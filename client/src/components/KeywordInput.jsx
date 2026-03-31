@@ -4,8 +4,8 @@ export default function KeywordInput({ keyword, setKeyword, onSearch, disabled }
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <label htmlFor="keyword" className="block text-sm font-semibold text-gray-700 mb-2">
+    <div className="bg-white rounded-xl border border-[#E5E7EB] p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)' }}>
+      <label htmlFor="keyword" className="block text-sm font-semibold text-[#111827] mb-2">
         Target Keyword
       </label>
       <div className="flex gap-3">
@@ -17,15 +17,14 @@ export default function KeywordInput({ keyword, setKeyword, onSearch, disabled }
           onKeyDown={handleKeyDown}
           placeholder="e.g. best project management software"
           disabled={disabled}
-          className="flex-1 px-4 py-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 transition"
+          className="flex-1 px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 disabled:bg-[#F4F5F7] disabled:text-[#9CA3AF] transition-shadow"
+          style={{ '--tw-ring-color': '#3DAA8E' }}
         />
         <button
           onClick={onSearch}
           disabled={disabled || !keyword.trim()}
-          className="px-8 py-3 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ backgroundColor: disabled || !keyword.trim() ? '#6b7280' : '#1e3a5f' }}
-          onMouseEnter={e => { if (!disabled && keyword.trim()) e.target.style.backgroundColor = '#2e5f8a'; }}
-          onMouseLeave={e => { if (!disabled && keyword.trim()) e.target.style.backgroundColor = '#1e3a5f'; }}
+          className="px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ backgroundColor: '#111827' }}
         >
           {disabled ? (
             <span className="flex items-center gap-2">
@@ -38,7 +37,7 @@ export default function KeywordInput({ keyword, setKeyword, onSearch, disabled }
           ) : 'Research'}
         </button>
       </div>
-      <p className="mt-2 text-xs text-gray-400">
+      <p className="mt-2 text-xs text-[#9CA3AF]">
         Searches top 10 US Google results, scrapes content, and generates AI-powered recommendations.
       </p>
     </div>

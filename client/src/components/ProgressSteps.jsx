@@ -1,7 +1,7 @@
 const STEPS = [
   { id: 'searching', label: 'Searching Google', icon: '🔍', description: 'Fetching top 10 US results' },
   { id: 'scraping', label: 'Scraping Pages', icon: '📄', description: 'Extracting content from each URL' },
-  { id: 'analyzing', label: 'AI Analysis', icon: '🤖', description: 'Claude generating recommendations' },
+  { id: 'analyzing', label: 'AI Analysis', icon: '🤖', description: 'Generating recommendations' },
   { id: 'done', label: 'Complete', icon: '✅', description: 'Report ready' },
 ];
 
@@ -22,7 +22,7 @@ function getStepStatus(stepId, currentStep) {
 
 export default function ProgressSteps({ step }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+    <div className="bg-white rounded-xl border border-[#E5E7EB] p-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)' }}>
       <div className="flex items-center justify-between">
         {STEPS.map((s, i) => {
           const status = getStepStatus(s.id, step);
@@ -31,26 +31,31 @@ export default function ProgressSteps({ step }) {
               {/* Step */}
               <div className="flex flex-col items-center flex-1">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition-all ${
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-base font-bold transition-all"
+                  style={
                     status === 'done'
-                      ? 'bg-green-500 text-white'
+                      ? { backgroundColor: '#3DAA8E', color: '#fff' }
                       : status === 'active'
-                      ? 'text-white animate-pulse'
-                      : 'bg-gray-100 text-gray-400'
-                  }`}
-                  style={status === 'active' ? { backgroundColor: '#1e3a5f' } : {}}
+                      ? { backgroundColor: '#3DAA8E1A', color: '#3DAA8E', border: '2px solid #3DAA8E' }
+                      : { backgroundColor: '#F4F5F7', color: '#9CA3AF' }
+                  }
                 >
                   {status === 'done' ? '✓' : s.icon}
                 </div>
                 <div className="mt-2 text-center">
                   <div
-                    className={`text-xs font-semibold ${
-                      status === 'active' ? 'text-blue-900' : status === 'done' ? 'text-green-700' : 'text-gray-400'
-                    }`}
+                    className="text-xs font-semibold"
+                    style={
+                      status === 'active'
+                        ? { color: '#3DAA8E' }
+                        : status === 'done'
+                        ? { color: '#111827' }
+                        : { color: '#9CA3AF' }
+                    }
                   >
                     {s.label}
                   </div>
-                  <div className="text-xs text-gray-400 mt-0.5 hidden sm:block">{s.description}</div>
+                  <div className="text-xs text-[#9CA3AF] mt-0.5 hidden sm:block">{s.description}</div>
                 </div>
               </div>
 
@@ -61,8 +66,8 @@ export default function ProgressSteps({ step }) {
                   style={{
                     backgroundColor:
                       getStepStatus(STEPS[i + 1].id, step) !== 'pending' || status === 'done'
-                        ? '#22c55e'
-                        : '#e5e7eb'
+                        ? '#3DAA8E'
+                        : '#E5E7EB'
                   }}
                 />
               )}
@@ -73,22 +78,22 @@ export default function ProgressSteps({ step }) {
 
       {/* Active step message */}
       {step === 'searching' && (
-        <p className="text-center text-sm text-gray-500 mt-3 pt-3 border-t border-gray-100">
+        <p className="text-center text-sm text-[#6B7280] mt-3 pt-3 border-t border-[#E5E7EB]">
           Querying Google Custom Search API for top 10 US results…
         </p>
       )}
       {step === 'scraping' && (
-        <p className="text-center text-sm text-gray-500 mt-3 pt-3 border-t border-gray-100">
+        <p className="text-center text-sm text-[#6B7280] mt-3 pt-3 border-t border-[#E5E7EB]">
           Scraping pages with headless browser (max 3 concurrent) — this may take 30–60 seconds…
         </p>
       )}
       {step === 'analyzing' && (
-        <p className="text-center text-sm text-gray-500 mt-3 pt-3 border-t border-gray-100">
-          Sending content to Claude for SEO analysis and content generation…
+        <p className="text-center text-sm text-[#6B7280] mt-3 pt-3 border-t border-[#E5E7EB]">
+          Sending content to AI for SEO analysis and content generation…
         </p>
       )}
       {step === 'done' && (
-        <p className="text-center text-sm text-green-600 mt-3 pt-3 border-t border-gray-100 font-medium">
+        <p className="text-center text-sm font-medium mt-3 pt-3 border-t border-[#E5E7EB]" style={{ color: '#3DAA8E' }}>
           Analysis complete — your content report is ready below.
         </p>
       )}

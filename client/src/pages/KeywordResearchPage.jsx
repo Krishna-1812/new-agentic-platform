@@ -132,33 +132,30 @@ export default function KeywordResearchPage() {
   const canStart = keyword.trim() && !running;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
       {/* Header */}
-      <header style={{ backgroundColor: '#1e6b4f' }} className="text-white py-5 px-4 shadow-lg">
-        <div className="max-w-5xl mx-auto flex items-center gap-4">
+      <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6">
+        <div className="max-w-5xl mx-auto w-full flex items-center gap-3">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-1.5 text-white/60 hover:text-white text-sm transition-colors"
+            className="flex items-center gap-1.5 text-[#6B7280] hover:text-[#111827] text-sm font-medium transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
             </svg>
             All tools
           </button>
-          <div className="w-px h-5 bg-white/20" />
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">Keyword Research</h1>
-            <p className="text-green-200 text-xs mt-0.5">Find primary &amp; secondary keywords from top competitor rankings</p>
-          </div>
+          <span className="text-[#E5E7EB]">/</span>
+          <span className="text-sm font-semibold text-[#111827]">Keyword Research</span>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+      <main className="max-w-5xl mx-auto px-8 py-7 space-y-5">
 
         {/* ── Input Card ───────────────────────────────────────────────── */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-xl border border-[#E5E7EB] p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)' }}>
           <div className="max-w-md">
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Seed Keyword</label>
+            <label className="block text-sm font-semibold text-[#111827] mb-1.5">Seed Keyword</label>
             <input
               type="text"
               value={keyword}
@@ -166,7 +163,8 @@ export default function KeywordResearchPage() {
               onKeyDown={e => e.key === 'Enter' && canStart && startResearch()}
               placeholder="e.g. dental implants"
               disabled={running}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-green-600 disabled:bg-gray-50 disabled:text-gray-400"
+              className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 disabled:bg-[#F4F5F7] disabled:text-[#9CA3AF]"
+              style={{ '--tw-ring-color': '#3DAA8E' }}
             />
           </div>
 
@@ -175,7 +173,7 @@ export default function KeywordResearchPage() {
               onClick={startResearch}
               disabled={!canStart}
               className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: canStart ? '#1e6b4f' : '#6b7280' }}
+              style={{ backgroundColor: '#111827' }}
             >
               {running ? (
                 <>
@@ -213,13 +211,14 @@ export default function KeywordResearchPage() {
               return (
                 <div
                   key={stepCfg.id}
-                  className={`bg-white rounded-xl border shadow-sm overflow-hidden transition-all ${
-                    s.status === 'active' ? 'border-blue-200' : s.status === 'done' ? 'border-green-200' : 'border-gray-200'
+                  className={`bg-white rounded-xl border overflow-hidden transition-all ${
+                    s.status === 'active' ? 'border-[#3DAA8E]' : s.status === 'done' ? 'border-[#E5E7EB]' : 'border-[#E5E7EB]'
                   }`}
+                  style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)' }}
                 >
                   {/* Step header */}
                   <div className={`flex items-center gap-3 px-5 py-3.5 ${
-                    s.status === 'active' ? 'bg-blue-50' : s.status === 'done' ? 'bg-green-50' : 'bg-gray-50'
+                    s.status === 'active' ? 'bg-[#F0FAF7]' : s.status === 'done' ? 'bg-[#F9FAFB]' : 'bg-[#F9FAFB]'
                   }`}>
                     <StepBadge status={s.status} />
                     <span className="text-lg">{stepCfg.icon}</span>
@@ -227,12 +226,12 @@ export default function KeywordResearchPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm text-gray-800">{stepCfg.label}</span>
                         {s.status === 'active' && (
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium animate-pulse">
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium animate-pulse" style={{ backgroundColor: '#3DAA8E1A', color: '#3DAA8E' }}>
                             In progress
                           </span>
                         )}
                         {s.status === 'done' && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                          <span className="text-xs bg-[#F4F5F7] text-[#6B7280] px-2 py-0.5 rounded-full font-medium">
                             Done
                           </span>
                         )}
@@ -247,7 +246,7 @@ export default function KeywordResearchPage() {
                       {urls.map((u, idx) => (
                         <div key={idx} className="border border-gray-100 rounded-lg p-3 bg-gray-50">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="w-5 h-5 rounded-full text-white text-xs flex items-center justify-center font-bold flex-shrink-0" style={{ backgroundColor: '#1e6b4f' }}>
+                            <span className="w-5 h-5 rounded-full text-white text-xs flex items-center justify-center font-bold flex-shrink-0" style={{ backgroundColor: '#3DAA8E' }}>
                               {idx + 1}
                             </span>
                             <span className="text-xs font-semibold text-gray-700 truncate">{u.displayUrl || new URL(u.url).hostname}</span>
@@ -347,14 +346,14 @@ export default function KeywordResearchPage() {
                 {(result.primary || []).map((kw, i) => (
                   <div
                     key={i}
-                    className="bg-white rounded-xl border-2 p-5 shadow-sm"
-                    style={{ borderColor: '#1e6b4f' }}
+                    className="bg-white rounded-xl p-5 border-l-4 border border-[#E5E7EB]"
+                    style={{ borderLeftColor: '#3DAA8E', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}
                   >
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <h3 className="font-bold text-gray-900 text-base leading-snug">{kw.keyword}</h3>
                       <span
-                        className="flex-shrink-0 text-xs font-bold text-white px-2 py-0.5 rounded-full"
-                        style={{ backgroundColor: '#1e6b4f' }}
+                        className="flex-shrink-0 text-xs font-semibold px-2.5 py-0.5 rounded"
+                        style={{ backgroundColor: '#3DAA8E1A', color: '#3DAA8E' }}
                       >
                         PRIMARY
                       </span>
@@ -392,7 +391,7 @@ export default function KeywordResearchPage() {
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr style={{ backgroundColor: '#1e3a5f' }}>
+                    <tr style={{ backgroundColor: '#111827' }}>
                       <th className="text-left text-white font-semibold px-4 py-3 text-xs uppercase tracking-wider">#</th>
                       <th className="text-left text-white font-semibold px-4 py-3 text-xs uppercase tracking-wider">Keyword</th>
                       <th className="text-left text-white font-semibold px-4 py-3 text-xs uppercase tracking-wider">Volume</th>

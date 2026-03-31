@@ -61,7 +61,6 @@ export default function ExportButtons({ keyword, analysis }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 3000);
     } catch (err) {
-      // Fallback for browsers that block clipboard API
       const textarea = document.createElement('textarea');
       textarea.value = text;
       textarea.style.position = 'fixed';
@@ -83,10 +82,8 @@ export default function ExportButtons({ keyword, analysis }) {
       <button
         onClick={exportDocx}
         disabled={exporting}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-sm hover:shadow"
-        style={{ backgroundColor: '#1e3a5f' }}
-        onMouseEnter={e => { if (!exporting) e.currentTarget.style.backgroundColor = '#2e5f8a'; }}
-        onMouseLeave={e => { if (!exporting) e.currentTarget.style.backgroundColor = '#1e3a5f'; }}
+        className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+        style={{ backgroundColor: '#111827', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' }}
       >
         {exporting ? (
           <>
@@ -110,11 +107,12 @@ export default function ExportButtons({ keyword, analysis }) {
       <button
         onClick={copyToClipboard}
         disabled={copying}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all border shadow-sm hover:shadow disabled:opacity-60 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all border disabled:opacity-60 disabled:cursor-not-allowed"
         style={{
-          backgroundColor: copied ? '#f0fdf4' : 'white',
-          borderColor: copied ? '#22c55e' : '#d1d5db',
-          color: copied ? '#15803d' : '#374151'
+          backgroundColor: copied ? '#F0FAF7' : '#FFFFFF',
+          borderColor: copied ? '#3DAA8E' : '#E5E7EB',
+          color: copied ? '#3DAA8E' : '#111827',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.06)'
         }}
       >
         {copied ? (
@@ -136,7 +134,7 @@ export default function ExportButtons({ keyword, analysis }) {
       </button>
 
       {exportError && (
-        <span className="text-red-600 text-sm">⚠ {exportError}</span>
+        <span className="text-red-500 text-sm">⚠ {exportError}</span>
       )}
     </div>
   );

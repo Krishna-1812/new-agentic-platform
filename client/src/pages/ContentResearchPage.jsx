@@ -74,59 +74,60 @@ export default function ContentResearchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header style={{ backgroundColor: '#1e3a5f' }} className="text-white py-5 px-4 shadow-lg">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
+      <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6">
+        <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/')}
-              className="flex items-center gap-1.5 text-white/60 hover:text-white text-sm transition-colors"
+              className="flex items-center gap-1.5 text-[#6B7280] hover:text-[#111827] text-sm font-medium transition-colors"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
               </svg>
               All tools
             </button>
-            <div className="w-px h-5 bg-white/20" />
+            <span className="text-[#E5E7EB]">/</span>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">Content Research</h1>
-              <p className="text-blue-200 text-xs mt-0.5">Analyse top-ranking pages &amp; generate structured content recommendations</p>
+              <span className="text-sm font-semibold text-[#111827]">Content Research</span>
             </div>
           </div>
           {searchCount > 0 && (
-            <div className="text-right">
-              <div className="text-white/60 text-xs uppercase tracking-wider">Daily searches used</div>
-              <div className="text-white font-semibold text-lg">{searchCount} <span className="text-white/50 text-sm font-normal">/ 100</span></div>
-              <div className="mt-1 h-1.5 w-32 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full rounded-full transition-all" style={{
-                  width: `${Math.min(100, searchCount)}%`,
-                  backgroundColor: searchCount >= 90 ? '#ef4444' : searchCount >= 70 ? '#f59e0b' : '#22c55e'
-                }} />
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-[#6B7280]">Daily searches</span>
+              <div className="flex items-center gap-2">
+                <div className="h-1.5 w-24 bg-[#E5E7EB] rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{
+                    width: `${Math.min(100, searchCount)}%`,
+                    backgroundColor: searchCount >= 90 ? '#EF4444' : searchCount >= 70 ? '#D97706' : '#3DAA8E'
+                  }} />
+                </div>
+                <span className="text-xs font-semibold text-[#111827]">{searchCount}<span className="text-[#9CA3AF] font-normal"> / 100</span></span>
               </div>
             </div>
           )}
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-8 py-7">
         <KeywordInput keyword={keyword} setKeyword={setKeyword} onSearch={handleResearch} disabled={isLoading} />
 
         {step !== 'idle' && <div className="mt-6"><ProgressSteps step={step} /></div>}
 
         {warnings.length > 0 && (
-          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="mt-4 p-4 bg-[#FEF9C3] border border-[#FDE68A] rounded-xl">
             <div className="flex items-start gap-2">
-              <span className="text-amber-500 mt-0.5">⚠</span>
-              <div className="space-y-1">{warnings.map((w, i) => <p key={i} className="text-amber-800 text-sm">{w}</p>)}</div>
+              <span className="mt-0.5" style={{ color: '#D97706' }}>⚠</span>
+              <div className="space-y-1">{warnings.map((w, i) => <p key={i} className="text-sm" style={{ color: '#92400E' }}>{w}</p>)}</div>
             </div>
           </div>
         )}
 
         {step === 'error' && error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
             <div className="flex items-start gap-2">
-              <span className="text-red-500 mt-0.5">✕</span>
-              <p className="text-red-800 text-sm font-medium">{error}</p>
+              <span className="text-red-500 mt-0.5 text-xs">✕</span>
+              <p className="text-red-700 text-sm font-medium">{error}</p>
             </div>
           </div>
         )}
