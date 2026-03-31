@@ -1,9 +1,11 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 
+const { router: authRouter, requireAuth } = require('./routes/auth');
 const searchRoutes = require('./routes/search');
 const scrapeRoutes = require('./routes/scrape');
 const analyzeRoutes = require('./routes/analyze');
@@ -13,30 +15,41 @@ const keywordResearchRoutes = require('./routes/keywordResearch');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '20mb' }));
+app.use(cookieParser());
 
-// Rate limit: 5 requests per minute per IP
+// General rate limit: 20 requests per minute
 const limiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 5,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests. Maximum 5 requests per minute. Please wait before trying again.' }
+  message: { error: 'Too many requests. Please wait a moment and try again.' }
+});
+
+// Strict rate limit for login: 10 attempts per 15 minutes
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many login attempts. Please try again in 15 minutes.' }
 });
 
 app.use('/api/', limiter);
+app.use('/api/auth/login', loginLimiter);
 
-app.use('/api/search', searchRoutes);
-app.use('/api/scrape', scrapeRoutes);
-app.use('/api/analyze', analyzeRoutes);
-app.use('/api/export', exportRoutes);
-app.use('/api/keyword-research', keywordResearchRoutes);
-
-// Health check
+// ── Public routes (no auth required) ────────────────────────────────────────
+app.use('/api/auth', authRouter);
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-// Serve React frontend in production
+// ── Protected routes (JWT cookie required on every request) ─────────────────
+app.use('/api/search',           requireAuth, searchRoutes);
+app.use('/api/scrape',           requireAuth, scrapeRoutes);
+app.use('/api/analyze',          requireAuth, analyzeRoutes);
+app.use('/api/export',           requireAuth, exportRoutes);
+app.use('/api/keyword-research', requireAuth, keywordResearchRoutes);
+
+// ── Serve React frontend ─────────────────────────────────────────────────────
 const clientBuild = path.join(__dirname, '../client/dist');
 app.use(express.static(clientBuild));
 app.get('*', (req, res) => {
@@ -45,9 +58,12 @@ app.get('*', (req, res) => {
 
 const server = app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
-  console.log(`   GOOGLE_API_KEY: ${process.env.GOOGLE_API_KEY ? '✓ set' : '✗ missing'}`);
-  console.log(`   GOOGLE_CX:      ${process.env.GOOGLE_CX ? '✓ set' : '✗ missing'}`);
-  console.log(`   OPENAI_API_KEY:     ${process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here' ? '✓ set' : '✗ missing/placeholder'}`);
+  console.log(`   GOOGLE_API_KEY:    ${process.env.GOOGLE_API_KEY ? '✓' : '✗ missing'}`);
+  console.log(`   GOOGLE_CX:         ${process.env.GOOGLE_CX ? '✓' : '✗ missing'}`);
+  console.log(`   OPENAI_API_KEY:    ${process.env.OPENAI_API_KEY ? '✓' : '✗ missing'}`);
+  console.log(`   SEMRUSH_API_KEY:   ${process.env.SEMRUSH_API_KEY ? '✓' : '✗ missing'}`);
+  console.log(`   APP_USERNAME:      ${process.env.APP_USERNAME ? '✓' : '✗ missing'}`);
+  console.log(`   JWT_SECRET:        ${process.env.JWT_SECRET ? '✓' : '✗ missing'}`);
 });
 
-server.timeout = 180000; // 3 minutes for long scraping sessions
+server.timeout = 180000;

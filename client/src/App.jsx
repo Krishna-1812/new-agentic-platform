@@ -1,4 +1,6 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import ContentResearchPage from './pages/ContentResearchPage';
 import KeywordResearchPage from './pages/KeywordResearchPage';
@@ -6,9 +8,11 @@ import KeywordResearchPage from './pages/KeywordResearchPage';
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/content-research" element={<ContentResearchPage />} />
-      <Route path="/keyword-research" element={<KeywordResearchPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+      <Route path="/content-research" element={<ProtectedRoute><ContentResearchPage /></ProtectedRoute>} />
+      <Route path="/keyword-research" element={<ProtectedRoute><KeywordResearchPage /></ProtectedRoute>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

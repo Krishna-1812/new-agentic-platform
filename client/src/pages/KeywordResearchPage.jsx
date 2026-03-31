@@ -38,8 +38,6 @@ function DifficultyBar({ value }) {
 export default function KeywordResearchPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
-  const [semrushKey, setSemrushKey] = useState('');
-  const [showKey, setShowKey] = useState(false);
   const [running, setRunning] = useState(false);
   const [started, setStarted] = useState(false);
   const [steps, setSteps] = useState({});       // { id: { status, message } }
@@ -70,7 +68,7 @@ export default function KeywordResearchPage() {
       const initRes = await fetch('/api/keyword-research/init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyword: keyword.trim(), semrushKey: semrushKey.trim() })
+        body: JSON.stringify({ keyword: keyword.trim() })
       });
       if (!initRes.ok) {
         const err = await initRes.json();
@@ -130,7 +128,7 @@ export default function KeywordResearchPage() {
     }
   }
 
-  const canStart = keyword.trim() && semrushKey.trim() && !running;
+  const canStart = keyword.trim() && !running;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -272,7 +270,7 @@ export default function KeywordResearchPage() {
 
                   {/* Step 1 — URL cards */}
                   {stepCfg.id === 'search' && s.status === 'done' && urls.length > 0 && (
-                    <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {urls.map((u, idx) => (
                         <div key={idx} className="border border-gray-100 rounded-lg p-3 bg-gray-50">
                           <div className="flex items-center gap-2 mb-1">
