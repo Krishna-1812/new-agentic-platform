@@ -59,7 +59,7 @@ export default function KeywordResearchPage() {
   }
 
   async function startResearch() {
-    if (!keyword.trim() || !semrushKey.trim() || running) return;
+    if (!keyword.trim() || running) return;
     reset();
     setStarted(true);
     setRunning(true);
@@ -68,6 +68,7 @@ export default function KeywordResearchPage() {
       const initRes = await fetch('/api/keyword-research/init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ keyword: keyword.trim() })
       });
       if (!initRes.ok) {
@@ -156,45 +157,17 @@ export default function KeywordResearchPage() {
 
         {/* ── Input Card ───────────────────────────────────────────────── */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Seed Keyword</label>
-              <input
-                type="text"
-                value={keyword}
-                onChange={e => setKeyword(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && canStart && startResearch()}
-                placeholder="e.g. dental implants"
-                disabled={running}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-green-600 disabled:bg-gray-50 disabled:text-gray-400"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">SEMrush API Key</label>
-              <div className="relative">
-                <input
-                  type={showKey ? 'text' : 'password'}
-                  value={semrushKey}
-                  onChange={e => setSemrushKey(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && canStart && startResearch()}
-                  placeholder="Paste your SEMrush API key"
-                  disabled={running}
-                  className="w-full px-4 py-2.5 pr-10 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-green-600 disabled:bg-gray-50 disabled:text-gray-400"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowKey(s => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showKey ? (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                  )}
-                </button>
-              </div>
-              <p className="text-xs text-gray-400 mt-1">Your key is never stored — used only for this session.</p>
-            </div>
+          <div className="max-w-md">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Seed Keyword</label>
+            <input
+              type="text"
+              value={keyword}
+              onChange={e => setKeyword(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && canStart && startResearch()}
+              placeholder="e.g. dental implants"
+              disabled={running}
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-green-600 disabled:bg-gray-50 disabled:text-gray-400"
+            />
           </div>
 
           <div className="mt-4 flex items-center gap-3">
