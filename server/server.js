@@ -8,6 +8,7 @@ const searchRoutes = require('./routes/search');
 const scrapeRoutes = require('./routes/scrape');
 const analyzeRoutes = require('./routes/analyze');
 const exportRoutes = require('./routes/export');
+const keywordResearchRoutes = require('./routes/keywordResearch');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -30,6 +31,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/scrape', scrapeRoutes);
 app.use('/api/analyze', analyzeRoutes);
 app.use('/api/export', exportRoutes);
+app.use('/api/keyword-research', keywordResearchRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
