@@ -118,29 +118,25 @@ export default function KBContextSelector({ module: moduleId, onChange, disabled
               <span className="text-xs text-[#9CA3AF]">(auto)</span>
             </div>
 
-            {/* Client Feedback — dropdown if multiple, label if single */}
-            {!loading && kbData?.feedbackOptions?.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-[#6B7280]">Feedback</span>
-                {kbData.feedbackOptions.length === 1 ? (
-                  <span className="text-xs px-2 py-0.5 rounded bg-[#F4F5F7] text-[#111827] font-medium">
-                    {kbData.feedbackOptions[0].period}
-                  </span>
-                ) : (
-                  <select
-                    value={feedbackKbId}
-                    onChange={e => setFeedbackKbId(e.target.value)}
-                    disabled={disabled}
-                    className="text-xs border border-[#E5E7EB] rounded-lg px-2.5 py-1.5 bg-white text-[#111827] focus:outline-none disabled:opacity-50"
-                  >
-                    <option value="">None</option>
-                    {kbData.feedbackOptions.map(f => (
-                      <option key={f.id} value={f.id}>{f.period}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            )}
+            {/* Client Feedback — always a dropdown so user can select or deselect */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-[#6B7280]">Feedback</span>
+              {loading ? (
+                <span className="text-xs text-[#9CA3AF]">…</span>
+              ) : (
+                <select
+                  value={feedbackKbId}
+                  onChange={e => setFeedbackKbId(e.target.value)}
+                  disabled={disabled}
+                  className="text-xs border border-[#E5E7EB] rounded-lg px-2.5 py-1.5 bg-white text-[#111827] focus:outline-none disabled:opacity-50 disabled:bg-[#F4F5F7]"
+                >
+                  <option value="">{client ? (kbData?.feedbackOptions?.length ? 'None' : 'No feedback available') : 'Select brand first'}</option>
+                  {(kbData?.feedbackOptions || []).map(f => (
+                    <option key={f.id} value={f.id}>{f.period}</option>
+                  ))}
+                </select>
+              )}
+            </div>
           </>
         )}
       </div>
