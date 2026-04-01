@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { saveAs } from 'file-saver';
+import KBContextSelector from '../components/KBContextSelector';
 
 const STEPS = [
   { id: 'search',   label: 'Searching Google US',  icon: '🔍' },
@@ -158,6 +159,8 @@ async function downloadDocx(keyword, markdown) {
 export default function ArticleRecommendationPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
+  const [client, setClient] = useState('');
+  const [feedbackKbId, setFeedbackKbId] = useState(null);
   const [running, setRunning] = useState(false);
   const [started, setStarted] = useState(false);
   const [steps, setSteps] = useState({});
@@ -195,7 +198,7 @@ export default function ArticleRecommendationPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ keyword: keyword.trim() })
+        body: JSON.stringify({ keyword: keyword.trim(), client: client || undefined, feedbackKbId: feedbackKbId || undefined })
       });
       if (!initRes.ok) {
         const err = await initRes.json();
@@ -310,7 +313,13 @@ export default function ArticleRecommendationPage() {
 
         {/* ── Input Card ───────────────────────────────────────────────── */}
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          <div className="max-w-md">
+          <KBContextSelector
+            module="article-recommendation"
+            onChange={({ client: c, feedbackKbId: fb }) => { setClient(c); setFeedbackKbId(fb); }}
+            disabled={running}
+          />
+
+          <div className="mt-4 max-w-md">
             <label className="block text-sm font-semibold text-[#111827] mb-1.5">Primary Keyword</label>
             <input
               type="text"
@@ -325,6 +334,7 @@ export default function ArticleRecommendationPage() {
           </div>
 
           <div className="mt-4 flex items-center gap-3">
+
             <button
               onClick={startGeneration}
               disabled={!canStart}

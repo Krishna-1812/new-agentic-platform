@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const OpenAI = require('openai');
 const { searchGoogle } = require('../services/googleSearch');
 const { scrapeUrlsDetailed } = require('../services/scraper');
+const { loadKBContext } = require('../services/kbLoader');
 
 // In-memory session store (token → params, expires in 5 min)
 const sessions = new Map();
@@ -12,13 +13,13 @@ function generateToken() {
   return crypto.randomBytes(16).toString('hex');
 }
 
-// POST /init — store keyword, return token
+// POST /init — store keyword + optional KB params, return token
 router.post('/init', (req, res) => {
-  const { keyword } = req.body;
+  const { keyword, client, feedbackKbId } = req.body;
   if (!keyword?.trim()) return res.status(400).json({ error: 'keyword is required' });
 
   const token = generateToken();
-  sessions.set(token, { keyword: keyword.trim() });
+  sessions.set(token, { keyword: keyword.trim(), client: client || null, feedbackKbId: feedbackKbId || null });
   setTimeout(() => sessions.delete(token), 300000); // 5-min TTL
   res.json({ token });
 });
@@ -29,7 +30,7 @@ router.get('/stream/:token', async (req, res) => {
   if (!session) return res.status(404).json({ error: 'Session not found or expired. Please try again.' });
   sessions.delete(req.params.token);
 
-  const { keyword } = session;
+  const { keyword, client, feedbackKbId } = session;
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -132,6 +133,19 @@ Analyze these pages and return a JSON object with these exact fields:
     // ── Step 4: Brief Generation ─────────────────────────────────────────
     emit('step', { id: 'brief', status: 'active', message: 'Building content brief…' });
 
+    // Load KB context (all optional — warn if any missing, never block)
+    let kbContext = null;
+    if (client) {
+      kbContext = await loadKBContext('article-recommendation', client, feedbackKbId);
+      if (kbContext.skipped.length > 0) {
+        emit('warning', {
+          message: `Some knowledge base context could not be loaded: ${kbContext.skipped.join(', ')}. Brief will continue with available context.`,
+          type: 'kb'
+        });
+      }
+      console.log(`[article-recommendation] KB confidence: ${kbContext.confidence}, loaded: ${kbContext.loaded.length}, skipped: ${kbContext.skipped.length}`);
+    }
+
     const sourceUrls = top10.map((u, i) => `- [${i + 1}] ${u.url}`).join('\n');
 
     const briefCompletion = await openai.chat.completions.create({
@@ -140,7 +154,8 @@ Analyze these pages and return a JSON object with these exact fields:
       messages: [
         {
           role: 'system',
-          content: `You are an expert SEO content strategist. Based on the analysis of the top 10 ranking pages provided, generate a detailed article content brief. The brief must follow this exact structure:
+          content: `You are an expert SEO content strategist. Based on the analysis of the top 10 ranking pages provided, generate a detailed article content brief. The brief must follow this exact structure:`
+            + (kbContext?.systemPromptSuffix || '') + `
 
 # H1: [Recommended article title]
 

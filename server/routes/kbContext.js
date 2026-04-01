@@ -4,8 +4,9 @@ const store = require('../services/kbStore');
 
 // Best-practices KB id per module
 const MODULE_BP_MAP = {
-  'content-research':  'article-creation',
-  'keyword-research':  'keyword-research-bp',
+  'content-research':      'article-creation',
+  'keyword-research':      'keyword-research-bp',
+  'article-recommendation': 'article-creation',
 };
 
 // Check whether a KB body has real content (not just HTML comments / section headers)

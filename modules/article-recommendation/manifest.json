@@ -1,0 +1,4 @@
+{
+  "required_kbs": [],
+  "optional_kbs": ["brand/{client}", "industry/{client-industry}", "article-creation", "client-feedback/{client}"]
+}
