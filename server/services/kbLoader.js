@@ -2,51 +2,43 @@
  * KB Loader — resolves module KB dependencies and returns injected context.
  *
  * Usage:
- *   const { context, confidence, missing, systemPromptSuffix } = await loadKBContext('content-research', 'gentle-dental');
+ *   const { loaded, confidence, missing, systemPromptSuffix } = await loadKBContext('content-research', 'gentle-dental', feedbackKbIds);
  *
+ * feedbackKbIds: string (legacy single) or array of KB ids — all will be loaded.
  * The systemPromptSuffix is a pre-formatted string ready to append to any AI system prompt.
  */
 
 const store = require('./kbStore');
 
-// Client → industry mapping (derived from the index at load time, cached per call)
+// Client → industry mapping (derived from the index at load time)
 async function resolveClientIndustry(clientSlug) {
   const index = await store.readIndex();
   const brandKB = index.knowledge_bases.find(
     kb => kb.category === 'brand' && kb.client === clientSlug
   );
   if (!brandKB) return null;
-  // Read the file to get the industry field from frontmatter
   const kb = await store.readKB(brandKB.id);
   return kb?.meta?.industry || null;
 }
 
-// Resolve a KB pattern like "brand/{client}" or "industry/{client-industry}" to an actual id
-async function resolvePattern(pattern, clientSlug, clientIndustry, feedbackKbId = null) {
+// Resolve a KB pattern like "brand/{client}" or "industry/{client-industry}" to an id.
+// Returns '__feedback__' as a sentinel for client-feedback patterns (handled below).
+async function resolvePattern(pattern, clientSlug, clientIndustry) {
   if (!pattern.includes('{')) return pattern;
-
-  if (pattern.startsWith('brand/')) {
-    return clientSlug; // brand KB id = client slug
-  }
-  if (pattern.startsWith('industry/')) {
-    return clientIndustry; // industry KB id = industry slug
-  }
-  if (pattern.startsWith('client-feedback/')) {
-    // Use explicit feedback KB if provided, otherwise auto-select most recent
-    if (feedbackKbId) return feedbackKbId;
-    const index = await store.readIndex();
-    const feedbackKBs = index.knowledge_bases.filter(
-      kb => kb.category === 'client-feedback' && kb.client === clientSlug && kb.active
-    );
-    if (feedbackKBs.length === 0) return null;
-    // Sort by id descending (relies on date-based naming like 2026-q1)
-    feedbackKBs.sort((a, b) => b.id.localeCompare(a.id));
-    return feedbackKBs[0].id;
-  }
+  if (pattern.startsWith('brand/')) return clientSlug;
+  if (pattern.startsWith('industry/')) return clientIndustry;
+  if (pattern.startsWith('client-feedback/')) return '__feedback__';
   return null;
 }
 
-async function loadKBContext(moduleId, clientSlug, feedbackKbId = null) {
+async function loadKBContext(moduleId, clientSlug, feedbackKbIds = null) {
+  // Normalise: accept string (legacy single) or array
+  if (typeof feedbackKbIds === 'string' && feedbackKbIds) {
+    feedbackKbIds = [feedbackKbIds];
+  } else if (!Array.isArray(feedbackKbIds) || feedbackKbIds.length === 0) {
+    feedbackKbIds = null;
+  }
+
   const result = {
     loaded: [],    // { id, category, meta, body }
     missing: [],   // required KB ids that could not be loaded
@@ -79,40 +71,76 @@ async function loadKBContext(moduleId, clientSlug, feedbackKbId = null) {
     return kb;
   }
 
+  // Helper: resolve pattern → ids, expanding __feedback__ into the feedbackKbIds array
+  // or auto-selecting most recent if none specified
+  async function resolveIds(pattern) {
+    const id = await resolvePattern(pattern, clientSlug, clientIndustry);
+    if (id !== '__feedback__') return id ? [id] : [];
+
+    // Feedback pattern
+    if (feedbackKbIds && feedbackKbIds.length > 0) return feedbackKbIds;
+
+    // Auto-select most recent if nothing specified
+    const index = await store.readIndex();
+    const feedbackKBs = index.knowledge_bases.filter(
+      kb => kb.category === 'client-feedback' && kb.client === clientSlug && kb.active
+    );
+    if (feedbackKBs.length === 0) return [];
+    feedbackKBs.sort((a, b) => b.id.localeCompare(a.id));
+    return [feedbackKBs[0].id];
+  }
+
   // Load required KBs
   for (const pattern of (manifest.required_kbs || [])) {
-    const id = await resolvePattern(pattern, clientSlug, clientIndustry, feedbackKbId);
-    const kb = await loadOne(id);
-    if (!kb) {
-      result.missing.push(id || pattern);
+    const ids = await resolveIds(pattern);
+    if (ids.length === 0) {
+      result.missing.push(pattern);
       result.confidence = 'LOW';
-    } else {
-      result.loaded.push(kb);
+      continue;
     }
+    let anyLoaded = false;
+    for (const id of ids) {
+      const kb = await loadOne(id);
+      if (kb) { result.loaded.push(kb); anyLoaded = true; }
+      else { result.missing.push(id); }
+    }
+    if (!anyLoaded) result.confidence = 'LOW';
   }
 
   // Load optional KBs
   for (const pattern of (manifest.optional_kbs || [])) {
-    const id = await resolvePattern(pattern, clientSlug, clientIndustry, feedbackKbId);
-    const kb = await loadOne(id);
-    if (!kb) {
-      result.skipped.push(id || pattern);
+    const ids = await resolveIds(pattern);
+    if (ids.length === 0) {
+      result.skipped.push(pattern);
       if (result.confidence === 'HIGH') result.confidence = 'MEDIUM';
-    } else {
-      result.loaded.push(kb);
+      continue;
+    }
+    for (const id of ids) {
+      const kb = await loadOne(id);
+      if (!kb) {
+        result.skipped.push(id);
+        if (result.confidence === 'HIGH') result.confidence = 'MEDIUM';
+      } else {
+        result.loaded.push(kb);
+      }
     }
   }
 
   // Build system prompt suffix
   if (result.loaded.length > 0) {
-    const parts = ['\n\n=== LOADED KNOWLEDGE BASE CONTEXT ===\n'];
+    const parts = [
+      '\n\n=== KNOWLEDGE BASE CONTEXT (LOW PRIORITY SUPPLEMENTAL) ===',
+      'Use the context below as a low-priority supplemental signal only.',
+      'It should inform — not override — decisions based on primary SERP/keyword data.\n',
+    ];
     // Order: Industry → Brand → Client Feedback → Best Practices
     const order = ['industry', 'brand', 'client-feedback', 'best-practices'];
     const sorted = [...result.loaded].sort(
       (a, b) => order.indexOf(a.meta.category) - order.indexOf(b.meta.category)
     );
     for (const kb of sorted) {
-      parts.push(`--- KB: ${kb.id} (${kb.meta.category}) | v${kb.meta.version} ---`);
+      const label = kb.meta.label ? ` "${kb.meta.label}"` : '';
+      parts.push(`--- KB: ${kb.id}${label} (${kb.meta.category}) | v${kb.meta.version} ---`);
       parts.push(kb.body.trim());
       parts.push('');
     }

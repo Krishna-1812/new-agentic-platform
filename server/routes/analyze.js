@@ -4,7 +4,7 @@ const { analyzeContent } = require('../services/claude');
 const { loadKBContext } = require('../services/kbLoader');
 
 router.post('/', async (req, res) => {
-  const { keyword, scrapedPages, client, feedbackKbId } = req.body;
+  const { keyword, scrapedPages, client, feedbackKbIds } = req.body;
 
   if (!keyword || typeof keyword !== 'string') {
     return res.status(400).json({ error: 'A keyword is required.' });
@@ -16,7 +16,7 @@ router.post('/', async (req, res) => {
 
   try {
     // Load KB context if a client is provided
-    const kbContext = client ? await loadKBContext('content-research', client, feedbackKbId || null) : null;
+    const kbContext = client ? await loadKBContext('content-research', client, feedbackKbIds || null) : null;
 
     console.log(`[analyze] Sending ${scrapedPages.filter(p => p.success).length} pages to Claude for keyword: "${keyword}"${client ? ` (client: ${client}, KB confidence: ${kbContext?.confidence})` : ''}`);
     const analysis = await analyzeContent(keyword, scrapedPages, kbContext);

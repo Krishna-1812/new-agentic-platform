@@ -85,11 +85,16 @@ router.get('/', async (req, res) => {
       .map(kb => ({ id: kb.id, period: kb.id.replace(`${client}-feedback-`, '') }))
       .sort((a, b) => b.period.localeCompare(a.period)); // newest first
 
-    // Fetch versions for feedback entries
+    // Fetch versions and labels for feedback entries
     const feedbackWithVersions = await Promise.all(
       feedbackOptions.map(async f => {
         const kb = await store.readKB(f.id);
-        return { ...f, version: kb?.meta?.version || '1.0.0', hasContent: hasContent(kb?.body) };
+        return {
+          ...f,
+          label: kb?.meta?.label || f.period,
+          version: kb?.meta?.version || '1.0.0',
+          hasContent: hasContent(kb?.body),
+        };
       })
     );
 

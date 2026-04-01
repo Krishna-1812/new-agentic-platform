@@ -15,11 +15,11 @@ function generateToken() {
 
 // POST /init — store keyword + optional KB params, return token
 router.post('/init', (req, res) => {
-  const { keyword, client, feedbackKbId } = req.body;
+  const { keyword, client, feedbackKbIds } = req.body;
   if (!keyword?.trim()) return res.status(400).json({ error: 'keyword is required' });
 
   const token = generateToken();
-  sessions.set(token, { keyword: keyword.trim(), client: client || null, feedbackKbId: feedbackKbId || null });
+  sessions.set(token, { keyword: keyword.trim(), client: client || null, feedbackKbIds: feedbackKbIds || null });
   setTimeout(() => sessions.delete(token), 300000); // 5-min TTL
   res.json({ token });
 });
@@ -30,7 +30,7 @@ router.get('/stream/:token', async (req, res) => {
   if (!session) return res.status(404).json({ error: 'Session not found or expired. Please try again.' });
   sessions.delete(req.params.token);
 
-  const { keyword, client, feedbackKbId } = session;
+  const { keyword, client, feedbackKbIds } = session;
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -136,7 +136,7 @@ Analyze these pages and return a JSON object with these exact fields:
     // Load KB context (all optional — warn if any missing, never block)
     let kbContext = null;
     if (client) {
-      kbContext = await loadKBContext('article-recommendation', client, feedbackKbId);
+      kbContext = await loadKBContext('article-recommendation', client, feedbackKbIds || null);
       if (kbContext.skipped.length > 0) {
         emit('warning', {
           message: `Some knowledge base context could not be loaded: ${kbContext.skipped.join(', ')}. Brief will continue with available context.`,

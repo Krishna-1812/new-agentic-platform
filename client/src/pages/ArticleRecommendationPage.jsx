@@ -160,7 +160,7 @@ export default function ArticleRecommendationPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [client, setClient] = useState('');
-  const [feedbackKbId, setFeedbackKbId] = useState(null);
+  const [feedbackKbIds, setFeedbackKbIds] = useState([]);
   const [running, setRunning] = useState(false);
   const [started, setStarted] = useState(false);
   const [steps, setSteps] = useState({});
@@ -198,7 +198,7 @@ export default function ArticleRecommendationPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ keyword: keyword.trim(), client: client || undefined, feedbackKbId: feedbackKbId || undefined })
+        body: JSON.stringify({ keyword: keyword.trim(), client: client || undefined, feedbackKbIds: feedbackKbIds.length ? feedbackKbIds : undefined })
       });
       if (!initRes.ok) {
         const err = await initRes.json();
@@ -315,7 +315,7 @@ export default function ArticleRecommendationPage() {
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
           <KBContextSelector
             module="article-recommendation"
-            onChange={({ client: c, feedbackKbId: fb }) => { setClient(c); setFeedbackKbId(fb); }}
+            onChange={({ client: c, feedbackKbIds: fb }) => { setClient(c); setFeedbackKbIds(fb || []); }}
             disabled={running}
           />
 

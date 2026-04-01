@@ -17,7 +17,7 @@ export default function ContentResearchPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [client, setClient] = useState('');
-  const [feedbackKbId, setFeedbackKbId] = useState(null);
+  const [feedbackKbIds, setFeedbackKbIds] = useState([]);
   const [step, setStep] = useState('idle');
   const [serpResults, setSerpResults] = useState(null);
   const [scrapeResults, setScrapeResults] = useState(null);
@@ -70,7 +70,7 @@ export default function ContentResearchPage() {
       const analyzeRes = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyword: keyword.trim(), scrapedPages: scrapeData.results, client: client || undefined, feedbackKbId: feedbackKbId || undefined })
+        body: JSON.stringify({ keyword: keyword.trim(), scrapedPages: scrapeData.results, client: client || undefined, feedbackKbIds: feedbackKbIds.length ? feedbackKbIds : undefined })
       });
       if (!analyzeRes.ok) throw new Error((await analyzeRes.json()).error || 'Analysis failed.');
       const analyzeData = await analyzeRes.json();
@@ -123,7 +123,7 @@ export default function ContentResearchPage() {
       <main className="max-w-7xl mx-auto px-8 py-7">
         <KBContextSelector
           module="content-research"
-          onChange={({ client: c, feedbackKbId: fb }) => { setClient(c); setFeedbackKbId(fb); }}
+          onChange={({ client: c, feedbackKbIds: fb }) => { setClient(c); setFeedbackKbIds(fb || []); }}
           disabled={isLoading}
         />
         <div className="mt-4">

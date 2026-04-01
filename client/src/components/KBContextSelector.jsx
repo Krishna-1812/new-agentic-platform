@@ -12,16 +12,17 @@ const CLIENTS = [
 
 export default function KBContextSelector({ module: moduleId, onChange, disabled }) {
   const [client, setClient] = useState('');
-  const [feedbackKbId, setFeedbackKbId] = useState('');
+  const [feedbackKbIds, setFeedbackKbIds] = useState([]);
   const [kbData, setKbData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   // Fetch KB context whenever client changes
   useEffect(() => {
     if (!client) {
       setKbData(null);
-      setFeedbackKbId('');
-      onChange?.({ client: '', feedbackKbId: null });
+      setFeedbackKbIds([]);
+      onChange?.({ client: '', feedbackKbIds: [] });
       return;
     }
     setLoading(true);
@@ -32,9 +33,8 @@ export default function KBContextSelector({ module: moduleId, onChange, disabled
       .then(r => (r.ok ? r.json() : null))
       .then(data => {
         setKbData(data);
-        const newest = data?.feedbackOptions?.[0]?.id || '';
-        setFeedbackKbId(newest);
-        onChange?.({ client, feedbackKbId: newest || null });
+        setFeedbackKbIds([]);
+        onChange?.({ client, feedbackKbIds: [] });
       })
       .catch(() => setKbData(null))
       .finally(() => setLoading(false));
@@ -44,9 +44,15 @@ export default function KBContextSelector({ module: moduleId, onChange, disabled
   // Notify parent when feedback selection changes
   useEffect(() => {
     if (!client) return;
-    onChange?.({ client, feedbackKbId: feedbackKbId || null });
+    onChange?.({ client, feedbackKbIds });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feedbackKbId]);
+  }, [feedbackKbIds]);
+
+  function toggleFeedback(id) {
+    setFeedbackKbIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  }
 
   // Build summary + warnings
   const summaryItems = [];
@@ -64,12 +70,17 @@ export default function KBContextSelector({ module: moduleId, onChange, disabled
       summaryItems.push({ label: 'Best Practices', id: kbData.bestPractices.id, hasContent: kbData.bestPractices.hasContent });
       if (!kbData.bestPractices.hasContent) warnings.push(`Best Practices KB "${kbData.bestPractices.id}" has no content`);
     }
-    const selectedFb = kbData.feedbackOptions?.find(f => f.id === feedbackKbId);
-    if (selectedFb) {
-      summaryItems.push({ label: 'Feedback', id: selectedFb.id, hasContent: selectedFb.hasContent });
-      if (!selectedFb.hasContent) warnings.push(`Feedback KB "${selectedFb.id}" has no content`);
+    for (const id of feedbackKbIds) {
+      const fb = kbData.feedbackOptions?.find(f => f.id === id);
+      if (fb) {
+        summaryItems.push({ label: `Feedback: ${fb.label}`, id: fb.id, hasContent: fb.hasContent });
+        if (!fb.hasContent) warnings.push(`Feedback KB "${fb.label}" has no content`);
+      }
     }
   }
+
+  const feedbackOptions = kbData?.feedbackOptions || [];
+  const selectedCount = feedbackKbIds.length;
 
   return (
     <div className="space-y-2">
@@ -118,23 +129,60 @@ export default function KBContextSelector({ module: moduleId, onChange, disabled
               <span className="text-xs text-[#9CA3AF]">(auto)</span>
             </div>
 
-            {/* Client Feedback — always a dropdown so user can select or deselect */}
-            <div className="flex items-center gap-2">
+            {/* Client Feedback — multi-select dropdown */}
+            <div className="relative flex items-center gap-2">
               <span className="text-xs font-semibold text-[#6B7280]">Feedback</span>
               {loading ? (
                 <span className="text-xs text-[#9CA3AF]">…</span>
+              ) : feedbackOptions.length === 0 ? (
+                <span className="text-xs text-[#9CA3AF]">No feedback available</span>
               ) : (
-                <select
-                  value={feedbackKbId}
-                  onChange={e => setFeedbackKbId(e.target.value)}
-                  disabled={disabled}
-                  className="text-xs border border-[#E5E7EB] rounded-lg px-2.5 py-1.5 bg-white text-[#111827] focus:outline-none disabled:opacity-50 disabled:bg-[#F4F5F7]"
-                >
-                  <option value="">{client ? (kbData?.feedbackOptions?.length ? 'None' : 'No feedback available') : 'Select brand first'}</option>
-                  {(kbData?.feedbackOptions || []).map(f => (
-                    <option key={f.id} value={f.id}>{f.period}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => setFeedbackOpen(o => !o)}
+                    className="text-xs border border-[#E5E7EB] rounded-lg px-2.5 py-1.5 bg-white text-[#111827] focus:outline-none disabled:opacity-50 disabled:bg-[#F4F5F7] flex items-center gap-1.5 min-w-[120px]"
+                  >
+                    <span className="flex-1 text-left">
+                      {selectedCount === 0 ? 'None selected' : `${selectedCount} selected`}
+                    </span>
+                    <svg className={`w-3 h-3 text-[#9CA3AF] transition-transform ${feedbackOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {feedbackOpen && (
+                    <div className="absolute top-full mt-1 left-0 z-20 bg-white border border-[#E5E7EB] rounded-lg shadow-md min-w-[200px] py-1">
+                      {feedbackOptions.map(f => (
+                        <label
+                          key={f.id}
+                          className="flex items-center gap-2.5 px-3 py-2 hover:bg-[#F4F5F7] cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={feedbackKbIds.includes(f.id)}
+                            onChange={() => toggleFeedback(f.id)}
+                            className="w-3.5 h-3.5 accent-[#3DAA8E]"
+                          />
+                          <span className="text-xs text-[#111827] font-medium">{f.label}</span>
+                          {!f.hasContent && (
+                            <span className="text-[10px] text-[#D97706]">empty</span>
+                          )}
+                        </label>
+                      ))}
+                      <div className="border-t border-[#E5E7EB] mt-1 pt-1 px-3 pb-1">
+                        <button
+                          type="button"
+                          onClick={() => setFeedbackOpen(false)}
+                          className="text-[10px] text-[#6B7280] hover:text-[#111827]"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </>

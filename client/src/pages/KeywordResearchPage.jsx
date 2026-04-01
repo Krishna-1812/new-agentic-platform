@@ -40,7 +40,7 @@ export default function KeywordResearchPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [client, setClient] = useState('');
-  const [feedbackKbId, setFeedbackKbId] = useState(null);
+  const [feedbackKbIds, setFeedbackKbIds] = useState([]);
   const [running, setRunning] = useState(false);
   const [started, setStarted] = useState(false);
   const [steps, setSteps] = useState({});       // { id: { status, message } }
@@ -76,7 +76,7 @@ export default function KeywordResearchPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ keyword: keyword.trim(), client: client || undefined, feedbackKbId: feedbackKbId || undefined })
+        body: JSON.stringify({ keyword: keyword.trim(), client: client || undefined, feedbackKbIds: feedbackKbIds.length ? feedbackKbIds : undefined })
       });
       if (!initRes.ok) {
         const err = await initRes.json();
@@ -167,7 +167,7 @@ export default function KeywordResearchPage() {
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)' }}>
           <KBContextSelector
             module="keyword-research"
-            onChange={({ client: c, feedbackKbId: fb }) => { setClient(c); setFeedbackKbId(fb); }}
+            onChange={({ client: c, feedbackKbIds: fb }) => { setClient(c); setFeedbackKbIds(fb || []); }}
             disabled={running}
           />
 

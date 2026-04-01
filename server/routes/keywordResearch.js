@@ -15,12 +15,12 @@ function generateToken() {
 
 // Step 1: Client POSTs keyword + optional client slug, gets back a token
 router.post('/init', (req, res) => {
-  const { keyword, client, feedbackKbId } = req.body;
+  const { keyword, client, feedbackKbIds } = req.body;
   if (!keyword?.trim()) return res.status(400).json({ error: 'keyword is required' });
   if (!process.env.SEMRUSH_API_KEY) return res.status(500).json({ error: 'SEMrush API key not configured on server.' });
 
   const token = generateToken();
-  sessions.set(token, { keyword: keyword.trim(), client: client || null, feedbackKbId: feedbackKbId || null });
+  sessions.set(token, { keyword: keyword.trim(), client: client || null, feedbackKbIds: feedbackKbIds || null });
   setTimeout(() => sessions.delete(token), 120000);
   res.json({ token });
 });
@@ -31,7 +31,7 @@ router.get('/stream/:token', async (req, res) => {
   if (!session) return res.status(404).json({ error: 'Session not found or expired. Please try again.' });
   sessions.delete(req.params.token);
 
-  const { keyword, client } = session;
+  const { keyword, client, feedbackKbIds } = session;
   const semrushKey = process.env.SEMRUSH_API_KEY;
 
   res.setHeader('Content-Type', 'text/event-stream');
@@ -88,7 +88,7 @@ router.get('/stream/:token', async (req, res) => {
     emit('step', { id: 'analysis', status: 'active', message: 'AI is filtering and shortlisting the best keywords…' });
 
     // Load KB context if client provided
-    const kbContext = client ? await loadKBContext('keyword-research', client) : null;
+    const kbContext = client ? await loadKBContext('keyword-research', client, feedbackKbIds || null) : null;
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     // Deduplicate by keyword string

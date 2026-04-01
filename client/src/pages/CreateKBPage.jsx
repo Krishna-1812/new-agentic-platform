@@ -14,7 +14,7 @@ export default function CreateKBPage() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     id: '', category: 'brand', client: 'gentle-dental', industry: 'dental-service-organizations',
-    tags: '', priority: 3, linked_modules: [], body: '',
+    tags: '', priority: 3, linked_modules: [], body: '', label: '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -27,14 +27,16 @@ export default function CreateKBPage() {
   async function handleCreate() {
     setSaving(true); setError('');
     try {
+      const payload = {
+        ...form,
+        tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+      };
+      if (!payload.label) delete payload.label;
       const res = await fetch('/api/kb', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          ...form,
-          tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -199,6 +201,14 @@ export default function CreateKBPage() {
                   placeholder="e.g. gentle-dental-v2"
                   className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm font-mono text-[#111827] focus:outline-none" />
               </div>
+              {form.category === 'client-feedback' && (
+                <div>
+                  <label className="block text-sm font-semibold text-[#111827] mb-1.5">Display Label <span className="font-normal text-[#6B7280]">(shown in the feedback selector)</span></label>
+                  <input type="text" value={form.label} onChange={e => set('label', e.target.value)}
+                    placeholder="e.g. Q1 2026 Review, Post-Launch Feedback"
+                    className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none" />
+                </div>
+              )}
               <div data-color-mode="light">
                 <label className="block text-sm font-semibold text-[#111827] mb-1.5">Content <span className="font-normal text-[#6B7280]">(Markdown)</span></label>
                 <MDEditor value={form.body} onChange={val => set('body', val || '')} height={300} preview="edit" />

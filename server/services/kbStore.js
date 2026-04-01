@@ -79,7 +79,7 @@ async function writeKB(id, frontmatter, body, changeNote = 'Updated') {
 }
 
 async function createKB(data) {
-  const { id, category, client, industry, tags, linked_modules, priority, body, period } = data;
+  const { id, category, client, industry, tags, linked_modules, priority, body, period, label } = data;
 
   // Determine file path based on category
   let filePath;
@@ -116,6 +116,7 @@ async function createKB(data) {
     linked_kbs: [],
     linked_modules: linked_modules || [],
     deprecated: false,
+    ...(label ? { label } : {}),
   };
 
   const changelogLine = `- ${t} v1.0.0 — Initial creation`;
