@@ -47,6 +47,8 @@ export default function KeywordResearchPage() {
   const [urls, setUrls] = useState([]);
   const [urlData, setUrlData] = useState({});   // { url: { keywords, status, error } }
   const [result, setResult] = useState(null);
+  const [allKeywords, setAllKeywords] = useState([]);
+  const [showAllKeywords, setShowAllKeywords] = useState(false);
   const [error, setError] = useState('');
   const esRef = useRef(null);
 
@@ -58,6 +60,8 @@ export default function KeywordResearchPage() {
     setUrls([]);
     setUrlData({});
     setResult(null);
+    setAllKeywords([]);
+    setShowAllKeywords(false);
     setError('');
   }
 
@@ -103,6 +107,10 @@ export default function KeywordResearchPage() {
           ...prev,
           [d.url]: { status: d.status, keywords: d.keywords || [], title: d.title, error: d.error }
         }));
+      });
+
+      es.addEventListener('allKeywords', e => {
+        setAllKeywords(JSON.parse(e.data).keywords || []);
       });
 
       es.addEventListener('result', e => {
@@ -424,6 +432,62 @@ export default function KeywordResearchPage() {
                 </table>
               </div>
             </div>
+
+            {/* All source keywords toggle */}
+            {allKeywords.length > 0 && (
+              <div className="bg-white rounded-xl border border-[#E5E7EB]" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+                <button
+                  onClick={() => setShowAllKeywords(v => !v)}
+                  className="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-[#F9FAFB] transition-colors rounded-xl"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-[#111827]">All source keywords</span>
+                    <span className="text-xs bg-[#F4F5F7] text-[#6B7280] font-semibold px-2 py-0.5 rounded-full">
+                      {allKeywords.length} total
+                    </span>
+                  </div>
+                  <svg
+                    className={`w-4 h-4 text-[#6B7280] transition-transform ${showAllKeywords ? 'rotate-180' : ''}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
+                </button>
+
+                {showAllKeywords && (
+                  <div className="border-t border-[#E5E7EB] overflow-hidden rounded-b-xl">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-[#F9FAFB]">
+                          <th className="text-left text-[#6B7280] font-semibold px-4 py-2.5 text-xs uppercase tracking-wider">#</th>
+                          <th className="text-left text-[#6B7280] font-semibold px-4 py-2.5 text-xs uppercase tracking-wider">Keyword</th>
+                          <th className="text-left text-[#6B7280] font-semibold px-4 py-2.5 text-xs uppercase tracking-wider">Volume</th>
+                          <th className="text-left text-[#6B7280] font-semibold px-4 py-2.5 text-xs uppercase tracking-wider w-40">Difficulty</th>
+                          <th className="text-left text-[#6B7280] font-semibold px-4 py-2.5 text-xs uppercase tracking-wider">Position</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {allKeywords.map((kw, i) => (
+                          <tr key={i} className="hover:bg-[#F9FAFB] transition-colors">
+                            <td className="px-4 py-2.5 text-[#9CA3AF] text-xs">{i + 1}</td>
+                            <td className="px-4 py-2.5 text-[#111827] font-medium text-xs">{kw.keyword}</td>
+                            <td className="px-4 py-2.5 text-[#6B7280] text-xs">
+                              {kw.volume > 0 ? kw.volume.toLocaleString() : '—'}
+                            </td>
+                            <td className="px-4 py-2.5 w-40">
+                              <DifficultyBar value={kw.difficulty} />
+                            </td>
+                            <td className="px-4 py-2.5 text-[#6B7280] text-xs">
+                              {kw.position || '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </main>

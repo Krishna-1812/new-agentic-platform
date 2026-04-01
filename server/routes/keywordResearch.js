@@ -94,6 +94,9 @@ router.get('/stream/:token', async (req, res) => {
     // Deduplicate by keyword string
     const unique = [...new Map(allKeywords.map(k => [k.keyword.toLowerCase(), k])).values()];
 
+    // Emit full deduplicated pool so the frontend can show "view all source keywords"
+    emit('allKeywords', { keywords: unique });
+
     const keywordList = unique.slice(0, 60).map(k =>
       `- ${k.keyword} | volume: ${k.volume || 'N/A'} | difficulty: ${k.difficulty || 'N/A'} | position: ${k.position || 'N/A'}`
     ).join('\n');
@@ -113,26 +116,57 @@ router.get('/stream/:token', async (req, res) => {
           role: 'user',
           content: `Seed keyword: "${keyword}"
 
-Competitor keywords pulled from top 3 ranking pages via SEMrush:
+${kbContext ? 'Brand context is available in your system prompt — use it as a low-priority secondary signal to prefer keywords that fit the brand\'s vertical, audience, and positioning, but do not let it override the core selection rules below.' : ''}
+
+Competitor keywords from top ranking pages (via SEMrush):
 ${keywordList}
 
-Task: Select the best keywords for an SEO campaign targeting "${keyword}".
+---
+
+PRIMARY SELECTION RULES (EXACTLY 2)
+
+Each primary keyword must satisfy ALL of the following simultaneously:
+
+1. Semantic core match — Directly targets the same core topic and intent as the seed keyword. Not a tangential subtopic or loose association.
+2. Intent alignment — Matches the commercial or informational intent appropriate for the stated content goal. For service/product pages: transactional or commercial intent only. For blog/informational: clear informational intent with strong demand signal.
+3. Mutual distinctiveness — Both primaries must differ meaningfully from each other. Different modifier angle, different intent signal, or different funnel position. Near-duplicates are not permitted.
+
+Each primary keyword must include a one-sentence reason that specifically justifies its selection against these criteria.
+
+---
+
+SECONDARY SELECTION RULES (EXACTLY 10)
+
+Select exactly 10 keywords that collectively:
+- Are complementary, supporting, or long-tail extensions of the seed keyword
+- Are viable for: supporting FAQs or sections on the same page, OR as separate blog/content pieces within the same topical cluster
+
+---
+
+HARD REJECTION CRITERIA
+
+Discard any keyword that meets one or more of the following — regardless of volume:
+- Branded or competitor-branded terms (unless the seed keyword itself is branded)
+- Navigational queries (user clearly looking for a specific website or brand)
+- Intent mismatch — superficial keyword overlap with the seed but clearly different user need
+- Near-duplicate of an already-selected keyword (trivial pluralisation, word reorder, minor variation)
+- Implausibly low search demand with no realistic audience at scale
+- Excessively broad head terms with no realistic ranking pathway (volume traps)
+- Out-of-vertical terms — keyword touches the industry loosely but does not serve the stated business or audience
+
+---
 
 Return this exact JSON:
 {
   "primary": [
-    {"keyword": "...", "volume": 0, "difficulty": 0, "reason": "one sentence explaining why this is a strong primary keyword"}
+    {"keyword": "...", "volume": 0, "difficulty": 0, "reason": "one sentence justifying selection against the primary criteria above"}
   ],
   "secondary": [
     {"keyword": "...", "volume": 0, "difficulty": 0}
   ]
 }
 
-Rules:
-- primary: exactly 2 keywords — most relevant to the seed, good search volume, achievable difficulty
-- secondary: exactly 10 keywords — supporting, complementary, or long-tail variations
-- Use the actual volume and difficulty numbers from the list above
-- If data is missing, use 0`
+Use the actual volume and difficulty numbers from the input list. If data is missing, use 0.`
         }
       ]
     });
