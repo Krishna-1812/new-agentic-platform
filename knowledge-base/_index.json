@@ -1,0 +1,95 @@
+{
+  "last_updated": "2026-04-01",
+  "knowledge_bases": [
+    {
+      "id": "dental-service-organizations",
+      "category": "industry",
+      "client": "global",
+      "path": "industry/dental-service-organizations.md",
+      "active": true,
+      "tags": ["dental", "dso", "industry"],
+      "linked_modules": ["content-research", "keyword-research"]
+    },
+    {
+      "id": "mental-health-organizations",
+      "category": "industry",
+      "client": "global",
+      "path": "industry/mental-health-organizations.md",
+      "active": true,
+      "tags": ["behavioral-health", "mental-health", "hipaa", "industry"],
+      "linked_modules": ["content-research", "keyword-research"]
+    },
+    {
+      "id": "gentle-dental",
+      "category": "brand",
+      "client": "gentle-dental",
+      "path": "brand/gentle-dental.md",
+      "active": true,
+      "tags": ["dental", "dso", "brand"],
+      "linked_modules": ["content-research", "keyword-research"]
+    },
+    {
+      "id": "great-lakes",
+      "category": "brand",
+      "client": "great-lakes",
+      "path": "brand/great-lakes.md",
+      "active": true,
+      "tags": ["dental", "dso", "brand"],
+      "linked_modules": ["content-research", "keyword-research"]
+    },
+    {
+      "id": "riccobene",
+      "category": "brand",
+      "client": "riccobene",
+      "path": "brand/riccobene.md",
+      "active": true,
+      "tags": ["dental", "dso", "brand"],
+      "linked_modules": ["content-research", "keyword-research"]
+    },
+    {
+      "id": "clear-behavioral-health",
+      "category": "brand",
+      "client": "clear-behavioral-health",
+      "path": "brand/clear-behavioral-health.md",
+      "active": true,
+      "tags": ["behavioral-health", "brand"],
+      "linked_modules": ["content-research", "keyword-research"]
+    },
+    {
+      "id": "neuro-wellness-spa",
+      "category": "brand",
+      "client": "neuro-wellness-spa",
+      "path": "brand/neuro-wellness-spa.md",
+      "active": true,
+      "tags": ["behavioral-health", "brand"],
+      "linked_modules": ["content-research", "keyword-research"]
+    },
+    {
+      "id": "new-life-house",
+      "category": "brand",
+      "client": "new-life-house",
+      "path": "brand/new-life-house.md",
+      "active": true,
+      "tags": ["behavioral-health", "brand"],
+      "linked_modules": ["content-research", "keyword-research"]
+    },
+    {
+      "id": "article-creation",
+      "category": "best-practices",
+      "client": "global",
+      "path": "best-practices/article-creation.md",
+      "active": true,
+      "tags": ["content", "seo", "best-practices"],
+      "linked_modules": ["content-research"]
+    },
+    {
+      "id": "keyword-research-bp",
+      "category": "best-practices",
+      "client": "global",
+      "path": "best-practices/keyword-research.md",
+      "active": true,
+      "tags": ["seo", "keywords", "best-practices"],
+      "linked_modules": ["keyword-research"]
+    }
+  ]
+}

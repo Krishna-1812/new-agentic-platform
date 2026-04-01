@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const OpenAI = require('openai');
 const { searchGoogle } = require('../services/googleSearch');
 const { getUrlKeywords } = require('../services/semrush');
+const { loadKBContext } = require('../services/kbLoader');
 
 // In-memory session store (token → params, expires in 2 min)
 const sessions = new Map();
@@ -12,14 +13,14 @@ function generateToken() {
   return crypto.randomBytes(16).toString('hex');
 }
 
-// Step 1: Client POSTs keyword + semrushKey, gets back a token
+// Step 1: Client POSTs keyword + optional client slug, gets back a token
 router.post('/init', (req, res) => {
-  const { keyword } = req.body;
+  const { keyword, client } = req.body;
   if (!keyword?.trim()) return res.status(400).json({ error: 'keyword is required' });
   if (!process.env.SEMRUSH_API_KEY) return res.status(500).json({ error: 'SEMrush API key not configured on server.' });
 
   const token = generateToken();
-  sessions.set(token, { keyword: keyword.trim() });
+  sessions.set(token, { keyword: keyword.trim(), client: client || null });
   setTimeout(() => sessions.delete(token), 120000);
   res.json({ token });
 });
@@ -30,7 +31,7 @@ router.get('/stream/:token', async (req, res) => {
   if (!session) return res.status(404).json({ error: 'Session not found or expired. Please try again.' });
   sessions.delete(req.params.token);
 
-  const { keyword } = session;
+  const { keyword, client } = session;
   const semrushKey = process.env.SEMRUSH_API_KEY;
 
   res.setHeader('Content-Type', 'text/event-stream');
@@ -86,6 +87,8 @@ router.get('/stream/:token', async (req, res) => {
     // ── Step 3: AI Analysis ──────────────────────────────────────────────
     emit('step', { id: 'analysis', status: 'active', message: 'AI is filtering and shortlisting the best keywords…' });
 
+    // Load KB context if client provided
+    const kbContext = client ? await loadKBContext('keyword-research', client) : null;
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     // Deduplicate by keyword string
@@ -95,13 +98,16 @@ router.get('/stream/:token', async (req, res) => {
       `- ${k.keyword} | volume: ${k.volume || 'N/A'} | difficulty: ${k.difficulty || 'N/A'} | position: ${k.position || 'N/A'}`
     ).join('\n');
 
+    const kbSystemPrompt = 'You are an expert SEO strategist. Always respond with valid JSON only.'
+      + (kbContext?.systemPromptSuffix || '');
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       response_format: { type: 'json_object' },
       messages: [
         {
           role: 'system',
-          content: 'You are an expert SEO strategist. Always respond with valid JSON only.'
+          content: kbSystemPrompt
         },
         {
           role: 'user',

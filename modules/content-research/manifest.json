@@ -1,0 +1,16 @@
+{
+  "module_id": "content-research",
+  "label": "Content Research",
+  "description": "Scrapes top-ranking pages for a keyword and generates structured content briefs with H2 recommendations.",
+  "required_kbs": [
+    "brand/{client}"
+  ],
+  "optional_kbs": [
+    "industry/{client-industry}",
+    "client-feedback/{client}",
+    "article-creation"
+  ],
+  "output_format": "structured-content-brief",
+  "client_scope": "single",
+  "active": true
+}

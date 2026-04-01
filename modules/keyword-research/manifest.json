@@ -1,0 +1,15 @@
+{
+  "module_id": "keyword-research",
+  "label": "Keyword Research",
+  "description": "Pulls competitor keyword rankings via SEMrush and uses AI to shortlist primary and secondary keywords.",
+  "required_kbs": [
+    "brand/{client}"
+  ],
+  "optional_kbs": [
+    "industry/{client-industry}",
+    "keyword-research-bp"
+  ],
+  "output_format": "keyword-list",
+  "client_scope": "single",
+  "active": true
+}

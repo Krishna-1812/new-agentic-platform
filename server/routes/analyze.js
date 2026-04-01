@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { analyzeContent } = require('../services/claude');
+const { loadKBContext } = require('../services/kbLoader');
 
 router.post('/', async (req, res) => {
-  const { keyword, scrapedPages } = req.body;
+  const { keyword, scrapedPages, client } = req.body;
 
   if (!keyword || typeof keyword !== 'string') {
     return res.status(400).json({ error: 'A keyword is required.' });
@@ -14,9 +15,12 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    console.log(`[analyze] Sending ${scrapedPages.filter(p => p.success).length} pages to Claude for keyword: "${keyword}"`);
-    const analysis = await analyzeContent(keyword, scrapedPages);
-    res.json({ analysis });
+    // Load KB context if a client is provided
+    const kbContext = client ? await loadKBContext('content-research', client) : null;
+
+    console.log(`[analyze] Sending ${scrapedPages.filter(p => p.success).length} pages to Claude for keyword: "${keyword}"${client ? ` (client: ${client}, KB confidence: ${kbContext?.confidence})` : ''}`);
+    const analysis = await analyzeContent(keyword, scrapedPages, kbContext);
+    res.json({ analysis, kbConfidence: kbContext?.confidence || null });
   } catch (err) {
     console.error('[analyze] Error:', err.message);
 

@@ -6,13 +6,46 @@ import SerpUrls from '../components/SerpUrls';
 import ResultsTable from '../components/ResultsTable';
 import ExportButtons from '../components/ExportButtons';
 
+const CLIENTS = [
+  { value: '', label: 'No client (generic analysis)' },
+  { value: 'gentle-dental', label: 'Gentle Dental' },
+  { value: 'great-lakes', label: 'Great Lakes' },
+  { value: 'riccobene', label: 'Riccobene' },
+  { value: 'clear-behavioral-health', label: 'Clear Behavioral Health' },
+  { value: 'neuro-wellness-spa', label: 'Neuro Wellness Spa' },
+  { value: 'new-life-house', label: 'New Life House' },
+];
+
+const CONFIDENCE_STYLES = {
+  HIGH:   { bg: '#D1FAE5', text: '#065F46', label: 'KB: HIGH' },
+  MEDIUM: { bg: '#FEF9C3', text: '#92400E', label: 'KB: MEDIUM' },
+  LOW:    { bg: '#FEE2E2', text: '#DC2626', label: 'KB: LOW' },
+};
+
+function ClientSelector({ client, setClient, disabled }) {
+  return (
+    <div className="flex items-center gap-3">
+      <label className="text-xs font-semibold text-[#6B7280] whitespace-nowrap">Client context</label>
+      <select value={client} onChange={e => setClient(e.target.value)} disabled={disabled}
+        className="text-sm border border-[#E5E7EB] rounded-lg px-3 py-2 bg-white text-[#111827] focus:outline-none disabled:opacity-50 disabled:bg-[#F4F5F7]">
+        {CLIENTS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+      </select>
+      {client && (
+        <span className="text-xs text-[#6B7280]">KB context will be injected into the AI analysis</span>
+      )}
+    </div>
+  );
+}
+
 export default function ContentResearchPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
+  const [client, setClient] = useState('');
   const [step, setStep] = useState('idle');
   const [serpResults, setSerpResults] = useState(null);
   const [scrapeResults, setScrapeResults] = useState(null);
   const [analysis, setAnalysis] = useState(null);
+  const [kbConfidence, setKbConfidence] = useState(null);
   const [error, setError] = useState('');
   const [warnings, setWarnings] = useState([]);
   const [searchCount, setSearchCount] = useState(0);
@@ -60,11 +93,12 @@ export default function ContentResearchPage() {
       const analyzeRes = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyword: keyword.trim(), scrapedPages: scrapeData.results })
+        body: JSON.stringify({ keyword: keyword.trim(), scrapedPages: scrapeData.results, client: client || undefined })
       });
       if (!analyzeRes.ok) throw new Error((await analyzeRes.json()).error || 'Analysis failed.');
       const analyzeData = await analyzeRes.json();
       setAnalysis(analyzeData.analysis);
+      setKbConfidence(analyzeData.kbConfidence || null);
       setWarnings(allWarnings);
       setStep('done');
     } catch (err) {
@@ -110,7 +144,9 @@ export default function ContentResearchPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-8 py-7">
-        <KeywordInput keyword={keyword} setKeyword={setKeyword} onSearch={handleResearch} disabled={isLoading} />
+        <ClientSelector client={client} setClient={setClient} disabled={isLoading} />
+        <div className="mt-4">
+        <KeywordInput keyword={keyword} setKeyword={setKeyword} onSearch={handleResearch} disabled={isLoading} /></div>
 
         {step !== 'idle' && <div className="mt-6"><ProgressSteps step={step} /></div>}
 
@@ -140,8 +176,16 @@ export default function ContentResearchPage() {
 
         {analysis && (
           <div className="mt-8">
-            <ExportButtons keyword={keyword} analysis={analysis} />
-            <div className="mt-4"><ResultsTable keyword={keyword} analysis={analysis} /></div>
+            <div className="flex items-center gap-3 mb-3">
+              <ExportButtons keyword={keyword} analysis={analysis} />
+              {kbConfidence && CONFIDENCE_STYLES[kbConfidence] && (
+                <span className="text-xs font-semibold px-2.5 py-1 rounded"
+                  style={{ backgroundColor: CONFIDENCE_STYLES[kbConfidence].bg, color: CONFIDENCE_STYLES[kbConfidence].text }}>
+                  {CONFIDENCE_STYLES[kbConfidence].label}
+                </span>
+              )}
+            </div>
+            <ResultsTable keyword={keyword} analysis={analysis} />
           </div>
         )}
       </main>

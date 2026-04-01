@@ -8,7 +8,7 @@ function getClient() {
   return new OpenAI({ apiKey });
 }
 
-async function analyzeContent(keyword, scrapedPages) {
+async function analyzeContent(keyword, scrapedPages, kbContext = null) {
   const client = getClient();
 
   const successfulPages = scrapedPages.filter(p => p.success && p.content && p.content.length > 150);
@@ -53,19 +53,16 @@ STRICT REQUIREMENTS:
 COMPETITOR PAGES:
 ${pagesText}`;
 
+  const systemPrompt = 'You are an expert SEO content strategist. Always respond with valid JSON only.'
+    + (kbContext?.systemPromptSuffix || '');
+
   const completion = await client.chat.completions.create({
     model: 'gpt-4o-mini',
     max_tokens: 8192,
     response_format: { type: 'json_object' },
     messages: [
-      {
-        role: 'system',
-        content: 'You are an expert SEO content strategist. Always respond with valid JSON only.'
-      },
-      {
-        role: 'user',
-        content: prompt
-      }
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: prompt }
     ]
   });
 

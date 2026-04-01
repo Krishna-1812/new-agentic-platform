@@ -11,6 +11,9 @@ const scrapeRoutes = require('./routes/scrape');
 const analyzeRoutes = require('./routes/analyze');
 const exportRoutes = require('./routes/export');
 const keywordResearchRoutes = require('./routes/keywordResearch');
+const kbRoutes = require('./routes/kb');
+const modulesRoutes = require('./routes/modules');
+const auditRoutes = require('./routes/audit');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -26,6 +29,15 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests. Please wait a moment and try again.' }
+});
+
+// KB rate limit: 100 requests per minute (editor auto-saves)
+const kbLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many KB requests. Please slow down.' }
 });
 
 // Strict rate limit for login: 10 attempts per 15 minutes
@@ -48,6 +60,9 @@ app.use('/api/scrape',           requireAuth, scrapeRoutes);
 app.use('/api/analyze',          requireAuth, analyzeRoutes);
 app.use('/api/export',           requireAuth, exportRoutes);
 app.use('/api/keyword-research', requireAuth, keywordResearchRoutes);
+app.use('/api/kb',               kbLimiter, requireAuth, kbRoutes);
+app.use('/api/modules',          kbLimiter, requireAuth, modulesRoutes);
+app.use('/api/audit',            kbLimiter, requireAuth, auditRoutes);
 
 // ── Serve React frontend ─────────────────────────────────────────────────────
 const clientBuild = path.join(__dirname, '../client/dist');

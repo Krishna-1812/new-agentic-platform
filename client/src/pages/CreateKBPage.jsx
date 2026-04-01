@@ -1,0 +1,234 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import MDEditor from '@uiw/react-md-editor';
+
+const CLIENTS = ['global','gentle-dental','great-lakes','riccobene','clear-behavioral-health','neuro-wellness-spa','new-life-house'];
+const INDUSTRIES = ['global','dental-service-organizations','mental-health-organizations','b2b-tech'];
+const CATEGORIES = ['industry','brand','client-feedback','best-practices'];
+const ALL_MODULES = ['content-research','keyword-research'];
+
+const STEPS = ['Category', 'Client', 'Industry', 'Tags & Priority', 'Linked Modules', 'Content'];
+
+export default function CreateKBPage() {
+  const navigate = useNavigate();
+  const [step, setStep] = useState(0);
+  const [form, setForm] = useState({
+    id: '', category: 'brand', client: 'gentle-dental', industry: 'dental-service-organizations',
+    tags: '', priority: 3, linked_modules: [], body: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+  const toggleModule = mod => set('linked_modules',
+    form.linked_modules.includes(mod) ? form.linked_modules.filter(m => m !== mod) : [...form.linked_modules, mod]
+  );
+
+  async function handleCreate() {
+    setSaving(true); setError('');
+    try {
+      const res = await fetch('/api/kb', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...form,
+          tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      navigate(`/kb/${data.id}`);
+    } catch (err) {
+      setError(err.message);
+      setSaving(false);
+    }
+  }
+
+  const canAdvance = () => {
+    if (step === 0) return !!form.category;
+    if (step === 1) return !!form.client;
+    if (step === 5) return !!form.id.trim();
+    return true;
+  };
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
+      {/* Header */}
+      <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6">
+        <div className="max-w-3xl mx-auto w-full flex items-center gap-3">
+          <button onClick={() => navigate('/kb')} className="flex items-center gap-1.5 text-[#6B7280] hover:text-[#111827] text-sm font-medium transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+            Knowledge Base
+          </button>
+          <span className="text-[#E5E7EB]">/</span>
+          <span className="text-sm font-semibold text-[#111827]">New KB</span>
+        </div>
+      </header>
+
+      <main className="max-w-3xl mx-auto px-6 py-8">
+        {/* Step progress */}
+        <div className="flex items-center gap-0 mb-8">
+          {STEPS.map((s, i) => (
+            <div key={s} className="flex items-center flex-1">
+              <div className="flex flex-col items-center">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                  style={i < step ? { backgroundColor: '#3DAA8E', color: '#fff' }
+                    : i === step ? { backgroundColor: '#111827', color: '#fff' }
+                    : { backgroundColor: '#E5E7EB', color: '#9CA3AF' }}>
+                  {i < step ? '✓' : i + 1}
+                </div>
+                <span className="text-xs mt-1 text-center whitespace-nowrap"
+                  style={{ color: i === step ? '#111827' : '#9CA3AF', fontWeight: i === step ? 600 : 400 }}>
+                  {s}
+                </span>
+              </div>
+              {i < STEPS.length - 1 && (
+                <div className="flex-1 h-0.5 mb-5 mx-1" style={{ backgroundColor: i < step ? '#3DAA8E' : '#E5E7EB' }} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Step content */}
+        <div className="bg-white rounded-xl border border-[#E5E7EB] p-8" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+          {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
+
+          {step === 0 && (
+            <div>
+              <h2 className="text-base font-semibold text-[#111827] mb-1">Choose a category</h2>
+              <p className="text-sm text-[#6B7280] mb-5">What type of knowledge base is this?</p>
+              <div className="grid grid-cols-2 gap-3">
+                {CATEGORIES.map(cat => (
+                  <button key={cat} onClick={() => set('category', cat)}
+                    className="p-4 rounded-xl border-2 text-left transition-all"
+                    style={form.category === cat ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7' } : { borderColor: '#E5E7EB', backgroundColor: '#fff' }}>
+                    <div className="font-semibold text-sm text-[#111827]">{cat}</div>
+                    <div className="text-xs text-[#6B7280] mt-0.5">
+                      {cat === 'industry' && 'Sector context, compliance rules'}
+                      {cat === 'brand' && 'Client voice, services, personas'}
+                      {cat === 'client-feedback' && 'Notes from client interactions'}
+                      {cat === 'best-practices' && 'Task instructions and templates'}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 1 && (
+            <div>
+              <h2 className="text-base font-semibold text-[#111827] mb-1">Choose a client</h2>
+              <p className="text-sm text-[#6B7280] mb-5">Which client does this KB belong to?</p>
+              <div className="grid grid-cols-2 gap-2">
+                {CLIENTS.map(c => (
+                  <button key={c} onClick={() => set('client', c)}
+                    className="p-3 rounded-lg border-2 text-left text-sm font-medium transition-all"
+                    style={form.client === c ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7', color: '#111827' } : { borderColor: '#E5E7EB', color: '#6B7280' }}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div>
+              <h2 className="text-base font-semibold text-[#111827] mb-1">Industry</h2>
+              <p className="text-sm text-[#6B7280] mb-5">Which industry does this client operate in?</p>
+              <div className="space-y-2">
+                {INDUSTRIES.map(ind => (
+                  <button key={ind} onClick={() => set('industry', ind)}
+                    className="w-full p-3 rounded-lg border-2 text-left text-sm font-medium transition-all"
+                    style={form.industry === ind ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7', color: '#111827' } : { borderColor: '#E5E7EB', color: '#6B7280' }}>
+                    {ind}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-5">
+              <h2 className="text-base font-semibold text-[#111827]">Tags & Priority</h2>
+              <div>
+                <label className="block text-sm font-semibold text-[#111827] mb-1.5">Tags <span className="font-normal text-[#6B7280]">(comma-separated)</span></label>
+                <input type="text" value={form.tags} onChange={e => set('tags', e.target.value)}
+                  placeholder="dental, dso, brand"
+                  className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[#111827] mb-1.5">Priority <span className="font-normal text-[#6B7280]">(1 = highest, 5 = lowest)</span></label>
+                <div className="flex gap-2">
+                  {[1,2,3,4,5].map(n => (
+                    <button key={n} onClick={() => set('priority', n)}
+                      className="w-10 h-10 rounded-lg border-2 text-sm font-semibold transition-all"
+                      style={form.priority === n ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7', color: '#3DAA8E' } : { borderColor: '#E5E7EB', color: '#6B7280' }}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 4 && (
+            <div>
+              <h2 className="text-base font-semibold text-[#111827] mb-1">Linked Modules</h2>
+              <p className="text-sm text-[#6B7280] mb-5">Which modules should load this KB?</p>
+              <div className="space-y-3">
+                {ALL_MODULES.map(mod => (
+                  <label key={mod} className="flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all"
+                    style={form.linked_modules.includes(mod) ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7' } : { borderColor: '#E5E7EB' }}>
+                    <input type="checkbox" checked={form.linked_modules.includes(mod)} onChange={() => toggleModule(mod)} className="w-4 h-4" />
+                    <div>
+                      <div className="text-sm font-semibold text-[#111827]">{mod}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 5 && (
+            <div className="space-y-5">
+              <h2 className="text-base font-semibold text-[#111827]">ID & Content</h2>
+              <div>
+                <label className="block text-sm font-semibold text-[#111827] mb-1.5">KB ID <span className="font-normal text-[#6B7280]">(unique slug, kebab-case)</span></label>
+                <input type="text" value={form.id} onChange={e => set('id', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                  placeholder="e.g. gentle-dental-v2"
+                  className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm font-mono text-[#111827] focus:outline-none" />
+              </div>
+              <div data-color-mode="light">
+                <label className="block text-sm font-semibold text-[#111827] mb-1.5">Content <span className="font-normal text-[#6B7280]">(Markdown)</span></label>
+                <MDEditor value={form.body} onChange={val => set('body', val || '')} height={300} preview="edit" />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between mt-5">
+          <button onClick={() => step > 0 ? setStep(s => s - 1) : navigate('/kb')}
+            className="px-5 py-2.5 text-sm font-semibold border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-[#111827] bg-white transition-colors">
+            {step === 0 ? 'Cancel' : '← Back'}
+          </button>
+
+          {step < STEPS.length - 1 ? (
+            <button onClick={() => setStep(s => s + 1)} disabled={!canAdvance()}
+              className="px-5 py-2.5 text-sm font-semibold rounded-lg text-white transition-colors disabled:opacity-50"
+              style={{ backgroundColor: '#111827' }}>
+              Next →
+            </button>
+          ) : (
+            <button onClick={handleCreate} disabled={saving || !form.id.trim()}
+              className="px-5 py-2.5 text-sm font-semibold rounded-lg text-white transition-colors disabled:opacity-50"
+              style={{ backgroundColor: '#3DAA8E' }}>
+              {saving ? 'Creating…' : 'Create KB'}
+            </button>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
