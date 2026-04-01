@@ -77,7 +77,7 @@ export default function HomePage() {
             </div>
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-[#111827] text-sm tracking-tight">SEO Automation</span>
-              <span className="text-[#9CA3AF] text-sm">· Gentle Dental</span>
+              <span className="text-[#9CA3AF] text-sm">· Arena</span>
             </div>
           </div>
           <button
@@ -164,7 +164,7 @@ export default function HomePage() {
         </div>
 
         <p className="text-center text-xs text-[#9CA3AF] mt-10">
-          SEO Automation · Built for Gentle Dental · Powered by Google Search, SEMrush &amp; GPT-4o
+          SEO Automation · Built by Arena · Powered by Google Search, SEMrush &amp; GPT-4o
         </p>
       </main>
     </div>

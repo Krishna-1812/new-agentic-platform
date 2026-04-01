@@ -52,7 +52,7 @@ export default function LoginPage() {
             </svg>
           </div>
           <span className="font-semibold text-[#111827] tracking-tight text-sm">SEO Automation</span>
-          <span className="text-[#9CA3AF] text-sm">· Gentle Dental</span>
+          <span className="text-[#9CA3AF] text-sm">· Arena</span>
         </div>
       </div>
 
