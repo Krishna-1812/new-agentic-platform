@@ -9,6 +9,7 @@ import KBEditorPage from './pages/KBEditorPage';
 import CreateKBPage from './pages/CreateKBPage';
 import ModuleAuditPage from './pages/ModuleAuditPage';
 import ClientFeedbackPage from './pages/ClientFeedbackPage';
+import ArticleRecommendationPage from './pages/ArticleRecommendationPage';
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
       <Route path="/kb/audit" element={<ProtectedRoute><ModuleAuditPage /></ProtectedRoute>} />
       <Route path="/kb/feedback/new" element={<ProtectedRoute><ClientFeedbackPage /></ProtectedRoute>} />
       <Route path="/kb/:id" element={<ProtectedRoute><KBEditorPage /></ProtectedRoute>} />
+      <Route path="/article-recommendation" element={<ProtectedRoute><ArticleRecommendationPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

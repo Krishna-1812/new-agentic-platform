@@ -17,6 +17,20 @@ const TOOLS = [
     badge: 'Knowledge',
   },
   {
+    id: 'article-recommendation',
+    path: '/article-recommendation',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6V7.5z" />
+      </svg>
+    ),
+    label: 'Article Recommendation',
+    tagline: 'Structured content briefs from SERP data',
+    description: 'Analyze the top 10 ranking pages for any keyword and generate a complete article brief — with H1/H2/H3 structure, writing instructions, keywords per section, FAQ recommendations, and visual opportunity callouts.',
+    features: ['Top 10 SERP scraping', 'H2/H3 structure analysis', 'Section writing instructions', 'Visual opportunity callouts', 'FAQ pattern extraction', 'Export to .docx'],
+    badge: 'Briefs',
+  },
+  {
     id: 'content-research',
     path: '/content-research',
     icon: (
