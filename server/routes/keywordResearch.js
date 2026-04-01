@@ -15,12 +15,12 @@ function generateToken() {
 
 // Step 1: Client POSTs keyword + optional client slug, gets back a token
 router.post('/init', (req, res) => {
-  const { keyword, client } = req.body;
+  const { keyword, client, feedbackKbId } = req.body;
   if (!keyword?.trim()) return res.status(400).json({ error: 'keyword is required' });
   if (!process.env.SEMRUSH_API_KEY) return res.status(500).json({ error: 'SEMrush API key not configured on server.' });
 
   const token = generateToken();
-  sessions.set(token, { keyword: keyword.trim(), client: client || null });
+  sessions.set(token, { keyword: keyword.trim(), client: client || null, feedbackKbId: feedbackKbId || null });
   setTimeout(() => sessions.delete(token), 120000);
   res.json({ token });
 });

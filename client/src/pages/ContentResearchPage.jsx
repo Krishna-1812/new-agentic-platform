@@ -5,16 +5,7 @@ import ProgressSteps from '../components/ProgressSteps';
 import SerpUrls from '../components/SerpUrls';
 import ResultsTable from '../components/ResultsTable';
 import ExportButtons from '../components/ExportButtons';
-
-const CLIENTS = [
-  { value: '', label: 'No client (generic analysis)' },
-  { value: 'gentle-dental', label: 'Gentle Dental' },
-  { value: 'great-lakes', label: 'Great Lakes' },
-  { value: 'riccobene', label: 'Riccobene' },
-  { value: 'clear-behavioral-health', label: 'Clear Behavioral Health' },
-  { value: 'neuro-wellness-spa', label: 'Neuro Wellness Spa' },
-  { value: 'new-life-house', label: 'New Life House' },
-];
+import KBContextSelector from '../components/KBContextSelector';
 
 const CONFIDENCE_STYLES = {
   HIGH:   { bg: '#D1FAE5', text: '#065F46', label: 'KB: HIGH' },
@@ -22,25 +13,11 @@ const CONFIDENCE_STYLES = {
   LOW:    { bg: '#FEE2E2', text: '#DC2626', label: 'KB: LOW' },
 };
 
-function ClientSelector({ client, setClient, disabled }) {
-  return (
-    <div className="flex items-center gap-3">
-      <label className="text-xs font-semibold text-[#6B7280] whitespace-nowrap">Client context</label>
-      <select value={client} onChange={e => setClient(e.target.value)} disabled={disabled}
-        className="text-sm border border-[#E5E7EB] rounded-lg px-3 py-2 bg-white text-[#111827] focus:outline-none disabled:opacity-50 disabled:bg-[#F4F5F7]">
-        {CLIENTS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-      </select>
-      {client && (
-        <span className="text-xs text-[#6B7280]">KB context will be injected into the AI analysis</span>
-      )}
-    </div>
-  );
-}
-
 export default function ContentResearchPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [client, setClient] = useState('');
+  const [feedbackKbId, setFeedbackKbId] = useState(null);
   const [step, setStep] = useState('idle');
   const [serpResults, setSerpResults] = useState(null);
   const [scrapeResults, setScrapeResults] = useState(null);
@@ -93,7 +70,7 @@ export default function ContentResearchPage() {
       const analyzeRes = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyword: keyword.trim(), scrapedPages: scrapeData.results, client: client || undefined })
+        body: JSON.stringify({ keyword: keyword.trim(), scrapedPages: scrapeData.results, client: client || undefined, feedbackKbId: feedbackKbId || undefined })
       });
       if (!analyzeRes.ok) throw new Error((await analyzeRes.json()).error || 'Analysis failed.');
       const analyzeData = await analyzeRes.json();
@@ -144,7 +121,11 @@ export default function ContentResearchPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-8 py-7">
-        <ClientSelector client={client} setClient={setClient} disabled={isLoading} />
+        <KBContextSelector
+          module="content-research"
+          onChange={({ client: c, feedbackKbId: fb }) => { setClient(c); setFeedbackKbId(fb); }}
+          disabled={isLoading}
+        />
         <div className="mt-4">
         <KeywordInput keyword={keyword} setKeyword={setKeyword} onSearch={handleResearch} disabled={isLoading} /></div>
 

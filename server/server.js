@@ -14,6 +14,7 @@ const keywordResearchRoutes = require('./routes/keywordResearch');
 const kbRoutes = require('./routes/kb');
 const modulesRoutes = require('./routes/modules');
 const auditRoutes = require('./routes/audit');
+const kbContextRoutes = require('./routes/kbContext');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -63,6 +64,7 @@ app.use('/api/keyword-research', requireAuth, keywordResearchRoutes);
 app.use('/api/kb',               kbLimiter, requireAuth, kbRoutes);
 app.use('/api/modules',          kbLimiter, requireAuth, modulesRoutes);
 app.use('/api/audit',            kbLimiter, requireAuth, auditRoutes);
+app.use('/api/kb-context',       kbLimiter, requireAuth, kbContextRoutes);
 
 // ── Serve React frontend ─────────────────────────────────────────────────────
 const clientBuild = path.join(__dirname, '../client/dist');

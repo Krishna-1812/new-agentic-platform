@@ -22,7 +22,7 @@ async function resolveClientIndustry(clientSlug) {
 }
 
 // Resolve a KB pattern like "brand/{client}" or "industry/{client-industry}" to an actual id
-async function resolvePattern(pattern, clientSlug, clientIndustry) {
+async function resolvePattern(pattern, clientSlug, clientIndustry, feedbackKbId = null) {
   if (!pattern.includes('{')) return pattern;
 
   if (pattern.startsWith('brand/')) {
@@ -32,7 +32,8 @@ async function resolvePattern(pattern, clientSlug, clientIndustry) {
     return clientIndustry; // industry KB id = industry slug
   }
   if (pattern.startsWith('client-feedback/')) {
-    // Return the most recent feedback KB for this client
+    // Use explicit feedback KB if provided, otherwise auto-select most recent
+    if (feedbackKbId) return feedbackKbId;
     const index = await store.readIndex();
     const feedbackKBs = index.knowledge_bases.filter(
       kb => kb.category === 'client-feedback' && kb.client === clientSlug && kb.active
@@ -45,7 +46,7 @@ async function resolvePattern(pattern, clientSlug, clientIndustry) {
   return null;
 }
 
-async function loadKBContext(moduleId, clientSlug) {
+async function loadKBContext(moduleId, clientSlug, feedbackKbId = null) {
   const result = {
     loaded: [],    // { id, category, meta, body }
     missing: [],   // required KB ids that could not be loaded
@@ -80,7 +81,7 @@ async function loadKBContext(moduleId, clientSlug) {
 
   // Load required KBs
   for (const pattern of (manifest.required_kbs || [])) {
-    const id = await resolvePattern(pattern, clientSlug, clientIndustry);
+    const id = await resolvePattern(pattern, clientSlug, clientIndustry, feedbackKbId);
     const kb = await loadOne(id);
     if (!kb) {
       result.missing.push(id || pattern);
@@ -92,7 +93,7 @@ async function loadKBContext(moduleId, clientSlug) {
 
   // Load optional KBs
   for (const pattern of (manifest.optional_kbs || [])) {
-    const id = await resolvePattern(pattern, clientSlug, clientIndustry);
+    const id = await resolvePattern(pattern, clientSlug, clientIndustry, feedbackKbId);
     const kb = await loadOne(id);
     if (!kb) {
       result.skipped.push(id || pattern);

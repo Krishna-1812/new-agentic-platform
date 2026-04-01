@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import KBContextSelector from '../components/KBContextSelector';
 
 const STEP_CONFIG = [
   { id: 'search',   label: 'Google Search',      icon: '🔍', desc: 'Finding top 3 ranking pages' },
@@ -35,20 +36,11 @@ function DifficultyBar({ value }) {
   );
 }
 
-const CLIENTS = [
-  { value: '', label: 'No client (generic)' },
-  { value: 'gentle-dental', label: 'Gentle Dental' },
-  { value: 'great-lakes', label: 'Great Lakes' },
-  { value: 'riccobene', label: 'Riccobene' },
-  { value: 'clear-behavioral-health', label: 'Clear Behavioral Health' },
-  { value: 'neuro-wellness-spa', label: 'Neuro Wellness Spa' },
-  { value: 'new-life-house', label: 'New Life House' },
-];
-
 export default function KeywordResearchPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [client, setClient] = useState('');
+  const [feedbackKbId, setFeedbackKbId] = useState(null);
   const [running, setRunning] = useState(false);
   const [started, setStarted] = useState(false);
   const [steps, setSteps] = useState({});       // { id: { status, message } }
@@ -80,7 +72,7 @@ export default function KeywordResearchPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ keyword: keyword.trim(), client: client || undefined })
+        body: JSON.stringify({ keyword: keyword.trim(), client: client || undefined, feedbackKbId: feedbackKbId || undefined })
       });
       if (!initRes.ok) {
         const err = await initRes.json();
@@ -165,27 +157,24 @@ export default function KeywordResearchPage() {
 
         {/* ── Input Card ───────────────────────────────────────────────── */}
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)' }}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
-            <div>
-              <label className="block text-sm font-semibold text-[#111827] mb-1.5">Seed Keyword</label>
-              <input
-                type="text"
-                value={keyword}
-                onChange={e => setKeyword(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && canStart && startResearch()}
-                placeholder="e.g. dental implants"
-                disabled={running}
-                className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 disabled:bg-[#F4F5F7] disabled:text-[#9CA3AF]"
-                style={{ '--tw-ring-color': '#3DAA8E' }}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-[#111827] mb-1.5">Client context <span className="font-normal text-[#9CA3AF]">(optional)</span></label>
-              <select value={client} onChange={e => setClient(e.target.value)} disabled={running}
-                className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none disabled:bg-[#F4F5F7] disabled:opacity-50 bg-white">
-                {CLIENTS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
-            </div>
+          <KBContextSelector
+            module="keyword-research"
+            onChange={({ client: c, feedbackKbId: fb }) => { setClient(c); setFeedbackKbId(fb); }}
+            disabled={running}
+          />
+
+          <div className="mt-4 max-w-md">
+            <label className="block text-sm font-semibold text-[#111827] mb-1.5">Seed Keyword</label>
+            <input
+              type="text"
+              value={keyword}
+              onChange={e => setKeyword(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && canStart && startResearch()}
+              placeholder="e.g. dental implants"
+              disabled={running}
+              className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 disabled:bg-[#F4F5F7] disabled:text-[#9CA3AF]"
+              style={{ '--tw-ring-color': '#3DAA8E' }}
+            />
           </div>
 
           <div className="mt-4 flex items-center gap-3">
