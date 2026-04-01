@@ -2,13 +2,6 @@ const express = require('express');
 const router = express.Router();
 const store = require('../services/kbStore');
 
-// Best-practices KB id per module
-const MODULE_BP_MAP = {
-  'content-research':      'article-creation',
-  'keyword-research':      'keyword-research-bp',
-  'article-recommendation': 'article-creation',
-};
-
 // Check whether a KB body has real content (not just HTML comments / section headers)
 function hasContent(body) {
   if (!body) return false;
@@ -46,7 +39,7 @@ router.get('/', async (req, res) => {
       };
     }
 
-    // ── Industry (resolved from brand's frontmatter) ─────────────────────────
+    // ── Industry (resolved from brand's associated industry KB) ──────────────
     let industry = null;
     if (brand?.industry && brand.industry !== 'global') {
       const industryEntry = index.knowledge_bases.find(
@@ -63,23 +56,7 @@ router.get('/', async (req, res) => {
       }
     }
 
-    // ── Best Practices (auto from module) ────────────────────────────────────
-    let bestPractices = null;
-    const bpId = MODULE_BP_MAP[moduleId];
-    if (bpId) {
-      const bpEntry = index.knowledge_bases.find(kb => kb.id === bpId);
-      if (bpEntry) {
-        const kb = await store.readKB(bpEntry.id);
-        bestPractices = {
-          id: bpEntry.id,
-          version: kb?.meta?.version || '1.0.0',
-          active: bpEntry.active,
-          hasContent: hasContent(kb?.body),
-        };
-      }
-    }
-
-    // ── Client Feedback options (filtered to this client) ────────────────────
+    // ── Client Feedback options (filtered to this client/brand) ─────────────
     const feedbackOptions = index.knowledge_bases
       .filter(kb => kb.category === 'client-feedback' && kb.client === client && kb.active)
       .map(kb => ({ id: kb.id, period: kb.id.replace(`${client}-feedback-`, '') }))
@@ -98,7 +75,7 @@ router.get('/', async (req, res) => {
       })
     );
 
-    res.json({ brand, industry, bestPractices, feedbackOptions: feedbackWithVersions });
+    res.json({ brand, industry, feedbackOptions: feedbackWithVersions });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

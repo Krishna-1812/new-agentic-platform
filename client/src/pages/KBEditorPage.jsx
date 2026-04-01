@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import MDEditor from '@uiw/react-md-editor';
 
-const CLIENTS = ['global','gentle-dental','great-lakes','riccobene','clear-behavioral-health','neuro-wellness-spa','new-life-house'];
-const INDUSTRIES = ['global','dental-service-organizations','mental-health-organizations','b2b-tech'];
-const CATEGORIES = ['industry','brand','client-feedback','best-practices'];
-const ALL_MODULES = ['content-research','keyword-research'];
+const BRANDS = ['global','gentle-dental','great-lakes','riccobene','clear-behavioral-health','neuro-wellness-spa','new-life-house'];
+const INDUSTRY_KBS = ['global','dental-service-organizations','mental-health-organizations','b2b-tech'];
+const CATEGORIES = ['industry','brand','client-feedback'];
+const ALL_MODULES = ['content-research','keyword-research','article-recommendation'];
 
 export default function KBEditorPage() {
   const { id } = useParams();
@@ -89,6 +89,10 @@ export default function KBEditorPage() {
     </div>
   );
 
+  const isBrand = meta.category === 'brand';
+  const isFeedback = meta.category === 'client-feedback';
+  const isIndustry = meta.category === 'industry';
+
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F4F5F7' }}>
       {/* Header */}
@@ -142,23 +146,19 @@ export default function KBEditorPage() {
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Client</label>
-              <select value={meta.client || ''} onChange={e => setMetaField('client', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none bg-white">
-                {CLIENTS.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
+            {/* Brand field — shown for feedback (which brand this feedback belongs to) */}
+            {isFeedback && (
+              <div>
+                <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Brand</label>
+                <select value={meta.client || ''} onChange={e => setMetaField('client', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none bg-white">
+                  {BRANDS.filter(b => b !== 'global').map(b => <option key={b} value={b}>{b}</option>)}
+                </select>
+              </div>
+            )}
 
-            <div>
-              <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Industry</label>
-              <select value={meta.industry || ''} onChange={e => setMetaField('industry', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none bg-white">
-                {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
-              </select>
-            </div>
-
-            {meta.category === 'client-feedback' && (
+            {/* Display Label — only for client-feedback */}
+            {isFeedback && (
               <div>
                 <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Display Label</label>
                 <input type="text" value={meta.label || ''}
@@ -168,33 +168,54 @@ export default function KBEditorPage() {
               </div>
             )}
 
-            <div>
-              <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Tags <span className="normal-case font-normal">(comma-separated)</span></label>
-              <input type="text" value={(meta.tags || []).join(', ')}
-                onChange={e => setMetaField('tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
-                className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Priority <span className="normal-case font-normal">(1=highest)</span></label>
-              <input type="number" min={1} max={5} value={meta.priority || 3}
-                onChange={e => setMetaField('priority', parseInt(e.target.value))}
-                className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-2">Linked Modules</label>
-              <div className="space-y-1.5">
-                {ALL_MODULES.map(mod => (
-                  <label key={mod} className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={(meta.linked_modules || []).includes(mod)}
-                      onChange={() => toggleModule(mod)}
-                      className="rounded" />
-                    <span className="text-sm text-[#111827]">{mod}</span>
-                  </label>
-                ))}
+            {/* Associated Industry KB — only for brand */}
+            {isBrand && (
+              <div>
+                <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Associated Industry KB</label>
+                <select value={meta.industry || 'global'} onChange={e => setMetaField('industry', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none bg-white">
+                  {INDUSTRY_KBS.map(i => <option key={i} value={i}>{i}</option>)}
+                </select>
+                <p className="text-[10px] text-[#9CA3AF] mt-1">Industry KB auto-injected when this brand is selected in any tool.</p>
               </div>
-            </div>
+            )}
+
+            {/* Tags */}
+            {!isFeedback && (
+              <div>
+                <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Tags <span className="normal-case font-normal">(comma-separated)</span></label>
+                <input type="text" value={(meta.tags || []).join(', ')}
+                  onChange={e => setMetaField('tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
+                  className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none" />
+              </div>
+            )}
+
+            {/* Priority */}
+            {!isFeedback && (
+              <div>
+                <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Priority <span className="normal-case font-normal">(1=highest)</span></label>
+                <input type="number" min={1} max={5} value={meta.priority || 3}
+                  onChange={e => setMetaField('priority', parseInt(e.target.value))}
+                  className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none" />
+              </div>
+            )}
+
+            {/* Linked Modules — only for industry and brand */}
+            {(isBrand || isIndustry) && (
+              <div>
+                <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-2">Linked Modules</label>
+                <div className="space-y-1.5">
+                  {ALL_MODULES.map(mod => (
+                    <label key={mod} className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={(meta.linked_modules || []).includes(mod)}
+                        onChange={() => toggleModule(mod)}
+                        className="rounded" />
+                      <span className="text-sm text-[#111827]">{mod}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Change Note</label>

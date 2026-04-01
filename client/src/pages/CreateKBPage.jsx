@@ -2,12 +2,17 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MDEditor from '@uiw/react-md-editor';
 
-const CLIENTS = ['global','gentle-dental','great-lakes','riccobene','clear-behavioral-health','neuro-wellness-spa','new-life-house'];
-const INDUSTRIES = ['global','dental-service-organizations','mental-health-organizations','b2b-tech'];
-const CATEGORIES = ['industry','brand','client-feedback','best-practices'];
-const ALL_MODULES = ['content-research','keyword-research'];
+const BRANDS = ['gentle-dental','great-lakes','riccobene','clear-behavioral-health','neuro-wellness-spa','new-life-house'];
+const INDUSTRY_KBS = ['global','dental-service-organizations','mental-health-organizations','b2b-tech'];
+const CATEGORIES = ['industry','brand','client-feedback'];
+const ALL_MODULES = ['content-research','keyword-research','article-recommendation'];
 
-const STEPS = ['Category', 'Client', 'Industry', 'Tags & Priority', 'Linked Modules', 'Content'];
+// Steps per category
+const STEPS_BY_CATEGORY = {
+  brand:           ['Category', 'Brand Slug', 'Industry KB', 'Tags & Priority', 'Linked Modules', 'Content'],
+  industry:        ['Category', 'Tags & Priority', 'Linked Modules', 'Content'],
+  'client-feedback': ['Category', 'Brand', 'Label & Content'],
+};
 
 export default function CreateKBPage() {
   const navigate = useNavigate();
@@ -23,6 +28,10 @@ export default function CreateKBPage() {
   const toggleModule = mod => set('linked_modules',
     form.linked_modules.includes(mod) ? form.linked_modules.filter(m => m !== mod) : [...form.linked_modules, mod]
   );
+
+  const STEPS = STEPS_BY_CATEGORY[form.category] || STEPS_BY_CATEGORY.brand;
+  const currentStepName = STEPS[step];
+  const isLastStep = step === STEPS.length - 1;
 
   async function handleCreate() {
     setSaving(true); setError('');
@@ -48,11 +57,18 @@ export default function CreateKBPage() {
   }
 
   const canAdvance = () => {
-    if (step === 0) return !!form.category;
-    if (step === 1) return !!form.client;
-    if (step === 5) return !!form.id.trim();
+    if (currentStepName === 'Category') return !!form.category;
+    if (currentStepName === 'Brand Slug') return !!form.client;
+    if (currentStepName === 'Brand') return !!form.client;
+    if (currentStepName === 'Label & Content') return !!form.id.trim();
+    if (currentStepName === 'Content') return !!form.id.trim();
     return true;
   };
+
+  function handleCategoryChange(cat) {
+    set('category', cat);
+    setStep(0); // reset to first step when category changes
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
@@ -96,13 +112,14 @@ export default function CreateKBPage() {
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-8" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
           {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
 
-          {step === 0 && (
+          {/* Step: Category */}
+          {currentStepName === 'Category' && (
             <div>
               <h2 className="text-base font-semibold text-[#111827] mb-1">Choose a category</h2>
               <p className="text-sm text-[#6B7280] mb-5">What type of knowledge base is this?</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 {CATEGORIES.map(cat => (
-                  <button key={cat} onClick={() => set('category', cat)}
+                  <button key={cat} onClick={() => handleCategoryChange(cat)}
                     className="p-4 rounded-xl border-2 text-left transition-all"
                     style={form.category === cat ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7' } : { borderColor: '#E5E7EB', backgroundColor: '#fff' }}>
                     <div className="font-semibold text-sm text-[#111827]">{cat}</div>
@@ -110,7 +127,6 @@ export default function CreateKBPage() {
                       {cat === 'industry' && 'Sector context, compliance rules'}
                       {cat === 'brand' && 'Client voice, services, personas'}
                       {cat === 'client-feedback' && 'Notes from client interactions'}
-                      {cat === 'best-practices' && 'Task instructions and templates'}
                     </div>
                   </button>
                 ))}
@@ -118,39 +134,59 @@ export default function CreateKBPage() {
             </div>
           )}
 
-          {step === 1 && (
+          {/* Step: Brand Slug (for brand category) */}
+          {currentStepName === 'Brand Slug' && (
             <div>
-              <h2 className="text-base font-semibold text-[#111827] mb-1">Choose a client</h2>
-              <p className="text-sm text-[#6B7280] mb-5">Which client does this KB belong to?</p>
+              <h2 className="text-base font-semibold text-[#111827] mb-1">Select brand</h2>
+              <p className="text-sm text-[#6B7280] mb-5">Which brand does this KB represent? The brand slug becomes the KB ID.</p>
               <div className="grid grid-cols-2 gap-2">
-                {CLIENTS.map(c => (
-                  <button key={c} onClick={() => set('client', c)}
+                {BRANDS.map(b => (
+                  <button key={b} onClick={() => { set('client', b); set('id', b); }}
                     className="p-3 rounded-lg border-2 text-left text-sm font-medium transition-all"
-                    style={form.client === c ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7', color: '#111827' } : { borderColor: '#E5E7EB', color: '#6B7280' }}>
-                    {c}
+                    style={form.client === b ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7', color: '#111827' } : { borderColor: '#E5E7EB', color: '#6B7280' }}>
+                    {b}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {step === 2 && (
+          {/* Step: Brand (for client-feedback category) */}
+          {currentStepName === 'Brand' && (
             <div>
-              <h2 className="text-base font-semibold text-[#111827] mb-1">Industry</h2>
-              <p className="text-sm text-[#6B7280] mb-5">Which industry does this client operate in?</p>
+              <h2 className="text-base font-semibold text-[#111827] mb-1">Select brand</h2>
+              <p className="text-sm text-[#6B7280] mb-5">Which brand does this feedback belong to?</p>
+              <div className="grid grid-cols-2 gap-2">
+                {BRANDS.map(b => (
+                  <button key={b} onClick={() => set('client', b)}
+                    className="p-3 rounded-lg border-2 text-left text-sm font-medium transition-all"
+                    style={form.client === b ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7', color: '#111827' } : { borderColor: '#E5E7EB', color: '#6B7280' }}>
+                    {b}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step: Industry KB (for brand category) */}
+          {currentStepName === 'Industry KB' && (
+            <div>
+              <h2 className="text-base font-semibold text-[#111827] mb-1">Associated Industry KB</h2>
+              <p className="text-sm text-[#6B7280] mb-5">Which industry KB should be auto-injected alongside this brand?</p>
               <div className="space-y-2">
-                {INDUSTRIES.map(ind => (
+                {INDUSTRY_KBS.map(ind => (
                   <button key={ind} onClick={() => set('industry', ind)}
                     className="w-full p-3 rounded-lg border-2 text-left text-sm font-medium transition-all"
                     style={form.industry === ind ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7', color: '#111827' } : { borderColor: '#E5E7EB', color: '#6B7280' }}>
-                    {ind}
+                    {ind === 'global' ? 'global (no industry KB)' : ind}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {step === 3 && (
+          {/* Step: Tags & Priority */}
+          {currentStepName === 'Tags & Priority' && (
             <div className="space-y-5">
               <h2 className="text-base font-semibold text-[#111827]">Tags & Priority</h2>
               <div>
@@ -174,7 +210,8 @@ export default function CreateKBPage() {
             </div>
           )}
 
-          {step === 4 && (
+          {/* Step: Linked Modules */}
+          {currentStepName === 'Linked Modules' && (
             <div>
               <h2 className="text-base font-semibold text-[#111827] mb-1">Linked Modules</h2>
               <p className="text-sm text-[#6B7280] mb-5">Which modules should load this KB?</p>
@@ -183,32 +220,46 @@ export default function CreateKBPage() {
                   <label key={mod} className="flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all"
                     style={form.linked_modules.includes(mod) ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7' } : { borderColor: '#E5E7EB' }}>
                     <input type="checkbox" checked={form.linked_modules.includes(mod)} onChange={() => toggleModule(mod)} className="w-4 h-4" />
-                    <div>
-                      <div className="text-sm font-semibold text-[#111827]">{mod}</div>
-                    </div>
+                    <div className="text-sm font-semibold text-[#111827]">{mod}</div>
                   </label>
                 ))}
               </div>
             </div>
           )}
 
-          {step === 5 && (
+          {/* Step: Content (brand / industry) */}
+          {currentStepName === 'Content' && (
             <div className="space-y-5">
               <h2 className="text-base font-semibold text-[#111827]">ID & Content</h2>
               <div>
                 <label className="block text-sm font-semibold text-[#111827] mb-1.5">KB ID <span className="font-normal text-[#6B7280]">(unique slug, kebab-case)</span></label>
                 <input type="text" value={form.id} onChange={e => set('id', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                  placeholder="e.g. gentle-dental-v2"
+                  placeholder="e.g. dental-service-organizations"
                   className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm font-mono text-[#111827] focus:outline-none" />
               </div>
-              {form.category === 'client-feedback' && (
-                <div>
-                  <label className="block text-sm font-semibold text-[#111827] mb-1.5">Display Label <span className="font-normal text-[#6B7280]">(shown in the feedback selector)</span></label>
-                  <input type="text" value={form.label} onChange={e => set('label', e.target.value)}
-                    placeholder="e.g. Q1 2026 Review, Post-Launch Feedback"
-                    className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none" />
-                </div>
-              )}
+              <div data-color-mode="light">
+                <label className="block text-sm font-semibold text-[#111827] mb-1.5">Content <span className="font-normal text-[#6B7280]">(Markdown)</span></label>
+                <MDEditor value={form.body} onChange={val => set('body', val || '')} height={300} preview="edit" />
+              </div>
+            </div>
+          )}
+
+          {/* Step: Label & Content (client-feedback) */}
+          {currentStepName === 'Label & Content' && (
+            <div className="space-y-5">
+              <h2 className="text-base font-semibold text-[#111827]">ID, Label & Content</h2>
+              <div>
+                <label className="block text-sm font-semibold text-[#111827] mb-1.5">KB ID <span className="font-normal text-[#6B7280]">(unique slug, kebab-case)</span></label>
+                <input type="text" value={form.id} onChange={e => set('id', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                  placeholder={`e.g. ${form.client}-feedback-q1-2026`}
+                  className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm font-mono text-[#111827] focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[#111827] mb-1.5">Display Label <span className="font-normal text-[#6B7280]">(shown in the feedback selector)</span></label>
+                <input type="text" value={form.label} onChange={e => set('label', e.target.value)}
+                  placeholder="e.g. Q1 2026 Review, Post-Launch Feedback"
+                  className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none" />
+              </div>
               <div data-color-mode="light">
                 <label className="block text-sm font-semibold text-[#111827] mb-1.5">Content <span className="font-normal text-[#6B7280]">(Markdown)</span></label>
                 <MDEditor value={form.body} onChange={val => set('body', val || '')} height={300} preview="edit" />
@@ -224,7 +275,7 @@ export default function CreateKBPage() {
             {step === 0 ? 'Cancel' : '← Back'}
           </button>
 
-          {step < STEPS.length - 1 ? (
+          {!isLastStep ? (
             <button onClick={() => setStep(s => s + 1)} disabled={!canAdvance()}
               className="px-5 py-2.5 text-sm font-semibold rounded-lg text-white transition-colors disabled:opacity-50"
               style={{ backgroundColor: '#111827' }}>

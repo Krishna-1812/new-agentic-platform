@@ -2,13 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import KBStatusBadge from '../components/KBStatusBadge';
 
-const CATEGORIES = ['all', 'industry', 'brand', 'client-feedback', 'best-practices'];
+const CATEGORIES = ['all', 'industry', 'brand', 'client-feedback'];
 const CATEGORY_LABELS = {
   all: 'All',
   industry: 'Industry',
   brand: 'Brand',
   'client-feedback': 'Client Feedback',
-  'best-practices': 'Best Practices',
 };
 
 const CLIENTS = [

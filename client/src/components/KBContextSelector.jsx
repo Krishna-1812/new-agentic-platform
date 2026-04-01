@@ -66,10 +66,6 @@ export default function KBContextSelector({ module: moduleId, onChange, disabled
       summaryItems.push({ label: 'Industry', id: kbData.industry.id, hasContent: kbData.industry.hasContent });
       if (!kbData.industry.hasContent) warnings.push(`Industry KB "${kbData.industry.id}" has no content`);
     }
-    if (kbData.bestPractices) {
-      summaryItems.push({ label: 'Best Practices', id: kbData.bestPractices.id, hasContent: kbData.bestPractices.hasContent });
-      if (!kbData.bestPractices.hasContent) warnings.push(`Best Practices KB "${kbData.bestPractices.id}" has no content`);
-    }
     for (const id of feedbackKbIds) {
       const fb = kbData.feedbackOptions?.find(f => f.id === id);
       if (fb) {
@@ -86,7 +82,7 @@ export default function KBContextSelector({ module: moduleId, onChange, disabled
     <div className="space-y-2">
       {/* Selector row */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        {/* Brand / Client */}
+        {/* Brand */}
         <div className="flex items-center gap-2">
           <label className="text-xs font-semibold text-[#6B7280] whitespace-nowrap">Brand</label>
           <select
@@ -103,7 +99,7 @@ export default function KBContextSelector({ module: moduleId, onChange, disabled
 
         {client && (
           <>
-            {/* Industry (auto-resolved from brand frontmatter) */}
+            {/* Industry (auto-resolved from brand's associated industry KB) */}
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-[#6B7280]">Industry</span>
               {loading ? (
@@ -116,20 +112,7 @@ export default function KBContextSelector({ module: moduleId, onChange, disabled
               <span className="text-xs text-[#9CA3AF]">(auto)</span>
             </div>
 
-            {/* Best Practices (auto from module) */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-[#6B7280]">Best Practices</span>
-              {loading ? (
-                <span className="text-xs text-[#9CA3AF]">…</span>
-              ) : kbData?.bestPractices ? (
-                <span className="text-xs px-2 py-0.5 rounded bg-[#F4F5F7] text-[#111827] font-medium">{kbData.bestPractices.id}</span>
-              ) : (
-                <span className="text-xs text-[#9CA3AF]">none</span>
-              )}
-              <span className="text-xs text-[#9CA3AF]">(auto)</span>
-            </div>
-
-            {/* Client Feedback — multi-select dropdown */}
+            {/* Client Feedback — multi-select */}
             <div className="relative flex items-center gap-2">
               <span className="text-xs font-semibold text-[#6B7280]">Feedback</span>
               {loading ? (
