@@ -1,0 +1,1131 @@
+{
+  "url": "https://www.brushandfloss.com/locations/mocksville",
+  "statusCode": 200,
+  "scrapedAt": "2026-04-14T14:54:45.335Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "Dentist in Mocksville, NC | Riccobene Associates Family Dentistry",
+  "metaDescription": "Dentist in Mocksville NC offering family, pediatric, cosmetic, emergency & implant care in a modern, welcoming practice. Call 336-753-6630 today!",
+  "canonical": "https://www.brushandfloss.com/locations/mocksville",
+  "allMeta": {
+    "description": "Dentist in Mocksville NC offering family, pediatric, cosmetic, emergency & implant care in a modern, welcoming practice. Call 336-753-6630 today!",
+    "og:title": "Riccobene Associates Family Dentistry | Mocksville, NC",
+    "og:description": "Dentist in Mocksville NC offering family, pediatric, cosmetic, emergency & implant care in a modern, welcoming practice. Call 336-753-6630 today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31728_Riccobene2-184.jpg",
+    "twitter:title": "Riccobene Associates Family Dentistry | Mocksville, NC",
+    "twitter:description": "Dentist in Mocksville NC offering family, pediatric, cosmetic, emergency & implant care in a modern, welcoming practice. Call 336-753-6630 today!",
+    "twitter:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31728_Riccobene2-184.jpg",
+    "og:type": "website",
+    "twitter:card": "summary_large_image",
+    "viewport": "width=device-width, initial-scale=1",
+    "generator": "Webflow"
+  },
+  "ogTags": {
+    "og:title": "Riccobene Associates Family Dentistry | Mocksville, NC",
+    "og:description": "Dentist in Mocksville NC offering family, pediatric, cosmetic, emergency & implant care in a modern, welcoming practice. Call 336-753-6630 today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31728_Riccobene2-184.jpg",
+    "og:type": "website"
+  },
+  "twitterTags": {
+    "twitter:card": "summary_large_image"
+  },
+  "headings": {
+    "h1": [
+      "TRUSTED DENTISTS IN MOCKSVILLE, NC FOR COMPLETE FAMILY DENTAL CARE"
+    ],
+    "h2": [
+      "MEET OUR DOCTOR",
+      "OUR SERVICES",
+      "WHAT OUR PATIENTS SAY",
+      "OUR OFFICE",
+      "WHY CHOOSE RICCOBENE?",
+      "OUR COMMITMENT TO EXCELLENCE",
+      "OTHER NEARBY LOCATIONS",
+      "PAYMENT OPTIONS & MEMBERSHIP PLANS",
+      "AFFORDABLE MEMBERSHIP PLANS",
+      "FREQUENTLY ASKED QUESTIONS",
+      "READY TO SCHEDULE? CONTACT US"
+    ],
+    "h3": [
+      "Titus Brinager, DDS",
+      "Office Amenities",
+      "500,000+",
+      "4.8",
+      "25",
+      "What dental services are available for families and children in Mocksville?",
+      "How can I schedule a dental appointment at the Mocksville office?",
+      "Can I get dental implants or a consultation in Mocksville?",
+      "Does the Mocksville office offer cosmetic services such as whitening or veneers?",
+      "Are emergency dental appointments available in Mocksville?",
+      "What are the Mocksville office hours and location details?",
+      "Do you accept my dental insurance or offer membership/financing plans in Mocksville?",
+      "Send us a Message",
+      "Get in Touch",
+      "Request An Appointment"
+    ],
+    "h4": [],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h1",
+      "text": "TRUSTED DENTISTS IN MOCKSVILLE, NC FOR COMPLETE FAMILY DENTAL CARE"
+    },
+    {
+      "tag": "h2",
+      "text": "MEET OUR DOCTOR"
+    },
+    {
+      "tag": "h3",
+      "text": "Titus Brinager, DDS"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR SERVICES"
+    },
+    {
+      "tag": "h2",
+      "text": "WHAT OUR PATIENTS SAY"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR OFFICE"
+    },
+    {
+      "tag": "h3",
+      "text": "Office Amenities"
+    },
+    {
+      "tag": "h2",
+      "text": "WHY CHOOSE RICCOBENE?"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR COMMITMENT TO EXCELLENCE"
+    },
+    {
+      "tag": "h3",
+      "text": "500,000+"
+    },
+    {
+      "tag": "h3",
+      "text": "4.8"
+    },
+    {
+      "tag": "h3",
+      "text": "25"
+    },
+    {
+      "tag": "h2",
+      "text": "OTHER NEARBY LOCATIONS"
+    },
+    {
+      "tag": "h2",
+      "text": "PAYMENT OPTIONS & MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "AFFORDABLE MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "FREQUENTLY ASKED QUESTIONS"
+    },
+    {
+      "tag": "h3",
+      "text": "What dental services are available for families and children in Mocksville?"
+    },
+    {
+      "tag": "h3",
+      "text": "How can I schedule a dental appointment at the Mocksville office?"
+    },
+    {
+      "tag": "h3",
+      "text": "Can I get dental implants or a consultation in Mocksville?"
+    },
+    {
+      "tag": "h3",
+      "text": "Does the Mocksville office offer cosmetic services such as whitening or veneers?"
+    },
+    {
+      "tag": "h3",
+      "text": "Are emergency dental appointments available in Mocksville?"
+    },
+    {
+      "tag": "h3",
+      "text": "What are the Mocksville office hours and location details?"
+    },
+    {
+      "tag": "h3",
+      "text": "Do you accept my dental insurance or offer membership/financing plans in Mocksville?"
+    },
+    {
+      "tag": "h2",
+      "text": "READY TO SCHEDULE? CONTACT US"
+    },
+    {
+      "tag": "h3",
+      "text": "Send us a Message"
+    },
+    {
+      "tag": "h3",
+      "text": "Get in Touch"
+    },
+    {
+      "tag": "h3",
+      "text": "Request An Appointment"
+    }
+  ],
+  "paragraphs": [
+    "Delivering quality dental care to Mocksville in a compassionate, considerate, and respectful manner.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Comprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Riccobene Family Dentistry in Mocksville is located off US-601 and I-40, making it easily accessible to families across Davie County. The office sits near Cooper Creek Heights and just a short drive from Rich Park and downtown Mocksville.",
+    "We are proud to serve this welcoming community with state-of-the-art dental technology and compassionate care. Patients from Bermuda Run, Cooleemee, and beyond find our Mocksville office a convenient home for their dental health needs.",
+    "We believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.",
+    "When you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.",
+    "Can't make it to our Mocksville office? We have other convenient locations in the area to serve you with the same exceptional dental care.",
+    "Quality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.",
+    "Save money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.",
+    "A wide variety of services are available in our Mocksville, NC location including general & pediatric dentistry, routine hygiene, emergency dentistry, cosmetic dentistry (including whitening) and dental implants.",
+    "Give us a call at (336) 753-6630 or book an appointment online today.",
+    "Yes - you can get both dental implants or a consultation for implants at our Mocksville location.",
+    "Yes - cosmetic services like whitening, veneers and Invisalign® are available at our Mocksville location.",
+    "We make an effort to see all emergency patients same day or next day, but there may be instances where we’ll refer you to another of our convenient practices if schedules are tight so make sure you’re seen as soon as possible.",
+    "We’re open Monday-Wednesday, 8:30am - 5pm and on Thursdays 9:00am - 3pm.",
+    "We accept and participate with a large majority of insurance plans. Prior to any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.",
+    "Take the first step towards optimal oral health. Contact our Mocksville office to schedule your appointment or ask any questions about our dental services.",
+    "Fill out the form below and we'll get back to you within 24 hours.",
+    "Select a Location to schedule an appointment:",
+    "Call our Mocksville  Office at 336.753.6630, or use the form below to request an appointment."
+  ],
+  "schemaMarkup": [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "https://www.brushandfloss.com/locations/mocksville",
+      "url": "https://www.brushandfloss.com/locations/mocksville",
+      "name": "Dentist in Mocksville, NC | Riccobene Associates Family Dentistry",
+      "description": "Dentist in Mocksville NC offering family, pediatric, cosmetic, emergency &amp; implant care in a modern, welcoming practice. Call 336-753-6630 today!",
+      "inLanguage": "en-US",
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "https://www.brushandfloss.com/",
+        "url": "https://www.brushandfloss.com/",
+        "name": "Riccobene Associates Family Dentistry"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://www.brushandfloss.com/#organization",
+      "url": "https://www.brushandfloss.com/",
+      "sameAs": [
+        "https://www.facebook.com/RiccobeneDentistry",
+        "https://www.instagram.com/brushandflossnc/"
+      ],
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg"
+      },
+      "brand": {
+        "@type": "Brand",
+        "name": "Riccobene Associates Family Dentistry",
+        "sameAs": [
+          "https://www.facebook.com/RiccobeneDentistry",
+          "https://www.instagram.com/brushandflossnc/"
+        ]
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Insurance Accepted",
+      "insuranceAccepted": [
+        "Delta Dental",
+        "Blue Cross Blue Shield",
+        "Aetna",
+        "Cigna",
+        "MetLife",
+        "UnitedHealthcare"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Dentist",
+      "@id": "https://www.brushandfloss.com/locations/mocksville/dentist",
+      "name": "Riccobene Associates Family Dentistry",
+      "image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31728_Riccobene2-184.jpg",
+      "logo": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315cd_riccobene-associates-family-dentistry.png",
+      "url": "/locations/mocksville",
+      "telephone": "336.753.6630",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "191 Cooper Creek Dr Suite 106, Mocksville, NC 27028",
+        "addressLocality": "Mocksville",
+        "addressRegion": "NC",
+        "postalCode": "27028",
+        "addressCountry": "US"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Monday",
+          "opens": "8:30",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Tuesday",
+          "opens": "8:30",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Wednesday",
+          "opens": "8:30",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Thursday",
+          "opens": "8:30",
+          "closes": "14:30"
+        }
+      ],
+      "priceRange": "$$",
+      "hasMap": "https://maps.app.goo.gl/2e2teTecd7VJquDb8",
+      "sameAs": "https://maps.app.goo.gl/2e2teTecd7VJquDb8"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Dental Services",
+      "serviceOutput": [
+        {
+          "@type": "Service",
+          "name": "Dental Sealants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dentures"
+        },
+        {
+          "@type": "Service",
+          "name": "Emergency Dentistry"
+        },
+        {
+          "@type": "Service",
+          "name": "Fluoride Treatment"
+        },
+        {
+          "@type": "Service",
+          "name": "Invisalign®"
+        },
+        {
+          "@type": "Service",
+          "name": "Root Canal Therapy"
+        }
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Jessica R"
+      },
+      "reviewBody": "Wonderful service, kind staff, and they’re quick and efficient. I was very pleased with my first visit. I would 10/10 recommend this dentistry to friends and family. I was able to get my consultation visit in and cleaning before the end of the year. Thank goodness they were able to fit me in. I am extremely grateful!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Debbie S"
+      },
+      "reviewBody": "The best dentist I have ever been to. Everyone is very nice, polite. And no pain.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Steve S"
+      },
+      "reviewBody": "I had a dental issue while traveling, I call them on a Monday morning and was able to be seen that afternoon. Everyone was great and understanding of my needs. They took care of my issue on the same day. I appreciate everyone involved and would highly recommend going to see them if you’re in need of dental care. They will take care of you. Thank you!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Andy J"
+      },
+      "reviewBody": "First visit, everyone was very friendly, the [hygenist] was very good and patient. The doctor was very informative and explained a possible plan for future dental care.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Angelo L"
+      },
+      "reviewBody": "Very nice dental practice, everyone I came in contact with was friendly and professional. New to area here, was recommended by a friend, great choice. Extremely thorough service, feels good to know you’re taken care of. Here’s to years of continued service!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What dental services are available for families and children in Mocksville?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A wide variety of services are available in our Mocksville, NC location including general & pediatric dentistry, routine hygiene, emergency dentistry, cosmetic dentistry (including whitening) and dental implants."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How can I schedule a dental appointment at the Mocksville office?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Give us a call at (336) 753-6630 or book an appointment online today."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I get dental implants or a consultation in Mocksville?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes - you can get both dental implants or a consultation for implants at our Mocksville location."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the Mocksville office offer cosmetic services such as whitening or veneers?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes - cosmetic services like whitening, veneers and Invisalign® are available at our Mocksville location."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are emergency dental appointments available in Mocksville?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We make an effort to see all emergency patients same day or next day, but there may be instances where we’ll refer you to another of our convenient practices if schedules are tight so make sure you’re seen as soon as possible."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What are the Mocksville office hours and location details?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We’re open Monday-Wednesday, 8:30am - 5pm and on Thursdays 9:00am - 3pm."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you accept my dental insurance or offer membership/financing plans in Mocksville?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We accept and participate with a large majority of insurance plans. Prior to any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance."
+          }
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314df_search.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152e_riccobene-banner-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31508_location-map.webp",
+      "alt": "Map showing neighborhoods, parks, schools, and roads including Davis Drive Elementary School, Pleasant Street, and Sunset Plaza."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314e7_location-banner.jpg",
+      "alt": "Smiling woman reclined in dental chair during a dental checkup with dentist holding dental mirror and probe."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31552_call-now-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317fa_titus-brinager.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317fa_titus-brinager.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ba_nc.dental-sealants-1024x768.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315af_brush-and-floss-dentures-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31689_Untitled-2.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ae_Fluoride-Treatment-nc-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3164c_Riccobene2-114.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315b9_root-canal-therapy-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152b_riccobene-our-office-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152a_riccobene-our-office-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152d_riccobene-our-office-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152c_riccobene-our-office-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31529_riccobene-our-office-icon-five.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31548_riccobene-wcr-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31549_family-friendly.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31547_state-of-the-art.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31527_insurance-accepted-icon-1.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31558_pricing-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31559_pricing-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31522_pricing-1.webp",
+      "alt": "Smiling young woman with long brown hair pointing to her teeth with both index fingers."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31523_pricing-2.webp",
+      "alt": "Smiling young boy sitting in a dental chair during a dental checkup with a dentist holding a dental tool."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154b_email-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154c_alarm-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a location"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville",
+      "text": "MOCKSVILLE"
+    },
+    {
+      "href": "tel:336.753.6630",
+      "text": "336.753.6630"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "CHANGE LOCATION"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers#jobs",
+      "text": "JOIN THE TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/mocksville",
+      "text": "SCHEDULE AN APPOINTMENT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": "Home"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a Dentist Near You"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "New Patient Experience"
+    },
+    {
+      "href": "https://www.brushandfloss.com/the-riccobene-way",
+      "text": "The Riccobene Way"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans",
+      "text": "Membership Plans"
+    },
+    {
+      "href": "https://www.brushandfloss.com/reviews",
+      "text": "Patient Reviews"
+    },
+    {
+      "href": "https://patient.payments.health/#/?organizationID=dab6a2b7&locationID=LSXWSH421HHY4",
+      "text": "Make A Payment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/payment",
+      "text": "Online Payments"
+    },
+    {
+      "href": "https://www.brushandfloss.com/articles",
+      "text": "articles"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "Contact us"
+    },
+    {
+      "href": "https://www.paycomonline.net/v4/ats/web.php/jobs?clientkey=B32F01563C7743C293E0AAB35AE1ADEA",
+      "text": "careers"
+    },
+    {
+      "href": "https://www.brushandflossaffiliates.com/",
+      "text": "Become an Affiliate Practice"
+    },
+    {
+      "href": "https://www.brushandfloss-employees.com/",
+      "text": "Employees"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/mocksville",
+      "text": "BOOK APPOINMENT"
+    },
+    {
+      "href": "tel:336.753.6630",
+      "text": "CALL NOW"
+    },
+    {
+      "href": "tel:336.753.6630",
+      "text": "Call Now"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/titus-brinager-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/titus-brinager-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/sealants",
+      "text": "Dental Sealants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dentures",
+      "text": "Dentures"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/emergency-dentistry",
+      "text": "Emergency Dentistry"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/fluoride-treatment",
+      "text": "Fluoride Treatment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/invisalign-r",
+      "text": "Invisalign®"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/root-canal-therapy",
+      "text": "Root Canal Therapy"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville?f5ff0038_page=2",
+      "text": "Load More"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#ready-to-schedule",
+      "text": "SCHEDULE A VISIT TODAY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/clemmons",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/clemmons",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/winston-salem",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/high-point",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/high-point",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "View all Locations"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#adult-preventative-plan",
+      "text": "ADULT PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#child-preventative-plan",
+      "text": "CHILD PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/mocksville",
+      "text": "BOOK APPOINTMENT ONLINE"
+    },
+    {
+      "href": "tel:336.753.6630",
+      "text": "CALL FOR EMERGENCY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "LOCATIONS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "SERVICES"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "WHAT TO EXPECT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers",
+      "text": "JOIN OUR TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/partnership",
+      "text": "PARTNER WITH US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "CONTACT US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/hipaa",
+      "text": "HIPAA"
+    },
+    {
+      "href": "https://www.brushandfloss.com/privacy-policy",
+      "text": "PRIVACY POLICY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/search",
+      "text": "SEARCH"
+    },
+    {
+      "href": "https://www.facebook.com/RiccobeneDentistry",
+      "text": ""
+    },
+    {
+      "href": "https://www.instagram.com/brushandflossnc/?hl=en",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville",
+      "text": "Mocksville"
+    },
+    {
+      "href": "tel:336.753.6630",
+      "text": "336.753.6630"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#",
+      "text": "Close"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville#",
+      "text": "Open Appointment"
+    }
+  ],
+  "bodyText": "MOCKSVILLE\n336.753.6630\nCHANGE LOCATION\nJOIN THE TEAM\nSCHEDULE AN APPOINTMENT\nTRUSTED DENTISTS IN MOCKSVILLE, NC FOR COMPLETE FAMILY DENTAL CARE\n\nDelivering quality dental care to Mocksville in a compassionate, considerate, and respectful manner.\n\n191 Cooper Creek Dr Suite 106, Mocksville, NC 27028\n336.753.6630\nMon - Wed: 8:30 AM - 5:00 PM | Thu: 9:00 AM - 3:00 PM\nBOOK APPOINMENT\nCALL NOW\nCall Now\nMEET OUR DOCTOR\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\nTitus Brinager, DDS\nGeneral & Restorative Dentistry\n\n10 Years Exp.\n\nMORE+\nTitus Brinager, DDS\nGeneral & Restorative Dentistry\n\n10 Years Exp.\n\nDR. TITUS BRINAGER was raised in Statesville, NC and discovered his passion for dentistry early on, inspired by his mother’s career as a dental hygienist. He graduated Magna Cum Laude with a Bachelor of Science in Biology from Lenoir-Rhyne University, then earned his Doctorate of Dental Surgery from the University of North Carolina at Chapel Hill School of Dentistry. With over a decade of experience, Dr. Brinager has received advanced training in cosmetic dentistry, endodontics, oral surgery, and implants, allowing him to provide comprehensive care tailored to each patient’s needs.\nVIEW PROFILE\nOUR SERVICES\n\nComprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.\n\nDental Sealants\nDental sealants protect your teeth from cavities and decay. A quick, effective way to maintain oral health. Book your consultation today!\nBOOK NOW\nDentures\nDiscover affordable dentures and permanent solutions from a trusted dentures specialist. Get one-day dentures that fit your needs. Book a consultation today!\nBOOK NOW\nEmergency Dentistry\nNeed emergency dentistry? Riccobene Associates provides expert care for tooth pain, injury, and more. Contact us today for quick relief!\nBOOK NOW\nFluoride Treatment\nRiccobene Associates Family Dentistry offers professional dental fluoride treatments in the Raleigh area. Contact us to schedule your appointment.\nBOOK NOW\nInvisalign®\nGet straighter teeth with Invisalign aligners. Comfortable and virtually invisible. Schedule your consultation today!\nBOOK NOW\nRoot Canal Therapy\nNeed root canal treatment? Our expert dentists provide gentle care to save your tooth and relieve pain. Schedule your consultation today!\nBOOK NOW\nLoad More\nWHAT OUR PATIENTS SAY\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\n★★★★★\nWonderful service, kind staff, and they’re quick and efficient. I was very pleased with my first visit. I would 10/10 recommend this dentistry to friends and family. I was able to get my consultation visit in and cleaning before the end of the year. Thank goodness they were able to fit me in. I am extremely grateful!\nJessica R\n★★★★★\nThe best dentist I have ever been to. Everyone is very nice, polite. And no pain.\nDebbie S\n★★★★★\nI had a dental issue while traveling, I call them on a Monday morning and was able to be seen that afternoon. Everyone was great and understanding of my needs. They took care of my issue on the same day. I appreciate everyone involved and would highly recommend going to see them if you’re in need of dental care. They will take care of you. Thank you!\nSteve S\n★★★★★\nFirst visit, everyone was very friendly, the [hygenist] was very good and patient. The doctor was very informative and explained a possible plan for future dental care.\nAndy J\n★★★★★\nVery nice dental practice, everyone I came in contact with was friendly and professional. New to area here, was recommended by a friend, great choice. Extremely thorough service, feels good to know you’re taken care of. Here’s to years of continued service!\nAngelo L\nOUR OFFICE\n\nRiccobene Family Dentistry in Mocksville is located off US-601 and I-40, making it easily accessible to families across Davie County. The office sits near Cooper Creek Heights and just a short drive from Rich Park and downtown Mocksville.\n\nWe are proud to serve this welcoming community with state-of-the-art dental technology and compassionate care. Patients from Bermuda Run, Cooleemee, and beyond find our Mocksville office a convenient home for their dental health needs.\n\nOffice Amenities\nFree WiFi\nComplimentary Beverages\nFamily-Friendly\nFree Parking\nFlexible Scheduling\nSCHEDULE A VISIT TODAY\nWHY CHOOSE RICCOBENE?\n\nWe believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.\n\nSame-Day Appointments\nUrgent dental needs? We offer same-day or next-day appointments in many locations for emergency care.\nFamily-Friendly\nWe provide gentle, expert dental care for children from their very first tooth through their teenage years.\nState-Of-The-Art\nCutting-edge technology and advanced treatment options bring the best that modern dental innovation has to offer to our offices.\nComprehensive Care\nOur expert provider offers a range of services from preventative, cosmetic, routine dental care and more.\nEmergency Dental Services\n24/7 emergency support when you need immediate dental care.\nOUR COMMITMENT TO EXCELLENCE\n\nWhen you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.\n\n500,000+\nHappy Smiles\nPatients served with exceptional care\n4.8\nAvg Google Rating\nfrom more than 28,000 reviews\n25\nYears In Business\nTrusted by the local community\nOTHER NEARBY LOCATIONS\n\nCan't make it to our Mocksville office? We have other convenient locations in the area to serve you with the same exceptional dental care.\n\nClemmons\n4168 Clemmons Rd, Clemmons, NC 27012\n336-331-9368\nCosmetic\nHygiene\nGeneral\nBOOK NOW\nVIEW DETAILS\nWinston-Salem\n201 Charlois Blvd, Winston-Salem, NC 27103\n(336) 331-3500\nGeneral\nEmergency\nSurgical\nSedation\nProsthodontic\nBOOK NOW\nVIEW DETAILS\nHigh Point\n2783 NC-68, Suite 107, High Point, NC 27265\n336-841-0000\nGeneral\nHygiene\nCosmetic\nSedation\nInvisalign®\nBOOK NOW\nVIEW DETAILS\nView all Locations\nPAYMENT OPTIONS & MEMBERSHIP PLANS\n\nQuality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.\n\nInsurance Accepted\nWe accept most major dental insurance plans\nDelta Dental\nBlue Cross Blue Shield\nAetna\nCigna\nMetlife\nUnited Heathcare\nFlexible Financing\nMultiple payment options to fit your budget\nSunbit\n0% Interest Plans\nMonthly Payment Plans\nHSA/FSA Accepted\nMembership Plans\nAffordable care for uninsured patients\nAnnual Cleanings\nX-rays Included\n10% Off Treatments\nNo Insurance Required\nAFFORDABLE MEMBERSHIP PLANS\n\nSave money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.\n\nAdult Preventative Plan\n$39\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nADULT PREVENTATIVE PLAN\nChild Preventative Plan\n$36\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nCHILD PREVENTATIVE PLAN\nFREQUENTLY ASKED QUESTIONS\nWhat dental services are available for families and children in Mocksville?\n\nA wide variety of services are available in our Mocksville, NC location including general & pediatric dentistry, routine hygiene, emergency dentistry, cosmetic dentistry (including whitening) and dental implants.\n\nHow can I schedule a dental appointment at the Mocksville office?\n\nGive us a call at (336) 753-6630 or book an appointment online today.\n\nCan I get dental implants or a consultation in Mocksville?\n\nYes - you can get both dental implants or a consultation for implants at our Mocksville location.\n\nDoes the Mocksville office offer cosmetic services such as whitening or veneers?\n\nYes - cosmetic services like whitening, veneers and Invisalign® are available at our Mocksville location.\n\nAre emergency dental appointments available in Mocksville?\n\nWe make an effort to see all emergency patients same day or next day, but there may be instances where we’ll refer you to another of our convenient practices if schedules are tight so make sure you’re seen as soon as possible.\n\nWhat are the Mocksville office hours and location details?\n\nWe’re open Monday-Wednesday, 8:30am - 5pm and on Thursdays 9:00am - 3pm.\n\nDo you accept my dental insurance or offer membership/financing plans in Mocksville?\n\nWe accept and participate with a large majority of insurance plans. Prior to any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.\n\nREADY TO SCHEDULE? CONTACT US\n\nTake the first step towards optimal oral health. Contact our Mocksville office to schedule your appointment or ask any questions about our dental services.\n\nSend us a Message\nFill out the form below and we'll get back to you within 24 hours.\nFirst Name*\nLast Name*\nEmail*\nPhone*\nHow Can We Help?\nI have dental insurance and would like to verify my benefits\nI prefer a phone call instead of email\nThis is a dental emergency\nGet in Touch\n\nFill out the form below and we'll get back to you within 24 hours.\n\nVisit Our Office\n191 Cooper Creek Dr Suite 106, Mocksville, NC 27028\nCall Us\n336.753.6630\nEmergency line available 24/7\nEmail Us\nmocksvillepc@brushandfloss.com\nOffice Hours\nMonday: 8:30 AM - 5:00 PM\nTuesday: 8:30 AM - 5:00 PM\nWednesday: 8:30 AM - 5:00 PM\nThursday: 9:00 AM - 3:00 PM\nBOOK APPOINTMENT ONLINE\nCALL FOR EMERGENCY\nLOCATIONS\nSERVICES\nWHAT TO EXPECT\nJOIN OUR TEAM\nPARTNER WITH US\nCONTACT US\nHIPAA\nPRIVACY POLICY\nSEARCH",
+  "wordCount": 1586
+}

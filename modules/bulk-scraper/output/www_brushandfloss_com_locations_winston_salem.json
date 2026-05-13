@@ -1,0 +1,1240 @@
+{
+  "url": "https://www.brushandfloss.com/locations/winston-salem",
+  "statusCode": 200,
+  "scrapedAt": "2026-04-14T14:54:35.353Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "Dentist in Winston-Salem, NC | Riccobene Associates Family Dentistry",
+  "metaDescription": "Looking for a dentist in Winston-Salem, NC? Our expert team provides dental care with comfort and clinical excellence. Book your appointment today!",
+  "canonical": "https://www.brushandfloss.com/locations/winston-salem",
+  "allMeta": {
+    "description": "Looking for a dentist in Winston-Salem, NC? Our expert team provides dental care with comfort and clinical excellence. Book your appointment today!",
+    "og:title": "Riccobene Associates Family Dentistry | Winston-Salem, NC",
+    "og:description": "Looking for a dentist in Winston-Salem, NC? Our expert team provides dental care with comfort and clinical excellence. Book your appointment today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3170c_WS%20New%20Picture.jpg",
+    "twitter:title": "Riccobene Associates Family Dentistry | Winston-Salem, NC",
+    "twitter:description": "Looking for a dentist in Winston-Salem, NC? Our expert team provides dental care with comfort and clinical excellence. Book your appointment today!",
+    "twitter:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3170c_WS%20New%20Picture.jpg",
+    "og:type": "website",
+    "twitter:card": "summary_large_image",
+    "viewport": "width=device-width, initial-scale=1",
+    "generator": "Webflow"
+  },
+  "ogTags": {
+    "og:title": "Riccobene Associates Family Dentistry | Winston-Salem, NC",
+    "og:description": "Looking for a dentist in Winston-Salem, NC? Our expert team provides dental care with comfort and clinical excellence. Book your appointment today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3170c_WS%20New%20Picture.jpg",
+    "og:type": "website"
+  },
+  "twitterTags": {
+    "twitter:card": "summary_large_image"
+  },
+  "headings": {
+    "h1": [
+      "TRUSTED DENTIST IN WINSTON SALEM, NC – EXPERT CARE FOR YOUR SMILE"
+    ],
+    "h2": [
+      "MEET OUR DOCTORS",
+      "OUR SERVICES",
+      "WHAT OUR PATIENTS SAY",
+      "OUR OFFICE",
+      "WHY CHOOSE RICCOBENE?",
+      "OUR COMMITMENT TO EXCELLENCE",
+      "OTHER NEARBY LOCATIONS",
+      "PAYMENT OPTIONS & MEMBERSHIP PLANS",
+      "AFFORDABLE MEMBERSHIP PLANS",
+      "FREQUENTLY ASKED QUESTIONS",
+      "READY TO SCHEDULE? CONTACT US"
+    ],
+    "h3": [
+      "Grace Aileru, DDS",
+      "Sam Byrd, DDS",
+      "Herb Johnson, DDS",
+      "Elizabeth Dixon, DDS",
+      "Catherine Watkins, DDS",
+      "Matthew McCullough, DDS",
+      "Preston Wilson, DMD",
+      "Office Amenities",
+      "500,000+",
+      "4.8",
+      "25",
+      "Are emergency dental services available in Winston-Salem?",
+      "Can I get cosmetic dentistry in Winston-Salem?",
+      "Do Winston-Salem dentists treat children and teens?",
+      "How do I schedule an appointment with a Winston-Salem dentist?",
+      "What services do dentists in Winston-Salem provide?",
+      "Send us a Message",
+      "Get in Touch",
+      "Request An Appointment"
+    ],
+    "h4": [],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h1",
+      "text": "TRUSTED DENTIST IN WINSTON SALEM, NC – EXPERT CARE FOR YOUR SMILE"
+    },
+    {
+      "tag": "h2",
+      "text": "MEET OUR DOCTORS"
+    },
+    {
+      "tag": "h3",
+      "text": "Grace Aileru, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Sam Byrd, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Herb Johnson, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Elizabeth Dixon, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Catherine Watkins, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Matthew McCullough, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Preston Wilson, DMD"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR SERVICES"
+    },
+    {
+      "tag": "h2",
+      "text": "WHAT OUR PATIENTS SAY"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR OFFICE"
+    },
+    {
+      "tag": "h3",
+      "text": "Office Amenities"
+    },
+    {
+      "tag": "h2",
+      "text": "WHY CHOOSE RICCOBENE?"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR COMMITMENT TO EXCELLENCE"
+    },
+    {
+      "tag": "h3",
+      "text": "500,000+"
+    },
+    {
+      "tag": "h3",
+      "text": "4.8"
+    },
+    {
+      "tag": "h3",
+      "text": "25"
+    },
+    {
+      "tag": "h2",
+      "text": "OTHER NEARBY LOCATIONS"
+    },
+    {
+      "tag": "h2",
+      "text": "PAYMENT OPTIONS & MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "AFFORDABLE MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "FREQUENTLY ASKED QUESTIONS"
+    },
+    {
+      "tag": "h3",
+      "text": "Are emergency dental services available in Winston-Salem?"
+    },
+    {
+      "tag": "h3",
+      "text": "Can I get cosmetic dentistry in Winston-Salem?"
+    },
+    {
+      "tag": "h3",
+      "text": "Do Winston-Salem dentists treat children and teens?"
+    },
+    {
+      "tag": "h3",
+      "text": "How do I schedule an appointment with a Winston-Salem dentist?"
+    },
+    {
+      "tag": "h3",
+      "text": "What services do dentists in Winston-Salem provide?"
+    },
+    {
+      "tag": "h2",
+      "text": "READY TO SCHEDULE? CONTACT US"
+    },
+    {
+      "tag": "h3",
+      "text": "Send us a Message"
+    },
+    {
+      "tag": "h3",
+      "text": "Get in Touch"
+    },
+    {
+      "tag": "h3",
+      "text": "Request An Appointment"
+    }
+  ],
+  "paragraphs": [
+    "For comprehensive care, visit our dentist in Winston Salem, NC, where clinical excellence meets patient comfort.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort. We're the trusted go-to dentist in Winston Salem for compassionate care.",
+    "Comprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Our experienced dentist in Winston Salem, NC, is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Located off Hanes Mall Boulevard near I-40, our Winston-Salem office is convenient to the Hanes Mall area, Ardmore, and nearby Clemmons. Patients enjoy easy access from major roads including Stratford Road and Silas Creek Parkway.",
+    "Riccobene Family Dentistry in Winston-Salem combines modern dental technology with a patient-centered philosophy. From families in Westgate and Sherwood Forest to those commuting from downtown Winston Salem, we make it simple to receive the care you need in a welcoming environment.",
+    "We believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.",
+    "When you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.",
+    "Can't make it to our Winston-Salem office? We have other convenient locations in the area to serve you with the same exceptional dental care.",
+    "Quality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.",
+    "Quality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients, ensuring you get the best dentist in Winston Salem.",
+    "Save money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.",
+    "We make an effort to see all emergency patients same day or next day, but there may be instances where we’ll refer you to another of our convenient practices if schedules are tight so make sure you’re seen as soon as possible.",
+    "Yes - cosmetic procedures and treatments ranging from tooth whitening to veneers to Invisalign® are all availalbe at our Winston-Salem location.",
+    "Yes - pediatric care is available. Bring your whole family and we’ll keep everyone’s smile bright for the next family photo.",
+    "Give us a call at (336) 331-3500 or book online and we’ll get you on the schedule as soon as possible.",
+    "A wide variety of services are available in our Winston-Salem location including general & pediatric dentistry, routine hygiene, emergency dentistry, cosmetic dentistry (including whitening) and dental implants.",
+    "Take the first step towards optimal oral health. Contact our Winston-Salem office to schedule your appointment or ask any questions about our dental services.",
+    "Fill out the form below and we'll get back to you within 24 hours.",
+    "Select a Location to schedule an appointment:",
+    "Call our Winston-Salem Office at (336) 331-3500, or use the form below to request an appointment."
+  ],
+  "schemaMarkup": [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "https://www.brushandfloss.com/locations/winston-salem",
+      "url": "https://www.brushandfloss.com/locations/winston-salem",
+      "name": "Dentist in Winston-Salem, NC | Riccobene Associates Family Dentistry",
+      "description": "Looking for a dentist in Winston-Salem, NC? Our expert team provides dental care with comfort and clinical excellence. Book your appointment today!",
+      "inLanguage": "en-US",
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "https://www.brushandfloss.com/",
+        "url": "https://www.brushandfloss.com/",
+        "name": "Riccobene Associates Family Dentistry"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://www.brushandfloss.com/#organization",
+      "url": "https://www.brushandfloss.com/",
+      "sameAs": [
+        "https://www.facebook.com/RiccobeneDentistry",
+        "https://www.instagram.com/brushandflossnc/"
+      ],
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg"
+      },
+      "brand": {
+        "@type": "Brand",
+        "name": "Riccobene Associates Family Dentistry",
+        "sameAs": [
+          "https://www.facebook.com/RiccobeneDentistry",
+          "https://www.instagram.com/brushandflossnc/"
+        ]
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Insurance Accepted",
+      "insuranceAccepted": [
+        "Delta Dental",
+        "Blue Cross Blue Shield",
+        "Aetna",
+        "Cigna",
+        "MetLife",
+        "UnitedHealthcare"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Dentist",
+      "@id": "https://www.brushandfloss.com/locations/winston-salem/dentist",
+      "name": "Riccobene Associates Family Dentistry",
+      "image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3170c_WS%20New%20Picture.jpg",
+      "logo": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315cd_riccobene-associates-family-dentistry.png",
+      "url": "/locations/winston-salem",
+      "telephone": "(336) 331-3500",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "201 Charlois Blvd, Winston-Salem, NC 27103",
+        "addressLocality": "Winston-Salem",
+        "addressRegion": "NC",
+        "postalCode": "27103",
+        "addressCountry": "US"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Monday",
+          "opens": "8:00",
+          "closes": "17:30"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Tuesday",
+          "opens": "8:00",
+          "closes": "17:30"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Wednesday",
+          "opens": "8:00",
+          "closes": "17:30"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Thursday",
+          "opens": "8:00",
+          "closes": "17:30"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Friday",
+          "opens": "8:00",
+          "closes": "17:30"
+        }
+      ],
+      "priceRange": "$$",
+      "hasMap": "https://g.page/WSdental",
+      "sameAs": "https://g.page/WSdental"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Dental Services",
+      "serviceOutput": [
+        {
+          "@type": "Service",
+          "name": "Dental Sealants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dentures"
+        },
+        {
+          "@type": "Service",
+          "name": "Emergency Dentistry"
+        },
+        {
+          "@type": "Service",
+          "name": "Fluoride Treatment"
+        },
+        {
+          "@type": "Service",
+          "name": "Invisalign®"
+        },
+        {
+          "@type": "Service",
+          "name": "Root Canal Therapy"
+        }
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Gayle C"
+      },
+      "reviewBody": "OMG!! I found my forever dentistry family. Everyone was so wonderful,from the front desk,xray,hygienist and dentist. My previous dentist office closed with no warning and finding a new practice is hard,especially when you have anxiety about going to the dentist. I highly recommend this practice and already planning on getting my daughter an appointment who just moved to town. Go!!! You will love them",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Tiffany P"
+      },
+      "reviewBody": "I had the most wonderful experience at Riccobene Ass. Family Dentistry on yesterday! I&#39;ve always had dental anxiety because every one that I&#39;ve visited, always did something wrong, but here, was totally different. My dental hygienist made me feel comfortable and she was very gentle while working on me. She told me everything that she was doing to me from start to finish and listened to my concerns. My dentist was the same - he eased my fears and made me eager to come back for further work that needs to be done so that I can comfortably smile again! Thank you so very much for being professional, caring and understanding!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Krista F"
+      },
+      "reviewBody": "This is a great dentist. Did an appointment on line to find out that it didn&#39;t go through. I showed up for my 8:00 am appointment and she told me she couldn&#39;t find me, but immediately found me an appointment so that I wouldn&#39;t have to reschedule. Didn&#39;t have to wait a long time. They are very friendly and efficient.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Eric M"
+      },
+      "reviewBody": "I am new to NC and found this Dentist researching my insurance and patient reviews. I just had my first visit today and I was very impressed. Everyone was on time and very helpful. They are very up to date on their equipment, even showing off some stuff I had never seen before! My hygienist [...] was great! Very friendly and efficient. I believe I made the right choice for my new dentist!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Are emergency dental services available in Winston-Salem?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We make an effort to see all emergency patients same day or next day, but there may be instances where we’ll refer you to another of our convenient practices if schedules are tight so make sure you’re seen as soon as possible."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I get cosmetic dentistry in Winston-Salem?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes - cosmetic procedures and treatments ranging from tooth whitening to veneers to Invisalign® are all availalbe at our Winston-Salem location."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do Winston-Salem dentists treat children and teens?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes - pediatric care is available. Bring your whole family and we’ll keep everyone’s smile bright for the next family photo."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I schedule an appointment with a Winston-Salem dentist?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Give us a call at (336) 331-3500 or book online and we’ll get you on the schedule as soon as possible."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What services do dentists in Winston-Salem provide?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A wide variety of services are available in our Winston-Salem location including general & pediatric dentistry, routine hygiene, emergency dentistry, cosmetic dentistry (including whitening) and dental implants."
+          }
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314df_search.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152e_riccobene-banner-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31508_location-map.webp",
+      "alt": "Map showing neighborhoods, parks, schools, and roads including Davis Drive Elementary School, Pleasant Street, and Sunset Plaza."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314e7_location-banner.jpg",
+      "alt": "Smiling woman reclined in dental chair during a dental checkup with dentist holding dental mirror and probe."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31552_call-now-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a1780df6fd875cbb158268_grace-aileru-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a1780df6fd875cbb158268_grace-aileru-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a1781c08d69ddcf0dec46b_sam-byrd-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a1781c08d69ddcf0dec46b_sam-byrd-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a17835dcd515b946419564_herb-johnson-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a17835dcd515b946419564_herb-johnson-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a17845cd144f6b58ee1425_elizabeth-dixon-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a17845cd144f6b58ee1425_elizabeth-dixon-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a178550a4b0ae704922b1c_catherine-watkins-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a178550a4b0ae704922b1c_catherine-watkins-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31674_matthew%20mc.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31674_matthew%20mc.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6989c86a6152e02c42b785b6_wilson-preston.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6989c86a6152e02c42b785b6_wilson-preston.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ba_nc.dental-sealants-1024x768.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315af_brush-and-floss-dentures-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31689_Untitled-2.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ae_Fluoride-Treatment-nc-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3164c_Riccobene2-114.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315b9_root-canal-therapy-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152b_riccobene-our-office-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152a_riccobene-our-office-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152d_riccobene-our-office-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152c_riccobene-our-office-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31529_riccobene-our-office-icon-five.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31548_riccobene-wcr-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31549_family-friendly.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31547_state-of-the-art.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31527_insurance-accepted-icon-1.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31558_pricing-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31559_pricing-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31522_pricing-1.webp",
+      "alt": "Smiling young woman with long brown hair pointing to her teeth with both index fingers."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31523_pricing-2.webp",
+      "alt": "Smiling young boy sitting in a dental chair during a dental checkup with a dentist holding a dental tool."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154b_email-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154c_alarm-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a location"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem",
+      "text": "WINSTON-SALEM"
+    },
+    {
+      "href": "tel:(336) 331-3500",
+      "text": "(336) 331-3500"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "CHANGE LOCATION"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers#jobs",
+      "text": "JOIN THE TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/winston-salem",
+      "text": "SCHEDULE AN APPOINTMENT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": "Home"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a Dentist Near You"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "New Patient Experience"
+    },
+    {
+      "href": "https://www.brushandfloss.com/the-riccobene-way",
+      "text": "The Riccobene Way"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans",
+      "text": "Membership Plans"
+    },
+    {
+      "href": "https://www.brushandfloss.com/reviews",
+      "text": "Patient Reviews"
+    },
+    {
+      "href": "https://patient.payments.health/#/?organizationID=dab6a2b7&locationID=LSXWSH421HHY4",
+      "text": "Make A Payment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/payment",
+      "text": "Online Payments"
+    },
+    {
+      "href": "https://www.brushandfloss.com/articles",
+      "text": "articles"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "Contact us"
+    },
+    {
+      "href": "https://www.paycomonline.net/v4/ats/web.php/jobs?clientkey=B32F01563C7743C293E0AAB35AE1ADEA",
+      "text": "careers"
+    },
+    {
+      "href": "https://www.brushandflossaffiliates.com/",
+      "text": "Become an Affiliate Practice"
+    },
+    {
+      "href": "https://www.brushandfloss-employees.com/",
+      "text": "Employees"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/winston-salem",
+      "text": "BOOK APPOINMENT"
+    },
+    {
+      "href": "tel:(336)331-3500",
+      "text": "CALL NOW"
+    },
+    {
+      "href": "tel:(336)331-3500",
+      "text": "Call Now"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/grace-aileru-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/grace-aileru-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/sam-byrd-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/sam-byrd-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/herb-johnson-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/herb-johnson-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/elizabeth-dixon-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/elizabeth-dixon-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/catherine-watkins-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/catherine-watkins-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/matthew-mccullough",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/matthew-mccullough",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/preston-wilson-dmd",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/preston-wilson-dmd",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/sealants",
+      "text": "Dental Sealants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dentures",
+      "text": "Dentures"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/emergency-dentistry",
+      "text": "Emergency Dentistry"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/fluoride-treatment",
+      "text": "Fluoride Treatment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/invisalign-r",
+      "text": "Invisalign®"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/root-canal-therapy",
+      "text": "Root Canal Therapy"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem?f5ff0038_page=2",
+      "text": "Load More"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#ready-to-schedule",
+      "text": "SCHEDULE A VISIT TODAY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/clemmons",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/clemmons",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/high-point",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/high-point",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/mocksville",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/mocksville",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "View all Locations"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#adult-preventative-plan",
+      "text": "ADULT PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#child-preventative-plan",
+      "text": "CHILD PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/winston-salem",
+      "text": "BOOK APPOINTMENT ONLINE"
+    },
+    {
+      "href": "tel:(336)331-3500",
+      "text": "CALL FOR EMERGENCY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "LOCATIONS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "SERVICES"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "WHAT TO EXPECT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers",
+      "text": "JOIN OUR TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/partnership",
+      "text": "PARTNER WITH US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "CONTACT US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/hipaa",
+      "text": "HIPAA"
+    },
+    {
+      "href": "https://www.brushandfloss.com/privacy-policy",
+      "text": "PRIVACY POLICY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/search",
+      "text": "SEARCH"
+    },
+    {
+      "href": "https://www.facebook.com/RiccobeneDentistry",
+      "text": ""
+    },
+    {
+      "href": "https://www.instagram.com/brushandflossnc/?hl=en",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem",
+      "text": "Winston-Salem"
+    },
+    {
+      "href": "tel:(336) 331-3500",
+      "text": "(336) 331-3500"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#",
+      "text": "Close"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/winston-salem#",
+      "text": "Open Appointment"
+    }
+  ],
+  "bodyText": "WINSTON-SALEM\n(336) 331-3500\nCHANGE LOCATION\nJOIN THE TEAM\nSCHEDULE AN APPOINTMENT\nTRUSTED DENTIST IN WINSTON SALEM, NC – EXPERT CARE FOR YOUR SMILE\n\nFor comprehensive care, visit our dentist in Winston Salem, NC, where clinical excellence meets patient comfort.\n\n201 Charlois Blvd, Winston-Salem, NC 27103\n(336) 331-3500\nMon - Fri: 8:00 AM - 5:30 PM\nBOOK APPOINMENT\nCALL NOW\nCall Now\nMEET OUR DOCTORS\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort. We're the trusted go-to dentist in Winston Salem for compassionate care.\n\nGrace Aileru, DDS\nMORE+\nGrace Aileru, DDS\nDr. Grace Aileru is a native of Hempstead, NY, and a proud graduate of South Carolina State College. She earned her Doctor of Dental Surgery degree from the University of North Carolina School of Dentistry in Chapel Hill in 1993 and went on to complete her residency with the U.S. Army, where she served for four years. A devoted mother of two, she now resides in Clemmons. As a born-again Christian, she finds joy and purpose in her faith and is excited about knowing Jesus while providing compassionate dental care to her patients.\nVIEW PROFILE\nSam Byrd, DDS\nMORE+\nSam Byrd, DDS\nDr. Byrd is a native of Sanford, North Carolina, and a proud graduate of N.C. State University, where he earned his B.S. in Biological Sciences. He went on to receive his D.D.S. from the University of North Carolina School of Dentistry. Dedicated to lifelong learning, he is a member of the American Dental Association, the Academy of General Dentistry, the North Carolina Dental Society, and the Forsyth County Dental Society. He has earned the Fellowship Award from the Academy of General Dentistry and is currently pursuing the Mastership Award.\nVIEW PROFILE\nHerb Johnson, DDS\nMORE+\nHerb Johnson, DDS\nDr. Herb Johnson is a proud graduate of the University of North Carolina School of Dentistry in Chapel Hill. Originally from Elkin, North Carolina, he spent nine years in Chapel Hill before moving to the area. A Fellow of the Academy of General Dentistry, Dr. Johnson is committed to providing exceptional, comprehensive care to his patients.\nVIEW PROFILE\nElizabeth Dixon, DDS\nMORE+\nElizabeth Dixon, DDS\nDr. Elizabeth Dixon earned both her B.S. degree and Doctor of Dental Surgery from McGill University in Montreal, Quebec, where she also completed her General Practice Residency. She practiced in a large dental office in Montreal for 13 years before relocating to Winston-Salem, North Carolina, in 2003.\nVIEW PROFILE\nCatherine Watkins, DDS\nMORE+\nCatherine Watkins, DDS\nDr. Catherine Watkins is a Diplomate of the American Board of Special Care Dentistry with over 20 years of experience in geriatric dentistry. She earned her DDS from UNC Chapel Hill, completed residency training in Special Patient Care in Rochester, NY, and holds a Master’s in Geriatric Dentistry and a Ph.D. in Oral Epidemiology. A former professor at the University of Iowa, she later established the Special Needs Dental Program at Wake Forest Baptist Medical Center. Dr. Watkins is dedicated to improving oral health care for seniors and patients with special needs.\nVIEW PROFILE\nMatthew McCullough, DDS\nMORE+\nMatthew McCullough, DDS\nDr. Matthew McCullough was born in New Iberia, LA and grew up in Houston, TX. He attended US Military Academy at West Point and served 5 years as an active-duty Army officer. After being discharged from active duty, Dr. McCullough attended the University of Texas School of Dentistry at Houston, graduating in 2014. He has lived in Texas, Hawaii, Colorado, and has now permanently settled in North Carolina.\nVIEW PROFILE\nPreston Wilson, DMD\nMORE+\nPreston Wilson, DMD\nDr. Preston Wilson, originally from Ashe County, NC, earned his B.S. in Computer Science from Appalachian State University in 2019 before discovering his true calling in dentistry. He went on to receive his DMD from ECU School of Dental Medicine in 2023, followed by a yearlong AEGD residency in 2024, where he gained advanced training in root canals, oral surgery, implants, and restorative care.\nVIEW PROFILE\nOUR SERVICES\n\nComprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.\n\nDental Sealants\nDental sealants protect your teeth from cavities and decay. A quick, effective way to maintain oral health. Book your consultation today!\nBOOK NOW\nDentures\nDiscover affordable dentures and permanent solutions from a trusted dentures specialist. Get one-day dentures that fit your needs. Book a consultation today!\nBOOK NOW\nEmergency Dentistry\nNeed emergency dentistry? Riccobene Associates provides expert care for tooth pain, injury, and more. Contact us today for quick relief!\nBOOK NOW\nFluoride Treatment\nRiccobene Associates Family Dentistry offers professional dental fluoride treatments in the Raleigh area. Contact us to schedule your appointment.\nBOOK NOW\nInvisalign®\nGet straighter teeth with Invisalign aligners. Comfortable and virtually invisible. Schedule your consultation today!\nBOOK NOW\nRoot Canal Therapy\nNeed root canal treatment? Our expert dentists provide gentle care to save your tooth and relieve pain. Schedule your consultation today!\nBOOK NOW\nLoad More\nWHAT OUR PATIENTS SAY\n\nOur experienced dentist in Winston Salem, NC, is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\n★★★★★\nOMG!! I found my forever dentistry family. Everyone was so wonderful,from the front desk,xray,hygienist and dentist. My previous dentist office closed with no warning and finding a new practice is hard,especially when you have anxiety about going to the dentist. I highly recommend this practice and already planning on getting my daughter an appointment who just moved to town. Go!!! You will love them\nGayle C\n★★★★★\nI had the most wonderful experience at Riccobene Ass. Family Dentistry on yesterday! I've always had dental anxiety because every one that I've visited, always did something wrong, but here, was totally different. My dental hygienist made me feel comfortable and she was very gentle while working on me. She told me everything that she was doing to me from start to finish and listened to my concerns. My dentist was the same - he eased my fears and made me eager to come back for further work that needs to be done so that I can comfortably smile again! Thank you so very much for being professional, caring and understanding!\nTiffany P\n★★★★★\nThis is a great dentist. Did an appointment on line to find out that it didn't go through. I showed up for my 8:00 am appointment and she told me she couldn't find me, but immediately found me an appointment so that I wouldn't have to reschedule. Didn't have to wait a long time. They are very friendly and efficient.\nKrista F\n★★★★★\nI am new to NC and found this Dentist researching my insurance and patient reviews. I just had my first visit today and I was very impressed. Everyone was on time and very helpful. They are very up to date on their equipment, even showing off some stuff I had never seen before! My hygienist [...] was great! Very friendly and efficient. I believe I made the right choice for my new dentist!\nEric M\nOUR OFFICE\n\nLocated off Hanes Mall Boulevard near I-40, our Winston-Salem office is convenient to the Hanes Mall area, Ardmore, and nearby Clemmons. Patients enjoy easy access from major roads including Stratford Road and Silas Creek Parkway.\n\nRiccobene Family Dentistry in Winston-Salem combines modern dental technology with a patient-centered philosophy. From families in Westgate and Sherwood Forest to those commuting from downtown Winston Salem, we make it simple to receive the care you need in a welcoming environment.\n\nOffice Amenities\nFree WiFi\nComplimentary Beverages\nFamily-Friendly\nFree Parking\nFlexible Scheduling\nSCHEDULE A VISIT TODAY\nWHY CHOOSE RICCOBENE?\n\nWe believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.\n\nSame-Day Appointments\nUrgent dental needs? We offer same-day or next-day appointments in many locations for emergency care.\nFamily-Friendly\nWe provide gentle, expert dental care for children from their very first tooth through their teenage years.\nState-Of-The-Art\nCutting-edge technology and advanced treatment options bring the best that modern dental innovation has to offer to our offices.\nComprehensive Care\nOur expert provider offers a range of services from preventative, cosmetic, routine dental care and more.\nEmergency Dental Services\n24/7 emergency support when you need immediate dental care.\nOUR COMMITMENT TO EXCELLENCE\n\nWhen you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.\n\n500,000+\nHappy Smiles\nPatients served with exceptional care\n4.8\nAvg Google Rating\nfrom more than 28,000 reviews\n25\nYears In Business\nTrusted by the local community\nOTHER NEARBY LOCATIONS\n\nCan't make it to our Winston-Salem office? We have other convenient locations in the area to serve you with the same exceptional dental care.\n\nClemmons\n4168 Clemmons Rd, Clemmons, NC 27012\n336-331-9368\nCosmetic\nHygiene\nGeneral\nBOOK NOW\nVIEW DETAILS\nHigh Point\n2783 NC-68, Suite 107, High Point, NC 27265\n336-841-0000\nGeneral\nHygiene\nCosmetic\nSedation\nInvisalign®\nBOOK NOW\nVIEW DETAILS\nMocksville\n191 Cooper Creek Dr Suite 106, Mocksville, NC 27028\n336.753.6630\nGeneral\nHygiene\nEmergency\nCosmetic\nBOOK NOW\nVIEW DETAILS\nView all Locations\nPAYMENT OPTIONS & MEMBERSHIP PLANS\n\nQuality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients, ensuring you get the best dentist in Winston Salem.\n\nInsurance Accepted\nWe accept most major dental insurance plans\nDelta Dental\nBlue Cross Blue Shield\nAetna\nCigna\nMetlife\nUnited Heathcare\nFlexible Financing\nMultiple payment options to fit your budget\nSunbit\n0% Interest Plans\nMonthly Payment Plans\nHSA/FSA Accepted\nMembership Plans\nAffordable care for uninsured patients\nAnnual Cleanings\nX-rays Included\n10% Off Treatments\nNo Insurance Required\nAFFORDABLE MEMBERSHIP PLANS\n\nSave money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.\n\nAdult Preventative Plan\n$39\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nADULT PREVENTATIVE PLAN\nChild Preventative Plan\n$36\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nCHILD PREVENTATIVE PLAN\nFREQUENTLY ASKED QUESTIONS\nAre emergency dental services available in Winston-Salem?\n\nWe make an effort to see all emergency patients same day or next day, but there may be instances where we’ll refer you to another of our convenient practices if schedules are tight so make sure you’re seen as soon as possible.\n\nCan I get cosmetic dentistry in Winston-Salem?\n\nYes - cosmetic procedures and treatments ranging from tooth whitening to veneers to Invisalign® are all availalbe at our Winston-Salem location.\n\nDo Winston-Salem dentists treat children and teens?\n\nYes - pediatric care is available. Bring your whole family and we’ll keep everyone’s smile bright for the next family photo.\n\nHow do I schedule an appointment with a Winston-Salem dentist?\n\nGive us a call at (336) 331-3500 or book online and we’ll get you on the schedule as soon as possible.\n\nWhat services do dentists in Winston-Salem provide?\n\nA wide variety of services are available in our Winston-Salem location including general & pediatric dentistry, routine hygiene, emergency dentistry, cosmetic dentistry (including whitening) and dental implants.\n\nREADY TO SCHEDULE? CONTACT US\n\nTake the first step towards optimal oral health. Contact our Winston-Salem office to schedule your appointment or ask any questions about our dental services.\n\nSend us a Message\nFill out the form below and we'll get back to you within 24 hours.\nFirst Name*\nLast Name*\nEmail*\nPhone*\nHow Can We Help?\nI have dental insurance and would like to verify my benefits\nI prefer a phone call instead of email\nThis is a dental emergency\nGet in Touch\n\nFill out the form below and we'll get back to you within 24 hours.\n\nVisit Our Office\n201 Charlois Blvd, Winston-Salem, NC 27103\nCall Us\n(336) 331-3500\nEmergency line available 24/7\nEmail Us\nwinstonpc@brushandfloss.com\nOffice Hours\nMonday: 8:00 AM - 5:30 PM\nTuesday: 8:00 AM - 5:30 PM\nWednesday: 8:00 AM - 5:30 PM\nThursday: 8:00 AM - 5:30 PM\nFriday: 8:00 AM - 5:30 PM\nBOOK APPOINTMENT ONLINE\nCALL FOR EMERGENCY\nLOCATIONS\nSERVICES\nWHAT TO EXPECT\nJOIN OUR TEAM\nPARTNER WITH US\nCONTACT US\nHIPAA\nPRIVACY POLICY\nSEARCH",
+  "wordCount": 2092
+}

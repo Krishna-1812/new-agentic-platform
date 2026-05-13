@@ -45,6 +45,48 @@ const TOOLS = [
     badge: 'Content',
   },
   {
+    id: 'image-alt-audit',
+    path: '/image-alt-audit',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+      </svg>
+    ),
+    label: 'Image Alt Tag Audit',
+    tagline: 'Bulk alt tag generation for location pages',
+    description: 'Scrape 100+ location pages, classify every image by type (doctor, service, hero, plan), generate SEO-optimised alt tags and clean filenames, and export a colour-coded Excel workbook.',
+    features: ['Batch scrape 100+ pages', 'Rule-based image classification', 'GPT-4o vision for hero banners', 'Suggested filenames per image', 'RENAME_CRITICAL flagging', 'Export to 4-sheet .xlsx'],
+    badge: 'Images',
+  },
+  {
+    id: 'team-insights',
+    path: '/team-insights',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+    label: 'Team Insights',
+    tagline: 'Live SEO PM dashboard from Google Sheets',
+    description: 'Connect to your team\'s task management sheet and surface daily intelligence — blocked tasks, overdue work, WIP limits, capacity vs load, client health, and team-level signals.',
+    features: ['Morning triage dashboard', 'Monday planning & capacity', 'Weekly review & slippage', 'Client health & cadence', 'Team health & pitch pipeline'],
+    badge: 'PM',
+  },
+  {
+    id: 'agent-readiness-audit',
+    path: '/agent-readiness-audit',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+      </svg>
+    ),
+    label: 'Agent Readiness Audit',
+    tagline: 'Score any site\'s AI agent readiness in 15s',
+    description: 'Run 13 automated checks across discoverability, content negotiation, bot access rules, and protocol support (MCP, OAuth, Agent Skills). Get a 0–100 score, category breakdown, and a GPT-generated CMO brief with prioritized roadmap.',
+    features: ['robots.txt, sitemap & Link headers', 'AI bot rules & Content-Signal', 'MCP server card detection', 'OAuth / OIDC discovery', 'Agent Skills index check', 'GPT-4o CMO executive brief'],
+    badge: 'AI Audit',
+  },
+  {
     id: 'keyword-research',
     path: '/keyword-research',
     icon: (
@@ -60,9 +102,18 @@ const TOOLS = [
   },
 ];
 
+const EXTENDED_TOOLS = new Set([
+  'knowledge-base',
+  'article-recommendation',
+  'image-alt-audit',
+  'agent-readiness-audit',
+  'keyword-research',
+]);
+
 export default function HomePage() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, role } = useAuth();
+  const visibleTools = role === 'seo' ? TOOLS : TOOLS.filter(t => EXTENDED_TOOLS.has(t.id));
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
@@ -99,7 +150,7 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {TOOLS.map(tool => (
+          {visibleTools.map(tool => (
             <button
               key={tool.id}
               onClick={() => navigate(tool.path)}

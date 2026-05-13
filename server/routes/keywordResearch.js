@@ -21,7 +21,7 @@ router.post('/init', (req, res) => {
 
   const token = generateToken();
   sessions.set(token, { keyword: keyword.trim(), client: client || null, feedbackKbIds: feedbackKbIds || null });
-  setTimeout(() => sessions.delete(token), 120000);
+  setTimeout(() => sessions.delete(token), 120000); // TTL for unconsumed tokens
   res.json({ token });
 });
 
@@ -40,10 +40,14 @@ router.get('/stream/:token', async (req, res) => {
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
+  let isClosed = false;
+  res.on('close', () => { isClosed = true; });
+
   const emit = (event, data) => {
+    if (isClosed) return;
     try {
       res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-    } catch (e) { /* client disconnected */ }
+    } catch (e) { isClosed = true; }
   };
 
   try {
@@ -57,24 +61,30 @@ router.get('/stream/:token', async (req, res) => {
 
     emit('urls', { urls: top3 });
 
-    // ── Step 2: SEMrush per URL ──────────────────────────────────────────
+    // ── Step 2: SEMrush per URL (parallel, max 3 concurrent) ────────────
     emit('step', { id: 'semrush', status: 'active', message: 'Fetching keyword rankings from SEMrush…' });
 
+    const CONCURRENCY = 3;
     const allKeywords = [];
 
-    for (const urlObj of top3) {
-      emit('url_status', { url: urlObj.url, title: urlObj.title, status: 'loading' });
-      try {
-        const keywords = await getUrlKeywords(urlObj.url, semrushKey, 30);
-        allKeywords.push(...keywords);
-        emit('url_keywords', { url: urlObj.url, title: urlObj.title, keywords, status: 'done' });
-      } catch (err) {
-        // Surface invalid key error immediately
-        if (err.message.includes('Invalid SEMrush')) {
-          throw err;
+    for (let i = 0; i < top3.length; i += CONCURRENCY) {
+      if (isClosed) break;
+      const batch = top3.slice(i, i + CONCURRENCY);
+      batch.forEach(urlObj => emit('url_status', { url: urlObj.url, title: urlObj.title, status: 'loading' }));
+
+      const batchResults = await Promise.all(batch.map(async urlObj => {
+        try {
+          const keywords = await getUrlKeywords(urlObj.url, semrushKey, 30);
+          emit('url_keywords', { url: urlObj.url, title: urlObj.title, keywords, status: 'done' });
+          return keywords;
+        } catch (err) {
+          if (err.message.includes('Invalid SEMrush')) throw err;
+          emit('url_keywords', { url: urlObj.url, title: urlObj.title, keywords: [], status: 'error', error: err.message });
+          return [];
         }
-        emit('url_keywords', { url: urlObj.url, title: urlObj.title, keywords: [], status: 'error', error: err.message });
-      }
+      }));
+
+      allKeywords.push(...batchResults.flat());
     }
 
     const successCount = allKeywords.length;

@@ -38,10 +38,14 @@ router.get('/stream/:token', async (req, res) => {
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
+  let isClosed = false;
+  res.on('close', () => { isClosed = true; });
+
   const emit = (event, data) => {
+    if (isClosed) return;
     try {
       res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-    } catch (e) { /* client disconnected */ }
+    } catch (e) { isClosed = true; }
   };
 
   try {

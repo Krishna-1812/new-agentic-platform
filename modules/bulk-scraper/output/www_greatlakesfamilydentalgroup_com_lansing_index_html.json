@@ -1,0 +1,642 @@
+{
+  "url": "https://www.greatlakesfamilydentalgroup.com/lansing/index.html",
+  "statusCode": 403,
+  "scrapedAt": "2026-04-14T14:40:19.770Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "403 Page | Great Lakes Family Dental Group",
+  "metaDescription": "403 Error We're sorry, you are not authorized to access this page. Return to homepage",
+  "canonical": "https://www.greatlakesfamilydentalgroup.com/403-page",
+  "allMeta": {
+    "description": "403 Error We're sorry, you are not authorized to access this page. Return to homepage",
+    "Generator": "Drupal 10 (https://www.drupal.org)",
+    "MobileOptimized": "width",
+    "HandheldFriendly": "true",
+    "viewport": "width=device-width, initial-scale=1, maximum-scale=1",
+    "facebook-domain-verification": "szu200a9sfif4yyxgdv6v84hdplsnt"
+  },
+  "ogTags": {},
+  "twitterTags": {},
+  "headings": {
+    "h1": [
+      "Access Denied"
+    ],
+    "h2": [
+      "Breadcrumb",
+      "403 Error",
+      "Footer"
+    ],
+    "h3": [
+      "Partners and Associations"
+    ],
+    "h4": [],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h1",
+      "text": "Access Denied"
+    },
+    {
+      "tag": "h2",
+      "text": "Breadcrumb"
+    },
+    {
+      "tag": "h2",
+      "text": "403 Error"
+    },
+    {
+      "tag": "h2",
+      "text": "Footer"
+    },
+    {
+      "tag": "h3",
+      "text": "Partners and Associations"
+    }
+  ],
+  "paragraphs": [
+    "We're sorry, you are not authorized to access this page.",
+    "©2026 Great Lakes Family Dental Group – All Rights Reserved.",
+    "Great Lakes Family Dental Group is a 42 North Dental Care, PLLC practice and is owned and operated by licensed dentists."
+  ],
+  "schemaMarkup": [],
+  "images": [
+    {
+      "src": "https://www.greatlakesfamilydentalgroup.com/themes/custom/greatlakesdptheme/images/logo.svg",
+      "alt": "Greak Lake | Logo"
+    },
+    {
+      "src": "https://www.greatlakesfamilydentalgroup.com/sites/default/files/2022-03/gradient-image-for-generic-pages-banner_0.jpg",
+      "alt": "Sitemap Banner Image"
+    },
+    {
+      "src": "https://www.greatlakesfamilydentalgroup.com/themes/custom/greatlakesdptheme/images/ada-footer-logo.png",
+      "alt": "ADA"
+    },
+    {
+      "src": "https://www.greatlakesfamilydentalgroup.com/themes/custom/greatlakesdptheme/images/invisalign-logo.png",
+      "alt": "Invisalign"
+    },
+    {
+      "src": "https://www.greatlakesfamilydentalgroup.com/sites/default/files/2022-03/mda-white-logo.png",
+      "alt": "MDS"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/mi/east-lansing#main-content",
+      "text": "Skip to main content"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices",
+      "text": "Locations"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/mi/almont",
+      "text": "Almont"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/mi/blissfield",
+      "text": "Blissfield"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/mi/charlotte",
+      "text": "Charlotte"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/mi/howell",
+      "text": "Howell"
+    },
+    {
+      "href": "https://indianagentledentist.com/locations/shadeland",
+      "text": "Indianapolis"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/mi/livonia",
+      "text": "Livonia"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/",
+      "text": "Muncie"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/mi/saginaw",
+      "text": "Saginaw"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/mi/tecumseh",
+      "text": "Tecumseh"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/cosmetic-dentistry",
+      "text": "Cosmetic Dentistry"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/cosmetic-dentistry/whitening",
+      "text": "Whitening"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/cosmetic-dentistry/veneers",
+      "text": "Veneers"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/crowns-bridges",
+      "text": "Crowns & Bridges"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/dental-fillings",
+      "text": "Dental Fillings"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/emergency-dental-care",
+      "text": "Emergency Dental Care"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/gum-treatments",
+      "text": "Gum Treatments"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/implants",
+      "text": "Implants"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/oral-surgery",
+      "text": "Oral Surgery"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/oral-surgery/extractions",
+      "text": "Extractions"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/oral-surgery/wisdom-teeth-extractions",
+      "text": "Wisdom Teeth"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/orthodontics",
+      "text": "Orthodontics"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/orthodontics/braces",
+      "text": "Braces"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/orthodontics/invisalign",
+      "text": "Invisalign"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/partial-and-full-dentures",
+      "text": "Partial & Full Dentures"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry",
+      "text": "Preventive Care"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry#sst-DentalExams",
+      "text": "Exams"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry#sst-DigitalXRays",
+      "text": "Digital X-rays"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry#sst-TeethCleaning",
+      "text": "Cleaning"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry#sst-Curodont",
+      "text": "Curodont"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry#sst-FluorideTreatments",
+      "text": "Fluoride"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry#sst-OralCancerScreening",
+      "text": "Oral Cancer Screening"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry#sst-Sealants",
+      "text": "Sealants"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/pediatric-dentistry",
+      "text": "Pediatric Dentistry"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/root-canals",
+      "text": "Root Canals"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/sedation-dentistry",
+      "text": "Sedation Dentistry"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/sleep-apnea-dentistry",
+      "text": "Sleep Dentistry"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/tmd-tmj-treatment",
+      "text": "TMD/TMJ Treatment"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-payment-options",
+      "text": "Payment Options"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-payment-options",
+      "text": "Payment & Insurance"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-discounts",
+      "text": "Dental Offers"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-discounts/new-patient-offer",
+      "text": "New Patient Offer"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/insurance-benefits",
+      "text": "Insurance Benefits"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-discounts/get-smile-you-deserve",
+      "text": "Consultations"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/resources",
+      "text": "Patient Resources"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/resources/articles/what-expect-your-first-dental-appointment",
+      "text": "What to Expect at Your First Visit"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/resources/articles/dental-care-definitions",
+      "text": "Dental Definitions"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/resources/faqs",
+      "text": "FAQs"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/resources/articles",
+      "text": "Articles"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/about-us",
+      "text": "About Us"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/about-us/health-and-safety",
+      "text": "Health & Safety"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/about-us/meet-our-dentists",
+      "text": "Meet Our Dentists"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/about-us/partners",
+      "text": "Partners"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/about-us/contact-us",
+      "text": "Contact Us"
+    },
+    {
+      "href": "javascript:void(0);",
+      "text": ""
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/request-an-appointment",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/",
+      "text": "Great Lakes Family Dental Group"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/",
+      "text": "RETURN TO HOMEPAGE"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices",
+      "text": "Locations"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-payment-options",
+      "text": "Payment Options"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/resources",
+      "text": "Patient Resources"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/about-us",
+      "text": "About Us"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/health-and-safety",
+      "text": "Health & Safety"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/disclaimer",
+      "text": "Great Lakes Family Dental Group is a 42 North Dental Care, PLLC practice and is owned and operated by licensed dentists."
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/sitemap",
+      "text": "Sitemap"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/privacy-policy",
+      "text": "Privacy Policy"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/disclaimer",
+      "text": "Disclaimer"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/terms-of-use",
+      "text": "Terms of Use"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/request-an-appointment",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices",
+      "text": "Locations"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/mi/east-lansing#",
+      "text": "Back"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices",
+      "text": "Locations"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/almont",
+      "text": "Almont"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/blissfield",
+      "text": "Blissfield"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/charlotte",
+      "text": "Charlotte"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/howell",
+      "text": "Howell"
+    },
+    {
+      "href": "https://indianagentledentist.com/locations/shadeland",
+      "text": "Indianapolis"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/livonia",
+      "text": "Livonia"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/",
+      "text": "Muncie"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/saginaw",
+      "text": "Saginaw"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/tecumseh",
+      "text": "Tecumseh"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/mi/east-lansing#",
+      "text": "Back"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/cosmetic-dentistry",
+      "text": "Cosmetic Dentistry"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/cosmetic-dentistry/whitening",
+      "text": "Whitening"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/cosmetic-dentistry/veneers",
+      "text": "Veneers"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/crowns-bridges",
+      "text": "Crowns & Bridges"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/dental-fillings",
+      "text": "Dental Fillings"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/emergency-dental-care",
+      "text": "Emergency Dental Care"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/gum-treatments",
+      "text": "Gum Treatments"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/implants",
+      "text": "Implants"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/oral-surgery",
+      "text": "Oral Surgery"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/oral-surgery/extractions",
+      "text": "Extractions"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/oral-surgery/wisdom-teeth-extractions",
+      "text": "Wisdom Teeth"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/orthodontics",
+      "text": "Orthodontics"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/orthodontics/braces",
+      "text": "Braces"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/orthodontics/invisalign",
+      "text": "Invisalign"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/partial-and-full-dentures",
+      "text": "Partial & Full Dentures"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry",
+      "text": "Preventive Care"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry#sst-DentalExams",
+      "text": "Exams"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry#sst-DigitalXRays",
+      "text": "Digital X-rays"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry#sst-TeethCleaning",
+      "text": "Cleaning"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry#sst-Curodont",
+      "text": "Curodont"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry#sst-FluorideTreatments",
+      "text": "Fluoride"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry#sst-OralCancerScreening",
+      "text": "Oral Cancer Screening"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/preventive-dentistry#sst-Sealants",
+      "text": "Sealants"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/pediatric-dentistry",
+      "text": "Pediatric Dentistry"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/root-canals",
+      "text": "Root Canals"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/sedation-dentistry",
+      "text": "Sedation Dentistry"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/sleep-apnea-dentistry",
+      "text": "Sleep Dentistry"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-services/tmd-tmj-treatment",
+      "text": "TMD/TMJ Treatment"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-payment-options",
+      "text": "Payment Options"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/mi/east-lansing#",
+      "text": "Back"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-payment-options",
+      "text": "Payment Options"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-payment-options",
+      "text": "Payment & Insurance"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-discounts",
+      "text": "Dental Offers"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-discounts/new-patient-offer",
+      "text": "New Patient Offer"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/insurance-benefits",
+      "text": "Insurance Benefits"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-discounts/get-smile-you-deserve",
+      "text": "Consultations"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/resources",
+      "text": "Patient Resources"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/mi/east-lansing#",
+      "text": "Back"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/resources",
+      "text": "Patient Resources"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/resources/articles/what-expect-your-first-dental-appointment",
+      "text": "What to Expect at Your First Visit"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/resources/articles/dental-care-definitions",
+      "text": "Dental Definitions"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/resources/faqs",
+      "text": "FAQs"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/resources/articles",
+      "text": "Articles"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/about-us",
+      "text": "About Us"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/dental-offices/mi/east-lansing#",
+      "text": "Back"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/about-us",
+      "text": "About Us"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/about-us/health-and-safety",
+      "text": "Health & Safety"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/about-us/meet-our-dentists",
+      "text": "Meet Our Dentists"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/about-us/partners",
+      "text": "Partners"
+    },
+    {
+      "href": "https://www.greatlakesfamilydentalgroup.com/about-us/contact-us",
+      "text": "Contact Us"
+    }
+  ],
+  "bodyText": "Skip to main content\nAccess Denied\nBreadcrumb\nGreat Lakes Family Dental Group403 Page\n403 Error\n\nWe're sorry, you are not authorized to access this page.\n\nRETURN TO HOMEPAGE\nLocationsDental ServicesPayment OptionsPatient ResourcesAbout UsHealth & Safety\nPartners and Associations\n\n©2026 Great Lakes Family Dental Group – All Rights Reserved.\n\nGreat Lakes Family Dental Group is a 42 North Dental Care, PLLC practice and is owned and operated by licensed dentists.\n\nSitemapPrivacy PolicyDisclaimerTerms of Use",
+  "wordCount": 73
+}

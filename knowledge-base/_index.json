@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-04-01",
+  "last_updated": "2026-04-16",
   "knowledge_bases": [
     {
       "id": "dental-service-organizations",
@@ -7,8 +7,15 @@
       "client": "global",
       "path": "industry/dental-service-organizations.md",
       "active": true,
-      "tags": ["dental", "dso", "industry"],
-      "linked_modules": ["content-research", "keyword-research"]
+      "tags": [
+        "dental",
+        "dso",
+        "industry"
+      ],
+      "linked_modules": [
+        "content-research",
+        "keyword-research"
+      ]
     },
     {
       "id": "mental-health-organizations",
@@ -16,8 +23,16 @@
       "client": "global",
       "path": "industry/mental-health-organizations.md",
       "active": true,
-      "tags": ["behavioral-health", "mental-health", "hipaa", "industry"],
-      "linked_modules": ["content-research", "keyword-research"]
+      "tags": [
+        "behavioral-health",
+        "mental-health",
+        "hipaa",
+        "industry"
+      ],
+      "linked_modules": [
+        "content-research",
+        "keyword-research"
+      ]
     },
     {
       "id": "gentle-dental",
@@ -25,8 +40,15 @@
       "client": "gentle-dental",
       "path": "brand/gentle-dental.md",
       "active": true,
-      "tags": ["dental", "dso", "brand"],
-      "linked_modules": ["content-research", "keyword-research"]
+      "tags": [
+        "dental",
+        "dso",
+        "brand"
+      ],
+      "linked_modules": [
+        "content-research",
+        "keyword-research"
+      ]
     },
     {
       "id": "great-lakes",
@@ -34,8 +56,15 @@
       "client": "great-lakes",
       "path": "brand/great-lakes.md",
       "active": true,
-      "tags": ["dental", "dso", "brand"],
-      "linked_modules": ["content-research", "keyword-research"]
+      "tags": [
+        "dental",
+        "dso",
+        "brand"
+      ],
+      "linked_modules": [
+        "content-research",
+        "keyword-research"
+      ]
     },
     {
       "id": "riccobene",
@@ -43,8 +72,15 @@
       "client": "riccobene",
       "path": "brand/riccobene.md",
       "active": true,
-      "tags": ["dental", "dso", "brand"],
-      "linked_modules": ["content-research", "keyword-research"]
+      "tags": [
+        "dental",
+        "dso",
+        "brand"
+      ],
+      "linked_modules": [
+        "content-research",
+        "keyword-research"
+      ]
     },
     {
       "id": "clear-behavioral-health",
@@ -52,8 +88,14 @@
       "client": "clear-behavioral-health",
       "path": "brand/clear-behavioral-health.md",
       "active": true,
-      "tags": ["behavioral-health", "brand"],
-      "linked_modules": ["content-research", "keyword-research"]
+      "tags": [
+        "behavioral-health",
+        "brand"
+      ],
+      "linked_modules": [
+        "content-research",
+        "keyword-research"
+      ]
     },
     {
       "id": "neuro-wellness-spa",
@@ -61,8 +103,14 @@
       "client": "neuro-wellness-spa",
       "path": "brand/neuro-wellness-spa.md",
       "active": true,
-      "tags": ["behavioral-health", "brand"],
-      "linked_modules": ["content-research", "keyword-research"]
+      "tags": [
+        "behavioral-health",
+        "brand"
+      ],
+      "linked_modules": [
+        "content-research",
+        "keyword-research"
+      ]
     },
     {
       "id": "new-life-house",
@@ -70,8 +118,14 @@
       "client": "new-life-house",
       "path": "brand/new-life-house.md",
       "active": true,
-      "tags": ["behavioral-health", "brand"],
-      "linked_modules": ["content-research", "keyword-research"]
+      "tags": [
+        "behavioral-health",
+        "brand"
+      ],
+      "linked_modules": [
+        "content-research",
+        "keyword-research"
+      ]
     },
     {
       "id": "article-creation",
@@ -79,8 +133,14 @@
       "client": "global",
       "path": "best-practices/article-creation.md",
       "active": true,
-      "tags": ["content", "seo", "best-practices"],
-      "linked_modules": ["content-research"]
+      "tags": [
+        "content",
+        "seo",
+        "best-practices"
+      ],
+      "linked_modules": [
+        "content-research"
+      ]
     },
     {
       "id": "keyword-research-bp",
@@ -88,8 +148,30 @@
       "client": "global",
       "path": "best-practices/keyword-research.md",
       "active": true,
-      "tags": ["seo", "keywords", "best-practices"],
-      "linked_modules": ["keyword-research"]
+      "tags": [
+        "seo",
+        "keywords",
+        "best-practices"
+      ],
+      "linked_modules": [
+        "keyword-research"
+      ]
+    },
+    {
+      "id": "gentle-dental-feedback-2026-q2",
+      "category": "client-feedback",
+      "client": "gentle-dental",
+      "path": "client-feedback/gentle-dental/2026-q2.md",
+      "active": true,
+      "tags": [
+        "gentle-dental",
+        "client-feedback",
+        "2026-q2"
+      ],
+      "linked_modules": [
+        "content-research",
+        "keyword-research"
+      ]
     }
   ]
 }

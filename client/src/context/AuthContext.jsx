@@ -3,27 +3,36 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  // 'loading' | 'authenticated' | 'unauthenticated'
   const [authState, setAuthState] = useState('loading');
+  const [role, setRole] = useState(null); // 'seo' | 'extended' | null
 
   useEffect(() => {
-    // On app load, verify session cookie with the server
     fetch('/api/auth/verify', { credentials: 'include' })
-      .then(r => setAuthState(r.ok ? 'authenticated' : 'unauthenticated'))
+      .then(async r => {
+        if (r.ok) {
+          const data = await r.json();
+          setRole(data.role || 'seo');
+          setAuthState('authenticated');
+        } else {
+          setAuthState('unauthenticated');
+        }
+      })
       .catch(() => setAuthState('unauthenticated'));
   }, []);
 
-  function markAuthenticated() {
+  function markAuthenticated(userRole) {
+    setRole(userRole || 'seo');
     setAuthState('authenticated');
   }
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    setRole(null);
     setAuthState('unauthenticated');
   }
 
   return (
-    <AuthContext.Provider value={{ authState, markAuthenticated, logout }}>
+    <AuthContext.Provider value={{ authState, role, markAuthenticated, logout }}>
       {children}
     </AuthContext.Provider>
   );

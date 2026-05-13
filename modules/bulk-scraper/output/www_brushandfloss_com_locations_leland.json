@@ -1,0 +1,1235 @@
+{
+  "url": "https://www.brushandfloss.com/locations/leland",
+  "statusCode": 200,
+  "scrapedAt": "2026-04-14T14:54:35.637Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "Dentist in Leland, NC | Riccobene Associates Family Dentistry",
+  "metaDescription": "Dentist in Leland NC, providing family, pediatric, cosmetic, emergency, and implant care with modern comfort. Call 910-663-1223 to schedule your visit today!",
+  "canonical": "https://www.brushandfloss.com/locations/leland",
+  "allMeta": {
+    "description": "Dentist in Leland NC, providing family, pediatric, cosmetic, emergency, and implant care with modern comfort. Call 910-663-1223 to schedule your visit today!",
+    "og:title": "Riccobene Associates Family Dentistry | Leland, NC",
+    "og:description": "Dentist in Leland NC, providing family, pediatric, cosmetic, emergency, and implant care with modern comfort. Call 910-663-1223 to schedule your visit today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317c7_Resize%20image%20project%20(1).jpeg",
+    "twitter:title": "Riccobene Associates Family Dentistry | Leland, NC",
+    "twitter:description": "Dentist in Leland NC, providing family, pediatric, cosmetic, emergency, and implant care with modern comfort. Call 910-663-1223 to schedule your visit today!",
+    "twitter:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317c7_Resize%20image%20project%20(1).jpeg",
+    "og:type": "website",
+    "twitter:card": "summary_large_image",
+    "viewport": "width=device-width, initial-scale=1",
+    "generator": "Webflow"
+  },
+  "ogTags": {
+    "og:title": "Riccobene Associates Family Dentistry | Leland, NC",
+    "og:description": "Dentist in Leland NC, providing family, pediatric, cosmetic, emergency, and implant care with modern comfort. Call 910-663-1223 to schedule your visit today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317c7_Resize%20image%20project%20(1).jpeg",
+    "og:type": "website"
+  },
+  "twitterTags": {
+    "twitter:card": "summary_large_image"
+  },
+  "headings": {
+    "h1": [
+      "TRUSTED DENTISTS IN LELAND, NC FOR COMPLETE FAMILY DENTAL CARE"
+    ],
+    "h2": [
+      "MEET OUR DOCTORS",
+      "OUR SERVICES",
+      "WHAT OUR PATIENTS SAY",
+      "OUR OFFICE",
+      "WHY CHOOSE RICCOBENE?",
+      "OUR COMMITMENT TO EXCELLENCE",
+      "OTHER NEARBY LOCATIONS",
+      "PAYMENT OPTIONS & MEMBERSHIP PLANS",
+      "AFFORDABLE MEMBERSHIP PLANS",
+      "FREQUENTLY ASKED QUESTIONS",
+      "READY TO SCHEDULE? CONTACT US"
+    ],
+    "h3": [
+      "Dustin Timmerman, DDS",
+      "Taylor B. Mast, DMD",
+      "Anna Rovetto, DDS",
+      "Melissa Sepúlveda, DMD",
+      "Alexander Arbelo, DMD",
+      "Office Amenities",
+      "500,000+",
+      "4.8",
+      "25",
+      "What types of dental services are offered for families and children in Leland?",
+      "How do I schedule a dental appointment at the Leland office?",
+      "Do you offer same-day crowns or restorations in Leland?",
+      "Can I get dental implants or a consultation at your Leland location?",
+      "Are emergency dental appointments available in Leland?",
+      "Does the Leland office offer cosmetic treatments like whitening or veneers?",
+      "What hours is the Leland office open, and is Saturday available?",
+      "Do you accept dental insurance or offer payment plans in Leland?",
+      "Where is the Leland office located, and what parking/accessibility is available?",
+      "Send us a Message",
+      "Get in Touch",
+      "Request An Appointment"
+    ],
+    "h4": [],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h1",
+      "text": "TRUSTED DENTISTS IN LELAND, NC FOR COMPLETE FAMILY DENTAL CARE"
+    },
+    {
+      "tag": "h2",
+      "text": "MEET OUR DOCTORS"
+    },
+    {
+      "tag": "h3",
+      "text": "Dustin Timmerman, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Taylor B. Mast, DMD"
+    },
+    {
+      "tag": "h3",
+      "text": "Anna Rovetto, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Melissa Sepúlveda, DMD"
+    },
+    {
+      "tag": "h3",
+      "text": "Alexander Arbelo, DMD"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR SERVICES"
+    },
+    {
+      "tag": "h2",
+      "text": "WHAT OUR PATIENTS SAY"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR OFFICE"
+    },
+    {
+      "tag": "h3",
+      "text": "Office Amenities"
+    },
+    {
+      "tag": "h2",
+      "text": "WHY CHOOSE RICCOBENE?"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR COMMITMENT TO EXCELLENCE"
+    },
+    {
+      "tag": "h3",
+      "text": "500,000+"
+    },
+    {
+      "tag": "h3",
+      "text": "4.8"
+    },
+    {
+      "tag": "h3",
+      "text": "25"
+    },
+    {
+      "tag": "h2",
+      "text": "OTHER NEARBY LOCATIONS"
+    },
+    {
+      "tag": "h2",
+      "text": "PAYMENT OPTIONS & MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "AFFORDABLE MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "FREQUENTLY ASKED QUESTIONS"
+    },
+    {
+      "tag": "h3",
+      "text": "What types of dental services are offered for families and children in Leland?"
+    },
+    {
+      "tag": "h3",
+      "text": "How do I schedule a dental appointment at the Leland office?"
+    },
+    {
+      "tag": "h3",
+      "text": "Do you offer same-day crowns or restorations in Leland?"
+    },
+    {
+      "tag": "h3",
+      "text": "Can I get dental implants or a consultation at your Leland location?"
+    },
+    {
+      "tag": "h3",
+      "text": "Are emergency dental appointments available in Leland?"
+    },
+    {
+      "tag": "h3",
+      "text": "Does the Leland office offer cosmetic treatments like whitening or veneers?"
+    },
+    {
+      "tag": "h3",
+      "text": "What hours is the Leland office open, and is Saturday available?"
+    },
+    {
+      "tag": "h3",
+      "text": "Do you accept dental insurance or offer payment plans in Leland?"
+    },
+    {
+      "tag": "h3",
+      "text": "Where is the Leland office located, and what parking/accessibility is available?"
+    },
+    {
+      "tag": "h2",
+      "text": "READY TO SCHEDULE? CONTACT US"
+    },
+    {
+      "tag": "h3",
+      "text": "Send us a Message"
+    },
+    {
+      "tag": "h3",
+      "text": "Get in Touch"
+    },
+    {
+      "tag": "h3",
+      "text": "Request An Appointment"
+    }
+  ],
+  "paragraphs": [
+    "Our first-rate team offers comfortable and modern family dental care for the Leland community.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Comprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Welcome to our Leland office! Right off West Gate Dr, reachable via Highway 17, our Leland location provides care for patients traveling from the nearby neighborhoods such as Belville, Navassa, Wilmington, and more. With our highly advanced technology and an experienced team, we provide the comfort and confidence you need for a healthy, pain-free smile!",
+    "Our modern, inviting space is filled with a professional, experienced team that strongly believes that dental care and treatment start with patient comfort. Therefore, we strive for our office and amenities to be designed with our patients’ health and well-being in mind. Situated in a suburban community that blends small-town charm with convenient access to the Walmart Shopping Center, this location is accessible and easy to travel to. Our Leland office stands out with its peaceful atmosphere, where patients feel supported and leave motivated to take care of their oral health with ease and comfort.",
+    "We believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.",
+    "When you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.",
+    "Can't make it to our Leland office? We have other convenient locations in the area to serve you with the same exceptional dental care.",
+    "Quality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.",
+    "Save money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.",
+    "We provide all the necessary dental services such as routine cleanings and exams, fillings, pediatric dental procedures, gum contouring, fluoride treatment, and so much more!",
+    "To schedule a visit, feel free to call us or book an appointment online to get you in as soon as possible! We look forward to treating you and providing you with the comfort and care you deserve!",
+    "Yes! By using the cutting-edge CAD/CAM technology, we are able to offer same-day crowns that provide permanent, custom-fit, and natural-looking metal-free restoration.",
+    "Yes. Our team of experts is here to help you with all your dental issues, including implants. You can schedule an appointment or request a consultation to make sure you’re getting the best treatment suited available.",
+    "Yes. At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our Leland location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!",
+    "Yes, we understand the impact a confident smile has on our patients' lives, and therefore, we offer cosmetic services that include whitening, veneers, and Invisalign®.",
+    "Our office Hours are Monday-Thursday: 8:00 AM – 5:00 PM, Friday: 8:00 AM – 2:00 PM. We are closed on Saturday and Sunday.",
+    "We accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.",
+    "Our office in Leland is located at 1215 West Gate Drive, Suite 180, Leland, NC 28451. We provide free parking, and the parking lot includes wheelchair-accessible spaces to accommodate all visitors.",
+    "Take the first step towards optimal oral health. Contact our Leland office to schedule your appointment or ask any questions about our dental services.",
+    "Fill out the form below and we'll get back to you within 24 hours.",
+    "Select a Location to schedule an appointment:",
+    "Call our Leland Office at 910-663-1223, or use the form below to request an appointment."
+  ],
+  "schemaMarkup": [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "https://www.brushandfloss.com/locations/leland",
+      "url": "https://www.brushandfloss.com/locations/leland",
+      "name": "Dentist in Leland, NC | Riccobene Associates Family Dentistry",
+      "description": "Dentist in Leland NC, providing family, pediatric, cosmetic, emergency, and implant care with modern comfort. Call 910-663-1223 to schedule your visit today!",
+      "inLanguage": "en-US",
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "https://www.brushandfloss.com/",
+        "url": "https://www.brushandfloss.com/",
+        "name": "Riccobene Associates Family Dentistry"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://www.brushandfloss.com/#organization",
+      "url": "https://www.brushandfloss.com/",
+      "sameAs": [
+        "https://www.facebook.com/RiccobeneDentistry",
+        "https://www.instagram.com/brushandflossnc/"
+      ],
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg"
+      },
+      "brand": {
+        "@type": "Brand",
+        "name": "Riccobene Associates Family Dentistry",
+        "sameAs": [
+          "https://www.facebook.com/RiccobeneDentistry",
+          "https://www.instagram.com/brushandflossnc/"
+        ]
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Insurance Accepted",
+      "insuranceAccepted": [
+        "Delta Dental",
+        "Blue Cross Blue Shield",
+        "Aetna",
+        "Cigna",
+        "MetLife",
+        "UnitedHealthcare"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Dentist",
+      "@id": "https://www.brushandfloss.com/locations/leland/dentist",
+      "name": "Riccobene Associates Family Dentistry",
+      "image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317c7_Resize%20image%20project%20(1).jpeg",
+      "logo": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315cd_riccobene-associates-family-dentistry.png",
+      "url": "/locations/leland",
+      "telephone": "910-663-1223",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "1215 W Gate Dr STE 180, Leland, NC 28451",
+        "addressLocality": "Leland",
+        "addressRegion": "NC",
+        "postalCode": "28451",
+        "addressCountry": "US"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Monday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Tuesday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Wednesday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Thursday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Friday",
+          "opens": "8:00",
+          "closes": "14:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Saturday",
+          "opens": "8:00",
+          "closes": "13:00"
+        }
+      ],
+      "priceRange": "$$",
+      "hasMap": "https://goo.gl/maps/5uib359ATaJq4MMo6",
+      "sameAs": "https://goo.gl/maps/5uib359ATaJq4MMo6"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Dental Services",
+      "serviceOutput": [
+        {
+          "@type": "Service",
+          "name": "Crowns"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Anesthesia"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Bridges"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Implants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Sealants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dentures"
+        }
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Kimberly H."
+      },
+      "reviewBody": "Got me in for a next-day emergency appointment as a new patient. The dentist and the whole staff were very professional and kind. The office was very clean and modern. The check-in and out process was simple. My exam was thorough, and treatment and options were thoroughly explained.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Rebecca L."
+      },
+      "reviewBody": "What a wonderful experience from the minute I walked in the door at Riccobene and Associates in Leland. I had been trying to get a dental problem taken care of for a year at another office, and things were worse than when I started. I decided to stop at the Leland office, and it was like day and night from the minute I walked in, the ladies up front were genuinely nice and helpful!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Ryan M."
+      },
+      "reviewBody": "As always, the service was timely and of high quality. My dental hygienist was professional, skilled, and friendly. The entire staff was welcoming, attentive, and prompt in addressing any requests.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What types of dental services are offered for families and children in Leland?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We provide all the necessary dental services such as routine cleanings and exams, fillings, pediatric dental procedures, gum contouring, fluoride treatment, and so much more!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I schedule a dental appointment at the Leland office?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "To schedule a visit, feel free to call us or book an appointment online to get you in as soon as possible! We look forward to treating you and providing you with the comfort and care you deserve!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you offer same-day crowns or restorations in Leland?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes! By using the cutting-edge CAD/CAM technology, we are able to offer same-day crowns that provide permanent, custom-fit, and natural-looking metal-free restoration."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I get dental implants or a consultation at your Leland location?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Our team of experts is here to help you with all your dental issues, including implants. You can schedule an appointment or request a consultation to make sure you’re getting the best treatment suited available."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are emergency dental appointments available in Leland?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our Leland location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the Leland office offer cosmetic treatments like whitening or veneers?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, we understand the impact a confident smile has on our patients' lives, and therefore, we offer cosmetic services that include whitening, veneers, and Invisalign®."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What hours is the Leland office open, and is Saturday available?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Our office Hours are Monday-Thursday: 8:00 AM – 5:00 PM, Friday: 8:00 AM – 2:00 PM. We are closed on Saturday and Sunday."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you accept dental insurance or offer payment plans in Leland?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where is the Leland office located, and what parking/accessibility is available?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Our office in Leland is located at 1215 West Gate Drive, Suite 180, Leland, NC 28451. We provide free parking, and the parking lot includes wheelchair-accessible spaces to accommodate all visitors."
+          }
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314df_search.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152e_riccobene-banner-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31508_location-map.webp",
+      "alt": "Map showing neighborhoods, parks, schools, and roads including Davis Drive Elementary School, Pleasant Street, and Sunset Plaza."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314e7_location-banner.jpg",
+      "alt": "Smiling woman reclined in dental chair during a dental checkup with dentist holding dental mirror and probe."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31552_call-now-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16f85de9c5a2b6e41ea64_dustin-timmerman-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16f85de9c5a2b6e41ea64_dustin-timmerman-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16f995e28f5f6f49f2da1_taylor-b-mast-dmd.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16f995e28f5f6f49f2da1_taylor-b-mast-dmd.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16fac194603d5ecfba0cd_anna-rovetto-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16fac194603d5ecfba0cd_anna-rovetto-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69ddcaf1550afb7b4355f26c_dr-sepulveda.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69ddcaf1550afb7b4355f26c_dr-sepulveda.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16fd953ea4d3983a61906_alexander-arbelo-dmd.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16fd953ea4d3983a61906_alexander-arbelo-dmd.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3164b_Riccobene2-103.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315aa_Dental-Anesthesia-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317f5_dental-bridges.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69b29dacd38e9840c17ead1c_denture-implants.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ba_nc.dental-sealants-1024x768.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315af_brush-and-floss-dentures-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152b_riccobene-our-office-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152a_riccobene-our-office-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152d_riccobene-our-office-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152c_riccobene-our-office-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31529_riccobene-our-office-icon-five.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31548_riccobene-wcr-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31549_family-friendly.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31547_state-of-the-art.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31527_insurance-accepted-icon-1.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31558_pricing-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31559_pricing-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31522_pricing-1.webp",
+      "alt": "Smiling young woman with long brown hair pointing to her teeth with both index fingers."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31523_pricing-2.webp",
+      "alt": "Smiling young boy sitting in a dental chair during a dental checkup with a dentist holding a dental tool."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154b_email-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154c_alarm-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a location"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland",
+      "text": "LELAND"
+    },
+    {
+      "href": "tel:910-663-1223",
+      "text": "910-663-1223"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "CHANGE LOCATION"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers#jobs",
+      "text": "JOIN THE TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/leland",
+      "text": "SCHEDULE AN APPOINTMENT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": "Home"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a Dentist Near You"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "New Patient Experience"
+    },
+    {
+      "href": "https://www.brushandfloss.com/the-riccobene-way",
+      "text": "The Riccobene Way"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans",
+      "text": "Membership Plans"
+    },
+    {
+      "href": "https://www.brushandfloss.com/reviews",
+      "text": "Patient Reviews"
+    },
+    {
+      "href": "https://patient.payments.health/#/?organizationID=dab6a2b7&locationID=LSXWSH421HHY4",
+      "text": "Make A Payment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/payment",
+      "text": "Online Payments"
+    },
+    {
+      "href": "https://www.brushandfloss.com/articles",
+      "text": "articles"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "Contact us"
+    },
+    {
+      "href": "https://www.paycomonline.net/v4/ats/web.php/jobs?clientkey=B32F01563C7743C293E0AAB35AE1ADEA",
+      "text": "careers"
+    },
+    {
+      "href": "https://www.brushandflossaffiliates.com/",
+      "text": "Become an Affiliate Practice"
+    },
+    {
+      "href": "https://www.brushandfloss-employees.com/",
+      "text": "Employees"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/leland",
+      "text": "BOOK APPOINMENT"
+    },
+    {
+      "href": "tel:910-663-1223",
+      "text": "CALL NOW"
+    },
+    {
+      "href": "tel:910-663-1223",
+      "text": "Call Now"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/dustin-timmerman-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/dustin-timmerman-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/taylor-b-mast-dmd",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/taylor-b-mast-dmd",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/anna-rovetto-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/anna-rovetto-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/melissa-sepulveda-dmd",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/melissa-sepulveda-dmd",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/alexander-arbelo-dmd",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/alexander-arbelo-dmd",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/crowns",
+      "text": "Crowns"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-anesthesia",
+      "text": "Dental Anesthesia"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-bridges",
+      "text": "Dental Bridges"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-implants",
+      "text": "Dental Implants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/sealants",
+      "text": "Dental Sealants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dentures",
+      "text": "Dentures"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland?f5ff0038_page=2",
+      "text": "Load More"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#ready-to-schedule",
+      "text": "SCHEDULE A VISIT TODAY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/southport",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/southport",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/downtown",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/wilmington-downtown",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/shallotte",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/shallotte",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "View all Locations"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#adult-preventative-plan",
+      "text": "ADULT PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#child-preventative-plan",
+      "text": "CHILD PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/leland",
+      "text": "BOOK APPOINTMENT ONLINE"
+    },
+    {
+      "href": "tel:910-663-1223",
+      "text": "CALL FOR EMERGENCY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "LOCATIONS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "SERVICES"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "WHAT TO EXPECT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers",
+      "text": "JOIN OUR TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/partnership",
+      "text": "PARTNER WITH US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "CONTACT US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/hipaa",
+      "text": "HIPAA"
+    },
+    {
+      "href": "https://www.brushandfloss.com/privacy-policy",
+      "text": "PRIVACY POLICY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/search",
+      "text": "SEARCH"
+    },
+    {
+      "href": "https://www.facebook.com/RiccobeneDentistry",
+      "text": ""
+    },
+    {
+      "href": "https://www.instagram.com/brushandflossnc/?hl=en",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland",
+      "text": "Leland"
+    },
+    {
+      "href": "tel:910-663-1223",
+      "text": "910-663-1223"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#",
+      "text": "Close"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/leland#",
+      "text": "Open Appointment"
+    }
+  ],
+  "bodyText": "LELAND\n910-663-1223\nCHANGE LOCATION\nJOIN THE TEAM\nSCHEDULE AN APPOINTMENT\nTRUSTED DENTISTS IN LELAND, NC FOR COMPLETE FAMILY DENTAL CARE\n\nOur first-rate team offers comfortable and modern family dental care for the Leland community.\n\n1215 W Gate Dr STE 180, Leland, NC 28451\n910-663-1223\nMon-Thu: 8:00 AM - 5:00 PM | Fri: 8:00 AM - 2:00 PM\nBOOK APPOINMENT\nCALL NOW\nCall Now\nMEET OUR DOCTORS\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\nDustin Timmerman, DDS\nGeneral Dentistry\nMORE+\nDustin Timmerman, DDS\nGeneral Dentistry\nDr. Timmerman is dedicated to patient-focused dentistry, ensuring every individual receives care tailored to their unique needs. His goal is to create a comfortable and positive dental experience.\nVIEW PROFILE\nTaylor B. Mast, DMD\nGeneral Dentistry\nMORE+\nTaylor B. Mast, DMD\nGeneral Dentistry\nDr. Mast is committed to providing compassionate, patient-centered care and enjoys helping individuals of all ages maintain healthy, beautiful smiles. He values building trust with every patient.\nVIEW PROFILE\nAnna Rovetto, DDS\nMORE+\nAnna Rovetto, DDS\nDr. Anna Rovetto, originally from Ballston Spa, NY, blends her love of art and science to create beautiful, confident smiles. She earned her B.S. in Microbiology from UC Berkeley, her dental degree from the University at Buffalo, and completed advanced training at East Carolina University. With expertise in esthetics, veneers, and smile design, she tailors treatment to each patient’s goals. Outside dentistry, Dr. Rovetto enjoys yoga, gardening, beach walks, and time with her French bulldog.\nVIEW PROFILE\nMelissa Sepúlveda, DMD\nGeneral & Family Dentistry With Community Focus\nMORE+\nMelissa Sepúlveda, DMD\nGeneral & Family Dentistry With Community Focus\nOriginally from Colombia and raised in Marvin NC, Dr Sepúlveda prioritizes building trust and enhancing patient wellbeing through compassionate family care.\nVIEW PROFILE\nAlexander Arbelo, DMD\nGeneral Dentistry\nMORE+\nAlexander Arbelo, DMD\nGeneral Dentistry\nDr. Alexander Arbelo, originally from Puerto Rico, earned his dental degree from the University of Puerto Rico and completed a General Practice Residency in New York City.\nVIEW PROFILE\nOUR SERVICES\n\nComprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.\n\nCrowns\nProtect and restore damaged teeth with custom dental crowns. Learn about tooth crown types, benefits, and treatment. Schedule your visit today.\nBOOK NOW\nDental Anesthesia\nSedation dentistry with dental anesthesia ensures you remain comfortalbe during dental care. Our patients are our top priority! Call Riccobene Associates.\nBOOK NOW\nDental Bridges\nDental bridges restore your smile by replacing missing teeth. Get a custom, natural fit that enhances both appearance and function. Book your consultation today\nBOOK NOW\nDental Implants\nAt Riccobene Associates Family Dentistry, we offer dental implants to restore your beautiful smile. Contact one of our dental offices today!\nBOOK NOW\nDental Sealants\nDental sealants protect your teeth from cavities and decay. A quick, effective way to maintain oral health. Book your consultation today!\nBOOK NOW\nDentures\nDiscover affordable dentures and permanent solutions from a trusted dentures specialist. Get one-day dentures that fit your needs. Book a consultation today!\nBOOK NOW\nLoad More\nWHAT OUR PATIENTS SAY\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\n★★★★★\nFrom making the initial call to the office visit to the staff, this was an amazing experience and I don’t say that lightly because I hate going to the dentist!\nThe staff was friendly. The place was clean. They were extremely understanding, no judgment Zone no shaming, no guilt. …Highly recommend!\nJanet L.\n★★★★★\nGot me in for a next-day emergency appointment as a new patient. The dentist and the whole staff were very professional and kind. The office was very clean and modern. The check-in and out process was simple. My exam was thorough, and treatment and options were thoroughly explained.\nKimberly H.\n★★★★★\nWhat a wonderful experience from the minute I walked in the door at Riccobene and Associates in Leland. I had been trying to get a dental problem taken care of for a year at another office, and things were worse than when I started. I decided to stop at the Leland office, and it was like day and night from the minute I walked in, the ladies up front were genuinely nice and helpful!\nRebecca L.\n★★★★★\nAs always, the service was timely and of high quality. My dental hygienist was professional, skilled, and friendly. The entire staff was welcoming, attentive, and prompt in addressing any requests.\nRyan M.\nOUR OFFICE\n\nWelcome to our Leland office! Right off West Gate Dr, reachable via Highway 17, our Leland location provides care for patients traveling from the nearby neighborhoods such as Belville, Navassa, Wilmington, and more. With our highly advanced technology and an experienced team, we provide the comfort and confidence you need for a healthy, pain-free smile!\n\nOur modern, inviting space is filled with a professional, experienced team that strongly believes that dental care and treatment start with patient comfort. Therefore, we strive for our office and amenities to be designed with our patients’ health and well-being in mind. Situated in a suburban community that blends small-town charm with convenient access to the Walmart Shopping Center, this location is accessible and easy to travel to. Our Leland office stands out with its peaceful atmosphere, where patients feel supported and leave motivated to take care of their oral health with ease and comfort.\n\nOffice Amenities\nFree WiFi\nComplimentary Beverages\nFamily-Friendly\nFree Parking\nFlexible Scheduling\nSCHEDULE A VISIT TODAY\nWHY CHOOSE RICCOBENE?\n\nWe believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.\n\nSame-Day Appointments\nUrgent dental needs? We offer same-day or next-day appointments in many locations for emergency care.\nFamily-Friendly\nWe provide gentle, expert dental care for children from their very first tooth through their teenage years.\nState-Of-The-Art\nCutting-edge technology and advanced treatment options bring the best that modern dental innovation has to offer to our offices.\nComprehensive Care\nOur expert provider offers a range of services from preventative, cosmetic, routine dental care and more.\nEmergency Dental Services\n24/7 emergency support when you need immediate dental care.\nOUR COMMITMENT TO EXCELLENCE\n\nWhen you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.\n\n500,000+\nHappy Smiles\nPatients served with exceptional care\n4.8\nAvg Google Rating\nfrom more than 28,000 reviews\n25\nYears In Business\nTrusted by the local community\nOTHER NEARBY LOCATIONS\n\nCan't make it to our Leland office? We have other convenient locations in the area to serve you with the same exceptional dental care.\n\nSouthport\n2831 Midway Rd SE Suite 116, Bolivia, NC 28422\n910-408-4436\nGeneral\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nWilmington - Downtown\n124 Walnut St STE 101, Wilmington, NC 28401\n910-254-4555\nEmergency\nGeneral\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nShallotte\n301 S Willis Dr #100, Shallotte, NC 28470\n910-754-7700\nEmergency\nGeneral\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nView all Locations\nPAYMENT OPTIONS & MEMBERSHIP PLANS\n\nQuality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.\n\nInsurance Accepted\nWe accept most major dental insurance plans\nDelta Dental\nBlue Cross Blue Shield\nAetna\nCigna\nMetlife\nUnited Heathcare\nFlexible Financing\nMultiple payment options to fit your budget\nSunbit\n0% Interest Plans\nMonthly Payment Plans\nHSA/FSA Accepted\nMembership Plans\nAffordable care for uninsured patients\nAnnual Cleanings\nX-rays Included\n10% Off Treatments\nNo Insurance Required\nAFFORDABLE MEMBERSHIP PLANS\n\nSave money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.\n\nAdult Preventative Plan\n$39\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nADULT PREVENTATIVE PLAN\nChild Preventative Plan\n$36\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nCHILD PREVENTATIVE PLAN\nFREQUENTLY ASKED QUESTIONS\nWhat types of dental services are offered for families and children in Leland?\n\nWe provide all the necessary dental services such as routine cleanings and exams, fillings, pediatric dental procedures, gum contouring, fluoride treatment, and so much more!\n\nHow do I schedule a dental appointment at the Leland office?\n\nTo schedule a visit, feel free to call us or book an appointment online to get you in as soon as possible! We look forward to treating you and providing you with the comfort and care you deserve!\n\nDo you offer same-day crowns or restorations in Leland?\n\nYes! By using the cutting-edge CAD/CAM technology, we are able to offer same-day crowns that provide permanent, custom-fit, and natural-looking metal-free restoration.\n\nCan I get dental implants or a consultation at your Leland location?\n\nYes. Our team of experts is here to help you with all your dental issues, including implants. You can schedule an appointment or request a consultation to make sure you’re getting the best treatment suited available. \n\nAre emergency dental appointments available in Leland?\n\nYes. At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our Leland location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!\n\nDoes the Leland office offer cosmetic treatments like whitening or veneers?\n\nYes, we understand the impact a confident smile has on our patients' lives, and therefore, we offer cosmetic services that include whitening, veneers, and Invisalign®.\n\nWhat hours is the Leland office open, and is Saturday available?\n\nOur office Hours are Monday-Thursday: 8:00 AM – 5:00 PM, Friday: 8:00 AM – 2:00 PM. We are closed on Saturday and Sunday.\n\nDo you accept dental insurance or offer payment plans in Leland?\n\nWe accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.\n\nWhere is the Leland office located, and what parking/accessibility is available?\n\nOur office in Leland is located at 1215 West Gate Drive, Suite 180, Leland, NC 28451. We provide free parking, and the parking lot includes wheelchair-accessible spaces to accommodate all visitors.\n\nREADY TO SCHEDULE? CONTACT US\n\nTake the first step towards optimal oral health. Contact our Leland office to schedule your appointment or ask any questions about our dental services.\n\nSend us a Message\nFill out the form below and we'll get back to you within 24 hours.\nFirst Name*\nLast Name*\nEmail*\nPhone*\nHow Can We Help?\nI have dental insurance and would like to verify my benefits\nI prefer a phone call instead of email\nThis is a dental emergency\nGet in Touch\n\nFill out the form below and we'll get back to you within 24 hours.\n\nVisit Our Office\n1215 W Gate Dr STE 180, Leland, NC 28451\nCall Us\n910-663-1223\nEmergency line available 24/7\nEmail Us\nlelandpc@brushandfloss.com\nOffice Hours\nMonday: 8:00 AM - 5:00 PM\nTuesday: 8:00 AM - 5:00 PM\nWednesday: 8:00 AM - 5:00 PM\nThursday: 8:00 AM - 5:00 PM\nFriday: 8:00 AM - 2:00 PM\nBOOK APPOINTMENT ONLINE\nCALL FOR EMERGENCY\nLOCATIONS\nSERVICES\nWHAT TO EXPECT\nJOIN OUR TEAM\nPARTNER WITH US\nCONTACT US\nHIPAA\nPRIVACY POLICY\nSEARCH",
+  "wordCount": 2004
+}

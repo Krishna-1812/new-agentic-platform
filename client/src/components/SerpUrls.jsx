@@ -1,4 +1,6 @@
-export default function SerpUrls({ results, scrapeResults, isLoading }) {
+import { memo } from 'react';
+
+function SerpUrls({ results, scrapeResults, isLoading }) {
   function getStatus(url) {
     if (!scrapeResults) return isLoading ? 'pending' : 'queued';
     const found = scrapeResults.find(r => r.url === url);
@@ -101,3 +103,5 @@ export default function SerpUrls({ results, scrapeResults, isLoading }) {
     </div>
   );
 }
+
+export default memo(SerpUrls);

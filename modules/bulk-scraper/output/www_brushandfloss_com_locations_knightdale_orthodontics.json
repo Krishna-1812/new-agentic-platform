@@ -1,0 +1,1182 @@
+{
+  "url": "https://www.brushandfloss.com/locations/knightdale-orthodontics",
+  "statusCode": 200,
+  "scrapedAt": "2026-04-14T14:40:37.662Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "Orthodontist in Knightdale, NC | BrushAndFloss Orthodontics",
+  "metaDescription": "Orthodontist in Knightdale NC offering braces, Invisalign, and pediatric orthodontic care in a modern, caring office. Call 919-930-8550 to schedule today!",
+  "canonical": "https://www.brushandfloss.com/locations/knightdale-orthodontics",
+  "allMeta": {
+    "description": "Orthodontist in Knightdale NC offering braces, Invisalign, and pediatric orthodontic care in a modern, caring office. Call 919-930-8550 to schedule today!",
+    "og:title": "BrushAndFloss Orthodontics | Knightdale, NC",
+    "og:description": "Orthodontist in Knightdale NC offering braces, Invisalign, and pediatric orthodontic care in a modern, caring office. Call 919-930-8550 to schedule today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69941b67b2dfcefb913ad7a3_knightdale-ortho.webp",
+    "twitter:title": "BrushAndFloss Orthodontics | Knightdale, NC",
+    "twitter:description": "Orthodontist in Knightdale NC offering braces, Invisalign, and pediatric orthodontic care in a modern, caring office. Call 919-930-8550 to schedule today!",
+    "twitter:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69941b67b2dfcefb913ad7a3_knightdale-ortho.webp",
+    "og:type": "website",
+    "twitter:card": "summary_large_image",
+    "viewport": "width=device-width, initial-scale=1",
+    "generator": "Webflow"
+  },
+  "ogTags": {
+    "og:title": "BrushAndFloss Orthodontics | Knightdale, NC",
+    "og:description": "Orthodontist in Knightdale NC offering braces, Invisalign, and pediatric orthodontic care in a modern, caring office. Call 919-930-8550 to schedule today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69941b67b2dfcefb913ad7a3_knightdale-ortho.webp",
+    "og:type": "website"
+  },
+  "twitterTags": {
+    "twitter:card": "summary_large_image"
+  },
+  "headings": {
+    "h1": [
+      "TRUSTED ORTHODONTIST IN KNIGHTDALE, NC FOR COMPLETE FAMILY DENTAL CARE"
+    ],
+    "h2": [
+      "MEET OUR DOCTOR",
+      "OUR SERVICES",
+      "WHAT OUR PATIENTS SAY",
+      "OUR OFFICE",
+      "WHY CHOOSE RICCOBENE?",
+      "OUR COMMITMENT TO EXCELLENCE",
+      "OTHER NEARBY LOCATIONS",
+      "PAYMENT OPTIONS & MEMBERSHIP PLANS",
+      "AFFORDABLE MEMBERSHIP PLANS",
+      "FREQUENTLY ASKED QUESTIONS",
+      "READY TO SCHEDULE? CONTACT US"
+    ],
+    "h3": [
+      "Shivani Patel, DMD",
+      "Office Amenities",
+      "500,000+",
+      "4.8",
+      "25",
+      "What orthodontic treatments are offered in Knightdale, NC?",
+      "Can teens and adults get Invisalign® in Knightdale?",
+      "How do I schedule a complimentary orthodontic consultation in Knightdale?",
+      "Does the Knightdale office offer emergency orthodontic care?",
+      "Are braces available for children in Knightdale, NC?",
+      "What types of clear aligners are offered, such as Invisalign®?",
+      "Does the Knightdale office accept dental insurance or offer payment plans?",
+      "How long does orthodontic treatment typically last in Knightdale?",
+      "Is early orthodontic treatment (Phase I) available for children in Knightdale?",
+      "Who are the orthodontists serving the Knightdale office, and what are their qualifications?",
+      "Send us a Message",
+      "Get in Touch",
+      "Request An Appointment"
+    ],
+    "h4": [],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h1",
+      "text": "TRUSTED ORTHODONTIST IN KNIGHTDALE, NC FOR COMPLETE FAMILY DENTAL CARE"
+    },
+    {
+      "tag": "h2",
+      "text": "MEET OUR DOCTOR"
+    },
+    {
+      "tag": "h3",
+      "text": "Shivani Patel, DMD"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR SERVICES"
+    },
+    {
+      "tag": "h2",
+      "text": "WHAT OUR PATIENTS SAY"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR OFFICE"
+    },
+    {
+      "tag": "h3",
+      "text": "Office Amenities"
+    },
+    {
+      "tag": "h2",
+      "text": "WHY CHOOSE RICCOBENE?"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR COMMITMENT TO EXCELLENCE"
+    },
+    {
+      "tag": "h3",
+      "text": "500,000+"
+    },
+    {
+      "tag": "h3",
+      "text": "4.8"
+    },
+    {
+      "tag": "h3",
+      "text": "25"
+    },
+    {
+      "tag": "h2",
+      "text": "OTHER NEARBY LOCATIONS"
+    },
+    {
+      "tag": "h2",
+      "text": "PAYMENT OPTIONS & MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "AFFORDABLE MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "FREQUENTLY ASKED QUESTIONS"
+    },
+    {
+      "tag": "h3",
+      "text": "What orthodontic treatments are offered in Knightdale, NC?"
+    },
+    {
+      "tag": "h3",
+      "text": "Can teens and adults get Invisalign® in Knightdale?"
+    },
+    {
+      "tag": "h3",
+      "text": "How do I schedule a complimentary orthodontic consultation in Knightdale?"
+    },
+    {
+      "tag": "h3",
+      "text": "Does the Knightdale office offer emergency orthodontic care?"
+    },
+    {
+      "tag": "h3",
+      "text": "Are braces available for children in Knightdale, NC?"
+    },
+    {
+      "tag": "h3",
+      "text": "What types of clear aligners are offered, such as Invisalign®?"
+    },
+    {
+      "tag": "h3",
+      "text": "Does the Knightdale office accept dental insurance or offer payment plans?"
+    },
+    {
+      "tag": "h3",
+      "text": "How long does orthodontic treatment typically last in Knightdale?"
+    },
+    {
+      "tag": "h3",
+      "text": "Is early orthodontic treatment (Phase I) available for children in Knightdale?"
+    },
+    {
+      "tag": "h3",
+      "text": "Who are the orthodontists serving the Knightdale office, and what are their qualifications?"
+    },
+    {
+      "tag": "h2",
+      "text": "READY TO SCHEDULE? CONTACT US"
+    },
+    {
+      "tag": "h3",
+      "text": "Send us a Message"
+    },
+    {
+      "tag": "h3",
+      "text": "Get in Touch"
+    },
+    {
+      "tag": "h3",
+      "text": "Request An Appointment"
+    }
+  ],
+  "paragraphs": [
+    "Conveniently located within Riccobene Family Dentistry in Knightdale, teens and adults enjoy modern orthodontic care in our advanced facility.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Comprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.",
+    "When you need specialized dental care, Riccobene is here for you. Our team has specific expertise in orthodontic care to personalize your dental treatment.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Our Knightdale office sits in Widewaters Commons, just off US-64 and near I-540, making visits simple for patients across eastern Wake County. We’re close to Knightdale Station Park, Widewaters Shopping Center, and neighborhoods like Cheswick and Langston Ridge.",
+    "Brush And Floss Orthodontics in Knightdale provides comprehensive dental services in a modern, family-friendly space. Whether you’re coming from Raleigh, Wendell, or Zebulon, our office offers convenient, compassionate care designed around your schedule.",
+    "We believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.",
+    "When you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.",
+    "Can't make it to our Knightdale office? We have other convenient locations in the area to serve you with the same exceptional dental care.",
+    "Quality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.",
+    "Save money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.",
+    "Orthodontics can correct a vast array of dental conditions, such as crowding, protruding/poorly spaced teeth, overbites, underbites and other misalignments. At Riccobene, we can help you treat them all.",
+    "Yes - both teens and adults can get Invisalign® at our Knightdale location. Schedule an initial consultation to see whether Invisalign® is the best option for your orthodontic needs by giving us a call.",
+    "Scheduling a consultation is as easy as giving us a call - you can reach us at (919) 266-6999. You can also book an appointment online and we’ll get you on the schedule as soon as possible!",
+    "Yes - whether it’s a concern with broken equipment, unexpected pain related to your orthodontic care, or urgent treatment needed for a new issue, we make an effort to see all emergency visits same or next day when possible. Give us a call to describe the emergency you’re having and we’ll help find the right care for your needs, as fast as is practicable.",
+    "Yes - what age is best for children to get braces will depend on your child and their dental development. We recommend most children getting braces around the time that all their permanent teeth have come in, but depending on what specific circumstances your child encounters earlier intervention may be needed. The easiest way to make sure we’re providing the right treatment for your child at the right time is to book a consultation today!",
+    "Invisalign® aligners are offered at our Knightdale, NC orthodontic practice. Other options may be available depending on your specific needs and circumstances - consult with an orthodontist today and we’ll help you sort out your choices.",
+    "We accept and participate with a large majority of insurance plans. Prior to any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.",
+    "The length of orthodontic treatment varies on what specific treatment you’re receiving - from as speedy as a single office visit to an extended treatment plan over weeks or months, orthodontic care is about making sure you receive care that’s effective, lasting and appropriate for your oral health. An orthodontist can help you understand the length of your specific treatment plan before any work is performed.",
+    "Yes - Phase I and Phase II orthodontic treatment is available for children at our Knightdale, NC location.",
+    "You can see our team here. At Riccobene, we pride ourselves on experienced, qualified staff. We don’t like to brag, but we also don’t think you’ll find a better team of orthodontists, dentists, hygienists and staff anywhere around!",
+    "Take the first step towards optimal oral health. Contact our Knightdale office to schedule your appointment or ask any questions about our dental services.",
+    "Fill out the form below and we'll get back to you within 24 hours.",
+    "Select a Location to schedule an appointment:",
+    "Call our Knightdale Orthodontics Office at 919.930.8550, or use the form below to request an appointment."
+  ],
+  "schemaMarkup": [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "https://www.brushandfloss.com/locations/knightdale-orthodontics",
+      "url": "https://www.brushandfloss.com/locations/knightdale-orthodontics",
+      "name": "Orthodontist in Knightdale, NC | BrushAndFloss Orthodontics",
+      "description": "Orthodontist in Knightdale NC offering braces, Invisalign, and pediatric orthodontic care in a modern, caring office. Call 919-930-8550 to schedule today!",
+      "inLanguage": "en-US",
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "https://www.brushandfloss.com/",
+        "url": "https://www.brushandfloss.com/",
+        "name": "BrushAndFloss Orthodontics"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://www.brushandfloss.com/#organization",
+      "url": "https://www.brushandfloss.com/",
+      "sameAs": [
+        "https://www.facebook.com/RiccobeneDentistry",
+        "https://www.instagram.com/brushandflossnc/"
+      ],
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg"
+      },
+      "brand": {
+        "@type": "Brand",
+        "name": "BrushAndFloss Orthodontics",
+        "sameAs": [
+          "https://www.facebook.com/RiccobeneDentistry",
+          "https://www.instagram.com/brushandflossnc/"
+        ]
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Insurance Accepted",
+      "insuranceAccepted": [
+        "Delta Dental",
+        "Blue Cross Blue Shield",
+        "Aetna",
+        "Cigna",
+        "MetLife",
+        "UnitedHealthcare"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Dentist",
+      "@id": "https://www.brushandfloss.com/locations/knightdale-orthodontics/dentist",
+      "name": "BrushAndFloss Orthodontics",
+      "image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69941b67b2dfcefb913ad7a3_knightdale-ortho.webp",
+      "logo": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ce_BrushAndFloss-orthodontics.png",
+      "url": "/locations/knightdale-orthodontics",
+      "telephone": "919.930.8550",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "1001 Widewaters Parkway, Knightdale, NC 27545",
+        "addressLocality": "Knightdale",
+        "addressRegion": "NC",
+        "postalCode": "27545",
+        "addressCountry": "US"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Monday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Tuesday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Wednesday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Thursday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Friday",
+          "opens": "8:00",
+          "closes": "14:00"
+        }
+      ],
+      "priceRange": "$$",
+      "hasMap": "https://goo.gl/maps/fzW8cZfcKz82",
+      "sameAs": "https://goo.gl/maps/fzW8cZfcKz82"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Dental Services",
+      "serviceOutput": [
+        {
+          "@type": "Service",
+          "name": "Invisalign®"
+        },
+        {
+          "@type": "Service",
+          "name": "Traditional Braces"
+        }
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Meeke D"
+      },
+      "reviewBody": "Cearena was awesome. Always give great customer service and remembers her clients! My son and I appreciate her!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Samantha F"
+      },
+      "reviewBody": "Cearena was so kind and patient. She also squeezed us in to get two of my kids appointment in one day. Dr Patel was so sweet and thorough. Great experience.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Chigozirim O"
+      },
+      "reviewBody": "We always have a positive experience at Riccobene Dentistry. Today we were seen by Dr Patel the orthodontist, she was extremely kind and patient with us. Cearena the treatment coordinator was simply excellent. She worked with us despite the tightness of the schedule (we showed up a little late), she patiently explained our options and she had a huge hug for me and my daughter when we seemed a little overwhelmed. I highly recommend this practice. They are definitely all about helping their patients.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Tonya Raymond"
+      },
+      "reviewBody": "My 15yo had his wisdom teeth removed here. Not only did I save money, my son loved everyone who helped us. He was nervous about the shots, but didn&#39;t even feel them! His mouth barely hurt afterward &amp; that says a lot about the care he got during the procedure. When a 15yo doesn&#39;t complain you know he actually was doing ok. He liked them so much he wants to use them as his regular dentist. Thank you for taking such good care of my kid.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Natalie Sue"
+      },
+      "reviewBody": "My kids and I have been going to Riccobene ever since we moved here in 2018. We&#39;ve always been well taken care of. Everyone has been personable and understanding when I have to bring our baby to my appointments. The dental hygienists have always done an awesome job with each of us. The dentist is also thorough with his exam at the end. My kids love going to the dentist. Probably because they know they&#39;ll get little toys at the end for being helpful during the appointments.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Kaye H"
+      },
+      "reviewBody": "They were so wonderful! The Dentist and Hygienist were professional and very helpful! They know what they&#39;re doing, such an asset to this office!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Debbie J"
+      },
+      "reviewBody": "Had such a great experience at Riccobene. My hygienist was so pleasant and kept me informed of everything she was doing and why. She was very gentle. The dentist was very nice, he has a great beside manner. Would highly recommend.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Sunkofa D"
+      },
+      "reviewBody": "I am pleased with the dental care that I receive at Riccobene, because of my pleasant visits, I look forward to dental care.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What orthodontic treatments are offered in Knightdale, NC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Orthodontics can correct a vast array of dental conditions, such as crowding, protruding/poorly spaced teeth, overbites, underbites and other misalignments. At Riccobene, we can help you treat them all."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can teens and adults get Invisalign® in Knightdale?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes - both teens and adults can get Invisalign® at our Knightdale location. Schedule an initial consultation to see whether Invisalign® is the best option for your orthodontic needs by giving us a call."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I schedule a complimentary orthodontic consultation in Knightdale?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Scheduling a consultation is as easy as giving us a call - you can reach us at (919) 266-6999. You can also book an appointment online and we’ll get you on the schedule as soon as possible!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the Knightdale office offer emergency orthodontic care?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes - whether it’s a concern with broken equipment, unexpected pain related to your orthodontic care, or urgent treatment needed for a new issue, we make an effort to see all emergency visits same or next day when possible. Give us a call to describe the emergency you’re having and we’ll help find the right care for your needs, as fast as is practicable."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Are braces available for children in Knightdale, NC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes - what age is best for children to get braces will depend on your child and their dental development. We recommend most children getting braces around the time that all their permanent teeth have come in, but depending on what specific circumstances your child encounters earlier intervention may be needed. The easiest way to make sure we’re providing the right treatment for your child at the right time is to book a consultation today!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What types of clear aligners are offered, such as Invisalign®?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Invisalign® aligners are offered at our Knightdale, NC orthodontic practice. Other options may be available depending on your specific needs and circumstances - consult with an orthodontist today and we’ll help you sort out your choices."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the Knightdale office accept dental insurance or offer payment plans?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We accept and participate with a large majority of insurance plans. Prior to any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How long does orthodontic treatment typically last in Knightdale?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The length of orthodontic treatment varies on what specific treatment you’re receiving - from as speedy as a single office visit to an extended treatment plan over weeks or months, orthodontic care is about making sure you receive care that’s effective, lasting and appropriate for your oral health. An orthodontist can help you understand the length of your specific treatment plan before any work is performed."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is early orthodontic treatment (Phase I) available for children in Knightdale?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes - Phase I and Phase II orthodontic treatment is available for children at our Knightdale, NC location."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Who are the orthodontists serving the Knightdale office, and what are their qualifications?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can see our team here. At Riccobene, we pride ourselves on experienced, qualified staff. We don’t like to brag, but we also don’t think you’ll find a better team of orthodontists, dentists, hygienists and staff anywhere around!"
+          }
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314df_search.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152e_riccobene-banner-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31508_location-map.webp",
+      "alt": "Map showing neighborhoods, parks, schools, and roads including Davis Drive Elementary School, Pleasant Street, and Sunset Plaza."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314e7_location-banner.jpg",
+      "alt": "Smiling woman reclined in dental chair during a dental checkup with dentist holding dental mirror and probe."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31552_call-now-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16ff9029edc643dd8520c_shivani-patel-dmd.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16ff9029edc643dd8520c_shivani-patel-dmd.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3164c_Riccobene2-114.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69831aabbb1ac8787ec1a433_tradtionalbraces.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152b_riccobene-our-office-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152a_riccobene-our-office-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152d_riccobene-our-office-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152c_riccobene-our-office-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31529_riccobene-our-office-icon-five.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31548_riccobene-wcr-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31549_family-friendly.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31547_state-of-the-art.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31527_insurance-accepted-icon-1.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31558_pricing-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31559_pricing-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31522_pricing-1.webp",
+      "alt": "Smiling young woman with long brown hair pointing to her teeth with both index fingers."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31523_pricing-2.webp",
+      "alt": "Smiling young boy sitting in a dental chair during a dental checkup with a dentist holding a dental tool."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154b_email-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154c_alarm-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a location"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics",
+      "text": "KNIGHTDALE ORTHODONTICS"
+    },
+    {
+      "href": "tel:919.930.8550",
+      "text": "919.930.8550"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "CHANGE LOCATION"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers#jobs",
+      "text": "JOIN THE TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#",
+      "text": "SCHEDULE AN APPOINTMENT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": "Home"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a Dentist Near You"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "New Patient Experience"
+    },
+    {
+      "href": "https://www.brushandfloss.com/the-riccobene-way",
+      "text": "The Riccobene Way"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans",
+      "text": "Membership Plans"
+    },
+    {
+      "href": "https://www.brushandfloss.com/reviews",
+      "text": "Patient Reviews"
+    },
+    {
+      "href": "https://patient.payments.health/#/?organizationID=dab6a2b7&locationID=LSXWSH421HHY4",
+      "text": "Make A Payment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/payment",
+      "text": "Online Payments"
+    },
+    {
+      "href": "https://www.brushandfloss.com/articles",
+      "text": "articles"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "Contact us"
+    },
+    {
+      "href": "https://www.paycomonline.net/v4/ats/web.php/jobs?clientkey=B32F01563C7743C293E0AAB35AE1ADEA",
+      "text": "careers"
+    },
+    {
+      "href": "https://www.brushandflossaffiliates.com/",
+      "text": "Become an Affiliate Practice"
+    },
+    {
+      "href": "https://www.brushandfloss-employees.com/",
+      "text": "Employees"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#",
+      "text": "BOOK APPOINMENT"
+    },
+    {
+      "href": "tel:919.930.8550",
+      "text": "CALL NOW"
+    },
+    {
+      "href": "tel:919.930.8550",
+      "text": "Call Now"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/shivani-patel-dmd",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/shivani-patel-dmd",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/invisalign-r",
+      "text": "Invisalign®"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/traditional-braces",
+      "text": "Traditional Braces"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#ready-to-schedule",
+      "text": "SCHEDULE A VISIT TODAY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/six-forks",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/raleigh-falls",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/raleigh-falls",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/wakefield",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/wakefield",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "View all Locations"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#adult-preventative-plan",
+      "text": "ADULT PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#child-preventative-plan",
+      "text": "CHILD PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#meet-our-doctors",
+      "text": "here"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#",
+      "text": "BOOK APPOINTMENT ONLINE"
+    },
+    {
+      "href": "tel:919.930.8550",
+      "text": "CALL FOR EMERGENCY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "LOCATIONS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "SERVICES"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "WHAT TO EXPECT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers",
+      "text": "JOIN OUR TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/partnership",
+      "text": "PARTNER WITH US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "CONTACT US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/hipaa",
+      "text": "HIPAA"
+    },
+    {
+      "href": "https://www.brushandfloss.com/privacy-policy",
+      "text": "PRIVACY POLICY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/search",
+      "text": "SEARCH"
+    },
+    {
+      "href": "https://www.facebook.com/RiccobeneDentistry",
+      "text": ""
+    },
+    {
+      "href": "https://www.instagram.com/brushandflossnc/?hl=en",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics",
+      "text": "Knightdale Orthodontics"
+    },
+    {
+      "href": "tel:919.930.8550",
+      "text": "919.930.8550"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#",
+      "text": "Close"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/knightdale-orthodontics#",
+      "text": "Open Appointment"
+    }
+  ],
+  "bodyText": "KNIGHTDALE ORTHODONTICS\n919.930.8550\nCHANGE LOCATION\nJOIN THE TEAM\nSCHEDULE AN APPOINTMENT\nTRUSTED ORTHODONTIST IN KNIGHTDALE, NC FOR COMPLETE FAMILY DENTAL CARE\n\nConveniently located within Riccobene Family Dentistry in Knightdale, teens and adults enjoy modern orthodontic care in our advanced facility.\n\n1001 Widewaters Parkway, Knightdale, NC 27545\n919.930.8550\nMon-Thu: 8:00 AM - 5:00 PM\nBOOK APPOINMENT\nCALL NOW\nCall Now\nMEET OUR DOCTOR\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\nShivani Patel, DMD\nOrthodontics\nMORE+\nShivani Patel, DMD\nOrthodontics\nDr. Patel studied at Georgia Institute of Technology before earning her DMD and orthodontics residency at Columbia University. She is a Board-Certified Orthodontist committed to delivering ethical, patient-focused care. Recently relocated to NC with her family, she enjoys dancing, travel, and reading.\n\nCredentials:\n\nDMD & Orthodontic Residency\nBoard-Certified Orthodontist\nUndergraduate Degree – Georgia Institute Of Technology\nVIEW PROFILE\nOUR SERVICES\n\nWhen you need specialized dental care, Riccobene is here for you. Our team has specific expertise in orthodontic care to personalize your dental treatment.\n\nInvisalign®\nGet straighter teeth with Invisalign aligners. Comfortable and virtually invisible. Schedule your consultation today!\nBOOK NOW\nTraditional Braces\nGet the perfect smile with affordable traditional braces at Riccobene. Expert care for kids and adults. Schedule your consultation today!\nBOOK NOW\nWHAT OUR PATIENTS SAY\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\n★★★★★\nCearena was awesome. Always give great customer service and remembers her clients! My son and I appreciate her!\nMeeke D\n★★★★★\nCearena was so kind and patient. She also squeezed us in to get two of my kids appointment in one day. Dr Patel was so sweet and thorough. Great experience.\nSamantha F\n★★★★★\nWe always have a positive experience at Riccobene Dentistry. Today we were seen by Dr Patel the orthodontist, she was extremely kind and patient with us. Cearena the treatment coordinator was simply excellent. She worked with us despite the tightness of the schedule (we showed up a little late), she patiently explained our options and she had a huge hug for me and my daughter when we seemed a little overwhelmed. I highly recommend this practice. They are definitely all about helping their patients.\nChigozirim O\n★★★★★\nMy 15yo had his wisdom teeth removed here. Not only did I save money, my son loved everyone who helped us. He was nervous about the shots, but didn't even feel them! His mouth barely hurt afterward & that says a lot about the care he got during the procedure. When a 15yo doesn't complain you know he actually was doing ok. He liked them so much he wants to use them as his regular dentist. Thank you for taking such good care of my kid.\nTonya Raymond\n★★★★★\nMy kids and I have been going to Riccobene ever since we moved here in 2018. We've always been well taken care of. Everyone has been personable and understanding when I have to bring our baby to my appointments. The dental hygienists have always done an awesome job with each of us. The dentist is also thorough with his exam at the end. My kids love going to the dentist. Probably because they know they'll get little toys at the end for being helpful during the appointments.\nNatalie Sue\n★★★★★\nThey were so wonderful! The Dentist and Hygienist were professional and very helpful! They know what they're doing, such an asset to this office!\nKaye H\n★★★★★\nHad such a great experience at Riccobene. My hygienist was so pleasant and kept me informed of everything she was doing and why. She was very gentle. The dentist was very nice, he has a great beside manner. Would highly recommend.\nDebbie J\n★★★★★\nI am pleased with the dental care that I receive at Riccobene, because of my pleasant visits, I look forward to dental care.\nSunkofa D\nOUR OFFICE\n\nOur Knightdale office sits in Widewaters Commons, just off US-64 and near I-540, making visits simple for patients across eastern Wake County. We’re close to Knightdale Station Park, Widewaters Shopping Center, and neighborhoods like Cheswick and Langston Ridge.\n\nBrush And Floss Orthodontics in Knightdale provides comprehensive dental services in a modern, family-friendly space. Whether you’re coming from Raleigh, Wendell, or Zebulon, our office offers convenient, compassionate care designed around your schedule.\n\nOffice Amenities\nFree WiFi\nComplimentary Beverages\nFamily-Friendly\nFree Parking\nFlexible Scheduling\nSCHEDULE A VISIT TODAY\nWHY CHOOSE RICCOBENE?\n\nWe believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.\n\nSame-Day Appointments\nUrgent dental needs? We offer same-day or next-day appointments in many locations for emergency care.\nFamily-Friendly\nWe provide gentle, expert dental care for children from their very first tooth through their teenage years.\nState-Of-The-Art\nCutting-edge technology and advanced treatment options bring the best that modern dental innovation has to offer to our offices.\nComprehensive Care\nOur expert provider offers a range of services from preventative, cosmetic, routine dental care and more.\nEmergency Dental Services\n24/7 emergency support when you need immediate dental care.\nOUR COMMITMENT TO EXCELLENCE\n\nWhen you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.\n\n500,000+\nHappy Smiles\nPatients served with exceptional care\n4.8\nAvg Google Rating\nfrom more than 28,000 reviews\n25\nYears In Business\nTrusted by the local community\nOTHER NEARBY LOCATIONS\n\nCan't make it to our Knightdale office? We have other convenient locations in the area to serve you with the same exceptional dental care.\n\nRaleigh\n3614 Haworth Dr, Raleigh, NC 27609\n919-834-4450\nGeneral\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nRaleigh Falls\n4400 Falls Of Neuse Rd #202, Raleigh, NC 27609\n919-872-1000\nEmergency\nGeneral\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nWakefield\n13251 Falls Of Neuse Rd #141, Raleigh, NC 27614\n919-556-6666\nEmergency\nGeneral\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nView all Locations\nPAYMENT OPTIONS & MEMBERSHIP PLANS\n\nQuality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.\n\nInsurance Accepted\nWe accept most major dental insurance plans\nDelta Dental\nBlue Cross Blue Shield\nAetna\nCigna\nMetlife\nUnited Heathcare\nFlexible Financing\nMultiple payment options to fit your budget\nSunbit\n0% Interest Plans\nMonthly Payment Plans\nHSA/FSA Accepted\nMembership Plans\nAffordable care for uninsured patients\nAnnual Cleanings\nX-rays Included\n10% Off Treatments\nNo Insurance Required\nAFFORDABLE MEMBERSHIP PLANS\n\nSave money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.\n\nAdult Preventative Plan\n$39\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nADULT PREVENTATIVE PLAN\nChild Preventative Plan\n$36\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nCHILD PREVENTATIVE PLAN\nFREQUENTLY ASKED QUESTIONS\nWhat orthodontic treatments are offered in Knightdale, NC?\n\nOrthodontics can correct a vast array of dental conditions, such as crowding, protruding/poorly spaced teeth, overbites, underbites and other misalignments. At Riccobene, we can help you treat them all.\n\nCan teens and adults get Invisalign® in Knightdale?\n\nYes - both teens and adults can get Invisalign® at our Knightdale location. Schedule an initial consultation to see whether Invisalign® is the best option for your orthodontic needs by giving us a call.\n\nHow do I schedule a complimentary orthodontic consultation in Knightdale?\n\nScheduling a consultation is as easy as giving us a call - you can reach us at (919) 266-6999. You can also book an appointment online and we’ll get you on the schedule as soon as possible!\n\nDoes the Knightdale office offer emergency orthodontic care?\n\nYes - whether it’s a concern with broken equipment, unexpected pain related to your orthodontic care, or urgent treatment needed for a new issue, we make an effort to see all emergency visits same or next day when possible. Give us a call to describe the emergency you’re having and we’ll help find the right care for your needs, as fast as is practicable.\n\nAre braces available for children in Knightdale, NC?\n\nYes - what age is best for children to get braces will depend on your child and their dental development. We recommend most children getting braces around the time that all their permanent teeth have come in, but depending on what specific circumstances your child encounters earlier intervention may be needed. The easiest way to make sure we’re providing the right treatment for your child at the right time is to book a consultation today!\n\nWhat types of clear aligners are offered, such as Invisalign®?\n\nInvisalign® aligners are offered at our Knightdale, NC orthodontic practice. Other options may be available depending on your specific needs and circumstances - consult with an orthodontist today and we’ll help you sort out your choices.\n\nDoes the Knightdale office accept dental insurance or offer payment plans?\n\nWe accept and participate with a large majority of insurance plans. Prior to any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.\n\nHow long does orthodontic treatment typically last in Knightdale?\n\nThe length of orthodontic treatment varies on what specific treatment you’re receiving - from as speedy as a single office visit to an extended treatment plan over weeks or months, orthodontic care is about making sure you receive care that’s effective, lasting and appropriate for your oral health. An orthodontist can help you understand the length of your specific treatment plan before any work is performed.\n\nIs early orthodontic treatment (Phase I) available for children in Knightdale?\n\nYes - Phase I and Phase II orthodontic treatment is available for children at our Knightdale, NC location.\n\nWho are the orthodontists serving the Knightdale office, and what are their qualifications?\n\nYou can see our team here. At Riccobene, we pride ourselves on experienced, qualified staff. We don’t like to brag, but we also don’t think you’ll find a better team of orthodontists, dentists, hygienists and staff anywhere around!\n\nREADY TO SCHEDULE? CONTACT US\n\nTake the first step towards optimal oral health. Contact our Knightdale office to schedule your appointment or ask any questions about our dental services.\n\nSend us a Message\nFill out the form below and we'll get back to you within 24 hours.\nFirst Name*\nLast Name*\nEmail*\nPhone*\nHow Can We Help?\nI have dental insurance and would like to verify my benefits\nI prefer a phone call instead of email\nThis is a dental emergency\nGet in Touch\n\nFill out the form below and we'll get back to you within 24 hours.\n\nVisit Our Office\n1001 Widewaters Parkway, Knightdale, NC 27545\nCall Us\n919.930.8550\nEmergency line available 24/7\nEmail Us\nknightdaleom@brushandfloss.com\nOffice Hours\nMonday: 8:00 AM - 5:00 PM\nTuesday: 8:00 AM - 5:00 PM\nWednesday: 8:00 AM - 5:00 PM\nThursday: 8:00 AM - 5:00 PM\nBOOK APPOINTMENT ONLINE\nCALL FOR EMERGENCY\nLOCATIONS\nSERVICES\nWHAT TO EXPECT\nJOIN OUR TEAM\nPARTNER WITH US\nCONTACT US\nHIPAA\nPRIVACY POLICY\nSEARCH",
+  "wordCount": 1920
+}

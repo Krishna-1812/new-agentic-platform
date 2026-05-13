@@ -1,0 +1,1197 @@
+{
+  "url": "https://www.brushandfloss.com/locations/goldsboro",
+  "statusCode": 200,
+  "scrapedAt": "2026-04-14T14:40:42.384Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "Dentist in Goldsboro, NC | Riccobene Associates Family Dentistry",
+  "metaDescription": "Dentist in Goldsboro NC offering family, pediatric, cosmetic, emergency and implant care in a welcoming modern office. Call 919-731-2331 to book today.",
+  "canonical": "https://www.brushandfloss.com/locations/goldsboro",
+  "allMeta": {
+    "description": "Dentist in Goldsboro NC offering family, pediatric, cosmetic, emergency and implant care in a welcoming modern office. Call 919-731-2331 to book today.",
+    "og:title": "Riccobene Associates Family Dentistry | Goldsboro, NC",
+    "og:description": "Dentist in Goldsboro NC offering family, pediatric, cosmetic, emergency and implant care in a welcoming modern office. Call 919-731-2331 to book today.",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317d4_IMG_8291%20-%20Edited.jpeg",
+    "twitter:title": "Riccobene Associates Family Dentistry | Goldsboro, NC",
+    "twitter:description": "Dentist in Goldsboro NC offering family, pediatric, cosmetic, emergency and implant care in a welcoming modern office. Call 919-731-2331 to book today.",
+    "twitter:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317d4_IMG_8291%20-%20Edited.jpeg",
+    "og:type": "website",
+    "twitter:card": "summary_large_image",
+    "viewport": "width=device-width, initial-scale=1",
+    "generator": "Webflow"
+  },
+  "ogTags": {
+    "og:title": "Riccobene Associates Family Dentistry | Goldsboro, NC",
+    "og:description": "Dentist in Goldsboro NC offering family, pediatric, cosmetic, emergency and implant care in a welcoming modern office. Call 919-731-2331 to book today.",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317d4_IMG_8291%20-%20Edited.jpeg",
+    "og:type": "website"
+  },
+  "twitterTags": {
+    "twitter:card": "summary_large_image"
+  },
+  "headings": {
+    "h1": [
+      "TRUSTED DENTISTS IN GOLDSBORO, NC FOR COMPLETE FAMILY DENTAL CARE"
+    ],
+    "h2": [
+      "MEET OUR DOCTORS",
+      "OUR SERVICES",
+      "WHAT OUR PATIENTS SAY",
+      "OUR OFFICE",
+      "WHY CHOOSE RICCOBENE?",
+      "OUR COMMITMENT TO EXCELLENCE",
+      "OTHER NEARBY LOCATIONS",
+      "PAYMENT OPTIONS & MEMBERSHIP PLANS",
+      "AFFORDABLE MEMBERSHIP PLANS",
+      "FREQUENTLY ASKED QUESTIONS",
+      "READY TO SCHEDULE? CONTACT US"
+    ],
+    "h3": [
+      "Brooke Johnson, DMD",
+      "Steven Taylor, DDS",
+      "Ashish Karia, DDS",
+      "Office Amenities",
+      "500,000+",
+      "4.8",
+      "25",
+      "What services are offered at the Goldsboro, NC dental office?",
+      "How do I schedule an appointment in Goldsboro, NC?",
+      "Does the Goldsboro office provide pediatric dental care?",
+      "Is emergency dental care available in Goldsboro, NC?",
+      "Can I get dental implants at the Goldsboro office?",
+      "What cosmetic dental services are offered in Goldsboro, NC?",
+      "Where is the Goldsboro office located and what are the hours?",
+      "Do you accept insurance or offer membership plans in Goldsboro, NC?",
+      "Does the Goldsboro office care for dental needs of all ages?",
+      "Send us a Message",
+      "Get in Touch",
+      "Request An Appointment"
+    ],
+    "h4": [],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h1",
+      "text": "TRUSTED DENTISTS IN GOLDSBORO, NC FOR COMPLETE FAMILY DENTAL CARE"
+    },
+    {
+      "tag": "h2",
+      "text": "MEET OUR DOCTORS"
+    },
+    {
+      "tag": "h3",
+      "text": "Brooke Johnson, DMD"
+    },
+    {
+      "tag": "h3",
+      "text": "Steven Taylor, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Ashish Karia, DDS"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR SERVICES"
+    },
+    {
+      "tag": "h2",
+      "text": "WHAT OUR PATIENTS SAY"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR OFFICE"
+    },
+    {
+      "tag": "h3",
+      "text": "Office Amenities"
+    },
+    {
+      "tag": "h2",
+      "text": "WHY CHOOSE RICCOBENE?"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR COMMITMENT TO EXCELLENCE"
+    },
+    {
+      "tag": "h3",
+      "text": "500,000+"
+    },
+    {
+      "tag": "h3",
+      "text": "4.8"
+    },
+    {
+      "tag": "h3",
+      "text": "25"
+    },
+    {
+      "tag": "h2",
+      "text": "OTHER NEARBY LOCATIONS"
+    },
+    {
+      "tag": "h2",
+      "text": "PAYMENT OPTIONS & MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "AFFORDABLE MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "FREQUENTLY ASKED QUESTIONS"
+    },
+    {
+      "tag": "h3",
+      "text": "What services are offered at the Goldsboro, NC dental office?"
+    },
+    {
+      "tag": "h3",
+      "text": "How do I schedule an appointment in Goldsboro, NC?"
+    },
+    {
+      "tag": "h3",
+      "text": "Does the Goldsboro office provide pediatric dental care?"
+    },
+    {
+      "tag": "h3",
+      "text": "Is emergency dental care available in Goldsboro, NC?"
+    },
+    {
+      "tag": "h3",
+      "text": "Can I get dental implants at the Goldsboro office?"
+    },
+    {
+      "tag": "h3",
+      "text": "What cosmetic dental services are offered in Goldsboro, NC?"
+    },
+    {
+      "tag": "h3",
+      "text": "Where is the Goldsboro office located and what are the hours?"
+    },
+    {
+      "tag": "h3",
+      "text": "Do you accept insurance or offer membership plans in Goldsboro, NC?"
+    },
+    {
+      "tag": "h3",
+      "text": "Does the Goldsboro office care for dental needs of all ages?"
+    },
+    {
+      "tag": "h2",
+      "text": "READY TO SCHEDULE? CONTACT US"
+    },
+    {
+      "tag": "h3",
+      "text": "Send us a Message"
+    },
+    {
+      "tag": "h3",
+      "text": "Get in Touch"
+    },
+    {
+      "tag": "h3",
+      "text": "Request An Appointment"
+    }
+  ],
+  "paragraphs": [
+    "Our extraordinary team of dentists deliver excellent dental care for patients of all ages in the Goldsboro community.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Comprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Our Goldsboro office is located near Wayne Memorial Drive and US-70, close to Wayne UNC Health Care and the Berkeley Mall. Patients from nearby neighborhoods like Walnut Creek and Green Meadows enjoy quick access to our practice.",
+    "At Riccobene Goldsboro, we combine state-of-the-art dental technology with a compassionate, patient-first approach. Serving families across Wayne County, our office makes maintaining a healthy smile both simple and stress-free.",
+    "We believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.",
+    "When you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.",
+    "Can't make it to our Goldsboro office? We have other convenient locations in the area to serve you with the same exceptional dental care.",
+    "Quality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.",
+    "Save money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.",
+    "A wide variety of services are available in our Goldsboro office including general & pediatric dentistry, routine hygiene, emergency dentistry, cosmetic dentistry (including whitening) and dental implants.",
+    "Give us a call or schedule an appointment online and we’ll get you on the schedule as soon as possible, often times the very next day that we’re open. At Riccobene, we know that waiting weeks for an appointment sometimes just doesn’t work for your schedule, so we eliminate the wait.",
+    "Yes - pediatric dental care is offered at our Goldsboro office.",
+    "Yes - we make every effort to fit emergency appointments into the schedule the same or next day. If we absolutely cannot accommodate an emergency appointment, one of our other Riccobene offices may be able to help.",
+    "Yes - some implants can be provided at our Goldsboro office. For more complex procedures, we may refer you to a dental surgery facility.",
+    "Riccobene in Goldsboro, NC offers cosmetic dental services like Invisalign® and others, as well as veneers, caps, crowns and more.",
+    "Riccobene in Goldsboro is located at 2702 Medical Office Place; Goldsboro, NC 27534. We’re open Monday-Thursday 8am-4pm and Fridays from 8am-2pm.",
+    "We accept and participate with a large majority of insurance plans. Prior to any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.",
+    "Yes - the whole family can visit our office in Goldsboro, NC.",
+    "Take the first step towards optimal oral health. Contact our Goldsboro office to schedule your appointment or ask any questions about our dental services.",
+    "Fill out the form below and we'll get back to you within 24 hours.",
+    "Select a Location to schedule an appointment:",
+    "Call our Goldsboro Office at 919-731-2331, or use the form below to request an appointment."
+  ],
+  "schemaMarkup": [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "https://www.brushandfloss.com/locations/goldsboro",
+      "url": "https://www.brushandfloss.com/locations/goldsboro",
+      "name": "Dentist in Goldsboro, NC | Riccobene Associates Family Dentistry",
+      "description": "Dentist in Goldsboro NC offering family, pediatric, cosmetic, emergency and implant care in a welcoming modern office. Call 919-731-2331 to book today.",
+      "inLanguage": "en-US",
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "https://www.brushandfloss.com/",
+        "url": "https://www.brushandfloss.com/",
+        "name": "Riccobene Associates Family Dentistry"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://www.brushandfloss.com/#organization",
+      "url": "https://www.brushandfloss.com/",
+      "sameAs": [
+        "https://www.facebook.com/RiccobeneDentistry",
+        "https://www.instagram.com/brushandflossnc/"
+      ],
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg"
+      },
+      "brand": {
+        "@type": "Brand",
+        "name": "Riccobene Associates Family Dentistry",
+        "sameAs": [
+          "https://www.facebook.com/RiccobeneDentistry",
+          "https://www.instagram.com/brushandflossnc/"
+        ]
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Insurance Accepted",
+      "insuranceAccepted": [
+        "Delta Dental",
+        "Blue Cross Blue Shield",
+        "Aetna",
+        "Cigna",
+        "MetLife",
+        "UnitedHealthcare"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Dentist",
+      "@id": "https://www.brushandfloss.com/locations/goldsboro/dentist",
+      "name": "Riccobene Associates Family Dentistry",
+      "image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317d4_IMG_8291%20-%20Edited.jpeg",
+      "logo": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315cd_riccobene-associates-family-dentistry.png",
+      "url": "/locations/goldsboro",
+      "telephone": "919-731-2331",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "2702 Medical Office Pl, Goldsboro, NC 27534",
+        "addressLocality": "Goldsboro",
+        "addressRegion": "NC",
+        "postalCode": "27534",
+        "addressCountry": "US"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Monday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Tuesday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Wednesday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Thursday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Friday",
+          "opens": "8:00",
+          "closes": "14:00"
+        }
+      ],
+      "priceRange": "$$",
+      "hasMap": "https://goo.gl/maps/cggUp8PGaS92",
+      "sameAs": "https://goo.gl/maps/cggUp8PGaS92"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Dental Services",
+      "serviceOutput": [
+        {
+          "@type": "Service",
+          "name": "Crowns"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Anesthesia"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Bridges"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Implants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Sealants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dentures"
+        }
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Chequieta S"
+      },
+      "reviewBody": "My favorite dental office hands down!! Recently moved to the area and the staff has been friendly, welcoming and beyond helpful when it comes my family’s dental needs. The hygienists provides attentive care and sensitivity with the services they provide and the dentists are beyond informative with providing educational support and a relaxed atmosphere. We will continue our care here in great hands.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Miranda P"
+      },
+      "reviewBody": "From check-in, to my actual appointment time with my dental hygienist, my experience was amazing! I not only felt heard by my hygienist, but I felt safe and appreciated. She took her time to explain my dental history, as well as the procedure that would take place, while answering all of my questions with patience. She made sure that I was okay, during the procedure, while letting me know that I was okay. I left with gratitude. Thanks so much!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Julianne R"
+      },
+      "reviewBody": "I had a great experience at Riccobene. The staff was incredibly friendly and professional, and they made me feel comfortable from the moment I walked in. The dentist was thorough, explained everything clearly, and took great care during my treatment. I really appreciate the clean and welcoming environment. Highly recommended to anyone looking for quality dental care!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Ashley C"
+      },
+      "reviewBody": "5/5 stars. This was my first time to the dentist in years, So naturally I was nervous; however, the staff was so friendly and well coordinated I felt so comfortable immediately. I can tell they enjoy working there and as someone who has anxiety about every little detail they put my mind at ease.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What services are offered at the Goldsboro, NC dental office?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A wide variety of services are available in our Goldsboro office including general & pediatric dentistry, routine hygiene, emergency dentistry, cosmetic dentistry (including whitening) and dental implants."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I schedule an appointment in Goldsboro, NC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Give us a call or schedule an appointment online and we’ll get you on the schedule as soon as possible, often times the very next day that we’re open. At Riccobene, we know that waiting weeks for an appointment sometimes just doesn’t work for your schedule, so we eliminate the wait."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the Goldsboro office provide pediatric dental care?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes - pediatric dental care is offered at our Goldsboro office."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is emergency dental care available in Goldsboro, NC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes - we make every effort to fit emergency appointments into the schedule the same or next day. If we absolutely cannot accommodate an emergency appointment, one of our other Riccobene offices may be able to help."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I get dental implants at the Goldsboro office?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes - some implants can be provided at our Goldsboro office. For more complex procedures, we may refer you to a dental surgery facility."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What cosmetic dental services are offered in Goldsboro, NC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Riccobene in Goldsboro, NC offers cosmetic dental services like Invisalign® and others, as well as veneers, caps, crowns and more."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where is the Goldsboro office located and what are the hours?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Riccobene in Goldsboro is located at 2702 Medical Office Place; Goldsboro, NC 27534. We’re open Monday-Thursday 8am-4pm and Fridays from 8am-2pm."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you accept insurance or offer membership plans in Goldsboro, NC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We accept and participate with a large majority of insurance plans. Prior to any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the Goldsboro office care for dental needs of all ages?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes - the whole family can visit our office in Goldsboro, NC."
+          }
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314df_search.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152e_riccobene-banner-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31508_location-map.webp",
+      "alt": "Map showing neighborhoods, parks, schools, and roads including Davis Drive Elementary School, Pleasant Street, and Sunset Plaza."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314e7_location-banner.jpg",
+      "alt": "Smiling woman reclined in dental chair during a dental checkup with dentist holding dental mirror and probe."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31552_call-now-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31654_catherine-watkins-dds.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31654_catherine-watkins-dds.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317ef_IMG_8384%20-%20Edited.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317ef_IMG_8384%20-%20Edited.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a167594b4522844f45f06c_ashish-karia-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a167594b4522844f45f06c_ashish-karia-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3164b_Riccobene2-103.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315aa_Dental-Anesthesia-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317f5_dental-bridges.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69b29dacd38e9840c17ead1c_denture-implants.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ba_nc.dental-sealants-1024x768.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315af_brush-and-floss-dentures-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152b_riccobene-our-office-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152a_riccobene-our-office-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152d_riccobene-our-office-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152c_riccobene-our-office-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31529_riccobene-our-office-icon-five.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31548_riccobene-wcr-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31549_family-friendly.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31547_state-of-the-art.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31527_insurance-accepted-icon-1.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31558_pricing-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31559_pricing-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31522_pricing-1.webp",
+      "alt": "Smiling young woman with long brown hair pointing to her teeth with both index fingers."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31523_pricing-2.webp",
+      "alt": "Smiling young boy sitting in a dental chair during a dental checkup with a dentist holding a dental tool."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154b_email-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154c_alarm-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a location"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro",
+      "text": "GOLDSBORO"
+    },
+    {
+      "href": "tel:919-731-2331",
+      "text": "919-731-2331"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "CHANGE LOCATION"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers#jobs",
+      "text": "JOIN THE TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/goldsboro",
+      "text": "SCHEDULE AN APPOINTMENT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": "Home"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a Dentist Near You"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "New Patient Experience"
+    },
+    {
+      "href": "https://www.brushandfloss.com/the-riccobene-way",
+      "text": "The Riccobene Way"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans",
+      "text": "Membership Plans"
+    },
+    {
+      "href": "https://www.brushandfloss.com/reviews",
+      "text": "Patient Reviews"
+    },
+    {
+      "href": "https://patient.payments.health/#/?organizationID=dab6a2b7&locationID=LSXWSH421HHY4",
+      "text": "Make A Payment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/payment",
+      "text": "Online Payments"
+    },
+    {
+      "href": "https://www.brushandfloss.com/articles",
+      "text": "articles"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "Contact us"
+    },
+    {
+      "href": "https://www.paycomonline.net/v4/ats/web.php/jobs?clientkey=B32F01563C7743C293E0AAB35AE1ADEA",
+      "text": "careers"
+    },
+    {
+      "href": "https://www.brushandflossaffiliates.com/",
+      "text": "Become an Affiliate Practice"
+    },
+    {
+      "href": "https://www.brushandfloss-employees.com/",
+      "text": "Employees"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/goldsboro",
+      "text": "BOOK APPOINMENT"
+    },
+    {
+      "href": "tel:919-731-2331",
+      "text": "CALL NOW"
+    },
+    {
+      "href": "tel:919-731-2331",
+      "text": "Call Now"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/brooke-johnson-dmd",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/brooke-johnson-dmd",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/steven-taylor-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/steven-taylor-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/ashish-karia-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/ashish-karia-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/crowns",
+      "text": "Crowns"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-anesthesia",
+      "text": "Dental Anesthesia"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-bridges",
+      "text": "Dental Bridges"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-implants",
+      "text": "Dental Implants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/sealants",
+      "text": "Dental Sealants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dentures",
+      "text": "Dentures"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro?f5ff0038_page=4",
+      "text": "Previous"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro?f5ff0038_page=2",
+      "text": "Load More"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#ready-to-schedule",
+      "text": "SCHEDULE A VISIT TODAY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/selma-adult",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/selma",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/benson",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/benson",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/clayton",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/clayton",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "View all Locations"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#adult-preventative-plan",
+      "text": "ADULT PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#child-preventative-plan",
+      "text": "CHILD PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/goldsboro",
+      "text": "BOOK APPOINTMENT ONLINE"
+    },
+    {
+      "href": "tel:919-731-2331",
+      "text": "CALL FOR EMERGENCY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "LOCATIONS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "SERVICES"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "WHAT TO EXPECT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers",
+      "text": "JOIN OUR TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/partnership",
+      "text": "PARTNER WITH US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "CONTACT US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/hipaa",
+      "text": "HIPAA"
+    },
+    {
+      "href": "https://www.brushandfloss.com/privacy-policy",
+      "text": "PRIVACY POLICY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/search",
+      "text": "SEARCH"
+    },
+    {
+      "href": "https://www.facebook.com/RiccobeneDentistry",
+      "text": ""
+    },
+    {
+      "href": "https://www.instagram.com/brushandflossnc/?hl=en",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro",
+      "text": "Goldsboro"
+    },
+    {
+      "href": "tel:919-731-2331",
+      "text": "919-731-2331"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#",
+      "text": "Close"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/goldsboro#",
+      "text": "Open Appointment"
+    }
+  ],
+  "bodyText": "GOLDSBORO\n919-731-2331\nCHANGE LOCATION\nJOIN THE TEAM\nSCHEDULE AN APPOINTMENT\nTRUSTED DENTISTS IN GOLDSBORO, NC FOR COMPLETE FAMILY DENTAL CARE\n\nOur extraordinary team of dentists deliver excellent dental care for patients of all ages in the Goldsboro community.\n\n2702 Medical Office Pl, Goldsboro, NC 27534\n919-731-2331\nMon-Thu: 8:00 AM - 4:00 PM | Fri: 8:00 AM - 2:00 PM\nBOOK APPOINMENT\nCALL NOW\nCall Now\nMEET OUR DOCTORS\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\nBrooke Johnson, DMD\nGeneral Dentistry\n\n10 Years Exp.\n\nMORE+\nBrooke Johnson, DMD\nGeneral Dentistry\n\n10 Years Exp.\n\nDr. Brooke Johnson, originally from Chocowinity, NC, graduated from East Carolina University School of Dental Medicine in 2015 and brings a warm, thoughtful approach that involves patients in shaping their dental goals. She is especially drawn to cosmetic dentistry and creating a calming environment for care.\nVIEW PROFILE\nSteven Taylor, DDS\nComprehensive Dentistry\n\n20 Years Exp.\n\nMORE+\nSteven Taylor, DDS\nComprehensive Dentistry\n\n20 Years Exp.\n\nDr. Steven Taylor is a compassionate and highly skilled dentist with over twenty years of experience serving the Goldsboro, NC, community. A former civil engineer, he earned his DDS from UNC Chapel Hill after a successful seven-year engineering career, now specializing in comprehensive, patient-centered dental care.\nVIEW PROFILE\nAshish Karia, DDS\nGeneral Dentistry\nMORE+\nAshish Karia, DDS\nGeneral Dentistry\nDr. Ashish Kariawas born and raised in India and earned his Bachelor of Dental Surgery from Dharmsinh Desai University in 2015. After relocating to the United States, he continued his advanced dental education at the University of Michigan School of Dentistry, graduating in 2022.\nVIEW PROFILE\nOUR SERVICES\n\nComprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.\n\nCrowns\nProtect and restore damaged teeth with custom dental crowns. Learn about tooth crown types, benefits, and treatment. Schedule your visit today.\nBOOK NOW\nDental Anesthesia\nSedation dentistry with dental anesthesia ensures you remain comfortalbe during dental care. Our patients are our top priority! Call Riccobene Associates.\nBOOK NOW\nDental Bridges\nDental bridges restore your smile by replacing missing teeth. Get a custom, natural fit that enhances both appearance and function. Book your consultation today\nBOOK NOW\nDental Implants\nAt Riccobene Associates Family Dentistry, we offer dental implants to restore your beautiful smile. Contact one of our dental offices today!\nBOOK NOW\nDental Sealants\nDental sealants protect your teeth from cavities and decay. A quick, effective way to maintain oral health. Book your consultation today!\nBOOK NOW\nDentures\nDiscover affordable dentures and permanent solutions from a trusted dentures specialist. Get one-day dentures that fit your needs. Book a consultation today!\nBOOK NOW\nLoad More\nWHAT OUR PATIENTS SAY\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\n★★★★★\nMy favorite dental office hands down!! Recently moved to the area and the staff has been friendly, welcoming and beyond helpful when it comes my family’s dental needs. The hygienists provides attentive care and sensitivity with the services they provide and the dentists are beyond informative with providing educational support and a relaxed atmosphere. We will continue our care here in great hands.\nChequieta S\n★★★★★\nFrom check-in, to my actual appointment time with my dental hygienist, my experience was amazing! I not only felt heard by my hygienist, but I felt safe and appreciated. She took her time to explain my dental history, as well as the procedure that would take place, while answering all of my questions with patience. She made sure that I was okay, during the procedure, while letting me know that I was okay. I left with gratitude. Thanks so much!\nMiranda P\n★★★★★\nI had a great experience at Riccobene. The staff was incredibly friendly and professional, and they made me feel comfortable from the moment I walked in. The dentist was thorough, explained everything clearly, and took great care during my treatment. I really appreciate the clean and welcoming environment. Highly recommended to anyone looking for quality dental care!\nJulianne R\n★★★★★\n5/5 stars. This was my first time to the dentist in years, So naturally I was nervous; however, the staff was so friendly and well coordinated I felt so comfortable immediately. I can tell they enjoy working there and as someone who has anxiety about every little detail they put my mind at ease.\nAshley C\nOUR OFFICE\n\nOur Goldsboro office is located near Wayne Memorial Drive and US-70, close to Wayne UNC Health Care and the Berkeley Mall. Patients from nearby neighborhoods like Walnut Creek and Green Meadows enjoy quick access to our practice.\n\nAt Riccobene Goldsboro, we combine state-of-the-art dental technology with a compassionate, patient-first approach. Serving families across Wayne County, our office makes maintaining a healthy smile both simple and stress-free.\n\nOffice Amenities\nFree WiFi\nComplimentary Beverages\nFamily-Friendly\nFree Parking\nFlexible Scheduling\nSCHEDULE A VISIT TODAY\nWHY CHOOSE RICCOBENE?\n\nWe believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.\n\nSame-Day Appointments\nUrgent dental needs? We offer same-day or next-day appointments in many locations for emergency care.\nFamily-Friendly\nWe provide gentle, expert dental care for children from their very first tooth through their teenage years.\nState-Of-The-Art\nCutting-edge technology and advanced treatment options bring the best that modern dental innovation has to offer to our offices.\nComprehensive Care\nOur expert provider offers a range of services from preventative, cosmetic, routine dental care and more.\nEmergency Dental Services\n24/7 emergency support when you need immediate dental care.\nOUR COMMITMENT TO EXCELLENCE\n\nWhen you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.\n\n500,000+\nHappy Smiles\nPatients served with exceptional care\n4.8\nAvg Google Rating\nfrom more than 28,000 reviews\n25\nYears In Business\nTrusted by the local community\nOTHER NEARBY LOCATIONS\n\nCan't make it to our Goldsboro office? We have other convenient locations in the area to serve you with the same exceptional dental care.\n\nSelma\n1111 S Pollock St, Selma, NC 27576\n919-965-2552\nEmergency\nCosmetic\nSedation\nPediatric\nOrthodontic\nBOOK NOW\nVIEW DETAILS\nBenson\n12330 Highway 210, Suite 115, Benson, NC 27504\n919-207-2077\nGeneral\nEmergency\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nClayton\n31 Oleander Dr, Clayton, NC 27527\n919-550-5251\nCosmetic\nImplants\nPediatric\nPeriodontal\nOrthodontic\nBOOK NOW\nVIEW DETAILS\nView all Locations\nPAYMENT OPTIONS & MEMBERSHIP PLANS\n\nQuality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.\n\nInsurance Accepted\nWe accept most major dental insurance plans\nDelta Dental\nBlue Cross Blue Shield\nAetna\nCigna\nMetlife\nUnited Heathcare\nFlexible Financing\nMultiple payment options to fit your budget\nSunbit\n0% Interest Plans\nMonthly Payment Plans\nHSA/FSA Accepted\nMembership Plans\nAffordable care for uninsured patients\nAnnual Cleanings\nX-rays Included\n10% Off Treatments\nNo Insurance Required\nAFFORDABLE MEMBERSHIP PLANS\n\nSave money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.\n\nAdult Preventative Plan\n$39\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nADULT PREVENTATIVE PLAN\nChild Preventative Plan\n$36\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nCHILD PREVENTATIVE PLAN\nFREQUENTLY ASKED QUESTIONS\nWhat services are offered at the Goldsboro, NC dental office?\n\nA wide variety of services are available in our Goldsboro office including general & pediatric dentistry, routine hygiene, emergency dentistry, cosmetic dentistry (including whitening) and dental implants.\n\nHow do I schedule an appointment in Goldsboro, NC?\n\nGive us a call or schedule an appointment online and we’ll get you on the schedule as soon as possible, often times the very next day that we’re open. At Riccobene, we know that waiting weeks for an appointment sometimes just doesn’t work for your schedule, so we eliminate the wait.\n\nDoes the Goldsboro office provide pediatric dental care?\n\nYes - pediatric dental care is offered at our Goldsboro office.\n\nIs emergency dental care available in Goldsboro, NC?\n\nYes - we make every effort to fit emergency appointments into the schedule the same or next day. If we absolutely cannot accommodate an emergency appointment, one of our other Riccobene offices may be able to help.\n\nCan I get dental implants at the Goldsboro office?\n\nYes - some implants can be provided at our Goldsboro office. For more complex procedures, we may refer you to a dental surgery facility.\n\nWhat cosmetic dental services are offered in Goldsboro, NC?\n\nRiccobene in Goldsboro, NC offers cosmetic dental services like Invisalign® and others, as well as veneers, caps, crowns and more.\n\nWhere is the Goldsboro office located and what are the hours?\n\nRiccobene in Goldsboro is located at 2702 Medical Office Place; Goldsboro, NC 27534. We’re open Monday-Thursday 8am-4pm and Fridays from 8am-2pm.\n\nDo you accept insurance or offer membership plans in Goldsboro, NC?\n\nWe accept and participate with a large majority of insurance plans. Prior to any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.\n\nDoes the Goldsboro office care for dental needs of all ages?\n\nYes - the whole family can visit our office in Goldsboro, NC.\n\nREADY TO SCHEDULE? CONTACT US\n\nTake the first step towards optimal oral health. Contact our Goldsboro office to schedule your appointment or ask any questions about our dental services.\n\nSend us a Message\nFill out the form below and we'll get back to you within 24 hours.\nFirst Name*\nLast Name*\nEmail*\nPhone*\nHow Can We Help?\nI have dental insurance and would like to verify my benefits\nI prefer a phone call instead of email\nThis is a dental emergency\nGet in Touch\n\nFill out the form below and we'll get back to you within 24 hours.\n\nVisit Our Office\n2702 Medical Office Pl, Goldsboro, NC 27534\nCall Us\n919-731-2331\nEmergency line available 24/7\nEmail Us\ngoldsboropc@brushandfloss.com\nOffice Hours\nMonday: 8:00 AM - 4:00 PM\nTuesday: 8:00 AM - 4:00 PM\nWednesday: 8:00 AM - 4:00 PM\nThursday: 8:00 AM - 4:00 PM\nFriday: 8:00 AM - 2:00 PM\nBOOK APPOINTMENT ONLINE\nCALL FOR EMERGENCY\nLOCATIONS\nSERVICES\nWHAT TO EXPECT\nJOIN OUR TEAM\nPARTNER WITH US\nCONTACT US\nHIPAA\nPRIVACY POLICY\nSEARCH",
+  "wordCount": 1804
+}

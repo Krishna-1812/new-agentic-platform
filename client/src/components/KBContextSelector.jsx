@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 
 const CLIENTS = [
   { value: '', label: 'No client (generic)' },
@@ -10,7 +10,7 @@ const CLIENTS = [
   { value: 'new-life-house', label: 'New Life House' },
 ];
 
-export default function KBContextSelector({ module: moduleId, onChange, disabled }) {
+function KBContextSelector({ module: moduleId, onChange, disabled }) {
   const [client, setClient] = useState('');
   const [feedbackKbIds, setFeedbackKbIds] = useState([]);
   const [kbData, setKbData] = useState(null);
@@ -48,11 +48,11 @@ export default function KBContextSelector({ module: moduleId, onChange, disabled
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedbackKbIds]);
 
-  function toggleFeedback(id) {
+  const toggleFeedback = useCallback((id) => {
     setFeedbackKbIds(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
-  }
+  }, []);
 
   // Build summary + warnings
   const summaryItems = [];
@@ -208,3 +208,5 @@ export default function KBContextSelector({ module: moduleId, onChange, disabled
     </div>
   );
 }
+
+export default memo(KBContextSelector);

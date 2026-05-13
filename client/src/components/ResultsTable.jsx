@@ -1,4 +1,6 @@
-export default function ResultsTable({ keyword, analysis }) {
+import { memo } from 'react';
+
+function ResultsTable({ keyword, analysis }) {
   const { sections, wordCountBenchmark, semanticKeywords, contentGaps } = analysis;
 
   return (
@@ -136,3 +138,5 @@ export default function ResultsTable({ keyword, analysis }) {
     </div>
   );
 }
+
+export default memo(ResultsTable);

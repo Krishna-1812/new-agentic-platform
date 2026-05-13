@@ -1,7 +1,7 @@
 {
-  "name": "serp-researcher-server",
+  "name": "seo-automation-server",
   "version": "1.0.0",
-  "description": "Backend for SERP Content Researcher",
+  "description": "Backend for SEO Automation",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -10,15 +10,19 @@
   "dependencies": {
     "@sparticuz/chromium": "^130.0.0",
     "axios": "^1.6.8",
+    "cheerio": "^1.2.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "docx": "^8.5.0",
     "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
     "express": "^4.19.2",
     "express-rate-limit": "^7.3.1",
+    "googleapis": "^171.4.0",
     "gray-matter": "^4.0.3",
     "jsonwebtoken": "^9.0.2",
     "openai": "^4.52.7",
+    "pptxgenjs": "^4.0.1",
     "puppeteer-core": "^22.8.2"
   },
   "devDependencies": {

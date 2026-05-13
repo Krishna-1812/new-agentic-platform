@@ -1,0 +1,1101 @@
+{
+  "url": "https://www.brushandfloss.com/locations/holly-ridge",
+  "statusCode": 200,
+  "scrapedAt": "2026-04-14T14:41:01.547Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "Dentist in Holly Ridge, NC | Riccobene Associates Family Dentistry",
+  "metaDescription": "Dentist in Holly Ridge NC offering family, pediatric, cosmetic, emergency & implant care in a modern, welcoming practice. Call today to schedule your visit!",
+  "canonical": "https://www.brushandfloss.com/locations/holly-ridge",
+  "allMeta": {
+    "description": "Dentist in Holly Ridge NC offering family, pediatric, cosmetic, emergency & implant care in a modern, welcoming practice. Call today to schedule your visit!",
+    "og:title": "Riccobene Associates Family Dentistry | Holly Ridge, NC",
+    "og:description": "Dentist in Holly Ridge NC offering family, pediatric, cosmetic, emergency & implant care in a modern, welcoming practice. Call today to schedule your visit!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315d9_HR1-scaled-500x303.jpeg",
+    "twitter:title": "Riccobene Associates Family Dentistry | Holly Ridge, NC",
+    "twitter:description": "Dentist in Holly Ridge NC offering family, pediatric, cosmetic, emergency & implant care in a modern, welcoming practice. Call today to schedule your visit!",
+    "twitter:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315d9_HR1-scaled-500x303.jpeg",
+    "og:type": "website",
+    "twitter:card": "summary_large_image",
+    "viewport": "width=device-width, initial-scale=1",
+    "generator": "Webflow"
+  },
+  "ogTags": {
+    "og:title": "Riccobene Associates Family Dentistry | Holly Ridge, NC",
+    "og:description": "Dentist in Holly Ridge NC offering family, pediatric, cosmetic, emergency & implant care in a modern, welcoming practice. Call today to schedule your visit!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315d9_HR1-scaled-500x303.jpeg",
+    "og:type": "website"
+  },
+  "twitterTags": {
+    "twitter:card": "summary_large_image"
+  },
+  "headings": {
+    "h1": [
+      "TRUSTED DENTISTS IN HOLLY RIDGE, NC FOR COMPLETE FAMILY DENTAL CARE"
+    ],
+    "h2": [
+      "MEET OUR DOCTOR",
+      "OUR SERVICES",
+      "WHAT OUR PATIENTS SAY",
+      "OUR OFFICE",
+      "WHY CHOOSE RICCOBENE?",
+      "OUR COMMITMENT TO EXCELLENCE",
+      "OTHER NEARBY LOCATIONS",
+      "PAYMENT OPTIONS & MEMBERSHIP PLANS",
+      "AFFORDABLE MEMBERSHIP PLANS",
+      "FREQUENTLY ASKED QUESTIONS",
+      "READY TO SCHEDULE? CONTACT US"
+    ],
+    "h3": [
+      "Raven Collins, DMD",
+      "Office Amenities",
+      "500,000+",
+      "4.8",
+      "25",
+      "What emergency dental services are available in Holly Ridge, NC?",
+      "Do you offer family and pediatric dentistry in Holly Ridge?",
+      "Can I get cosmetic dental services like teeth whitening or veneers in Holly Ridge?",
+      "Does the Holly Ridge office provide dental implants?",
+      "How can I schedule an appointment with a Holly Ridge dentist?",
+      "What payment options and insurance plans does the Holly Ridge office accept?",
+      "Send us a Message",
+      "Get in Touch",
+      "Request An Appointment"
+    ],
+    "h4": [],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h1",
+      "text": "TRUSTED DENTISTS IN HOLLY RIDGE, NC FOR COMPLETE FAMILY DENTAL CARE"
+    },
+    {
+      "tag": "h2",
+      "text": "MEET OUR DOCTOR"
+    },
+    {
+      "tag": "h3",
+      "text": "Raven Collins, DMD"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR SERVICES"
+    },
+    {
+      "tag": "h2",
+      "text": "WHAT OUR PATIENTS SAY"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR OFFICE"
+    },
+    {
+      "tag": "h3",
+      "text": "Office Amenities"
+    },
+    {
+      "tag": "h2",
+      "text": "WHY CHOOSE RICCOBENE?"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR COMMITMENT TO EXCELLENCE"
+    },
+    {
+      "tag": "h3",
+      "text": "500,000+"
+    },
+    {
+      "tag": "h3",
+      "text": "4.8"
+    },
+    {
+      "tag": "h3",
+      "text": "25"
+    },
+    {
+      "tag": "h2",
+      "text": "OTHER NEARBY LOCATIONS"
+    },
+    {
+      "tag": "h2",
+      "text": "PAYMENT OPTIONS & MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "AFFORDABLE MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "FREQUENTLY ASKED QUESTIONS"
+    },
+    {
+      "tag": "h3",
+      "text": "What emergency dental services are available in Holly Ridge, NC?"
+    },
+    {
+      "tag": "h3",
+      "text": "Do you offer family and pediatric dentistry in Holly Ridge?"
+    },
+    {
+      "tag": "h3",
+      "text": "Can I get cosmetic dental services like teeth whitening or veneers in Holly Ridge?"
+    },
+    {
+      "tag": "h3",
+      "text": "Does the Holly Ridge office provide dental implants?"
+    },
+    {
+      "tag": "h3",
+      "text": "How can I schedule an appointment with a Holly Ridge dentist?"
+    },
+    {
+      "tag": "h3",
+      "text": "What payment options and insurance plans does the Holly Ridge office accept?"
+    },
+    {
+      "tag": "h2",
+      "text": "READY TO SCHEDULE? CONTACT US"
+    },
+    {
+      "tag": "h3",
+      "text": "Send us a Message"
+    },
+    {
+      "tag": "h3",
+      "text": "Get in Touch"
+    },
+    {
+      "tag": "h3",
+      "text": "Request An Appointment"
+    }
+  ],
+  "paragraphs": [
+    "Experience modern dental care designed for the Holly Ridge community.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Comprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Located along US-17 (Ocean Highway) in Onslow County, our Holly Ridge office is convenient for patients traveling between Jacksonville and Wilmington. We’re just minutes from Topsail Island and close to growing neighborhoods like Folkstone and Mimosa Bay.",
+    "At Riccobene Holly Ridge, we bring compassionate, cutting-edge dental care to a growing coastal community. Families from Sneads Ferry, Surf City, and beyond trust us to deliver comfortable, family-focused dentistry year-round.",
+    "We believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.",
+    "When you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.",
+    "Can't make it to our Holly Ridge office? We have other convenient locations in the area to serve you with the same exceptional dental care.",
+    "Quality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.",
+    "Save money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.",
+    "We strive to provide same day or next day care for those with dental emergencies, either at our Holly Ridge location or another convenient Riccobene location to prioritize solving urgent issues. Whether you have a broken or cracked tooth, a damaged crown, or undiagnosed severe tooth pain, we can help diagnose and treat urgent oral problems at our Holly Ridge location. Give us a call today to schedule an emergency appointment.",
+    "Yes - we can help your whole family with their oral health! Parents, bring your kids. (Kids, definitely bring your parents!). We want your whole family smiling widely and brightly.",
+    "Yes - professional teeth whitening is one of the most common cosmetic dental procedures we see at our Holly Ridge location, and we offer a variety of other options including veneers that help you get your smile looking just the way you want.",
+    "Yes - we offer expert care diagnosing and managing your dental implant procedure. Some implants can be performed in-office, while other procedures may be performed at an outpatient surgery facility.",
+    "Booking an appointment is as simple as making a phone call or scheduling online. You can reach us at (910) 329-8191 and we’ll get you on the schedule as soon as possible!",
+    "We accept and participate with a large majority of insurance plans. Prior to any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.",
+    "Take the first step towards optimal oral health. Contact our Holly Ridge office to schedule your appointment or ask any questions about our dental services.",
+    "Fill out the form below and we'll get back to you within 24 hours.",
+    "Select a Location to schedule an appointment:",
+    "Call our Holly Ridge Office at 910-329-8191, or use the form below to request an appointment."
+  ],
+  "schemaMarkup": [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "https://www.brushandfloss.com/locations/holly-ridge",
+      "url": "https://www.brushandfloss.com/locations/holly-ridge",
+      "name": "Dentist in Holly Ridge, NC | Riccobene Associates Family Dentistry",
+      "description": "Dentist in Holly Ridge NC offering family, pediatric, cosmetic, emergency &amp; implant care in a modern, welcoming practice. Call today to schedule your visit!",
+      "inLanguage": "en-US",
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "https://www.brushandfloss.com/",
+        "url": "https://www.brushandfloss.com/",
+        "name": "Riccobene Associates Family Dentistry"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://www.brushandfloss.com/#organization",
+      "url": "https://www.brushandfloss.com/",
+      "sameAs": [
+        "https://www.facebook.com/RiccobeneDentistry",
+        "https://www.instagram.com/brushandflossnc/"
+      ],
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg"
+      },
+      "brand": {
+        "@type": "Brand",
+        "name": "Riccobene Associates Family Dentistry",
+        "sameAs": [
+          "https://www.facebook.com/RiccobeneDentistry",
+          "https://www.instagram.com/brushandflossnc/"
+        ]
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Insurance Accepted",
+      "insuranceAccepted": [
+        "Delta Dental",
+        "Blue Cross Blue Shield",
+        "Aetna",
+        "Cigna",
+        "MetLife",
+        "UnitedHealthcare"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Dentist",
+      "@id": "https://www.brushandfloss.com/locations/holly-ridge/dentist",
+      "name": "Riccobene Associates Family Dentistry",
+      "image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315d9_HR1-scaled-500x303.jpeg",
+      "logo": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315cd_riccobene-associates-family-dentistry.png",
+      "url": "/locations/holly-ridge",
+      "telephone": "910-329-8191",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "200 US-17 N, Holly Ridge, NC 28445",
+        "addressLocality": "Holly Ridge",
+        "addressRegion": "NC",
+        "postalCode": "28445",
+        "addressCountry": "US"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Monday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Tuesday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Wednesday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Thursday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Friday",
+          "opens": "8:00",
+          "closes": "14:00"
+        }
+      ],
+      "priceRange": "$$",
+      "hasMap": "https://goo.gl/maps/GnUWgX7jX4g5ESa46",
+      "sameAs": "https://goo.gl/maps/GnUWgX7jX4g5ESa46"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Dental Services",
+      "serviceOutput": [
+        {
+          "@type": "Service",
+          "name": "Crowns"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Bridges"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Sealants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dentures"
+        },
+        {
+          "@type": "Service",
+          "name": "Digital X-Rays"
+        },
+        {
+          "@type": "Service",
+          "name": "Fluoride Treatment"
+        }
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Emily F"
+      },
+      "reviewBody": "I brought my mom, who has Alzheimer&#39;s, to them when we moved her here. They have been so patient and kind and gentle with her. They have done everything they can to help her feel comfortable, safe and heard. They have answered her questions, sometimes the same ones over and over. I just really appreciate the effort because I know it&#39;s tough. I am so grateful for their care and support!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Jessa W"
+      },
+      "reviewBody": "Riccobene is such a great place to go. I have 3 kids and even though this place isn&#39;t a &#39;pediatric dentist&#39; they are amazing with the kids.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Lola N"
+      },
+      "reviewBody": "This dental office has restored my faith and confidence in getting my teeth fixed. Their extremely friendly staff and lovely Dr. addressed all of my concerns and treated me with respect. If you are worried about getting dental treatment I highly recommend this place.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "William L"
+      },
+      "reviewBody": "I scheduled a cleaning at 8 am on each of my last 2 birthdays. The whole staff came in, sang happy birthday, presented me with a card and a cookie with a candle in it. Great way to start my birthday!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What emergency dental services are available in Holly Ridge, NC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We strive to provide same day or next day care for those with dental emergencies, either at our Holly Ridge location or another convenient Riccobene location to prioritize solving urgent issues. Whether you have a broken or cracked tooth, a damaged crown, or undiagnosed severe tooth pain, we can help diagnose and treat urgent oral problems at our Holly Ridge location. Give us a call today to schedule an emergency appointment."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you offer family and pediatric dentistry in Holly Ridge?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes - we can help your whole family with their oral health! Parents, bring your kids. (Kids, definitely bring your parents!). We want your whole family smiling widely and brightly."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I get cosmetic dental services like teeth whitening or veneers in Holly Ridge?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes - professional teeth whitening is one of the most common cosmetic dental procedures we see at our Holly Ridge location, and we offer a variety of other options including veneers that help you get your smile looking just the way you want."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the Holly Ridge office provide dental implants?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes - we offer expert care diagnosing and managing your dental implant procedure. Some implants can be performed in-office, while other procedures may be performed at an outpatient surgery facility."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How can I schedule an appointment with a Holly Ridge dentist?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Booking an appointment is as simple as making a phone call or scheduling online. You can reach us at (910) 329-8191 and we’ll get you on the schedule as soon as possible!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What payment options and insurance plans does the Holly Ridge office accept?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We accept and participate with a large majority of insurance plans. Prior to any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance."
+          }
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314df_search.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152e_riccobene-banner-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31508_location-map.webp",
+      "alt": "Map showing neighborhoods, parks, schools, and roads including Davis Drive Elementary School, Pleasant Street, and Sunset Plaza."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314e7_location-banner.jpg",
+      "alt": "Smiling woman reclined in dental chair during a dental checkup with dentist holding dental mirror and probe."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31552_call-now-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a1705b4c7eaf82f72a3b2a_raven-collins-dmd.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a1705b4c7eaf82f72a3b2a_raven-collins-dmd.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3164b_Riccobene2-103.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317f5_dental-bridges.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ba_nc.dental-sealants-1024x768.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315af_brush-and-floss-dentures-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ac_dental-x-rays-north-carolina-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ae_Fluoride-Treatment-nc-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152b_riccobene-our-office-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152a_riccobene-our-office-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152d_riccobene-our-office-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152c_riccobene-our-office-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31529_riccobene-our-office-icon-five.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31548_riccobene-wcr-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31549_family-friendly.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31547_state-of-the-art.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31527_insurance-accepted-icon-1.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31558_pricing-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31559_pricing-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31522_pricing-1.webp",
+      "alt": "Smiling young woman with long brown hair pointing to her teeth with both index fingers."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31523_pricing-2.webp",
+      "alt": "Smiling young boy sitting in a dental chair during a dental checkup with a dentist holding a dental tool."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154b_email-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154c_alarm-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a location"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge",
+      "text": "HOLLY RIDGE"
+    },
+    {
+      "href": "tel:910-329-8191",
+      "text": "910-329-8191"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "CHANGE LOCATION"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers#jobs",
+      "text": "JOIN THE TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/holly-ridge",
+      "text": "SCHEDULE AN APPOINTMENT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": "Home"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a Dentist Near You"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "New Patient Experience"
+    },
+    {
+      "href": "https://www.brushandfloss.com/the-riccobene-way",
+      "text": "The Riccobene Way"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans",
+      "text": "Membership Plans"
+    },
+    {
+      "href": "https://www.brushandfloss.com/reviews",
+      "text": "Patient Reviews"
+    },
+    {
+      "href": "https://patient.payments.health/#/?organizationID=dab6a2b7&locationID=LSXWSH421HHY4",
+      "text": "Make A Payment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/payment",
+      "text": "Online Payments"
+    },
+    {
+      "href": "https://www.brushandfloss.com/articles",
+      "text": "articles"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "Contact us"
+    },
+    {
+      "href": "https://www.paycomonline.net/v4/ats/web.php/jobs?clientkey=B32F01563C7743C293E0AAB35AE1ADEA",
+      "text": "careers"
+    },
+    {
+      "href": "https://www.brushandflossaffiliates.com/",
+      "text": "Become an Affiliate Practice"
+    },
+    {
+      "href": "https://www.brushandfloss-employees.com/",
+      "text": "Employees"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/holly-ridge",
+      "text": "BOOK APPOINMENT"
+    },
+    {
+      "href": "tel:910-329-8191",
+      "text": "CALL NOW"
+    },
+    {
+      "href": "tel:910-329-8191",
+      "text": "Call Now"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/raven-collins-dmd",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/raven-collins-dmd",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/crowns",
+      "text": "Crowns"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-bridges",
+      "text": "Dental Bridges"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/sealants",
+      "text": "Dental Sealants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dentures",
+      "text": "Dentures"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/digital-x-rays",
+      "text": "Digital X-Rays"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/fluoride-treatment",
+      "text": "Fluoride Treatment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge?f5ff0038_page=2",
+      "text": "Load More"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#ready-to-schedule",
+      "text": "SCHEDULE A VISIT TODAY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/hampstead",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/hampstead",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/porters-neck",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/new-bern",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/new-bern",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "View all Locations"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#adult-preventative-plan",
+      "text": "ADULT PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#child-preventative-plan",
+      "text": "CHILD PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/holly-ridge",
+      "text": "BOOK APPOINTMENT ONLINE"
+    },
+    {
+      "href": "tel:910-329-8191",
+      "text": "CALL FOR EMERGENCY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "LOCATIONS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "SERVICES"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "WHAT TO EXPECT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers",
+      "text": "JOIN OUR TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/partnership",
+      "text": "PARTNER WITH US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "CONTACT US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/hipaa",
+      "text": "HIPAA"
+    },
+    {
+      "href": "https://www.brushandfloss.com/privacy-policy",
+      "text": "PRIVACY POLICY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/search",
+      "text": "SEARCH"
+    },
+    {
+      "href": "https://www.facebook.com/RiccobeneDentistry",
+      "text": ""
+    },
+    {
+      "href": "https://www.instagram.com/brushandflossnc/?hl=en",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge",
+      "text": "Holly Ridge"
+    },
+    {
+      "href": "tel:910-329-8191",
+      "text": "910-329-8191"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#",
+      "text": "Close"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/holly-ridge#",
+      "text": "Open Appointment"
+    }
+  ],
+  "bodyText": "HOLLY RIDGE\n910-329-8191\nCHANGE LOCATION\nJOIN THE TEAM\nSCHEDULE AN APPOINTMENT\nTRUSTED DENTISTS IN HOLLY RIDGE, NC FOR COMPLETE FAMILY DENTAL CARE\n\nExperience modern dental care designed for the Holly Ridge community.\n\n200 US-17 N, Holly Ridge, NC 28445\n910-329-8191\nMon-Thu: 8:00 AM - 4:00 PM | Fri: 8:00 AM - 2:00 PM\nBOOK APPOINMENT\nCALL NOW\nCall Now\nMEET OUR DOCTOR\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\nRaven Collins, DMD\nGeneral Dentistry\nMORE+\nRaven Collins, DMD\nGeneral Dentistry\nDr. Raven Collins, originally from Rockwell, NC, earned her BS in Biology (with minors in Chemistry & Community Health) at UNCW and her DMD at East Carolina University, then completed a one-year residency at Bernstein Dental Services; she is passionate about serving underserved communities and helping patients build personalized dental care plans.\nVIEW PROFILE\nOUR SERVICES\n\nComprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.\n\nCrowns\nProtect and restore damaged teeth with custom dental crowns. Learn about tooth crown types, benefits, and treatment. Schedule your visit today.\nBOOK NOW\nDental Bridges\nDental bridges restore your smile by replacing missing teeth. Get a custom, natural fit that enhances both appearance and function. Book your consultation today\nBOOK NOW\nDental Sealants\nDental sealants protect your teeth from cavities and decay. A quick, effective way to maintain oral health. Book your consultation today!\nBOOK NOW\nDentures\nDiscover affordable dentures and permanent solutions from a trusted dentures specialist. Get one-day dentures that fit your needs. Book a consultation today!\nBOOK NOW\nDigital X-Rays\nGet safe, low-radiation dental X-rays for early detection of cavities, infections, and bone loss. Schedule your dental imaging appointment today.\nBOOK NOW\nFluoride Treatment\nRiccobene Associates Family Dentistry offers professional dental fluoride treatments in the Raleigh area. Contact us to schedule your appointment.\nBOOK NOW\nWHAT OUR PATIENTS SAY\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\n★★★★★\nI brought my mom, who has Alzheimer's, to them when we moved her here. They have been so patient and kind and gentle with her. They have done everything they can to help her feel comfortable, safe and heard. They have answered her questions, sometimes the same ones over and over. I just really appreciate the effort because I know it's tough. I am so grateful for their care and support!\nEmily F\n★★★★★\nRiccobene is such a great place to go. I have 3 kids and even though this place isn't a 'pediatric dentist' they are amazing with the kids.\nJessa W\n★★★★★\nThis dental office has restored my faith and confidence in getting my teeth fixed. Their extremely friendly staff and lovely Dr. addressed all of my concerns and treated me with respect. If you are worried about getting dental treatment I highly recommend this place.\nLola N\n★★★★★\nI scheduled a cleaning at 8 am on each of my last 2 birthdays. The whole staff came in, sang happy birthday, presented me with a card and a cookie with a candle in it. Great way to start my birthday!\nWilliam L\nOUR OFFICE\n\nLocated along US-17 (Ocean Highway) in Onslow County, our Holly Ridge office is convenient for patients traveling between Jacksonville and Wilmington. We’re just minutes from Topsail Island and close to growing neighborhoods like Folkstone and Mimosa Bay.\n\nAt Riccobene Holly Ridge, we bring compassionate, cutting-edge dental care to a growing coastal community. Families from Sneads Ferry, Surf City, and beyond trust us to deliver comfortable, family-focused dentistry year-round.\n\nOffice Amenities\nFree WiFi\nComplimentary Beverages\nFamily-Friendly\nFree Parking\nFlexible Scheduling\nSCHEDULE A VISIT TODAY\nWHY CHOOSE RICCOBENE?\n\nWe believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.\n\nSame-Day Appointments\nUrgent dental needs? We offer same-day or next-day appointments in many locations for emergency care.\nFamily-Friendly\nWe provide gentle, expert dental care for children from their very first tooth through their teenage years.\nState-Of-The-Art\nCutting-edge technology and advanced treatment options bring the best that modern dental innovation has to offer to our offices.\nComprehensive Care\nOur expert provider offers a range of services from preventative, cosmetic, routine dental care and more.\nEmergency Dental Services\n24/7 emergency support when you need immediate dental care.\nOUR COMMITMENT TO EXCELLENCE\n\nWhen you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.\n\n500,000+\nHappy Smiles\nPatients served with exceptional care\n4.8\nAvg Google Rating\nfrom more than 28,000 reviews\n25\nYears In Business\nTrusted by the local community\nOTHER NEARBY LOCATIONS\n\nCan't make it to our Holly Ridge office? We have other convenient locations in the area to serve you with the same exceptional dental care.\n\nHampstead\n43 Shuckin St Suite 104, Hampstead, NC 28443\n910-270-3602\nEmergency\nGeneral\nHygiene\nImplants\nSedation (Nitrous Only)\nBOOK NOW\nVIEW DETAILS\nWilmington - Porters Neck\n8201 Market Street, Wilmington, NC 28411\n910-550-1853\nHygiene\nCosmetic\nImplants\nSedation\nEndodontic\nBOOK NOW\nVIEW DETAILS\nNew Bern\n2048 Waterscape Way, New Bern, NC 28562\n252-638-3600\nEmergency\nGeneral\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nView all Locations\nPAYMENT OPTIONS & MEMBERSHIP PLANS\n\nQuality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.\n\nInsurance Accepted\nWe accept most major dental insurance plans\nDelta Dental\nBlue Cross Blue Shield\nAetna\nCigna\nMetlife\nUnited Heathcare\nFlexible Financing\nMultiple payment options to fit your budget\nSunbit\n0% Interest Plans\nMonthly Payment Plans\nHSA/FSA Accepted\nMembership Plans\nAffordable care for uninsured patients\nAnnual Cleanings\nX-rays Included\n10% Off Treatments\nNo Insurance Required\nAFFORDABLE MEMBERSHIP PLANS\n\nSave money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.\n\nAdult Preventative Plan\n$39\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nADULT PREVENTATIVE PLAN\nChild Preventative Plan\n$36\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nCHILD PREVENTATIVE PLAN\nFREQUENTLY ASKED QUESTIONS\nWhat emergency dental services are available in Holly Ridge, NC?\n\nWe strive to provide same day or next day care for those with dental emergencies, either at our Holly Ridge location or another convenient Riccobene location to prioritize solving urgent issues. Whether you have a broken or cracked tooth, a damaged crown, or undiagnosed severe tooth pain, we can help diagnose and treat urgent oral problems at our Holly Ridge location. Give us a call today to schedule an emergency appointment.\n\nDo you offer family and pediatric dentistry in Holly Ridge?\n\nYes - we can help your whole family with their oral health! Parents, bring your kids. (Kids, definitely bring your parents!). We want your whole family smiling widely and brightly.\n\nCan I get cosmetic dental services like teeth whitening or veneers in Holly Ridge?\n\nYes - professional teeth whitening is one of the most common cosmetic dental procedures we see at our Holly Ridge location, and we offer a variety of other options including veneers that help you get your smile looking just the way you want.\n\nDoes the Holly Ridge office provide dental implants?\n\nYes - we offer expert care diagnosing and managing your dental implant procedure. Some implants can be performed in-office, while other procedures may be performed at an outpatient surgery facility.\n\nHow can I schedule an appointment with a Holly Ridge dentist?\n\nBooking an appointment is as simple as making a phone call or scheduling online. You can reach us at (910) 329-8191 and we’ll get you on the schedule as soon as possible!\n\nWhat payment options and insurance plans does the Holly Ridge office accept?\n\nWe accept and participate with a large majority of insurance plans. Prior to any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.\n\nREADY TO SCHEDULE? CONTACT US\n\nTake the first step towards optimal oral health. Contact our Holly Ridge office to schedule your appointment or ask any questions about our dental services.\n\nSend us a Message\nFill out the form below and we'll get back to you within 24 hours.\nFirst Name*\nLast Name*\nEmail*\nPhone*\nHow Can We Help?\nI have dental insurance and would like to verify my benefits\nI prefer a phone call instead of email\nThis is a dental emergency\nGet in Touch\n\nFill out the form below and we'll get back to you within 24 hours.\n\nVisit Our Office\n200 US-17 N, Holly Ridge, NC 28445\nCall Us\n910-329-8191\nEmergency line available 24/7\nEmail Us\nhollyridgepc@brushandfloss.com\nOffice Hours\nMonday: 8:00 AM - 4:00 PM\nTuesday: 8:00 AM - 4:00 PM\nWednesday: 8:00 AM - 4:00 PM\nThursday: 8:00 AM - 4:00 PM\nFriday: 8:00 AM - 2:00 PM\nBOOK APPOINTMENT ONLINE\nCALL FOR EMERGENCY\nLOCATIONS\nSERVICES\nWHAT TO EXPECT\nJOIN OUR TEAM\nPARTNER WITH US\nCONTACT US\nHIPAA\nPRIVACY POLICY\nSEARCH",
+  "wordCount": 1592
+}

@@ -5,16 +5,26 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'seo-automation-fallback-secret';
 const COOKIE_NAME = 'seo_session';
 const COOKIE_OPTIONS = {
-  httpOnly: true,                                          // JS cannot read it — XSS proof
-  secure: process.env.NODE_ENV !== 'development',         // HTTPS only in production
-  sameSite: 'strict',                                     // CSRF protection
-  maxAge: 7 * 24 * 60 * 60 * 1000                        // 7 days
+  httpOnly: true,
+  secure: process.env.NODE_ENV !== 'development',
+  sameSite: 'strict',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
-// Brute force tracking: { ip → { count, lockedUntil } }
+// Known users: { username, password, role }
+function getUsers() {
+  return [
+    { username: process.env.SEO_USERNAME, password: process.env.SEO_PASSWORD, role: 'seo' },
+    { username: process.env.EXTENDED_USERNAME, password: process.env.EXTENDED_PASSWORD, role: 'extended' },
+    // Legacy fallback — supports old APP_USERNAME/APP_PASSWORD as seo role
+    ...(process.env.APP_USERNAME ? [{ username: process.env.APP_USERNAME, password: process.env.APP_PASSWORD, role: 'seo' }] : []),
+  ].filter(u => u.username && u.password);
+}
+
+// Brute force tracking
 const loginAttempts = new Map();
 const MAX_ATTEMPTS = 5;
-const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+const LOCKOUT_MS = 15 * 60 * 1000;
 
 function checkBruteForce(ip) {
   const record = loginAttempts.get(ip);
@@ -46,21 +56,20 @@ router.post('/login', (req, res) => {
   const ip = req.ip || req.connection.remoteAddress;
   const { username, password } = req.body;
 
-  try {
-    checkBruteForce(ip);
-  } catch (err) {
-    return res.status(err.status || 429).json({ error: err.message });
-  }
+  try { checkBruteForce(ip); }
+  catch (err) { return res.status(err.status || 429).json({ error: err.message }); }
 
   if (!username || !password) {
     return res.status(400).json({ error: 'Username and password are required.' });
   }
 
-  if (username === process.env.APP_USERNAME && password === process.env.APP_PASSWORD) {
+  const user = getUsers().find(u => u.username === username && u.password === password);
+
+  if (user) {
     clearAttempts(ip);
-    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS);
-    return res.json({ ok: true });
+    return res.json({ ok: true, role: user.role });
   }
 
   recordFailure(ip);
@@ -69,7 +78,7 @@ router.post('/login', (req, res) => {
   res.status(401).json({
     error: remaining > 0
       ? `Invalid username or password. ${remaining} attempt(s) remaining.`
-      : 'Invalid username or password.'
+      : 'Invalid username or password.',
   });
 });
 
@@ -79,20 +88,20 @@ router.post('/logout', (req, res) => {
   res.json({ ok: true });
 });
 
-// GET /api/auth/verify  (used by frontend on load to check session)
+// GET /api/auth/verify
 router.get('/verify', (req, res) => {
   const token = req.cookies?.[COOKIE_NAME];
   if (!token) return res.status(401).json({ valid: false });
   try {
-    jwt.verify(token, JWT_SECRET);
-    res.json({ valid: true });
+    const decoded = jwt.verify(token, JWT_SECRET);
+    res.json({ valid: true, role: decoded.role || 'seo' });
   } catch {
     res.clearCookie(COOKIE_NAME, { ...COOKIE_OPTIONS, maxAge: 0 });
     res.status(401).json({ valid: false });
   }
 });
 
-// Middleware used by other routes
+// requireAuth — any authenticated user
 function requireAuth(req, res, next) {
   const token = req.cookies?.[COOKIE_NAME];
   if (!token) return res.status(401).json({ error: 'Unauthorised. Please log in.' });
@@ -105,4 +114,20 @@ function requireAuth(req, res, next) {
   }
 }
 
-module.exports = { router, requireAuth };
+// requireSeo — SEO team only
+function requireSeo(req, res, next) {
+  const token = req.cookies?.[COOKIE_NAME];
+  if (!token) return res.status(401).json({ error: 'Unauthorised. Please log in.' });
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    if (req.user.role !== 'seo') {
+      return res.status(403).json({ error: 'Access restricted to SEO team.' });
+    }
+    next();
+  } catch {
+    res.clearCookie(COOKIE_NAME, { ...COOKIE_OPTIONS, maxAge: 0 });
+    res.status(401).json({ error: 'Session expired. Please log in again.' });
+  }
+}
+
+module.exports = { router, requireAuth, requireSeo };

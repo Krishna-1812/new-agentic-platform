@@ -10,9 +10,8 @@
 
 const store = require('./kbStore');
 
-// Client → industry mapping (derived from the index at load time)
-async function resolveClientIndustry(clientSlug) {
-  const index = await store.readIndex();
+// Client → industry mapping — accepts pre-loaded index to avoid re-read
+async function resolveClientIndustry(clientSlug, index) {
   const brandKB = index.knowledge_bases.find(
     kb => kb.category === 'brand' && kb.client === clientSlug
   );
@@ -23,7 +22,7 @@ async function resolveClientIndustry(clientSlug) {
 
 // Resolve a KB pattern like "brand/{client}" or "industry/{client-industry}" to an id.
 // Returns '__feedback__' as a sentinel for client-feedback patterns (handled below).
-async function resolvePattern(pattern, clientSlug, clientIndustry) {
+function resolvePattern(pattern, clientSlug, clientIndustry) {
   if (!pattern.includes('{')) return pattern;
   if (pattern.startsWith('brand/')) return clientSlug;
   if (pattern.startsWith('industry/')) return clientIndustry;
@@ -61,7 +60,9 @@ async function loadKBContext(moduleId, clientSlug, feedbackKbIds = null) {
     return result;
   }
 
-  const clientIndustry = await resolveClientIndustry(clientSlug);
+  // Read index ONCE and pass it to all helpers
+  const index = await store.readIndex();
+  const clientIndustry = await resolveClientIndustry(clientSlug, index);
 
   // Helper: load one KB by id
   async function loadOne(id) {
@@ -73,15 +74,14 @@ async function loadKBContext(moduleId, clientSlug, feedbackKbIds = null) {
 
   // Helper: resolve pattern → ids, expanding __feedback__ into the feedbackKbIds array
   // or auto-selecting most recent if none specified
-  async function resolveIds(pattern) {
-    const id = await resolvePattern(pattern, clientSlug, clientIndustry);
+  function resolveIds(pattern) {
+    const id = resolvePattern(pattern, clientSlug, clientIndustry);
     if (id !== '__feedback__') return id ? [id] : [];
 
     // Feedback pattern
     if (feedbackKbIds && feedbackKbIds.length > 0) return feedbackKbIds;
 
-    // Auto-select most recent if nothing specified
-    const index = await store.readIndex();
+    // Auto-select most recent if nothing specified — use already-loaded index
     const feedbackKBs = index.knowledge_bases.filter(
       kb => kb.category === 'client-feedback' && kb.client === clientSlug && kb.active
     );
@@ -92,38 +92,38 @@ async function loadKBContext(moduleId, clientSlug, feedbackKbIds = null) {
 
   // Load required KBs
   for (const pattern of (manifest.required_kbs || [])) {
-    const ids = await resolveIds(pattern);
+    const ids = resolveIds(pattern);
     if (ids.length === 0) {
       result.missing.push(pattern);
       result.confidence = 'LOW';
       continue;
     }
+    const kbs = await Promise.all(ids.map(loadOne));
     let anyLoaded = false;
-    for (const id of ids) {
-      const kb = await loadOne(id);
+    kbs.forEach((kb, i) => {
       if (kb) { result.loaded.push(kb); anyLoaded = true; }
-      else { result.missing.push(id); }
-    }
+      else { result.missing.push(ids[i]); }
+    });
     if (!anyLoaded) result.confidence = 'LOW';
   }
 
   // Load optional KBs
   for (const pattern of (manifest.optional_kbs || [])) {
-    const ids = await resolveIds(pattern);
+    const ids = resolveIds(pattern);
     if (ids.length === 0) {
       result.skipped.push(pattern);
       if (result.confidence === 'HIGH') result.confidence = 'MEDIUM';
       continue;
     }
-    for (const id of ids) {
-      const kb = await loadOne(id);
+    const kbs = await Promise.all(ids.map(loadOne));
+    kbs.forEach((kb, i) => {
       if (!kb) {
-        result.skipped.push(id);
+        result.skipped.push(ids[i]);
         if (result.confidence === 'HIGH') result.confidence = 'MEDIUM';
       } else {
         result.loaded.push(kb);
       }
-    }
+    });
   }
 
   // Build system prompt suffix

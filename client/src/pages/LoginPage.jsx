@@ -32,7 +32,7 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed.');
 
-      markAuthenticated();
+      markAuthenticated(data.role);
       navigate(from, { replace: true });
     } catch (err) {
       setError(err.message);

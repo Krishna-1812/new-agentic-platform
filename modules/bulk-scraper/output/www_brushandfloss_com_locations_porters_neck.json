@@ -1,0 +1,1222 @@
+{
+  "url": "https://www.brushandfloss.com/locations/porters-neck",
+  "statusCode": 200,
+  "scrapedAt": "2026-04-14T14:54:36.911Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "Dentist in Wilmington, Porters Neck, NC | Riccobene Associates Family Dentistry",
+  "metaDescription": "Looking for an expert dentist in Wilmington, Porters Neck? We offer cosmetic, implant, and emergency care in a modern, welcoming office. Book today!",
+  "canonical": "https://www.brushandfloss.com/locations/porters-neck",
+  "allMeta": {
+    "description": "Looking for an expert dentist in Wilmington, Porters Neck? We offer cosmetic, implant, and emergency care in a modern, welcoming office. Book today!",
+    "og:title": "Riccobene Associates Family Dentistry | Wilmington, NC",
+    "og:description": "Looking for an expert dentist in Wilmington, Porters Neck? We offer cosmetic, implant, and emergency care in a modern, welcoming office. Book today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31715_598c5352-934c-11ed-801a-76f835da85f1.webp",
+    "twitter:title": "Riccobene Associates Family Dentistry | Wilmington, NC",
+    "twitter:description": "Looking for an expert dentist in Wilmington, Porters Neck? We offer cosmetic, implant, and emergency care in a modern, welcoming office. Book today!",
+    "twitter:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31715_598c5352-934c-11ed-801a-76f835da85f1.webp",
+    "og:type": "website",
+    "twitter:card": "summary_large_image",
+    "viewport": "width=device-width, initial-scale=1",
+    "generator": "Webflow"
+  },
+  "ogTags": {
+    "og:title": "Riccobene Associates Family Dentistry | Wilmington, NC",
+    "og:description": "Looking for an expert dentist in Wilmington, Porters Neck? We offer cosmetic, implant, and emergency care in a modern, welcoming office. Book today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31715_598c5352-934c-11ed-801a-76f835da85f1.webp",
+    "og:type": "website"
+  },
+  "twitterTags": {
+    "twitter:card": "summary_large_image"
+  },
+  "headings": {
+    "h1": [
+      "DENTIST IN PORTERS NECK, WILMINGTON, NC FOR FAMILY DENTAL CARE"
+    ],
+    "h2": [
+      "MEET OUR DOCTORS",
+      "OUR SERVICES",
+      "WHAT OUR PATIENTS SAY",
+      "OUR OFFICE",
+      "WHY CHOOSE RICCOBENE?",
+      "OUR COMMITMENT TO EXCELLENCE",
+      "OTHER NEARBY LOCATIONS",
+      "PAYMENT OPTIONS & MEMBERSHIP PLANS",
+      "AFFORDABLE MEMBERSHIP PLANS",
+      "FREQUENTLY ASKED QUESTIONS",
+      "READY TO SCHEDULE? CONTACT US"
+    ],
+    "h3": [
+      "Melissa Papio, DMD, MS",
+      "Michelle Holmes, DDS",
+      "Adam Roberts, DDS",
+      "Anna Rovetto, DDS",
+      "Kyle Thames, DMD",
+      "Danielle Gill, DMD",
+      "Office Amenities",
+      "500,000+",
+      "4.8",
+      "25",
+      "What sedation dentistry options are available at Riccobene Associates in Porters Neck?",
+      "Why choose Riccobene Associates Family Dentistry in Porters Neck?",
+      "Do you provide emergency dental care in Porters Neck?",
+      "Do you accept dental insurance and offer financing options?",
+      "Send us a Message",
+      "Get in Touch",
+      "Request An Appointment"
+    ],
+    "h4": [],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h1",
+      "text": "DENTIST IN PORTERS NECK, WILMINGTON, NC FOR FAMILY DENTAL CARE"
+    },
+    {
+      "tag": "h2",
+      "text": "MEET OUR DOCTORS"
+    },
+    {
+      "tag": "h3",
+      "text": "Melissa Papio, DMD, MS"
+    },
+    {
+      "tag": "h3",
+      "text": "Michelle Holmes, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Adam Roberts, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Anna Rovetto, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Kyle Thames, DMD"
+    },
+    {
+      "tag": "h3",
+      "text": "Danielle Gill, DMD"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR SERVICES"
+    },
+    {
+      "tag": "h2",
+      "text": "WHAT OUR PATIENTS SAY"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR OFFICE"
+    },
+    {
+      "tag": "h3",
+      "text": "Office Amenities"
+    },
+    {
+      "tag": "h2",
+      "text": "WHY CHOOSE RICCOBENE?"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR COMMITMENT TO EXCELLENCE"
+    },
+    {
+      "tag": "h3",
+      "text": "500,000+"
+    },
+    {
+      "tag": "h3",
+      "text": "4.8"
+    },
+    {
+      "tag": "h3",
+      "text": "25"
+    },
+    {
+      "tag": "h2",
+      "text": "OTHER NEARBY LOCATIONS"
+    },
+    {
+      "tag": "h2",
+      "text": "PAYMENT OPTIONS & MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "AFFORDABLE MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "FREQUENTLY ASKED QUESTIONS"
+    },
+    {
+      "tag": "h3",
+      "text": "What sedation dentistry options are available at Riccobene Associates in Porters Neck?"
+    },
+    {
+      "tag": "h3",
+      "text": "Why choose Riccobene Associates Family Dentistry in Porters Neck?"
+    },
+    {
+      "tag": "h3",
+      "text": "Do you provide emergency dental care in Porters Neck?"
+    },
+    {
+      "tag": "h3",
+      "text": "Do you accept dental insurance and offer financing options?"
+    },
+    {
+      "tag": "h2",
+      "text": "READY TO SCHEDULE? CONTACT US"
+    },
+    {
+      "tag": "h3",
+      "text": "Send us a Message"
+    },
+    {
+      "tag": "h3",
+      "text": "Get in Touch"
+    },
+    {
+      "tag": "h3",
+      "text": "Request An Appointment"
+    }
+  ],
+  "paragraphs": [
+    "Our dentists in Wilmington, NC, are honored to deliver outstanding dental care for families in the Porters Neck area.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort. We're the trusted go-to dentist in Wilmington, Porters Neck, for compassionate care.",
+    "Comprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "As your trusted dentist in Wilmington, Porters Neck, our experienced team of dental professionals is dedicated to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Welcome to our Porters Neck office! Right off U.S. Route 17, our Porters Neck location provides care for the Wilmington community as well as patients traveling from the nearby neighborhoods such as Murryville, Kirkland, Hampstead, and more. With our highly advanced technology and an experienced team, we provide the comfort and confidence you need for a healthy, pain-free smile!",
+    "Our modern, inviting space is filled with a professional, experienced team that strongly believes that dental care and treatment start with patient comfort. Therefore, we strive for our office and amenities to be designed with our patients’ health and well-being in mind. Situated in a suburban community that blends small-town charm with convenient access to the Landfall Shopping Center, and not far from the Independence Mall, this location is accessible and easy to travel to. Our Porters Neck office stands out with its peaceful atmosphere, where patients feel supported and leave motivated to take care of their oral health with ease and comfort.",
+    "We believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.",
+    "When you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.",
+    "Can't make it to our Wilmington office? We have other convenient locations in the area to serve you with the same exceptional dental care.",
+    "Quality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.",
+    "Save money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.",
+    "At Porters Neck, we offer a variety of sedation dentistry options. You can choose from Nitrous Oxide, IV Sedation, and Local Anesthesia.",
+    "At Riccobene Associates Family Dentistry, we are committed to personalized, high-quality dental care focused on patient comfort, advanced technology, and lifelong oral health.",
+    "Yes. At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!",
+    "We accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.",
+    "Take the first step towards optimal oral health. Contact our Wilmington office to schedule your appointment or ask any questions about our dental services.",
+    "Fill out the form below and we'll get back to you within 24 hours.",
+    "Select a Location to schedule an appointment:",
+    "Call our Wilmington - Porters Neck Office at 910-550-1853, or use the form below to request an appointment."
+  ],
+  "schemaMarkup": [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "https://www.brushandfloss.com/locations/porters-neck",
+      "url": "https://www.brushandfloss.com/locations/porters-neck",
+      "name": "Dentist in Wilmington, Porters Neck, NC | Riccobene Associates Family Dentistry",
+      "description": "Looking for an expert dentist in Wilmington, Porters Neck? We offer cosmetic, implant, and emergency care in a modern, welcoming office. Book today!",
+      "inLanguage": "en-US",
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "https://www.brushandfloss.com/",
+        "url": "https://www.brushandfloss.com/",
+        "name": "Riccobene Associates Family Dentistry"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://www.brushandfloss.com/#organization",
+      "url": "https://www.brushandfloss.com/",
+      "sameAs": [
+        "https://www.facebook.com/RiccobeneDentistry",
+        "https://www.instagram.com/brushandflossnc/"
+      ],
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg"
+      },
+      "brand": {
+        "@type": "Brand",
+        "name": "Riccobene Associates Family Dentistry",
+        "sameAs": [
+          "https://www.facebook.com/RiccobeneDentistry",
+          "https://www.instagram.com/brushandflossnc/"
+        ]
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Insurance Accepted",
+      "insuranceAccepted": [
+        "Delta Dental",
+        "Blue Cross Blue Shield",
+        "Aetna",
+        "Cigna",
+        "MetLife",
+        "UnitedHealthcare"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Dentist",
+      "@id": "https://www.brushandfloss.com/locations/porters-neck/dentist",
+      "name": "Riccobene Associates Family Dentistry",
+      "image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31715_598c5352-934c-11ed-801a-76f835da85f1.webp",
+      "logo": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315cd_riccobene-associates-family-dentistry.png",
+      "url": "/locations/porters-neck",
+      "telephone": "910-550-1853",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "8201 Market Street, Wilmington, NC 28411",
+        "addressLocality": "Wilmington",
+        "addressRegion": "NC",
+        "postalCode": "28411",
+        "addressCountry": "US"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Monday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Tuesday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Wednesday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Thursday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Friday",
+          "opens": "8:00",
+          "closes": "14:00"
+        }
+      ],
+      "priceRange": "$$",
+      "hasMap": "https://goo.gl/maps/ETPsb6AsYz2YWAacA",
+      "sameAs": "https://goo.gl/maps/ETPsb6AsYz2YWAacA"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Dental Services",
+      "serviceOutput": [
+        {
+          "@type": "Service",
+          "name": "Dental Implants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Sealants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dentures"
+        },
+        {
+          "@type": "Service",
+          "name": "Emergency Dentistry"
+        },
+        {
+          "@type": "Service",
+          "name": "Fluoride Treatment"
+        },
+        {
+          "@type": "Service",
+          "name": "Invisalign®"
+        }
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Skyler H"
+      },
+      "reviewBody": "Such an amazing dental office!! Everyone is so kind and welcoming right when you walk in the door, and it makes you feel seen. My dentist is especially wonderful and has taught me SO much about the health of my teeth. If it wasn’t for her, I would not have the healthy set of teeth and gums that I do now, and I’m thankful. 100% recommend this company to anyone who is in need of a great dentist!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Alexandria B"
+      },
+      "reviewBody": "This branch welcomes you so that you feel like family. The ladies are phenomenal. My hygienist was very thorough and explained how to improve my flossing technique.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "CharityFaith G"
+      },
+      "reviewBody": "Everyone was friendly and helpful they explained everything to me. And has top-notch. equipment.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Catherine I"
+      },
+      "reviewBody": "I had the best experience here. I needed a root canal done and was having some pretty severe pain, and they got me in faster than any other dentist or endodontist in the area... I have pretty severe panic disorder, and they were so supportive and sensitive through the whole process. They were very encouraging and held my hand when I needed it. I would definitely recommend them.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Ali R"
+      },
+      "reviewBody": "I haven’t seen a dentist in over 10 years. To say I was nervous about going to one is an understatement. I had a tooth break about a year ago and was terrified to get it fixed. Everyone I encountered in this establishment went above and beyond to make me feel comfortable. After hearing I needed a root canal, I was even more scared. I did not need to be. Everyone was so kind and made me feel extremely comfortable. My dental fears may be gone. Thank you so much.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What sedation dentistry options are available at Riccobene Associates in Porters Neck?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "At Porters Neck, we offer a variety of sedation dentistry options. You can choose from Nitrous Oxide, IV Sedation, and Local Anesthesia."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why choose Riccobene Associates Family Dentistry in Porters Neck?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "At Riccobene Associates Family Dentistry, we are committed to personalized, high-quality dental care focused on patient comfort, advanced technology, and lifelong oral health."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you provide emergency dental care in Porters Neck?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you accept dental insurance and offer financing options?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance."
+          }
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314df_search.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152e_riccobene-banner-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31508_location-map.webp",
+      "alt": "Map showing neighborhoods, parks, schools, and roads including Davis Drive Elementary School, Pleasant Street, and Sunset Plaza."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314e7_location-banner.jpg",
+      "alt": "Smiling woman reclined in dental chair during a dental checkup with dentist holding dental mirror and probe."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31552_call-now-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31680_papio.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31680_papio.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31668_michelle-holmes-dds.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31668_michelle-holmes-dds.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a178d26d6bdcfad5a75e7a_adam-roberts-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a178d26d6bdcfad5a75e7a_adam-roberts-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16fac194603d5ecfba0cd_anna-rovetto-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16fac194603d5ecfba0cd_anna-rovetto-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a178e44a990acade0c8082_kyle-thames-dmd.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a178e44a990acade0c8082_kyle-thames-dmd.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6985e09cffc6d75545199e3c_gill.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6985e09cffc6d75545199e3c_gill.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69b29dacd38e9840c17ead1c_denture-implants.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ba_nc.dental-sealants-1024x768.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315af_brush-and-floss-dentures-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31689_Untitled-2.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ae_Fluoride-Treatment-nc-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3164c_Riccobene2-114.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152b_riccobene-our-office-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152a_riccobene-our-office-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152d_riccobene-our-office-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152c_riccobene-our-office-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31529_riccobene-our-office-icon-five.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31548_riccobene-wcr-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31549_family-friendly.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31547_state-of-the-art.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31527_insurance-accepted-icon-1.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31558_pricing-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31559_pricing-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31522_pricing-1.webp",
+      "alt": "Smiling young woman with long brown hair pointing to her teeth with both index fingers."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31523_pricing-2.webp",
+      "alt": "Smiling young boy sitting in a dental chair during a dental checkup with a dentist holding a dental tool."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154b_email-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154c_alarm-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a location"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck",
+      "text": "WILMINGTON - PORTERS NECK"
+    },
+    {
+      "href": "tel:910-550-1853",
+      "text": "910-550-1853"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "CHANGE LOCATION"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers#jobs",
+      "text": "JOIN THE TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/porters-neck",
+      "text": "SCHEDULE AN APPOINTMENT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": "Home"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a Dentist Near You"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "New Patient Experience"
+    },
+    {
+      "href": "https://www.brushandfloss.com/the-riccobene-way",
+      "text": "The Riccobene Way"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans",
+      "text": "Membership Plans"
+    },
+    {
+      "href": "https://www.brushandfloss.com/reviews",
+      "text": "Patient Reviews"
+    },
+    {
+      "href": "https://patient.payments.health/#/?organizationID=dab6a2b7&locationID=LSXWSH421HHY4",
+      "text": "Make A Payment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/payment",
+      "text": "Online Payments"
+    },
+    {
+      "href": "https://www.brushandfloss.com/articles",
+      "text": "articles"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "Contact us"
+    },
+    {
+      "href": "https://www.paycomonline.net/v4/ats/web.php/jobs?clientkey=B32F01563C7743C293E0AAB35AE1ADEA",
+      "text": "careers"
+    },
+    {
+      "href": "https://www.brushandflossaffiliates.com/",
+      "text": "Become an Affiliate Practice"
+    },
+    {
+      "href": "https://www.brushandfloss-employees.com/",
+      "text": "Employees"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/porters-neck",
+      "text": "BOOK APPOINMENT"
+    },
+    {
+      "href": "tel:910-550-1853",
+      "text": "CALL NOW"
+    },
+    {
+      "href": "tel:910-550-1853",
+      "text": "Call Now"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/melissa-papio-dmd-ms",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/melissa-papio-dmd-ms",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/michelle-holmes-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/michelle-holmes-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/adam-roberts-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/adam-roberts-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/anna-rovetto-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/anna-rovetto-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/kyle-thames-dmd",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/kyle-thames-dmd",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/danielle-gill-dmd",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/danielle-gill-dmd",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-implants",
+      "text": "Dental Implants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/sealants",
+      "text": "Dental Sealants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dentures",
+      "text": "Dentures"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/emergency-dentistry",
+      "text": "Emergency Dentistry"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/fluoride-treatment",
+      "text": "Fluoride Treatment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/invisalign-r",
+      "text": "Invisalign®"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck?f5ff0038_page=2",
+      "text": "Load More"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#ready-to-schedule",
+      "text": "SCHEDULE A VISIT TODAY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/downtown",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/wilmington-downtown",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/hampstead",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/hampstead",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/the-pointe",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/the-pointe",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "View all Locations"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#adult-preventative-plan",
+      "text": "ADULT PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#child-preventative-plan",
+      "text": "CHILD PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/porters-neck",
+      "text": "BOOK APPOINTMENT ONLINE"
+    },
+    {
+      "href": "tel:910-550-1853",
+      "text": "CALL FOR EMERGENCY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "LOCATIONS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "SERVICES"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "WHAT TO EXPECT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers",
+      "text": "JOIN OUR TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/partnership",
+      "text": "PARTNER WITH US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "CONTACT US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/hipaa",
+      "text": "HIPAA"
+    },
+    {
+      "href": "https://www.brushandfloss.com/privacy-policy",
+      "text": "PRIVACY POLICY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/search",
+      "text": "SEARCH"
+    },
+    {
+      "href": "https://www.facebook.com/RiccobeneDentistry",
+      "text": ""
+    },
+    {
+      "href": "https://www.instagram.com/brushandflossnc/?hl=en",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck",
+      "text": "Wilmington - Porters Neck"
+    },
+    {
+      "href": "tel:910-550-1853",
+      "text": "910-550-1853"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#",
+      "text": "Close"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/porters-neck#",
+      "text": "Open Appointment"
+    }
+  ],
+  "bodyText": "WILMINGTON - PORTERS NECK\n910-550-1853\nCHANGE LOCATION\nJOIN THE TEAM\nSCHEDULE AN APPOINTMENT\nDENTIST IN PORTERS NECK, WILMINGTON, NC FOR FAMILY DENTAL CARE\n\nOur dentists in Wilmington, NC, are honored to deliver outstanding dental care for families in the Porters Neck area.\n\n8201 Market Street, Wilmington, NC 28411\n910-550-1853\nMon-Thu: 8:00 AM - 5:00 PM | Fri: 8:00 AM - 2:00 PM\nBOOK APPOINMENT\nCALL NOW\nCall Now\nMEET OUR DOCTORS\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort. We're the trusted go-to dentist in Wilmington, Porters Neck, for compassionate care.\n\nMelissa Papio, DMD, MS\nOrthodontic Dentistry\nMORE+\nMelissa Papio, DMD, MS\nOrthodontic Dentistry\nDr. Melissa Papio specializes in orthodontics, blending mechanics and aesthetics to create beautiful smiles. She earned her DMD at the University of Connecticut, completed her residency at Virginia Commonwealth University, and earned her MS in Orthodontics from Ohio State University. She enjoys traveling, hiking, boating, and spending time with her husband and Labradoodles.\nVIEW PROFILE\nMichelle Holmes, DDS\nGeneral & Cosmetic Dentistry\nMORE+\nMichelle Holmes, DDS\nGeneral & Cosmetic Dentistry\nDr. Michelle Holmes brings over 30 years of experience in the dental field and nearly 25 years as a practicing DDS to the Wilmington community, where she has lived and cared for patients for almost 20 years. She is a proud graduate of the University of Texas, where she served as Class President and Vice President of her Academic Fraternity, demonstrating early leadership and a commitment to academic excellence.\nVIEW PROFILE\nAdam Roberts, DDS\nComprehensive Dental Care\nMORE+\nAdam Roberts, DDS\nComprehensive Dental Care\nDr. Adam Roberts is dedicated to delivering high-quality, comprehensive dental care for patients of all ages. He combines modern techniques with a compassionate approach, ensuring every patient’s dental needs are met with the utmost care.\nVIEW PROFILE\nAnna Rovetto, DDS\nMORE+\nAnna Rovetto, DDS\nDr. Anna Rovetto, originally from Ballston Spa, NY, blends her love of art and science to create beautiful, confident smiles. She earned her B.S. in Microbiology from UC Berkeley, her dental degree from the University at Buffalo, and completed advanced training at East Carolina University. With expertise in esthetics, veneers, and smile design, she tailors treatment to each patient’s goals. Outside dentistry, Dr. Rovetto enjoys yoga, gardening, beach walks, and time with her French bulldog.\nVIEW PROFILE\nKyle Thames, DMD\nMORE+\nKyle Thames, DMD\nDr. Kyle Thames is a collaborative, evidence-based endodontist passionate about high-quality, compassionate care. Originally from Junction City, Oregon, he discovered his love for root canal therapy while practicing general dentistry. A graduate of Oregon Health and Science University, he completed his residency at the Dental College of Georgia. Dedicated to serving others, Dr. Thames has provided care on dental mission trips abroad. Outside dentistry, he values faith, family, and staying active outdoors.\nVIEW PROFILE\nDanielle Gill, DMD\nBoard Certified Oral & Maxillofacial Surgeon\nMORE+\nDanielle Gill, DMD\nBoard Certified Oral & Maxillofacial Surgeon\nDr. Danielle Gill is originally from Kings Mountain, North Carolina, and is a board‑certified oral and maxillofacial surgeon.\nVIEW PROFILE\nOUR SERVICES\n\nComprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.\n\nDental Implants\nAt Riccobene Associates Family Dentistry, we offer dental implants to restore your beautiful smile. Contact one of our dental offices today!\nBOOK NOW\nDental Sealants\nDental sealants protect your teeth from cavities and decay. A quick, effective way to maintain oral health. Book your consultation today!\nBOOK NOW\nDentures\nDiscover affordable dentures and permanent solutions from a trusted dentures specialist. Get one-day dentures that fit your needs. Book a consultation today!\nBOOK NOW\nEmergency Dentistry\nNeed emergency dentistry? Riccobene Associates provides expert care for tooth pain, injury, and more. Contact us today for quick relief!\nBOOK NOW\nFluoride Treatment\nRiccobene Associates Family Dentistry offers professional dental fluoride treatments in the Raleigh area. Contact us to schedule your appointment.\nBOOK NOW\nInvisalign®\nGet straighter teeth with Invisalign aligners. Comfortable and virtually invisible. Schedule your consultation today!\nBOOK NOW\nWHAT OUR PATIENTS SAY\n\nAs your trusted dentist in Wilmington, Porters Neck, our experienced team of dental professionals is dedicated to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\n★★★★★\nSuch an amazing dental office!! Everyone is so kind and welcoming right when you walk in the door, and it makes you feel seen. My dentist is especially wonderful and has taught me SO much about the health of my teeth. If it wasn’t for her, I would not have the healthy set of teeth and gums that I do now, and I’m thankful. 100% recommend this company to anyone who is in need of a great dentist!\nSkyler H\n★★★★★\nThis branch welcomes you so that you feel like family. The ladies are phenomenal. My hygienist was very thorough and explained how to improve my flossing technique.\nAlexandria B\n★★★★★\nEveryone was friendly and helpful they explained everything to me. And has top-notch. equipment.\nCharityFaith G\n★★★★★\nI had the best experience here. I needed a root canal done and was having some pretty severe pain, and they got me in faster than any other dentist or endodontist in the area... I have pretty severe panic disorder, and they were so supportive and sensitive through the whole process. They were very encouraging and held my hand when I needed it. I would definitely recommend them.\nCatherine I\n★★★★★\nI haven’t seen a dentist in over 10 years. To say I was nervous about going to one is an understatement. I had a tooth break about a year ago and was terrified to get it fixed. Everyone I encountered in this establishment went above and beyond to make me feel comfortable. After hearing I needed a root canal, I was even more scared. I did not need to be. Everyone was so kind and made me feel extremely comfortable. My dental fears may be gone. Thank you so much.\nAli R\nOUR OFFICE\n\nWelcome to our Porters Neck office! Right off U.S. Route 17, our Porters Neck location provides care for the Wilmington community as well as patients traveling from the nearby neighborhoods such as Murryville, Kirkland, Hampstead, and more. With our highly advanced technology and an experienced team, we provide the comfort and confidence you need for a healthy, pain-free smile!\n\nOur modern, inviting space is filled with a professional, experienced team that strongly believes that dental care and treatment start with patient comfort. Therefore, we strive for our office and amenities to be designed with our patients’ health and well-being in mind. Situated in a suburban community that blends small-town charm with convenient access to the Landfall Shopping Center, and not far from the Independence Mall, this location is accessible and easy to travel to. Our Porters Neck office stands out with its peaceful atmosphere, where patients feel supported and leave motivated to take care of their oral health with ease and comfort.\n\nOffice Amenities\nFree WiFi\nComplimentary Beverages\nFamily-Friendly\nFree Parking\nFlexible Scheduling\nSCHEDULE A VISIT TODAY\nWHY CHOOSE RICCOBENE?\n\nWe believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.\n\nSame-Day Appointments\nUrgent dental needs? We offer same-day or next-day appointments in many locations for emergency care.\nFamily-Friendly\nWe provide gentle, expert dental care for children from their very first tooth through their teenage years.\nState-Of-The-Art\nCutting-edge technology and advanced treatment options bring the best that modern dental innovation has to offer to our offices.\nComprehensive Care\nOur expert provider offers a range of services from preventative, cosmetic, routine dental care and more.\nEmergency Dental Services\n24/7 emergency support when you need immediate dental care.\nOUR COMMITMENT TO EXCELLENCE\n\nWhen you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.\n\n500,000+\nHappy Smiles\nPatients served with exceptional care\n4.8\nAvg Google Rating\nfrom more than 28,000 reviews\n25\nYears In Business\nTrusted by the local community\nOTHER NEARBY LOCATIONS\n\nCan't make it to our Wilmington office? We have other convenient locations in the area to serve you with the same exceptional dental care.\n\nWilmington - Downtown\n124 Walnut St STE 101, Wilmington, NC 28401\n910-254-4555\nEmergency\nGeneral\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nHampstead\n43 Shuckin St Suite 104, Hampstead, NC 28443\n910-270-3602\nEmergency\nGeneral\nHygiene\nImplants\nSedation (Nitrous Only)\nBOOK NOW\nVIEW DETAILS\nWilmington - The Pointe\n1124 Gallery Pk Blvd Ste 101, Wilmington, NC 28412\n910-218-1222\nEmergency\nGeneral\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nView all Locations\nPAYMENT OPTIONS & MEMBERSHIP PLANS\n\nQuality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.\n\nInsurance Accepted\nWe accept most major dental insurance plans\nDelta Dental\nBlue Cross Blue Shield\nAetna\nCigna\nMetlife\nUnited Heathcare\nFlexible Financing\nMultiple payment options to fit your budget\nSunbit\n0% Interest Plans\nMonthly Payment Plans\nHSA/FSA Accepted\nMembership Plans\nAffordable care for uninsured patients\nAnnual Cleanings\nX-rays Included\n10% Off Treatments\nNo Insurance Required\nAFFORDABLE MEMBERSHIP PLANS\n\nSave money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.\n\nAdult Preventative Plan\n$39\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nADULT PREVENTATIVE PLAN\nChild Preventative Plan\n$36\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nCHILD PREVENTATIVE PLAN\nFREQUENTLY ASKED QUESTIONS\nWhat sedation dentistry options are available at Riccobene Associates in Porters Neck?\n\nAt Porters Neck, we offer a variety of sedation dentistry options. You can choose from Nitrous Oxide, IV Sedation, and Local Anesthesia.\n\nWhy choose Riccobene Associates Family Dentistry in Porters Neck?\n\nAt Riccobene Associates Family Dentistry, we are committed to personalized, high-quality dental care focused on patient comfort, advanced technology, and lifelong oral health.\n\nDo you provide emergency dental care in Porters Neck?\n\nYes. At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!\n\nDo you accept dental insurance and offer financing options?\n\nWe accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.\n\nREADY TO SCHEDULE? CONTACT US\n\nTake the first step towards optimal oral health. Contact our Wilmington office to schedule your appointment or ask any questions about our dental services.\n\nSend us a Message\nFill out the form below and we'll get back to you within 24 hours.\nFirst Name*\nLast Name*\nEmail*\nPhone*\nHow Can We Help?\nI have dental insurance and would like to verify my benefits\nI prefer a phone call instead of email\nThis is a dental emergency\nGet in Touch\n\nFill out the form below and we'll get back to you within 24 hours.\n\nVisit Our Office\n8201 Market Street, Wilmington, NC 28411\nCall Us\n910-550-1853\nEmergency line available 24/7\nEmail Us\nportersneckpc@brushandfloss.com\nOffice Hours\nMonday: 8:00 AM - 5:00 PM\nTuesday: 8:00 AM - 5:00 PM\nWednesday: 8:00 AM - 5:00 PM\nThursday: 8:00 AM - 5:00 PM\nFriday: 8:00 AM - 2:00 PM\nBOOK APPOINTMENT ONLINE\nCALL FOR EMERGENCY\nLOCATIONS\nSERVICES\nWHAT TO EXPECT\nJOIN OUR TEAM\nPARTNER WITH US\nCONTACT US\nHIPAA\nPRIVACY POLICY\nSEARCH",
+  "wordCount": 2050
+}

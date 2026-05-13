@@ -1,7 +1,7 @@
 {
-  "name": "serp-researcher-client",
+  "name": "seo-automation-client",
   "version": "1.0.0",
-  "description": "Frontend for SERP Content Researcher",
+  "description": "Frontend for SEO Automation",
   "type": "module",
   "scripts": {
     "dev": "vite",

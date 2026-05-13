@@ -21,59 +21,67 @@ router.get('/', async (req, res) => {
   }
 
   try {
+    // Read index once
     const index = await store.readIndex();
 
-    // ── Brand ────────────────────────────────────────────────────────────────
+    // ── Identify entries from index ──────────────────────────────────────────
     const brandEntry = index.knowledge_bases.find(
       kb => kb.category === 'brand' && kb.client === client
     );
+    const feedbackEntries = index.knowledge_bases
+      .filter(kb => kb.category === 'client-feedback' && kb.client === client && kb.active);
+
+    // ── Parallel: brand KB file + all feedback KB files ──────────────────────
+    const [brandKb, ...feedbackKbs] = await Promise.all([
+      brandEntry ? store.readKB(brandEntry.id) : Promise.resolve(null),
+      ...feedbackEntries.map(f => store.readKB(f.id)),
+    ]);
+
+    // ── Brand ────────────────────────────────────────────────────────────────
     let brand = null;
     if (brandEntry) {
-      const kb = await store.readKB(brandEntry.id);
       brand = {
         id: brandEntry.id,
-        version: kb?.meta?.version || '1.0.0',
+        version: brandKb?.meta?.version || '1.0.0',
         active: brandEntry.active,
-        hasContent: hasContent(kb?.body),
-        industry: kb?.meta?.industry || null,
+        hasContent: hasContent(brandKb?.body),
+        industry: brandKb?.meta?.industry || null,
       };
     }
 
-    // ── Industry (resolved from brand's associated industry KB) ──────────────
+    // ── Industry (sequential — depends on brand.industry) ────────────────────
     let industry = null;
     if (brand?.industry && brand.industry !== 'global') {
       const industryEntry = index.knowledge_bases.find(
         kb => kb.category === 'industry' && kb.id === brand.industry
       );
       if (industryEntry) {
-        const kb = await store.readKB(industryEntry.id);
-        industry = {
-          id: industryEntry.id,
-          version: kb?.meta?.version || '1.0.0',
-          active: industryEntry.active,
-          hasContent: hasContent(kb?.body),
-        };
+        const industryKb = await store.readKB(industryEntry.id);
+        if (industryKb) {
+          industry = {
+            id: industryEntry.id,
+            version: industryKb.meta?.version || '1.0.0',
+            active: industryEntry.active,
+            hasContent: hasContent(industryKb.body),
+          };
+        }
       }
     }
 
-    // ── Client Feedback options (filtered to this client/brand) ─────────────
-    const feedbackOptions = index.knowledge_bases
-      .filter(kb => kb.category === 'client-feedback' && kb.client === client && kb.active)
-      .map(kb => ({ id: kb.id, period: kb.id.replace(`${client}-feedback-`, '') }))
-      .sort((a, b) => b.period.localeCompare(a.period)); // newest first
-
-    // Fetch versions and labels for feedback entries
-    const feedbackWithVersions = await Promise.all(
-      feedbackOptions.map(async f => {
-        const kb = await store.readKB(f.id);
+    // ── Client Feedback options (built from already-fetched KB files) ─────────
+    const feedbackWithVersions = feedbackEntries
+      .map((f, i) => {
+        const kb = feedbackKbs[i];
+        const period = f.id.replace(`${client}-feedback-`, '');
         return {
-          ...f,
-          label: kb?.meta?.label || f.period,
+          id: f.id,
+          period,
+          label: kb?.meta?.label || period,
           version: kb?.meta?.version || '1.0.0',
           hasContent: hasContent(kb?.body),
         };
       })
-    );
+      .sort((a, b) => b.period.localeCompare(a.period)); // newest first
 
     res.json({ brand, industry, feedbackOptions: feedbackWithVersions });
   } catch (err) {

@@ -5,7 +5,7 @@ const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 
-const { router: authRouter, requireAuth } = require('./routes/auth');
+const { router: authRouter, requireAuth, requireSeo } = require('./routes/auth');
 const searchRoutes = require('./routes/search');
 const scrapeRoutes = require('./routes/scrape');
 const analyzeRoutes = require('./routes/analyze');
@@ -16,6 +16,10 @@ const modulesRoutes = require('./routes/modules');
 const auditRoutes = require('./routes/audit');
 const kbContextRoutes = require('./routes/kbContext');
 const articleRecommendationRoutes = require('./routes/articleRecommendation');
+const imageAltAuditRoutes = require('./routes/imageAltAudit');
+const teamInsightsRoutes = require('./routes/teamInsights');
+const competitorAnalysisRoutes = require('./routes/competitorAnalysis');
+const agentReadinessAuditRoutes = require('./routes/agentReadinessAudit');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -57,16 +61,23 @@ app.use('/api/auth', authRouter);
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 // ── Protected routes (JWT cookie required on every request) ─────────────────
-app.use('/api/search',           requireAuth, searchRoutes);
-app.use('/api/scrape',           requireAuth, scrapeRoutes);
-app.use('/api/analyze',          requireAuth, analyzeRoutes);
-app.use('/api/export',           requireAuth, exportRoutes);
-app.use('/api/keyword-research', requireAuth, keywordResearchRoutes);
-app.use('/api/kb',               kbLimiter, requireAuth, kbRoutes);
-app.use('/api/modules',          kbLimiter, requireAuth, modulesRoutes);
-app.use('/api/audit',            kbLimiter, requireAuth, auditRoutes);
-app.use('/api/kb-context',            kbLimiter, requireAuth, kbContextRoutes);
+// ── Extended team + SEO team (all authenticated users) ──────────────────────
+app.use('/api/kb',                     kbLimiter, requireAuth, kbRoutes);
+app.use('/api/modules',                kbLimiter, requireAuth, modulesRoutes);
+app.use('/api/audit',                  kbLimiter, requireAuth, auditRoutes);
+app.use('/api/kb-context',             kbLimiter, requireAuth, kbContextRoutes);
+app.use('/api/keyword-research',       requireAuth, keywordResearchRoutes);
 app.use('/api/article-recommendation', requireAuth, articleRecommendationRoutes);
+app.use('/api/image-alt-audit',        requireAuth, imageAltAuditRoutes);
+app.use('/api/agent-readiness-audit',  requireAuth, agentReadinessAuditRoutes);
+
+// ── SEO team only ────────────────────────────────────────────────────────────
+app.use('/api/search',              requireSeo, searchRoutes);
+app.use('/api/scrape',              requireSeo, scrapeRoutes);
+app.use('/api/analyze',             requireSeo, analyzeRoutes);
+app.use('/api/export',              requireSeo, exportRoutes);
+app.use('/api/team-insights',       requireSeo, teamInsightsRoutes);
+app.use('/api/competitor-analysis', requireSeo, competitorAnalysisRoutes);
 
 // ── Serve React frontend ─────────────────────────────────────────────────────
 const clientBuild = path.join(__dirname, '../client/dist');
@@ -83,6 +94,9 @@ const server = app.listen(PORT, () => {
   console.log(`   SEMRUSH_API_KEY:   ${process.env.SEMRUSH_API_KEY ? '✓' : '✗ missing'}`);
   console.log(`   APP_USERNAME:      ${process.env.APP_USERNAME ? '✓' : '✗ missing'}`);
   console.log(`   JWT_SECRET:        ${process.env.JWT_SECRET ? '✓' : '✗ missing'}`);
+  console.log(`   GOOGLE_SHEETS_ID:  ${process.env.GOOGLE_SHEETS_ID ? '✓' : '✗ missing (team insights disabled)'}`);
+  console.log(`   GOOGLE_PSI_KEY:    ${process.env.GOOGLE_PSI_API_KEY ? '✓' : '○ optional (PageSpeed)'}`);
+
 });
 
 server.timeout = 180000;
