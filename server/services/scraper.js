@@ -18,7 +18,7 @@ function findLocalBrowser() {
   return candidates.find(p => fs.existsSync(p)) || null;
 }
 
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+const USER_AGENT = 'Screaming Frog SEO Spider/23.1';
 const PAGE_TIMEOUT = 15000;
 const MAX_CONTENT_LENGTH = 5000;
 const MAX_CONCURRENCY = 3;
