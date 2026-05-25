@@ -2,6 +2,26 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const OpenAI = require('openai');
+const puppeteer = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
+const fs = require('fs');
+const { runOnPageChecks } = require('../checks/onpage');
+
+function findLocalBrowser() {
+  const candidates = [
+    process.env.CHROME_PATH,
+    `C:\\Users\\${process.env.USERNAME}\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe`,
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium',
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  ].filter(Boolean);
+  return candidates.find(p => fs.existsSync(p)) || null;
+}
 
 // ── Scoring weights (must sum to 100, webbotauth = 0 = informational) ────────
 const WEIGHTS = {
@@ -12,10 +32,21 @@ const WEIGHTS = {
 };
 
 const CATEGORIES = {
-  Discoverability: ['robots', 'sitemap', 'linkheaders'],
-  Content:         ['markdown'],
-  'Bot Access':    ['aibots', 'contentsignals', 'webbotauth'],
-  'API / Auth / MCP': ['apicatalog', 'oauth', 'oauthresource', 'mcp', 'agentskills', 'webmcp'],
+  Discoverability:     ['robots', 'sitemap', 'linkheaders'],
+  Content:             ['markdown'],
+  'Bot Access':        ['aibots', 'contentsignals', 'webbotauth'],
+  'API / Auth / MCP':  ['apicatalog', 'oauth', 'oauthresource', 'mcp', 'agentskills', 'webmcp'],
+};
+
+const ONPAGE_CATEGORIES = {
+  'On-Page Signals': ['schema_search', 'schema_action', 'captcha', 'cookie_banner', 'js_rendering'],
+  'Forms':           ['form_labels', 'input_type', 'autocomplete', 'vague_buttons', 'interactive_divs'],
+};
+
+const ONPAGE_WEIGHTS = {
+  form_labels: 10, input_type: 6, autocomplete: 6,
+  schema_search: 5, schema_action: 5, captcha: 8, cookie_banner: 6, js_rendering: 8,
+  vague_buttons: 4, interactive_divs: 5,
 };
 
 function levelFromScore(score) {
@@ -41,10 +72,9 @@ async function safeFetch(url, opts = {}) {
   }
 }
 
-async function runChecks(inputUrl) {
+async function runHttpChecks(inputUrl) {
   const origin = new URL(inputUrl).origin;
 
-  // Fetch robots.txt and homepage in parallel upfront
   const [robotsResp, homeResp, mdResp] = await Promise.all([
     safeFetch(`${origin}/robots.txt`),
     safeFetch(inputUrl),
@@ -52,12 +82,10 @@ async function runChecks(inputUrl) {
   ]);
 
   const robotsText = typeof robotsResp.data === 'string' ? robotsResp.data : '';
-
-  // ── 1. robots.txt ─────────────────────────────────────────────────────────
-  const robotsOk = robotsResp.status === 200 &&
-    (robotsResp.headers['content-type'] || '').includes('text/plain');
   const checks = {};
 
+  // 1. robots.txt
+  const robotsOk = robotsResp.status === 200 && (robotsResp.headers['content-type'] || '').includes('text/plain');
   checks.robots = {
     status: robotsOk ? 'pass' : 'fail',
     tech: robotsOk
@@ -65,7 +93,7 @@ async function runChecks(inputUrl) {
       : `robots.txt returned ${robotsResp.status || 'no response'}`,
   };
 
-  // ── 2. XML sitemap ────────────────────────────────────────────────────────
+  // 2. XML sitemap
   let sitemapFound = false, sitemapTech = '';
   const sitemapDeclared = robotsText.match(/^Sitemap:\s*(.+)$/im);
   if (sitemapDeclared) {
@@ -83,7 +111,7 @@ async function runChecks(inputUrl) {
   }
   checks.sitemap = { status: sitemapFound ? 'pass' : 'fail', tech: sitemapTech };
 
-  // ── 3. Link headers (RFC 8288) ────────────────────────────────────────────
+  // 3. Link headers
   const linkHeader = homeResp.headers['link'] || '';
   checks.linkheaders = {
     status: linkHeader ? 'pass' : 'fail',
@@ -92,7 +120,7 @@ async function runChecks(inputUrl) {
       : 'No Link header present in HTTP response',
   };
 
-  // ── 4. Markdown negotiation ───────────────────────────────────────────────
+  // 4. Markdown negotiation
   const mdCt = mdResp.headers['content-type'] || '';
   checks.markdown = {
     status: mdCt.includes('text/markdown') ? 'pass' : 'fail',
@@ -101,17 +129,17 @@ async function runChecks(inputUrl) {
       : `Site returned ${mdCt.split(';')[0] || 'unknown'} when agent sent Accept: text/markdown`,
   };
 
-  // ── 5. AI bot rules ───────────────────────────────────────────────────────
+  // 5. AI bot rules
   const aiBots = ['GPTBot', 'ClaudeBot', 'anthropic-ai', 'PerplexityBot', 'cohere-ai', 'Google-Extended'];
   const foundBots = aiBots.filter(b => robotsText.toLowerCase().includes(b.toLowerCase()));
   checks.aibots = {
     status: foundBots.length > 0 ? 'pass' : 'fail',
     tech: foundBots.length > 0
-      ? `AI-specific bot rules detected in robots.txt: ${foundBots.join(', ')}`
+      ? `AI-specific bot rules detected: ${foundBots.join(', ')}`
       : 'No AI-specific bot rules found in robots.txt',
   };
 
-  // ── 6. Content signals ────────────────────────────────────────────────────
+  // 6. Content signals
   const hasContentSignal = /Content-Signal/i.test(robotsText);
   checks.contentsignals = {
     status: hasContentSignal ? 'pass' : 'fail',
@@ -120,7 +148,6 @@ async function runChecks(inputUrl) {
       : 'No Content-Signal directives in robots.txt',
   };
 
-  // Run remaining well-known checks in parallel
   const [wbAuth, apiCat, oidc, oauthAs, opr] = await Promise.all([
     safeFetch(`${origin}/.well-known/http-message-signatures-directory`),
     safeFetch(`${origin}/.well-known/api-catalog`),
@@ -129,7 +156,6 @@ async function runChecks(inputUrl) {
     safeFetch(`${origin}/.well-known/oauth-protected-resource`),
   ]);
 
-  // MCP paths in parallel
   const [mcp1, mcp2, mcp3] = await Promise.all([
     safeFetch(`${origin}/.well-known/mcp/server-card.json`),
     safeFetch(`${origin}/.well-known/mcp/server-cards.json`),
@@ -141,7 +167,7 @@ async function runChecks(inputUrl) {
     safeFetch(`${origin}/.well-known/agent-skills.json`),
   ]);
 
-  // ── 7. Web bot auth (informational) ──────────────────────────────────────
+  // 7. Web bot auth (informational)
   checks.webbotauth = {
     status: wbAuth.status === 200 ? 'pass' : 'info',
     tech: wbAuth.status === 200
@@ -149,7 +175,7 @@ async function runChecks(inputUrl) {
       : `/.well-known/http-message-signatures-directory returned ${wbAuth.status || 'no response'} (informational only)`,
   };
 
-  // ── 8. API catalog ────────────────────────────────────────────────────────
+  // 8. API catalog
   checks.apicatalog = {
     status: apiCat.status === 200 ? 'pass' : 'fail',
     tech: apiCat.status === 200
@@ -157,7 +183,7 @@ async function runChecks(inputUrl) {
       : `/.well-known/api-catalog returned ${apiCat.status || 'no response'}`,
   };
 
-  // ── 9. OAuth / OIDC ───────────────────────────────────────────────────────
+  // 9. OAuth / OIDC
   const oauthFound = oidc.status === 200 || oauthAs.status === 200;
   checks.oauth = {
     status: oauthFound ? 'pass' : 'fail',
@@ -166,7 +192,7 @@ async function runChecks(inputUrl) {
       : `Both /.well-known/openid-configuration and oauth-authorization-server returned ${oidc.status || 'no response'}`,
   };
 
-  // ── 10. OAuth protected resource ──────────────────────────────────────────
+  // 10. OAuth protected resource
   checks.oauthresource = {
     status: opr.status === 200 ? 'pass' : 'fail',
     tech: opr.status === 200
@@ -174,7 +200,7 @@ async function runChecks(inputUrl) {
       : `/.well-known/oauth-protected-resource returned ${opr.status || 'no response'}`,
   };
 
-  // ── 11. MCP server card ───────────────────────────────────────────────────
+  // 11. MCP server card
   const mcpPass = [mcp1, mcp2, mcp3].find(r => r.status === 200);
   checks.mcp = {
     status: mcpPass ? 'pass' : 'fail',
@@ -183,48 +209,48 @@ async function runChecks(inputUrl) {
       : 'All MCP card paths returned 404 (server-card.json, server-cards.json, mcp.json)',
   };
 
-  // ── 12. Agent skills index ────────────────────────────────────────────────
+  // 12. Agent skills index
   const skillsPass = skills1.status === 200 || skills2.status === 200;
   checks.agentskills = {
     status: skillsPass ? 'pass' : 'fail',
-    tech: skillsPass
-      ? 'Agent skills index found'
-      : 'Both agent-skills index paths returned 404',
+    tech: skillsPass ? 'Agent skills index found' : 'Both agent-skills index paths returned 404',
   };
 
-  // ── 13. WebMCP ────────────────────────────────────────────────────────────
+  // 13. WebMCP
   checks.webmcp = {
     status: 'fail',
     tech: 'WebMCP requires browser-side evaluation of navigator.modelContext (not detectable via HTTP)',
   };
 
-  // ── Score & categories ────────────────────────────────────────────────────
   let score = 0;
   for (const [id, check] of Object.entries(checks)) {
     if (check.status === 'pass') score += WEIGHTS[id] || 0;
   }
 
-  const cats = Object.entries(CATEGORIES).map(([name, ids]) => {
-    const maxPts = ids.reduce((s, id) => s + (WEIGHTS[id] || 0), 0);
-    const earnedPts = ids.reduce((s, id) =>
-      s + (checks[id]?.status === 'pass' ? WEIGHTS[id] || 0 : 0), 0);
-    const passed = ids.filter(id => checks[id]?.status === 'pass').length;
-    const total = ids.length;
-    return {
-      id: name,
-      score: maxPts > 0 ? Math.round((earnedPts / maxPts) * 100) : 0,
-      passed,
-      total,
-    };
-  });
-
-  return { checks, score, level: levelFromScore(score), cats };
+  return { checks, httpScore: score };
 }
 
-// ── CMO brief via OpenAI ─────────────────────────────────────────────────────
+// ── Static check metadata ─────────────────────────────────────────────────────
+const CHECK_META = {
+  robots:         { cat: 'Discoverability',   label: 'robots.txt',                effort: 'done',   business: 'Crawl rules are accessible to all agents. This is the foundation — without it, agents cannot know what they are and are not allowed to index.', action: null },
+  sitemap:        { cat: 'Discoverability',   label: 'XML sitemap',               effort: 'done',   business: 'Agents can enumerate your full content structure. This accelerates discovery of all your pages, not just those linked from the homepage.', action: null },
+  linkheaders:    { cat: 'Discoverability',   label: 'Link headers (RFC 8288)',   effort: 'quick',  business: 'Without Link headers, agents cannot auto-discover your API or documentation endpoints. They rely on guesswork instead of following your signposts — adding friction to every automated interaction.', action: 'Add Link: </.well-known/api-catalog>; rel="api-catalog" to your server\'s HTTP response headers. ~1–2 hours with a developer.' },
+  markdown:       { cat: 'Content',           label: 'Markdown negotiation',      effort: 'medium', business: 'AI agents parse raw HTML including nav menus and footers — not your actual content. This degrades how AI tools summarize and cite your information, creating risk of misquotation or incomplete representation.', action: 'Enable Markdown for Agents via Cloudflare or server middleware. When a request includes Accept: text/markdown, respond with Content-Type: text/markdown. ~1–3 days of dev time.' },
+  aibots:         { cat: 'Bot Access',        label: 'AI bot rules',              effort: 'done',   business: "You're actively managing AI crawler access. This signals technical governance maturity to partners, platforms, and regulators.", action: null },
+  contentsignals: { cat: 'Bot Access',        label: 'Content signals',           effort: 'quick',  business: "You haven't declared whether your content can be used for AI training. That's an IP governance gap — and increasingly one partners, distributors, and regulators will ask about.", action: 'Add one line to robots.txt: Content-Signal: ai-train=no, search=yes, ai-input=yes. 15 minutes. No developer needed.' },
+  webbotauth:     { cat: 'Bot Access',        label: 'Web bot auth',              effort: 'low',    business: "Your server can't cryptographically identify itself for agent-to-agent trust verification. Not urgent today — will matter as authenticated agent networks mature in 2026–27.", action: 'Backlog for H2 2026. Publish a JWKS at /.well-known/http-message-signatures-directory.' },
+  apicatalog:     { cat: 'API / Auth / MCP',  label: 'API catalog (RFC 9727)',    effort: 'medium', business: "Agents and AI platforms can't auto-discover your APIs or developer resources. Your tools, integrations, and documentation are dark to the AI ecosystem.", action: 'Create /.well-known/api-catalog as application/linkset+json with service-desc and service-doc relations for any existing API. ~3–5 days.' },
+  oauth:          { cat: 'API / Auth / MCP',  label: 'OAuth / OIDC discovery',    effort: 'medium', business: "AI agents can't programmatically authenticate with any protected resources you offer — blocking agentic access to portals, dashboards, or any authenticated endpoints.", action: 'If you have protected APIs, publish /.well-known/openid-configuration with auth endpoint details. If no public APIs exist yet, deprioritize.' },
+  oauthresource:  { cat: 'API / Auth / MCP',  label: 'OAuth protected resource',  effort: 'medium', business: "Agents can't discover which authorization servers grant access to your resources. Pair this fix with OAuth / OIDC discovery.", action: 'Publish /.well-known/oauth-protected-resource alongside the OAuth discovery setup.' },
+  mcp:            { cat: 'API / Auth / MCP',  label: 'MCP server card',           effort: 'high',   business: 'You have zero MCP presence. As Claude, ChatGPT, and other AI agents use MCP to interact with tools and services, you\'re not in the room. Competitors who publish an MCP card get invoked — you don\'t.', action: 'Publish /.well-known/mcp/server-card.json with serverInfo, transport endpoint, and capabilities. Strategic priority for 2026.' },
+  agentskills:    { cat: 'API / Auth / MCP',  label: 'Agent skills index',        effort: 'high',   business: 'No declared capabilities for AI agents. Competitors with Agent Skills can be invoked directly by AI assistants. You can only be found passively via web search.', action: 'Publish /.well-known/agent-skills/index.json. Define skills for key user intents specific to your business.' },
+  webmcp:         { cat: 'API / Auth / MCP',  label: 'WebMCP',                    effort: 'high',   business: 'Your website cannot expose interactive capabilities to in-browser AI agents. As Chrome and Safari ship native AI APIs, sites with WebMCP registered tools will surface above those without.', action: 'Implement navigator.modelContext.provideContext() for key site actions. Q3/Q4 2026 priority.' },
+};
+
+// ── CMO brief ─────────────────────────────────────────────────────────────────
 async function generateCmoBrief(siteUrl, score, level, checks, openai) {
-  const passedChecks = Object.entries(checks).filter(([, c]) => c.status === 'pass').map(([id]) => id);
-  const failedChecks = Object.entries(checks).filter(([, c]) => c.status === 'fail').map(([id]) => id);
+  const passed = Object.entries(checks).filter(([, c]) => c.status === 'pass').map(([id]) => id);
+  const failed = Object.entries(checks).filter(([, c]) => c.status === 'fail').map(([id]) => id);
 
   const prompt = `You are a senior digital strategist advising CMOs on AI readiness.
 
@@ -232,8 +258,8 @@ Site: ${siteUrl}
 Agent-readiness score: ${score}/100 (${level})
 Scan date: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
 
-Passing (${passedChecks.length}): ${passedChecks.join(', ') || 'none'}
-Failing (${failedChecks.length}): ${failedChecks.join(', ') || 'none'}
+Passing (${passed.length}): ${passed.join(', ') || 'none'}
+Failing (${failed.length}): ${failed.join(', ') || 'none'}
 
 Generate a CMO-level executive briefing. Be specific to this site's industry based on its domain. Address the CMO directly as "you". Plain language — no technical jargon. Return ONLY this JSON object, no markdown or preamble:
 {
@@ -250,52 +276,210 @@ Generate a CMO-level executive briefing. Be specific to this site's industry bas
     messages: [{ role: 'user', content: prompt }],
     response_format: { type: 'json_object' },
   });
-
   return JSON.parse(response.choices[0].message.content);
 }
 
-// ── Static check metadata ────────────────────────────────────────────────────
-const CHECK_META = {
-  robots:         { cat: 'Discoverability', label: 'robots.txt',                effort: 'done',   business: 'Crawl rules are accessible to all agents. This is the foundation — without it, agents cannot know what they are and are not allowed to index.', action: null },
-  sitemap:        { cat: 'Discoverability', label: 'XML sitemap',               effort: 'done',   business: 'Agents can enumerate your full content structure. This accelerates discovery of all your pages, not just those linked from the homepage.', action: null },
-  linkheaders:    { cat: 'Discoverability', label: 'Link headers (RFC 8288)',   effort: 'quick',  business: 'Without Link headers, agents cannot auto-discover your API or documentation endpoints. They rely on guesswork instead of following your signposts — adding friction to every automated interaction.', action: 'Add Link: </.well-known/api-catalog>; rel="api-catalog" to your server\'s HTTP response headers. ~1–2 hours with a developer.' },
-  markdown:       { cat: 'Content',         label: 'Markdown negotiation',      effort: 'medium', business: 'AI agents parse raw HTML including nav menus and footers — not your actual content. This degrades how AI tools summarize and cite your information, creating risk of misquotation or incomplete representation.', action: 'Enable Markdown for Agents via Cloudflare or server middleware. When a request includes Accept: text/markdown, respond with Content-Type: text/markdown. ~1–3 days of dev time.' },
-  aibots:         { cat: 'Bot Access',      label: 'AI bot rules',              effort: 'done',   business: "You're actively managing AI crawler access. This signals technical governance maturity to partners, platforms, and regulators.", action: null },
-  contentsignals: { cat: 'Bot Access',      label: 'Content signals',           effort: 'quick',  business: "You haven't declared whether your content can be used for AI training. That's an IP governance gap — and increasingly one partners, distributors, and regulators will ask about.", action: 'Add one line to robots.txt: Content-Signal: ai-train=no, search=yes, ai-input=yes. 15 minutes. No developer needed.' },
-  webbotauth:     { cat: 'Bot Access',      label: 'Web bot auth',              effort: 'low',    business: "Your server can't cryptographically identify itself for agent-to-agent trust verification. Not urgent today — will matter as authenticated agent networks mature in 2026–27.", action: 'Backlog for H2 2026. Publish a JWKS at /.well-known/http-message-signatures-directory.' },
-  apicatalog:     { cat: 'API / Auth / MCP', label: 'API catalog (RFC 9727)',   effort: 'medium', business: "Agents and AI platforms can't auto-discover your APIs or developer resources. Your tools, integrations, and documentation are dark to the AI ecosystem.", action: 'Create /.well-known/api-catalog as application/linkset+json with service-desc and service-doc relations for any existing API. ~3–5 days.' },
-  oauth:          { cat: 'API / Auth / MCP', label: 'OAuth / OIDC discovery',   effort: 'medium', business: "AI agents can't programmatically authenticate with any protected resources you offer — blocking agentic access to portals, dashboards, or any authenticated endpoints.", action: 'If you have protected APIs, publish /.well-known/openid-configuration with auth endpoint details. If no public APIs exist yet, deprioritize.' },
-  oauthresource:  { cat: 'API / Auth / MCP', label: 'OAuth protected resource', effort: 'medium', business: "Agents can't discover which authorization servers grant access to your resources. Pair this fix with OAuth / OIDC discovery.", action: 'Publish /.well-known/oauth-protected-resource alongside the OAuth discovery setup.' },
-  mcp:            { cat: 'API / Auth / MCP', label: 'MCP server card',          effort: 'high',   business: 'You have zero MCP presence. As Claude, ChatGPT, and other AI agents use MCP to interact with tools and services, you\'re not in the room. Competitors who publish an MCP card get invoked — you don\'t.', action: 'Publish /.well-known/mcp/server-card.json with serverInfo, transport endpoint, and capabilities. Strategic priority for 2026.' },
-  agentskills:    { cat: 'API / Auth / MCP', label: 'Agent skills index',       effort: 'high',   business: 'No declared capabilities for AI agents. Competitors with Agent Skills can be invoked directly by AI assistants. You can only be found passively via web search.', action: 'Publish /.well-known/agent-skills/index.json. Define skills for key user intents specific to your business.' },
-  webmcp:         { cat: 'API / Auth / MCP', label: 'WebMCP',                   effort: 'high',   business: 'Your website cannot expose interactive capabilities to in-browser AI agents. As Chrome and Safari ship native AI APIs, sites with WebMCP registered tools will surface above those without.', action: 'Implement navigator.modelContext.provideContext() for key site actions. Q3/Q4 2026 priority.' },
-};
+// ── PDF generation ────────────────────────────────────────────────────────────
+function buildPdfHtml(data) {
+  const { site, cats, checks, cmoBrief, onPageChecks } = data;
+  const allChecks = [...(checks || []), ...(onPageChecks || [])];
+  const pass = allChecks.filter(c => c.status === 'pass').length;
+  const fail = allChecks.filter(c => c.status === 'fail').length;
 
-// ── Route ─────────────────────────────────────────────────────────────────────
+  const statusColor = { pass: '#3B6D11', fail: '#A32D2D', info: '#854F0B' };
+  const statusBg    = { pass: '#EAF3DE', fail: '#FCEBEB', info: '#FAEEDA' };
+  const statusIcon  = { pass: '✓', fail: '✗', info: 'i' };
+  const scoreColor  = site.score >= 70 ? '#3B6D11' : site.score >= 40 ? '#EF9F27' : '#E24B4A';
+
+  const checkRows = allChecks.map(c => `
+    <tr>
+      <td style="padding:8px 10px;border-bottom:1px solid #F3F4F6;">
+        <span style="background:${statusBg[c.status]};color:${statusColor[c.status]};padding:2px 7px;border-radius:3px;font-size:11px;font-weight:600;">
+          ${statusIcon[c.status]} ${c.status.toUpperCase()}
+        </span>
+      </td>
+      <td style="padding:8px 10px;border-bottom:1px solid #F3F4F6;font-weight:500;font-size:13px;">${c.label}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #F3F4F6;color:#6B7280;font-size:12px;">${c.cat}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#374151;">${c.tech || ''}</td>
+    </tr>`).join('');
+
+  const catBars = cats.map(cat => {
+    const w = cat.score;
+    const col = w >= 70 ? '#639922' : w >= 40 ? '#EF9F27' : '#E24B4A';
+    return `
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:12px;color:#6B7280;">${cat.id}</span>
+        <span style="font-size:12px;font-weight:500;color:${col};">${cat.score}</span>
+      </div>
+      <div style="height:6px;border-radius:3px;background:#F3F4F6;overflow:hidden;">
+        <div style="height:100%;width:${w}%;background:${col};border-radius:3px;"></div>
+      </div>
+      <div style="font-size:11px;color:#9CA3AF;margin-top:2px;">${cat.passed} of ${cat.total} passed</div>
+    </div>`;
+  }).join('');
+
+  const brief = cmoBrief ? `
+    <div style="background:#EEEDFE;border-radius:10px;padding:16px 20px;margin-bottom:24px;">
+      <div style="font-size:10px;font-weight:600;color:#534AB7;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">✦ CMO Executive Brief</div>
+      <p style="font-size:16px;font-weight:500;color:#111827;margin:0 0 8px;line-height:1.4;">${cmoBrief.headline}</p>
+      <p style="font-size:12px;color:#6B7280;margin:0 0 12px;line-height:1.7;">${cmoBrief.summary}</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div style="background:#FCEBEB;border-radius:6px;padding:8px 10px;">
+          <div style="font-size:10px;font-weight:600;color:#A32D2D;margin-bottom:4px;">TOP RISK</div>
+          <p style="font-size:11px;color:#791F1F;margin:0;line-height:1.5;">${cmoBrief.risk}</p>
+        </div>
+        <div style="background:#EAF3DE;border-radius:6px;padding:8px 10px;">
+          <div style="font-size:10px;font-weight:600;color:#3B6D11;margin-bottom:4px;">60-DAY OPPORTUNITY</div>
+          <p style="font-size:11px;color:#27500A;margin:0;line-height:1.5;">${cmoBrief.opportunity}</p>
+        </div>
+        <div style="background:#E6F1FB;border-radius:6px;padding:8px 10px;">
+          <div style="font-size:10px;font-weight:600;color:#185FA5;margin-bottom:4px;">COMPETITIVE CONTEXT</div>
+          <p style="font-size:11px;color:#0C447C;margin:0;line-height:1.5;">${cmoBrief.competitive}</p>
+        </div>
+      </div>
+    </div>` : '';
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; color: #111827; padding: 32px 40px; font-size: 13px; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #9CA3AF; padding: 8px 10px; border-bottom: 2px solid #E5E7EB; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #E5E7EB;">
+    <div>
+      <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Agent Readiness Audit</div>
+      <h1>${site.url}</h1>
+      <div style="font-size:13px;color:#6B7280;margin-top:4px;">${site.level} &nbsp;·&nbsp; Scanned ${site.date}</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:36px;font-weight:600;color:${scoreColor};line-height:1;">${site.score}</div>
+      <div style="font-size:11px;color:#9CA3AF;">out of 100</div>
+      <div style="margin-top:6px;font-size:11px;">
+        <span style="color:#3B6D11;">✓ ${pass} passed</span> &nbsp;
+        <span style="color:#A32D2D;">✗ ${fail} failed</span>
+      </div>
+    </div>
+  </div>
+
+  ${brief}
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+    <div>
+      <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">Score by category</div>
+      ${catBars}
+    </div>
+    <div style="background:#F9FAFB;border-radius:8px;padding:14px;">
+      <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">About this audit</div>
+      <p style="font-size:12px;color:#6B7280;line-height:1.6;">This report covers ${allChecks.length} checks across HTTP discoverability, bot access, API/auth/MCP protocols, and on-page agent signals. Scores are weighted by business impact. On-page checks require browser rendering and are only available when additional URLs are provided.</p>
+      <div style="margin-top:10px;font-size:11px;color:#9CA3AF;">Generated by Arena · ${site.date}</div>
+    </div>
+  </div>
+
+  <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">All Findings</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:70px;">Status</th>
+        <th>Check</th>
+        <th style="width:140px;">Category</th>
+        <th>Finding</th>
+      </tr>
+    </thead>
+    <tbody>${checkRows}</tbody>
+  </table>
+</body>
+</html>`;
+}
+
+// ── Routes ────────────────────────────────────────────────────────────────────
+
 router.post('/', async (req, res) => {
-  const { url } = req.body;
-  if (!url) return res.status(400).json({ error: 'url is required' });
+  // Accept { url_homepage, url_action, url_form } or legacy { url }
+  const { url, url_homepage, url_action, url_form } = req.body;
+  const homepageRaw = url_homepage || url;
+  if (!homepageRaw) return res.status(400).json({ error: 'url_homepage is required' });
 
   let parsedUrl;
-  try { parsedUrl = new URL(url.startsWith('http') ? url : `https://${url}`); }
+  try { parsedUrl = new URL(homepageRaw.startsWith('http') ? homepageRaw : `https://${homepageRaw}`); }
   catch { return res.status(400).json({ error: 'Invalid URL' }); }
 
-  try {
-    const { checks, score, level, cats } = await runChecks(parsedUrl.href);
+  const parseOptional = (u) => {
+    if (!u || !u.trim()) return null;
+    try { return new URL(u.startsWith('http') ? u : `https://${u}`).href; }
+    catch { return null; }
+  };
 
-    // Build full check list with metadata merged in
-    const fullChecks = Object.entries(checks).map(([id, result]) => ({
+  const urls = {
+    url_homepage: parsedUrl.href,
+    url_action: parseOptional(url_action),
+    url_form: parseOptional(url_form),
+  };
+
+  try {
+    // Run HTTP checks and on-page checks in parallel
+    const hasOnPage = urls.url_action || urls.url_form || urls.url_homepage;
+    const [httpResult, rawOnPageChecks] = await Promise.all([
+      runHttpChecks(parsedUrl.href),
+      hasOnPage
+        ? runOnPageChecks(urls).catch(e => { console.warn('[on-page checks]', e.message); return []; })
+        : Promise.resolve([]),
+    ]);
+
+    const { checks: rawHttpChecks, httpScore } = httpResult;
+
+    // Build full HTTP check list with metadata
+    const httpChecks = Object.entries(rawHttpChecks).map(([id, result]) => ({
       id,
       ...CHECK_META[id],
       status: result.status,
       tech: result.tech,
     }));
 
-    // Generate CMO brief
+    // Combined scoring
+    const httpMax = 100;
+    const onPageMax = rawOnPageChecks.reduce((s, c) => s + (c.maxScore || 0), 0);
+    const onPageEarned = rawOnPageChecks.reduce((s, c) => s + (c.score || 0), 0);
+    const totalMax = httpMax + onPageMax;
+    const totalScore = totalMax > 0
+      ? Math.round((httpScore + onPageEarned) / totalMax * 100)
+      : httpScore;
+
+    // Build categories — HTTP cats first
+    const httpCats = Object.entries(CATEGORIES).map(([name, ids]) => {
+      const maxPts = ids.reduce((s, id) => s + (WEIGHTS[id] || 0), 0);
+      const earned = ids.reduce((s, id) =>
+        s + (rawHttpChecks[id]?.status === 'pass' ? WEIGHTS[id] || 0 : 0), 0);
+      const passed = ids.filter(id => rawHttpChecks[id]?.status === 'pass').length;
+      return { id: name, score: maxPts > 0 ? Math.round((earned / maxPts) * 100) : 0, passed, total: ids.length };
+    });
+
+    // On-page categories — only include if checks ran
+    const onPageCats = rawOnPageChecks.length > 0
+      ? Object.entries(ONPAGE_CATEGORIES).map(([name, ids]) => {
+          const ranChecks = rawOnPageChecks.filter(c => ids.includes(c.id));
+          if (ranChecks.length === 0) return null;
+          const maxPts = ranChecks.reduce((s, c) => s + (c.maxScore || 0), 0);
+          const earned = ranChecks.reduce((s, c) => s + (c.score || 0), 0);
+          const passed = ranChecks.filter(c => c.status === 'pass').length;
+          return { id: name, score: maxPts > 0 ? Math.round((earned / maxPts) * 100) : 0, passed, total: ranChecks.length };
+        }).filter(Boolean)
+      : [];
+
+    const allCats = [...httpCats, ...onPageCats];
+
+    // CMO brief (HTTP checks only for the prompt)
     let cmoBrief = null;
     try {
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      cmoBrief = await generateCmoBrief(parsedUrl.href, score, level, checks, openai);
+      cmoBrief = await generateCmoBrief(parsedUrl.href, totalScore, levelFromScore(totalScore), rawHttpChecks, openai);
     } catch (e) {
       console.warn('[agent-readiness] CMO brief failed:', e.message);
     }
@@ -304,16 +488,58 @@ router.post('/', async (req, res) => {
       site: {
         url: parsedUrl.hostname,
         full: parsedUrl.href,
-        score,
-        level,
+        score: totalScore,
+        level: levelFromScore(totalScore),
         date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        httpScore,
+        onPageScore: onPageMax > 0 ? Math.round((onPageEarned / onPageMax) * 100) : null,
+        onPageMax,
       },
-      cats,
-      checks: fullChecks,
+      cats: allCats,
+      checks: httpChecks,
+      onPageChecks: rawOnPageChecks,
       cmoBrief,
     });
   } catch (err) {
     console.error('[agent-readiness] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── PDF export ────────────────────────────────────────────────────────────────
+router.post('/pdf', async (req, res) => {
+  const data = req.body;
+  if (!data?.site) return res.status(400).json({ error: 'Invalid audit data' });
+
+  const localBrowser = findLocalBrowser();
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      executablePath: localBrowser || (await chromium.executablePath()),
+      headless: true,
+      args: localBrowser ? ['--no-sandbox', '--disable-setuid-sandbox'] : chromium.args,
+      defaultViewport: localBrowser ? { width: 1280, height: 800 } : chromium.defaultViewport,
+    });
+    const page = await browser.newPage();
+    const html = buildPdfHtml(data);
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdf = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '16mm', bottom: '16mm', left: '14mm', right: '14mm' },
+    });
+    await browser.close();
+
+    const filename = `agent-readiness-${(data.site.url || 'report').replace(/[^a-z0-9]/gi, '-')}.pdf`;
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': pdf.length,
+    });
+    res.send(pdf);
+  } catch (err) {
+    if (browser) await browser.close().catch(() => {});
+    console.error('[agent-readiness/pdf]', err.message);
     res.status(500).json({ error: err.message });
   }
 });

@@ -73,6 +73,20 @@ const TOOLS = [
     badge: 'PM',
   },
   {
+    id: 'seo-geo-audit',
+    path: '/seo-geo-audit',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    label: 'SEO & GEO Audit',
+    tagline: '200+ checks · scored · AI recommendations',
+    description: 'Run a full SEO and Generative Engine Optimization audit on any URL or pasted HTML. 200+ checks across title, meta, headings, content, schema, E-E-A-T, technical, and GEO signals — scored and analysed by GPT-4o mini.',
+    features: ['200+ checks across 21 categories', 'CSQAF & GEO readiness score', 'Platform readiness: 6 AI engines', 'Schema audit with sameAs gaps', 'E-E-A-T & content recommendations', 'Instant AI expert analysis'],
+    badge: 'SEO+GEO',
+  },
+  {
     id: 'agent-readiness-audit',
     path: '/agent-readiness-audit',
     icon: (
@@ -108,6 +122,7 @@ const EXTENDED_TOOLS = new Set([
   'image-alt-audit',
   'agent-readiness-audit',
   'keyword-research',
+  'seo-geo-audit',
 ]);
 
 export default function HomePage() {

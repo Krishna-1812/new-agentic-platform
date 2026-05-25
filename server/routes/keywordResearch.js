@@ -104,11 +104,52 @@ router.get('/stream/:token', async (req, res) => {
     // Deduplicate by keyword string
     const unique = [...new Map(allKeywords.map(k => [k.keyword.toLowerCase(), k])).values()];
 
-    // Emit full deduplicated pool so the frontend can show "view all source keywords"
-    emit('allKeywords', { keywords: unique });
+    // ── Composite scoring: 60% semantic alignment + 40% volume ──────────────
+    emit('step', { id: 'scoring', status: 'active', message: 'Scoring keywords by alignment and volume…' });
 
-    const keywordList = unique.slice(0, 60).map(k =>
-      `- ${k.keyword} | volume: ${k.volume || 'N/A'} | difficulty: ${k.difficulty || 'N/A'} | position: ${k.position || 'N/A'}`
+    const scoringRes = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: 'You are an SEO scoring assistant. Always respond with valid JSON only.' },
+        {
+          role: 'user',
+          content: `Seed keyword: "${keyword}"
+
+Rate each keyword below for semantic alignment to the seed keyword on a scale of 0–10.
+0 = completely unrelated, 10 = directly targets the exact same topic and intent.
+
+Keywords to score:
+${unique.map((k, i) => `${i}. ${k.keyword}`).join('\n')}
+
+Return JSON: { "scores": [<score for keyword 0>, <score for keyword 1>, ...] }
+Return exactly ${unique.length} scores in the same order.`
+        }
+      ]
+    });
+
+    const rawScores = JSON.parse(scoringRes.choices[0].message.content).scores;
+    const alignmentScores = rawScores.map(s => Math.min(Math.max(Number(s) || 0, 0), 10) / 10);
+
+    const volumes = unique.map(k => k.volume || 0);
+    const maxVol = Math.max(...volumes, 1);
+    const volumeScores = volumes.map(v => v / maxVol);
+
+    const scored = unique.map((k, i) => ({
+      ...k,
+      alignmentScore: alignmentScores[i],
+      volumeScore: volumeScores[i],
+      compositeScore: 0.6 * alignmentScores[i] + 0.4 * volumeScores[i],
+    }));
+    scored.sort((a, b) => b.compositeScore - a.compositeScore);
+
+    emit('step', { id: 'scoring', status: 'done', message: `Scored and ranked ${unique.length} keywords` });
+
+    // Emit full scored pool so the frontend can show "view all source keywords"
+    emit('allKeywords', { keywords: scored });
+
+    const keywordList = scored.slice(0, 40).map(k =>
+      `- ${k.keyword} | volume: ${k.volume || 'N/A'} | difficulty: ${k.difficulty || 'N/A'} | alignment: ${k.alignmentScore.toFixed(3)} | composite: ${k.compositeScore.toFixed(3)}`
     ).join('\n');
 
     const kbSystemPrompt = 'You are an expert SEO strategist. Always respond with valid JSON only.'
@@ -127,6 +168,11 @@ router.get('/stream/:token', async (req, res) => {
           content: `Seed keyword: "${keyword}"
 
 ${kbContext ? 'Brand context is available in your system prompt — use it as a low-priority secondary signal to prefer keywords that fit the brand\'s vertical, audience, and positioning, but do not let it override the core selection rules below.' : ''}
+
+The keyword candidates below have been pre-ranked using a composite score:
+  • 60% — semantic embedding similarity to the seed keyword (alignment score, 0–1)
+  • 40% — normalised search volume relative to the pool (composite score, 0–1)
+Prefer higher composite-scored keywords when selecting primaries and secondaries, unless a hard rejection criterion applies.
 
 Competitor keywords from top ranking pages (via SEMrush):
 ${keywordList}
