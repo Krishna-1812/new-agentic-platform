@@ -6,6 +6,7 @@ const puppeteer = require('puppeteer-core');
 const chromium = require('@sparticuz/chromium');
 const fs = require('fs');
 const { runOnPageChecks } = require('../checks/onpage');
+const { discoverLinks } = require('../utils/linkDiscovery');
 
 function findLocalBrowser() {
   const candidates = [
@@ -248,7 +249,7 @@ const CHECK_META = {
 };
 
 // ── CMO brief ─────────────────────────────────────────────────────────────────
-async function generateCmoBrief(siteUrl, score, level, checks, openai) {
+async function generateCmoBrief(siteUrl, score, level, checks, openai, cats) {
   const passed = Object.entries(checks).filter(([, c]) => c.status === 'pass').map(([id]) => id);
   const failed = Object.entries(checks).filter(([, c]) => c.status === 'fail').map(([id]) => id);
 
@@ -261,7 +262,16 @@ Scan date: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numer
 Passing (${passed.length}): ${passed.join(', ') || 'none'}
 Failing (${failed.length}): ${failed.join(', ') || 'none'}
 
-Generate a CMO-level executive briefing. Be specific to this site's industry based on its domain. Address the CMO directly as "you". Plain language — no technical jargon. Return ONLY this JSON object, no markdown or preamble:
+Category scores:
+${cats ? cats.map(c => `${c.id}: ${c.score}/100 (${c.passed}/${c.total} passed)`).join('\n') : 'not available'}
+
+Guidance:
+- If Bot Access = 0 AND API/Auth/MCP = 0: lead with AI discoverability risk
+- If Forms score is low AND On-Page Signals score is low: lead with conversion and agent interaction risk
+- If HTTP score is high but on-page score is low: note the gap between infrastructure and user-facing agent readiness
+- If score >= 75: shift tone from risk to optimization opportunity
+
+Generate an executive summary. Be specific to this site's industry based on its domain. Address the CMO directly as "you". Plain language — no technical jargon. Return ONLY this JSON object, no markdown or preamble:
 {
   "headline": "A punchy 10-15 word headline capturing the core risk or opportunity",
   "summary": "2-3 sentences explaining what this score means for the business, the competitive context, and what is at stake",
@@ -280,6 +290,34 @@ Generate a CMO-level executive briefing. Be specific to this site's industry bas
 }
 
 // ── PDF generation ────────────────────────────────────────────────────────────
+
+// Roadmap tier definitions (hard-coded to match client ROADMAP constant)
+const ROADMAP_TIERS = {
+  'This week':         ['contentsignals', 'linkheaders', 'form_labels', 'input_type', 'autocomplete', 'cookie_banner', 'vague_buttons'],
+  'This quarter':      ['markdown', 'apicatalog', 'oauth', 'schema_search', 'schema_action', 'js_rendering', 'interactive_divs'],
+  'Strategic horizon': ['mcp', 'agentskills', 'webmcp', 'captcha'],
+};
+
+const ROLE_MAP = {
+  robots: 'SEO / Content', sitemap: 'SEO / Content', aibots: 'SEO / Content',
+  contentsignals: 'SEO / Content', linkheaders: 'SEO / Content',
+  markdown: 'Engineering', apicatalog: 'Engineering', oauth: 'Engineering',
+  oauthresource: 'Engineering', mcp: 'Engineering', agentskills: 'Engineering',
+  webmcp: 'Engineering', webbotauth: 'Engineering', captcha: 'Engineering',
+  form_labels: 'Front-End Dev', input_type: 'Front-End Dev', autocomplete: 'Front-End Dev',
+  vague_buttons: 'Front-End Dev', interactive_divs: 'Front-End Dev',
+  schema_search: 'Front-End Dev', schema_action: 'Front-End Dev',
+  js_rendering: 'Front-End Dev', cookie_banner: 'Front-End Dev',
+};
+
+const EFFORT_TIME_MAP = {
+  contentsignals: '~15 min', linkheaders: '~2 hrs', form_labels: '~1 hr', input_type: '30 min',
+  autocomplete: '30 min', cookie_banner: '30 min', vague_buttons: '1 hr',
+  markdown: '1–3 days', apicatalog: '3–5 days', oauth: '1–2 wks', schema_search: '~1 day',
+  schema_action: '~1 day', js_rendering: '1–2 wks', interactive_divs: '~1 day',
+  mcp: '2–4 wks', agentskills: '4–6 wks', webmcp: '4–8 wks', captcha: '2–4 wks',
+};
+
 function buildPdfHtml(data) {
   const { site, cats, checks, cmoBrief, onPageChecks } = data;
   const allChecks = [...(checks || []), ...(onPageChecks || [])];
@@ -321,7 +359,7 @@ function buildPdfHtml(data) {
 
   const brief = cmoBrief ? `
     <div style="background:#EEEDFE;border-radius:10px;padding:16px 20px;margin-bottom:24px;">
-      <div style="font-size:10px;font-weight:600;color:#534AB7;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">✦ CMO Executive Brief</div>
+      <div style="font-size:10px;font-weight:600;color:#534AB7;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">✦ Executive Summary</div>
       <p style="font-size:16px;font-weight:500;color:#111827;margin:0 0 8px;line-height:1.4;">${cmoBrief.headline}</p>
       <p style="font-size:12px;color:#6B7280;margin:0 0 12px;line-height:1.7;">${cmoBrief.summary}</p>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
@@ -339,6 +377,65 @@ function buildPdfHtml(data) {
         </div>
       </div>
     </div>` : '';
+
+  // ── Priority Roadmap table ──────────────────────────────────────────────────
+  const tierOrder = ['This week', 'This quarter', 'Strategic horizon'];
+  const tierColors = {
+    'This week':         { bg: '#FEF3C7', text: '#92400E', dot: '#F59E0B' },
+    'This quarter':      { bg: '#DBEAFE', text: '#1E40AF', dot: '#3B82F6' },
+    'Strategic horizon': { bg: '#EDE9FE', text: '#5B21B6', dot: '#8B5CF6' },
+  };
+
+  // Collect failing checks with tier info, sorted by tier then by weight
+  const allWeights = { ...WEIGHTS, ...ONPAGE_WEIGHTS };
+  const roadmapRows = [];
+  const passingCount = allChecks.filter(c => c.status === 'pass').length;
+
+  for (const tier of tierOrder) {
+    const tierIds = ROADMAP_TIERS[tier] || [];
+    // Find failing checks that belong to this tier
+    const tierChecks = allChecks
+      .filter(c => c.status !== 'pass' && tierIds.includes(c.id))
+      .sort((a, b) => (allWeights[b.id] || 0) - (allWeights[a.id] || 0));
+
+    for (const c of tierChecks) {
+      roadmapRows.push({ tier, check: c });
+    }
+  }
+
+  const roadmapTableRows = roadmapRows.map(({ tier, check }) => {
+    const tc = tierColors[tier];
+    const effort = EFFORT_TIME_MAP[check.id] || '—';
+    const owner = ROLE_MAP[check.id] || '—';
+    return `
+    <tr>
+      <td style="padding:7px 10px;border-bottom:1px solid #F3F4F6;">
+        <span style="background:${tc.bg};color:${tc.text};padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;white-space:nowrap;">${tier}</span>
+      </td>
+      <td style="padding:7px 10px;border-bottom:1px solid #F3F4F6;font-weight:500;font-size:12px;">${check.label || check.id}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #F3F4F6;color:#6B7280;font-size:11px;">${check.cat || ''}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #F3F4F6;color:#374151;font-size:11px;">${owner}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #F3F4F6;color:#374151;font-size:11px;">${effort}</td>
+    </tr>`;
+  }).join('');
+
+  const roadmapSection = roadmapRows.length > 0 ? `
+  <div style="margin-bottom:24px;">
+    <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Priority Roadmap</div>
+    ${passingCount > 0 ? `<div style="font-size:11px;color:#6B7280;margin-bottom:8px;">${passingCount} check${passingCount !== 1 ? 's' : ''} already passing — focus effort below.</div>` : ''}
+    <table>
+      <thead>
+        <tr>
+          <th style="width:110px;">Priority</th>
+          <th>Check</th>
+          <th style="width:130px;">Category</th>
+          <th style="width:110px;">Owner</th>
+          <th style="width:80px;">Effort</th>
+        </tr>
+      </thead>
+      <tbody>${roadmapTableRows}</tbody>
+    </table>
+  </div>` : '';
 
   return `<!DOCTYPE html>
 <html>
@@ -371,17 +468,12 @@ function buildPdfHtml(data) {
 
   ${brief}
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
-    <div>
-      <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">Score by category</div>
-      ${catBars}
-    </div>
-    <div style="background:#F9FAFB;border-radius:8px;padding:14px;">
-      <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">About this audit</div>
-      <p style="font-size:12px;color:#6B7280;line-height:1.6;">This report covers ${allChecks.length} checks across HTTP discoverability, bot access, API/auth/MCP protocols, and on-page agent signals. Scores are weighted by business impact. On-page checks require browser rendering and are only available when additional URLs are provided.</p>
-      <div style="margin-top:10px;font-size:11px;color:#9CA3AF;">Generated by Arena · ${site.date}</div>
-    </div>
+  <div style="margin-bottom:24px;">
+    <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">Score by category</div>
+    ${catBars}
   </div>
+
+  ${roadmapSection}
 
   <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">All Findings</div>
   <table>
@@ -395,11 +487,29 @@ function buildPdfHtml(data) {
     </thead>
     <tbody>${checkRows}</tbody>
   </table>
+
+  <div style="margin-top:24px;padding-top:16px;border-top:1px solid #E5E7EB;">
+    <p style="font-size:12px;color:#6B7280;line-height:1.6;">This report covers ${allChecks.length} checks across HTTP discoverability, bot access, API/auth/MCP protocols, and on-page agent signals. Scores are weighted by business impact. On-page checks require browser rendering and are only available when additional URLs are provided. Generated by Arena · ${site.date}</p>
+  </div>
 </body>
 </html>`;
 }
 
 // ── Routes ────────────────────────────────────────────────────────────────────
+
+router.get('/discover-links', async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: 'url is required' });
+  try {
+    let parsed;
+    try { parsed = new URL(url.startsWith('http') ? url : `https://${url}`); }
+    catch { return res.status(400).json({ error: 'Invalid URL' }); }
+    const result = await discoverLinks(parsed.href);
+    res.json(result);
+  } catch (e) {
+    res.json({ actionCandidates: [], formCandidates: [] });
+  }
+});
 
 router.post('/', async (req, res) => {
   // Accept { url_homepage, url_action, url_form } or legacy { url }
@@ -479,7 +589,7 @@ router.post('/', async (req, res) => {
     let cmoBrief = null;
     try {
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      cmoBrief = await generateCmoBrief(parsedUrl.href, totalScore, levelFromScore(totalScore), rawHttpChecks, openai);
+      cmoBrief = await generateCmoBrief(parsedUrl.href, totalScore, levelFromScore(totalScore), rawHttpChecks, openai, allCats);
     } catch (e) {
       console.warn('[agent-readiness] CMO brief failed:', e.message);
     }
@@ -503,6 +613,150 @@ router.post('/', async (req, res) => {
   } catch (err) {
     console.error('[agent-readiness] Error:', err.message);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── SSE streaming endpoint ────────────────────────────────────────────────────
+router.post('/stream', async (req, res) => {
+  const { url, url_homepage, url_action, url_form } = req.body;
+  const homepageRaw = url_homepage || url;
+  if (!homepageRaw) { res.status(400).json({ error: 'url_homepage is required' }); return; }
+
+  let parsedUrl;
+  try { parsedUrl = new URL(homepageRaw.startsWith('http') ? homepageRaw : `https://${homepageRaw}`); }
+  catch { res.status(400).json({ error: 'Invalid URL' }); return; }
+
+  res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
+  res.flushHeaders();
+
+  const emit = (eventType, data) => {
+    if (res.writableEnded) return;
+    res.write(`event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
+
+  // Handle client disconnect
+  let disconnected = false;
+  req.on('close', () => { disconnected = true; });
+
+  try {
+    const parseOptional = (u) => {
+      if (!u || !u.trim()) return null;
+      try { return new URL(u.startsWith('http') ? u : `https://${u}`).href; }
+      catch { return null; }
+    };
+
+    const urls = {
+      url_homepage: parsedUrl.href,
+      url_action: parseOptional(url_action),
+      url_form: parseOptional(url_form),
+    };
+
+    // Run HTTP checks
+    const httpResult = await runHttpChecks(parsedUrl.href);
+    const { checks: rawHttpChecks, httpScore } = httpResult;
+
+    // Emit each HTTP check result
+    for (const [id, result] of Object.entries(rawHttpChecks)) {
+      if (disconnected) return;
+      emit('check', { id, ...CHECK_META[id], status: result.status, tech: result.tech });
+    }
+
+    // Emit HTTP score
+    if (!disconnected) emit('score', { httpScore });
+
+    // Run on-page checks
+    const hasOnPage = urls.url_action || urls.url_form || urls.url_homepage;
+    let rawOnPageChecks = [];
+    if (hasOnPage && !disconnected) {
+      try {
+        rawOnPageChecks = await runOnPageChecks(urls);
+        // Emit each on-page check as it comes
+        for (const c of rawOnPageChecks) {
+          if (disconnected) return;
+          emit('check', c);
+        }
+      } catch (e) {
+        console.warn('[on-page checks/stream]', e.message);
+      }
+    }
+
+    if (disconnected) return;
+
+    // Build full HTTP check list with metadata
+    const httpChecks = Object.entries(rawHttpChecks).map(([id, result]) => ({
+      id,
+      ...CHECK_META[id],
+      status: result.status,
+      tech: result.tech,
+    }));
+
+    // Combined scoring
+    const httpMax = 100;
+    const onPageMax = rawOnPageChecks.reduce((s, c) => s + (c.maxScore || 0), 0);
+    const onPageEarned = rawOnPageChecks.reduce((s, c) => s + (c.score || 0), 0);
+    const totalMax = httpMax + onPageMax;
+    const totalScore = totalMax > 0
+      ? Math.round((httpScore + onPageEarned) / totalMax * 100)
+      : httpScore;
+
+    // Build categories
+    const httpCats = Object.entries(CATEGORIES).map(([name, ids]) => {
+      const maxPts = ids.reduce((s, id) => s + (WEIGHTS[id] || 0), 0);
+      const earned = ids.reduce((s, id) =>
+        s + (rawHttpChecks[id]?.status === 'pass' ? WEIGHTS[id] || 0 : 0), 0);
+      const passed = ids.filter(id => rawHttpChecks[id]?.status === 'pass').length;
+      return { id: name, score: maxPts > 0 ? Math.round((earned / maxPts) * 100) : 0, passed, total: ids.length };
+    });
+
+    const onPageCats = rawOnPageChecks.length > 0
+      ? Object.entries(ONPAGE_CATEGORIES).map(([name, ids]) => {
+          const ranChecks = rawOnPageChecks.filter(c => ids.includes(c.id));
+          if (ranChecks.length === 0) return null;
+          const maxPts = ranChecks.reduce((s, c) => s + (c.maxScore || 0), 0);
+          const earned = ranChecks.reduce((s, c) => s + (c.score || 0), 0);
+          const passed = ranChecks.filter(c => c.status === 'pass').length;
+          return { id: name, score: maxPts > 0 ? Math.round((earned / maxPts) * 100) : 0, passed, total: ranChecks.length };
+        }).filter(Boolean)
+      : [];
+
+    const allCats = [...httpCats, ...onPageCats];
+
+    // CMO brief
+    let cmoBrief = null;
+    try {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      cmoBrief = await generateCmoBrief(parsedUrl.href, totalScore, levelFromScore(totalScore), rawHttpChecks, openai, allCats);
+    } catch (e) {
+      console.warn('[agent-readiness/stream] CMO brief failed:', e.message);
+    }
+
+    if (disconnected) return;
+
+    // Emit complete event with full result object (identical to POST /)
+    emit('complete', {
+      site: {
+        url: parsedUrl.hostname,
+        full: parsedUrl.href,
+        score: totalScore,
+        level: levelFromScore(totalScore),
+        date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        httpScore,
+        onPageScore: onPageMax > 0 ? Math.round((onPageEarned / onPageMax) * 100) : null,
+        onPageMax,
+      },
+      cats: allCats,
+      checks: httpChecks,
+      onPageChecks: rawOnPageChecks,
+      cmoBrief,
+    });
+
+    if (!res.writableEnded) res.end();
+  } catch (err) {
+    console.error('[agent-readiness/stream] Error:', err.message);
+    if (!disconnected && !res.writableEnded) {
+      emit('error', { message: err.message });
+      res.end();
+    }
   }
 });
 

@@ -13,6 +13,7 @@ import ArticleRecommendationPage from './pages/ArticleRecommendationPage';
 import ImageAltAuditPage from './pages/ImageAltAuditPage';
 import TeamInsightsPage from './pages/TeamInsightsPage';
 import AgentReadinessAuditPage from './pages/AgentReadinessAuditPage';
+import AgentReadinessSummaryPage from './pages/AgentReadinessSummaryPage';
 import SeoGeoAuditPage from './pages/SeoGeoAuditPage';
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
       <Route path="/image-alt-audit" element={<ProtectedRoute><ImageAltAuditPage /></ProtectedRoute>} />
       <Route path="/team-insights" element={<ProtectedRoute><TeamInsightsPage /></ProtectedRoute>} />
       <Route path="/agent-readiness-audit" element={<ProtectedRoute><AgentReadinessAuditPage /></ProtectedRoute>} />
+      <Route path="/agent-readiness-audit/summary" element={<AgentReadinessSummaryPage />} />
       <Route path="/seo-geo-audit" element={<ProtectedRoute><SeoGeoAuditPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
