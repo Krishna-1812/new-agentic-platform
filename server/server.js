@@ -21,6 +21,7 @@ const teamInsightsRoutes = require('./routes/teamInsights');
 const competitorAnalysisRoutes = require('./routes/competitorAnalysis');
 const agentReadinessAuditRoutes = require('./routes/agentReadinessAudit');
 const seoGeoAuditRoutes = require('./routes/seoGeoAudit');
+const contentEnhancementRoutes = require('./routes/contentEnhancement');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -73,6 +74,7 @@ app.use('/api/article-recommendation', requireAuth, articleRecommendationRoutes)
 app.use('/api/image-alt-audit',        requireAuth, imageAltAuditRoutes);
 app.use('/api/agent-readiness-audit',  requireAuth, agentReadinessAuditRoutes);
 app.use('/api/seo-geo-audit',          requireAuth, seoGeoAuditRoutes);
+app.use('/api/content-enhancement',     requireAuth, contentEnhancementRoutes);
 
 // ── SEO team only ────────────────────────────────────────────────────────────
 app.use('/api/search',              requireSeo, searchRoutes);

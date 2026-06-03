@@ -31,6 +31,21 @@ const TOOLS = [
     badge: 'Briefs',
   },
   {
+    id: 'content-enhancement',
+    path: '/content-enhancement',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75h6m-6 3h6m2.25 4.5H6.75A2.25 2.25 0 014.5 18V6A2.25 2.25 0 016.75 3.75h5.379c.597 0 1.17.237 1.591.659l1.871 1.871c.422.422.659.994.659 1.591V18a2.25 2.25 0 01-2.25 2.25z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 8.25h3m-3 0a1.5 1.5 0 100 3m3-3a1.5 1.5 0 110 3m4.5-3h.008v.008h-.008z" />
+      </svg>
+    ),
+    label: 'Content Enhancement',
+    tagline: 'Structure & authority recommendations',
+    description: 'Analyze a live URL or pasted HTML, research the top 10 ranking blogs for the topic, and generate copy-ready upgrades for structure, authority, citations, FAQs, schema, and AI-search readiness.',
+    features: ['URL or pasted HTML input', 'Google top 10 content research', 'Copy-ready FAQ and answer blocks', 'Useful HTML table recommendations', 'Citation/statistic/expert quote gaps', 'Author byline guidance'],
+    badge: 'AEO',
+  },
+  {
     id: 'content-research',
     path: '/content-research',
     icon: (
@@ -119,6 +134,7 @@ const TOOLS = [
 const EXTENDED_TOOLS = new Set([
   'knowledge-base',
   'article-recommendation',
+  'content-enhancement',
   'image-alt-audit',
   'agent-readiness-audit',
   'keyword-research',

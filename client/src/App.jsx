@@ -15,6 +15,7 @@ import TeamInsightsPage from './pages/TeamInsightsPage';
 import AgentReadinessAuditPage from './pages/AgentReadinessAuditPage';
 import AgentReadinessSummaryPage from './pages/AgentReadinessSummaryPage';
 import SeoGeoAuditPage from './pages/SeoGeoAuditPage';
+import ContentEnhancementPage from './pages/ContentEnhancementPage';
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
       <Route path="/agent-readiness-audit" element={<ProtectedRoute><AgentReadinessAuditPage /></ProtectedRoute>} />
       <Route path="/agent-readiness-audit/summary" element={<AgentReadinessSummaryPage />} />
       <Route path="/seo-geo-audit" element={<ProtectedRoute><SeoGeoAuditPage /></ProtectedRoute>} />
+      <Route path="/content-enhancement" element={<ProtectedRoute><ContentEnhancementPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
