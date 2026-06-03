@@ -49,15 +49,7 @@ const kbLimiter = rateLimit({
   message: { error: 'Too many KB requests. Please slow down.' }
 });
 
-// Strict rate limit for login: 10 attempts per 15 minutes
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { error: 'Too many login attempts. Please try again in 15 minutes.' }
-});
-
 app.use('/api/', limiter);
-app.use('/api/auth/login', loginLimiter);
 
 // ── Public routes (no auth required) ────────────────────────────────────────
 app.use('/api/auth', authRouter);

@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 
 const TOOLS = [
   {
@@ -131,20 +130,8 @@ const TOOLS = [
   },
 ];
 
-const EXTENDED_TOOLS = new Set([
-  'knowledge-base',
-  'article-recommendation',
-  'content-enhancement',
-  'image-alt-audit',
-  'agent-readiness-audit',
-  'keyword-research',
-  'seo-geo-audit',
-]);
-
 export default function HomePage() {
   const navigate = useNavigate();
-  const { logout, role } = useAuth();
-  const visibleTools = role === 'seo' ? TOOLS : TOOLS.filter(t => EXTENDED_TOOLS.has(t.id));
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
@@ -162,15 +149,6 @@ export default function HomePage() {
               <span className="text-[#9CA3AF] text-sm">· Arena</span>
             </div>
           </div>
-          <button
-            onClick={() => logout().then(() => navigate('/login', { replace: true }))}
-            className="flex items-center gap-1.5 text-[#6B7280] hover:text-[#111827] text-xs font-medium transition-colors"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-            </svg>
-            Sign out
-          </button>
         </div>
       </header>
 
@@ -181,7 +159,7 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {visibleTools.map(tool => (
+          {TOOLS.map(tool => (
             <button
               key={tool.id}
               onClick={() => navigate(tool.path)}
