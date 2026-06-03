@@ -5,3 +5,6 @@ client/dist/
 .env
 *.local
 .DS_Store
+
+# Location Page Builder runtime data (file-store)
+data/

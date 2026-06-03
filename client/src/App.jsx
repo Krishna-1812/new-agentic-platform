@@ -14,6 +14,8 @@ import AgentReadinessAuditPage from './pages/AgentReadinessAuditPage';
 import AgentReadinessSummaryPage from './pages/AgentReadinessSummaryPage';
 import SeoGeoAuditPage from './pages/SeoGeoAuditPage';
 import ContentEnhancementPage from './pages/ContentEnhancementPage';
+import LocationPageBuilderPage from './pages/LocationPageBuilderPage';
+import LocationPageDetailPage from './pages/LocationPageDetailPage';
 
 export default function App() {
   return (
@@ -33,6 +35,8 @@ export default function App() {
       <Route path="/agent-readiness-audit/summary" element={<AgentReadinessSummaryPage />} />
       <Route path="/seo-geo-audit" element={<SeoGeoAuditPage />} />
       <Route path="/content-enhancement" element={<ContentEnhancementPage />} />
+      <Route path="/location-page-builder" element={<LocationPageBuilderPage />} />
+      <Route path="/location-page-builder/:id" element={<LocationPageDetailPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
