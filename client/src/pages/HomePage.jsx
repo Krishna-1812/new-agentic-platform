@@ -115,6 +115,21 @@ const TOOLS = [
     badge: 'AI Audit',
   },
   {
+    id: 'location-page-builder',
+    path: '/location-page-builder',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+      </svg>
+    ),
+    label: 'Location + Service Page Builder',
+    tagline: 'Composed, approved, dev-ready location pages',
+    description: 'For a Client × Service × Location, produce an approved page package — keywords, competitor analysis, layer-composed content, FAQs, internal links and schema — routed through SEO/Clinical/Content/Client gates and exported as JSON, Markdown & DOCX.',
+    features: ['Three-layer composition engine', 'Keyword pipeline (SERP + SEMrush + AI)', 'Category-aware section logic', 'Uniqueness & NAP guardrails', 'Approval workflow & audit trail', 'Export to JSON / Markdown / DOCX'],
+    badge: 'Local SEO',
+  },
+  {
     id: 'keyword-research',
     path: '/keyword-research',
     icon: (

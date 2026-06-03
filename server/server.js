@@ -22,6 +22,7 @@ const competitorAnalysisRoutes = require('./routes/competitorAnalysis');
 const agentReadinessAuditRoutes = require('./routes/agentReadinessAudit');
 const seoGeoAuditRoutes = require('./routes/seoGeoAudit');
 const contentEnhancementRoutes = require('./routes/contentEnhancement');
+const locationPageBuilderRoutes = require('./routes/locationPageBuilder');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -31,13 +32,19 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '20mb' }));
 app.use(cookieParser());
 
-// General rate limit: 20 requests per minute
+// General rate limit: 20 requests per minute.
+// Skips routers that have their own (higher) limiter, so the call-heavy
+// Location Page Builder + KB editor aren't throttled by the global cap.
 const limiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests. Please wait a moment and try again.' }
+  message: { error: 'Too many requests. Please wait a moment and try again.' },
+  skip: (req) => {
+    const u = req.originalUrl || req.url || '';
+    return u.startsWith('/api/location-page-builder') || u.startsWith('/api/kb') || u.startsWith('/api/modules') || u.startsWith('/api/audit');
+  },
 });
 
 // KB rate limit: 100 requests per minute (editor auto-saves)
@@ -47,6 +54,15 @@ const kbLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many KB requests. Please slow down.' }
+});
+
+// Location Page Builder: dashboard + wizard + entity CRUD + SSE are chatty.
+const lpbLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests to the page builder. Please slow down a moment.' }
 });
 
 app.use('/api/', limiter);
@@ -67,6 +83,7 @@ app.use('/api/image-alt-audit',        requireAuth, imageAltAuditRoutes);
 app.use('/api/agent-readiness-audit',  requireAuth, agentReadinessAuditRoutes);
 app.use('/api/seo-geo-audit',          requireAuth, seoGeoAuditRoutes);
 app.use('/api/content-enhancement',     requireAuth, contentEnhancementRoutes);
+app.use('/api/location-page-builder',   lpbLimiter, requireAuth, locationPageBuilderRoutes);
 
 // ── SEO team only ────────────────────────────────────────────────────────────
 app.use('/api/search',              requireSeo, searchRoutes);
