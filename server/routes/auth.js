@@ -147,4 +147,18 @@ function requireSeo(req, res, next) {
   }
 }
 
+
+// GET /api/auth/platform-login?token=xxx
+// Silent auto-login for the Position2 Intelligence Platform iframe embed.
+router.get('/platform-login', (req, res) => {
+  const platformToken = process.env.PLATFORM_TOKEN;
+  if (!platformToken || req.query.token !== platformToken) {
+    return res.status(401).json({ error: 'Invalid platform token.' });
+  }
+  const role = process.env.PLATFORM_DEFAULT_ROLE || 'seo';
+  const token = jwt.sign({ username: 'platform_embed', role }, JWT_SECRET, { expiresIn: '7d' });
+  res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS);
+  res.json({ ok: true });
+});
+
 module.exports = { router, requireAuth, requireSeo };
