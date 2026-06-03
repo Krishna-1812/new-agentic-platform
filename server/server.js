@@ -84,6 +84,27 @@ app.use('/api/export',              requireSeo, exportRoutes);
 app.use('/api/team-insights',       requireSeo, teamInsightsRoutes);
 app.use('/api/competitor-analysis', requireSeo, competitorAnalysisRoutes);
 
+
+// ── Platform auto-login (Position2 Intelligence Platform) ────────────────────
+// Intercepts any page load carrying ?pt=<PLATFORM_TOKEN>, sets the JWT session
+// cookie server-side, then redirects to the clean URL — all before React renders.
+const _jwt = require('jsonwebtoken');
+app.use((req, res, next) => {
+  const pt = req.query.pt;
+  const platformToken = process.env.PLATFORM_TOKEN;
+  if (pt && platformToken && pt === platformToken && !req.path.startsWith('/api/')) {
+    const secret  = process.env.JWT_SECRET || 'seo-automation-fallback-secret';
+    const role    = process.env.PLATFORM_DEFAULT_ROLE || 'seo';
+    const token   = _jwt.sign({ username: 'platform_embed', role }, secret, { expiresIn: '7d' });
+    const ss      = ((process.env.COOKIE_SAME_SITE || process.env.COOKIE_SAMESITE || 'lax')).toLowerCase();
+    const secure  = ss === 'none' ? true : process.env.NODE_ENV !== 'development';
+    res.cookie('seo_session', token, { httpOnly: true, secure, sameSite: ss, maxAge: 604800000 });
+    const rest    = Object.entries(req.query).filter(([k]) => k !== 'pt').map(([k,v]) => k+'='+v).join('&');
+    return res.redirect(302, req.path + (rest ? '?' + rest : ''));
+  }
+  next();
+});
+
 // ── Serve React frontend ─────────────────────────────────────────────────────
 const clientBuild = path.join(__dirname, '../client/dist');
 app.use(express.static(clientBuild));
