@@ -4,12 +4,29 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'seo-automation-fallback-secret';
 const COOKIE_NAME = 'seo_session';
+
+function normalizeSameSite(value) {
+  const normalized = String(value || '').toLowerCase();
+  return ['strict', 'lax', 'none'].includes(normalized) ? normalized : 'lax';
+}
+
+const sameSite = normalizeSameSite(process.env.COOKIE_SAME_SITE || process.env.COOKIE_SAMESITE);
+const secureCookie = process.env.COOKIE_SECURE
+  ? process.env.COOKIE_SECURE === 'true'
+  : process.env.NODE_ENV !== 'development';
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV !== 'development',
-  sameSite: 'strict',
+  secure: sameSite === 'none' ? true : secureCookie,
+  sameSite,
   maxAge: 7 * 24 * 60 * 60 * 1000,
+  ...(process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {}),
 };
+
+function clearCookieOptions() {
+  const { maxAge, ...options } = COOKIE_OPTIONS;
+  return options;
+}
 
 // Known users: { username, password, role }
 function getUsers() {
@@ -84,7 +101,7 @@ router.post('/login', (req, res) => {
 
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {
-  res.clearCookie(COOKIE_NAME, { ...COOKIE_OPTIONS, maxAge: 0 });
+  res.clearCookie(COOKIE_NAME, clearCookieOptions());
   res.json({ ok: true });
 });
 
@@ -96,7 +113,7 @@ router.get('/verify', (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     res.json({ valid: true, role: decoded.role || 'seo' });
   } catch {
-    res.clearCookie(COOKIE_NAME, { ...COOKIE_OPTIONS, maxAge: 0 });
+    res.clearCookie(COOKIE_NAME, clearCookieOptions());
     res.status(401).json({ valid: false });
   }
 });
@@ -109,7 +126,7 @@ function requireAuth(req, res, next) {
     req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch {
-    res.clearCookie(COOKIE_NAME, { ...COOKIE_OPTIONS, maxAge: 0 });
+    res.clearCookie(COOKIE_NAME, clearCookieOptions());
     res.status(401).json({ error: 'Session expired. Please log in again.' });
   }
 }
@@ -125,7 +142,7 @@ function requireSeo(req, res, next) {
     }
     next();
   } catch {
-    res.clearCookie(COOKIE_NAME, { ...COOKIE_OPTIONS, maxAge: 0 });
+    res.clearCookie(COOKIE_NAME, clearCookieOptions());
     res.status(401).json({ error: 'Session expired. Please log in again.' });
   }
 }
