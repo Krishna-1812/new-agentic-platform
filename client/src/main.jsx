@@ -5,6 +5,12 @@ import { AuthProvider } from './context/AuthContext'
 import './index.css'
 import App from './App.jsx'
 
+
+// Hide app navigation when embedded in an iframe (e.g. Position2 Intelligence Platform)
+if (window.self !== window.top) {
+  document.documentElement.classList.add('embedded');
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>

@@ -15,3 +15,12 @@
     vertical-align: top;
   }
 }
+
+/* ── Embedded mode (iframe inside Intelligence Platform) ── */
+/* Hide the app's own header/nav so only the platform topbar shows */
+html.embedded header {
+  display: none !important;
+}
+html.embedded main {
+  padding-top: 0 !important;
+}
