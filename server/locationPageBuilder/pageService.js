@@ -63,8 +63,11 @@ async function runKeywordPipeline(pageId, onStep = () => {}) {
   const seeds = pipeline.generateSeeds({ service, location });
   onStep({ id: 'seeds', status: 'done', message: `Generated ${seeds.length} seeds`, seeds });
 
-  onStep({ id: 'serp', status: 'active', message: 'Running location-forced SERP queries…' });
-  const { competitor_urls, modelAfter, discoveryOnly } = await pipeline.rankCompetitors({ client, service, location, seeds });
+  onStep({ id: 'serp', status: 'active', message: `Running location-forced SERP queries (0/${Math.min(seeds.filter(s => s.includes((location.city || '').toLowerCase()) || s.includes('near me')).length || seeds.length, 6)})…` });
+  const { competitor_urls, modelAfter, discoveryOnly } = await pipeline.rankCompetitors({
+    client, service, location, seeds,
+    onProgress: (done, total) => onStep({ id: 'serp', status: 'active', message: `Running location-forced SERP queries (${done}/${total})…` }),
+  });
   onStep({ id: 'serp', status: 'done', message: `Ranked ${competitor_urls.length} competitor URLs`, competitor_urls });
 
   onStep({ id: 'semrush', status: 'active', message: 'Extracting keywords via SEMrush…' });

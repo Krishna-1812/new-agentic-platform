@@ -131,6 +131,10 @@ router.get('/stream/:token', async (req, res) => {
   const emit = (event, data) => { if (!closed) { try { res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`); } catch { closed = true; } } };
   const onStep = (step) => emit('step', step);
 
+  // Heartbeat: a comment line every 15s keeps the SSE connection warm through
+  // proxies (Railway/Envoy) during slow stages (SERP/SEMrush/LLM).
+  const heartbeat = setInterval(() => { if (!closed) { try { res.write(': keepalive\n\n'); } catch { closed = true; } } }, 15000);
+
   try {
     if (job.kind === 'pipeline') {
       const result = await pageService.runKeywordPipeline(job.pageId, onStep);
@@ -142,6 +146,7 @@ router.get('/stream/:token', async (req, res) => {
   } catch (e) {
     emit('fail', { message: e.message });
   }
+  clearInterval(heartbeat);
   emit('done', {});
   res.end();
 });

@@ -71,7 +71,13 @@ function domainOf(url) {
   try { return new URL(url).hostname.replace(/^www\./, '').toLowerCase(); } catch { return ''; }
 }
 
-async function rankCompetitors({ client, service, location, seeds }) {
+async function rankCompetitors({ client, service, location, seeds, onProgress }) {
+  // Fail fast (and clearly) if the SERP provider isn't configured — otherwise
+  // the calls error one-by-one and look like a hang (Spec §14 resilience).
+  if (!process.env.GOOGLE_API_KEY || !process.env.GOOGLE_CX) {
+    throw new Error('Google Custom Search is not configured on the server (GOOGLE_API_KEY / GOOGLE_CX). Set these in the environment to run the SERP stage.');
+  }
+
   const weights = config.serpScoreWeights;
   const ownDomain = domainOf(client?.brand_static?.base_url || '');
   const city = (location.city || '').toLowerCase();
@@ -81,9 +87,14 @@ async function rankCompetitors({ client, service, location, seeds }) {
 
   // Use a focused subset of geo-bearing seeds to control SERP spend.
   const querySeeds = seeds.filter(s => s.includes(city) || s.includes('near me')).slice(0, 6);
+  const list = querySeeds.length ? querySeeds : seeds.slice(0, 4);
   const byUrl = new Map();
 
-  for (const seed of (querySeeds.length ? querySeeds : seeds.slice(0, 4))) {
+  // Run the SERP queries in parallel (not sequentially) so one slow/timing-out
+  // call doesn't stall the whole stage. Transient errors yield empty results;
+  // a quota error surfaces immediately.
+  let completed = 0;
+  const perSeed = await Promise.all(list.map(async (seed) => {
     const cacheK = store.cacheKey('serp', seed, 'us');
     let data = await store.cacheGet(cacheK, config.cache.serpTtlMs);
     if (!data) {
@@ -92,9 +103,15 @@ async function rankCompetitors({ client, service, location, seeds }) {
         await store.cacheSet(cacheK, data);
       } catch (e) {
         if (e.code === 'QUOTA_EXCEEDED') throw e;
-        continue; // skip this seed's SERP on transient error
+        data = { results: [] }; // transient error → skip this seed
       }
     }
+    completed += 1;
+    if (onProgress) onProgress(completed, list.length);
+    return { seed, data };
+  }));
+
+  perSeed.forEach(({ seed, data }) => {
     (data.results || []).forEach(r => {
       const dom = domainOf(r.url);
       if (!dom) return;
@@ -107,7 +124,7 @@ async function rankCompetitors({ client, service, location, seeds }) {
       existing.best_position = Math.min(existing.best_position, r.position || 99);
       byUrl.set(r.url, existing);
     });
-  }
+  });
 
   // Score each URL with the tunable rubric.
   const scored = [...byUrl.values()].map(u => {
