@@ -16,6 +16,9 @@ import SeoGeoAuditPage from './pages/SeoGeoAuditPage';
 import ContentEnhancementPage from './pages/ContentEnhancementPage';
 import LocationPageBuilderPage from './pages/LocationPageBuilderPage';
 import LocationPageDetailPage from './pages/LocationPageDetailPage';
+import RobotsMonitorPage from './pages/RobotsMonitorPage';
+import HubSpokePage from './pages/HubSpokePage';
+import HubSpokeProjectPage from './pages/HubSpokeProjectPage';
 
 export default function App() {
   return (
@@ -37,6 +40,9 @@ export default function App() {
       <Route path="/content-enhancement" element={<ContentEnhancementPage />} />
       <Route path="/location-page-builder" element={<LocationPageBuilderPage />} />
       <Route path="/location-page-builder/:id" element={<LocationPageDetailPage />} />
+      <Route path="/robots-monitor" element={<RobotsMonitorPage />} />
+      <Route path="/hub-spoke" element={<HubSpokePage />} />
+      <Route path="/hub-spoke/:id" element={<HubSpokeProjectPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

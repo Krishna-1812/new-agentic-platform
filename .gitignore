@@ -8,3 +8,6 @@ client/dist/
 
 # Location Page Builder runtime data (file-store)
 data/
+
+# Robots Monitor runtime data — contains plaintext credentials, do not commit
+modules/robotsMonitor/data/

@@ -23,6 +23,8 @@ const agentReadinessAuditRoutes = require('./routes/agentReadinessAudit');
 const seoGeoAuditRoutes = require('./routes/seoGeoAudit');
 const contentEnhancementRoutes = require('./routes/contentEnhancement');
 const locationPageBuilderRoutes = require('./routes/locationPageBuilder');
+const robotsMonitorRoutes = require('./modules/robotsMonitor/routes');
+const hubSpokeRoutes = require('./modules/hubSpoke/routes');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -84,6 +86,8 @@ app.use('/api/agent-readiness-audit',  requireAuth, agentReadinessAuditRoutes);
 app.use('/api/seo-geo-audit',          requireAuth, seoGeoAuditRoutes);
 app.use('/api/content-enhancement',     requireAuth, contentEnhancementRoutes);
 app.use('/api/location-page-builder',   lpbLimiter, requireAuth, locationPageBuilderRoutes);
+app.use('/api/robots-monitor',          lpbLimiter, requireAuth, robotsMonitorRoutes);
+app.use('/api/hub-spoke',               lpbLimiter, requireAuth, hubSpokeRoutes);
 
 // ── SEO team only ────────────────────────────────────────────────────────────
 app.use('/api/search',              requireSeo, searchRoutes);
@@ -119,6 +123,19 @@ const clientBuild = path.join(__dirname, '../client/dist');
 app.use(express.static(clientBuild));
 app.get('*', (req, res) => {
   res.sendFile(path.join(clientBuild, 'index.html'));
+});
+
+// ── Module schedulers ────────────────────────────────────────────────────────
+require('./modules/hubSpoke/store').init().catch(err => {
+  console.error('[HubSpoke] Store init failed:', err.message);
+});
+
+require('./modules/robotsMonitor/monitorStore').init().then(() => {
+  require('./modules/robotsMonitor/monitorScheduler').init().catch(err => {
+    console.error('[RobotsMonitor] Scheduler init failed:', err.message);
+  });
+}).catch(err => {
+  console.error('[RobotsMonitor] Store init failed:', err.message);
 });
 
 const server = app.listen(PORT, () => {

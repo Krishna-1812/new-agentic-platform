@@ -1,0 +1,12 @@
+{
+  "watch": ["server.js", "routes", "modules"],
+  "ignore": [
+    "modules/hubSpoke/data",
+    "modules/robotsMonitor/data",
+    "**/*.log",
+    "**/*.db",
+    "**/*.sqlite"
+  ],
+  "ext": "js,json",
+  "delay": 500
+}

@@ -130,6 +130,34 @@ const TOOLS = [
     badge: 'Local SEO',
   },
   {
+    id: 'robots-monitor',
+    path: '/robots-monitor',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+      </svg>
+    ),
+    label: 'Robots Monitor',
+    tagline: 'Daily noindex health checks across client domains',
+    description: 'Automatically crawl sitemaps, sample pages by type, and verify noindex signals on production and staging domains. Get Slack alerts the moment a production page goes dark or a staging page becomes indexable.',
+    features: ['Sitemap discovery + URL sampling', 'X-Robots-Tag & meta robots checks', 'Production vs staging rule enforcement', 'Daily scheduled + manual runs', 'Slack Block Kit alerts per client', '90-day run history'],
+    badge: 'Technical SEO',
+  },
+  {
+    id: 'hub-spoke',
+    path: '/hub-spoke',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 3M21 7.5H7.5" />
+      </svg>
+    ),
+    label: 'Hub & Spoke',
+    tagline: 'AI internal linking strategy & recommendations',
+    description: 'Upload an existing hub and spoke spreadsheet or paste a URL list to auto-categorize with AI. Review the cluster structure, approve it, then generate targeted internal linking recommendations across all cluster types.',
+    features: ['XLSX hub/spoke import + AI categorization', 'GAP hub & dual-cluster detection', 'Human review & approval gate', 'Hub-to-spoke, spoke-to-hub, cross-cluster recs', 'Inline anchor text & placement editing', 'Export to XLSX or CSV'],
+    badge: 'Internal Linking',
+  },
+  {
     id: 'keyword-research',
     path: '/keyword-research',
     icon: (
