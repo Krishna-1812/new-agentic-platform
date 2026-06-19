@@ -25,6 +25,7 @@ const contentEnhancementRoutes = require('./routes/contentEnhancement');
 const locationPageBuilderRoutes = require('./routes/locationPageBuilder');
 const robotsMonitorRoutes = require('./modules/robotsMonitor/routes');
 const hubSpokeRoutes = require('./modules/hubSpoke/routes');
+const onPageAuditRoutes = require('./modules/onPageAudit/routes');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -88,6 +89,7 @@ app.use('/api/content-enhancement',     requireAuth, contentEnhancementRoutes);
 app.use('/api/location-page-builder',   lpbLimiter, requireAuth, locationPageBuilderRoutes);
 app.use('/api/robots-monitor',          lpbLimiter, requireAuth, robotsMonitorRoutes);
 app.use('/api/hub-spoke',               lpbLimiter, requireAuth, hubSpokeRoutes);
+app.use('/api/on-page-audit',           lpbLimiter, requireAuth, onPageAuditRoutes);
 
 // ── SEO team only ────────────────────────────────────────────────────────────
 app.use('/api/search',              requireSeo, searchRoutes);
@@ -128,6 +130,10 @@ app.get('*', (req, res) => {
 // ── Module schedulers ────────────────────────────────────────────────────────
 require('./modules/hubSpoke/store').init().catch(err => {
   console.error('[HubSpoke] Store init failed:', err.message);
+});
+
+require('./modules/onPageAudit/store').init().catch(err => {
+  console.error('[OnPageAudit] Store init failed:', err.message);
 });
 
 require('./modules/robotsMonitor/monitorStore').init().then(() => {

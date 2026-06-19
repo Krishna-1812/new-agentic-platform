@@ -158,6 +158,20 @@ const TOOLS = [
     badge: 'Internal Linking',
   },
   {
+    id: 'on-page-audit',
+    path: '/on-page-audit',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+      </svg>
+    ),
+    label: 'On-Page SEO Audit',
+    tagline: '23 sections · live data · PageSpeed + CWV',
+    description: 'Enter a URL and primary keywords to run a comprehensive on-page audit. Checks URL structure, meta title/description, headings, content quality, schema, Core Web Vitals, canonical, OG tags, crawlability, redirects, mobile, HTTPS, analytics, E-E-A-T, local SEO, and accessibility.',
+    features: ['23 audit sections, ~90 individual checks', 'PageSpeed Insights (mobile + desktop)', 'Core Web Vitals (LCP, CLS, INP)', 'YMYL + page type auto-detection', 'Top 10 priority action list', 'Manual check summary'],
+    badge: 'On-Page',
+  },
+  {
     id: 'keyword-research',
     path: '/keyword-research',
     icon: (

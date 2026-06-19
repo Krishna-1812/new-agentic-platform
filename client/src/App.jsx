@@ -19,6 +19,7 @@ import LocationPageDetailPage from './pages/LocationPageDetailPage';
 import RobotsMonitorPage from './pages/RobotsMonitorPage';
 import HubSpokePage from './pages/HubSpokePage';
 import HubSpokeProjectPage from './pages/HubSpokeProjectPage';
+import OnPageAuditPage from './pages/OnPageAuditPage';
 
 export default function App() {
   return (
@@ -43,6 +44,7 @@ export default function App() {
       <Route path="/robots-monitor" element={<RobotsMonitorPage />} />
       <Route path="/hub-spoke" element={<HubSpokePage />} />
       <Route path="/hub-spoke/:id" element={<HubSpokeProjectPage />} />
+      <Route path="/on-page-audit" element={<OnPageAuditPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

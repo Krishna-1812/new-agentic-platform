@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import KBContextSelector from '../components/KBContextSelector';
 
 const STEP_CONFIG = [
-  { id: 'search',   label: 'Google Search',      icon: '🔍', desc: 'Finding top 3 ranking pages' },
-  { id: 'semrush',  label: 'SEMrush Keywords',   icon: '📊', desc: 'Pulling competitor rankings' },
-  { id: 'analysis', label: 'AI Shortlisting',    icon: '🤖', desc: 'Filtering & ranking keywords' },
+  { id: 'variants',    label: 'Query Variants',   icon: '↗', desc: 'Expanding across intent variants' },
+  { id: 'search',      label: 'SERP Analysis',    icon: '🔍', desc: 'Fetching top pages for all queries' },
+  { id: 'url_scoring', label: 'URL Scoring',      icon: '📐', desc: 'Selecting best competitor pages' },
+  { id: 'semrush',     label: 'SEMrush Keywords', icon: '📊', desc: 'Pulling competitor rankings' },
+  { id: 'analysis',    label: 'AI Shortlisting',  icon: '🤖', desc: 'Filtering & ranking keywords' },
 ];
 
 function StepBadge({ status }) {
@@ -36,16 +38,25 @@ function DifficultyBar({ value }) {
   );
 }
 
+const PAGE_TYPE_STYLES = {
+  page:      { bg: '#DCFCE7', text: '#15803D' },
+  article:   { bg: '#DBEAFE', text: '#1D4ED8' },
+  directory: { bg: '#F3F4F6', text: '#6B7280' },
+};
+
 export default function KeywordResearchPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
+  const [intent, setIntent] = useState('commercial');
   const [client, setClient] = useState('');
   const [feedbackKbIds, setFeedbackKbIds] = useState([]);
   const [running, setRunning] = useState(false);
   const [started, setStarted] = useState(false);
-  const [steps, setSteps] = useState({});       // { id: { status, message } }
+  const [steps, setSteps] = useState({});
+  const [queries, setQueries] = useState([]);
   const [urls, setUrls] = useState([]);
-  const [urlData, setUrlData] = useState({});   // { url: { keywords, status, error } }
+  const [totalQueries, setTotalQueries] = useState(0);
+  const [urlData, setUrlData] = useState({});
   const [result, setResult] = useState(null);
   const [allKeywords, setAllKeywords] = useState([]);
   const [showAllKeywords, setShowAllKeywords] = useState(false);
@@ -57,7 +68,9 @@ export default function KeywordResearchPage() {
     setStarted(false);
     setRunning(false);
     setSteps({});
+    setQueries([]);
     setUrls([]);
+    setTotalQueries(0);
     setUrlData({});
     setResult(null);
     setAllKeywords([]);
@@ -76,7 +89,12 @@ export default function KeywordResearchPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ keyword: keyword.trim(), client: client || undefined, feedbackKbIds: feedbackKbIds.length ? feedbackKbIds : undefined })
+        body: JSON.stringify({
+          keyword: keyword.trim(),
+          intent,
+          client: client || undefined,
+          feedbackKbIds: feedbackKbIds.length ? feedbackKbIds : undefined,
+        })
       });
       if (!initRes.ok) {
         const err = await initRes.json();
@@ -92,8 +110,14 @@ export default function KeywordResearchPage() {
         setSteps(prev => ({ ...prev, [d.id]: { status: d.status, message: d.message } }));
       });
 
+      es.addEventListener('variants', e => {
+        setQueries(JSON.parse(e.data).queries || []);
+      });
+
       es.addEventListener('urls', e => {
-        setUrls(JSON.parse(e.data).urls);
+        const d = JSON.parse(e.data);
+        setUrls(d.urls || []);
+        setTotalQueries(d.totalQueries || 0);
       });
 
       es.addEventListener('url_status', e => {
@@ -185,6 +209,36 @@ export default function KeywordResearchPage() {
             />
           </div>
 
+          {/* Intent toggle */}
+          <div className="mt-4">
+            <label className="block text-sm font-semibold text-[#111827] mb-2">Page Intent</label>
+            <div className="flex gap-3">
+              {[
+                { value: 'commercial', label: 'Commercial / Transactional', desc: 'Service pages, pricing, booking' },
+                { value: 'informational', label: 'Informational / Educational', desc: 'Guides, FAQs, how-to content' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  disabled={running}
+                  onClick={() => setIntent(opt.value)}
+                  className={`flex-1 text-left px-4 py-3 rounded-lg border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                    intent === opt.value
+                      ? 'border-[#111827] bg-[#111827]'
+                      : 'border-[#E5E7EB] bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <div className={`text-sm font-semibold ${intent === opt.value ? 'text-white' : 'text-[#111827]'}`}>
+                    {opt.label}
+                  </div>
+                  <div className={`text-xs mt-0.5 ${intent === opt.value ? 'text-gray-300' : 'text-[#6B7280]'}`}>
+                    {opt.desc}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="mt-4 flex items-center gap-3">
             <button
               onClick={startResearch}
@@ -221,21 +275,21 @@ export default function KeywordResearchPage() {
         {/* ── Progress Journey ─────────────────────────────────────────── */}
         {started && (
           <div className="space-y-4">
-            {STEP_CONFIG.map((stepCfg, i) => {
+            {STEP_CONFIG.map((stepCfg) => {
               const s = steps[stepCfg.id] || {};
-              const isVisible = s.status || i === 0;
+              if (!s.status) return null;
 
               return (
                 <div
                   key={stepCfg.id}
                   className={`bg-white rounded-xl border overflow-hidden transition-all ${
-                    s.status === 'active' ? 'border-[#3DAA8E]' : s.status === 'done' ? 'border-[#E5E7EB]' : 'border-[#E5E7EB]'
+                    s.status === 'active' ? 'border-[#3DAA8E]' : 'border-[#E5E7EB]'
                   }`}
                   style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)' }}
                 >
                   {/* Step header */}
                   <div className={`flex items-center gap-3 px-5 py-3.5 ${
-                    s.status === 'active' ? 'bg-[#F0FAF7]' : s.status === 'done' ? 'bg-[#F9FAFB]' : 'bg-[#F9FAFB]'
+                    s.status === 'active' ? 'bg-[#F0FAF7]' : 'bg-[#F9FAFB]'
                   }`}>
                     <StepBadge status={s.status} />
                     <span className="text-lg">{stepCfg.icon}</span>
@@ -257,26 +311,62 @@ export default function KeywordResearchPage() {
                     </div>
                   </div>
 
-                  {/* Step 1 — URL cards */}
-                  {stepCfg.id === 'search' && s.status === 'done' && urls.length > 0 && (
-                    <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {urls.map((u, idx) => (
-                        <div key={idx} className="border border-gray-100 rounded-lg p-3 bg-gray-50">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="w-5 h-5 rounded-full text-white text-xs flex items-center justify-center font-bold flex-shrink-0" style={{ backgroundColor: '#3DAA8E' }}>
-                              {idx + 1}
-                            </span>
-                            <span className="text-xs font-semibold text-gray-700 truncate">{u.displayUrl || new URL(u.url).hostname}</span>
-                          </div>
-                          <p className="text-xs text-gray-500 line-clamp-2 leading-snug">{u.title}</p>
-                        </div>
+                  {/* Variants step — show query chips */}
+                  {stepCfg.id === 'variants' && s.status === 'done' && queries.length > 0 && (
+                    <div className="px-5 py-3.5 flex flex-wrap gap-2 border-t border-gray-100">
+                      {queries.map((q, i) => (
+                        <span
+                          key={i}
+                          className="text-xs px-3 py-1.5 rounded-full font-medium"
+                          style={i === 0
+                            ? { backgroundColor: '#111827', color: '#fff' }
+                            : { backgroundColor: '#F4F5F7', color: '#374151' }
+                          }
+                        >
+                          {i === 0 ? '★ ' : ''}{q}
+                        </span>
                       ))}
                     </div>
                   )}
 
-                  {/* Step 2 — Keywords per URL */}
+                  {/* URL scoring step — show scored URL cards */}
+                  {stepCfg.id === 'url_scoring' && s.status === 'done' && urls.length > 0 && (
+                    <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 border-t border-gray-100">
+                      {urls.map((u, idx) => {
+                        const ptStyle = PAGE_TYPE_STYLES[u.pageType] || PAGE_TYPE_STYLES.page;
+                        return (
+                          <div key={idx} className="border border-gray-100 rounded-lg p-3 bg-gray-50">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="w-5 h-5 rounded-full text-white text-xs flex items-center justify-center font-bold flex-shrink-0" style={{ backgroundColor: '#3DAA8E' }}>
+                                {idx + 1}
+                              </span>
+                              <span className="text-xs font-semibold text-gray-700 truncate flex-1">
+                                {(() => { try { return new URL(u.url).hostname; } catch { return u.url; } })()}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 line-clamp-2 leading-snug mb-2">{u.title}</p>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: ptStyle.bg, color: ptStyle.text }}>
+                                {u.pageType}
+                              </span>
+                              {u.queryCount > 1 && (
+                                <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: '#EDE9FE', color: '#6D28D9' }}>
+                                  {u.queryCount}/{totalQueries || queries.length} queries
+                                </span>
+                              )}
+                              <span className="text-xs px-1.5 py-0.5 rounded font-medium ml-auto" style={{ backgroundColor: '#F4F5F7', color: '#6B7280' }}>
+                                {u.rubricScore?.toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* SEMrush step — keywords per URL */}
                   {stepCfg.id === 'semrush' && (s.status === 'active' || s.status === 'done') && urls.length > 0 && (
-                    <div className="px-5 py-4 space-y-4">
+                    <div className="px-5 py-4 space-y-4 border-t border-gray-100">
                       {urls.map((u, idx) => {
                         const ud = urlData[u.url];
                         return (
@@ -295,7 +385,7 @@ export default function KeywordResearchPage() {
                                 <span className="text-gray-300 text-xs">·</span>
                               )}
                               <span className="text-xs font-semibold text-gray-600 truncate">
-                                {new URL(u.url).hostname}{new URL(u.url).pathname !== '/' ? new URL(u.url).pathname : ''}
+                                {(() => { try { const p = new URL(u.url); return p.hostname + (p.pathname !== '/' ? p.pathname : ''); } catch { return u.url; } })()}
                               </span>
                               {ud?.keywords?.length > 0 && (
                                 <span className="ml-auto text-xs text-gray-400">{ud.keywords.length} keyword{ud.keywords.length !== 1 ? 's' : ''}</span>
@@ -330,9 +420,9 @@ export default function KeywordResearchPage() {
                     </div>
                   )}
 
-                  {/* Step 3 — Analysis in progress */}
+                  {/* Analysis step — in progress spinner */}
                   {stepCfg.id === 'analysis' && s.status === 'active' && (
-                    <div className="px-5 py-4">
+                    <div className="px-5 py-4 border-t border-gray-100">
                       <div className="flex items-center gap-3 text-sm text-gray-500">
                         <svg className="animate-spin w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="none">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
@@ -375,16 +465,10 @@ export default function KeywordResearchPage() {
                         PRIMARY
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 mb-3">
-                      <div>
-                        <div className="text-xs text-gray-400 mb-0.5">Search Volume</div>
-                        <div className="text-lg font-bold text-gray-800">
-                          {kw.volume > 0 ? kw.volume.toLocaleString() : '—'}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-400 mb-1">Keyword Difficulty</div>
-                        <DifficultyBar value={kw.difficulty} />
+                    <div className="mb-3">
+                      <div className="text-xs text-gray-400 mb-0.5">Search Volume</div>
+                      <div className="text-lg font-bold text-gray-800">
+                        {kw.volume > 0 ? kw.volume.toLocaleString() : '—'}
                       </div>
                     </div>
                     {kw.reason && (
@@ -412,7 +496,6 @@ export default function KeywordResearchPage() {
                       <th className="text-left text-white font-semibold px-4 py-3 text-xs uppercase tracking-wider">#</th>
                       <th className="text-left text-white font-semibold px-4 py-3 text-xs uppercase tracking-wider">Keyword</th>
                       <th className="text-left text-white font-semibold px-4 py-3 text-xs uppercase tracking-wider">Volume</th>
-                      <th className="text-left text-white font-semibold px-4 py-3 text-xs uppercase tracking-wider w-40">Difficulty</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -422,9 +505,6 @@ export default function KeywordResearchPage() {
                         <td className="px-4 py-3 font-medium text-gray-800">{kw.keyword}</td>
                         <td className="px-4 py-3 text-gray-600">
                           {kw.volume > 0 ? kw.volume.toLocaleString() : '—'}
-                        </td>
-                        <td className="px-4 py-3 w-40">
-                          <DifficultyBar value={kw.difficulty} />
                         </td>
                       </tr>
                     ))}
@@ -455,35 +535,38 @@ export default function KeywordResearchPage() {
                 </button>
 
                 {showAllKeywords && (
-                  <div className="border-t border-[#E5E7EB] overflow-hidden rounded-b-xl">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-[#F9FAFB]">
-                          <th className="text-left text-[#6B7280] font-semibold px-4 py-2.5 text-xs uppercase tracking-wider">#</th>
-                          <th className="text-left text-[#6B7280] font-semibold px-4 py-2.5 text-xs uppercase tracking-wider">Keyword</th>
-                          <th className="text-left text-[#6B7280] font-semibold px-4 py-2.5 text-xs uppercase tracking-wider">Volume</th>
-                          <th className="text-left text-[#6B7280] font-semibold px-4 py-2.5 text-xs uppercase tracking-wider w-40">Difficulty</th>
-                          <th className="text-left text-[#6B7280] font-semibold px-4 py-2.5 text-xs uppercase tracking-wider">Position</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {allKeywords.map((kw, i) => (
-                          <tr key={i} className="hover:bg-[#F9FAFB] transition-colors">
-                            <td className="px-4 py-2.5 text-[#9CA3AF] text-xs">{i + 1}</td>
-                            <td className="px-4 py-2.5 text-[#111827] font-medium text-xs">{kw.keyword}</td>
-                            <td className="px-4 py-2.5 text-[#6B7280] text-xs">
-                              {kw.volume > 0 ? kw.volume.toLocaleString() : '—'}
-                            </td>
-                            <td className="px-4 py-2.5 w-40">
-                              <DifficultyBar value={kw.difficulty} />
-                            </td>
-                            <td className="px-4 py-2.5 text-[#6B7280] text-xs">
-                              {kw.position || '—'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="border-t border-[#E5E7EB] overflow-hidden rounded-b-xl divide-y divide-[#E5E7EB]">
+                    {[
+                      { label: 'Core', desc: 'Appears across 3+ competitor pages', color: '#3DAA8E', headerBg: '#F0FAF7', filter: k => (k.urlFrequency || 0) >= 3 },
+                      { label: 'Relevant', desc: 'Appears across 2 competitor pages', color: '#6D28D9', headerBg: '#EDE9FE', filter: k => (k.urlFrequency || 0) === 2 },
+                      { label: 'Discovery', desc: 'Unique to a single competitor page', color: '#6B7280', headerBg: '#F4F5F7', filter: k => (k.urlFrequency || 0) <= 1 },
+                    ].map(tier => {
+                      const tierKws = allKeywords
+                        .filter(tier.filter)
+                        .sort((a, b) => (b.volume || 0) - (a.volume || 0));
+                      if (tierKws.length === 0) return null;
+                      return (
+                        <div key={tier.label}>
+                          <div className="px-5 py-2.5 flex items-center gap-2.5" style={{ backgroundColor: tier.headerBg }}>
+                            <span className="text-xs font-bold" style={{ color: tier.color }}>{tier.label}</span>
+                            <span className="text-xs text-[#6B7280]">{tier.desc}</span>
+                            <span className="ml-auto text-xs font-semibold" style={{ color: tier.color }}>{tierKws.length}</span>
+                          </div>
+                          <table className="w-full text-sm">
+                            <tbody className="divide-y divide-gray-50">
+                              {tierKws.map((kw, i) => (
+                                <tr key={i} className="hover:bg-[#F9FAFB] transition-colors">
+                                  <td className="px-5 py-2.5 text-[#111827] font-medium text-xs">{kw.keyword}</td>
+                                  <td className="px-5 py-2.5 text-[#6B7280] text-xs text-right w-24">
+                                    {kw.volume > 0 ? kw.volume.toLocaleString() : '—'}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

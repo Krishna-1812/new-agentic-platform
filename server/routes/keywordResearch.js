@@ -9,19 +9,108 @@ const { loadKBContext } = require('../services/kbLoader');
 // In-memory session store (token → params, expires in 2 min)
 const sessions = new Map();
 
+// SERP result cache: query → { results, ts }
+const serpCache = new Map();
+const SERP_CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
+
+const MAX_VARIANTS = 5; // original + 5 variants = 6 total SERP queries
+
+const DIRECTORY_DOMAINS = new Set([
+  'yelp.com', 'healthgrades.com', 'zocdoc.com', 'vitals.com', 'ratemds.com',
+  'angieslist.com', 'homeadvisor.com', 'thumbtack.com', 'tripadvisor.com',
+  'yellowpages.com', 'bbb.org', 'findlaw.com', 'avvo.com', 'lawyers.com',
+  'martindale.com', 'nolo.com', 'expertise.com',
+]);
+
 function generateToken() {
   return crypto.randomBytes(16).toString('hex');
 }
 
-// Step 1: Client POSTs keyword + optional client slug, gets back a token
+function getRootDomain(url) {
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./, '');
+    const parts = hostname.split('.');
+    return parts.slice(-2).join('.');
+  } catch { return url; }
+}
+
+function isDirectoryDomain(url) {
+  try { return DIRECTORY_DOMAINS.has(getRootDomain(url)); }
+  catch { return false; }
+}
+
+function getPageTypeScore(url, title = '') {
+  try {
+    const path = new URL(url).pathname.toLowerCase();
+    if (isDirectoryDomain(url)) return 0.2;
+    if (/\/\d{4}[\/\-]\d{2}/.test(path)) return 0.4;
+    if (/\/(blog|article|articles|news|post|posts|insights|resources|guide|guides|learn|education)\//i.test(path)) return 0.4;
+    // Informational title signals — penalise even when the URL path looks like a service page
+    const t = title.toLowerCase();
+    if (/^(what is|how to|guide to|introduction to|understanding|the complete|everything (you|about))/i.test(t)) return 0.3;
+    if (/(explained|: a guide| guide$|overview|tutorial|\bfaq\b|trends|challenges|what is|how to)/i.test(t)) return 0.45;
+    return 1.0;
+  } catch { return 0.5; }
+}
+
+function getPageTypeLabel(url, title = '') {
+  if (isDirectoryDomain(url)) return 'directory';
+  if (getPageTypeScore(url, title) < 0.5) return 'article';
+  return 'page';
+}
+
+function getIntentAlignmentScore(titleSnippet, seedKeyword) {
+  const seedWords = seedKeyword.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  const text = titleSnippet.toLowerCase();
+  const matches = seedWords.filter(w => text.includes(w));
+  return seedWords.length > 0 ? matches.length / seedWords.length : 0;
+}
+
+function getConversionIntentScore(titleSnippet) {
+  const CONVERSION_WORDS = ['cost', 'price', 'pricing', 'book', 'schedule', 'appointment', 'quote', 'free', 'cheap', 'affordable', 'near me', 'local', 'best'];
+  const text = titleSnippet.toLowerCase();
+  const matches = CONVERSION_WORDS.filter(w => text.includes(w));
+  return Math.min(1.0, matches.length / 2);
+}
+
+function scoreUrl(urlObj, bestPosition, seedKeyword) {
+  const posScore = 1 - (bestPosition - 1) / 10;
+  const pageTypeScore = getPageTypeScore(urlObj.url, urlObj.title || '');
+  const combined = (urlObj.title || '') + ' ' + (urlObj.snippet || '');
+  const intentScore = getIntentAlignmentScore(combined, seedKeyword);
+  const conversionScore = getConversionIntentScore(combined);
+  return (
+    0.35 * posScore +
+    0.30 * pageTypeScore +
+    0.20 * intentScore +
+    0.15 * conversionScore
+  );
+}
+
+async function cachedSearch(query) {
+  const cached = serpCache.get(query);
+  if (cached && Date.now() - cached.ts < SERP_CACHE_TTL) {
+    return { ...cached.results, fromCache: true };
+  }
+  const results = await searchGoogle(query);
+  serpCache.set(query, { results, ts: Date.now() });
+  return results;
+}
+
+// Step 1: Client POSTs keyword + optional client slug + intent, gets back a token
 router.post('/init', (req, res) => {
-  const { keyword, client, feedbackKbIds } = req.body;
+  const { keyword, client, feedbackKbIds, intent } = req.body;
   if (!keyword?.trim()) return res.status(400).json({ error: 'keyword is required' });
   if (!process.env.SEMRUSH_API_KEY) return res.status(500).json({ error: 'SEMrush API key not configured on server.' });
 
   const token = generateToken();
-  sessions.set(token, { keyword: keyword.trim(), client: client || null, feedbackKbIds: feedbackKbIds || null });
-  setTimeout(() => sessions.delete(token), 120000); // TTL for unconsumed tokens
+  sessions.set(token, {
+    keyword: keyword.trim(),
+    client: client || null,
+    feedbackKbIds: feedbackKbIds || null,
+    intent: intent === 'informational' ? 'informational' : 'commercial',
+  });
+  setTimeout(() => sessions.delete(token), 120000);
   res.json({ token });
 });
 
@@ -31,7 +120,7 @@ router.get('/stream/:token', async (req, res) => {
   if (!session) return res.status(404).json({ error: 'Session not found or expired. Please try again.' });
   sessions.delete(req.params.token);
 
-  const { keyword, client, feedbackKbIds } = session;
+  const { keyword, client, feedbackKbIds, intent } = session;
   const semrushKey = process.env.SEMRUSH_API_KEY;
 
   res.setHeader('Content-Type', 'text/event-stream');
@@ -51,32 +140,114 @@ router.get('/stream/:token', async (req, res) => {
   };
 
   try {
-    // ── Step 1: Google Search ────────────────────────────────────────────
-    emit('step', { id: 'search', status: 'active', message: `Searching Google for "${keyword}"…` });
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const searchData = await searchGoogle(keyword);
-    const top3 = searchData.results.slice(0, 10);
+    // ── Stage 0: Generate intent-focused query variants ──────────────────
+    emit('step', { id: 'variants', status: 'active', message: `Generating ${intent} query variants for "${keyword}"…` });
 
-    emit('step', { id: 'search', status: 'done', message: `Found top ${top3.length} ranking pages` });
+    const intentDesc = intent === 'informational'
+      ? 'informational/educational intent (how it works, procedure, recovery, comparisons, FAQs, risks, symptoms). Do not include any commercial or transactional queries such as cost, pricing, booking, or near me.'
+      : 'commercial/transactional intent (cost, pricing, services, booking, near me, comparisons, best options). Do not include any informational or how-to queries.';
 
-    emit('urls', { urls: top3 });
+    const variantRes = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: 'You are an SEO query expansion assistant. Always respond with valid JSON only.' },
+        {
+          role: 'user',
+          content: `Seed keyword: "${keyword}"
+Generate exactly ${MAX_VARIANTS} search query variants that stay strictly within ${intentDesc}
+Return JSON: { "variants": ["...", "...", "...", "...", "..."] }`,
+        }
+      ]
+    });
 
-    // ── Step 2: SEMrush per URL (parallel, max 3 concurrent) ────────────
+    const rawVariants = JSON.parse(variantRes.choices[0].message.content).variants || [];
+    const variants = rawVariants.slice(0, MAX_VARIANTS).filter(v => typeof v === 'string' && v.trim());
+    const allQueries = [keyword, ...variants];
+
+    emit('step', { id: 'variants', status: 'done', message: `Generated ${variants.length} ${intent} query variants` });
+    emit('variants', { queries: allQueries });
+
+    // ── Stage 1: Parallel SERP for all queries (batched, cache-aware) ────
+    emit('step', { id: 'search', status: 'active', message: `Running ${allQueries.length} searches…` });
+
+    const SERP_CONCURRENCY = 3;
+    const allSerpResults = [];
+    let cacheHits = 0;
+
+    for (let i = 0; i < allQueries.length; i += SERP_CONCURRENCY) {
+      if (isClosed) break;
+      const batch = allQueries.slice(i, i + SERP_CONCURRENCY);
+      const batchResults = await Promise.all(batch.map(async q => {
+        const data = await cachedSearch(q);
+        if (data.fromCache) cacheHits++;
+        return { query: q, results: data.results || [], fromCache: data.fromCache || false };
+      }));
+      allSerpResults.push(...batchResults);
+    }
+
+    emit('step', { id: 'search', status: 'done', message: `Fetched ${allQueries.length} SERPs${cacheHits > 0 ? ` (${cacheHits} cached)` : ''}` });
+
+    // ── Stage 1.5: URL Scoring + Selection ───────────────────────────────
+    emit('step', { id: 'url_scoring', status: 'active', message: 'Scoring and selecting best competitor pages…' });
+
+    // Aggregate per-URL: best position + query count
+    const urlMap = new Map();
+    for (const { results } of allSerpResults) {
+      for (const r of results) {
+        const existing = urlMap.get(r.url);
+        if (!existing) {
+          urlMap.set(r.url, { urlObj: r, bestPosition: r.position, queryCount: 1 });
+        } else {
+          existing.queryCount++;
+          if (r.position < existing.bestPosition) existing.bestPosition = r.position;
+        }
+      }
+    }
+
+    // Domain cap: max 2 URLs per root domain
+    const domainCount = new Map();
+    const candidateUrls = [];
+    for (const [, entry] of urlMap) {
+      const root = getRootDomain(entry.urlObj.url);
+      const count = domainCount.get(root) || 0;
+      if (count >= 2) continue;
+      domainCount.set(root, count + 1);
+      candidateUrls.push(entry);
+    }
+
+    // Score and rank; take top 10
+    const scoredUrls = candidateUrls.map(entry => ({
+      ...entry.urlObj,
+      rubricScore: Math.round(scoreUrl(entry.urlObj, entry.bestPosition, keyword) * 100) / 100,
+      pageType: getPageTypeLabel(entry.urlObj.url, entry.urlObj.title || ''),
+      queryCount: entry.queryCount,
+      bestPosition: entry.bestPosition,
+    }));
+    scoredUrls.sort((a, b) => b.rubricScore - a.rubricScore);
+    const top10 = scoredUrls.slice(0, 10);
+
+    emit('step', { id: 'url_scoring', status: 'done', message: `Selected top ${top10.length} pages from ${urlMap.size} candidates` });
+    emit('urls', { urls: top10, totalQueries: allQueries.length });
+
+    // ── Stage 2: SEMrush per scored URL (parallel, max 3 concurrent) ────
     emit('step', { id: 'semrush', status: 'active', message: 'Fetching keyword rankings from SEMrush…' });
 
     const CONCURRENCY = 3;
-    const allKeywords = [];
+    const allKeywordsRaw = [];
 
-    for (let i = 0; i < top3.length; i += CONCURRENCY) {
+    for (let i = 0; i < top10.length; i += CONCURRENCY) {
       if (isClosed) break;
-      const batch = top3.slice(i, i + CONCURRENCY);
+      const batch = top10.slice(i, i + CONCURRENCY);
       batch.forEach(urlObj => emit('url_status', { url: urlObj.url, title: urlObj.title, status: 'loading' }));
 
       const batchResults = await Promise.all(batch.map(async urlObj => {
         try {
           const keywords = await getUrlKeywords(urlObj.url, semrushKey, 30);
           emit('url_keywords', { url: urlObj.url, title: urlObj.title, keywords, status: 'done' });
-          return keywords;
+          return keywords.map(k => ({ ...k, sourceUrl: urlObj.url }));
         } catch (err) {
           if (err.message.includes('Invalid SEMrush')) throw err;
           emit('url_keywords', { url: urlObj.url, title: urlObj.title, keywords: [], status: 'error', error: err.message });
@@ -84,28 +255,43 @@ router.get('/stream/:token', async (req, res) => {
         }
       }));
 
-      allKeywords.push(...batchResults.flat());
+      allKeywordsRaw.push(...batchResults.flat());
     }
 
-    const successCount = allKeywords.length;
-    emit('step', { id: 'semrush', status: 'done', message: `Collected ${successCount} keyword${successCount !== 1 ? 's' : ''} across all pages` });
+    const rawCount = allKeywordsRaw.length;
+    emit('step', { id: 'semrush', status: 'done', message: `Collected ${rawCount} keyword${rawCount !== 1 ? 's' : ''} across all pages` });
 
-    if (successCount === 0) {
+    if (rawCount === 0) {
       throw new Error('No keyword data returned from SEMrush. These pages may not have enough ranking history, or the API key may be incorrect.');
     }
 
-    // ── Step 3: AI Analysis ──────────────────────────────────────────────
+    // ── Stage 2.5: Deduplicate + urlFrequency enrichment ─────────────────
     emit('step', { id: 'analysis', status: 'active', message: 'AI is filtering and shortlisting the best keywords…' });
 
-    // Load KB context if client provided
     const kbContext = client ? await loadKBContext('keyword-research', client, feedbackKbIds || null) : null;
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    // Deduplicate by keyword string
-    const unique = [...new Map(allKeywords.map(k => [k.keyword.toLowerCase(), k])).values()];
+    // Deduplicate by keyword string; track unique source URLs per keyword
+    const kwMap = new Map();
+    for (const kw of allKeywordsRaw) {
+      const key = kw.keyword.toLowerCase();
+      if (!kwMap.has(key)) {
+        kwMap.set(key, { kwObj: { ...kw }, urlSet: new Set([kw.sourceUrl]) });
+      } else {
+        const existing = kwMap.get(key);
+        existing.urlSet.add(kw.sourceUrl);
+        if ((kw.volume || 0) > (existing.kwObj.volume || 0)) existing.kwObj = { ...kw };
+      }
+    }
 
-    // ── Composite scoring: 60% semantic alignment + 40% volume ──────────────
-    emit('step', { id: 'scoring', status: 'active', message: 'Scoring keywords by alignment and volume…' });
+    const totalUrlsSelected = top10.length;
+    const unique = [...kwMap.values()].map(({ kwObj, urlSet }) => ({
+      ...kwObj,
+      urlFrequency: urlSet.size,
+      urlFreqScore: urlSet.size / totalUrlsSelected,
+    }));
+
+    // ── Stage 3: Composite scoring ────────────────────────────────────────
+    emit('step', { id: 'scoring', status: 'active', message: 'Scoring keywords by alignment, URL frequency, and volume…' });
 
     const scoringRes = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -135,21 +321,20 @@ Return exactly ${unique.length} scores in the same order.`
     const maxVol = Math.max(...volumes, 1);
     const volumeScores = volumes.map(v => v / maxVol);
 
+    // New composite: 50% alignment + 30% urlFreq + 20% volume
     const scored = unique.map((k, i) => ({
       ...k,
       alignmentScore: alignmentScores[i],
       volumeScore: volumeScores[i],
-      compositeScore: 0.6 * alignmentScores[i] + 0.4 * volumeScores[i],
+      compositeScore: 0.5 * alignmentScores[i] + 0.3 * k.urlFreqScore + 0.2 * volumeScores[i],
     }));
     scored.sort((a, b) => b.compositeScore - a.compositeScore);
 
     emit('step', { id: 'scoring', status: 'done', message: `Scored and ranked ${unique.length} keywords` });
-
-    // Emit full scored pool so the frontend can show "view all source keywords"
     emit('allKeywords', { keywords: scored });
 
     const keywordList = scored.slice(0, 40).map(k =>
-      `- ${k.keyword} | volume: ${k.volume || 'N/A'} | difficulty: ${k.difficulty || 'N/A'} | alignment: ${k.alignmentScore.toFixed(3)} | composite: ${k.compositeScore.toFixed(3)}`
+      `- ${k.keyword} | volume: ${k.volume || 'N/A'} | difficulty: ${k.difficulty || 'N/A'} | alignment: ${k.alignmentScore.toFixed(3)} | urlFreq: ${k.urlFreqScore.toFixed(2)} | composite: ${k.compositeScore.toFixed(3)}`
     ).join('\n');
 
     const kbSystemPrompt = 'You are an expert SEO strategist. Always respond with valid JSON only.'
@@ -159,19 +344,18 @@ Return exactly ${unique.length} scores in the same order.`
       model: 'gpt-4o-mini',
       response_format: { type: 'json_object' },
       messages: [
-        {
-          role: 'system',
-          content: kbSystemPrompt
-        },
+        { role: 'system', content: kbSystemPrompt },
         {
           role: 'user',
           content: `Seed keyword: "${keyword}"
+Page intent: ${intent === 'informational' ? 'INFORMATIONAL / EDUCATIONAL' : 'COMMERCIAL / TRANSACTIONAL'}
 
 ${kbContext ? 'Brand context is available in your system prompt — use it as a low-priority secondary signal to prefer keywords that fit the brand\'s vertical, audience, and positioning, but do not let it override the core selection rules below.' : ''}
 
 The keyword candidates below have been pre-ranked using a composite score:
-  • 60% — semantic embedding similarity to the seed keyword (alignment score, 0–1)
-  • 40% — normalised search volume relative to the pool (composite score, 0–1)
+  • 50% — semantic alignment to the seed keyword (alignment score, 0–1)
+  • 30% — URL frequency: how many of the top-scoring competitor pages rank for this keyword (urlFreq, 0–1)
+  • 20% — normalised search volume relative to the pool (0–1)
 Prefer higher composite-scored keywords when selecting primaries and secondaries, unless a hard rejection criterion applies.
 
 Competitor keywords from top ranking pages (via SEMrush):
@@ -184,8 +368,9 @@ PRIMARY SELECTION RULES (EXACTLY 2)
 Each primary keyword must satisfy ALL of the following simultaneously:
 
 1. Semantic core match — Directly targets the same core topic and intent as the seed keyword. Not a tangential subtopic or loose association.
-2. Intent alignment — Matches the commercial or informational intent appropriate for the stated content goal. For service/product pages: transactional or commercial intent only. For blog/informational: clear informational intent with strong demand signal.
-3. Mutual distinctiveness — Both primaries must differ meaningfully from each other. Different modifier angle, different intent signal, or different funnel position. Near-duplicates are not permitted.
+2. Topical completeness — Must preserve ALL key topical dimensions of the seed keyword. If the seed combines two concepts (e.g. "fleet management" + "last mile delivery"), a primary that drops either concept entirely is not acceptable — even if it has high search volume. A subset of the seed topic is not the same topic.
+3. Intent alignment — Must match the stated page intent (${intent === 'informational' ? 'informational/educational — avoid transactional modifiers like cost, pricing, booking, near me' : 'commercial/transactional — avoid purely informational or how-to terms'}).
+4. Mutual distinctiveness — Both primaries must differ meaningfully from each other. Different modifier angle, different intent signal, or different funnel position. Near-duplicates are not permitted.
 
 Each primary keyword must include a one-sentence reason that specifically justifies its selection against these criteria.
 
@@ -195,16 +380,26 @@ SECONDARY SELECTION RULES (EXACTLY 10)
 
 Select exactly 10 keywords that collectively:
 - Are complementary, supporting, or long-tail extensions of the seed keyword
-- Are viable for: supporting FAQs or sections on the same page, OR as separate blog/content pieces within the same topical cluster
+- Remain consistent with the ${intent} intent
+- Are viable for supporting sections on the same page, OR as separate pieces within the same topical cluster
+${intent === 'commercial' ? `
+SECONDARY COMMERCIAL ENFORCEMENT — reject any secondary keyword that:
+- Starts with or contains "what is", "what does", "what are", "how to", "how long", "how does", "why", "when"
+- Contains "news", "trends", "statistics", "report", "study"
+- Contains "explained", "meaning", "definition", "overview", "introduction", "guide"
+These are informational by nature and do not belong on a commercial page regardless of volume.` : `
+SECONDARY INFORMATIONAL ENFORCEMENT — reject any secondary keyword that:
+- Contains "pricing", "cost", "buy", "near me", "hire", "quote", "booking"
+- Has clear transactional or purchase intent`}
 
 ---
 
 HARD REJECTION CRITERIA
 
-Discard any keyword that meets one or more of the following — regardless of volume:
+Discard any keyword that meets one or more of the following:
 - Branded or competitor-branded terms (unless the seed keyword itself is branded)
 - Navigational queries (user clearly looking for a specific website or brand)
-- Intent mismatch — superficial keyword overlap with the seed but clearly different user need
+- Intent mismatch — conflicts with the stated ${intent} intent
 - Near-duplicate of an already-selected keyword (trivial pluralisation, word reorder, minor variation)
 - Implausibly low search demand with no realistic audience at scale
 - Excessively broad head terms with no realistic ranking pathway (volume traps)
