@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import KeywordInput from '../components/KeywordInput';
 import ProgressSteps from '../components/ProgressSteps';
 import SerpUrls from '../components/SerpUrls';
@@ -14,7 +13,6 @@ const CONFIDENCE_STYLES = {
 };
 
 export default function ContentResearchPage() {
-  const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [client, setClient] = useState('');
   const [feedbackKbIds, setFeedbackKbIds] = useState([]);
@@ -85,41 +83,6 @@ export default function ContentResearchPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
-      <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6">
-        <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate('/')}
-              className="flex items-center gap-1.5 text-[#6B7280] hover:text-[#111827] text-sm font-medium transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-              </svg>
-              All tools
-            </button>
-            <span className="text-[#E5E7EB]">/</span>
-            <div>
-              <span className="text-sm font-semibold text-[#111827]">Content Research</span>
-            </div>
-          </div>
-          {searchCount > 0 && (
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-[#6B7280]">Daily searches</span>
-              <div className="flex items-center gap-2">
-                <div className="h-1.5 w-24 bg-[#E5E7EB] rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all" style={{
-                    width: `${Math.min(100, searchCount)}%`,
-                    backgroundColor: searchCount >= 90 ? '#EF4444' : searchCount >= 70 ? '#D97706' : '#3DAA8E'
-                  }} />
-                </div>
-                <span className="text-xs font-semibold text-[#111827]">{searchCount}<span className="text-[#9CA3AF] font-normal"> / 100</span></span>
-              </div>
-            </div>
-          )}
-        </div>
-      </header>
-
       <main className="max-w-7xl mx-auto px-8 py-7">
         <KBContextSelector
           module="content-research"
@@ -170,6 +133,5 @@ export default function ContentResearchPage() {
           </div>
         )}
       </main>
-    </div>
   );
 }

@@ -133,8 +133,7 @@ export default function LocationPageBuilderPage() {
   const isStale = (r) => r.status !== 'Exported' && (Date.now() - new Date(r.updated_at).getTime()) > 7 * 864e5;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
-      <Header />
+    <>
       <main className="max-w-6xl mx-auto px-8 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -184,6 +183,6 @@ export default function LocationPageBuilderPage() {
         </div>
       </main>
       {wizard && <NewPageWizard onClose={() => { setWizard(false); load(); }} onCreated={(id) => navigate(`/location-page-builder/${id}`)} />}
-    </div>
+    </>
   );
 }

@@ -198,8 +198,7 @@ export default function HubSpokePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F4F5F7' }}>
-      <Header />
+    <>
       <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -242,6 +241,6 @@ export default function HubSpokePage() {
       </main>
 
       {showCreate && <CreateProjectModal onClose={() => setShowCreate(false)} onCreate={handleCreate} />}
-    </div>
+    </>
   );
 }

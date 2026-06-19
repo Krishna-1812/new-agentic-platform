@@ -1107,32 +1107,25 @@ export default function HubSpokeProjectPage() {
 
   if (screen === 'loading') {
     return (
-      <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F4F5F7' }}>
-        <Header project={null} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-[#3DAA8E] border-t-transparent rounded-full animate-spin" />
-        </div>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[#3DAA8E] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (screen === 'error') {
     return (
-      <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F4F5F7' }}>
-        <Header project={project} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-red-600 text-sm mb-4">{error}</p>
-            <button onClick={() => window.location.reload()} className="text-sm text-[#3DAA8E] underline">Reload</button>
-          </div>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 text-sm mb-4">{error}</p>
+          <button onClick={() => window.location.reload()} className="text-sm text-[#3DAA8E] underline">Reload</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F4F5F7' }}>
-      <Header project={project} />
+    <>
       <Stepper screen={screen} />
 
       {error && (
@@ -1172,6 +1165,6 @@ export default function HubSpokeProjectPage() {
           <ResultsScreen project={project} recs={recs} onRecUpdate={handleRecUpdate} />
         )}
       </main>
-    </div>
+    </>
   );
 }

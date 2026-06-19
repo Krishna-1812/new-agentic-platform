@@ -83,9 +83,6 @@ export default function KnowledgeBasePage() {
   }, {});
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
-      <PageHeader navigate={navigate} />
-
       <main className="max-w-7xl mx-auto px-8 py-7">
         <div className="mb-6">
           <h1 className="text-[22px] font-bold text-[#111827]">Knowledge Base</h1>
@@ -186,6 +183,5 @@ export default function KnowledgeBasePage() {
           </div>
         )}
       </main>
-    </div>
   );
 }

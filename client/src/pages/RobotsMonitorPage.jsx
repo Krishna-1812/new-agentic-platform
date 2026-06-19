@@ -841,8 +841,7 @@ export default function RobotsMonitorPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F4F5F7' }}>
-      <Header />
+    <>
       <MonitorNav active={tab} onChange={setTab} />
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-6">
@@ -854,6 +853,6 @@ export default function RobotsMonitorPage() {
       {toast && (
         <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
       )}
-    </div>
+    </>
   );
 }

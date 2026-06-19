@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 const SC = {
   pass: { label: 'Pass', bg: '#EAF3DE', color: '#3B6D11', icon: '✓' },
@@ -301,7 +300,6 @@ function SkeletonLine({ w = '100%' }) {
 
 // ─── Main page component ──────────────────────────────────────────────────────
 export default function AgentReadinessAuditPage() {
-  const navigate = useNavigate();
   const [urlHomepage, setUrlHomepage] = useState('');
   const [urlAction, setUrlAction]     = useState('');
   const [urlForm, setUrlForm]         = useState('');
@@ -555,28 +553,7 @@ export default function AgentReadinessAuditPage() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
-      {/* Nav */}
-      <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6">
-        <div className="max-w-5xl mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/')} className="text-[#6B7280] hover:text-[#111827] transition-colors">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-            </button>
-            <div className="w-px h-4 bg-[#E5E7EB]" />
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded flex items-center justify-center" style={{ background: '#534AB71A' }}>
-                <span style={{ fontSize: 13 }}>🤖</span>
-              </div>
-              <span className="font-semibold text-[#111827] text-sm">Agent Readiness Audit</span>
-            </div>
-          </div>
-          <span className="text-xs text-[#9CA3AF]">{checkCount || '13–23'} checks · Scores 0–100</span>
-        </div>
-      </header>
-
+    <>
       <main className="max-w-5xl mx-auto px-6 py-8">
 
         {/* Agent importance one-liner */}
@@ -1081,6 +1058,6 @@ export default function AgentReadinessAuditPage() {
           .ara-copy-btn, .ara-share-btn { width: 100%; justify-content: center; }
         }
       `}</style>
-    </div>
+    </>
   );
 }

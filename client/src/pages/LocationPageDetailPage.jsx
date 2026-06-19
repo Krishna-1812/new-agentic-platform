@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { lpb, openStream } from '../lib/lpbApi';
 
 const TEAL = '#3DAA8E';
@@ -409,7 +409,6 @@ function ExportTab({ page }) {
 
 export default function LocationPageDetailPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [page, setPage] = useState(null);
   const [tab, setTab] = useState('Keywords');
   const [error, setError] = useState('');
@@ -426,15 +425,6 @@ export default function LocationPageDetailPage() {
   const title = po ? `${po.service_data.service_name} in ${po.location_data.location_name}` : 'Page';
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
-      <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6">
-        <div className="max-w-5xl mx-auto w-full flex items-center gap-3">
-          <button onClick={() => navigate('/location-page-builder')} className="text-[#6B7280] text-sm">← Pages</button>
-          <span className="font-bold text-[#111827] text-sm">{title}</span>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: TEAL + '1A', color: TEAL }}>{page.status}</span>
-        </div>
-      </header>
-
       <main className="max-w-5xl mx-auto px-8 py-6">
         {!page.eligibility?.eligible && <div className="bg-red-50 text-red-700 text-sm rounded-md p-3 mb-4">⛔ {page.eligibility?.reason}</div>}
         <div className="flex gap-1 border-b border-[#E5E7EB] mb-5">
@@ -448,6 +438,5 @@ export default function LocationPageDetailPage() {
         {tab === 'Approval' && <ApprovalTab page={page} reload={reload} />}
         {tab === 'Export' && <ExportTab page={page} />}
       </main>
-    </div>
   );
 }

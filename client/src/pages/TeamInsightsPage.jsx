@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import MorningTriageView from '../components/teamInsights/MorningTriageView';
 import MondayPlanningView from '../components/teamInsights/MondayPlanningView';
 import WeeklyReviewView from '../components/teamInsights/WeeklyReviewView';
@@ -84,7 +83,6 @@ function formatRelativeTime(isoStr) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function TeamInsightsPage() {
-  const navigate = useNavigate();
   const [activeView, setActiveView] = useState('morning-triage');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -161,49 +159,7 @@ export default function TeamInsightsPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
-      {/* ── Top nav ─────────────────────────────────────────────────────────── */}
-      <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6 sticky top-0 z-30">
-        <div className="max-w-screen-xl mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate('/')}
-              className="flex items-center gap-1.5 text-[#6B7280] hover:text-[#111827] text-xs font-medium transition-colors mr-1"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-              Back
-            </button>
-            <div className="w-px h-4 bg-[#E5E7EB]" />
-            <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ backgroundColor: '#3DAA8E' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <span className="font-bold text-[#111827] text-sm tracking-tight">Team Insights</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {data?.lastSynced && (
-              <span className="text-xs text-[#9CA3AF]">
-                {data.staleData ? '⚠ Stale · ' : ''}Synced {formatRelativeTime(data.lastSynced)}
-              </span>
-            )}
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing || loading}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#E5E7EB] rounded-lg bg-white text-[#374151] hover:border-[#3DAA8E] hover:text-[#3DAA8E] transition-colors disabled:opacity-50"
-            >
-              <svg className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              {refreshing ? 'Refreshing…' : 'Refresh'}
-            </button>
-          </div>
-        </div>
-      </header>
-
+      <>
       {/* ── View tabs ────────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-[#E5E7EB] px-6">
         <div className="max-w-screen-xl mx-auto flex gap-0 overflow-x-auto">
@@ -319,6 +275,6 @@ export default function TeamInsightsPage() {
 
       {/* ── Task drawer ──────────────────────────────────────────────────────── */}
       <TaskDrawer task={selectedTask} onClose={() => setSelectedTask(null)} />
-    </div>
+      </>
   );
 }

@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
@@ -562,7 +561,6 @@ function downloadReport(findings, ai) {
 
 // ── Main page component ───────────────────────────────────────────────────────
 export default function SeoGeoAuditPage() {
-  const navigate = useNavigate();
   const [inputType, setInputType] = useState('url');
   const [urlInput, setUrlInput] = useState('');
   const [htmlInput, setHtmlInput] = useState('');
@@ -677,43 +675,6 @@ export default function SeoGeoAuditPage() {
   const orderedCats = CATEGORY_ORDER.filter(c => checksByCategory[c]);
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
-      {/* Header */}
-      <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6">
-        <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/')} className="text-gray-400 hover:text-gray-600">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </button>
-            <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ backgroundColor: '#3DAA8E' }}>
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <span className="font-bold text-[#111827] text-sm">SEO & GEO Audit</span>
-          </div>
-          {findings && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => downloadReport(findings, ai)}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white transition-colors"
-                style={{ backgroundColor: '#3DAA8E' }}
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download Report
-              </button>
-              <button onClick={reset} className="text-xs text-gray-500 hover:text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg">
-                New Audit
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
-
       <main className="max-w-7xl mx-auto px-6 py-6">
 
         {/* Input panel */}
@@ -1189,6 +1150,5 @@ export default function SeoGeoAuditPage() {
           </div>
         )}
       </main>
-    </div>
   );
 }

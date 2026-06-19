@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import MDEditor from '@uiw/react-md-editor';
 
 const BRANDS = ['global','gentle-dental','great-lakes','riccobene','clear-behavioral-health','neuro-wellness-spa','new-life-house'];
@@ -9,7 +9,6 @@ const ALL_MODULES = ['content-research','keyword-research','article-recommendati
 
 export default function KBEditorPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
 
   const [kb, setKb] = useState(null);
   const [meta, setMeta] = useState({});
@@ -94,36 +93,7 @@ export default function KBEditorPage() {
   const isIndustry = meta.category === 'industry';
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F4F5F7' }}>
-      {/* Header */}
-      <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6 flex-shrink-0">
-        <div className="w-full flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/kb')} className="flex items-center gap-1.5 text-[#6B7280] hover:text-[#111827] text-sm font-medium transition-colors">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-              Knowledge Base
-            </button>
-            <span className="text-[#E5E7EB]">/</span>
-            <span className="text-sm font-semibold text-[#111827] font-mono">{id}</span>
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded ${meta.active ? 'bg-[#D1FAE5] text-[#065F46]' : 'bg-[#F3F4F6] text-[#9CA3AF]'}`}>
-              {meta.active ? 'Active' : 'Inactive'}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-[#9CA3AF]">v{meta.version}</span>
-            <button onClick={handleToggle} disabled={toggling}
-              className="px-3 py-1.5 text-xs font-semibold border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-[#111827] bg-white transition-colors disabled:opacity-50">
-              {meta.active ? 'Deactivate' : 'Reactivate'}
-            </button>
-            <button onClick={handleSave} disabled={saving}
-              className="px-4 py-1.5 text-xs font-semibold rounded-lg text-white transition-colors disabled:opacity-50"
-              style={{ backgroundColor: saving ? '#6B7280' : '#111827' }}>
-              {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save'}
-            </button>
-          </div>
-        </div>
-      </header>
-
+    <>
       {error && (
         <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex-shrink-0">{error}</div>
       )}
@@ -244,6 +214,6 @@ export default function KBEditorPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

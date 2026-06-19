@@ -16,18 +16,6 @@ export default function ModuleAuditPage() {
   }, []);
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
-      <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6">
-        <div className="max-w-7xl mx-auto w-full flex items-center gap-3">
-          <button onClick={() => navigate('/kb')} className="flex items-center gap-1.5 text-[#6B7280] hover:text-[#111827] text-sm font-medium transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-            Knowledge Base
-          </button>
-          <span className="text-[#E5E7EB]">/</span>
-          <span className="text-sm font-semibold text-[#111827]">Dependency Audit</span>
-        </div>
-      </header>
-
       <main className="max-w-7xl mx-auto px-8 py-7">
         <div className="mb-6">
           <h1 className="text-[22px] font-bold text-[#111827]">Dependency Audit</h1>
@@ -148,6 +136,5 @@ export default function ModuleAuditPage() {
           </div>
         )}
       </main>
-    </div>
   );
 }

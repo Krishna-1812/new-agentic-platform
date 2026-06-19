@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { startAudit, pollStatus, getResult, listAudits, deleteAudit } from '../lib/onPageAuditApi';
 
 const TEAL = '#3DAA8E';
@@ -455,7 +454,6 @@ function InputForm({ onSubmit, loading }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function OnPageAuditPage() {
-  const navigate = useNavigate();
   const [view, setView] = useState('input'); // input | progress | report
   const [jobId, setJobId] = useState(null);
   const [progress, setProgress] = useState('');
@@ -526,9 +524,7 @@ export default function OnPageAuditPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F4F5F7' }}>
-      <Header onBack={() => navigate('/')} />
-
+    <>
       {view === 'input' && (
         <main className="flex-1 flex items-start justify-center pt-12 px-4">
           <div className="w-full max-w-xl">
@@ -553,6 +549,6 @@ export default function OnPageAuditPage() {
           <ReportView audit={audit} onNewAudit={handleNewAudit} />
         </main>
       )}
-    </div>
+    </>
   );
 }

@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { saveAs } from 'file-saver';
 import KBContextSelector from '../components/KBContextSelector';
@@ -157,7 +156,6 @@ async function downloadDocx(keyword, markdown) {
 }
 
 export default function ArticleRecommendationPage() {
-  const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [client, setClient] = useState('');
   const [feedbackKbIds, setFeedbackKbIds] = useState([]);
@@ -291,24 +289,6 @@ export default function ArticleRecommendationPage() {
   const scrapeLabel = STEPS.find(s => s.id === 'scrape')?.label;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
-      {/* Header */}
-      <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6">
-        <div className="max-w-5xl mx-auto w-full flex items-center gap-3">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-1.5 text-[#6B7280] hover:text-[#111827] text-sm font-medium transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-            </svg>
-            All tools
-          </button>
-          <span className="text-[#E5E7EB]">/</span>
-          <span className="text-sm font-semibold text-[#111827]">Article Recommendation</span>
-        </div>
-      </header>
-
       <main className="max-w-5xl mx-auto px-8 py-7 space-y-5">
 
         {/* ── Input Card ───────────────────────────────────────────────── */}
@@ -555,6 +535,5 @@ export default function ArticleRecommendationPage() {
           </div>
         )}
       </main>
-    </div>
   );
 }

@@ -1,4 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from './components/ThemeContext';
+import MacWindow from './components/MacWindow';
 import HomePage from './pages/HomePage';
 import ContentResearchPage from './pages/ContentResearchPage';
 import KeywordResearchPage from './pages/KeywordResearchPage';
@@ -23,29 +25,33 @@ import OnPageAuditPage from './pages/OnPageAuditPage';
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/content-research" element={<ContentResearchPage />} />
-      <Route path="/keyword-research" element={<KeywordResearchPage />} />
-      <Route path="/kb" element={<KnowledgeBasePage />} />
-      <Route path="/kb/new" element={<CreateKBPage />} />
-      <Route path="/kb/audit" element={<ModuleAuditPage />} />
-      <Route path="/kb/feedback/new" element={<ClientFeedbackPage />} />
-      <Route path="/kb/:id" element={<KBEditorPage />} />
-      <Route path="/article-recommendation" element={<ArticleRecommendationPage />} />
-      <Route path="/image-alt-audit" element={<ImageAltAuditPage />} />
-      <Route path="/team-insights" element={<TeamInsightsPage />} />
-      <Route path="/agent-readiness-audit" element={<AgentReadinessAuditPage />} />
-      <Route path="/agent-readiness-audit/summary" element={<AgentReadinessSummaryPage />} />
-      <Route path="/seo-geo-audit" element={<SeoGeoAuditPage />} />
-      <Route path="/content-enhancement" element={<ContentEnhancementPage />} />
-      <Route path="/location-page-builder" element={<LocationPageBuilderPage />} />
-      <Route path="/location-page-builder/:id" element={<LocationPageDetailPage />} />
-      <Route path="/robots-monitor" element={<RobotsMonitorPage />} />
-      <Route path="/hub-spoke" element={<HubSpokePage />} />
-      <Route path="/hub-spoke/:id" element={<HubSpokeProjectPage />} />
-      <Route path="/on-page-audit" element={<OnPageAuditPage />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <ThemeProvider>
+      <Routes>
+        <Route element={<MacWindow />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/content-research" element={<ContentResearchPage />} />
+          <Route path="/keyword-research" element={<KeywordResearchPage />} />
+          <Route path="/kb" element={<KnowledgeBasePage />} />
+          <Route path="/kb/new" element={<CreateKBPage />} />
+          <Route path="/kb/audit" element={<ModuleAuditPage />} />
+          <Route path="/kb/feedback/new" element={<ClientFeedbackPage />} />
+          <Route path="/kb/:id" element={<KBEditorPage />} />
+          <Route path="/article-recommendation" element={<ArticleRecommendationPage />} />
+          <Route path="/image-alt-audit" element={<ImageAltAuditPage />} />
+          <Route path="/team-insights" element={<TeamInsightsPage />} />
+          <Route path="/agent-readiness-audit" element={<AgentReadinessAuditPage />} />
+          <Route path="/agent-readiness-audit/summary" element={<AgentReadinessSummaryPage />} />
+          <Route path="/seo-geo-audit" element={<SeoGeoAuditPage />} />
+          <Route path="/content-enhancement" element={<ContentEnhancementPage />} />
+          <Route path="/location-page-builder" element={<LocationPageBuilderPage />} />
+          <Route path="/location-page-builder/:id" element={<LocationPageDetailPage />} />
+          <Route path="/robots-monitor" element={<RobotsMonitorPage />} />
+          <Route path="/hub-spoke" element={<HubSpokePage />} />
+          <Route path="/hub-spoke/:id" element={<HubSpokeProjectPage />} />
+          <Route path="/on-page-audit" element={<OnPageAuditPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </ThemeProvider>
   );
 }
