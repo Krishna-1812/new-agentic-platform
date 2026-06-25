@@ -12,13 +12,39 @@ function resetIfNewDay() {
   }
 }
 
+async function searchSerper(keyword) {
+  const response = await axios.post(
+    'https://google.serper.dev/search',
+    { q: keyword, gl: 'us', hl: 'en', num: 10 },
+    {
+      headers: {
+        'X-API-KEY': process.env.SERPER_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      timeout: 15000,
+    }
+  );
+  const items = response.data.organic || [];
+  return {
+    results: items.map(item => ({
+      position: item.position,
+      title: item.title || '',
+      url: item.link || '',
+      snippet: item.snippet || '',
+      displayUrl: item.displayLink || '',
+    })),
+    searchCount: dailySearchCount,
+    totalResults: response.data.searchInformation?.totalResults || items.length,
+    source: 'serper',
+  };
+}
+
 async function searchGoogle(keyword) {
   resetIfNewDay();
 
+  // Google quota exhausted — skip straight to Serper
   if (dailySearchCount >= 100) {
-    const err = new Error('Daily quota exceeded (100 searches/day limit)');
-    err.code = 'QUOTA_EXCEEDED';
-    throw err;
+    return searchSerper(keyword);
   }
 
   const params = {
@@ -37,18 +63,15 @@ async function searchGoogle(keyword) {
   } catch (err) {
     if (err.response) {
       const status = err.response.status;
+      // Quota or auth failure — fall back to Serper
+      if (status === 429 || status === 403) {
+        return searchSerper(keyword);
+      }
       const message = err.response.data?.error?.message || 'Unknown Google API error';
-      if (status === 403) {
-        throw new Error(`Google API error: ${message}. Check your API key and ensure Custom Search API is enabled.`);
-      }
-      if (status === 429) {
-        const quotaErr = new Error('Daily quota exceeded (100 searches/day limit)');
-        quotaErr.code = 'QUOTA_EXCEEDED';
-        throw quotaErr;
-      }
       throw new Error(`Google API error (${status}): ${message}`);
     }
-    throw new Error(`Failed to reach Google API: ${err.message}`);
+    // Network/timeout error — fall back to Serper
+    return searchSerper(keyword);
   }
 
   dailySearchCount++;
@@ -65,7 +88,8 @@ async function searchGoogle(keyword) {
       displayUrl: item.displayLink || ''
     })),
     searchCount: dailySearchCount,
-    totalResults
+    totalResults,
+    source: 'google',
   };
 }
 
