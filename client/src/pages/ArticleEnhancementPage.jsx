@@ -20,6 +20,7 @@ const STEPS = [
   { id: 'kb',            label: 'Load KB' },
   { id: 'report',        label: 'Generate Report' },
   { id: 'enhance',       label: 'Enhance Article' },
+  { id: 'structure',    label: 'Add Structure & FAQ' },
 ];
 
 const PROMPT_LABELS = {
@@ -197,7 +198,7 @@ function EnhancedArticlePanel({ text }) {
   if (!text) return null;
 
   function parseInline(str) {
-    const parts = str.split(/(\[NEW\][^\]]*?\[\/NEW\])/g);
+    const parts = str.split(/(\[NEW\][\s\S]*?\[\/NEW\])/g);
     return parts.map((part, i) => {
       if (part.startsWith('[NEW]') && part.endsWith('[/NEW]')) {
         return (

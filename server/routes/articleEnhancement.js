@@ -120,9 +120,13 @@ router.get('/stream/:token', async (req, res) => {
     // Step 9: Add structural additions (FAQ + report-recommended new sections)
     emit('step', { id: 'structure', status: 'active', message: 'Adding FAQ and recommended new sections…' });
     const structural = await generateStructuralAdditions(openai, articleData, analysis, report, kb);
-    let enhancedText = structural ? enhancedChunks + '\n\n' + structural : enhancedChunks;
-    // Remove duplicate sentences that multiple chunks independently added
-    enhancedText = deduplicateAdditions(enhancedText);
+    // Dedup only per-chunk enhancements; structural additions (FAQ, new sections) are entirely new
+    // content so deduplicating them would collapse their internal newlines and destroy heading structure.
+    let enhancedText = deduplicateAdditions(enhancedChunks);
+    if (structural) enhancedText += '\n\n' + structural;
+    // Expand all multi-line [NEW]...[/NEW] blocks to per-line markers so the frontend and docx
+    // renderer both receive consistently normalized text (one [NEW]line[/NEW] per line).
+    enhancedText = normalizeNewMarkers(enhancedText);
     emit('step', { id: 'structure', status: 'done', message: 'FAQ and structural sections added' });
     emit('enhanced', { text: enhancedText });
 
@@ -645,6 +649,19 @@ function htmlChunkToMarkdown(html) {
 
   $('body').children().each((_, el) => walk(el));
   return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+// ── normalizeNewMarkers ────────────────────────────────────────────────────────
+// Shared utility: expands multi-line [NEW]...[/NEW] blocks into per-line markers
+// so both the docx renderer and the frontend can process line-by-line.
+// Also merges back-to-back [/NEW][NEW] pairs that GPT sometimes emits.
+// The function is idempotent: running it twice on already-normalized text is a no-op.
+function normalizeNewMarkers(text) {
+  if (!text) return '';
+  let t = text.replace(/\[\/NEW\]\s*\[NEW\]/g, ' ');
+  return t.replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) =>
+    inner.split('\n').map(l => l.trim() ? `[NEW]${l.trim()}[/NEW]` : '').join('\n')
+  );
 }
 
 // ── deduplicateAdditions ───────────────────────────────────────────────────────
