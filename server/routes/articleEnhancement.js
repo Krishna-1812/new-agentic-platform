@@ -112,10 +112,18 @@ router.get('/stream/:token', async (req, res) => {
     emit('step', { id: 'report', status: 'done', message: 'Enhancement recommendations ready' });
     emit('report', { report });
 
-    // Step 8: Generate enhanced article
-    emit('step', { id: 'enhance', status: 'active', message: 'Generating enhanced article…' });
-    const enhancedText = await generateEnhancedArticle(openai, articleData, analysis, report, kb);
-    emit('step', { id: 'enhance', status: 'done', message: 'Enhanced article ready' });
+    // Step 8: Enhance existing sections (inline stats, quotes, citations)
+    emit('step', { id: 'enhance', status: 'active', message: 'Enhancing article sections with statistics, citations, and expert quotes…' });
+    const enhancedChunks = await generateEnhancedArticle(openai, articleData, analysis, report, kb);
+    emit('step', { id: 'enhance', status: 'done', message: 'Section enhancements complete' });
+
+    // Step 9: Add structural additions (FAQ + report-recommended new sections)
+    emit('step', { id: 'structure', status: 'active', message: 'Adding FAQ and recommended new sections…' });
+    const structural = await generateStructuralAdditions(openai, articleData, analysis, report, kb);
+    let enhancedText = structural ? enhancedChunks + '\n\n' + structural : enhancedChunks;
+    // Remove duplicate sentences that multiple chunks independently added
+    enhancedText = deduplicateAdditions(enhancedText);
+    emit('step', { id: 'structure', status: 'done', message: 'FAQ and structural sections added' });
     emit('enhanced', { text: enhancedText });
 
   } catch (err) {
@@ -639,6 +647,79 @@ function htmlChunkToMarkdown(html) {
   return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
+// ── deduplicateAdditions ───────────────────────────────────────────────────────
+// Remove duplicate sentences that appear in multiple [NEW] blocks across chunks.
+// Each chunk calls GPT independently so the same stat or quote often appears 2-4x.
+function deduplicateAdditions(text) {
+  const seenSentences = new Set();
+  return text.replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) => {
+    const sentences = inner.split(/(?<=[.!?])\s+/);
+    const kept = [];
+    for (const s of sentences) {
+      const key = s.trim().toLowerCase().replace(/\s+/g, ' ');
+      if (key.length > 30 && seenSentences.has(key)) continue; // duplicate — drop
+      if (key.length > 30) seenSentences.add(key);
+      kept.push(s);
+    }
+    const cleaned = kept.join(' ').trim();
+    return cleaned ? `[NEW]${cleaned}[/NEW]` : '';
+  });
+}
+
+// ── generateStructuralAdditions ────────────────────────────────────────────────
+// Separate post-chunk pass: generates FAQs + report-recommended new sections.
+// The per-chunk pass forbids new headings, so this is the only place where
+// an FAQ block or a "How to Protect" section can be appended.
+async function generateStructuralAdditions(openai, articleData, analysis, report, kb) {
+  const kbGuidance = kb ? `\n\nKnowledge Base Enhancement Framework:\n${kb.body}` : '';
+  try {
+    const res = await openai.chat.completions.create({
+      model: 'gpt-5.4-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `You are an SEO and GEO content specialist. Your job is to generate ADDITIONAL SECTIONS to append after an existing article. All content you write is new, so wrap everything you produce in a single [NEW]...[/NEW] block.
+
+WHAT TO GENERATE (in this order):
+
+1. FAQ SECTION (required):
+   Write "## Frequently Asked Questions" as the first heading.
+   Add 4-6 questions as ### headings. Each answer must:
+   - Directly answer the question in the first sentence (inverted pyramid)
+   - Be 50-150 words
+   - Be self-contained (no references to "the article above")
+   - Be factual and non-promotional
+   - Include a sourced statistic where relevant: "[X]% of [population] [action] (Source, Year)"
+
+2. ADDITIONAL RECOMMENDED SECTIONS:
+   Read the enhancement report's "Priority Enhancements" section. If it recommends adding a specific new section (e.g. "How to Protect Your Wallet", "Quick Reference", "Key Takeaways"), generate it now as its own ## section with an appropriate format (bullet list, numbered steps, or short paragraphs). Only generate sections the report explicitly recommends.
+
+FORMAT RULES:
+- Start your output with [NEW]
+- End your output with [/NEW]
+- Use ## for section headings, ### for FAQ questions
+- Bullet lists with "- " prefix for tips/steps
+- Do NOT include promotional language
+- Do NOT duplicate content from the main article${kbGuidance}`,
+        },
+        {
+          role: 'user',
+          content: `Article: "${articleData.title}" | Keyword: ${analysis.primaryKeyword}
+
+ENHANCEMENT REPORT — read "Priority Enhancements" and "Content Gaps" to know what new sections to add:
+${report}
+
+Generate the additional sections to append. Start with the FAQ, then any other explicitly recommended new sections. Wrap everything in [NEW]...[/NEW].`,
+        },
+      ],
+    });
+    return res.choices[0].message.content || '';
+  } catch (err) {
+    console.error('[article-enhancement] structural additions error:', err.message);
+    return '';
+  }
+}
+
 // ── generateEnhancedArticle ────────────────────────────────────────────────────
 async function generateEnhancedArticle(openai, articleData, analysis, report, kb) {
   const sourceHtml = articleData.mainContentHtml || articleData.bodyText || '';
@@ -660,6 +741,8 @@ WHAT TO ADD (priority order — apply every type that fits this section):
 4. ANSWER-FIRST SENTENCES — If the section's opening paragraph does not directly answer the section's implied question, insert a direct-answer sentence at the very start.
 
 5. SELF-CONTAINED CONTEXT — If any part of the section references content elsewhere ("as mentioned above", implied context), insert a brief inline clarification so the passage makes sense in isolation.
+
+6. SCANNABLE BULLET LISTS — If a paragraph enumerates 3+ distinct items in prose form without a list, append a [NEW] bullet summary after it. Each bullet should be a specific, scannable data point, not a paraphrase of the prose sentence.
 
 HARD PROHIBITIONS:
 - Do NOT add new ## or ### headings — causes duplicate sections across the article
@@ -788,7 +871,10 @@ async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, repo
 
   // Expand multi-line [NEW]...[/NEW] blocks to per-line markers before line-by-line processing
   function normalizeNewMarkers(text) {
-    return (text || '').replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) =>
+    if (!text) return '';
+    // Merge adjacent [NEW] blocks GPT emits back-to-back (e.g. "[/NEW] [NEW]...")
+    let t = text.replace(/\[\/NEW\]\s*\[NEW\]/g, ' ');
+    return t.replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) =>
       inner.split('\n').map(l => l.trim() ? `[NEW]${l.trim()}[/NEW]` : '').join('\n')
     );
   }
