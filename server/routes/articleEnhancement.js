@@ -166,10 +166,11 @@ async function fetchArticle(url) {
     } catch {}
   });
 
+  $('script, style, nav, header, footer, aside, noscript').remove();
+
   const $mainEl = $('article').length ? $('article') : $('main').length ? $('main') : $('body');
   const mainContentHtml = $mainEl.html() || '';
 
-  $('script, style, nav, header, footer, aside, noscript').remove();
   const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
   const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
 
@@ -644,17 +645,27 @@ async function generateEnhancedArticle(openai, articleData, analysis, report, kb
   const kbGuidance = kb ? kb.body : '';
   const reportSlice = report;
 
-  const systemPrompt = `You are an expert content enhancer. Enhance this article section based on SEO recommendations.
+  const systemPrompt = `You are an article augmentation assistant. Your job is to INSERT additional content into an existing article section — not to rewrite it.
 
-Output the enhanced section as clean Markdown.
+CORE RULE: The section you receive is EXISTING text. You must output it EXACTLY as written, with your additions inserted inline.
 
-MARKING RULES — follow exactly:
-- Mark ALL newly added inline text: [NEW]added text[/NEW]
-- Mark ALL new paragraphs by wrapping them: [NEW]This entire new paragraph is here.[/NEW]
-- Mark ALL new headings: [NEW]## New Section Heading[/NEW]
-- Preserve ALL existing content exactly — do not alter original sentences
-- Do NOT mark existing content with [NEW] tags
-- Return ONLY the enhanced Markdown. No explanations, no preamble.${kbGuidance ? '\n\nEnhancement Framework:\n' + kbGuidance : ''}`;
+WHAT YOU MAY ADD:
+- New sentences inserted within or after existing paragraphs
+- New bullet points added to existing lists
+- New short paragraphs inserted between existing paragraphs
+- Inline phrases or data points added to existing sentences
+
+WHAT YOU MUST NOT DO:
+- Do NOT add new ## or ### headings — this causes duplicate sections across the article
+- Do NOT rewrite, rephrase, or modify any existing sentence
+- Do NOT mark existing text with [NEW] tags — only text YOU INSERT gets tagged
+- Do NOT repeat or summarise content already present in the section
+- Do NOT add whole new sections that duplicate topics covered elsewhere in the article
+
+MARKING RULES:
+- Wrap ONLY the text you insert: [NEW]your inserted text here[/NEW]
+- Existing text must appear verbatim without any [NEW] tags
+- Return ONLY the section. No preamble or explanation.${kbGuidance ? '\n\nEnhancement Guidance:\n' + kbGuidance : ''}`;
 
   // Split at H2 boundaries, then sub-split any section still too large
   const h2Chunks = sourceHtml.split(/(?=<h2[\s>])/i).filter(c => c.trim());
@@ -674,13 +685,13 @@ MARKING RULES — follow exactly:
             role: 'user',
             content: `Article: "${articleData.title}" | Keyword: ${analysis.primaryKeyword}
 
-ENHANCEMENT RECOMMENDATIONS (apply what is relevant to this section):
+ENHANCEMENT CONTEXT (use to decide what inline additions to make — do NOT add new headings or duplicate sections):
 ${reportSlice}
 
-SECTION ${index + 1} TO ENHANCE:
+EXISTING SECTION ${index + 1} — copy this exactly, inserting additions inline:
 ${mdChunk}
 
-Return ONLY the enhanced Markdown for this section.`,
+Return the section with your inline additions inserted. All existing text must be preserved verbatim.`,
           },
         ],
       });
@@ -777,7 +788,7 @@ async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, repo
 
   // Split a text string on **bold** and [NEW]...[/NEW] markers → array of TextRun
   function inlineRuns(text, baseOpts = {}) {
-    const parts = text.split(/(\*\*[^*]+\*\*|\[NEW\][^\]]*?\[\/NEW\])/g);
+    const parts = text.split(/(\*\*[^*]+\*\*|\[NEW\].*?\[\/NEW\])/g);
     return parts.map(part => {
       if (!part) return null;
       if (part.startsWith('**') && part.endsWith('**')) {
