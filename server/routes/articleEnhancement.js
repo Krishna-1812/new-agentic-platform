@@ -645,27 +645,34 @@ async function generateEnhancedArticle(openai, articleData, analysis, report, kb
   const kbGuidance = kb ? kb.body : '';
   const reportSlice = report;
 
-  const systemPrompt = `You are an article augmentation assistant. Your job is to INSERT additional content into an existing article section — not to rewrite it.
+  const systemPrompt = `You are an SEO and GEO content augmentation assistant. Your job is to INSERT substantive, high-value content into an existing article section to improve its AI citability and search performance.
 
-CORE RULE: The section you receive is EXISTING text. You must output it EXACTLY as written, with your additions inserted inline.
+CORE RULE: Existing text must appear VERBATIM. You insert additions only — never rewrite, rephrase, or modify any existing sentence.
 
-WHAT YOU MAY ADD:
-- New sentences inserted within or after existing paragraphs
-- New bullet points added to existing lists
-- New short paragraphs inserted between existing paragraphs
-- Inline phrases or data points added to existing sentences
+WHAT TO ADD (priority order — apply every type that fits this section):
 
-WHAT YOU MUST NOT DO:
-- Do NOT add new ## or ### headings — this causes duplicate sections across the article
+1. STATISTICS — Insert sourced, dated data points. Format exactly: "[X]% of [population] [action] (Source, Year)." Back any claim in the section that data can support. Aim for 1–2 per section where relevant.
+
+2. EXPERT QUOTES — Insert a direct quote from a named, credentialed expert when the section discusses a concept experts have publicly addressed. Format: "As [Full Name], [Credential/Title] at [Organisation] ([Year]): '[quote].'"
+
+3. CITATIONS — Add outbound references to primary sources (research papers, government data, industry reports) in the format "(Source Name, Year)" or as a hyperlink anchor in the text.
+
+4. ANSWER-FIRST SENTENCES — If the section's opening paragraph does not directly answer the section's implied question, insert a direct-answer sentence at the very start.
+
+5. SELF-CONTAINED CONTEXT — If any part of the section references content elsewhere ("as mentioned above", implied context), insert a brief inline clarification so the passage makes sense in isolation.
+
+HARD PROHIBITIONS:
+- Do NOT add new ## or ### headings — causes duplicate sections across the article
+- Do NOT mark existing text with [NEW] — only your insertions get tagged
+- Do NOT keyword-stuff — repeating the same phrase across multiple paragraphs scores −9% on AI visibility and is an explicit anti-pattern
+- Do NOT define the same term more than once across the article — if a term was already defined in an earlier section, do not re-define it here
 - Do NOT rewrite, rephrase, or modify any existing sentence
-- Do NOT mark existing text with [NEW] tags — only text YOU INSERT gets tagged
-- Do NOT repeat or summarise content already present in the section
-- Do NOT add whole new sections that duplicate topics covered elsewhere in the article
+- Do NOT add generic filler sentences that state the obvious or repeat what the paragraph already says
 
 MARKING RULES:
 - Wrap ONLY the text you insert: [NEW]your inserted text here[/NEW]
 - Existing text must appear verbatim without any [NEW] tags
-- Return ONLY the section. No preamble or explanation.${kbGuidance ? '\n\nEnhancement Guidance:\n' + kbGuidance : ''}`;
+- Return ONLY the section. No preamble or explanation.${kbGuidance ? '\n\nKnowledge Base — Enhancement Framework:\n' + kbGuidance : ''}`;
 
   // Split at H2 boundaries, then sub-split any section still too large
   const h2Chunks = sourceHtml.split(/(?=<h2[\s>])/i).filter(c => c.trim());
@@ -685,13 +692,13 @@ MARKING RULES:
             role: 'user',
             content: `Article: "${articleData.title}" | Keyword: ${analysis.primaryKeyword}
 
-ENHANCEMENT CONTEXT (use to decide what inline additions to make — do NOT add new headings or duplicate sections):
+ARTICLE-LEVEL ENHANCEMENT CONTEXT (use to identify what is missing — do NOT add headings or duplicate content):
 ${reportSlice}
 
-EXISTING SECTION ${index + 1} — copy this exactly, inserting additions inline:
+EXISTING SECTION ${index + 1} of ${chunks.length}:
 ${mdChunk}
 
-Return the section with your inline additions inserted. All existing text must be preserved verbatim.`,
+Add statistics (with source + year), expert quotes (with name + credential + org + year), citations, and answer-first sentences where they fit. Do NOT add anything already present in this section. Do NOT repeat definitions or phrases that would have appeared in earlier sections. Mark every insertion [NEW]...[/NEW]. Existing text verbatim.`,
           },
         ],
       });
