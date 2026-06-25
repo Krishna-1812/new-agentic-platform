@@ -157,13 +157,8 @@ async function fetchArticle(url) {
   const title = $('title').first().text().trim();
   const metaDescription = $('meta[name="description"]').attr('content') || '';
   const h1 = $('h1').first().text().trim();
-  const h2s = $('h2').map((_, el) => $(el).text().trim()).get().filter(Boolean);
-  const h3s = $('h3').map((_, el) => $(el).text().trim()).get().filter(Boolean);
-  const h4s = $('h4').map((_, el) => $(el).text().trim()).get().filter(Boolean);
 
-  const allHeadings = [...h2s, ...h3s, ...h4s];
-  const faqs = allHeadings.filter(h => /^(what|how|why|when|where|who|can|is|are|does|do|will|should)\b/i.test(h));
-
+  // Collect links before stripping (links live in elements that may be removed)
   const baseHostname = new URL(url).hostname.replace(/^www\./, '');
   const internalLinks = [];
   const externalLinks = [];
@@ -178,12 +173,100 @@ async function fetchArticle(url) {
     } catch {}
   });
 
-  $('script, style, nav, header, footer, aside, noscript').remove();
+  // ── Stage 1: Remove structural chrome ─────────────────────────────────────
+  $('script, style, nav, header, footer, aside, noscript, iframe, form, ' +
+    '[role="navigation"], [role="banner"], [role="contentinfo"]').remove();
 
-  const $mainEl = $('article').length ? $('article') : $('main').length ? $('main') : $('body');
+  // ── Stage 2: Remove elements by class/id pattern (non-content widgets) ────
+  // Covers: related posts, social share, comments, newsletter CTAs, ads,
+  // sidebars, modals, office/location directories, breadcrumbs, cookie bars,
+  // book-now CTAs, author bios, tag clouds, and recent-article carousels.
+  const NON_CONTENT = [
+    /\b(related[-_]?(posts?|articles?|content)|you[-_]?might[-_]?also|recommended[-_]?(posts?|articles?)|more[-_]?(articles?|posts?|reads?))\b/i,
+    /\b(share[-_]?(this|post|article|buttons?)|social[-_]?(share|media|links?|icons?)|follow[-_]?us)\b/i,
+    /\b(comments?[-_]?(section|area|box|form|list)|discussion|disqus|utterances|livefyre)\b/i,
+    /\b(newsletter[-_]?(signup|form|cta|block)|subscribe[-_]?(form|block|cta)|subscription[-_]?form)\b/i,
+    /\b(advert(isement)?|ad[-_]?(unit|slot|container|block)|sponsor(ed)?|promo(tion)?[-_]?(box|banner))\b/i,
+    /\b(sidebar|side[-_]?bar|widget[-_]?(area|container|block)|flyout|off[-_]?canvas)\b/i,
+    /\b(modal|popup|pop[-_]?up|overlay|lightbox|dialog|drawer)\b/i,
+    /\b(office[-_]?locations?|locations?[-_]?(list|grid|directory|finder|map)|store[-_]?(finder|locator)|find[-_]?a[-_]?(location|store|office|clinic))\b/i,
+    /\b(all[-_]?offices?|our[-_]?offices?|branch(es)?[-_]?(list|directory|map)|clinic[-_]?(list|directory|locations?))\b/i,
+    /\b(breadcrumb|pagination|pager|page[-_]?nav(igation)?|prev[-_]?next|post[-_]?nav)\b/i,
+    /\b(cookie[-_]?(banner|notice|bar|consent)|gdpr[-_]?(notice|banner|consent)|consent[-_]?(bar|notice))\b/i,
+    /\b(call[-_]?to[-_]?action|book[-_]?(now|appointment|consultation|today)|schedule[-_]?(now|today|consultation)|cta[-_]?(block|section|box|banner))\b/i,
+    /\b(author[-_]?(bio|info|box|card|profile)|about[-_]?the[-_]?author|written[-_]?by|byline)\b/i,
+    /\b(tags?[-_]?(list|cloud|section)|categor(y|ies)[-_]?(list|nav|section)|archive[-_]?(list|nav))\b/i,
+    /\b(latest[-_]?articles?|recent[-_]?(posts?|articles?)|trending[-_]?(posts?|articles?)|popular[-_]?(posts?|articles?)|featured[-_]?(posts?|articles?))\b/i,
+    /\b(global[-_]?(footer|nav|cta|locations?|offices?)|site[-_]?(footer|wide|global)|page[-_]?footer)\b/i,
+  ];
+
+  $('[class], [id]').each((_, el) => {
+    const combined = `${($(el).attr('class') || '')} ${($(el).attr('id') || '')}`.toLowerCase();
+    if (NON_CONTENT.some(p => p.test(combined))) $(el).remove();
+  });
+
+  // ── Stage 3: Select the primary article container ──────────────────────────
+  // Tries selectors from most specific (article with content class) to least (body).
+  const ARTICLE_SELECTORS = [
+    'article[class*="post"]', 'article[class*="article"]', 'article[class*="blog"]',
+    'article[class*="entry"]', 'article[class*="content"]',
+    'article',
+    '[role="main"]',
+    '.post-content', '.entry-content', '.article-content', '.article-body',
+    '.blog-content', '.blog-post-content', '.blog-entry-content',
+    '.post-body', '.story-body', '.article__body', '.article__content',
+    '.content-area', '.main-content', '.page-content', '.primary-content',
+    '#content', '#main-content', '#article-content', '#post-content', '#entry-content',
+    'main',
+  ];
+
+  let $mainEl = null;
+  for (const sel of ARTICLE_SELECTORS) {
+    try {
+      const $el = $(sel).first();
+      if ($el.length && $el.text().replace(/\s+/g, ' ').trim().length > 300) {
+        $mainEl = $el;
+        break;
+      }
+    } catch {}
+  }
+  if (!$mainEl) $mainEl = $('body');
+
+  // ── Stage 4: Prune non-article subtrees within the container ───────────────
+
+  // 4a. Remove high link-density blocks (related posts grids, in-content nav menus)
+  $mainEl.find('ul, ol, nav, div, section').each((_, el) => {
+    const $el = $(el);
+    const text = $el.text().replace(/\s+/g, ' ').trim();
+    if (text.length < 30) return;
+    const links = $el.find('a');
+    const linkText = links.map((_, a) => $(a).text()).get().join(' ').replace(/\s+/g, ' ').trim();
+    const linkDensity = text.length > 0 ? linkText.length / text.length : 0;
+    if (linkDensity > 0.5 && links.length >= 3) $(el).remove();
+  });
+
+  // 4b. Remove large lists of short items (city/location directories, nav menus).
+  // Legitimate article bullet lists rarely have 12+ items averaging <35 chars each.
+  $mainEl.find('ul, ol').each((_, el) => {
+    const $el = $(el);
+    const $items = $el.children('li');
+    if ($items.length < 12) return;
+    const lens = $items.map((_, li) => $(li).text().trim().length).get();
+    const avg = lens.reduce((a, b) => a + b, 0) / (lens.length || 1);
+    const shortFraction = lens.filter(l => l < 40).length / (lens.length || 1);
+    if (avg < 35 || shortFraction > 0.8) $(el).remove();
+  });
+
   const mainContentHtml = $mainEl.html() || '';
 
-  const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
+  // ── Extract headings from cleaned content (not the full raw page) ──────────
+  const $c = cheerio.load(mainContentHtml);
+  const h2s = $c('h2').map((_, el) => $c(el).text().trim()).get().filter(Boolean);
+  const h3s = $c('h3').map((_, el) => $c(el).text().trim()).get().filter(Boolean);
+  const h4s = $c('h4').map((_, el) => $c(el).text().trim()).get().filter(Boolean);
+  const allHeadings = [...h2s, ...h3s, ...h4s];
+  const faqs = allHeadings.filter(h => /^(what|how|why|when|where|who|can|is|are|does|do|will|should)\b/i.test(h));
+  const bodyText = $c('body').text().replace(/\s+/g, ' ').trim();
   const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
 
   return {
@@ -199,7 +282,7 @@ async function fetchArticle(url) {
     wordCount,
     internalLinks: internalLinks.slice(0, 50),
     externalLinks: externalLinks.slice(0, 20),
-    mainContentHtml: mainContentHtml,
+    mainContentHtml,
   };
 }
 
