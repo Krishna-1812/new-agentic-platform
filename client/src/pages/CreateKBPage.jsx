@@ -5,7 +5,7 @@ import MDEditor from '@uiw/react-md-editor';
 const BRANDS = ['gentle-dental','great-lakes','riccobene','clear-behavioral-health','neuro-wellness-spa','new-life-house'];
 const INDUSTRY_KBS = ['global','dental-service-organizations','mental-health-organizations','b2b-tech'];
 const CATEGORIES = ['industry','brand','client-feedback','best-practices'];
-const ALL_MODULES = ['content-research','keyword-research','article-recommendation'];
+const ALL_MODULES = ['content-research','keyword-research','article-recommendation','article-enhancement'];
 
 // Steps per category
 const STEPS_BY_CATEGORY = {

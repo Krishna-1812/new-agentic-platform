@@ -16,6 +16,7 @@ import AgentReadinessAuditPage from './pages/AgentReadinessAuditPage';
 import AgentReadinessSummaryPage from './pages/AgentReadinessSummaryPage';
 import SeoGeoAuditPage from './pages/SeoGeoAuditPage';
 import ContentEnhancementPage from './pages/ContentEnhancementPage';
+import ArticleEnhancementPage from './pages/ArticleEnhancementPage';
 import LocationPageBuilderPage from './pages/LocationPageBuilderPage';
 import LocationPageDetailPage from './pages/LocationPageDetailPage';
 import RobotsMonitorPage from './pages/RobotsMonitorPage';
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/agent-readiness-audit/summary" element={<AgentReadinessSummaryPage />} />
           <Route path="/seo-geo-audit" element={<SeoGeoAuditPage />} />
           <Route path="/content-enhancement" element={<ContentEnhancementPage />} />
+          <Route path="/article-enhancement" element={<ArticleEnhancementPage />} />
           <Route path="/location-page-builder" element={<LocationPageBuilderPage />} />
           <Route path="/location-page-builder/:id" element={<LocationPageDetailPage />} />
           <Route path="/robots-monitor" element={<RobotsMonitorPage />} />

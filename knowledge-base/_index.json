@@ -172,6 +172,25 @@
         "content-research",
         "keyword-research"
       ]
+    },
+    {
+      "id": "seo-geo-article-enhancement-knowledge-base",
+      "category": "best-practices",
+      "client": "global",
+      "path": "best-practices/seo-geo-article-enhancement-knowledge-base.md",
+      "active": true,
+      "tags": [
+        "seo",
+        "geo",
+        "aeo",
+        "ai-visibility",
+        "article-enhancement",
+        "eeat",
+        "best-practices"
+      ],
+      "linked_modules": [
+        "article-enhancement"
+      ]
     }
   ]
 }
