@@ -654,11 +654,12 @@ function htmlChunkToMarkdown(html) {
 // ── normalizeNewMarkers ────────────────────────────────────────────────────────
 // Shared utility: expands multi-line [NEW]...[/NEW] blocks into per-line markers
 // so both the docx renderer and the frontend can process line-by-line.
-// Also merges back-to-back [/NEW][NEW] pairs that GPT sometimes emits.
-// The function is idempotent: running it twice on already-normalized text is a no-op.
+// Also merges back-to-back [/NEW][NEW] pairs that GPT sometimes emits ON THE SAME LINE.
+// Uses [ \t]* (horizontal whitespace only) — NOT \s* — so cross-line [/NEW]\n[NEW]
+// pairs are NOT collapsed, keeping the function idempotent on already-normalized text.
 function normalizeNewMarkers(text) {
   if (!text) return '';
-  let t = text.replace(/\[\/NEW\]\s*\[NEW\]/g, ' ');
+  let t = text.replace(/\[\/NEW\][ \t]*\[NEW\]/g, ' ');
   return t.replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) =>
     inner.split('\n').map(l => l.trim() ? `[NEW]${l.trim()}[/NEW]` : '').join('\n')
   );
@@ -889,8 +890,8 @@ async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, repo
   // Expand multi-line [NEW]...[/NEW] blocks to per-line markers before line-by-line processing
   function normalizeNewMarkers(text) {
     if (!text) return '';
-    // Merge adjacent [NEW] blocks GPT emits back-to-back (e.g. "[/NEW] [NEW]...")
-    let t = text.replace(/\[\/NEW\]\s*\[NEW\]/g, ' ');
+    // Merge same-line adjacent [NEW] blocks only ([ \t]* not \s* — avoids collapsing cross-line pairs)
+    let t = text.replace(/\[\/NEW\][ \t]*\[NEW\]/g, ' ');
     return t.replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) =>
       inner.split('\n').map(l => l.trim() ? `[NEW]${l.trim()}[/NEW]` : '').join('\n')
     );
