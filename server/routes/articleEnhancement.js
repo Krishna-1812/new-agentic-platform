@@ -186,7 +186,7 @@ async function fetchArticle(url) {
     wordCount,
     internalLinks: internalLinks.slice(0, 50),
     externalLinks: externalLinks.slice(0, 20),
-    mainContentHtml: mainContentHtml.slice(0, 80000),
+    mainContentHtml: mainContentHtml,
   };
 }
 
@@ -609,52 +609,83 @@ Be specific. Reference actual headings and sections. Do not give generic advice.
 
 // ── generateEnhancedArticle ────────────────────────────────────────────────────
 async function generateEnhancedArticle(openai, articleData, analysis, report, kb) {
-  const originalContent = articleData.mainContentHtml.slice(0, 30000) || articleData.bodyText.slice(0, 20000);
-  const kbGuidance = kb ? kb.body.slice(0, 1200) : '';
+  const sourceHtml = articleData.mainContentHtml || articleData.bodyText || '';
+  const kbGuidance = kb ? kb.body.slice(0, 600) : '';
+  const reportSlice = report.slice(0, 1200);
 
-  const res = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    max_tokens: 12000,
-    messages: [
-      {
-        role: 'system',
-        content: `You are an expert content enhancer. Enhance an existing article based on SEO and content recommendations.
+  const systemPrompt = `You are an expert content enhancer. Enhance this article section based on SEO recommendations.
 
 MARKING RULES — follow exactly:
-- Wrap ALL newly added inline text or sentences in: <mark data-enhancement="new">added text</mark>
-- Wrap ALL newly added full sections or subsections in: <section data-enhancement="new-section"><h2>New Heading</h2><p>Content</p></section>
-- Preserve ALL existing content exactly as written — do not alter any original sentences
+- Wrap ALL newly added inline text in: <mark data-enhancement="new">added text</mark>
+- Wrap ALL newly added full sections in: <section data-enhancement="new-section"><h2>New Heading</h2><p>Content</p></section>
+- Preserve ALL existing content exactly as written — do not alter original sentences
 - Do NOT mark existing content as new
-- Maintain existing HTML structure and formatting
+- Return ONLY the enhanced HTML. No explanations.${kbGuidance ? '\n\nEnhancement Framework:\n' + kbGuidance : ''}`;
 
-${kbGuidance ? `Enhancement Framework:\n${kbGuidance}` : ''}`,
-      },
-      {
-        role: 'user',
-        content: `Article: "${articleData.title}"
-Primary keyword: ${analysis.primaryKeyword}
+  // Split at H2 boundaries, then sub-split any section that's still too large
+  const h2Chunks = sourceHtml.split(/(?=<h2[\s>])/i).filter(c => c.trim());
+  const chunks = (h2Chunks.length > 1 ? h2Chunks : [sourceHtml])
+    .flatMap(c => splitHtmlSafely(c, 8000));
 
-ENHANCEMENT RECOMMENDATIONS:
-${report.slice(0, 2500)}
+  async function enhanceChunk(chunk, index) {
+    if (!chunk.trim()) return chunk;
+    try {
+      const res = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: `Article: "${articleData.title}" | Keyword: ${analysis.primaryKeyword}
 
-ORIGINAL ARTICLE CONTENT (HTML):
-${originalContent}
+ENHANCEMENT RECOMMENDATIONS (apply what is relevant to this section):
+${reportSlice}
 
----
+SECTION ${index + 1} TO ENHANCE:
+${chunk}
 
-Enhance this article by implementing the priority recommendations. Rules:
-1. Preserve all existing content exactly as written
-2. Add new inline content using: <mark data-enhancement="new">text</mark>
-3. Add new full sections using: <section data-enhancement="new-section"><h2>Heading</h2><p>Content</p></section>
-4. Only add content where it genuinely improves the article
-5. Return the complete enhanced HTML content
+Return ONLY the enhanced HTML for this section.`,
+          },
+        ],
+      });
+      return res.choices[0].message.content || chunk;
+    } catch {
+      return chunk;
+    }
+  }
 
-Return ONLY the enhanced HTML. No explanations, no preamble.`,
-      }
-    ],
-  });
+  // Process in batches of 5 to avoid rate-limit errors on long articles
+  const BATCH = 5;
+  const enhancedChunks = [];
+  for (let i = 0; i < chunks.length; i += BATCH) {
+    const batch = chunks.slice(i, i + BATCH);
+    const results = await Promise.all(batch.map((chunk, j) => enhanceChunk(chunk, i + j)));
+    enhancedChunks.push(...results);
+  }
 
-  return res.choices[0].message.content || '';
+  return enhancedChunks.join('\n');
+}
+
+// Split HTML at safe closing-tag boundaries to avoid breaking mid-tag
+function splitHtmlSafely(html, maxChars) {
+  if (html.length <= maxChars) return [html];
+  const SAFE_BREAK = /<\/(?:p|li|div|blockquote|section|h[1-6])>/gi;
+  const chunks = [];
+  let start = 0;
+  while (start < html.length) {
+    if (start + maxChars >= html.length) {
+      chunks.push(html.slice(start));
+      break;
+    }
+    const window = html.slice(start, start + maxChars);
+    const matches = [...window.matchAll(SAFE_BREAK)];
+    const cut = matches.length > 0
+      ? start + matches[matches.length - 1].index + matches[matches.length - 1][0].length
+      : start + maxChars;
+    chunks.push(html.slice(start, cut));
+    start = cut;
+  }
+  return chunks;
 }
 
 // ── POST /export/docx ──────────────────────────────────────────────────────────
