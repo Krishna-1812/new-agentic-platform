@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import KBStatusBadge from '../components/KBStatusBadge';
 
-const CATEGORIES = ['all', 'industry', 'brand', 'client-feedback'];
+const CATEGORIES = ['all', 'industry', 'brand', 'client-feedback', 'best-practices'];
 const CATEGORY_LABELS = {
   all: 'All',
   industry: 'Industry',
   brand: 'Brand',
   'client-feedback': 'Client Feedback',
+  'best-practices': 'Best Practices',
 };
 
 const CLIENTS = [
@@ -83,6 +84,8 @@ export default function KnowledgeBasePage() {
   }, {});
 
   return (
+    <>
+      <PageHeader navigate={navigate} />
       <main className="max-w-7xl mx-auto px-8 py-7">
         <div className="mb-6">
           <h1 className="text-[22px] font-bold text-[#111827]">Knowledge Base</h1>
@@ -183,5 +186,6 @@ export default function KnowledgeBasePage() {
           </div>
         )}
       </main>
+    </>
   );
 }

@@ -4,14 +4,15 @@ import MDEditor from '@uiw/react-md-editor';
 
 const BRANDS = ['gentle-dental','great-lakes','riccobene','clear-behavioral-health','neuro-wellness-spa','new-life-house'];
 const INDUSTRY_KBS = ['global','dental-service-organizations','mental-health-organizations','b2b-tech'];
-const CATEGORIES = ['industry','brand','client-feedback'];
+const CATEGORIES = ['industry','brand','client-feedback','best-practices'];
 const ALL_MODULES = ['content-research','keyword-research','article-recommendation'];
 
 // Steps per category
 const STEPS_BY_CATEGORY = {
-  brand:           ['Category', 'Brand Slug', 'Industry KB', 'Tags & Priority', 'Linked Modules', 'Content'],
-  industry:        ['Category', 'Tags & Priority', 'Linked Modules', 'Content'],
+  brand:             ['Category', 'Brand Slug', 'Industry KB', 'Tags & Priority', 'Linked Modules', 'Content'],
+  industry:          ['Category', 'Tags & Priority', 'Linked Modules', 'Content'],
   'client-feedback': ['Category', 'Brand', 'Label & Content'],
+  'best-practices':  ['Category', 'Tags & Priority', 'Linked Modules', 'Content'],
 };
 
 export default function CreateKBPage() {
@@ -104,7 +105,7 @@ export default function CreateKBPage() {
             <div>
               <h2 className="text-base font-semibold text-[#111827] mb-1">Choose a category</h2>
               <p className="text-sm text-[#6B7280] mb-5">What type of knowledge base is this?</p>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {CATEGORIES.map(cat => (
                   <button key={cat} onClick={() => handleCategoryChange(cat)}
                     className="p-4 rounded-xl border-2 text-left transition-all"
@@ -114,6 +115,7 @@ export default function CreateKBPage() {
                       {cat === 'industry' && 'Sector context, compliance rules'}
                       {cat === 'brand' && 'Client voice, services, personas'}
                       {cat === 'client-feedback' && 'Notes from client interactions'}
+                      {cat === 'best-practices' && 'Reusable guidelines for AI modules'}
                     </div>
                   </button>
                 ))}
