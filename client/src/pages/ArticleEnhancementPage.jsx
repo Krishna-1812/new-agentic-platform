@@ -193,6 +193,69 @@ function ReportPanel({ report }) {
   );
 }
 
+function EnhancedArticlePanel({ text }) {
+  if (!text) return null;
+
+  function parseInline(str) {
+    const parts = str.split(/(\[NEW\][^\]]*?\[\/NEW\])/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('[NEW]') && part.endsWith('[/NEW]')) {
+        return (
+          <mark key={i} style={{ backgroundColor: '#bbf7d0', borderRadius: '2px', padding: '0 2px' }}>
+            {part.slice(5, -6)}
+          </mark>
+        );
+      }
+      return part || null;
+    });
+  }
+
+  const lines = text.split('\n');
+  const elements = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (!trimmed) { elements.push(<div key={i} style={{ height: '0.6rem' }} />); continue; }
+
+    const isNewLine = trimmed.startsWith('[NEW]') && trimmed.endsWith('[/NEW]');
+    const content = isNewLine ? trimmed.slice(5, -6).trim() : trimmed;
+    const wrapStyle = isNewLine ? { backgroundColor: '#bbf7d0', borderRadius: '3px', display: 'block', padding: '0 4px' } : {};
+
+    if (content.startsWith('# ')) {
+      elements.push(<h1 key={i} className="text-xl font-bold text-[#111827] mt-6 mb-2" style={wrapStyle}>{parseInline(content.slice(2))}</h1>);
+    } else if (content.startsWith('## ')) {
+      elements.push(<h2 key={i} className="text-lg font-bold text-[#111827] mt-5 mb-1.5" style={wrapStyle}>{parseInline(content.slice(3))}</h2>);
+    } else if (content.startsWith('### ')) {
+      elements.push(<h3 key={i} className="text-base font-semibold text-[#111827] mt-4 mb-1" style={wrapStyle}>{parseInline(content.slice(4))}</h3>);
+    } else if (content.startsWith('#### ')) {
+      elements.push(<h4 key={i} className="text-sm font-semibold text-[#374151] mt-3 mb-1" style={wrapStyle}>{parseInline(content.slice(5))}</h4>);
+    } else if (content.startsWith('- ') || content.startsWith('* ')) {
+      elements.push(
+        <div key={i} className="flex gap-2 my-0.5" style={wrapStyle}>
+          <span className="text-[#6B7280] flex-shrink-0 mt-0.5">·</span>
+          <span className="text-sm text-[#374151] leading-relaxed">{parseInline(content.slice(2))}</span>
+        </div>
+      );
+    } else if (content.startsWith('> ')) {
+      elements.push(<blockquote key={i} className="border-l-4 border-[#E5E7EB] pl-3 italic text-sm text-[#6B7280] my-2" style={wrapStyle}>{parseInline(content.slice(2))}</blockquote>);
+    } else {
+      elements.push(<p key={i} className="text-sm text-[#374151] leading-relaxed my-1.5" style={wrapStyle}>{parseInline(content)}</p>);
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-[#E5E7EB] p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+      <div className="flex items-center gap-2 mb-5 pb-3 border-b border-[#F3F4F6]">
+        <span className="text-xs text-[#6B7280]">New content is</span>
+        <mark style={{ backgroundColor: '#bbf7d0', borderRadius: '3px', padding: '1px 7px', fontSize: '11px', fontWeight: 600, color: '#166534' }}>highlighted in green</mark>
+      </div>
+      <div style={{ fontFamily: 'Georgia, "Times New Roman", serif', lineHeight: '1.75' }}>
+        {elements}
+      </div>
+    </div>
+  );
+}
+
 export default function ArticleEnhancementPage() {
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
@@ -211,7 +274,7 @@ export default function ArticleEnhancementPage() {
   const [llmResults, setLlmResults] = useState([]);
   const [serpPatterns, setSerpPatterns] = useState(null);
   const [report, setReport] = useState('');
-  const [enhancedHtml, setEnhancedHtml] = useState('');
+  const [enhancedText, setEnhancedText] = useState('');
 
   const [activeTab, setActiveTab] = useState('report');
   const esRef = useRef(null);
@@ -244,7 +307,7 @@ export default function ArticleEnhancementPage() {
     setLlmResults([]);
     setSerpPatterns(null);
     setReport('');
-    setEnhancedHtml('');
+    setEnhancedText('');
 
     let token;
     try {
@@ -294,7 +357,7 @@ export default function ArticleEnhancementPage() {
     });
     es.addEventListener('serp_patterns', e => setSerpPatterns(JSON.parse(e.data)));
     es.addEventListener('report', e => { setReport(JSON.parse(e.data).report); setActiveTab('report'); });
-    es.addEventListener('enhanced', e => setEnhancedHtml(JSON.parse(e.data).html || ''));
+    es.addEventListener('enhanced', e => { setEnhancedText(JSON.parse(e.data).text || ''); setActiveTab('enhanced'); });
     es.addEventListener('fail', e => {
       setFailed(JSON.parse(e.data).message);
       setRunning(false);
@@ -325,7 +388,7 @@ export default function ArticleEnhancementPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ articleMeta, analysis, llmResults, serpPatterns, report, enhancedHtml }),
+        body: JSON.stringify({ articleMeta, analysis, llmResults, serpPatterns, report, enhancedText }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -347,10 +410,11 @@ export default function ArticleEnhancementPage() {
   }
 
   const tabs = [
-    { id: 'analysis',   label: 'Analysis',                    show: !!analysis },
-    { id: 'llm',        label: `LLM Results (${llmResults.length})`, show: llmResults.length > 0 },
-    { id: 'competitors',label: 'Competitors',                 show: !!serpPatterns },
-    { id: 'report',     label: 'Report',                      show: !!report },
+    { id: 'enhanced',    label: 'Enhanced Article',                show: !!enhancedText },
+    { id: 'analysis',    label: 'Analysis',                        show: !!analysis },
+    { id: 'llm',         label: `Models (${llmResults.length})`,   show: llmResults.length > 0 },
+    { id: 'competitors', label: 'Competitors',                     show: !!serpPatterns },
+    { id: 'report',      label: 'Report',                          show: !!report },
   ].filter(t => t.show);
 
   return (
@@ -430,7 +494,7 @@ export default function ArticleEnhancementPage() {
                     </button>
                   )}
 
-                  {done && report && (
+                  {done && (report || enhancedText) && (
                     <button onClick={downloadDocx} disabled={downloading}
                       className="w-full px-4 py-2.5 text-sm font-semibold rounded-lg text-white transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
                       style={{ backgroundColor: '#3DAA8E' }}>
@@ -570,6 +634,7 @@ export default function ArticleEnhancementPage() {
                   </div>
                 )}
 
+                {activeTab === 'enhanced' && <EnhancedArticlePanel text={enhancedText} />}
                 {activeTab === 'llm' && <LLMResultPanel llmResults={llmResults} />}
                 {activeTab === 'competitors' && <SerpPanel serpPatterns={serpPatterns} />}
                 {activeTab === 'report' && <ReportPanel report={report} />}

@@ -113,10 +113,10 @@ router.get('/stream/:token', async (req, res) => {
     emit('report', { report });
 
     // Step 8: Generate enhanced article
-    emit('step', { id: 'enhance', status: 'active', message: 'Generating enhanced HTML article…' });
-    const enhancedHtml = await generateEnhancedArticle(openai, articleData, analysis, report, kb);
+    emit('step', { id: 'enhance', status: 'active', message: 'Generating enhanced article…' });
+    const enhancedText = await generateEnhancedArticle(openai, articleData, analysis, report, kb);
     emit('step', { id: 'enhance', status: 'done', message: 'Enhanced article ready' });
-    emit('enhanced', { html: enhancedHtml });
+    emit('enhanced', { text: enhancedText });
 
   } catch (err) {
     console.error('[article-enhancement] Error:', err.message);
@@ -607,6 +607,37 @@ Be specific. Reference actual headings and sections. Do not give generic advice.
   return res.choices[0].message.content || '';
 }
 
+// ── htmlChunkToMarkdown ────────────────────────────────────────────────────────
+function htmlChunkToMarkdown(html) {
+  const $ = cheerio.load(`<body>${html}</body>`);
+  const SKIP = new Set(['script', 'style', 'nav', 'header', 'footer', 'aside', 'noscript', 'iframe', 'form']);
+  const lines = [];
+
+  function text(el) { return $(el).text().replace(/\s+/g, ' ').trim(); }
+
+  function walk(el) {
+    const tag = (el.tagName || '').toLowerCase();
+    if (!tag || SKIP.has(tag)) return;
+    switch (tag) {
+      case 'h1': { const t = text(el); if (t) lines.push('# ' + t, ''); break; }
+      case 'h2': { const t = text(el); if (t) lines.push('## ' + t, ''); break; }
+      case 'h3': { const t = text(el); if (t) lines.push('### ' + t, ''); break; }
+      case 'h4': case 'h5': case 'h6': { const t = text(el); if (t) lines.push('#### ' + t, ''); break; }
+      case 'p': { const t = text(el); if (t) lines.push(t, ''); break; }
+      case 'li': { const t = text(el); if (t) lines.push('- ' + t); break; }
+      case 'ul': case 'ol': $(el).children('li').each((_, li) => walk(li)); lines.push(''); break;
+      case 'blockquote': { const t = text(el); if (t) lines.push('> ' + t, ''); break; }
+      default:
+        if (!['span', 'a', 'strong', 'em', 'b', 'i', 'mark', 'code'].includes(tag)) {
+          $(el).children().each((_, child) => walk(child));
+        }
+    }
+  }
+
+  $('body').children().each((_, el) => walk(el));
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 // ── generateEnhancedArticle ────────────────────────────────────────────────────
 async function generateEnhancedArticle(openai, articleData, analysis, report, kb) {
   const sourceHtml = articleData.mainContentHtml || articleData.bodyText || '';
@@ -615,23 +646,28 @@ async function generateEnhancedArticle(openai, articleData, analysis, report, kb
 
   const systemPrompt = `You are an expert content enhancer. Enhance this article section based on SEO recommendations.
 
-MARKING RULES — follow exactly:
-- Wrap ALL newly added inline text in: <mark data-enhancement="new">added text</mark>
-- Wrap ALL newly added full sections in: <section data-enhancement="new-section"><h2>New Heading</h2><p>Content</p></section>
-- Preserve ALL existing content exactly as written — do not alter original sentences
-- Do NOT mark existing content as new
-- Return ONLY the enhanced HTML. No explanations.${kbGuidance ? '\n\nEnhancement Framework:\n' + kbGuidance : ''}`;
+Output the enhanced section as clean Markdown.
 
-  // Split at H2 boundaries, then sub-split any section that's still too large
+MARKING RULES — follow exactly:
+- Mark ALL newly added inline text: [NEW]added text[/NEW]
+- Mark ALL new paragraphs by wrapping them: [NEW]This entire new paragraph is here.[/NEW]
+- Mark ALL new headings: [NEW]## New Section Heading[/NEW]
+- Preserve ALL existing content exactly — do not alter original sentences
+- Do NOT mark existing content with [NEW] tags
+- Return ONLY the enhanced Markdown. No explanations, no preamble.${kbGuidance ? '\n\nEnhancement Framework:\n' + kbGuidance : ''}`;
+
+  // Split at H2 boundaries, then sub-split any section still too large
   const h2Chunks = sourceHtml.split(/(?=<h2[\s>])/i).filter(c => c.trim());
   const chunks = (h2Chunks.length > 1 ? h2Chunks : [sourceHtml])
     .flatMap(c => splitHtmlSafely(c, 8000));
 
   async function enhanceChunk(chunk, index) {
-    if (!chunk.trim()) return chunk;
+    if (!chunk.trim()) return '';
+    const mdChunk = htmlChunkToMarkdown(chunk);
+    if (!mdChunk) return '';
     try {
       const res = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5.4-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           {
@@ -642,15 +678,15 @@ ENHANCEMENT RECOMMENDATIONS (apply what is relevant to this section):
 ${reportSlice}
 
 SECTION ${index + 1} TO ENHANCE:
-${chunk}
+${mdChunk}
 
-Return ONLY the enhanced HTML for this section.`,
+Return ONLY the enhanced Markdown for this section.`,
           },
         ],
       });
-      return res.choices[0].message.content || chunk;
+      return res.choices[0].message.content || mdChunk;
     } catch {
-      return chunk;
+      return mdChunk;
     }
   }
 
@@ -663,7 +699,7 @@ Return ONLY the enhanced HTML for this section.`,
     enhancedChunks.push(...results);
   }
 
-  return enhancedChunks.join('\n');
+  return enhancedChunks.filter(Boolean).join('\n\n');
 }
 
 // Split HTML at safe closing-tag boundaries to avoid breaking mid-tag
@@ -690,11 +726,11 @@ function splitHtmlSafely(html, maxChars) {
 
 // ── POST /export/docx ──────────────────────────────────────────────────────────
 router.post('/export/docx', async (req, res) => {
-  const { articleMeta, analysis, llmResults, serpPatterns, report, enhancedHtml } = req.body;
+  const { articleMeta, analysis, llmResults, serpPatterns, report, enhancedText } = req.body;
   if (!report) return res.status(400).json({ error: 'report is required' });
 
   try {
-    const buf = await buildDocx({ articleMeta, analysis, llmResults, serpPatterns, report, enhancedHtml });
+    const buf = await buildDocx({ articleMeta, analysis, llmResults, serpPatterns, report, enhancedText });
     const slug = (articleMeta?.title || 'article').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="${slug}-enhancement.docx"`);
@@ -705,83 +741,8 @@ router.post('/export/docx', async (req, res) => {
   }
 });
 
-// ── htmlArticleToDocxParagraphs ────────────────────────────────────────────────
-function htmlArticleToDocxParagraphs(html) {
-  if (!html) return [];
-  const $ = cheerio.load(`<div id="docroot">${html}</div>`);
-
-  const SKIP = new Set(['script', 'style', 'nav', 'header', 'footer', 'aside', 'noscript', 'iframe', 'svg', 'form']);
-  const CONTAINERS = new Set(['div', 'section', 'article', 'main', 'ul', 'ol', 'figure', 'figcaption', 'table', 'tbody', 'thead', 'tr', 'td', 'th']);
-  const paragraphs = [];
-
-  function makeRun(text, { bold = false, italic = false, isNew = false, size = 22 } = {}) {
-    const opts = { text: String(text), font: 'Calibri', size };
-    if (bold) opts.bold = true;
-    if (italic) opts.italic = true;
-    if (isNew) opts.highlight = 'green';
-    return new TextRun(opts);
-  }
-
-  function collectRuns(el, opts) {
-    const { isNew = false, bold = false, italic = false, size = 22 } = opts;
-    const runs = [];
-    $(el).contents().each((_, child) => {
-      if (child.type === 'text') {
-        const text = (child.data || '').replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ');
-        if (text) runs.push(makeRun(text, { bold, italic, isNew, size }));
-      } else {
-        const tag = (child.tagName || '').toLowerCase();
-        if (SKIP.has(tag)) return;
-        const childNew = isNew || child.attribs?.['data-enhancement'] === 'new';
-        runs.push(...collectRuns(child, {
-          isNew: childNew,
-          bold: bold || tag === 'strong' || tag === 'b',
-          italic: italic || tag === 'em' || tag === 'i',
-          size,
-        }));
-      }
-    });
-    return runs;
-  }
-
-  function processEl(el, parentNew) {
-    const tag = (el.tagName || '').toLowerCase();
-    if (!tag || SKIP.has(tag)) return;
-    const isNewSection = el.attribs?.['data-enhancement'] === 'new-section';
-    const isNew = parentNew || isNewSection || el.attribs?.['data-enhancement'] === 'new';
-
-    if (tag === 'h1') {
-      const runs = collectRuns(el, { isNew, bold: true, size: 44 });
-      if (runs.length) paragraphs.push(new Paragraph({ spacing: { before: 240, after: 120 }, children: runs }));
-    } else if (tag === 'h2') {
-      const runs = collectRuns(el, { isNew, bold: true, size: 30 });
-      if (runs.length) paragraphs.push(new Paragraph({ spacing: { before: 320, after: 100 }, children: runs }));
-    } else if (tag === 'h3') {
-      const runs = collectRuns(el, { isNew, bold: true, size: 24 });
-      if (runs.length) paragraphs.push(new Paragraph({ spacing: { before: 180, after: 60 }, children: runs }));
-    } else if (tag === 'h4' || tag === 'h5' || tag === 'h6') {
-      const runs = collectRuns(el, { isNew, bold: true, size: 22 });
-      if (runs.length) paragraphs.push(new Paragraph({ spacing: { before: 120, after: 40 }, children: runs }));
-    } else if (tag === 'p') {
-      const runs = collectRuns(el, { isNew, size: 22 });
-      if (runs.length) paragraphs.push(new Paragraph({ spacing: { after: 100 }, children: runs }));
-    } else if (tag === 'li') {
-      const runs = collectRuns(el, { isNew, size: 22 });
-      if (runs.length) paragraphs.push(new Paragraph({ bullet: { level: 0 }, spacing: { after: 50 }, children: runs }));
-    } else if (tag === 'blockquote') {
-      const runs = collectRuns(el, { isNew, italic: true, size: 22 });
-      if (runs.length) paragraphs.push(new Paragraph({ spacing: { after: 100 }, indent: { left: 720 }, children: runs }));
-    } else if (CONTAINERS.has(tag)) {
-      $(el).children().each((_, child) => processEl(child, parentNew || isNewSection));
-    }
-  }
-
-  $('#docroot').children().each((_, el) => processEl(el, false));
-  return paragraphs;
-}
-
 // ── buildDocx ──────────────────────────────────────────────────────────────────
-async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, report, enhancedHtml }) {
+async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, report, enhancedText }) {
   const TEAL = '2C7A7B';
   const NAVY = '1F2D3D';
   const GREY = '6B7280';
@@ -807,39 +768,59 @@ async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, repo
   const gap = () => new Paragraph({ spacing: { after: 80 }, children: [run('')] });
   const pageBreak = () => new Paragraph({ pageBreakBefore: true, children: [run('')] });
 
-  // Parse markdown into docx paragraphs, handling inline **bold** spans
+  // Expand multi-line [NEW]...[/NEW] blocks to per-line markers before line-by-line processing
+  function normalizeNewMarkers(text) {
+    return (text || '').replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) =>
+      inner.split('\n').map(l => l.trim() ? `[NEW]${l.trim()}[/NEW]` : '').join('\n')
+    );
+  }
+
+  // Split a text string on **bold** and [NEW]...[/NEW] markers → array of TextRun
+  function inlineRuns(text, baseOpts = {}) {
+    const parts = text.split(/(\*\*[^*]+\*\*|\[NEW\][^\]]*?\[\/NEW\])/g);
+    return parts.map(part => {
+      if (!part) return null;
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return run(part.slice(2, -2), { bold: true, ...baseOpts });
+      }
+      if (part.startsWith('[NEW]') && part.endsWith('[/NEW]')) {
+        return run(part.slice(5, -6), { highlight: 'green', ...baseOpts });
+      }
+      return run(part, baseOpts);
+    }).filter(Boolean);
+  }
+
+  // Parse markdown (with [NEW] markers) into docx paragraphs
   function markdownToParagraphs(text) {
-    const lines = (text || '').split('\n');
+    const lines = normalizeNewMarkers(text).split('\n');
     const paras = [];
     for (const line of lines) {
       const trimmed = line.trim();
       if (!trimmed) { paras.push(gap()); continue; }
-      if (trimmed.startsWith('## ')) {
-        paras.push(subSection(trimmed.slice(3)));
-      } else if (trimmed.startsWith('# ')) {
-        paras.push(subSection(trimmed.slice(2)));
-      } else if (trimmed.startsWith('### ')) {
-        paras.push(new Paragraph({ spacing: { before: 120, after: 40 }, children: [run(trimmed.slice(4), { bold: true })] }));
-      } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-        paras.push(new Paragraph({ bullet: { level: 0 }, spacing: { after: 40 }, children: inlineRuns(trimmed.slice(2)) }));
-      } else if (/^\d+\.\s/.test(trimmed)) {
-        paras.push(new Paragraph({ bullet: { level: 0 }, spacing: { after: 40 }, children: inlineRuns(trimmed.replace(/^\d+\.\s/, '')) }));
+      // Check if the whole line is wrapped in [NEW]...[/NEW]
+      const isNewLine = trimmed.startsWith('[NEW]') && trimmed.endsWith('[/NEW]');
+      const content = isNewLine ? trimmed.slice(5, -6).trim() : trimmed;
+      const newOpt = isNewLine ? { highlight: 'green' } : {};
+
+      if (content.startsWith('## ')) {
+        paras.push(new Paragraph({ spacing: { before: 180, after: 60 }, children: inlineRuns(content.slice(3), { bold: true, color: NAVY, size: 24, ...newOpt }) }));
+      } else if (content.startsWith('# ')) {
+        paras.push(new Paragraph({ spacing: { before: 180, after: 60 }, children: inlineRuns(content.slice(2), { bold: true, color: NAVY, size: 24, ...newOpt }) }));
+      } else if (content.startsWith('### ')) {
+        paras.push(new Paragraph({ spacing: { before: 120, after: 40 }, children: inlineRuns(content.slice(4), { bold: true, ...newOpt }) }));
+      } else if (content.startsWith('#### ')) {
+        paras.push(new Paragraph({ spacing: { before: 80, after: 30 }, children: inlineRuns(content.slice(5), { bold: true, ...newOpt }) }));
+      } else if (content.startsWith('- ') || content.startsWith('* ')) {
+        paras.push(new Paragraph({ bullet: { level: 0 }, spacing: { after: 40 }, children: inlineRuns(content.slice(2), newOpt) }));
+      } else if (/^\d+\.\s/.test(content)) {
+        paras.push(new Paragraph({ bullet: { level: 0 }, spacing: { after: 40 }, children: inlineRuns(content.replace(/^\d+\.\s/, ''), newOpt) }));
+      } else if (content.startsWith('> ')) {
+        paras.push(new Paragraph({ spacing: { after: 80 }, indent: { left: 720 }, children: inlineRuns(content.slice(2), { italic: true, ...newOpt }) }));
       } else {
-        paras.push(new Paragraph({ spacing: { after: 80 }, children: inlineRuns(trimmed) }));
+        paras.push(new Paragraph({ spacing: { after: 80 }, children: inlineRuns(content, newOpt) }));
       }
     }
     return paras;
-  }
-
-  // Split a markdown string on **bold** markers → array of TextRun
-  function inlineRuns(text, baseOpts = {}) {
-    const parts = text.split(/(\*\*[^*]+\*\*)/g);
-    return parts.map(part => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return run(part.slice(2, -2), { bold: true, ...baseOpts });
-      }
-      return run(part, baseOpts);
-    }).filter(r => r);
   }
 
   const children = [];
@@ -851,14 +832,14 @@ async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, repo
   children.push(rule());
 
   // ── Enhanced Article (primary content) ──
-  if (enhancedHtml) {
+  if (enhancedText) {
     children.push(sectionHeading('Enhanced Article'));
     children.push(new Paragraph({
       spacing: { after: 120 },
-      children: [run('Content highlighted in ', { italic: true, color: GREY, size: 20 }), run('green', { italic: true, highlight: 'green', size: 20 }), run(' was added or modified during enhancement.', { italic: true, color: GREY, size: 20 })],
+      children: [run('Content ', { italic: true, color: GREY, size: 20 }), run('highlighted in green', { italic: true, highlight: 'green', size: 20 }), run(' was added during enhancement.', { italic: true, color: GREY, size: 20 })],
     }));
     children.push(gap());
-    htmlArticleToDocxParagraphs(enhancedHtml).forEach(p => children.push(p));
+    markdownToParagraphs(enhancedText).forEach(p => children.push(p));
     children.push(rule());
   }
 
