@@ -549,7 +549,7 @@ async function generateReport(openai, articleData, analysis, llmResults, serpAna
     serpAnalysis.contentPatterns.join(' | '),
   ].join('\n');
 
-  const kbContext = kb ? `\n\nEnhancement Framework:\n${kb.body.slice(0, 1500)}` : '';
+  const kbContext = kb ? `\n\nEnhancement Framework:\n${kb.body}` : '';
 
   const res = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
@@ -641,8 +641,8 @@ function htmlChunkToMarkdown(html) {
 // ── generateEnhancedArticle ────────────────────────────────────────────────────
 async function generateEnhancedArticle(openai, articleData, analysis, report, kb) {
   const sourceHtml = articleData.mainContentHtml || articleData.bodyText || '';
-  const kbGuidance = kb ? kb.body.slice(0, 600) : '';
-  const reportSlice = report.slice(0, 1200);
+  const kbGuidance = kb ? kb.body : '';
+  const reportSlice = report;
 
   const systemPrompt = `You are an expert content enhancer. Enhance this article section based on SEO recommendations.
 
