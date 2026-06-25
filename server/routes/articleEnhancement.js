@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const OpenAI = require('openai');
+const { Document, Packer, Paragraph, TextRun, BorderStyle, AlignmentType } = require('docx');
 const { searchGoogle } = require('../services/googleSearch');
 const { scrapeUrlsDetailed } = require('../services/scraper');
 const store = require('../services/kbStore');
@@ -16,7 +17,7 @@ function generateToken() {
 
 // ── POST /init ─────────────────────────────────────────────────────────────────
 router.post('/init', (req, res) => {
-  const { url, models } = req.body;
+  const { url, models, kbId } = req.body;
   if (!url?.trim()) return res.status(400).json({ error: 'url is required' });
   if (!Array.isArray(models) || models.length !== 5) {
     return res.status(400).json({ error: 'Exactly 5 models must be selected' });
@@ -26,7 +27,7 @@ router.post('/init', (req, res) => {
   catch { return res.status(400).json({ error: 'Invalid URL format' }); }
 
   const token = generateToken();
-  sessions.set(token, { url: parsedUrl.href, models });
+  sessions.set(token, { url: parsedUrl.href, models, kbId: kbId || 'seo-geo-article-enhancement-knowledge-base' });
   setTimeout(() => sessions.delete(token), 120000);
   res.json({ token });
 });
@@ -37,7 +38,7 @@ router.get('/stream/:token', async (req, res) => {
   if (!session) return res.status(404).json({ error: 'Session not found or expired.' });
   sessions.delete(req.params.token);
 
-  const { url, models } = session;
+  const { url, models, kbId } = session;
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -102,8 +103,8 @@ router.get('/stream/:token', async (req, res) => {
 
     // Step 6: Load KB
     emit('step', { id: 'kb', status: 'active', message: 'Loading enhancement framework KB…' });
-    const kb = await store.readKB('seo-geo-article-enhancement-knowledge-base');
-    emit('step', { id: 'kb', status: 'done', message: kb ? 'Enhancement KB loaded' : 'KB not found — using defaults' });
+    const kb = await store.readKB(kbId);
+    emit('step', { id: 'kb', status: 'done', message: kb ? `KB "${kbId}" loaded` : 'KB not found — using defaults' });
 
     // Step 7: Generate recommendation report
     emit('step', { id: 'report', status: 'active', message: 'Generating unified enhancement report…' });
@@ -654,6 +655,164 @@ Return ONLY the enhanced HTML. No explanations, no preamble.`,
   });
 
   return res.choices[0].message.content || '';
+}
+
+// ── POST /export/docx ──────────────────────────────────────────────────────────
+router.post('/export/docx', async (req, res) => {
+  const { articleMeta, analysis, llmResults, serpPatterns, report } = req.body;
+  if (!report) return res.status(400).json({ error: 'report is required' });
+
+  try {
+    const buf = await buildDocx({ articleMeta, analysis, llmResults, serpPatterns, report });
+    const slug = (articleMeta?.title || 'article').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${slug}-enhancement.docx"`);
+    res.send(buf);
+  } catch (err) {
+    console.error('[article-enhancement] docx error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── buildDocx ──────────────────────────────────────────────────────────────────
+async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, report }) {
+  const TEAL = '2C7A7B';
+  const NAVY = '1F2D3D';
+  const GREY = '6B7280';
+
+  const run = (text, opts = {}) => new TextRun({ text: String(text || ''), size: 22, font: 'Calibri', ...opts });
+  const title = t => new Paragraph({ spacing: { after: 80 }, children: [run(t, { bold: true, color: NAVY, size: 40, font: 'Calibri' })] });
+  const section = t => new Paragraph({
+    spacing: { before: 360, after: 120 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: TEAL, space: 4 } },
+    children: [run(t, { bold: true, color: TEAL, size: 28 })],
+  });
+  const subSection = t => new Paragraph({ spacing: { before: 180, after: 60 }, children: [run(t, { bold: true, color: NAVY, size: 24 })] });
+  const body = t => new Paragraph({ spacing: { after: 80 }, children: [run(t)] });
+  const label = (lbl, val) => new Paragraph({
+    spacing: { after: 60 },
+    children: [run(lbl + ': ', { bold: true, color: GREY }), run(String(val || '—'))],
+  });
+  const bullet = t => new Paragraph({ bullet: { level: 0 }, spacing: { after: 40 }, children: [run(t)] });
+  const rule = () => new Paragraph({
+    spacing: { before: 120, after: 120 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 16, color: TEAL } },
+    children: [run('')],
+  });
+  const gap = () => new Paragraph({ spacing: { after: 80 }, children: [run('')] });
+
+  // Parse markdown text into docx paragraphs
+  function markdownToParagraphs(text) {
+    const lines = (text || '').split('\n');
+    const paras = [];
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) { paras.push(gap()); continue; }
+      if (trimmed.startsWith('## ')) {
+        paras.push(subSection(trimmed.slice(3)));
+      } else if (trimmed.startsWith('# ')) {
+        paras.push(subSection(trimmed.slice(2)));
+      } else if (trimmed.startsWith('### ')) {
+        paras.push(new Paragraph({ spacing: { before: 120, after: 40 }, children: [run(trimmed.slice(4), { bold: true })] }));
+      } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+        paras.push(bullet(trimmed.slice(2)));
+      } else if (/^\d+\.\s/.test(trimmed)) {
+        paras.push(bullet(trimmed.replace(/^\d+\.\s/, '')));
+      } else if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
+        paras.push(new Paragraph({ spacing: { after: 60 }, children: [run(trimmed.slice(2, -2), { bold: true })] }));
+      } else {
+        paras.push(body(trimmed));
+      }
+    }
+    return paras;
+  }
+
+  const children = [];
+
+  // ── Cover ──
+  children.push(new Paragraph({ spacing: { after: 40 }, children: [run('ARTICLE ENHANCEMENT REPORT', { bold: true, color: TEAL, size: 18, characterSpacing: 40 })] }));
+  children.push(title(articleMeta?.title || 'Article Enhancement Report'));
+  if (articleMeta?.url) children.push(new Paragraph({ spacing: { after: 40 }, children: [run(articleMeta.url, { color: GREY, size: 18 })] }));
+  children.push(rule());
+
+  // ── Article Metadata ──
+  children.push(section('Article Metadata'));
+  if (articleMeta) {
+    children.push(label('Word Count', articleMeta.wordCount?.toLocaleString()));
+    children.push(label('H1', articleMeta.h1 || '—'));
+    children.push(label('Meta Description', articleMeta.metaDescription || '—'));
+    if (articleMeta.h2s?.length) {
+      children.push(new Paragraph({ spacing: { before: 80, after: 40 }, children: [run('H2 Sections:', { bold: true, color: GREY })] }));
+      articleMeta.h2s.forEach(h => children.push(bullet(h)));
+    }
+  }
+
+  // ── Analysis ──
+  if (analysis) {
+    children.push(section('Content Analysis'));
+    children.push(label('Topic', analysis.topic));
+    children.push(label('Primary Keyword', analysis.primaryKeyword));
+    children.push(label('Intent', analysis.intent));
+    children.push(label('Target Audience', analysis.targetAudience));
+    if (analysis.contentStrengths?.length) {
+      children.push(new Paragraph({ spacing: { before: 100, after: 40 }, children: [run('Content Strengths:', { bold: true })] }));
+      analysis.contentStrengths.forEach(s => children.push(bullet(s)));
+    }
+    if (analysis.contentGaps?.length) {
+      children.push(new Paragraph({ spacing: { before: 100, after: 40 }, children: [run('Content Gaps:', { bold: true })] }));
+      analysis.contentGaps.forEach(g => children.push(bullet(g)));
+    }
+    if (analysis.seoIssues?.length) {
+      children.push(new Paragraph({ spacing: { before: 100, after: 40 }, children: [run('SEO Issues:', { bold: true })] }));
+      analysis.seoIssues.forEach(i => children.push(bullet(i)));
+    }
+    if (analysis.missingTopics?.length) {
+      children.push(new Paragraph({ spacing: { before: 100, after: 40 }, children: [run('Missing Topics:', { bold: true })] }));
+      analysis.missingTopics.forEach(t => children.push(bullet(t)));
+    }
+  }
+
+  // ── LLM Analyses ──
+  if (llmResults?.length) {
+    children.push(section('AI Analysis Results'));
+    for (const r of llmResults) {
+      if (!r.success || !r.text) continue;
+      children.push(subSection(`${r.label} — ${r.model}`));
+      markdownToParagraphs(r.text).forEach(p => children.push(p));
+      children.push(gap());
+    }
+  }
+
+  // ── Competitor Analysis ──
+  if (serpPatterns) {
+    children.push(section('Competitor Analysis'));
+    children.push(label('Pages Analyzed', serpPatterns.successfulPages));
+    children.push(label('Average Word Count', serpPatterns.avgWordCount?.toLocaleString()));
+    if (serpPatterns.contentPatterns?.length) {
+      children.push(new Paragraph({ spacing: { before: 100, after: 40 }, children: [run('Content Patterns:', { bold: true })] }));
+      serpPatterns.contentPatterns.forEach(p => children.push(bullet(p)));
+    }
+    if (serpPatterns.commonH2Topics?.length) {
+      children.push(new Paragraph({ spacing: { before: 100, after: 40 }, children: [run('Common H2 Topics:', { bold: true })] }));
+      serpPatterns.commonH2Topics.slice(0, 8).forEach(t => children.push(bullet(`${t.topic} (${t.count} competitor pages)`)));
+    }
+    if (serpPatterns.topFAQs?.length) {
+      children.push(new Paragraph({ spacing: { before: 100, after: 40 }, children: [run('Common FAQ Questions:', { bold: true })] }));
+      serpPatterns.topFAQs.slice(0, 6).forEach(f => children.push(bullet(f.topic)));
+    }
+  }
+
+  // ── Enhancement Report ──
+  if (report) {
+    children.push(section('Enhancement Recommendations'));
+    markdownToParagraphs(report).forEach(p => children.push(p));
+  }
+
+  const doc = new Document({
+    styles: { default: { document: { run: { font: 'Calibri', size: 22 } } } },
+    sections: [{ children }],
+  });
+  return Packer.toBuffer(doc);
 }
 
 module.exports = router;
