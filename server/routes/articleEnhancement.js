@@ -119,7 +119,10 @@ router.get('/stream/:token', async (req, res) => {
 
     // Step 9: Add structural additions (FAQ + report-recommended new sections)
     emit('step', { id: 'structure', status: 'active', message: 'Adding FAQ and recommended new sections…' });
-    const structural = await generateStructuralAdditions(openai, articleData, analysis, report, kb);
+    // Detect if the article already has a FAQ section so we don't add a duplicate
+    const existingHeadings = [...(articleData.h2s || []), ...(articleData.h3s || [])].join(' ');
+    const articleHasFaq = /faq|frequently asked/i.test(existingHeadings);
+    const structural = await generateStructuralAdditions(openai, articleData, analysis, report, kb, articleHasFaq);
     // Dedup only per-chunk enhancements; structural additions (FAQ, new sections) are entirely new
     // content so deduplicating them would collapse their internal newlines and destroy heading structure.
     let enhancedText = deduplicateAdditions(enhancedChunks);
@@ -742,10 +745,20 @@ function htmlChunkToMarkdown(html) {
 // pairs are NOT collapsed, keeping the function idempotent on already-normalized text.
 function normalizeNewMarkers(text) {
   if (!text) return '';
+  // Merge same-line adjacent pairs (GPT sometimes emits [/NEW][NEW] back-to-back)
   let t = text.replace(/\[\/NEW\][ \t]*\[NEW\]/g, ' ');
-  return t.replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) =>
+  // Expand multi-line [NEW]...[/NEW] blocks to per-line markers
+  t = t.replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) =>
     inner.split('\n').map(l => l.trim() ? `[NEW]${l.trim()}[/NEW]` : '').join('\n')
   );
+  // Strip orphaned markers: any [NEW] or [/NEW] not part of a complete pair on the same line
+  t = t.split('\n').map(line => {
+    const hasOpen = line.includes('[NEW]');
+    const hasClose = line.includes('[/NEW]');
+    if (hasOpen && hasClose) return line; // complete pair — leave it
+    return line.replace(/\[NEW\]/g, '').replace(/\[\/NEW\]/g, '');
+  }).join('\n');
+  return t;
 }
 
 // ── deduplicateAdditions ───────────────────────────────────────────────────────
@@ -771,8 +784,20 @@ function deduplicateAdditions(text) {
 // Separate post-chunk pass: generates FAQs + report-recommended new sections.
 // The per-chunk pass forbids new headings, so this is the only place where
 // an FAQ block or a "How to Protect" section can be appended.
-async function generateStructuralAdditions(openai, articleData, analysis, report, kb) {
+async function generateStructuralAdditions(openai, articleData, analysis, report, kb, skipFaq = false) {
   const kbGuidance = kb ? `\n\nKnowledge Base Enhancement Framework:\n${kb.body}` : '';
+
+  const faqBlock = skipFaq
+    ? `1. FAQ SECTION: The article already contains a FAQ section — DO NOT add another one. Skip this step entirely.`
+    : `1. FAQ SECTION (required):
+   Write "## Frequently Asked Questions" as the first heading.
+   Add 4-6 questions as ### headings. Each answer must:
+   - Directly answer the question in the first sentence (inverted pyramid)
+   - Be 50-150 words
+   - Be self-contained (no references to "the article above")
+   - Be factual and non-promotional
+   - Include a sourced statistic where relevant: "[X]% of [population] [action] (Source, Year)"`;
+
   try {
     const res = await openai.chat.completions.create({
       model: 'gpt-5.4-mini',
@@ -783,17 +808,14 @@ async function generateStructuralAdditions(openai, articleData, analysis, report
 
 WHAT TO GENERATE (in this order):
 
-1. FAQ SECTION (required):
-   Write "## Frequently Asked Questions" as the first heading.
-   Add 4-6 questions as ### headings. Each answer must:
-   - Directly answer the question in the first sentence (inverted pyramid)
-   - Be 50-150 words
-   - Be self-contained (no references to "the article above")
-   - Be factual and non-promotional
-   - Include a sourced statistic where relevant: "[X]% of [population] [action] (Source, Year)"
+${faqBlock}
 
-2. ADDITIONAL RECOMMENDED SECTIONS:
-   Read the enhancement report's "Priority Enhancements" section. If it recommends adding a specific new section (e.g. "How to Protect Your Wallet", "Quick Reference", "Key Takeaways"), generate it now as its own ## section with an appropriate format (bullet list, numbered steps, or short paragraphs). Only generate sections the report explicitly recommends.
+2. ADDITIONAL RECOMMENDED SECTIONS — STRICT RULES:
+   - ONLY add a new ## section if the enhancement report's "Priority Enhancements" or "Content Gaps" section EXPLICITLY states a specific section title or topic to add (e.g. "Add a section titled X", "The article is missing a section on Y").
+   - DO NOT infer, imagine, or add sections you think would be useful.
+   - DO NOT add generic evergreen sections such as: "Common Mistakes", "Tools", "Trends", "Tips", "Summary", "Key Takeaways", "Best Practices", "Quick Reference" — unless the report names them verbatim.
+   - If the report recommends 0 new sections (or you are unsure), output ONLY the FAQ block and nothing else.
+   - Maximum 1 additional section beyond the FAQ.
 
 FORMAT RULES:
 - Start your output with [NEW]
@@ -801,16 +823,16 @@ FORMAT RULES:
 - Use ## for section headings, ### for FAQ questions
 - Bullet lists with "- " prefix for tips/steps
 - Do NOT include promotional language
-- Do NOT duplicate content from the main article${kbGuidance}`,
+- Do NOT duplicate content already in the article${kbGuidance}`,
         },
         {
           role: 'user',
           content: `Article: "${articleData.title}" | Keyword: ${analysis.primaryKeyword}
 
-ENHANCEMENT REPORT — read "Priority Enhancements" and "Content Gaps" to know what new sections to add:
+ENHANCEMENT REPORT — scan "Priority Enhancements" and "Content Gaps" for any EXPLICITLY named new sections to add:
 ${report}
 
-Generate the additional sections to append. Start with the FAQ, then any other explicitly recommended new sections. Wrap everything in [NEW]...[/NEW].`,
+Generate only what is described above. Wrap all output in [NEW]...[/NEW].`,
         },
       ],
     });
@@ -844,6 +866,11 @@ WHAT TO ADD (priority order — apply every type that fits this section):
 5. SELF-CONTAINED CONTEXT — If any part of the section references content elsewhere ("as mentioned above", implied context), insert a brief inline clarification so the passage makes sense in isolation.
 
 6. SCANNABLE BULLET LISTS — If a paragraph enumerates 3+ distinct items in prose form without a list, append a [NEW] bullet summary after it. Each bullet should be a specific, scannable data point, not a paraphrase of the prose sentence.
+
+VOLUME LIMIT — be surgical, not exhaustive:
+- Per section: at most 2 statistics, 1 expert quote, 1 bullet list (3–5 bullets max), 1 answer-first sentence
+- Total new text per section must not exceed 120 words
+- If the section is already well-supported with data and quotes, add nothing — return it verbatim
 
 HARD PROHIBITIONS:
 - Do NOT add new ## or ### headings — causes duplicate sections across the article
