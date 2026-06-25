@@ -659,11 +659,11 @@ Return ONLY the enhanced HTML. No explanations, no preamble.`,
 
 // ── POST /export/docx ──────────────────────────────────────────────────────────
 router.post('/export/docx', async (req, res) => {
-  const { articleMeta, analysis, llmResults, serpPatterns, report } = req.body;
+  const { articleMeta, analysis, llmResults, serpPatterns, report, enhancedHtml } = req.body;
   if (!report) return res.status(400).json({ error: 'report is required' });
 
   try {
-    const buf = await buildDocx({ articleMeta, analysis, llmResults, serpPatterns, report });
+    const buf = await buildDocx({ articleMeta, analysis, llmResults, serpPatterns, report, enhancedHtml });
     const slug = (articleMeta?.title || 'article').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="${slug}-enhancement.docx"`);
@@ -674,16 +674,90 @@ router.post('/export/docx', async (req, res) => {
   }
 });
 
+// ── htmlArticleToDocxParagraphs ────────────────────────────────────────────────
+function htmlArticleToDocxParagraphs(html) {
+  if (!html) return [];
+  const $ = cheerio.load(`<div id="docroot">${html}</div>`);
+
+  const SKIP = new Set(['script', 'style', 'nav', 'header', 'footer', 'aside', 'noscript', 'iframe', 'svg', 'form']);
+  const CONTAINERS = new Set(['div', 'section', 'article', 'main', 'ul', 'ol', 'figure', 'figcaption', 'table', 'tbody', 'thead', 'tr', 'td', 'th']);
+  const paragraphs = [];
+
+  function makeRun(text, { bold = false, italic = false, isNew = false, size = 22 } = {}) {
+    const opts = { text: String(text), font: 'Calibri', size };
+    if (bold) opts.bold = true;
+    if (italic) opts.italic = true;
+    if (isNew) opts.highlight = 'green';
+    return new TextRun(opts);
+  }
+
+  function collectRuns(el, opts) {
+    const { isNew = false, bold = false, italic = false, size = 22 } = opts;
+    const runs = [];
+    $(el).contents().each((_, child) => {
+      if (child.type === 'text') {
+        const text = (child.data || '').replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ');
+        if (text) runs.push(makeRun(text, { bold, italic, isNew, size }));
+      } else {
+        const tag = (child.tagName || '').toLowerCase();
+        if (SKIP.has(tag)) return;
+        const childNew = isNew || child.attribs?.['data-enhancement'] === 'new';
+        runs.push(...collectRuns(child, {
+          isNew: childNew,
+          bold: bold || tag === 'strong' || tag === 'b',
+          italic: italic || tag === 'em' || tag === 'i',
+          size,
+        }));
+      }
+    });
+    return runs;
+  }
+
+  function processEl(el, parentNew) {
+    const tag = (el.tagName || '').toLowerCase();
+    if (!tag || SKIP.has(tag)) return;
+    const isNewSection = el.attribs?.['data-enhancement'] === 'new-section';
+    const isNew = parentNew || isNewSection || el.attribs?.['data-enhancement'] === 'new';
+
+    if (tag === 'h1') {
+      const runs = collectRuns(el, { isNew, bold: true, size: 44 });
+      if (runs.length) paragraphs.push(new Paragraph({ spacing: { before: 240, after: 120 }, children: runs }));
+    } else if (tag === 'h2') {
+      const runs = collectRuns(el, { isNew, bold: true, size: 30 });
+      if (runs.length) paragraphs.push(new Paragraph({ spacing: { before: 320, after: 100 }, children: runs }));
+    } else if (tag === 'h3') {
+      const runs = collectRuns(el, { isNew, bold: true, size: 24 });
+      if (runs.length) paragraphs.push(new Paragraph({ spacing: { before: 180, after: 60 }, children: runs }));
+    } else if (tag === 'h4' || tag === 'h5' || tag === 'h6') {
+      const runs = collectRuns(el, { isNew, bold: true, size: 22 });
+      if (runs.length) paragraphs.push(new Paragraph({ spacing: { before: 120, after: 40 }, children: runs }));
+    } else if (tag === 'p') {
+      const runs = collectRuns(el, { isNew, size: 22 });
+      if (runs.length) paragraphs.push(new Paragraph({ spacing: { after: 100 }, children: runs }));
+    } else if (tag === 'li') {
+      const runs = collectRuns(el, { isNew, size: 22 });
+      if (runs.length) paragraphs.push(new Paragraph({ bullet: { level: 0 }, spacing: { after: 50 }, children: runs }));
+    } else if (tag === 'blockquote') {
+      const runs = collectRuns(el, { isNew, italic: true, size: 22 });
+      if (runs.length) paragraphs.push(new Paragraph({ spacing: { after: 100 }, indent: { left: 720 }, children: runs }));
+    } else if (CONTAINERS.has(tag)) {
+      $(el).children().each((_, child) => processEl(child, parentNew || isNewSection));
+    }
+  }
+
+  $('#docroot').children().each((_, el) => processEl(el, false));
+  return paragraphs;
+}
+
 // ── buildDocx ──────────────────────────────────────────────────────────────────
-async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, report }) {
+async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, report, enhancedHtml }) {
   const TEAL = '2C7A7B';
   const NAVY = '1F2D3D';
   const GREY = '6B7280';
 
   const run = (text, opts = {}) => new TextRun({ text: String(text || ''), size: 22, font: 'Calibri', ...opts });
-  const title = t => new Paragraph({ spacing: { after: 80 }, children: [run(t, { bold: true, color: NAVY, size: 40, font: 'Calibri' })] });
-  const section = t => new Paragraph({
-    spacing: { before: 360, after: 120 },
+  const sectionHeading = t => new Paragraph({
+    spacing: { before: 400, after: 140 },
     border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: TEAL, space: 4 } },
     children: [run(t, { bold: true, color: TEAL, size: 28 })],
   });
@@ -700,8 +774,9 @@ async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, repo
     children: [run('')],
   });
   const gap = () => new Paragraph({ spacing: { after: 80 }, children: [run('')] });
+  const pageBreak = () => new Paragraph({ pageBreakBefore: true, children: [run('')] });
 
-  // Parse markdown text into docx paragraphs
+  // Parse markdown into docx paragraphs, handling inline **bold** spans
   function markdownToParagraphs(text) {
     const lines = (text || '').split('\n');
     const paras = [];
@@ -715,28 +790,50 @@ async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, repo
       } else if (trimmed.startsWith('### ')) {
         paras.push(new Paragraph({ spacing: { before: 120, after: 40 }, children: [run(trimmed.slice(4), { bold: true })] }));
       } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-        paras.push(bullet(trimmed.slice(2)));
+        paras.push(new Paragraph({ bullet: { level: 0 }, spacing: { after: 40 }, children: inlineRuns(trimmed.slice(2)) }));
       } else if (/^\d+\.\s/.test(trimmed)) {
-        paras.push(bullet(trimmed.replace(/^\d+\.\s/, '')));
-      } else if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
-        paras.push(new Paragraph({ spacing: { after: 60 }, children: [run(trimmed.slice(2, -2), { bold: true })] }));
+        paras.push(new Paragraph({ bullet: { level: 0 }, spacing: { after: 40 }, children: inlineRuns(trimmed.replace(/^\d+\.\s/, '')) }));
       } else {
-        paras.push(body(trimmed));
+        paras.push(new Paragraph({ spacing: { after: 80 }, children: inlineRuns(trimmed) }));
       }
     }
     return paras;
   }
 
+  // Split a markdown string on **bold** markers → array of TextRun
+  function inlineRuns(text, baseOpts = {}) {
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map(part => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return run(part.slice(2, -2), { bold: true, ...baseOpts });
+      }
+      return run(part, baseOpts);
+    }).filter(r => r);
+  }
+
   const children = [];
 
   // ── Cover ──
-  children.push(new Paragraph({ spacing: { after: 40 }, children: [run('ARTICLE ENHANCEMENT REPORT', { bold: true, color: TEAL, size: 18, characterSpacing: 40 })] }));
-  children.push(title(articleMeta?.title || 'Article Enhancement Report'));
+  children.push(new Paragraph({ spacing: { after: 40 }, children: [run('A R T I C L E  E N H A N C E M E N T  R E P O R T', { bold: true, color: TEAL, size: 18 })] }));
+  children.push(new Paragraph({ spacing: { after: 80 }, children: [run(articleMeta?.title || 'Article Enhancement Report', { bold: true, color: NAVY, size: 40 })] }));
   if (articleMeta?.url) children.push(new Paragraph({ spacing: { after: 40 }, children: [run(articleMeta.url, { color: GREY, size: 18 })] }));
   children.push(rule());
 
-  // ── Article Metadata ──
-  children.push(section('Article Metadata'));
+  // ── Enhanced Article (primary content) ──
+  if (enhancedHtml) {
+    children.push(sectionHeading('Enhanced Article'));
+    children.push(new Paragraph({
+      spacing: { after: 120 },
+      children: [run('Content highlighted in ', { italic: true, color: GREY, size: 20 }), run('green', { italic: true, highlight: 'green', size: 20 }), run(' was added or modified during enhancement.', { italic: true, color: GREY, size: 20 })],
+    }));
+    children.push(gap());
+    htmlArticleToDocxParagraphs(enhancedHtml).forEach(p => children.push(p));
+    children.push(rule());
+  }
+
+  // ── Appendix: Article Metadata ──
+  children.push(pageBreak());
+  children.push(sectionHeading('Article Metadata'));
   if (articleMeta) {
     children.push(label('Word Count', articleMeta.wordCount?.toLocaleString()));
     children.push(label('H1', articleMeta.h1 || '—'));
@@ -747,9 +844,9 @@ async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, repo
     }
   }
 
-  // ── Analysis ──
+  // ── Appendix: Content Analysis ──
   if (analysis) {
-    children.push(section('Content Analysis'));
+    children.push(sectionHeading('Content Analysis'));
     children.push(label('Topic', analysis.topic));
     children.push(label('Primary Keyword', analysis.primaryKeyword));
     children.push(label('Intent', analysis.intent));
@@ -772,20 +869,9 @@ async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, repo
     }
   }
 
-  // ── LLM Analyses ──
-  if (llmResults?.length) {
-    children.push(section('AI Analysis Results'));
-    for (const r of llmResults) {
-      if (!r.success || !r.text) continue;
-      children.push(subSection(`${r.label} — ${r.model}`));
-      markdownToParagraphs(r.text).forEach(p => children.push(p));
-      children.push(gap());
-    }
-  }
-
-  // ── Competitor Analysis ──
+  // ── Appendix: Competitor Analysis ──
   if (serpPatterns) {
-    children.push(section('Competitor Analysis'));
+    children.push(sectionHeading('Competitor Analysis'));
     children.push(label('Pages Analyzed', serpPatterns.successfulPages));
     children.push(label('Average Word Count', serpPatterns.avgWordCount?.toLocaleString()));
     if (serpPatterns.contentPatterns?.length) {
@@ -802,9 +888,9 @@ async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, repo
     }
   }
 
-  // ── Enhancement Report ──
+  // ── Appendix: Enhancement Recommendations ──
   if (report) {
-    children.push(section('Enhancement Recommendations'));
+    children.push(sectionHeading('Enhancement Recommendations'));
     markdownToParagraphs(report).forEach(p => children.push(p));
   }
 

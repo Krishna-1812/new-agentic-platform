@@ -211,6 +211,7 @@ export default function ArticleEnhancementPage() {
   const [llmResults, setLlmResults] = useState([]);
   const [serpPatterns, setSerpPatterns] = useState(null);
   const [report, setReport] = useState('');
+  const [enhancedHtml, setEnhancedHtml] = useState('');
 
   const [activeTab, setActiveTab] = useState('report');
   const esRef = useRef(null);
@@ -243,6 +244,7 @@ export default function ArticleEnhancementPage() {
     setLlmResults([]);
     setSerpPatterns(null);
     setReport('');
+    setEnhancedHtml('');
 
     let token;
     try {
@@ -292,6 +294,7 @@ export default function ArticleEnhancementPage() {
     });
     es.addEventListener('serp_patterns', e => setSerpPatterns(JSON.parse(e.data)));
     es.addEventListener('report', e => { setReport(JSON.parse(e.data).report); setActiveTab('report'); });
+    es.addEventListener('enhanced', e => setEnhancedHtml(JSON.parse(e.data).html || ''));
     es.addEventListener('fail', e => {
       setFailed(JSON.parse(e.data).message);
       setRunning(false);
@@ -322,7 +325,7 @@ export default function ArticleEnhancementPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ articleMeta, analysis, llmResults, serpPatterns, report }),
+        body: JSON.stringify({ articleMeta, analysis, llmResults, serpPatterns, report, enhancedHtml }),
       });
       if (!res.ok) {
         const err = await res.json();
