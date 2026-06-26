@@ -247,6 +247,339 @@ const Label = ({ children }) => <label style={labelStyle}>{children}</label>;
 const Area = ({ value, onChange, rows = 2 }) => <textarea rows={rows} style={areaStyle} value={value || ''} onChange={e => onChange(e.target.value)} />;
 const Input = ({ value, onChange }) => <input style={inputStyle} value={value || ''} onChange={e => onChange(e.target.value)} />;
 
+// ── Page Template Preview ─────────────────────────────────────────────────────
+
+function PageTemplatePreview({ draft, page }) {
+  const faqCount = (draft.faqs || []).length;
+  const NAVY = '#0A2540';
+  const PRIMARY = '#635BFF';
+  const genWrap = { border: '2px solid rgba(220,38,38,0.35)', borderRadius: '6px', marginBottom: '0.5rem', overflow: 'hidden' };
+  const tplWrap = { border: '2px solid rgba(109,40,217,0.22)', borderRadius: '6px', marginBottom: '0.5rem', overflow: 'hidden', opacity: 0.75 };
+  const genHead = { background: 'rgba(220,38,38,0.06)', borderBottom: '1px solid rgba(220,38,38,0.15)', padding: '3px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' };
+  const tplHead = { background: 'rgba(109,40,217,0.04)', borderBottom: '1px solid rgba(109,40,217,0.12)', padding: '3px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' };
+  const lbl = (text, color) => <span style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color }}>{text}</span>;
+  const genBadge = <span style={{ background: 'rgba(220,38,38,0.13)', color: '#DC2626', padding: '1px 6px', borderRadius: '3px', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Generated</span>;
+  const tplBadge = <span style={{ background: 'rgba(109,40,217,0.10)', color: '#7C3AED', padding: '1px 6px', borderRadius: '3px', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Template</span>;
+  const gbar = (w, h = 8) => ({ width: typeof w === 'number' ? `${w}px` : w, height: `${h}px`, background: 'var(--border)', borderRadius: '3px', display: 'block' });
+  const dbar = (w, h = 8) => ({ width: typeof w === 'number' ? `${w}px` : w, height: `${h}px`, background: 'rgba(255,255,255,0.15)', borderRadius: '3px', display: 'block' });
+
+  return (
+    <div style={{ fontSize: '0.8rem', lineHeight: 1.5 }}>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: '0.875rem', marginBottom: '0.625rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.7rem', color: '#DC2626' }}>
+          <div style={{ width: '10px', height: '10px', border: '2px solid rgba(220,38,38,0.5)', borderRadius: '2px', flexShrink: 0 }} />
+          Generated content
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.7rem', color: '#7C3AED' }}>
+          <div style={{ width: '10px', height: '10px', border: '2px solid rgba(109,40,217,0.4)', borderRadius: '2px', flexShrink: 0 }} />
+          Template — not generated
+        </div>
+      </div>
+
+      {/* SEO Metadata */}
+      <div style={{ ...genWrap }}>
+        <div style={{ ...genHead }}>{lbl('SEO Metadata — not rendered on page', '#DC2626')}{genBadge}</div>
+        <div style={{ padding: '0.5rem 0.75rem', background: 'var(--card)' }}>
+          <div style={{ marginBottom: '0.25rem' }}>
+            <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '0.125rem' }}>Title Tag</div>
+            <div style={{ color: 'var(--text)', fontWeight: 500, fontSize: '0.75rem' }}>{draft.meta_title || '—'}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '0.125rem' }}>Meta Description</div>
+            <div style={{ color: 'var(--text-2)', fontSize: '0.72rem' }}>{draft.meta_description || '—'}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 1. Navigation */}
+      <div style={{ ...tplWrap }}>
+        <div style={{ ...tplHead }}>{lbl('Navigation', '#7C3AED')}{tplBadge}</div>
+        <div style={{ padding: '0.375rem 0.75rem', background: 'var(--card)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ width: '52px', height: '14px', background: 'var(--border)', borderRadius: '3px' }} />
+            {[40, 48, 56, 44].map((w, i) => <div key={i} style={{ width: `${w}px`, height: '8px', background: 'var(--border)', borderRadius: '3px' }} />)}
+            <div style={{ marginLeft: 'auto', width: '60px', height: '20px', background: PRIMARY, borderRadius: '4px', opacity: 0.7 }} />
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Hero Banner — GENERATED */}
+      <div style={{ ...genWrap }}>
+        <div style={{ ...genHead }}>{lbl('Hero Banner', '#DC2626')}{genBadge}</div>
+        <div style={{ background: NAVY, padding: '0.875rem 1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '0.75rem', alignItems: 'start' }}>
+            <div>
+              <div style={{ display: 'flex', gap: '2px', marginBottom: '0.3rem', alignItems: 'center' }}>
+                {[1,2,3,4,5].map(s => <span key={s} style={{ color: '#F59E0B', fontSize: '0.65rem' }}>★</span>)}
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.6rem', marginLeft: '0.25rem' }}>4.9 · 200+ reviews</span>
+              </div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#fff', lineHeight: 1.25, marginBottom: '0.375rem' }}>
+                {draft.h1 || <span style={{ color: 'rgba(255,255,255,0.35)', fontStyle: 'italic', fontWeight: 400, fontSize: '0.75rem' }}>H1 not generated yet</span>}
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.7rem', lineHeight: 1.5, marginBottom: '0.5rem' }}>
+                {draft.hero_intro
+                  ? (draft.hero_intro.length > 150 ? draft.hero_intro.slice(0, 150) + '…' : draft.hero_intro)
+                  : <span style={{ color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>Hero intro not generated yet</span>}
+              </div>
+              <div style={{ display: 'flex', gap: '0.375rem' }}>
+                <div style={{ background: PRIMARY, color: '#fff', fontSize: '0.62rem', fontWeight: 600, padding: '4px 10px', borderRadius: '4px' }}>Get Started</div>
+                <div style={{ border: '1px solid rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.8)', fontSize: '0.62rem', fontWeight: 500, padding: '4px 10px', borderRadius: '4px' }}>Call Now</div>
+              </div>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '6px', minHeight: '88px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '0.25rem' }}>
+              <div style={{ fontSize: '1rem' }}>🗺</div>
+              <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>Map placeholder</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Sub Navigation */}
+      <div style={{ ...tplWrap }}>
+        <div style={{ ...tplHead }}>{lbl('Sub Navigation', '#7C3AED')}{tplBadge}</div>
+        <div style={{ padding: '0.375rem 0.75rem', background: 'var(--card)' }}>
+          <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
+            {['Overview', 'Approach', 'Services', 'FAQs', 'Location'].map((t, i) => (
+              <div key={i} style={{ fontSize: '0.62rem', padding: '2px 8px', borderRadius: '999px', background: i === 0 ? 'var(--border)' : 'var(--surface)', color: 'var(--text-3)', fontWeight: 500 }}>{t}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Approach Section — GENERATED */}
+      <div style={{ ...genWrap }}>
+        <div style={{ ...genHead }}>{lbl('Approach Section', '#DC2626')}{genBadge}</div>
+        <div style={{ padding: '0.625rem 0.75rem', background: 'var(--card)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '0.75rem', alignItems: 'start' }}>
+            <div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: PRIMARY, marginBottom: '0.25rem' }}>
+                {draft.approach?.heading || <span style={{ color: 'var(--text-3)', fontStyle: 'italic', fontWeight: 400 }}>—</span>}
+              </div>
+              <div style={{ color: 'var(--text-2)', fontSize: '0.7rem', lineHeight: 1.5, marginBottom: '0.5rem' }}>
+                {draft.approach?.intro
+                  ? (draft.approach.intro.length > 120 ? draft.approach.intro.slice(0, 120) + '…' : draft.approach.intro)
+                  : '—'}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                {(draft.approach?.care_pillars || []).slice(0, 4).map((p, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '0.375rem', alignItems: 'flex-start' }}>
+                    <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: PRIMARY, marginTop: '0.3rem', flexShrink: 0 }} />
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text)', fontWeight: 600 }}>{p.heading}</div>
+                  </div>
+                ))}
+                {(draft.approach?.care_pillars || []).length > 4 && (
+                  <div style={{ fontSize: '0.62rem', color: 'var(--text-3)', marginLeft: '0.75rem' }}>+{draft.approach.care_pillars.length - 4} more</div>
+                )}
+              </div>
+            </div>
+            <div style={{ background: 'var(--surface)', borderRadius: '6px', minHeight: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '0.62rem', color: 'var(--text-3)', fontStyle: 'italic' }}>Photo</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. Why Choose */}
+      <div style={{ ...tplWrap }}>
+        <div style={{ ...tplHead }}>{lbl('Why Choose Brand', '#7C3AED')}{tplBadge}</div>
+        <div style={{ padding: '0.5rem 0.75rem', background: 'var(--card)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+            {[1,2,3].map(i => (
+              <div key={i} style={{ textAlign: 'center' }}>
+                <div style={{ width: '24px', height: '24px', background: 'var(--border)', borderRadius: '50%', margin: '0 auto 0.25rem' }} />
+                <div style={{ ...gbar('70%', 8), margin: '0 auto 0.2rem' }} />
+                <div style={{ ...gbar('50%'), margin: '0 auto' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 6. Statistics */}
+      <div style={{ ...tplWrap, opacity: 1 }}>
+        <div style={{ ...tplHead }}>{lbl('Statistics Section', '#7C3AED')}{tplBadge}</div>
+        <div style={{ background: NAVY, padding: '0.625rem 0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-around', gap: '0.25rem', flexWrap: 'wrap' }}>
+            {[['10+', 'Years'], ['92%', 'Success Rate'], ['16', 'Locations'], ['50+', 'Experts']].map(([n, l], i) => (
+              <div key={i} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#fff', lineHeight: 1.1 }}>{n}</div>
+                <div style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>{l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 7. Condition / Service Deep-Dive — GENERATED */}
+      {(draft.competitor_section?.blocks || []).length > 0 && (
+        <div style={{ ...genWrap }}>
+          <div style={{ ...genHead }}>{lbl('Condition / Service Section', '#DC2626')}{genBadge}</div>
+          <div style={{ padding: '0.5rem 0.75rem', background: 'var(--card)' }}>
+            {draft.competitor_section.blocks.map((blk, bi) => (
+              <div key={bi} style={{ marginBottom: bi < draft.competitor_section.blocks.length - 1 ? '0.75rem' : 0 }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.375rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.25rem' }}>{blk.h2 || '—'}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.25rem' }}>
+                  {(blk.h3s || []).slice(0, 4).map((h, hi) => (
+                    <div key={hi} style={{ background: 'var(--surface)', borderRadius: '4px', padding: '0.375rem 0.5rem' }}>
+                      <div style={{ fontSize: '0.67rem', fontWeight: 700, color: PRIMARY, marginBottom: '2px' }}>{h.heading || '—'}</div>
+                      <div style={{ fontSize: '0.63rem', color: 'var(--text-2)', lineHeight: 1.4 }}>
+                        {h.copy ? (h.copy.length > 60 ? h.copy.slice(0, 60) + '…' : h.copy) : '—'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 8. Treatment Programs */}
+      <div style={{ ...tplWrap }}>
+        <div style={{ ...tplHead }}>{lbl('Treatment Programs', '#7C3AED')}{tplBadge}</div>
+        <div style={{ padding: '0.5rem 0.75rem', background: 'var(--card)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.375rem' }}>
+            {[1,2,3].map(i => (
+              <div key={i} style={{ background: 'var(--surface)', borderRadius: '5px', padding: '0.375rem' }}>
+                <div style={{ width: '100%', height: '30px', background: 'var(--border)', borderRadius: '3px', marginBottom: '0.25rem' }} />
+                <div style={{ ...gbar('80%'), marginBottom: '0.2rem' }} />
+                <div style={gbar('55%')} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 9. Experts */}
+      <div style={{ ...tplWrap }}>
+        <div style={{ ...tplHead }}>{lbl('Experts Section', '#7C3AED')}{tplBadge}</div>
+        <div style={{ padding: '0.5rem 0.75rem', background: 'var(--card)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.375rem' }}>
+            {[1,2,3].map(i => (
+              <div key={i} style={{ textAlign: 'center' }}>
+                <div style={{ width: '36px', height: '36px', background: 'var(--border)', borderRadius: '50%', margin: '0 auto 0.25rem' }} />
+                <div style={{ ...gbar('65%', 8), margin: '0 auto 0.2rem' }} />
+                <div style={{ ...gbar('45%'), margin: '0 auto' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 10. Insurance */}
+      <div style={{ ...tplWrap }}>
+        <div style={{ ...tplHead }}>{lbl('Insurance Section', '#7C3AED')}{tplBadge}</div>
+        <div style={{ padding: '0.375rem 0.75rem', background: 'var(--card)' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            {[1,2,3,4,5].map(i => <div key={i} style={{ width: '48px', height: '18px', background: 'var(--border)', borderRadius: '3px' }} />)}
+          </div>
+        </div>
+      </div>
+
+      {/* 11. Testimonials */}
+      <div style={{ ...tplWrap }}>
+        <div style={{ ...tplHead }}>{lbl('Testimonials', '#7C3AED')}{tplBadge}</div>
+        <div style={{ padding: '0.5rem 0.75rem', background: 'var(--card)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.375rem' }}>
+            {[1,2].map(i => (
+              <div key={i} style={{ background: 'var(--surface)', borderRadius: '5px', padding: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '2px', marginBottom: '0.25rem' }}>
+                  {[1,2,3,4,5].map(s => <span key={s} style={{ color: '#F59E0B', fontSize: '0.62rem' }}>★</span>)}
+                </div>
+                <div style={{ ...gbar('100%'), marginBottom: '0.2rem' }} />
+                <div style={{ ...gbar('80%'), marginBottom: '0.2rem' }} />
+                <div style={gbar('60%')} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 12. Resources */}
+      <div style={{ ...tplWrap }}>
+        <div style={{ ...tplHead }}>{lbl('Resources Section', '#7C3AED')}{tplBadge}</div>
+        <div style={{ padding: '0.5rem 0.75rem', background: 'var(--card)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.375rem' }}>
+            {[1,2,3].map(i => (
+              <div key={i} style={{ background: 'var(--surface)', borderRadius: '5px', padding: '0.375rem' }}>
+                <div style={{ width: '100%', height: '30px', background: 'var(--border)', borderRadius: '3px', marginBottom: '0.25rem' }} />
+                <div style={{ display: 'flex', gap: '3px', marginBottom: '0.25rem' }}>
+                  {['Blog', 'Guide'].map((t, ti) => <span key={ti} style={{ fontSize: '0.55rem', background: 'rgba(109,40,217,0.1)', color: '#7C3AED', padding: '1px 4px', borderRadius: '2px', fontWeight: 600 }}>{t}</span>)}
+                </div>
+                <div style={{ ...gbar('90%'), marginBottom: '0.2rem' }} />
+                <div style={gbar('70%')} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 13. Form */}
+      <div style={{ ...tplWrap }}>
+        <div style={{ ...tplHead }}>{lbl('Contact Form Section', '#7C3AED')}{tplBadge}</div>
+        <div style={{ padding: '0.5rem 0.75rem', background: 'var(--card)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              {[1,2,3,4].map(i => <div key={i} style={{ height: '20px', background: 'var(--border)', borderRadius: '3px' }} />)}
+              <div style={{ width: '72px', height: '24px', background: PRIMARY, borderRadius: '4px', marginTop: '0.125rem', opacity: 0.7 }} />
+            </div>
+            <div style={{ background: 'var(--surface)', borderRadius: '5px', padding: '0.5rem' }}>
+              {[1,2,3].map(i => <div key={i} style={{ ...gbar(i === 1 ? '65%' : i === 2 ? '80%' : '50%'), marginBottom: '0.25rem' }} />)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 14. FAQ Section — GENERATED */}
+      <div style={{ ...genWrap }}>
+        <div style={{ ...genHead }}>{lbl(`FAQ Section (${faqCount} FAQs — target 7–11)`, '#DC2626')}{genBadge}</div>
+        <div style={{ padding: '0.5rem 0.75rem', background: 'var(--card)' }}>
+          {faqCount === 0
+            ? <div style={{ color: 'var(--text-3)', fontSize: '0.75rem', fontStyle: 'italic' }}>No FAQs generated yet.</div>
+            : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                {draft.faqs.slice(0, 5).map((f, i) => (
+                  <div key={i} style={{ borderBottom: '1px solid var(--border)', paddingBottom: '0.375rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.375rem', marginBottom: '0.125rem' }}>
+                      <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: '0.72rem' }}>{f.question}</div>
+                      <span style={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', background: 'rgba(109,40,217,0.08)', color: '#7C3AED', padding: '1px 4px', borderRadius: '2px', whiteSpace: 'nowrap', flexShrink: 0 }}>{f.faq_type}</span>
+                    </div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-2)', lineHeight: 1.5 }}>
+                      {f.answer?.length > 120 ? f.answer.slice(0, 120) + '…' : f.answer}
+                    </div>
+                  </div>
+                ))}
+                {faqCount > 5 && <div style={{ fontSize: '0.68rem', color: 'var(--text-3)', textAlign: 'center' }}>+{faqCount - 5} more FAQs</div>}
+              </div>
+            )
+          }
+        </div>
+      </div>
+
+      {/* 15. Footer */}
+      <div style={{ ...tplWrap, opacity: 1 }}>
+        <div style={{ ...tplHead }}>{lbl('Footer', '#7C3AED')}{tplBadge}</div>
+        <div style={{ background: NAVY, padding: '0.625rem 0.75rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: '0.75rem' }}>
+            <div>
+              <div style={{ ...dbar(44, 14), borderRadius: '3px', marginBottom: '0.375rem' }} />
+              {[68, 60, 52].map((w, i) => <div key={i} style={{ ...dbar(w), marginBottom: '0.2rem' }} />)}
+            </div>
+            {[1,2,3].map(col => (
+              <div key={col}>
+                <div style={{ ...dbar(44, 8), borderRadius: '2px', marginBottom: '0.375rem' }} />
+                {[56, 64, 48, 44].map((w, i) => <div key={i} style={{ ...dbar(w), marginBottom: '0.2rem' }} />)}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ContentTab({ page, reload }) {
   const [steps, setSteps] = useState({});
   const [running, setRunning] = useState(false);
@@ -319,7 +652,8 @@ function ContentTab({ page, reload }) {
       {po && draft && (
         <>
           {page.qa_result && <QAPanel qa={page.qa_result} />}
-          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '1.25rem', marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '55fr 45fr', gap: '1.25rem', marginTop: '0.75rem', alignItems: 'start' }}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div><Label>Meta title</Label><Input value={draft.meta_title} onChange={v => set({ meta_title: v })} /></div>
             <div><Label>Meta description</Label><Area value={draft.meta_description} onChange={v => set({ meta_description: v })} /></div>
             <div><Label>H1 heading</Label><Input value={draft.h1} onChange={v => set({ h1: v })} /></div>
@@ -392,6 +726,11 @@ function ContentTab({ page, reload }) {
             <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '0.5rem', borderTop: '1px solid var(--border)' }}>
               <button onClick={saveAll} disabled={saving} style={primaryBtnStyle(saving)}>{saving ? 'Saving…' : 'Save content changes'}</button>
             </div>
+          </div>
+          <div style={{ position: 'sticky', top: '1rem', maxHeight: 'calc(100vh - 6rem)', overflowY: 'auto' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-3)', marginBottom: '0.5rem', padding: '0 0.125rem' }}>Page Template Placement</div>
+            <PageTemplatePreview draft={draft} page={page} />
+          </div>
           </div>
         </>
       )}
