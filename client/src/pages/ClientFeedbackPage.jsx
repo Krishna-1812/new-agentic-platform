@@ -29,6 +29,19 @@ const PERIODS = (() => {
   return p;
 })();
 
+const selectStyle = {
+  width: '100%',
+  padding: '0.625rem 1rem',
+  borderRadius: 'var(--r-md, 8px)',
+  border: '1px solid var(--border)',
+  fontSize: '0.875rem',
+  color: 'var(--text)',
+  background: 'var(--card)',
+  outline: 'none',
+  appearance: 'none',
+  WebkitAppearance: 'none',
+};
+
 export default function ClientFeedbackPage() {
   const navigate = useNavigate();
   const [client, setClient] = useState('gentle-dental');
@@ -36,6 +49,8 @@ export default function ClientFeedbackPage() {
   const [body, setBody] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [clientFocused, setClientFocused] = useState(false);
+  const [periodFocused, setPeriodFocused] = useState(false);
 
   async function handleCreate() {
     if (!body.trim()) { setError('Please add some feedback content.'); return; }
@@ -68,55 +83,124 @@ export default function ClientFeedbackPage() {
   }
 
   return (
-      <main className="max-w-3xl mx-auto px-6 py-8">
-        <div className="mb-6">
-          <h1 className="text-[22px] font-bold text-[#111827]">New Client Feedback Entry</h1>
-          <p className="text-sm text-[#6B7280] mt-1">Log notes from a client call, email, or review. Each entry is versioned and never overwritten.</p>
+    <main style={{ maxWidth: '48rem', margin: '0 auto', padding: '2rem 1.5rem' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text)', margin: 0 }}>New Client Feedback Entry</h1>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginTop: '0.25rem' }}>Log notes from a client call, email, or review. Each entry is versioned and never overwritten.</p>
+      </div>
+
+      <div style={{
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--r-lg)',
+        padding: '1.5rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.25rem',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+      }}>
+        {error && (
+          <div style={{
+            padding: '0.75rem',
+            background: 'var(--danger-soft, #FEF2F2)',
+            border: '1px solid var(--danger-border, #FECACA)',
+            borderRadius: 'var(--r-md, 8px)',
+            fontSize: '0.875rem',
+            color: 'var(--danger)',
+          }}>{error}</div>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.375rem' }}>Client</label>
+            <select
+              value={client}
+              onChange={e => setClient(e.target.value)}
+              onFocus={() => setClientFocused(true)}
+              onBlur={() => setClientFocused(false)}
+              style={{
+                ...selectStyle,
+                boxShadow: clientFocused ? '0 0 0 2px var(--primary)' : 'none',
+                borderColor: clientFocused ? 'var(--primary)' : 'var(--border)',
+              }}
+            >
+              {CLIENTS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.375rem' }}>Period</label>
+            <select
+              value={period}
+              onChange={e => setPeriod(e.target.value)}
+              onFocus={() => setPeriodFocused(true)}
+              onBlur={() => setPeriodFocused(false)}
+              style={{
+                ...selectStyle,
+                boxShadow: periodFocused ? '0 0 0 2px var(--primary)' : 'none',
+                borderColor: periodFocused ? 'var(--primary)' : 'var(--border)',
+              }}
+            >
+              {PERIODS.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 space-y-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-[#111827] mb-1.5">Client</label>
-              <select value={client} onChange={e => setClient(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none bg-white">
-                {CLIENTS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-[#111827] mb-1.5">Period</label>
-              <select value={period} onChange={e => setPeriod(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none bg-white">
-                {PERIODS.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="p-3 bg-[#F4F5F7] rounded-lg">
-            <div className="text-xs text-[#6B7280]">This will be saved as KB ID:</div>
-            <div className="text-sm font-mono font-semibold text-[#111827] mt-0.5">{client}-feedback-{period}</div>
-          </div>
-
-          <div data-color-mode="light">
-            <label className="block text-sm font-semibold text-[#111827] mb-1.5">Feedback Notes <span className="font-normal text-[#6B7280]">(Markdown)</span></label>
-            <p className="text-xs text-[#9CA3AF] mb-2">Include: dated notes, approval preferences, rejected wording, format preferences, open questions.</p>
-            <MDEditor value={body} onChange={val => setBody(val || '')} height={350} preview="edit" />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <button onClick={() => navigate('/kb')}
-              className="px-5 py-2.5 text-sm font-semibold border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-[#111827] bg-white transition-colors">
-              Cancel
-            </button>
-            <button onClick={handleCreate} disabled={saving || !body.trim()}
-              className="px-5 py-2.5 text-sm font-semibold rounded-lg text-white transition-colors disabled:opacity-50"
-              style={{ backgroundColor: '#3DAA8E' }}>
-              {saving ? 'Creating…' : 'Save Feedback Entry'}
-            </button>
-          </div>
+        <div style={{
+          padding: '0.75rem',
+          background: 'var(--surface)',
+          borderRadius: 'var(--r-md, 8px)',
+        }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-2)' }}>This will be saved as KB ID:</div>
+          <div style={{ fontSize: '0.875rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text)', marginTop: '0.125rem' }}>{client}-feedback-{period}</div>
         </div>
-      </main>
+
+        <div data-color-mode="light">
+          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.375rem' }}>
+            Feedback Notes <span style={{ fontWeight: 400, color: 'var(--text-2)' }}>(Markdown)</span>
+          </label>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginBottom: '0.5rem', marginTop: 0 }}>Include: dated notes, approval preferences, rejected wording, format preferences, open questions.</p>
+          <MDEditor value={body} onChange={val => setBody(val || '')} height={350} preview="edit" />
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '0.5rem' }}>
+          <button
+            onClick={() => navigate('/kb')}
+            style={{
+              padding: '0.625rem 1.25rem',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--r-md, 8px)',
+              color: 'var(--text-2)',
+              background: 'var(--card)',
+              cursor: 'pointer',
+              transition: 'color 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-2)'}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreate}
+            disabled={saving || !body.trim()}
+            style={{
+              padding: '0.625rem 1.25rem',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              borderRadius: 'var(--r-md, 8px)',
+              color: '#fff',
+              background: 'var(--primary)',
+              border: 'none',
+              cursor: saving || !body.trim() ? 'not-allowed' : 'pointer',
+              opacity: saving || !body.trim() ? 0.5 : 1,
+              transition: 'opacity 0.15s',
+            }}
+          >
+            {saving ? 'Creating…' : 'Save Feedback Entry'}
+          </button>
+        </div>
+      </div>
+    </main>
   );
 }

@@ -5,25 +5,30 @@ const CATEGORY_COLORS = {
   Authority: '#DC2626',
   Schema: '#7C3AED',
   'Entity Clarity': '#0F766E',
-  Input: '#6B7280',
+  Input: 'var(--text-2)',
 };
 
 const SEVERITY = {
-  error: { bg: '#FEF2F2', text: '#DC2626', label: 'High' },
-  warning: { bg: '#FFFBEB', text: '#B45309', label: 'Medium' },
-  notice: { bg: '#EFF6FF', text: '#2563EB', label: 'Low' },
-  info: { bg: '#F3F4F6', text: '#6B7280', label: 'Info' },
+  error: { bg: 'var(--danger-soft)', text: 'var(--danger)', label: 'High' },
+  warning: { bg: 'var(--warning-soft)', text: 'var(--warning)', label: 'Medium' },
+  notice: { bg: 'var(--info-soft)', text: 'var(--info)', label: 'Low' },
+  info: { bg: 'var(--surface)', text: 'var(--text-2)', label: 'Info' },
 };
+
+/* ── Spinner keyframes injected once ── */
+const spinnerStyle = (
+  <style>{`@keyframes _spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}._spinner{animation:_spin .8s linear infinite}`}</style>
+);
 
 function ScoreRing({ score, size = 92 }) {
   const radius = (size / 2) - 8;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
-  const color = score >= 75 ? '#16A34A' : score >= 50 ? '#D97706' : '#DC2626';
+  const color = score >= 75 ? 'var(--success)' : score >= 50 ? 'var(--warning)' : 'var(--danger)';
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#E5E7EB" strokeWidth="7" />
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--border)" strokeWidth="7" />
       <circle
         cx={size / 2}
         cy={size / 2}
@@ -46,51 +51,100 @@ function ScoreRing({ score, size = 92 }) {
 function SeverityBadge({ severity }) {
   const style = SEVERITY[severity] || SEVERITY.info;
   return (
-    <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ backgroundColor: style.bg, color: style.text }}>
+    <span style={{
+      fontSize: '0.75rem',
+      fontWeight: 600,
+      padding: '2px 8px',
+      borderRadius: '4px',
+      backgroundColor: style.bg,
+      color: style.text,
+    }}>
       {style.label}
     </span>
   );
 }
 
 function CategoryScore({ item }) {
-  const color = CATEGORY_COLORS[item.category] || '#3DAA8E';
+  const color = CATEGORY_COLORS[item.category] || 'var(--primary)';
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-lg p-4">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-semibold text-[#111827]">{item.category}</span>
-        <span className="text-sm font-bold" style={{ color }}>{item.score}</span>
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      padding: '1rem',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)' }}>{item.category}</span>
+        <span style={{ fontSize: '0.875rem', fontWeight: 700, color }}>{item.score}</span>
       </div>
-      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-        <div className="h-full rounded-full" style={{ width: `${item.score}%`, backgroundColor: color }} />
+      <div style={{ height: '0.5rem', borderRadius: '9999px', background: 'var(--surface)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', borderRadius: '9999px', width: `${item.score}%`, backgroundColor: color }} />
       </div>
-      <p className="text-xs text-gray-500 mt-2">{item.passed}/{item.total} checks passed</p>
+      <p style={{ fontSize: '0.75rem', color: 'var(--text-2)', marginTop: '0.5rem' }}>{item.passed}/{item.total} checks passed</p>
     </div>
   );
 }
 
 function PriorityCard({ item, index }) {
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-lg p-4">
-      <div className="flex items-start gap-3">
-        <span className="w-6 h-6 rounded-full text-white text-xs font-bold flex items-center justify-center shrink-0" style={{ backgroundColor: '#111827' }}>
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      padding: '1rem',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+        <span style={{
+          width: '1.5rem',
+          height: '1.5rem',
+          borderRadius: '9999px',
+          background: 'var(--text)',
+          color: '#fff',
+          fontSize: '0.75rem',
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}>
           {index + 1}
         </span>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-sm font-bold text-[#111827]">{item.title}</h3>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>{item.title}</h3>
             <SeverityBadge severity={item.severity || (item.priority <= 2 ? 'error' : 'warning')} />
-            {item.effort && <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500">{item.effort}</span>}
+            {item.effort && (
+              <span style={{
+                fontSize: '0.75rem',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                background: 'var(--surface)',
+                color: 'var(--text-2)',
+              }}>
+                {item.effort}
+              </span>
+            )}
           </div>
           {(item.why_it_matters || item.current_state) && (
-            <p className="text-sm text-gray-600 mt-2">{item.why_it_matters || item.current_state}</p>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginTop: '0.5rem', marginBottom: 0 }}>
+              {item.why_it_matters || item.current_state}
+            </p>
           )}
           {(item.how_to_fix || item.recommendation) && (
-            <p className="text-sm text-gray-800 mt-2">{item.how_to_fix || item.recommendation}</p>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text)', marginTop: '0.5rem', marginBottom: 0 }}>
+              {item.how_to_fix || item.recommendation}
+            </p>
           )}
           {item.example_copy && (
-            <div className="mt-3 bg-gray-50 border border-gray-100 rounded-md p-3">
-              <p className="text-xs font-semibold text-gray-500 mb-1">Example</p>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{item.example_copy}</p>
+            <div style={{
+              marginTop: '0.75rem',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '0.375rem',
+              padding: '0.75rem',
+            }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-2)', marginBottom: '0.25rem', marginTop: 0 }}>Example</p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text)', whiteSpace: 'pre-wrap', margin: 0 }}>{item.example_copy}</p>
             </div>
           )}
         </div>
@@ -101,37 +155,63 @@ function PriorityCard({ item, index }) {
 
 function ListCard({ title, items, empty = 'No items detected.' }) {
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-lg p-4">
-      <h3 className="text-sm font-bold text-[#111827] mb-3">{title}</h3>
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      padding: '1rem',
+    }}>
+      <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.75rem', marginTop: 0 }}>{title}</h3>
       {items?.length ? (
-        <ul className="space-y-2">
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {items.map((item, idx) => (
-            <li key={idx} className="flex gap-2 text-sm text-gray-700">
-              <span className="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style={{ backgroundColor: '#3DAA8E' }} />
+            <li key={idx} style={{ display: 'flex', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text)' }}>
+              <span style={{
+                width: '0.375rem',
+                height: '0.375rem',
+                borderRadius: '9999px',
+                background: 'var(--primary)',
+                marginTop: '0.5rem',
+                flexShrink: 0,
+              }} />
               <span>{typeof item === 'string' ? item : item.text || item.href || JSON.stringify(item)}</span>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-gray-400">{empty}</p>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-3)', margin: 0 }}>{empty}</p>
       )}
     </div>
   );
 }
 
 function CheckRow({ check }) {
-  const color = check.status === 'pass' ? '#16A34A' : check.severity === 'error' ? '#DC2626' : check.severity === 'warning' ? '#D97706' : '#2563EB';
+  const color = check.status === 'pass'
+    ? 'var(--success)'
+    : check.severity === 'error'
+      ? 'var(--danger)'
+      : check.severity === 'warning'
+        ? 'var(--warning)'
+        : 'var(--info)';
   return (
-    <div className="flex items-start gap-3 py-2.5 border-b border-gray-100 last:border-0">
-      <span className="font-mono text-xs text-gray-400 w-12 pt-0.5 shrink-0">{check.id}</span>
-      <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: color }} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-semibold text-[#111827]">{check.name}</span>
-          <span className="text-xs text-gray-400">{check.category}</span>
+    <div style={{
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '0.75rem',
+      padding: '0.625rem 0',
+      borderBottom: '1px solid var(--border)',
+    }}>
+      <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--text-3)', width: '3rem', paddingTop: '0.125rem', flexShrink: 0 }}>{check.id}</span>
+      <span style={{ width: '0.5rem', height: '0.5rem', borderRadius: '9999px', marginTop: '0.375rem', flexShrink: 0, backgroundColor: color }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)' }}>{check.name}</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{check.category}</span>
         </div>
-        <p className="text-xs text-gray-500 mt-0.5">{check.detail}</p>
-        {check.recommendation && <p className="text-xs text-gray-700 mt-1">{check.recommendation}</p>}
+        <p style={{ fontSize: '0.75rem', color: 'var(--text-2)', marginTop: '0.125rem', marginBottom: 0 }}>{check.detail}</p>
+        {check.recommendation && (
+          <p style={{ fontSize: '0.75rem', color: 'var(--text)', marginTop: '0.25rem', marginBottom: 0 }}>{check.recommendation}</p>
+        )}
       </div>
     </div>
   );
@@ -140,7 +220,17 @@ function CheckRow({ check }) {
 function CodeBlock({ value }) {
   if (!value) return null;
   return (
-    <pre className="text-xs bg-[#111827] text-[#E5E7EB] rounded-lg p-4 overflow-x-auto whitespace-pre-wrap max-h-80">
+    <pre style={{
+      fontSize: '0.75rem',
+      background: 'var(--nav-bg-top)',
+      color: 'var(--border)',
+      borderRadius: 'var(--r-lg)',
+      padding: '1rem',
+      overflowX: 'auto',
+      whiteSpace: 'pre-wrap',
+      maxHeight: '20rem',
+      margin: 0,
+    }}>
       {value}
     </pre>
   );
@@ -151,18 +241,34 @@ function TableRecommendation({ table }) {
   const columns = table.columns || [];
   const rows = table.rows || [];
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-lg overflow-hidden">
-      <div className="p-4 border-b border-gray-100">
-        <h3 className="text-sm font-bold text-[#111827]">{table.title || 'Recommended Table'}</h3>
-        {table.why_it_helps && <p className="text-sm text-gray-600 mt-1">{table.why_it_helps}</p>}
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      overflow: 'hidden',
+    }}>
+      <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)' }}>
+        <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>{table.title || 'Recommended Table'}</h3>
+        {table.why_it_helps && (
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginTop: '0.25rem', marginBottom: 0 }}>{table.why_it_helps}</p>
+        )}
       </div>
       {columns.length > 0 && rows.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', fontSize: '0.875rem', borderCollapse: 'collapse' }}>
+            <thead style={{ background: 'var(--surface)' }}>
               <tr>
                 {columns.map((col, idx) => (
-                  <th key={idx} className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">
+                  <th key={idx} style={{
+                    padding: '0.5rem 0.75rem',
+                    textAlign: 'left',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: 'var(--text-2)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    borderBottom: '1px solid var(--border)',
+                  }}>
                     {col}
                   </th>
                 ))}
@@ -170,9 +276,9 @@ function TableRecommendation({ table }) {
             </thead>
             <tbody>
               {rows.map((row, idx) => (
-                <tr key={idx} className="border-b border-gray-50 last:border-0">
+                <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
                   {row.map((cell, cellIdx) => (
-                    <td key={cellIdx} className="px-3 py-2 text-gray-700 align-top">
+                    <td key={cellIdx} style={{ padding: '0.5rem 0.75rem', color: 'var(--text)', verticalAlign: 'top' }}>
                       {cell}
                     </td>
                   ))}
@@ -182,7 +288,7 @@ function TableRecommendation({ table }) {
           </table>
         </div>
       ) : (
-        <p className="p-4 text-sm text-gray-400">No table rows returned.</p>
+        <p style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-3)', margin: 0 }}>No table rows returned.</p>
       )}
     </div>
   );
@@ -191,14 +297,21 @@ function TableRecommendation({ table }) {
 function FaqRecommendation({ faq }) {
   if (!faq?.questions?.length) return null;
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-lg p-4">
-      <h3 className="text-sm font-bold text-[#111827] mb-1">Recommended FAQ Block</h3>
-      {faq.why_it_helps && <p className="text-sm text-gray-600 mb-3">{faq.why_it_helps}</p>}
-      <div className="space-y-3">
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      padding: '1rem',
+    }}>
+      <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.25rem', marginTop: 0 }}>Recommended FAQ Block</h3>
+      {faq.why_it_helps && (
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginBottom: '0.75rem', marginTop: 0 }}>{faq.why_it_helps}</p>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {faq.questions.map((item, idx) => (
-          <div key={idx} className="bg-gray-50 rounded-lg p-3">
-            <p className="text-sm font-semibold text-[#111827]">{item.question}</p>
-            <p className="text-sm text-gray-700 mt-1">{item.answer}</p>
+          <div key={idx} style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: '0.75rem' }}>
+            <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', margin: 0 }}>{item.question}</p>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text)', marginTop: '0.25rem', marginBottom: 0 }}>{item.answer}</p>
           </div>
         ))}
       </div>
@@ -209,9 +322,14 @@ function FaqRecommendation({ faq }) {
 function TextBlock({ title, value }) {
   if (!value) return null;
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-lg p-4">
-      <h3 className="text-sm font-bold text-[#111827] mb-2">{title}</h3>
-      <p className="text-sm text-gray-700 whitespace-pre-wrap">{value}</p>
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      padding: '1rem',
+    }}>
+      <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem', marginTop: 0 }}>{title}</h3>
+      <p style={{ fontSize: '0.875rem', color: 'var(--text)', whiteSpace: 'pre-wrap', margin: 0 }}>{value}</p>
     </div>
   );
 }
@@ -219,20 +337,40 @@ function TextBlock({ title, value }) {
 function CitationTargets({ items }) {
   if (!items?.length) return <ListCard title="Citation Targets" items={['No citation targets returned.']} />;
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-lg p-4">
-      <h3 className="text-sm font-bold text-[#111827] mb-3">Citation Targets</h3>
-      <div className="space-y-3">
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      padding: '1rem',
+    }}>
+      <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.75rem', marginTop: 0 }}>Citation Targets</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {items.map((item, idx) => (
-          <div key={idx} className="bg-gray-50 rounded-lg p-3">
-            <a href={item.source_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold hover:underline" style={{ color: '#111827' }}>
+          <div key={idx} style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: '0.75rem' }}>
+            <a href={item.source_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', textDecoration: 'none' }}
+              onMouseEnter={e => e.target.style.textDecoration = 'underline'}
+              onMouseLeave={e => e.target.style.textDecoration = 'none'}
+            >
               {item.source_title || item.source_url}
             </a>
-            <div className="flex gap-2 flex-wrap mt-1">
-              {item.source_type && <span className="text-xs px-2 py-0.5 rounded bg-white text-gray-500 border border-gray-200">{item.source_type}</span>}
-              {item.where_to_add && <span className="text-xs px-2 py-0.5 rounded bg-white text-gray-500 border border-gray-200">{item.where_to_add}</span>}
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+              {item.source_type && (
+                <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px', background: 'var(--card)', color: 'var(--text-2)', border: '1px solid var(--border)' }}>
+                  {item.source_type}
+                </span>
+              )}
+              {item.where_to_add && (
+                <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px', background: 'var(--card)', color: 'var(--text-2)', border: '1px solid var(--border)' }}>
+                  {item.where_to_add}
+                </span>
+              )}
             </div>
-            {item.claim_to_support && <p className="text-xs text-gray-500 mt-2">Claim: {item.claim_to_support}</p>}
-            {item.draft_sentence && <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">{item.draft_sentence}</p>}
+            {item.claim_to_support && (
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-2)', marginTop: '0.5rem', marginBottom: 0 }}>Claim: {item.claim_to_support}</p>
+            )}
+            {item.draft_sentence && (
+              <p style={{ fontSize: '0.875rem', color: 'var(--text)', marginTop: '0.5rem', whiteSpace: 'pre-wrap', marginBottom: 0 }}>{item.draft_sentence}</p>
+            )}
           </div>
         ))}
       </div>
@@ -243,21 +381,33 @@ function CitationTargets({ items }) {
 function StatisticsRecommendations({ items }) {
   if (!items?.length) return <ListCard title="Statistics to Add" items={['No statistics recommendations returned.']} />;
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-lg p-4">
-      <h3 className="text-sm font-bold text-[#111827] mb-3">Statistics to Add</h3>
-      <div className="space-y-3">
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      padding: '1rem',
+    }}>
+      <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.75rem', marginTop: 0 }}>Statistics to Add</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {items.map((item, idx) => (
-          <div key={idx} className="bg-gray-50 rounded-lg p-3">
-            <p className="text-sm font-semibold text-[#111827]">{item.claim_or_stat_needed || item}</p>
+          <div key={idx} style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: '0.75rem' }}>
+            <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', margin: 0 }}>{item.claim_or_stat_needed || item}</p>
             {item.recommended_source_url ? (
-              <a href={item.recommended_source_url} target="_blank" rel="noopener noreferrer" className="text-xs hover:underline" style={{ color: '#3DAA8E' }}>
+              <a href={item.recommended_source_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary)', textDecoration: 'none' }}
+                onMouseEnter={e => e.target.style.textDecoration = 'underline'}
+                onMouseLeave={e => e.target.style.textDecoration = 'none'}
+              >
                 {item.recommended_source_title || item.recommended_source_url}
               </a>
             ) : item.recommended_source_type ? (
-              <p className="text-xs text-gray-500 mt-1">Source: {item.recommended_source_type}</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-2)', marginTop: '0.25rem', marginBottom: 0 }}>Source: {item.recommended_source_type}</p>
             ) : null}
-            {item.where_to_place && <p className="text-xs text-gray-500 mt-1">Placement: {item.where_to_place}</p>}
-            {item.sample_sentence_template && <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">{item.sample_sentence_template}</p>}
+            {item.where_to_place && (
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-2)', marginTop: '0.25rem', marginBottom: 0 }}>Placement: {item.where_to_place}</p>
+            )}
+            {item.sample_sentence_template && (
+              <p style={{ fontSize: '0.875rem', color: 'var(--text)', marginTop: '0.5rem', whiteSpace: 'pre-wrap', marginBottom: 0 }}>{item.sample_sentence_template}</p>
+            )}
           </div>
         ))}
       </div>
@@ -268,19 +418,35 @@ function StatisticsRecommendations({ items }) {
 function CsqafRecommendations({ items }) {
   if (!items?.length) return <ListCard title="CSQAF Recommendations" items={[]} empty="No CSQAF recommendations returned." />;
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-lg p-4">
-      <h3 className="text-sm font-bold text-[#111827] mb-3">CSQAF Recommendations</h3>
-      <div className="space-y-3">
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      padding: '1rem',
+    }}>
+      <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.75rem', marginTop: 0 }}>CSQAF Recommendations</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {items.map((item, idx) => (
-          <div key={idx} className="bg-gray-50 rounded-lg p-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-[#111827]">{item.element || `Fix ${idx + 1}`}</span>
-              {item.placement && <span className="text-xs px-2 py-0.5 rounded bg-white text-gray-500 border border-gray-200">{item.placement}</span>}
+          <div key={idx} style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)' }}>{item.element || `Fix ${idx + 1}`}</span>
+              {item.placement && (
+                <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px', background: 'var(--card)', color: 'var(--text-2)', border: '1px solid var(--border)' }}>
+                  {item.placement}
+                </span>
+              )}
             </div>
-            {item.specific_action && <p className="text-sm text-gray-700 mt-2">{item.specific_action}</p>}
-            {item.draft_copy && <p className="text-sm text-gray-800 mt-2 whitespace-pre-wrap">{item.draft_copy}</p>}
+            {item.specific_action && (
+              <p style={{ fontSize: '0.875rem', color: 'var(--text)', marginTop: '0.5rem', marginBottom: 0 }}>{item.specific_action}</p>
+            )}
+            {item.draft_copy && (
+              <p style={{ fontSize: '0.875rem', color: 'var(--text)', marginTop: '0.5rem', whiteSpace: 'pre-wrap', marginBottom: 0 }}>{item.draft_copy}</p>
+            )}
             {item.source_url && (
-              <a href={item.source_url} target="_blank" rel="noopener noreferrer" className="text-xs hover:underline mt-2 inline-block" style={{ color: '#3DAA8E' }}>
+              <a href={item.source_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary)', textDecoration: 'none', marginTop: '0.5rem', display: 'inline-block' }}
+                onMouseEnter={e => e.target.style.textDecoration = 'underline'}
+                onMouseLeave={e => e.target.style.textDecoration = 'none'}
+              >
                 {item.source_title || item.source_url}
               </a>
             )}
@@ -290,6 +456,19 @@ function CsqafRecommendations({ items }) {
     </div>
   );
 }
+
+/* ── Shared input style ── */
+const inputStyle = {
+  width: '100%',
+  padding: '0.625rem 1rem',
+  borderRadius: 'var(--r-lg)',
+  border: '1px solid var(--border)',
+  fontSize: '0.875rem',
+  color: 'var(--text)',
+  background: 'var(--card)',
+  outline: 'none',
+  boxSizing: 'border-box',
+};
 
 export default function ContentEnhancementPage() {
   const [inputMode, setInputMode] = useState('html');
@@ -352,143 +531,221 @@ export default function ContentEnhancementPage() {
   }
 
   return (
-      <main className="max-w-6xl mx-auto px-8 py-7 space-y-5">
-        <div>
-          <h1 className="text-[22px] font-bold text-[#111827]">Content Enhancement Recommendations</h1>
-          <p className="text-sm text-[#6B7280] mt-1">
-            Audit content structure, authority, citations, schema, and AI-answer readiness from a URL or pasted HTML.
-          </p>
+    <main style={{ maxWidth: '72rem', margin: '0 auto', padding: '1.75rem 2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {spinnerStyle}
+
+      <div>
+        <h1 style={{ fontSize: '1.375rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Content Enhancement Recommendations</h1>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginTop: '0.25rem', marginBottom: 0 }}>
+          Audit content structure, authority, citations, schema, and AI-answer readiness from a URL or pasted HTML.
+        </p>
+      </div>
+
+      {/* Input panel */}
+      <section style={{
+        background: 'var(--card)',
+        borderRadius: '0.75rem',
+        border: '1px solid var(--border)',
+        padding: '1.5rem',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+      }}>
+        {/* Mode toggle */}
+        <div style={{
+          display: 'flex',
+          gap: '0.25rem',
+          background: 'var(--surface)',
+          borderRadius: '0.5rem',
+          padding: '0.25rem',
+          width: 'fit-content',
+          marginBottom: '1.25rem',
+        }}>
+          {[
+            ['html', 'Paste HTML'],
+            ['url', 'Fetch URL'],
+          ].map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setInputMode(id)}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '0.375rem',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background 0.15s, color 0.15s',
+                background: inputMode === id ? 'var(--card)' : 'transparent',
+                color: inputMode === id ? 'var(--text)' : 'var(--text-2)',
+                boxShadow: inputMode === id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              }}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
-        <section className="bg-white rounded-xl border border-[#E5E7EB] p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit mb-5">
-            {[
-              ['html', 'Paste HTML'],
-              ['url', 'Fetch URL'],
-            ].map(([id, label]) => (
-              <button
-                key={id}
-                onClick={() => setInputMode(id)}
-                className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${inputMode === id ? 'bg-white text-[#111827] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2">
-              {inputMode === 'url' ? (
-                <div>
-                  <label className="block text-sm font-semibold text-[#111827] mb-1.5">Page URL</label>
-                  <input
-                    value={url}
-                    onChange={e => setUrl(e.target.value)}
-                    placeholder="https://example.com/resources/article"
-                    className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2"
-                    style={{ '--tw-ring-color': '#3DAA8E' }}
-                  />
-                </div>
-              ) : (
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-sm font-semibold text-[#111827]">HTML Source</label>
-                    <span className="text-xs text-gray-400">{html.length.toLocaleString()} chars</span>
-                  </div>
-                  <textarea
-                    value={html}
-                    onChange={e => setHtml(e.target.value)}
-                    placeholder="Paste the page HTML here. Use this for sites that block scraping or bots."
-                    rows={10}
-                    className="w-full px-4 py-3 rounded-lg border border-[#E5E7EB] text-sm font-mono focus:outline-none focus:ring-2 resize-y"
-                    style={{ '--tw-ring-color': '#3DAA8E' }}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-4">
+        {/* Grid: main input + sidebar */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+          <div style={{ gridColumn: '1 / 3' }}>
+            {inputMode === 'url' ? (
               <div>
-                <label className="block text-sm font-semibold text-[#111827] mb-1.5">Primary Keyword</label>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.375rem' }}>Page URL</label>
                 <input
-                  value={primaryKeyword}
-                  onChange={e => setPrimaryKeyword(e.target.value)}
-                  placeholder="e.g. hypodontia"
-                  className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2"
-                  style={{ '--tw-ring-color': '#3DAA8E' }}
+                  value={url}
+                  onChange={e => setUrl(e.target.value)}
+                  placeholder="https://example.com/resources/article"
+                  style={inputStyle}
                 />
               </div>
+            ) : (
               <div>
-                <label className="block text-sm font-semibold text-[#111827] mb-1.5">Page Type</label>
-                <input
-                  value={pageType}
-                  onChange={e => setPageType(e.target.value)}
-                  placeholder="article, service, location"
-                  className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2"
-                  style={{ '--tw-ring-color': '#3DAA8E' }}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)' }}>HTML Source</label>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{html.length.toLocaleString()} chars</span>
+                </div>
+                <textarea
+                  value={html}
+                  onChange={e => setHtml(e.target.value)}
+                  placeholder="Paste the page HTML here. Use this for sites that block scraping or bots."
+                  rows={10}
+                  style={{ ...inputStyle, fontFamily: 'monospace', resize: 'vertical' }}
                 />
               </div>
-              {inputMode === 'html' && url.trim() && (
-                <p className="text-xs text-gray-500">The URL will be used only for canonical/internal-link context. The pasted HTML is the source of truth.</p>
-              )}
-              {inputMode === 'html' && (
-                <div>
-                  <label className="block text-sm font-semibold text-[#111827] mb-1.5">Optional Page URL</label>
-                  <input
-                    value={url}
-                    onChange={e => setUrl(e.target.value)}
-                    placeholder="https://example.com/page"
-                    className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2"
-                    style={{ '--tw-ring-color': '#3DAA8E' }}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-5 flex items-center gap-3">
-            <button
-              onClick={runAudit}
-              disabled={!canRun || loading}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: '#111827' }}
-            >
-              {loading && (
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-              )}
-              {loading ? 'Analyzing...' : 'Generate Recommendations'}
-            </button>
-            {result && (
-              <button onClick={copySummary} className="px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm font-semibold bg-white text-gray-700 hover:bg-gray-50">
-                {copied ? 'Copied' : 'Copy JSON'}
-              </button>
             )}
           </div>
-        </section>
 
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-            <p className="text-sm font-medium text-red-800">{error}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.375rem' }}>Primary Keyword</label>
+              <input
+                value={primaryKeyword}
+                onChange={e => setPrimaryKeyword(e.target.value)}
+                placeholder="e.g. hypodontia"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.375rem' }}>Page Type</label>
+              <input
+                value={pageType}
+                onChange={e => setPageType(e.target.value)}
+                placeholder="article, service, location"
+                style={inputStyle}
+              />
+            </div>
+            {inputMode === 'html' && url.trim() && (
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-2)', margin: 0 }}>
+                The URL will be used only for canonical/internal-link context. The pasted HTML is the source of truth.
+              </p>
+            )}
+            {inputMode === 'html' && (
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.375rem' }}>Optional Page URL</label>
+                <input
+                  value={url}
+                  onChange={e => setUrl(e.target.value)}
+                  placeholder="https://example.com/page"
+                  style={inputStyle}
+                />
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
-        {findings && (
-          <section className="space-y-4">
-            <div className="bg-white rounded-xl border border-[#E5E7EB] p-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-              <div className="flex flex-col md:flex-row md:items-center gap-5">
+        {/* Actions */}
+        <div style={{ marginTop: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button
+            onClick={runAudit}
+            disabled={!canRun || loading}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.625rem 1.5rem',
+              borderRadius: 'var(--r-lg)',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              color: '#fff',
+              background: 'var(--primary)',
+              border: 'none',
+              cursor: !canRun || loading ? 'not-allowed' : 'pointer',
+              opacity: !canRun || loading ? 0.5 : 1,
+              transition: 'opacity 0.15s',
+            }}
+          >
+            {loading && (
+              <svg className="_spinner" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {loading ? 'Analyzing...' : 'Generate Recommendations'}
+          </button>
+          {result && (
+            <button
+              onClick={copySummary}
+              style={{
+                padding: '0.625rem 1rem',
+                borderRadius: 'var(--r-lg)',
+                border: '1px solid var(--border)',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                background: 'var(--card)',
+                color: 'var(--text)',
+                cursor: 'pointer',
+              }}
+            >
+              {copied ? 'Copied' : 'Copy JSON'}
+            </button>
+          )}
+        </div>
+      </section>
+
+      {/* Error */}
+      {error && (
+        <div style={{
+          padding: '1rem',
+          background: 'var(--danger-soft)',
+          border: '1px solid var(--danger)',
+          borderRadius: '0.75rem',
+        }}>
+          <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--danger)', margin: 0 }}>{error}</p>
+        </div>
+      )}
+
+      {/* Results */}
+      {findings && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Score header */}
+          <div style={{
+            background: 'var(--card)',
+            borderRadius: '0.75rem',
+            border: '1px solid var(--border)',
+            padding: '1.25rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.25rem', flexWrap: 'wrap' }}>
                 <ScoreRing score={findings.scores.overall} />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-lg font-bold text-[#111827]">{findings.meta.h1 || findings.meta.title || 'Analyzed Content'}</h2>
-                    <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500">{findings.meta.inputType === 'html_paste' ? 'HTML paste' : 'URL fetch'}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+                      {findings.meta.h1 || findings.meta.title || 'Analyzed Content'}
+                    </h2>
+                    <span style={{
+                      fontSize: '0.75rem',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      background: 'var(--surface)',
+                      color: 'var(--text-2)',
+                    }}>
+                      {findings.meta.inputType === 'html_paste' ? 'HTML paste' : 'URL fetch'}
+                    </span>
                   </div>
-                  <p className="text-sm text-gray-600 mt-2">
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginTop: '0.5rem', marginBottom: 0 }}>
                     {ai?.executive_summary?.verdict || `${findings.scores.counts.fail} improvement opportunities found across structure, authority, schema, and entity clarity.`}
                   </p>
-                  <div className="flex flex-wrap gap-2 mt-3 text-xs text-gray-500">
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.75rem', fontSize: '0.75rem', color: 'var(--text-2)' }}>
                     <span>{findings.meta.wordCount.toLocaleString()} words</span>
                     <span>{findings.signals.h2s.length} H2s</span>
                     <span>{findings.signals.authoritativeCitations.length} trusted citations</span>
@@ -496,133 +753,203 @@ export default function ContentEnhancementPage() {
                   </div>
                 </div>
                 {ai?.executive_summary?.readiness && (
-                  <div className="rounded-lg bg-gray-50 px-4 py-3 min-w-[150px]">
-                    <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Readiness</p>
-                    <p className="text-lg font-bold capitalize text-[#111827]">{ai.executive_summary.readiness}</p>
+                  <div style={{
+                    borderRadius: 'var(--r-lg)',
+                    background: 'var(--surface)',
+                    padding: '0.75rem 1rem',
+                    minWidth: '150px',
+                  }}>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Readiness</p>
+                    <p style={{ fontSize: '1.125rem', fontWeight: 700, textTransform: 'capitalize', color: 'var(--text)', marginTop: '0.125rem', marginBottom: 0 }}>
+                      {ai.executive_summary.readiness}
+                    </p>
                   </div>
                 )}
               </div>
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-              {findings.scores.categories.map(cat => <CategoryScore key={cat.category} item={cat} />)}
+          {/* Category score cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem' }}>
+            {findings.scores.categories.map(cat => <CategoryScore key={cat.category} item={cat} />)}
+          </div>
+
+          {/* Tab bar */}
+          <div style={{
+            display: 'flex',
+            gap: '0.25rem',
+            background: 'var(--surface)',
+            borderRadius: '0.5rem',
+            padding: '0.25rem',
+            width: 'fit-content',
+            flexWrap: 'wrap',
+          }}>
+            {[
+              ['summary', 'Recommendations'],
+              ['research', 'Research'],
+              ['structure', 'Structure'],
+              ['authority', 'Authority'],
+              ['assets', 'Copy-Ready Assets'],
+              ['schema', 'Schema'],
+              ['checks', 'All Checks'],
+            ].map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                style={{
+                  padding: '0.375rem 0.75rem',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s, color 0.15s',
+                  background: activeTab === id ? 'var(--card)' : 'transparent',
+                  color: activeTab === id ? 'var(--text)' : 'var(--text-2)',
+                  boxShadow: activeTab === id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab: Recommendations */}
+          {activeTab === 'summary' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {ai?.executive_summary?.highest_impact_fix && (
+                <div style={{
+                  background: 'var(--card)',
+                  border: '1px solid var(--primary)',
+                  borderRadius: 'var(--r-lg)',
+                  padding: '1rem',
+                }}>
+                  <p style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem', marginTop: 0, color: 'var(--primary)' }}>
+                    Highest Impact Fix
+                  </p>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text)', margin: 0 }}>{ai.executive_summary.highest_impact_fix}</p>
+                </div>
+              )}
+              {priorityItems.map((item, index) => <PriorityCard key={index} item={item} index={index} />)}
             </div>
+          )}
 
-            <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
-              {[
-                ['summary', 'Recommendations'],
-                ['research', 'Research'],
-                ['structure', 'Structure'],
-                ['authority', 'Authority'],
-                ['assets', 'Copy-Ready Assets'],
-                ['schema', 'Schema'],
-                ['checks', 'All Checks'],
-              ].map(([id, label]) => (
-                <button
-                  key={id}
-                  onClick={() => setActiveTab(id)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${activeTab === id ? 'bg-white text-[#111827] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  {label}
-                </button>
-              ))}
+          {/* Tab: Structure */}
+          {activeTab === 'structure' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <ListCard title="Recommended Outline Changes" items={ai?.content_structure?.recommended_outline_changes || findings.recommendations.sectionIdeas} />
+              <ListCard title="Answer Blocks to Add" items={ai?.content_structure?.answer_blocks_to_add || findings.recommendations.sectionIdeas} />
+              <ListCard title="Detected H2s" items={findings.signals.h2s} />
+              <ListCard title="FAQ Recommendations" items={ai?.content_structure?.faq_questions || findings.recommendations.faqIdeas} />
             </div>
+          )}
 
-            {activeTab === 'summary' && (
-              <div className="space-y-3">
-                {ai?.executive_summary?.highest_impact_fix && (
-                  <div className="bg-white border border-[#3DAA8E] rounded-lg p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: '#3DAA8E' }}>Highest Impact Fix</p>
-                    <p className="text-sm text-gray-800">{ai.executive_summary.highest_impact_fix}</p>
-                  </div>
-                )}
-                {priorityItems.map((item, index) => <PriorityCard key={index} item={item} index={index} />)}
-              </div>
-            )}
-
-            {activeTab === 'structure' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <ListCard title="Recommended Outline Changes" items={ai?.content_structure?.recommended_outline_changes || findings.recommendations.sectionIdeas} />
-                <ListCard title="Answer Blocks to Add" items={ai?.content_structure?.answer_blocks_to_add || findings.recommendations.sectionIdeas} />
-                <ListCard title="Detected H2s" items={findings.signals.h2s} />
-                <ListCard title="FAQ Recommendations" items={ai?.content_structure?.faq_questions || findings.recommendations.faqIdeas} />
-              </div>
-            )}
-
-            {activeTab === 'research' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <ListCard title="Competitor Patterns" items={ai?.research_summary?.competitor_patterns || []} empty="No competitor patterns returned." />
-                <ListCard title="Content Gaps to Exploit" items={ai?.research_summary?.content_gaps || []} empty="No content gaps returned." />
-                <div className="lg:col-span-2 bg-white border border-[#E5E7EB] rounded-lg p-4">
-                  <h3 className="text-sm font-bold text-[#111827] mb-3">Top Ranking Sources Used</h3>
-                  {ai?.research_summary?.source_urls?.length ? (
-                    <div className="space-y-2">
-                      {ai.research_summary.source_urls.map((source, idx) => (
-                        <div key={idx} className="flex items-start gap-3 text-sm">
-                          <span className="w-6 h-6 rounded-full text-white text-xs font-bold flex items-center justify-center shrink-0" style={{ backgroundColor: '#3DAA8E' }}>{idx + 1}</span>
-                          <div>
-                            <a href={source.url} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline" style={{ color: '#111827' }}>{source.title || source.url}</a>
-                            {source.use_for && <p className="text-xs text-gray-500 mt-0.5">{source.use_for}</p>}
-                          </div>
+          {/* Tab: Research */}
+          {activeTab === 'research' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <ListCard title="Competitor Patterns" items={ai?.research_summary?.competitor_patterns || []} empty="No competitor patterns returned." />
+              <ListCard title="Content Gaps to Exploit" items={ai?.research_summary?.content_gaps || []} empty="No content gaps returned." />
+              <div style={{ gridColumn: '1 / -1', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '1rem' }}>
+                <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.75rem', marginTop: 0 }}>Top Ranking Sources Used</h3>
+                {ai?.research_summary?.source_urls?.length ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {ai.research_summary.source_urls.map((source, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', fontSize: '0.875rem' }}>
+                        <span style={{
+                          width: '1.5rem',
+                          height: '1.5rem',
+                          borderRadius: '9999px',
+                          background: 'var(--primary)',
+                          color: '#fff',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}>{idx + 1}</span>
+                        <div>
+                          <a href={source.url} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: 'var(--text)', textDecoration: 'none' }}
+                            onMouseEnter={e => e.target.style.textDecoration = 'underline'}
+                            onMouseLeave={e => e.target.style.textDecoration = 'none'}
+                          >
+                            {source.title || source.url}
+                          </a>
+                          {source.use_for && (
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-2)', marginTop: '0.125rem', marginBottom: 0 }}>{source.use_for}</p>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-400">No researched source list returned.</p>
-                  )}
-                </div>
-                {result.researchError && (
-                  <div className="lg:col-span-2 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-sm text-amber-800">Research warning: {result.researchError}</p>
+                      </div>
+                    ))}
                   </div>
+                ) : (
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-3)', margin: 0 }}>No researched source list returned.</p>
                 )}
               </div>
-            )}
+              {result.researchError && (
+                <div style={{ gridColumn: '1 / -1', padding: '1rem', background: 'var(--warning-soft)', border: '1px solid var(--warning)', borderRadius: 'var(--r-lg)' }}>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--warning)', margin: 0 }}>Research warning: {result.researchError}</p>
+                </div>
+              )}
+            </div>
+          )}
 
-            {activeTab === 'authority' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <ListCard title="Expert Signal Recommendations" items={ai?.authority?.expert_signal_recommendations || findings.recommendations.authorityIdeas} />
-                <CitationTargets items={ai?.authority?.citation_targets} />
-                <StatisticsRecommendations items={ai?.authority?.statistics_to_add} />
-                <ListCard title="Detected Trusted Citations" items={findings.signals.authoritativeCitations.map(c => `${c.host} - ${c.text || c.href}`)} />
-                <CsqafRecommendations items={ai?.csqaf?.recommendations} />
-                <TextBlock title="Expert Quote Integration" value={ai?.authority?.expert_quote_integration ? `${ai.authority.expert_quote_integration.credential_to_request}\n\nPlacement: ${ai.authority.expert_quote_integration.placement}\n\nPrompt: ${ai.authority.expert_quote_integration.sample_quote_prompt}\n\nFormat: ${ai.authority.expert_quote_integration.sample_quote_format}` : ''} />
-                <TextBlock title="Author Bio & Byline Optimization" value={ai?.authority?.author_bio_byline ? `${ai.authority.author_bio_byline.recommendation}\n\nByline: ${ai.authority.author_bio_byline.sample_byline}\n\nBio: ${ai.authority.author_bio_byline.sample_bio}` : ''} />
-              </div>
-            )}
+          {/* Tab: Authority */}
+          {activeTab === 'authority' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <ListCard title="Expert Signal Recommendations" items={ai?.authority?.expert_signal_recommendations || findings.recommendations.authorityIdeas} />
+              <CitationTargets items={ai?.authority?.citation_targets} />
+              <StatisticsRecommendations items={ai?.authority?.statistics_to_add} />
+              <ListCard title="Detected Trusted Citations" items={findings.signals.authoritativeCitations.map(c => `${c.host} - ${c.text || c.href}`)} />
+              <CsqafRecommendations items={ai?.csqaf?.recommendations} />
+              <TextBlock title="Expert Quote Integration" value={ai?.authority?.expert_quote_integration ? `${ai.authority.expert_quote_integration.credential_to_request}\n\nPlacement: ${ai.authority.expert_quote_integration.placement}\n\nPrompt: ${ai.authority.expert_quote_integration.sample_quote_prompt}\n\nFormat: ${ai.authority.expert_quote_integration.sample_quote_format}` : ''} />
+              <TextBlock title="Author Bio & Byline Optimization" value={ai?.authority?.author_bio_byline ? `${ai.authority.author_bio_byline.recommendation}\n\nByline: ${ai.authority.author_bio_byline.sample_byline}\n\nBio: ${ai.authority.author_bio_byline.sample_bio}` : ''} />
+            </div>
+          )}
 
-            {activeTab === 'assets' && (
-              <div className="space-y-4">
-                <TextBlock title="Direct Answer Block" value={ai?.direct_answer_formatting?.recommended_block} />
-                <FaqRecommendation faq={ai?.faq_block} />
-                {(ai?.html_comparison_tables || []).map((table, idx) => <TableRecommendation key={idx} table={table} />)}
-                {!ai?.direct_answer_formatting?.recommended_block && !ai?.faq_block?.questions?.length && !ai?.html_comparison_tables?.length && (
-                  <div className="bg-white border border-[#E5E7EB] rounded-lg p-4">
-                    <p className="text-sm text-gray-400">No copy-ready assets returned.</p>
-                  </div>
+          {/* Tab: Copy-Ready Assets */}
+          {activeTab === 'assets' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <TextBlock title="Direct Answer Block" value={ai?.direct_answer_formatting?.recommended_block} />
+              <FaqRecommendation faq={ai?.faq_block} />
+              {(ai?.html_comparison_tables || []).map((table, idx) => <TableRecommendation key={idx} table={table} />)}
+              {!ai?.direct_answer_formatting?.recommended_block && !ai?.faq_block?.questions?.length && !ai?.html_comparison_tables?.length && (
+                <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '1rem' }}>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-3)', margin: 0 }}>No copy-ready assets returned.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tab: Schema */}
+          {activeTab === 'schema' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <ListCard title="Detected Schema Types" items={findings.signals.schemaTypes} empty="No JSON-LD schema types detected." />
+              <ListCard title="Schema Recommendations" items={ai?.schema?.missing_or_improved_schema || ['Article or MedicalWebPage schema with author, reviewedBy, datePublished, dateModified, and citation fields.']} />
+              <div style={{ gridColumn: '1 / -1', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '1rem' }}>
+                <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.75rem', marginTop: 0 }}>Starter JSON-LD</h3>
+                <CodeBlock value={ai?.schema?.starter_json_ld} />
+                {!ai?.schema?.starter_json_ld && (
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-3)', margin: 0 }}>No starter schema returned.</p>
                 )}
               </div>
-            )}
+            </div>
+          )}
 
-            {activeTab === 'schema' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <ListCard title="Detected Schema Types" items={findings.signals.schemaTypes} empty="No JSON-LD schema types detected." />
-                <ListCard title="Schema Recommendations" items={ai?.schema?.missing_or_improved_schema || ['Article or MedicalWebPage schema with author, reviewedBy, datePublished, dateModified, and citation fields.']} />
-                <div className="lg:col-span-2 bg-white border border-[#E5E7EB] rounded-lg p-4">
-                  <h3 className="text-sm font-bold text-[#111827] mb-3">Starter JSON-LD</h3>
-                  <CodeBlock value={ai?.schema?.starter_json_ld} />
-                  {!ai?.schema?.starter_json_ld && <p className="text-sm text-gray-400">No starter schema returned.</p>}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'checks' && (
-              <div className="bg-white border border-[#E5E7EB] rounded-xl px-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                {findings.checks.map(check => <CheckRow key={check.id} check={check} />)}
-              </div>
-            )}
-          </section>
-        )}
-      </main>
+          {/* Tab: All Checks */}
+          {activeTab === 'checks' && (
+            <div style={{
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: '0.75rem',
+              padding: '0 1rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+            }}>
+              {findings.checks.map(check => <CheckRow key={check.id} check={check} />)}
+            </div>
+          )}
+        </section>
+      )}
+    </main>
   );
 }

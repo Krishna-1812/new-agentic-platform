@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeContext';
+import { ToastProvider } from './ui/Toast';
 import MacWindow from './components/MacWindow';
 import HomePage from './pages/HomePage';
 import ContentResearchPage from './pages/ContentResearchPage';
@@ -27,6 +28,7 @@ import OnPageAuditPage from './pages/OnPageAuditPage';
 export default function App() {
   return (
     <ThemeProvider>
+      <ToastProvider>
       <Routes>
         <Route element={<MacWindow />}>
           <Route path="/" element={<HomePage />} />
@@ -54,6 +56,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
+      </ToastProvider>
     </ThemeProvider>
   );
 }

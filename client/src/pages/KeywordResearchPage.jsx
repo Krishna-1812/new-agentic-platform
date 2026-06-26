@@ -2,46 +2,73 @@ import { useState, useRef } from 'react';
 import KBContextSelector from '../components/KBContextSelector';
 
 const STEP_CONFIG = [
-  { id: 'variants',    label: 'Query Variants',   icon: '↗', desc: 'Expanding across intent variants' },
-  { id: 'search',      label: 'SERP Analysis',    icon: '🔍', desc: 'Fetching top pages for all queries' },
-  { id: 'url_scoring', label: 'URL Scoring',      icon: '📐', desc: 'Selecting best competitor pages' },
-  { id: 'semrush',     label: 'SEMrush Keywords', icon: '📊', desc: 'Pulling competitor rankings' },
-  { id: 'analysis',    label: 'AI Shortlisting',  icon: '🤖', desc: 'Filtering & ranking keywords' },
+  { id: 'variants',    label: 'Query Variants',   desc: 'Expanding across intent variants' },
+  { id: 'search',      label: 'SERP Analysis',    desc: 'Fetching top pages for all queries' },
+  { id: 'url_scoring', label: 'URL Scoring',      desc: 'Selecting best competitor pages' },
+  { id: 'semrush',     label: 'SEMrush Keywords', desc: 'Pulling competitor rankings' },
+  { id: 'analysis',    label: 'AI Shortlisting',  desc: 'Filtering & ranking keywords' },
 ];
 
-function StepBadge({ status }) {
+function StepBadge({ status, index }) {
+  const baseStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 28,
+    height: 28,
+    borderRadius: '50%',
+    flexShrink: 0,
+    fontSize: 12,
+    fontWeight: 700,
+  };
+
   if (status === 'done') return (
-    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-green-500 text-white text-xs font-bold">✓</span>
-  );
-  if (status === 'active') return (
-    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-blue-900 text-white">
-      <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+    <span style={{ ...baseStyle, background: 'var(--success)', color: '#fff' }}>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     </span>
   );
-  return <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gray-200 text-gray-400 text-xs font-bold">·</span>;
+
+  if (status === 'active') return (
+    <span style={{ ...baseStyle, background: 'var(--primary)', color: '#fff' }}>
+      <svg
+        style={{ animation: 'spin 1s linear infinite', width: 14, height: 14 }}
+        viewBox="0 0 24 24" fill="none"
+      >
+        <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+        <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+      </svg>
+    </span>
+  );
+
+  return (
+    <span style={{ ...baseStyle, background: 'var(--surface)', color: 'var(--text-3)', border: '1px solid var(--border)' }}>
+      {index + 1}
+    </span>
+  );
 }
 
 function DifficultyBar({ value }) {
   const pct = Math.min(100, Math.max(0, value || 0));
-  const color = pct >= 70 ? '#ef4444' : pct >= 40 ? '#f59e0b' : '#22c55e';
+  const color = pct >= 70 ? 'var(--danger)' : pct >= 40 ? 'var(--warning)' : 'var(--success)';
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ flex: 1, height: 6, background: 'var(--surface)', borderRadius: 99, overflow: 'hidden' }}>
+        <div style={{ height: '100%', borderRadius: 99, transition: 'width 0.3s', width: `${pct}%`, backgroundColor: color }} />
       </div>
-      <span className="text-xs text-gray-500 w-6 text-right">{value || '—'}</span>
+      <span style={{ fontSize: 12, color: 'var(--text-2)', width: 24, textAlign: 'right' }}>{value || '—'}</span>
     </div>
   );
 }
 
 const PAGE_TYPE_STYLES = {
-  page:      { bg: '#DCFCE7', text: '#15803D' },
-  article:   { bg: '#DBEAFE', text: '#1D4ED8' },
-  directory: { bg: '#F3F4F6', text: '#6B7280' },
+  page:      { bg: 'var(--success-soft)', text: 'var(--success)' },
+  article:   { bg: 'var(--info-soft)',    text: 'var(--info)' },
+  directory: { bg: 'var(--surface)',      text: 'var(--text-3)' },
 };
+
+const cardShadow = '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)';
 
 export default function KeywordResearchPage() {
   const [keyword, setKeyword] = useState('');
@@ -165,394 +192,587 @@ export default function KeywordResearchPage() {
   const canStart = keyword.trim() && !running;
 
   return (
-      <main className="max-w-5xl mx-auto px-8 py-7 space-y-5">
+    <main style={{ maxWidth: 900, margin: '0 auto', padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-        {/* ── Input Card ───────────────────────────────────────────────── */}
-        <div className="bg-white rounded-xl border border-[#E5E7EB] p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)' }}>
-          <KBContextSelector
-            module="keyword-research"
-            onChange={({ client: c, feedbackKbIds: fb }) => { setClient(c); setFeedbackKbIds(fb || []); }}
+      {/* ── Input Card ───────────────────────────────────────────────── */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 24, boxShadow: cardShadow }}>
+        <KBContextSelector
+          module="keyword-research"
+          onChange={({ client: c, feedbackKbIds: fb }) => { setClient(c); setFeedbackKbIds(fb || []); }}
+          disabled={running}
+        />
+
+        <div style={{ marginTop: 16, maxWidth: 448 }}>
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
+            Seed Keyword
+          </label>
+          <input
+            type="text"
+            value={keyword}
+            onChange={e => setKeyword(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && canStart && startResearch()}
+            placeholder="e.g. dental implants"
             disabled={running}
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              padding: '10px 16px',
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              fontSize: 14,
+              color: 'var(--text)',
+              background: running ? 'var(--surface)' : 'var(--card)',
+              outline: 'none',
+              transition: 'border-color 0.15s',
+            }}
+            onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+            onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
           />
+        </div>
 
-          <div className="mt-4 max-w-md">
-            <label className="block text-sm font-semibold text-[#111827] mb-1.5">Seed Keyword</label>
-            <input
-              type="text"
-              value={keyword}
-              onChange={e => setKeyword(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && canStart && startResearch()}
-              placeholder="e.g. dental implants"
-              disabled={running}
-              className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 disabled:bg-[#F4F5F7] disabled:text-[#9CA3AF]"
-              style={{ '--tw-ring-color': '#3DAA8E' }}
-            />
-          </div>
-
-          {/* Intent toggle */}
-          <div className="mt-4">
-            <label className="block text-sm font-semibold text-[#111827] mb-2">Page Intent</label>
-            <div className="flex gap-3">
-              {[
-                { value: 'commercial', label: 'Commercial / Transactional', desc: 'Service pages, pricing, booking' },
-                { value: 'informational', label: 'Informational / Educational', desc: 'Guides, FAQs, how-to content' },
-              ].map(opt => (
+        {/* Intent toggle */}
+        <div style={{ marginTop: 16 }}>
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>
+            Page Intent
+          </label>
+          <div style={{ display: 'flex', gap: 12 }}>
+            {[
+              { value: 'commercial',   label: 'Commercial / Transactional', desc: 'Service pages, pricing, booking' },
+              { value: 'informational', label: 'Informational / Educational', desc: 'Guides, FAQs, how-to content' },
+            ].map(opt => {
+              const isSelected = intent === opt.value;
+              return (
                 <button
                   key={opt.value}
                   type="button"
                   disabled={running}
                   onClick={() => setIntent(opt.value)}
-                  className={`flex-1 text-left px-4 py-3 rounded-lg border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                    intent === opt.value
-                      ? 'border-[#111827] bg-[#111827]'
-                      : 'border-[#E5E7EB] bg-white hover:border-gray-300'
-                  }`}
+                  style={{
+                    flex: 1,
+                    textAlign: 'left',
+                    padding: '12px 16px',
+                    borderRadius: 8,
+                    border: `2px solid ${isSelected ? 'var(--nav-bg-top)' : 'var(--border)'}`,
+                    background: isSelected ? 'var(--nav-bg-top)' : 'var(--card)',
+                    cursor: running ? 'not-allowed' : 'pointer',
+                    opacity: running ? 0.5 : 1,
+                    transition: 'all 0.15s',
+                  }}
                 >
-                  <div className={`text-sm font-semibold ${intent === opt.value ? 'text-white' : 'text-[#111827]'}`}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: isSelected ? '#fff' : 'var(--text)' }}>
                     {opt.label}
                   </div>
-                  <div className={`text-xs mt-0.5 ${intent === opt.value ? 'text-gray-300' : 'text-[#6B7280]'}`}>
+                  <div style={{ fontSize: 12, marginTop: 2, color: isSelected ? 'rgba(255,255,255,0.65)' : 'var(--text-2)' }}>
                     {opt.desc}
                   </div>
                 </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-center gap-3">
-            <button
-              onClick={startResearch}
-              disabled={!canStart}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: '#111827' }}
-            >
-              {running ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                  </svg>
-                  Running…
-                </>
-              ) : 'Start Research'}
-            </button>
-            {started && !running && (
-              <button onClick={reset} className="text-sm text-gray-500 hover:text-gray-700 underline">
-                Reset
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* ── Error ────────────────────────────────────────────────────── */}
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
-            <span className="text-red-500 mt-0.5 flex-shrink-0">✕</span>
-            <p className="text-red-800 text-sm font-medium">{error}</p>
-          </div>
-        )}
-
-        {/* ── Progress Journey ─────────────────────────────────────────── */}
-        {started && (
-          <div className="space-y-4">
-            {STEP_CONFIG.map((stepCfg) => {
-              const s = steps[stepCfg.id] || {};
-              if (!s.status) return null;
-
-              return (
-                <div
-                  key={stepCfg.id}
-                  className={`bg-white rounded-xl border overflow-hidden transition-all ${
-                    s.status === 'active' ? 'border-[#3DAA8E]' : 'border-[#E5E7EB]'
-                  }`}
-                  style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)' }}
-                >
-                  {/* Step header */}
-                  <div className={`flex items-center gap-3 px-5 py-3.5 ${
-                    s.status === 'active' ? 'bg-[#F0FAF7]' : 'bg-[#F9FAFB]'
-                  }`}>
-                    <StepBadge status={s.status} />
-                    <span className="text-lg">{stepCfg.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-gray-800">{stepCfg.label}</span>
-                        {s.status === 'active' && (
-                          <span className="text-xs px-2 py-0.5 rounded-full font-medium animate-pulse" style={{ backgroundColor: '#3DAA8E1A', color: '#3DAA8E' }}>
-                            In progress
-                          </span>
-                        )}
-                        {s.status === 'done' && (
-                          <span className="text-xs bg-[#F4F5F7] text-[#6B7280] px-2 py-0.5 rounded-full font-medium">
-                            Done
-                          </span>
-                        )}
-                      </div>
-                      {s.message && <p className="text-xs text-gray-500 mt-0.5">{s.message}</p>}
-                    </div>
-                  </div>
-
-                  {/* Variants step — show query chips */}
-                  {stepCfg.id === 'variants' && s.status === 'done' && queries.length > 0 && (
-                    <div className="px-5 py-3.5 flex flex-wrap gap-2 border-t border-gray-100">
-                      {queries.map((q, i) => (
-                        <span
-                          key={i}
-                          className="text-xs px-3 py-1.5 rounded-full font-medium"
-                          style={i === 0
-                            ? { backgroundColor: '#111827', color: '#fff' }
-                            : { backgroundColor: '#F4F5F7', color: '#374151' }
-                          }
-                        >
-                          {i === 0 ? '★ ' : ''}{q}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* URL scoring step — show scored URL cards */}
-                  {stepCfg.id === 'url_scoring' && s.status === 'done' && urls.length > 0 && (
-                    <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 border-t border-gray-100">
-                      {urls.map((u, idx) => {
-                        const ptStyle = PAGE_TYPE_STYLES[u.pageType] || PAGE_TYPE_STYLES.page;
-                        return (
-                          <div key={idx} className="border border-gray-100 rounded-lg p-3 bg-gray-50">
-                            <div className="flex items-center gap-2 mb-1.5">
-                              <span className="w-5 h-5 rounded-full text-white text-xs flex items-center justify-center font-bold flex-shrink-0" style={{ backgroundColor: '#3DAA8E' }}>
-                                {idx + 1}
-                              </span>
-                              <span className="text-xs font-semibold text-gray-700 truncate flex-1">
-                                {(() => { try { return new URL(u.url).hostname; } catch { return u.url; } })()}
-                              </span>
-                            </div>
-                            <p className="text-xs text-gray-500 line-clamp-2 leading-snug mb-2">{u.title}</p>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: ptStyle.bg, color: ptStyle.text }}>
-                                {u.pageType}
-                              </span>
-                              {u.queryCount > 1 && (
-                                <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: '#EDE9FE', color: '#6D28D9' }}>
-                                  {u.queryCount}/{totalQueries || queries.length} queries
-                                </span>
-                              )}
-                              <span className="text-xs px-1.5 py-0.5 rounded font-medium ml-auto" style={{ backgroundColor: '#F4F5F7', color: '#6B7280' }}>
-                                {u.rubricScore?.toFixed(2)}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* SEMrush step — keywords per URL */}
-                  {stepCfg.id === 'semrush' && (s.status === 'active' || s.status === 'done') && urls.length > 0 && (
-                    <div className="px-5 py-4 space-y-4 border-t border-gray-100">
-                      {urls.map((u, idx) => {
-                        const ud = urlData[u.url];
-                        return (
-                          <div key={idx}>
-                            <div className="flex items-center gap-2 mb-2">
-                              {ud?.status === 'done' ? (
-                                <span className="text-green-500 text-xs font-bold">✓</span>
-                              ) : ud?.status === 'loading' ? (
-                                <svg className="animate-spin w-3 h-3 text-blue-500" viewBox="0 0 24 24" fill="none">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                                </svg>
-                              ) : ud?.status === 'error' ? (
-                                <span className="text-red-400 text-xs">✕</span>
-                              ) : (
-                                <span className="text-gray-300 text-xs">·</span>
-                              )}
-                              <span className="text-xs font-semibold text-gray-600 truncate">
-                                {(() => { try { const p = new URL(u.url); return p.hostname + (p.pathname !== '/' ? p.pathname : ''); } catch { return u.url; } })()}
-                              </span>
-                              {ud?.keywords?.length > 0 && (
-                                <span className="ml-auto text-xs text-gray-400">{ud.keywords.length} keyword{ud.keywords.length !== 1 ? 's' : ''}</span>
-                              )}
-                            </div>
-
-                            {ud?.status === 'error' && (
-                              <p className="text-xs text-red-500 ml-5">{ud.error}</p>
-                            )}
-
-                            {ud?.keywords?.length > 0 && (
-                              <div className="ml-5 flex flex-wrap gap-1.5">
-                                {ud.keywords.slice(0, 10).map((kw, ki) => (
-                                  <span key={ki} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
-                                    {kw.keyword}
-                                    {kw.volume > 0 && <span className="text-gray-400">{(kw.volume / 1000).toFixed(kw.volume >= 1000 ? 1 : 0)}{kw.volume >= 1000 ? 'k' : ''}</span>}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-
-                            {ud?.status === 'loading' && (
-                              <div className="ml-5 flex gap-1.5">
-                                {[...Array(5)].map((_, i) => (
-                                  <div key={i} className="h-5 rounded-full bg-gray-100 animate-pulse" style={{ width: `${50 + i * 15}px` }} />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Analysis step — in progress spinner */}
-                  {stepCfg.id === 'analysis' && s.status === 'active' && (
-                    <div className="px-5 py-4 border-t border-gray-100">
-                      <div className="flex items-center gap-3 text-sm text-gray-500">
-                        <svg className="animate-spin w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                        </svg>
-                        Deduplicating keywords and running GPT-4o analysis…
-                      </div>
-                    </div>
-                  )}
-                </div>
               );
             })}
           </div>
-        )}
+        </div>
 
-        {/* ── Results ──────────────────────────────────────────────────── */}
-        {result && (
-          <div className="space-y-5">
-            {/* Primary Keywords */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <h2 className="text-base font-bold text-gray-900">Primary Keywords</h2>
-                <span className="text-xs bg-green-100 text-green-800 font-semibold px-2 py-0.5 rounded-full">
-                  {result.primary?.length || 0} selected
-                </span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(result.primary || []).map((kw, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-xl p-5 border-l-4 border border-[#E5E7EB]"
-                    style={{ borderLeftColor: '#3DAA8E', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <h3 className="font-bold text-gray-900 text-base leading-snug">{kw.keyword}</h3>
-                      <span
-                        className="flex-shrink-0 text-xs font-semibold px-2.5 py-0.5 rounded"
-                        style={{ backgroundColor: '#3DAA8E1A', color: '#3DAA8E' }}
-                      >
-                        PRIMARY
-                      </span>
+        <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            onClick={startResearch}
+            disabled={!canStart}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 24px',
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 600,
+              color: '#fff',
+              background: 'var(--nav-bg-top)',
+              border: 'none',
+              cursor: canStart ? 'pointer' : 'not-allowed',
+              opacity: canStart ? 1 : 0.5,
+              transition: 'opacity 0.15s',
+            }}
+          >
+            {running ? (
+              <>
+                <svg style={{ animation: 'spin 1s linear infinite', width: 16, height: 16 }} viewBox="0 0 24 24" fill="none">
+                  <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                Running…
+              </>
+            ) : 'Start Research'}
+          </button>
+          {started && !running && (
+            <button
+              onClick={reset}
+              style={{ fontSize: 14, color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              Reset
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Error ────────────────────────────────────────────────────── */}
+      {error && (
+        <div style={{
+          padding: 16,
+          background: 'var(--danger-soft, #FEF2F2)',
+          border: '1px solid var(--danger)',
+          borderRadius: 'var(--r-lg)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 8,
+        }}>
+          <span style={{ color: 'var(--danger)', flexShrink: 0, marginTop: 2 }}>✕</span>
+          <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--danger)', margin: 0 }}>{error}</p>
+        </div>
+      )}
+
+      {/* ── Progress Journey ─────────────────────────────────────────── */}
+      {started && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {STEP_CONFIG.map((stepCfg, stepIndex) => {
+            const s = steps[stepCfg.id] || {};
+            if (!s.status) return null;
+
+            const isActive = s.status === 'active';
+
+            return (
+              <div
+                key={stepCfg.id}
+                style={{
+                  background: 'var(--card)',
+                  border: `1px solid ${isActive ? 'var(--primary)' : 'var(--border)'}`,
+                  borderRadius: 'var(--r-lg)',
+                  overflow: 'hidden',
+                  transition: 'border-color 0.2s',
+                  boxShadow: cardShadow,
+                }}
+              >
+                {/* Step header */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '14px 20px',
+                  background: isActive ? 'var(--primary-soft)' : 'var(--surface)',
+                }}>
+                  <StepBadge status={s.status} index={stepIndex} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>{stepCfg.label}</span>
+                      {isActive && (
+                        <span style={{
+                          fontSize: 12,
+                          padding: '2px 8px',
+                          borderRadius: 99,
+                          fontWeight: 500,
+                          background: 'var(--primary-soft)',
+                          color: 'var(--primary)',
+                          animation: 'pulse 2s infinite',
+                        }}>
+                          In progress
+                        </span>
+                      )}
+                      {s.status === 'done' && (
+                        <span style={{
+                          fontSize: 12,
+                          background: 'var(--surface)',
+                          color: 'var(--text-3)',
+                          padding: '2px 8px',
+                          borderRadius: 99,
+                          fontWeight: 500,
+                        }}>
+                          Done
+                        </span>
+                      )}
                     </div>
-                    <div className="mb-3">
-                      <div className="text-xs text-gray-400 mb-0.5">Search Volume</div>
-                      <div className="text-lg font-bold text-gray-800">
-                        {kw.volume > 0 ? kw.volume.toLocaleString() : '—'}
-                      </div>
-                    </div>
-                    {kw.reason && (
-                      <p className="text-xs text-gray-500 leading-relaxed border-t border-gray-100 pt-3 mt-1">
-                        {kw.reason}
-                      </p>
+                    {s.message && (
+                      <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '2px 0 0' }}>{s.message}</p>
                     )}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
 
-            {/* Secondary Keywords */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <h2 className="text-base font-bold text-gray-900">Secondary Keywords</h2>
-                <span className="text-xs bg-blue-100 text-blue-800 font-semibold px-2 py-0.5 rounded-full">
-                  {result.secondary?.length || 0} selected
-                </span>
-              </div>
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ backgroundColor: '#111827' }}>
-                      <th className="text-left text-white font-semibold px-4 py-3 text-xs uppercase tracking-wider">#</th>
-                      <th className="text-left text-white font-semibold px-4 py-3 text-xs uppercase tracking-wider">Keyword</th>
-                      <th className="text-left text-white font-semibold px-4 py-3 text-xs uppercase tracking-wider">Volume</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {(result.secondary || []).map((kw, i) => (
-                      <tr key={i} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 text-gray-400 text-xs">{i + 1}</td>
-                        <td className="px-4 py-3 font-medium text-gray-800">{kw.keyword}</td>
-                        <td className="px-4 py-3 text-gray-600">
-                          {kw.volume > 0 ? kw.volume.toLocaleString() : '—'}
-                        </td>
-                      </tr>
+                {/* Variants step — show query chips */}
+                {stepCfg.id === 'variants' && s.status === 'done' && queries.length > 0 && (
+                  <div style={{
+                    padding: '14px 20px',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 8,
+                    borderTop: '1px solid var(--border)',
+                  }}>
+                    {queries.map((q, i) => (
+                      <span
+                        key={i}
+                        style={i === 0
+                          ? { fontSize: 12, padding: '6px 12px', borderRadius: 99, fontWeight: 500, background: 'var(--nav-bg-top)', color: '#fff' }
+                          : { fontSize: 12, padding: '6px 12px', borderRadius: 99, fontWeight: 500, background: 'var(--surface)', color: 'var(--text)' }
+                        }
+                      >
+                        {i === 0 ? '★ ' : ''}{q}
+                      </span>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* All source keywords toggle */}
-            {allKeywords.length > 0 && (
-              <div className="bg-white rounded-xl border border-[#E5E7EB]" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                <button
-                  onClick={() => setShowAllKeywords(v => !v)}
-                  className="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-[#F9FAFB] transition-colors rounded-xl"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-[#111827]">All source keywords</span>
-                    <span className="text-xs bg-[#F4F5F7] text-[#6B7280] font-semibold px-2 py-0.5 rounded-full">
-                      {allKeywords.length} total
-                    </span>
                   </div>
-                  <svg
-                    className={`w-4 h-4 text-[#6B7280] transition-transform ${showAllKeywords ? 'rotate-180' : ''}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                  </svg>
-                </button>
+                )}
 
-                {showAllKeywords && (
-                  <div className="border-t border-[#E5E7EB] overflow-hidden rounded-b-xl divide-y divide-[#E5E7EB]">
-                    {[
-                      { label: 'Core', desc: 'Appears across 3+ competitor pages', color: '#3DAA8E', headerBg: '#F0FAF7', filter: k => (k.urlFrequency || 0) >= 3 },
-                      { label: 'Relevant', desc: 'Appears across 2 competitor pages', color: '#6D28D9', headerBg: '#EDE9FE', filter: k => (k.urlFrequency || 0) === 2 },
-                      { label: 'Discovery', desc: 'Unique to a single competitor page', color: '#6B7280', headerBg: '#F4F5F7', filter: k => (k.urlFrequency || 0) <= 1 },
-                    ].map(tier => {
-                      const tierKws = allKeywords
-                        .filter(tier.filter)
-                        .sort((a, b) => (b.volume || 0) - (a.volume || 0));
-                      if (tierKws.length === 0) return null;
+                {/* URL scoring step — show scored URL cards */}
+                {stepCfg.id === 'url_scoring' && s.status === 'done' && urls.length > 0 && (
+                  <div style={{
+                    padding: '16px 20px',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                    gap: 12,
+                    borderTop: '1px solid var(--border)',
+                  }}>
+                    {urls.map((u, idx) => {
+                      const ptStyle = PAGE_TYPE_STYLES[u.pageType] || PAGE_TYPE_STYLES.page;
                       return (
-                        <div key={tier.label}>
-                          <div className="px-5 py-2.5 flex items-center gap-2.5" style={{ backgroundColor: tier.headerBg }}>
-                            <span className="text-xs font-bold" style={{ color: tier.color }}>{tier.label}</span>
-                            <span className="text-xs text-[#6B7280]">{tier.desc}</span>
-                            <span className="ml-auto text-xs font-semibold" style={{ color: tier.color }}>{tierKws.length}</span>
+                        <div key={idx} style={{
+                          border: '1px solid var(--border)',
+                          borderRadius: 8,
+                          padding: 12,
+                          background: 'var(--surface)',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                            <span style={{
+                              width: 20,
+                              height: 20,
+                              borderRadius: '50%',
+                              background: 'var(--primary)',
+                              color: '#fff',
+                              fontSize: 11,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 700,
+                              flexShrink: 0,
+                            }}>
+                              {idx + 1}
+                            </span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                              {(() => { try { return new URL(u.url).hostname; } catch { return u.url; } })()}
+                            </span>
                           </div>
-                          <table className="w-full text-sm">
-                            <tbody className="divide-y divide-gray-50">
-                              {tierKws.map((kw, i) => (
-                                <tr key={i} className="hover:bg-[#F9FAFB] transition-colors">
-                                  <td className="px-5 py-2.5 text-[#111827] font-medium text-xs">{kw.keyword}</td>
-                                  <td className="px-5 py-2.5 text-[#6B7280] text-xs text-right w-24">
-                                    {kw.volume > 0 ? kw.volume.toLocaleString() : '—'}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                          <p style={{ fontSize: 12, color: 'var(--text-2)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.4, margin: '0 0 8px' }}>
+                            {u.title}
+                          </p>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: 12, padding: '2px 6px', borderRadius: 4, fontWeight: 500, background: ptStyle.bg, color: ptStyle.text }}>
+                              {u.pageType}
+                            </span>
+                            {u.queryCount > 1 && (
+                              <span style={{ fontSize: 12, padding: '2px 6px', borderRadius: 4, fontWeight: 500, background: 'var(--primary-soft)', color: 'var(--primary)' }}>
+                                {u.queryCount}/{totalQueries || queries.length} queries
+                              </span>
+                            )}
+                            <span style={{ fontSize: 12, padding: '2px 6px', borderRadius: 4, fontWeight: 500, background: 'var(--surface)', color: 'var(--text-2)', marginLeft: 'auto' }}>
+                              {u.rubricScore?.toFixed(2)}
+                            </span>
+                          </div>
                         </div>
                       );
                     })}
                   </div>
                 )}
+
+                {/* SEMrush step — keywords per URL */}
+                {stepCfg.id === 'semrush' && (s.status === 'active' || s.status === 'done') && urls.length > 0 && (
+                  <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16, borderTop: '1px solid var(--border)' }}>
+                    {urls.map((u, idx) => {
+                      const ud = urlData[u.url];
+                      return (
+                        <div key={idx}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                            {ud?.status === 'done' ? (
+                              <span style={{ color: 'var(--success)', fontSize: 12, fontWeight: 700 }}>✓</span>
+                            ) : ud?.status === 'loading' ? (
+                              <svg style={{ animation: 'spin 1s linear infinite', width: 12, height: 12, color: 'var(--primary)' }} viewBox="0 0 24 24" fill="none">
+                                <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                              </svg>
+                            ) : ud?.status === 'error' ? (
+                              <span style={{ color: 'var(--danger)', fontSize: 12 }}>✕</span>
+                            ) : (
+                              <span style={{ color: 'var(--text-3)', fontSize: 12 }}>·</span>
+                            )}
+                            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                              {(() => { try { const p = new URL(u.url); return p.hostname + (p.pathname !== '/' ? p.pathname : ''); } catch { return u.url; } })()}
+                            </span>
+                            {ud?.keywords?.length > 0 && (
+                              <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-3)', flexShrink: 0 }}>
+                                {ud.keywords.length} keyword{ud.keywords.length !== 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+
+                          {ud?.status === 'error' && (
+                            <p style={{ fontSize: 12, color: 'var(--danger)', marginLeft: 20, margin: 0 }}>{ud.error}</p>
+                          )}
+
+                          {ud?.keywords?.length > 0 && (
+                            <div style={{ marginLeft: 20, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                              {ud.keywords.slice(0, 10).map((kw, ki) => (
+                                <span key={ki} style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  fontSize: 12,
+                                  padding: '2px 8px',
+                                  borderRadius: 99,
+                                  background: 'var(--surface)',
+                                  color: 'var(--text)',
+                                }}>
+                                  {kw.keyword}
+                                  {kw.volume > 0 && (
+                                    <span style={{ color: 'var(--text-3)' }}>
+                                      {(kw.volume / 1000).toFixed(kw.volume >= 1000 ? 1 : 0)}{kw.volume >= 1000 ? 'k' : ''}
+                                    </span>
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {ud?.status === 'loading' && (
+                            <div style={{ marginLeft: 20, display: 'flex', gap: 6 }}>
+                              {[...Array(5)].map((_, i) => (
+                                <div key={i} style={{
+                                  height: 20,
+                                  borderRadius: 99,
+                                  background: 'var(--surface)',
+                                  width: 50 + i * 15,
+                                  animation: 'pulse 1.5s infinite',
+                                }} />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Analysis step — in progress spinner */}
+                {stepCfg.id === 'analysis' && s.status === 'active' && (
+                  <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 14, color: 'var(--text-2)' }}>
+                      <svg style={{ animation: 'spin 1s linear infinite', width: 16, height: 16, color: 'var(--primary)' }} viewBox="0 0 24 24" fill="none">
+                        <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                      </svg>
+                      Deduplicating keywords and running GPT-4o analysis…
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Results ──────────────────────────────────────────────────── */}
+      {result && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+          {/* Primary Keywords */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Primary Keywords</h2>
+              <span style={{
+                fontSize: 12,
+                background: 'var(--success-soft)',
+                color: 'var(--success)',
+                fontWeight: 600,
+                padding: '2px 8px',
+                borderRadius: 99,
+              }}>
+                {result.primary?.length || 0} selected
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+              {(result.primary || []).map((kw, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: 'var(--card)',
+                    borderRadius: 'var(--r-lg)',
+                    padding: 20,
+                    border: '1px solid var(--border)',
+                    borderLeft: '4px solid var(--primary)',
+                    boxShadow: cardShadow,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
+                    <h3 style={{ fontWeight: 700, color: 'var(--text)', fontSize: 15, lineHeight: 1.3, margin: 0 }}>{kw.keyword}</h3>
+                    <span style={{
+                      flexShrink: 0,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      padding: '2px 10px',
+                      borderRadius: 4,
+                      background: 'var(--primary-soft)',
+                      color: 'var(--primary)',
+                    }}>
+                      PRIMARY
+                    </span>
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 2 }}>Search Volume</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
+                      {kw.volume > 0 ? kw.volume.toLocaleString() : '—'}
+                    </div>
+                  </div>
+                  {kw.reason && (
+                    <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, borderTop: '1px solid var(--border)', paddingTop: 12, margin: 0 }}>
+                      {kw.reason}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-        )}
-      </main>
+
+          {/* Secondary Keywords */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Secondary Keywords</h2>
+              <span style={{
+                fontSize: 12,
+                background: 'var(--info-soft)',
+                color: 'var(--info)',
+                fontWeight: 600,
+                padding: '2px 8px',
+                borderRadius: 99,
+              }}>
+                {result.secondary?.length || 0} selected
+              </span>
+            </div>
+            <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', boxShadow: cardShadow, overflow: 'hidden' }}>
+              <table style={{ width: '100%', fontSize: 14, borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'var(--nav-bg-top)' }}>
+                    <th style={{ textAlign: 'left', color: '#fff', fontWeight: 600, padding: '12px 16px', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>#</th>
+                    <th style={{ textAlign: 'left', color: '#fff', fontWeight: 600, padding: '12px 16px', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Keyword</th>
+                    <th style={{ textAlign: 'left', color: '#fff', fontWeight: 600, padding: '12px 16px', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Volume</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(result.secondary || []).map((kw, i) => (
+                    <tr
+                      key={i}
+                      style={{ borderTop: '1px solid var(--border)', transition: 'background 0.1s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <td style={{ padding: '12px 16px', color: 'var(--text-3)', fontSize: 12 }}>{i + 1}</td>
+                      <td style={{ padding: '12px 16px', fontWeight: 500, color: 'var(--text)' }}>{kw.keyword}</td>
+                      <td style={{ padding: '12px 16px', color: 'var(--text-2)' }}>
+                        {kw.volume > 0 ? kw.volume.toLocaleString() : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* All source keywords toggle */}
+          {allKeywords.length > 0 && (
+            <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', boxShadow: cardShadow }}>
+              <button
+                onClick={() => setShowAllKeywords(v => !v)}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '14px 20px',
+                  textAlign: 'left',
+                  background: 'none',
+                  border: 'none',
+                  borderRadius: 'var(--r-lg)',
+                  cursor: 'pointer',
+                  transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>All source keywords</span>
+                  <span style={{ fontSize: 12, background: 'var(--surface)', color: 'var(--text-2)', fontWeight: 600, padding: '2px 8px', borderRadius: 99 }}>
+                    {allKeywords.length} total
+                  </span>
+                </div>
+                <svg
+                  style={{ width: 16, height: 16, color: 'var(--text-2)', transform: showAllKeywords ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </button>
+
+              {showAllKeywords && (
+                <div style={{ borderTop: '1px solid var(--border)', borderRadius: '0 0 var(--r-lg) var(--r-lg)', overflow: 'hidden' }}>
+                  {[
+                    { label: 'Core',      desc: 'Appears across 3+ competitor pages', color: 'var(--primary)',  headerBg: 'var(--primary-soft)',  filter: k => (k.urlFrequency || 0) >= 3 },
+                    { label: 'Relevant',  desc: 'Appears across 2 competitor pages',  color: 'var(--info)',     headerBg: 'var(--info-soft)',     filter: k => (k.urlFrequency || 0) === 2 },
+                    { label: 'Discovery', desc: 'Unique to a single competitor page', color: 'var(--text-3)',   headerBg: 'var(--surface)',       filter: k => (k.urlFrequency || 0) <= 1 },
+                  ].map(tier => {
+                    const tierKws = allKeywords
+                      .filter(tier.filter)
+                      .sort((a, b) => (b.volume || 0) - (a.volume || 0));
+                    if (tierKws.length === 0) return null;
+                    return (
+                      <div key={tier.label} style={{ borderTop: '1px solid var(--border)' }}>
+                        <div style={{
+                          padding: '10px 20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          background: tier.headerBg,
+                        }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: tier.color }}>{tier.label}</span>
+                          <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{tier.desc}</span>
+                          <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 600, color: tier.color }}>{tierKws.length}</span>
+                        </div>
+                        <table style={{ width: '100%', fontSize: 14, borderCollapse: 'collapse' }}>
+                          <tbody>
+                            {tierKws.map((kw, i) => (
+                              <tr
+                                key={i}
+                                style={{ borderTop: '1px solid var(--border)', transition: 'background 0.1s' }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                              >
+                                <td style={{ padding: '10px 20px', color: 'var(--text)', fontWeight: 500, fontSize: 12 }}>{kw.keyword}</td>
+                                <td style={{ padding: '10px 20px', color: 'var(--text-2)', fontSize: 12, textAlign: 'right', width: 96 }}>
+                                  {kw.volume > 0 ? kw.volume.toLocaleString() : '—'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.5; }
+        }
+      `}</style>
+    </main>
   );
 }

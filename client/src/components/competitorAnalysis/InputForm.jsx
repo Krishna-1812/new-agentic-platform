@@ -68,17 +68,28 @@ export default function InputForm({ onSubmit, loading, mode, onModeChange }) {
     });
   }
 
-  const labelCls = 'block text-xs font-semibold text-[#374151] mb-1';
-  const inputCls = 'w-full border border-[#D1D5DB] rounded-lg px-3 py-2.5 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#245E9E] focus:border-transparent';
-  const errCls = 'text-xs text-red-500 mt-1';
+  const inputStyle = (hasError) => ({
+    width: '100%',
+    border: `1px solid ${hasError ? 'var(--danger)' : 'var(--border)'}`,
+    borderRadius: 'var(--r-lg)',
+    padding: '10px 12px',
+    fontSize: 14,
+    color: 'var(--text)',
+    background: 'var(--card)',
+    outline: 'none',
+    boxSizing: 'border-box',
+  });
+
+  const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 4 };
+  const errStyle = { fontSize: 12, color: 'var(--danger)', marginTop: 4 };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       {/* Data Source mode toggle */}
       <div>
-        <label className={labelCls}>Data Source</label>
-        <div className="flex rounded-lg border border-[#D1D5DB] overflow-hidden">
+        <label style={labelStyle}>Data Source</label>
+        <div style={{ display: 'flex', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
           {[
             { id: 'api', label: 'Semrush API', desc: 'Auto-pull data' },
             { id: 'manual', label: 'Manual Upload', desc: 'Upload CSV exports' },
@@ -87,62 +98,63 @@ export default function InputForm({ onSubmit, loading, mode, onModeChange }) {
               key={opt.id}
               type="button"
               onClick={() => onModeChange(opt.id)}
-              className={`flex-1 py-2.5 px-3 text-left transition-colors ${
-                mode === opt.id
-                  ? 'bg-[#245E9E] text-white'
-                  : 'bg-white text-[#6B7280] hover:bg-[#F9FAFB]'
-              }`}
+              style={{
+                flex: 1, padding: '10px 12px', textAlign: 'left', border: 'none', cursor: 'pointer',
+                background: mode === opt.id ? 'var(--primary)' : 'var(--card)',
+                transition: 'background 0.15s',
+              }}
             >
-              <div className={`text-xs font-semibold ${mode === opt.id ? 'text-white' : 'text-[#374151]'}`}>{opt.label}</div>
-              <div className={`text-xs mt-0.5 ${mode === opt.id ? 'text-blue-100' : 'text-[#9CA3AF]'}`}>{opt.desc}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: mode === opt.id ? '#fff' : 'var(--text)' }}>{opt.label}</div>
+              <div style={{ fontSize: 12, marginTop: 2, color: mode === opt.id ? 'rgba(255,255,255,0.75)' : 'var(--text-3)' }}>{opt.desc}</div>
             </button>
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         {/* Brand Name */}
         <div>
-          <label className={labelCls}>Brand Name *</label>
+          <label style={labelStyle}>Brand Name *</label>
           <input
             type="text"
             placeholder="e.g. Acalvio"
             maxLength={80}
             value={form.brandName}
             onChange={e => set('brandName', e.target.value)}
-            className={inputCls + (errors.brandName ? ' border-red-400' : '')}
+            style={inputStyle(errors.brandName)}
           />
-          {errors.brandName && <p className={errCls}>{errors.brandName}</p>}
+          {errors.brandName && <p style={errStyle}>{errors.brandName}</p>}
         </div>
 
         {/* Target URL */}
         <div>
-          <label className={labelCls}>Target URL *</label>
+          <label style={labelStyle}>Target URL *</label>
           <input
             type="text"
             placeholder="e.g. acalvio.com"
             value={form.targetUrl}
             onChange={e => set('targetUrl', e.target.value)}
-            className={inputCls + (errors.targetUrl ? ' border-red-400' : '')}
+            style={inputStyle(errors.targetUrl)}
           />
-          {errors.targetUrl && <p className={errCls}>{errors.targetUrl}</p>}
+          {errors.targetUrl && <p style={errStyle}>{errors.targetUrl}</p>}
         </div>
       </div>
 
       {/* Analysis Level */}
       <div>
-        <label className={labelCls}>Analysis Level *</label>
-        <div className="flex rounded-lg border border-[#D1D5DB] overflow-hidden">
+        <label style={labelStyle}>Analysis Level *</label>
+        <div style={{ display: 'flex', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
           {['domain', 'suburl'].map(lvl => (
             <button
               key={lvl}
               type="button"
               onClick={() => set('analysisLevel', lvl)}
-              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
-                form.analysisLevel === lvl
-                  ? 'bg-[#245E9E] text-white'
-                  : 'bg-white text-[#6B7280] hover:bg-[#F9FAFB]'
-              }`}
+              style={{
+                flex: 1, padding: '10px 0', fontSize: 14, fontWeight: 500, border: 'none', cursor: 'pointer',
+                background: form.analysisLevel === lvl ? 'var(--primary)' : 'var(--card)',
+                color: form.analysisLevel === lvl ? '#fff' : 'var(--text-2)',
+                transition: 'background 0.15s',
+              }}
             >
               {lvl === 'domain' ? 'Full Domain' : 'Sub-URL'}
             </button>
@@ -153,40 +165,40 @@ export default function InputForm({ onSubmit, loading, mode, onModeChange }) {
       {/* Sub-URL */}
       {form.analysisLevel === 'suburl' && (
         <div>
-          <label className={labelCls}>Sub-URL Path *</label>
+          <label style={labelStyle}>Sub-URL Path *</label>
           <input
             type="text"
             placeholder="e.g. /services/seo/"
             value={form.subUrl}
             onChange={e => set('subUrl', e.target.value)}
-            className={inputCls + (errors.subUrl ? ' border-red-400' : '')}
+            style={inputStyle(errors.subUrl)}
           />
-          {errors.subUrl && <p className={errCls}>{errors.subUrl}</p>}
+          {errors.subUrl && <p style={errStyle}>{errors.subUrl}</p>}
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         {/* Country */}
         <div>
-          <label className={labelCls}>Country *</label>
+          <label style={labelStyle}>Country *</label>
           <select
             value={form.country}
             onChange={e => set('country', e.target.value)}
-            className={inputCls + (errors.country ? ' border-red-400' : '')}
+            style={inputStyle(errors.country)}
           >
             {countries.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          {errors.country && <p className={errCls}>{errors.country}</p>}
+          {errors.country && <p style={errStyle}>{errors.country}</p>}
         </div>
 
         {/* Max Competitors (API mode only) */}
         {mode === 'api' && (
           <div>
-            <label className={labelCls}>Max Competitors</label>
+            <label style={labelStyle}>Max Competitors</label>
             <select
               value={form.maxCompetitors}
               onChange={e => set('maxCompetitors', parseInt(e.target.value))}
-              className={inputCls}
+              style={inputStyle(false)}
             >
               {[4, 5, 6, 7].map(n => <option key={n} value={n}>{n} competitors</option>)}
             </select>
@@ -196,34 +208,33 @@ export default function InputForm({ onSubmit, loading, mode, onModeChange }) {
 
       {/* Date Range */}
       <div>
-        <label className={labelCls}>Date Range</label>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <input
-              type="date"
-              value={form.dateFrom}
-              onChange={e => set('dateFrom', e.target.value)}
-              className={inputCls + (errors.dateRange ? ' border-red-400' : '')}
-            />
-          </div>
-          <div>
-            <input
-              type="date"
-              value={form.dateTo}
-              onChange={e => set('dateTo', e.target.value)}
-              className={inputCls + (errors.dateRange ? ' border-red-400' : '')}
-            />
-          </div>
+        <label style={labelStyle}>Date Range</label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <input
+            type="date"
+            value={form.dateFrom}
+            onChange={e => set('dateFrom', e.target.value)}
+            style={inputStyle(errors.dateRange)}
+          />
+          <input
+            type="date"
+            value={form.dateTo}
+            onChange={e => set('dateTo', e.target.value)}
+            style={inputStyle(errors.dateRange)}
+          />
         </div>
-        {errors.dateRange && <p className={errCls}>{errors.dateRange}</p>}
+        {errors.dateRange && <p style={errStyle}>{errors.dateRange}</p>}
       </div>
 
       {/* Submit */}
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50"
-        style={{ backgroundColor: '#245E9E' }}
+        style={{
+          width: '100%', padding: '12px 0', borderRadius: 'var(--r-lg)',
+          fontSize: 14, fontWeight: 600, color: '#fff', border: 'none', cursor: 'pointer',
+          background: 'var(--primary)', opacity: loading ? 0.5 : 1, transition: 'opacity 0.15s',
+        }}
       >
         {loading
           ? (mode === 'manual' ? 'Preparing…' : 'Discovering Competitors…')

@@ -13,51 +13,53 @@ function FileZone({ file, onFile, label, required, error }) {
     if (f) onFile(f);
   }
 
+  const borderColor = file ? 'var(--success)' : error ? 'var(--danger)' : 'var(--border)';
+  const bg = file ? 'var(--success-soft)' : error ? 'var(--danger-soft)' : 'var(--card)';
+
   return (
     <div>
-      <p className="text-xs text-[#6B7280] mb-1">
-        {label} {required && <span className="text-red-400">*</span>}
+      <p style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 4, marginTop: 0 }}>
+        {label} {required && <span style={{ color: 'var(--danger)' }}>*</span>}
       </p>
       <div
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
         onClick={() => ref.current?.click()}
-        className={`cursor-pointer rounded-lg border-2 border-dashed px-3 py-2 text-center transition-colors ${
-          file
-            ? 'border-green-400 bg-green-50'
-            : error
-            ? 'border-red-300 bg-red-50'
-            : 'border-[#D1D5DB] bg-white hover:border-[#245E9E] hover:bg-blue-50'
-        }`}
+        style={{
+          cursor: 'pointer', borderRadius: 'var(--r-lg)',
+          border: `2px dashed ${borderColor}`,
+          padding: '8px 12px', textAlign: 'center',
+          background: bg, transition: 'border-color 0.15s',
+        }}
       >
         <input
           ref={ref}
           type="file"
           accept=".csv,.txt"
-          className="hidden"
+          style={{ display: 'none' }}
           onChange={e => { if (e.target.files[0]) onFile(e.target.files[0]); }}
         />
         {file ? (
-          <div className="flex items-center justify-center gap-1.5">
-            <svg className="w-3.5 h-3.5 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <svg style={{ width: 14, height: 14, color: 'var(--success)', flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            <span className="text-xs font-medium text-green-700 truncate max-w-[130px]">{file.name}</span>
+            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--success)', maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</span>
             <button
               type="button"
               onClick={e => { e.stopPropagation(); onFile(null); }}
-              className="text-green-400 hover:text-red-500 ml-0.5"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--success)', padding: 0, marginLeft: 2 }}
             >
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg style={{ width: 12, height: 12 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
         ) : (
-          <p className="text-xs text-[#9CA3AF]">
+          <p style={{ fontSize: 12, color: error ? 'var(--danger)' : 'var(--text-3)', margin: 0 }}>
             {error
-              ? <span className="text-red-500">{error}</span>
-              : <><span className="text-[#245E9E] font-medium">Browse</span> or drop CSV</>}
+              ? error
+              : <><span style={{ color: 'var(--primary)', fontWeight: 500 }}>Browse</span> or drop CSV</>}
           </p>
         )}
       </div>
@@ -71,32 +73,51 @@ function DomainCard({ domain, isClient, competitorType, onDomainChange, onTypeCh
                       posFile, refFile, authorityScore,
                       onPosFile, onRefFile, onAuthorityScore,
                       onRemove, errors }) {
-  const inputCls = 'w-full border border-[#D1D5DB] rounded-lg px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#245E9E] focus:border-transparent';
+  const inputStyle = (hasErr) => ({
+    width: '100%',
+    border: `1px solid ${hasErr ? 'var(--danger)' : 'var(--border)'}`,
+    borderRadius: 'var(--r-lg)',
+    padding: '8px 12px',
+    fontSize: 14,
+    color: 'var(--text)',
+    background: 'var(--card)',
+    outline: 'none',
+    boxSizing: 'border-box',
+  });
 
   return (
-    <div className={`rounded-xl border p-4 ${isClient ? 'border-[#D3342E] bg-red-50/30' : 'border-[#E5E7EB] bg-white'}`}>
+    <div style={{
+      borderRadius: 'var(--r-lg)',
+      border: `1px solid ${isClient ? 'var(--danger)' : 'var(--border)'}`,
+      background: isClient ? 'rgba(var(--danger-rgb, 211,52,46), 0.04)' : 'var(--card)',
+      padding: 16,
+    }}>
       {/* Header row */}
-      <div className="flex items-center gap-3 mb-3">
-        <div className="flex-1">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <div style={{ flex: 1 }}>
           {isClient ? (
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: '#D3342E' }} />
-              <span className="text-sm font-semibold text-[#111827]">{domain}</span>
-              <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ backgroundColor: '#D3342E1A', color: '#D3342E' }}>Client</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: 'var(--danger)' }} />
+              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{domain}</span>
+              <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 4, fontWeight: 500, background: 'var(--danger-soft)', color: 'var(--danger)' }}>Client</span>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <input
                 type="text"
                 placeholder="competitor.com"
                 value={domain}
                 onChange={e => onDomainChange(e.target.value)}
-                className={inputCls + (errors?.domain ? ' border-red-400' : '')}
+                style={{ ...inputStyle(errors?.domain), flex: 1 }}
               />
               <select
                 value={competitorType}
                 onChange={e => onTypeChange(e.target.value)}
-                className="border border-[#D1D5DB] rounded-lg px-2 py-2 text-xs text-[#374151] focus:outline-none w-32 flex-shrink-0"
+                style={{
+                  border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+                  padding: '8px', fontSize: 12, color: 'var(--text)', background: 'var(--card)',
+                  outline: 'none', width: 128, flexShrink: 0,
+                }}
               >
                 {COMPETITOR_TYPES.map(t => (
                   <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
@@ -105,21 +126,21 @@ function DomainCard({ domain, isClient, competitorType, onDomainChange, onTypeCh
               <button
                 type="button"
                 onClick={onRemove}
-                className="text-[#9CA3AF] hover:text-red-500 flex-shrink-0"
                 title="Remove"
+                style={{ color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, padding: 0 }}
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
           )}
-          {errors?.domain && <p className="text-xs text-red-500 mt-1 ml-4">{errors.domain}</p>}
+          {errors?.domain && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4, marginLeft: 16 }}>{errors.domain}</p>}
         </div>
       </div>
 
       {/* Uploads + authority score */}
-      <div className="grid grid-cols-3 gap-3">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
         <FileZone
           label="Organic Positions"
           required
@@ -135,7 +156,7 @@ function DomainCard({ domain, isClient, competitorType, onDomainChange, onTypeCh
           error={errors?.refFile}
         />
         <div>
-          <p className="text-xs text-[#6B7280] mb-1">Authority Score</p>
+          <p style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 4, marginTop: 0 }}>Authority Score</p>
           <input
             type="number"
             min="0"
@@ -143,9 +164,13 @@ function DomainCard({ domain, isClient, competitorType, onDomainChange, onTypeCh
             placeholder="e.g. 42"
             value={authorityScore}
             onChange={e => onAuthorityScore(e.target.value)}
-            className="w-full border border-[#D1D5DB] rounded-lg px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#245E9E]"
+            style={{
+              width: '100%', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+              padding: '8px 12px', fontSize: 14, color: 'var(--text)', background: 'var(--card)',
+              outline: 'none', boxSizing: 'border-box',
+            }}
           />
-          <p className="text-xs text-[#9CA3AF] mt-0.5">From Domain Overview</p>
+          <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>From Domain Overview</p>
         </div>
       </div>
     </div>
@@ -159,7 +184,6 @@ export default function ManualUpload({ clientDomain, brandName, onRunAnalysis, l
 
   const [competitors, setCompetitors] = useState([emptyDomain(), emptyDomain()]);
 
-  // Per-domain file + score state — keyed by "client" or competitor index
   const [posFiles,  setPosFiles]  = useState({});
   const [refFiles,  setRefFiles]  = useState({});
   const [ascores,   setAscores]   = useState({});
@@ -188,10 +212,8 @@ export default function ManualUpload({ clientDomain, brandName, onRunAnalysis, l
   async function handleSubmit() {
     const errs = {};
 
-    // Client positions file required
     if (!posFiles['client']) errs['client_posFile'] = 'Required';
 
-    // Validate competitors
     const validComps = competitors.map((c, i) => ({ ...c, i })).filter(c => c.domain.trim());
     if (!validComps.length) errs.noCompetitors = 'Add at least one competitor domain.';
 
@@ -201,7 +223,6 @@ export default function ManualUpload({ clientDomain, brandName, onRunAnalysis, l
 
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    // Read all files
     try {
       const positionFiles  = {};
       const refdomainFiles = {};
@@ -232,50 +253,56 @@ export default function ManualUpload({ clientDomain, brandName, onRunAnalysis, l
   }
 
   return (
-    <div className="space-y-5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       {/* Instructions */}
-      <div className="rounded-xl border border-blue-200 bg-blue-50 overflow-hidden">
+      <div style={{ borderRadius: 'var(--r-lg)', border: '1px solid var(--info)', background: 'var(--info-soft)', overflow: 'hidden' }}>
         <button
           type="button"
           onClick={() => setShowInstructions(v => !v)}
-          className="w-full flex items-center justify-between px-4 py-3"
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer',
+          }}
         >
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg style={{ width: 16, height: 16, color: 'var(--info)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span className="text-sm font-semibold text-blue-800">What to download from Semrush (per domain)</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--info)' }}>What to download from Semrush (per domain)</span>
           </div>
-          <svg className={`w-4 h-4 text-blue-500 transition-transform ${showInstructions ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg
+            style={{ width: 16, height: 16, color: 'var(--info)', transform: showInstructions ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         </button>
 
         {showInstructions && (
-          <div className="px-4 pb-4 pt-3 border-t border-blue-200 grid grid-cols-2 gap-4">
-            <div className="bg-white rounded-lg p-3 border border-blue-100">
-              <p className="text-xs font-bold text-blue-900 mb-1.5">1. Organic Positions <span className="text-red-500">*</span></p>
-              <ol className="space-y-1 text-xs text-blue-800">
-                <li>Go to <strong>Organic Research</strong> for the domain</li>
-                <li>Click the <strong>Positions</strong> tab</li>
-                <li>Set the correct country</li>
-                <li>Click <strong>Export → CSV</strong></li>
+          <div style={{ padding: '12px 16px 16px', borderTop: '1px solid var(--info)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', padding: 12, border: '1px solid var(--info)' }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--info)', marginBottom: 6, marginTop: 0 }}>1. Organic Positions <span style={{ color: 'var(--danger)' }}>*</span></p>
+              <ol style={{ margin: 0, padding: '0 0 0 16px' }}>
+                <li style={{ fontSize: 12, color: 'var(--text)', marginBottom: 4 }}>Go to <strong>Organic Research</strong> for the domain</li>
+                <li style={{ fontSize: 12, color: 'var(--text)', marginBottom: 4 }}>Click the <strong>Positions</strong> tab</li>
+                <li style={{ fontSize: 12, color: 'var(--text)', marginBottom: 4 }}>Set the correct country</li>
+                <li style={{ fontSize: 12, color: 'var(--text)' }}>Click <strong>Export → CSV</strong></li>
               </ol>
-              <p className="text-xs text-blue-600 mt-2 italic">Gives: keywords, positions, volumes, URLs, SERP features</p>
+              <p style={{ fontSize: 12, color: 'var(--info)', marginTop: 8, marginBottom: 0, fontStyle: 'italic' }}>Gives: keywords, positions, volumes, URLs, SERP features</p>
             </div>
-            <div className="bg-white rounded-lg p-3 border border-blue-100">
-              <p className="text-xs font-bold text-blue-900 mb-1.5">2. Referring Domains <span className="text-[#9CA3AF]">(optional)</span></p>
-              <ol className="space-y-1 text-xs text-blue-800">
-                <li>Go to <strong>Backlink Analytics</strong> for the domain</li>
-                <li>Click the <strong>Referring Domains</strong> tab</li>
-                <li>Click <strong>Export → CSV</strong></li>
+            <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', padding: 12, border: '1px solid var(--info)' }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--info)', marginBottom: 6, marginTop: 0 }}>2. Referring Domains <span style={{ color: 'var(--text-3)' }}>(optional)</span></p>
+              <ol style={{ margin: 0, padding: '0 0 0 16px' }}>
+                <li style={{ fontSize: 12, color: 'var(--text)', marginBottom: 4 }}>Go to <strong>Backlink Analytics</strong> for the domain</li>
+                <li style={{ fontSize: 12, color: 'var(--text)', marginBottom: 4 }}>Click the <strong>Referring Domains</strong> tab</li>
+                <li style={{ fontSize: 12, color: 'var(--text)' }}>Click <strong>Export → CSV</strong></li>
               </ol>
-              <p className="text-xs text-blue-600 mt-2 italic">Gives: backlinks, referring domains, follow/nofollow, authority buckets</p>
+              <p style={{ fontSize: 12, color: 'var(--info)', marginTop: 8, marginBottom: 0, fontStyle: 'italic' }}>Gives: backlinks, referring domains, follow/nofollow, authority buckets</p>
             </div>
-            <div className="col-span-2 bg-white rounded-lg p-3 border border-blue-100">
-              <p className="text-xs font-bold text-blue-900 mb-1">3. Authority Score <span className="text-[#9CA3AF]">(optional)</span></p>
-              <p className="text-xs text-blue-800">Visible on the <strong>Domain Overview</strong> page for any domain. Enter the number directly in the field below.</p>
+            <div style={{ gridColumn: '1 / -1', background: 'var(--card)', borderRadius: 'var(--r-lg)', padding: 12, border: '1px solid var(--info)' }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--info)', marginBottom: 4, marginTop: 0 }}>3. Authority Score <span style={{ color: 'var(--text-3)' }}>(optional)</span></p>
+              <p style={{ fontSize: 12, color: 'var(--text)', margin: 0 }}>Visible on the <strong>Domain Overview</strong> page for any domain. Enter the number directly in the field below.</p>
             </div>
           </div>
         )}
@@ -283,7 +310,7 @@ export default function ManualUpload({ clientDomain, brandName, onRunAnalysis, l
 
       {/* Client domain card */}
       <div>
-        <p className="text-xs font-semibold text-[#374151] mb-2">Client Domain</p>
+        <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 8, marginTop: 0 }}>Client Domain</p>
         <DomainCard
           domain={clientDomain}
           isClient
@@ -299,11 +326,11 @@ export default function ManualUpload({ clientDomain, brandName, onRunAnalysis, l
 
       {/* Competitor cards */}
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-semibold text-[#374151]">Competitor Domains</p>
-          {errors.noCompetitors && <p className="text-xs text-red-500">{errors.noCompetitors}</p>}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', margin: 0 }}>Competitor Domains</p>
+          {errors.noCompetitors && <p style={{ fontSize: 12, color: 'var(--danger)', margin: 0 }}>{errors.noCompetitors}</p>}
         </div>
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {competitors.map((comp, i) => (
             <DomainCard
               key={i}
@@ -326,9 +353,13 @@ export default function ManualUpload({ clientDomain, brandName, onRunAnalysis, l
         <button
           type="button"
           onClick={() => setCompetitors(prev => [...prev, emptyDomain()])}
-          className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#245E9E] hover:text-[#1a4a7a]"
+          style={{
+            marginTop: 12, display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: 12, fontWeight: 500, color: 'var(--primary)',
+            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+          }}
         >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <svg style={{ width: 14, height: 14 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
           Add competitor
@@ -336,15 +367,22 @@ export default function ManualUpload({ clientDomain, brandName, onRunAnalysis, l
       </div>
 
       {errors.submit && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{errors.submit}</p>
+        <p style={{
+          fontSize: 14, color: 'var(--danger)',
+          background: 'var(--danger-soft)', border: '1px solid var(--danger)',
+          borderRadius: 'var(--r-lg)', padding: '8px 12px', margin: 0,
+        }}>{errors.submit}</p>
       )}
 
       <button
         type="button"
         onClick={handleSubmit}
         disabled={loading}
-        className="w-full py-3 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50"
-        style={{ backgroundColor: '#245E9E' }}
+        style={{
+          width: '100%', padding: '12px 0', borderRadius: 'var(--r-lg)',
+          fontSize: 14, fontWeight: 600, color: '#fff', border: 'none', cursor: 'pointer',
+          background: 'var(--primary)', opacity: loading ? 0.5 : 1, transition: 'opacity 0.15s',
+        }}
       >
         {loading ? 'Processing files…' : 'Run Analysis'}
       </button>

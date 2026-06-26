@@ -12,28 +12,40 @@ const MANUAL_STEPS = [{ id: 1, label: 'Input' }, { id: 3, label: 'Upload' }, { i
 function StepBar({ step, mode }) {
   const steps = mode === 'manual' ? MANUAL_STEPS : API_STEPS;
   return (
-    <div className="flex items-center gap-0 mb-8">
+    <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: '2rem' }}>
       {steps.map((s, i) => {
         const done = step > s.id;
         const active = step === s.id;
         return (
-          <div key={s.id} className="flex items-center flex-1">
-            <div className="flex flex-col items-center flex-1">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                done ? 'bg-green-500 text-white' : active ? 'text-white' : 'bg-[#E5E7EB] text-[#9CA3AF]'
-              }`} style={active ? { backgroundColor: '#245E9E' } : {}}>
+          <div key={s.id} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 12, fontWeight: 700,
+                background: done ? 'var(--success)' : active ? 'var(--primary)' : 'var(--border)',
+                color: done || active ? '#fff' : 'var(--text-3)',
+                transition: 'background 0.2s',
+              }}>
                 {done ? (
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <svg style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
                 ) : (i + 1)}
               </div>
-              <span className={`text-xs mt-1 font-medium ${active ? 'text-[#245E9E]' : done ? 'text-green-600' : 'text-[#9CA3AF]'}`}>
+              <span style={{
+                fontSize: 12, marginTop: 4, fontWeight: 500,
+                color: active ? 'var(--primary)' : done ? 'var(--success)' : 'var(--text-3)',
+              }}>
                 {s.label}
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div className={`h-0.5 flex-1 mb-4 transition-colors ${done ? 'bg-green-400' : 'bg-[#E5E7EB]'}`} />
+              <div style={{
+                height: 2, flex: 1, marginBottom: 16,
+                background: done ? 'var(--success)' : 'var(--border)',
+                transition: 'background 0.2s',
+              }} />
             )}
           </div>
         );
@@ -216,123 +228,147 @@ export default function CompetitorAnalysisPage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F4F5F7' }}>
-      {/* Top nav */}
-      <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6">
-        <div className="max-w-4xl mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <button onClick={() => navigate('/')} className="flex items-center gap-1.5 text-[#6B7280] hover:text-[#111827] transition-colors">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-            </button>
-            <div className="w-px h-4 bg-[#E5E7EB]" />
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded flex items-center justify-center" style={{ backgroundColor: '#D3342E1A' }}>
-                <svg className="w-3.5 h-3.5" style={{ color: '#D3342E' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    <>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div style={{ minHeight: '100vh', background: 'var(--surface)' }}>
+        {/* Top nav */}
+        <header style={{ background: 'var(--card)', borderBottom: '1px solid var(--border)', height: 56, display: 'flex', alignItems: 'center', padding: '0 1.5rem' }}>
+          <div style={{ maxWidth: 896, margin: '0 auto', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                onClick={() => navigate('/')}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                <svg style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                 </svg>
+              </button>
+              <div style={{ width: 1, height: 16, background: 'var(--border)' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 24, height: 24, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--danger-soft)' }}>
+                  <svg style={{ width: 14, height: 14, color: 'var(--danger)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <span style={{ fontWeight: 600, color: 'var(--text)', fontSize: 14 }}>Competitor Analysis</span>
               </div>
-              <span className="font-semibold text-[#111827] text-sm">Competitor Analysis</span>
             </div>
+            {brandInfo && (
+              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>
+                {brandInfo.brandName} · {brandInfo.targetUrl} · {brandInfo.country}
+              </span>
+            )}
           </div>
-          {brandInfo && (
-            <span className="text-xs text-[#6B7280]">
-              {brandInfo.brandName} · {brandInfo.targetUrl} · {brandInfo.country}
-            </span>
-          )}
-        </div>
-      </header>
+        </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        <StepBar step={step} mode={mode} />
+        <main style={{ maxWidth: 896, margin: '0 auto', padding: '2rem 1.5rem' }}>
+          <StepBar step={step} mode={mode} />
 
-        {/* Error banner */}
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
-            <svg className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
-            <div>
-              <p className="text-sm font-medium text-red-800">Error</p>
-              <p className="text-sm text-red-700 mt-0.5">{error}</p>
-            </div>
-            <button onClick={() => setError('')} className="ml-auto text-red-400 hover:text-red-600">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          {/* Error banner */}
+          {error && (
+            <div style={{
+              marginBottom: 24,
+              background: 'var(--danger-soft)',
+              border: '1px solid var(--danger)',
+              borderRadius: 'var(--r-lg)',
+              padding: '12px 16px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 12,
+            }}>
+              <svg style={{ width: 16, height: 16, color: 'var(--danger)', flexShrink: 0, marginTop: 2 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
               </svg>
-            </button>
-          </div>
-        )}
-
-        <div className="bg-white rounded-xl border border-[#E5E7EB] p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          <h2 className="text-lg font-bold text-[#111827] mb-5">{stepTitles[step]}</h2>
-
-          {/* Step 1: Input */}
-          {step === 1 && (
-            <InputForm
-              onSubmit={handleDiscover}
-              loading={loading}
-              mode={mode}
-              onModeChange={m => setMode(m)}
-            />
-          )}
-
-          {/* Step 2: Auto-discovery loading (API mode only) */}
-          {step === 2 && (
-            <div className="flex flex-col items-center justify-center py-12 gap-5">
-              <div className="w-12 h-12 border-4 border-[#245E9E] border-t-transparent rounded-full animate-spin" />
-              <div className="text-center">
-                <p className="text-sm font-semibold text-[#374151]">Discovering competitors…</p>
-                <p className="text-xs text-[#9CA3AF] mt-1">Pulling Semrush data and running AI validation</p>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--danger)', margin: 0 }}>Error</p>
+                <p style={{ fontSize: 14, color: 'var(--danger)', margin: '2px 0 0' }}>{error}</p>
               </div>
+              <button
+                onClick={() => setError('')}
+                style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: 0 }}
+              >
+                <svg style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           )}
 
-          {/* Step 3: Confirm competitors (API) or Upload CSVs (manual) */}
-          {step === 3 && mode === 'api' && (
-            <CompetitorConfirmation
-              competitors={competitors}
-              gptSummary={gptSummary}
-              onConfirm={handleRunAnalysis}
-              loading={loading}
-            />
-          )}
-          {step === 3 && mode === 'manual' && (
-            <ManualUpload
-              clientDomain={brandInfo?.targetUrl || ''}
-              brandName={brandInfo?.brandName || ''}
-              onRunAnalysis={(comps, posFiles, refFiles, ascores) => handleManualRun(comps, posFiles, refFiles, ascores)}
-              loading={loading}
-            />
-          )}
+          <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20, marginTop: 0 }}>{stepTitles[step]}</h2>
 
-          {/* Step 4: Progress */}
-          {step === 4 && (
-            <ProgressTracker
-              sectionStatuses={sectionStatuses}
-              overallProgress={overallProgress}
-            />
-          )}
+            {/* Step 1: Input */}
+            {step === 1 && (
+              <InputForm
+                onSubmit={handleDiscover}
+                loading={loading}
+                mode={mode}
+                onModeChange={m => setMode(m)}
+              />
+            )}
 
-          {/* Step 5: Report */}
-          {step === 5 && reportData && (
-            <ReportPreview
-              reportData={reportData}
-              jobId={jobId}
-              brandName={brandInfo?.brandName || 'Brand'}
-            />
-          )}
-        </div>
+            {/* Step 2: Auto-discovery loading (API mode only) */}
+            {step === 2 && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 0', gap: 20 }}>
+                <div style={{
+                  width: 48, height: 48,
+                  border: '4px solid var(--border)',
+                  borderTopColor: 'var(--primary)',
+                  borderRadius: '50%',
+                  animation: 'spin 0.8s linear infinite',
+                }} />
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: 0 }}>Discovering competitors…</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>Pulling Semrush data and running AI validation</p>
+                </div>
+              </div>
+            )}
 
-        {step === 5 && (
-          <p className="text-center text-xs text-[#9CA3AF] mt-4">
-            {mode === 'manual'
-              ? 'Data sourced from uploaded Semrush CSV exports · 0 API units used'
-              : 'Semrush API · approximately 150,000–200,000 units per report'}
-          </p>
-        )}
-      </main>
-    </div>
+            {/* Step 3: Confirm competitors (API) or Upload CSVs (manual) */}
+            {step === 3 && mode === 'api' && (
+              <CompetitorConfirmation
+                competitors={competitors}
+                gptSummary={gptSummary}
+                onConfirm={handleRunAnalysis}
+                loading={loading}
+              />
+            )}
+            {step === 3 && mode === 'manual' && (
+              <ManualUpload
+                clientDomain={brandInfo?.targetUrl || ''}
+                brandName={brandInfo?.brandName || ''}
+                onRunAnalysis={(comps, posFiles, refFiles, ascores) => handleManualRun(comps, posFiles, refFiles, ascores)}
+                loading={loading}
+              />
+            )}
+
+            {/* Step 4: Progress */}
+            {step === 4 && (
+              <ProgressTracker
+                sectionStatuses={sectionStatuses}
+                overallProgress={overallProgress}
+              />
+            )}
+
+            {/* Step 5: Report */}
+            {step === 5 && reportData && (
+              <ReportPreview
+                reportData={reportData}
+                jobId={jobId}
+                brandName={brandInfo?.brandName || 'Brand'}
+              />
+            )}
+          </div>
+
+          {step === 5 && (
+            <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-3)', marginTop: 16 }}>
+              {mode === 'manual'
+                ? 'Data sourced from uploaded Semrush CSV exports · 0 API units used'
+                : 'Semrush API · approximately 150,000–200,000 units per report'}
+            </p>
+          )}
+        </main>
+      </div>
+    </>
   );
 }

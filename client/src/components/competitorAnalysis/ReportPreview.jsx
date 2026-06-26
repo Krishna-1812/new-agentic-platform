@@ -7,21 +7,25 @@ function fmt(n, fallback = 'N/A') {
 }
 
 function scoreColor(score) {
-  if (score === null || score === undefined) return '#9CA3AF';
-  if (score >= 90) return '#1DA64B';
-  if (score >= 50) return '#F0B816';
-  return '#D3342E';
+  if (score === null || score === undefined) return 'var(--text-3)';
+  if (score >= 90) return 'var(--success)';
+  if (score >= 50) return 'var(--warning)';
+  return 'var(--danger)';
 }
 
 function Table({ headers, rows, clientDomain }) {
-  if (!rows?.length) return <p className="text-sm text-[#9CA3AF] italic">No data available.</p>;
+  if (!rows?.length) return <p style={{ fontSize: 14, color: 'var(--text-3)', fontStyle: 'italic' }}>No data available.</p>;
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm border-collapse">
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', fontSize: 14, borderCollapse: 'collapse' }}>
         <thead>
           <tr>
             {headers.map(h => (
-              <th key={h} className="text-left px-3 py-2 text-xs font-semibold text-white bg-[#245E9E] whitespace-nowrap">{h}</th>
+              <th key={h} style={{
+                textAlign: 'left', padding: '8px 12px',
+                fontSize: 12, fontWeight: 600, color: '#fff',
+                background: 'var(--primary)', whiteSpace: 'nowrap',
+              }}>{h}</th>
             ))}
           </tr>
         </thead>
@@ -29,9 +33,16 @@ function Table({ headers, rows, clientDomain }) {
           {rows.map((row, i) => {
             const isClient = clientDomain && String(row[0]).includes(clientDomain);
             return (
-              <tr key={i} className={isClient ? 'bg-[#D3342E] text-white font-semibold' : i % 2 === 0 ? 'bg-[#F9FAFB]' : 'bg-white'}>
+              <tr key={i} style={{
+                background: isClient ? 'var(--primary)' : i % 2 === 0 ? 'var(--surface)' : 'var(--card)',
+                color: isClient ? '#fff' : 'inherit',
+                fontWeight: isClient ? 600 : 400,
+              }}>
                 {row.map((cell, j) => (
-                  <td key={j} className="px-3 py-2 whitespace-nowrap text-xs">{cell ?? 'N/A'}</td>
+                  <td key={j} style={{
+                    padding: '8px 12px', whiteSpace: 'nowrap', fontSize: 12,
+                    fontFamily: typeof cell === 'number' ? 'var(--font-mono)' : 'inherit',
+                  }}>{cell ?? 'N/A'}</td>
                 ))}
               </tr>
             );
@@ -48,31 +59,34 @@ function ObsRecsEditor({ sectionKey, value, onChange, onRegenerate, regenerating
   const recommendations = lines.filter(l => l.startsWith('→'));
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-      <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-4">
-        <p className="text-xs font-bold text-[#245E9E] mb-2">Observations</p>
-        <ul className="space-y-1.5">
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 16 }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', marginBottom: 8, marginTop: 0 }}>Observations</p>
+        <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {observations.length ? observations.map((o, i) => (
-            <li key={i} className="text-xs text-[#374151] leading-relaxed">{o}</li>
-          )) : <li className="text-xs text-[#9CA3AF] italic">No observations.</li>}
+            <li key={i} style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.5 }}>{o}</li>
+          )) : <li style={{ fontSize: 12, color: 'var(--text-3)', fontStyle: 'italic' }}>No observations.</li>}
         </ul>
       </div>
-      <div className="bg-[#FFF5F5] border border-[#D3342E] rounded-xl p-4">
-        <p className="text-xs font-bold text-[#D3342E] mb-2">Recommendations</p>
-        <ul className="space-y-1.5">
+      <div style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger)', borderRadius: 'var(--r-lg)', padding: 16 }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--danger)', marginBottom: 8, marginTop: 0 }}>Recommendations</p>
+        <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {recommendations.length ? recommendations.map((r, i) => (
-            <li key={i} className="text-xs text-[#374151] leading-relaxed">{r}</li>
-          )) : <li className="text-xs text-[#9CA3AF] italic">No recommendations.</li>}
+            <li key={i} style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.5 }}>{r}</li>
+          )) : <li style={{ fontSize: 12, color: 'var(--text-3)', fontStyle: 'italic' }}>No recommendations.</li>}
         </ul>
       </div>
 
-      <div className="md:col-span-2">
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-xs font-medium text-[#6B7280]">Edit draft</p>
+      <div style={{ gridColumn: '1 / -1' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-2)', margin: 0 }}>Edit draft</p>
           <button
             onClick={() => onRegenerate(sectionKey)}
             disabled={regenerating}
-            className="text-xs text-[#245E9E] hover:underline disabled:opacity-50"
+            style={{
+              fontSize: 12, color: 'var(--primary)', background: 'none', border: 'none',
+              cursor: 'pointer', textDecoration: 'underline', opacity: regenerating ? 0.5 : 1,
+            }}
           >
             {regenerating ? 'Regenerating…' : 'Regenerate'}
           </button>
@@ -81,9 +95,15 @@ function ObsRecsEditor({ sectionKey, value, onChange, onRegenerate, regenerating
           value={value || ''}
           onChange={e => onChange(sectionKey, e.target.value)}
           rows={6}
-          className="w-full border border-[#D1D5DB] rounded-lg px-3 py-2 text-xs text-[#374151] focus:outline-none focus:ring-2 focus:ring-[#245E9E] font-mono"
+          style={{
+            width: '100%', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+            padding: '8px 12px', fontSize: 12, color: 'var(--text)', background: 'var(--card)',
+            outline: 'none', fontFamily: 'var(--font-mono)', resize: 'vertical', boxSizing: 'border-box',
+          }}
         />
-        <p className="text-xs text-[#9CA3AF] mt-1">{(value || '').length} chars · Use • for observations, → for recommendations</p>
+        <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>
+          {(value || '').length} chars · Use • for observations, → for recommendations
+        </p>
       </div>
     </div>
   );
@@ -92,17 +112,24 @@ function ObsRecsEditor({ sectionKey, value, onChange, onRegenerate, regenerating
 function Section({ title, children, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border border-[#E5E7EB] rounded-xl overflow-hidden">
+    <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', overflow: 'hidden' }}>
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-5 py-3.5 bg-[#F9FAFB] hover:bg-[#F3F4F6] transition-colors"
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px 20px', background: 'var(--surface)', border: 'none', cursor: 'pointer',
+        }}
       >
-        <span className="text-sm font-semibold text-[#111827]">{title}</span>
-        <svg className={`w-4 h-4 text-[#6B7280] transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{title}</span>
+        <svg style={{ width: 16, height: 16, color: 'var(--text-2)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      {open && <div className="p-5 bg-white space-y-4">{children}</div>}
+      {open && (
+        <div style={{ padding: 20, background: 'var(--card)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {children}
+        </div>
+      )}
     </div>
   );
 }
@@ -162,25 +189,27 @@ export default function ReportPreview({ reportData, jobId, brandName }) {
   const aioData = sections.aiOverview || [];
   const contentData = sections.contentAnalysis || [];
 
+  const downloadBtnStyle = {
+    display: 'flex', alignItems: 'center', gap: 8,
+    padding: '10px 20px', borderRadius: 'var(--r-lg)',
+    fontSize: 14, fontWeight: 600, color: '#fff', border: 'none', cursor: 'pointer',
+    background: 'var(--primary)', opacity: downloading ? 0.5 : 1, transition: 'opacity 0.15s',
+  };
+
   return (
-    <div className="space-y-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Executive Summary */}
       {executiveSummary && (
-        <div className="bg-[#F0F7FF] border border-[#BAD5F5] rounded-xl p-5">
-          <p className="text-xs font-bold text-[#245E9E] mb-2">Executive Summary</p>
-          <p className="text-sm text-[#374151] leading-relaxed">{executiveSummary}</p>
+        <div style={{ background: 'var(--info-soft)', border: '1px solid var(--info)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--info)', marginBottom: 8, marginTop: 0 }}>Executive Summary</p>
+          <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6, margin: 0 }}>{executiveSummary}</p>
         </div>
       )}
 
       {/* Download */}
-      <div className="flex justify-end">
-        <button
-          onClick={downloadPptx}
-          disabled={downloading}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-50 transition-colors"
-          style={{ backgroundColor: '#D3342E' }}
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button onClick={downloadPptx} disabled={downloading} style={downloadBtnStyle}>
+          <svg style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
           {downloading ? 'Generating PPTX…' : 'Download PPTX'}
@@ -244,7 +273,7 @@ export default function ReportPreview({ reportData, jobId, brandName }) {
           const items = (gapData[key] || []).slice(0, 20);
           return (
             <div key={key}>
-              <p className="text-xs font-semibold text-[#374151] mb-2">{label} ({items.length})</p>
+              <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 8, marginTop: 0 }}>{label} ({items.length})</p>
               <Table
                 headers={headers}
                 rows={items.map(k => [
@@ -272,8 +301,8 @@ export default function ReportPreview({ reportData, jobId, brandName }) {
           })}
           clientDomain={clientDomain}
         />
-        <div className="mt-4">
-          <p className="text-xs font-semibold text-[#374151] mb-2">Referring Domain Quality (Authority Buckets)</p>
+        <div>
+          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 8, marginTop: 0 }}>Referring Domain Quality (Authority Buckets)</p>
           <Table
             headers={['Domain', '80+', '60–79', '40–59', '20–39', '0–19']}
             rows={allDomains.map(d => {
@@ -314,14 +343,9 @@ export default function ReportPreview({ reportData, jobId, brandName }) {
       </Section>
 
       {/* Download again at bottom */}
-      <div className="flex justify-center pt-2">
-        <button
-          onClick={downloadPptx}
-          disabled={downloading}
-          className="flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white disabled:opacity-50 transition-colors"
-          style={{ backgroundColor: '#D3342E' }}
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8 }}>
+        <button onClick={downloadPptx} disabled={downloading} style={{ ...downloadBtnStyle, padding: '12px 24px' }}>
+          <svg style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
           {downloading ? 'Generating…' : 'Download PPTX Report'}

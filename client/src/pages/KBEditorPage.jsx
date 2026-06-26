@@ -76,15 +76,26 @@ export default function KBEditorPage() {
     setMetaField('linked_modules', current.includes(mod) ? current.filter(m => m !== mod) : [...current, mod]);
   };
 
+  const inputStyle = {
+    width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--r-lg)',
+    border: '1px solid var(--border)', fontSize: '0.875rem', color: 'var(--text)',
+    background: 'var(--card)', outline: 'none', boxSizing: 'border-box',
+  };
+
+  const labelStyle = {
+    display: 'block', fontSize: '0.75rem', fontWeight: 600,
+    color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem',
+  };
+
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F4F5F7' }}>
-      <p className="text-sm text-[#6B7280]">Loading…</p>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface)' }}>
+      <p style={{ fontSize: '0.875rem', color: 'var(--text-2)' }}>Loading…</p>
     </div>
   );
 
   if (!kb && !loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F4F5F7' }}>
-      <p className="text-sm text-red-500">KB not found.</p>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface)' }}>
+      <p style={{ fontSize: '0.875rem', color: 'var(--danger)' }}>KB not found.</p>
     </div>
   );
 
@@ -95,23 +106,40 @@ export default function KBEditorPage() {
   return (
     <>
       {error && (
-        <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex-shrink-0">{error}</div>
+        <div style={{
+          margin: '1rem 1.5rem 0', padding: '0.75rem 1rem',
+          background: 'var(--danger-soft, #FEF2F2)', border: '1px solid var(--danger-border, #FECACA)',
+          borderRadius: 'var(--r-lg)', fontSize: '0.875rem', color: 'var(--danger)',
+          flexShrink: 0,
+        }}>{error}</div>
       )}
 
       {/* Two-pane layout */}
-      <div className="flex flex-1 overflow-hidden">
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* Left pane: frontmatter form */}
-        <aside className="w-72 flex-shrink-0 bg-white border-r border-[#E5E7EB] overflow-y-auto">
-          <div className="p-5 space-y-4">
+        <aside style={{
+          width: '18rem', flexShrink: 0,
+          background: 'var(--card)', borderRight: '1px solid var(--border)',
+          overflowY: 'auto',
+        }}>
+          <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
-              <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">ID</label>
-              <div className="px-3 py-2 bg-[#F4F5F7] rounded-lg text-sm text-[#9CA3AF] font-mono">{meta.id}</div>
+              <label style={labelStyle}>ID</label>
+              <div style={{
+                padding: '0.5rem 0.75rem', background: 'var(--surface)',
+                borderRadius: 'var(--r-lg)', fontSize: '0.875rem', color: 'var(--text-3)',
+                fontFamily: 'var(--font-mono)',
+              }}>{meta.id}</div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Category</label>
-              <select value={meta.category || ''} onChange={e => setMetaField('category', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none bg-white">
+              <label style={labelStyle}>Category</label>
+              <select
+                value={meta.category || ''} onChange={e => setMetaField('category', e.target.value)}
+                style={{ ...inputStyle, cursor: 'pointer' }}
+                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+                onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+              >
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
@@ -119,9 +147,13 @@ export default function KBEditorPage() {
             {/* Brand field — shown for feedback (which brand this feedback belongs to) */}
             {isFeedback && (
               <div>
-                <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Brand</label>
-                <select value={meta.client || ''} onChange={e => setMetaField('client', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none bg-white">
+                <label style={labelStyle}>Brand</label>
+                <select
+                  value={meta.client || ''} onChange={e => setMetaField('client', e.target.value)}
+                  style={{ ...inputStyle, cursor: 'pointer' }}
+                  onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+                >
                   {BRANDS.filter(b => b !== 'global').map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
               </div>
@@ -130,57 +162,81 @@ export default function KBEditorPage() {
             {/* Display Label — only for client-feedback */}
             {isFeedback && (
               <div>
-                <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Display Label</label>
-                <input type="text" value={meta.label || ''}
+                <label style={labelStyle}>Display Label</label>
+                <input
+                  type="text" value={meta.label || ''}
                   onChange={e => setMetaField('label', e.target.value)}
                   placeholder="e.g. Q1 2026 Review"
-                  className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none" />
+                  style={inputStyle}
+                  onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+                />
               </div>
             )}
 
             {/* Associated Industry KB — only for brand */}
             {isBrand && (
               <div>
-                <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Associated Industry KB</label>
-                <select value={meta.industry || 'global'} onChange={e => setMetaField('industry', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none bg-white">
+                <label style={labelStyle}>Associated Industry KB</label>
+                <select
+                  value={meta.industry || 'global'} onChange={e => setMetaField('industry', e.target.value)}
+                  style={{ ...inputStyle, cursor: 'pointer' }}
+                  onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+                >
                   {INDUSTRY_KBS.map(i => <option key={i} value={i}>{i}</option>)}
                 </select>
-                <p className="text-[10px] text-[#9CA3AF] mt-1">Industry KB auto-injected when this brand is selected in any tool.</p>
+                <p style={{ fontSize: '0.625rem', color: 'var(--text-3)', marginTop: '0.25rem' }}>
+                  Industry KB auto-injected when this brand is selected in any tool.
+                </p>
               </div>
             )}
 
             {/* Tags */}
             {!isFeedback && (
               <div>
-                <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Tags <span className="normal-case font-normal">(comma-separated)</span></label>
-                <input type="text" value={(meta.tags || []).join(', ')}
+                <label style={labelStyle}>
+                  Tags <span style={{ textTransform: 'none', fontWeight: 400 }}>(comma-separated)</span>
+                </label>
+                <input
+                  type="text" value={(meta.tags || []).join(', ')}
                   onChange={e => setMetaField('tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
-                  className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none" />
+                  style={inputStyle}
+                  onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+                />
               </div>
             )}
 
             {/* Priority */}
             {!isFeedback && (
               <div>
-                <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Priority <span className="normal-case font-normal">(1=highest)</span></label>
-                <input type="number" min={1} max={5} value={meta.priority || 3}
+                <label style={labelStyle}>
+                  Priority <span style={{ textTransform: 'none', fontWeight: 400 }}>(1=highest)</span>
+                </label>
+                <input
+                  type="number" min={1} max={5} value={meta.priority || 3}
                   onChange={e => setMetaField('priority', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none" />
+                  style={inputStyle}
+                  onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+                />
               </div>
             )}
 
             {/* Linked Modules — only for industry and brand */}
             {(isBrand || isIndustry) && (
               <div>
-                <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-2">Linked Modules</label>
-                <div className="space-y-1.5">
+                <label style={{ ...labelStyle, marginBottom: '0.5rem' }}>Linked Modules</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
                   {ALL_MODULES.map(mod => (
-                    <label key={mod} className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={(meta.linked_modules || []).includes(mod)}
+                    <label key={mod} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox" checked={(meta.linked_modules || []).includes(mod)}
                         onChange={() => toggleModule(mod)}
-                        className="rounded" />
-                      <span className="text-sm text-[#111827]">{mod}</span>
+                        style={{ borderRadius: '0.25rem', accentColor: 'var(--primary)' }}
+                      />
+                      <span style={{ fontSize: '0.875rem', color: 'var(--text)' }}>{mod}</span>
                     </label>
                   ))}
                 </div>
@@ -188,13 +244,21 @@ export default function KBEditorPage() {
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Change Note</label>
-              <input type="text" value={changeNote} onChange={e => setChangeNote(e.target.value)}
+              <label style={labelStyle}>Change Note</label>
+              <input
+                type="text" value={changeNote} onChange={e => setChangeNote(e.target.value)}
                 placeholder="Describe what changed…"
-                className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none" />
+                style={inputStyle}
+                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+                onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+              />
             </div>
 
-            <div className="pt-2 border-t border-[#E5E7EB] space-y-1 text-xs text-[#9CA3AF]">
+            <div style={{
+              paddingTop: '0.5rem', borderTop: '1px solid var(--border)',
+              display: 'flex', flexDirection: 'column', gap: '0.25rem',
+              fontSize: '0.75rem', color: 'var(--text-3)',
+            }}>
               <div>Last updated: {meta.last_updated}</div>
               <div>Version: {meta.version}</div>
             </div>
@@ -202,8 +266,8 @@ export default function KBEditorPage() {
         </aside>
 
         {/* Right pane: Markdown editor */}
-        <div className="flex-1 overflow-hidden flex flex-col" data-color-mode="light">
-          <div className="flex-1 overflow-auto">
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }} data-color-mode="light">
+          <div style={{ flex: 1, overflow: 'auto' }}>
             <MDEditor
               value={body}
               onChange={val => setBody(val || '')}

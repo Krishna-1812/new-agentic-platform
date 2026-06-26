@@ -24,28 +24,70 @@ const CLIENTS = [
 
 function PageHeader({ navigate }) {
   return (
-    <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6">
-      <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/')} className="flex items-center gap-1.5 text-[#6B7280] hover:text-[#111827] text-sm font-medium transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+    <header style={{
+      background: 'var(--card)',
+      borderBottom: '1px solid var(--border)',
+      height: '3.5rem',
+      display: 'flex',
+      alignItems: 'center',
+      padding: '0 1.5rem',
+    }}>
+      <div style={{ maxWidth: '80rem', margin: '0 auto', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.375rem',
+              color: 'var(--text-2)', background: 'none', border: 'none',
+              fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-2)'}
+          >
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
             All tools
           </button>
-          <span className="text-[#E5E7EB]">/</span>
-          <span className="text-sm font-semibold text-[#111827]">Knowledge Base</span>
+          <span style={{ color: 'var(--border)' }}>/</span>
+          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)' }}>Knowledge Base</span>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate('/kb/audit')}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-[#111827] hover:border-[#D1D5DB] transition-colors bg-white">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button
+            onClick={() => navigate('/kb/audit')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.375rem',
+              padding: '0.375rem 0.75rem', fontSize: '0.75rem', fontWeight: 600,
+              border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+              color: 'var(--text-2)', background: 'var(--card)', cursor: 'pointer',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.borderColor = 'var(--text-3)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-2)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+          >
             Audit
           </button>
-          <button onClick={() => navigate('/kb/feedback/new')}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-[#111827] hover:border-[#D1D5DB] transition-colors bg-white">
+          <button
+            onClick={() => navigate('/kb/feedback/new')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.375rem',
+              padding: '0.375rem 0.75rem', fontSize: '0.75rem', fontWeight: 600,
+              border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+              color: 'var(--text-2)', background: 'var(--card)', cursor: 'pointer',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.borderColor = 'var(--text-3)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-2)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+          >
             + Client Feedback
           </button>
-          <button onClick={() => navigate('/kb/new')}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-white transition-colors"
-            style={{ backgroundColor: '#111827' }}>
+          <button
+            onClick={() => navigate('/kb/new')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.375rem',
+              padding: '0.375rem 0.75rem', fontSize: '0.75rem', fontWeight: 600,
+              borderRadius: 'var(--r-lg)', color: '#fff',
+              background: 'var(--primary)', border: 'none', cursor: 'pointer',
+            }}
+          >
             + New KB
           </button>
         </div>
@@ -83,37 +125,54 @@ export default function KnowledgeBasePage() {
     return acc;
   }, {});
 
+  const selectStyle = {
+    fontSize: '0.75rem',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--r-lg)',
+    padding: '0.375rem 0.75rem',
+    background: 'var(--card)',
+    color: 'var(--text-2)',
+    outline: 'none',
+    cursor: 'pointer',
+  };
+
   return (
     <>
       <PageHeader navigate={navigate} />
-      <main className="max-w-7xl mx-auto px-8 py-7">
-        <div className="mb-6">
-          <h1 className="text-[22px] font-bold text-[#111827]">Knowledge Base</h1>
-          <p className="text-sm text-[#6B7280] mt-1">Manage client context, industry rules, and best practices injected into AI tools.</p>
+      <main style={{ maxWidth: '80rem', margin: '0 auto', padding: '1.75rem 2rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <h1 style={{ fontSize: '1.375rem', fontWeight: 700, color: 'var(--text)' }}>Knowledge Base</h1>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginTop: '0.25rem' }}>
+            Manage client context, industry rules, and best practices injected into AI tools.
+          </p>
         </div>
 
         {/* Filter bar */}
-        <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
           {/* Category tabs */}
-          <div className="flex gap-1.5 flex-wrap">
+          <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
             {CATEGORIES.map(cat => (
-              <button key={cat} onClick={() => setActiveCategory(cat)}
-                className="px-3 py-1.5 rounded-full text-xs font-medium border transition-all"
-                style={activeCategory === cat
-                  ? { backgroundColor: '#111827', color: '#fff', borderColor: '#111827' }
-                  : { backgroundColor: '#fff', color: '#6B7280', borderColor: '#E5E7EB' }}>
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                style={activeCategory === cat ? {
+                  padding: '0.375rem 0.75rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 500,
+                  border: '1px solid var(--primary)', background: 'var(--primary)', color: '#fff', cursor: 'pointer',
+                } : {
+                  padding: '0.375rem 0.75rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 500,
+                  border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text-2)', cursor: 'pointer',
+                }}
+              >
                 {CATEGORY_LABELS[cat]}
               </button>
             ))}
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
-            <select value={clientFilter} onChange={e => setClientFilter(e.target.value)}
-              className="text-xs border border-[#E5E7EB] rounded-lg px-3 py-1.5 bg-white text-[#6B7280] focus:outline-none">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto' }}>
+            <select value={clientFilter} onChange={e => setClientFilter(e.target.value)} style={selectStyle}>
               {CLIENTS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-              className="text-xs border border-[#E5E7EB] rounded-lg px-3 py-1.5 bg-white text-[#6B7280] focus:outline-none">
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={selectStyle}>
               <option value="all">All statuses</option>
               <option value="active">Active only</option>
               <option value="inactive">Inactive only</option>
@@ -121,54 +180,82 @@ export default function KnowledgeBasePage() {
           </div>
         </div>
 
-        {loading && <p className="text-sm text-[#6B7280]">Loading…</p>}
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {loading && <p style={{ fontSize: '0.875rem', color: 'var(--text-2)' }}>Loading…</p>}
+        {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger)' }}>{error}</p>}
 
         {!loading && !error && (
-          <div className="space-y-8">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             {(activeCategory === 'all' ? CATEGORIES.slice(1) : [activeCategory]).map(cat => {
               const items = activeCategory === 'all' ? grouped[cat] : filtered;
               if (items.length === 0) return null;
               return (
                 <div key={cat}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <h2 className="text-base font-semibold text-[#111827]">{CATEGORY_LABELS[cat]}</h2>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#E5E7EB] text-[#6B7280]">{items.length}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text)' }}>{CATEGORY_LABELS[cat]}</h2>
+                    <span style={{
+                      fontSize: '0.75rem', fontWeight: 600, padding: '0.125rem 0.5rem',
+                      borderRadius: '9999px', background: 'var(--border)', color: 'var(--text-2)',
+                    }}>{items.length}</span>
                   </div>
-                  <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                    <table className="w-full text-sm">
+                  <div style={{
+                    background: 'var(--card)', borderRadius: 'var(--r-lg)',
+                    border: '1px solid var(--border)', overflow: 'hidden',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+                  }}>
+                    <table style={{ width: '100%', fontSize: '0.875rem', borderCollapse: 'collapse' }}>
                       <thead>
-                        <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
-                          <th className="text-left text-xs font-semibold text-[#6B7280] px-4 py-3">ID</th>
-                          <th className="text-left text-xs font-semibold text-[#6B7280] px-4 py-3">Client</th>
-                          <th className="text-left text-xs font-semibold text-[#6B7280] px-4 py-3">Tags</th>
-                          <th className="text-left text-xs font-semibold text-[#6B7280] px-4 py-3">Modules</th>
-                          <th className="text-left text-xs font-semibold text-[#6B7280] px-4 py-3">Status</th>
-                          <th className="px-4 py-3" />
+                        <tr style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+                          {['ID', 'Client', 'Tags', 'Modules', 'Status', ''].map((h, i) => (
+                            <th key={i} style={{
+                              textAlign: h === '' ? undefined : 'left',
+                              fontSize: '0.75rem', fontWeight: 600,
+                              color: 'var(--text-2)', padding: '0.75rem 1rem',
+                            }}>{h}</th>
+                          ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#F3F4F6]">
-                        {items.map(kb => (
-                          <tr key={kb.id} className="hover:bg-[#F9FAFB] transition-colors">
-                            <td className="px-4 py-3 font-medium text-[#111827]">{kb.id}</td>
-                            <td className="px-4 py-3 text-[#6B7280]">{kb.client}</td>
-                            <td className="px-4 py-3">
-                              <div className="flex flex-wrap gap-1">
+                      <tbody>
+                        {items.map((kb, idx) => (
+                          <tr
+                            key={kb.id}
+                            style={{ borderTop: idx > 0 ? '1px solid var(--surface)' : undefined }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <td style={{ padding: '0.75rem 1rem', fontWeight: 500, color: 'var(--text)' }}>{kb.id}</td>
+                            <td style={{ padding: '0.75rem 1rem', color: 'var(--text-2)' }}>{kb.client}</td>
+                            <td style={{ padding: '0.75rem 1rem' }}>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
                                 {(kb.tags || []).slice(0, 3).map(tag => (
-                                  <span key={tag} className="text-xs px-1.5 py-0.5 rounded bg-[#F4F5F7] text-[#6B7280]">{tag}</span>
+                                  <span key={tag} style={{
+                                    fontSize: '0.75rem', padding: '0.125rem 0.375rem',
+                                    borderRadius: '0.25rem', background: 'var(--surface)', color: 'var(--text-2)',
+                                  }}>{tag}</span>
                                 ))}
                               </div>
                             </td>
-                            <td className="px-4 py-3 text-[#6B7280] text-xs">{(kb.linked_modules || []).join(', ') || '—'}</td>
-                            <td className="px-4 py-3">
-                              <span className={`text-xs font-semibold px-2 py-0.5 rounded ${kb.active ? 'bg-[#D1FAE5] text-[#065F46]' : 'bg-[#F3F4F6] text-[#9CA3AF]'}`}>
+                            <td style={{ padding: '0.75rem 1rem', color: 'var(--text-2)', fontSize: '0.75rem' }}>
+                              {(kb.linked_modules || []).join(', ') || '—'}
+                            </td>
+                            <td style={{ padding: '0.75rem 1rem' }}>
+                              <span style={kb.active ? {
+                                fontSize: '0.75rem', fontWeight: 600, padding: '0.125rem 0.5rem',
+                                borderRadius: '0.25rem', background: 'var(--success-soft, #D1FAE5)', color: 'var(--success, #065F46)',
+                              } : {
+                                fontSize: '0.75rem', fontWeight: 600, padding: '0.125rem 0.5rem',
+                                borderRadius: '0.25rem', background: 'var(--surface)', color: 'var(--text-3)',
+                              }}>
                                 {kb.active ? 'Active' : 'Inactive'}
                               </span>
                             </td>
-                            <td className="px-4 py-3">
-                              <button onClick={() => navigate(`/kb/${kb.id}`)}
-                                className="text-xs font-medium transition-colors"
-                                style={{ color: '#3DAA8E' }}>
+                            <td style={{ padding: '0.75rem 1rem' }}>
+                              <button
+                                onClick={() => navigate(`/kb/${kb.id}`)}
+                                style={{
+                                  fontSize: '0.75rem', fontWeight: 500, background: 'none',
+                                  border: 'none', cursor: 'pointer', color: 'var(--primary)',
+                                }}
+                              >
                                 Edit →
                               </button>
                             </td>
@@ -181,7 +268,9 @@ export default function KnowledgeBasePage() {
               );
             })}
             {filtered.length === 0 && (
-              <div className="text-center py-16 text-[#9CA3AF] text-sm">No knowledge bases match your filters.</div>
+              <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--text-3)', fontSize: '0.875rem' }}>
+                No knowledge bases match your filters.
+              </div>
             )}
           </div>
         )}

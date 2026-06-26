@@ -3,25 +3,25 @@
 
 function SectionHeader({ title, subtitle }) {
   return (
-    <div className="mb-4">
-      <h2 className="text-[15px] font-semibold text-[#111827]">{title}</h2>
-      {subtitle && <p className="text-xs text-[#9CA3AF] mt-0.5">{subtitle}</p>}
+    <div style={{ marginBottom: 16 }}>
+      <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', margin: 0 }}>{title}</h2>
+      {subtitle && <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2, marginBottom: 0 }}>{subtitle}</p>}
     </div>
   );
 }
 
 function EmptyState({ message }) {
   return (
-    <div className="py-6 text-center text-sm text-[#9CA3AF] bg-white rounded-xl border border-[#E5E7EB]">{message}</div>
+    <div style={{ padding: '24px 0', textAlign: 'center', fontSize: 14, color: 'var(--text-3)', background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)' }}>{message}</div>
   );
 }
 
-function Td({ children, className = '' }) {
-  return <td className={`px-4 py-2.5 text-sm ${className}`}>{children}</td>;
+function Td({ children, style = {} }) {
+  return <td style={{ padding: '10px 16px', fontSize: 14, ...style }}>{children}</td>;
 }
 
 function Th({ children }) {
-  return <th className="px-4 py-2.5 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wide">{children}</th>;
+  return <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{children}</th>;
 }
 
 function formatDate(iso) {
@@ -29,32 +29,27 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-// Simple horizontal bar
-function HBar({ value, max, label, color = '#3DAA8E' }) {
+function HBar({ value, max, label, color = 'var(--primary)' }) {
   const pct = Math.min(100, max > 0 ? (value / max) * 100 : 0);
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 bg-[#F3F4F6] rounded-full h-2">
-        <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ flex: 1, background: 'var(--surface)', borderRadius: 999, height: 8 }}>
+        <div style={{ height: 8, borderRadius: 999, width: `${pct}%`, background: color, transition: 'width 0.3s' }} />
       </div>
-      <span className="text-xs text-[#6B7280] w-16 text-right">{label}</span>
+      <span style={{ fontSize: 12, color: 'var(--text-2)', width: 64, textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{label}</span>
     </div>
   );
 }
 
 function CadenceFlag({ flag }) {
   const map = {
-    'On Track':  { cls: 'bg-green-100 text-green-700',  label: 'On Track' },
-    'At Risk':   { cls: 'bg-amber-100 text-amber-700',  label: 'At Risk' },
-    'Missed':    { cls: 'bg-red-100 text-red-700',      label: 'Missed' },
+    'On Track': { background: 'var(--success-soft)', color: 'var(--success)' },
+    'At Risk':  { background: 'var(--warning-soft)', color: 'var(--warning)' },
+    'Missed':   { background: 'var(--danger-soft)',  color: 'var(--danger)' },
   };
-  const style = map[flag] || { cls: 'bg-gray-100 text-gray-500', label: flag };
-  return <span className={`text-xs font-medium px-2 py-0.5 rounded ${style.cls}`}>{style.label}</span>;
+  const s = map[flag] || { background: 'var(--surface)', color: 'var(--text-2)' };
+  return <span style={{ fontSize: 12, fontWeight: 500, padding: '2px 8px', borderRadius: 4, ...s }}>{flag}</span>;
 }
-
-// ── Cadence compliance ─────────────────────────────────────────────────────────
-// For each unique (client, task type from recurringSchedule), check Task Board + Archive
-// for a completed task within the last ~30 days. Best-effort.
 
 const FREQUENCY_DAYS = {
   'weekly': 7,
@@ -77,7 +72,6 @@ export default function ClientHealthView({ tasks, archiveTasks, recurringSchedul
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const allTasks = [...tasks, ...archiveTasks];
 
-  // ── Active load by client ─────────────────────────────────────────────────
   const activeStatuses = ['In Progress', 'Backlog', 'This Week', 'Today', 'Blocked'];
   const activeTasks = tasks.filter(t => activeStatuses.includes(t.status));
 
@@ -95,7 +89,6 @@ export default function ClientHealthView({ tasks, archiveTasks, recurringSchedul
 
   const maxHours = Math.max(...clientLoad.map(r => r.totalHours), 1);
 
-  // ── Blocked/overdue by client ─────────────────────────────────────────────
   const atRisk = tasks.filter(t => t.status === 'Blocked' || t.isOverdue);
   const riskByClient = atRisk.reduce((acc, t) => {
     const c = t.client || 'Unknown';
@@ -104,15 +97,12 @@ export default function ClientHealthView({ tasks, archiveTasks, recurringSchedul
     return acc;
   }, {});
 
-  // ── Recurring cadence compliance ──────────────────────────────────────────
   const cadenceRows = recurringSchedule
     .filter(r => r.client && r.taskName)
     .map(r => {
       const windowDays = getWindowDays(r.frequency);
       const cutoff = new Date(today.getTime() - windowDays * 86400000);
-      const halfWindow = new Date(today.getTime() - (windowDays / 2) * 86400000);
 
-      // Find matching done tasks in the window
       const matchingDone = allTasks.filter(t => {
         if (t.status !== 'Done') return false;
         if (t.client !== r.client) return false;
@@ -120,7 +110,6 @@ export default function ClientHealthView({ tasks, archiveTasks, recurringSchedul
         return t.dueDate && new Date(t.dueDate) >= cutoff;
       });
 
-      // Find if any in-progress or upcoming task matches
       const upcoming = tasks.filter(t => {
         if (!['In Progress', 'This Week', 'Today', 'Backlog'].includes(t.status)) return false;
         if (t.client !== r.client) return false;
@@ -133,7 +122,6 @@ export default function ClientHealthView({ tasks, archiveTasks, recurringSchedul
       } else if (upcoming.length > 0) {
         flag = 'At Risk';
       } else {
-        // Check if window has passed
         flag = 'Missed';
       }
 
@@ -149,7 +137,6 @@ export default function ClientHealthView({ tasks, archiveTasks, recurringSchedul
       };
     });
 
-  // ── SOW coverage — clients in recurring with zero active tasks ────────────
   const recurringClients = [...new Set(recurringSchedule.map(r => r.client).filter(Boolean))];
   const activeClientNames = new Set(activeTasks.map(t => t.client));
 
@@ -165,33 +152,32 @@ export default function ClientHealthView({ tasks, archiveTasks, recurringSchedul
       return { client: c, lastTask, daysSince };
     });
 
+  const tableCard = { background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', overflow: 'hidden' };
+
   return (
-    <div className="space-y-8">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
 
       {/* ── Active Load by Client ─────────────────────────────────────────── */}
       <section>
-        <SectionHeader
-          title="Active Load by Client"
-          subtitle="In Progress + Backlog tasks sorted by total estimated hours"
-        />
+        <SectionHeader title="Active Load by Client" subtitle="In Progress + Backlog tasks sorted by total estimated hours" />
         {clientLoad.length === 0 ? (
           <EmptyState message="No active tasks found." />
         ) : (
-          <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-            <table className="w-full">
+          <div style={tableCard}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="border-b border-[#E5E7EB]">
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
                   {['Client', 'In Progress', 'Backlog', 'Total Hours', 'Load'].map(h => <Th key={h}>{h}</Th>)}
                 </tr>
               </thead>
               <tbody>
                 {clientLoad.map(row => (
-                  <tr key={row.client} className="border-b border-[#F3F4F6] last:border-0">
-                    <Td className="font-semibold text-[#111827]">{row.client}</Td>
-                    <Td className="text-[#6B7280]">{row.inProgress}</Td>
-                    <Td className="text-[#6B7280]">{row.backlog}</Td>
-                    <Td className="font-medium text-[#374151]">{row.totalHours > 0 ? `${row.totalHours}h` : '—'}</Td>
-                    <Td className="min-w-[160px]">
+                  <tr key={row.client} style={{ borderBottom: '1px solid var(--surface)' }}>
+                    <Td style={{ fontWeight: 600, color: 'var(--text)' }}>{row.client}</Td>
+                    <Td style={{ color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{row.inProgress}</Td>
+                    <Td style={{ color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{row.backlog}</Td>
+                    <Td style={{ fontWeight: 500, color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>{row.totalHours > 0 ? `${row.totalHours}h` : '—'}</Td>
+                    <Td style={{ minWidth: 160 }}>
                       <HBar value={row.totalHours} max={maxHours} label={`${row.totalHours}h`} />
                     </Td>
                   </tr>
@@ -204,23 +190,20 @@ export default function ClientHealthView({ tasks, archiveTasks, recurringSchedul
 
       {/* ── Blocked or Overdue by Client ──────────────────────────────────── */}
       <section>
-        <SectionHeader
-          title="Blocked or Overdue by Client"
-          subtitle="Client relationship risks to address before the next call"
-        />
+        <SectionHeader title="Blocked or Overdue by Client" subtitle="Client relationship risks to address before the next call" />
         {Object.keys(riskByClient).length === 0 ? (
           <EmptyState message="No blocked or overdue tasks across any client." />
         ) : (
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {Object.entries(riskByClient).map(([client, items]) => (
-              <div key={client} className="bg-white rounded-xl border border-red-200 overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-red-100 bg-red-50">
-                  <span className="text-sm font-semibold text-red-800">{client}</span>
-                  <span className="text-xs text-red-600">{items.length} at-risk task{items.length !== 1 ? 's' : ''}</span>
+              <div key={client} style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--danger)', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: '1px solid var(--danger-soft)', background: 'var(--danger-soft)' }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--danger)' }}>{client}</span>
+                  <span style={{ fontSize: 12, color: 'var(--danger)', fontFamily: 'var(--font-mono)' }}>{items.length} at-risk task{items.length !== 1 ? 's' : ''}</span>
                 </div>
-                <table className="w-full">
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr className="border-b border-[#F3F4F6]">
+                    <tr style={{ borderBottom: '1px solid var(--surface)' }}>
                       {['ID', 'Task', 'Assignee', 'Status', 'Due Date'].map(h => <Th key={h}>{h}</Th>)}
                     </tr>
                   </thead>
@@ -229,21 +212,23 @@ export default function ClientHealthView({ tasks, archiveTasks, recurringSchedul
                       <tr
                         key={t.id}
                         onClick={() => onTaskClick(t)}
-                        className="border-b border-[#F3F4F6] last:border-0 cursor-pointer hover:bg-[#F9FAFB] transition-colors"
+                        style={{ borderBottom: '1px solid var(--surface)', cursor: 'pointer' }}
                       >
-                        <Td className="font-mono text-xs text-[#9CA3AF]">{t.id}</Td>
-                        <Td className="font-medium text-[#111827] max-w-[220px]">
-                          <span className="line-clamp-2">{t.name}</span>
+                        <Td style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-3)' }}>{t.id}</Td>
+                        <Td style={{ fontWeight: 500, color: 'var(--text)', maxWidth: 220 }}>
+                          <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{t.name}</span>
                         </Td>
-                        <Td className="text-[#6B7280]">{t.assignedTo || '—'}</Td>
+                        <Td style={{ color: 'var(--text-2)' }}>{t.assignedTo || '—'}</Td>
                         <Td>
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-                            t.status === 'Blocked' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
-                          }`}>{t.status}</span>
+                          <span style={{
+                            fontSize: 12, fontWeight: 500, padding: '2px 8px', borderRadius: 4,
+                            background: t.status === 'Blocked' ? 'var(--danger-soft)' : 'var(--warning-soft)',
+                            color: t.status === 'Blocked' ? 'var(--danger)' : 'var(--warning)',
+                          }}>{t.status}</span>
                         </Td>
-                        <Td className={t.isOverdue ? 'text-red-600 font-semibold' : 'text-[#6B7280]'}>
+                        <Td style={{ color: t.isOverdue ? 'var(--danger)' : 'var(--text-2)', fontWeight: t.isOverdue ? 600 : 400 }}>
                           {formatDate(t.dueDate) || '—'}
-                          {t.isOverdue && t.daysOverdue && <span className="ml-1 text-xs">(+{t.daysOverdue}d)</span>}
+                          {t.isOverdue && t.daysOverdue && <span style={{ marginLeft: 4, fontSize: 12, fontFamily: 'var(--font-mono)' }}>(+{t.daysOverdue}d)</span>}
                         </Td>
                       </tr>
                     ))}
@@ -264,27 +249,27 @@ export default function ClientHealthView({ tasks, archiveTasks, recurringSchedul
         {cadenceRows.length === 0 ? (
           <EmptyState message="No recurring schedule data to analyze." />
         ) : (
-          <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-            <table className="w-full">
+          <div style={tableCard}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="border-b border-[#E5E7EB]">
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
                   {['Client', 'Task Type', 'Assignee', 'Frequency', 'Last Completed', 'Status'].map(h => <Th key={h}>{h}</Th>)}
                 </tr>
               </thead>
               <tbody>
                 {cadenceRows.map((row, i) => (
-                  <tr key={i} className="border-b border-[#F3F4F6] last:border-0">
-                    <Td className="font-medium text-[#111827]">{row.client}</Td>
-                    <Td className="text-[#6B7280]">{row.taskType}</Td>
-                    <Td className="text-[#6B7280]">{row.person || '—'}</Td>
-                    <Td className="text-[#6B7280]">{row.frequency || '—'}</Td>
-                    <Td className="text-[#6B7280]">{formatDate(row.lastCompleted) || 'None on record'}</Td>
+                  <tr key={i} style={{ borderBottom: '1px solid var(--surface)' }}>
+                    <Td style={{ fontWeight: 500, color: 'var(--text)' }}>{row.client}</Td>
+                    <Td style={{ color: 'var(--text-2)' }}>{row.taskType}</Td>
+                    <Td style={{ color: 'var(--text-2)' }}>{row.person || '—'}</Td>
+                    <Td style={{ color: 'var(--text-2)' }}>{row.frequency || '—'}</Td>
+                    <Td style={{ color: 'var(--text-2)' }}>{formatDate(row.lastCompleted) || 'None on record'}</Td>
                     <Td><CadenceFlag flag={row.flag} /></Td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <p className="px-4 py-2.5 text-xs text-[#9CA3AF] border-t border-[#F3F4F6]">
+            <p style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-3)', borderTop: '1px solid var(--surface)', margin: 0 }}>
               Matching is based on task name keywords and due date windows. Manual verification recommended before client calls.
             </p>
           </div>
@@ -300,22 +285,24 @@ export default function ClientHealthView({ tasks, archiveTasks, recurringSchedul
         {sowGaps.length === 0 ? (
           <EmptyState message="All clients in the recurring schedule have active tasks." />
         ) : (
-          <div className="bg-white rounded-xl border border-amber-200 overflow-hidden">
-            <table className="w-full">
+          <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--warning)', overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="border-b border-amber-100 bg-amber-50">
+                <tr style={{ borderBottom: '1px solid var(--warning-soft)', background: 'var(--warning-soft)' }}>
                   {['Client', 'Last Completed Task', 'Last Activity', 'Days Since'].map(h => <Th key={h}>{h}</Th>)}
                 </tr>
               </thead>
               <tbody>
                 {sowGaps.map(row => (
-                  <tr key={row.client} className="border-b border-[#F3F4F6] last:border-0">
-                    <Td className="font-semibold text-[#111827]">{row.client}</Td>
-                    <Td className="text-[#6B7280] max-w-[200px]">
-                      {row.lastTask ? <span className="line-clamp-1">{row.lastTask.name}</span> : <span className="text-[#D1D5DB]">No history</span>}
+                  <tr key={row.client} style={{ borderBottom: '1px solid var(--surface)' }}>
+                    <Td style={{ fontWeight: 600, color: 'var(--text)' }}>{row.client}</Td>
+                    <Td style={{ color: 'var(--text-2)', maxWidth: 200 }}>
+                      {row.lastTask
+                        ? <span style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{row.lastTask.name}</span>
+                        : <span style={{ color: 'var(--border)' }}>No history</span>}
                     </Td>
-                    <Td className="text-[#6B7280]">{formatDate(row.lastTask?.dueDate) || '—'}</Td>
-                    <Td className={row.daysSince != null && row.daysSince > 14 ? 'text-amber-600 font-semibold' : 'text-[#6B7280]'}>
+                    <Td style={{ color: 'var(--text-2)' }}>{formatDate(row.lastTask?.dueDate) || '—'}</Td>
+                    <Td style={{ color: row.daysSince != null && row.daysSince > 14 ? 'var(--warning)' : 'var(--text-2)', fontWeight: row.daysSince != null && row.daysSince > 14 ? 600 : 400, fontFamily: 'var(--font-mono)' }}>
                       {row.daysSince != null ? `${row.daysSince}d ago` : '—'}
                     </Td>
                   </tr>

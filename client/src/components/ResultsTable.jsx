@@ -5,132 +5,134 @@ function ResultsTable({ keyword, analysis }) {
 
   return (
     <div id="results-table">
-      {/* ── Title Banner ─────────────────────────────────────────────────── */}
-      <div
-        className="w-full text-white font-semibold text-center py-2.5 px-5 text-sm tracking-wide rounded-t-xl"
-        style={{ backgroundColor: '#111827' }}
-      >
+      {/* Title Banner */}
+      <div style={{
+        background: 'linear-gradient(90deg, var(--nav-bg-top) 0%, var(--nav-bg-bot) 100%)',
+        color: '#fff',
+        fontWeight: 600,
+        textAlign: 'center',
+        padding: '10px 20px',
+        fontSize: 13,
+        letterSpacing: '0.06em',
+        borderRadius: 'var(--r-lg) var(--r-lg) 0 0',
+      }}>
         CONTENT ANALYSIS REPORT: {keyword.toUpperCase()} &nbsp;(Based on Competitor Research)
       </div>
 
-      {/* ── Main Table ───────────────────────────────────────────────────── */}
-      <div className="overflow-x-auto border border-[#E5E7EB] border-t-0 rounded-b-xl overflow-hidden">
-        <table className="w-full border-collapse results-table" style={{ tableLayout: 'fixed' }}>
+      {/* Main Table */}
+      <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 var(--r-lg) var(--r-lg)', overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
           <colgroup>
             <col style={{ width: '20%' }} />
             <col style={{ width: '30%' }} />
             <col style={{ width: '50%' }} />
           </colgroup>
-
-          {/* Header */}
           <thead>
-            <tr style={{ backgroundColor: '#F9FAFB' }}>
+            <tr style={{ background: 'var(--surface)' }}>
               {['Section', 'Recommendations', 'Content'].map(col => (
                 <th
                   key={col}
-                  className="text-left font-semibold border-b border-r border-[#E5E7EB] last:border-r-0"
-                  style={{ padding: '10px 16px', fontSize: '13px', color: '#6B7280' }}
+                  style={{
+                    textAlign: 'left',
+                    fontWeight: 600,
+                    padding: '10px 16px',
+                    fontSize: 12,
+                    color: 'var(--text-2)',
+                    borderBottom: '1px solid var(--border)',
+                    borderRight: '1px solid var(--border)',
+                    fontFamily: 'var(--font-mono)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                  }}
                 >
                   {col}
                 </th>
               ))}
             </tr>
           </thead>
-
-          {/* Rows */}
           <tbody>
             {sections.map((section, i) => (
-              <tr key={i} className="border-b border-[#F3F4F6]">
-                {/* Section */}
-                <td
-                  className="align-top bg-white border-r border-[#E5E7EB] p-4"
-                  style={{ fontSize: '13px' }}
-                >
-                  <div className="text-xs uppercase tracking-wider text-[#9CA3AF] mb-1">Section {i + 1}</div>
-                  <div className="font-semibold text-[#111827]">H2: {section.h2}</div>
+              <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+                <td style={{ verticalAlign: 'top', background: 'var(--card)', borderRight: '1px solid var(--border)', padding: 16, fontSize: 13 }}>
+                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-3)', marginBottom: 4 }}>Section {i + 1}</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text)' }}>H2: {section.h2}</div>
                 </td>
 
-                {/* Recommendations — bullet points */}
-                <td
-                  className="align-top bg-white border-r border-[#E5E7EB] p-4"
-                  style={{ fontSize: '13px' }}
-                >
+                <td style={{ verticalAlign: 'top', background: 'var(--card)', borderRight: '1px solid var(--border)', padding: 16, fontSize: 13 }}>
                   {Array.isArray(section.recommendations) && section.recommendations.length > 0 ? (
-                    <ul className="space-y-1.5">
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {section.recommendations.map((point, j) => (
-                        <li key={j} className="flex items-start gap-2 text-[#374151]">
-                          <span className="mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#3DAA8E' }} />
-                          <span className="leading-snug">{point}</span>
+                        <li key={j} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, color: 'var(--text)' }}>
+                          <span style={{ marginTop: 6, flexShrink: 0, width: 5, height: 5, borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'inline-block' }} />
+                          <span style={{ lineHeight: 1.45 }}>{point}</span>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <span className="italic text-[#9CA3AF]">—</span>
+                    <span style={{ fontStyle: 'italic', color: 'var(--text-3)' }}>—</span>
                   )}
                 </td>
 
-                {/* Content — empty for user to fill */}
-                <td
-                  className="align-top border-[#E5E7EB] p-4"
-                  style={{ backgroundColor: '#F9FAFB' }}
-                />
+                <td style={{ verticalAlign: 'top', background: 'var(--surface)', padding: 16 }} />
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* ── Metadata Cards ───────────────────────────────────────────────── */}
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Metadata Cards */}
+      <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
         {/* Word Count */}
-        <div className="bg-white border border-[#E5E7EB] rounded-xl p-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          <h3 className="font-semibold text-sm text-[#111827] mb-3">
-            Word Count Benchmark
-          </h3>
-          <p className="text-3xl font-bold" style={{ color: '#3DAA8E' }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+          <h3 style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)', marginBottom: 10, marginTop: 0 }}>Word Count Benchmark</h3>
+          <p style={{ fontSize: 28, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-mono)', margin: 0 }}>
             {wordCountBenchmark?.toLocaleString() || '—'}
           </p>
-          <p className="text-xs text-[#6B7280] mt-1">words — competitor page average</p>
-          <p className="text-xs text-[#9CA3AF] mt-2">
+          <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>words — competitor page average</p>
+          <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>
             Aim for at least this many words to stay competitive in this SERP.
           </p>
         </div>
 
         {/* Semantic Keywords */}
-        <div className="bg-white border border-[#E5E7EB] rounded-xl p-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          <h3 className="font-semibold text-sm text-[#111827] mb-3">
-            Semantic Keywords <span className="text-[#9CA3AF] font-normal">({semanticKeywords?.length || 0})</span>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+          <h3 style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)', marginBottom: 10, marginTop: 0 }}>
+            Semantic Keywords <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>({semanticKeywords?.length || 0})</span>
           </h3>
-          <div className="flex flex-wrap gap-1.5">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {(semanticKeywords || []).map((kw, i) => (
-              <span
-                key={i}
-                className="inline-block text-xs px-2 py-0.5 rounded font-medium"
-                style={{ backgroundColor: '#3DAA8E1A', color: '#3DAA8E' }}
-              >
+              <span key={i} style={{
+                display: 'inline-block',
+                fontSize: 12,
+                padding: '2px 8px',
+                borderRadius: 'var(--r-pill)',
+                background: 'var(--primary-soft)',
+                color: 'var(--primary-text)',
+                fontWeight: 500,
+              }}>
                 {kw}
               </span>
             ))}
             {(!semanticKeywords || semanticKeywords.length === 0) && (
-              <span className="text-[#9CA3AF] text-sm italic">None identified</span>
+              <span style={{ color: 'var(--text-3)', fontSize: 13, fontStyle: 'italic' }}>None identified</span>
             )}
           </div>
         </div>
 
         {/* Content Gaps */}
-        <div className="bg-white border border-[#E5E7EB] rounded-xl p-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          <h3 className="font-semibold text-sm text-[#111827] mb-3">
-            Content Gaps <span className="text-[#9CA3AF] font-normal">({contentGaps?.length || 0})</span>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20 }}>
+          <h3 style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)', marginBottom: 10, marginTop: 0 }}>
+            Content Gaps <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>({contentGaps?.length || 0})</span>
           </h3>
-          <ul className="space-y-1.5">
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
             {(contentGaps || []).map((gap, i) => (
-              <li key={i} className="flex items-start gap-2">
-                <span className="mt-0.5 flex-shrink-0" style={{ color: '#D97706' }}>▸</span>
-                <span className="text-sm text-[#374151]">{gap}</span>
+              <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <span style={{ color: 'var(--warning)', flexShrink: 0 }}>▸</span>
+                <span style={{ fontSize: 13, color: 'var(--text)' }}>{gap}</span>
               </li>
             ))}
             {(!contentGaps || contentGaps.length === 0) && (
-              <li className="text-[#9CA3AF] text-sm italic">None identified</li>
+              <li style={{ color: 'var(--text-3)', fontSize: 13, fontStyle: 'italic' }}>None identified</li>
             )}
           </ul>
         </div>

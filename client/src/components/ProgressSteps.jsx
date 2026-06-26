@@ -1,100 +1,111 @@
 const STEPS = [
-  { id: 'searching', label: 'Searching Google', icon: '🔍', description: 'Fetching top 10 US results' },
-  { id: 'scraping', label: 'Scraping Pages', icon: '📄', description: 'Extracting content from each URL' },
-  { id: 'analyzing', label: 'AI Analysis', icon: '🤖', description: 'Generating recommendations' },
-  { id: 'done', label: 'Complete', icon: '✅', description: 'Report ready' },
+  { id: 'searching', label: 'Searching Google',  description: 'Fetching top 10 US results' },
+  { id: 'scraping',  label: 'Scraping Pages',    description: 'Extracting content from each URL' },
+  { id: 'analyzing', label: 'AI Analysis',       description: 'Generating recommendations' },
+  { id: 'done',      label: 'Complete',          description: 'Report ready' },
 ];
 
 const ORDER = ['searching', 'scraping', 'analyzing', 'done'];
 
 function getStepStatus(stepId, currentStep) {
-  if (currentStep === 'error') {
-    const idx = ORDER.indexOf(stepId);
-    const curIdx = ORDER.indexOf(currentStep === 'error' ? 'done' : currentStep);
-    return idx < curIdx ? 'done' : 'pending';
-  }
   const stepIdx = ORDER.indexOf(stepId);
-  const currentIdx = ORDER.indexOf(currentStep);
+  const currentIdx = ORDER.indexOf(currentStep === 'error' ? 'done' : currentStep);
   if (stepIdx < currentIdx) return 'done';
   if (stepIdx === currentIdx) return 'active';
   return 'pending';
 }
 
+const CheckIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4.5 12.75l6 6 9-13.5" />
+  </svg>
+);
+
+const SpinnerIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}>
+    <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeOpacity="0.25" />
+    <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+  </svg>
+);
+
+const MSG = {
+  searching: 'Querying Google Custom Search API for top 10 US results…',
+  scraping:  'Scraping pages with headless browser (max 3 concurrent) — this may take 30–60 seconds…',
+  analyzing: 'Sending content to AI for SEO analysis and content generation…',
+  done:      'Analysis complete — your content report is ready below.',
+};
+
 export default function ProgressSteps({ step }) {
   return (
-    <div className="bg-white rounded-xl border border-[#E5E7EB] p-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)' }}>
-      <div className="flex items-center justify-between">
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      padding: 20,
+      boxShadow: 'var(--shadow-sm)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {STEPS.map((s, i) => {
           const status = getStepStatus(s.id, step);
           return (
-            <div key={s.id} className="flex items-center flex-1">
-              {/* Step */}
-              <div className="flex flex-col items-center flex-1">
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-base font-bold transition-all"
-                  style={
-                    status === 'done'
-                      ? { backgroundColor: '#3DAA8E', color: '#fff' }
-                      : status === 'active'
-                      ? { backgroundColor: '#3DAA8E1A', color: '#3DAA8E', border: '2px solid #3DAA8E' }
-                      : { backgroundColor: '#F4F5F7', color: '#9CA3AF' }
-                  }
-                >
-                  {status === 'done' ? '✓' : s.icon}
+            <div key={s.id} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                {/* Circle */}
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 700, transition: 'all var(--dur-std) var(--ease)',
+                  ...(status === 'done'
+                    ? { background: 'var(--success)', color: '#fff' }
+                    : status === 'active'
+                    ? { background: 'var(--primary-soft)', color: 'var(--primary)', border: '2px solid var(--primary)' }
+                    : { background: 'var(--surface)', color: 'var(--text-3)', border: '2px solid var(--border)' })
+                }}>
+                  {status === 'done' ? <CheckIcon /> : status === 'active' ? <SpinnerIcon /> : (
+                    <span style={{ fontSize: 13, fontFamily: 'var(--font-mono)' }}>{i + 1}</span>
+                  )}
                 </div>
-                <div className="mt-2 text-center">
-                  <div
-                    className="text-xs font-semibold"
-                    style={
-                      status === 'active'
-                        ? { color: '#3DAA8E' }
-                        : status === 'done'
-                        ? { color: '#111827' }
-                        : { color: '#9CA3AF' }
-                    }
-                  >
+
+                {/* Labels */}
+                <div style={{ marginTop: 8, textAlign: 'center' }}>
+                  <div style={{
+                    fontSize: 12, fontWeight: 600,
+                    color: status === 'active' ? 'var(--primary)' : status === 'done' ? 'var(--text)' : 'var(--text-3)',
+                    transition: 'color var(--dur-std) var(--ease)',
+                  }}>
                     {s.label}
                   </div>
-                  <div className="text-xs text-[#9CA3AF] mt-0.5 hidden sm:block">{s.description}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{s.description}</div>
                 </div>
               </div>
 
               {/* Connector */}
               {i < STEPS.length - 1 && (
-                <div
-                  className="h-0.5 flex-1 mx-2 mb-6 transition-all"
-                  style={{
-                    backgroundColor:
-                      getStepStatus(STEPS[i + 1].id, step) !== 'pending' || status === 'done'
-                        ? '#3DAA8E'
-                        : '#E5E7EB'
-                  }}
-                />
+                <div style={{
+                  height: 2, flex: 1, margin: '0 8px 28px',
+                  background: status === 'done' || getStepStatus(STEPS[i + 1].id, step) !== 'pending'
+                    ? 'var(--primary)' : 'var(--border)',
+                  transition: 'background var(--dur-std) var(--ease)',
+                }} />
               )}
             </div>
           );
         })}
       </div>
 
-      {/* Active step message */}
-      {step === 'searching' && (
-        <p className="text-center text-sm text-[#6B7280] mt-3 pt-3 border-t border-[#E5E7EB]">
-          Querying Google Custom Search API for top 10 US results…
-        </p>
-      )}
-      {step === 'scraping' && (
-        <p className="text-center text-sm text-[#6B7280] mt-3 pt-3 border-t border-[#E5E7EB]">
-          Scraping pages with headless browser (max 3 concurrent) — this may take 30–60 seconds…
-        </p>
-      )}
-      {step === 'analyzing' && (
-        <p className="text-center text-sm text-[#6B7280] mt-3 pt-3 border-t border-[#E5E7EB]">
-          Sending content to AI for SEO analysis and content generation…
-        </p>
-      )}
-      {step === 'done' && (
-        <p className="text-center text-sm font-medium mt-3 pt-3 border-t border-[#E5E7EB]" style={{ color: '#3DAA8E' }}>
-          Analysis complete — your content report is ready below.
+      {/* Status message */}
+      {MSG[step] && (
+        <p style={{
+          textAlign: 'center',
+          fontSize: 13,
+          color: step === 'done' ? 'var(--success)' : 'var(--text-2)',
+          fontWeight: step === 'done' ? 600 : 400,
+          marginTop: 12,
+          paddingTop: 12,
+          borderTop: '1px solid var(--border)',
+        }}>
+          {MSG[step]}
         </p>
       )}
     </div>

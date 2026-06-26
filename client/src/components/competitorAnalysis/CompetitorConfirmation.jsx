@@ -2,13 +2,20 @@ import { useState } from 'react';
 
 function TypeBadge({ type }) {
   const map = {
-    direct: ['bg-red-100 text-red-700', 'Direct'],
-    indirect: ['bg-yellow-100 text-yellow-700', 'Indirect'],
-    aggregator: ['bg-purple-100 text-purple-700', 'Aggregator'],
-    informational: ['bg-blue-100 text-blue-700', 'Informational'],
+    direct:        { bg: 'var(--danger-soft)',  color: 'var(--danger)',  label: 'Direct' },
+    indirect:      { bg: 'var(--warning-soft)', color: 'var(--warning)', label: 'Indirect' },
+    aggregator:    { bg: 'var(--info-soft)',     color: 'var(--info)',    label: 'Aggregator' },
+    informational: { bg: 'var(--info-soft)',     color: 'var(--info)',    label: 'Informational' },
   };
-  const [cls, label] = map[type] || ['bg-gray-100 text-gray-600', type || 'Unknown'];
-  return <span className={`text-xs font-medium px-2 py-0.5 rounded ${cls}`}>{label}</span>;
+  const style = map[type] || { bg: 'var(--surface)', color: 'var(--text-2)', label: type || 'Unknown' };
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 4,
+      background: style.bg, color: style.color,
+    }}>
+      {style.label}
+    </span>
+  );
 }
 
 export default function CompetitorConfirmation({ competitors, gptSummary, onConfirm, loading }) {
@@ -29,7 +36,6 @@ export default function CompetitorConfirmation({ competitors, gptSummary, onConf
     setAddLoading(true);
     setAddError('');
     try {
-      // We'll just add it directly — validation against Semrush is optional
       setList(l => [...l, {
         domain,
         authorityScore: 0,
@@ -49,40 +55,44 @@ export default function CompetitorConfirmation({ competitors, gptSummary, onConf
   }
 
   return (
-    <div className="space-y-5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* GPT Summary */}
       {gptSummary && (
-        <div className="bg-[#F0F7FF] border border-[#BAD5F5] rounded-xl p-4">
-          <p className="text-xs font-semibold text-[#245E9E] mb-1.5">AI Competitive Landscape Summary</p>
-          <p className="text-sm text-[#374151] leading-relaxed">{gptSummary}</p>
+        <div style={{ background: 'var(--info-soft)', border: '1px solid var(--info)', borderRadius: 'var(--r-lg)', padding: 16 }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--info)', marginBottom: 6, marginTop: 0 }}>AI Competitive Landscape Summary</p>
+          <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6, margin: 0 }}>{gptSummary}</p>
         </div>
       )}
 
       {/* Competitor cards */}
-      <div className="space-y-3">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {list.map(c => (
-          <div key={c.domain} className="bg-white border border-[#E5E7EB] rounded-xl p-4 flex gap-4">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <span className="text-sm font-semibold text-[#111827]">{c.domain}</span>
+          <div key={c.domain} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 16, display: 'flex', gap: 16 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{c.domain}</span>
                 <TypeBadge type={c.competitorType} />
               </div>
-              <div className="flex gap-4 text-xs text-[#6B7280] mb-2 flex-wrap">
-                {c.authorityScore > 0 && <span>Authority: <b className="text-[#374151]">{c.authorityScore}</b></span>}
-                {c.organicTraffic > 0 && <span>Traffic: <b className="text-[#374151]">{c.organicTraffic.toLocaleString()}</b></span>}
-                {c.organicKeywords > 0 && <span>Keywords: <b className="text-[#374151]">{c.organicKeywords.toLocaleString()}</b></span>}
-                {c.competitionLevel > 0 && <span>Competition: <b className="text-[#374151]">{(c.competitionLevel * 100).toFixed(0)}%</b></span>}
+              <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-2)', marginBottom: 8, flexWrap: 'wrap' }}>
+                {c.authorityScore > 0 && <span>Authority: <b style={{ color: 'var(--text)' }}>{c.authorityScore}</b></span>}
+                {c.organicTraffic > 0 && <span>Traffic: <b style={{ color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>{c.organicTraffic.toLocaleString()}</b></span>}
+                {c.organicKeywords > 0 && <span>Keywords: <b style={{ color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>{c.organicKeywords.toLocaleString()}</b></span>}
+                {c.competitionLevel > 0 && <span>Competition: <b style={{ color: 'var(--text)' }}>{(c.competitionLevel * 100).toFixed(0)}%</b></span>}
               </div>
               {c.gptReasoning && (
-                <p className="text-xs text-[#6B7280] leading-relaxed italic">"{c.gptReasoning}"</p>
+                <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5, fontStyle: 'italic', margin: 0 }}>"{c.gptReasoning}"</p>
               )}
             </div>
             <button
               onClick={() => remove(c.domain)}
-              className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[#9CA3AF] hover:text-red-500 hover:bg-red-50 transition-colors"
               title="Remove"
+              style={{
+                flexShrink: 0, width: 28, height: 28, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer',
+              }}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -91,38 +101,51 @@ export default function CompetitorConfirmation({ competitors, gptSummary, onConf
       </div>
 
       {/* Add competitor */}
-      <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-4">
-        <p className="text-xs font-semibold text-[#374151] mb-2">Add a Competitor Manually</p>
-        <div className="flex gap-2">
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 16 }}>
+        <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 8, marginTop: 0 }}>Add a Competitor Manually</p>
+        <div style={{ display: 'flex', gap: 8 }}>
           <input
             type="text"
             placeholder="e.g. competitor.com"
             value={addDomain}
             onChange={e => { setAddDomain(e.target.value); setAddError(''); }}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCompetitor(); } }}
-            className="flex-1 border border-[#D1D5DB] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#245E9E]"
+            style={{
+              flex: 1, border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+              padding: '8px 12px', fontSize: 14, color: 'var(--text)', background: 'var(--card)', outline: 'none',
+            }}
           />
           <button
             onClick={addCompetitor}
             disabled={addLoading}
-            className="px-4 py-2 bg-[#245E9E] text-white text-sm font-medium rounded-lg hover:bg-[#1d4f87] disabled:opacity-50 transition-colors"
+            style={{
+              padding: '8px 16px', background: 'var(--primary)', color: '#fff',
+              fontSize: 14, fontWeight: 500, borderRadius: 'var(--r-lg)', border: 'none', cursor: 'pointer',
+              opacity: addLoading ? 0.5 : 1,
+            }}
           >
             Add
           </button>
         </div>
-        {addError && <p className="text-xs text-red-500 mt-1">{addError}</p>}
+        {addError && <p style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>{addError}</p>}
       </div>
 
       {/* Run button */}
       <div>
         {list.length < 3 && (
-          <p className="text-xs text-amber-600 mb-2 text-center">Add at least 3 competitors to run the analysis.</p>
+          <p style={{ fontSize: 12, color: 'var(--warning)', marginBottom: 8, textAlign: 'center' }}>
+            Add at least 3 competitors to run the analysis.
+          </p>
         )}
         <button
           onClick={() => onConfirm(list)}
           disabled={loading || list.length < 3}
-          className="w-full py-3 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50"
-          style={{ backgroundColor: '#D3342E' }}
+          style={{
+            width: '100%', padding: '12px 0', borderRadius: 'var(--r-lg)',
+            fontSize: 14, fontWeight: 600, color: '#fff', border: 'none', cursor: 'pointer',
+            background: 'var(--primary)', opacity: (loading || list.length < 3) ? 0.5 : 1,
+            transition: 'opacity 0.15s',
+          }}
         >
           {loading ? 'Starting Analysis…' : `Run Full Analysis (${list.length} competitor${list.length !== 1 ? 's' : ''})`}
         </button>

@@ -10,6 +10,19 @@ const CLIENTS = [
   { value: 'new-life-house', label: 'New Life House' },
 ];
 
+const ChevronIcon = ({ open }) => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
+    style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+    <path d="M19 9l-7 7-7-7" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4.5 12.75l6 6 9-13.5" />
+  </svg>
+);
+
 function KBContextSelector({ module: moduleId, onChange, disabled }) {
   const [client, setClient] = useState('');
   const [feedbackKbIds, setFeedbackKbIds] = useState([]);
@@ -17,7 +30,6 @@ function KBContextSelector({ module: moduleId, onChange, disabled }) {
   const [loading, setLoading] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
-  // Fetch KB context whenever client changes
   useEffect(() => {
     if (!client) {
       setKbData(null);
@@ -41,7 +53,6 @@ function KBContextSelector({ module: moduleId, onChange, disabled }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client, moduleId]);
 
-  // Notify parent when feedback selection changes
   useEffect(() => {
     if (!client) return;
     onChange?.({ client, feedbackKbIds });
@@ -49,12 +60,9 @@ function KBContextSelector({ module: moduleId, onChange, disabled }) {
   }, [feedbackKbIds]);
 
   const toggleFeedback = useCallback((id) => {
-    setFeedbackKbIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
+    setFeedbackKbIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }, []);
 
-  // Build summary + warnings
   const summaryItems = [];
   const warnings = [];
   if (client && kbData && !loading) {
@@ -78,18 +86,29 @@ function KBContextSelector({ module: moduleId, onChange, disabled }) {
   const feedbackOptions = kbData?.feedbackOptions || [];
   const selectedCount = feedbackKbIds.length;
 
+  const selectStyle = {
+    fontSize: 12,
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--r-md)',
+    padding: '5px 10px',
+    background: 'var(--card)',
+    color: 'var(--text)',
+    outline: 'none',
+    cursor: 'pointer',
+  };
+
   return (
-    <div className="space-y-2">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {/* Selector row */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 16px' }}>
         {/* Brand */}
-        <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-[#6B7280] whitespace-nowrap">Brand</label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>Brand</label>
           <select
             value={client}
             onChange={e => setClient(e.target.value)}
             disabled={disabled}
-            className="text-xs border border-[#E5E7EB] rounded-lg px-2.5 py-1.5 bg-white text-[#111827] focus:outline-none disabled:opacity-50 disabled:bg-[#F4F5F7]"
+            style={{ ...selectStyle, opacity: disabled ? 0.5 : 1 }}
           >
             {CLIENTS.map(c => (
               <option key={c.value} value={c.value}>{c.label}</option>
@@ -99,66 +118,89 @@ function KBContextSelector({ module: moduleId, onChange, disabled }) {
 
         {client && (
           <>
-            {/* Industry (auto-resolved from brand's associated industry KB) */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-[#6B7280]">Industry</span>
+            {/* Industry (auto) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)' }}>Industry</span>
               {loading ? (
-                <span className="text-xs text-[#9CA3AF]">…</span>
+                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>…</span>
               ) : kbData?.industry ? (
-                <span className="text-xs px-2 py-0.5 rounded bg-[#F4F5F7] text-[#111827] font-medium">{kbData.industry.id}</span>
+                <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 'var(--r-pill)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 500 }}>
+                  {kbData.industry.id}
+                </span>
               ) : (
-                <span className="text-xs text-[#9CA3AF]">not set</span>
+                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>not set</span>
               )}
-              <span className="text-xs text-[#9CA3AF]">(auto)</span>
+              <span style={{ fontSize: 12, color: 'var(--text-3)' }}>(auto)</span>
             </div>
 
-            {/* Client Feedback — multi-select */}
-            <div className="relative flex items-center gap-2">
-              <span className="text-xs font-semibold text-[#6B7280]">Feedback</span>
+            {/* Feedback multi-select */}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)' }}>Feedback</span>
               {loading ? (
-                <span className="text-xs text-[#9CA3AF]">…</span>
+                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>…</span>
               ) : feedbackOptions.length === 0 ? (
-                <span className="text-xs text-[#9CA3AF]">No feedback available</span>
+                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>No feedback available</span>
               ) : (
-                <div className="relative">
+                <div style={{ position: 'relative' }}>
                   <button
                     type="button"
                     disabled={disabled}
                     onClick={() => setFeedbackOpen(o => !o)}
-                    className="text-xs border border-[#E5E7EB] rounded-lg px-2.5 py-1.5 bg-white text-[#111827] focus:outline-none disabled:opacity-50 disabled:bg-[#F4F5F7] flex items-center gap-1.5 min-w-[120px]"
+                    style={{
+                      ...selectStyle,
+                      display: 'inline-flex', alignItems: 'center', gap: 8,
+                      minWidth: 130, cursor: disabled ? 'not-allowed' : 'pointer',
+                      opacity: disabled ? 0.5 : 1,
+                    }}
                   >
-                    <span className="flex-1 text-left">
+                    <span style={{ flex: 1, textAlign: 'left' }}>
                       {selectedCount === 0 ? 'None selected' : `${selectedCount} selected`}
                     </span>
-                    <svg className={`w-3 h-3 text-[#9CA3AF] transition-transform ${feedbackOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
+                    <ChevronIcon open={feedbackOpen} />
                   </button>
 
                   {feedbackOpen && (
-                    <div className="absolute top-full mt-1 left-0 z-20 bg-white border border-[#E5E7EB] rounded-lg shadow-md min-w-[200px] py-1">
+                    <div style={{
+                      position: 'absolute', top: '100%', marginTop: 4, left: 0, zIndex: 20,
+                      background: 'var(--card)', border: '1px solid var(--border)',
+                      borderRadius: 'var(--r-md)', boxShadow: 'var(--shadow-md)',
+                      minWidth: 200, paddingTop: 4, paddingBottom: 4,
+                    }}>
                       {feedbackOptions.map(f => (
-                        <label
-                          key={f.id}
-                          className="flex items-center gap-2.5 px-3 py-2 hover:bg-[#F4F5F7] cursor-pointer"
+                        <label key={f.id} style={{
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          padding: '8px 12px', cursor: 'pointer',
+                        }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                         >
+                          {/* Custom checkbox */}
+                          <span style={{
+                            width: 14, height: 14, borderRadius: 3,
+                            border: feedbackKbIds.includes(f.id) ? '2px solid var(--primary)' : '1.5px solid var(--border)',
+                            background: feedbackKbIds.includes(f.id) ? 'var(--primary)' : 'var(--card)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: '#fff', flexShrink: 0,
+                          }}>
+                            {feedbackKbIds.includes(f.id) && <CheckIcon />}
+                          </span>
                           <input
                             type="checkbox"
                             checked={feedbackKbIds.includes(f.id)}
                             onChange={() => toggleFeedback(f.id)}
-                            className="w-3.5 h-3.5 accent-[#3DAA8E]"
+                            style={{ display: 'none' }}
                           />
-                          <span className="text-xs text-[#111827] font-medium">{f.label}</span>
+                          <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 500 }}>{f.label}</span>
                           {!f.hasContent && (
-                            <span className="text-[10px] text-[#D97706]">empty</span>
+                            <span style={{ fontSize: 10, color: 'var(--warning)', marginLeft: 'auto' }}>empty</span>
                           )}
                         </label>
                       ))}
-                      <div className="border-t border-[#E5E7EB] mt-1 pt-1 px-3 pb-1">
+                      <div style={{ borderTop: '1px solid var(--border)', marginTop: 4, paddingTop: 4, paddingLeft: 12, paddingBottom: 4 }}>
                         <button
                           type="button"
                           onClick={() => setFeedbackOpen(false)}
-                          className="text-[10px] text-[#6B7280] hover:text-[#111827]"
+                          style={{ fontSize: 11, color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer' }}
                         >
                           Close
                         </button>
@@ -172,34 +214,40 @@ function KBContextSelector({ module: moduleId, onChange, disabled }) {
         )}
       </div>
 
-      {/* Injection summary */}
+      {/* Context summary */}
       {client && !loading && summaryItems.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-[#E5E7EB] text-xs">
-          <span className="text-[#9CA3AF] font-medium mr-0.5">Context injected:</span>
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6,
+          padding: '8px 12px', borderRadius: 'var(--r-md)',
+          background: 'var(--card)', border: '1px solid var(--border)', fontSize: 12,
+        }}>
+          <span style={{ color: 'var(--text-3)', fontWeight: 500, marginRight: 2 }}>Context injected:</span>
           {summaryItems.map(item => (
-            <span
-              key={item.id}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-medium"
-              style={{
-                backgroundColor: item.hasContent ? '#D1FAE5' : '#FEE2E2',
-                color: item.hasContent ? '#065F46' : '#DC2626',
-              }}
-            >
+            <span key={item.id} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              padding: '2px 8px', borderRadius: 'var(--r-pill)', fontWeight: 500,
+              background: item.hasContent ? 'var(--success-soft)' : 'var(--danger-soft)',
+              color: item.hasContent ? 'var(--success)' : 'var(--danger)',
+            }}>
               {item.hasContent ? '✓' : '⚠'} {item.label}: {item.id}
             </span>
           ))}
         </div>
       )}
 
-      {/* No-content warnings */}
+      {/* Warnings */}
       {warnings.length > 0 && (
-        <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-[#FEF9C3] border border-[#FDE68A] text-xs">
-          <span style={{ color: '#D97706' }} className="mt-0.5 flex-shrink-0">⚠</span>
-          <div className="space-y-0.5">
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 8,
+          padding: '8px 12px', borderRadius: 'var(--r-md)',
+          background: 'var(--warning-soft)', border: '1px solid var(--warning)', fontSize: 12,
+        }}>
+          <span style={{ color: 'var(--warning)', flexShrink: 0, marginTop: 1 }}>⚠</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {warnings.map((w, i) => (
-              <p key={i} style={{ color: '#92400E' }}>
+              <p key={i} style={{ margin: 0, color: 'var(--text)' }}>
                 {w} —{' '}
-                <a href="/kb" className="underline hover:opacity-75">edit in KB</a>
+                <a href="/kb" style={{ color: 'var(--primary-text)', textDecoration: 'underline' }}>edit in KB</a>
               </p>
             ))}
           </div>

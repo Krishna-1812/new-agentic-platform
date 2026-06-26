@@ -2,29 +2,27 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { rm } from '../lib/robotsMonitorApi';
 
-const TEAL = '#3DAA8E';
-
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
-function RobotIcon({ className = 'w-4 h-4' }) {
+function RobotIcon({ style }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '1rem', height: '1rem', ...style }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
     </svg>
   );
 }
 
-function ChevronDown({ className = 'w-4 h-4' }) {
+function ChevronDown({ style }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '1rem', height: '1rem', ...style }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
     </svg>
   );
 }
 
-function ChevronUp({ className = 'w-4 h-4' }) {
+function ChevronUp({ style }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '1rem', height: '1rem', ...style }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
     </svg>
   );
@@ -32,9 +30,122 @@ function ChevronUp({ className = 'w-4 h-4' }) {
 
 function LockIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '0.875rem', height: '0.875rem', color: 'var(--text-3)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
     </svg>
+  );
+}
+
+// ── Shared input style ─────────────────────────────────────────────────────────
+
+function FocusInput({ type = 'text', value, onChange, onKeyDown, placeholder, autoFocus, style: extraStyle }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={onChange}
+      onKeyDown={onKeyDown}
+      placeholder={placeholder}
+      autoFocus={autoFocus}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={{
+        width: '100%',
+        fontSize: '0.875rem',
+        border: `1px solid ${focused ? 'var(--primary)' : 'var(--border)'}`,
+        borderRadius: '6px',
+        padding: '0.5rem 0.75rem',
+        outline: 'none',
+        boxShadow: focused ? '0 0 0 2px var(--primary-soft)' : 'none',
+        background: 'var(--card)',
+        color: 'var(--text)',
+        boxSizing: 'border-box',
+        ...extraStyle,
+      }}
+    />
+  );
+}
+
+function FocusSelect({ value, onChange, children, style: extraStyle }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <select
+      value={value}
+      onChange={onChange}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={{
+        width: '100%',
+        fontSize: '0.875rem',
+        border: `1px solid ${focused ? 'var(--primary)' : 'var(--border)'}`,
+        borderRadius: '6px',
+        padding: '0.5rem 0.75rem',
+        outline: 'none',
+        boxShadow: focused ? '0 0 0 2px var(--primary-soft)' : 'none',
+        background: 'var(--card)',
+        color: 'var(--text)',
+        appearance: 'none',
+        WebkitAppearance: 'none',
+        boxSizing: 'border-box',
+        ...extraStyle,
+      }}
+    >
+      {children}
+    </select>
+  );
+}
+
+// ── Env badge ──────────────────────────────────────────────────────────────────
+
+function EnvBadge({ env }) {
+  const isProd = env === 'production';
+  return (
+    <span style={{
+      fontSize: '0.75rem',
+      fontWeight: 600,
+      padding: '0.125rem 0.5rem',
+      borderRadius: '9999px',
+      background: isProd ? 'var(--success-soft, #D1FAE5)' : 'var(--warning-soft, #FEF3C7)',
+      color: isProd ? 'var(--success, #065F46)' : 'var(--warning-text, #92400E)',
+    }}>{env}</span>
+  );
+}
+
+// ── Toggle switch ──────────────────────────────────────────────────────────────
+
+function Toggle({ checked, onChange, disabled }) {
+  return (
+    <button
+      onClick={onChange}
+      disabled={disabled}
+      title={checked ? 'Disable' : 'Enable'}
+      style={{
+        position: 'relative',
+        display: 'inline-flex',
+        height: '1.25rem',
+        width: '2.25rem',
+        borderRadius: '9999px',
+        border: 'none',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        background: checked ? 'var(--primary)' : 'var(--border)',
+        transition: 'background 0.2s',
+        padding: 0,
+        flexShrink: 0,
+      }}
+    >
+      <span style={{
+        display: 'inline-block',
+        height: '1rem',
+        width: '1rem',
+        marginTop: '0.125rem',
+        borderRadius: '9999px',
+        background: '#fff',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+        transform: checked ? 'translateX(1.125rem)' : 'translateX(0.125rem)',
+        transition: 'transform 0.2s',
+      }} />
+    </button>
   );
 }
 
@@ -43,15 +154,33 @@ function LockIcon() {
 function Header() {
   const navigate = useNavigate();
   return (
-    <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6 flex-shrink-0">
-      <div className="max-w-5xl mx-auto w-full flex items-center gap-2.5">
-        <button onClick={() => navigate('/')} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-          <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ backgroundColor: TEAL }}>
-            <RobotIcon className="w-4 h-4 text-white" />
+    <header style={{
+      background: 'var(--card)',
+      borderBottom: '1px solid var(--border)',
+      height: '3.5rem',
+      display: 'flex',
+      alignItems: 'center',
+      padding: '0 1.5rem',
+      flexShrink: 0,
+    }}>
+      <div style={{ maxWidth: '64rem', margin: '0 auto', width: '100%', display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+        <button
+          onClick={() => navigate('/')}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: 'none', border: 'none', cursor: 'pointer', padding: 0, opacity: 1, transition: 'opacity 0.15s' }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        >
+          <div style={{
+            width: '1.75rem', height: '1.75rem',
+            borderRadius: '6px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'var(--primary)',
+          }}>
+            <RobotIcon style={{ color: '#fff' }} />
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-[#111827] text-sm tracking-tight">Robots Monitor</span>
-            <span className="text-[#9CA3AF] text-sm">· Arena</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            <span style={{ fontWeight: 700, color: 'var(--text)', fontSize: '0.875rem', letterSpacing: '-0.01em' }}>Robots Monitor</span>
+            <span style={{ color: 'var(--text-3)', fontSize: '0.875rem' }}>· Arena</span>
           </div>
         </button>
       </div>
@@ -66,14 +195,27 @@ function Toast({ message, type = 'error', onClose }) {
     const t = setTimeout(onClose, 4000);
     return () => clearTimeout(t);
   }, [onClose]);
-  const bg = type === 'error' ? 'bg-red-50 border-red-200 text-red-800'
-    : type === 'success' ? 'bg-green-50 border-green-200 text-green-800'
-    : 'bg-blue-50 border-blue-200 text-blue-800';
+
+  const styles = {
+    error:   { background: 'var(--danger-soft, #FEF2F2)',   border: '1px solid var(--danger-border, #FECACA)',   color: 'var(--danger)' },
+    success: { background: 'var(--success-soft, #D1FAE5)',  border: '1px solid var(--success-border, #6EE7B7)',  color: 'var(--success, #065F46)' },
+    info:    { background: 'var(--primary-soft)',            border: '1px solid var(--primary)',                  color: 'var(--primary-text)' },
+  };
+  const s = styles[type] || styles.error;
+
   return (
-    <div className={`fixed top-4 right-4 z-50 border rounded-lg px-4 py-3 text-sm max-w-md shadow-md ${bg}`}>
-      <div className="flex items-start gap-2">
-        <span className="flex-1">{message}</span>
-        <button onClick={onClose} className="flex-shrink-0 opacity-60 hover:opacity-100">✕</button>
+    <div style={{
+      position: 'fixed', top: '1rem', right: '1rem', zIndex: 50,
+      ...s,
+      borderRadius: 'var(--r-lg)',
+      padding: '0.75rem 1rem',
+      fontSize: '0.875rem',
+      maxWidth: '28rem',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+        <span style={{ flex: 1 }}>{message}</span>
+        <button onClick={onClose} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', opacity: 0.6, fontSize: '1rem', lineHeight: 1 }}>✕</button>
       </div>
     </div>
   );
@@ -88,17 +230,25 @@ function MonitorNav({ active, onChange }) {
     { id: 'settings', label: 'Settings' },
   ];
   return (
-    <div className="border-b border-[#E5E7EB] bg-white">
-      <div className="max-w-5xl mx-auto px-6 flex gap-0">
+    <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--card)' }}>
+      <div style={{ maxWidth: '64rem', margin: '0 auto', padding: '0 1.5rem', display: 'flex', gap: 0 }}>
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => onChange(tab.id)}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-              active === tab.id
-                ? 'border-[#3DAA8E] text-[#3DAA8E]'
-                : 'border-transparent text-[#6B7280] hover:text-[#111827]'
-            }`}
+            style={{
+              padding: '0.75rem 1rem',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              border: 'none',
+              borderBottom: `2px solid ${active === tab.id ? 'var(--primary)' : 'transparent'}`,
+              color: active === tab.id ? 'var(--primary)' : 'var(--text-2)',
+              background: 'none',
+              cursor: 'pointer',
+              transition: 'color 0.15s',
+            }}
+            onMouseEnter={e => { if (active !== tab.id) e.currentTarget.style.color = 'var(--text)'; }}
+            onMouseLeave={e => { if (active !== tab.id) e.currentTarget.style.color = 'var(--text-2)'; }}
           >
             {tab.label}
           </button>
@@ -146,52 +296,84 @@ function DomainForm({ onSave, onCancel, initial = {} }) {
   }
 
   return (
-    <div className="border border-[#E5E7EB] rounded-lg p-4 bg-[#F9FAFB] space-y-3">
+    <div style={{
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      padding: '1rem',
+      background: 'var(--surface)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.75rem',
+    }}>
       <div>
-        <label className="block text-xs font-medium text-[#374151] mb-1">Domain URL</label>
-        <input
-          type="url"
-          value={url}
-          onChange={e => setUrl(e.target.value)}
-          placeholder="https://example.com"
-          className="w-full text-sm border border-[#D1D5DB] rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#3DAA8E]"
-        />
+        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text)', marginBottom: '0.25rem' }}>Domain URL</label>
+        <FocusInput type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://example.com" />
       </div>
       <div>
-        <label className="block text-xs font-medium text-[#374151] mb-1">Environment</label>
-        <div className="flex gap-4">
+        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text)', marginBottom: '0.25rem' }}>Environment</label>
+        <div style={{ display: 'flex', gap: '1rem' }}>
           {['production', 'staging'].map(e => (
-            <label key={e} className="flex items-center gap-1.5 cursor-pointer text-sm text-[#374151]">
-              <input type="radio" name="env" value={e} checked={env === e} onChange={() => setEnv(e)} className="accent-[#3DAA8E]" />
+            <label key={e} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text)' }}>
+              <input type="radio" name="env" value={e} checked={env === e} onChange={() => setEnv(e)} style={{ accentColor: 'var(--primary)' }} />
               {e.charAt(0).toUpperCase() + e.slice(1)}
             </label>
           ))}
         </div>
       </div>
       <div>
-        <label className="flex items-center gap-2 cursor-pointer text-sm text-[#374151]">
-          <input type="checkbox" checked={useAuth} onChange={e => setUseAuth(e.target.checked)} className="accent-[#3DAA8E]" />
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text)' }}>
+          <input type="checkbox" checked={useAuth} onChange={e => setUseAuth(e.target.checked)} style={{ accentColor: 'var(--primary)' }} />
           This domain requires basic auth
         </label>
       </div>
       {useAuth && (
-        <div className="grid grid-cols-2 gap-3">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
           <div>
-            <label className="block text-xs font-medium text-[#374151] mb-1">Username</label>
-            <input value={username} onChange={e => setUsername(e.target.value)} className="w-full text-sm border border-[#D1D5DB] rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#3DAA8E]" />
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text)', marginBottom: '0.25rem' }}>Username</label>
+            <FocusInput value={username} onChange={e => setUsername(e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#374151] mb-1">Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full text-sm border border-[#D1D5DB] rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#3DAA8E]" />
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text)', marginBottom: '0.25rem' }}>Password</label>
+            <FocusInput type="password" value={password} onChange={e => setPassword(e.target.value)} />
           </div>
         </div>
       )}
-      {error && <p className="text-xs text-red-600">{error}</p>}
-      <div className="flex gap-2">
-        <button onClick={handleSave} disabled={saving} className="px-3 py-1.5 text-xs font-medium rounded-md text-white" style={{ backgroundColor: TEAL }}>
+      {error && <p style={{ fontSize: '0.75rem', color: 'var(--danger)', margin: 0 }}>{error}</p>}
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          style={{
+            padding: '0.375rem 0.75rem',
+            fontSize: '0.75rem',
+            fontWeight: 500,
+            borderRadius: '6px',
+            border: 'none',
+            color: '#fff',
+            background: 'var(--primary)',
+            cursor: saving ? 'not-allowed' : 'pointer',
+            opacity: saving ? 0.7 : 1,
+          }}
+        >
           {saving ? 'Saving…' : 'Save Domain'}
         </button>
-        <button onClick={onCancel} className="px-3 py-1.5 text-xs font-medium rounded-md text-[#374151] border border-[#D1D5DB] hover:bg-[#F9FAFB]">Cancel</button>
+        <button
+          onClick={onCancel}
+          style={{
+            padding: '0.375rem 0.75rem',
+            fontSize: '0.75rem',
+            fontWeight: 500,
+            borderRadius: '6px',
+            border: '1px solid var(--border)',
+            color: 'var(--text)',
+            background: 'var(--card)',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'var(--card)'}
+        >
+          Cancel
+        </button>
       </div>
     </div>
   );
@@ -230,37 +412,42 @@ function DomainRow({ domain, clientId, onUpdate, onDelete }) {
   }
 
   return (
-    <div className={`flex items-center gap-3 py-2.5 px-3 rounded-lg ${domain.enabled ? '' : 'opacity-50'}`}>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-[#111827] truncate">{domain.url}</span>
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.75rem',
+      padding: '0.625rem 0.75rem',
+      borderRadius: '8px',
+      opacity: domain.enabled ? 1 : 0.5,
+    }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)' }}>{domain.url}</span>
           {domain.auth && <LockIcon />}
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-            domain.env === 'production' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-          }`}>
-            {domain.env}
-          </span>
+          <EnvBadge env={domain.env} />
         </div>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {/* Toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+        <Toggle checked={domain.enabled} onChange={handleToggle} disabled={toggling} />
         <button
-          onClick={handleToggle}
-          disabled={toggling}
-          title={domain.enabled ? 'Disable' : 'Enable'}
-          className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${domain.enabled ? 'bg-[#3DAA8E]' : 'bg-gray-200'}`}
-        >
-          <span className={`inline-block h-4 w-4 mt-0.5 rounded-full bg-white shadow transition-transform ${domain.enabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
-        </button>
-        <button onClick={() => setEditing(true)} className="text-xs text-[#6B7280] hover:text-[#111827]">Edit</button>
+          onClick={() => setEditing(true)}
+          style={{ fontSize: '0.75rem', color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer' }}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-2)'}
+        >Edit</button>
         {confirmDelete ? (
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-red-600">Delete?</span>
-            <button onClick={handleDelete} className="text-xs font-medium text-red-600 hover:text-red-800">Yes</button>
-            <button onClick={() => setConfirmDelete(false)} className="text-xs text-[#6B7280]">No</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>Delete?</span>
+            <button onClick={handleDelete} style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>Yes</button>
+            <button onClick={() => setConfirmDelete(false)} style={{ fontSize: '0.75rem', color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer' }}>No</button>
           </div>
         ) : (
-          <button onClick={() => setConfirmDelete(true)} className="text-xs text-[#6B7280] hover:text-red-600">Delete</button>
+          <button
+            onClick={() => setConfirmDelete(true)}
+            style={{ fontSize: '0.75rem', color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--danger)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-2)'}
+          >Delete</button>
         )}
       </div>
     </div>
@@ -309,42 +496,63 @@ function ClientCard({ client, onChange, onDelete }) {
   }
 
   return (
-    <div className="bg-white border border-[#E5E7EB] rounded-xl p-5 space-y-3" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      padding: '1.25rem',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.75rem',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+    }}>
       {/* Client header */}
-      <div className="flex items-center justify-between">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {editingName ? (
-          <div className="flex items-center gap-2 flex-1">
-            <input
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+            <FocusInput
               value={nameVal}
               onChange={e => setNameVal(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(false); }}
               autoFocus
-              className="flex-1 text-sm font-semibold border border-[#D1D5DB] rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#3DAA8E]"
+              style={{ flex: 1, fontWeight: 600 }}
             />
-            <button onClick={saveName} className="text-xs text-[#3DAA8E] font-medium">Save</button>
-            <button onClick={() => { setEditingName(false); setNameVal(client.name); }} className="text-xs text-[#6B7280]">Cancel</button>
-            {nameError && <span className="text-xs text-red-600">{nameError}</span>}
+            <button onClick={saveName} style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer' }}>Save</button>
+            <button onClick={() => { setEditingName(false); setNameVal(client.name); }} style={{ fontSize: '0.75rem', color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+            {nameError && <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>{nameError}</span>}
           </div>
         ) : (
-          <h3 className="font-semibold text-[#111827] text-sm">{client.name}</h3>
+          <h3 style={{ fontWeight: 600, color: 'var(--text)', fontSize: '0.875rem', margin: 0 }}>{client.name}</h3>
         )}
-        <div className="flex items-center gap-2 ml-3">
-          {!editingName && <button onClick={() => setEditingName(true)} className="text-xs text-[#6B7280] hover:text-[#111827]">Rename</button>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '0.75rem' }}>
+          {!editingName && (
+            <button
+              onClick={() => setEditingName(true)}
+              style={{ fontSize: '0.75rem', color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-2)'}
+            >Rename</button>
+          )}
           {confirmDelete ? (
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-red-600">Delete client + all domains?</span>
-              <button onClick={handleDeleteClient} className="text-xs font-medium text-red-600 hover:text-red-800">Yes</button>
-              <button onClick={() => setConfirmDelete(false)} className="text-xs text-[#6B7280]">No</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>Delete client + all domains?</span>
+              <button onClick={handleDeleteClient} style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>Yes</button>
+              <button onClick={() => setConfirmDelete(false)} style={{ fontSize: '0.75rem', color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer' }}>No</button>
             </div>
           ) : (
-            <button onClick={() => setConfirmDelete(true)} className="text-xs text-[#6B7280] hover:text-red-600">Delete</button>
+            <button
+              onClick={() => setConfirmDelete(true)}
+              style={{ fontSize: '0.75rem', color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--danger)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-2)'}
+            >Delete</button>
           )}
         </div>
       </div>
 
       {/* Domains */}
       {domains.length > 0 ? (
-        <div className="space-y-1 border-t border-[#F3F4F6] pt-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
           {domains.map(d => (
             <DomainRow
               key={d.id}
@@ -356,7 +564,7 @@ function ClientCard({ client, onChange, onDelete }) {
           ))}
         </div>
       ) : (
-        <p className="text-xs text-[#9CA3AF] py-1">No domains yet — add one below.</p>
+        <p style={{ fontSize: '0.75rem', color: 'var(--text-3)', margin: '0.25rem 0' }}>No domains yet — add one below.</p>
       )}
 
       {/* Add domain */}
@@ -365,9 +573,11 @@ function ClientCard({ client, onChange, onDelete }) {
       ) : (
         <button
           onClick={() => setAddingDomain(true)}
-          className="text-xs font-medium text-[#3DAA8E] hover:opacity-80 flex items-center gap-1"
+          style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', padding: 0 }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
         >
-          <span className="text-base leading-none">+</span> Add Domain
+          <span style={{ fontSize: '1rem', lineHeight: 1 }}>+</span> Add Domain
         </button>
       )}
     </div>
@@ -403,14 +613,23 @@ function ClientsTab({ showToast }) {
     }
   }
 
-  if (loading) return <div className="py-12 text-center text-sm text-[#9CA3AF]">Loading…</div>;
+  if (loading) return <div style={{ padding: '3rem 0', textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-3)' }}>Loading…</div>;
 
   return (
-    <div className="space-y-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {clients.length === 0 && !addingClient && (
-        <div className="bg-white border border-[#E5E7EB] rounded-xl p-8 text-center">
-          <p className="text-sm text-[#6B7280] mb-3">No clients yet — add one to get started.</p>
-          <button onClick={() => setAddingClient(true)} className="px-4 py-2 text-sm font-medium rounded-lg text-white" style={{ backgroundColor: TEAL }}>
+        <div style={{
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--r-lg)',
+          padding: '2rem',
+          textAlign: 'center',
+        }}>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginBottom: '0.75rem' }}>No clients yet — add one to get started.</p>
+          <button
+            onClick={() => setAddingClient(true)}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, borderRadius: 'var(--r-md, 8px)', border: 'none', color: '#fff', background: 'var(--primary)', cursor: 'pointer' }}
+          >
             Add Client
           </button>
         </div>
@@ -426,24 +645,42 @@ function ClientsTab({ showToast }) {
       ))}
 
       {addingClient ? (
-        <div className="bg-white border border-[#E5E7EB] rounded-xl p-5 space-y-3">
-          <label className="block text-xs font-medium text-[#374151]">Client Name</label>
-          <input
+        <div style={{
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--r-lg)',
+          padding: '1.25rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.75rem',
+        }}>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text)' }}>Client Name</label>
+          <FocusInput
             value={newClientName}
             onChange={e => setNewClientName(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAddClient(); if (e.key === 'Escape') setAddingClient(false); }}
             autoFocus
             placeholder="e.g. Riccobene Associates"
-            className="w-full text-sm border border-[#D1D5DB] rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#3DAA8E]"
           />
-          {addError && <p className="text-xs text-red-600">{addError}</p>}
-          <div className="flex gap-2">
-            <button onClick={handleAddClient} className="px-3 py-1.5 text-xs font-medium rounded-md text-white" style={{ backgroundColor: TEAL }}>Add Client</button>
-            <button onClick={() => { setAddingClient(false); setNewClientName(''); setAddError(''); }} className="px-3 py-1.5 text-xs font-medium rounded-md text-[#374151] border border-[#D1D5DB]">Cancel</button>
+          {addError && <p style={{ fontSize: '0.75rem', color: 'var(--danger)', margin: 0 }}>{addError}</p>}
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={handleAddClient}
+              style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', fontWeight: 500, borderRadius: '6px', border: 'none', color: '#fff', background: 'var(--primary)', cursor: 'pointer' }}
+            >Add Client</button>
+            <button
+              onClick={() => { setAddingClient(false); setNewClientName(''); setAddError(''); }}
+              style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', fontWeight: 500, borderRadius: '6px', border: '1px solid var(--border)', color: 'var(--text)', background: 'var(--card)', cursor: 'pointer' }}
+            >Cancel</button>
           </div>
         </div>
       ) : clients.length > 0 && (
-        <button onClick={() => setAddingClient(true)} className="text-sm font-medium text-[#3DAA8E] hover:opacity-80">
+        <button
+          onClick={() => setAddingClient(true)}
+          style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        >
           + Add Client
         </button>
       )}
@@ -454,9 +691,15 @@ function ClientsTab({ showToast }) {
 // ── Run detail panel ──────────────────────────────────────────────────────────
 
 function SitemapBadge({ status, error }) {
-  if (status === 'found') return <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Sitemap found</span>;
-  if (status === 'not-found') return <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">No sitemap — homepage only</span>;
-  return <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full">Sitemap error{error ? `: ${error}` : ''}</span>;
+  if (status === 'found') return (
+    <span style={{ fontSize: '0.75rem', background: 'var(--success-soft, #D1FAE5)', color: 'var(--success, #065F46)', padding: '0.125rem 0.5rem', borderRadius: '9999px' }}>Sitemap found</span>
+  );
+  if (status === 'not-found') return (
+    <span style={{ fontSize: '0.75rem', background: 'var(--warning-soft, #FEF3C7)', color: 'var(--warning-text, #92400E)', padding: '0.125rem 0.5rem', borderRadius: '9999px' }}>No sitemap — homepage only</span>
+  );
+  return (
+    <span style={{ fontSize: '0.75rem', background: 'var(--danger-soft, #FEF2F2)', color: 'var(--danger)', padding: '0.125rem 0.5rem', borderRadius: '9999px' }}>Sitemap error{error ? `: ${error}` : ''}</span>
+  );
 }
 
 const SIGNAL_LABELS = {
@@ -473,28 +716,40 @@ function PageResultRow({ page, env }) {
   const signalLabel = page.signal ? (SIGNAL_LABELS[page.signal] || page.signal) : 'no noindex';
 
   return (
-    <div className="flex items-start gap-2 py-1.5 text-xs border-b border-[#F3F4F6] last:border-0">
-      <span className={`mt-0.5 flex-shrink-0 font-bold ${isIssue ? 'text-red-500' : 'text-green-500'}`}>
+    <div style={{
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '0.5rem',
+      padding: '0.375rem 0',
+      fontSize: '0.75rem',
+      borderBottom: '1px solid var(--surface)',
+    }}>
+      <span style={{ marginTop: '0.125rem', flexShrink: 0, fontWeight: 700, color: isIssue ? 'var(--danger)' : 'var(--success, #059669)' }}>
         {isIssue ? '✗' : '✓'}
       </span>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="font-mono text-[#374151] truncate max-w-xs">{page.url}</span>
-          <span className="text-[#9CA3AF]">·</span>
-          <span className="text-[#9CA3AF]">{page.pageType}</span>
-          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-            page.noindex ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-500'
-          }`}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '18rem' }}>{page.url}</span>
+          <span style={{ color: 'var(--text-3)' }}>·</span>
+          <span style={{ color: 'var(--text-3)' }}>{page.pageType}</span>
+          <span style={{
+            padding: '0.0625rem 0.375rem',
+            borderRadius: '4px',
+            fontSize: '0.625rem',
+            fontWeight: 500,
+            background: page.noindex ? 'var(--danger-soft, #FEF2F2)' : 'var(--surface)',
+            color: page.noindex ? 'var(--danger)' : 'var(--text-2)',
+          }}>
             {signalLabel}
           </span>
           {page.httpStatus && page.httpStatus !== 200 && (
-            <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px]">HTTP {page.httpStatus}</span>
+            <span style={{ background: 'var(--surface)', color: 'var(--text-2)', padding: '0.0625rem 0.375rem', borderRadius: '4px', fontSize: '0.625rem' }}>HTTP {page.httpStatus}</span>
           )}
         </div>
         {page.redirected && page.finalUrl !== page.url && (
-          <div className="text-[#9CA3AF] mt-0.5">↳ {page.finalUrl}</div>
+          <div style={{ color: 'var(--text-3)', marginTop: '0.125rem' }}>↳ {page.finalUrl}</div>
         )}
-        {page.error && <div className="text-red-500 mt-0.5">{page.error}</div>}
+        {page.error && <div style={{ color: 'var(--danger)', marginTop: '0.125rem' }}>{page.error}</div>}
       </div>
     </div>
   );
@@ -502,19 +757,24 @@ function PageResultRow({ page, env }) {
 
 function DomainResultSection({ domain }) {
   return (
-    <div className="border border-[#E5E7EB] rounded-lg p-3 space-y-2">
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-sm font-medium text-[#111827]">{domain.url}</span>
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-          domain.env === 'production' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-        }`}>{domain.env}</span>
+    <div style={{
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      padding: '0.75rem',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.5rem',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>{domain.url}</span>
+        <EnvBadge env={domain.env} />
         <SitemapBadge status={domain.sitemapStatus} error={domain.error} />
       </div>
       {domain.issues?.length > 0 && (
-        <div className="text-xs font-medium text-red-600">{domain.issues.length} issue{domain.issues.length !== 1 ? 's' : ''} found</div>
+        <div style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--danger)' }}>{domain.issues.length} issue{domain.issues.length !== 1 ? 's' : ''} found</div>
       )}
       {domain.pagesChecked?.length > 0 && (
-        <div className="mt-1">
+        <div style={{ marginTop: '0.25rem' }}>
           {domain.pagesChecked.map((p, i) => <PageResultRow key={i} page={p} env={domain.env} />)}
         </div>
       )}
@@ -530,23 +790,23 @@ function RunDetailPanel({ runId }) {
     rm.runDetail(runId).then(setDetail).finally(() => setLoading(false));
   }, [runId]);
 
-  if (loading) return <div className="py-4 text-xs text-[#9CA3AF]">Loading run detail…</div>;
-  if (!detail) return <div className="py-4 text-xs text-red-500">Failed to load run detail.</div>;
+  if (loading) return <div style={{ padding: '1rem 0', fontSize: '0.75rem', color: 'var(--text-3)' }}>Loading run detail…</div>;
+  if (!detail) return <div style={{ padding: '1rem 0', fontSize: '0.75rem', color: 'var(--danger)' }}>Failed to load run detail.</div>;
 
   const durationSec = Math.round((detail.durationMs || 0) / 1000);
 
   return (
-    <div className="mt-3 space-y-4">
+    <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {(detail.clients || []).map(client => (
         <div key={client.clientId}>
-          <h4 className="text-xs font-semibold text-[#374151] mb-2 uppercase tracking-wide">{client.clientName}</h4>
-          <div className="space-y-2">
+          <h4 style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-2)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{client.clientName}</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {(client.domains || []).map(d => <DomainResultSection key={d.domainId} domain={d} />)}
           </div>
         </div>
       ))}
-      <div className="text-xs text-[#9CA3AF] pt-1">
-        Run ID: <span className="font-mono">{detail.runId}</span> · {detail.summary?.totalPagesChecked || 0} pages · {durationSec}s
+      <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', paddingTop: '0.25rem' }}>
+        Run ID: <span style={{ fontFamily: 'var(--font-mono)' }}>{detail.runId}</span> · {detail.summary?.totalPagesChecked || 0} pages · {durationSec}s
       </div>
     </div>
   );
@@ -562,29 +822,57 @@ function RunSummaryRow({ run }) {
   });
 
   return (
-    <div className="border border-[#E5E7EB] rounded-xl overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+    <div style={{
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      overflow: 'hidden',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+    }}>
       <button
         onClick={() => setExpanded(x => !x)}
-        className="w-full flex items-center justify-between px-5 py-4 bg-white hover:bg-[#F9FAFB] transition-colors text-left"
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '1rem 1.25rem',
+          background: 'var(--card)',
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+          transition: 'background 0.15s',
+        }}
+        onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
+        onMouseLeave={e => e.currentTarget.style.background = 'var(--card)'}
       >
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-sm font-medium text-[#111827]">{date}</span>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-            run.triggeredBy === 'manual' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'
-          }`}>{run.triggeredBy === 'manual' ? 'Manual' : 'Scheduled'}</span>
-          <span className="text-xs text-[#6B7280]">{run.summary?.totalDomains || 0} domains</span>
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-            issueCount > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-          }`}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>{date}</span>
+          <span style={{
+            fontSize: '0.75rem',
+            padding: '0.125rem 0.5rem',
+            borderRadius: '9999px',
+            fontWeight: 500,
+            background: run.triggeredBy === 'manual' ? 'var(--primary-soft)' : 'var(--surface)',
+            color: run.triggeredBy === 'manual' ? 'var(--primary-text)' : 'var(--text-2)',
+          }}>{run.triggeredBy === 'manual' ? 'Manual' : 'Scheduled'}</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-2)' }}>{run.summary?.totalDomains || 0} domains</span>
+          <span style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            padding: '0.125rem 0.5rem',
+            borderRadius: '9999px',
+            background: issueCount > 0 ? 'var(--danger-soft, #FEF2F2)' : 'var(--success-soft, #D1FAE5)',
+            color: issueCount > 0 ? 'var(--danger)' : 'var(--success, #065F46)',
+          }}>
             {issueCount > 0 ? `${issueCount} issue${issueCount !== 1 ? 's' : ''}` : 'Clean'}
           </span>
         </div>
-        <span className="text-[#9CA3AF] flex-shrink-0 ml-2">
+        <span style={{ color: 'var(--text-3)', flexShrink: 0, marginLeft: '0.5rem' }}>
           {expanded ? <ChevronUp /> : <ChevronDown />}
         </span>
       </button>
       {expanded && (
-        <div className="px-5 pb-5 bg-white border-t border-[#F3F4F6]">
+        <div style={{ padding: '0 1.25rem 1.25rem', background: 'var(--card)', borderTop: '1px solid var(--surface)' }}>
           <RunDetailPanel runId={run.runId} />
         </div>
       )}
@@ -637,38 +925,59 @@ function HistoryTab({ showToast }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
       {/* Run controls */}
-      <div className="flex items-center gap-3">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         <button
           onClick={handleRun}
           disabled={isRunning}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-white disabled:opacity-60 transition-opacity"
-          style={{ backgroundColor: TEAL }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.5rem 1rem',
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            borderRadius: 'var(--r-md, 8px)',
+            border: 'none',
+            color: '#fff',
+            background: 'var(--primary)',
+            cursor: isRunning ? 'not-allowed' : 'pointer',
+            opacity: isRunning ? 0.6 : 1,
+            transition: 'opacity 0.15s',
+          }}
         >
           {isRunning ? (
             <>
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              <svg style={{ width: '1rem', height: '1rem', animation: 'spin 1s linear infinite' }} fill="none" viewBox="0 0 24 24">
+                <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
               </svg>
               Checking…
             </>
           ) : 'Run Now'}
         </button>
         {isRunning && (
-          <span className="text-xs text-[#6B7280]">Run in progress — polling for completion…</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-2)' }}>Run in progress — polling for completion…</span>
         )}
       </div>
 
       {loading ? (
-        <div className="py-8 text-center text-sm text-[#9CA3AF]">Loading history…</div>
+        <div style={{ padding: '2rem 0', textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-3)' }}>Loading history…</div>
       ) : history.length === 0 ? (
-        <div className="bg-white border border-[#E5E7EB] rounded-xl p-8 text-center">
-          <p className="text-sm text-[#6B7280]">No runs yet. Click "Run Now" or wait for the scheduled run.</p>
+        <div style={{
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--r-lg)',
+          padding: '2rem',
+          textAlign: 'center',
+        }}>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', margin: 0 }}>No runs yet. Click "Run Now" or wait for the scheduled run.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {history.map(run => <RunSummaryRow key={run.runId} run={run} />)}
         </div>
       )}
@@ -742,89 +1051,118 @@ function SettingsTab({ showToast }) {
     }
   }
 
-  if (loading) return <div className="py-12 text-center text-sm text-[#9CA3AF]">Loading…</div>;
+  if (loading) return <div style={{ padding: '3rem 0', textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-3)' }}>Loading…</div>;
 
   return (
-    <div className="space-y-6 max-w-lg">
-      <div className="bg-white border border-[#E5E7EB] rounded-xl p-6 space-y-4">
-        <h3 className="text-sm font-semibold text-[#111827]">Slack Alerts</h3>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '32rem' }}>
+      <div style={{
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--r-lg)',
+        padding: '1.5rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem',
+      }}>
+        <h3 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', margin: 0 }}>Slack Alerts</h3>
 
         <div>
-          <label className="block text-xs font-medium text-[#374151] mb-1">Webhook URL</label>
-          <input
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text)', marginBottom: '0.25rem' }}>Webhook URL</label>
+          <FocusInput
             type="text"
             value={form.webhookUrl}
             onChange={e => setForm(f => ({ ...f, webhookUrl: e.target.value }))}
             placeholder="https://hooks.slack.com/services/…"
-            className="w-full text-sm border border-[#D1D5DB] rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#3DAA8E]"
           />
-          {errors.webhookUrl && <p className="text-xs text-red-600 mt-1">{errors.webhookUrl}</p>}
+          {errors.webhookUrl && <p style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '0.25rem', marginBottom: 0 }}>{errors.webhookUrl}</p>}
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-[#374151] mb-1">Channel (optional)</label>
-          <input
+          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text)', marginBottom: '0.25rem' }}>Channel (optional)</label>
+          <FocusInput
             value={form.channel}
             onChange={e => setForm(f => ({ ...f, channel: e.target.value }))}
             placeholder="#seo-alerts"
-            className="w-full text-sm border border-[#D1D5DB] rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#3DAA8E]"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
-            <label className="block text-xs font-medium text-[#374151] mb-1">Daily Run Time (24h)</label>
-            <input
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text)', marginBottom: '0.25rem' }}>Daily Run Time (24h)</label>
+            <FocusInput
               value={form.scheduleTime}
               onChange={e => setForm(f => ({ ...f, scheduleTime: e.target.value }))}
               placeholder="06:00"
-              className="w-full text-sm border border-[#D1D5DB] rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#3DAA8E]"
             />
-            {errors.scheduleTime && <p className="text-xs text-red-600 mt-1">{errors.scheduleTime}</p>}
+            {errors.scheduleTime && <p style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '0.25rem', marginBottom: 0 }}>{errors.scheduleTime}</p>}
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#374151] mb-1">Timezone</label>
-            <select
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text)', marginBottom: '0.25rem' }}>Timezone</label>
+            <FocusSelect
               value={form.timezone}
               onChange={e => setForm(f => ({ ...f, timezone: e.target.value }))}
-              className="w-full text-sm border border-[#D1D5DB] rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#3DAA8E]"
             >
               {COMMON_TIMEZONES.map(tz => <option key={tz} value={tz}>{tz}</option>)}
-            </select>
+            </FocusSelect>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setForm(f => ({ ...f, enabled: !f.enabled }))}
-            className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${form.enabled ? 'bg-[#3DAA8E]' : 'bg-gray-200'}`}
-          >
-            <span className={`inline-block h-4 w-4 mt-0.5 rounded-full bg-white shadow transition-transform ${form.enabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
-          </button>
-          <span className="text-sm text-[#374151]">Send Slack alerts</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Toggle checked={form.enabled} onChange={() => setForm(f => ({ ...f, enabled: !f.enabled }))} />
+          <span style={{ fontSize: '0.875rem', color: 'var(--text)' }}>Send Slack alerts</span>
         </div>
 
-        <div className="flex items-center gap-3 pt-1">
-          <button onClick={handleSave} disabled={saving} className="px-4 py-2 text-sm font-medium rounded-lg text-white" style={{ backgroundColor: TEAL }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '0.25rem' }}>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, borderRadius: 'var(--r-md, 8px)', border: 'none', color: '#fff', background: 'var(--primary)', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}
+          >
             {saving ? 'Saving…' : 'Save Settings'}
           </button>
-          <button onClick={handleTest} disabled={testing} className="px-4 py-2 text-sm font-medium rounded-lg text-[#374151] border border-[#D1D5DB] hover:bg-[#F9FAFB]">
+          <button
+            onClick={handleTest}
+            disabled={testing}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, borderRadius: 'var(--r-md, 8px)', border: '1px solid var(--border)', color: 'var(--text)', background: 'var(--card)', cursor: testing ? 'not-allowed' : 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--card)'}
+          >
             {testing ? 'Sending…' : 'Send Test Message'}
           </button>
         </div>
 
-        {saveMsg && <p className="text-xs text-green-700">{saveMsg}</p>}
-        {testMsg && <p className={`text-xs ${testMsg.startsWith('✅') ? 'text-green-700' : 'text-red-600'}`}>{testMsg}</p>}
+        {saveMsg && <p style={{ fontSize: '0.75rem', color: 'var(--success, #059669)', margin: 0 }}>{saveMsg}</p>}
+        {testMsg && <p style={{ fontSize: '0.75rem', color: testMsg.startsWith('✅') ? 'var(--success, #059669)' : 'var(--danger)', margin: 0 }}>{testMsg}</p>}
       </div>
 
-      <div className="bg-[#FFFBEB] border border-yellow-200 rounded-xl p-4 text-xs text-yellow-800 space-y-1">
-        <p className="font-semibold">History retention note</p>
-        <p>Run history is retained for 90 days. Older files are automatically pruned after each run.</p>
+      <div style={{
+        background: 'var(--warning-soft, #FFFBEB)',
+        border: '1px solid var(--warning-border, #FDE68A)',
+        borderRadius: 'var(--r-lg)',
+        padding: '1rem',
+        fontSize: '0.75rem',
+        color: 'var(--warning-text, #92400E)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.25rem',
+      }}>
+        <p style={{ fontWeight: 600, margin: 0 }}>History retention note</p>
+        <p style={{ margin: 0 }}>Run history is retained for 90 days. Older files are automatically pruned after each run.</p>
       </div>
 
-      <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-xs text-red-800 space-y-1">
-        <p className="font-semibold">Security notice</p>
-        <p>Client credentials and the Slack webhook URL are stored in plaintext on disk. Ensure <code className="bg-red-100 px-1 rounded">modules/robotsMonitor/data/</code> is excluded from version control.</p>
+      <div style={{
+        background: 'var(--danger-soft, #FEF2F2)',
+        border: '1px solid var(--danger-border, #FECACA)',
+        borderRadius: 'var(--r-lg)',
+        padding: '1rem',
+        fontSize: '0.75rem',
+        color: 'var(--danger)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.25rem',
+      }}>
+        <p style={{ fontWeight: 600, margin: 0 }}>Security notice</p>
+        <p style={{ margin: 0 }}>Client credentials and the Slack webhook URL are stored in plaintext on disk. Ensure <code style={{ background: 'rgba(0,0,0,0.08)', padding: '0.1rem 0.25rem', borderRadius: '3px' }}>modules/robotsMonitor/data/</code> is excluded from version control.</p>
       </div>
     </div>
   );
@@ -844,7 +1182,7 @@ export default function RobotsMonitorPage() {
     <>
       <MonitorNav active={tab} onChange={setTab} />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-6">
+      <main style={{ flex: 1, maxWidth: '64rem', margin: '0 auto', width: '100%', padding: '1.5rem' }}>
         {tab === 'clients' && <ClientsTab showToast={showToast} />}
         {tab === 'history' && <HistoryTab showToast={showToast} />}
         {tab === 'settings' && <SettingsTab showToast={showToast} />}

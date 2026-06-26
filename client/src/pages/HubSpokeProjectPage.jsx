@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { hs, openStream, xlsxToBase64 } from '../lib/hubSpokeApi';
 
-const TEAL = '#3DAA8E';
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function stateToScreen(ws) {
@@ -30,48 +28,70 @@ const LINK_TYPE_LABELS = {
   'cross-cluster': 'Cross-Cluster',
 };
 
-const PRIORITY_COLORS = { high: '#EF4444', medium: '#F59E0B', low: '#9CA3AF' };
+const PRIORITY_COLORS = {
+  high: 'var(--danger,#EF4444)',
+  medium: 'var(--warning,#F59E0B)',
+  low: 'var(--text-3)',
+};
 
+// Anchor source badge styles using design tokens
 const ANCHOR_SOURCE_BADGE = {
-  'existing-content':      { label: 'Found in content',    cls: 'bg-green-50 text-green-700' },
-  'new-sentence-required': { label: 'New sentence req.',   cls: 'bg-amber-50 text-amber-700' },
-  'existing-link':         { label: 'Already linked',      cls: 'bg-blue-50 text-blue-600' },
-  'page-unavailable':      { label: 'Page unavailable',    cls: 'bg-red-50 text-red-600' },
+  'existing-content':      { label: 'Found in content',    bg: 'rgba(16,185,129,0.08)',  color: 'var(--success,#059669)' },
+  'new-sentence-required': { label: 'New sentence req.',   bg: 'rgba(245,158,11,0.08)',  color: 'var(--warning,#B45309)' },
+  'existing-link':         { label: 'Already linked',      bg: 'rgba(59,130,246,0.08)',  color: 'var(--info,#2563EB)' },
+  'page-unavailable':      { label: 'Page unavailable',    bg: 'rgba(239,68,68,0.08)',   color: 'var(--danger,#DC2626)' },
 };
 
 const ANCHOR_WARNING_LABELS = {
-  'anchor-too-short':            'Too short (< 2 words)',
-  'anchor-too-long':             'Too long (> 10 words)',
-  'generic-phrase':              'Generic phrase',
-  'duplicate-anchor-diff-target':'Duplicate anchor → diff target',
-  'anchor-overused-for-target':  'Anchor used > 3× for target',
-  'high-link-density':           'High link density on source',
-  'exact-title-match':           'Exact title match',
-  'page-unavailable':            'Source page unavailable',
-  'anchor-not-in-context':       'Anchor not in context sentence',
-  'geo-specific-target':         'Geo-specific target (hub→location page)',
+  'anchor-too-short':             'Too short (< 2 words)',
+  'anchor-too-long':              'Too long (> 10 words)',
+  'generic-phrase':               'Generic phrase',
+  'duplicate-anchor-diff-target': 'Duplicate anchor → diff target',
+  'anchor-overused-for-target':   'Anchor used > 3× for target',
+  'high-link-density':            'High link density on source',
+  'exact-title-match':            'Exact title match',
+  'page-unavailable':             'Source page unavailable',
+  'anchor-not-in-context':        'Anchor not in context sentence',
+  'geo-specific-target':          'Geo-specific target (hub→location page)',
 };
+
+// Spinner keyframes injected once
+const SPIN_STYLE = `@keyframes spin { to { transform: rotate(360deg); } }`;
 
 // ── Header ────────────────────────────────────────────────────────────────────
 
 function Header({ project }) {
   const navigate = useNavigate();
   return (
-    <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6 flex-shrink-0">
-      <div className="max-w-7xl mx-auto w-full flex items-center gap-3">
-        <button onClick={() => navigate('/hub-spoke')}
-          className="text-[#9CA3AF] hover:text-[#374151] flex items-center gap-1.5 text-sm">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <header style={{
+      background: 'var(--card)',
+      borderBottom: '1px solid var(--border)',
+      height: '3.5rem',
+      display: 'flex',
+      alignItems: 'center',
+      padding: '0 1.5rem',
+      flexShrink: 0,
+    }}>
+      <div style={{ maxWidth: '80rem', margin: '0 auto', width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <button
+          onClick={() => navigate('/hub-spoke')}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem', color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer' }}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-3)'}
+        >
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
           Projects
         </button>
-        <span className="text-[#E5E7EB]">/</span>
-        <span className="text-sm font-semibold text-[#111827] truncate max-w-xs">{project?.name || '…'}</span>
+        <span style={{ color: 'var(--border)', fontSize: '1rem' }}>/</span>
+        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', maxWidth: '16rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {project?.name || '…'}
+        </span>
         {project?.domain && (
           <>
-            <span className="text-[#E5E7EB]">·</span>
-            <span className="text-xs text-[#9CA3AF] truncate">{project.domain}</span>
+            <span style={{ color: 'var(--border)' }}>·</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{project.domain}</span>
           </>
         )}
       </div>
@@ -91,27 +111,40 @@ function Stepper({ screen }) {
   const active = screen === 'analyzing' ? 'reviewing' : screen === 'generating' ? 'results' : screen;
   const activeIdx = STEPS.findIndex(s => s.key === active);
   return (
-    <div className="bg-white border-b border-[#E5E7EB] px-6 py-3">
-      <div className="max-w-7xl mx-auto flex items-center gap-0">
+    <div style={{ background: 'var(--card)', borderBottom: '1px solid var(--border)', padding: '0.75rem 1.5rem' }}>
+      <div style={{ maxWidth: '80rem', margin: '0 auto', display: 'flex', alignItems: 'center', gap: 0 }}>
         {STEPS.map((step, i) => {
           const done = i < activeIdx;
           const current = i === activeIdx;
           return (
-            <div key={step.key} className="flex items-center">
-              <div className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                  done ? 'bg-[#3DAA8E] text-white' :
-                  current ? 'bg-[#3DAA8E] text-white ring-2 ring-[#3DAA8E] ring-offset-2' :
-                  'bg-[#F3F4F6] text-[#9CA3AF]'
-                }`}>
+            <div key={step.key} style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{
+                  width: '1.5rem', height: '1.5rem', borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.75rem', fontWeight: 700,
+                  background: done || current ? 'var(--primary)' : 'var(--surface)',
+                  color: done || current ? '#fff' : 'var(--text-3)',
+                  boxShadow: current ? '0 0 0 3px var(--primary-soft)' : 'none',
+                  transition: 'background 0.2s, box-shadow 0.2s',
+                }}>
                   {done ? '✓' : i + 1}
                 </div>
-                <span className={`text-sm font-medium ${current ? 'text-[#111827]' : done ? 'text-[#3DAA8E]' : 'text-[#9CA3AF]'}`}>
+                <span style={{
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  color: current ? 'var(--text)' : done ? 'var(--primary)' : 'var(--text-3)',
+                }}>
                   {step.label}
                 </span>
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`mx-4 h-px w-16 ${i < activeIdx ? 'bg-[#3DAA8E]' : 'bg-[#E5E7EB]'}`} />
+                <div style={{
+                  margin: '0 1rem',
+                  height: '1px',
+                  width: '4rem',
+                  background: i < activeIdx ? 'var(--primary)' : 'var(--border)',
+                }} />
               )}
             </div>
           );
@@ -125,30 +158,35 @@ function Stepper({ screen }) {
 
 function ProgressDisplay({ steps, title }) {
   return (
-    <div className="max-w-lg mx-auto py-16">
-      <h2 className="text-base font-semibold text-[#111827] mb-6">{title}</h2>
-      <div className="space-y-3">
+    <div style={{ maxWidth: '32rem', margin: '0 auto', padding: '4rem 0' }}>
+      <h2 style={{ margin: '0 0 1.5rem', fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text)' }}>{title}</h2>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {steps.map((step, i) => (
-          <div key={step.id + i} className="flex items-start gap-3">
-            <div className="flex-shrink-0 mt-0.5">
+          <div key={step.id + i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+            <div style={{ flexShrink: 0, marginTop: '0.125rem' }}>
               {step.status === 'done' ? (
-                <div className="w-5 h-5 rounded-full bg-[#3DAA8E] flex items-center justify-center">
-                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
               ) : step.status === 'active' ? (
-                <div className="w-5 h-5 rounded-full border-2 border-[#3DAA8E] border-t-transparent animate-spin" />
+                <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', border: '2px solid var(--primary)', borderTopColor: 'transparent', animation: 'spin 0.7s linear infinite' }} />
               ) : (
-                <div className="w-5 h-5 rounded-full bg-[#F3F4F6]" />
+                <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', background: 'var(--surface)' }} />
               )}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className={`text-sm ${step.status === 'done' ? 'text-[#374151]' : step.status === 'active' ? 'text-[#111827] font-medium' : 'text-[#9CA3AF]'}`}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{
+                margin: 0,
+                fontSize: '0.875rem',
+                color: step.status === 'done' ? 'var(--text)' : step.status === 'active' ? 'var(--text)' : 'var(--text-3)',
+                fontWeight: step.status === 'active' ? 500 : 400,
+              }}>
                 {step.message}
               </p>
               {step.url && (
-                <p className="text-xs text-[#9CA3AF] truncate mt-0.5">{step.url}</p>
+                <p style={{ margin: '0.125rem 0 0', fontSize: '0.75rem', color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{step.url}</p>
               )}
             </div>
           </div>
@@ -225,19 +263,47 @@ function InputScreen({ project, onXlsxParsed, onAnalyzeStarted }) {
     }
   }
 
+  const modeTabBase = {
+    padding: '0.375rem 1rem',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    borderRadius: 'var(--r-md)',
+    border: 'none',
+    cursor: 'pointer',
+    transition: 'background 0.15s, color 0.15s',
+  };
+
+  const inputStyle = {
+    width: '100%',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--r-xl)',
+    padding: '0.75rem 1rem',
+    fontSize: '0.875rem',
+    background: 'var(--card)',
+    color: 'var(--text)',
+    outline: 'none',
+    resize: 'none',
+    boxSizing: 'border-box',
+    fontFamily: 'var(--font-mono)',
+  };
+
   return (
-    <div className="max-w-2xl mx-auto py-10">
-      <h2 className="text-lg font-bold text-[#111827] mb-1">Add Content Structure</h2>
-      <p className="text-sm text-[#6B7280] mb-6">Upload an existing hub and spoke document, or enter URLs to auto-categorize with AI.</p>
+    <div style={{ maxWidth: '40rem', margin: '0 auto', padding: '2.5rem 0' }}>
+      <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.125rem', fontWeight: 700, color: 'var(--text)' }}>Add Content Structure</h2>
+      <p style={{ margin: '0 0 1.5rem', fontSize: '0.875rem', color: 'var(--text-2)' }}>Upload an existing hub and spoke document, or enter URLs to auto-categorize with AI.</p>
 
       {/* Mode toggle */}
-      <div className="flex bg-[#F3F4F6] rounded-lg p-1 mb-6 w-fit">
-        <button onClick={() => setMode('xlsx')}
-          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${mode === 'xlsx' ? 'bg-white text-[#111827] shadow-sm' : 'text-[#6B7280] hover:text-[#374151]'}`}>
+      <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: '0.25rem', marginBottom: '1.5rem', width: 'fit-content' }}>
+        <button
+          onClick={() => setMode('xlsx')}
+          style={{ ...modeTabBase, background: mode === 'xlsx' ? 'var(--card)' : 'transparent', color: mode === 'xlsx' ? 'var(--text)' : 'var(--text-2)', boxShadow: mode === 'xlsx' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}
+        >
           Upload XLSX
         </button>
-        <button onClick={() => setMode('urls')}
-          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${mode === 'urls' ? 'bg-white text-[#111827] shadow-sm' : 'text-[#6B7280] hover:text-[#374151]'}`}>
+        <button
+          onClick={() => setMode('urls')}
+          style={{ ...modeTabBase, background: mode === 'urls' ? 'var(--card)' : 'transparent', color: mode === 'urls' ? 'var(--text)' : 'var(--text-2)', boxShadow: mode === 'urls' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}
+        >
           Enter URLs
         </button>
       </div>
@@ -249,61 +315,92 @@ function InputScreen({ project, onXlsxParsed, onAnalyzeStarted }) {
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors ${
-              dragging ? 'border-[#3DAA8E] bg-[#3DAA8E08]' : 'border-[#E5E7EB] hover:border-[#3DAA8E] hover:bg-[#3DAA8E08]'
-            }`}>
-            <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden"
+            style={{
+              border: `2px dashed ${dragging ? 'var(--primary)' : 'var(--border)'}`,
+              borderRadius: 'var(--r-xl)',
+              padding: '3rem',
+              textAlign: 'center',
+              cursor: 'pointer',
+              background: dragging ? 'var(--primary-soft)' : 'var(--card)',
+              transition: 'border-color 0.15s, background 0.15s',
+            }}
+            onMouseEnter={e => { if (!dragging) { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'var(--primary-soft)'; } }}
+            onMouseLeave={e => { if (!dragging) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--card)'; } }}
+          >
+            <input ref={fileInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }}
               onChange={e => processFile(e.target.files[0])} />
             {uploading ? (
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-6 h-6 border-2 border-[#3DAA8E] border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm text-[#6B7280]">Parsing XLSX…</p>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: '1.5rem', height: '1.5rem', borderRadius: '50%', border: '2px solid var(--primary)', borderTopColor: 'transparent', animation: 'spin 0.7s linear infinite' }} />
+                <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-2)' }}>Parsing XLSX…</p>
               </div>
             ) : (
               <>
-                <svg className="w-8 h-8 text-[#9CA3AF] mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="var(--text-3)" strokeWidth={1.5} style={{ margin: '0 auto 0.75rem', display: 'block' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                 </svg>
-                <p className="text-sm font-medium text-[#374151]">Drop XLSX file here, or click to browse</p>
-                <p className="text-xs text-[#9CA3AF] mt-1">Supports hub and spoke spreadsheets with HUB:/spoke format</p>
+                <p style={{ margin: '0 0 0.25rem', fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)' }}>Drop XLSX file here, or click to browse</p>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-3)' }}>Supports hub and spoke spreadsheets with HUB:/spoke format</p>
               </>
             )}
           </div>
-          {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
+          {uploadError && <p style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: 'var(--danger,#DC2626)' }}>{uploadError}</p>}
         </div>
       ) : (
         <div>
           <textarea
             value={urlText}
             onChange={e => handleUrlTextChange(e.target.value)}
-            placeholder="Paste URLs here, one per line&#10;&#10;https://example.com/blog/post-1&#10;https://example.com/services/dental-cleaning&#10;https://example.com/about"
+            placeholder={"Paste URLs here, one per line\n\nhttps://example.com/blog/post-1\nhttps://example.com/services/dental-cleaning\nhttps://example.com/about"}
             rows={12}
-            className="w-full border border-[#E5E7EB] rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-[#3DAA8E] resize-none"
+            style={inputStyle}
+            onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+            onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
           />
           {classification && (
-            <div className="mt-3 p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB] flex items-center gap-4 text-sm">
-              <span className="font-medium text-[#374151]">{classification.urlCount} URLs detected</span>
+            <div style={{
+              marginTop: '0.75rem',
+              padding: '0.75rem',
+              background: 'var(--surface)',
+              borderRadius: 'var(--r-lg)',
+              border: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              fontSize: '0.875rem',
+            }}>
+              <span style={{ fontWeight: 500, color: 'var(--text)' }}>{classification.urlCount} URLs detected</span>
               {classification.type === 'hub-and-spoke-complete' && (
-                <span className="text-xs px-2 py-0.5 bg-[#3DAA8E1A] text-[#3DAA8E] rounded-full font-medium">Hub & Spoke structure found</span>
+                <span style={{ fontSize: '0.75rem', padding: '0.125rem 0.5rem', background: 'var(--primary-soft)', color: 'var(--primary-text)', borderRadius: '9999px', fontWeight: 500 }}>Hub &amp; Spoke structure found</span>
               )}
               {classification.type === 'url-list-only' && (
-                <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full font-medium">AI categorization will be applied</span>
+                <span style={{ fontSize: '0.75rem', padding: '0.125rem 0.5rem', background: 'rgba(59,130,246,0.1)', color: 'var(--info,#1D4ED8)', borderRadius: '9999px', fontWeight: 500 }}>AI categorization will be applied</span>
               )}
               {classification.type === 'mixed' && (
-                <span className="text-xs px-2 py-0.5 bg-yellow-50 text-yellow-700 rounded-full font-medium">Mixed content — AI will categorize</span>
+                <span style={{ fontSize: '0.75rem', padding: '0.125rem 0.5rem', background: 'rgba(245,158,11,0.1)', color: 'var(--warning,#92400E)', borderRadius: '9999px', fontWeight: 500 }}>Mixed content — AI will categorize</span>
               )}
               {classification.type === 'invalid' && (
-                <span className="text-xs px-2 py-0.5 bg-red-50 text-red-700 rounded-full font-medium">No valid URLs found</span>
+                <span style={{ fontSize: '0.75rem', padding: '0.125rem 0.5rem', background: 'rgba(239,68,68,0.1)', color: 'var(--danger,#DC2626)', borderRadius: '9999px', fontWeight: 500 }}>No valid URLs found</span>
               )}
             </div>
           )}
-          {analyzeError && <p className="mt-2 text-sm text-red-600">{analyzeError}</p>}
-          <div className="mt-4">
+          {analyzeError && <p style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: 'var(--danger,#DC2626)' }}>{analyzeError}</p>}
+          <div style={{ marginTop: '1rem' }}>
             <button
               onClick={handleAnalyze}
               disabled={!classification?.urlCount || classification?.type === 'invalid' || analyzing}
-              className="px-5 py-2.5 text-sm font-medium text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: TEAL }}>
+              style={{
+                padding: '0.625rem 1.25rem',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                color: '#fff',
+                background: 'var(--primary)',
+                border: 'none',
+                borderRadius: 'var(--r-lg)',
+                cursor: (!classification?.urlCount || classification?.type === 'invalid' || analyzing) ? 'not-allowed' : 'pointer',
+                opacity: (!classification?.urlCount || classification?.type === 'invalid' || analyzing) ? 0.5 : 1,
+              }}
+            >
               {analyzing ? 'Starting…' : `Analyze ${classification?.urlCount || ''} URLs with AI`}
             </button>
           </div>
@@ -319,53 +416,56 @@ function ClusterCard({ cluster }) {
   const [open, setOpen] = useState(true);
   const spokes = cluster.spokes || [];
   return (
-    <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-      <button onClick={() => setOpen(o => !o)}
-        className="w-full text-left px-5 py-4 flex items-center gap-3 hover:bg-[#F9FAFB] transition-colors">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-[#111827]">{cluster.clusterName}</span>
-            {cluster.hubPage?.isGap && (
-              <span className="text-xs px-1.5 py-0.5 bg-orange-50 text-orange-700 rounded font-medium">GAP</span>
+    <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{ width: '100%', textAlign: 'left', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'none', border: 'none', cursor: 'pointer', transition: 'background 0.15s' }}
+        onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
+        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)' }}>{cluster.clusterName}</span>
+            {(cluster.hubPage?.isGap || cluster.hubPage?.hubStatus === 'gap') && (
+              <span style={{ fontSize: '0.75rem', padding: '0.125rem 0.375rem', background: 'rgba(245,158,11,0.1)', color: 'var(--warning,#92400E)', borderRadius: 'var(--r-sm)', fontWeight: 500 }}>GAP</span>
             )}
-            {cluster.hubPage?.hubStatus === 'gap' && (
-              <span className="text-xs px-1.5 py-0.5 bg-orange-50 text-orange-700 rounded font-medium">GAP</span>
-            )}
-            <span className="text-xs text-[#9CA3AF]">{spokes.length} spoke{spokes.length !== 1 ? 's' : ''}</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{spokes.length} spoke{spokes.length !== 1 ? 's' : ''}</span>
           </div>
           {cluster.hubPage?.url && (
-            <p className="text-xs text-[#6B7280] mt-0.5 truncate">{cluster.hubPage.url}</p>
+            <p style={{ margin: '0.125rem 0 0', fontSize: '0.75rem', color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cluster.hubPage.url}</p>
           )}
           {cluster.primaryKeyword && (
-            <p className="text-xs text-[#9CA3AF] mt-0.5">Primary keyword: {cluster.primaryKeyword}</p>
+            <p style={{ margin: '0.125rem 0 0', fontSize: '0.75rem', color: 'var(--text-3)' }}>Primary keyword: {cluster.primaryKeyword}</p>
           )}
         </div>
-        <svg className={`w-4 h-4 text-[#9CA3AF] flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg
+          width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--text-3)" strokeWidth={2}
+          style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+        >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
         </svg>
       </button>
 
       {open && spokes.length > 0 && (
-        <div className="border-t border-[#F3F4F6] divide-y divide-[#F3F4F6]">
+        <div style={{ borderTop: '1px solid var(--surface)' }}>
           {spokes.map((spoke, i) => (
-            <div key={i} className="px-5 py-3 flex items-start gap-3">
-              <div className="w-1 h-1 rounded-full bg-[#9CA3AF] mt-2 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-[#374151] truncate max-w-sm">{spoke.url}</span>
+            <div key={i} style={{ padding: '0.75rem 1.25rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem', borderBottom: i < spokes.length - 1 ? '1px solid var(--surface)' : 'none' }}>
+              <div style={{ width: '0.25rem', height: '0.25rem', borderRadius: '50%', background: 'var(--text-3)', marginTop: '0.5rem', flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '24rem' }}>{spoke.url}</span>
                   {spoke.isDualCluster && (
-                    <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded font-medium">dual-cluster</span>
+                    <span style={{ fontSize: '0.625rem', padding: '0.125rem 0.375rem', background: 'rgba(59,130,246,0.1)', color: 'var(--info,#1D4ED8)', borderRadius: 'var(--r-sm)', fontWeight: 500 }}>dual-cluster</span>
                   )}
                   {spoke.isLocationArticle && (
-                    <span className="text-[10px] px-1.5 py-0.5 bg-purple-50 text-purple-700 rounded font-medium">location</span>
+                    <span style={{ fontSize: '0.625rem', padding: '0.125rem 0.375rem', background: 'rgba(147,51,234,0.1)', color: '#6D28D9', borderRadius: 'var(--r-sm)', fontWeight: 500 }}>location</span>
                   )}
                   {spoke.confidenceScore != null && (
-                    <span className="text-[10px] text-[#9CA3AF]">score: {spoke.confidenceScore}</span>
+                    <span style={{ fontSize: '0.625rem', color: 'var(--text-3)' }}>score: {spoke.confidenceScore}</span>
                   )}
                 </div>
                 {(spoke.primaryTopic || spoke.inferredTopic) && (
-                  <p className="text-[11px] text-[#9CA3AF] mt-0.5">{spoke.primaryTopic || spoke.inferredTopic}</p>
+                  <p style={{ margin: '0.125rem 0 0', fontSize: '0.6875rem', color: 'var(--text-3)' }}>{spoke.primaryTopic || spoke.inferredTopic}</p>
                 )}
               </div>
             </div>
@@ -373,7 +473,7 @@ function ClusterCard({ cluster }) {
         </div>
       )}
       {open && spokes.length === 0 && (
-        <div className="border-t border-[#F3F4F6] px-5 py-3 text-xs text-[#9CA3AF] italic">No spokes assigned</div>
+        <div style={{ borderTop: '1px solid var(--surface)', padding: '0.75rem 1.25rem', fontSize: '0.75rem', color: 'var(--text-3)', fontStyle: 'italic' }}>No spokes assigned</div>
       )}
     </div>
   );
@@ -385,38 +485,69 @@ function ReviewScreen({ project, clusters, warnings, onApprove, approving }) {
   const dualCluster = clusters.reduce((s, c) => s + (c.spokes?.filter(sp => sp.isDualCluster)?.length || 0), 0);
 
   return (
-    <div className="max-w-4xl mx-auto py-8">
-      <div className="flex items-start justify-between mb-6 gap-4">
+    <div style={{ maxWidth: '56rem', margin: '0 auto', padding: '2rem 0' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.5rem', gap: '1rem' }}>
         <div>
-          <h2 className="text-lg font-bold text-[#111827] mb-1">Review Hub & Spoke Structure</h2>
-          <p className="text-sm text-[#6B7280]">Review the cluster structure before generating linking recommendations.</p>
+          <h2 style={{ margin: '0 0 0.25rem', fontSize: '1.125rem', fontWeight: 700, color: 'var(--text)' }}>Review Hub &amp; Spoke Structure</h2>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-2)' }}>Review the cluster structure before generating linking recommendations.</p>
         </div>
-        <button onClick={onApprove} disabled={approving || project?.workflowState === 'approved'}
-          className="px-5 py-2.5 text-sm font-semibold text-white rounded-lg flex-shrink-0 disabled:opacity-50"
-          style={{ backgroundColor: TEAL }}>
+        <button
+          onClick={onApprove}
+          disabled={approving || project?.workflowState === 'approved'}
+          style={{
+            padding: '0.625rem 1.25rem',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            color: '#fff',
+            background: 'var(--primary)',
+            border: 'none',
+            borderRadius: 'var(--r-lg)',
+            flexShrink: 0,
+            cursor: (approving || project?.workflowState === 'approved') ? 'not-allowed' : 'pointer',
+            opacity: (approving || project?.workflowState === 'approved') ? 0.5 : 1,
+          }}
+        >
           {approving ? 'Approving…' : project?.workflowState === 'approved' ? 'Approved ✓' : 'Approve & Generate'}
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-3 mb-5">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', marginBottom: '1.25rem' }}>
         {[
           { label: 'Clusters', value: clusters.length },
           { label: 'Total Spokes', value: totalSpokes },
           { label: 'GAP Hubs', value: gapHubs.length },
           { label: 'Dual-Cluster Spokes', value: dualCluster },
         ].map(stat => (
-          <div key={stat.label} className="bg-white rounded-lg border border-[#E5E7EB] px-4 py-3 text-center" style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-            <div className="text-xl font-bold text-[#111827]">{stat.value}</div>
-            <div className="text-xs text-[#9CA3AF] mt-0.5">{stat.label}</div>
+          <div key={stat.label} style={{
+            background: 'var(--card)',
+            borderRadius: 'var(--r-lg)',
+            border: '1px solid var(--border)',
+            padding: '0.75rem 1rem',
+            textAlign: 'center',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+          }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>{stat.value}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: '0.125rem' }}>{stat.label}</div>
           </div>
         ))}
       </div>
 
       {/* Warning banners */}
       {warnings?.map((w, i) => (
-        <div key={i} className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 flex items-start gap-2">
-          <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div key={i} style={{
+          marginBottom: '0.75rem',
+          padding: '0.75rem',
+          background: 'rgba(245,158,11,0.08)',
+          border: '1px solid rgba(245,158,11,0.25)',
+          borderRadius: 'var(--r-lg)',
+          fontSize: '0.875rem',
+          color: 'var(--warning,#92400E)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '0.5rem',
+        }}>
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ flexShrink: 0, marginTop: '0.125rem' }}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
           {w}
@@ -424,7 +555,7 @@ function ReviewScreen({ project, clusters, warnings, onApprove, approving }) {
       ))}
 
       {/* Cluster list */}
-      <div className="space-y-3">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {clusters.map((cluster, i) => (
           <ClusterCard key={cluster.id || i} cluster={cluster} />
         ))}
@@ -435,10 +566,11 @@ function ReviewScreen({ project, clusters, warnings, onApprove, approving }) {
 
 // ── Results Screen ────────────────────────────────────────────────────────────
 
-const STATUS_BADGE = {
-  pending: 'bg-gray-100 text-gray-600',
-  approved: 'bg-green-50 text-green-700',
-  rejected: 'bg-red-50 text-red-600',
+// Status badge styles using design tokens
+const STATUS_BADGE_STYLE = {
+  pending:  { background: 'var(--surface)', color: 'var(--text-2)' },
+  approved: { background: 'rgba(16,185,129,0.1)', color: 'var(--success,#059669)' },
+  rejected: { background: 'rgba(239,68,68,0.1)', color: 'var(--danger,#DC2626)' },
 };
 
 function InlineEditCell({ value, onSave }) {
@@ -456,15 +588,25 @@ function InlineEditCell({ value, onSave }) {
 
   if (editing) {
     return (
-      <input ref={inputRef} value={draft} onChange={e => setDraft(e.target.value)}
+      <input
+        ref={inputRef}
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { setDraft(value || ''); setEditing(false); } }}
-        className="w-full border border-[#3DAA8E] rounded px-1 py-0.5 text-xs focus:outline-none" />
+        style={{ width: '100%', border: '1px solid var(--primary)', borderRadius: 'var(--r-sm)', padding: '0.125rem 0.25rem', fontSize: '0.75rem', outline: 'none', background: 'var(--card)', color: 'var(--text)' }}
+      />
     );
   }
   return (
-    <span onClick={() => setEditing(true)} className="cursor-text text-xs text-[#374151] hover:text-[#3DAA8E] truncate block max-w-[140px]" title={value || '—'}>
-      {value || <span className="text-[#D1D5DB] italic">click to edit</span>}
+    <span
+      onClick={() => setEditing(true)}
+      title={value || '—'}
+      style={{ cursor: 'text', fontSize: '0.75rem', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', maxWidth: '8.75rem' }}
+      onMouseEnter={e => e.currentTarget.style.color = 'var(--primary)'}
+      onMouseLeave={e => e.currentTarget.style.color = 'var(--text)'}
+    >
+      {value || <span style={{ color: 'var(--border)', fontStyle: 'italic' }}>click to edit</span>}
     </span>
   );
 }
@@ -472,22 +614,48 @@ function InlineEditCell({ value, onSave }) {
 function AnchorSourceBadge({ source }) {
   const b = ANCHOR_SOURCE_BADGE[source];
   if (!b) return null;
-  return <span className={`inline-block text-[9px] font-semibold px-1 py-0.5 rounded mb-0.5 ${b.cls}`}>{b.label}</span>;
+  return (
+    <span style={{
+      display: 'inline-block',
+      fontSize: '0.5625rem',
+      fontWeight: 600,
+      padding: '0.125rem 0.25rem',
+      borderRadius: 'var(--r-sm)',
+      marginBottom: '0.125rem',
+      background: b.bg,
+      color: b.color,
+    }}>
+      {b.label}
+    </span>
+  );
 }
 
 function CandidatesPopover({ candidates, current, onSelect, onClose }) {
   return (
-    <div className="absolute top-full left-0 mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg p-2 w-72 space-y-0.5" style={{ zIndex: 50 }}>
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wide">Anchor candidates</span>
-        <button onClick={onClose} className="text-[#9CA3AF] hover:text-[#374151] text-xs leading-none">✕</button>
+    <div style={{
+      position: 'absolute', top: '100%', left: 0, marginTop: '0.25rem',
+      background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.12)', padding: '0.5rem', width: '18rem',
+      zIndex: 50, display: 'flex', flexDirection: 'column', gap: '0.125rem',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
+        <span style={{ fontSize: '0.625rem', fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Anchor candidates</span>
+        <button onClick={onClose} style={{ color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', lineHeight: 1 }}>✕</button>
       </div>
       {candidates.map((c, i) => (
         <button key={i} onClick={() => onSelect(c.anchorText)}
-          className={`w-full text-left px-2 py-1.5 rounded hover:bg-[#F3F4F6] ${c.anchorText === current ? 'bg-[#3DAA8E0D] ring-1 ring-[#3DAA8E33]' : ''}`}>
-          <span className="block text-xs text-[#111827] leading-snug">{c.anchorText}</span>
-          <span className="text-[10px] text-[#9CA3AF]">R:{c.relevanceScore} N:{c.naturalness}
-            {c.section && ` · ${c.section}`}
+          style={{
+            width: '100%', textAlign: 'left', padding: '0.375rem 0.5rem',
+            borderRadius: 'var(--r-md)', border: 'none', cursor: 'pointer',
+            background: c.anchorText === current ? 'var(--primary-soft)' : 'none',
+            outline: c.anchorText === current ? '1px solid rgba(61,170,142,0.2)' : 'none',
+          }}
+          onMouseEnter={e => { if (c.anchorText !== current) e.currentTarget.style.background = 'var(--surface)'; }}
+          onMouseLeave={e => { if (c.anchorText !== current) e.currentTarget.style.background = 'none'; }}
+        >
+          <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text)', lineHeight: 1.4 }}>{c.anchorText}</span>
+          <span style={{ fontSize: '0.625rem', color: 'var(--text-3)' }}>
+            R:{c.relevanceScore} N:{c.naturalness}{c.section && ` · ${c.section}`}
           </span>
         </button>
       ))}
@@ -502,34 +670,31 @@ function AnchorCell({ rec, onSave }) {
   const altCount = candidates.filter(c => c.anchorText !== displayText).length;
 
   return (
-    <div className="relative min-w-[140px]">
+    <div style={{ position: 'relative', minWidth: '8.75rem' }}>
       {rec.anchorTextSource && <AnchorSourceBadge source={rec.anchorTextSource} />}
 
       {rec.anchorTextSource === 'page-unavailable' ? (
-        <InlineEditCell value={rec.editedAnchorText || ''}
-          onSave={onSave} />
+        <InlineEditCell value={rec.editedAnchorText || ''} onSave={onSave} />
       ) : (
         <InlineEditCell value={displayText} onSave={onSave} />
       )}
 
-      <div className="flex items-center gap-2 mt-0.5">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.125rem' }}>
         {altCount > 0 && (
           <button onClick={() => setShowCandidates(s => !s)}
-            className="text-[10px] text-[#3DAA8E] hover:underline leading-none">
+            style={{ fontSize: '0.625rem', color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', lineHeight: 1 }}>
             {altCount} alt{altCount > 1 ? 's' : ''} ↓
           </button>
         )}
         {rec.anchorTextSource === 'existing-link' && (
-          <span className="text-[10px] text-blue-500">existing anchor kept</span>
+          <span style={{ fontSize: '0.625rem', color: 'var(--info,#2563EB)' }}>existing anchor kept</span>
         )}
       </div>
 
       {rec.anchorTextSource === 'new-sentence-required' && rec.suggestedNewSentence && (
-        <p className="text-[10px] text-amber-700 mt-0.5 leading-snug max-w-[200px]"
+        <p style={{ margin: '0.125rem 0 0', fontSize: '0.625rem', color: 'var(--warning,#92400E)', lineHeight: 1.4, maxWidth: '12.5rem' }}
           title={rec.suggestedNewSentence}>
-          ✏ {rec.suggestedNewSentence.length > 80
-            ? rec.suggestedNewSentence.slice(0, 80) + '…'
-            : rec.suggestedNewSentence}
+          ✏ {rec.suggestedNewSentence.length > 80 ? rec.suggestedNewSentence.slice(0, 80) + '…' : rec.suggestedNewSentence}
         </p>
       )}
 
@@ -547,59 +712,76 @@ function AnchorCell({ rec, onSave }) {
 
 function RecRow({ rec, selected, onSelect, onUpdate }) {
   return (
-    <tr className={`border-b border-[#F3F4F6] hover:bg-[#FAFAFA] ${selected ? 'bg-[#3DAA8E08]' : ''}`}>
-      <td className="px-4 py-2.5 w-8">
-        <input type="checkbox" checked={selected} onChange={e => onSelect(rec.id, e.target.checked)}
-          className="rounded border-[#D1D5DB]" />
+    <tr style={{ borderBottom: '1px solid var(--surface)', background: selected ? 'var(--primary-soft)' : 'transparent', transition: 'background 0.1s' }}
+      onMouseEnter={e => { if (!selected) e.currentTarget.style.background = 'var(--surface)'; }}
+      onMouseLeave={e => { e.currentTarget.style.background = selected ? 'var(--primary-soft)' : 'transparent'; }}
+    >
+      <td style={{ padding: '0.625rem 1rem', width: '2rem' }}>
+        <input type="checkbox" checked={selected} onChange={e => onSelect(rec.id, e.target.checked)} style={{ borderRadius: 'var(--r-sm)' }} />
       </td>
-      <td className="px-3 py-2.5">
-        <span className="text-xs text-[#6B7280] max-w-[120px] truncate block" title={rec.clusterName}>{rec.clusterName || '—'}</span>
+      <td style={{ padding: '0.625rem 0.75rem' }}>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-2)', maxWidth: '7.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={rec.clusterName}>{rec.clusterName || '—'}</span>
       </td>
-      <td className="px-3 py-2.5">
-        <span className="text-xs font-mono text-[#374151] max-w-[160px] truncate block" title={rec.sourceUrl}>{rec.sourceUrl}</span>
-        {rec.sourceTitle && <span className="text-[11px] text-[#9CA3AF] truncate block max-w-[160px]">{rec.sourceTitle}</span>}
+      <td style={{ padding: '0.625rem 0.75rem' }}>
+        <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text)', maxWidth: '10rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={rec.sourceUrl}>{rec.sourceUrl}</span>
+        {rec.sourceTitle && <span style={{ fontSize: '0.6875rem', color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', maxWidth: '10rem' }}>{rec.sourceTitle}</span>}
       </td>
-      <td className="px-3 py-2.5">
-        <span className="text-xs font-mono text-[#374151] max-w-[160px] truncate block" title={rec.targetUrl}>{rec.targetUrl}</span>
-        {rec.targetTitle && <span className="text-[11px] text-[#9CA3AF] truncate block max-w-[160px]">{rec.targetTitle}</span>}
+      <td style={{ padding: '0.625rem 0.75rem' }}>
+        <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text)', maxWidth: '10rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={rec.targetUrl}>{rec.targetUrl}</span>
+        {rec.targetTitle && <span style={{ fontSize: '0.6875rem', color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', maxWidth: '10rem' }}>{rec.targetTitle}</span>}
       </td>
-      <td className="px-3 py-2.5">
-        <span className="text-xs text-[#374151] whitespace-nowrap">{LINK_TYPE_LABELS[rec.linkType] || rec.linkType}</span>
+      <td style={{ padding: '0.625rem 0.75rem' }}>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text)', whiteSpace: 'nowrap' }}>{LINK_TYPE_LABELS[rec.linkType] || rec.linkType}</span>
       </td>
-      <td className="px-3 py-2.5 min-w-[160px]">
+      <td style={{ padding: '0.625rem 0.75rem', minWidth: '10rem' }}>
         <AnchorCell rec={rec} onSave={v => onUpdate(rec.id, { editedAnchorText: v })} />
       </td>
-      <td className="px-3 py-2.5 min-w-[100px]">
-        <InlineEditCell value={rec.editedPlacement || rec.suggestedPlacement}
-          onSave={v => onUpdate(rec.id, { editedPlacement: v })} />
+      <td style={{ padding: '0.625rem 0.75rem', minWidth: '6.25rem' }}>
+        <InlineEditCell value={rec.editedPlacement || rec.suggestedPlacement} onSave={v => onUpdate(rec.id, { editedPlacement: v })} />
       </td>
-      <td className="px-3 py-2.5 text-center">
-        <span className={`text-xs font-semibold ${rec.relevanceScore >= 7 ? 'text-green-600' : rec.relevanceScore >= 4 ? 'text-yellow-600' : 'text-red-500'}`}>
+      <td style={{ padding: '0.625rem 0.75rem', textAlign: 'center' }}>
+        <span style={{
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          fontFamily: 'var(--font-mono)',
+          color: rec.relevanceScore >= 7 ? 'var(--success,#059669)' : rec.relevanceScore >= 4 ? 'var(--warning,#D97706)' : 'var(--danger,#DC2626)',
+        }}>
           {rec.relevanceScore ?? '—'}
         </span>
       </td>
-      <td className="px-3 py-2.5">
+      <td style={{ padding: '0.625rem 0.75rem' }}>
         {rec.priority && (
-          <span className="text-xs font-medium" style={{ color: PRIORITY_COLORS[rec.priority] || '#9CA3AF' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 500, color: PRIORITY_COLORS[rec.priority] || 'var(--text-3)' }}>
             {rec.priority}
           </span>
         )}
       </td>
-      <td className="px-3 py-2.5 min-w-[130px]">
+      <td style={{ padding: '0.625rem 0.75rem', minWidth: '8.125rem' }}>
         {(rec.anchorWarnings || []).length === 0 ? null : (
-          <div className="space-y-0.5">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
             {(rec.anchorWarnings || []).map((w, i) => (
-              <span key={i} className="block text-[10px] text-orange-600 leading-tight">
+              <span key={i} style={{ display: 'block', fontSize: '0.625rem', color: 'var(--warning,#D97706)', lineHeight: 1.4 }}>
                 ⚠ {ANCHOR_WARNING_LABELS[w] || w}
               </span>
             ))}
           </div>
         )}
       </td>
-      <td className="px-3 py-2.5">
-        <select value={rec.status || 'pending'}
+      <td style={{ padding: '0.625rem 0.75rem' }}>
+        <select
+          value={rec.status || 'pending'}
           onChange={e => onUpdate(rec.id, { status: e.target.value })}
-          className={`text-xs font-medium px-1.5 py-0.5 rounded border-0 cursor-pointer focus:outline-none ${STATUS_BADGE[rec.status] || STATUS_BADGE.pending}`}>
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 500,
+            padding: '0.125rem 0.375rem',
+            borderRadius: 'var(--r-sm)',
+            border: 'none',
+            cursor: 'pointer',
+            outline: 'none',
+            ...STATUS_BADGE_STYLE[rec.status] || STATUS_BADGE_STYLE.pending,
+          }}
+        >
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
@@ -667,54 +849,95 @@ function ResultsScreen({ project, recs, onRecUpdate }) {
   const byStatus = { pending: 0, approved: 0, rejected: 0 };
   recs.forEach(r => { if (byStatus[r.status] != null) byStatus[r.status]++; });
 
+  const filterSelectStyle = {
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--r-lg)',
+    padding: '0.375rem 0.75rem',
+    fontSize: '0.75rem',
+    color: 'var(--text)',
+    background: 'var(--card)',
+    outline: 'none',
+    cursor: 'pointer',
+  };
+
   return (
-    <div className="py-6">
-      <div className="flex items-center justify-between mb-4 gap-4">
+    <div style={{ padding: '1.5rem 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', gap: '1rem' }}>
         <div>
-          <h2 className="text-base font-bold text-[#111827]">Linking Recommendations</h2>
-          <p className="text-sm text-[#6B7280] mt-0.5">{recs.length} total · {byStatus.approved} approved · {byStatus.rejected} rejected · {byStatus.pending} pending</p>
+          <h2 style={{ margin: '0 0 0.125rem', fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text)' }}>Linking Recommendations</h2>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-2)' }}>
+            <span style={{ fontFamily: 'var(--font-mono)' }}>{recs.length}</span> total ·{' '}
+            <span style={{ fontFamily: 'var(--font-mono)' }}>{byStatus.approved}</span> approved ·{' '}
+            <span style={{ fontFamily: 'var(--font-mono)' }}>{byStatus.rejected}</span> rejected ·{' '}
+            <span style={{ fontFamily: 'var(--font-mono)' }}>{byStatus.pending}</span> pending
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => handleExport('xlsx')} disabled={exporting}
-            className="px-3 py-1.5 text-xs font-medium border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] text-[#374151] disabled:opacity-50">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button
+            onClick={() => handleExport('xlsx')}
+            disabled={exporting}
+            style={{
+              padding: '0.375rem 0.75rem', fontSize: '0.75rem', fontWeight: 500,
+              border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+              background: 'var(--card)', color: 'var(--text)', cursor: exporting ? 'not-allowed' : 'pointer',
+              opacity: exporting ? 0.5 : 1,
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--card)'}
+          >
             {exporting ? '…' : 'Export XLSX'}
           </button>
-          <button onClick={() => handleExport('csv')} disabled={exporting}
-            className="px-3 py-1.5 text-xs font-medium border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] text-[#374151] disabled:opacity-50">
+          <button
+            onClick={() => handleExport('csv')}
+            disabled={exporting}
+            style={{
+              padding: '0.375rem 0.75rem', fontSize: '0.75rem', fontWeight: 500,
+              border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+              background: 'var(--card)', color: 'var(--text)', cursor: exporting ? 'not-allowed' : 'pointer',
+              opacity: exporting ? 0.5 : 1,
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--card)'}
+          >
             Export CSV
           </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3 flex-wrap mb-4">
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-          className="border border-[#E5E7EB] rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#3DAA8E] text-[#374151]">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={filterSelectStyle}
+          onFocus={e => e.target.style.borderColor = 'var(--primary)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}>
           <option value="">All statuses</option>
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
         </select>
-        <select value={filterLinkType} onChange={e => setFilterLinkType(e.target.value)}
-          className="border border-[#E5E7EB] rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#3DAA8E] text-[#374151]">
+        <select value={filterLinkType} onChange={e => setFilterLinkType(e.target.value)} style={filterSelectStyle}
+          onFocus={e => e.target.style.borderColor = 'var(--primary)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}>
           <option value="">All link types</option>
           {Object.entries(LINK_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
-        <select value={filterCluster} onChange={e => setFilterCluster(e.target.value)}
-          className="border border-[#E5E7EB] rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#3DAA8E] text-[#374151]">
+        <select value={filterCluster} onChange={e => setFilterCluster(e.target.value)} style={filterSelectStyle}
+          onFocus={e => e.target.style.borderColor = 'var(--primary)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}>
           <option value="">All clusters</option>
           {clusterNames.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={filterMinScore} onChange={e => setFilterMinScore(e.target.value)}
-          className="border border-[#E5E7EB] rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#3DAA8E] text-[#374151]">
+        <select value={filterMinScore} onChange={e => setFilterMinScore(e.target.value)} style={filterSelectStyle}
+          onFocus={e => e.target.style.borderColor = 'var(--primary)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}>
           <option value="">Any score</option>
           <option value="3">Score ≥ 3</option>
           <option value="5">Score ≥ 5</option>
           <option value="7">Score ≥ 7</option>
           <option value="9">Score ≥ 9</option>
         </select>
-        <select value={filterAnchorSource} onChange={e => setFilterAnchorSource(e.target.value)}
-          className="border border-[#E5E7EB] rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#3DAA8E] text-[#374151]">
+        <select value={filterAnchorSource} onChange={e => setFilterAnchorSource(e.target.value)} style={filterSelectStyle}
+          onFocus={e => e.target.style.borderColor = 'var(--primary)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}>
           <option value="">All anchor sources</option>
           <option value="existing-content">Found in content</option>
           <option value="new-sentence-required">New sentence req.</option>
@@ -722,55 +945,74 @@ function ResultsScreen({ project, recs, onRecUpdate }) {
           <option value="page-unavailable">Page unavailable</option>
         </select>
         {(filterStatus || filterLinkType || filterCluster || filterMinScore || filterAnchorSource) && (
-          <button onClick={() => { setFilterStatus(''); setFilterLinkType(''); setFilterCluster(''); setFilterMinScore(''); setFilterAnchorSource(''); }}
-            className="text-xs text-[#9CA3AF] hover:text-[#374151]">Clear filters</button>
+          <button
+            onClick={() => { setFilterStatus(''); setFilterLinkType(''); setFilterCluster(''); setFilterMinScore(''); setFilterAnchorSource(''); }}
+            style={{ fontSize: '0.75rem', color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-3)'}
+          >
+            Clear filters
+          </button>
         )}
-        <span className="text-xs text-[#9CA3AF] ml-auto">{filtered.length} showing</span>
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginLeft: 'auto', fontFamily: 'var(--font-mono)' }}>{filtered.length} showing</span>
       </div>
 
       {/* Bulk actions */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 mb-3 p-3 bg-[#3DAA8E0D] border border-[#3DAA8E33] rounded-lg">
-          <span className="text-sm font-medium text-[#3DAA8E]">{selectedIds.size} selected</span>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.75rem',
+          marginBottom: '0.75rem', padding: '0.75rem',
+          background: 'var(--primary-soft)', border: '1px solid rgba(61,170,142,0.2)',
+          borderRadius: 'var(--r-lg)',
+        }}>
+          <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--primary-text)', fontFamily: 'var(--font-mono)' }}>{selectedIds.size} selected</span>
           <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}
-            className="border border-[#E5E7EB] rounded px-2 py-1 text-xs focus:outline-none">
+            style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', padding: '0.25rem 0.5rem', fontSize: '0.75rem', background: 'var(--card)', color: 'var(--text)', outline: 'none' }}>
             <option value="">Set status…</option>
             <option value="approved">Approve</option>
             <option value="rejected">Reject</option>
             <option value="pending">Reset to pending</option>
           </select>
-          <button onClick={applyBulk} disabled={!bulkStatus}
-            className="px-3 py-1 text-xs font-medium text-white rounded disabled:opacity-40"
-            style={{ backgroundColor: TEAL }}>Apply</button>
-          <button onClick={() => setSelectedIds(new Set())} className="text-xs text-[#9CA3AF] hover:text-[#374151]">Deselect</button>
+          <button
+            onClick={applyBulk}
+            disabled={!bulkStatus}
+            style={{
+              padding: '0.25rem 0.75rem', fontSize: '0.75rem', fontWeight: 500,
+              color: '#fff', background: 'var(--primary)', border: 'none',
+              borderRadius: 'var(--r-md)', cursor: bulkStatus ? 'pointer' : 'not-allowed', opacity: bulkStatus ? 1 : 0.4,
+            }}
+          >
+            Apply
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            style={{ fontSize: '0.75rem', color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-3)'}
+          >
+            Deselect
+          </button>
         </div>
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+      <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', textAlign: 'left', fontSize: '0.75rem', borderCollapse: 'collapse' }}>
             <thead>
-              <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
-                <th className="px-4 py-2.5 w-8">
-                  <input type="checkbox" checked={allSelected} onChange={e => toggleAll(e.target.checked)} className="rounded" />
+              <tr style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+                <th style={{ padding: '0.625rem 1rem', width: '2rem' }}>
+                  <input type="checkbox" checked={allSelected} onChange={e => toggleAll(e.target.checked)} style={{ borderRadius: 'var(--r-sm)' }} />
                 </th>
-                <th className="px-3 py-2.5 font-semibold text-[#6B7280] whitespace-nowrap">Cluster</th>
-                <th className="px-3 py-2.5 font-semibold text-[#6B7280] whitespace-nowrap">Source</th>
-                <th className="px-3 py-2.5 font-semibold text-[#6B7280] whitespace-nowrap">Target</th>
-                <th className="px-3 py-2.5 font-semibold text-[#6B7280] whitespace-nowrap">Type</th>
-                <th className="px-3 py-2.5 font-semibold text-[#6B7280] whitespace-nowrap">Anchor Text</th>
-                <th className="px-3 py-2.5 font-semibold text-[#6B7280] whitespace-nowrap">Placement</th>
-                <th className="px-3 py-2.5 font-semibold text-[#6B7280] text-center whitespace-nowrap">Score</th>
-                <th className="px-3 py-2.5 font-semibold text-[#6B7280] whitespace-nowrap">Priority</th>
-                <th className="px-3 py-2.5 font-semibold text-[#6B7280] whitespace-nowrap">Warnings</th>
-                <th className="px-3 py-2.5 font-semibold text-[#6B7280] whitespace-nowrap">Status</th>
+                {['Cluster', 'Source', 'Target', 'Type', 'Anchor Text', 'Placement', 'Score', 'Priority', 'Warnings', 'Status'].map(h => (
+                  <th key={h} style={{ padding: '0.625rem 0.75rem', fontWeight: 600, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-8 text-center text-sm text-[#9CA3AF]">
+                  <td colSpan={11} style={{ padding: '2rem 1rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-3)' }}>
                     No recommendations match your filters.
                   </td>
                 </tr>
@@ -808,22 +1050,34 @@ function genStepStatus(stepId, jobState) {
 function GeneratingScreen({ jobState, elapsed, onRetry, onBack }) {
   if (jobState?.status === 'failed') {
     return (
-      <div className="max-w-lg mx-auto py-16 text-center">
-        <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center mx-auto mb-4">
-          <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <div style={{ maxWidth: '32rem', margin: '0 auto', padding: '4rem 0', textAlign: 'center' }}>
+        <div style={{
+          width: '3rem', height: '3rem', borderRadius: 'var(--r-xl)',
+          background: 'rgba(239,68,68,0.08)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem',
+        }}>
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="var(--danger,#EF4444)" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </div>
-        <h2 className="text-base font-semibold text-[#111827] mb-1">Generation failed</h2>
+        <h2 style={{ margin: '0 0 0.25rem', fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text)' }}>Generation failed</h2>
         {jobState.failedStep && (
-          <p className="text-sm text-[#6B7280] mb-1">Failed at: <span className="font-medium">{jobState.failedStep}</span></p>
+          <p style={{ margin: '0 0 0.25rem', fontSize: '0.875rem', color: 'var(--text-2)' }}>Failed at: <span style={{ fontWeight: 500 }}>{jobState.failedStep}</span></p>
         )}
-        <p className="text-sm text-red-600 mb-6">{jobState.errorMessage}</p>
-        <div className="flex justify-center gap-3">
-          <button onClick={onRetry} className="px-4 py-2 text-sm font-medium text-white rounded-lg" style={{ backgroundColor: TEAL }}>
+        <p style={{ margin: '0 0 1.5rem', fontSize: '0.875rem', color: 'var(--danger,#DC2626)' }}>{jobState.errorMessage}</p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
+          <button
+            onClick={onRetry}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, color: '#fff', background: 'var(--primary)', border: 'none', borderRadius: 'var(--r-lg)', cursor: 'pointer' }}
+          >
             Retry Generation
           </button>
-          <button onClick={onBack} className="px-4 py-2 text-sm border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-[#374151]">
+          <button
+            onClick={onBack}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', background: 'var(--card)', color: 'var(--text-2)', cursor: 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-2)'}
+          >
             Back to Review
           </button>
         </div>
@@ -860,39 +1114,42 @@ function GeneratingScreen({ jobState, elapsed, onRetry, onBack }) {
   ];
 
   return (
-    <div className="max-w-lg mx-auto py-16">
-      <h2 className="text-base font-semibold text-[#111827] mb-6">Generating recommendations…</h2>
+    <div style={{ maxWidth: '32rem', margin: '0 auto', padding: '4rem 0' }}>
+      <h2 style={{ margin: '0 0 1.5rem', fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text)' }}>Generating recommendations…</h2>
 
-      <div className="space-y-4 mb-8">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
         {steps.map(step => {
           const status = genStepStatus(step.id, jobState);
           return (
-            <div key={step.id} className="flex items-start gap-3">
-              <div className="flex-shrink-0 mt-0.5">
+            <div key={step.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+              <div style={{ flexShrink: 0, marginTop: '0.125rem' }}>
                 {status === 'complete' ? (
-                  <div className="w-5 h-5 rounded-full bg-[#3DAA8E] flex items-center justify-center">
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                 ) : status === 'active' ? (
-                  <div className="w-5 h-5 rounded-full border-2 border-[#3DAA8E] border-t-transparent animate-spin" />
+                  <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', border: '2px solid var(--primary)', borderTopColor: 'transparent', animation: 'spin 0.7s linear infinite' }} />
                 ) : (
-                  <div className="w-5 h-5 rounded-full bg-[#F3F4F6]" />
+                  <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', background: 'var(--surface)' }} />
                 )}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm leading-snug ${
-                  status === 'active' ? 'text-[#111827] font-medium' :
-                  status === 'complete' ? 'text-[#374151]' : 'text-[#9CA3AF]'
-                }`}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{
+                  margin: 0,
+                  fontSize: '0.875rem',
+                  lineHeight: 1.5,
+                  color: status === 'active' ? 'var(--text)' : status === 'complete' ? 'var(--text)' : 'var(--text-3)',
+                  fontWeight: status === 'active' ? 500 : 400,
+                }}>
                   {step.label}
                 </p>
                 {step.id === 'per-cluster' && step.warnings?.length > 0 && (
-                  <div className="mt-1 space-y-0.5">
+                  <div style={{ marginTop: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
                     {step.warnings.map((w, i) => (
-                      <p key={i} className="text-xs text-yellow-600 flex items-start gap-1">
-                        <span className="flex-shrink-0">⚠</span><span>{w}</span>
+                      <p key={i} style={{ margin: 0, fontSize: '0.75rem', color: 'var(--warning,#D97706)', display: 'flex', alignItems: 'flex-start', gap: '0.25rem' }}>
+                        <span style={{ flexShrink: 0 }}>⚠</span><span>{w}</span>
                       </p>
                     ))}
                   </div>
@@ -903,13 +1160,13 @@ function GeneratingScreen({ jobState, elapsed, onRetry, onBack }) {
         })}
       </div>
 
-      <div className="border-t border-[#F3F4F6] pt-4 space-y-1">
+      <div style={{ borderTop: '1px solid var(--surface)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
         {(jobState?.recommendationsGenerated > 0) && (
-          <p className="text-sm text-[#374151]">
-            <span className="font-semibold">{jobState.recommendationsGenerated}</span> recommendations generated so far
+          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text)' }}>
+            <span style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{jobState.recommendationsGenerated}</span> recommendations generated so far
           </p>
         )}
-        <p className="text-xs text-[#9CA3AF]">{elapsed}s elapsed</p>
+        <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{elapsed}s elapsed</p>
       </div>
     </div>
   );
@@ -944,7 +1201,6 @@ export default function HubSpokeProjectPage() {
         const ws = data.workflowState;
 
         if (ws === 'approved') {
-          // Check if there's a running generation job to resume
           const pendingJobId = localStorage.getItem(`hs_job_${id}`);
           if (pendingJobId) {
             setGenJobId(pendingJobId);
@@ -987,7 +1243,6 @@ export default function HubSpokeProjectPage() {
           setProject(p => ({ ...p, workflowState: 'complete' }));
           setScreen('results');
         }
-        // 'failed' stays on generating screen — GeneratingScreen renders error state
       } catch { /* transient network error — retry next interval */ }
     }
 
@@ -1107,37 +1362,72 @@ export default function HubSpokeProjectPage() {
 
   if (screen === 'loading') {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-[#3DAA8E] border-t-transparent rounded-full animate-spin" />
-      </div>
+      <>
+        <style>{SPIN_STYLE}</style>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '1.5rem', height: '1.5rem', borderRadius: '50%', border: '2px solid var(--primary)', borderTopColor: 'transparent', animation: 'spin 0.7s linear infinite' }} />
+        </div>
+      </>
     );
   }
 
   if (screen === 'error') {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 text-sm mb-4">{error}</p>
-          <button onClick={() => window.location.reload()} className="text-sm text-[#3DAA8E] underline">Reload</button>
+      <>
+        <style>{SPIN_STYLE}</style>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ color: 'var(--danger,#DC2626)', fontSize: '0.875rem', marginBottom: '1rem' }}>{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{ fontSize: '0.875rem', color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              Reload
+            </button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
     <>
+      <style>{SPIN_STYLE}</style>
       <Stepper screen={screen} />
 
       {error && (
-        <div className="max-w-7xl mx-auto w-full px-6 pt-4">
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-start gap-2">
+        <div style={{ maxWidth: '80rem', margin: '0 auto', width: '100%', padding: '1rem 1.5rem 0' }}>
+          <div style={{
+            padding: '0.75rem',
+            background: 'rgba(239,68,68,0.07)',
+            border: '1px solid rgba(239,68,68,0.25)',
+            borderRadius: 'var(--r-lg)',
+            fontSize: '0.875rem',
+            color: 'var(--danger,#DC2626)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.5rem',
+          }}>
             <span>{error}</span>
-            <button onClick={() => setError('')} className="ml-auto text-red-400 hover:text-red-600">✕</button>
+            <button
+              onClick={() => setError('')}
+              style={{ marginLeft: 'auto', color: 'rgba(239,68,68,0.6)', background: 'none', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--danger,#DC2626)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(239,68,68,0.6)'}
+            >
+              ✕
+            </button>
           </div>
         </div>
       )}
 
-      <main className={`flex-1 ${screen === 'results' ? 'max-w-[1400px]' : 'max-w-7xl'} mx-auto w-full px-6`}>
+      <main style={{
+        flex: 1,
+        maxWidth: screen === 'results' ? '87.5rem' : '80rem',
+        margin: '0 auto',
+        width: '100%',
+        padding: '0 1.5rem',
+      }}>
         {screen === 'input' && (
           <InputScreen project={project} onXlsxParsed={handleXlsxParsed} onAnalyzeStarted={handleAnalyzeStarted} />
         )}

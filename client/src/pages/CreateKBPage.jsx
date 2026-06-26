@@ -71,47 +71,90 @@ export default function CreateKBPage() {
     setStep(0); // reset to first step when category changes
   }
 
+  const inputStyle = {
+    width: '100%', padding: '0.625rem 1rem', borderRadius: 'var(--r-lg)',
+    border: '1px solid var(--border)', fontSize: '0.875rem', color: 'var(--text)',
+    background: 'var(--card)', outline: 'none', boxSizing: 'border-box',
+  };
+
+  const labelStyle = {
+    display: 'block', fontSize: '0.875rem', fontWeight: 600,
+    color: 'var(--text)', marginBottom: '0.375rem',
+  };
+
   return (
-      <main className="max-w-3xl mx-auto px-6 py-8">
+    <>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <main style={{ maxWidth: '48rem', margin: '0 auto', padding: '2rem 1.5rem' }}>
         {/* Step progress */}
-        <div className="flex items-center gap-0 mb-8">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: '2rem' }}>
           {STEPS.map((s, i) => (
-            <div key={s} className="flex items-center flex-1">
-              <div className="flex flex-col items-center">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                  style={i < step ? { backgroundColor: '#3DAA8E', color: '#fff' }
-                    : i === step ? { backgroundColor: '#111827', color: '#fff' }
-                    : { backgroundColor: '#E5E7EB', color: '#9CA3AF' }}>
+            <div key={s} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{
+                  width: '1.75rem', height: '1.75rem', borderRadius: '9999px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.75rem', fontWeight: 700,
+                  ...(i < step
+                    ? { background: 'var(--primary)', color: '#fff' }
+                    : i === step
+                    ? { background: 'var(--text)', color: '#fff' }
+                    : { background: 'var(--border)', color: 'var(--text-3)' }
+                  ),
+                }}>
                   {i < step ? '✓' : i + 1}
                 </div>
-                <span className="text-xs mt-1 text-center whitespace-nowrap"
-                  style={{ color: i === step ? '#111827' : '#9CA3AF', fontWeight: i === step ? 600 : 400 }}>
+                <span style={{
+                  fontSize: '0.75rem', marginTop: '0.25rem', textAlign: 'center', whiteSpace: 'nowrap',
+                  color: i === step ? 'var(--text)' : 'var(--text-3)',
+                  fontWeight: i === step ? 600 : 400,
+                }}>
                   {s}
                 </span>
               </div>
               {i < STEPS.length - 1 && (
-                <div className="flex-1 h-0.5 mb-5 mx-1" style={{ backgroundColor: i < step ? '#3DAA8E' : '#E5E7EB' }} />
+                <div style={{
+                  flex: 1, height: '0.125rem', marginBottom: '1.25rem', margin: '0 0.25rem',
+                  background: i < step ? 'var(--primary)' : 'var(--border)',
+                }} />
               )}
             </div>
           ))}
         </div>
 
         {/* Step content */}
-        <div className="bg-white rounded-xl border border-[#E5E7EB] p-8" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
+        <div style={{
+          background: 'var(--card)', borderRadius: 'var(--r-lg)',
+          border: '1px solid var(--border)', padding: '2rem',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+        }}>
+          {error && (
+            <div style={{
+              marginBottom: '1rem', padding: '0.75rem 1rem',
+              background: 'var(--danger-soft, #FEF2F2)', border: '1px solid var(--danger-border, #FECACA)',
+              borderRadius: 'var(--r-lg)', fontSize: '0.875rem', color: 'var(--danger)',
+            }}>{error}</div>
+          )}
 
           {/* Step: Category */}
           {currentStepName === 'Category' && (
             <div>
-              <h2 className="text-base font-semibold text-[#111827] mb-1">Choose a category</h2>
-              <p className="text-sm text-[#6B7280] mb-5">What type of knowledge base is this?</p>
-              <div className="grid grid-cols-2 gap-3">
+              <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.25rem' }}>Choose a category</h2>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginBottom: '1.25rem' }}>What type of knowledge base is this?</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 {CATEGORIES.map(cat => (
-                  <button key={cat} onClick={() => handleCategoryChange(cat)}
-                    className="p-4 rounded-xl border-2 text-left transition-all"
-                    style={form.category === cat ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7' } : { borderColor: '#E5E7EB', backgroundColor: '#fff' }}>
-                    <div className="font-semibold text-sm text-[#111827]">{cat}</div>
-                    <div className="text-xs text-[#6B7280] mt-0.5">
+                  <button
+                    key={cat}
+                    onClick={() => handleCategoryChange(cat)}
+                    style={{
+                      padding: '1rem', borderRadius: 'var(--r-lg)', textAlign: 'left',
+                      border: `2px solid ${form.category === cat ? 'var(--primary)' : 'var(--border)'}`,
+                      background: form.category === cat ? 'var(--primary-soft)' : 'var(--card)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text)' }}>{cat}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-2)', marginTop: '0.125rem' }}>
                       {cat === 'industry' && 'Sector context, compliance rules'}
                       {cat === 'brand' && 'Client voice, services, personas'}
                       {cat === 'client-feedback' && 'Notes from client interactions'}
@@ -126,13 +169,22 @@ export default function CreateKBPage() {
           {/* Step: Brand Slug (for brand category) */}
           {currentStepName === 'Brand Slug' && (
             <div>
-              <h2 className="text-base font-semibold text-[#111827] mb-1">Select brand</h2>
-              <p className="text-sm text-[#6B7280] mb-5">Which brand does this KB represent? The brand slug becomes the KB ID.</p>
-              <div className="grid grid-cols-2 gap-2">
+              <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.25rem' }}>Select brand</h2>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginBottom: '1.25rem' }}>Which brand does this KB represent? The brand slug becomes the KB ID.</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 {BRANDS.map(b => (
-                  <button key={b} onClick={() => { set('client', b); set('id', b); }}
-                    className="p-3 rounded-lg border-2 text-left text-sm font-medium transition-all"
-                    style={form.client === b ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7', color: '#111827' } : { borderColor: '#E5E7EB', color: '#6B7280' }}>
+                  <button
+                    key={b}
+                    onClick={() => { set('client', b); set('id', b); }}
+                    style={{
+                      padding: '0.75rem', borderRadius: 'var(--r-lg)', textAlign: 'left',
+                      fontSize: '0.875rem', fontWeight: 500,
+                      border: `2px solid ${form.client === b ? 'var(--primary)' : 'var(--border)'}`,
+                      background: form.client === b ? 'var(--primary-soft)' : 'var(--card)',
+                      color: form.client === b ? 'var(--text)' : 'var(--text-2)',
+                      cursor: 'pointer',
+                    }}
+                  >
                     {b}
                   </button>
                 ))}
@@ -143,13 +195,22 @@ export default function CreateKBPage() {
           {/* Step: Brand (for client-feedback category) */}
           {currentStepName === 'Brand' && (
             <div>
-              <h2 className="text-base font-semibold text-[#111827] mb-1">Select brand</h2>
-              <p className="text-sm text-[#6B7280] mb-5">Which brand does this feedback belong to?</p>
-              <div className="grid grid-cols-2 gap-2">
+              <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.25rem' }}>Select brand</h2>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginBottom: '1.25rem' }}>Which brand does this feedback belong to?</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 {BRANDS.map(b => (
-                  <button key={b} onClick={() => set('client', b)}
-                    className="p-3 rounded-lg border-2 text-left text-sm font-medium transition-all"
-                    style={form.client === b ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7', color: '#111827' } : { borderColor: '#E5E7EB', color: '#6B7280' }}>
+                  <button
+                    key={b}
+                    onClick={() => set('client', b)}
+                    style={{
+                      padding: '0.75rem', borderRadius: 'var(--r-lg)', textAlign: 'left',
+                      fontSize: '0.875rem', fontWeight: 500,
+                      border: `2px solid ${form.client === b ? 'var(--primary)' : 'var(--border)'}`,
+                      background: form.client === b ? 'var(--primary-soft)' : 'var(--card)',
+                      color: form.client === b ? 'var(--text)' : 'var(--text-2)',
+                      cursor: 'pointer',
+                    }}
+                  >
                     {b}
                   </button>
                 ))}
@@ -160,13 +221,22 @@ export default function CreateKBPage() {
           {/* Step: Industry KB (for brand category) */}
           {currentStepName === 'Industry KB' && (
             <div>
-              <h2 className="text-base font-semibold text-[#111827] mb-1">Associated Industry KB</h2>
-              <p className="text-sm text-[#6B7280] mb-5">Which industry KB should be auto-injected alongside this brand?</p>
-              <div className="space-y-2">
+              <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.25rem' }}>Associated Industry KB</h2>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginBottom: '1.25rem' }}>Which industry KB should be auto-injected alongside this brand?</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {INDUSTRY_KBS.map(ind => (
-                  <button key={ind} onClick={() => set('industry', ind)}
-                    className="w-full p-3 rounded-lg border-2 text-left text-sm font-medium transition-all"
-                    style={form.industry === ind ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7', color: '#111827' } : { borderColor: '#E5E7EB', color: '#6B7280' }}>
+                  <button
+                    key={ind}
+                    onClick={() => set('industry', ind)}
+                    style={{
+                      width: '100%', padding: '0.75rem', borderRadius: 'var(--r-lg)', textAlign: 'left',
+                      fontSize: '0.875rem', fontWeight: 500,
+                      border: `2px solid ${form.industry === ind ? 'var(--primary)' : 'var(--border)'}`,
+                      background: form.industry === ind ? 'var(--primary-soft)' : 'var(--card)',
+                      color: form.industry === ind ? 'var(--text)' : 'var(--text-2)',
+                      cursor: 'pointer',
+                    }}
+                  >
                     {ind === 'global' ? 'global (no industry KB)' : ind}
                   </button>
                 ))}
@@ -176,21 +246,37 @@ export default function CreateKBPage() {
 
           {/* Step: Tags & Priority */}
           {currentStepName === 'Tags & Priority' && (
-            <div className="space-y-5">
-              <h2 className="text-base font-semibold text-[#111827]">Tags & Priority</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text)' }}>Tags & Priority</h2>
               <div>
-                <label className="block text-sm font-semibold text-[#111827] mb-1.5">Tags <span className="font-normal text-[#6B7280]">(comma-separated)</span></label>
-                <input type="text" value={form.tags} onChange={e => set('tags', e.target.value)}
+                <label style={labelStyle}>
+                  Tags <span style={{ fontWeight: 400, color: 'var(--text-2)' }}>(comma-separated)</span>
+                </label>
+                <input
+                  type="text" value={form.tags} onChange={e => set('tags', e.target.value)}
                   placeholder="dental, dso, brand"
-                  className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none" />
+                  style={inputStyle}
+                  onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+                />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-[#111827] mb-1.5">Priority <span className="font-normal text-[#6B7280]">(1 = highest, 5 = lowest)</span></label>
-                <div className="flex gap-2">
+                <label style={labelStyle}>
+                  Priority <span style={{ fontWeight: 400, color: 'var(--text-2)' }}>(1 = highest, 5 = lowest)</span>
+                </label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
                   {[1,2,3,4,5].map(n => (
-                    <button key={n} onClick={() => set('priority', n)}
-                      className="w-10 h-10 rounded-lg border-2 text-sm font-semibold transition-all"
-                      style={form.priority === n ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7', color: '#3DAA8E' } : { borderColor: '#E5E7EB', color: '#6B7280' }}>
+                    <button
+                      key={n}
+                      onClick={() => set('priority', n)}
+                      style={{
+                        width: '2.5rem', height: '2.5rem', borderRadius: 'var(--r-lg)',
+                        fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+                        border: `2px solid ${form.priority === n ? 'var(--primary)' : 'var(--border)'}`,
+                        background: form.priority === n ? 'var(--primary-soft)' : 'var(--card)',
+                        color: form.priority === n ? 'var(--primary)' : 'var(--text-2)',
+                      }}
+                    >
                       {n}
                     </button>
                   ))}
@@ -202,14 +288,24 @@ export default function CreateKBPage() {
           {/* Step: Linked Modules */}
           {currentStepName === 'Linked Modules' && (
             <div>
-              <h2 className="text-base font-semibold text-[#111827] mb-1">Linked Modules</h2>
-              <p className="text-sm text-[#6B7280] mb-5">Which modules should load this KB?</p>
-              <div className="space-y-3">
+              <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.25rem' }}>Linked Modules</h2>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginBottom: '1.25rem' }}>Which modules should load this KB?</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {ALL_MODULES.map(mod => (
-                  <label key={mod} className="flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all"
-                    style={form.linked_modules.includes(mod) ? { borderColor: '#3DAA8E', backgroundColor: '#F0FAF7' } : { borderColor: '#E5E7EB' }}>
-                    <input type="checkbox" checked={form.linked_modules.includes(mod)} onChange={() => toggleModule(mod)} className="w-4 h-4" />
-                    <div className="text-sm font-semibold text-[#111827]">{mod}</div>
+                  <label
+                    key={mod}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.75rem',
+                      padding: '1rem', borderRadius: 'var(--r-lg)', cursor: 'pointer',
+                      border: `2px solid ${form.linked_modules.includes(mod) ? 'var(--primary)' : 'var(--border)'}`,
+                      background: form.linked_modules.includes(mod) ? 'var(--primary-soft)' : 'var(--card)',
+                    }}
+                  >
+                    <input
+                      type="checkbox" checked={form.linked_modules.includes(mod)} onChange={() => toggleModule(mod)}
+                      style={{ width: '1rem', height: '1rem', accentColor: 'var(--primary)' }}
+                    />
+                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)' }}>{mod}</div>
                   </label>
                 ))}
               </div>
@@ -218,16 +314,25 @@ export default function CreateKBPage() {
 
           {/* Step: Content (brand / industry) */}
           {currentStepName === 'Content' && (
-            <div className="space-y-5">
-              <h2 className="text-base font-semibold text-[#111827]">ID & Content</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text)' }}>ID & Content</h2>
               <div>
-                <label className="block text-sm font-semibold text-[#111827] mb-1.5">KB ID <span className="font-normal text-[#6B7280]">(unique slug, kebab-case)</span></label>
-                <input type="text" value={form.id} onChange={e => set('id', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                <label style={labelStyle}>
+                  KB ID <span style={{ fontWeight: 400, color: 'var(--text-2)' }}>(unique slug, kebab-case)</span>
+                </label>
+                <input
+                  type="text" value={form.id}
+                  onChange={e => set('id', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
                   placeholder="e.g. dental-service-organizations"
-                  className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm font-mono text-[#111827] focus:outline-none" />
+                  style={{ ...inputStyle, fontFamily: 'var(--font-mono)' }}
+                  onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+                />
               </div>
               <div data-color-mode="light">
-                <label className="block text-sm font-semibold text-[#111827] mb-1.5">Content <span className="font-normal text-[#6B7280]">(Markdown)</span></label>
+                <label style={labelStyle}>
+                  Content <span style={{ fontWeight: 400, color: 'var(--text-2)' }}>(Markdown)</span>
+                </label>
                 <MDEditor value={form.body} onChange={val => set('body', val || '')} height={300} preview="edit" />
               </div>
             </div>
@@ -235,22 +340,37 @@ export default function CreateKBPage() {
 
           {/* Step: Label & Content (client-feedback) */}
           {currentStepName === 'Label & Content' && (
-            <div className="space-y-5">
-              <h2 className="text-base font-semibold text-[#111827]">ID, Label & Content</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text)' }}>ID, Label & Content</h2>
               <div>
-                <label className="block text-sm font-semibold text-[#111827] mb-1.5">KB ID <span className="font-normal text-[#6B7280]">(unique slug, kebab-case)</span></label>
-                <input type="text" value={form.id} onChange={e => set('id', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                <label style={labelStyle}>
+                  KB ID <span style={{ fontWeight: 400, color: 'var(--text-2)' }}>(unique slug, kebab-case)</span>
+                </label>
+                <input
+                  type="text" value={form.id}
+                  onChange={e => set('id', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
                   placeholder={`e.g. ${form.client}-feedback-q1-2026`}
-                  className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm font-mono text-[#111827] focus:outline-none" />
+                  style={{ ...inputStyle, fontFamily: 'var(--font-mono)' }}
+                  onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+                />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-[#111827] mb-1.5">Display Label <span className="font-normal text-[#6B7280]">(shown in the feedback selector)</span></label>
-                <input type="text" value={form.label} onChange={e => set('label', e.target.value)}
+                <label style={labelStyle}>
+                  Display Label <span style={{ fontWeight: 400, color: 'var(--text-2)' }}>(shown in the feedback selector)</span>
+                </label>
+                <input
+                  type="text" value={form.label} onChange={e => set('label', e.target.value)}
                   placeholder="e.g. Q1 2026 Review, Post-Launch Feedback"
-                  className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] focus:outline-none" />
+                  style={inputStyle}
+                  onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+                  onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+                />
               </div>
               <div data-color-mode="light">
-                <label className="block text-sm font-semibold text-[#111827] mb-1.5">Content <span className="font-normal text-[#6B7280]">(Markdown)</span></label>
+                <label style={labelStyle}>
+                  Content <span style={{ fontWeight: 400, color: 'var(--text-2)' }}>(Markdown)</span>
+                </label>
                 <MDEditor value={form.body} onChange={val => set('body', val || '')} height={300} preview="edit" />
               </div>
             </div>
@@ -258,26 +378,55 @@ export default function CreateKBPage() {
         </div>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between mt-5">
-          <button onClick={() => step > 0 ? setStep(s => s - 1) : navigate('/kb')}
-            className="px-5 py-2.5 text-sm font-semibold border border-[#E5E7EB] rounded-lg text-[#6B7280] hover:text-[#111827] bg-white transition-colors">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.25rem' }}>
+          <button
+            onClick={() => step > 0 ? setStep(s => s - 1) : navigate('/kb')}
+            style={{
+              padding: '0.625rem 1.25rem', fontSize: '0.875rem', fontWeight: 600,
+              border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+              color: 'var(--text-2)', background: 'var(--card)', cursor: 'pointer',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.borderColor = 'var(--text-3)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-2)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+          >
             {step === 0 ? 'Cancel' : '← Back'}
           </button>
 
           {!isLastStep ? (
-            <button onClick={() => setStep(s => s + 1)} disabled={!canAdvance()}
-              className="px-5 py-2.5 text-sm font-semibold rounded-lg text-white transition-colors disabled:opacity-50"
-              style={{ backgroundColor: '#111827' }}>
+            <button
+              onClick={() => setStep(s => s + 1)} disabled={!canAdvance()}
+              style={{
+                padding: '0.625rem 1.25rem', fontSize: '0.875rem', fontWeight: 600,
+                borderRadius: 'var(--r-lg)', color: '#fff', border: 'none',
+                background: 'var(--text)', cursor: canAdvance() ? 'pointer' : 'not-allowed',
+                opacity: canAdvance() ? 1 : 0.5,
+              }}
+            >
               Next →
             </button>
           ) : (
-            <button onClick={handleCreate} disabled={saving || !form.id.trim()}
-              className="px-5 py-2.5 text-sm font-semibold rounded-lg text-white transition-colors disabled:opacity-50"
-              style={{ backgroundColor: '#3DAA8E' }}>
+            <button
+              onClick={handleCreate} disabled={saving || !form.id.trim()}
+              style={{
+                padding: '0.625rem 1.25rem', fontSize: '0.875rem', fontWeight: 600,
+                borderRadius: 'var(--r-lg)', color: '#fff', border: 'none',
+                background: 'var(--primary)', cursor: (saving || !form.id.trim()) ? 'not-allowed' : 'pointer',
+                opacity: (saving || !form.id.trim()) ? 0.5 : 1,
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+              }}
+            >
+              {saving && (
+                <span style={{
+                  display: 'inline-block', width: '0.875rem', height: '0.875rem',
+                  border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff',
+                  borderRadius: '9999px', animation: 'spin 0.7s linear infinite',
+                }} />
+              )}
               {saving ? 'Creating…' : 'Create KB'}
             </button>
           )}
         </div>
       </main>
+    </>
   );
 }

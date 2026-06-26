@@ -7,9 +7,9 @@ import ExportButtons from '../components/ExportButtons';
 import KBContextSelector from '../components/KBContextSelector';
 
 const CONFIDENCE_STYLES = {
-  HIGH:   { bg: '#D1FAE5', text: '#065F46', label: 'KB: HIGH' },
-  MEDIUM: { bg: '#FEF9C3', text: '#92400E', label: 'KB: MEDIUM' },
-  LOW:    { bg: '#FEE2E2', text: '#DC2626', label: 'KB: LOW' },
+  HIGH:   { bg: 'var(--success-soft)', text: 'var(--success)', label: 'KB: HIGH' },
+  MEDIUM: { bg: 'var(--warning-soft)', text: 'var(--warning)', label: 'KB: MEDIUM' },
+  LOW:    { bg: 'var(--danger-soft)',  text: 'var(--danger)',  label: 'KB: LOW' },
 };
 
 export default function ContentResearchPage() {
@@ -83,55 +83,88 @@ export default function ContentResearchPage() {
   }
 
   return (
-      <main className="max-w-7xl mx-auto px-8 py-7">
-        <KBContextSelector
-          module="content-research"
-          onChange={({ client: c, feedbackKbIds: fb }) => { setClient(c); setFeedbackKbIds(fb || []); }}
-          disabled={isLoading}
-        />
-        <div className="mt-4">
-        <KeywordInput keyword={keyword} setKeyword={setKeyword} onSearch={handleResearch} disabled={isLoading} /></div>
+    <main style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 32px' }}>
+      <KBContextSelector
+        module="content-research"
+        onChange={({ client: c, feedbackKbIds: fb }) => { setClient(c); setFeedbackKbIds(fb || []); }}
+        disabled={isLoading}
+      />
 
-        {step !== 'idle' && <div className="mt-6"><ProgressSteps step={step} /></div>}
+      <div style={{ marginTop: 16 }}>
+        <KeywordInput keyword={keyword} setKeyword={setKeyword} onSearch={handleResearch} disabled={isLoading} />
+      </div>
 
-        {warnings.length > 0 && (
-          <div className="mt-4 p-4 bg-[#FEF9C3] border border-[#FDE68A] rounded-xl">
-            <div className="flex items-start gap-2">
-              <span className="mt-0.5" style={{ color: '#D97706' }}>⚠</span>
-              <div className="space-y-1">{warnings.map((w, i) => <p key={i} className="text-sm" style={{ color: '#92400E' }}>{w}</p>)}</div>
-            </div>
+      {step !== 'idle' && (
+        <div style={{ marginTop: 24 }}>
+          <ProgressSteps step={step} />
+        </div>
+      )}
+
+      {warnings.length > 0 && (
+        <div style={{
+          marginTop: 16,
+          padding: '12px 16px',
+          background: 'var(--warning-soft)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--r-lg)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 8,
+        }}>
+          <span style={{ color: 'var(--warning)', marginTop: 2, flexShrink: 0 }}>&#9888;</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {warnings.map((w, i) => (
+              <p key={i} style={{ margin: 0, fontSize: 14, color: 'var(--warning)' }}>{w}</p>
+            ))}
           </div>
-        )}
+        </div>
+      )}
 
-        {step === 'error' && error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
-            <div className="flex items-start gap-2">
-              <span className="text-red-500 mt-0.5 text-xs">✕</span>
-              <p className="text-red-700 text-sm font-medium">{error}</p>
-            </div>
-          </div>
-        )}
+      {step === 'error' && error && (
+        <div style={{
+          marginTop: 16,
+          padding: '12px 16px',
+          background: 'var(--danger-soft)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--r-lg)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 8,
+        }}>
+          <span style={{ color: 'var(--danger)', marginTop: 2, fontSize: 12, flexShrink: 0 }}>&#10005;</span>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: 'var(--danger)' }}>{error}</p>
+        </div>
+      )}
 
-        {serpResults && (
-          <div className="mt-6">
-            <SerpUrls results={serpResults} scrapeResults={scrapeResults} isLoading={step === 'scraping'} />
-          </div>
-        )}
+      {serpResults && (
+        <div style={{ marginTop: 24 }}>
+          <SerpUrls results={serpResults} scrapeResults={scrapeResults} isLoading={step === 'scraping'} />
+        </div>
+      )}
 
-        {analysis && (
-          <div className="mt-8">
-            <div className="flex items-center gap-3 mb-3">
-              <ExportButtons keyword={keyword} analysis={analysis} />
-              {kbConfidence && CONFIDENCE_STYLES[kbConfidence] && (
-                <span className="text-xs font-semibold px-2.5 py-1 rounded"
-                  style={{ backgroundColor: CONFIDENCE_STYLES[kbConfidence].bg, color: CONFIDENCE_STYLES[kbConfidence].text }}>
-                  {CONFIDENCE_STYLES[kbConfidence].label}
-                </span>
-              )}
-            </div>
-            <ResultsTable keyword={keyword} analysis={analysis} />
+      {analysis && (
+        <div style={{ marginTop: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <ExportButtons keyword={keyword} analysis={analysis} />
+            {kbConfidence && CONFIDENCE_STYLES[kbConfidence] && (
+              <span style={{
+                fontSize: 11,
+                fontFamily: 'var(--font-mono)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                fontWeight: 600,
+                padding: '3px 10px',
+                borderRadius: 'var(--r-lg)',
+                backgroundColor: CONFIDENCE_STYLES[kbConfidence].bg,
+                color: CONFIDENCE_STYLES[kbConfidence].text,
+              }}>
+                {CONFIDENCE_STYLES[kbConfidence].label}
+              </span>
+            )}
           </div>
-        )}
-      </main>
+          <ResultsTable keyword={keyword} analysis={analysis} />
+        </div>
+      )}
+    </main>
   );
 }

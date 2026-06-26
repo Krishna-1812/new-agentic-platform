@@ -1,44 +1,70 @@
-export default function KeywordInput({ keyword, setKeyword, onSearch, disabled }) {
+const SpinnerIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}>
+    <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeOpacity="0.25" />
+    <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+  </svg>
+);
+
+export default function KeywordInput({ keyword, setKeyword, onSearch, disabled, placeholder, label, hint }) {
   function handleKeyDown(e) {
     if (e.key === 'Enter' && !disabled) onSearch();
   }
 
   return (
-    <div className="bg-white rounded-xl border border-[#E5E7EB] p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)' }}>
-      <label htmlFor="keyword" className="block text-sm font-semibold text-[#111827] mb-2">
-        Target Keyword
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      padding: 24,
+      boxShadow: 'var(--shadow-sm)',
+    }}>
+      <label htmlFor="keyword" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>
+        {label || 'Target Keyword'}
       </label>
-      <div className="flex gap-3">
+      <div style={{ display: 'flex', gap: 10 }}>
         <input
           id="keyword"
           type="text"
           value={keyword}
           onChange={e => setKeyword(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="e.g. best project management software"
+          placeholder={placeholder || 'e.g. best project management software'}
           disabled={disabled}
-          className="flex-1 px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 disabled:bg-[#F4F5F7] disabled:text-[#9CA3AF] transition-shadow"
-          style={{ '--tw-ring-color': '#3DAA8E' }}
+          style={{
+            flex: 1, padding: '9px 14px',
+            borderRadius: 'var(--r-md)',
+            border: '1px solid var(--border)',
+            fontSize: 14, color: 'var(--text)',
+            background: disabled ? 'var(--surface)' : 'var(--card)',
+            outline: 'none',
+            transition: 'border-color var(--dur-fast) var(--ease)',
+          }}
+          onFocus={e => e.target.style.borderColor = 'var(--primary)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}
         />
         <button
           onClick={onSearch}
           disabled={disabled || !keyword.trim()}
-          className="px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ backgroundColor: '#111827' }}
+          style={{
+            padding: '9px 22px',
+            borderRadius: 'var(--r-md)',
+            fontSize: 13, fontWeight: 600,
+            color: '#fff',
+            background: 'var(--primary)',
+            border: 'none', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            opacity: disabled || !keyword.trim() ? 0.5 : 1,
+            transition: 'opacity var(--dur-fast) var(--ease)',
+          }}
         >
           {disabled ? (
-            <span className="flex items-center gap-2">
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              Working…
-            </span>
+            <><SpinnerIcon /> Working…</>
           ) : 'Research'}
         </button>
       </div>
-      <p className="mt-2 text-xs text-[#9CA3AF]">
-        Searches top 10 US Google results, scrapes content, and generates AI-powered recommendations.
+      <p style={{ marginTop: 8, fontSize: 12, color: 'var(--text-3)' }}>
+        {hint || 'Searches top 10 US Google results, scrapes content, and generates AI-powered recommendations.'}
       </p>
     </div>
   );

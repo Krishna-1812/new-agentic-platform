@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useTheme } from './ThemeContext';
 import { TOOL_GROUPS, getToolByPath } from '../toolsMeta';
 
-/* ── Sidebar SVG icons (14px, line-art) ── */
+/* ── Sidebar icons (14px line-art, Lucide-style) ── */
 const TOOL_ICONS = {
   'keyword-research': (
     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
@@ -78,6 +78,27 @@ const TOOL_ICONS = {
   ),
 };
 
+/* ── Sun / Moon icons ── */
+const SunIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="5" />
+    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+  </svg>
+);
+
+const ChevronLeftIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 18l-6-6 6-6" />
+  </svg>
+);
+
+/* ── AppShell (replaces old MacWindow) ── */
 export default function MacWindow() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -99,30 +120,40 @@ export default function MacWindow() {
     : TOOL_GROUPS;
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: '100vh' }}>
 
-        {/* ── Title bar ── */}
+        {/* ── AppHeader (56px solid) ── */}
         <div style={{
-          height: 52, flexShrink: 0,
-          background: 'var(--titlebar)',
-          backdropFilter: 'blur(30px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+          height: 56,
+          flexShrink: 0,
+          background: 'var(--card)',
           borderBottom: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          zIndex: 10,
         }}>
-          {/* Brand — left portion, aligned to sidebar width */}
+          {/* Brand block — aligned to sidebar width */}
           <div style={{
-            width: 250, flexShrink: 0, height: '100%',
-            display: 'flex', alignItems: 'center',
-            padding: '0 14px', gap: 9,
+            width: 248,
+            flexShrink: 0,
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 16px',
+            gap: 10,
             borderRight: '1px solid var(--border)',
             boxSizing: 'border-box',
           }}>
+            {/* Brand square */}
             <div style={{
-              width: 26, height: 26, borderRadius: 7,
-              background: 'var(--accent)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              background: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               flexShrink: 0,
             }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
@@ -130,92 +161,133 @@ export default function MacWindow() {
               </svg>
             </div>
             <span style={{
-              fontWeight: 700, fontSize: 14,
-              color: 'var(--text)', letterSpacing: '-0.015em',
+              fontWeight: 700,
+              fontSize: 14,
+              color: 'var(--text)',
+              letterSpacing: '-0.015em',
               userSelect: 'none',
             }}>
               SEO Studio
             </span>
           </div>
 
-          {/* Page title — centered in remaining space */}
+          {/* Breadcrumb / page title */}
           <div style={{
-            flex: 1, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', gap: 5,
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '0 20px',
           }}>
             {!isHome && (
               <button
                 onClick={() => navigate('/')}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center',
-                  color: 'var(--text-3)', padding: '4px 2px',
-                  outline: 'none', lineHeight: 1,
-                }}
                 title="All Tools"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 28,
+                  height: 28,
+                  borderRadius: 6,
+                  color: 'var(--text-3)',
+                  outline: 'none',
+                  transition: 'background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease)',
+                  flexShrink: 0,
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'var(--surface)';
+                  e.currentTarget.style.color = 'var(--text)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'none';
+                  e.currentTarget.style.color = 'var(--text-3)';
+                }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M15 18l-6-6 6-6" />
-                </svg>
+                <ChevronLeftIcon />
               </button>
             )}
+            {!isHome && (
+              <span style={{ fontSize: 12, color: 'var(--text-3)', userSelect: 'none' }}>
+                All Tools
+              </span>
+            )}
+            {!isHome && (
+              <span style={{ fontSize: 12, color: 'var(--text-3)' }}>/</span>
+            )}
             <span style={{
-              fontSize: 13, fontWeight: 600,
-              color: 'var(--text)', letterSpacing: '-0.01em',
+              fontSize: 14,
+              fontWeight: 600,
+              color: 'var(--text)',
+              letterSpacing: '-0.01em',
               userSelect: 'none',
             }}>
-              {isHome ? 'All Tools' : (currentTool ? currentTool.label : 'SEO Studio')}
+              {isHome ? 'SEO Tools' : (currentTool ? currentTool.label : 'SEO Studio')}
             </span>
           </div>
 
-          {/* Theme toggle */}
-          <button
-            onClick={toggle}
-            title="Toggle theme"
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              width: 32, height: 32, borderRadius: 8, cursor: 'pointer',
-              background: 'var(--glass)', border: '1px solid var(--glass-border)',
-              backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
-              color: 'var(--text-2)', outline: 'none', marginRight: 14,
-            }}
-          >
-            {theme === 'light' ? (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-              </svg>
-            ) : (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="5" />
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-              </svg>
-            )}
-          </button>
+          {/* Right controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingRight: 16 }}>
+            {/* Theme toggle */}
+            <button
+              onClick={toggle}
+              title="Toggle theme"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                cursor: 'pointer',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-2)',
+                outline: 'none',
+                transition: 'background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'var(--surface-2)';
+                e.currentTarget.style.borderColor = 'var(--border-strong)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'var(--surface)';
+                e.currentTarget.style.borderColor = 'var(--border)';
+              }}
+            >
+              {theme === 'light' ? <MoonIcon /> : <SunIcon />}
+            </button>
+          </div>
         </div>
 
         {/* ── Body: sidebar + content ── */}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
 
-          {/* ── Sidebar ── */}
+          {/* ── Sidebar (navy gradient) ── */}
           <div style={{
-            width: 250, flexShrink: 0,
-            background: 'var(--sidebar)',
-            backdropFilter: 'blur(30px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(30px) saturate(180%)',
-            borderRight: '1px solid var(--border)',
-            display: 'flex', flexDirection: 'column',
+            width: 248,
+            flexShrink: 0,
+            background: 'linear-gradient(180deg, var(--nav-bg-top) 0%, var(--nav-bg-bot) 100%)',
+            borderRight: '1px solid rgba(255,255,255,0.06)',
+            display: 'flex',
+            flexDirection: 'column',
             overflow: 'hidden',
           }}>
             {/* Search */}
-            <div style={{ padding: '10px 10px 6px' }}>
+            <div style={{ padding: '12px 12px 8px' }}>
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                background: 'var(--input-bg)',
-                border: '1px solid var(--input-border)',
-                backdropFilter: 'blur(10px)',
-                borderRadius: 8, padding: '5px 9px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 8,
+                padding: '6px 10px',
               }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(199,210,224,0.7)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="8" />
                   <path d="m21 21-4.35-4.35" />
                 </svg>
@@ -224,21 +296,30 @@ export default function MacWindow() {
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Search tools…"
                   style={{
-                    background: 'none', border: 'none', outline: 'none',
-                    fontSize: 12, color: 'var(--text)', width: '100%',
+                    background: 'none',
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: 12,
+                    color: 'var(--nav-text-active)',
+                    width: '100%',
                   }}
                 />
               </div>
             </div>
 
             {/* Nav groups */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 16px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 20px' }}>
               {filteredGroups.map(group => (
-                <div key={group.label} style={{ marginBottom: 18 }}>
+                <div key={group.label} style={{ marginBottom: 20 }}>
+                  {/* Group label */}
                   <div style={{
-                    fontSize: 10, fontWeight: 700,
-                    textTransform: 'uppercase', letterSpacing: '0.09em',
-                    color: 'var(--text-3)', padding: '2px 8px 4px',
+                    fontSize: 10,
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.12em',
+                    color: 'rgba(255,255,255,0.40)',
+                    padding: '4px 10px 6px',
                   }}>
                     {group.label}
                   </div>
@@ -259,12 +340,11 @@ export default function MacWindow() {
             </div>
           </div>
 
-          {/* ── Content area ── */}
+          {/* ── Content area (solid bg) ── */}
           <div style={{
             flex: 1,
             overflowY: 'auto',
-            background: 'rgba(255,255,255,0.06)',
-            backdropFilter: 'blur(2px)',
+            background: 'var(--bg)',
           }}>
             <Outlet />
           </div>
@@ -274,6 +354,7 @@ export default function MacWindow() {
   );
 }
 
+/* ── Sidebar nav item ── */
 function SidebarItem({ tool, icon, isActive, onClick }) {
   const [hovered, setHovered] = useState(false);
 
@@ -283,27 +364,58 @@ function SidebarItem({ tool, icon, isActive, onClick }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        width: '100%', textAlign: 'left',
-        display: 'flex', alignItems: 'center', gap: 8,
-        padding: '6px 10px', borderRadius: 8,
-        border: 'none', cursor: 'pointer',
+        width: '100%',
+        textAlign: 'left',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '6px 10px',
+        borderRadius: 8,
+        border: 'none',
+        cursor: 'pointer',
         fontSize: 13,
         fontWeight: isActive ? 600 : 400,
-        color: isActive ? 'var(--accent-text)' : hovered ? 'var(--text)' : 'var(--text-2)',
+        color: isActive ? 'var(--nav-text-active)' : hovered ? '#e8edf5' : 'var(--nav-text)',
         background: isActive
-          ? 'var(--accent-soft)'
+          ? 'var(--nav-active-bg)'
           : hovered
-          ? 'var(--glass)'
+          ? 'rgba(255,255,255,0.06)'
           : 'transparent',
-        transition: 'background 0.12s, color 0.12s',
+        transition: 'background 0.12s var(--ease), color 0.12s var(--ease)',
         marginBottom: 1,
         outline: 'none',
+        position: 'relative',
+        boxSizing: 'border-box',
       }}
     >
-      <span style={{ flexShrink: 0, lineHeight: 1, display: 'flex', alignItems: 'center' }}>
+      {/* Active left indicator */}
+      {isActive && (
+        <span style={{
+          position: 'absolute',
+          left: 0,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          width: 2,
+          height: 16,
+          background: 'var(--nav-active-bar)',
+          borderRadius: '0 2px 2px 0',
+        }} />
+      )}
+      <span style={{
+        flexShrink: 0,
+        lineHeight: 1,
+        display: 'flex',
+        alignItems: 'center',
+        marginLeft: isActive ? 6 : 0,
+        transition: 'margin-left 0.12s var(--ease)',
+      }}>
         {icon}
       </span>
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <span style={{
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+      }}>
         {tool.label}
       </span>
     </button>

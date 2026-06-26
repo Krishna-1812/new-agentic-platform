@@ -1,21 +1,21 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 
 const SC = {
-  pass: { label: 'Pass', bg: '#EAF3DE', color: '#3B6D11', icon: '✓' },
-  fail: { label: 'Fail', bg: '#FCEBEB', color: '#A32D2D', icon: '✗' },
-  info: { label: 'Info', bg: '#FAEEDA', color: '#854F0B', icon: 'i' },
+  pass: { label: 'Pass', bg: 'var(--success-soft)', color: 'var(--success)', icon: '✓' },
+  fail: { label: 'Fail', bg: 'var(--danger-soft)', color: 'var(--danger)', icon: '✗' },
+  info: { label: 'Info', bg: 'var(--warning-soft)', color: 'var(--warning)', icon: 'i' },
 };
 
 const EC = {
-  done:   { label: 'Completed',   color: '#3B6D11' },
-  quick:  { label: 'Quick win',   color: '#185FA5' },
-  medium: { label: 'Medium lift', color: '#854F0B' },
-  high:   { label: 'Strategic',   color: '#534AB7' },
-  low:    { label: 'Low lift',    color: '#185FA5' },
+  done:   { label: 'Completed',   color: 'var(--success)' },
+  quick:  { label: 'Quick win',   color: 'var(--info)' },
+  medium: { label: 'Medium lift', color: 'var(--warning)' },
+  high:   { label: 'Strategic',   color: 'var(--primary)' },
+  low:    { label: 'Low lift',    color: 'var(--info)' },
 };
 
 // Flag status (visual differentiation from Fail)
-const FC = { label: 'Flag', bg: '#FEF3C7', color: '#92400E', icon: '⚑' };
+const FC = { label: 'Flag', bg: 'var(--warning-soft)', color: 'var(--warning)', icon: '⚑' };
 
 // Effort time ranges
 const EFFORT_TIME = {
@@ -97,21 +97,21 @@ const ROADMAP = [
   {
     tier: 'This week',
     sub: '15 min – 2 hrs each',
-    color: '#3B6D11', bg: '#EAF3DE',
+    color: 'var(--success)', bg: 'var(--success-soft)',
     checkIds: ['contentsignals', 'linkheaders', 'form_labels', 'input_type', 'autocomplete', 'cookie_banner', 'vague_buttons'],
     efforts: { contentsignals: '15 min', linkheaders: '~2 hrs', form_labels: '~1 hr', input_type: '30 min', autocomplete: '30 min', cookie_banner: '30 min', vague_buttons: '1 hr' },
   },
   {
     tier: 'This quarter',
     sub: '1 day – 2 weeks each',
-    color: '#185FA5', bg: '#E6F1FB',
+    color: 'var(--info)', bg: 'var(--info-soft)',
     checkIds: ['markdown', 'apicatalog', 'oauth', 'schema_search', 'schema_action', 'js_rendering', 'interactive_divs'],
     efforts: { markdown: '1–3 days', apicatalog: '3–5 days', oauth: '1–2 wks', schema_search: '~1 day', schema_action: '~1 day', js_rendering: '1–2 wks', interactive_divs: '~1 day' },
   },
   {
     tier: 'Strategic horizon',
     sub: '2–8 weeks each',
-    color: '#534AB7', bg: '#EEEDFE',
+    color: 'var(--primary)', bg: 'var(--primary-soft)',
     checkIds: ['mcp', 'agentskills', 'webmcp', 'captcha'],
     efforts: { mcp: '2–4 wks', agentskills: '4–6 wks', webmcp: '4–8 wks', captcha: '2–4 wks' },
   },
@@ -140,11 +140,11 @@ function CodeSnippet({ code }) {
         type="button"
         onClick={copy}
         aria-label="Copy code snippet"
-        style={{ position: 'absolute', top: 8, right: 8, background: copied ? '#3B6D11' : '#374151', color: '#fff', border: 'none', borderRadius: 5, padding: '3px 8px', fontSize: 11, cursor: 'pointer' }}
+        style={{ position: 'absolute', top: 8, right: 8, background: copied ? 'var(--success)' : 'var(--text)', color: '#fff', border: 'none', borderRadius: 5, padding: '3px 8px', fontSize: 11, cursor: 'pointer' }}
       >
         {copied ? '✓ Copied' : '⎘ Copy'}
       </button>
-      <pre style={{ margin: 0, fontSize: 12, color: '#E5E7EB', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'monospace', paddingRight: 60 }}>
+      <pre style={{ margin: 0, fontSize: 12, color: 'var(--border)', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'var(--font-mono)', paddingRight: 60 }}>
         {code}
       </pre>
     </div>
@@ -179,36 +179,39 @@ function ScoreRing({ score, checkCount }) {
   }, [score]);
 
   const offset = circ * (1 - displayScore / 100);
-  const color = score >= 70 ? '#639922' : score >= 40 ? '#EF9F27' : '#E24B4A';
+  // Use CSS variable names resolved via inline style trick; for SVG we need computed values
+  const ringColor = score >= 70 ? 'var(--success)' : score >= 45 ? 'var(--warning)' : 'var(--danger)';
 
   return (
     <svg width="128" height="128" viewBox="0 0 128 128"
       aria-label={`Agent readiness score: ${score} out of 100`} role="img">
       <title>Agent readiness score: {score} out of 100</title>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#E2E8F0" strokeWidth="8" />
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth="8"
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--border)" strokeWidth="8" />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={ringColor} strokeWidth="8"
         strokeDasharray={circ} strokeDashoffset={offset}
         strokeLinecap="round" transform="rotate(-90 64 64)"
         style={{ transition: 'none' }} />
-      <text x={cx} y={cy - 4} textAnchor="middle" fontSize="28" fontWeight="500" fill={color}>{displayScore}</text>
-      <text x={cx} y={cy + 16} textAnchor="middle" fontSize="12" fill="#888780">/ 100</text>
+      <text x={cx} y={cy - 4} textAnchor="middle" fontSize="28" fontWeight="500" fill={ringColor}
+        style={{ fontFamily: 'var(--font-mono)' }}>{displayScore}</text>
+      <text x={cx} y={cy + 16} textAnchor="middle" fontSize="12" fill="var(--text-3)">/ 100</text>
     </svg>
   );
 }
 
 // ─── CatBar component ─────────────────────────────────────────────────────────
 function CatBar({ cat }) {
-  const color = cat.score >= 70 ? '#639922' : cat.score >= 40 ? '#EF9F27' : '#E24B4A';
+  const barColor = cat.score >= 70 ? 'var(--success)' : cat.score >= 45 ? 'var(--warning)' : 'var(--danger)';
+  const textColor = cat.score >= 70 ? 'var(--success)' : cat.score >= 45 ? 'var(--warning)' : 'var(--danger)';
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-        <span style={{ fontSize: 13, color: '#6B7280' }}>{cat.id}</span>
-        <span style={{ fontSize: 13, fontWeight: 500, color }}>{cat.score}</span>
+        <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{cat.id}</span>
+        <span style={{ fontSize: 13, fontWeight: 500, color: textColor }}>{cat.score}</span>
       </div>
-      <div style={{ height: 6, borderRadius: 3, background: '#F3F4F6', overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${cat.score}%`, background: color, borderRadius: 3 }} />
+      <div style={{ height: 6, borderRadius: 3, background: 'var(--border)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${cat.score}%`, background: barColor, borderRadius: 3 }} />
       </div>
-      <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 3 }}>{cat.passed} of {cat.total} checks passed</div>
+      <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 3 }}>{cat.passed} of {cat.total} checks passed</div>
     </div>
   );
 }
@@ -221,7 +224,7 @@ function CheckRow({ check, open, onToggle, isLast }) {
   const e = EC[check.effort] || EC.medium;
 
   return (
-    <div style={{ borderBottom: isLast ? 'none' : '0.5px solid #F3F4F6' }}>
+    <div style={{ borderBottom: isLast ? 'none' : '0.5px solid var(--border)' }}>
       <button
         type="button"
         onClick={onToggle}
@@ -237,50 +240,50 @@ function CheckRow({ check, open, onToggle, isLast }) {
         >
           {badge.icon} {badgeLabel}
         </span>
-        <span style={{ flex: 1, fontSize: 14, color: '#111827' }}>{check.label}</span>
-        <span style={{ flexShrink: 0, fontSize: 11, color: '#9CA3AF', marginRight: 2 }}>{check.cat}</span>
+        <span style={{ flex: 1, fontSize: 14, color: 'var(--text)' }}>{check.label}</span>
+        <span style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-3)', marginRight: 2 }}>{check.cat}</span>
         <span style={{ flexShrink: 0, fontSize: 11, color: e.color, border: `0.5px solid ${e.color}`, padding: '2px 7px', borderRadius: 4 }}>
           {e.label}
         </span>
-        <span style={{ color: '#9CA3AF', fontSize: 12, marginLeft: 2 }}>{open ? '▲' : '▼'}</span>
+        <span style={{ color: 'var(--text-3)', fontSize: 12, marginLeft: 2 }}>{open ? '▲' : '▼'}</span>
       </button>
 
       {open && (
         <div style={{ paddingBottom: 16 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-            <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '10px 12px' }}>
-              <div style={{ fontSize: 10, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5, fontWeight: 500 }}>
+            <div style={{ background: 'var(--surface)', borderRadius: 8, padding: '10px 12px' }}>
+              <div style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5, fontWeight: 500 }}>
                 Technical finding
               </div>
-              <p style={{ fontSize: 12, color: '#6B7280', margin: 0, fontFamily: 'monospace', lineHeight: 1.6 }}>
+              <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0, fontFamily: 'var(--font-mono)', lineHeight: 1.6 }}>
                 {check.tech}
               </p>
             </div>
-            <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '10px 12px' }}>
-              <div style={{ fontSize: 10, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5, fontWeight: 500 }}>
+            <div style={{ background: 'var(--surface)', borderRadius: 8, padding: '10px 12px' }}>
+              <div style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5, fontWeight: 500 }}>
                 Business impact
               </div>
-              <p style={{ fontSize: 12, color: '#111827', margin: 0, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 12, color: 'var(--text)', margin: 0, lineHeight: 1.6 }}>
                 {check.business}
               </p>
             </div>
           </div>
 
           {check.status !== 'pass' && check.detail && check.detail !== check.tech && (
-            <div style={{ background: '#FFFBEB', borderRadius: 8, padding: '10px 12px', marginBottom: 10, borderLeft: '3px solid #F59E0B' }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+            <div style={{ background: 'var(--warning-soft)', borderRadius: 8, padding: '10px 12px', marginBottom: 10, borderLeft: '3px solid var(--warning)' }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--warning)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
                 Specific issues found
               </div>
-              <p style={{ fontSize: 12, color: '#78350F', margin: 0, lineHeight: 1.6, fontFamily: 'monospace' }}>{check.detail}</p>
+              <p style={{ fontSize: 12, color: 'var(--text)', margin: 0, lineHeight: 1.6, fontFamily: 'var(--font-mono)' }}>{check.detail}</p>
             </div>
           )}
 
           {check.action && (
-            <div style={{ background: '#E6F1FB', borderRadius: 8, padding: '10px 12px', borderLeft: '3px solid #378ADD' }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: '#185FA5', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+            <div style={{ background: 'var(--info-soft)', borderRadius: 8, padding: '10px 12px', borderLeft: '3px solid var(--info)' }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--info)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
                 Recommended action
               </div>
-              <p style={{ fontSize: 12, color: '#0C447C', margin: 0, lineHeight: 1.6 }}>{check.action}</p>
+              <p style={{ fontSize: 12, color: 'var(--text)', margin: 0, lineHeight: 1.6 }}>{check.action}</p>
             </div>
           )}
 
@@ -295,7 +298,7 @@ function CheckRow({ check, open, onToggle, isLast }) {
 
 // ─── SkeletonLine component ───────────────────────────────────────────────────
 function SkeletonLine({ w = '100%' }) {
-  return <div style={{ height: 13, background: '#F3F4F6', borderRadius: 4, marginBottom: 7, width: w }} />;
+  return <div style={{ height: 13, background: 'var(--border)', borderRadius: 4, marginBottom: 7, width: w }} />;
 }
 
 // ─── Main page component ──────────────────────────────────────────────────────
@@ -554,28 +557,28 @@ export default function AgentReadinessAuditPage() {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main style={{ maxWidth: 960, margin: '0 auto', padding: '2rem 1.5rem' }}>
 
         {/* Agent importance one-liner */}
-        <div style={{ background: '#534AB7', borderRadius: 10, padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ background: 'var(--primary)', borderRadius: 10, padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 16, flexShrink: 0 }}>⚡</span>
-          <p style={{ fontSize: 13, color: '#EEEDFe', margin: 0, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 13, color: '#fff', margin: 0, lineHeight: 1.5 }}>
             <strong style={{ color: '#fff' }}>AI agents are replacing browsers as the primary interface to the web.</strong>{' '}
             Sites optimized for agents get found, cited, and transacted with — those that aren't get bypassed entirely. By 2027, agents will initiate the majority of commercial queries.
           </p>
         </div>
 
         {/* URL Inputs */}
-        <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 mb-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          <h2 className="text-base font-semibold text-[#111827] mb-1">Audit a website's AI agent readiness</h2>
-          <p className="text-sm text-[#6B7280] mb-5">
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: '1.5rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', margin: '0 0 4px' }}>Audit a website's AI agent readiness</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-2)', margin: '0 0 20px' }}>
             Provide up to three URLs for a full audit: 13 HTTP checks run on all sites; 10 additional on-page checks require the action and form URLs.
           </p>
           <form onSubmit={handleAudit}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#374151', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Homepage <span style={{ color: '#A32D2D' }}>*</span>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Homepage <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
                 <input
                   type="text"
@@ -591,19 +594,25 @@ export default function AgentReadinessAuditPage() {
                   }}
                   placeholder="https://example.com"
                   disabled={loading}
-                  className="w-full border border-[#E5E7EB] rounded-lg px-4 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#534AB7] focus:border-transparent"
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    border: '1px solid var(--border)', borderRadius: 8,
+                    padding: '8px 14px', fontSize: 13,
+                    color: 'var(--text)', background: 'var(--card)',
+                    outline: 'none',
+                  }}
                 />
                 {discoverLoading && (
-                  <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ display: 'inline-block', width: 10, height: 10, border: '1.5px solid #534AB7', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ display: 'inline-block', width: 10, height: 10, border: '1.5px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
                     Discovering links…
                   </div>
                 )}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }} className="ara-form-grid">
                 <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#374151', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Key action page <span style={{ fontSize: 10, fontWeight: 400, color: '#9CA3AF', textTransform: 'none' }}>optional — product / service page</span>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Key action page <span style={{ fontSize: 10, fontWeight: 400, color: 'var(--text-3)', textTransform: 'none' }}>optional — product / service page</span>
                   </label>
                   <input
                     type="text"
@@ -611,14 +620,20 @@ export default function AgentReadinessAuditPage() {
                     onChange={e => setUrlAction(e.target.value)}
                     placeholder="https://example.com/product"
                     disabled={loading}
-                    className="w-full border border-[#E5E7EB] rounded-lg px-4 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#534AB7] focus:border-transparent"
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      border: '1px solid var(--border)', borderRadius: 8,
+                      padding: '8px 14px', fontSize: 13,
+                      color: 'var(--text)', background: 'var(--card)',
+                      outline: 'none',
+                    }}
                   />
                   {actionSuggestions.length > 0 && !urlAction && (
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 5 }}>
                       {actionSuggestions.map(s => (
                         <button key={s.full} type="button"
                           onClick={() => setUrlAction(s.full)}
-                          style={{ fontSize: 11, color: '#534AB7', background: '#EEEDFE', border: '0.5px solid #C4BFEF', borderRadius: 20, padding: '3px 10px', cursor: 'pointer' }}>
+                          style={{ fontSize: 11, color: 'var(--primary-text)', background: 'var(--primary-soft)', border: '0.5px solid var(--primary)', borderRadius: 20, padding: '3px 10px', cursor: 'pointer' }}>
                           → {s.path} <span style={{ opacity: 0.6, marginLeft: 3 }}>suggested</span>
                         </button>
                       ))}
@@ -626,8 +641,8 @@ export default function AgentReadinessAuditPage() {
                   )}
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#374151', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Form / checkout page <span style={{ fontSize: 10, fontWeight: 400, color: '#9CA3AF', textTransform: 'none' }}>optional — contact / checkout</span>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Form / checkout page <span style={{ fontSize: 10, fontWeight: 400, color: 'var(--text-3)', textTransform: 'none' }}>optional — contact / checkout</span>
                   </label>
                   <input
                     type="text"
@@ -635,14 +650,20 @@ export default function AgentReadinessAuditPage() {
                     onChange={e => setUrlForm(e.target.value)}
                     placeholder="https://example.com/contact"
                     disabled={loading}
-                    className="w-full border border-[#E5E7EB] rounded-lg px-4 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#534AB7] focus:border-transparent"
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      border: '1px solid var(--border)', borderRadius: 8,
+                      padding: '8px 14px', fontSize: 13,
+                      color: 'var(--text)', background: 'var(--card)',
+                      outline: 'none',
+                    }}
                   />
                   {formSuggestions.length > 0 && !urlForm && (
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 5 }}>
                       {formSuggestions.map(s => (
                         <button key={s.full} type="button"
                           onClick={() => setUrlForm(s.full)}
-                          style={{ fontSize: 11, color: '#534AB7', background: '#EEEDFE', border: '0.5px solid #C4BFEF', borderRadius: 20, padding: '3px 10px', cursor: 'pointer' }}>
+                          style={{ fontSize: 11, color: 'var(--primary-text)', background: 'var(--primary-soft)', border: '0.5px solid var(--primary)', borderRadius: 20, padding: '3px 10px', cursor: 'pointer' }}>
                           → {s.path} <span style={{ opacity: 0.6, marginLeft: 3 }}>suggested</span>
                         </button>
                       ))}
@@ -654,60 +675,66 @@ export default function AgentReadinessAuditPage() {
             <button
               type="submit"
               disabled={loading || !urlHomepage.trim()}
-              className="px-6 py-2.5 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ background: '#534AB7' }}
+              style={{
+                background: 'var(--primary)', color: '#fff',
+                border: 'none', borderRadius: 8,
+                padding: '9px 20px', fontSize: 13, fontWeight: 500,
+                cursor: loading || !urlHomepage.trim() ? 'not-allowed' : 'pointer',
+                opacity: loading || !urlHomepage.trim() ? 0.5 : 1,
+                transition: 'opacity 0.15s',
+              }}
             >
               {loading ? 'Running audit…' : 'Run Audit'}
             </button>
           </form>
 
           {loading && (
-            <div className="mt-3 flex items-center gap-2 text-sm text-[#6B7280]">
-              <div className="w-4 h-4 border-2 border-[#534AB7] border-t-transparent rounded-full animate-spin" />
+            <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-2)' }}>
+              <div style={{ width: 16, height: 16, border: '2px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
               Running {urlAction || urlForm ? '23' : '13'} checks
               {(urlAction || urlForm) && ' including browser-rendered on-page checks'}… (~{urlAction || urlForm ? '35' : '15'}s)
             </div>
           )}
           {error && (
-            <div className="mt-3 text-sm text-red-600 bg-red-50 rounded-lg px-4 py-2">{error}</div>
+            <div style={{ marginTop: 12, fontSize: 13, color: 'var(--danger)', background: 'var(--danger-soft)', borderRadius: 8, padding: '8px 14px' }}>{error}</div>
           )}
         </div>
 
         {!result && !loading && (
-          <div className="text-center py-16 text-[#9CA3AF]">
-            <div className="text-4xl mb-3">🤖</div>
-            <p className="text-sm">Enter a URL above to audit its agent readiness.</p>
-            <p className="text-xs mt-1">Add the action and form URLs for on-page checks.</p>
+          <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--text-3)' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🤖</div>
+            <p style={{ fontSize: 13, margin: '0 0 4px' }}>Enter a URL above to audit its agent readiness.</p>
+            <p style={{ fontSize: 12, margin: 0 }}>Add the action and form URLs for on-page checks.</p>
           </div>
         )}
 
         {result && (
           <div style={{ paddingBottom: '1.5rem' }}>
             {/* Site header */}
-            <div className="flex items-start justify-between mb-5 ara-header-row">
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }} className="ara-header-row">
               <div>
-                <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500 }}>
                   Agent Readiness Audit
                 </div>
-                <h1 style={{ fontSize: 22, fontWeight: 500, margin: '0 0 4px', color: '#111827' }}>
+                <h1 style={{ fontSize: 22, fontWeight: 500, margin: '0 0 4px', color: 'var(--text)' }}>
                   {result.site.url}
                 </h1>
-                <div style={{ fontSize: 13, color: '#6B7280', position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 13, color: 'var(--text-2)', position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <span
                     onMouseEnter={() => setLevelTooltipOpen(true)}
                     onMouseLeave={() => setLevelTooltipOpen(false)}
-                    style={{ cursor: 'help', borderBottom: '1px dashed #9CA3AF' }}
+                    style={{ cursor: 'help', borderBottom: '1px dashed var(--text-3)' }}
                   >
                     {result.site.level}
                   </span>
                   &nbsp;·&nbsp; Scanned {result.site.date}
-                  {hasOnPage && <span style={{ marginLeft: 6, fontSize: 11, background: '#EEEDFE', color: '#534AB7', padding: '1px 7px', borderRadius: 10 }}>+10 on-page checks</span>}
+                  {hasOnPage && <span style={{ marginLeft: 6, fontSize: 11, background: 'var(--primary-soft)', color: 'var(--primary-text)', padding: '1px 7px', borderRadius: 10 }}>+10 on-page checks</span>}
                   {levelTooltipOpen && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 6, background: '#fff', border: '0.5px solid #E5E7EB', borderRadius: 8, padding: '8px 12px', zIndex: 50, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', minWidth: 220 }}>
+                    <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 6, background: 'var(--card)', border: '0.5px solid var(--border)', borderRadius: 8, padding: '8px 12px', zIndex: 50, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', minWidth: 220 }}>
                       {LEVELS.map(l => (
-                        <div key={l.level} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, padding: '3px 0', color: result.site.level.includes(l.label) ? '#534AB7' : '#6B7280', fontWeight: result.site.level.includes(l.label) ? 600 : 400 }}>
+                        <div key={l.level} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, padding: '3px 0', color: result.site.level.includes(l.label) ? 'var(--primary)' : 'var(--text-2)', fontWeight: result.site.level.includes(l.label) ? 600 : 400 }}>
                           <span>Level {l.level} — {l.label}</span>
-                          <span style={{ color: '#9CA3AF' }}>{l.score}</span>
+                          <span style={{ color: 'var(--text-3)' }}>{l.score}</span>
                         </div>
                       ))}
                     </div>
@@ -720,18 +747,18 @@ export default function AgentReadinessAuditPage() {
                   disabled={pdfLoading}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6,
-                    fontSize: 12, color: '#534AB7', background: '#EEEDFE',
-                    border: '0.5px solid #C4BFEF', borderRadius: 7,
+                    fontSize: 12, color: 'var(--primary-text)', background: 'var(--primary-soft)',
+                    border: '0.5px solid var(--primary)', borderRadius: 7,
                     padding: '6px 12px', cursor: 'pointer',
                     opacity: pdfLoading ? 0.6 : 1,
                   }}
                 >
                   {pdfLoading
-                    ? <><span style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid #534AB7', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> Generating…</>
+                    ? <><span style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> Generating…</>
                     : <>⬇ Download PDF</>}
                 </button>
                 <a href={result.site.full} target="_blank" rel="noreferrer"
-                  style={{ fontSize: 12, color: '#534AB7', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  style={{ fontSize: 12, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
                   {result.site.full} ↗
                 </a>
               </div>
@@ -740,51 +767,51 @@ export default function AgentReadinessAuditPage() {
             {/* Sub-scores banner (only when on-page ran) */}
             {hasOnPage && result.site.onPageScore !== null && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }} className="ara-sub-scores">
-                <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ background: 'var(--surface)', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div>
-                    <div style={{ fontSize: 10, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>HTTP readiness</div>
-                    <div style={{ fontSize: 20, fontWeight: 600, color: result.site.httpScore >= 70 ? '#3B6D11' : result.site.httpScore >= 40 ? '#EF9F27' : '#E24B4A' }}>
-                      {result.site.httpScore}<span style={{ fontSize: 12, fontWeight: 400, color: '#9CA3AF' }}>/100</span>
+                    <div style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>HTTP readiness</div>
+                    <div style={{ fontSize: 20, fontWeight: 600, color: result.site.httpScore >= 70 ? 'var(--success)' : result.site.httpScore >= 45 ? 'var(--warning)' : 'var(--danger)' }}>
+                      {result.site.httpScore}<span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-3)' }}>/100</span>
                     </div>
                   </div>
-                  <div style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.5 }}>robots, sitemap, headers,<br />bot access, MCP/OAuth</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>robots, sitemap, headers,<br />bot access, MCP/OAuth</div>
                 </div>
-                <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ background: 'var(--surface)', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div>
-                    <div style={{ fontSize: 10, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>On-page readiness</div>
-                    <div style={{ fontSize: 20, fontWeight: 600, color: result.site.onPageScore >= 70 ? '#3B6D11' : result.site.onPageScore >= 40 ? '#EF9F27' : '#E24B4A' }}>
-                      {result.site.onPageScore}<span style={{ fontSize: 12, fontWeight: 400, color: '#9CA3AF' }}>/100</span>
+                    <div style={{ fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>On-page readiness</div>
+                    <div style={{ fontSize: 20, fontWeight: 600, color: result.site.onPageScore >= 70 ? 'var(--success)' : result.site.onPageScore >= 45 ? 'var(--warning)' : 'var(--danger)' }}>
+                      {result.site.onPageScore}<span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-3)' }}>/100</span>
                     </div>
                   </div>
-                  <div style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.5 }}>forms, schema, CAPTCHA,<br />rendering gap, interactivity</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>forms, schema, CAPTCHA,<br />rendering gap, interactivity</div>
                 </div>
               </div>
             )}
 
             {/* Score + Category bars */}
             <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 16, marginBottom: '1.25rem' }} className="ara-score-grid">
-              <div className="bg-white border border-[#E5E7EB] rounded-xl p-4 text-center" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 16, textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
                 <ScoreRing score={result.site.score} checkCount={checkCount} />
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 10, color: '#9CA3AF', marginTop: 2, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 10, color: 'var(--text-3)', marginTop: 2, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   <span>overall score</span>
                   <button type="button" aria-label="How is this score calculated?"
                     onClick={() => setScorePanelOpen(o => !o)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: 13, padding: 0, lineHeight: 1 }}>ⓘ</button>
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 13, padding: 0, lineHeight: 1 }}>ⓘ</button>
                 </div>
-                <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 6 }}>
+                <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 6 }}>
                   Based on {hasOnPage ? '23 checks (HTTP + on-page)' : '13 HTTP checks'}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <span style={{ fontSize: 11, background: '#EAF3DE', color: '#3B6D11', padding: '3px 8px', borderRadius: 4 }}>✓ {passCount} passed</span>
-                  <span style={{ fontSize: 11, background: '#FCEBEB', color: '#A32D2D', padding: '3px 8px', borderRadius: 4 }}>✗ {failCount} failed</span>
+                  <span style={{ fontSize: 11, background: 'var(--success-soft)', color: 'var(--success)', padding: '3px 8px', borderRadius: 4 }}>✓ {passCount} passed</span>
+                  <span style={{ fontSize: 11, background: 'var(--danger-soft)', color: 'var(--danger)', padding: '3px 8px', borderRadius: 4 }}>✗ {failCount} failed</span>
                   {infoCount > 0 && (
-                    <span style={{ fontSize: 11, background: '#FAEEDA', color: '#854F0B', padding: '3px 8px', borderRadius: 4 }}>i {infoCount} info</span>
+                    <span style={{ fontSize: 11, background: 'var(--warning-soft)', color: 'var(--warning)', padding: '3px 8px', borderRadius: 4 }}>i {infoCount} info</span>
                   )}
                 </div>
                 {delta && (
                   <div style={{ marginTop: 8, fontSize: 11, padding: '3px 8px', borderRadius: 6,
-                    background: delta.diff > 0 ? '#EAF3DE' : delta.diff < 0 ? '#FEF3C7' : '#F3F4F6',
-                    color: delta.diff > 0 ? '#3B6D11' : delta.diff < 0 ? '#92400E' : '#6B7280',
+                    background: delta.diff > 0 ? 'var(--success-soft)' : delta.diff < 0 ? 'var(--warning-soft)' : 'var(--surface)',
+                    color: delta.diff > 0 ? 'var(--success)' : delta.diff < 0 ? 'var(--warning)' : 'var(--text-2)',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
                     <span>{delta.diff > 0 ? `↑ ${delta.diff} pts` : delta.diff < 0 ? `↓ ${Math.abs(delta.diff)} pts` : 'No change'} since {delta.prevDate}</span>
                     <button type="button" onClick={() => { setDelta(null); localStorage.removeItem(`ara_last_${new URL(result.site.full).hostname}`); }}
@@ -793,14 +820,14 @@ export default function AgentReadinessAuditPage() {
                 )}
               </div>
 
-              <div className="bg-white border border-[#E5E7EB] rounded-xl p-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+                <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   Score by category
                 </div>
                 {result.cats.map(cat => <CatBar key={cat.id} cat={cat} />)}
-                <div style={{ marginTop: 8, padding: '7px 10px', background: '#EEEDFE', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 12, color: '#534AB7' }}>
-                    📈 Quick wins this week could raise your score to <strong>{Math.min(100, result.site.score + 16)}/100</strong>
+                <div style={{ marginTop: 8, padding: '7px 10px', background: 'var(--primary-soft)', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 12, color: 'var(--primary-text)' }}>
+                    Quick wins this week could raise your score to <strong>{Math.min(100, result.site.score + 16)}/100</strong>
                   </span>
                 </div>
               </div>
@@ -808,62 +835,62 @@ export default function AgentReadinessAuditPage() {
 
             {/* Score explanation panel — outside grid */}
             {scorePanelOpen && (
-              <div style={{ background: '#F9FAFB', border: '0.5px solid #E5E7EB', borderRadius: 10, padding: 14, marginTop: -8, marginBottom: 16 }}>
-                <p style={{ fontSize: 12, color: '#374151', margin: '0 0 10px', lineHeight: 1.7 }}>
+              <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 10, padding: 14, marginTop: -8, marginBottom: 16 }}>
+                <p style={{ fontSize: 12, color: 'var(--text)', margin: '0 0 10px', lineHeight: 1.7 }}>
                   <strong>How this score is calculated</strong><br />
                   The overall score combines up to 23 checks across 6 categories. Each check carries a weight based on its business impact. HTTP checks (13 total) run on every audit and form the foundation score. On-page checks (10 additional) only run when an action page or form URL is provided.
                 </p>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginBottom: 10 }}>
                   <thead>
-                    <tr>{['Category', 'Checks', 'Total Weight'].map(h => <th key={h} style={{ textAlign: 'left', padding: '4px 8px', borderBottom: '1px solid #E5E7EB', color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>)}</tr>
+                    <tr>{['Category', 'Checks', 'Total Weight'].map(h => <th key={h} style={{ textAlign: 'left', padding: '4px 8px', borderBottom: '1px solid var(--border)', color: 'var(--text-3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>)}</tr>
                   </thead>
                   <tbody>
                     {SCORE_WEIGHTS_TABLE.map(row => (
                       <tr key={row.cat}>
-                        <td style={{ padding: '4px 8px', color: '#374151' }}>{row.cat}</td>
-                        <td style={{ padding: '4px 8px', color: '#6B7280' }}>{row.checks}</td>
-                        <td style={{ padding: '4px 8px', color: '#374151', fontWeight: 500 }}>{row.weight}</td>
+                        <td style={{ padding: '4px 8px', color: 'var(--text)' }}>{row.cat}</td>
+                        <td style={{ padding: '4px 8px', color: 'var(--text-2)' }}>{row.checks}</td>
+                        <td style={{ padding: '4px 8px', color: 'var(--text)', fontWeight: 500 }}>{row.weight}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                <p style={{ fontSize: 11, color: '#9CA3AF', margin: 0 }}>On-page checks add up to 63 points of possible additional signal. Add your action and form URLs to unlock the full audit.</p>
+                <p style={{ fontSize: 11, color: 'var(--text-3)', margin: 0 }}>On-page checks add up to 63 points of possible additional signal. Add your action and form URLs to unlock the full audit.</p>
               </div>
             )}
 
             {/* Executive Summary */}
-            <div className="bg-white border border-[#E5E7EB] rounded-xl p-5 mb-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 20, marginBottom: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#534AB7', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   ✦ Executive Summary
                 </span>
                 {result.cmoBrief && (
                   <button type="button" onClick={shareSummary}
-                    style={{ fontSize: 11, color: '#534AB7', background: '#EEEDFE', border: '0.5px solid #C4BFEF', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
+                    style={{ fontSize: 11, color: 'var(--primary-text)', background: 'var(--primary-soft)', border: '0.5px solid var(--primary)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
                     {sharedBrief ? '✓ Link copied!' : '⬡ Share summary'}
                   </button>
                 )}
               </div>
               {result.cmoBrief ? (
                 <>
-                  <p style={{ fontSize: 17, fontWeight: 500, color: '#111827', margin: '0 0 10px', lineHeight: 1.4 }}>
+                  <p style={{ fontSize: 17, fontWeight: 500, color: 'var(--text)', margin: '0 0 10px', lineHeight: 1.4 }}>
                     {result.cmoBrief.headline}
                   </p>
-                  <p style={{ fontSize: 13, color: '#6B7280', margin: '0 0 16px', lineHeight: 1.7 }}>
+                  <p style={{ fontSize: 13, color: 'var(--text-2)', margin: '0 0 16px', lineHeight: 1.7 }}>
                     {result.cmoBrief.summary}
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }} className="ara-brief-grid">
-                    <div style={{ background: '#FCEBEB', borderRadius: 8, padding: '10px 12px' }}>
-                      <div style={{ fontSize: 10, fontWeight: 600, color: '#A32D2D', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>Top risk</div>
-                      <p style={{ fontSize: 12, color: '#791F1F', margin: 0, lineHeight: 1.55 }}>{result.cmoBrief.risk}</p>
+                    <div style={{ background: 'var(--danger-soft)', borderRadius: 8, padding: '10px 12px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>Top risk</div>
+                      <p style={{ fontSize: 12, color: 'var(--text)', margin: 0, lineHeight: 1.55 }}>{result.cmoBrief.risk}</p>
                     </div>
-                    <div style={{ background: '#EAF3DE', borderRadius: 8, padding: '10px 12px' }}>
-                      <div style={{ fontSize: 10, fontWeight: 600, color: '#3B6D11', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>60-day opportunity</div>
-                      <p style={{ fontSize: 12, color: '#27500A', margin: 0, lineHeight: 1.55 }}>{result.cmoBrief.opportunity}</p>
+                    <div style={{ background: 'var(--success-soft)', borderRadius: 8, padding: '10px 12px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>60-day opportunity</div>
+                      <p style={{ fontSize: 12, color: 'var(--text)', margin: 0, lineHeight: 1.55 }}>{result.cmoBrief.opportunity}</p>
                     </div>
-                    <div style={{ background: '#EEEDFE', borderRadius: 8, padding: '10px 12px' }}>
-                      <div style={{ fontSize: 10, fontWeight: 600, color: '#534AB7', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>Competitive context</div>
-                      <p style={{ fontSize: 12, color: '#3C3489', margin: 0, lineHeight: 1.55 }}>{result.cmoBrief.competitive}</p>
+                    <div style={{ background: 'var(--primary-soft)', borderRadius: 8, padding: '10px 12px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--primary-text)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>Competitive context</div>
+                      <p style={{ fontSize: 12, color: 'var(--text)', margin: 0, lineHeight: 1.55 }}>{result.cmoBrief.competitive}</p>
                     </div>
                   </div>
                 </>
@@ -872,13 +899,13 @@ export default function AgentReadinessAuditPage() {
                   <SkeletonLine w="55%" />
                   <div style={{ height: 8 }} />
                   <SkeletonLine w="100%" /><SkeletonLine w="90%" /><SkeletonLine w="70%" />
-                  <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 8 }}>Executive Summary unavailable (check OPENAI_API_KEY)</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 8 }}>Executive Summary unavailable (check OPENAI_API_KEY)</div>
                 </div>
               )}
             </div>
 
             {/* Tabs */}
-            <div role="tablist" style={{ display: 'flex', borderBottom: '0.5px solid #E5E7EB', marginBottom: '1rem' }}>
+            <div role="tablist" style={{ display: 'flex', borderBottom: '0.5px solid var(--border)', marginBottom: '1rem' }}>
               {[['findings', `Findings (${allChecks.length})`], ['roadmap', 'Priority roadmap']].map(([t, label]) => (
                 <button key={t} type="button"
                   role="tab"
@@ -887,10 +914,10 @@ export default function AgentReadinessAuditPage() {
                   onClick={() => setTab(t)}
                   style={{
                     background: 'none', border: 'none',
-                    borderBottom: tab === t ? '2px solid #111827' : '2px solid transparent',
+                    borderBottom: tab === t ? '2px solid var(--text)' : '2px solid transparent',
                     padding: '8px 16px', cursor: 'pointer',
                     fontSize: 14, fontWeight: tab === t ? 500 : 400,
-                    color: tab === t ? '#111827' : '#6B7280',
+                    color: tab === t ? 'var(--text)' : 'var(--text-2)',
                   }}>
                   {label}
                 </button>
@@ -909,9 +936,9 @@ export default function AgentReadinessAuditPage() {
                         onClick={() => setFilterCat(c)}
                         style={{
                           fontSize: 12, padding: '4px 11px', borderRadius: 20, cursor: 'pointer',
-                          border: '0.5px solid #E5E7EB',
-                          background: filterCat === c ? '#111827' : '#F9FAFB',
-                          color: filterCat === c ? '#fff' : '#6B7280',
+                          border: '0.5px solid var(--border)',
+                          background: filterCat === c ? 'var(--text)' : 'var(--surface)',
+                          color: filterCat === c ? '#fff' : 'var(--text-2)',
                           fontWeight: filterCat === c ? 500 : 400,
                         }}>
                         {c === 'all' ? `All (${allChecks.length})` : c}
@@ -921,8 +948,8 @@ export default function AgentReadinessAuditPage() {
                   <div style={{ display: 'flex', gap: 4 }}>
                     {[['priority', 'By priority'], ['category', 'By category']].map(([mode, label]) => (
                       <button key={mode} type="button" onClick={() => setSortMode(mode)}
-                        style={{ fontSize: 11, padding: '3px 9px', borderRadius: 6, border: '0.5px solid #E5E7EB', cursor: 'pointer',
-                          background: sortMode === mode ? '#111827' : '#F9FAFB', color: sortMode === mode ? '#fff' : '#6B7280' }}>
+                        style={{ fontSize: 11, padding: '3px 9px', borderRadius: 6, border: '0.5px solid var(--border)', cursor: 'pointer',
+                          background: sortMode === mode ? 'var(--text)' : 'var(--surface)', color: sortMode === mode ? '#fff' : 'var(--text-2)' }}>
                         {label}
                       </button>
                     ))}
@@ -932,10 +959,10 @@ export default function AgentReadinessAuditPage() {
                 {/* Findings legend */}
                 <div style={{ display: 'flex', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
                   {[
-                    { bg: '#EAF3DE', color: '#3B6D11', label: 'Pass' },
-                    { bg: '#FCEBEB', color: '#A32D2D', label: 'Fail' },
-                    { bg: '#FEF3C7', color: '#92400E', label: 'Flag (advisory)' },
-                    { bg: '#FAEEDA', color: '#854F0B', label: 'Info' },
+                    { bg: 'var(--success-soft)', color: 'var(--success)', label: 'Pass' },
+                    { bg: 'var(--danger-soft)', color: 'var(--danger)', label: 'Fail' },
+                    { bg: 'var(--warning-soft)', color: 'var(--warning)', label: 'Flag (advisory)' },
+                    { bg: 'var(--warning-soft)', color: 'var(--warning)', label: 'Info' },
                   ].map(b => (
                     <span key={b.label} style={{ fontSize: 10, background: b.bg, color: b.color, padding: '2px 7px', borderRadius: 4, fontWeight: 500 }}>
                       {b.label}
@@ -945,15 +972,15 @@ export default function AgentReadinessAuditPage() {
 
                 {/* Agentic Protocol callout (when all failing) */}
                 {agenticAllFailing && (filterCat === 'all' || filterCat === 'API / Auth / MCP') && (
-                  <div style={{ background: '#FFFBEB', border: '0.5px solid #F59E0B', borderRadius: 8, padding: '10px 14px', marginBottom: 10, borderLeft: '3px solid #F59E0B' }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#92400E', marginBottom: 4 }}>Agentic Protocol Setup — None configured</div>
-                    <p style={{ fontSize: 12, color: '#78350F', margin: 0, lineHeight: 1.6 }}>
+                  <div style={{ background: 'var(--warning-soft)', border: '0.5px solid var(--warning)', borderRadius: 8, padding: '10px 14px', marginBottom: 10, borderLeft: '3px solid var(--warning)' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--warning)', marginBottom: 4 }}>Agentic Protocol Setup — None configured</div>
+                    <p style={{ fontSize: 12, color: 'var(--text)', margin: 0, lineHeight: 1.6 }}>
                       <strong>None of these protocols are configured.</strong> These are emerging standards for AI agent integration. They're not required today, but sites that adopt them early will have a significant advantage as agent traffic grows. Start with API catalog — it's a medium lift and unlocks the most downstream value.
                     </p>
                   </div>
                 )}
 
-                <div className="bg-white border border-[#E5E7EB] rounded-xl px-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+                <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '0 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
                   {filtered.map((check, i) => (
                     <CheckRow
                       key={check.id}
@@ -965,8 +992,8 @@ export default function AgentReadinessAuditPage() {
                   ))}
                 </div>
                 {!hasOnPage && (
-                  <div style={{ marginTop: 10, padding: '8px 14px', background: '#FFFBEB', borderRadius: 8, fontSize: 12, color: '#92400E' }}>
-                    💡 Add an action page and form page URL above to unlock 10 additional on-page checks covering forms, schema markup, CAPTCHA, and rendering gaps.
+                  <div style={{ marginTop: 10, padding: '8px 14px', background: 'var(--warning-soft)', borderRadius: 8, fontSize: 12, color: 'var(--warning)' }}>
+                    Add an action page and form page URL above to unlock 10 additional on-page checks covering forms, schema markup, CAPTCHA, and rendering gaps.
                   </div>
                 )}
               </div>
@@ -978,12 +1005,12 @@ export default function AgentReadinessAuditPage() {
                 {/* Copy as checklist button */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
                   <button type="button" onClick={copyRoadmap}
-                    style={{ fontSize: 12, color: '#534AB7', background: '#EEEDFE', border: '0.5px solid #C4BFEF', borderRadius: 7, padding: '6px 12px', cursor: 'pointer' }}>
+                    style={{ fontSize: 12, color: 'var(--primary-text)', background: 'var(--primary-soft)', border: '0.5px solid var(--primary)', borderRadius: 7, padding: '6px 12px', cursor: 'pointer' }}>
                     {copiedRoadmap ? '✓ Copied!' : '⎘ Copy as checklist'}
                   </button>
                 </div>
 
-                <p style={{ fontSize: 13, color: '#6B7280', margin: '0 0 1rem', lineHeight: 1.6 }}>
+                <p style={{ fontSize: 13, color: 'var(--text-2)', margin: '0 0 1rem', lineHeight: 1.6 }}>
                   Prioritized by impact-to-effort ratio. Quick wins deliver immediate governance and discoverability signal; the strategic horizon positions you for the AI agent economy.
                 </p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }} className="ara-roadmap-grid">
@@ -993,7 +1020,7 @@ export default function AgentReadinessAuditPage() {
                       .filter(Boolean);
                     if (tierChecks.length === 0) return null;
                     return (
-                      <div key={tier.tier} className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+                      <div key={tier.tier} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
                         <div style={{ background: tier.bg, padding: '14px 16px' }}>
                           <span style={{ fontSize: 14, fontWeight: 500, color: tier.color }}>{tier.tier}</span>
                           <div style={{ fontSize: 12, color: tier.color, marginTop: 2, opacity: 0.8 }}>{tier.sub}</div>
@@ -1003,26 +1030,26 @@ export default function AgentReadinessAuditPage() {
                             <div key={check.id} style={{
                               paddingBottom: i < tierChecks.length - 1 ? 12 : 0,
                               marginBottom: i < tierChecks.length - 1 ? 12 : 0,
-                              borderBottom: i < tierChecks.length - 1 ? '0.5px solid #F3F4F6' : 'none',
+                              borderBottom: i < tierChecks.length - 1 ? '0.5px solid var(--border)' : 'none',
                             }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                                 <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 3, background: SC[check.status]?.bg, color: SC[check.status]?.color }}>
                                   {check.status === 'pass' ? '✓ Done' : check.flagOnly ? '⚑ Flag' : '✗ Missing'}
                                 </span>
-                                <span style={{ fontSize: 13, fontWeight: 500, color: '#111827' }}>{check.label}</span>
+                                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{check.label}</span>
                               </div>
-                              <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.4, marginBottom: 5 }}>
+                              <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.4, marginBottom: 5 }}>
                                 {check.action ? check.action.split('.')[0] + '.' : 'Already implemented.'}
                               </div>
                               <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 5, flexWrap: 'wrap' }}>
                                 {check.status === 'pass' ? (
-                                  <span style={{ fontSize: 11, color: '#3B6D11', background: '#EAF3DE', padding: '2px 7px', borderRadius: 3 }}>✓ Done</span>
+                                  <span style={{ fontSize: 11, color: 'var(--success)', background: 'var(--success-soft)', padding: '2px 7px', borderRadius: 3 }}>✓ Done</span>
                                 ) : (
                                   <>
                                     <span style={{ fontSize: 11, color: tier.color, background: tier.bg, padding: '2px 7px', borderRadius: 3 }}>
                                       {EC[check.effort]?.label || 'Medium lift'} · {EFFORT_TIME[check.effort] || tier.efforts[check.id] || '–'}
                                     </span>
-                                    <span style={{ fontSize: 10, color: '#6B7280', background: '#F3F4F6', padding: '2px 7px', borderRadius: 10 }}>
+                                    <span style={{ fontSize: 10, color: 'var(--text-2)', background: 'var(--surface)', padding: '2px 7px', borderRadius: 10 }}>
                                       {ROLE_MAP[check.id] || 'Team'}
                                     </span>
                                   </>
@@ -1035,9 +1062,9 @@ export default function AgentReadinessAuditPage() {
                     );
                   })}
                 </div>
-                <div style={{ marginTop: '1rem', padding: '10px 14px', background: '#F9FAFB', borderRadius: 8 }}>
-                  <span style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>
-                    ℹ Effort estimates assume a developer familiar with your stack. WebMCP is not checkable via HTTP — marked fail by default. On-page checks require the action/form URLs to be provided. Score gain estimates are approximate.
+                <div style={{ marginTop: '1rem', padding: '10px 14px', background: 'var(--surface)', borderRadius: 8 }}>
+                  <span style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
+                    Effort estimates assume a developer familiar with your stack. WebMCP is not checkable via HTTP — marked fail by default. On-page checks require the action/form URLs to be provided. Score gain estimates are approximate.
                   </span>
                 </div>
               </div>

@@ -1,40 +1,40 @@
 import { memo } from 'react';
 
+const SpinnerIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}>
+    <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeOpacity="0.25" />
+    <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+  </svg>
+);
+
+function StatusBadge({ status }) {
+  const styles = {
+    success: { bg: 'var(--success-soft)', color: 'var(--success)', label: 'Scraped' },
+    failed:  { bg: 'var(--danger-soft)',  color: 'var(--danger)',  label: 'Failed' },
+    pending: { bg: 'var(--primary-soft)', color: 'var(--primary)', label: 'Scraping…', spinner: true },
+    queued:  { bg: 'var(--surface)',      color: 'var(--text-3)',  label: 'Queued' },
+  };
+  const s = styles[status] || styles.queued;
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      padding: '2px 8px', borderRadius: 'var(--r-pill)',
+      fontSize: 11, fontWeight: 600,
+      background: s.bg, color: s.color,
+    }}>
+      {s.spinner ? <SpinnerIcon /> : null}
+      {s.label}
+    </span>
+  );
+}
+
 function SerpUrls({ results, scrapeResults, isLoading }) {
   function getStatus(url) {
     if (!scrapeResults) return isLoading ? 'pending' : 'queued';
     const found = scrapeResults.find(r => r.url === url);
     if (!found) return 'queued';
     return found.success ? 'success' : 'failed';
-  }
-
-  function getStatusBadge(status) {
-    switch (status) {
-      case 'success': return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
-          ✓ Scraped
-        </span>
-      );
-      case 'failed': return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-600">
-          ✕ Failed
-        </span>
-      );
-      case 'pending': return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: '#3DAA8E1A', color: '#3DAA8E' }}>
-          <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          Scraping…
-        </span>
-      );
-      default: return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-[#F4F5F7] text-[#9CA3AF]">
-          Queued
-        </span>
-      );
-    }
   }
 
   function getErrorMessage(url) {
@@ -46,55 +46,78 @@ function SerpUrls({ results, scrapeResults, isLoading }) {
   const successCount = scrapeResults ? scrapeResults.filter(r => r.success).length : 0;
 
   return (
-    <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)' }}>
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-lg)',
+      overflow: 'hidden',
+      boxShadow: 'var(--shadow-sm)',
+    }}>
       {/* Header */}
-      <div className="px-5 py-3.5 border-b border-[#E5E7EB] bg-[#F9FAFB] flex items-center justify-between">
+      <div style={{
+        padding: '12px 20px',
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--surface)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
         <div>
-          <h2 className="font-semibold text-[#111827] text-sm">Top 10 SERP Results</h2>
-          <p className="text-xs text-[#6B7280] mt-0.5">URLs being analyzed from Google US results</p>
+          <h2 style={{ fontWeight: 600, color: 'var(--text)', fontSize: 14, margin: 0 }}>Top 10 SERP Results</h2>
+          <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2, marginBottom: 0 }}>URLs being analyzed from Google US results</p>
         </div>
         {scrapeResults && (
-          <span className="text-xs font-medium text-[#6B7280]">
+          <span style={{ fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-2)' }}>
             {successCount} / {results.length} scraped
           </span>
         )}
       </div>
 
       {/* URL list */}
-      <ol className="divide-y divide-[#F3F4F6]">
+      <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {results.map((result, i) => {
           const status = getStatus(result.url);
           const errMsg = getErrorMessage(result.url);
-
           return (
-            <li key={i} className="px-5 py-3 flex items-start gap-3 hover:bg-[#F9FAFB] transition-colors">
-              {/* Position */}
-              <span
-                className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white mt-0.5"
-                style={{ backgroundColor: '#3DAA8E' }}
-              >
+            <li key={i} style={{
+              padding: '12px 20px',
+              display: 'flex', alignItems: 'flex-start', gap: 12,
+              borderBottom: i < results.length - 1 ? '1px solid var(--border)' : 'none',
+            }}>
+              {/* Position bubble */}
+              <span style={{
+                flexShrink: 0, width: 22, height: 22, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)',
+                background: 'var(--primary)', color: '#fff', marginTop: 2,
+              }}>
                 {result.position}
               </span>
 
               {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-[#111827] truncate">{result.title}</div>
-                <div className="text-xs truncate mt-0.5" style={{ color: '#3DAA8E' }}>
-                  <a href={result.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {result.title}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--primary-text)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <a href={result.url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}
+                    onMouseEnter={e => e.target.style.textDecoration = 'underline'}
+                    onMouseLeave={e => e.target.style.textDecoration = 'none'}
+                  >
                     {result.url.length > 80 ? result.url.substring(0, 80) + '…' : result.url}
                   </a>
                 </div>
                 {result.snippet && (
-                  <div className="text-xs text-[#9CA3AF] mt-1 line-clamp-2">{result.snippet}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {result.snippet}
+                  </div>
                 )}
                 {errMsg && (
-                  <div className="text-xs text-red-500 mt-1">⚠ {errMsg}</div>
+                  <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 4 }}>⚠ {errMsg}</div>
                 )}
               </div>
 
               {/* Status badge */}
-              <div className="flex-shrink-0 mt-0.5">
-                {getStatusBadge(status)}
+              <div style={{ flexShrink: 0, marginTop: 2 }}>
+                <StatusBadge status={status} />
               </div>
             </li>
           );

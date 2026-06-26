@@ -1,27 +1,23 @@
 // View 1 — Morning Triage
 // Sections: Blocked Tasks · Overdue Tasks · WIP Status per Person · Today's P1 Tasks
 
-const P1_COLOR   = 'bg-red-50 border-red-200';
-const P2_COLOR   = 'bg-orange-50';
-const OVER_COLOR = 'text-red-600 font-semibold';
-
 function SectionHeader({ title, count, subtitle }) {
   return (
-    <div className="mb-4">
-      <div className="flex items-center gap-2">
-        <h2 className="text-[15px] font-semibold text-[#111827]">{title}</h2>
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', margin: 0 }}>{title}</h2>
         {count != null && (
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#F3F4F6] text-[#6B7280]">{count}</span>
+          <span style={{ fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: 'var(--surface)', color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{count}</span>
         )}
       </div>
-      {subtitle && <p className="text-xs text-[#9CA3AF] mt-0.5">{subtitle}</p>}
+      {subtitle && <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2, marginBottom: 0 }}>{subtitle}</p>}
     </div>
   );
 }
 
 function EmptyState({ message }) {
   return (
-    <div className="py-6 text-center text-sm text-[#9CA3AF] bg-white rounded-xl border border-[#E5E7EB]">
+    <div style={{ padding: '24px 0', textAlign: 'center', fontSize: 14, color: 'var(--text-3)', background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)' }}>
       {message}
     </div>
   );
@@ -31,17 +27,19 @@ function TaskRow({ task, onTaskClick, children }) {
   return (
     <tr
       onClick={() => onTaskClick(task)}
-      className={`border-b border-[#F3F4F6] cursor-pointer hover:bg-[#F9FAFB] transition-colors last:border-0 ${
-        task.priority === 'P1 - Urgent' ? 'bg-red-50/40' : ''
-      }`}
+      style={{
+        borderBottom: '1px solid var(--surface)',
+        cursor: 'pointer',
+        background: task.priority === 'P1 - Urgent' ? 'rgba(var(--danger-rgb, 211,52,46), 0.04)' : 'transparent',
+      }}
     >
       {children}
     </tr>
   );
 }
 
-function Td({ children, className = '' }) {
-  return <td className={`px-4 py-2.5 text-sm ${className}`}>{children}</td>;
+function Td({ children, style = {} }) {
+  return <td style={{ padding: '10px 16px', fontSize: 14, ...style }}>{children}</td>;
 }
 
 function formatDate(iso) {
@@ -50,34 +48,37 @@ function formatDate(iso) {
 }
 
 function PriorityBadge({ priority }) {
-  const colors = {
-    'P1 - Urgent': 'bg-red-100 text-red-700',
-    'P2 - High':   'bg-orange-100 text-orange-700',
-    'P3 - Normal': 'bg-blue-50 text-blue-700',
-    'P4 - Low':    'bg-gray-100 text-gray-500',
+  const styles = {
+    'P1 - Urgent': { background: 'var(--danger-soft)',  color: 'var(--danger)' },
+    'P2 - High':   { background: 'var(--warning-soft)', color: 'var(--warning)' },
+    'P3 - Normal': { background: 'var(--info-soft)',    color: 'var(--info)' },
+    'P4 - Low':    { background: 'var(--surface)',      color: 'var(--text-2)' },
   };
-  return (
-    <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded ${colors[priority] || 'bg-gray-100 text-gray-500'}`}>
-      {priority?.replace('P1 - ', '').replace('P2 - ', '').replace('P3 - ', '').replace('P4 - ', '') || '—'}
-    </span>
-  );
+  const s = styles[priority] || { background: 'var(--surface)', color: 'var(--text-2)' };
+  const label = priority?.replace('P1 - ', '').replace('P2 - ', '').replace('P3 - ', '').replace('P4 - ', '') || '—';
+  return <span style={{ display: 'inline-block', fontSize: 12, fontWeight: 500, padding: '2px 8px', borderRadius: 4, ...s }}>{label}</span>;
 }
 
 function StatusBadge({ status }) {
-  const colors = {
-    'Blocked':     'bg-red-100 text-red-700',
-    'In Progress': 'bg-blue-100 text-blue-700',
-    'In Review':   'bg-purple-100 text-purple-700',
-    'Backlog':     'bg-gray-100 text-gray-500',
-    'Today':       'bg-indigo-100 text-indigo-700',
-    'This Week':   'bg-teal-100 text-teal-700',
-    'Deferred':    'bg-yellow-100 text-yellow-700',
-    'Done':        'bg-green-100 text-green-700',
+  const styles = {
+    'Blocked':     { background: 'var(--danger-soft)',  color: 'var(--danger)' },
+    'In Progress': { background: 'var(--info-soft)',    color: 'var(--info)' },
+    'In Review':   { background: 'var(--info-soft)',    color: 'var(--info)' },
+    'Backlog':     { background: 'var(--surface)',      color: 'var(--text-2)' },
+    'Today':       { background: 'var(--primary-soft)', color: 'var(--primary)' },
+    'This Week':   { background: 'var(--primary-soft)', color: 'var(--primary)' },
+    'Deferred':    { background: 'var(--warning-soft)', color: 'var(--warning)' },
+    'Done':        { background: 'var(--success-soft)', color: 'var(--success)' },
   };
+  const s = styles[status] || { background: 'var(--surface)', color: 'var(--text-2)' };
+  return <span style={{ display: 'inline-block', fontSize: 12, fontWeight: 500, padding: '2px 8px', borderRadius: 4, ...s }}>{status || '—'}</span>;
+}
+
+function Th({ children }) {
   return (
-    <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded ${colors[status] || 'bg-gray-100 text-gray-500'}`}>
-      {status || '—'}
-    </span>
+    <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+      {children}
+    </th>
   );
 }
 
@@ -91,50 +92,56 @@ function WipCard({ person, tasks, config, onTaskClick }) {
   const wipLimit  = config.wipLimit || 3;
   const wipCount  = wip.length;
 
-  const wipColor =
-    wipCount === 0 && backlog.length > 15 ? 'border-yellow-300 bg-yellow-50' :
-    wipCount <= 2 ? 'border-green-200 bg-green-50' :
-    wipCount === 3 ? 'border-amber-300 bg-amber-50' :
-    'border-red-300 bg-red-50';
+  const cardBorder =
+    wipCount === 0 && backlog.length > 15 ? 'var(--warning)' :
+    wipCount <= 2 ? 'var(--success)' :
+    wipCount === 3 ? 'var(--warning)' :
+    'var(--danger)';
+
+  const cardBg =
+    wipCount === 0 && backlog.length > 15 ? 'var(--warning-soft)' :
+    wipCount <= 2 ? 'var(--success-soft)' :
+    wipCount === 3 ? 'var(--warning-soft)' :
+    'var(--danger-soft)';
 
   const wipIndicator =
-    wipCount <= 2 ? { color: 'text-green-600', label: 'On track' } :
-    wipCount === 3 ? { color: 'text-amber-600', label: 'At limit' } :
-    { color: 'text-red-600', label: 'Over limit' };
+    wipCount <= 2 ? { color: 'var(--success)', label: 'On track' } :
+    wipCount === 3 ? { color: 'var(--warning)', label: 'At limit' } :
+    { color: 'var(--danger)', label: 'Over limit' };
 
   return (
-    <div className={`rounded-xl border-2 ${wipColor} p-4`}>
-      <div className="flex items-start justify-between mb-3">
+    <div style={{ borderRadius: 'var(--r-lg)', border: `2px solid ${cardBorder}`, background: cardBg, padding: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
         <div>
-          <p className="text-sm font-semibold text-[#111827]">{person}</p>
-          <p className={`text-xs font-medium mt-0.5 ${wipIndicator.color}`}>{wipIndicator.label}</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: 0 }}>{person}</p>
+          <p style={{ fontSize: 12, fontWeight: 500, marginTop: 2, marginBottom: 0, color: wipIndicator.color }}>{wipIndicator.label}</p>
         </div>
-        <div className="text-right">
-          <p className={`text-2xl font-bold leading-none ${wipCount > wipLimit ? 'text-red-600' : 'text-[#111827]'}`}>
+        <div style={{ textAlign: 'right' }}>
+          <p style={{ fontSize: 24, fontWeight: 700, lineHeight: 1, margin: 0, fontFamily: 'var(--font-mono)', color: wipCount > wipLimit ? 'var(--danger)' : 'var(--text)' }}>
             {wipCount}
           </p>
-          <p className="text-xs text-[#9CA3AF]">/ {wipLimit} WIP</p>
+          <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '2px 0 0', fontFamily: 'var(--font-mono)' }}>/ {wipLimit} WIP</p>
         </div>
       </div>
 
-      <div className="flex gap-3 text-xs">
+      <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
         <div>
-          <span className="text-[#9CA3AF]">In Progress</span>
-          <span className="ml-1.5 font-semibold text-[#111827]">{wipHours > 0 ? `${wipHours}h` : '—'}</span>
+          <span style={{ color: 'var(--text-3)' }}>In Progress</span>
+          <span style={{ marginLeft: 6, fontWeight: 600, color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>{wipHours > 0 ? `${wipHours}h` : '—'}</span>
         </div>
-        <div className="w-px bg-[#E5E7EB]" />
+        <div style={{ width: 1, background: 'var(--border)' }} />
         <div>
-          <span className="text-[#9CA3AF]">Blocked</span>
-          <span className={`ml-1.5 font-semibold ${blocked.length > 0 ? 'text-red-600' : 'text-[#111827]'}`}>
+          <span style={{ color: 'var(--text-3)' }}>Blocked</span>
+          <span style={{ marginLeft: 6, fontWeight: 600, color: blocked.length > 0 ? 'var(--danger)' : 'var(--text)', fontFamily: 'var(--font-mono)' }}>
             {blocked.length}
           </span>
         </div>
-        <div className="w-px bg-[#E5E7EB]" />
+        <div style={{ width: 1, background: 'var(--border)' }} />
         <div>
-          <span className="text-[#9CA3AF]">Backlog</span>
-          <span className={`ml-1.5 font-semibold ${backlog.length > 15 ? 'text-yellow-600' : 'text-[#111827]'}`}>
+          <span style={{ color: 'var(--text-3)' }}>Backlog</span>
+          <span style={{ marginLeft: 6, fontWeight: 600, color: backlog.length > 15 ? 'var(--warning)' : 'var(--text)', fontFamily: 'var(--font-mono)' }}>
             {backlog.length}
-            {backlog.length > 15 && <span className="ml-1 text-yellow-600 text-[10px] font-semibold">Large queue</span>}
+            {backlog.length > 15 && <span style={{ marginLeft: 4, fontSize: 10, fontWeight: 600, color: 'var(--warning)' }}>Large queue</span>}
           </span>
         </div>
       </div>
@@ -147,7 +154,6 @@ function WipCard({ person, tasks, config, onTaskClick }) {
 export default function MorningTriageView({ tasks, config, onTaskClick }) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
 
-  // ── Blocked tasks ─────────────────────────────────────────────────────────
   const blocked = tasks
     .filter(t => t.status === 'Blocked')
     .sort((a, b) => {
@@ -156,7 +162,6 @@ export default function MorningTriageView({ tasks, config, onTaskClick }) {
       return da - db;
     });
 
-  // ── Overdue tasks ─────────────────────────────────────────────────────────
   const overdue = tasks
     .filter(t => t.isOverdue)
     .sort((a, b) => {
@@ -173,40 +178,32 @@ export default function MorningTriageView({ tasks, config, onTaskClick }) {
     return acc;
   }, {});
 
-  // ── WIP per person ────────────────────────────────────────────────────────
   const persons = [...new Set(tasks.map(t => t.assignedTo).filter(Boolean))].sort();
   const tasksByPerson = persons.reduce((acc, p) => {
     acc[p] = tasks.filter(t => t.assignedTo === p);
     return acc;
   }, {});
 
-  // ── Today's P1 ────────────────────────────────────────────────────────────
   const p1Tasks = tasks.filter(t =>
     t.priority === 'P1 - Urgent' && t.status !== 'Done' && t.status !== 'Archived'
   );
 
+  const tableCard = { background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', overflow: 'hidden' };
+
   return (
-    <div className="space-y-8">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
 
       {/* ── Blocked Tasks ─────────────────────────────────────────────────── */}
       <section>
-        <SectionHeader
-          title="Blocked Tasks"
-          count={blocked.length}
-          subtitle="Sorted by due date — address these first"
-        />
+        <SectionHeader title="Blocked Tasks" count={blocked.length} subtitle="Sorted by due date — address these first" />
         {blocked.length === 0 ? (
           <EmptyState message="No blocked tasks — clear!" />
         ) : (
-          <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-            <table className="w-full">
+          <div style={tableCard}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="border-b border-[#E5E7EB]">
-                  {['ID', 'Task', 'Client', 'Assignee', 'Due Date', 'Notes'].map(h => (
-                    <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wide">
-                      {h}
-                    </th>
-                  ))}
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['ID', 'Task', 'Client', 'Assignee', 'Due Date', 'Notes'].map(h => <Th key={h}>{h}</Th>)}
                 </tr>
               </thead>
               <tbody>
@@ -214,18 +211,18 @@ export default function MorningTriageView({ tasks, config, onTaskClick }) {
                   const pastDue = t.dueDate && new Date(t.dueDate) < today;
                   return (
                     <TaskRow key={t.id} task={t} onTaskClick={onTaskClick}>
-                      <Td className="font-mono text-xs text-[#9CA3AF]">{t.id}</Td>
-                      <Td className="font-medium text-[#111827] max-w-[200px]">
-                        <span className="line-clamp-2">{t.name}</span>
+                      <Td style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-3)' }}>{t.id}</Td>
+                      <Td style={{ fontWeight: 500, color: 'var(--text)', maxWidth: 200 }}>
+                        <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{t.name}</span>
                       </Td>
-                      <Td className="text-[#6B7280]">{t.client || '—'}</Td>
-                      <Td className="text-[#6B7280]">{t.assignedTo || '—'}</Td>
-                      <Td className={pastDue ? OVER_COLOR : 'text-[#6B7280]'}>
+                      <Td style={{ color: 'var(--text-2)' }}>{t.client || '—'}</Td>
+                      <Td style={{ color: 'var(--text-2)' }}>{t.assignedTo || '—'}</Td>
+                      <Td style={{ color: pastDue ? 'var(--danger)' : 'var(--text-2)', fontWeight: pastDue ? 600 : 400 }}>
                         {formatDate(t.dueDate)}
-                        {pastDue && <span className="ml-1 text-xs">⚠</span>}
+                        {pastDue && <span style={{ marginLeft: 4 }}>⚠</span>}
                       </Td>
-                      <Td className="text-[#6B7280] max-w-[180px]">
-                        <span className="line-clamp-2 text-xs">{t.notes || '—'}</span>
+                      <Td style={{ color: 'var(--text-2)', maxWidth: 180 }}>
+                        <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: 12 }}>{t.notes || '—'}</span>
                       </Td>
                     </TaskRow>
                   );
@@ -238,39 +235,33 @@ export default function MorningTriageView({ tasks, config, onTaskClick }) {
 
       {/* ── Overdue Tasks ─────────────────────────────────────────────────── */}
       <section>
-        <SectionHeader
-          title="Overdue Tasks"
-          count={overdue.length}
-          subtitle="Grouped by assignee · P1 first, then by days overdue"
-        />
+        <SectionHeader title="Overdue Tasks" count={overdue.length} subtitle="Grouped by assignee · P1 first, then by days overdue" />
         {overdue.length === 0 ? (
           <EmptyState message="No overdue tasks — all clear!" />
         ) : (
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {Object.entries(overdueByPerson).map(([person, personTasks]) => (
-              <div key={person} className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-                <div className="px-4 py-2.5 border-b border-[#F3F4F6] bg-[#F9FAFB]">
-                  <span className="text-sm font-semibold text-[#374151]">{person}</span>
-                  <span className="ml-2 text-xs text-[#9CA3AF]">{personTasks.length} overdue</span>
+              <div key={person} style={tableCard}>
+                <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--surface)', background: 'var(--surface)' }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{person}</span>
+                  <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>{personTasks.length} overdue</span>
                 </div>
-                <table className="w-full">
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr className="border-b border-[#F3F4F6]">
-                      {['ID', 'Task', 'Client', 'Priority', 'Days Overdue'].map(h => (
-                        <th key={h} className="px-4 py-2 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wide">{h}</th>
-                      ))}
+                    <tr style={{ borderBottom: '1px solid var(--surface)' }}>
+                      {['ID', 'Task', 'Client', 'Priority', 'Days Overdue'].map(h => <Th key={h}>{h}</Th>)}
                     </tr>
                   </thead>
                   <tbody>
                     {personTasks.map(t => (
                       <TaskRow key={t.id} task={t} onTaskClick={onTaskClick}>
-                        <Td className="font-mono text-xs text-[#9CA3AF]">{t.id}</Td>
-                        <Td className="font-medium text-[#111827] max-w-[220px]">
-                          <span className="line-clamp-2">{t.name}</span>
+                        <Td style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-3)' }}>{t.id}</Td>
+                        <Td style={{ fontWeight: 500, color: 'var(--text)', maxWidth: 220 }}>
+                          <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{t.name}</span>
                         </Td>
-                        <Td className="text-[#6B7280]">{t.client || '—'}</Td>
+                        <Td style={{ color: 'var(--text-2)' }}>{t.client || '—'}</Td>
                         <Td><PriorityBadge priority={t.priority} /></Td>
-                        <Td className={t.priority === 'P1 - Urgent' ? 'text-red-600 font-bold' : 'text-[#6B7280]'}>
+                        <Td style={{ color: t.priority === 'P1 - Urgent' ? 'var(--danger)' : 'var(--text-2)', fontWeight: t.priority === 'P1 - Urgent' ? 700 : 400, fontFamily: 'var(--font-mono)' }}>
                           {t.daysOverdue != null ? `${t.daysOverdue}d` : '—'}
                         </Td>
                       </TaskRow>
@@ -285,22 +276,13 @@ export default function MorningTriageView({ tasks, config, onTaskClick }) {
 
       {/* ── WIP Status per Person ─────────────────────────────────────────── */}
       <section>
-        <SectionHeader
-          title="WIP Status"
-          subtitle={`WIP limit: ${config.wipLimit || 3} per person · Green ≤2, Amber = 3, Red ≥4`}
-        />
+        <SectionHeader title="WIP Status" subtitle={`WIP limit: ${config.wipLimit || 3} per person · Green ≤2, Amber = 3, Red ≥4`} />
         {persons.length === 0 ? (
           <EmptyState message="No assignees found in active tasks." />
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
             {persons.map(p => (
-              <WipCard
-                key={p}
-                person={p}
-                tasks={tasksByPerson[p]}
-                config={config}
-                onTaskClick={onTaskClick}
-              />
+              <WipCard key={p} person={p} tasks={tasksByPerson[p]} config={config} onTaskClick={onTaskClick} />
             ))}
           </div>
         )}
@@ -308,34 +290,28 @@ export default function MorningTriageView({ tasks, config, onTaskClick }) {
 
       {/* ── Today's P1 Tasks ─────────────────────────────────────────────── */}
       <section>
-        <SectionHeader
-          title="Today's P1 Tasks"
-          count={p1Tasks.length}
-          subtitle="All Urgent priority tasks not yet Done"
-        />
+        <SectionHeader title="Today's P1 Tasks" count={p1Tasks.length} subtitle="All Urgent priority tasks not yet Done" />
         {p1Tasks.length === 0 ? (
           <EmptyState message="No P1 tasks outstanding." />
         ) : (
-          <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-            <table className="w-full">
+          <div style={tableCard}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="border-b border-[#E5E7EB]">
-                  {['ID', 'Task', 'Client', 'Assignee', 'Status', 'Due Date'].map(h => (
-                    <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wide">{h}</th>
-                  ))}
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['ID', 'Task', 'Client', 'Assignee', 'Status', 'Due Date'].map(h => <Th key={h}>{h}</Th>)}
                 </tr>
               </thead>
               <tbody>
                 {p1Tasks.map(t => (
                   <TaskRow key={t.id} task={t} onTaskClick={onTaskClick}>
-                    <Td className="font-mono text-xs text-[#9CA3AF]">{t.id}</Td>
-                    <Td className="font-semibold text-[#111827] max-w-[200px]">
-                      <span className="line-clamp-2">{t.name}</span>
+                    <Td style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-3)' }}>{t.id}</Td>
+                    <Td style={{ fontWeight: 600, color: 'var(--text)', maxWidth: 200 }}>
+                      <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{t.name}</span>
                     </Td>
-                    <Td className="text-[#6B7280]">{t.client || '—'}</Td>
-                    <Td className="text-[#6B7280]">{t.assignedTo || '—'}</Td>
+                    <Td style={{ color: 'var(--text-2)' }}>{t.client || '—'}</Td>
+                    <Td style={{ color: 'var(--text-2)' }}>{t.assignedTo || '—'}</Td>
                     <Td><StatusBadge status={t.status} /></Td>
-                    <Td className={t.isOverdue ? OVER_COLOR : 'text-[#6B7280]'}>{formatDate(t.dueDate)}</Td>
+                    <Td style={{ color: t.isOverdue ? 'var(--danger)' : 'var(--text-2)', fontWeight: t.isOverdue ? 600 : 400 }}>{formatDate(t.dueDate)}</Td>
                   </TaskRow>
                 ))}
               </tbody>

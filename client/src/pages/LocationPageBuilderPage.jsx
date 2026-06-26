@@ -2,32 +2,37 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { lpb } from '../lib/lpbApi';
 
-const TEAL = '#3DAA8E';
-
 const STAGE_COLORS = {
-  'Draft': '#9CA3AF', 'Keywords In Progress': '#F59E0B', 'Keywords Finalized': '#3B82F6',
-  'Content Generated': '#8B5CF6', 'SEO Review': '#F59E0B', 'SEO Approved': '#10B981',
-  'Clinical Review': '#F59E0B', 'Clinical Approved': '#10B981', 'Content Review': '#F59E0B',
-  'Content Approved': '#10B981', 'Client Review': '#F59E0B', 'Client Approved': '#059669', 'Exported': '#059669',
+  'Draft':                { bg: 'var(--surface)',       text: 'var(--text-3)' },
+  'Keywords In Progress': { bg: 'var(--warning-soft)',  text: 'var(--warning)' },
+  'Keywords Finalized':   { bg: 'var(--info-soft)',     text: 'var(--info)' },
+  'Content Generated':    { bg: 'var(--primary-soft)',  text: 'var(--primary-text)' },
+  'SEO Review':           { bg: 'var(--warning-soft)',  text: 'var(--warning)' },
+  'SEO Approved':         { bg: 'var(--success-soft)',  text: 'var(--success)' },
+  'Clinical Review':      { bg: 'var(--warning-soft)',  text: 'var(--warning)' },
+  'Clinical Approved':    { bg: 'var(--success-soft)',  text: 'var(--success)' },
+  'Content Review':       { bg: 'var(--warning-soft)',  text: 'var(--warning)' },
+  'Content Approved':     { bg: 'var(--success-soft)',  text: 'var(--success)' },
+  'Client Review':        { bg: 'var(--warning-soft)',  text: 'var(--warning)' },
+  'Client Approved':      { bg: 'var(--success-soft)',  text: 'var(--success)' },
+  'Exported':             { bg: 'var(--success-soft)',  text: 'var(--success)' },
 };
 
-function Header() {
-  return (
-    <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6">
-      <div className="max-w-6xl mx-auto w-full flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ backgroundColor: TEAL }}>
-          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
-        </div>
-        <span className="font-bold text-[#111827] text-sm tracking-tight">Location + Service Page Builder</span>
-        <span className="text-[#9CA3AF] text-sm">· Arena</span>
-      </div>
-    </header>
-  );
-}
-
 function StatusPill({ status }) {
-  const c = STAGE_COLORS[status] || '#9CA3AF';
-  return <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: c + '1A', color: c }}>{status}</span>;
+  const c = STAGE_COLORS[status] || { bg: 'var(--surface)', text: 'var(--text-3)' };
+  return (
+    <span style={{
+      fontSize: '0.75rem',
+      fontWeight: 600,
+      padding: '2px 8px',
+      borderRadius: '9999px',
+      backgroundColor: c.bg,
+      color: c.text,
+      display: 'inline-block',
+    }}>
+      {status}
+    </span>
+  );
 }
 
 function NewPageWizard({ onClose, onCreated }) {
@@ -55,45 +60,69 @@ function NewPageWizard({ onClose, onCreated }) {
     setBusy(false);
   }
 
+  const overlayStyle = {
+    position: 'fixed', inset: 0,
+    background: 'rgba(0,0,0,0.4)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 50, padding: '1rem',
+  };
+  const modalStyle = {
+    background: 'var(--card)',
+    borderRadius: 'var(--r-lg)',
+    border: '1px solid var(--border)',
+    width: '100%', maxWidth: '32rem',
+    padding: '1.5rem',
+  };
+  const labelStyle = { display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-2)', marginBottom: '0.25rem' };
+  const selectStyle = { width: '100%', border: '1px solid var(--border)', borderRadius: 'var(--r-md,6px)', padding: '0.5rem 0.75rem', fontSize: '0.875rem', background: 'var(--card)', color: 'var(--text)' };
+
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
-        <h2 className="text-lg font-bold text-[#111827] mb-1">New Page</h2>
-        <p className="text-sm text-[#6B7280] mb-4">Select a Client · Service · Location. Eligibility is GBP-backed (§15.1).</p>
-        {!data && !error && <p className="text-sm text-[#6B7280]">Loading…</p>}
-        {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
+    <div style={overlayStyle} onClick={onClose}>
+      <div style={modalStyle} onClick={e => e.stopPropagation()}>
+        <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.25rem' }}>New Page</h2>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginBottom: '1rem' }}>Select a Client · Service · Location. Eligibility is GBP-backed (§15.1).</p>
+        {!data && !error && <p style={{ fontSize: '0.875rem', color: 'var(--text-2)' }}>Loading…</p>}
+        {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger,#EF4444)', marginBottom: '0.75rem' }}>{error}</p>}
         {data && (
-          <div className="space-y-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div>
-              <label className="block text-xs font-medium text-[#6B7280] mb-1">Client</label>
-              <div className="text-sm font-medium text-[#111827] px-3 py-2 bg-[#F4F5F7] rounded-md">{data.client.name}</div>
+              <label style={labelStyle}>Client</label>
+              <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)', padding: '0.5rem 0.75rem', background: 'var(--surface)', borderRadius: 'var(--r-md,6px)' }}>{data.client.name}</div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#6B7280] mb-1">Service</label>
-              <select className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm" value={serviceId} onChange={e => { setServiceId(e.target.value); setResult(null); }}>
+              <label style={labelStyle}>Service</label>
+              <select style={selectStyle} value={serviceId} onChange={e => { setServiceId(e.target.value); setResult(null); }}>
                 <option value="">Select a service…</option>
                 {data.services.map(s => <option key={s.id} value={s.id}>{s.name} ({s.category})</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#6B7280] mb-1">Location</label>
-              <select className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm" value={locationId} onChange={e => { setLocationId(e.target.value); setResult(null); }}>
+              <label style={labelStyle}>Location</label>
+              <select style={selectStyle} value={locationId} onChange={e => { setLocationId(e.target.value); setResult(null); }}>
                 <option value="">Select a location…</option>
                 {data.locations.map(l => <option key={l.id} value={l.id}>{l.location_name}{l.verified ? '' : ' (not GBP-verified)'}</option>)}
               </select>
             </div>
 
             {result && (
-              <div className={`text-sm rounded-md p-3 ${result.blocked ? 'bg-red-50 text-red-700' : result.existing ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}>
+              <div style={{
+                fontSize: '0.875rem', borderRadius: 'var(--r-md,6px)', padding: '0.75rem',
+                background: result.blocked ? 'var(--danger-soft,#FEF2F2)' : result.existing ? '#FFFBEB' : 'var(--success-soft,#ECFDF5)',
+                color: result.blocked ? 'var(--danger,#EF4444)' : result.existing ? '#B45309' : 'var(--success,#059669)',
+              }}>
                 {result.blocked && <>⛔ Not eligible: {result.eligibility.reason}</>}
-                {result.existing && <>⚠ A page for this tuple already exists. <button className="underline font-medium" onClick={() => onCreated(result.page.id)}>Open it →</button></>}
-                {!result.blocked && !result.existing && result.page && <>✓ Eligible — page created. <button className="underline font-medium" onClick={() => onCreated(result.page.id)}>Open page →</button></>}
+                {result.existing && <>⚠ A page for this tuple already exists. <button style={{ textDecoration: 'underline', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }} onClick={() => onCreated(result.page.id)}>Open it →</button></>}
+                {!result.blocked && !result.existing && result.page && <>✓ Eligible — page created. <button style={{ textDecoration: 'underline', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }} onClick={() => onCreated(result.page.id)}>Open page →</button></>}
               </div>
             )}
 
-            <div className="flex justify-end gap-2 pt-2">
-              <button className="px-4 py-2 text-sm text-[#6B7280]" onClick={onClose}>Cancel</button>
-              <button disabled={!serviceId || !locationId || busy} className="px-4 py-2 text-sm font-medium text-white rounded-md disabled:opacity-50" style={{ backgroundColor: TEAL }} onClick={check}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', paddingTop: '0.5rem' }}>
+              <button style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer' }} onClick={onClose}>Cancel</button>
+              <button
+                disabled={!serviceId || !locationId || busy}
+                style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, color: '#fff', borderRadius: 'var(--r-md,6px)', border: 'none', cursor: (!serviceId || !locationId || busy) ? 'not-allowed' : 'pointer', opacity: (!serviceId || !locationId || busy) ? 0.5 : 1, background: 'var(--primary)' }}
+                onClick={check}
+              >
                 {busy ? 'Checking…' : 'Check eligibility & create'}
               </button>
             </div>
@@ -134,48 +163,82 @@ export default function LocationPageBuilderPage() {
 
   return (
     <>
-      <main className="max-w-6xl mx-auto px-8 py-8">
-        <div className="flex items-center justify-between mb-6">
+      <main style={{ maxWidth: '72rem', margin: '0 auto', padding: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
           <div>
-            <h1 className="text-[22px] font-bold text-[#111827]">Pages</h1>
-            <p className="text-sm text-[#6B7280] mt-1">Every Location × Service page, its stage, approvals, and QA status.</p>
+            <h1 style={{ fontSize: '1.375rem', fontWeight: 700, color: 'var(--text)' }}>Pages</h1>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginTop: '0.25rem' }}>Every Location × Service page, its stage, approvals, and QA status.</p>
           </div>
-          <div className="flex gap-2">
-            <button onClick={seed} disabled={seeding} className="px-3 py-2 text-sm border border-[#E5E7EB] bg-white rounded-md text-[#6B7280] disabled:opacity-50">
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={seed}
+              disabled={seeding}
+              style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', border: '1px solid var(--border)', background: 'var(--card)', borderRadius: 'var(--r-md,6px)', color: 'var(--text-2)', cursor: seeding ? 'not-allowed' : 'pointer', opacity: seeding ? 0.5 : 1 }}
+            >
               {seeding ? 'Seeding…' : 'Seed Neuro Wellness Spa'}
             </button>
-            <button onClick={() => setWizard(true)} className="px-4 py-2 text-sm font-medium text-white rounded-md" style={{ backgroundColor: TEAL }}>+ New Page</button>
+            <button
+              onClick={() => setWizard(true)}
+              style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, color: '#fff', background: 'var(--primary)', borderRadius: 'var(--r-md,6px)', border: 'none', cursor: 'pointer' }}
+            >
+              + New Page
+            </button>
           </div>
         </div>
 
-        {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
+        {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger,#EF4444)', marginBottom: '0.75rem' }}>{error}</p>}
 
-        <input value={filter} onChange={e => setFilter(e.target.value)} placeholder="Filter by service, location, status, keyword…"
-          className="w-full mb-4 border border-[#E5E7EB] rounded-md px-3 py-2 text-sm bg-white" />
+        <input
+          value={filter}
+          onChange={e => setFilter(e.target.value)}
+          placeholder="Filter by service, location, status, keyword…"
+          style={{ width: '100%', marginBottom: '1rem', border: '1px solid var(--border)', borderRadius: 'var(--r-md,6px)', padding: '0.5rem 0.75rem', fontSize: '0.875rem', background: 'var(--card)', color: 'var(--text)', boxSizing: 'border-box' }}
+        />
 
-        <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-          <table className="w-full text-sm">
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+          <table style={{ width: '100%', fontSize: '0.875rem', borderCollapse: 'collapse' }}>
             <thead>
-              <tr className="text-left text-xs text-[#6B7280] border-b border-[#E5E7EB] bg-[#FAFAFA]">
-                <th className="px-4 py-3 font-medium">Service</th>
-                <th className="px-4 py-3 font-medium">Location</th>
-                <th className="px-4 py-3 font-medium">Stage</th>
-                <th className="px-4 py-3 font-medium">Primary keywords</th>
-                <th className="px-4 py-3 font-medium">QA</th>
-                <th className="px-4 py-3 font-medium">Updated</th>
+              <tr style={{ textAlign: 'left', fontSize: '0.75rem', color: 'var(--text-2)', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Service</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Location</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Stage</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Primary keywords</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>QA</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Updated</th>
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={6} className="px-4 py-8 text-center text-[#9CA3AF]">Loading…</td></tr>}
-              {!loading && !filtered.length && <tr><td colSpan={6} className="px-4 py-8 text-center text-[#9CA3AF]">No pages yet. Seed the client, then create one.</td></tr>}
+              {loading && (
+                <tr>
+                  <td colSpan={6} style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-3)' }}>Loading…</td>
+                </tr>
+              )}
+              {!loading && !filtered.length && (
+                <tr>
+                  <td colSpan={6} style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-3)' }}>No pages yet. Seed the client, then create one.</td>
+                </tr>
+              )}
               {filtered.map(r => (
-                <tr key={r.id} className="border-b border-[#F1F1F1] hover:bg-[#F9FAFB] cursor-pointer" onClick={() => navigate(`/location-page-builder/${r.id}`)}>
-                  <td className="px-4 py-3 font-medium text-[#111827]">{r.service_name}</td>
-                  <td className="px-4 py-3 text-[#6B7280]">{r.location_name}</td>
-                  <td className="px-4 py-3"><StatusPill status={r.status} /></td>
-                  <td className="px-4 py-3 text-[#6B7280]">{(r.primary_keywords || []).join(', ') || '—'}</td>
-                  <td className="px-4 py-3">{r.qa_blocking == null ? '—' : r.qa_blocking === 0 ? <span className="text-green-600">✓ clean</span> : <span className="text-red-600">{r.qa_blocking} blocking</span>}</td>
-                  <td className="px-4 py-3 text-[#9CA3AF] text-xs">{isStale(r) && <span className="text-amber-600 mr-1" title="Stalled 7+ days">⏳</span>}{new Date(r.updated_at).toLocaleDateString()}</td>
+                <tr
+                  key={r.id}
+                  style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
+                  onMouseLeave={e => e.currentTarget.style.background = ''}
+                  onClick={() => navigate(`/location-page-builder/${r.id}`)}
+                >
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 500, color: 'var(--text)' }}>{r.service_name}</td>
+                  <td style={{ padding: '0.75rem 1rem', color: 'var(--text-2)' }}>{r.location_name}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}><StatusPill status={r.status} /></td>
+                  <td style={{ padding: '0.75rem 1rem', color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{(r.primary_keywords || []).join(', ') || '—'}</td>
+                  <td style={{ padding: '0.75rem 1rem' }}>
+                    {r.qa_blocking == null ? '—' : r.qa_blocking === 0
+                      ? <span style={{ color: 'var(--success,#10B981)' }}>✓ clean</span>
+                      : <span style={{ color: 'var(--danger,#EF4444)' }}>{r.qa_blocking} blocking</span>}
+                  </td>
+                  <td style={{ padding: '0.75rem 1rem', color: 'var(--text-3)', fontSize: '0.75rem' }}>
+                    {isStale(r) && <span style={{ color: '#D97706', marginRight: '0.25rem' }} title="Stalled 7+ days">⏳</span>}
+                    {new Date(r.updated_at).toLocaleDateString()}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -3,25 +3,25 @@
 
 function SectionHeader({ title, subtitle }) {
   return (
-    <div className="mb-4">
-      <h2 className="text-[15px] font-semibold text-[#111827]">{title}</h2>
-      {subtitle && <p className="text-xs text-[#9CA3AF] mt-0.5">{subtitle}</p>}
+    <div style={{ marginBottom: 16 }}>
+      <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', margin: 0 }}>{title}</h2>
+      {subtitle && <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2, marginBottom: 0 }}>{subtitle}</p>}
     </div>
   );
 }
 
 function EmptyState({ message }) {
   return (
-    <div className="py-6 text-center text-sm text-[#9CA3AF] bg-white rounded-xl border border-[#E5E7EB]">{message}</div>
+    <div style={{ padding: '24px 0', textAlign: 'center', fontSize: 14, color: 'var(--text-3)', background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)' }}>{message}</div>
   );
 }
 
-function Td({ children, className = '' }) {
-  return <td className={`px-4 py-2.5 text-sm ${className}`}>{children}</td>;
+function Td({ children, style = {} }) {
+  return <td style={{ padding: '10px 16px', fontSize: 14, ...style }}>{children}</td>;
 }
 
 function Th({ children }) {
-  return <th className="px-4 py-2.5 text-left text-xs font-semibold text-[#9CA3AF] uppercase tracking-wide">{children}</th>;
+  return <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{children}</th>;
 }
 
 function formatDate(iso) {
@@ -52,7 +52,7 @@ function inferTaskType(name) {
 
 function getWeekBounds() {
   const now = new Date();
-  const day = now.getDay(); // 0=Sun
+  const day = now.getDay();
   const monday = new Date(now);
   monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
   monday.setHours(0, 0, 0, 0);
@@ -65,8 +65,6 @@ function getWeekBounds() {
 export default function WeeklyReviewView({ tasks, archiveTasks, onTaskClick }) {
   const { monday, sunday } = getWeekBounds();
 
-  // ── Completion summary ────────────────────────────────────────────────────
-  // Tasks from archive that are Done within the current week (by dueDate or week field)
   const completedThisWeek = archiveTasks.filter(t => {
     if (t.status !== 'Done') return false;
     if (t.dueDate) {
@@ -84,7 +82,6 @@ export default function WeeklyReviewView({ tasks, archiveTasks, onTaskClick }) {
     return acc;
   }, {});
 
-  // Also check main task board for Done tasks this week (might not be in archive yet)
   const doneOnBoard = tasks.filter(t => {
     if (t.status !== 'Done') return false;
     if (t.dueDate) {
@@ -96,10 +93,8 @@ export default function WeeklyReviewView({ tasks, archiveTasks, onTaskClick }) {
 
   const allCompletedThisWeek = [...completedThisWeek, ...doneOnBoard];
 
-  // ── Slippage tracker ──────────────────────────────────────────────────────
   const deferred = tasks.filter(t => t.status === 'Deferred');
 
-  // ── Estimation accuracy ───────────────────────────────────────────────────
   const allDone = [...archiveTasks.filter(t => t.status === 'Done'), ...tasks.filter(t => t.status === 'Done')];
 
   const byType = allDone.reduce((acc, t) => {
@@ -124,7 +119,6 @@ export default function WeeklyReviewView({ tasks, archiveTasks, onTaskClick }) {
     }))
     .sort((a, b) => b.count - a.count);
 
-  // ── Hours logged ──────────────────────────────────────────────────────────
   const persons = [...new Set(allCompletedThisWeek.map(t => t.assignedTo).filter(Boolean))].sort();
   const hoursByPerson = persons.map(p => {
     const personTasks = allCompletedThisWeek.filter(t => t.assignedTo === p);
@@ -132,8 +126,10 @@ export default function WeeklyReviewView({ tasks, archiveTasks, onTaskClick }) {
     return { person: p, tasks: personTasks, hours };
   });
 
+  const tableCard = { background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', overflow: 'hidden' };
+
   return (
-    <div className="space-y-8">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
 
       {/* ── Completion Summary ────────────────────────────────────────────── */}
       <section>
@@ -144,29 +140,32 @@ export default function WeeklyReviewView({ tasks, archiveTasks, onTaskClick }) {
         {allCompletedThisWeek.length === 0 ? (
           <EmptyState message="No completed tasks found for this week. Check that done tasks are archived with a due date in the current week." />
         ) : (
-          <div className="space-y-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {Object.entries(completionByPerson).map(([person, data]) => (
-              <div key={person} className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[#F3F4F6] bg-[#F9FAFB]">
-                  <span className="text-sm font-semibold text-[#374151]">{person}</span>
-                  <div className="flex items-center gap-4 text-xs text-[#9CA3AF]">
-                    <span><strong className="text-[#111827]">{data.tasks.length}</strong> completed</span>
-                    <span><strong className="text-[#111827]">{data.hours > 0 ? `${data.hours}h` : '—'}</strong> estimated</span>
+              <div key={person} style={tableCard}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--surface)', background: 'var(--surface)' }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{person}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 12, color: 'var(--text-3)' }}>
+                    <span><strong style={{ color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>{data.tasks.length}</strong> completed</span>
+                    <span><strong style={{ color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>{data.hours > 0 ? `${data.hours}h` : '—'}</strong> estimated</span>
                   </div>
                 </div>
-                <div className="divide-y divide-[#F3F4F6]">
+                <div>
                   {data.tasks.map(t => (
                     <div
                       key={t.id}
                       onClick={() => onTaskClick(t)}
-                      className="flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-[#F9FAFB] transition-colors"
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid var(--surface)',
+                      }}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-xs font-mono text-[#9CA3AF] flex-shrink-0">{t.id}</span>
-                        <span className="text-sm text-[#111827] truncate">{t.name}</span>
-                        {t.client && <span className="text-xs text-[#9CA3AF] flex-shrink-0">{t.client}</span>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                        <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-3)', flexShrink: 0 }}>{t.id}</span>
+                        <span style={{ fontSize: 14, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
+                        {t.client && <span style={{ fontSize: 12, color: 'var(--text-3)', flexShrink: 0 }}>{t.client}</span>}
                       </div>
-                      <span className="text-sm text-[#6B7280] flex-shrink-0 ml-3">
+                      <span style={{ fontSize: 14, color: 'var(--text-2)', flexShrink: 0, marginLeft: 12, fontFamily: 'var(--font-mono)' }}>
                         {t.effortHours != null ? `${t.effortHours}h` : '—'}
                       </span>
                     </div>
@@ -174,9 +173,8 @@ export default function WeeklyReviewView({ tasks, archiveTasks, onTaskClick }) {
                 </div>
               </div>
             ))}
-            {/* Board done tasks not in archive */}
             {doneOnBoard.length > 0 && (
-              <p className="text-xs text-[#9CA3AF] px-1">
+              <p style={{ fontSize: 12, color: 'var(--text-3)', padding: '0 4px' }}>
                 Note: {doneOnBoard.length} task(s) marked Done on the Task Board but not yet archived.
               </p>
             )}
@@ -193,10 +191,10 @@ export default function WeeklyReviewView({ tasks, archiveTasks, onTaskClick }) {
         {hoursByPerson.length === 0 ? (
           <EmptyState message="No hours data available for this week." />
         ) : (
-          <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-            <table className="w-full">
+          <div style={tableCard}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="border-b border-[#E5E7EB]">
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
                   <Th>Person</Th>
                   <Th>Tasks Completed</Th>
                   <Th>Est. Hours</Th>
@@ -204,10 +202,10 @@ export default function WeeklyReviewView({ tasks, archiveTasks, onTaskClick }) {
               </thead>
               <tbody>
                 {hoursByPerson.map(row => (
-                  <tr key={row.person} className="border-b border-[#F3F4F6] last:border-0">
-                    <Td className="font-medium text-[#111827]">{row.person}</Td>
-                    <Td className="text-[#6B7280]">{row.tasks.length}</Td>
-                    <Td className="font-semibold text-[#3DAA8E]">{row.hours > 0 ? `${row.hours}h` : '—'}</Td>
+                  <tr key={row.person} style={{ borderBottom: '1px solid var(--surface)' }}>
+                    <Td style={{ fontWeight: 500, color: 'var(--text)' }}>{row.person}</Td>
+                    <Td style={{ color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{row.tasks.length}</Td>
+                    <Td style={{ fontWeight: 600, color: 'var(--primary)', fontFamily: 'var(--font-mono)' }}>{row.hours > 0 ? `${row.hours}h` : '—'}</Td>
                   </tr>
                 ))}
               </tbody>
@@ -225,10 +223,10 @@ export default function WeeklyReviewView({ tasks, archiveTasks, onTaskClick }) {
         {deferred.length === 0 ? (
           <EmptyState message="No deferred tasks — good discipline!" />
         ) : (
-          <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-            <table className="w-full">
+          <div style={tableCard}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="border-b border-[#E5E7EB]">
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
                   {['ID', 'Task', 'Assignee', 'Original Due', 'Weeks Deferred'].map(h => <Th key={h}>{h}</Th>)}
                 </tr>
               </thead>
@@ -247,15 +245,15 @@ export default function WeeklyReviewView({ tasks, archiveTasks, onTaskClick }) {
                       <tr
                         key={t.id}
                         onClick={() => onTaskClick(t)}
-                        className="border-b border-[#F3F4F6] last:border-0 cursor-pointer hover:bg-[#F9FAFB] transition-colors"
+                        style={{ borderBottom: '1px solid var(--surface)', cursor: 'pointer' }}
                       >
-                        <Td className="font-mono text-xs text-[#9CA3AF]">{t.id}</Td>
-                        <Td className="font-medium text-[#111827] max-w-[220px]">
-                          <span className="line-clamp-2">{t.name}</span>
+                        <Td style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-3)' }}>{t.id}</Td>
+                        <Td style={{ fontWeight: 500, color: 'var(--text)', maxWidth: 220 }}>
+                          <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{t.name}</span>
                         </Td>
-                        <Td className="text-[#6B7280]">{t.assignedTo || '—'}</Td>
-                        <Td className="text-[#6B7280]">{formatDate(t.dueDate)}</Td>
-                        <Td className={weeks != null && weeks > 0 ? 'text-amber-600 font-semibold' : 'text-[#6B7280]'}>
+                        <Td style={{ color: 'var(--text-2)' }}>{t.assignedTo || '—'}</Td>
+                        <Td style={{ color: 'var(--text-2)' }}>{formatDate(t.dueDate)}</Td>
+                        <Td style={{ color: weeks != null && weeks > 0 ? 'var(--warning)' : 'var(--text-2)', fontWeight: weeks != null && weeks > 0 ? 600 : 400, fontFamily: 'var(--font-mono)' }}>
                           {weeks != null ? `${weeks}w` : '—'}
                         </Td>
                       </tr>
@@ -276,36 +274,36 @@ export default function WeeklyReviewView({ tasks, archiveTasks, onTaskClick }) {
         {estimationStats.length === 0 ? (
           <EmptyState message="No completed tasks in archive to analyze." />
         ) : (
-          <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-            <table className="w-full">
+          <div style={tableCard}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="border-b border-[#E5E7EB]">
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
                   {['Task Type', 'Completed', 'Avg Effort', 'Missing Effort %', 'Signal'].map(h => <Th key={h}>{h}</Th>)}
                 </tr>
               </thead>
               <tbody>
                 {estimationStats.map(row => (
-                  <tr key={row.type} className="border-b border-[#F3F4F6] last:border-0">
-                    <Td className="font-medium text-[#111827]">{row.type}</Td>
-                    <Td className="text-[#6B7280]">{row.count}</Td>
-                    <Td className="text-[#6B7280]">{row.avgHours != null ? `${row.avgHours}h` : '—'}</Td>
-                    <Td className={row.missingPct > 50 ? 'text-red-600 font-semibold' : 'text-[#6B7280]'}>
+                  <tr key={row.type} style={{ borderBottom: '1px solid var(--surface)' }}>
+                    <Td style={{ fontWeight: 500, color: 'var(--text)' }}>{row.type}</Td>
+                    <Td style={{ color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{row.count}</Td>
+                    <Td style={{ color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{row.avgHours != null ? `${row.avgHours}h` : '—'}</Td>
+                    <Td style={{ color: row.missingPct > 50 ? 'var(--danger)' : 'var(--text-2)', fontWeight: row.missingPct > 50 ? 600 : 400, fontFamily: 'var(--font-mono)' }}>
                       {row.missingPct}%
                     </Td>
                     <Td>
                       {row.missingPct > 50 ? (
-                        <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-100 text-red-700">Blind spot</span>
+                        <span style={{ fontSize: 12, fontWeight: 500, padding: '2px 8px', borderRadius: 4, background: 'var(--danger-soft)', color: 'var(--danger)' }}>Blind spot</span>
                       ) : row.avgHours != null ? (
-                        <span className="text-xs text-[#9CA3AF]">OK</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-3)' }}>OK</span>
                       ) : (
-                        <span className="text-xs text-[#D1D5DB]">No data</span>
+                        <span style={{ fontSize: 12, color: 'var(--border)' }}>No data</span>
                       )}
                     </Td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <p className="px-4 py-2.5 text-xs text-[#9CA3AF] border-t border-[#F3F4F6]">
+            <p style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-3)', borderTop: '1px solid var(--surface)', margin: 0 }}>
               Task types are inferred from task names using keyword patterns. Types with few samples may not be representative.
             </p>
           </div>

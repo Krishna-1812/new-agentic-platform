@@ -10,19 +10,35 @@ const STEPS = [
   { id: 'brief',    label: 'Building Brief',         icon: '✍️' },
 ];
 
-function StepBadge({ status }) {
+function StepBadge({ status, number }) {
   if (status === 'done') return (
-    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-green-500 text-white text-xs font-bold">✓</span>
+    <span style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: 28, height: 28, borderRadius: '50%',
+      background: 'var(--success)', color: '#fff',
+      fontSize: 12, fontWeight: 700, flexShrink: 0,
+    }}>✓</span>
   );
   if (status === 'active') return (
-    <span className="flex items-center justify-center w-7 h-7 rounded-full" style={{ backgroundColor: '#3DAA8E' }}>
-      <svg className="animate-spin w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+    <span style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: 28, height: 28, borderRadius: '50%',
+      background: 'var(--primary)', flexShrink: 0,
+    }}>
+      <svg style={{ width: 14, height: 14, color: '#fff', animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none">
+        <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+        <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
       </svg>
     </span>
   );
-  return <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gray-200 text-gray-400 text-xs">·</span>;
+  return (
+    <span style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: 28, height: 28, borderRadius: '50%',
+      background: 'var(--surface)', color: 'var(--text-3)',
+      fontSize: 12, flexShrink: 0,
+    }}>{number || '·'}</span>
+  );
 }
 
 // Renders inline markdown (bold, plain)
@@ -32,7 +48,7 @@ function InlineText({ text }) {
     <>
       {parts.map((part, i) =>
         part.startsWith('**') && part.endsWith('**')
-          ? <strong key={i} className="font-semibold text-[#111827]">{part.slice(2, -2)}</strong>
+          ? <strong key={i} style={{ fontWeight: 600, color: 'var(--text)' }}>{part.slice(2, -2)}</strong>
           : <span key={i}>{part}</span>
       )}
     </>
@@ -49,61 +65,92 @@ function BriefRenderer({ markdown }) {
     const t = raw.trim();
 
     if (!t) {
-      elements.push(<div key={i} className="h-1" />);
+      elements.push(<div key={i} style={{ height: 4 }} />);
       continue;
     }
 
     if (t.startsWith('# ')) {
       elements.push(
-        <h1 key={i} className="text-2xl font-bold text-[#111827] mt-2 mb-5 pb-3 border-b-2" style={{ borderColor: '#3DAA8E' }}>
+        <h1 key={i} style={{
+          fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)',
+          marginTop: 8, marginBottom: 20, paddingBottom: 12,
+          borderBottom: '2px solid var(--primary)',
+        }}>
           {t.slice(2)}
         </h1>
       );
     } else if (t.startsWith('## ')) {
       elements.push(
-        <h2 key={i} className="text-lg font-bold text-[#111827] mt-7 mb-2 pt-2">
-          <span className="inline-block w-1 h-5 rounded mr-2 align-middle" style={{ backgroundColor: '#3DAA8E' }} />
+        <h2 key={i} style={{
+          fontSize: '1.125rem', fontWeight: 700, color: 'var(--text)',
+          marginTop: 28, marginBottom: 8, paddingTop: 8,
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <span style={{
+            display: 'inline-block', width: 4, height: 20, borderRadius: 2,
+            backgroundColor: 'var(--primary)', flexShrink: 0,
+          }} />
           {t.slice(3)}
         </h2>
       );
     } else if (t.startsWith('### ')) {
       elements.push(
-        <h3 key={i} className="text-sm font-bold text-[#374151] mt-4 mb-1.5 ml-3">
+        <h3 key={i} style={{
+          fontSize: '0.875rem', fontWeight: 700, color: 'var(--text)',
+          marginTop: 16, marginBottom: 6, marginLeft: 12,
+        }}>
           {t.slice(4)}
         </h3>
       );
     } else if (t.startsWith('#### ')) {
       elements.push(
-        <h4 key={i} className="text-sm font-semibold text-[#6B7280] mt-3 mb-1 ml-5">
+        <h4 key={i} style={{
+          fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-2)',
+          marginTop: 12, marginBottom: 4, marginLeft: 20,
+        }}>
           {t.slice(5)}
         </h4>
       );
     } else if (/^\*\*\[Visual Opportunity/i.test(t)) {
-      // Amber callout box
+      // Amber callout box — kept as-is (amber is not in design tokens, intentional semantic color)
       const inner = t.replace(/^\*\*\[/, '').replace(/\]\*\*$/, '').replace(/^\*\*/, '').replace(/\*\*$/, '');
       const desc = inner.replace(/^Visual Opportunity:\s*/i, '');
       elements.push(
-        <div key={i} className="my-3 ml-3 flex gap-3 px-4 py-3 rounded-lg border border-amber-200"
-          style={{ backgroundColor: '#FFFBEB' }}>
-          <span className="text-base flex-shrink-0 mt-0.5">💡</span>
+        <div key={i} style={{
+          margin: '12px 0 12px 12px', display: 'flex', gap: 12,
+          padding: '12px 16px', borderRadius: 8,
+          border: '1px solid #FDE68A', backgroundColor: '#FFFBEB',
+        }}>
+          <span style={{ fontSize: '1rem', flexShrink: 0, marginTop: 2 }}>💡</span>
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#D97706' }}>Visual Opportunity</span>
-            <p className="text-sm mt-0.5 leading-relaxed" style={{ color: '#92400E' }}>{desc}</p>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#D97706' }}>
+              Visual Opportunity
+            </span>
+            <p style={{ fontSize: '0.875rem', marginTop: 2, lineHeight: 1.6, color: '#92400E' }}>{desc}</p>
           </div>
         </div>
       );
     } else if (/^---+$/.test(t)) {
-      elements.push(<hr key={i} className="my-5 border-[#E5E7EB]" />);
+      elements.push(<hr key={i} style={{ margin: '20px 0', borderColor: 'var(--border)', borderTopWidth: 1, borderStyle: 'solid' }} />);
     } else if (t.startsWith('- ') || t.startsWith('* ')) {
       elements.push(
-        <div key={i} className="flex gap-2 text-sm text-[#374151] my-0.5 ml-4">
-          <span className="flex-shrink-0 mt-1.5 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#3DAA8E' }} />
+        <div key={i} style={{
+          display: 'flex', gap: 8, fontSize: '0.875rem', color: 'var(--text)',
+          margin: '2px 0', marginLeft: 16,
+        }}>
+          <span style={{
+            flexShrink: 0, marginTop: 6, width: 6, height: 6,
+            borderRadius: '50%', backgroundColor: 'var(--primary)',
+          }} />
           <span><InlineText text={t.slice(2)} /></span>
         </div>
       );
     } else {
       elements.push(
-        <p key={i} className="text-sm text-[#374151] my-1 ml-1 leading-relaxed">
+        <p key={i} style={{
+          fontSize: '0.875rem', color: 'var(--text)', margin: '4px 0',
+          marginLeft: 4, lineHeight: 1.6,
+        }}>
           <InlineText text={t} />
         </p>
       );
@@ -285,255 +332,370 @@ export default function ArticleRecommendationPage() {
   }
 
   const canStart = keyword.trim() && !running;
-  const scrapeStep = steps['scrape'];
-  const scrapeLabel = STEPS.find(s => s.id === 'scrape')?.label;
 
   return (
-      <main className="max-w-5xl mx-auto px-8 py-7 space-y-5">
+    <main style={{ maxWidth: 960, margin: '0 auto', padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-        {/* ── Input Card ───────────────────────────────────────────────── */}
-        <div className="bg-white rounded-xl border border-[#E5E7EB] p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          <KBContextSelector
-            module="article-recommendation"
-            onChange={({ client: c, feedbackKbIds: fb }) => { setClient(c); setFeedbackKbIds(fb || []); }}
+      {/* ── Input Card ───────────────────────────────────────────────── */}
+      <div style={{
+        background: 'var(--card)', border: '1px solid var(--border)',
+        borderRadius: 'var(--r-lg)', padding: 24,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+      }}>
+        <KBContextSelector
+          module="article-recommendation"
+          onChange={({ client: c, feedbackKbIds: fb }) => { setClient(c); setFeedbackKbIds(fb || []); }}
+          disabled={running}
+        />
+
+        <div style={{ marginTop: 16, maxWidth: 448 }}>
+          <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
+            Primary Keyword
+          </label>
+          <input
+            type="text"
+            value={keyword}
+            onChange={e => setKeyword(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && canStart && startGeneration()}
+            placeholder="e.g. dental implants"
             disabled={running}
+            style={{
+              width: '100%', padding: '10px 16px', borderRadius: 8,
+              border: '1px solid var(--border)', fontSize: '0.875rem',
+              color: 'var(--text)', background: running ? 'var(--surface)' : 'var(--card)',
+              outline: 'none', boxSizing: 'border-box',
+            }}
           />
-
-          <div className="mt-4 max-w-md">
-            <label className="block text-sm font-semibold text-[#111827] mb-1.5">Primary Keyword</label>
-            <input
-              type="text"
-              value={keyword}
-              onChange={e => setKeyword(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && canStart && startGeneration()}
-              placeholder="e.g. dental implants"
-              disabled={running}
-              className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 disabled:bg-[#F4F5F7] disabled:text-[#9CA3AF]"
-              style={{ '--tw-ring-color': '#3DAA8E' }}
-            />
-          </div>
-
-          <div className="mt-4 flex items-center gap-3">
-
-            <button
-              onClick={startGeneration}
-              disabled={!canStart}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: '#111827' }}
-            >
-              {running ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                  </svg>
-                  Generating…
-                </>
-              ) : 'Generate Recommendations'}
-            </button>
-            {started && !running && (
-              <button onClick={reset} className="text-sm text-gray-500 hover:text-gray-700 underline">
-                Reset
-              </button>
-            )}
-          </div>
         </div>
 
-        {/* ── Error ────────────────────────────────────────────────────── */}
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-            <span className="text-red-500 mt-0.5 flex-shrink-0">✕</span>
-            <div className="flex-1">
-              <p className="text-red-800 text-sm font-medium">{error}</p>
-            </div>
+        <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            onClick={startGeneration}
+            disabled={!canStart}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '10px 24px', borderRadius: 8,
+              fontSize: '0.875rem', fontWeight: 600, color: '#fff',
+              background: 'var(--primary)', border: 'none', cursor: canStart ? 'pointer' : 'not-allowed',
+              opacity: canStart ? 1 : 0.5, transition: 'opacity 0.15s',
+            }}
+          >
+            {running ? (
+              <>
+                <svg style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none">
+                  <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                Generating…
+              </>
+            ) : 'Generate Recommendations'}
+          </button>
+          {started && !running && (
             <button
-              onClick={startGeneration}
-              disabled={!keyword.trim()}
-              className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
-              style={{ backgroundColor: '#111827' }}
+              onClick={reset}
+              style={{
+                fontSize: '0.875rem', color: 'var(--text-2)', background: 'none',
+                border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0,
+              }}
             >
-              Retry
+              Reset
             </button>
-          </div>
-        )}
+          )}
+        </div>
+      </div>
 
-        {/* ── Warning ──────────────────────────────────────────────────── */}
-        {warning && (
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
-            <span style={{ color: '#D97706' }} className="mt-0.5 flex-shrink-0">⚠</span>
-            <p className="text-sm" style={{ color: '#92400E' }}>{warning}</p>
+      {/* ── Error ────────────────────────────────────────────────────── */}
+      {error && (
+        <div style={{
+          padding: 16, background: '#FEF2F2', border: '1px solid #FECACA',
+          borderRadius: 'var(--r-lg)', display: 'flex', alignItems: 'flex-start', gap: 12,
+        }}>
+          <span style={{ color: '#EF4444', marginTop: 2, flexShrink: 0 }}>✕</span>
+          <div style={{ flex: 1 }}>
+            <p style={{ color: '#991B1B', fontSize: '0.875rem', fontWeight: 500, margin: 0 }}>{error}</p>
           </div>
-        )}
+          <button
+            onClick={startGeneration}
+            disabled={!keyword.trim()}
+            style={{
+              flexShrink: 0, fontSize: '0.75rem', fontWeight: 600,
+              padding: '6px 12px', borderRadius: 8, color: '#fff',
+              background: 'var(--primary)', border: 'none',
+              cursor: keyword.trim() ? 'pointer' : 'not-allowed',
+              opacity: keyword.trim() ? 1 : 0.5,
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
-        {/* ── Progress Steps ───────────────────────────────────────────── */}
-        {started && (
-          <div className="space-y-3">
-            {STEPS.map((stepCfg) => {
-              const s = steps[stepCfg.id] || {};
-              return (
-                <div
-                  key={stepCfg.id}
-                  className={`bg-white rounded-xl border overflow-hidden transition-all ${
-                    s.status === 'active' ? 'border-[#3DAA8E]' : 'border-[#E5E7EB]'
-                  }`}
-                  style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}
-                >
-                  <div className={`flex items-center gap-3 px-5 py-3.5 ${s.status === 'active' ? 'bg-[#F0FAF7]' : 'bg-[#F9FAFB]'}`}>
-                    <StepBadge status={s.status} />
-                    <span className="text-base">{stepCfg.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-gray-800">{stepCfg.label}</span>
-                        {s.status === 'active' && (
-                          <span className="text-xs px-2 py-0.5 rounded-full font-medium animate-pulse" style={{ backgroundColor: '#3DAA8E1A', color: '#3DAA8E' }}>
-                            In progress
-                          </span>
-                        )}
-                        {s.status === 'done' && (
-                          <span className="text-xs bg-[#F4F5F7] text-[#6B7280] px-2 py-0.5 rounded-full font-medium">Done</span>
-                        )}
-                      </div>
-                      {s.message && <p className="text-xs text-gray-500 mt-0.5">{s.message}</p>}
+      {/* ── Warning ──────────────────────────────────────────────────── */}
+      {warning && (
+        <div style={{
+          padding: 16, background: '#FFFBEB', border: '1px solid #FDE68A',
+          borderRadius: 'var(--r-lg)', display: 'flex', alignItems: 'flex-start', gap: 8,
+        }}>
+          <span style={{ color: '#D97706', marginTop: 2, flexShrink: 0 }}>⚠</span>
+          <p style={{ fontSize: '0.875rem', color: '#92400E', margin: 0 }}>{warning}</p>
+        </div>
+      )}
+
+      {/* ── Progress Steps ───────────────────────────────────────────── */}
+      {started && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {STEPS.map((stepCfg, stepIdx) => {
+            const s = steps[stepCfg.id] || {};
+            const isActive = s.status === 'active';
+            return (
+              <div
+                key={stepCfg.id}
+                style={{
+                  background: 'var(--card)',
+                  border: `1px solid ${isActive ? 'var(--primary)' : 'var(--border)'}`,
+                  borderRadius: 'var(--r-lg)', overflow: 'hidden',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.07)', transition: 'border-color 0.2s',
+                }}
+              >
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '14px 20px',
+                  background: isActive ? 'var(--primary-soft)' : 'var(--surface)',
+                }}>
+                  <StepBadge status={s.status} number={stepIdx + 1} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text)' }}>
+                        {stepCfg.label}
+                      </span>
+                      {isActive && (
+                        <span style={{
+                          fontSize: '0.75rem', padding: '2px 8px', borderRadius: 999,
+                          fontWeight: 500, animation: 'pulse 2s cubic-bezier(0.4,0,0.6,1) infinite',
+                          background: 'var(--primary-soft)', color: 'var(--primary-text)',
+                        }}>
+                          In progress
+                        </span>
+                      )}
+                      {s.status === 'done' && (
+                        <span style={{
+                          fontSize: '0.75rem', padding: '2px 8px', borderRadius: 999,
+                          fontWeight: 500, background: 'var(--surface)', color: 'var(--text-2)',
+                        }}>
+                          Done
+                        </span>
+                      )}
                     </div>
+                    {s.message && (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-2)', marginTop: 2, marginBottom: 0 }}>
+                        {s.message}
+                      </p>
+                    )}
                   </div>
-
-                  {/* Search — show URL list */}
-                  {stepCfg.id === 'search' && s.status === 'done' && urls.length > 0 && (
-                    <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {urls.map((u, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-xs text-[#6B7280]">
-                          <span className="w-5 h-5 rounded-full text-white text-xs flex items-center justify-center font-bold flex-shrink-0" style={{ backgroundColor: '#3DAA8E' }}>
-                            {idx + 1}
-                          </span>
-                          <span className="truncate">{u.displayUrl || new URL(u.url).hostname}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Scrape — per-URL status */}
-                  {stepCfg.id === 'scrape' && (s.status === 'active' || s.status === 'done') && scrapeProgress.length > 0 && (
-                    <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-1.5">
-                      {scrapeProgress.map((p, idx) => p ? (
-                        <div key={idx} className="flex items-center gap-2 text-xs">
-                          {p.status === 'done' ? (
-                            <span className="text-green-500 font-bold flex-shrink-0">✓</span>
-                          ) : p.status === 'error' ? (
-                            <span className="text-red-400 flex-shrink-0">✕</span>
-                          ) : (
-                            <svg className="animate-spin w-3 h-3 flex-shrink-0" style={{ color: '#3DAA8E' }} viewBox="0 0 24 24" fill="none">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                            </svg>
-                          )}
-                          <span className={`truncate ${p.status === 'error' ? 'text-red-400' : 'text-[#6B7280]'}`}>
-                            {(() => { try { return new URL(p.url).hostname; } catch { return p.url; } })()}
-                          </span>
-                        </div>
-                      ) : null)}
-                    </div>
-                  )}
                 </div>
-              );
-            })}
-          </div>
-        )}
 
-        {/* ── Result ───────────────────────────────────────────────────── */}
-        {result && (
-          <div className="space-y-4">
-            {/* Action bar */}
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-[#111827]">Content Brief</h2>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={copyBrief}
-                  className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg border border-[#E5E7EB] bg-white text-[#374151] hover:bg-[#F9FAFB] transition-colors"
-                >
-                  {copying ? (
-                    <><span className="text-green-500">✓</span> Copied!</>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                      Copy Brief
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handleDownloadDocx}
-                  disabled={downloading}
-                  className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white transition-all disabled:opacity-60"
-                  style={{ backgroundColor: '#111827' }}
-                >
-                  {downloading ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                      </svg>
-                      Exporting…
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                      </svg>
-                      Download .docx
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Brief content */}
-            <div className="bg-white rounded-xl border border-[#E5E7EB] px-8 py-7" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-              <BriefRenderer markdown={result.brief} />
-            </div>
-
-            {/* Reference URLs collapsible */}
-            {result.sourceUrls?.length > 0 && (
-              <div className="bg-white rounded-xl border border-[#E5E7EB]" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                <button
-                  onClick={() => setShowUrls(v => !v)}
-                  className="w-full flex items-center justify-between px-5 py-3.5 text-left hover:bg-[#F9FAFB] transition-colors rounded-xl"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-[#111827]">Reference URLs</span>
-                    <span className="text-xs bg-[#F4F5F7] text-[#6B7280] font-semibold px-2 py-0.5 rounded-full">
-                      {result.sourceUrls.length}
-                    </span>
-                  </div>
-                  <svg
-                    className={`w-4 h-4 text-[#6B7280] transition-transform ${showUrls ? 'rotate-180' : ''}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                  </svg>
-                </button>
-                {showUrls && (
-                  <div className="border-t border-[#E5E7EB] px-5 py-4 space-y-2">
-                    {result.sourceUrls.map((u, idx) => (
-                      <div key={idx} className="flex items-start gap-3">
-                        <span className="w-5 h-5 rounded-full text-white text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5" style={{ backgroundColor: '#3DAA8E' }}>
+                {/* Search — show URL list */}
+                {stepCfg.id === 'search' && s.status === 'done' && urls.length > 0 && (
+                  <div style={{
+                    padding: '16px 20px',
+                    display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 8,
+                  }}>
+                    {urls.map((u, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.75rem', color: 'var(--text-2)' }}>
+                        <span style={{
+                          width: 20, height: 20, borderRadius: '50%',
+                          background: 'var(--primary)', color: '#fff',
+                          fontSize: '0.75rem', display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', fontWeight: 700, flexShrink: 0,
+                        }}>
                           {idx + 1}
                         </span>
-                        <div>
-                          <p className="text-xs font-medium text-[#111827]">{u.title}</p>
-                          <a href={u.url} target="_blank" rel="noopener noreferrer"
-                            className="text-xs hover:underline break-all" style={{ color: '#3DAA8E' }}>
-                            {u.url}
-                          </a>
-                        </div>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {u.displayUrl || (() => { try { return new URL(u.url).hostname; } catch { return u.url; } })()}
+                        </span>
                       </div>
                     ))}
                   </div>
                 )}
+
+                {/* Scrape — per-URL status */}
+                {stepCfg.id === 'scrape' && (s.status === 'active' || s.status === 'done') && scrapeProgress.length > 0 && (
+                  <div style={{
+                    padding: '16px 20px',
+                    display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 6,
+                  }}>
+                    {scrapeProgress.map((p, idx) => p ? (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.75rem' }}>
+                        {p.status === 'done' ? (
+                          <span style={{ color: 'var(--success)', fontWeight: 700, flexShrink: 0 }}>✓</span>
+                        ) : p.status === 'error' ? (
+                          <span style={{ color: '#F87171', flexShrink: 0 }}>✕</span>
+                        ) : (
+                          <svg style={{ width: 12, height: 12, flexShrink: 0, color: 'var(--primary)', animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none">
+                            <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                            <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                          </svg>
+                        )}
+                        <span style={{
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                          color: p.status === 'error' ? '#F87171' : 'var(--text-2)',
+                        }}>
+                          {(() => { try { return new URL(p.url).hostname; } catch { return p.url; } })()}
+                        </span>
+                      </div>
+                    ) : null)}
+                  </div>
+                )}
               </div>
-            )}
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Result ───────────────────────────────────────────────────── */}
+      {result && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Action bar */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Content Brief</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                onClick={copyBrief}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  fontSize: '0.875rem', fontWeight: 500, padding: '8px 16px',
+                  borderRadius: 8, border: '1px solid var(--border)',
+                  background: 'var(--card)', color: 'var(--text)', cursor: 'pointer',
+                  transition: 'background 0.15s',
+                }}
+              >
+                {copying ? (
+                  <><span style={{ color: 'var(--success)' }}>✓</span> Copied!</>
+                ) : (
+                  <>
+                    <svg style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Copy Brief
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handleDownloadDocx}
+                disabled={downloading}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  fontSize: '0.875rem', fontWeight: 600, padding: '8px 16px',
+                  borderRadius: 8, border: 'none',
+                  background: 'var(--primary)', color: '#fff',
+                  cursor: downloading ? 'not-allowed' : 'pointer',
+                  opacity: downloading ? 0.6 : 1, transition: 'opacity 0.15s',
+                }}
+              >
+                {downloading ? (
+                  <>
+                    <svg style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none">
+                      <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    Exporting…
+                  </>
+                ) : (
+                  <>
+                    <svg style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Download .docx
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        )}
-      </main>
+
+          {/* Brief content */}
+          <div style={{
+            background: 'var(--card)', border: '1px solid var(--border)',
+            borderRadius: 'var(--r-lg)', padding: '28px 32px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+          }}>
+            <BriefRenderer markdown={result.brief} />
+          </div>
+
+          {/* Reference URLs collapsible */}
+          {result.sourceUrls?.length > 0 && (
+            <div style={{
+              background: 'var(--card)', border: '1px solid var(--border)',
+              borderRadius: 'var(--r-lg)', boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+              overflow: 'hidden',
+            }}>
+              <button
+                onClick={() => setShowUrls(v => !v)}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '14px 20px', textAlign: 'left', background: 'none', border: 'none',
+                  cursor: 'pointer', transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)' }}>Reference URLs</span>
+                  <span style={{
+                    fontSize: '0.75rem', background: 'var(--surface)', color: 'var(--text-2)',
+                    fontWeight: 600, padding: '2px 8px', borderRadius: 999,
+                  }}>
+                    {result.sourceUrls.length}
+                  </span>
+                </div>
+                <svg
+                  style={{
+                    width: 16, height: 16, color: 'var(--text-2)',
+                    transition: 'transform 0.2s', transform: showUrls ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </button>
+              {showUrls && (
+                <div style={{ borderTop: '1px solid var(--border)', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {result.sourceUrls.map((u, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                      <span style={{
+                        width: 20, height: 20, borderRadius: '50%',
+                        background: 'var(--primary)', color: '#fff',
+                        fontSize: '0.75rem', display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', fontWeight: 700, flexShrink: 0, marginTop: 2,
+                      }}>
+                        {idx + 1}
+                      </span>
+                      <div>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text)', margin: '0 0 2px 0' }}>
+                          {u.title}
+                        </p>
+                        <a
+                          href={u.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ fontSize: '0.75rem', color: 'var(--primary)', wordBreak: 'break-all' }}
+                        >
+                          {u.url}
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Keyframe injection ───────────────────────────────────────── */}
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+      `}</style>
+    </main>
   );
 }

@@ -13,20 +13,26 @@ const SECTION_LABELS = {
 function StatusIcon({ status }) {
   if (status === 'done') {
     return (
-      <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <svg style={{ width: 20, height: 20, color: 'var(--success)', flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
       </svg>
     );
   }
   if (status === 'active') {
     return (
-      <div className="w-5 h-5 flex-shrink-0 flex items-center justify-center">
-        <div className="w-4 h-4 border-2 border-[#245E9E] border-t-transparent rounded-full animate-spin" />
+      <div style={{ width: 20, height: 20, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{
+          width: 16, height: 16,
+          border: '2px solid var(--border)',
+          borderTopColor: 'var(--primary)',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
       </div>
     );
   }
   return (
-    <div className="w-5 h-5 rounded-full border-2 border-[#E5E7EB] flex-shrink-0" />
+    <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--border)', flexShrink: 0 }} />
   );
 }
 
@@ -34,44 +40,53 @@ export default function ProgressTracker({ sectionStatuses, overallProgress }) {
   const sections = Object.keys(SECTION_LABELS);
 
   return (
-    <div className="space-y-4">
-      {/* Progress bar */}
-      <div>
-        <div className="flex justify-between text-xs text-[#6B7280] mb-1.5">
-          <span>Analysis in progress…</span>
-          <span>{overallProgress || 0}%</span>
+    <>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Progress bar */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-2)', marginBottom: 6 }}>
+            <span>Analysis in progress…</span>
+            <span style={{ fontFamily: 'var(--font-mono)' }}>{overallProgress || 0}%</span>
+          </div>
+          <div style={{ height: 8, background: 'var(--border)', borderRadius: 999, overflow: 'hidden' }}>
+            <div style={{
+              height: 8, borderRadius: 999,
+              width: `${overallProgress || 0}%`,
+              background: 'var(--primary)',
+              transition: 'width 0.5s ease',
+            }} />
+          </div>
         </div>
-        <div className="h-2 bg-[#E5E7EB] rounded-full overflow-hidden">
-          <div
-            className="h-2 rounded-full transition-all duration-500"
-            style={{ width: `${overallProgress || 0}%`, backgroundColor: '#245E9E' }}
-          />
+
+        {/* Section list */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {sections.map(section => {
+            const status = sectionStatuses[section] || 'pending';
+            const label = SECTION_LABELS[section];
+            return (
+              <div key={section} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '8px 12px', borderRadius: 'var(--r-lg)',
+                background: 'var(--surface)',
+              }}>
+                <StatusIcon status={status} />
+                <span style={{
+                  fontSize: 14,
+                  color: status === 'done' ? 'var(--text)' : status === 'active' ? 'var(--primary)' : 'var(--text-3)',
+                  fontWeight: status === 'active' ? 500 : 400,
+                }}>
+                  {label}
+                </span>
+              </div>
+            );
+          })}
         </div>
-      </div>
 
-      {/* Section list */}
-      <div className="space-y-2">
-        {sections.map(section => {
-          const status = sectionStatuses[section] || 'pending';
-          const label = SECTION_LABELS[section];
-          return (
-            <div key={section} className="flex items-center gap-3 py-2 px-3 rounded-lg bg-[#F9FAFB]">
-              <StatusIcon status={status} />
-              <span className={`text-sm ${
-                status === 'done' ? 'text-[#374151]' :
-                status === 'active' ? 'text-[#245E9E] font-medium' :
-                'text-[#9CA3AF]'
-              }`}>
-                {label}
-              </span>
-            </div>
-          );
-        })}
+        <p style={{ fontSize: 12, color: 'var(--text-3)', textAlign: 'center', margin: 0 }}>
+          This may take 1–3 minutes depending on the number of competitors.
+        </p>
       </div>
-
-      <p className="text-xs text-[#9CA3AF] text-center">
-        This may take 1–3 minutes depending on the number of competitors.
-      </p>
-    </div>
+    </>
   );
 }

@@ -16,32 +16,48 @@ const DEFAULT_CONFIG = {
 
 function StepBadge({ status }) {
   if (status === 'done') return (
-    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-green-500 text-white text-xs font-bold">✓</span>
+    <span style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: 28, height: 28, borderRadius: '50%',
+      background: 'var(--success)', color: '#fff', fontSize: 12, fontWeight: 700,
+    }}>✓</span>
   );
   if (status === 'active') return (
-    <span className="flex items-center justify-center w-7 h-7 rounded-full" style={{ backgroundColor: '#3DAA8E' }}>
-      <svg className="animate-spin w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    <span style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: 28, height: 28, borderRadius: '50%',
+      background: 'var(--primary)',
+    }}>
+      <svg style={{ width: 14, height: 14, color: '#fff', animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none">
+        <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
       </svg>
     </span>
   );
-  return <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gray-200 text-gray-400 text-xs">·</span>;
+  return (
+    <span style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: 28, height: 28, borderRadius: '50%',
+      background: 'var(--border)', color: 'var(--text-3)', fontSize: 12,
+    }}>·</span>
+  );
 }
 
 function UrlStatusIcon({ status }) {
   if (status === 'done')
-    return <span className="text-green-500 font-bold flex-shrink-0">✓</span>;
+    return <span style={{ color: 'var(--success)', fontWeight: 700, flexShrink: 0 }}>✓</span>;
   if (status === 'error')
-    return <span className="text-red-400 flex-shrink-0">✕</span>;
+    return <span style={{ color: 'var(--danger)', flexShrink: 0 }}>✕</span>;
   if (status === 'loading')
     return (
-      <svg className="animate-spin w-3 h-3 flex-shrink-0" style={{ color: '#3DAA8E' }} viewBox="0 0 24 24" fill="none">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+      <svg style={{ width: 12, height: 12, flexShrink: 0, color: 'var(--primary)', animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none">
+        <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
       </svg>
     );
-  return <span className="w-3 h-3 rounded-full bg-gray-200 flex-shrink-0" />;
+  return (
+    <span style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--border)', flexShrink: 0, display: 'inline-block' }} />
+  );
 }
 
 function parseUrlList(raw) {
@@ -200,34 +216,69 @@ export default function ImageAltAuditPage() {
   const totalDecorativeImages = urlStatusList.reduce((s, u) => s + (u.decorativeCount || 0), 0);
 
   return (
-      <main className="max-w-5xl mx-auto px-8 py-7 space-y-5">
+    <>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <main style={{ maxWidth: 960, margin: '0 auto', padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
         {/* ── Input Card ──────────────────────────────────────────────── */}
-        <div className="bg-white rounded-xl border border-[#E5E7EB] p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-          <div className="mb-4">
-            <label className="block text-sm font-semibold text-[#111827] mb-1.5">Location Page URLs</label>
-            <p className="text-xs text-[#6B7280] mb-2">One URL per line. Paste directly or upload a .txt / .csv file.</p>
+        <div style={{
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--r-lg)',
+          padding: 24,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+        }}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
+              Location Page URLs
+            </label>
+            <p style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 8 }}>
+              One URL per line. Paste directly or upload a .txt / .csv file.
+            </p>
             <textarea
               value={urlInput}
               onChange={e => setUrlInput(e.target.value)}
               disabled={running}
               rows={6}
               placeholder={`https://www.brushandfloss.com/locations/cary-family-specialty\nhttps://www.brushandfloss.com/locations/apex\nhttps://www.brushandfloss.com/locations/raleigh`}
-              className="w-full px-4 py-2.5 rounded-lg border border-[#E5E7EB] text-sm text-[#111827] placeholder-[#9CA3AF] font-mono focus:outline-none focus:ring-2 disabled:bg-[#F4F5F7] disabled:text-[#9CA3AF] resize-none"
-              style={{ '--tw-ring-color': '#3DAA8E' }}
+              style={{
+                width: '100%',
+                padding: '10px 16px',
+                borderRadius: 'var(--r-lg)',
+                border: '1px solid var(--border)',
+                fontSize: 13,
+                color: 'var(--text)',
+                fontFamily: 'var(--font-mono)',
+                background: running ? 'var(--surface)' : 'var(--card)',
+                resize: 'none',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
             />
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-xs text-[#6B7280]">
+            <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>
                 {urlCount > 0 ? (
-                  <span className="font-semibold" style={{ color: '#3DAA8E' }}>{urlCount} URL{urlCount !== 1 ? 's' : ''} ready</span>
+                  <span style={{ fontWeight: 600, color: 'var(--primary)' }}>
+                    {urlCount} URL{urlCount !== 1 ? 's' : ''} ready
+                  </span>
                 ) : 'No URLs entered yet'}
               </span>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={running}
-                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-[#E5E7EB] text-[#374151] hover:bg-[#F9FAFB] transition-colors disabled:opacity-50"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  fontSize: 12, fontWeight: 500,
+                  padding: '6px 12px',
+                  borderRadius: 'var(--r-lg)',
+                  border: '1px solid var(--border)',
+                  background: 'var(--card)',
+                  color: 'var(--text)',
+                  cursor: running ? 'not-allowed' : 'pointer',
+                  opacity: running ? 0.5 : 1,
+                }}
               >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg style={{ width: 14, height: 14 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                 </svg>
                 Upload .txt / .csv
@@ -236,30 +287,39 @@ export default function ImageAltAuditPage() {
                 ref={fileInputRef}
                 type="file"
                 accept=".txt,.csv"
-                className="hidden"
+                style={{ display: 'none' }}
                 onChange={handleFileUpload}
               />
             </div>
           </div>
 
           {/* Config toggle */}
-          <div className="border-t border-[#F3F4F6] pt-4">
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
             <button
               onClick={() => setShowConfig(v => !v)}
-              className="flex items-center gap-2 text-xs font-semibold text-[#6B7280] hover:text-[#111827] transition-colors"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                fontSize: 12, fontWeight: 600,
+                color: 'var(--text-2)',
+                background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+              }}
             >
               <svg
-                className={`w-3.5 h-3.5 transition-transform ${showConfig ? 'rotate-90' : ''}`}
+                style={{
+                  width: 14, height: 14,
+                  transition: 'transform 0.2s',
+                  transform: showConfig ? 'rotate(90deg)' : 'rotate(0deg)',
+                }}
                 fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
               </svg>
               Configuration
-              <span className="text-[#9CA3AF] font-normal">(optional overrides)</span>
+              <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>(optional overrides)</span>
             </button>
 
             {showConfig && (
-              <div className="mt-4 grid grid-cols-2 gap-4">
+              <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 {[
                   { key: 'brandName',       label: 'Brand name',              placeholder: DEFAULT_CONFIG.brandName },
                   { key: 'locationSuffix',  label: 'Location suffix',         placeholder: DEFAULT_CONFIG.locationSuffix },
@@ -269,15 +329,27 @@ export default function ImageAltAuditPage() {
                   { key: 'concurrency',     label: 'Concurrency (1–10)',      placeholder: DEFAULT_CONFIG.concurrency },
                 ].map(({ key, label, placeholder }) => (
                   <div key={key}>
-                    <label className="block text-xs font-medium text-[#374151] mb-1">{label}</label>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--text)', marginBottom: 4 }}>
+                      {label}
+                    </label>
                     <input
                       type="text"
                       value={config[key]}
                       onChange={e => handleConfigChange(key, e.target.value)}
                       disabled={running}
                       placeholder={placeholder}
-                      className="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-xs text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 disabled:bg-[#F4F5F7] font-mono"
-                      style={{ '--tw-ring-color': '#3DAA8E' }}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: 'var(--r-lg)',
+                        border: '1px solid var(--border)',
+                        fontSize: 12,
+                        color: 'var(--text)',
+                        fontFamily: 'var(--font-mono)',
+                        background: running ? 'var(--surface)' : 'var(--card)',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
                     />
                   </div>
                 ))}
@@ -286,25 +358,42 @@ export default function ImageAltAuditPage() {
           </div>
 
           {/* Actions */}
-          <div className="mt-5 flex items-center gap-3">
+          <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
             <button
               onClick={startAudit}
               disabled={!canStart}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: '#111827' }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '10px 24px',
+                borderRadius: 'var(--r-lg)',
+                fontSize: 14, fontWeight: 600,
+                color: '#fff',
+                background: 'var(--primary)',
+                border: 'none',
+                cursor: !canStart ? 'not-allowed' : 'pointer',
+                opacity: !canStart ? 0.5 : 1,
+                transition: 'opacity 0.2s',
+              }}
             >
               {running ? (
                 <>
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  <svg style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none">
+                    <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
                   Running audit…
                 </>
               ) : 'Run Audit'}
             </button>
             {started && !running && (
-              <button onClick={reset} className="text-sm text-gray-500 hover:text-gray-700 underline">
+              <button
+                onClick={reset}
+                style={{
+                  fontSize: 14, color: 'var(--text-2)',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  textDecoration: 'underline', padding: 0,
+                }}
+              >
                 Reset
               </button>
             )}
@@ -313,14 +402,28 @@ export default function ImageAltAuditPage() {
 
         {/* ── Error ───────────────────────────────────────────────────── */}
         {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-            <span className="text-red-500 mt-0.5 flex-shrink-0">✕</span>
-            <p className="text-red-800 text-sm font-medium flex-1">{error}</p>
+          <div style={{
+            padding: 16,
+            background: 'var(--danger-soft)',
+            border: '1px solid var(--danger)',
+            borderRadius: 'var(--r-lg)',
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+          }}>
+            <span style={{ color: 'var(--danger)', marginTop: 2, flexShrink: 0 }}>✕</span>
+            <p style={{ color: 'var(--danger)', fontSize: 14, fontWeight: 500, flex: 1, margin: 0 }}>{error}</p>
             <button
               onClick={startAudit}
               disabled={!urlCount}
-              className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
-              style={{ backgroundColor: '#111827' }}
+              style={{
+                flexShrink: 0, fontSize: 12, fontWeight: 600,
+                padding: '6px 12px',
+                borderRadius: 'var(--r-lg)',
+                color: '#fff',
+                background: 'var(--primary)',
+                border: 'none',
+                cursor: !urlCount ? 'not-allowed' : 'pointer',
+                opacity: !urlCount ? 0.5 : 1,
+              }}
             >
               Retry
             </button>
@@ -329,49 +432,82 @@ export default function ImageAltAuditPage() {
 
         {/* ── Progress ─────────────────────────────────────────────────── */}
         {started && (
-          <div className="space-y-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {STEPS.map(stepCfg => {
               const s = steps[stepCfg.id] || {};
+              const isActive = s.status === 'active';
               return (
                 <div
                   key={stepCfg.id}
-                  className={`bg-white rounded-xl border overflow-hidden transition-all ${s.status === 'active' ? 'border-[#3DAA8E]' : 'border-[#E5E7EB]'}`}
-                  style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}
+                  style={{
+                    background: 'var(--card)',
+                    border: `1px solid ${isActive ? 'var(--primary)' : 'var(--border)'}`,
+                    borderRadius: 'var(--r-lg)',
+                    overflow: 'hidden',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+                    transition: 'border-color 0.2s',
+                  }}
                 >
-                  <div className={`flex items-center gap-3 px-5 py-3.5 ${s.status === 'active' ? 'bg-[#F0FAF7]' : 'bg-[#F9FAFB]'}`}>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '14px 20px',
+                    background: isActive ? 'var(--primary-soft)' : 'var(--surface)',
+                  }}>
                     <StepBadge status={s.status} />
-                    <span className="text-base">{stepCfg.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-gray-800">{stepCfg.label}</span>
-                        {s.status === 'active' && (
-                          <span className="text-xs px-2 py-0.5 rounded-full font-medium animate-pulse" style={{ backgroundColor: '#3DAA8E1A', color: '#3DAA8E' }}>
+                    <span style={{ fontSize: 18 }}>{stepCfg.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>{stepCfg.label}</span>
+                        {isActive && (
+                          <span style={{
+                            fontSize: 11, padding: '2px 8px', borderRadius: 999,
+                            fontWeight: 500,
+                            background: 'var(--primary-soft)', color: 'var(--primary)',
+                            animation: 'pulse 2s cubic-bezier(0.4,0,0.6,1) infinite',
+                          }}>
                             In progress
                           </span>
                         )}
                         {s.status === 'done' && (
-                          <span className="text-xs bg-[#F4F5F7] text-[#6B7280] px-2 py-0.5 rounded-full font-medium">Done</span>
+                          <span style={{
+                            fontSize: 11, padding: '2px 8px', borderRadius: 999,
+                            fontWeight: 500,
+                            background: 'var(--surface)', color: 'var(--text-2)',
+                          }}>Done</span>
                         )}
                       </div>
-                      {s.message && <p className="text-xs text-gray-500 mt-0.5">{s.message}</p>}
+                      {s.message && (
+                        <p style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 2, marginBottom: 0 }}>{s.message}</p>
+                      )}
                     </div>
                   </div>
 
                   {/* Per-URL grid (scrape step only) */}
                   {stepCfg.id === 'scrape' && urlStatusList.length > 0 && (
-                    <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-1.5">
+                    <div style={{
+                      padding: '16px 20px',
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, 1fr)',
+                      gap: 6,
+                    }}>
                       {urlStatusList.map((u, idx) => (
-                        <div key={idx} className="flex items-start gap-2 text-xs">
-                          <div className="mt-0.5"><UrlStatusIcon status={u.status} /></div>
-                          <div className="min-w-0 flex-1">
-                            <span className={`truncate block ${u.status === 'error' ? 'text-red-400' : 'text-[#6B7280]'}`}>
+                        <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12 }}>
+                          <div style={{ marginTop: 2 }}><UrlStatusIcon status={u.status} /></div>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <span style={{
+                              display: 'block',
+                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                              color: u.status === 'error' ? 'var(--danger)' : 'var(--text-2)',
+                            }}>
                               {(() => { try { return new URL(u.url).pathname.replace(/\/$/, '').split('/').pop() || new URL(u.url).hostname; } catch { return u.url; } })()}
                             </span>
                             {u.status === 'done' && u.locationName && (
-                              <span className="text-[#9CA3AF]">{u.locationName} · {u.contentCount} content, {u.decorativeCount} decorative</span>
+                              <span style={{ color: 'var(--text-3)' }}>
+                                {u.locationName} · {u.contentCount} content, {u.decorativeCount} decorative
+                              </span>
                             )}
                             {u.status === 'error' && u.error && (
-                              <span className="text-red-300">{u.error.substring(0, 60)}</span>
+                              <span style={{ color: 'var(--danger)', opacity: 0.7 }}>{u.error.substring(0, 60)}</span>
                             )}
                           </div>
                         </div>
@@ -386,16 +522,26 @@ export default function ImageAltAuditPage() {
 
         {/* ── Summary stats (shown once scraping is underway) ──────────── */}
         {doneCount > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
             {[
-              { label: 'Pages processed', value: `${doneCount} / ${urlStatusList.length}`, color: '#3DAA8E' },
-              { label: 'Successful', value: successCount, color: '#22C55E' },
-              { label: 'Failed', value: failedCount, color: failedCount > 0 ? '#EF4444' : '#9CA3AF' },
-              { label: 'Content images', value: totalContentImages, color: '#3DAA8E' },
+              { label: 'Pages processed', value: `${doneCount} / ${urlStatusList.length}`, color: 'var(--primary)' },
+              { label: 'Successful',       value: successCount,                             color: 'var(--success)' },
+              { label: 'Failed',           value: failedCount,                              color: failedCount > 0 ? 'var(--danger)' : 'var(--text-3)' },
+              { label: 'Content images',   value: totalContentImages,                       color: 'var(--primary)' },
             ].map(stat => (
-              <div key={stat.label} className="bg-white rounded-xl border border-[#E5E7EB] px-4 py-3" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <p className="text-xs text-[#6B7280] font-medium">{stat.label}</p>
-                <p className="text-xl font-bold mt-0.5" style={{ color: stat.color }}>{stat.value}</p>
+              <div key={stat.label} style={{
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r-lg)',
+                padding: '12px 16px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              }}>
+                <p style={{ fontSize: 12, color: 'var(--text-2)', fontWeight: 500, margin: 0 }}>{stat.label}</p>
+                <p style={{
+                  fontSize: 22, fontWeight: 700, marginTop: 2, marginBottom: 0,
+                  color: stat.color,
+                  fontFamily: 'var(--font-mono)',
+                }}>{stat.value}</p>
               </div>
             ))}
           </div>
@@ -403,24 +549,44 @@ export default function ImageAltAuditPage() {
 
         {/* ── Download ─────────────────────────────────────────────────── */}
         {download && (
-          <div className="bg-white rounded-xl border border-[#3DAA8E] p-5 flex items-center justify-between" style={{ boxShadow: '0 1px 3px rgba(61,170,142,0.15)' }}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#F0FAF7' }}>
-                <svg className="w-5 h-5" style={{ color: '#3DAA8E' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <div style={{
+            background: 'var(--card)',
+            border: '1px solid var(--primary)',
+            borderRadius: 'var(--r-lg)',
+            padding: 20,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            boxShadow: '0 1px 3px rgba(61,170,142,0.15)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 8,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'var(--primary-soft)',
+              }}>
+                <svg style={{ width: 20, height: 20, color: 'var(--primary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-semibold text-[#111827]">Audit complete</p>
-                <p className="text-xs text-[#6B7280] mt-0.5">{download.filename}</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: 0 }}>Audit complete</p>
+                <p style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 2, marginBottom: 0 }}>{download.filename}</p>
               </div>
             </div>
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-all"
-              style={{ backgroundColor: '#111827' }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '10px 20px',
+                borderRadius: 'var(--r-lg)',
+                fontSize: 14, fontWeight: 600,
+                color: '#fff',
+                background: 'var(--primary)',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'opacity 0.2s',
+              }}
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
               </svg>
               Download .xlsx
@@ -430,9 +596,19 @@ export default function ImageAltAuditPage() {
 
         {/* ── Legend ──────────────────────────────────────────────────── */}
         {started && (
-          <div className="bg-white rounded-xl border border-[#E5E7EB] px-5 py-4" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-            <p className="text-xs font-semibold text-[#6B7280] mb-3 uppercase tracking-wider">Excel row colours</p>
-            <div className="flex flex-wrap gap-3">
+          <div style={{
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--r-lg)',
+            padding: '16px 20px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          }}>
+            <p style={{
+              fontSize: 11, fontWeight: 600, color: 'var(--text-2)',
+              textTransform: 'uppercase', letterSpacing: '0.06em',
+              marginBottom: 12, marginTop: 0,
+            }}>Excel row colours</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
               {[
                 { label: 'Doctor',      color: '#E8F0FE' },
                 { label: 'Service',     color: '#E6F4EA' },
@@ -440,8 +616,14 @@ export default function ImageAltAuditPage() {
                 { label: 'Hero Banner', color: '#FCE4EC' },
                 { label: 'Unknown',     color: '#FFE0B2' },
               ].map(({ label, color }) => (
-                <div key={label} className="flex items-center gap-1.5 text-xs text-[#374151]">
-                  <span className="w-3.5 h-3.5 rounded-sm border border-[#E5E7EB] flex-shrink-0" style={{ backgroundColor: color }} />
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text)' }}>
+                  <span style={{
+                    width: 14, height: 14, borderRadius: 3,
+                    border: '1px solid var(--border)',
+                    flexShrink: 0,
+                    background: color,
+                    display: 'inline-block',
+                  }} />
                   {label}
                 </div>
               ))}
@@ -450,5 +632,6 @@ export default function ImageAltAuditPage() {
         )}
 
       </main>
+    </>
   );
 }

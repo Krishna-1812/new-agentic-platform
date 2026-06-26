@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { hs } from '../lib/hubSpokeApi';
 
-const TEAL = '#3DAA8E';
-
 const INDUSTRIES = ['Dental', 'Healthcare', 'Legal', 'Ecommerce', 'Real Estate', 'SaaS', 'Other'];
 
 const STATUS_LABELS = {
@@ -13,28 +11,47 @@ const STATUS_LABELS = {
   approved: 'Ready',
   complete: 'Complete',
 };
-const STATUS_COLORS = {
-  input: '#9CA3AF',
-  analyzing: '#F59E0B',
-  reviewing: '#3B82F6',
-  approved: TEAL,
-  complete: '#10B981',
+
+// Map workflow states to design-token semantic colors
+const STATUS_TOKEN = {
+  input: { bg: 'var(--text-3)', bgAlpha: 'var(--surface)', color: 'var(--text-3)' },
+  analyzing: { bg: 'var(--warning)', bgAlpha: 'var(--warning-soft)', color: 'var(--warning)' },
+  reviewing: { bg: 'var(--info)', bgAlpha: 'var(--info-soft)', color: 'var(--info)' },
+  approved: { bg: 'var(--primary)', bgAlpha: 'var(--primary-soft)', color: 'var(--primary-text)' },
+  complete: { bg: 'var(--success)', bgAlpha: 'var(--success-soft)', color: 'var(--success)' },
 };
 
 function Header() {
   const navigate = useNavigate();
   return (
-    <header className="bg-white border-b border-[#E5E7EB] h-14 flex items-center px-6 flex-shrink-0">
-      <div className="max-w-6xl mx-auto w-full flex items-center gap-2.5">
-        <button onClick={() => navigate('/')} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-          <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ backgroundColor: TEAL }}>
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <header style={{
+      background: 'var(--card)',
+      borderBottom: '1px solid var(--border)',
+      height: '3.5rem',
+      display: 'flex',
+      alignItems: 'center',
+      padding: '0 1.5rem',
+      flexShrink: 0,
+    }}>
+      <div style={{ maxWidth: '72rem', margin: '0 auto', width: '100%', display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+        <button
+          onClick={() => navigate('/')}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: 'none', border: 'none', cursor: 'pointer', opacity: 1, transition: 'opacity 0.15s' }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        >
+          <div style={{
+            width: '1.75rem', height: '1.75rem', borderRadius: 'var(--r-md)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'var(--primary)',
+          }}>
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 3M21 7.5H7.5" />
             </svg>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-[#111827] text-sm tracking-tight">Hub & Spoke</span>
-            <span className="text-[#9CA3AF] text-sm">· Internal Linking</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            <span style={{ fontWeight: 700, color: 'var(--text)', fontSize: '0.875rem', letterSpacing: '-0.01em' }}>Hub &amp; Spoke</span>
+            <span style={{ color: 'var(--text-3)', fontSize: '0.875rem' }}>· Internal Linking</span>
           </div>
         </button>
       </div>
@@ -65,59 +82,114 @@ function CreateProjectModal({ onClose, onCreate }) {
     }
   }
 
-  return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl w-full max-w-lg p-6 space-y-4" onClick={e => e.stopPropagation()}>
-        <h2 className="text-base font-semibold text-[#111827]">Create Project</h2>
+  const inputStyle = {
+    width: '100%',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--r-md)',
+    padding: '0.5rem 0.75rem',
+    fontSize: '0.875rem',
+    background: 'var(--card)',
+    color: 'var(--text)',
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
 
-        <div className="space-y-3">
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: 'var(--card)', borderRadius: 'var(--r-xl)', width: '100%', maxWidth: '32rem', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <h2 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text)' }}>Create Project</h2>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <div>
-            <label className="block text-xs font-medium text-[#374151] mb-1">Project Name <span className="text-red-500">*</span></label>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text)', marginBottom: '0.25rem' }}>
+              Project Name <span style={{ color: 'var(--danger)' }}>*</span>
+            </label>
             <input
               autoFocus
               value={name}
               onChange={e => setName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleCreate()}
               placeholder="e.g. Riccobene Dental Blog Q2"
-              className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3DAA8E]"
+              style={inputStyle}
+              onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+              onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#374151] mb-1">Website Domain <span className="text-red-500">*</span></label>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text)', marginBottom: '0.25rem' }}>
+              Website Domain <span style={{ color: 'var(--danger)' }}>*</span>
+            </label>
             <input
               value={domain}
               onChange={e => setDomain(e.target.value)}
               placeholder="https://www.example.com"
-              className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3DAA8E]"
+              style={inputStyle}
+              onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+              onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label className="block text-xs font-medium text-[#374151] mb-1">Industry</label>
-              <select value={industry} onChange={e => setIndustry(e.target.value)}
-                className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3DAA8E]">
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text)', marginBottom: '0.25rem' }}>Industry</label>
+              <select
+                value={industry}
+                onChange={e => setIndustry(e.target.value)}
+                style={inputStyle}
+                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+                onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+              >
                 <option value="">Select…</option>
                 {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#374151] mb-1">Description</label>
-              <input value={description} onChange={e => setDescription(e.target.value)}
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--text)', marginBottom: '0.25rem' }}>Description</label>
+              <input
+                value={description}
+                onChange={e => setDescription(e.target.value)}
                 placeholder="Optional notes"
-                className="w-full border border-[#E5E7EB] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#3DAA8E]" />
+                style={inputStyle}
+                onFocus={e => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 2px var(--primary-soft)'; }}
+                onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
+              />
             </div>
           </div>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--danger)' }}>{error}</p>}
 
-        <div className="flex gap-2 pt-1">
-          <button onClick={handleCreate} disabled={saving}
-            className="px-4 py-2 text-sm font-medium rounded-md text-white disabled:opacity-50"
-            style={{ backgroundColor: TEAL }}>
+        <div style={{ display: 'flex', gap: '0.5rem', paddingTop: '0.25rem' }}>
+          <button
+            onClick={handleCreate}
+            disabled={saving}
+            style={{
+              padding: '0.5rem 1rem',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              borderRadius: 'var(--r-md)',
+              background: 'var(--primary)',
+              color: '#fff',
+              border: 'none',
+              cursor: saving ? 'not-allowed' : 'pointer',
+              opacity: saving ? 0.5 : 1,
+            }}
+          >
             {saving ? 'Creating…' : 'Create Project'}
           </button>
-          <button onClick={onClose} className="px-4 py-2 text-sm text-[#6B7280] hover:text-[#111827]">Cancel</button>
+          <button
+            onClick={onClose}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-2)'}
+          >
+            Cancel
+          </button>
         </div>
       </div>
     </div>
@@ -128,6 +200,7 @@ function ProjectCard({ project, onDelete }) {
   const navigate = useNavigate();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   async function handleDelete(e) {
     e.stopPropagation();
@@ -138,40 +211,70 @@ function ProjectCard({ project, onDelete }) {
     } catch { setDeleting(false); }
   }
 
-  const statusColor = STATUS_COLORS[project.workflowState] || '#9CA3AF';
+  const tokenInfo = STATUS_TOKEN[project.workflowState] || STATUS_TOKEN.input;
   const statusLabel = STATUS_LABELS[project.workflowState] || project.workflowState;
 
   return (
-    <div onClick={() => navigate(`/hub-spoke/${project.id}`)}
-      className="bg-white rounded-xl border border-[#E5E7EB] p-5 cursor-pointer hover:shadow-md transition-shadow group"
-      style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <h3 className="text-sm font-semibold text-[#111827] truncate">{project.name}</h3>
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0"
-              style={{ backgroundColor: statusColor + '1A', color: statusColor }}>
+    <div
+      onClick={() => navigate(`/hub-spoke/${project.id}`)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: 'var(--card)',
+        borderRadius: 'var(--r-lg)',
+        border: '1px solid var(--border)',
+        padding: '1.25rem',
+        cursor: 'pointer',
+        boxShadow: hovered ? '0 4px 12px rgba(0,0,0,0.1)' : '0 1px 3px rgba(0,0,0,0.07)',
+        transition: 'box-shadow 0.15s',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
+            <h3 style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {project.name}
+            </h3>
+            <span style={{
+              fontSize: '0.75rem',
+              fontWeight: 500,
+              padding: '0.125rem 0.5rem',
+              borderRadius: '9999px',
+              flexShrink: 0,
+              background: tokenInfo.bgAlpha,
+              color: tokenInfo.color,
+            }}>
               {statusLabel}
             </span>
           </div>
-          <p className="text-xs text-[#6B7280] truncate">{project.domain}</p>
-          {project.industry && <p className="text-xs text-[#9CA3AF] mt-0.5">{project.industry}</p>}
+          <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{project.domain}</p>
+          {project.industry && <p style={{ margin: '0.125rem 0 0', fontSize: '0.75rem', color: 'var(--text-3)' }}>{project.industry}</p>}
         </div>
-        <div className="flex-shrink-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+        <div
+          style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
+          onClick={e => e.stopPropagation()}
+        >
           {confirmDelete ? (
             <>
-              <span className="text-xs text-red-600">Delete?</span>
-              <button onClick={handleDelete} disabled={deleting} className="text-xs font-medium text-red-600 hover:text-red-800">Yes</button>
-              <button onClick={() => setConfirmDelete(false)} className="text-xs text-[#6B7280]">No</button>
+              <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>Delete?</span>
+              <button onClick={handleDelete} disabled={deleting} style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>Yes</button>
+              <button onClick={() => setConfirmDelete(false)} style={{ fontSize: '0.75rem', color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer' }}>No</button>
             </>
           ) : (
-            <button onClick={() => setConfirmDelete(true)} className="text-xs text-[#9CA3AF] hover:text-red-500">Delete</button>
+            <button
+              onClick={() => setConfirmDelete(true)}
+              style={{ fontSize: '0.75rem', color: 'var(--text-3)', background: 'none', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--danger)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-3)'}
+            >
+              Delete
+            </button>
           )}
         </div>
       </div>
-      <div className="mt-3 flex items-center gap-4 text-xs text-[#9CA3AF]">
+      <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.75rem', color: 'var(--text-3)' }}>
         <span>{new Date(project.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-        {project.description && <span className="truncate">{project.description}</span>}
+        {project.description && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{project.description}</span>}
       </div>
     </div>
   );
@@ -199,40 +302,85 @@ export default function HubSpokePage() {
 
   return (
     <>
-      <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <main style={{ flex: 1, maxWidth: '72rem', margin: '0 auto', width: '100%', padding: '2rem 1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
           <div>
-            <h1 className="text-xl font-bold text-[#111827]">Hub & Spoke Projects</h1>
-            <p className="text-sm text-[#6B7280] mt-0.5">Categorize content and generate internal linking recommendations</p>
+            <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--text)' }}>Hub &amp; Spoke Projects</h1>
+            <p style={{ margin: '0.125rem 0 0', fontSize: '0.875rem', color: 'var(--text-2)' }}>Categorize content and generate internal linking recommendations</p>
           </div>
-          <button onClick={() => setShowCreate(true)}
-            className="px-4 py-2 text-sm font-medium text-white rounded-lg"
-            style={{ backgroundColor: TEAL }}>
+          <button
+            onClick={() => setShowCreate(true)}
+            style={{
+              padding: '0.5rem 1rem',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              color: '#fff',
+              background: 'var(--primary)',
+              border: 'none',
+              borderRadius: 'var(--r-lg)',
+              cursor: 'pointer',
+            }}
+          >
             + New Project
           </button>
         </div>
 
-        {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
+        {error && (
+          <div style={{
+            marginBottom: '1rem',
+            padding: '0.75rem',
+            background: 'var(--danger-soft)',
+            border: '1px solid var(--danger)',
+            borderRadius: 'var(--r-lg)',
+            fontSize: '0.875rem',
+            color: 'var(--danger)',
+          }}>
+            {error}
+          </div>
+        )}
 
         {loading ? (
-          <div className="py-12 text-center text-sm text-[#9CA3AF]">Loading…</div>
+          <div style={{ padding: '3rem 0', textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-3)' }}>Loading…</div>
         ) : projects.length === 0 ? (
-          <div className="bg-white rounded-xl border border-[#E5E7EB] p-12 text-center" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-            <div className="w-12 h-12 rounded-xl mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: TEAL + '1A' }}>
-              <svg className="w-6 h-6" style={{ color: TEAL }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <div style={{
+            background: 'var(--card)',
+            borderRadius: 'var(--r-xl)',
+            border: '1px solid var(--border)',
+            padding: '3rem',
+            textAlign: 'center',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+          }}>
+            <div style={{
+              width: '3rem', height: '3rem', borderRadius: 'var(--r-xl)',
+              margin: '0 auto 1rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'var(--primary-soft)',
+            }}>
+              <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="var(--primary)" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 3M21 7.5H7.5" />
               </svg>
             </div>
-            <h2 className="text-sm font-semibold text-[#111827] mb-1">No projects yet</h2>
-            <p className="text-sm text-[#6B7280] mb-4">Create your first hub and spoke project to get started.</p>
-            <button onClick={() => setShowCreate(true)}
-              className="px-4 py-2 text-sm font-medium text-white rounded-lg"
-              style={{ backgroundColor: TEAL }}>
+            <h2 style={{ margin: '0 0 0.25rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)' }}>No projects yet</h2>
+            <p style={{ margin: '0 0 1rem', fontSize: '0.875rem', color: 'var(--text-2)' }}>Create your first hub and spoke project to get started.</p>
+            <button
+              onClick={() => setShowCreate(true)}
+              style={{
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                color: '#fff',
+                background: 'var(--primary)',
+                border: 'none',
+                borderRadius: 'var(--r-lg)',
+                cursor: 'pointer',
+              }}
+            >
               Create First Project
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
             {projects.map(p => (
               <ProjectCard key={p.id} project={p} onDelete={id => setProjects(prev => prev.filter(x => x.id !== id))} />
             ))}

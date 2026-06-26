@@ -16,125 +16,169 @@ export default function ModuleAuditPage() {
   }, []);
 
   return (
-      <main className="max-w-7xl mx-auto px-8 py-7">
-        <div className="mb-6">
-          <h1 className="text-[22px] font-bold text-[#111827]">Dependency Audit</h1>
-          <p className="text-sm text-[#6B7280] mt-1">Full health check of module-to-KB bindings. Fix broken links before running modules.</p>
-        </div>
+    <main style={{ maxWidth: '80rem', margin: '0 auto', padding: '1.75rem 2rem' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Dependency Audit</h1>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginTop: '0.25rem' }}>Full health check of module-to-KB bindings. Fix broken links before running modules.</p>
+      </div>
 
-        {loading && <p className="text-sm text-[#6B7280]">Running audit…</p>}
-        {error && <p className="text-sm text-red-500">{error}</p>}
+      {loading && <p style={{ fontSize: '0.875rem', color: 'var(--text-2)' }}>Running audit…</p>}
+      {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger)' }}>{error}</p>}
 
-        {audit && (
-          <div className="space-y-6">
-            {/* Summary strip */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { label: 'Total KBs', value: audit.summary.total_kbs, color: '#111827' },
-                { label: 'Active KBs', value: audit.summary.active_kbs, color: '#3DAA8E' },
-                { label: 'Errors', value: audit.summary.errors, color: '#DC2626' },
-                { label: 'Warnings', value: audit.summary.warnings, color: '#D97706' },
-              ].map(s => (
-                <div key={s.label} className="bg-white rounded-xl border border-[#E5E7EB] p-5" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                  <div className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</div>
-                  <div className="text-xs text-[#6B7280] mt-1">{s.label}</div>
-                </div>
-              ))}
-            </div>
+      {audit && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* Summary strip */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
+            {[
+              { label: 'Total KBs', value: audit.summary.total_kbs, color: 'var(--text)' },
+              { label: 'Active KBs', value: audit.summary.active_kbs, color: 'var(--primary)' },
+              { label: 'Errors', value: audit.summary.errors, color: 'var(--danger)' },
+              { label: 'Warnings', value: audit.summary.warnings, color: 'var(--warning)' },
+            ].map(s => (
+              <div key={s.label} style={{
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r-lg)',
+                padding: '1.25rem',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+              }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-2)', marginTop: '0.25rem' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
 
-            {/* Module audit */}
-            <div>
-              <h2 className="text-base font-semibold text-[#111827] mb-3">Module Health</h2>
-              <div className="space-y-4">
-                {audit.modules.map(mod => (
-                  <div key={mod.module_id} className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                    <div className="flex items-center justify-between px-5 py-3.5 bg-[#F9FAFB] border-b border-[#E5E7EB]">
-                      <div className="flex items-center gap-3">
-                        <span className="font-semibold text-sm text-[#111827]">{mod.label}</span>
-                        <span className="font-mono text-xs text-[#9CA3AF]">{mod.module_id}</span>
-                      </div>
-                      <KBStatusBadge health={mod.health} />
+          {/* Module audit */}
+          <div>
+            <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.75rem' }}>Module Health</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {audit.modules.map(mod => (
+                <div key={mod.module_id} style={{
+                  background: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--r-lg)',
+                  overflow: 'hidden',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.875rem 1.25rem',
+                    background: 'var(--surface)',
+                    borderBottom: '1px solid var(--border)',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text)' }}>{mod.label}</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-3)' }}>{mod.module_id}</span>
                     </div>
-                    <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-2">Required KBs</div>
-                        <div className="space-y-1.5">
-                          {mod.required.map((kb, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                              <KBStatusBadge health={kb.status === 'OK' ? 'OK' : kb.status === 'TEMPLATE' ? 'INFO' : 'ERROR'} size="sm" />
-                              <span className="text-xs text-[#111827] font-mono">{kb.pattern}</span>
-                              {kb.reason && <span className="text-xs text-red-500">— {kb.reason}</span>}
-                            </div>
-                          ))}
-                        </div>
+                    <KBStatusBadge health={mod.health} />
+                  </div>
+                  <div style={{
+                    padding: '1rem 1.25rem',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '1rem',
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Required KBs</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                        {mod.required.map((kb, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <KBStatusBadge health={kb.status === 'OK' ? 'OK' : kb.status === 'TEMPLATE' ? 'INFO' : 'ERROR'} size="sm" />
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>{kb.pattern}</span>
+                            {kb.reason && <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>— {kb.reason}</span>}
+                          </div>
+                        ))}
                       </div>
-                      <div>
-                        <div className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-2">Optional KBs</div>
-                        <div className="space-y-1.5">
-                          {mod.optional.map((kb, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                              <KBStatusBadge health={kb.status === 'OK' ? 'OK' : kb.status === 'TEMPLATE' ? 'INFO' : 'WARNING'} size="sm" />
-                              <span className="text-xs text-[#111827] font-mono">{kb.pattern}</span>
-                              {kb.reason && <span className="text-xs text-yellow-600">— {kb.reason}</span>}
-                            </div>
-                          ))}
-                          {mod.optional.length === 0 && <span className="text-xs text-[#9CA3AF]">None</span>}
-                        </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Optional KBs</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                        {mod.optional.map((kb, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <KBStatusBadge health={kb.status === 'OK' ? 'OK' : kb.status === 'TEMPLATE' ? 'INFO' : 'WARNING'} size="sm" />
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>{kb.pattern}</span>
+                            {kb.reason && <span style={{ fontSize: '0.75rem', color: 'var(--warning)' }}>— {kb.reason}</span>}
+                          </div>
+                        ))}
+                        {mod.optional.length === 0 && <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>None</span>}
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* KB health */}
-            <div>
-              <h2 className="text-base font-semibold text-[#111827] mb-3">Knowledge Base Health</h2>
-              <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
-                      <th className="text-left text-xs font-semibold text-[#6B7280] px-4 py-3">KB ID</th>
-                      <th className="text-left text-xs font-semibold text-[#6B7280] px-4 py-3">Category</th>
-                      <th className="text-left text-xs font-semibold text-[#6B7280] px-4 py-3">Client</th>
-                      <th className="text-left text-xs font-semibold text-[#6B7280] px-4 py-3">Status</th>
-                      <th className="text-left text-xs font-semibold text-[#6B7280] px-4 py-3">Flags</th>
-                      <th className="px-4 py-3" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#F3F4F6]">
-                    {audit.knowledge_bases.map(kb => (
-                      <tr key={kb.id} className="hover:bg-[#F9FAFB] transition-colors">
-                        <td className="px-4 py-3 font-medium text-[#111827] font-mono text-xs">{kb.id}</td>
-                        <td className="px-4 py-3 text-[#6B7280] text-xs">{kb.category}</td>
-                        <td className="px-4 py-3 text-[#6B7280] text-xs">{kb.client}</td>
-                        <td className="px-4 py-3"><KBStatusBadge health={kb.health} /></td>
-                        <td className="px-4 py-3">
-                          {kb.flags.length === 0
-                            ? <span className="text-xs text-[#9CA3AF]">None</span>
-                            : <div className="space-y-0.5">
-                                {kb.flags.map((f, i) => (
-                                  <div key={i} className="text-xs" style={{ color: f.level === 'ERROR' ? '#DC2626' : f.level === 'WARNING' ? '#D97706' : '#6B7280' }}>
-                                    {f.msg}
-                                  </div>
-                                ))}
-                              </div>
-                          }
-                        </td>
-                        <td className="px-4 py-3">
-                          <button onClick={() => navigate(`/kb/${kb.id}`)}
-                            className="text-xs font-medium" style={{ color: '#3DAA8E' }}>
-                            Edit →
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                </div>
+              ))}
             </div>
           </div>
-        )}
-      </main>
+
+          {/* KB health */}
+          <div>
+            <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.75rem' }}>Knowledge Base Health</h2>
+            <div style={{
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--r-lg)',
+              overflow: 'hidden',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+            }}>
+              <table style={{ width: '100%', fontSize: '0.875rem', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+                    {['KB ID', 'Category', 'Client', 'Status', 'Flags', ''].map((h, i) => (
+                      <th key={i} style={{
+                        textAlign: 'left',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        color: 'var(--text-2)',
+                        padding: '0.75rem 1rem',
+                      }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {audit.knowledge_bases.map((kb, idx) => (
+                    <tr key={kb.id} style={{
+                      borderBottom: idx < audit.knowledge_bases.length - 1 ? '1px solid var(--surface)' : 'none',
+                      transition: 'background 0.15s',
+                    }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: 500, color: 'var(--text)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{kb.id}</td>
+                      <td style={{ padding: '0.75rem 1rem', color: 'var(--text-2)', fontSize: '0.75rem' }}>{kb.category}</td>
+                      <td style={{ padding: '0.75rem 1rem', color: 'var(--text-2)', fontSize: '0.75rem' }}>{kb.client}</td>
+                      <td style={{ padding: '0.75rem 1rem' }}><KBStatusBadge health={kb.health} /></td>
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        {kb.flags.length === 0
+                          ? <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>None</span>
+                          : <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+                              {kb.flags.map((f, i) => (
+                                <div key={i} style={{
+                                  fontSize: '0.75rem',
+                                  color: f.level === 'ERROR' ? 'var(--danger)' : f.level === 'WARNING' ? 'var(--warning)' : 'var(--text-2)',
+                                }}>
+                                  {f.msg}
+                                </div>
+                              ))}
+                            </div>
+                        }
+                      </td>
+                      <td style={{ padding: '0.75rem 1rem' }}>
+                        <button
+                          onClick={() => navigate(`/kb/${kb.id}`)}
+                          style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                        >
+                          Edit →
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
   );
 }
