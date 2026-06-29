@@ -179,6 +179,8 @@ async function fetchArticle(url) {
   ];
 
   $('[class], [id]').each((_, el) => {
+    const tag = (el.tagName || '').toLowerCase();
+    if (tag === 'html' || tag === 'body') return;
     const combined = `${($(el).attr('class') || '')} ${($(el).attr('id') || '')}`.toLowerCase();
     if (NON_CONTENT.some(p => p.test(combined))) $(el).remove();
   });
