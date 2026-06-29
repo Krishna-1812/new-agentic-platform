@@ -5,9 +5,15 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const OpenAI = require('openai');
 const { Document, Packer, Paragraph, TextRun, BorderStyle, AlignmentType } = require('docx');
-const { searchGoogle } = require('../services/googleSearch');
-const { scrapeUrlsDetailed } = require('../services/scraper');
 const store = require('../services/kbStore');
+
+const MODELS = [
+  'gpt-4o-mini',
+  'gpt-5.4-mini',
+  'gpt-4o-mini-search-preview',
+  'gpt-4.1-mini',
+  'gpt-5-mini',
+];
 
 const sessions = new Map();
 
@@ -17,17 +23,14 @@ function generateToken() {
 
 // ── POST /init ─────────────────────────────────────────────────────────────────
 router.post('/init', (req, res) => {
-  const { url, models, kbId } = req.body;
+  const { url, kbId } = req.body;
   if (!url?.trim()) return res.status(400).json({ error: 'url is required' });
-  if (!Array.isArray(models) || models.length !== 5) {
-    return res.status(400).json({ error: 'Exactly 5 models must be selected' });
-  }
   let parsedUrl;
   try { parsedUrl = new URL(url.trim()); }
   catch { return res.status(400).json({ error: 'Invalid URL format' }); }
 
   const token = generateToken();
-  sessions.set(token, { url: parsedUrl.href, models, kbId: kbId || 'seo-geo-article-enhancement-knowledge-base' });
+  sessions.set(token, { url: parsedUrl.href, kbId: kbId || 'seo-geo-article-enhancement-knowledge-base' });
   setTimeout(() => sessions.delete(token), 120000);
   res.json({ token });
 });
@@ -38,7 +41,7 @@ router.get('/stream/:token', async (req, res) => {
   if (!session) return res.status(404).json({ error: 'Session not found or expired.' });
   sessions.delete(req.params.token);
 
-  const { url, models, kbId } = session;
+  const { url, kbId } = session;
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -71,66 +74,44 @@ router.get('/stream/:token', async (req, res) => {
       metaDescription: articleData.metaDescription,
     });
 
-    // Step 2: Analyze article
-    emit('step', { id: 'analyze', status: 'active', message: 'Analyzing content structure and gaps…' });
-    const analysis = await analyzeArticle(openai, articleData);
-    emit('step', { id: 'analyze', status: 'done', message: `Topic: ${analysis.topic} · Intent: ${analysis.intent} · ${analysis.contentGaps.length} gaps found` });
-    emit('analysis', analysis);
+    // Step 2: Theme & Query Generation
+    emit('step', { id: 'theme', status: 'active', message: 'Identifying article theme and generating queries…' });
+    const themeData = await generateThemeAndQueries(openai, articleData);
+    emit('step', { id: 'theme', status: 'done', message: `Theme: "${themeData.theme}" · 3 queries generated` });
+    emit('theme_queries', themeData);
 
-    // Step 3: Build 5 fanout prompts
-    emit('step', { id: 'prompts', status: 'active', message: 'Building 5 specialized analysis prompts…' });
-    const fanoutPrompts = buildFanoutPrompts(articleData, analysis);
-    emit('step', { id: 'prompts', status: 'done', message: 'SEO · GEO · Intent · E-E-A-T · Conversion prompts ready' });
-    emit('prompts', { prompts: fanoutPrompts.map(p => ({ key: p.key, label: p.label })) });
+    // Step 3: LLM Fanout — 3 queries × 5 models = 15 parallel calls
+    emit('step', { id: 'llm_fanout', status: 'active', message: 'Running 15 model queries in parallel…' });
+    const llmResults = await runLLMFanout(openai, themeData.queries, emit);
+    emit('llm_results', { results: llmResults.map(r => ({ queryIndex: r.queryIndex, query: r.query, modelIndex: r.modelIndex, model: r.model, success: r.success })) });
+    emit('step', { id: 'llm_fanout', status: 'done', message: `${llmResults.filter(r => r.success).length}/15 responses received` });
 
-    // Step 4: Parallel — LLM fanout + search/crawl branch
-    emit('step', { id: 'llm_fanout', status: 'active', message: `Running ${models.length} model analyses in parallel…` });
-    emit('step', { id: 'keywords', status: 'active', message: 'Generating search keywords from analysis…' });
+    // Step 4: Concept Synthesis — 15 parallel calls (one per model output)
+    emit('step', { id: 'synthesis', status: 'active', message: 'Synthesizing concepts from all model outputs…' });
+    const { allConcepts } = await runConceptSynthesis(openai, llmResults, emit);
+    emit('step', { id: 'synthesis', status: 'done', message: `${allConcepts.length} concepts extracted` });
 
-    const [llmResults, searchBranchData] = await Promise.all([
-      runLLMFanout(openai, models, fanoutPrompts, emit),
-      runSearchBranch(openai, fanoutPrompts, analysis, emit),
-    ]);
-
-    emit('step', { id: 'llm_fanout', status: 'done', message: `${llmResults.filter(r => r.success).length}/${models.length} model responses received` });
-    emit('llm_results', { results: llmResults.map(r => ({ key: r.key, label: r.label, model: r.model, success: r.success })) });
-
-    // Step 5: SERP pattern analysis
-    emit('step', { id: 'serp_analysis', status: 'active', message: 'Analyzing competitor content patterns…' });
-    const serpAnalysis = analyzeSERPData(searchBranchData.competitorPages);
-    emit('step', { id: 'serp_analysis', status: 'done', message: `${serpAnalysis.successfulPages} competitor pages analyzed` });
-    emit('serp_patterns', serpAnalysis);
-
-    // Step 6: Load KB
+    // Step 5: Load KB
     emit('step', { id: 'kb', status: 'active', message: 'Loading enhancement framework KB…' });
     const kb = await store.readKB(kbId);
     emit('step', { id: 'kb', status: 'done', message: kb ? `KB "${kbId}" loaded` : 'KB not found — using defaults' });
 
-    // Step 7: Generate recommendation report
-    emit('step', { id: 'report', status: 'active', message: 'Generating unified enhancement report…' });
-    const report = await generateReport(openai, articleData, analysis, llmResults, serpAnalysis, kb);
-    emit('step', { id: 'report', status: 'done', message: 'Enhancement recommendations ready' });
-    emit('report', { report });
+    // Step 6: Generate Recommendations
+    emit('step', { id: 'recommend', status: 'active', message: 'Generating enhancement recommendations…' });
+    const recommendations = await generateRecommendations(openai, articleData, themeData, allConcepts, kb);
+    emit('step', { id: 'recommend', status: 'done', message: 'Enhancement recommendations ready' });
+    emit('recommendations', { recommendations });
 
-    // Step 8: Enhance existing sections (inline stats, quotes, citations)
+    // Step 7: Enhance article sections + structural additions
     emit('step', { id: 'enhance', status: 'active', message: 'Enhancing article sections with statistics, citations, and expert quotes…' });
-    const enhancedChunks = await generateEnhancedArticle(openai, articleData, analysis, report, kb);
-    emit('step', { id: 'enhance', status: 'done', message: 'Section enhancements complete' });
-
-    // Step 9: Add structural additions (FAQ + report-recommended new sections)
-    emit('step', { id: 'structure', status: 'active', message: 'Adding FAQ and recommended new sections…' });
-    // Detect if the article already has a FAQ section so we don't add a duplicate
+    const enhancedChunks = await generateEnhancedArticle(openai, articleData, recommendations, kb);
     const existingHeadings = [...(articleData.h2s || []), ...(articleData.h3s || [])].join(' ');
     const articleHasFaq = /faq|frequently asked/i.test(existingHeadings);
-    const structural = await generateStructuralAdditions(openai, articleData, analysis, report, kb, articleHasFaq);
-    // Dedup only per-chunk enhancements; structural additions (FAQ, new sections) are entirely new
-    // content so deduplicating them would collapse their internal newlines and destroy heading structure.
+    const structural = await generateStructuralAdditions(openai, articleData, themeData, recommendations, kb, articleHasFaq);
     let enhancedText = deduplicateAdditions(enhancedChunks);
     if (structural) enhancedText += '\n\n' + structural;
-    // Expand all multi-line [NEW]...[/NEW] blocks to per-line markers so the frontend and docx
-    // renderer both receive consistently normalized text (one [NEW]line[/NEW] per line).
     enhancedText = normalizeNewMarkers(enhancedText);
-    emit('step', { id: 'structure', status: 'done', message: 'FAQ and structural sections added' });
+    emit('step', { id: 'enhance', status: 'done', message: 'Article enhancement complete' });
     emit('enhanced', { text: enhancedText });
 
   } catch (err) {
@@ -161,7 +142,6 @@ async function fetchArticle(url) {
   const metaDescription = $('meta[name="description"]').attr('content') || '';
   const h1 = $('h1').first().text().trim();
 
-  // Collect links before stripping (links live in elements that may be removed)
   const baseHostname = new URL(url).hostname.replace(/^www\./, '');
   const internalLinks = [];
   const externalLinks = [];
@@ -176,14 +156,9 @@ async function fetchArticle(url) {
     } catch {}
   });
 
-  // ── Stage 1: Remove structural chrome ─────────────────────────────────────
   $('script, style, nav, header, footer, aside, noscript, iframe, form, ' +
     '[role="navigation"], [role="banner"], [role="contentinfo"]').remove();
 
-  // ── Stage 2: Remove elements by class/id pattern (non-content widgets) ────
-  // Covers: related posts, social share, comments, newsletter CTAs, ads,
-  // sidebars, modals, office/location directories, breadcrumbs, cookie bars,
-  // book-now CTAs, author bios, tag clouds, and recent-article carousels.
   const NON_CONTENT = [
     /\b(related[-_]?(posts?|articles?|content)|you[-_]?might[-_]?also|recommended[-_]?(posts?|articles?)|more[-_]?(articles?|posts?|reads?))\b/i,
     /\b(share[-_]?(this|post|article|buttons?)|social[-_]?(share|media|links?|icons?)|follow[-_]?us)\b/i,
@@ -208,8 +183,6 @@ async function fetchArticle(url) {
     if (NON_CONTENT.some(p => p.test(combined))) $(el).remove();
   });
 
-  // ── Stage 3: Select the primary article container ──────────────────────────
-  // Tries selectors from most specific (article with content class) to least (body).
   const ARTICLE_SELECTORS = [
     'article[class*="post"]', 'article[class*="article"]', 'article[class*="blog"]',
     'article[class*="entry"]', 'article[class*="content"]',
@@ -235,9 +208,6 @@ async function fetchArticle(url) {
   }
   if (!$mainEl) $mainEl = $('body');
 
-  // ── Stage 4: Prune non-article subtrees within the container ───────────────
-
-  // 4a. Remove high link-density blocks (related posts grids, in-content nav menus)
   $mainEl.find('ul, ol, nav, div, section').each((_, el) => {
     const $el = $(el);
     const text = $el.text().replace(/\s+/g, ' ').trim();
@@ -248,8 +218,6 @@ async function fetchArticle(url) {
     if (linkDensity > 0.5 && links.length >= 3) $(el).remove();
   });
 
-  // 4b. Remove large lists of short items (city/location directories, nav menus).
-  // Legitimate article bullet lists rarely have 12+ items averaging <35 chars each.
   $mainEl.find('ul, ol').each((_, el) => {
     const $el = $(el);
     const $items = $el.children('li');
@@ -262,7 +230,6 @@ async function fetchArticle(url) {
 
   const mainContentHtml = $mainEl.html() || '';
 
-  // ── Extract headings from cleaned content (not the full raw page) ──────────
   const $c = cheerio.load(mainContentHtml);
   const h2s = $c('h2').map((_, el) => $c(el).text().trim()).get().filter(Boolean);
   const h3s = $c('h3').map((_, el) => $c(el).text().trim()).get().filter(Boolean);
@@ -289,177 +256,72 @@ async function fetchArticle(url) {
   };
 }
 
-// ── analyzeArticle ─────────────────────────────────────────────────────────────
-async function analyzeArticle(openai, articleData) {
+// ── generateThemeAndQueries ────────────────────────────────────────────────────
+async function generateThemeAndQueries(openai, articleData) {
   const res = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: 'gpt-5.4-mini',
     response_format: { type: 'json_object' },
     messages: [
-      { role: 'system', content: 'You are an expert content strategist and SEO analyst. Respond with valid JSON only.' },
+      { role: 'system', content: 'You are an expert content analyst. Respond with valid JSON only.' },
       {
         role: 'user',
-        content: `Analyze this article and return a structured assessment.
+        content: `Analyze this article and identify its main theme and generate search queries.
 
 Title: ${articleData.title}
-URL: ${articleData.url}
-Meta Description: ${articleData.metaDescription}
 H1: ${articleData.h1}
 H2s: ${articleData.h2s.join(' | ')}
-H3s: ${articleData.h3s.slice(0, 10).join(' | ')}
-Word count: ${articleData.wordCount}
-Internal links: ${articleData.internalLinks.length}
-External links: ${articleData.externalLinks.length}
 
 Content sample (first 3000 chars):
 ${articleData.bodyText.slice(0, 3000)}
 
-Return JSON with exactly these fields:
+Return JSON:
 {
-  "topic": "The core subject in 3-6 words",
-  "primaryKeyword": "The most likely target search keyword",
-  "intent": "informational or commercial or transactional or navigational",
-  "targetAudience": "Who this article is written for",
-  "contentStrengths": ["strength 1", "strength 2"],
-  "contentGaps": ["missing topic or angle 1", "missing topic 2"],
-  "thinSections": ["H2/H3 heading that appears thin or underdeveloped"],
-  "seoIssues": ["specific SEO weakness 1", "specific SEO weakness 2"],
-  "geoWeaknesses": ["specific GEO/AI-visibility weakness"],
-  "missingTopics": ["important related topic not covered"],
-  "faqOpportunities": ["question that could become a FAQ entry"]
-}`,
+  "theme": "The article's main topic/theme in 4-8 words",
+  "queries": [
+    { "queryIndex": 0, "query": "the primary user search query this article addresses", "isPrimary": true },
+    { "queryIndex": 1, "query": "a related user query expanding on the theme", "isPrimary": false },
+    { "queryIndex": 2, "query": "another related user query from a different angle", "isPrimary": false }
+  ]
+}
+
+Rules:
+- queries[0] is the PRIMARY query — the most direct match to the article's main intent
+- queries[1] and [2] are related but distinct queries a user interested in this theme might also search for
+- Each query should be phrased as a natural user search (not a headline), 4-12 words
+- Queries must be meaningfully different from each other — not paraphrases`,
       }
     ],
   });
-
   return JSON.parse(res.choices[0].message.content);
 }
 
-// ── buildFanoutPrompts ─────────────────────────────────────────────────────────
-function buildFanoutPrompts(articleData, analysis) {
-  const { topic, primaryKeyword, intent, contentGaps, thinSections, missingTopics } = analysis;
-
-  const articleContext = `ARTICLE: ${articleData.title}
-URL: ${articleData.url}
-TOPIC: ${topic}
-PRIMARY KEYWORD: ${primaryKeyword}
-INTENT: ${intent}
-WORD COUNT: ${articleData.wordCount}
-H1: ${articleData.h1}
-H2s: ${articleData.h2s.join(' | ')}
-CONTENT GAPS IDENTIFIED: ${contentGaps.join(', ')}
-THIN SECTIONS: ${thinSections.join(', ')}
-MISSING TOPICS: ${missingTopics.join(', ')}
-
-CONTENT SAMPLE (first 2500 chars):
-${articleData.bodyText.slice(0, 2500)}`;
-
-  return [
-    {
-      key: 'seo',
-      label: 'SEO Content Gap Analysis',
-      prompt: `${articleContext}
-
-You are an SEO Content Strategist. Analyze this article from a pure SEO perspective.
-
-Cover:
-1. **Keyword coverage** — What primary, secondary, and LSI keywords is the article missing or underusing?
-2. **Heading structure** — Are the H2/H3s optimized for featured snippets and PAA? What changes would capture more SERP snippets?
-3. **Content gaps vs. search intent** — What subtopics do searchers expect to find on "${primaryKeyword}" that are absent?
-4. **Internal linking** — What contextual internal link opportunities exist?
-5. **Meta improvements** — How should the title tag and meta description be rewritten?
-6. **Thin content** — Which sections are too thin to rank competitively?
-
-For each finding, give a specific, actionable recommendation. Name the exact heading to add, the exact keyword to incorporate, the exact section to expand.`,
-    },
-    {
-      key: 'geo',
-      label: 'GEO & AI Visibility Analysis',
-      prompt: `${articleContext}
-
-You are a Generative Engine Optimization (GEO) specialist. Analyze this article for AI citation potential and visibility in Google AI Overviews, ChatGPT, Perplexity, Gemini, and Claude.
-
-Cover:
-1. **Answer-first structure** — Does the article place a direct, extractable answer within the first 150 words? What needs to change?
-2. **Entity completeness** — What important entities are missing or poorly defined?
-3. **Structured data opportunities** — What schema markup is missing (FAQ, HowTo, Article)?
-4. **Citability signals** — Are there enough specific, factual claims AI models can confidently extract?
-5. **Definition gaps** — What key terms are used without definition?
-6. **Structured formatting** — Where would numbered lists, definition blocks, or comparison tables improve AI extractability?
-
-For each finding, give a specific recommendation that will improve AI citation likelihood.`,
-    },
-    {
-      key: 'intent',
-      label: 'User Intent & Content Quality Analysis',
-      prompt: `${articleContext}
-
-You are a Content Quality and User Experience analyst. Analyze this article for intent alignment and content quality.
-
-Cover:
-1. **Intent match** — Does the article fully satisfy the "${intent}" intent behind "${primaryKeyword}"? Where does it fall short?
-2. **Completeness** — What questions does a typical user arrive with that the article does not answer?
-3. **Readability** — Are there sections with complex language, passive voice, or vague phrasing?
-4. **Information flow** — Is the content logically ordered? What should move earlier or later?
-5. **Thin content** — Which sections have under 100 words on a topic deserving deeper treatment?
-6. **FAQ opportunities** — What common user questions should be added as FAQ entries?
-7. **Supporting evidence** — Where are claims made without data, examples, or authority references?
-
-Identify exact passages or sections that need improvement and describe precisely what the improvement should be.`,
-    },
-    {
-      key: 'eeat',
-      label: 'E-E-A-T & Trust Enhancement Analysis',
-      prompt: `${articleContext}
-
-You are an E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness) audit specialist.
-
-Cover:
-1. **Experience signals** — Is there evidence of first-hand experience or real-world application? What could be added?
-2. **Expertise signals** — Does the article demonstrate deep domain knowledge? Where is it thin or vague?
-3. **Authoritativeness signals** — Are there citations to recognized authorities? What external references are missing?
-4. **Trustworthiness signals** — Are there appropriate disclaimers? Are claims accurate and free of exaggeration?
-5. **YMYL considerations** — If this touches health, finance, safety, or legal domains, what additional trust signals are needed?
-6. **Author credibility** — Is there an author bio with credentials? What should be added?
-7. **Accuracy gaps** — Are there vague or unsupported claims that could undermine trust?
-
-For each gap, give a specific recommendation for what to add, modify, or remove.`,
-    },
-    {
-      key: 'conversion',
-      label: 'Conversion, UX & Content Structure Analysis',
-      prompt: `${articleContext}
-
-You are a Conversion Rate Optimization and UX specialist. Analyze this article for conversion potential and structural effectiveness.
-
-Cover:
-1. **CTA presence and placement** — Are there clear calls-to-action? Where should CTAs be added or improved?
-2. **Content structure** — Is the information hierarchy clear? Do headings guide readers effectively?
-3. **Engagement elements** — What tables, checklists, or comparison charts are missing?
-4. **Trust-building elements** — Are there testimonials, social proof, or case studies that should be added?
-5. **Next-step guidance** — Does the article naturally guide users toward a next action?
-6. **Micro-conversions** — What low-commitment actions (subscribe, download, share) could be offered?
-7. **Abandonment risks** — What content elements might cause users to leave before reaching the key message?
-
-For each finding, give a specific, implementable recommendation that improves conversion without compromising content quality.`,
-    },
-  ];
-}
-
 // ── runLLMFanout ───────────────────────────────────────────────────────────────
-async function runLLMFanout(openai, models, fanoutPrompts, emit) {
-  const results = await Promise.all(
-    fanoutPrompts.map(async (promptObj, i) => {
-      const model = models[i];
-      try {
-        const text = await callLLM(openai, model, promptObj.prompt);
-        emit('llm_result', { key: promptObj.key, label: promptObj.label, model, success: true });
-        return { key: promptObj.key, label: promptObj.label, model, success: true, text };
-      } catch (err) {
-        emit('llm_result', { key: promptObj.key, label: promptObj.label, model, success: false, error: err.message });
-        return { key: promptObj.key, label: promptObj.label, model, success: false, text: '', error: err.message };
-      }
-    })
+async function runLLMFanout(openai, queries, emit) {
+  const tasks = queries.flatMap((q, qi) =>
+    MODELS.map((model, mi) => ({ queryIndex: qi, query: q.query, modelIndex: mi, model }))
   );
+
+  const results = await Promise.all(tasks.map(async ({ queryIndex, query, modelIndex, model }) => {
+    try {
+      const prompt = `Query: "${query}"
+
+Provide a comprehensive response to this search query. Include:
+- Key concepts, definitions, and explanations
+- Important statistics, data points, and research findings (with sources where known)
+- Best practices, methodologies, or actionable insights
+- Expert perspectives or authoritative viewpoints
+- Nuanced considerations or common misconceptions
+
+This information will be used to enhance an article on this topic. Focus on depth, accuracy, and specificity.`;
+      const text = await callLLM(openai, model, prompt);
+      emit('llm_result', { queryIndex, query, modelIndex, model, success: true });
+      return { queryIndex, query, modelIndex, model, success: true, text };
+    } catch (err) {
+      emit('llm_result', { queryIndex, query, modelIndex, model, success: false, error: err.message });
+      return { queryIndex, query, modelIndex, model, success: false, text: '', error: err.message };
+    }
+  }));
+
   return results;
 }
 
@@ -470,18 +332,17 @@ async function callLLM(openai, model, prompt) {
       model,
       max_tokens: 2000,
       messages: [
-        { role: 'system', content: 'You are an expert SEO, GEO, and content strategist. Provide detailed, actionable analysis.' },
+        { role: 'system', content: 'You are a knowledgeable expert. Provide comprehensive, factual information.' },
         { role: 'user', content: prompt },
       ],
     });
     return res.choices[0].message.content || '';
   } catch (err) {
-    // Retry without max_tokens for models that may have different constraints
     if (err.status === 400 || err.status === 422) {
       const res = await openai.chat.completions.create({
         model,
         messages: [
-          { role: 'system', content: 'You are an expert SEO, GEO, and content strategist. Provide detailed, actionable analysis.' },
+          { role: 'system', content: 'You are a knowledgeable expert. Provide comprehensive, factual information.' },
           { role: 'user', content: prompt },
         ],
       });
@@ -491,214 +352,126 @@ async function callLLM(openai, model, prompt) {
   }
 }
 
-// ── runSearchBranch ────────────────────────────────────────────────────────────
-async function runSearchBranch(openai, fanoutPrompts, analysis, emit) {
-  // Generate 5 search keywords
-  const keywordRes = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    response_format: { type: 'json_object' },
-    messages: [
-      { role: 'system', content: 'You are an SEO search strategist. Respond with valid JSON only.' },
-      {
-        role: 'user',
-        content: `Topic: "${analysis.topic}"
-Primary keyword: "${analysis.primaryKeyword}"
+// ── synthesizeConcepts ─────────────────────────────────────────────────────────
+async function synthesizeConcepts(openai, { queryIndex, query, model, text }) {
+  try {
+    const res = await openai.chat.completions.create({
+      model: 'gpt-5.4-mini',
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: 'You are an expert content analyst. Respond with valid JSON only.' },
+        {
+          role: 'user',
+          content: `Query: "${query}"
+Model: ${model}
 
-For each of these 5 analysis dimensions, generate ONE focused Google search keyword (2-5 words) that surfaces the best competitor content to compare against. Be specific enough to surface relevant, high-quality pages.
+Response to analyze:
+${text.slice(0, 1500)}
 
-Dimensions:
-1. seo — SEO Content Gap Analysis
-2. geo — GEO & AI Visibility
-3. intent — User Intent & Content Quality
-4. eeat — E-E-A-T & Trust
-5. conversion — Conversion & UX
+Extract all distinct concepts, ideas, facts, statistics, and insights from this response.
 
 Return JSON:
 {
-  "keywords": [
-    {"key": "seo", "keyword": "..."},
-    {"key": "geo", "keyword": "..."},
-    {"key": "intent", "keyword": "..."},
-    {"key": "eeat", "keyword": "..."},
-    {"key": "conversion", "keyword": "..."}
+  "queryIndex": ${queryIndex},
+  "query": "${query.replace(/"/g, '\\"')}",
+  "model": "${model}",
+  "concepts": [
+    "Concept or fact — specific and self-contained"
   ]
-}`,
-      }
-    ],
-  });
+}
 
-  const { keywords } = JSON.parse(keywordRes.choices[0].message.content);
-  emit('step', { id: 'keywords', status: 'done', message: `Generated ${keywords.length} search keywords` });
-  emit('search_keywords', { keywords });
+Rules:
+- Each concept must be a standalone, self-contained statement
+- Include specific statistics with their source when mentioned
+- Aim for 5-10 concepts per response
+- Prioritize specificity over generality`,
+        }
+      ],
+    });
+    return JSON.parse(res.choices[0].message.content);
+  } catch (err) {
+    console.error('[synthesis] error for query', queryIndex, 'model', model, ':', err.message);
+    return { queryIndex, query, model, concepts: [] };
+  }
+}
 
-  // Run 5 Google searches in parallel
-  emit('step', { id: 'comp_crawl', status: 'active', message: 'Running SERP searches and crawling competitor pages…' });
+// ── runConceptSynthesis ────────────────────────────────────────────────────────
+async function runConceptSynthesis(openai, llmResults, emit) {
+  const successfulResults = llmResults.filter(r => r.success && r.text);
 
-  const searchResults = await Promise.all(
-    keywords.map(async ({ key, keyword }) => {
-      try {
-        const data = await searchGoogle(keyword);
-        return { key, keyword, results: data.results || [] };
-      } catch {
-        return { key, keyword, results: [] };
-      }
+  const synthResults = await Promise.all(
+    successfulResults.map(async (result) => {
+      const synth = await synthesizeConcepts(openai, result);
+      emit('synthesis_result', synth);
+      return synth;
     })
   );
 
-  // Deduplicate URLs — max 2 per domain, max 10 total
-  const domainCount = new Map();
-  const seenUrls = new Set();
-  const urlList = [];
-
-  for (const { results } of searchResults) {
-    for (const r of results) {
-      if (seenUrls.has(r.url) || urlList.length >= 10) continue;
-      try {
-        const hostname = new URL(r.url).hostname.replace(/^www\./, '');
-        const count = domainCount.get(hostname) || 0;
-        if (count >= 2) continue;
-        domainCount.set(hostname, count + 1);
-        seenUrls.add(r.url);
-        urlList.push(r.url);
-      } catch {}
+  // Merge and de-duplicate all concepts across all 15 outputs
+  const seenConcepts = new Set();
+  const allConcepts = [];
+  for (const s of synthResults) {
+    for (const concept of (s.concepts || [])) {
+      const key = concept.toLowerCase().trim().slice(0, 80);
+      if (!seenConcepts.has(key)) {
+        seenConcepts.add(key);
+        allConcepts.push(concept);
+      }
     }
   }
 
-  // Crawl competitor pages
-  const competitorPages = await scrapeUrlsDetailed(urlList, ({ url, done, total }) => {
-    emit('crawl_progress', { url, done, total });
-  });
-
-  emit('step', { id: 'comp_crawl', status: 'done', message: `Crawled ${competitorPages.filter(p => p.success).length}/${urlList.length} competitor pages` });
-
-  return { keywords, searchResults, competitorPages, urlList };
+  return { allConcepts };
 }
 
-// ── analyzeSERPData ────────────────────────────────────────────────────────────
-function analyzeSERPData(competitorPages) {
-  const successful = competitorPages.filter(p => p.success);
-
-  if (successful.length === 0) {
-    return { successfulPages: 0, avgWordCount: 0, commonH2Topics: [], commonH3Topics: [], topFAQs: [], contentPatterns: [], pageList: [] };
-  }
-
-  const wordCounts = successful.map(p => (p.bodyText || '').split(/\s+/).filter(Boolean).length);
-  const avgWordCount = Math.round(wordCounts.reduce((s, n) => s + n, 0) / successful.length);
-
-  const h2Freq = {};
-  const h3Freq = {};
-  const faqFreq = {};
-
-  for (const page of successful) {
-    const seen = new Set();
-    for (const h of (page.h2s || [])) {
-      const key = h.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().slice(0, 60);
-      if (key.length > 5 && !seen.has('h2:' + key)) { seen.add('h2:' + key); h2Freq[key] = (h2Freq[key] || 0) + 1; }
-    }
-    for (const h of (page.h3s || [])) {
-      const key = h.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().slice(0, 60);
-      if (key.length > 5 && !seen.has('h3:' + key)) { seen.add('h3:' + key); h3Freq[key] = (h3Freq[key] || 0) + 1; }
-    }
-    for (const f of (page.faqs || [])) {
-      const key = f.toLowerCase().trim().slice(0, 80);
-      if (!seen.has('faq:' + key)) { seen.add('faq:' + key); faqFreq[key] = (faqFreq[key] || 0) + 1; }
-    }
-  }
-
-  const sortByFreq = obj =>
-    Object.entries(obj).sort(([, a], [, b]) => b - a).slice(0, 10).map(([topic, count]) => ({ topic, count }));
-
-  const withFAQ = successful.filter(p => (p.faqs || []).length > 0).length;
-  const avgH2 = Math.round(successful.reduce((s, p) => s + (p.h2s || []).length, 0) / successful.length);
-
-  const contentPatterns = [
-    `Average word count: ${avgWordCount}`,
-    `Average H2 sections: ${avgH2}`,
-    withFAQ > successful.length * 0.5 ? `${withFAQ}/${successful.length} competitor pages include FAQ sections` : null,
-  ].filter(Boolean);
-
-  return {
-    successfulPages: successful.length,
-    avgWordCount,
-    commonH2Topics: sortByFreq(h2Freq),
-    commonH3Topics: sortByFreq(h3Freq),
-    topFAQs: sortByFreq(faqFreq),
-    contentPatterns,
-    pageList: successful.map((p, i) => ({
-      url: p.url,
-      title: p.title,
-      wordCount: wordCounts[i],
-    })),
-  };
-}
-
-// ── generateReport ─────────────────────────────────────────────────────────────
-async function generateReport(openai, articleData, analysis, llmResults, serpAnalysis, kb) {
-  const successfulResults = llmResults.filter(r => r.success);
-
-  const llmSummary = successfulResults.map(r =>
-    `=== ${r.label} (${r.model}) ===\n${r.text.slice(0, 1200)}`
-  ).join('\n\n');
-
-  const serpSummary = [
-    `Competitor data (${serpAnalysis.successfulPages} pages):`,
-    `Avg word count: ${serpAnalysis.avgWordCount}`,
-    `Common H2s: ${serpAnalysis.commonH2Topics.slice(0, 6).map(t => `"${t.topic}" (${t.count})`).join(', ')}`,
-    `Common FAQs: ${serpAnalysis.topFAQs.slice(0, 4).map(t => `"${t.topic}"`).join(', ')}`,
-    serpAnalysis.contentPatterns.join(' | '),
-  ].join('\n');
-
-  const kbContext = kb ? `\n\nEnhancement Framework:\n${kb.body}` : '';
+// ── generateRecommendations ────────────────────────────────────────────────────
+async function generateRecommendations(openai, articleData, themeData, allConcepts, kb) {
+  const kbGuidance = kb ? `\n\nEnhancement Framework:\n${kb.body}` : '';
 
   const res = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: 'gpt-5.4-mini',
     max_tokens: 3000,
     messages: [
       {
         role: 'system',
-        content: `You are a senior SEO and content strategist producing an article enhancement report. Be specific, actionable, and prioritized.${kbContext}`,
+        content: `You are a senior SEO and content strategist producing article enhancement recommendations. Be specific, actionable, and prioritized.${kbGuidance}`,
       },
       {
         role: 'user',
         content: `Article: "${articleData.title}"
 URL: ${articleData.url}
-Topic: ${analysis.topic} | Keyword: ${analysis.primaryKeyword} | Words: ${articleData.wordCount}
+Theme: ${themeData.theme}
+Word count: ${articleData.wordCount}
+H1: ${articleData.h1}
+H2 sections: ${articleData.h2s.join(' | ')}
 
---- LLM ANALYSIS RESULTS ---
-${llmSummary}
+Queries this article should address:
+1. ${themeData.queries[0]?.query} [PRIMARY]
+2. ${themeData.queries[1]?.query}
+3. ${themeData.queries[2]?.query}
 
---- SERP COMPETITOR ANALYSIS ---
-${serpSummary}
+Synthesized concepts from multi-model research:
+${allConcepts.join('\n').slice(0, 8000)}
 
 ---
 
-Produce a unified Enhancement Report with these sections:
-
-## Executive Summary
-2-3 sentences on the article's current state and enhancement priority level.
+Produce a structured Enhancement Recommendations document:
 
 ## Priority Enhancements (Top 5)
 Rank the 5 most impactful improvements. For each: what to add/change, why it matters, where in the article.
 
-## SEO Improvements
-Specific heading changes, keyword additions, internal linking opportunities.
+## Content Gaps
+Specific topics or concepts from the research that are absent from the article. For each gap: what to add and where.
 
-## GEO & AI Visibility
-What to add to improve AI citation potential and featured snippet capture.
+## SEO & GEO Improvements
+Heading optimizations, keyword opportunities, answer-first structures, entity completeness.
 
-## Content Gaps to Fill
-Each gap with a specific content recommendation (what to write, where to place it).
+## E-E-A-T & Trust Signals
+Statistics, expert quotes, and citations the article should incorporate.
 
-## Competitor Coverage Gaps
-Topics competitor pages cover that this article misses.
+## Structure & FAQ
+New sections to add (only if explicitly needed), FAQ questions to include.
 
-## E-E-A-T Recommendations
-Trust and authority signals to add.
-
-## Structure & UX
-Formatting and structural improvements.
-
-Be specific. Reference actual headings and sections. Do not give generic advice.`,
+Be specific. Reference actual H2 headings. Do not give generic advice.`,
       }
     ],
   });
@@ -738,32 +511,22 @@ function htmlChunkToMarkdown(html) {
 }
 
 // ── normalizeNewMarkers ────────────────────────────────────────────────────────
-// Shared utility: expands multi-line [NEW]...[/NEW] blocks into per-line markers
-// so both the docx renderer and the frontend can process line-by-line.
-// Also merges back-to-back [/NEW][NEW] pairs that GPT sometimes emits ON THE SAME LINE.
-// Uses [ \t]* (horizontal whitespace only) — NOT \s* — so cross-line [/NEW]\n[NEW]
-// pairs are NOT collapsed, keeping the function idempotent on already-normalized text.
 function normalizeNewMarkers(text) {
   if (!text) return '';
-  // Merge same-line adjacent pairs (GPT sometimes emits [/NEW][NEW] back-to-back)
   let t = text.replace(/\[\/NEW\][ \t]*\[NEW\]/g, ' ');
-  // Expand multi-line [NEW]...[/NEW] blocks to per-line markers
   t = t.replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) =>
     inner.split('\n').map(l => l.trim() ? `[NEW]${l.trim()}[/NEW]` : '').join('\n')
   );
-  // Strip orphaned markers: any [NEW] or [/NEW] not part of a complete pair on the same line
   t = t.split('\n').map(line => {
     const hasOpen = line.includes('[NEW]');
     const hasClose = line.includes('[/NEW]');
-    if (hasOpen && hasClose) return line; // complete pair — leave it
+    if (hasOpen && hasClose) return line;
     return line.replace(/\[NEW\]/g, '').replace(/\[\/NEW\]/g, '');
   }).join('\n');
   return t;
 }
 
 // ── deduplicateAdditions ───────────────────────────────────────────────────────
-// Remove duplicate sentences that appear in multiple [NEW] blocks across chunks.
-// Each chunk calls GPT independently so the same stat or quote often appears 2-4x.
 function deduplicateAdditions(text) {
   const seenSentences = new Set();
   return text.replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) => {
@@ -771,7 +534,7 @@ function deduplicateAdditions(text) {
     const kept = [];
     for (const s of sentences) {
       const key = s.trim().toLowerCase().replace(/\s+/g, ' ');
-      if (key.length > 30 && seenSentences.has(key)) continue; // duplicate — drop
+      if (key.length > 30 && seenSentences.has(key)) continue;
       if (key.length > 30) seenSentences.add(key);
       kept.push(s);
     }
@@ -781,10 +544,7 @@ function deduplicateAdditions(text) {
 }
 
 // ── generateStructuralAdditions ────────────────────────────────────────────────
-// Separate post-chunk pass: generates FAQs + report-recommended new sections.
-// The per-chunk pass forbids new headings, so this is the only place where
-// an FAQ block or a "How to Protect" section can be appended.
-async function generateStructuralAdditions(openai, articleData, analysis, report, kb, skipFaq = false) {
+async function generateStructuralAdditions(openai, articleData, themeData, recommendations, kb, skipFaq = false) {
   const kbGuidance = kb ? `\n\nKnowledge Base Enhancement Framework:\n${kb.body}` : '';
 
   const faqBlock = skipFaq
@@ -811,7 +571,7 @@ WHAT TO GENERATE (in this order):
 ${faqBlock}
 
 2. ADDITIONAL RECOMMENDED SECTIONS — STRICT RULES:
-   - ONLY add a new ## section if the enhancement report's "Priority Enhancements" or "Content Gaps" section EXPLICITLY states a specific section title or topic to add (e.g. "Add a section titled X", "The article is missing a section on Y").
+   - ONLY add a new ## section if the enhancement recommendations' "Priority Enhancements" or "Content Gaps" section EXPLICITLY states a specific section title or topic to add.
    - DO NOT infer, imagine, or add sections you think would be useful.
    - DO NOT add generic evergreen sections such as: "Common Mistakes", "Tools", "Trends", "Tips", "Summary", "Key Takeaways", "Best Practices", "Quick Reference" — unless the report names them verbatim.
    - If the report recommends 0 new sections (or you are unsure), output ONLY the FAQ block and nothing else.
@@ -827,10 +587,10 @@ FORMAT RULES:
         },
         {
           role: 'user',
-          content: `Article: "${articleData.title}" | Keyword: ${analysis.primaryKeyword}
+          content: `Article: "${articleData.title}" | Theme: ${themeData.theme}
 
-ENHANCEMENT REPORT — scan "Priority Enhancements" and "Content Gaps" for any EXPLICITLY named new sections to add:
-${report}
+ENHANCEMENT RECOMMENDATIONS — scan "Priority Enhancements" and "Content Gaps" for any EXPLICITLY named new sections to add:
+${recommendations}
 
 Generate only what is described above. Wrap all output in [NEW]...[/NEW].`,
         },
@@ -844,10 +604,10 @@ Generate only what is described above. Wrap all output in [NEW]...[/NEW].`,
 }
 
 // ── generateEnhancedArticle ────────────────────────────────────────────────────
-async function generateEnhancedArticle(openai, articleData, analysis, report, kb) {
+async function generateEnhancedArticle(openai, articleData, recommendations, kb) {
   const sourceHtml = articleData.mainContentHtml || articleData.bodyText || '';
   const kbGuidance = kb ? kb.body : '';
-  const reportSlice = report;
+  const reportSlice = recommendations;
 
   const systemPrompt = `You are an SEO and GEO content augmentation assistant. Your job is to INSERT substantive, high-value content into an existing article section to improve its AI citability and search performance.
 
@@ -885,7 +645,6 @@ MARKING RULES:
 - Existing text must appear verbatim without any [NEW] tags
 - Return ONLY the section. No preamble or explanation.${kbGuidance ? '\n\nKnowledge Base — Enhancement Framework:\n' + kbGuidance : ''}`;
 
-  // Split at H2 boundaries, then sub-split any section still too large
   const h2Chunks = sourceHtml.split(/(?=<h2[\s>])/i).filter(c => c.trim());
   const chunks = (h2Chunks.length > 1 ? h2Chunks : [sourceHtml])
     .flatMap(c => splitHtmlSafely(c, 8000));
@@ -901,7 +660,7 @@ MARKING RULES:
           { role: 'system', content: systemPrompt },
           {
             role: 'user',
-            content: `Article: "${articleData.title}" | Keyword: ${analysis.primaryKeyword}
+            content: `Article: "${articleData.title}"
 
 ARTICLE-LEVEL ENHANCEMENT CONTEXT (use to identify what is missing — do NOT add headings or duplicate content):
 ${reportSlice}
@@ -919,7 +678,6 @@ Add statistics (with source + year), expert quotes (with name + credential + org
     }
   }
 
-  // Process in batches of 5 to avoid rate-limit errors on long articles
   const BATCH = 5;
   const enhancedChunks = [];
   for (let i = 0; i < chunks.length; i += BATCH) {
@@ -931,7 +689,7 @@ Add statistics (with source + year), expert quotes (with name + credential + org
   return enhancedChunks.filter(Boolean).join('\n\n');
 }
 
-// Split HTML at safe closing-tag boundaries to avoid breaking mid-tag
+// ── splitHtmlSafely ────────────────────────────────────────────────────────────
 function splitHtmlSafely(html, maxChars) {
   if (html.length <= maxChars) return [html];
   const SAFE_BREAK = /<\/(?:p|li|div|blockquote|section|h[1-6])>/gi;
@@ -955,11 +713,11 @@ function splitHtmlSafely(html, maxChars) {
 
 // ── POST /export/docx ──────────────────────────────────────────────────────────
 router.post('/export/docx', async (req, res) => {
-  const { articleMeta, analysis, llmResults, serpPatterns, report, enhancedText } = req.body;
-  if (!report) return res.status(400).json({ error: 'report is required' });
+  const { articleMeta, themeData, llmResults, recommendations, enhancedText } = req.body;
+  if (!recommendations) return res.status(400).json({ error: 'recommendations is required' });
 
   try {
-    const buf = await buildDocx({ articleMeta, analysis, llmResults, serpPatterns, report, enhancedText });
+    const buf = await buildDocx({ articleMeta, themeData, llmResults, recommendations, enhancedText });
     const slug = (articleMeta?.title || 'article').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="${slug}-enhancement.docx"`);
@@ -971,7 +729,7 @@ router.post('/export/docx', async (req, res) => {
 });
 
 // ── buildDocx ──────────────────────────────────────────────────────────────────
-async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, report, enhancedText }) {
+async function buildDocx({ articleMeta, themeData, llmResults, recommendations, enhancedText }) {
   const TEAL = '2C7A7B';
   const NAVY = '1F2D3D';
   const GREY = '6B7280';
@@ -997,17 +755,14 @@ async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, repo
   const gap = () => new Paragraph({ spacing: { after: 80 }, children: [run('')] });
   const pageBreak = () => new Paragraph({ pageBreakBefore: true, children: [run('')] });
 
-  // Expand multi-line [NEW]...[/NEW] blocks to per-line markers before line-by-line processing
-  function normalizeNewMarkers(text) {
+  function normalizeNewMarkersLocal(text) {
     if (!text) return '';
-    // Merge same-line adjacent [NEW] blocks only ([ \t]* not \s* — avoids collapsing cross-line pairs)
     let t = text.replace(/\[\/NEW\][ \t]*\[NEW\]/g, ' ');
     return t.replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) =>
       inner.split('\n').map(l => l.trim() ? `[NEW]${l.trim()}[/NEW]` : '').join('\n')
     );
   }
 
-  // Split a text string on **bold** and [NEW]...[/NEW] markers → array of TextRun
   function inlineRuns(text, baseOpts = {}) {
     const parts = text.split(/(\*\*[^*]+\*\*|\[NEW\].*?\[\/NEW\])/g);
     return parts.map(part => {
@@ -1022,14 +777,12 @@ async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, repo
     }).filter(Boolean);
   }
 
-  // Parse markdown (with [NEW] markers) into docx paragraphs
   function markdownToParagraphs(text) {
-    const lines = normalizeNewMarkers(text).split('\n');
+    const lines = normalizeNewMarkersLocal(text).split('\n');
     const paras = [];
     for (const line of lines) {
       const trimmed = line.trim();
       if (!trimmed) { paras.push(gap()); continue; }
-      // Check if the whole line is wrapped in [NEW]...[/NEW]
       const isNewLine = trimmed.startsWith('[NEW]') && trimmed.endsWith('[/NEW]');
       const content = isNewLine ? trimmed.slice(5, -6).trim() : trimmed;
       const newOpt = isNewLine ? { highlight: 'green' } : {};
@@ -1057,13 +810,13 @@ async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, repo
 
   const children = [];
 
-  // ── Cover ──
+  // Cover
   children.push(new Paragraph({ spacing: { after: 40 }, children: [run('A R T I C L E  E N H A N C E M E N T  R E P O R T', { bold: true, color: TEAL, size: 18 })] }));
   children.push(new Paragraph({ spacing: { after: 80 }, children: [run(articleMeta?.title || 'Article Enhancement Report', { bold: true, color: NAVY, size: 40 })] }));
   if (articleMeta?.url) children.push(new Paragraph({ spacing: { after: 40 }, children: [run(articleMeta.url, { color: GREY, size: 18 })] }));
   children.push(rule());
 
-  // ── Enhanced Article (primary content) ──
+  // Enhanced Article
   if (enhancedText) {
     children.push(sectionHeading('Enhanced Article'));
     children.push(new Paragraph({
@@ -1075,7 +828,7 @@ async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, repo
     children.push(rule());
   }
 
-  // ── Appendix: Article Metadata ──
+  // Appendix: Article Metadata
   children.push(pageBreak());
   children.push(sectionHeading('Article Metadata'));
   if (articleMeta) {
@@ -1088,54 +841,23 @@ async function buildDocx({ articleMeta, analysis, llmResults, serpPatterns, repo
     }
   }
 
-  // ── Appendix: Content Analysis ──
-  if (analysis) {
-    children.push(sectionHeading('Content Analysis'));
-    children.push(label('Topic', analysis.topic));
-    children.push(label('Primary Keyword', analysis.primaryKeyword));
-    children.push(label('Intent', analysis.intent));
-    children.push(label('Target Audience', analysis.targetAudience));
-    if (analysis.contentStrengths?.length) {
-      children.push(new Paragraph({ spacing: { before: 100, after: 40 }, children: [run('Content Strengths:', { bold: true })] }));
-      analysis.contentStrengths.forEach(s => children.push(bullet(s)));
-    }
-    if (analysis.contentGaps?.length) {
-      children.push(new Paragraph({ spacing: { before: 100, after: 40 }, children: [run('Content Gaps:', { bold: true })] }));
-      analysis.contentGaps.forEach(g => children.push(bullet(g)));
-    }
-    if (analysis.seoIssues?.length) {
-      children.push(new Paragraph({ spacing: { before: 100, after: 40 }, children: [run('SEO Issues:', { bold: true })] }));
-      analysis.seoIssues.forEach(i => children.push(bullet(i)));
-    }
-    if (analysis.missingTopics?.length) {
-      children.push(new Paragraph({ spacing: { before: 100, after: 40 }, children: [run('Missing Topics:', { bold: true })] }));
-      analysis.missingTopics.forEach(t => children.push(bullet(t)));
+  // Appendix: Theme & Queries
+  if (themeData) {
+    children.push(sectionHeading('Theme & Queries'));
+    children.push(label('Theme', themeData.theme));
+    if (themeData.queries?.length) {
+      children.push(new Paragraph({ spacing: { before: 80, after: 40 }, children: [run('Queries:', { bold: true, color: GREY })] }));
+      themeData.queries.forEach((q, i) => {
+        const prefix = q.isPrimary ? '[Primary] ' : `[Q${i + 1}] `;
+        children.push(bullet(prefix + q.query));
+      });
     }
   }
 
-  // ── Appendix: Competitor Analysis ──
-  if (serpPatterns) {
-    children.push(sectionHeading('Competitor Analysis'));
-    children.push(label('Pages Analyzed', serpPatterns.successfulPages));
-    children.push(label('Average Word Count', serpPatterns.avgWordCount?.toLocaleString()));
-    if (serpPatterns.contentPatterns?.length) {
-      children.push(new Paragraph({ spacing: { before: 100, after: 40 }, children: [run('Content Patterns:', { bold: true })] }));
-      serpPatterns.contentPatterns.forEach(p => children.push(bullet(p)));
-    }
-    if (serpPatterns.commonH2Topics?.length) {
-      children.push(new Paragraph({ spacing: { before: 100, after: 40 }, children: [run('Common H2 Topics:', { bold: true })] }));
-      serpPatterns.commonH2Topics.slice(0, 8).forEach(t => children.push(bullet(`${t.topic} (${t.count} competitor pages)`)));
-    }
-    if (serpPatterns.topFAQs?.length) {
-      children.push(new Paragraph({ spacing: { before: 100, after: 40 }, children: [run('Common FAQ Questions:', { bold: true })] }));
-      serpPatterns.topFAQs.slice(0, 6).forEach(f => children.push(bullet(f.topic)));
-    }
-  }
-
-  // ── Appendix: Enhancement Recommendations ──
-  if (report) {
+  // Appendix: Enhancement Recommendations
+  if (recommendations) {
     children.push(sectionHeading('Enhancement Recommendations'));
-    markdownToParagraphs(report).forEach(p => children.push(p));
+    markdownToParagraphs(recommendations).forEach(p => children.push(p));
   }
 
   const doc = new Document({
