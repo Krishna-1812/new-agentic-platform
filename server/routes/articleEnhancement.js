@@ -23,14 +23,18 @@ function generateToken() {
 
 // ── POST /init ─────────────────────────────────────────────────────────────────
 router.post('/init', (req, res) => {
-  const { url, kbId } = req.body;
+  const { url, kbId, manualContent } = req.body;
   if (!url?.trim()) return res.status(400).json({ error: 'url is required' });
   let parsedUrl;
   try { parsedUrl = new URL(url.trim()); }
   catch { return res.status(400).json({ error: 'Invalid URL format' }); }
 
   const token = generateToken();
-  sessions.set(token, { url: parsedUrl.href, kbId: kbId || 'seo-geo-article-enhancement-knowledge-base' });
+  sessions.set(token, {
+    url: parsedUrl.href,
+    kbId: kbId || 'seo-geo-article-enhancement-knowledge-base',
+    manualContent: (manualContent || '').trim(),
+  });
   setTimeout(() => sessions.delete(token), 120000);
   res.json({ token });
 });
@@ -41,7 +45,7 @@ router.get('/stream/:token', async (req, res) => {
   if (!session) return res.status(404).json({ error: 'Session not found or expired.' });
   sessions.delete(req.params.token);
 
-  const { url, kbId } = session;
+  const { url, kbId, manualContent } = session;
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -61,10 +65,24 @@ router.get('/stream/:token', async (req, res) => {
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    // Step 1: Crawl article
-    emit('step', { id: 'crawl', status: 'active', message: 'Fetching and analyzing article…' });
-    const articleData = await fetchArticle(url);
-    emit('step', { id: 'crawl', status: 'done', message: `"${articleData.title}" · ${articleData.wordCount} words · ${articleData.h2s.length} H2s` });
+    // Step 1: Crawl article (or use manually pasted content)
+    let articleData;
+    if (manualContent) {
+      emit('step', { id: 'crawl', status: 'active', message: 'Using manually provided content…' });
+      articleData = buildArticleDataFromText(url, manualContent);
+      emit('step', { id: 'crawl', status: 'done', message: `Manual content · ${articleData.wordCount} words · ${articleData.h2s.length} H2s` });
+    } else {
+      emit('step', { id: 'crawl', status: 'active', message: 'Fetching and analyzing article…' });
+      articleData = await fetchArticle(url);
+      if (articleData.wordCount < 100) {
+        emit('step', { id: 'crawl', status: 'error', message: `Only ${articleData.wordCount} words extracted — page may require JavaScript or block crawlers` });
+        emit('crawl_failed', { wordCount: articleData.wordCount, title: articleData.title, url: articleData.url });
+        emit('done', {});
+        res.end();
+        return;
+      }
+      emit('step', { id: 'crawl', status: 'done', message: `"${articleData.title}" · ${articleData.wordCount} words · ${articleData.h2s.length} H2s` });
+    }
     emit('article_meta', {
       title: articleData.title,
       url: articleData.url,
@@ -107,10 +125,12 @@ router.get('/stream/:token', async (req, res) => {
     const enhancedChunks = await generateEnhancedArticle(openai, articleData, recommendations, kb);
     const existingHeadings = [...(articleData.h2s || []), ...(articleData.h3s || [])].join(' ');
     const articleHasFaq = /faq|frequently asked/i.test(existingHeadings);
-    const structural = await generateStructuralAdditions(openai, articleData, themeData, recommendations, kb, articleHasFaq);
+    const existingFaqHeading = (articleData.h2s || []).find(h => /faq|frequently asked/i.test(h)) || null;
+    const structural = await generateStructuralAdditions(openai, articleData, themeData, recommendations, kb, articleHasFaq, existingFaqHeading);
     let enhancedText = deduplicateAdditions(enhancedChunks);
     if (structural) enhancedText += '\n\n' + structural;
     enhancedText = normalizeNewMarkers(enhancedText);
+    enhancedText = enforceFaqHeadings(enhancedText);
     emit('step', { id: 'enhance', status: 'done', message: 'Article enhancement complete' });
     emit('enhanced', { text: enhancedText });
 
@@ -122,6 +142,41 @@ router.get('/stream/:token', async (req, res) => {
   emit('done', {});
   res.end();
 });
+
+// ── buildArticleDataFromText ────────────────────────────────────────────────────
+function buildArticleDataFromText(url, text) {
+  const lines = text.split('\n');
+  const h1s = [];
+  const h2s = [];
+  const h3s = [];
+
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) continue;
+    if (t.startsWith('### ')) h3s.push(t.slice(4).trim());
+    else if (t.startsWith('## ')) h2s.push(t.slice(3).trim());
+    else if (t.startsWith('# ')) h1s.push(t.slice(2).trim());
+  }
+
+  const bodyText = text.trim();
+  const wordCount = bodyText.split(/\s+/).filter(Boolean).length;
+
+  let hostname = '';
+  try { hostname = new URL(url).hostname; } catch {}
+
+  return {
+    url,
+    title: h1s[0] || hostname || 'Manual Content',
+    h1: h1s[0] || '',
+    h2s,
+    h3s,
+    metaDescription: '',
+    bodyText,
+    wordCount,
+    internalLinks: [],
+    externalLinks: [],
+  };
+}
 
 // ── fetchArticle ───────────────────────────────────────────────────────────────
 async function fetchArticle(url) {
@@ -467,6 +522,7 @@ function htmlChunkToMarkdown(html) {
   const $ = cheerio.load(`<body>${html}</body>`);
   const SKIP = new Set(['script', 'style', 'nav', 'header', 'footer', 'aside', 'noscript', 'iframe', 'form']);
   const lines = [];
+  let inFaqSection = false;
 
   function text(el) { return $(el).text().replace(/\s+/g, ' ').trim(); }
 
@@ -475,10 +531,30 @@ function htmlChunkToMarkdown(html) {
     if (!tag || SKIP.has(tag)) return;
     switch (tag) {
       case 'h1': { const t = text(el); if (t) lines.push('# ' + t, ''); break; }
-      case 'h2': { const t = text(el); if (t) lines.push('## ' + t, ''); break; }
+      case 'h2': {
+        const t = text(el);
+        if (t) {
+          inFaqSection = /faq|frequently asked/i.test(t);
+          lines.push('## ' + t, '');
+        }
+        break;
+      }
       case 'h3': { const t = text(el); if (t) lines.push('### ' + t, ''); break; }
       case 'h4': case 'h5': case 'h6': { const t = text(el); if (t) lines.push('#### ' + t, ''); break; }
-      case 'p': { const t = text(el); if (t) lines.push(t, ''); break; }
+      case 'p': {
+        // Inside FAQ sections: a <p> whose only child is <strong> or <b> ending in '?' → treat as question heading
+        if (inFaqSection) {
+          const kids = $(el).children().toArray();
+          if (kids.length === 1) {
+            const kidTag = (kids[0].tagName || '').toLowerCase();
+            if (kidTag === 'strong' || kidTag === 'b') {
+              const qt = text(el);
+              if (qt.endsWith('?')) { lines.push('### ' + qt, ''); break; }
+            }
+          }
+        }
+        const t = text(el); if (t) lines.push(t, ''); break;
+      }
       case 'li': { const t = text(el); if (t) lines.push('- ' + t); break; }
       case 'ul': case 'ol': $(el).children('li').each((_, li) => walk(li)); lines.push(''); break;
       case 'blockquote': { const t = text(el); if (t) lines.push('> ' + t, ''); break; }
@@ -491,6 +567,34 @@ function htmlChunkToMarkdown(html) {
 
   $('body').children().each((_, el) => walk(el));
   return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+// ── enforceFaqHeadings ────────────────────────────────────────────────────────
+// Safety net: within any ## FAQ/Frequently Asked section, upgrade bare question
+// lines (plain text or **bold**) to ### headings. Handles WordPress-style FAQ
+// sections where questions aren't marked up as <h3> in the HTML.
+function enforceFaqHeadings(text) {
+  const lines = text.split('\n');
+  let inFaq = false;
+  const result = [];
+  for (const line of lines) {
+    const stripped = line.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim();
+    if (/^## .*(faq|frequently asked)/i.test(stripped)) {
+      inFaq = true;
+      result.push(line);
+      continue;
+    }
+    if (inFaq && /^## /.test(stripped)) inFaq = false;
+    if (inFaq && !stripped.startsWith('#') && stripped.endsWith('?')) {
+      const words = stripped.split(/\s+/).length;
+      if (words >= 3 && words <= 25) {
+        result.push(`### ${stripped}`);
+        continue;
+      }
+    }
+    result.push(line);
+  }
+  return result.join('\n');
 }
 
 // ── normalizeNewMarkers ────────────────────────────────────────────────────────
@@ -527,14 +631,21 @@ function deduplicateAdditions(text) {
 }
 
 // ── generateStructuralAdditions ────────────────────────────────────────────────
-async function generateStructuralAdditions(openai, articleData, themeData, recommendations, kb, skipFaq = false) {
+async function generateStructuralAdditions(openai, articleData, themeData, recommendations, kb, skipFaq = false, existingFaqHeading = null) {
   const kbGuidance = kb ? `\n\nKnowledge Base Enhancement Framework:\n${kb.body}` : '';
+
+  // Use the page's existing FAQ heading style, or detect from H2 style, or default
+  const faqHeadingText = existingFaqHeading
+    ? existingFaqHeading
+    : (/\bFAQs?\b/.test((articleData.h2s || []).join(' ')) ? 'FAQs' : 'Frequently Asked Questions');
 
   const faqBlock = skipFaq
     ? `1. FAQ SECTION: The article already contains a FAQ section — DO NOT add another one. Skip this step entirely.`
     : `1. FAQ SECTION (required):
-   Write "## Frequently Asked Questions" as the first heading.
-   Add 4-6 questions as ### headings. Each answer must:
+   Write "## ${faqHeadingText}" as the H2 heading (exactly this text, no variation).
+   Add 4-6 questions as ### headings.
+   Write each answer as a plain prose paragraph directly below its ### heading. Rules for each answer:
+   - Do NOT use bullet lists, numbered lists, or sub-headings inside answers
    - Directly answer the question in the first sentence (inverted pyramid)
    - Be 50-150 words
    - Be self-contained (no references to "the article above")
@@ -563,8 +674,9 @@ ${faqBlock}
 FORMAT RULES:
 - Start your output with [NEW]
 - End your output with [/NEW]
-- Use ## for section headings, ### for FAQ questions
-- Bullet lists with "- " prefix for tips/steps
+- Use ## for H2 section headings, ### for FAQ question headings
+- FAQ answers must be plain prose paragraphs — no bullets, no lists, no sub-headings
+- Bullet lists with "- " prefix are allowed only in non-FAQ sections
 - Do NOT include promotional language
 - Do NOT duplicate content already in the article${kbGuidance}`,
         },
@@ -615,7 +727,7 @@ VOLUME LIMIT — be surgical, not exhaustive:
 - If the section is already well-supported with data and quotes, add nothing — return it verbatim
 
 HARD PROHIBITIONS:
-- Do NOT add new ## or ### headings — causes duplicate sections across the article
+- Do NOT insert new ## or ### headings of your own — ALL existing headings in the input MUST appear in the output verbatim, including ### FAQ question headings
 - Do NOT mark existing text with [NEW] — only your insertions get tagged
 - Do NOT keyword-stuff — repeating the same phrase across multiple paragraphs scores −9% on AI visibility and is an explicit anti-pattern
 - Do NOT define the same term more than once across the article — if a term was already defined in an earlier section, do not re-define it here

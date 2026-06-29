@@ -52,11 +52,12 @@ function StepIndicator({ stepStates }) {
           const state = stepStates[step.id];
           const isDone = state?.status === 'done';
           const isActive = state?.status === 'active';
+          const isError = state?.status === 'error';
           return (
             <div key={step.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '2px 0' }}>
               <div style={{
                 width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px',
-                backgroundColor: isDone ? 'var(--success)' : isActive ? 'var(--primary)' : 'var(--surface)',
+                backgroundColor: isDone ? 'var(--success)' : isActive ? 'var(--primary)' : isError ? 'var(--danger)' : 'var(--surface)',
               }}>
                 {isDone ? (
                   <svg style={{ width: '10px', height: '10px', color: '#fff' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -64,14 +65,18 @@ function StepIndicator({ stepStates }) {
                   </svg>
                 ) : isActive ? (
                   <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#fff', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                ) : isError ? (
+                  <svg style={{ width: '10px', height: '10px', color: '#fff' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 ) : null}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: '12px', fontWeight: 500, color: isDone ? 'var(--success)' : isActive ? 'var(--primary)' : 'var(--text-3)' }}>
+                <span style={{ fontSize: '12px', fontWeight: 500, color: isDone ? 'var(--success)' : isActive ? 'var(--primary)' : isError ? 'var(--danger)' : 'var(--text-3)' }}>
                   {step.label}
                 </span>
                 {state?.message && (
-                  <p style={{ fontSize: '12px', color: 'var(--text-2)', marginTop: '2px', wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                  <p style={{ fontSize: '12px', color: isError ? 'var(--danger)' : 'var(--text-2)', marginTop: '2px', wordBreak: 'break-word', whiteSpace: 'normal' }}>
                     {state.message}
                   </p>
                 )}
@@ -199,6 +204,59 @@ function EnhancedArticlePanel({ text }) {
   );
 }
 
+function CrawlFailedPanel({ manualContent, setManualContent, onContinue }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ background: 'var(--danger-soft, #FEF2F2)', border: '1px solid var(--danger-border, #FECACA)', borderRadius: 'var(--r-lg)', padding: '16px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+          <svg style={{ width: '18px', height: '18px', color: 'var(--danger)', flexShrink: 0, marginTop: '1px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <div>
+            <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--danger)', marginBottom: '4px' }}>Article could not be crawled</p>
+            <p style={{ fontSize: '13px', color: 'var(--danger)', lineHeight: 1.5 }}>
+              Very little content was extracted. The page may require JavaScript, block crawlers, or use a login wall.
+              Paste the article text below to continue.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+        <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '8px' }}>Paste article content</label>
+        <textarea
+          value={manualContent}
+          onChange={e => setManualContent(e.target.value)}
+          placeholder="Paste the full article text here. Use ## for H2 headings, # for the title."
+          rows={16}
+          style={{
+            width: '100%', padding: '10px 12px', fontSize: '13px', lineHeight: 1.6,
+            border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+            background: 'var(--surface)', color: 'var(--text)',
+            resize: 'vertical', outline: 'none', boxSizing: 'border-box',
+            fontFamily: 'var(--font-mono)',
+          }}
+          onFocus={e => e.target.style.borderColor = 'var(--primary)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}
+        />
+        <button
+          onClick={onContinue}
+          disabled={!manualContent.trim()}
+          style={{
+            marginTop: '12px', width: '100%', padding: '10px 16px', fontSize: '14px',
+            fontWeight: 600, borderRadius: 'var(--r-lg)', border: 'none', color: '#fff',
+            background: manualContent.trim() ? 'var(--primary)' : 'var(--text-3)',
+            cursor: manualContent.trim() ? 'pointer' : 'not-allowed', transition: 'opacity 0.15s',
+          }}
+          onMouseEnter={e => { if (manualContent.trim()) e.currentTarget.style.opacity = '0.88'; }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+        >
+          Continue with pasted content
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function ArticleEnhancementPage() {
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
@@ -218,9 +276,12 @@ export default function ArticleEnhancementPage() {
   const [synthResults, setSynthResults] = useState([]);
   const [recommendations, setRecommendations] = useState('');
   const [enhancedText, setEnhancedText] = useState('');
+  const [crawlFailed, setCrawlFailed] = useState(false);
+  const [manualContent, setManualContent] = useState('');
 
   const [activeTab, setActiveTab] = useState('recommendations');
   const esRef = useRef(null);
+  const crawlFailedRef = useRef(false);
 
   useEffect(() => {
     fetch('/api/kb', { credentials: 'include' })
@@ -250,6 +311,8 @@ export default function ArticleEnhancementPage() {
     setSynthResults([]);
     setRecommendations('');
     setEnhancedText('');
+    setCrawlFailed(false);
+    crawlFailedRef.current = false;
 
     let token;
     try {
@@ -257,7 +320,7 @@ export default function ArticleEnhancementPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ url: url.trim(), kbId: selectedKbId }),
+        body: JSON.stringify({ url: url.trim(), kbId: selectedKbId, manualContent: manualContent || undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to start');
@@ -313,12 +376,19 @@ export default function ArticleEnhancementPage() {
       setActiveTab('recommendations');
     });
     es.addEventListener('enhanced', e => { setEnhancedText(JSON.parse(e.data).text || ''); setActiveTab('enhanced'); });
+    es.addEventListener('crawl_failed', () => {
+      crawlFailedRef.current = true;
+      setCrawlFailed(true);
+      setRunning(false);
+      es.close();
+    });
     es.addEventListener('fail', e => {
       setFailed(JSON.parse(e.data).message);
       setRunning(false);
       es.close();
     });
     es.addEventListener('done', () => {
+      if (crawlFailedRef.current) return;
       setDone(true);
       setRunning(false);
       es.close();
@@ -549,7 +619,13 @@ export default function ArticleEnhancementPage() {
 
           {/* Right: results */}
           <div>
-            {tabs.length === 0 ? (
+            {crawlFailed ? (
+              <CrawlFailedPanel
+                manualContent={manualContent}
+                setManualContent={setManualContent}
+                onContinue={run}
+              />
+            ) : tabs.length === 0 ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '256px', background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', color: 'var(--text-3)', fontSize: '14px' }}>
                 {running ? 'Running analysis…' : 'Enter an article URL and click Run Enhancement'}
               </div>
