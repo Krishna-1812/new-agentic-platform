@@ -9,25 +9,31 @@ const text = require('./text');
 const { chatParams } = require('./llmParams');
 
 const L3_SCHEMA_HINT = `{
-  "meta_title": "<=60 chars, includes service + location + brand",
-  "meta_description": "150-160 chars, includes service + location",
+  "meta_title": "string — max 60 chars, includes service + location + brand",
+  "meta_description": "string — 150-160 chars, includes service + location",
   "og_title": "string", "og_description": "string",
-  "h1": "[Adjective] [Service] in [Location] — natural, not stuffed, includes service + location",
-  "hero_intro": "2-3 sentences, mentions the location",
-  "approach_intro": "1-2 sentences introducing 'Our approach to [service]'",
-  "care_pillars": [
-    { "copy": "2-3 sentences for H3 'Our philosophy of compassionate care'" },
-    { "copy": "2-3 sentences for H3 'Clinical therapies offered'" }
-  ],
+  "h1": "string — MAX 55 CHARS. Natural heading, includes service + location, not keyword-stuffed",
+  "hero_intro": "string — MAX 160 CHARS. 1-2 sentences mentioning the specific location",
+  "approach_intro": "string — MAX 1110 CHARS. Body copy for the 'Our approach to [service]' section. Write as 2-3 paragraphs separated by a blank line (\\n\\n). ONE H2 heading only, NO sub-headings, NO bullet points",
   "competitor_section": [
     {
-      "h2": "An H2 modelled on what top competitors cover for this service",
+      "h2": "string — H2 heading modelled on what top competitors cover for this service",
+      "description": "string — MAX 450 CHARS. 1-2 sentence intro paragraph below the H2 heading",
       "h3s": [
-        { "heading": "H3 subtopic", "copy": "2-4 sentences of unique copy" }
+        {
+          "heading": "string — H3 subtopic title",
+          "copy": "string — MAX 1500 CHARS. 3-5 sentences of unique, informative copy for this H3. No bullet points unless truly needed (bullets reduce limit to 1400 chars)"
+        }
       ]
     }
   ],
-  "faqs": [ { "question": "string", "answer": "2-4 sentence answer", "faq_type": "location|service|insurance|virtual|provider|appointment" } ]
+  "faqs": [
+    {
+      "question": "string",
+      "answer": "string — MAX 300 CHARS. Concise, helpful, direct answer",
+      "faq_type": "location|service|insurance|virtual|provider|appointment"
+    }
+  ]
 }`;
 
 function buildPrompt({ pageObject, layers, keywords, modelCopy }) {
@@ -46,12 +52,18 @@ function buildPrompt({ pageObject, layers, keywords, modelCopy }) {
   const competitorHeadings = [...new Set((modelCopy || []).flatMap(m => m.headings || []))].slice(0, 25);
 
   const structureRules = `REQUIRED PAGE STRUCTURE (produce content in this exact order):
-1. meta_title, meta_description, h1, hero_intro
-2. "Our approach to ${service.name}" (approach_intro) with EXACTLY these two H3 pillars, in order:
-   - "Our philosophy of compassionate care"
-   - "Clinical therapies offered"
-3. competitor_section: a body modelled on top competitors. MINIMUM 1 H2 with 3 H3s; RECOMMENDED 2 H2 blocks with 5 H3s total. Each H3 has unique copy.
-4. faqs: 7 to 11 questions with answers, tagged by faq_type.`;
+1. meta_title, meta_description, h1 (MAX 55 chars), hero_intro (MAX 160 chars)
+2. approach_intro (MAX 1110 chars): body copy for "Our approach to ${service.name}". Write as 2-3 paragraphs (blank line between each). ONE H2 heading only, NO sub-headings, NO bullet points.
+3. competitor_section: modelled on top competitors. MINIMUM 1 H2 block with 3 H3s; RECOMMENDED 2 H2 blocks with 5 H3s total. Each block has: h2 heading, description (MAX 450 chars), and h3s each with heading + copy (MAX 1500 chars per H3).
+4. faqs: 7 to 11 questions, each answer MAX 300 chars, tagged by faq_type.
+
+CHARACTER LIMITS — THESE ARE ABSOLUTE HARD LIMITS. COUNT EVERY CHARACTER INCLUDING SPACES:
+- h1: 55 chars max
+- hero_intro: 160 chars max
+- approach_intro: 1110 chars max
+- competitor_section[].description: 450 chars max per block
+- competitor_section[].h3s[].copy: 1500 chars max per H3
+- faqs[].answer: 300 chars max per answer`;
 
   const localFacts = `LOCAL FACTS (use ONLY these — do not invent NAP/providers):
 - City/State: ${ld.city}, ${ld.state}
@@ -70,6 +82,9 @@ ${L3_SCHEMA_HINT}
 ${toneBlock}
 ${structureRules}
 HARD RULES:
+- CHARACTER LIMITS ARE ABSOLUTE. Before finalising each field, count characters and trim if needed: h1 ≤55, hero_intro ≤160, approach_intro ≤1110, block description ≤450, H3 copy ≤1500, FAQ answer ≤300.
+- Do NOT produce a "care_pillars" key — the approach section is approach_intro only (plain paragraphs, no sub-headings).
+- Each competitor_section block MUST include a "description" key (the intro paragraph under the H2).
 - Place primary/secondary keywords naturally — NO stuffing.
 - Weave at least one concrete LOCAL detail (nearby areas, parking/access, local providers) into the hero and competitor_section, drawn from the LOCAL FACTS only.
 - Minimum ${config.uniqueness.minBodyWordCount} words of unique body copy across the sections.
@@ -146,4 +161,74 @@ function competitorOverlap(pageData, modelCopy = []) {
   return worst;
 }
 
-module.exports = { buildPrompt, generateL3, crossPageSimilarity, competitorOverlap };
+// ── Single-field regeneration (per-field regen from the editor) ───────────────
+const REGEN_FIELD_CONFIGS = {
+  h1: {
+    key: 'h1',
+    promptFn: (svc, loc) => `Write the H1 page heading for a "${svc}" page in ${loc}. Natural phrasing, includes service + location, not keyword-stuffed.`,
+  },
+  hero_intro: {
+    key: 'hero_intro',
+    promptFn: (svc, loc) => `Write the hero intro paragraph for a "${svc}" page in ${loc}. 2-3 sentences mentioning the specific location and what makes this service accessible here.`,
+  },
+  'approach.intro': {
+    key: 'approach_intro',
+    promptFn: (svc, loc) => `Write the body copy for the "Our approach to ${svc}" section on a page in ${loc}. Write in 2-3 distinct paragraphs (separate with a blank line). Warm clinical authority, weave in local specifics.`,
+  },
+  'block.description': {
+    key: 'description',
+    promptFn: (svc, loc, ctx) => `Write a brief section intro paragraph for an H2 block titled "${ctx.h2 || 'this section'}" on a "${svc}" page in ${loc}. One short paragraph that introduces what this section covers.`,
+  },
+  'h3.copy': {
+    key: 'copy',
+    promptFn: (svc, loc, ctx) => `Write description copy for an H3 subsection titled "${ctx.heading || 'this subsection'}" under H2 "${ctx.h2 || ''}" on a "${svc}" page in ${loc}. Informative, unique, include local specifics where naturally relevant.`,
+  },
+  'faq.answer': {
+    key: 'answer',
+    promptFn: (svc, loc, ctx) => `Write a concise, helpful FAQ answer to: "${ctx.question || 'this question'}" on a "${svc}" page in ${loc}. Direct, conversational, accurate.`,
+  },
+};
+
+async function regenField({ pageObject, layers, keywords, field, maxChars, context = {} }) {
+  if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not configured on server.');
+  const cfg = REGEN_FIELD_CONFIGS[field];
+  if (!cfg) throw new Error(`Unknown regen field: "${field}".`);
+
+  const { service, location, client, tone } = layers;
+  const ld = pageObject.location_data;
+  const loc = `${location.location_name}, ${location.state}`;
+
+  const prohibited = (client.brand_rules?.prohibited_claims || []).join(', ');
+  const ymyl = client.brand_rules?.ymyl;
+  const toneBlock = tone ? `Brand voice: ${tone.voice}. Reading level: ${tone.reading_level}.` : 'Brand voice: warm, professional, clear.';
+  const primaryKws = (keywords?.primary || []).map(k => k.keyword).slice(0, 5).join(', ');
+  const localFacts = `City/State: ${ld.city}, ${ld.state}. Nearby: ${(ld.nearby_areas || []).slice(0, 4).join(', ')}.`;
+  const charRule = maxChars ? `HARD CHARACTER LIMIT: ${maxChars} characters maximum (every character including spaces). Do not exceed this limit.` : '';
+
+  const system = `You are a healthcare content writer. Respond ONLY with a JSON object: { "${cfg.key}": "..." }. No prose, no markdown, no extra keys.
+${toneBlock}
+${charRule}
+Weave in these primary keywords naturally (no stuffing): ${primaryKws || 'n/a'}.
+NEVER use these prohibited claims: ${prohibited || '(none)'}.
+${ymyl ? 'YMYL: do NOT overclaim medical outcomes. Never invent credentials or certifications.' : ''}`;
+
+  const user = `${cfg.promptFn(service.name, loc, context)}
+
+${localFacts}
+
+Return JSON only: { "${cfg.key}": "..." }`;
+
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const completion = await openai.chat.completions.create({
+    model: config.llm.generationModel,
+    ...chatParams(config.llm.generationModel, { maxTokens: 700 }),
+    response_format: { type: 'json_object' },
+    messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+  });
+
+  const raw = JSON.parse(completion.choices[0].message.content);
+  const value = raw[cfg.key] || '';
+  return maxChars && value.length > maxChars ? value.slice(0, maxChars) : value;
+}
+
+module.exports = { buildPrompt, generateL3, crossPageSimilarity, competitorOverlap, regenField };

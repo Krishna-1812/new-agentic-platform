@@ -116,20 +116,27 @@ function mergeL3(pageObject, l3) {
   if (l3.meta_description) pd.meta_description = l3.meta_description;
   if (l3.og_title) pd.og_title = l3.og_title;
   if (l3.og_description) pd.og_description = l3.og_description;
-  if (l3.h1) pd.h1 = l3.h1;
-  if (l3.hero_intro) pd.hero_intro = l3.hero_intro;
-  if (l3.approach_intro) pd.approach.intro = l3.approach_intro;
-  // care_pillars: keep the fixed H3 headings, fill copy by index.
-  if (Array.isArray(l3.care_pillars)) {
-    l3.care_pillars.forEach((c, i) => { if (pd.approach.care_pillars[i]) pd.approach.care_pillars[i].copy = (typeof c === 'string' ? c : c.copy) || ''; });
-  }
-  // competitor_section: blocks of { h2, h3s: [{heading, copy}] }
+  if (l3.h1) pd.h1 = l3.h1.slice(0, 55);
+  if (l3.hero_intro) pd.hero_intro = l3.hero_intro.slice(0, 160);
+  if (l3.approach_intro) pd.approach.intro = l3.approach_intro.slice(0, 1110);
+  // competitor_section: blocks of { h2, description, h3s: [{heading, copy}] }
+  // Enforce char limits as a safety net after generation.
+  const LIMITS = { description: 450, h3Copy: 1500, faqAnswer: 300 };
+  const clip = (s, n) => (typeof s === 'string' && s.length > n ? s.slice(0, n) : s);
   if (Array.isArray(l3.competitor_section)) {
-    pd.competitor_section.blocks = l3.competitor_section;
+    pd.competitor_section.blocks = l3.competitor_section.map(b => ({
+      h2: b.h2 || '',
+      description: clip(b.description || '', LIMITS.description),
+      h3s: (b.h3s || []).map(h => ({ heading: h.heading || '', copy: clip(h.copy || '', LIMITS.h3Copy) })),
+    }));
   } else if (l3.competitor_section && Array.isArray(l3.competitor_section.blocks)) {
-    pd.competitor_section.blocks = l3.competitor_section.blocks;
+    pd.competitor_section.blocks = l3.competitor_section.blocks.map(b => ({
+      h2: b.h2 || '',
+      description: clip(b.description || '', LIMITS.description),
+      h3s: (b.h3s || []).map(h => ({ heading: h.heading || '', copy: clip(h.copy || '', LIMITS.h3Copy) })),
+    }));
   }
-  if (Array.isArray(l3.faqs)) pd.faqs = l3.faqs;
+  if (Array.isArray(l3.faqs)) pd.faqs = l3.faqs.map(f => ({ ...f, answer: clip(f.answer || '', LIMITS.faqAnswer) }));
   return pageObject;
 }
 

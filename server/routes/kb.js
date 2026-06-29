@@ -45,6 +45,16 @@ router.post('/', async (req, res) => {
   }
 });
 
+// DELETE /api/kb/:id  — permanently delete a KB
+router.delete('/:id', async (req, res) => {
+  try {
+    await store.deleteKB(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(err.message.includes('not found') ? 404 : 500).json({ error: err.message });
+  }
+});
+
 // PATCH /api/kb/:id/toggle  — toggle active/inactive
 router.patch('/:id/toggle', async (req, res) => {
   try {

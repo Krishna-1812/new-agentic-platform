@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import MDEditor from '@uiw/react-md-editor';
 
 const BRANDS = ['global','gentle-dental','great-lakes','riccobene','clear-behavioral-health','neuro-wellness-spa','new-life-house'];
@@ -9,6 +9,7 @@ const ALL_MODULES = ['content-research','keyword-research','article-recommendati
 
 export default function KBEditorPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [kb, setKb] = useState(null);
   const [meta, setMeta] = useState({});
@@ -18,6 +19,7 @@ export default function KBEditorPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [toggling, setToggling] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [changeNote, setChangeNote] = useState('');
 
   useEffect(() => {
@@ -51,6 +53,20 @@ export default function KBEditorPage() {
       setError(err.message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm(`Permanently delete "${id}"? This cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/kb/${id}`, { method: 'DELETE', credentials: 'include' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      navigate('/knowledge-base');
+    } catch (err) {
+      setError(err.message);
+      setDeleting(false);
     }
   }
 
@@ -113,6 +129,48 @@ export default function KBEditorPage() {
           flexShrink: 0,
         }}>{error}</div>
       )}
+
+      {/* Toolbar */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0.625rem 1.25rem',
+        background: 'var(--card)', borderBottom: '1px solid var(--border)',
+        flexShrink: 0,
+      }}>
+        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>
+          {id}
+        </span>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          {saved && (
+            <span style={{ fontSize: '0.75rem', color: 'var(--success, #16a34a)' }}>Saved</span>
+          )}
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            style={{
+              padding: '0.375rem 0.875rem', borderRadius: 'var(--r-lg)',
+              border: '1px solid var(--danger-border, #FECACA)',
+              background: 'var(--danger-soft, #FEF2F2)', color: 'var(--danger)',
+              fontSize: '0.8125rem', fontWeight: 500, cursor: deleting ? 'not-allowed' : 'pointer',
+              opacity: deleting ? 0.6 : 1,
+            }}
+          >
+            {deleting ? 'Deleting…' : 'Delete KB'}
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            style={{
+              padding: '0.375rem 0.875rem', borderRadius: 'var(--r-lg)',
+              border: 'none', background: 'var(--primary)', color: '#fff',
+              fontSize: '0.8125rem', fontWeight: 500, cursor: saving ? 'not-allowed' : 'pointer',
+              opacity: saving ? 0.6 : 1,
+            }}
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </div>
 
       {/* Two-pane layout */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>

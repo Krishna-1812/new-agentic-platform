@@ -37,6 +37,7 @@ export const lpb = {
   editSection: (id, body) => req(`/pages/${id}/section`, { method: 'PUT', body: JSON.stringify(body) }),
   saveContent: (id, body) => req(`/pages/${id}/content`, { method: 'PUT', body: JSON.stringify(body) }),
   rerunQA: (id) => req(`/pages/${id}/qa`, { method: 'POST' }),
+  regenField: (id, body) => req(`/pages/${id}/content/regen-field`, { method: 'POST', body: JSON.stringify(body) }),
   gate: (id, body) => req(`/pages/${id}/gate`, { method: 'POST', body: JSON.stringify(body) }),
   comment: (id, body) => req(`/pages/${id}/comments`, { method: 'POST', body: JSON.stringify(body) }),
 

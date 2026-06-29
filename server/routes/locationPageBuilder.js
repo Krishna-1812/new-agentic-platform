@@ -176,6 +176,13 @@ router.post('/pages/:id/qa', async (req, res) => {
   try { res.json(await pageService.rerunQA(req.params.id)); }
   catch (e) { res.status(400).json({ error: e.message }); }
 });
+router.post('/pages/:id/content/regen-field', async (req, res) => {
+  try {
+    const { field, maxChars, context } = req.body;
+    const value = await pageService.regenField(req.params.id, { field, maxChars: maxChars || null, context: context || {} });
+    res.json({ value });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
 
 // ── Approval (Spec §10) ──────────────────────────────────────────────────────
 router.post('/pages/:id/gate', async (req, res) => {

@@ -231,6 +231,14 @@ function setByPath(obj, path, value) {
   cur[parts[parts.length - 1]] = value;
 }
 
+// ── Single-field regeneration (editor per-field regen) ──────────────────────
+async function regenField(pageId, { field, maxChars, context = {} }) {
+  const page = await store.get('pages', pageId);
+  if (!page?.page_object) throw new Error('No generated content to regen.');
+  const layers = await compose.loadLayers({ clientId: page.client_id, serviceId: page.service_id, locationId: page.location_id });
+  return contentGenerator.regenField({ pageObject: page.page_object, layers, keywords: page.keyword_set || {}, field, maxChars: maxChars || null, context });
+}
+
 // ── Approval actions ─────────────────────────────────────────────────────────
 async function actOnGate(pageId, gate, action, { role, comment, actorId }) {
   const page = await store.get('pages', pageId);
@@ -290,5 +298,5 @@ async function snapshotVersion(pageId, exportedFormats = []) {
 
 module.exports = {
   createPage, runKeywordPipeline, saveKeywords, finalizeKeywords,
-  generateContent, rerunQA, editSection, saveContent, actOnGate, addComment, snapshotVersion,
+  generateContent, rerunQA, editSection, saveContent, regenField, actOnGate, addComment, snapshotVersion,
 };

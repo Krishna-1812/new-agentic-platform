@@ -141,6 +141,17 @@ async function createKB(data) {
   return { id, path: filePath, meta: frontmatter, body: initialBody };
 }
 
+async function deleteKB(id) {
+  const index = await readIndex();
+  const entryIdx = index.knowledge_bases.findIndex(kb => kb.id === id);
+  if (entryIdx === -1) throw new Error(`KB "${id}" not found in index.`);
+  const entry = index.knowledge_bases[entryIdx];
+  const filePath = path.join(KB_ROOT, entry.path);
+  try { await fs.unlink(filePath); } catch { /* file may not exist */ }
+  index.knowledge_bases.splice(entryIdx, 1);
+  await writeIndex(index);
+}
+
 async function toggleActive(id) {
   const kb = await readKB(id);
   if (!kb) throw new Error(`KB "${id}" not found.`);
@@ -201,6 +212,6 @@ function currentPeriod() {
 module.exports = {
   KB_ROOT, MODULES_ROOT,
   readIndex, writeIndex,
-  listKBs, readKB, writeKB, createKB, toggleActive,
+  listKBs, readKB, writeKB, createKB, deleteKB, toggleActive,
   listModules, readModule, writeModule,
 };
