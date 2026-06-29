@@ -558,10 +558,46 @@ function htmlChunkToMarkdown(html) {
       case 'li': { const t = text(el); if (t) lines.push('- ' + t); break; }
       case 'ul': case 'ol': $(el).children('li').each((_, li) => walk(li)); lines.push(''); break;
       case 'blockquote': { const t = text(el); if (t) lines.push('> ' + t, ''); break; }
-      default:
-        if (!['span', 'a', 'strong', 'em', 'b', 'i', 'mark', 'code'].includes(tag)) {
-          $(el).children().each((_, child) => walk(child));
+      case 'dt': {
+        // Definition term — used by some FAQ plugins for questions
+        const t = text(el);
+        if (t) lines.push(inFaqSection ? '### ' + t : t, '');
+        break;
+      }
+      case 'dd': {
+        // Definition description — used alongside <dt> for FAQ answers
+        $(el).children().length ? $(el).children().each((_, c) => walk(c)) : (() => { const t = text(el); if (t) lines.push(t); })();
+        lines.push('');
+        break;
+      }
+      case 'summary': {
+        // <details>/<summary> accordion — summary is always the question
+        const t = text(el);
+        if (t) lines.push('### ' + t, '');
+        break;
+      }
+      default: {
+        const INLINE = new Set(['span', 'a', 'strong', 'em', 'b', 'i', 'mark', 'code', 'small', 'sub', 'sup']);
+        if (INLINE.has(tag)) break;
+        // For block/unknown elements: if it has block-level children, walk them.
+        // Otherwise it's a leaf container (button, div with only text, etc.) — emit its text directly.
+        const BLOCK = new Set(['p','div','section','article','h1','h2','h3','h4','h5','h6','ul','ol','dl','dt','dd','blockquote','details','summary','figure','table','thead','tbody','tr','th','td']);
+        const childEls = $(el).children().toArray();
+        const hasBlockChild = childEls.some(c => BLOCK.has((c.tagName || '').toLowerCase()));
+        if (hasBlockChild) {
+          childEls.forEach(c => walk(c));
+        } else {
+          const t = text(el);
+          if (t) {
+            if (inFaqSection && t.endsWith('?') && t.split(/\s+/).length <= 25) {
+              lines.push('### ' + t, '');
+            } else {
+              lines.push(t, '');
+            }
+          }
         }
+        break;
+      }
     }
   }
 
