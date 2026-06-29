@@ -74,21 +74,21 @@ router.get('/stream/:token', async (req, res) => {
       metaDescription: articleData.metaDescription,
     });
 
-    // Step 2: Theme & Query Generation
-    emit('step', { id: 'theme', status: 'active', message: 'Identifying article theme and generating queries…' });
-    const themeData = await generateThemeAndQueries(openai, articleData);
-    emit('step', { id: 'theme', status: 'done', message: `Theme: "${themeData.theme}" · 3 queries generated` });
-    emit('theme_queries', themeData);
+    // Step 2: Theme & Query
+    emit('step', { id: 'theme', status: 'active', message: 'Identifying article theme and query…' });
+    const themeData = await generateThemeAndQuery(openai, articleData);
+    emit('step', { id: 'theme', status: 'done', message: `Theme: "${themeData.theme}"` });
+    emit('theme_query', themeData);
 
-    // Step 3: LLM Fanout — 3 queries × 5 models = 15 parallel calls
-    emit('step', { id: 'llm_fanout', status: 'active', message: 'Running 15 model queries in parallel…' });
-    const llmResults = await runLLMFanout(openai, themeData.queries, emit);
-    emit('llm_results', { results: llmResults.map(r => ({ queryIndex: r.queryIndex, query: r.query, modelIndex: r.modelIndex, model: r.model, success: r.success })) });
-    emit('step', { id: 'llm_fanout', status: 'done', message: `${llmResults.filter(r => r.success).length}/15 responses received` });
+    // Step 3: LLM Queries — 1 query × 5 models = 5 parallel calls
+    emit('step', { id: 'llm_fanout', status: 'active', message: 'Querying 5 models in parallel…' });
+    const llmResults = await runLLMQueries(openai, themeData.query, emit);
+    emit('llm_results', { results: llmResults.map(r => ({ modelIndex: r.modelIndex, model: r.model, success: r.success })) });
+    emit('step', { id: 'llm_fanout', status: 'done', message: `${llmResults.filter(r => r.success).length}/5 responses received` });
 
-    // Step 4: Concept Synthesis — 15 parallel calls (one per model output)
-    emit('step', { id: 'synthesis', status: 'active', message: 'Synthesizing concepts from all model outputs…' });
-    const { allConcepts } = await runConceptSynthesis(openai, llmResults, emit);
+    // Step 4: Concept Synthesis — 5 parallel calls (one per model output)
+    emit('step', { id: 'synthesis', status: 'active', message: 'Synthesizing concepts from model outputs…' });
+    const { allConcepts } = await runConceptSynthesis(openai, themeData.query, llmResults, emit);
     emit('step', { id: 'synthesis', status: 'done', message: `${allConcepts.length} concepts extracted` });
 
     // Step 5: Load KB
@@ -256,8 +256,8 @@ async function fetchArticle(url) {
   };
 }
 
-// ── generateThemeAndQueries ────────────────────────────────────────────────────
-async function generateThemeAndQueries(openai, articleData) {
+// ── generateThemeAndQuery ──────────────────────────────────────────────────────
+async function generateThemeAndQuery(openai, articleData) {
   const res = await openai.chat.completions.create({
     model: 'gpt-5.4-mini',
     response_format: { type: 'json_object' },
@@ -265,7 +265,7 @@ async function generateThemeAndQueries(openai, articleData) {
       { role: 'system', content: 'You are an expert content analyst. Respond with valid JSON only.' },
       {
         role: 'user',
-        content: `Analyze this article and identify its main theme and generate search queries.
+        content: `Analyze this article and identify its main theme and the primary user search query it addresses.
 
 Title: ${articleData.title}
 H1: ${articleData.h1}
@@ -277,31 +277,17 @@ ${articleData.bodyText.slice(0, 3000)}
 Return JSON:
 {
   "theme": "The article's main topic/theme in 4-8 words",
-  "queries": [
-    { "queryIndex": 0, "query": "the primary user search query this article addresses", "isPrimary": true },
-    { "queryIndex": 1, "query": "a related user query expanding on the theme", "isPrimary": false },
-    { "queryIndex": 2, "query": "another related user query from a different angle", "isPrimary": false }
-  ]
-}
-
-Rules:
-- queries[0] is the PRIMARY query — the most direct match to the article's main intent
-- queries[1] and [2] are related but distinct queries a user interested in this theme might also search for
-- Each query should be phrased as a natural user search (not a headline), 4-12 words
-- Queries must be meaningfully different from each other — not paraphrases`,
+  "query": "The primary user search query this article addresses, 4-12 words, phrased as a natural user search"
+}`,
       }
     ],
   });
   return JSON.parse(res.choices[0].message.content);
 }
 
-// ── runLLMFanout ───────────────────────────────────────────────────────────────
-async function runLLMFanout(openai, queries, emit) {
-  const tasks = queries.flatMap((q, qi) =>
-    MODELS.map((model, mi) => ({ queryIndex: qi, query: q.query, modelIndex: mi, model }))
-  );
-
-  const results = await Promise.all(tasks.map(async ({ queryIndex, query, modelIndex, model }) => {
+// ── runLLMQueries ──────────────────────────────────────────────────────────────
+async function runLLMQueries(openai, query, emit) {
+  const results = await Promise.all(MODELS.map(async (model, modelIndex) => {
     try {
       const prompt = `Query: "${query}"
 
@@ -314,11 +300,11 @@ Provide a comprehensive response to this search query. Include:
 
 This information will be used to enhance an article on this topic. Focus on depth, accuracy, and specificity.`;
       const text = await callLLM(openai, model, prompt);
-      emit('llm_result', { queryIndex, query, modelIndex, model, success: true });
-      return { queryIndex, query, modelIndex, model, success: true, text };
+      emit('llm_result', { modelIndex, model, success: true });
+      return { modelIndex, model, success: true, text };
     } catch (err) {
-      emit('llm_result', { queryIndex, query, modelIndex, model, success: false, error: err.message });
-      return { queryIndex, query, modelIndex, model, success: false, text: '', error: err.message };
+      emit('llm_result', { modelIndex, model, success: false, error: err.message });
+      return { modelIndex, model, success: false, text: '', error: err.message };
     }
   }));
 
@@ -330,7 +316,7 @@ async function callLLM(openai, model, prompt) {
   try {
     const res = await openai.chat.completions.create({
       model,
-      max_tokens: 2000,
+      max_completion_tokens: 2000,
       messages: [
         { role: 'system', content: 'You are a knowledgeable expert. Provide comprehensive, factual information.' },
         { role: 'user', content: prompt },
@@ -339,6 +325,7 @@ async function callLLM(openai, model, prompt) {
     return res.choices[0].message.content || '';
   } catch (err) {
     if (err.status === 400 || err.status === 422) {
+      // Retry without token limit in case the model doesn't support max_completion_tokens
       const res = await openai.chat.completions.create({
         model,
         messages: [
@@ -353,7 +340,7 @@ async function callLLM(openai, model, prompt) {
 }
 
 // ── synthesizeConcepts ─────────────────────────────────────────────────────────
-async function synthesizeConcepts(openai, { queryIndex, query, model, text }) {
+async function synthesizeConcepts(openai, query, { model, text }) {
   try {
     const res = await openai.chat.completions.create({
       model: 'gpt-5.4-mini',
@@ -372,8 +359,6 @@ Extract all distinct concepts, ideas, facts, statistics, and insights from this 
 
 Return JSON:
 {
-  "queryIndex": ${queryIndex},
-  "query": "${query.replace(/"/g, '\\"')}",
   "model": "${model}",
   "concepts": [
     "Concept or fact — specific and self-contained"
@@ -390,24 +375,23 @@ Rules:
     });
     return JSON.parse(res.choices[0].message.content);
   } catch (err) {
-    console.error('[synthesis] error for query', queryIndex, 'model', model, ':', err.message);
-    return { queryIndex, query, model, concepts: [] };
+    console.error('[synthesis] error for model', model, ':', err.message);
+    return { model, concepts: [] };
   }
 }
 
 // ── runConceptSynthesis ────────────────────────────────────────────────────────
-async function runConceptSynthesis(openai, llmResults, emit) {
+async function runConceptSynthesis(openai, query, llmResults, emit) {
   const successfulResults = llmResults.filter(r => r.success && r.text);
 
   const synthResults = await Promise.all(
     successfulResults.map(async (result) => {
-      const synth = await synthesizeConcepts(openai, result);
+      const synth = await synthesizeConcepts(openai, query, result);
       emit('synthesis_result', synth);
       return synth;
     })
   );
 
-  // Merge and de-duplicate all concepts across all 15 outputs
   const seenConcepts = new Set();
   const allConcepts = [];
   for (const s of synthResults) {
@@ -429,7 +413,7 @@ async function generateRecommendations(openai, articleData, themeData, allConcep
 
   const res = await openai.chat.completions.create({
     model: 'gpt-5.4-mini',
-    max_tokens: 3000,
+    max_completion_tokens: 3000,
     messages: [
       {
         role: 'system',
@@ -444,10 +428,7 @@ Word count: ${articleData.wordCount}
 H1: ${articleData.h1}
 H2 sections: ${articleData.h2s.join(' | ')}
 
-Queries this article should address:
-1. ${themeData.queries[0]?.query} [PRIMARY]
-2. ${themeData.queries[1]?.query}
-3. ${themeData.queries[2]?.query}
+Query this article should address: ${themeData.query}
 
 Synthesized concepts from multi-model research:
 ${allConcepts.join('\n').slice(0, 8000)}
@@ -607,7 +588,6 @@ Generate only what is described above. Wrap all output in [NEW]...[/NEW].`,
 async function generateEnhancedArticle(openai, articleData, recommendations, kb) {
   const sourceHtml = articleData.mainContentHtml || articleData.bodyText || '';
   const kbGuidance = kb ? kb.body : '';
-  const reportSlice = recommendations;
 
   const systemPrompt = `You are an SEO and GEO content augmentation assistant. Your job is to INSERT substantive, high-value content into an existing article section to improve its AI citability and search performance.
 
@@ -663,7 +643,7 @@ MARKING RULES:
             content: `Article: "${articleData.title}"
 
 ARTICLE-LEVEL ENHANCEMENT CONTEXT (use to identify what is missing — do NOT add headings or duplicate content):
-${reportSlice}
+${recommendations}
 
 EXISTING SECTION ${index + 1} of ${chunks.length}:
 ${mdChunk}
@@ -740,8 +720,6 @@ async function buildDocx({ articleMeta, themeData, llmResults, recommendations, 
     border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: TEAL, space: 4 } },
     children: [run(t, { bold: true, color: TEAL, size: 28 })],
   });
-  const subSection = t => new Paragraph({ spacing: { before: 180, after: 60 }, children: [run(t, { bold: true, color: NAVY, size: 24 })] });
-  const body = t => new Paragraph({ spacing: { after: 80 }, children: [run(t)] });
   const label = (lbl, val) => new Paragraph({
     spacing: { after: 60 },
     children: [run(lbl + ': ', { bold: true, color: GREY }), run(String(val || '—'))],
@@ -841,17 +819,11 @@ async function buildDocx({ articleMeta, themeData, llmResults, recommendations, 
     }
   }
 
-  // Appendix: Theme & Queries
+  // Appendix: Theme & Query
   if (themeData) {
-    children.push(sectionHeading('Theme & Queries'));
+    children.push(sectionHeading('Theme & Query'));
     children.push(label('Theme', themeData.theme));
-    if (themeData.queries?.length) {
-      children.push(new Paragraph({ spacing: { before: 80, after: 40 }, children: [run('Queries:', { bold: true, color: GREY })] }));
-      themeData.queries.forEach((q, i) => {
-        const prefix = q.isPrimary ? '[Primary] ' : `[Q${i + 1}] `;
-        children.push(bullet(prefix + q.query));
-      });
-    }
+    children.push(label('Query', themeData.query));
   }
 
   // Appendix: Enhancement Recommendations

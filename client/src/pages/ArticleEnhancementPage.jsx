@@ -11,18 +11,12 @@ const MODELS = [
 
 const STEPS = [
   { id: 'crawl',      label: 'Crawl Article' },
-  { id: 'theme',      label: 'Theme & Queries' },
-  { id: 'llm_fanout', label: 'LLM Fanout (15 calls)' },
+  { id: 'theme',      label: 'Theme & Query' },
+  { id: 'llm_fanout', label: 'Model Queries (5 calls)' },
   { id: 'synthesis',  label: 'Concept Synthesis' },
   { id: 'kb',         label: 'Load KB' },
   { id: 'recommend',  label: 'Generate Recommendations' },
   { id: 'enhance',    label: 'Enhance Article' },
-];
-
-const QUERY_COLORS = [
-  { bg: 'var(--info-soft)',    color: 'var(--info)',    label: 'Primary' },
-  { bg: 'var(--brand-soft)',   color: 'var(--brand)',   label: 'Q2' },
-  { bg: 'var(--success-soft)', color: 'var(--success)', label: 'Q3' },
 ];
 
 function PageHeader({ navigate }) {
@@ -90,87 +84,40 @@ function StepIndicator({ stepStates }) {
   );
 }
 
-function LLMResultPanel({ llmResults, queries }) {
-  const [expandedGroup, setExpandedGroup] = useState(null);
-  const [expandedModel, setExpandedModel] = useState(null);
-
-  const groups = [0, 1, 2].map(qi => ({
-    queryIndex: qi,
-    query: queries?.[qi]?.query || `Query ${qi + 1}`,
-    isPrimary: queries?.[qi]?.isPrimary || qi === 0,
-    results: llmResults.filter(r => r.queryIndex === qi),
-  }));
+function LLMResultPanel({ llmResults }) {
+  const [expanded, setExpanded] = useState(null);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {groups.map(group => {
-        const color = QUERY_COLORS[group.queryIndex] || QUERY_COLORS[0];
-        const doneCount = group.results.filter(r => r.success).length;
-        const isOpen = expandedGroup === group.queryIndex;
+    <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+      {MODELS.map((model, mi) => {
+        const result = llmResults.find(r => r.model === model || r.modelIndex === mi);
+        const isOpen = expanded === mi;
         return (
-          <div key={group.queryIndex} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-            {/* Query header */}
+          <div key={mi} style={{ borderBottom: mi < MODELS.length - 1 ? '1px solid var(--border)' : 'none' }}>
             <button
-              onClick={() => setExpandedGroup(isOpen ? null : group.queryIndex)}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', transition: 'background 0.15s' }}
-              onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              onClick={() => result?.text ? setExpanded(isOpen ? null : mi) : undefined}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: result?.text ? 'pointer' : 'default', transition: 'background 0.15s' }}
+              onMouseEnter={e => { if (result?.text) e.currentTarget.style.background = 'var(--surface)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
-                <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 7px', borderRadius: '4px', background: color.bg, color: color.color, flexShrink: 0 }}>
-                  {group.isPrimary ? 'PRIMARY' : `Q${group.queryIndex + 1}`}
-                </span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {group.query}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: '12px' }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-2)' }}>{doneCount}/{MODELS.length}</span>
-                <svg style={{ width: '16px', height: '16px', color: 'var(--text-2)', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                </svg>
+              <span style={{ fontSize: '13px', fontFamily: 'monospace', color: 'var(--text)' }}>{model}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {!result && <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>pending</span>}
+                {result && (
+                  result.success
+                    ? <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '4px', background: 'var(--success-soft)', color: 'var(--success)' }}>Done</span>
+                    : <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '4px', background: 'var(--danger-soft)', color: 'var(--danger)' }}>Failed</span>
+                )}
+                {result?.text && (
+                  <svg style={{ width: '14px', height: '14px', color: 'var(--text-2)', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
+                )}
               </div>
             </button>
-            {/* Model rows */}
-            {isOpen && (
-              <div style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
-                {MODELS.map((model, mi) => {
-                  const result = group.results.find(r => r.model === model || r.modelIndex === mi);
-                  const rowKey = `${group.queryIndex}_${mi}`;
-                  const isModelOpen = expandedModel === rowKey;
-                  return (
-                    <div key={mi} style={{ borderBottom: mi < MODELS.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                      <button
-                        onClick={() => result?.text ? setExpandedModel(isModelOpen ? null : rowKey) : undefined}
-                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: result?.text ? 'pointer' : 'default' }}
-                        onMouseEnter={e => { if (result?.text) e.currentTarget.style.background = 'rgba(0,0,0,0.03)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
-                      >
-                        <span style={{ fontSize: '12px', fontFamily: 'monospace', color: 'var(--text)' }}>{model}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {!result && (
-                            <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>pending</span>
-                          )}
-                          {result && (
-                            result.success
-                              ? <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '4px', background: 'var(--success-soft)', color: 'var(--success)' }}>Done</span>
-                              : <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 7px', borderRadius: '4px', background: 'var(--danger-soft)', color: 'var(--danger)' }}>Failed</span>
-                          )}
-                          {result?.text && (
-                            <svg style={{ width: '14px', height: '14px', color: 'var(--text-2)', transform: isModelOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                            </svg>
-                          )}
-                        </div>
-                      </button>
-                      {isModelOpen && result?.text && (
-                        <div style={{ padding: '12px 16px', background: 'var(--card)', borderTop: '1px solid var(--border)' }}>
-                          <pre style={{ fontSize: '12px', color: 'var(--text)', whiteSpace: 'pre-wrap', lineHeight: 1.6, fontFamily: 'sans-serif', margin: 0 }}>{result.text}</pre>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+            {isOpen && result?.text && (
+              <div style={{ padding: '12px 16px', background: 'var(--surface)', borderTop: '1px solid var(--border)' }}>
+                <pre style={{ fontSize: '12px', color: 'var(--text)', whiteSpace: 'pre-wrap', lineHeight: 1.6, fontFamily: 'sans-serif', margin: 0 }}>{result.text}</pre>
               </div>
             )}
           </div>
@@ -329,18 +276,16 @@ export default function ArticleEnhancementPage() {
       setStepStates(prev => ({ ...prev, [d.id]: { status: d.status, message: d.message } }));
     });
     es.addEventListener('article_meta', e => setArticleMeta(JSON.parse(e.data)));
-    es.addEventListener('theme_queries', e => {
+    es.addEventListener('theme_query', e => {
       setThemeData(JSON.parse(e.data));
       setActiveTab('analysis');
     });
     es.addEventListener('llm_result', e => {
       const d = JSON.parse(e.data);
-      const key = `${d.queryIndex}_${d.modelIndex}`;
       setLlmResults(prev => {
-        const i = prev.findIndex(r => r.key === key);
-        const entry = { ...d, key };
-        if (i >= 0) { const next = [...prev]; next[i] = { ...next[i], ...entry }; return next; }
-        return [...prev, entry];
+        const i = prev.findIndex(r => r.modelIndex === d.modelIndex);
+        if (i >= 0) { const next = [...prev]; next[i] = { ...next[i], ...d }; return next; }
+        return [...prev, d];
       });
     });
     es.addEventListener('llm_results', e => {
@@ -348,10 +293,8 @@ export default function ArticleEnhancementPage() {
       setLlmResults(prev => {
         const merged = [...prev];
         for (const r of d.results) {
-          const key = `${r.queryIndex}_${r.modelIndex}`;
-          const i = merged.findIndex(x => x.key === key);
-          const entry = { ...r, key };
-          if (i >= 0) merged[i] = { ...merged[i], ...entry }; else merged.push(entry);
+          const i = merged.findIndex(x => x.modelIndex === r.modelIndex);
+          if (i >= 0) merged[i] = { ...merged[i], ...r }; else merged.push(r);
         }
         return merged;
       });
@@ -360,8 +303,7 @@ export default function ArticleEnhancementPage() {
     es.addEventListener('synthesis_result', e => {
       const d = JSON.parse(e.data);
       setSynthResults(prev => {
-        const key = `${d.queryIndex}_${d.model}`;
-        const i = prev.findIndex(r => `${r.queryIndex}_${r.model}` === key);
+        const i = prev.findIndex(r => r.model === d.model);
         if (i >= 0) { const next = [...prev]; next[i] = d; return next; }
         return [...prev, d];
       });
@@ -429,13 +371,18 @@ export default function ArticleEnhancementPage() {
     { id: 'recommendations', label: 'Recommendations',               show: !!recommendations },
   ].filter(t => t.show);
 
-  // Concepts grouped by query for the Analysis tab
-  const conceptsByQuery = [0, 1, 2].map(qi => ({
-    queryIndex: qi,
-    query: themeData?.queries?.[qi]?.query || '',
-    isPrimary: themeData?.queries?.[qi]?.isPrimary || qi === 0,
-    concepts: synthResults.filter(s => s.queryIndex === qi).flatMap(s => s.concepts || []),
-  }));
+  // Deduplicated concepts from all synthesis results
+  const allConceptsDisplay = (() => {
+    const seen = new Set();
+    const result = [];
+    for (const s of synthResults) {
+      for (const c of (s.concepts || [])) {
+        const key = c.toLowerCase().trim().slice(0, 80);
+        if (!seen.has(key)) { seen.add(key); result.push(c); }
+      }
+    }
+    return result;
+  })();
 
   return (
     <>
@@ -448,7 +395,7 @@ export default function ArticleEnhancementPage() {
         <div style={{ marginBottom: '24px' }}>
           <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text)' }}>Enhance Existing Article</h1>
           <p style={{ fontSize: '14px', color: 'var(--text-2)', marginTop: '4px' }}>
-            Crawl a live article, extract theme &amp; 3 queries, run 15 parallel LLM calls, synthesize concepts, and generate enhancement recommendations.
+            Crawl a live article, extract theme &amp; query, run 5 parallel model calls, synthesize concepts, and generate enhancement recommendations.
           </p>
         </div>
 
@@ -505,7 +452,7 @@ export default function ArticleEnhancementPage() {
 
                 {/* Models */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '6px' }}>Models (3 queries × 5 = 15 calls)</label>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '6px' }}>Models (5 parallel calls)</label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {MODELS.map((m, i) => (
                       <div key={i} style={{ padding: '6px 12px', borderRadius: 'var(--r-lg)', background: 'var(--surface)', fontSize: '12px', fontFamily: 'monospace', color: 'var(--text)' }}>
@@ -625,62 +572,40 @@ export default function ArticleEnhancementPage() {
                 {/* Analysis tab */}
                 {activeTab === 'analysis' && themeData && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {/* Theme */}
-                    <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                      <p style={{ fontSize: '12px', color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Article Theme</p>
-                      <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text)' }}>{themeData.theme}</p>
-                    </div>
-
-                    {/* Queries */}
-                    <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                      <p style={{ fontSize: '12px', color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Search Queries</p>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {themeData.queries?.map((q, i) => {
-                          const color = QUERY_COLORS[i] || QUERY_COLORS[0];
-                          return (
-                            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px 12px', background: color.bg, borderRadius: 'var(--r-lg)' }}>
-                              <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'rgba(255,255,255,0.6)', color: color.color, flexShrink: 0, marginTop: '1px' }}>
-                                {q.isPrimary ? 'PRIMARY' : `Q${i + 1}`}
-                              </span>
-                              <span style={{ fontSize: '13px', color: color.color, fontWeight: 500 }}>{q.query}</span>
-                            </div>
-                          );
-                        })}
+                    {/* Theme & Query */}
+                    <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      <div>
+                        <p style={{ fontSize: '12px', color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Article Theme</p>
+                        <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text)' }}>{themeData.theme}</p>
+                      </div>
+                      <div>
+                        <p style={{ fontSize: '12px', color: 'var(--text-2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Search Query</p>
+                        <div style={{ padding: '10px 12px', background: 'var(--info-soft)', borderRadius: 'var(--r-lg)', fontSize: '13px', fontWeight: 500, color: 'var(--info)' }}>
+                          {themeData.query}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Concepts per query */}
-                    {conceptsByQuery.some(g => g.concepts.length > 0) && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {conceptsByQuery.filter(g => g.concepts.length > 0).map(group => {
-                          const color = QUERY_COLORS[group.queryIndex] || QUERY_COLORS[0];
-                          return (
-                            <div key={group.queryIndex} style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                                <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: color.bg, color: color.color }}>
-                                  {group.isPrimary ? 'PRIMARY' : `Q${group.queryIndex + 1}`}
-                                </span>
-                                <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                  Synthesized Concepts ({group.concepts.length})
-                                </p>
-                              </div>
-                              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                {group.concepts.map((c, i) => (
-                                  <li key={i} style={{ fontSize: '13px', color: 'var(--text)', display: 'flex', alignItems: 'flex-start', gap: '8px', lineHeight: 1.5 }}>
-                                    <span style={{ color: color.color, flexShrink: 0, marginTop: '3px' }}>·</span>{c}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          );
-                        })}
+                    {/* Synthesized concepts */}
+                    {allConceptsDisplay.length > 0 && (
+                      <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+                        <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
+                          Synthesized Concepts ({allConceptsDisplay.length})
+                        </p>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {allConceptsDisplay.map((c, i) => (
+                            <li key={i} style={{ fontSize: '13px', color: 'var(--text)', display: 'flex', alignItems: 'flex-start', gap: '8px', lineHeight: 1.5 }}>
+                              <span style={{ color: 'var(--info)', flexShrink: 0, marginTop: '3px' }}>·</span>{c}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     )}
                   </div>
                 )}
 
                 {activeTab === 'enhanced' && <EnhancedArticlePanel text={enhancedText} />}
-                {activeTab === 'llm' && <LLMResultPanel llmResults={llmResults} queries={themeData?.queries} />}
+                {activeTab === 'llm' && <LLMResultPanel llmResults={llmResults} />}
                 {activeTab === 'recommendations' && <RecommendationsPanel recommendations={recommendations} />}
               </div>
             )}
