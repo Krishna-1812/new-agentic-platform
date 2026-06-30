@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const OpenAI = require('openai');
-const { Document, Packer, Paragraph, TextRun, BorderStyle, AlignmentType } = require('docx');
+const { Document, Packer, Paragraph, TextRun, BorderStyle, AlignmentType, Table, TableRow, TableCell, WidthType, ShadingType } = require('docx');
 const store = require('../services/kbStore');
 
 const MODELS = [
@@ -129,6 +129,7 @@ router.get('/stream/:token', async (req, res) => {
     const structural = await generateStructuralAdditions(openai, articleData, themeData, recommendations, kb, articleHasFaq, existingFaqHeading);
     let enhancedText = deduplicateAdditions(enhancedChunks);
     if (structural) enhancedText += '\n\n' + structural;
+    enhancedText = normalizeTablesToMarkdown(enhancedText);
     enhancedText = normalizeNewMarkers(enhancedText);
     enhancedText = enforceFaqHeadings(enhancedText);
     emit('step', { id: 'enhance', status: 'done', message: 'Article enhancement complete' });
@@ -231,6 +232,9 @@ async function fetchArticle(url) {
     /\b(tags?[-_]?(list|cloud|section)|categor(y|ies)[-_]?(list|nav|section)|archive[-_]?(list|nav))\b/i,
     /\b(latest[-_]?articles?|recent[-_]?(posts?|articles?)|trending[-_]?(posts?|articles?)|popular[-_]?(posts?|articles?)|featured[-_]?(posts?|articles?))\b/i,
     /\b(global[-_]?(footer|nav|cta|locations?|offices?)|site[-_]?(footer|wide|global)|page[-_]?footer)\b/i,
+    /\b(loading[-_]?(spinner|screen|overlay|state|indicator)?|skeleton[-_]?loader|preloader|spinner[-_]?(wrap|container)?)\b/i,
+    /\b(service[-_]?(list|menu|area|section|grid)|our[-_]?services?|services?[-_]?(we[-_]?offer|offered)|treatment[-_]?(list|menu|options?)|procedure[-_]?(list|menu))\b/i,
+    /\b(nearby[-_]?(locations?|offices?|clinics?)|other[-_]?(locations?|offices?|clinics?)|all[-_]?(locations?|clinics?|practices?|offices?))\b/i,
   ];
 
   $('[class], [id]').each((_, el) => {
@@ -284,6 +288,22 @@ async function fetchArticle(url) {
     const shortFraction = lens.filter(l => l < 40).length / (lens.length || 1);
     if (avg < 35 || shortFraction > 0.8) $(el).remove();
   });
+
+  // Pass: remove classless/idless loading text nodes
+  $mainEl.find('*').each((_, el) => {
+    const t = $(el).text().replace(/\s+/g, ' ').trim();
+    if (/^(loading\.{0,3}|please wait\.{0,3}|\.{3,5})$/i.test(t)) $(el).remove();
+  });
+
+  // Pass: remove standalone document-control codes (e.g. "MM000125_C")
+  $mainEl.find('*').each((_, el) => {
+    if ($(el).children().length) return; // leaf nodes only
+    const t = $(el).text().replace(/\s+/g, ' ').trim();
+    if (t.length <= 20 && /^[A-Z]{2,}\d{3,}[_-]?[A-Z0-9]*$/.test(t)) $(el).remove();
+  });
+
+  // Pass: remove trailing end-of-article sections from within mainEl
+  truncateAfterArticleEnd($, $mainEl);
 
   const mainContentHtml = $mainEl.html() || '';
 
@@ -636,10 +656,18 @@ function enforceFaqHeadings(text) {
 // ── normalizeNewMarkers ────────────────────────────────────────────────────────
 function normalizeNewMarkers(text) {
   if (!text) return '';
-  let t = text.replace(/\[\/NEW\][ \t]*\[NEW\]/g, ' ');
-  t = t.replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) =>
-    inner.split('\n').map(l => l.trim() ? `[NEW]${l.trim()}[/NEW]` : '').join('\n')
-  );
+  let t = text;
+  // Collapse adjacent/doubled markers (LLMs sometimes emit [NEW][NEW]… or …[/NEW][/NEW],
+  // which would otherwise leave a literal [NEW] inside a highlighted run).
+  t = t.replace(/\[\/NEW\][ \t]*\[NEW\]/g, ' ');          // close immediately followed by open
+  t = t.replace(/(?:\[NEW\][ \t]*){2,}/g, '[NEW]');        // doubled openings → single
+  t = t.replace(/(?:\[\/NEW\][ \t]*){2,}/g, '[/NEW]');     // doubled closings → single
+  // Re-wrap each line inside a pair; strip any nested stray markers inside the pair.
+  t = t.replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) => {
+    const clean = inner.replace(/\[NEW\]/g, '').replace(/\[\/NEW\]/g, '');
+    return clean.split('\n').map(l => l.trim() ? `[NEW]${l.trim()}[/NEW]` : '').join('\n');
+  });
+  // Strip orphan markers on any line that has only one side of the pair.
   t = t.split('\n').map(line => {
     const hasOpen = line.includes('[NEW]');
     const hasClose = line.includes('[/NEW]');
@@ -647,6 +675,50 @@ function normalizeNewMarkers(text) {
     return line.replace(/\[NEW\]/g, '').replace(/\[\/NEW\]/g, '');
   }).join('\n');
   return t;
+}
+
+// ── normalizeTablesToMarkdown ──────────────────────────────────────────────────
+// LLMs sometimes emit tables as HTML <table> or a hybrid (<table> wrapping pipe
+// rows) instead of markdown. Convert any such block to clean markdown pipe tables
+// so both the web renderer and DOCX export (which only handle markdown) work.
+function normalizeTablesToMarkdown(text) {
+  if (!text) return '';
+  return text.replace(/<table[\s\S]*?<\/table>/gi, (block) => {
+    // Hybrid case: <table> wrapping markdown pipe rows — strip tags, keep pipe rows.
+    const tagless = block.replace(/<\/?(?:table|thead|tbody|tfoot|tr|th|td)\b[^>]*>/gi, '').trim();
+    const pipeRows = tagless.split('\n').map(l => l.trim()).filter(l => l.startsWith('|'));
+    if (pipeRows.length >= 2) {
+      return '\n' + ensureSeparatorRow(pipeRows).join('\n') + '\n';
+    }
+    // Pure HTML case: parse <tr>/<th>/<td> into cells via cheerio.
+    try {
+      const $ = cheerio.load(block);
+      const rows = [];
+      $('tr').each((_, tr) => {
+        const cells = [];
+        $(tr).find('th, td').each((__, c) => cells.push($(c).text().replace(/\s+/g, ' ').trim()));
+        if (cells.length) rows.push(cells);
+      });
+      if (rows.length) {
+        const cols = Math.max(...rows.map(r => r.length));
+        const pad = (r) => { const o = r.slice(); while (o.length < cols) o.push(''); return o; };
+        const md = ['| ' + pad(rows[0]).join(' | ') + ' |', '| ' + Array(cols).fill('---').join(' | ') + ' |'];
+        for (let i = 1; i < rows.length; i++) md.push('| ' + pad(rows[i]).join(' | ') + ' |');
+        return '\n' + md.join('\n') + '\n';
+      }
+    } catch { /* fall through to leaving the block untouched */ }
+    return block;
+  });
+}
+
+// Ensure a markdown pipe-table has a `| --- |` separator as its second row.
+function ensureSeparatorRow(pipeRows) {
+  const strip = (r) => r.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim();
+  const isSep = (r) => /^\|?[\s\-|:]+\|?$/.test(strip(r));
+  if (pipeRows.length >= 2 && isSep(pipeRows[1])) return pipeRows;
+  const cols = Math.max((strip(pipeRows[0]).match(/\|/g) || []).length - 1, 1);
+  const sep = '| ' + Array(cols).fill('---').join(' | ') + ' |';
+  return [pipeRows[0], sep, ...pipeRows.slice(1)];
 }
 
 // ── deduplicateAdditions ───────────────────────────────────────────────────────
@@ -764,11 +836,11 @@ WHAT TO ADD (priority order — apply every type that fits this section):
 
 6. SCANNABLE BULLET LISTS — If a paragraph enumerates 3+ distinct items in prose form without a list, append a [NEW] bullet summary after it. Each bullet should be a specific, scannable data point, not a paraphrase of the prose sentence.
 
-7. KB-SPECIFIED FORMATS — If the Knowledge Base above mandates a specific content format (e.g., comparison tables, data grids, summary tables), apply that format where the section content fits. Tables use markdown: header row, separator row (---), data rows.
+7. TABLES — Actively check whether this section: compares 2+ options (A vs B), lists costs or pricing tiers, describes a step-by-step process or timeline, lists symptoms or conditions, weighs pros and cons, or presents data with multiple attributes per item. If ANY of these apply, you MUST insert a markdown table. Output tables in markdown pipe syntax ONLY — never HTML <table> tags. Format: header row, then separator row (| --- | --- |), then 3–5 data rows. A table counts as your 1 allowed list/table for this section.
 
 VOLUME LIMIT — be surgical, not exhaustive:
 - Per section: at most 2 statistics, 1 expert quote, 1 bullet list or table (3–5 rows/bullets max), 1 answer-first sentence
-- Total new text per section must not exceed 120 words (tables count toward this limit)
+- Total new text per section must not exceed 200 words; tables are exempt from this word limit
 - If the section is already well-supported with data and quotes, add nothing — return it verbatim
 
 HARD PROHIBITIONS:
@@ -807,7 +879,7 @@ ${recommendations}
 EXISTING SECTION ${index + 1} of ${chunks.length}:
 ${mdChunk}
 
-Add statistics (with source + year), expert quotes (with name + credential + org + year), citations, and answer-first sentences where they fit. Do NOT add anything already present in this section. Do NOT repeat definitions or phrases that would have appeared in earlier sections. Mark every insertion [NEW]...[/NEW]. Existing text verbatim.`,
+Add statistics (with source + year), expert quotes (with name + credential + org + year), citations, answer-first sentences, and markdown tables (for comparisons, timelines, symptom/condition lists, costs, pros/cons, or multi-attribute data — markdown pipe syntax only, never HTML) where they fit. Do NOT add anything already present in this section. Do NOT repeat definitions or phrases that would have appeared in earlier sections. Mark every insertion [NEW]...[/NEW]. Existing text verbatim.`,
           },
         ],
       });
@@ -826,6 +898,43 @@ Add statistics (with source + year), expert quotes (with name + credential + org
   }
 
   return enhancedChunks.filter(Boolean).join('\n\n');
+}
+
+// ── truncateAfterArticleEnd ────────────────────────────────────────────────────
+function truncateAfterArticleEnd($, $mainEl) {
+  const END_SIGNALS = /\b(related[-_]?(posts?|articles?|reads?)|you[-_]?might[-_]?(also[-_]?like|like|enjoy)|more[-_]?(from|like|articles?|posts?|reads?)|explore[-_]?(more|related|topics?)|similar[-_]?(articles?|posts?)|keep[-_]?reading|our[-_]?(locations?|offices?|clinics?|services?|team)|services?[-_]?(we[-_]?offer|list|menu)|location[-_]?(directory|list|finder)|about[-_]?the[-_]?author|share[-_]?(this|article|post)|next[-_]?post|prev(ious)?[-_]?post|up[-_]?next)\b/i;
+
+  const children = $mainEl.children().toArray();
+  let cutIndex = -1;
+
+  for (let i = 0; i < children.length; i++) {
+    const $child = $(children[i]);
+
+    // Heading-based signal
+    const headings = $child.find('h2, h3, h4').toArray();
+    for (const h of headings) {
+      if (END_SIGNALS.test($(h).text().replace(/\s+/g, ' ').trim())) {
+        cutIndex = i;
+        break;
+      }
+    }
+    if (cutIndex !== -1) break;
+
+    // High link-density block (navigation/directory masquerading as content)
+    const text = $child.text().replace(/\s+/g, ' ').trim();
+    if (text.length > 80) {
+      const links = $child.find('a');
+      const linkText = links.map((_, a) => $(a).text()).get().join(' ').replace(/\s+/g, ' ').trim();
+      if (links.length >= 5 && linkText.length / text.length > 0.6) {
+        cutIndex = i;
+        break;
+      }
+    }
+  }
+
+  if (cutIndex > 0) {
+    for (let i = cutIndex; i < children.length; i++) $(children[i]).remove();
+  }
 }
 
 // ── splitHtmlSafely ────────────────────────────────────────────────────────────
@@ -914,12 +1023,54 @@ async function buildDocx({ articleMeta, themeData, llmResults, recommendations, 
     }).filter(Boolean);
   }
 
+  const stripRowMarks = (r) => r.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim();
+  const isTableRow = (raw) => { const s = stripRowMarks(raw.trim()); return s.startsWith('|') && s.endsWith('|'); };
+  const isSeparatorRow = (raw) => /^\|?[\s\-|:]+\|?$/.test(stripRowMarks(raw.trim()));
+  const parseCells = (raw) => stripRowMarks(raw.trim()).replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+
+  function buildTable(rows, isNew) {
+    const headerCells = parseCells(rows[0]);
+    const cols = Math.max(headerCells.length, 1);
+    const shade = isNew ? { shading: { type: ShadingType.CLEAR, color: 'auto', fill: 'C6F6D5' } } : {};
+    const makeCell = (txt, header) => new TableCell({
+      ...shade,
+      margins: { top: 40, bottom: 40, left: 80, right: 80 },
+      children: [new Paragraph({ children: inlineRuns(txt, header ? { bold: true } : {}) })],
+    });
+    const pad = (cells) => { const o = cells.slice(0, cols); while (o.length < cols) o.push(''); return o; };
+    const headerRow = new TableRow({ tableHeader: true, children: pad(headerCells).map(c => makeCell(c, true)) });
+    const bodyRows = rows.slice(1).map(r => new TableRow({ children: pad(parseCells(r)).map(c => makeCell(c, false)) }));
+    const edge = { style: BorderStyle.SINGLE, size: 4, color: 'CBD5E0' };
+    const inner = { style: BorderStyle.SINGLE, size: 2, color: 'E2E8F0' };
+    return new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      borders: { top: edge, bottom: edge, left: edge, right: edge, insideHorizontal: inner, insideVertical: inner },
+      rows: [headerRow, ...bodyRows],
+    });
+  }
+
   function markdownToParagraphs(text) {
-    const lines = normalizeNewMarkersLocal(text).split('\n');
+    const lines = normalizeNewMarkersLocal(normalizeTablesToMarkdown(text)).split('\n');
     const paras = [];
-    for (const line of lines) {
+    for (let li = 0; li < lines.length; li++) {
+      const line = lines[li];
       const trimmed = line.trim();
       if (!trimmed) { paras.push(gap()); continue; }
+
+      // Markdown pipe-table block → real Word table
+      if (isTableRow(trimmed)) {
+        const tableLines = [];
+        while (li < lines.length && lines[li].trim() && (isTableRow(lines[li].trim()) || isSeparatorRow(lines[li].trim()))) {
+          tableLines.push(lines[li].trim());
+          li++;
+        }
+        li--; // outer loop re-increments
+        const isNew = tableLines.some(l => l.startsWith('[NEW]'));
+        const nonSep = tableLines.filter(l => !isSeparatorRow(l));
+        if (nonSep.length) { paras.push(buildTable(nonSep, isNew)); paras.push(gap()); }
+        continue;
+      }
+
       const isNewLine = trimmed.startsWith('[NEW]') && trimmed.endsWith('[/NEW]');
       const content = isNewLine ? trimmed.slice(5, -6).trim() : trimmed;
       const newOpt = isNewLine ? { highlight: 'green' } : {};
