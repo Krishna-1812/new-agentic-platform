@@ -6,13 +6,12 @@ const MODELS = [
   'gpt-5.4-mini',
   'gpt-4o-mini-search-preview',
   'gpt-4.1-mini',
-  'gpt-5-mini',
 ];
 
 const STEPS = [
   { id: 'crawl',      label: 'Crawl Article' },
   { id: 'theme',      label: 'Theme & Query' },
-  { id: 'llm_fanout', label: 'Model Queries (5 calls)' },
+  { id: 'llm_fanout', label: `Model Queries (${MODELS.length} calls)` },
   { id: 'synthesis',  label: 'Concept Synthesis' },
   { id: 'kb',         label: 'Load KB' },
   { id: 'recommend',  label: 'Generate Recommendations' },
@@ -132,44 +131,40 @@ function LLMResultPanel({ llmResults }) {
   );
 }
 
-function RecommendationsPanel({ recommendations }) {
-  if (!recommendations) return null;
-  return (
-    <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-      <pre style={{ fontSize: '14px', color: 'var(--text)', whiteSpace: 'pre-wrap', lineHeight: 1.6, fontFamily: 'sans-serif', margin: 0 }}>{recommendations}</pre>
-    </div>
-  );
+// ── Shared markdown rendering (Fix 5) ──────────────────────────────────────────
+// One renderer for both the Recommendations and Enhanced Article tabs. Handles
+// headings, **bold**, ---, ordered/unordered lists, blockquotes, pipe tables,
+// and [NEW]…[/NEW] highlight markers.
+function parseInline(str) {
+  const parts = str.split(/(\[NEW\][\s\S]*?\[\/NEW\]|\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (!part) return null;
+    if (part.startsWith('[NEW]') && part.endsWith('[/NEW]')) {
+      return (
+        <mark key={i} style={{ backgroundColor: 'var(--success-soft)', borderRadius: '2px', padding: '0 2px', color: 'var(--success)' }}>
+          {part.slice(5, -6)}
+        </mark>
+      );
+    }
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} style={{ fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+function parseTableLine(raw) {
+  const stripped = raw.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim();
+  return stripped.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+}
+function isTableRow(raw) {
+  const s = raw.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim();
+  return s.startsWith('|') && s.endsWith('|');
+}
+function isSeparatorRow(raw) {
+  return /^\|?[\s\-|:]+\|?$/.test(raw.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim());
 }
 
-function EnhancedArticlePanel({ text }) {
-  if (!text) return null;
-
-  function parseInline(str) {
-    const parts = str.split(/(\[NEW\][\s\S]*?\[\/NEW\])/g);
-    return parts.map((part, i) => {
-      if (part.startsWith('[NEW]') && part.endsWith('[/NEW]')) {
-        return (
-          <mark key={i} style={{ backgroundColor: 'var(--success-soft)', borderRadius: '2px', padding: '0 2px', color: 'var(--success)' }}>
-            {part.slice(5, -6)}
-          </mark>
-        );
-      }
-      return part || null;
-    });
-  }
-
-  function parseTableLine(raw) {
-    const stripped = raw.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim();
-    return stripped.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
-  }
-  function isTableRow(raw) {
-    const s = raw.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim();
-    return s.startsWith('|') && s.endsWith('|');
-  }
-  function isSeparatorRow(raw) {
-    return /^\|?[\s\-|:]+\|?$/.test(raw.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim());
-  }
-
+function renderMarkdown(text) {
   const lines = text.split('\n');
   const elements = [];
 
@@ -222,6 +217,33 @@ function EnhancedArticlePanel({ text }) {
     const content = isNewLine ? trimmed.slice(5, -6).trim() : trimmed;
     const wrapStyle = isNewLine ? { backgroundColor: 'var(--success-soft)', borderRadius: '3px', display: 'block', padding: '0 4px' } : {};
 
+    // Horizontal rule
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(content)) {
+      elements.push(<hr key={i} style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '16px 0' }} />);
+      continue;
+    }
+
+    // Ordered list — group consecutive numbered items into a single <ol>
+    if (/^\d+[.)]\s+/.test(content)) {
+      const items = [];
+      while (i < lines.length) {
+        const lt = lines[i].trim();
+        const inner = (lt.startsWith('[NEW]') && lt.endsWith('[/NEW]')) ? lt.slice(5, -6).trim() : lt;
+        if (!/^\d+[.)]\s+/.test(inner)) break;
+        items.push(inner.replace(/^\d+[.)]\s+/, ''));
+        i++;
+      }
+      i--;
+      elements.push(
+        <ol key={i} style={{ paddingLeft: '1.4rem', margin: '8px 0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {items.map((li, idx) => (
+            <li key={idx} style={{ fontSize: '14px', color: 'var(--text)', lineHeight: 1.6 }}>{parseInline(li)}</li>
+          ))}
+        </ol>
+      );
+      continue;
+    }
+
     if (content.startsWith('# ')) {
       elements.push(<h1 key={i} style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)', marginTop: '24px', marginBottom: '8px', ...wrapStyle }}>{parseInline(content.slice(2))}</h1>);
     } else if (content.startsWith('## ')) {
@@ -244,6 +266,20 @@ function EnhancedArticlePanel({ text }) {
     }
   }
 
+  return elements;
+}
+
+function RecommendationsPanel({ recommendations }) {
+  if (!recommendations) return null;
+  return (
+    <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+      <div>{renderMarkdown(recommendations)}</div>
+    </div>
+  );
+}
+
+function EnhancedArticlePanel({ text }) {
+  if (!text) return null;
   return (
     <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
@@ -251,7 +287,7 @@ function EnhancedArticlePanel({ text }) {
         <mark style={{ backgroundColor: 'var(--success-soft)', borderRadius: '3px', padding: '1px 7px', fontSize: '11px', fontWeight: 600, color: 'var(--success)' }}>highlighted in green</mark>
       </div>
       <div style={{ fontFamily: 'Georgia, "Times New Roman", serif', lineHeight: '1.75' }}>
-        {elements}
+        {renderMarkdown(text)}
       </div>
     </div>
   );
@@ -314,6 +350,7 @@ export default function ArticleEnhancementPage() {
   const navigate = useNavigate();
   const [url, setUrl] = useState('');
   const [urlError, setUrlError] = useState('');
+  const [contentType, setContentType] = useState('article');
   const [kbs, setKbs] = useState([]);
   const [selectedKbId, setSelectedKbId] = useState('seo-geo-article-enhancement-knowledge-base');
   const [running, setRunning] = useState(false);
@@ -329,6 +366,7 @@ export default function ArticleEnhancementPage() {
   const [synthResults, setSynthResults] = useState([]);
   const [recommendations, setRecommendations] = useState('');
   const [enhancedText, setEnhancedText] = useState('');
+  const [coverage, setCoverage] = useState(null);
   const [crawlFailed, setCrawlFailed] = useState(false);
   const [manualContent, setManualContent] = useState('');
 
@@ -364,6 +402,7 @@ export default function ArticleEnhancementPage() {
     setSynthResults([]);
     setRecommendations('');
     setEnhancedText('');
+    setCoverage(null);
     setCrawlFailed(false);
     crawlFailedRef.current = false;
 
@@ -373,7 +412,7 @@ export default function ArticleEnhancementPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ url: url.trim(), kbId: selectedKbId, manualContent: manualContent || undefined }),
+        body: JSON.stringify({ url: url.trim(), kbId: selectedKbId, contentType, manualContent: manualContent || undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to start');
@@ -414,7 +453,6 @@ export default function ArticleEnhancementPage() {
         }
         return merged;
       });
-      setActiveTab('llm');
     });
     es.addEventListener('synthesis_result', e => {
       const d = JSON.parse(e.data);
@@ -428,6 +466,7 @@ export default function ArticleEnhancementPage() {
       setRecommendations(JSON.parse(e.data).recommendations || '');
       setActiveTab('recommendations');
     });
+    es.addEventListener('coverage', e => setCoverage(JSON.parse(e.data)));
     es.addEventListener('enhanced', e => { setEnhancedText(JSON.parse(e.data).text || ''); setActiveTab('enhanced'); });
     es.addEventListener('crawl_failed', () => {
       crawlFailedRef.current = true;
@@ -488,10 +527,10 @@ export default function ArticleEnhancementPage() {
   }
 
   const tabs = [
-    { id: 'enhanced',        label: 'Enhanced Article',              show: !!enhancedText },
-    { id: 'analysis',        label: 'Analysis',                      show: !!themeData },
-    { id: 'llm',             label: `Models (${llmResults.length})`, show: llmResults.length > 0 },
-    { id: 'recommendations', label: 'Recommendations',               show: !!recommendations },
+    { id: 'enhanced',        label: 'Enhanced Article', show: !!enhancedText },
+    { id: 'analysis',        label: 'Analysis',         show: !!themeData },
+    { id: 'recommendations', label: 'Recommendations',  show: !!recommendations },
+    { id: 'coverage',        label: 'Coverage',         show: !!(coverage && coverage.reportMarkdown) },
   ].filter(t => t.show);
 
   // Deduplicated concepts from all synthesis results
@@ -518,7 +557,7 @@ export default function ArticleEnhancementPage() {
         <div style={{ marginBottom: '24px' }}>
           <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text)' }}>Enhance Existing Article</h1>
           <p style={{ fontSize: '14px', color: 'var(--text-2)', marginTop: '4px' }}>
-            Crawl a live article, extract theme &amp; query, run 5 parallel model calls, synthesize concepts, and generate enhancement recommendations.
+            Crawl a live article, extract theme &amp; query, run {MODELS.length} parallel model calls, synthesize concepts, and generate enhancement recommendations.
           </p>
         </div>
 
@@ -550,6 +589,26 @@ export default function ArticleEnhancementPage() {
                   {urlError && <p style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '6px' }}>{urlError}</p>}
                 </div>
 
+                {/* Content type (user-selected) */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '6px' }}>Content Type</label>
+                  <select
+                    value={contentType}
+                    onChange={e => setContentType(e.target.value)}
+                    disabled={running}
+                    style={{
+                      width: '100%', padding: '10px 12px', fontSize: '14px',
+                      border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+                      background: running ? 'var(--surface)' : 'var(--card)',
+                      color: 'var(--text)', outline: 'none', boxSizing: 'border-box',
+                    }}
+                  >
+                    <option value="article">Article (long-form, single topic)</option>
+                    <option value="hub">Hub / Resource Page (links &amp; navigation)</option>
+                    <option value="thin-content">Thin Content (needs expansion)</option>
+                  </select>
+                </div>
+
                 {/* KB selector */}
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '6px' }}>Knowledge Base</label>
@@ -571,18 +630,6 @@ export default function ArticleEnhancementPage() {
                       <option key={kb.id} value={kb.id}>{kb.id}</option>
                     ))}
                   </select>
-                </div>
-
-                {/* Models */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '6px' }}>Models (5 parallel calls)</label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {MODELS.map((m, i) => (
-                      <div key={i} style={{ padding: '6px 12px', borderRadius: 'var(--r-lg)', background: 'var(--surface)', fontSize: '12px', fontFamily: 'monospace', color: 'var(--text)' }}>
-                        {m}
-                      </div>
-                    ))}
-                  </div>
                 </div>
 
                 {/* Actions */}
@@ -648,6 +695,14 @@ export default function ArticleEnhancementPage() {
                     <div style={{ fontSize: '12px', color: 'var(--text-2)' }}>H2 sections</div>
                   </div>
                 </div>
+                {/* Coverage summary badge (Fix 6) */}
+                {coverage && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 600, padding: '3px 9px', borderRadius: '999px', background: 'var(--success-soft)', color: 'var(--success)' }}>
+                      ✅ {coverage.checked}/{coverage.total} covered
+                    </span>
+                  </div>
+                )}
                 {articleMeta.h2s?.length > 0 && (
                   <div style={{ marginTop: '12px' }}>
                     <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', marginBottom: '6px' }}>H2 Headings</p>
@@ -734,8 +789,8 @@ export default function ArticleEnhancementPage() {
                 )}
 
                 {activeTab === 'enhanced' && <EnhancedArticlePanel text={enhancedText} />}
-                {activeTab === 'llm' && <LLMResultPanel llmResults={llmResults} />}
                 {activeTab === 'recommendations' && <RecommendationsPanel recommendations={recommendations} />}
+                {activeTab === 'coverage' && coverage?.reportMarkdown && <RecommendationsPanel recommendations={coverage.reportMarkdown} />}
               </div>
             )}
           </div>
