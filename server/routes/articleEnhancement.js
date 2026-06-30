@@ -739,9 +739,16 @@ async function generateEnhancedArticle(openai, articleData, recommendations, kb)
   const sourceHtml = articleData.mainContentHtml || articleData.bodyText || '';
   const kbGuidance = kb ? kb.body : '';
 
+  const kbSection = kbGuidance
+    ? `KNOWLEDGE BASE — MANDATORY REQUIREMENTS (these override and supplement the defaults below):
+${kbGuidance}
+
+`
+    : '';
+
   const systemPrompt = `You are an SEO and GEO content augmentation assistant. Your job is to INSERT substantive, high-value content into an existing article section to improve its AI citability and search performance.
 
-CORE RULE: Existing text must appear VERBATIM. You insert additions only — never rewrite, rephrase, or modify any existing sentence.
+${kbSection}CORE RULE: Existing text must appear VERBATIM. You insert additions only — never rewrite, rephrase, or modify any existing sentence.
 
 WHAT TO ADD (priority order — apply every type that fits this section):
 
@@ -757,9 +764,11 @@ WHAT TO ADD (priority order — apply every type that fits this section):
 
 6. SCANNABLE BULLET LISTS — If a paragraph enumerates 3+ distinct items in prose form without a list, append a [NEW] bullet summary after it. Each bullet should be a specific, scannable data point, not a paraphrase of the prose sentence.
 
+7. KB-SPECIFIED FORMATS — If the Knowledge Base above mandates a specific content format (e.g., comparison tables, data grids, summary tables), apply that format where the section content fits. Tables use markdown: header row, separator row (---), data rows.
+
 VOLUME LIMIT — be surgical, not exhaustive:
-- Per section: at most 2 statistics, 1 expert quote, 1 bullet list (3–5 bullets max), 1 answer-first sentence
-- Total new text per section must not exceed 120 words
+- Per section: at most 2 statistics, 1 expert quote, 1 bullet list or table (3–5 rows/bullets max), 1 answer-first sentence
+- Total new text per section must not exceed 120 words (tables count toward this limit)
 - If the section is already well-supported with data and quotes, add nothing — return it verbatim
 
 HARD PROHIBITIONS:
@@ -773,7 +782,7 @@ HARD PROHIBITIONS:
 MARKING RULES:
 - Wrap ONLY the text you insert: [NEW]your inserted text here[/NEW]
 - Existing text must appear verbatim without any [NEW] tags
-- Return ONLY the section. No preamble or explanation.${kbGuidance ? '\n\nKnowledge Base — Enhancement Framework:\n' + kbGuidance : ''}`;
+- Return ONLY the section. No preamble or explanation.`;
 
   const h2Chunks = sourceHtml.split(/(?=<h2[\s>])/i).filter(c => c.trim());
   const chunks = (h2Chunks.length > 1 ? h2Chunks : [sourceHtml])

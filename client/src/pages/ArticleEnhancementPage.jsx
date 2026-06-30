@@ -158,12 +158,65 @@ function EnhancedArticlePanel({ text }) {
     });
   }
 
+  function parseTableLine(raw) {
+    const stripped = raw.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim();
+    return stripped.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+  }
+  function isTableRow(raw) {
+    const s = raw.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim();
+    return s.startsWith('|') && s.endsWith('|');
+  }
+  function isSeparatorRow(raw) {
+    return /^\|?[\s\-|:]+\|?$/.test(raw.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim());
+  }
+
   const lines = text.split('\n');
   const elements = [];
 
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim();
     if (!trimmed) { elements.push(<div key={i} style={{ height: '0.6rem' }} />); continue; }
+
+    // Markdown table — collect all consecutive table rows
+    if (isTableRow(trimmed)) {
+      const tableLines = [];
+      while (i < lines.length && (isTableRow(lines[i].trim()) || isSeparatorRow(lines[i].trim()))) {
+        tableLines.push(lines[i].trim());
+        i++;
+      }
+      i--; // outer loop will increment
+      const nonSep = tableLines.filter(l => !isSeparatorRow(l));
+      const isNew = tableLines.some(l => l.startsWith('[NEW]'));
+      const headerCells = parseTableLine(nonSep[0] || '');
+      const bodyRows = nonSep.slice(1);
+      elements.push(
+        <div key={i} style={{ overflowX: 'auto', margin: '12px 0', ...(isNew ? { backgroundColor: 'var(--success-soft)', borderRadius: '4px', padding: '4px' } : {}) }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', fontFamily: 'inherit' }}>
+            <thead>
+              <tr>
+                {headerCells.map((cell, ci) => (
+                  <th key={ci} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--text)', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' }}>
+                    {parseInline(cell)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {bodyRows.map((row, ri) => (
+                <tr key={ri} style={{ borderBottom: '1px solid var(--border)', background: ri % 2 === 1 ? 'var(--surface)' : 'transparent' }}>
+                  {parseTableLine(row).map((cell, ci) => (
+                    <td key={ci} style={{ padding: '7px 12px', color: 'var(--text)', verticalAlign: 'top' }}>
+                      {parseInline(cell)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      continue;
+    }
 
     const isNewLine = trimmed.startsWith('[NEW]') && trimmed.endsWith('[/NEW]');
     const content = isNewLine ? trimmed.slice(5, -6).trim() : trimmed;
