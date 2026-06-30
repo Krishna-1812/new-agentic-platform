@@ -6,13 +6,26 @@ const STEPS = [
 ];
 
 const DEFAULT_CONFIG = {
-  brandName: 'Riccobene Associates',
-  locationSuffix: ', NC',
-  sitewidePrefix: '6916222bad26f3b001d31303',
-  locationPrefix: '6916222bad26f3b001d31354',
-  plansFilenames: 'pricing-1, pricing-2',
+  brandName: '',
+  locationSuffix: '',
+  sitewidePrefix: '',
+  locationPrefix: '',
+  plansFilenames: '',
   concurrency: '5',
 };
+
+// Per-field placeholder + helper copy (Change 7). Keeps the form usable for any site.
+const CONFIG_FIELDS = [
+  { key: 'brandName',      label: 'Brand name',            placeholder: 'e.g. Aspen Dental' },
+  { key: 'locationSuffix', label: 'Location suffix',       placeholder: 'e.g. , TX  (or leave blank)' },
+  { key: 'sitewidePrefix', label: 'Sitewide CDN prefix',   placeholder: 'e.g. abc123def456 (optional)',
+    helper: 'Enter the Contentful/Cloudinary asset folder ID to identify content images. Leave blank to include all images.' },
+  { key: 'locationPrefix', label: 'Location CDN prefix',   placeholder: 'e.g. xyz789uvw012 (optional)',
+    helper: 'Enter the Contentful/Cloudinary asset folder ID to identify content images. Leave blank to include all images.' },
+  { key: 'plansFilenames', label: 'Plans image filenames', placeholder: 'e.g. pricing-1, pricing-2 (optional)',
+    helper: 'Comma-separated partial filenames used to identify pricing/plan images.' },
+  { key: 'concurrency',    label: 'Concurrency (1–10)',    placeholder: '5' },
+];
 
 function StepBadge({ status }) {
   if (status === 'done') return (
@@ -230,7 +243,7 @@ export default function ImageAltAuditPage() {
         }}>
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
-              Location Page URLs
+              Page URLs
             </label>
             <p style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 8 }}>
               One URL per line. Paste directly or upload a .txt / .csv file.
@@ -240,7 +253,7 @@ export default function ImageAltAuditPage() {
               onChange={e => setUrlInput(e.target.value)}
               disabled={running}
               rows={6}
-              placeholder={`https://www.brushandfloss.com/locations/cary-family-specialty\nhttps://www.brushandfloss.com/locations/apex\nhttps://www.brushandfloss.com/locations/raleigh`}
+              placeholder={`https://www.example.com/locations/city-name\nhttps://www.example.com/locations/another-city\nhttps://www.example.com/about-us`}
               style={{
                 width: '100%',
                 padding: '10px 16px',
@@ -320,14 +333,7 @@ export default function ImageAltAuditPage() {
 
             {showConfig && (
               <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                {[
-                  { key: 'brandName',       label: 'Brand name',              placeholder: DEFAULT_CONFIG.brandName },
-                  { key: 'locationSuffix',  label: 'Location suffix',         placeholder: DEFAULT_CONFIG.locationSuffix },
-                  { key: 'sitewidePrefix',  label: 'Sitewide CDN prefix',     placeholder: DEFAULT_CONFIG.sitewidePrefix },
-                  { key: 'locationPrefix',  label: 'Location CDN prefix',     placeholder: DEFAULT_CONFIG.locationPrefix },
-                  { key: 'plansFilenames',  label: 'Plans image filenames',   placeholder: DEFAULT_CONFIG.plansFilenames },
-                  { key: 'concurrency',     label: 'Concurrency (1–10)',      placeholder: DEFAULT_CONFIG.concurrency },
-                ].map(({ key, label, placeholder }) => (
+                {CONFIG_FIELDS.map(({ key, label, placeholder, helper }) => (
                   <div key={key}>
                     <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--text)', marginBottom: 4 }}>
                       {label}
@@ -351,6 +357,11 @@ export default function ImageAltAuditPage() {
                         boxSizing: 'border-box',
                       }}
                     />
+                    {helper && (
+                      <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4, marginBottom: 0, lineHeight: 1.4 }}>
+                        {helper}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -606,28 +617,13 @@ export default function ImageAltAuditPage() {
             <p style={{
               fontSize: 11, fontWeight: 600, color: 'var(--text-2)',
               textTransform: 'uppercase', letterSpacing: '0.06em',
-              marginBottom: 12, marginTop: 0,
+              marginBottom: 8, marginTop: 0,
             }}>Excel row colours</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-              {[
-                { label: 'Doctor',      color: '#E8F0FE' },
-                { label: 'Service',     color: '#E6F4EA' },
-                { label: 'Dental Plan', color: '#FFF8E1' },
-                { label: 'Hero Banner', color: '#FCE4EC' },
-                { label: 'Unknown',     color: '#FFE0B2' },
-              ].map(({ label, color }) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text)' }}>
-                  <span style={{
-                    width: 14, height: 14, borderRadius: 3,
-                    border: '1px solid var(--border)',
-                    flexShrink: 0,
-                    background: color,
-                    display: 'inline-block',
-                  }} />
-                  {label}
-                </div>
-              ))}
-            </div>
+            <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
+              In the “Content Images” sheet, rows are grouped by an <strong>Image Type</strong> category that is
+              inferred by AI from each image’s content and page context. Categories vary by site, and each distinct
+              category is assigned its own row colour automatically.
+            </p>
           </div>
         )}
 

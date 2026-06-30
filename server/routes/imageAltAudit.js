@@ -15,12 +15,14 @@ function generateToken() {
 }
 
 // ── Defaults ─────────────────────────────────────────────────────────────────
+// All client-specific values are blank by default so the tool is site-agnostic.
+// concurrency stays at a sensible universal default.
 const DEFAULT_CONFIG = {
-  brandName: 'Riccobene Associates',
-  locationSuffix: ', NC',
-  sitewidePrefix: '6916222bad26f3b001d31303',
-  locationPrefix: '6916222bad26f3b001d31354',
-  plansFilenames: ['pricing-1', 'pricing-2'],
+  brandName: '',
+  locationSuffix: '',
+  sitewidePrefix: '',
+  locationPrefix: '',
+  plansFilenames: [],
   concurrency: 5,
 };
 
@@ -225,27 +227,41 @@ function classifyImage(filename, cdnFolder, sectionText, anchorText, config) {
   const lf = filename.toLowerCase();
   const ls = (sectionText || '').toLowerCase();
   const la = (anchorText || '').toLowerCase();
+  const sitewide = (config.sitewidePrefix || '').trim();
+  const location = (config.locationPrefix || '').trim();
+  const hasPrefix = !!(sitewide || location);
 
-  // 1. Dental Plan
-  if (config.plansFilenames.some(p => lf.includes(p.toLowerCase()))) return 'DENTAL_PLAN';
+  // 1. Plan images (only when plan filename signals are configured)
+  if (config.plansFilenames.length && config.plansFilenames.some(p => lf.includes(p.toLowerCase()))) return 'DENTAL_PLAN';
+
+  // When no CDN prefix is configured, do NOT auto-classify decorative — there is
+  // no reliable signal. Treat everything as content; classify by filename/section only.
+  // (Guards against the empty-string match bug where cdnFolder '' === prefix '' .)
+  if (!hasPrefix) {
+    const byFilename = classifyByFilename(filename);
+    if (byFilename !== 'UNKNOWN') return byFilename;
+    if (/doctor|meet our|our team/i.test(ls)) return 'DOCTOR';
+    if (/service|our services/i.test(ls) || la.includes('/dental-services/')) return 'SERVICE';
+    return 'UNKNOWN';
+  }
 
   // 2. Hero Banner
-  if (cdnFolder === config.sitewidePrefix && (lf.includes('banner') || lf.includes('location-map'))) return 'HERO_BANNER';
+  if (sitewide && cdnFolder === sitewide && (lf.includes('banner') || lf.includes('location-map'))) return 'HERO_BANNER';
 
   // 3. Doctor (section signal)
-  if (cdnFolder === config.locationPrefix && /doctor|meet our|our team/i.test(ls)) return 'DOCTOR';
+  if (location && cdnFolder === location && /doctor|meet our|our team/i.test(ls)) return 'DOCTOR';
 
   // 4. Service (section signal or service link)
-  if (cdnFolder === config.locationPrefix && (/service|our services/i.test(ls) || la.includes('/dental-services/'))) return 'SERVICE';
+  if (location && cdnFolder === location && (/service|our services/i.test(ls) || la.includes('/dental-services/'))) return 'SERVICE';
 
   // 5. Filename-based fallback for location CDN images with no section context
-  if (cdnFolder === config.locationPrefix) {
+  if (location && cdnFolder === location) {
     const byFilename = classifyByFilename(filename);
     if (byFilename !== 'UNKNOWN') return byFilename;
   }
 
   // 6. Sitewide Decorative
-  if (cdnFolder === config.sitewidePrefix) return 'SITEWIDE_DECORATIVE';
+  if (sitewide && cdnFolder === sitewide) return 'SITEWIDE_DECORATIVE';
 
   // 7. Unknown
   return 'UNKNOWN';
@@ -302,18 +318,26 @@ function generateAltTag(type, config, locationName, doctorInfo, serviceName, pla
   }
 }
 
-// Bug 3: best-effort fallback for images that remain UNKNOWN after all classifiers
+// Bug 3: best-effort fallback for images that remain UNKNOWN after all classifiers.
+// Brand- and location-agnostic: only appends brand / location when they are provided.
 function fallbackAltTag(filename, locationName, config) {
   const base = cleanFilenameBase(filename)
     .replace(/[-_]+/g, ' ')
     .replace(/\b\w/g, c => c.toUpperCase())
     .trim();
-  const subject = base || 'Dental care';
-  return `${subject} at ${config.brandName} in ${locationName}${config.locationSuffix}`;
+  const subject = base || 'Image';
+  const brand = (config.brandName || '').trim();
+  const loc = `${(locationName || '').trim()}${config.locationSuffix || ''}`.trim();
+  let out = subject;
+  if (brand) out += ` at ${brand}`;
+  if (loc) out += ` in ${loc}`;
+  return out;
 }
 
 async function generateHeroAltWithGPT(imageUrl, locationName, config, openai) {
-  const prompt = `You are an SEO specialist writing image alt tags for a dental practice website.\n\nPage location: ${locationName}\nBrand: ${config.brandName}\n\nWrite a single, concise alt tag (under 125 characters) that:\n- Describes what is literally visible in the image\n- Naturally includes the location name and brand name\n- Does not start with 'Image of' or 'Photo of'\n- Is written as a plain string with no quotes or punctuation at the end\n\nReturn only the alt tag text. Nothing else.`;
+  const brandLabel = (config.brandName || '').trim() || 'this website';
+  const loc = (locationName || '').trim();
+  const prompt = `You are an SEO specialist writing an image alt tag for ${brandLabel}.\n${loc ? `Page location: ${loc}\n` : ''}\nWrite a single, concise alt tag (under 125 characters) that:\n- Describes what is literally visible in the image\n- Naturally includes the brand name${loc ? ' and location' : ''} where appropriate\n- Does not assume any particular industry\n- Does not start with 'Image of' or 'Photo of'\n- Is written as a plain string with no quotes or punctuation at the end\n\nReturn only the alt tag text. Nothing else.`;
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',
@@ -328,6 +352,45 @@ async function generateHeroAltWithGPT(imageUrl, locationName, config, openai) {
   });
 
   return response.choices[0].message.content.trim();
+}
+
+// ── AI-inferred image categories (Change 5, Option A) ──────────────────────────
+// One lightweight text call per page categorizes every content image by its role,
+// using site-agnostic labels inferred from filename, existing alt, and section.
+// Returns { [index]: label } or null on failure (caller falls back to heuristic type).
+async function inferImageCategories(images, pageContext, openai) {
+  if (!images.length) return null;
+  const list = images.map((img, i) =>
+    `${i}. filename="${img.filename}" alt="${(img.existingAlt || '').slice(0, 80)}" section="${(img.section || '').slice(0, 60)}"`
+  ).join('\n');
+
+  const prompt = `You are categorizing images on a single web page so they can be grouped in an SEO report.
+Page context: ${pageContext}
+
+For each image, assign a SHORT category label (1–3 words) describing its ROLE on the page, inferred from its filename, existing alt text, and section heading. Use site-agnostic labels that fit ANY industry (law firm, SaaS, retail, healthcare, etc.). Pick the best fit or invent a better short label. Example roles: "Team / Person", "Service", "Product", "Hero / Banner", "Logo / Brand", "Pricing / Plan", "Map / Location", "Gallery / Photo", "Icon / Decorative", "Other".
+
+Images:
+${list}
+
+Return ONLY JSON in the form {"categories":[{"i":0,"label":"..."}]} with exactly one entry per image index.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      max_tokens: 700,
+      response_format: { type: 'json_object' },
+      messages: [{ role: 'user', content: prompt }],
+    });
+    const parsed = JSON.parse(response.choices[0].message.content || '{}');
+    const map = {};
+    for (const c of (parsed.categories || [])) {
+      if (typeof c.i === 'number' && c.label) map[c.i] = String(c.label).trim();
+    }
+    return map;
+  } catch (err) {
+    console.warn(`[image-alt-audit] category inference failed: ${err.message}`);
+    return null;
+  }
 }
 
 function getRenamePriority(filename, type) {
@@ -365,8 +428,9 @@ async function processUrl(pageUrl, config, openai) {
     const locationName = urlSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()); // "High Point"
 
     // Bug 5 fix: locationSlug for filenames includes the state code (e.g. "high-point-nc")
-    const stateCode = (config.locationSuffix || ', NC').replace(/[^a-z]/gi, '').toLowerCase() || 'nc';
-    const locationSlug = `${urlSlug}-${stateCode}`; // "high-point-nc"
+    // when a location suffix is provided; otherwise just the URL slug (site-agnostic).
+    const stateCode = (config.locationSuffix || '').replace(/[^a-z]/gi, '').toLowerCase();
+    const locationSlug = stateCode ? `${urlSlug}-${stateCode}` : urlSlug;
 
     const contentImages = [];
     const decorativeImages = [];
@@ -461,12 +525,24 @@ async function processUrl(pageUrl, config, openai) {
         type: typeLabel,
         rawType: type,
         section: sectionText,
+        existingAlt: alt,
         src, filename,
         suggestedFilename: suggestFilename(filename, type, locationSlug, doctorInfo, serviceName, planName),
         suggestedAlt: suggestedAlt || '',
         hasAlt: evaluateExistingAlt(alt),
         renamePriority,
         notes,
+      });
+    }
+
+    // Change 5 (Option A): AI-infer a site-agnostic category for each content image.
+    // Best-effort — falls back to the heuristic type label if the call fails.
+    if (contentImages.length) {
+      let pageContext = locationName || '';
+      try { pageContext = `${pageContext} (${new URL(pageUrl).hostname})`.trim(); } catch { /* keep */ }
+      const catMap = await inferImageCategories(contentImages, pageContext, openai);
+      contentImages.forEach((img, i) => {
+        img.category = (catMap && catMap[i]) || img.type;
       });
     }
 
@@ -499,13 +575,11 @@ async function runWithConcurrency(items, concurrency, fn) {
 
 // ── Excel builder ─────────────────────────────────────────────────────────────
 
-const TYPE_ROW_COLORS = {
-  DOCTOR: 'FFE8F0FE',
-  SERVICE: 'FFE6F4EA',
-  DENTAL_PLAN: 'FFFFF8E1',
-  HERO_BANNER: 'FFFCE4EC',
-  UNKNOWN: 'FFFFE0B2',
-};
+// Palette for dynamic, AI-inferred categories (assigned on first appearance).
+const CATEGORY_PALETTE = [
+  'FFE8F0FE', 'FFE6F4EA', 'FFFFF8E1', 'FFFCE4EC', 'FFFFE0B2',
+  'FFE0F2F1', 'FFF3E5F5', 'FFEDE7F6', 'FFFFF3E0', 'FFE1F5FE',
+];
 
 function applyHeaderStyle(row) {
   row.height = 22;
@@ -530,6 +604,18 @@ async function buildExcel(results, config, brandSlug) {
   wb.creator = 'SEO Automation · Arena';
   wb.created = new Date();
 
+  // Assign a stable palette color to each distinct AI-inferred category.
+  const categoryColors = {};
+  let paletteIdx = 0;
+  const colorForCategory = (cat) => {
+    const key = ((cat || 'Other').trim()) || 'Other';
+    if (!categoryColors[key]) {
+      categoryColors[key] = CATEGORY_PALETTE[paletteIdx % CATEGORY_PALETTE.length];
+      paletteIdx++;
+    }
+    return categoryColors[key];
+  };
+
   // ── Sheet 1: Content Images ────────────────────────────────────────────────
   const s1 = wb.addWorksheet('Content Images');
   s1.columns = [
@@ -543,12 +629,13 @@ async function buildExcel(results, config, brandSlug) {
 
   for (const r of results) {
     for (const img of r.contentImages) {
+      const category = img.category || img.type;
       const row = s1.addRow([
-        img.pageUrl, img.locationName, img.type, img.section,
+        img.pageUrl, img.locationName, category, img.section,
         img.src, img.filename, img.suggestedFilename, img.suggestedAlt,
         img.hasAlt, img.renamePriority, img.notes,
       ]);
-      applyDataStyle(row, TYPE_ROW_COLORS[img.rawType] || 'FFFFFFFF');
+      applyDataStyle(row, colorForCategory(category));
     }
   }
 
@@ -614,7 +701,8 @@ async function buildExcel(results, config, brandSlug) {
 
   const buffer = await wb.xlsx.writeBuffer();
   const today = new Date().toISOString().split('T')[0];
-  const filename = `${brandSlug || 'brand'}_image_alt_audit_${today}.xlsx`;
+  // Derive filename from the brand name when provided; otherwise a generic slug.
+  const filename = `${brandSlug ? `${brandSlug}_` : ''}image_alt_audit_${today}.xlsx`;
   return { buffer, filename };
 }
 
@@ -709,7 +797,7 @@ router.get('/stream/:token', async (req, res) => {
     emit('step', { id: 'scrape', status: 'done', message: `Processed ${successCount} / ${urls.length} pages successfully` });
     emit('step', { id: 'export', status: 'active', message: 'Building Excel workbook…' });
 
-    const brandSlug = slugify(config.brandName) || 'brand';
+    const brandSlug = slugify(config.brandName);
     const { buffer, filename } = await buildExcel(allResults, config, brandSlug);
 
     const dlToken = generateToken();
