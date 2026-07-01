@@ -27,6 +27,7 @@ const locationPageBuilderRoutes = require('./routes/locationPageBuilder');
 const robotsMonitorRoutes = require('./modules/robotsMonitor/routes');
 const hubSpokeRoutes = require('./modules/hubSpoke/routes');
 const onPageAuditRoutes = require('./modules/onPageAudit/routes');
+const marketPotentialRoutes = require('./modules/marketPotential/routes');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -47,7 +48,7 @@ const limiter = rateLimit({
   message: { error: 'Too many requests. Please wait a moment and try again.' },
   skip: (req) => {
     const u = req.originalUrl || req.url || '';
-    return u.startsWith('/api/location-page-builder') || u.startsWith('/api/kb') || u.startsWith('/api/modules') || u.startsWith('/api/audit');
+    return u.startsWith('/api/location-page-builder') || u.startsWith('/api/kb') || u.startsWith('/api/modules') || u.startsWith('/api/audit') || u.startsWith('/api/market-potential');
   },
 });
 
@@ -92,6 +93,7 @@ app.use('/api/location-page-builder',   lpbLimiter, requireAuth, locationPageBui
 app.use('/api/robots-monitor',          lpbLimiter, requireAuth, robotsMonitorRoutes);
 app.use('/api/hub-spoke',               lpbLimiter, requireAuth, hubSpokeRoutes);
 app.use('/api/on-page-audit',           lpbLimiter, requireAuth, onPageAuditRoutes);
+app.use('/api/market-potential',        lpbLimiter, requireAuth, marketPotentialRoutes);
 
 // ── SEO team only ────────────────────────────────────────────────────────────
 app.use('/api/search',              requireSeo, searchRoutes);
@@ -136,6 +138,10 @@ require('./modules/hubSpoke/store').init().catch(err => {
 
 require('./modules/onPageAudit/store').init().catch(err => {
   console.error('[OnPageAudit] Store init failed:', err.message);
+});
+
+require('./modules/marketPotential/store').init().catch(err => {
+  console.error('[MarketPotential] Store init failed:', err.message);
 });
 
 require('./modules/robotsMonitor/monitorStore').init().then(() => {

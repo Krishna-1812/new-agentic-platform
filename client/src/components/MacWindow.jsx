@@ -76,6 +76,11 @@ const TOOL_ICONS = {
       <path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
   ),
+  'market-potential': (
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+    </svg>
+  ),
 };
 
 /* ── Sun / Moon icons ── */
@@ -418,6 +423,22 @@ function SidebarItem({ tool, icon, isActive, onClick }) {
       }}>
         {tool.label}
       </span>
+      {tool.beta && (
+        <span style={{
+          marginLeft: 'auto',
+          flexShrink: 0,
+          fontSize: 9,
+          fontWeight: 700,
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+          padding: '1px 5px',
+          borderRadius: 4,
+          background: 'rgba(59,130,246,0.20)',
+          color: '#60a5fa',
+        }}>
+          Beta
+        </span>
+      )}
     </button>
   );
 }

@@ -5,6 +5,7 @@ export const TOOL_GROUPS = [
       { id: 'keyword-research',       path: '/keyword-research',       label: 'Keyword Research',       icon: '🔍' },
       { id: 'content-research',       path: '/content-research',       label: 'Content Research',       icon: '📄' },
       { id: 'article-recommendation', path: '/article-recommendation', label: 'Article Recommendation', icon: '📰' },
+      { id: 'market-potential',       path: '/market-potential',       label: 'Market Potential',       icon: '🗺️', beta: true },
     ],
   },
   {

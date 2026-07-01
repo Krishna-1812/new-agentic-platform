@@ -3,6 +3,7 @@
   "ignore": [
     "modules/hubSpoke/data",
     "modules/robotsMonitor/data",
+    "modules/marketPotential/data",
     "**/*.log",
     "**/*.db",
     "**/*.sqlite"

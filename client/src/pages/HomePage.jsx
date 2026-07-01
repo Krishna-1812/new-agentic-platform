@@ -38,6 +38,17 @@ const TOOLS = [
     ),
   },
   {
+    id: 'market-potential', path: '/market-potential', badge: 'Market Intel', group: 'Research', beta: true,
+    label: 'Healthcare Market Potential', tagline: 'Rank metros by commercial search demand',
+    description: 'Enter your home market(s) and a service, then compare commercial-intent search demand across adjacent metros — indexed against your current market, with per-capita, CPC, competition and 12-month trend.',
+    features: ['Agent-proposed, frozen keyword baskets', 'Geo-targeted volume (DataForSEO)', 'Adjacency suggestions + home index', 'Ranked table + US bubble map'],
+    icon: (
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+      </svg>
+    ),
+  },
+  {
     id: 'content-enhancement', path: '/content-enhancement', badge: 'AEO', group: 'Optimize',
     label: 'Content Enhancement', tagline: 'Structure & authority recommendations',
     description: 'Analyze a live URL or pasted HTML, research the top 10 ranking blogs for the topic, and generate copy-ready upgrades for structure, authority, citations, FAQs, schema, and AI-search readiness.',
@@ -224,7 +235,10 @@ function ToolCard({ tool, onClick }) {
         }}>
           {tool.icon}
         </div>
-        <Badge variant="brand">{tool.badge}</Badge>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {tool.beta && <Badge variant="info">Beta</Badge>}
+          <Badge variant="brand">{tool.badge}</Badge>
+        </div>
       </div>
 
       {/* Title + tagline */}
