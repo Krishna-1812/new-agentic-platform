@@ -71,11 +71,59 @@ function trendDirection(pct) {
   return 'flat';
 }
 
+// ── Decision-layer normalization (V2 Phase 1) ─────────────────────────────────
+// All tunable in one place — the composite Opportunity Score is computed CLIENT
+// side from these `components` so weight sliders respond with no refetch.
+
+const TREND_CLAMP = 50;      // percentage points — clamp YoY so one outlier city
+                             // doesn't own the trend axis before min–max.
+const HOME_VOLUME_MIN = 100; // aggregate home cluster volume below this → the whole
+                             // run's indexes are unstable (home_volume_low warning).
+
+// Confidence thresholds — tune here. Coverage = share of rankable terms that
+// returned any volume for the city; clusterVolume = summed monthly searches.
+const CONFIDENCE = {
+  high:   { minVolume: 500, minCoverage: 0.5 },
+  medium: { minVolume: 100, minCoverage: 0.3 },
+};
+function confidenceOf(clusterVolume, coverage) {
+  if (clusterVolume <= 0) return 'insufficient';
+  if (clusterVolume >= CONFIDENCE.high.minVolume && coverage >= CONFIDENCE.high.minCoverage) return 'high';
+  if (clusterVolume >= CONFIDENCE.medium.minVolume && coverage >= CONFIDENCE.medium.minCoverage) return 'medium';
+  return 'low';
+}
+
+function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
+
+// Min–max normalize x within arr's range → [0,1]. Returns 0.5 for a degenerate
+// range (all values equal); null in → null out so a missing metric never gets a
+// fabricated score.
+function minMax(x, arr) {
+  if (x == null) return null;
+  const vals = arr.filter((v) => v != null);
+  if (!vals.length) return null;
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  if (hi === lo) return 0.5;
+  return (x - lo) / (hi - lo);
+}
+
+// Percentile rank of value within arr → 0–100 (min→0, max→100). Single value → 100.
+function percentileRank(value, arr) {
+  if (value == null) return null;
+  const vals = arr.filter((v) => v != null);
+  if (vals.length <= 1) return vals.length ? 100 : null;
+  const below = vals.filter((v) => v < value).length;
+  return Math.round((below / (vals.length - 1)) * 100);
+}
+
 // regionData: [{ geo, terms: { term: {searchVolume,cpc,competition,monthlySearches} }, source }]
 // rankableTerms: basket terms with isGeoTemplate === false (un-templated, Method A).
 // homeGeoIds: set of geo ids that constitute the home market (index = 100 base).
-function buildComparison(regionData, rankableTerms, homeGeoIds) {
+// classifyDomain: optional (domain) => 'you'|'directory'|'provider' (Phase 2). When
+//   supplied, each row also carries a competitorBreakdown.
+function buildComparison(regionData, rankableTerms, homeGeoIds, classifyDomain = null) {
   const rankableSet = new Set(rankableTerms.map((t) => t.term));
+  const rankableCount = rankableTerms.length;
 
   const rows = regionData.map(({ geo, terms, source, density, densityDomains }) => {
     const used = Object.entries(terms).filter(([term]) => rankableSet.has(term));
@@ -95,6 +143,19 @@ function buildComparison(regionData, rankableTerms, homeGeoIds) {
     const perCapitaRaw = geo.population ? clusterVolume / (geo.population / 100000) : null;
     const perCapita = perCapitaRaw == null ? null : Math.round(perCapitaRaw * 10) / 10;
 
+    // Confidence (Phase 1): how much of the basket actually returned volume here.
+    const termsWithVolume = used.filter(([, v]) => (v.searchVolume || 0) > 0).length;
+    const coverage = rankableCount ? termsWithVolume / rankableCount : 0;
+
+    // Term contribution (Phase 2): top 8 rankable terms by volume, rest → "other".
+    const termBreakdown = buildTermBreakdown(used, clusterVolume);
+
+    // Competitor classification (Phase 2): split the density domain list.
+    const domains = Array.isArray(densityDomains) ? densityDomains : [];
+    const competitorBreakdown = classifyDomain
+      ? classifyDomains(domains, classifyDomain)
+      : null;
+
     return {
       geoId: geo.id,
       region: geo.displayName,
@@ -103,16 +164,22 @@ function buildComparison(regionData, rankableTerms, homeGeoIds) {
       centroidLng: geo.centroidLng,
       population: geo.population,
       clusterVolume,
+      estMonthlySearches: clusterVolume,   // display alias (leader-facing copy, §6.4)
       perCapita,                       // null when population unmapped → UI hides it
       perCapitaRaw,                    // unrounded — used for the home-indexed Demand Index
       competitorDensity: density == null ? null : density,   // unique top-10 domains (Item 3)
-      competitorDomains: Array.isArray(densityDomains) ? densityDomains : [],
+      competitorDomains: domains,
+      competitorBreakdown,             // { providers, directories, youRankHere } | null
       medianCpc: Math.round(median(used.map(([, v]) => v.cpc || 0)) * 100) / 100,
       avgCompetition: Math.round(mean(used.map(([, v]) => v.competition || 0)) * 100) / 100,
       trendPct,
       yoyPct,
       trendDirection: trendDirection(trendPct),
       monthlyTotals,
+      termsWithVolume,
+      coverage: Math.round(coverage * 100) / 100,
+      confidence: confidenceOf(clusterVolume, coverage),
+      termBreakdown,
       source,
     };
   });
@@ -133,9 +200,67 @@ function buildComparison(regionData, rankableTerms, homeGeoIds) {
       : null;
   }
 
+  // ── Component normalization (Phase 1) — each metric min–max'd WITHIN this run.
+  // Home rows are IN the pool (so the leader sees home in context) but the client
+  // excludes home from tiering. Higher component = more attractive:
+  //   demand  ↑ = more per-capita demand
+  //   competition ↑ = FEWER ranking domains (more open market)  → 1 − minMax
+  //   trend   ↑ = faster YoY growth (clamped so an outlier can't own the axis)
+  //   cost    ↑ = CHEAPER clicks (lower CPC) → 1 − minMax. NB: high CPC also signals
+  //               commercial value, so this axis is ambiguous → low default weight.
+  const demandArr = rows.map((r) => r.demandIndex);
+  const densArr = rows.map((r) => r.competitorDensity);
+  const trendArr = rows.map((r) => (r.yoyPct == null ? null : clamp(r.yoyPct, -TREND_CLAMP, TREND_CLAMP)));
+  const cpcArr = rows.map((r) => r.medianCpc);
+  for (const r of rows) {
+    const competitionM = r.competitorDensity == null ? null : minMax(r.competitorDensity, densArr);
+    const costM = minMax(r.medianCpc, cpcArr);
+    r.components = {
+      demand: minMax(r.demandIndex, demandArr),
+      competition: competitionM == null ? null : 1 - competitionM,
+      trend: minMax(r.yoyPct == null ? null : clamp(r.yoyPct, -TREND_CLAMP, TREND_CLAMP), trendArr),
+      cost: costM == null ? null : 1 - costM,
+    };
+    r.percentileDemand = percentileRank(r.demandIndex, demandArr);
+  }
+
   // Sort by cluster volume desc (Decision 2). Home rows kept in-line, flagged.
   rows.sort((a, b) => b.clusterVolume - a.clusterVolume);
-  return { rows, homeBase };
+
+  const warnings = [];
+  if (homeBase < HOME_VOLUME_MIN) warnings.push('home_volume_low');
+
+  return { rows, homeBase, warnings };
 }
 
-module.exports = { haversineMiles, suggestAdjacent, buildComparison, trendSlopePct, trendDirection };
+// Top-N rankable terms by volume; the tail collapses into a single "other" row.
+// Adds a skewed flag when one phrase drives > 60% of the cluster (fragile index).
+function buildTermBreakdown(used, clusterVolume, topN = 8) {
+  if (!clusterVolume) return [];
+  const sorted = used
+    .map(([term, v]) => ({ term, volume: v.searchVolume || 0 }))
+    .filter((t) => t.volume > 0)
+    .sort((a, b) => b.volume - a.volume);
+  const head = sorted.slice(0, topN);
+  const tailVol = sorted.slice(topN).reduce((a, t) => a + t.volume, 0);
+  const out = head.map((t) => ({ term: t.term, volume: t.volume, share: Math.round((t.volume / clusterVolume) * 100) / 100 }));
+  if (tailVol > 0) out.push({ term: 'other', volume: tailVol, share: Math.round((tailVol / clusterVolume) * 100) / 100, isOther: true });
+  return out;
+}
+
+// Split a density domain list into provider / directory counts + a youRankHere flag,
+// and carry the per-domain typed list so the drill-down can name each competitor.
+function classifyDomains(domains, classifyDomain) {
+  let providers = 0, directories = 0, youRankHere = false;
+  const list = [];
+  for (const d of domains) {
+    const type = classifyDomain(d);
+    if (type === 'you') { youRankHere = true; providers++; }   // your own site is a provider
+    else if (type === 'directory') directories++;
+    else providers++;
+    list.push({ domain: d, type });
+  }
+  return { providers, directories, youRankHere, domains: list };
+}
+
+module.exports = { haversineMiles, suggestAdjacent, buildComparison, trendSlopePct, trendDirection, confidenceOf };

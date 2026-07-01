@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo, Fragment } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { SectionHeader } from '../ui/SectionHeader';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -6,6 +6,10 @@ import { Field } from '../ui/Field';
 import { useToast } from '../ui/Toast';
 import { mp } from '../lib/marketPotentialApi';
 import USMetroMap from '../components/USMetroMap';
+import DecisionBoard, { topMarket } from '../components/marketPotential/DecisionBoard';
+import ScenarioDiff from '../components/marketPotential/ScenarioDiff';
+import { scoreRows, WEIGHT_PRESETS } from '../components/marketPotential/scoring';
+import { loadAssumptions, saveAssumptions } from '../components/marketPotential/assumptions';
 
 /* ── Step machine: setup → signals → regions → results ── */
 const STEPS = [
@@ -22,60 +26,27 @@ const INTENT_META = {
 };
 
 const SAVED_KEY = 'marketPotential_savedAnalyses';
+const WEIGHTS_KEY = 'marketPotential_weights';
 
 /* ── Small helpers ── */
-const fmt = (n) => (n == null ? '—' : n.toLocaleString());
 const shortName = (name) => name.split(',')[0].split('–')[0].trim();
 
-function indexColor(idx, isHome) {
-  if (isHome) return 'var(--primary)';
-  if (idx == null) return 'var(--text-3)';
-  if (idx >= 120) return 'var(--success)';
-  if (idx >= 80) return 'var(--warning)';
-  return 'var(--text-3)';
-}
-function densityColor(n) {
-  if (n == null) return 'var(--text-3)';
-  if (n < 10) return 'var(--success)';
-  if (n <= 25) return 'var(--warning)';
-  return 'var(--danger)';
-}
 function radiusLabel(mi) {
   if (mi < 200) return 'Regional cluster · same-day drive market';
   if (mi <= 400) return 'Multi-state region · short-haul flight territory';
   return 'National expansion scope';
 }
 
-// Deterministic top expansion pick (Items 6 & 8): highest Demand Index with a
-// non-negative trend and competitor density under 25; fall back to best index.
-function topPick(rows) {
-  const cands = rows.filter((r) => !r.isHome && r.demandIndex != null);
-  const strong = cands.filter((r) => (r.yoyPct == null || r.yoyPct >= 0) && (r.competitorDensity == null || r.competitorDensity < 25));
-  const pool = strong.length ? strong : cands;
-  return pool.slice().sort((a, b) => b.demandIndex - a.demandIndex)[0] || null;
-}
-
 function loadSaved() {
   try { return JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'); } catch { return []; }
 }
 
-/* ── Trend sparkline ── */
-function Sparkline({ series, dir }) {
-  if (!series || series.length < 2) return <span style={{ color: 'var(--text-3)' }}>—</span>;
-  const w = 54, h = 18, pad = 2;
-  const max = Math.max(...series), min = Math.min(...series);
-  const range = max - min || 1;
-  const pts = series.map((v, i) => {
-    const x = pad + (i / (series.length - 1)) * (w - 2 * pad);
-    const y = h - pad - ((v - min) / range) * (h - 2 * pad);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(' ');
-  const color = dir === 'up' ? 'var(--success)' : dir === 'down' ? 'var(--danger)' : 'var(--text-3)';
-  return (
-    <svg width={w} height={h} style={{ display: 'block' }}>
-      <polyline points={pts} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+function loadWeights() {
+  try {
+    const w = JSON.parse(localStorage.getItem(WEIGHTS_KEY) || 'null');
+    if (w && typeof w === 'object') return w;
+  } catch { /* ignore */ }
+  return { ...WEIGHT_PRESETS.balanced.weights };
 }
 
 /* ── Geo picker with debounced candidate search ── */
@@ -155,22 +126,6 @@ function RegionChip({ region, onRemove, tone = 'neutral', meta }) {
   );
 }
 
-/* ── Sortable table header cell ── */
-function Th({ label, k, sort, setSort, tip, align = 'left' }) {
-  const active = k && sort.key === k;
-  return (
-    <th
-      title={tip || undefined}
-      onClick={() => k && setSort((s) => ({ key: k, dir: s.key === k && s.dir === 'desc' ? 'asc' : 'desc' }))}
-      style={{ ...thStyle, textAlign: align, cursor: k ? 'pointer' : 'default', userSelect: 'none' }}
-    >
-      {label}
-      {k && <span style={{ opacity: active ? 1 : 0.3, marginLeft: 3 }}>{active ? (sort.dir === 'desc' ? '▼' : '▲') : '↕'}</span>}
-      {tip && <span style={{ marginLeft: 3, opacity: 0.5 }}>ⓘ</span>}
-    </th>
-  );
-}
-
 export default function MarketPotentialPage() {
   const toastCtx = useToast();
   // Toast wrapper (Item 1): useToast() exposes { add, remove }, NOT .error/.success.
@@ -186,6 +141,7 @@ export default function MarketPotentialPage() {
   // setup
   const [serviceName, setServiceName] = useState('');
   const [homeRegions, setHomeRegions] = useState([]);
+  const [ownDomain, setOwnDomain] = useState(''); // optional "your domain" (Phase 2)
 
   // basket / signals
   const [service, setService] = useState(null);
@@ -202,13 +158,13 @@ export default function MarketPotentialPage() {
   // results
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [sort, setSort] = useState({ key: 'demandIndex', dir: 'desc' });
-  const [insightOpen, setInsightOpen] = useState(true);
-  const [expandedGeo, setExpandedGeo] = useState(null); // metro whose density domains are shown
+  const [weights, setWeights] = useState(loadWeights); // Opportunity-Score weights (persisted)
 
-  // saved analyses (Item 5)
-  const [saved, setSaved] = useState(loadSaved());
+  // saved scenarios (Phase 4 — server-backed, replaces localStorage analyses)
+  const [scenarios, setScenarios] = useState([]);
   const [savedOpen, setSavedOpen] = useState(false);
+  const [diffSel, setDiffSel] = useState([]);   // scenario ids checked for comparison
+  const [diff, setDiff] = useState(null);        // { left, right } once both loaded
 
   // all metros (for the interactive selection map)
   const [allMetros, setAllMetros] = useState([]);
@@ -217,6 +173,10 @@ export default function MarketPotentialPage() {
 
   useEffect(() => { mp.meta().then(setMeta).catch(() => {}); }, []);
   useEffect(() => { mp.allGeo().then((d) => setAllMetros(d.regions || [])).catch(() => {}); }, []);
+  useEffect(() => { try { localStorage.setItem(WEIGHTS_KEY, JSON.stringify(weights)); } catch { /* ignore */ } }, [weights]);
+
+  // Rows carrying opportunityScore + tier for the current weights (reorders w/o refetch).
+  const scoredRows = useMemo(() => (result ? scoreRows(result.rows, weights) : []), [result, weights]);
 
   const maxRegions = meta?.maxCompareRegions || 10;
 
@@ -247,27 +207,13 @@ export default function MarketPotentialPage() {
   const overRun = units && estUnits > units.perRunCap;
   const overDay = units && estUnits > units.dailyRemaining;
 
-  const sortedRows = useMemo(() => {
-    if (!result) return [];
-    const rows = [...result.rows];
-    const { key, dir } = sort;
-    rows.sort((a, b) => {
-      const av = a[key], bv = b[key];
-      if (av == null && bv == null) return 0;
-      if (av == null) return 1;
-      if (bv == null) return -1;
-      return dir === 'desc' ? bv - av : av - bv;
-    });
-    return rows;
-  }, [result, sort]);
-
   /* ── Step 1 → resolve service + basket ── */
   const startAnalysis = async () => {
     if (!serviceName.trim()) return toast.error('Enter a service.');
     if (!homeRegions.length) return toast.error('Add at least one home market.');
     setBusy(true);
     try {
-      const r = await mp.resolveService(serviceName.trim());
+      const r = await mp.resolveService(serviceName.trim(), ownDomain.trim() || undefined);
       setService(r.service);
       setBasket(r.basket);
       setBasketState(r.basketState);
@@ -324,67 +270,180 @@ export default function MarketPotentialPage() {
     return () => clearTimeout(radiusTimer.current);
   }, [radius, step, homeRegions, fetchSuggestions]);
 
-  const runCompare = async () => {
+  // Run a comparison for explicit ids (used by the wizard and scenario reload).
+  const runCompareWith = async (svcId, homeIds, comparedIds) => {
     setBusy(true);
     try {
-      const body = {
-        serviceId: service.id,
-        homeGeoIds: homeRegions.map((r) => r.id),
-        comparedGeoIds: compared.map((r) => r.id),
-      };
-      const r = await mp.compare(body);
+      const r = await mp.compare({ serviceId: svcId, homeGeoIds: homeIds, comparedGeoIds: comparedIds });
       setResult(r);
-      setInsightOpen(true);
       if (r.usage) setMeta((m) => (m ? { ...m, units: { ...m.units, ...r.usage } } : m));
       setStep('results');
-    } catch (e) { toast.error(e.message); } finally { setBusy(false); }
+      return r;
+    } catch (e) { toast.error(e.message); throw e; } finally { setBusy(false); }
   };
 
-  /* ── Save & export (Items 5, 6) ── */
-  const saveAnalysis = () => {
-    const dflt = `${service.name} — ${shortName(homeRegions[0].displayName)} — ${new Date().toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}`;
-    const name = window.prompt('Name this analysis', dflt);
+  const runCompare = () => runCompareWith(service.id, homeRegions.map((r) => r.id), compared.map((r) => r.id)).catch(() => {});
+
+  /* ── Scenarios (Phase 4 — server-backed) ── */
+  const refreshScenarios = async () => {
+    try { const d = await mp.scenarios(); setScenarios(d.scenarios || []); } catch { /* ignore */ }
+  };
+
+  const regionsFromIds = (ids) => {
+    const byId = new Map(allMetros.map((m) => [m.id, m]));
+    return (ids || []).map((id) => byId.get(id)).filter(Boolean);
+  };
+
+  const saveAnalysis = async () => {
+    if (!service || !result) return;
+    const dflt = `${service.name} — ${shortName(homeRegions[0]?.displayName || homeName)} — ${new Date().toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}`;
+    const name = window.prompt('Name this scenario', dflt);
     if (!name) return;
-    const entry = {
-      id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      name, createdAt: new Date().toISOString(),
-      service: service.name, homeMarkets: homeRegions, candidateRegions: compared, results: result,
-    };
-    const next = [entry, ...saved];
-    localStorage.setItem(SAVED_KEY, JSON.stringify(next));
-    setSaved(next);
-    toast.success('Analysis saved.');
+    try {
+      await mp.saveScenario({
+        name, serviceId: service.id, serviceName: service.name,
+        basketVersion: result.basketVersion,
+        homeGeoIds: homeRegions.map((r) => r.id), comparedGeoIds: compared.map((r) => r.id),
+        weightsUsed: weights, assumptions: loadAssumptions(service.id), yearMonth: result.yearMonth,
+      });
+      await refreshScenarios();
+      toast.success('Scenario saved to your account.');
+    } catch (e) { toast.error(e.message); }
   };
 
-  const openSaved = (entry) => {
-    setService({ id: entry.results?.service?.id || null, name: entry.service });
-    setHomeRegions(entry.homeMarkets || []);
-    setCompared(entry.candidateRegions || []);
-    setResult(entry.results);
+  // Cold-reload unit estimate (§8 formula). Needs the basket size → resolve service.
+  const estimateScenarioUnits = async (scn, regionCount) => {
+    if (!units || !scn.serviceName) return null;
+    try {
+      const resolved = await mp.resolveService(scn.serviceName);
+      const rc = (resolved.basket?.terms || []).filter((t) => !t.isGeoTemplate).length;
+      const perRegion = rc + (densityCfg ? densityCfg.terms * densityCfg.topN : 0);
+      return regionCount * perRegion * units.rate;
+    } catch { return null; }
+  };
+
+  const loadScenario = async (scn) => {
     setSavedOpen(false);
-    setStep('results');
-    toast.info(`Opened “${entry.name}” (read-only)`);
+    const homeR = regionsFromIds(scn.homeGeoIds);
+    const comparedR = regionsFromIds(scn.comparedGeoIds);
+    setService({ id: scn.serviceId, name: scn.serviceName || 'Saved service' });
+    setHomeRegions(homeR);
+    setCompared(comparedR);
+    if (scn.weightsUsed) setWeights(scn.weightsUsed);
+    if (scn.assumptions && scn.serviceId) saveAssumptions(scn.serviceId, scn.assumptions);
+
+    // Month-change guard: a new month means a cold fetch → confirm cost first (§5.3).
+    const curMonth = meta?.yearMonth;
+    if (scn.yearMonth && curMonth && scn.yearMonth !== curMonth) {
+      const est = await estimateScenarioUnits(scn, homeR.length + comparedR.length);
+      const msg = est != null
+        ? `Saved in ${scn.yearMonth}; reloading in ${curMonth} needs a live re-fetch of up to ~${est.toLocaleString()} SEMrush units. Refresh with live data?`
+        : `Saved in ${scn.yearMonth}; reloading in ${curMonth} may spend SEMrush units. Refresh with live data?`;
+      if (!window.confirm(msg)) {
+        setStep('regions');
+        toast.info('Scenario loaded — review regions, then run when ready.');
+        return;
+      }
+    }
+    try { await runCompareWith(scn.serviceId, scn.homeGeoIds || [], scn.comparedGeoIds || []); }
+    catch { setStep('regions'); }
   };
 
-  const deleteSaved = (id) => {
-    const next = saved.filter((s) => s.id !== id);
-    localStorage.setItem(SAVED_KEY, JSON.stringify(next));
-    setSaved(next);
+  const deleteScenario = async (id) => {
+    try {
+      await mp.deleteScenario(id);
+      setScenarios((prev) => prev.filter((s) => s.id !== id));
+      setDiffSel((prev) => prev.filter((x) => x !== id));
+    } catch (e) { toast.error(e.message); }
+  };
+
+  const migrateLocalScenarios = async () => {
+    const local = loadSaved();
+    if (!local.length) return;
+    if (window.confirm(`Import ${local.length} saved ${local.length === 1 ? 'analysis' : 'analyses'} from this browser into your account?`)) {
+      let n = 0;
+      for (const e of local) {
+        const serviceId = e.results?.service?.id;
+        if (!serviceId) continue;
+        try {
+          await mp.saveScenario({
+            name: e.name, serviceId, serviceName: e.service,
+            basketVersion: e.results?.basketVersion,
+            homeGeoIds: (e.homeMarkets || []).map((r) => r.id), comparedGeoIds: (e.candidateRegions || []).map((r) => r.id),
+            weightsUsed: null, assumptions: null, yearMonth: e.results?.yearMonth,
+          });
+          n++;
+        } catch { /* skip unresolved */ }
+      }
+      if (n) toast.success(`Imported ${n} saved ${n === 1 ? 'analysis' : 'analyses'}.`);
+      await refreshScenarios();
+    }
+    localStorage.removeItem(SAVED_KEY); // ask only once
+  };
+
+  // Load server scenarios + one-time-migrate any V1 localStorage analyses (§5.2).
+  useEffect(() => { refreshScenarios(); migrateLocalScenarios(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+
+  // Diff: pick two scenarios of the same service (same month → cache-first, §5.4).
+  const toggleDiffSel = (id) => {
+    setDiffSel((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : prev.length >= 2 ? [prev[1], id] : [...prev, id]);
+  };
+
+  const runDiff = async () => {
+    const [aId, bId] = diffSel;
+    const a = scenarios.find((s) => s.id === aId), b = scenarios.find((s) => s.id === bId);
+    if (!a || !b) return;
+    if (a.serviceId !== b.serviceId) return toast.error('Pick two scenarios of the same service.');
+    const curMonth = meta?.yearMonth;
+    if (a.yearMonth !== curMonth || b.yearMonth !== curMonth) {
+      return toast.info('Both scenarios must be from the current month to compare without a live re-fetch.');
+    }
+    setSavedOpen(false); setBusy(true);
+    try {
+      const side = async (scn) => {
+        const r = await mp.compare({ serviceId: scn.serviceId, homeGeoIds: scn.homeGeoIds || [], comparedGeoIds: scn.comparedGeoIds || [] });
+        return { name: scn.name, rows: scoreRows(r.rows, scn.weightsUsed || weights) };
+      };
+      const left = await side(a), right = await side(b);
+      setDiff({ left, right });
+    } catch (e) { toast.error(e.message); } finally { setBusy(false); }
   };
 
   const exportCsv = () => {
     if (!result) return;
-    const pick = topPick(result.rows);
+    // Reproducible export: score with the BALANCED preset regardless of on-screen
+    // weights, and print the weights used (spec §2.2). Dollar figures stay out of
+    // the CSV — they're assumption-dependent (the one-pager carries them, §3.4).
+    const bw = WEIGHT_PRESETS.balanced.weights;
+    const rows = scoreRows(result.rows, bw).sort((a, b) => (b.opportunityScore ?? -1) - (a.opportunityScore ?? -1));
+    const pick = topMarket(rows);
     const summary = pick
-      ? `Top recommendation: ${pick.region} — highest per-capita demand${pick.yoyPct != null ? `, ${pick.yoyPct > 0 ? '+' : ''}${pick.yoyPct}% YoY growth` : ''}, ${pick.competitorDensity != null ? pick.competitorDensity : 'n/a'} competitors`
-      : 'No clear top recommendation from this run';
-    const header = ['Metro', 'Search Volume', 'Demand Index (vs. home)', 'Competitor Density', 'Trend (12mo)', 'CPC', 'Population'];
+      ? `Top market (Balanced weighting): ${pick.region} — Opportunity Score ${pick.opportunityScore}${pick.demandIndex != null ? `, Demand Index ${pick.demandIndex}` : ''}${pick.yoyPct != null ? `, ${pick.yoyPct > 0 ? '+' : ''}${pick.yoyPct}% YoY` : ''}, ${pick.competitorDensity != null ? pick.competitorDensity : 'n/a'} competitors in top 10`
+      : 'No standout market in this run';
+    const weightsNote = `Score weights (Balanced): demand ${Math.round(bw.demand * 100)}%, openness ${Math.round(bw.competition * 100)}%, growth ${Math.round(bw.trend * 100)}%, cost ${Math.round(bw.cost * 100)}%`;
+    const header = ['Market', 'Opportunity Score (Balanced)', 'Tier', 'Confidence', 'Demand Index (home=100)', 'Est. searches/mo', 'Competitors in top 10', 'Providers', 'Directories', 'You rank here', 'Trend 12mo', 'CPC', 'Population'];
     const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const lines = [[esc(summary)], header.map(esc)];
-    for (const r of sortedRows) {
-      lines.push([esc(r.region), r.clusterVolume, r.demandIndex ?? '', r.competitorDensity ?? '', r.yoyPct == null ? '' : `${r.yoyPct}%`, r.medianCpc, r.population ?? ''].map((v, i) => (i === 0 ? v : esc(v))));
+    const toLine = (arr) => arr.map(esc).join(',');
+    const lines = [toLine([summary]), toLine([weightsNote]), toLine(header)];
+    for (const r of rows) {
+      const cb = r.competitorBreakdown;
+      lines.push(toLine([
+        r.region,
+        r.isHome ? 'home' : (r.opportunityScore ?? ''),
+        r.isHome ? 'Home' : (r.tier || ''),
+        r.confidence || '',
+        r.demandIndex ?? '',
+        r.estMonthlySearches ?? '',
+        r.competitorDensity ?? '',
+        cb ? cb.providers : '',
+        cb ? cb.directories : '',
+        cb ? (cb.youRankHere ? 'yes' : 'no') : '',
+        r.yoyPct == null ? '' : `${r.yoyPct}%`,
+        r.medianCpc,
+        r.population ?? '',
+      ]));
     }
-    const csv = lines.map((l) => l.join(',')).join('\n');
+    const csv = lines.join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -400,7 +459,6 @@ export default function MarketPotentialPage() {
   };
 
   const homeName = result?.rows.find((r) => r.isHome)?.region || homeRegions[0]?.displayName || 'your home market';
-  const pick = result ? topPick(result.rows) : null;
 
   /* ── Render ── */
   return (
@@ -423,18 +481,23 @@ export default function MarketPotentialPage() {
             {units && (
               <Badge variant={lowCredits ? 'warning' : 'info'}>SEMrush: {units.dailyRemaining.toLocaleString()} credits</Badge>
             )}
-            {saved.length > 0 && (
+            {scenarios.length > 0 && (
               <div style={{ position: 'relative' }}>
-                <Button variant="ghost" size="sm" onClick={() => setSavedOpen((v) => !v)}>Saved ({saved.length})</Button>
+                <Button variant="ghost" size="sm" onClick={() => setSavedOpen((v) => !v)}>Saved ({scenarios.length})</Button>
                 {savedOpen && (
-                  <div style={{ position: 'absolute', right: 0, top: 36, zIndex: 30, width: 300, background: 'var(--card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--r-md)', boxShadow: 'var(--shadow-md)', maxHeight: 320, overflowY: 'auto' }}>
-                    {saved.map((s) => (
-                      <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', borderBottom: '1px solid var(--border)' }}>
-                        <button onClick={() => openSaved(s)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)', fontSize: 12 }}>
+                  <div style={{ position: 'absolute', right: 0, top: 36, zIndex: 30, width: 328, background: 'var(--card)', border: '1px solid var(--border-strong)', borderRadius: 'var(--r-md)', boxShadow: 'var(--shadow-md)', maxHeight: 380, overflowY: 'auto' }}>
+                    <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, background: 'var(--card)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{diffSel.length ? `${diffSel.length} selected to compare` : 'Tick 2 to compare'}</span>
+                      {diffSel.length === 2 && <Button size="sm" onClick={runDiff}>Compare →</Button>}
+                    </div>
+                    {scenarios.map((s) => (
+                      <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderBottom: '1px solid var(--border)' }}>
+                        <input type="checkbox" checked={diffSel.includes(s.id)} onChange={() => toggleDiffSel(s.id)} title="Select for comparison" style={{ accentColor: 'var(--primary)' }} />
+                        <button onClick={() => loadScenario(s)} style={{ flex: 1, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text)', fontSize: 12 }}>
                           <div style={{ fontWeight: 600 }}>{s.name}</div>
-                          <div style={{ color: 'var(--text-3)', fontSize: 11 }}>{new Date(s.createdAt).toLocaleDateString()}</div>
+                          <div style={{ color: 'var(--text-3)', fontSize: 11 }}>{s.serviceName || ''}{s.yearMonth ? ` · ${s.yearMonth}` : ''}</div>
                         </button>
-                        <button onClick={() => deleteSaved(s.id)} title="Delete" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', display: 'flex' }}>
+                        <button onClick={() => deleteScenario(s.id)} title="Delete" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', display: 'flex' }}>
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
                         </button>
                       </div>
@@ -507,6 +570,16 @@ export default function MarketPotentialPage() {
                   <RegionChip key={r.id} region={r} tone="home" onRemove={() => setHomeRegions((prev) => prev.filter((x) => x.id !== r.id))} />
                 ))}
             </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Your domain <span style={{ fontWeight: 400, color: 'var(--text-3)' }}>· optional</span></label>
+            <Field
+              as="input"
+              placeholder="e.g. yourclinic.com"
+              value={ownDomain}
+              onChange={(e) => setOwnDomain(e.target.value)}
+              helper="If set, we flag the markets where your site already ranks in the top 10 (“you rank here”)."
+            />
           </div>
           <div>
             <Button onClick={startAnalysis} loading={busy} disabled={!serviceName.trim() || !homeRegions.length}>
@@ -689,152 +762,24 @@ export default function MarketPotentialPage() {
         </div>
       )}
 
-      {/* ── STEP 4: results ── */}
+      {/* ── STEP 4: results — the Decision Board ── */}
       {step === 'results' && result && (
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 10 }}>
-            <div style={{ fontSize: 13, color: 'var(--text-2)' }}>
-              <b>{result.service.name}</b>{result.basketVersion ? ` · v${result.basketVersion}` : ''} · {result.stats?.regions ?? result.rows.length} regions
-              {result.stats?.apiCalls != null && <> · {result.stats.apiCalls} fetched / {result.stats.cacheHits} cached</>}
-              {units && result.stats?.unitsUsed != null && <> · <b>{result.stats.unitsUsed.toLocaleString()} units used</b></>}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button variant="secondary" size="sm" onClick={exportCsv}>⬇ Export results</Button>
-              <Button variant="secondary" size="sm" onClick={saveAnalysis}>Save this analysis</Button>
-            </div>
-          </div>
-
-          {/* Decision insight panel (Item 8) */}
-          <div style={{
-            marginBottom: 20, borderRadius: 'var(--r-lg)', border: '1px solid rgba(99,91,255,0.35)',
-            background: 'linear-gradient(180deg, var(--primary-soft), var(--card))', padding: '14px 16px',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary-text)' }}>Decision summary</div>
-              <button onClick={() => setInsightOpen((v) => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', fontSize: 11 }}>
-                {insightOpen ? 'Hide' : 'Show'}
-              </button>
-            </div>
-            {insightOpen && (
-              <div style={{ marginTop: 8 }}>
-                {pick ? (
-                  <div style={{ fontSize: 14, color: 'var(--text)', fontWeight: 600, lineHeight: 1.5 }}>
-                    🎯 Top opportunity: {pick.region} — {pick.demandIndex != null ? `${(pick.demandIndex / 100).toFixed(1)}× the per-capita demand of ${shortName(homeName)}` : 'strongest relative demand'}
-                    {pick.yoyPct != null && `, ${pick.yoyPct > 0 ? '+' : ''}${pick.yoyPct}% YoY`}
-                    {pick.competitorDensity != null && `, and ${pick.competitorDensity} competing domains`}.
-                  </div>
-                ) : (
-                  <div style={{ fontSize: 13, color: 'var(--text-2)' }}>No standout expansion market in this set — all candidates trail the home market on per-capita demand.</div>
-                )}
-                <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 6 }}>
-                  Your home market ({shortName(homeName)}) has a Demand Index of 100. Markets above 120 represent meaningful expansion opportunity.
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div style={{ marginBottom: 24 }}>
-            <USMetroMap mode="result" rows={result.rows} />
-          </div>
-
-          <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 760 }}>
-              <thead>
-                <tr style={{ background: 'var(--surface)' }}>
-                  <th style={thStyle}>#</th>
-                  <th style={thStyle}>Region</th>
-                  <Th label="Search Volume" k="clusterVolume" sort={sort} setSort={setSort} align="right" />
-                  <Th label="Demand Index (vs. home)" k="demandIndex" sort={sort} setSort={setSort} align="right"
-                    tip="Search demand per 100k residents, indexed to your home market. 100 = same as home. Higher = more relative demand." />
-                  <Th label="Competitor Density" k="competitorDensity" sort={sort} setSort={setSort} align="right"
-                    tip="Number of unique domains ranking in the top 10 for this service in this market. Click a value to list the domains." />
-                  <Th label="Trend (12mo)" k="yoyPct" sort={sort} setSort={setSort} align="right"
-                    tip="Year-over-year change in search volume for this service in this market." />
-                  <Th label="CPC" k="medianCpc" sort={sort} setSort={setSort} align="right" />
-                </tr>
-              </thead>
-              <tbody>
-                {sortedRows.map((r, i) => {
-                  const dir = r.yoyPct == null ? 'flat' : r.yoyPct > 0 ? 'up' : r.yoyPct < 0 ? 'down' : 'flat';
-                  const domains = r.competitorDomains || [];
-                  const canExpand = r.competitorDensity != null && domains.length > 0;
-                  const isOpen = expandedGeo === r.geoId;
-                  return (
-                    <Fragment key={r.geoId}>
-                      <tr style={{ borderTop: '1px solid var(--border)', background: r.isHome ? 'var(--primary-soft)' : 'transparent' }}>
-                        <td style={tdStyle}>{i + 1}</td>
-                        <td style={{ ...tdStyle, fontWeight: 600 }}>
-                          {r.region}
-                          {r.isHome && <Badge variant="brand" style={{ marginLeft: 8 }}>Home</Badge>}
-                          <div style={{ fontSize: 11, fontWeight: 400, color: 'var(--text-3)' }}>{r.population ? `${(r.population / 1e6).toFixed(1)}M residents` : ''}</div>
-                        </td>
-                        <td style={{ ...tdStyle, textAlign: 'right' }}>{fmt(r.clusterVolume)}</td>
-                        <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700, color: indexColor(r.demandIndex, r.isHome) }}>
-                          {r.demandIndex != null ? r.demandIndex : '—'}
-                          {!r.isHome && r.demandIndex != null && <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-3)' }}> ({(r.demandIndex / 100).toFixed(1)}×)</span>}
-                        </td>
-                        <td style={{ ...tdStyle, textAlign: 'right' }}>
-                          {r.competitorDensity == null
-                            ? <span style={{ color: 'var(--text-3)' }}>—</span>
-                            : canExpand
-                              ? <button
-                                  onClick={() => setExpandedGeo(isOpen ? null : r.geoId)}
-                                  title="Show the ranking domains"
-                                  style={{ background: 'none', border: 'none', cursor: 'pointer', font: 'inherit', fontWeight: 600, color: densityColor(r.competitorDensity), display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                                >
-                                  {r.competitorDensity} domains <span style={{ fontSize: 9 }}>{isOpen ? '▲' : '▾'}</span>
-                                </button>
-                              : <span style={{ fontWeight: 600, color: densityColor(r.competitorDensity) }}>{r.competitorDensity} domains</span>}
-                        </td>
-                        <td style={{ ...tdStyle, textAlign: 'right' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
-                            <Sparkline series={r.monthlyTotals} dir={dir} />
-                            <span style={{ fontSize: 12, minWidth: 44, textAlign: 'right', color: dir === 'up' ? 'var(--success)' : dir === 'down' ? 'var(--danger)' : 'var(--text-3)' }}>
-                              {dir === 'up' ? '▲' : dir === 'down' ? '▼' : '▬'} {r.yoyPct == null ? '—' : `${r.yoyPct > 0 ? '+' : ''}${r.yoyPct}%`}
-                            </span>
-                          </div>
-                        </td>
-                        <td style={{ ...tdStyle, textAlign: 'right' }}>${r.medianCpc.toFixed(2)}</td>
-                      </tr>
-                      {isOpen && (
-                        <tr style={{ background: 'var(--surface)' }}>
-                          <td colSpan={7} style={{ padding: '10px 14px 12px' }}>
-                            <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 8 }}>
-                              Unique domains ranking in the top {result.stats?.densityTopN ?? 10} for this service in <b>{r.region}</b> ({domains.length}):
-                            </div>
-                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                              {domains.map((d) => (
-                                <a key={d} href={`https://${d}`} target="_blank" rel="noopener noreferrer"
-                                  style={{ fontSize: 12, padding: '3px 9px', borderRadius: 'var(--r-pill)', background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--primary-text)', textDecoration: 'none' }}>
-                                  {d}
-                                </a>
-                              ))}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 12, lineHeight: 1.6 }}>
-            Demand Index normalises search volume by metro population (per 100k residents) and indexes it to your home market (=100).
-            {result.dataSource === 'semrush' && ' Data via SEMrush using the templated [service] [city] method — it captures searchers who include the city name, so it is best read as a relative index across metros.'}
-            {result.dataSource === 'demo' && ' Figures are deterministic demo placeholders until a provider key is configured.'}
-          </p>
-
-          <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-            <Button variant="ghost" onClick={() => setStep('regions')}>← Adjust regions</Button>
-          </div>
-        </div>
+        <DecisionBoard
+          result={result}
+          scoredRows={scoredRows}
+          weights={weights}
+          onWeightsChange={setWeights}
+          homeName={homeName}
+          units={units}
+          onExport={exportCsv}
+          onSave={saveAnalysis}
+          onBack={() => setStep('regions')}
+        />
       )}
+
+      <ScenarioDiff open={!!diff} onClose={() => setDiff(null)} left={diff?.left} right={diff?.right} />
     </div>
   );
 }
 
 const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 8 };
-const thStyle = { padding: '10px 14px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-3)', whiteSpace: 'nowrap', textAlign: 'left' };
-const tdStyle = { padding: '11px 14px', color: 'var(--text)', whiteSpace: 'nowrap' };

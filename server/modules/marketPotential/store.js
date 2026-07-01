@@ -24,6 +24,7 @@ const SERVICES_PATH = path.join(DATA_DIR, 'services.json');
 const BASKETS_PATH = path.join(DATA_DIR, 'baskets.json');
 const CACHE_PATH = path.join(DATA_DIR, 'volumeCache.json');
 const SCENARIOS_PATH = path.join(DATA_DIR, 'scenarios.json');
+const SUMMARIES_PATH = path.join(DATA_DIR, 'summaries.json');
 
 function genId(prefix = 'id') {
   return `${prefix}_${Date.now().toString(36)}${crypto.randomBytes(4).toString('hex')}`;
@@ -77,6 +78,7 @@ async function init() {
     [BASKETS_PATH, '[]'],
     [CACHE_PATH, '{}'],
     [SCENARIOS_PATH, '[]'],
+    [SUMMARIES_PATH, '{}'],
   ]) {
     try { await fs.access(p); } catch { await fs.writeFile(p, init, 'utf8'); }
   }
@@ -97,11 +99,26 @@ async function findServiceByName(name) {
   return (await getServices()).find((s) => s.name.trim().toLowerCase() === norm) || null;
 }
 
-async function createService(name) {
+async function createService(name, ownDomain) {
   const services = await getServices();
-  const existing = await findServiceByName(name);
-  if (existing) return existing;
-  const service = { id: genId('svc'), name: name.trim(), status: 'active', createdAt: new Date().toISOString() };
+  const norm = (name || '').trim().toLowerCase();
+  const existing = services.find((s) => s.name.trim().toLowerCase() === norm);
+  if (existing) {
+    // Update the stored own-domain when the caller supplies one (Phase 2).
+    if (ownDomain !== undefined) {
+      const next = ownDomain ? String(ownDomain).trim() : null;
+      if (next !== (existing.ownDomain ?? null)) {
+        existing.ownDomain = next;
+        await writeAtomic(SERVICES_PATH, services);
+      }
+    }
+    return existing;
+  }
+  const service = {
+    id: genId('svc'), name: name.trim(),
+    ownDomain: ownDomain ? String(ownDomain).trim() : null,
+    status: 'active', createdAt: new Date().toISOString(),
+  };
   services.push(service);
   await writeAtomic(SERVICES_PATH, services);
   return service;
@@ -203,6 +220,8 @@ async function mergeCachedRegion(geoId, yearMonth, patch) {
 }
 
 // Drop cached rows for a (geo, month) — used by the monthly refresh job.
+// TODO (V2 §5.5): wire a monthly refresh scheduler that invalidates last month's
+// cache on the 1st, following the robotsMonitor scheduler pattern. Not built here.
 async function invalidateRegion(geoId, yearMonth) {
   return withWriteLock(async () => {
     const cache = await readJson(CACHE_PATH, {});
@@ -222,16 +241,20 @@ async function getScenario(id) {
   return (await readJson(SCENARIOS_PATH, [])).find((s) => s.id === id) || null;
 }
 
-async function saveScenario({ userId, name, serviceId, basketVersion, homeGeoIds, comparedGeoIds }) {
+async function saveScenario({ userId, name, serviceId, serviceName, basketVersion, homeGeoIds, comparedGeoIds, weightsUsed, assumptions, yearMonth }) {
   const scenarios = await readJson(SCENARIOS_PATH, []);
   const scenario = {
     id: genId('scn'),
     userId: userId || 'anon',
     name: name || 'Untitled scenario',
     serviceId,
-    basketVersion,
+    serviceName: serviceName || null,   // convenience for the list/reload (Phase 4)
+    basketVersion: basketVersion ?? null,
     homeGeoIds: homeGeoIds || [],
     comparedGeoIds: comparedGeoIds || [],
+    weightsUsed: weightsUsed || null,   // reproduce the exact ranking on reload
+    assumptions: assumptions || null,   // reproduce the dollar model on reload
+    yearMonth: yearMonth || null,       // month the run was saved in → cold-fetch guard
     createdAt: new Date().toISOString(),
   };
   scenarios.push(scenario);
@@ -246,6 +269,25 @@ async function deleteScenario(id) {
   return next.length !== scenarios.length;
 }
 
+// ── Executive-summary cache (Phase 3) ─────────────────────────────────────────
+// Keyed by a hash of (service, basket version, region set, month, weights) so a
+// repeat view of the same run is free. Bounded to keep the file small.
+
+async function getCachedSummary(key) {
+  const all = await readJson(SUMMARIES_PATH, {});
+  return all[key] || null;
+}
+
+async function setCachedSummary(key, value) {
+  return withWriteLock(async () => {
+    const all = await readJson(SUMMARIES_PATH, {});
+    all[key] = { ...value, at: new Date().toISOString() };
+    const keys = Object.keys(all);
+    if (keys.length > 500) delete all[keys[0]]; // FIFO bound
+    await writeAtomic(SUMMARIES_PATH, all);
+  });
+}
+
 module.exports = {
   init,
   // services
@@ -256,4 +298,6 @@ module.exports = {
   getCachedRegion, setCachedRegion, mergeCachedRegion, invalidateRegion,
   // scenarios
   getScenarios, getScenario, saveScenario, deleteScenario,
+  // summaries
+  getCachedSummary, setCachedSummary,
 };

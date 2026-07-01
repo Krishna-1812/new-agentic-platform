@@ -13,14 +13,9 @@
 //
 // Uses OpenAI when OPENAI_API_KEY is set; otherwise a deterministic heuristic.
 
-const OpenAI = require('openai');
+const { hasOpenAI, chat } = require('./openaiClient');
 
 const VALID_TAGS = ['commercial-local', 'commercial-cost', 'commercial-general'];
-
-function hasOpenAI() {
-  const k = process.env.OPENAI_API_KEY;
-  return !!k && k !== 'your_openai_api_key_here';
-}
 
 const INFORMATIONAL_RE = /^(what|how|why|when|who|is|are|does|can)\b|guide|meaning|definition|symptoms?\b/i;
 const NEAR_ME_RE = /\bnear\s?me\b|\bnearby\b|\bin my area\b|\baround me\b/i;
@@ -72,7 +67,6 @@ function heuristicBasket(service) {
 // ── LLM path ───────────────────────────────────────────────────────────────────
 
 async function llmBasket(service) {
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const prompt = `You are building a frozen keyword basket to measure COMMERCIAL search demand for a healthcare service across US metro markets, using SEMrush.
 
 Service: "${service}"
@@ -91,17 +85,10 @@ Rules:
 Return ONLY valid JSON, no markdown:
 {"terms":[{"term":"...","intent_tag":"commercial-general"}]}`;
 
-  const completion = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
-    max_tokens: 1500,
-    response_format: { type: 'json_object' },
-    messages: [
-      { role: 'system', content: 'You are a precise SEO keyword strategist. Respond with valid JSON only.' },
-      { role: 'user', content: prompt },
-    ],
-  });
-
-  const text = completion.choices[0]?.message?.content || '{}';
+  const text = await chat([
+    { role: 'system', content: 'You are a precise SEO keyword strategist. Respond with valid JSON only.' },
+    { role: 'user', content: prompt },
+  ], { maxTokens: 1500, json: true }) || '{}';
   const parsed = JSON.parse(text);
   const raw = (parsed.terms || []).map((t) => ({
     term: t.term,

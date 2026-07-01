@@ -6,6 +6,7 @@
 //   4. Fetch + rank (cache-first), index to home = 100, render table + map
 
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 
 const store = require('./store');
@@ -13,6 +14,8 @@ const geo = require('./geoData');
 const { proposeBasket } = require('./basketAgent');
 const { suggestAdjacent, buildComparison } = require('./ranking');
 const { getProvider, unitTrackingActive } = require('./provider');
+const { makeClassifier } = require('./competitorTaxonomy');
+const { generateSummary } = require('./summaryAgent');
 const usage = require('./usageStore');
 
 // Current refresh bucket — volume changes monthly, so cache keys on year-month.
@@ -87,8 +90,10 @@ router.post('/service/resolve', async (req, res) => {
   try {
     const name = (req.body.service || '').trim();
     if (!name) return res.status(400).json({ error: 'service is required' });
+    // Optional "your domain" (Phase 2) — persisted on the service for youRankHere.
+    const ownDomain = typeof req.body.ownDomain === 'string' ? req.body.ownDomain.trim() : undefined;
 
-    const service = await store.createService(name);
+    const service = await store.createService(name, ownDomain);
     const active = await store.getActiveBasket(service.id);
     if (active) {
       return res.json({ service, basket: active, basketState: 'active' });
@@ -312,14 +317,15 @@ router.post('/compare', async (req, res) => {
     }
 
     const homeSet = new Set(homeGeoIds);
-    const { rows, homeBase } = buildComparison(regionData, rankableTerms, homeSet);
+    // Classify density domains against the client's own site (Phase 2) → competitorBreakdown.
+    const { rows, homeBase, warnings } = buildComparison(regionData, rankableTerms, homeSet, makeClassifier(service.ownDomain));
     const srcSet = new Set(regionData.map((r) => r.source));
     const dataSource = srcSet.has('semrush') ? 'semrush'
       : srcSet.has('dataforseo') ? 'dataforseo'
       : [...srcSet][0] || 'demo';
 
     res.json({
-      service: { id: service.id, name: service.name },
+      service: { id: service.id, name: service.name, ownDomain: service.ownDomain || null },
       basketVersion: basket.version,
       yearMonth,
       dataSource,
@@ -332,10 +338,47 @@ router.post('/compare', async (req, res) => {
       },
       usage: usageAfter,
       homeBase,
+      warnings: warnings || [],
       rows,
     });
   } catch (err) {
     console.error('[market-potential] compare:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Executive summary (Phase 3) — grounded, cached, deterministic fallback ────
+// The client sends exactly the (scored) rows it rendered; we summarise them with
+// OpenAI when a key exists, else a template. Cached by run signature so repeat
+// views are free and never re-bill tokens.
+
+router.post('/summary', async (req, res) => {
+  try {
+    const { serviceId, yearMonth, rows, weightsUsed } = req.body;
+    if (!serviceId || !Array.isArray(rows) || !rows.length) {
+      return res.status(400).json({ error: 'serviceId and a non-empty rows array are required' });
+    }
+    const service = await store.getService(serviceId);
+    if (!service) return res.status(404).json({ error: 'Service not found' });
+
+    const basket = await store.getActiveBasket(serviceId);
+    const basketVersion = basket?.version ?? null;
+    const homeRow = rows.find((r) => r.isHome);
+    const homeName = (homeRow?.region || 'your home market').split(',')[0].trim();
+
+    // Cache key: same run signature → same summary (spec §4.2).
+    const geoIds = rows.map((r) => r.geoId).filter(Boolean).sort();
+    const keyObj = { serviceId, basketVersion, yearMonth: yearMonth || null, geoIds, weights: weightsUsed || null };
+    const hash = crypto.createHash('sha1').update(JSON.stringify(keyObj)).digest('hex').slice(0, 16);
+
+    const cached = await store.getCachedSummary(hash);
+    if (cached) return res.json({ summary: cached.summary, source: cached.source, cached: true });
+
+    const { summary, source } = await generateSummary({ service: service.name, homeName, rows, weightsUsed });
+    await store.setCachedSummary(hash, { summary, source });
+    res.json({ summary, source, cached: false });
+  } catch (err) {
+    console.error('[market-potential] summary:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -350,9 +393,11 @@ router.get('/scenarios', async (req, res) => {
 router.post('/scenarios', async (req, res) => {
   try {
     const userId = req.user?.username || 'anon';
-    const { name, serviceId, basketVersion, homeGeoIds, comparedGeoIds } = req.body;
+    const { name, serviceId, serviceName, basketVersion, homeGeoIds, comparedGeoIds, weightsUsed, assumptions, yearMonth } = req.body;
     if (!serviceId) return res.status(400).json({ error: 'serviceId is required' });
-    const scenario = await store.saveScenario({ userId, name, serviceId, basketVersion, homeGeoIds, comparedGeoIds });
+    const scenario = await store.saveScenario({
+      userId, name, serviceId, serviceName, basketVersion, homeGeoIds, comparedGeoIds, weightsUsed, assumptions, yearMonth,
+    });
     res.json({ scenario });
   } catch (err) {
     res.status(500).json({ error: err.message });

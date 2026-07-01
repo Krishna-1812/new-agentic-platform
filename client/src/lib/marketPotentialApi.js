@@ -24,7 +24,7 @@ export const mp = {
   allGeo: () => req('/geo/all'),
 
   // Service + basket
-  resolveService: (service) => req('/service/resolve', { method: 'POST', body: JSON.stringify({ service }) }),
+  resolveService: (service, ownDomain) => req('/service/resolve', { method: 'POST', body: JSON.stringify({ service, ownDomain }) }),
   proposeBasket: (serviceId) => req(`/service/${serviceId}/basket/propose`, { method: 'POST' }),
   saveDraft: (serviceId, terms) => req(`/service/${serviceId}/basket/draft`, { method: 'PUT', body: JSON.stringify({ terms }) }),
   freezeBasket: (serviceId) => req(`/service/${serviceId}/basket/freeze`, { method: 'POST' }),
@@ -34,6 +34,9 @@ export const mp = {
 
   // Compare
   compare: (body) => req('/compare', { method: 'POST', body: JSON.stringify(body) }),
+
+  // Executive summary (grounded, cached)
+  summary: (body) => req('/summary', { method: 'POST', body: JSON.stringify(body) }),
 
   // Scenarios
   scenarios: () => req('/scenarios'),
