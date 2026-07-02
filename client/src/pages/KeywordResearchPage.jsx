@@ -83,9 +83,13 @@ export default function KeywordResearchPage() {
   const [totalQueries, setTotalQueries] = useState(0);
   const [urlData, setUrlData] = useState({});
   const [result, setResult] = useState(null);
+  const [primaryList, setPrimaryList] = useState([]);
+  const [secondaryList, setSecondaryList] = useState([]);
+  const [editMode, setEditMode] = useState(false);
   const [allKeywords, setAllKeywords] = useState([]);
   const [showAllKeywords, setShowAllKeywords] = useState(false);
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
   const esRef = useRef(null);
 
   function reset() {
@@ -98,6 +102,9 @@ export default function KeywordResearchPage() {
     setTotalQueries(0);
     setUrlData({});
     setResult(null);
+    setPrimaryList([]);
+    setSecondaryList([]);
+    setEditMode(false);
     setAllKeywords([]);
     setShowAllKeywords(false);
     setError('');
@@ -163,7 +170,10 @@ export default function KeywordResearchPage() {
       });
 
       es.addEventListener('result', e => {
-        setResult(JSON.parse(e.data));
+        const d = JSON.parse(e.data);
+        setResult(d);
+        setPrimaryList(d.primary || []);
+        setSecondaryList(d.secondary || []);
       });
 
       es.addEventListener('fail', e => {
@@ -190,6 +200,81 @@ export default function KeywordResearchPage() {
   }
 
   const canStart = keyword.trim() && !running;
+
+  function keyOf(kw) {
+    return (kw.keyword || '').trim().toLowerCase();
+  }
+
+  function removeFromPrimary(idx) {
+    setPrimaryList(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  function removeFromSecondary(idx) {
+    setSecondaryList(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  function addAsPrimary(kw) {
+    setPrimaryList(prev => (prev.length >= 2 ? prev : [...prev, kw]));
+  }
+
+  function addAsSecondary(kw) {
+    setSecondaryList(prev => (prev.length >= 10 ? prev : [...prev, kw]));
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // Copies the current (possibly edited) Primary + Secondary lists as a table.
+  // Writes both a tab-separated plain-text version (pastes as columns in
+  // Excel/Sheets) and an HTML <table> (pastes as a real bordered table in
+  // Word/Docs/email) so the table renders correctly wherever it lands.
+  async function copyKeywordsTable() {
+    const rows = [
+      ...primaryList.map(kw => ({ type: 'Primary', keyword: kw.keyword, volume: kw.volume || 0 })),
+      ...secondaryList.map(kw => ({ type: 'Secondary', keyword: kw.keyword, volume: kw.volume || 0 })),
+    ];
+    if (!rows.length) return;
+
+    const header = ['Type', 'Keyword', 'Volume'];
+    const tsv = [header.join('\t'), ...rows.map(r => [r.type, r.keyword, r.volume].join('\t'))].join('\n');
+    const html = `<table><thead><tr>${header.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${
+      rows.map(r => `<tr><td>${escapeHtml(r.type)}</td><td>${escapeHtml(r.keyword)}</td><td>${r.volume}</td></tr>`).join('')
+    }</tbody></table>`;
+
+    try {
+      if (navigator.clipboard?.write && window.ClipboardItem) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/plain': new Blob([tsv], { type: 'text/plain' }),
+            'text/html': new Blob([html], { type: 'text/html' }),
+          }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(tsv);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      try {
+        await navigator.clipboard.writeText(tsv);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch { /* clipboard unavailable — silently no-op */ }
+    }
+  }
+
+  // Source pool for the "All source keywords" panel: the full candidate list,
+  // plus a safety net for any selected keyword the LLM phrased slightly
+  // differently from its candidate-list entry. Selected keywords (primary or
+  // secondary) are excluded here — removing one makes it reappear below.
+  const selectedKeys = new Set([...primaryList, ...secondaryList].map(keyOf));
+  const sourcePoolMap = new Map();
+  for (const k of allKeywords) sourcePoolMap.set(keyOf(k), k);
+  for (const k of [...primaryList, ...secondaryList]) {
+    if (!sourcePoolMap.has(keyOf(k))) sourcePoolMap.set(keyOf(k), k);
+  }
+  const availableKeywords = [...sourcePoolMap.values()].filter(k => !selectedKeys.has(keyOf(k)));
 
   return (
     <main style={{ maxWidth: 900, margin: '0 auto', padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -575,23 +660,97 @@ export default function KeywordResearchPage() {
       {result && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
+          {/* Copy + Edit toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+            <button
+              onClick={copyKeywordsTable}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 13,
+                fontWeight: 600,
+                padding: '8px 14px',
+                borderRadius: 8,
+                border: `1px solid ${copied ? 'var(--success)' : 'var(--border)'}`,
+                background: copied ? 'var(--success-soft)' : 'var(--card)',
+                color: copied ? 'var(--success)' : 'var(--text)',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              {copied ? (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                  </svg>
+                  Copy as Table
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => setEditMode(v => {
+                const next = !v;
+                if (next) setShowAllKeywords(true);
+                return next;
+              })}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 13,
+                fontWeight: 600,
+                padding: '8px 14px',
+                borderRadius: 8,
+                border: `1px solid ${editMode ? 'var(--primary)' : 'var(--border)'}`,
+                background: editMode ? 'var(--primary)' : 'var(--card)',
+                color: editMode ? '#fff' : 'var(--text)',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              {editMode ? (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                  Done Editing
+                </>
+              ) : (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                  </svg>
+                  Edit Keywords
+                </>
+              )}
+            </button>
+          </div>
+
           {/* Primary Keywords */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Primary Keywords</h2>
               <span style={{
                 fontSize: 12,
-                background: 'var(--success-soft)',
-                color: 'var(--success)',
+                background: primaryList.length === 2 ? 'var(--success-soft)' : 'var(--danger-soft, #FEF2F2)',
+                color: primaryList.length === 2 ? 'var(--success)' : 'var(--danger)',
                 fontWeight: 600,
                 padding: '2px 8px',
                 borderRadius: 99,
               }}>
-                {result.primary?.length || 0} selected
+                {primaryList.length} / 2 selected
               </span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-              {(result.primary || []).map((kw, i) => (
+              {primaryList.map((kw, i) => (
                 <div
                   key={i}
                   style={{
@@ -605,17 +764,32 @@ export default function KeywordResearchPage() {
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
                     <h3 style={{ fontWeight: 700, color: 'var(--text)', fontSize: 15, lineHeight: 1.3, margin: 0 }}>{kw.keyword}</h3>
-                    <span style={{
-                      flexShrink: 0,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      padding: '2px 10px',
-                      borderRadius: 4,
-                      background: 'var(--primary-soft)',
-                      color: 'var(--primary)',
-                    }}>
-                      PRIMARY
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                      <span style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        padding: '2px 10px',
+                        borderRadius: 4,
+                        background: 'var(--primary-soft)',
+                        color: 'var(--primary)',
+                      }}>
+                        PRIMARY
+                      </span>
+                      {editMode && (
+                        <button
+                          onClick={() => removeFromPrimary(i)}
+                          title="Remove from Primary"
+                          style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            width: 20, height: 20, borderRadius: '50%', border: 'none',
+                            background: 'var(--danger-soft, #FEF2F2)', color: 'var(--danger)',
+                            cursor: 'pointer', fontSize: 13, fontWeight: 700, lineHeight: 1, padding: 0,
+                          }}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 2 }}>Search Volume</div>
@@ -639,13 +813,13 @@ export default function KeywordResearchPage() {
               <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Secondary Keywords</h2>
               <span style={{
                 fontSize: 12,
-                background: 'var(--info-soft)',
-                color: 'var(--info)',
+                background: secondaryList.length === 10 ? 'var(--success-soft)' : 'var(--danger-soft, #FEF2F2)',
+                color: secondaryList.length === 10 ? 'var(--success)' : 'var(--danger)',
                 fontWeight: 600,
                 padding: '2px 8px',
                 borderRadius: 99,
               }}>
-                {result.secondary?.length || 0} selected
+                {secondaryList.length} / 10 selected
               </span>
             </div>
             <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', boxShadow: cardShadow, overflow: 'hidden' }}>
@@ -655,10 +829,11 @@ export default function KeywordResearchPage() {
                     <th style={{ textAlign: 'left', color: '#fff', fontWeight: 600, padding: '12px 16px', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>#</th>
                     <th style={{ textAlign: 'left', color: '#fff', fontWeight: 600, padding: '12px 16px', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Keyword</th>
                     <th style={{ textAlign: 'left', color: '#fff', fontWeight: 600, padding: '12px 16px', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Volume</th>
+                    {editMode && <th style={{ padding: '12px 16px', width: 48 }}></th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {(result.secondary || []).map((kw, i) => (
+                  {secondaryList.map((kw, i) => (
                     <tr
                       key={i}
                       style={{ borderTop: '1px solid var(--border)', transition: 'background 0.1s' }}
@@ -670,6 +845,22 @@ export default function KeywordResearchPage() {
                       <td style={{ padding: '12px 16px', color: 'var(--text-2)' }}>
                         {kw.volume > 0 ? kw.volume.toLocaleString() : '—'}
                       </td>
+                      {editMode && (
+                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                          <button
+                            onClick={() => removeFromSecondary(i)}
+                            title="Remove from Secondary"
+                            style={{
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              width: 20, height: 20, borderRadius: '50%', border: 'none',
+                              background: 'var(--danger-soft, #FEF2F2)', color: 'var(--danger)',
+                              cursor: 'pointer', fontSize: 13, fontWeight: 700, lineHeight: 1, padding: 0,
+                            }}
+                          >
+                            ×
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -701,7 +892,7 @@ export default function KeywordResearchPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>All source keywords</span>
                   <span style={{ fontSize: 12, background: 'var(--surface)', color: 'var(--text-2)', fontWeight: 600, padding: '2px 8px', borderRadius: 99 }}>
-                    {allKeywords.length} total
+                    {availableKeywords.length} available
                   </span>
                 </div>
                 <svg
@@ -714,12 +905,17 @@ export default function KeywordResearchPage() {
 
               {showAllKeywords && (
                 <div style={{ borderTop: '1px solid var(--border)', borderRadius: '0 0 var(--r-lg) var(--r-lg)', overflow: 'hidden' }}>
+                  {availableKeywords.length === 0 && (
+                    <div style={{ padding: '16px 20px', fontSize: 13, color: 'var(--text-2)' }}>
+                      All candidate keywords have been selected as Primary or Secondary.
+                    </div>
+                  )}
                   {[
                     { label: 'Core',      desc: 'Appears across 3+ competitor pages', color: 'var(--primary)',  headerBg: 'var(--primary-soft)',  filter: k => (k.urlFrequency || 0) >= 3 },
                     { label: 'Relevant',  desc: 'Appears across 2 competitor pages',  color: 'var(--info)',     headerBg: 'var(--info-soft)',     filter: k => (k.urlFrequency || 0) === 2 },
                     { label: 'Discovery', desc: 'Unique to a single competitor page', color: 'var(--text-3)',   headerBg: 'var(--surface)',       filter: k => (k.urlFrequency || 0) <= 1 },
                   ].map(tier => {
-                    const tierKws = allKeywords
+                    const tierKws = availableKeywords
                       .filter(tier.filter)
                       .sort((a, b) => (b.volume || 0) - (a.volume || 0));
                     if (tierKws.length === 0) return null;
@@ -749,6 +945,38 @@ export default function KeywordResearchPage() {
                                 <td style={{ padding: '10px 20px', color: 'var(--text-2)', fontSize: 12, textAlign: 'right', width: 96 }}>
                                   {kw.volume > 0 ? kw.volume.toLocaleString() : '—'}
                                 </td>
+                                {editMode && (
+                                  <td style={{ padding: '10px 20px', textAlign: 'right', width: 160 }}>
+                                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                                      <button
+                                        onClick={() => addAsPrimary(kw)}
+                                        disabled={primaryList.length >= 2}
+                                        title={primaryList.length >= 2 ? 'Primary is full (2/2) — remove one first' : 'Add as Primary'}
+                                        style={{
+                                          fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, border: 'none',
+                                          background: primaryList.length >= 2 ? 'var(--surface)' : 'var(--primary-soft)',
+                                          color: primaryList.length >= 2 ? 'var(--text-3)' : 'var(--primary)',
+                                          cursor: primaryList.length >= 2 ? 'not-allowed' : 'pointer',
+                                        }}
+                                      >
+                                        + Primary
+                                      </button>
+                                      <button
+                                        onClick={() => addAsSecondary(kw)}
+                                        disabled={secondaryList.length >= 10}
+                                        title={secondaryList.length >= 10 ? 'Secondary is full (10/10) — remove one first' : 'Add as Secondary'}
+                                        style={{
+                                          fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, border: 'none',
+                                          background: secondaryList.length >= 10 ? 'var(--surface)' : 'var(--info-soft)',
+                                          color: secondaryList.length >= 10 ? 'var(--text-3)' : 'var(--info)',
+                                          cursor: secondaryList.length >= 10 ? 'not-allowed' : 'pointer',
+                                        }}
+                                      >
+                                        + Secondary
+                                      </button>
+                                    </div>
+                                  </td>
+                                )}
                               </tr>
                             ))}
                           </tbody>
