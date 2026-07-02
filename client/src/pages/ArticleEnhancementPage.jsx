@@ -13,6 +13,7 @@ const STEPS = [
   { id: 'theme',      label: 'Theme & Query' },
   { id: 'llm_fanout', label: `Model Queries (${MODELS.length} calls)` },
   { id: 'synthesis',  label: 'Concept Synthesis' },
+  { id: 'serp',       label: 'SERP Competitor Research' },
   { id: 'kb',         label: 'Load KB' },
   { id: 'recommend',  label: 'Generate Recommendations' },
   { id: 'enhance',    label: 'Enhance Article' },
@@ -364,6 +365,8 @@ export default function ArticleEnhancementPage() {
   const [themeData, setThemeData] = useState(null);
   const [llmResults, setLlmResults] = useState([]);
   const [synthResults, setSynthResults] = useState([]);
+  const [serpResults, setSerpResults] = useState([]);
+  const [competitorData, setCompetitorData] = useState({ totalCompetitors: 0, concepts: [] });
   const [recommendations, setRecommendations] = useState('');
   const [enhancedText, setEnhancedText] = useState('');
   const [coverage, setCoverage] = useState(null);
@@ -400,6 +403,8 @@ export default function ArticleEnhancementPage() {
     setThemeData(null);
     setLlmResults([]);
     setSynthResults([]);
+    setSerpResults([]);
+    setCompetitorData({ totalCompetitors: 0, concepts: [] });
     setRecommendations('');
     setEnhancedText('');
     setCoverage(null);
@@ -462,6 +467,8 @@ export default function ArticleEnhancementPage() {
         return [...prev, d];
       });
     });
+    es.addEventListener('serp_results', e => setSerpResults(JSON.parse(e.data).results || []));
+    es.addEventListener('competitor_concepts', e => setCompetitorData(JSON.parse(e.data)));
     es.addEventListener('recommendations', e => {
       setRecommendations(JSON.parse(e.data).recommendations || '');
       setActiveTab('recommendations');
@@ -780,6 +787,47 @@ export default function ArticleEnhancementPage() {
                           {allConceptsDisplay.map((c, i) => (
                             <li key={i} style={{ fontSize: '13px', color: 'var(--text)', display: 'flex', alignItems: 'flex-start', gap: '8px', lineHeight: 1.5 }}>
                               <span style={{ color: 'var(--info)', flexShrink: 0, marginTop: '3px' }}>·</span>{c}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* SERP competitors */}
+                    {serpResults.length > 0 && (
+                      <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+                        <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
+                          SERP Competitors ({serpResults.length})
+                        </p>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {serpResults.map((r, i) => (
+                            <li key={i} style={{ fontSize: '13px', color: 'var(--text)', display: 'flex', alignItems: 'flex-start', gap: '8px', lineHeight: 1.4 }}>
+                              <span style={{ color: 'var(--text-3)', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>#{r.rank}</span>
+                              <a href={r.url} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.title || r.url}</a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Competitor topic coverage */}
+                    {competitorData.concepts.length > 0 && (
+                      <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+                        <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
+                          Competitor Topic Coverage ({competitorData.concepts.length})
+                        </p>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {competitorData.concepts.map((c, i) => (
+                            <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text)' }}>
+                              <span style={{
+                                fontSize: '11px', fontWeight: 600, padding: '1px 7px', borderRadius: '999px', flexShrink: 0,
+                                background: c.coveredByArticle ? 'var(--success-soft)' : 'var(--danger-soft)',
+                                color: c.coveredByArticle ? 'var(--success)' : 'var(--danger)',
+                              }}>
+                                {c.coveredByArticle ? 'Covered' : 'Gap'}
+                              </span>
+                              <span style={{ flex: 1 }}>{c.topic}</span>
+                              <span style={{ color: 'var(--text-3)', fontSize: '12px', flexShrink: 0 }}>{c.frequency}/{competitorData.totalCompetitors}</span>
                             </li>
                           ))}
                         </ul>

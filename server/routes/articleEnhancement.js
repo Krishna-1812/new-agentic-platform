@@ -6,6 +6,7 @@ const cheerio = require('cheerio');
 const OpenAI = require('openai');
 const { Document, Packer, Paragraph, TextRun, BorderStyle, AlignmentType, Table, TableRow, TableCell, WidthType, ShadingType } = require('docx');
 const store = require('../services/kbStore');
+const { searchGoogle } = require('../services/googleSearch');
 
 // gpt-5-mini was removed — it failed on 100% of runs and added only noise.
 const MODELS = [
@@ -114,16 +115,15 @@ router.get('/stream/:token', async (req, res) => {
     emit('step', { id: 'theme', status: 'done', message: `Theme: "${themeData.theme}"` });
     emit('theme_query', themeData);
 
-    // Step 3: LLM Queries — 1 query × N models in parallel
-    emit('step', { id: 'llm_fanout', status: 'active', message: `Querying ${MODELS.length} models in parallel…` });
-    const llmResults = await runLLMQueries(openai, themeData.query, emit);
-    emit('llm_results', { results: llmResults.map(r => ({ modelIndex: r.modelIndex, model: r.model, success: r.success })) });
-    emit('step', { id: 'llm_fanout', status: 'done', message: `${llmResults.filter(r => r.success).length}/${MODELS.length} responses received` });
-
-    // Step 4: Concept Synthesis — 5 parallel calls (one per model output)
-    emit('step', { id: 'synthesis', status: 'active', message: 'Synthesizing concepts from model outputs…' });
-    const { allConcepts } = await runConceptSynthesis(openai, themeData.query, llmResults, emit);
-    emit('step', { id: 'synthesis', status: 'done', message: `${allConcepts.length} concepts extracted` });
+    // Steps 3+4 (LLM research fan-out + synthesis) and Step 3b (SERP competitor
+    // research) run in parallel — both must finish before recommendations, but
+    // neither should stack on the other's latency.
+    const [llmBranch, serpBranch] = await Promise.all([
+      runLlmResearchBranch(openai, themeData, articleData, emit),
+      runSerpCompetitorBranch(openai, themeData, articleData, emit),
+    ]);
+    const { llmResults, allConcepts, llmGaps } = llmBranch;
+    const { competitorGaps } = serpBranch;
 
     // Step 5: Load KB
     emit('step', { id: 'kb', status: 'active', message: 'Loading enhancement framework KB…' });
@@ -132,7 +132,7 @@ router.get('/stream/:token', async (req, res) => {
 
     // Step 6: Generate Recommendations
     emit('step', { id: 'recommend', status: 'active', message: 'Generating enhancement recommendations…' });
-    const recommendations = await generateRecommendations(openai, articleData, themeData, allConcepts, kb);
+    const recommendations = await generateRecommendations(openai, articleData, themeData, allConcepts, kb, competitorGaps, llmGaps);
     emit('step', { id: 'recommend', status: 'done', message: 'Enhancement recommendations ready' });
     emit('recommendations', { recommendations });
 
@@ -772,17 +772,346 @@ async function runConceptSynthesis(openai, query, llmResults, emit) {
   return { allConcepts };
 }
 
+// ── SERP competitor research ────────────────────────────────────────────────────
+// Runs as a branch parallel to the LLM research fan-out (see runSerpCompetitorBranch
+// below). Reuses the two search integrations already in the repo (Google CSE primary,
+// Serper fallback — both handled inside searchGoogle()) and the existing crawler
+// (fetchArticleResilient) rather than adding new providers or a second scraper.
+const SERP_EXCLUDE_HOSTS = new Set([
+  'youtube.com', 'reddit.com', 'quora.com', 'pinterest.com',
+  'facebook.com', 'twitter.com', 'x.com', 'linkedin.com',
+]);
+
+function isExcludedSerpHost(host) {
+  if (!host) return true;
+  for (const h of SERP_EXCLUDE_HOSTS) {
+    if (host === h || host.endsWith(`.${h}`)) return true;
+  }
+  return false;
+}
+
+// ── fetchSerpResults ────────────────────────────────────────────────────────────
+async function fetchSerpResults(seedKeyword, { limit = 10, excludeUrl } = {}) {
+  if (!seedKeyword?.trim()) return [];
+
+  let excludeHost = '';
+  if (excludeUrl) {
+    try { excludeHost = new URL(excludeUrl).hostname.replace(/^www\./, ''); } catch {}
+  }
+
+  let searchData;
+  try {
+    searchData = await searchGoogle(seedKeyword);
+    console.log('[article-enhancement] SERP served by:', searchData.source);
+  } catch (err) {
+    console.error('[article-enhancement] SERP search failed:', err.message);
+    return [];
+  }
+
+  const filtered = [];
+  for (const r of (searchData.results || [])) {
+    if (!r.url) continue;
+    let host = '';
+    try { host = new URL(r.url).hostname.replace(/^www\./, ''); } catch { continue; }
+    if (excludeHost && host === excludeHost) continue;
+    if (isExcludedSerpHost(host)) continue;
+    if (/\.pdf(\?|$)/i.test(r.url)) continue;
+    filtered.push({ rank: filtered.length + 1, title: r.title || '', url: r.url, snippet: r.snippet || '' });
+    if (filtered.length >= limit) break;
+  }
+  return filtered;
+}
+
+// ── mapWithConcurrency / withTimeout ─────────────────────────────────────────────
+async function mapWithConcurrency(items, concurrency, fn) {
+  const results = new Array(items.length);
+  let idx = 0;
+  async function worker() {
+    while (idx < items.length) {
+      const i = idx++;
+      results[i] = await fn(items[i], i);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  return results;
+}
+
+function withTimeout(promise, ms) {
+  let timer;
+  const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('timeout')), ms); });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+// ── scrapeCompetitorPages ────────────────────────────────────────────────────────
+// Reuses fetchArticleResilient (direct fetch -> Jina reader fallback) — the same
+// crawler used for the main article — so competitor pages get identical boilerplate
+// handling. Concurrency-capped and per-page timed out so a handful of slow/blocked
+// competitors can't become the long pole of the pipeline. Partial results (some pages
+// failing) are expected and fine — this never throws per-page.
+async function scrapeCompetitorPages(results, { concurrency = 3, perPageTimeoutMs = 15000 } = {}) {
+  const noop = () => {};
+  return mapWithConcurrency(results, concurrency, async (r) => {
+    try {
+      const data = await withTimeout(fetchArticleResilient(r.url, noop), perPageTimeoutMs);
+      if (!data || data.wordCount < 100) {
+        return { url: r.url, title: r.title || '', h2s: [], wordCount: data?.wordCount || 0, bodyText: '', fetchOk: false };
+      }
+      return {
+        url: r.url,
+        title: data.title || r.title || '',
+        h2s: data.h2s || [],
+        wordCount: data.wordCount,
+        bodyText: data.bodyText || '',
+        fetchOk: true,
+      };
+    } catch {
+      return { url: r.url, title: r.title || '', h2s: [], wordCount: 0, bodyText: '', fetchOk: false };
+    }
+  });
+}
+
+// ── extractCompetitorConcepts ────────────────────────────────────────────────────
+async function extractPageTopics(openai, page, seedKeyword) {
+  try {
+    const res = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: 'You are an expert content analyst. Respond with valid JSON only.' },
+        {
+          role: 'user',
+          content: `Seed keyword: "${seedKeyword}"
+Page title: "${page.title}"
+URL: ${page.url}
+
+H2 headings: ${(page.h2s || []).join(' | ') || '(none)'}
+
+Content sample (first 3000 chars):
+${(page.bodyText || '').slice(0, 3000)}
+
+List the distinct topics, subtopics, and questions this page covers that are relevant to the seed keyword.
+
+Return JSON:
+{
+  "topics": [
+    { "topic": "short topic label, 3-8 words", "description": "one sentence describing what the page says about it" }
+  ]
+}
+
+Rules:
+- 5-10 topics max
+- Each topic must be specific and self-contained, not generic ("benefits" is too vague; "reduced recovery time vs traditional surgery" is good)`,
+        },
+      ],
+    });
+    const parsed = JSON.parse(res.choices[0].message.content || '{}');
+    return Array.isArray(parsed.topics) ? parsed.topics : [];
+  } catch (err) {
+    console.error('[article-enhancement] competitor topic extraction error for', page.url, ':', err.message);
+    return [];
+  }
+}
+
+async function extractCompetitorConcepts(openai, pages, seedKeyword) {
+  const successfulPages = pages.filter(p => p.fetchOk && p.bodyText);
+  const perPageTopics = await Promise.all(
+    successfulPages.map(async (page) => ({ page, topics: await extractPageTopics(openai, page, seedKeyword) }))
+  );
+
+  const merged = new Map();
+  for (const { page, topics } of perPageTopics) {
+    for (const t of topics) {
+      const label = (t.topic || '').trim();
+      if (!label) continue;
+      const key = label.toLowerCase().slice(0, 70);
+      if (!merged.has(key)) {
+        merged.set(key, { topic: label, description: t.description || '', competitors: new Set() });
+      }
+      merged.get(key).competitors.add(page.url);
+    }
+  }
+
+  return [...merged.values()]
+    .map(e => ({ topic: e.topic, description: e.description, competitors: [...e.competitors], frequency: e.competitors.size }))
+    .sort((a, b) => b.frequency - a.frequency);
+}
+
+// ── checkTopicsAgainstArticle ────────────────────────────────────────────────────
+// Shared coverage check used by both gap builders: does the article already address
+// each topic/concept, judged by meaning (not exact phrasing)? Falls back to a keyword
+// overlap heuristic against headings + body if the model call fails.
+async function checkTopicsAgainstArticle(openai, articleData, topicList) {
+  if (!topicList.length) return new Set();
+  const list = topicList.map((t, i) => `${i}: ${t}`).join('\n');
+  const bodySummary = (articleData.bodyText || '').slice(0, 2500);
+
+  try {
+    const res = await openai.chat.completions.create({
+      model: 'gpt-5.4-mini',
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: 'You are an expert content analyst. Respond with valid JSON only.' },
+        {
+          role: 'user',
+          content: `Article H1: ${articleData.h1 || articleData.title}
+Article H2 sections: ${(articleData.h2s || []).join(' | ') || '(none)'}
+Article H3 sections: ${(articleData.h3s || []).join(' | ') || '(none)'}
+
+Article body sample:
+${bodySummary}
+
+Below is a numbered list of topics. For each, decide whether the article ALREADY covers it (even if worded differently — judge by meaning, not exact phrasing).
+
+TOPICS:
+${list}
+
+Return JSON: { "covered": [array of integer indices that ARE already covered by the article] }`,
+        },
+      ],
+    });
+    const parsed = JSON.parse(res.choices[0].message.content || '{}');
+    const arr = Array.isArray(parsed.covered) ? parsed.covered : [];
+    return new Set(arr.map(Number).filter(n => Number.isInteger(n) && n >= 0 && n < topicList.length));
+  } catch (err) {
+    console.error('[article-enhancement] topic coverage check error:', err.message);
+    const haystack = `${(articleData.h2s || []).join(' ')} ${(articleData.h3s || []).join(' ')} ${(articleData.bodyText || '').slice(0, 5000)}`.toLowerCase();
+    const covered = new Set();
+    topicList.forEach((t, i) => {
+      const words = t.toLowerCase().split(/\s+/).filter(w => w.length > 4);
+      const hits = words.filter(w => haystack.includes(w)).length;
+      if (words.length && hits / words.length >= 0.6) covered.add(i);
+    });
+    return covered;
+  }
+}
+
+// ── buildCompetitorGapAnalysis ───────────────────────────────────────────────────
+// Topic-level only: recommends what to cover, never lifts competitor wording. This
+// keeps the honesty invariant — inserted stats/quotes still must come from the LLM
+// research fan-out with a real citation, never from a competitor page.
+async function buildCompetitorGapAnalysis(openai, articleData, competitorConcepts, totalCompetitors) {
+  if (!competitorConcepts.length) return { gaps: [], covered: [] };
+
+  const labels = competitorConcepts.map(c => c.topic);
+  const coveredIdx = await checkTopicsAgainstArticle(openai, articleData, labels);
+
+  const gaps = [];
+  const covered = [];
+  for (let i = 0; i < competitorConcepts.length; i++) {
+    const c = competitorConcepts[i];
+    if (coveredIdx.has(i)) {
+      covered.push({ topic: c.topic, frequency: c.frequency });
+      continue;
+    }
+    const priority = c.frequency >= 6 ? 'high' : c.frequency >= 3 ? 'medium' : 'low';
+    gaps.push({
+      topic: c.topic,
+      frequency: c.frequency,
+      priority,
+      note: `Covered by ${c.frequency} of ${totalCompetitors} ranking competitors; absent from this article.`,
+    });
+  }
+  gaps.sort((a, b) => b.frequency - a.frequency);
+  return { gaps, covered };
+}
+
+// ── buildLlmGapAnalysis ──────────────────────────────────────────────────────────
+async function buildLlmGapAnalysis(openai, articleData, synthesizedConcepts) {
+  if (!synthesizedConcepts.length) return { gaps: [] };
+  const coveredIdx = await checkTopicsAgainstArticle(openai, articleData, synthesizedConcepts);
+  const gaps = [];
+  synthesizedConcepts.forEach((concept, i) => {
+    if (!coveredIdx.has(i)) gaps.push({ concept, priority: 'medium' });
+  });
+  return { gaps };
+}
+
+// ── runLlmResearchBranch / runSerpCompetitorBranch ───────────────────────────────
+// The two research branches run in parallel (see the /stream handler's Promise.all)
+// so SERP research doesn't stack in series after the LLM fan-out.
+async function runLlmResearchBranch(openai, themeData, articleData, emit) {
+  emit('step', { id: 'llm_fanout', status: 'active', message: `Querying ${MODELS.length} models in parallel…` });
+  const llmResults = await runLLMQueries(openai, themeData.query, emit);
+  emit('llm_results', { results: llmResults.map(r => ({ modelIndex: r.modelIndex, model: r.model, success: r.success })) });
+  emit('step', { id: 'llm_fanout', status: 'done', message: `${llmResults.filter(r => r.success).length}/${MODELS.length} responses received` });
+
+  emit('step', { id: 'synthesis', status: 'active', message: 'Synthesizing concepts from model outputs…' });
+  const { allConcepts } = await runConceptSynthesis(openai, themeData.query, llmResults, emit);
+  emit('step', { id: 'synthesis', status: 'done', message: `${allConcepts.length} concepts extracted` });
+
+  let llmGaps = { gaps: [] };
+  try {
+    llmGaps = await buildLlmGapAnalysis(openai, articleData, allConcepts);
+    emit('llm_gaps', { gaps: llmGaps.gaps });
+  } catch (err) {
+    console.error('[article-enhancement] LLM gap analysis error:', err.message);
+  }
+
+  return { llmResults, allConcepts, llmGaps };
+}
+
+// Graceful degradation: any failure here (search, scrape, extraction, gap analysis)
+// falls back to an empty competitor result and a soft "done" step — SERP research
+// must never fail the run. See emit('step', { id: 'serp', ... }) below.
+async function runSerpCompetitorBranch(openai, themeData, articleData, emit) {
+  emit('step', { id: 'serp', status: 'active', message: 'Searching for top-ranking competitors…' });
+  try {
+    const serpResults = await fetchSerpResults(themeData.query, { limit: 10, excludeUrl: articleData.url });
+    if (!serpResults.length) {
+      emit('step', { id: 'serp', status: 'done', message: 'No usable competitor results — skipping competitor analysis' });
+      return { serpResults: [], competitorConcepts: [], competitorGaps: { gaps: [], covered: [] } };
+    }
+    emit('serp_results', { seedKeyword: themeData.query, results: serpResults.map(r => ({ rank: r.rank, title: r.title, url: r.url })) });
+    emit('step', { id: 'serp', status: 'active', message: `Found ${serpResults.length} competitors — scraping content…` });
+
+    const pages = await scrapeCompetitorPages(serpResults);
+    const okCount = pages.filter(p => p.fetchOk).length;
+    if (!okCount) {
+      emit('step', { id: 'serp', status: 'done', message: 'Competitor pages could not be scraped — skipping competitor analysis' });
+      return { serpResults, competitorConcepts: [], competitorGaps: { gaps: [], covered: [] } };
+    }
+    emit('step', { id: 'serp', status: 'active', message: `Scraped ${okCount}/${pages.length} competitor pages — extracting topics…` });
+
+    const competitorConcepts = await extractCompetitorConcepts(openai, pages, themeData.query);
+    const competitorGaps = await buildCompetitorGapAnalysis(openai, articleData, competitorConcepts, okCount);
+
+    const coveredTopics = new Set((competitorGaps.covered || []).map(c => c.topic));
+    emit('competitor_concepts', {
+      totalCompetitors: okCount,
+      concepts: competitorConcepts.map(c => ({ topic: c.topic, frequency: c.frequency, coveredByArticle: coveredTopics.has(c.topic) })),
+    });
+    emit('competitor_gaps', { gaps: competitorGaps.gaps });
+    emit('step', { id: 'serp', status: 'done', message: `${competitorGaps.gaps.length} competitor content gap(s) identified` });
+
+    return { serpResults, competitorConcepts, competitorGaps };
+  } catch (err) {
+    console.error('[article-enhancement] SERP competitor branch error:', err.message);
+    emit('step', { id: 'serp', status: 'done', message: 'Competitor analysis unavailable — continuing with LLM research only' });
+    return { serpResults: [], competitorConcepts: [], competitorGaps: { gaps: [], covered: [] } };
+  }
+}
+
 // ── generateRecommendations ────────────────────────────────────────────────────
-async function generateRecommendations(openai, articleData, themeData, allConcepts, kb) {
+async function generateRecommendations(openai, articleData, themeData, allConcepts, kb, competitorGaps, llmGaps) {
   const kbGuidance = kb ? `\n\nEnhancement Framework:\n${kb.body}` : '';
+
+  const compGaps = competitorGaps?.gaps || [];
+  const competitorGapsText = compGaps.length
+    ? compGaps.map(g => `- [${g.priority.toUpperCase()}] ${g.topic} — ${g.note}`).join('\n')
+    : '(No significant competitor content gaps identified — either competitor research was unavailable, or the article already covers what ranking competitors cover.)';
+
+  const llmGapList = llmGaps?.gaps || [];
+  const llmGapsText = llmGapList.length
+    ? llmGapList.map(g => `- ${g.concept}`).join('\n')
+    : '(No uncovered research concepts identified.)';
 
   const res = await openai.chat.completions.create({
     model: 'gpt-5.4-mini',
-    max_completion_tokens: 3000,
+    max_completion_tokens: 3400,
     messages: [
       {
         role: 'system',
-        content: `You are a senior SEO and content strategist producing article enhancement recommendations. Be specific, actionable, and prioritized.${kbGuidance}`,
+        content: `You are a senior SEO and content strategist producing article enhancement recommendations. Be specific, actionable, and prioritized. When drawing on SERP Competitor Gaps or LLM Research Gaps, recommend the TOPIC or ANGLE to cover — never instruct copying a competitor's specific wording, sentences, or claims.${kbGuidance}`,
       },
       {
         role: 'user',
@@ -803,6 +1132,12 @@ Query this article should address: ${themeData.query}
 
 Synthesized concepts from multi-model research:
 ${allConcepts.join('\n').slice(0, 8000)}
+
+SERP Competitor Gaps — topics ranking competitors cover that this article does not (topic/angle only, never their wording):
+${competitorGapsText}
+
+LLM Research Gaps — research concepts not yet covered by this article:
+${llmGapsText}
 
 ---
 
@@ -829,6 +1164,12 @@ Rank the 5 most impactful improvements. For each: what to add/change, why it mat
 
 ## Content Gaps
 Specific topics or concepts from the research that are absent from the article. For each gap: what to add and where.
+
+## SERP Competitor Gaps
+List each competitor gap topic with its competitor frequency (e.g. "covered by 7 of 10 ranking competitors") and priority. Recommend the topic/angle to add — never competitor wording. If none were identified, state that clearly.
+
+## LLM Research Gaps
+List research concepts the article does not yet cover and why they matter. If none were identified, state that clearly.
 
 ## SEO & GEO Improvements
 Heading optimizations, keyword opportunities, answer-first structures, entity completeness.
