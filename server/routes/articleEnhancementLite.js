@@ -401,6 +401,24 @@ function stripMetaReferences(t) {
     .replace(/(^|[.!?]\s+)([a-z])/g, (m, p, c) => p + c.toUpperCase());
 }
 
+// A chunk with no real sentence (only headings, nav bullets, or link fragments) has
+// nothing to enhance. Skip it — feeding boilerplate to the model risks it echoing the
+// instructions back instead of returning content.
+function hasSubstantiveProse(md) {
+  for (const line of (md || '').split('\n')) {
+    const t = line.trim();
+    if (!t || /^#{1,6}\s/.test(t)) continue;
+    const words = t.replace(/\[[^\]]*\]\([^)]*\)/g, ' ').replace(/[^A-Za-z ]/g, ' ').split(/\s+/).filter(w => w.length > 2);
+    if (words.length >= 12) return true;
+  }
+  return false;
+}
+
+// Detect when the model parroted the instruction prompt instead of returning content.
+function isInstructionEcho(out) {
+  return /Apply only verified, source-grounded improvements|Mark every insertion|Existing text verbatim/i.test(out || '');
+}
+
 // ── generateEnhancedArticleLite ────────────────────────────────────────────────
 // Verified-only section enhancement. Existing text verbatim; the ONLY permitted
 // insertions are derivable from the section's own content.
@@ -465,6 +483,8 @@ MARKING RULES:
     if (!chunk.trim()) return '';
     const mdChunk = isHtml ? htmlChunkToMarkdown(chunk) : chunk.trim();
     if (!mdChunk) return '';
+    // Nothing substantive to enhance (residual nav/link list) — return as-is.
+    if (!hasSubstantiveProse(mdChunk)) return mdChunk;
     try {
       const res = await openai.chat.completions.create({
         model: MODEL,
@@ -485,6 +505,8 @@ Apply only verified, source-grounded improvements: an answer-first sentence buil
         ],
       });
       let out = res.choices[0].message.content || mdChunk;
+      // Guard 0 — the model echoed the prompt instead of returning the section.
+      if (isInstructionEcho(out)) return mdChunk;
       // Guard 1 — verbatim preservation: if the model dropped or reworded original
       // text beyond a small tolerance, discard its version and keep the original.
       if (!originalPreserved(mdChunk, out)) return mdChunk;

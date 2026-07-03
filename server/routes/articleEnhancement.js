@@ -322,13 +322,27 @@ function cleanReaderMarkdown(md, title = '') {
 
   // End-of-article signals — cut everything from the first one onward (once we
   // have already seen real article content).
-  const END_SIGNAL = /^(#{1,6}\s*)?(related (articles?|posts?|reads?)|you might also like|more (from|articles?|posts?)|share this( post| article)?|top cities|top brands|top categories|copyright\s*©)/i;
+  const END_SIGNAL = /^(#{1,6}\s*)?(related (articles?|posts?|reads?)|recommended (posts?|articles?|reads?)|more on this topic|you might also like|more (from|articles?|posts?)|share this( post| article)?|top cities|top brands|top categories|copyright\s*©)/i;
 
   // A line that is essentially just markdown links / bullet-separated links.
   const isPureLinks = (t) => {
     if (!/\[[^\]]*\]\([^)]*\)/.test(t)) return false;
     const stripped = t.replace(/\[[^\]]*\]\([^)]*\)/g, '').replace(/[·•|\-–—\s]/g, '');
     return stripped.length < 4;
+  };
+
+  // The Jina reader renders nav items as DOUBLED links: [[Label](/path)Label](https://url).
+  // These are pure navigation, but isPureLinks misses them because the doubled syntax
+  // leaves leftover text after a single link-strip pass. Strip all link markup (doubled,
+  // normal, and bare URLs); if almost nothing remains, the line is a nav/menu item.
+  const stripAllLinkMarkup = (t) => t
+    .replace(/\[\[[^\]]*\]\([^)]*\)[^\]]*\]\([^)]*\)/g, ' ') // doubled (Jina) links
+    .replace(/\[[^\]]*\]\([^)]*\)/g, ' ')                    // normal markdown links
+    .replace(/https?:\/\/\S+/g, ' ');                        // bare URLs
+  const isNavLinkLine = (t) => {
+    if (!/\]\(|https?:\/\//.test(t)) return false;           // must contain a link/URL
+    const rest = stripAllLinkMarkup(t).replace(/[●•·|:+*\-–—\s]/g, '');
+    return rest.length < 8;                                   // essentially just the link(s)
   };
 
   // 1. Trailing cut at the first end-signal that appears after real content.
@@ -347,6 +361,7 @@ function cleanReaderMarkdown(md, title = '') {
     if (!t) return true; // keep blank lines for paragraph structure
     if (JUNK_LINE.test(t)) return false;
     if (isPureLinks(t)) return false;
+    if (isNavLinkLine(t)) return false;
     return true;
   });
 
@@ -359,7 +374,10 @@ function cleanReaderMarkdown(md, title = '') {
   }
   lines = lines.slice(start);
 
-  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  return lines.join('\n')
+    .replace(/^(#{1,6})\s+#{1,6}\s+/gm, '$1 ')  // collapse doubled heading markers ("## ## X" -> "## X")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 // ── refineArticleBoundary (LLM block-classifier) ───────────────────────────────
@@ -383,10 +401,14 @@ async function refineArticleBoundary(openai, articleData) {
     return articleData;
   }
   if (!dropSet || dropSet.size === 0) return articleData;
-  if (dropSet.size > blocks.length * 0.7) return articleData; // implausible — keep original
+  // Only bail on a near-total drop (a model that nuked the whole page). Nav-heavy
+  // pages legitimately have the real article as a small fraction of the extracted
+  // text — global mega-menus + footers can dwarf the body — so the old 70% cap
+  // wrongly kept all that boilerplate. Rely on the kept-content word floor instead.
+  if (dropSet.size >= blocks.length) return articleData;
 
   const cleanedMd = blocks.filter((_, i) => !dropSet.has(i)).join('\n\n').trim();
-  if (cleanedMd.split(/\s+/).filter(Boolean).length < 100) return articleData; // safety floor
+  if (cleanedMd.split(/\s+/).filter(Boolean).length < 120) return articleData; // safety floor
 
   const h2s = [];
   const h3s = [];
