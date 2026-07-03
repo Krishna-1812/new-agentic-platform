@@ -2011,3 +2011,24 @@ async function buildDocx({ articleMeta, themeData, llmResults, recommendations, 
 }
 
 module.exports = router;
+
+// ── Reusable helpers for the Lite variant (article-enhancement-lite) ─────────────
+// Additive export only — attaches the shared, side-effect-free helpers to the
+// exported router object so the Lite route can reuse the crawl / markdown / docx
+// machinery without duplicating it. This does NOT change the router or any
+// existing behavior of this route.
+module.exports.helpers = {
+  fetchArticleResilient,
+  buildArticleDataFromText,
+  refineArticleBoundary,
+  generateThemeAndQuery,
+  htmlChunkToMarkdown,
+  splitHtmlSafely,
+  splitMarkdownByH2,
+  normalizeTablesToMarkdown,
+  normalizeNewMarkers,
+  enforceFaqHeadings,
+  insertBeforeTrailingFaq,
+  deduplicateAdditions,
+  buildDocx,
+};

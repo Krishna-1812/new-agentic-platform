@@ -71,6 +71,17 @@ const TOOLS = [
     ),
   },
   {
+    id: 'article-enhancement-lite', path: '/article-enhancement-lite', badge: 'Verified', group: 'Optimize', beta: true,
+    label: 'Enhance Article (Lite)', tagline: 'Verified, source-grounded enhancement — no external data',
+    description: 'A safe, external-tester version of the article enhancer. Uses only the article’s own content plus SEO/AEO best practices — no SERP, competitor, or search-API data — and never inserts statistics, expert quotes, or citations. Every highlighted change is verifiable against your original article.',
+    features: ['No SERP / SEMrush / web research', 'Never fabricates stats, quotes, or citations', 'Answer-first, lists & tables from existing content', 'FAQ answerable from the article itself'],
+    icon: (
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+      </svg>
+    ),
+  },
+  {
     id: 'on-page-audit', path: '/on-page-audit', badge: 'On-Page', group: 'Optimize',
     label: 'On-Page SEO Audit', tagline: '23 sections · live data · PageSpeed + CWV',
     description: 'Enter a URL and primary keywords to run a comprehensive on-page audit covering URL structure, meta, headings, content, schema, Core Web Vitals, canonicals, OG tags, crawlability, and more.',
