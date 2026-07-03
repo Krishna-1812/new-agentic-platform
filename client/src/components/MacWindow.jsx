@@ -2,6 +2,18 @@ import { useState } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { TOOL_GROUPS, getToolByPath } from '../toolsMeta';
 
+/* ── Embed mode ──────────────────────────────────────────────────────────────
+   When the app is framed with ?embed=1 (used by the public intelligence.position2.com
+   /app agents), render ONLY the tool content — no sidebar, no "SEO Studio" header,
+   no "All Tools" nav — so public users see just the single agent they opened.
+   Internal /p2/seo embeds omit the param and keep the full studio. */
+const EMBED_MODE = (() => {
+  try {
+    const p = new URLSearchParams(window.location.search);
+    return p.get('embed') === '1' || p.get('chrome') === 'none';
+  } catch (e) { return false; }
+})();
+
 /* ── Sidebar icons (14px line-art, Lucide-style) ── */
 const TOOL_ICONS = {
   'keyword-research': (
@@ -112,6 +124,15 @@ export default function MacWindow() {
         }))
         .filter(g => g.tools.length > 0)
     : TOOL_GROUPS;
+
+  // Chrome-less embed: only the tool content, for public framed use.
+  if (EMBED_MODE) {
+    return (
+      <div style={{ minHeight: '100vh', overflowY: 'auto', background: 'var(--bg)' }}>
+        <Outlet />
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
