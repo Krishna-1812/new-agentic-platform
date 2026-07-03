@@ -12,7 +12,7 @@ export const TOOL_GROUPS = [
     label: 'Optimize',
     tools: [
 { id: 'article-enhancement',    path: '/article-enhancement',    label: 'Enhance Existing Article', icon: '✍️' },
-      { id: 'article-enhancement-lite', path: '/article-enhancement-lite', label: 'Enhance Article (Lite)', icon: '✅', beta: true },
+      { id: 'article-enhancement-lite', path: '/article-enhancement-lite', label: 'Article Enhancer', icon: '📝' },
       { id: 'on-page-audit',          path: '/on-page-audit',          label: 'On-Page SEO Audit',      icon: '🔎' },
       { id: 'seo-geo-audit',          path: '/seo-geo-audit',          label: 'SEO & GEO Audit',        icon: '🌐' },
       { id: 'agent-readiness-audit',  path: '/agent-readiness-audit',  label: 'Agent Readiness Audit',  icon: '🤖' },

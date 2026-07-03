@@ -1,6 +1,7 @@
-// ── Enhance Article (Lite) ───────────────────────────────────────────────────────
+// ── Article Enhancer ───────────────────────────────────────────────────────────
 // A verified-only, self-contained variant of the "Enhance Existing Article" tool
-// intended for external testers. Two deliberate differences from the full tool:
+// (internal id: article-enhancement-lite). Two deliberate differences from the
+// full tool:
 //
 //   1. NO SERP / SEMrush / web research. It uses only the LLM's own reasoning about
 //      the article plus the enhancement KB. No competitor crawl, no search API.
@@ -708,7 +709,7 @@ router.post('/export/docx', async (req, res) => {
     const buf = await buildDocx({ articleMeta, themeData, recommendations, enhancedText });
     const slug = (articleMeta?.title || 'article').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.setHeader('Content-Disposition', `attachment; filename="${slug}-enhancement-lite.docx"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${slug}-article-enhancer.docx"`);
     res.send(buf);
   } catch (err) {
     console.error('[article-enhancement-lite] docx error:', err.message);

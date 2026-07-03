@@ -71,9 +71,9 @@ const TOOLS = [
     ),
   },
   {
-    id: 'article-enhancement-lite', path: '/article-enhancement-lite', badge: 'Verified', group: 'Optimize', beta: true,
-    label: 'Enhance Article (Lite)', tagline: 'Verified, source-grounded enhancement — no external data',
-    description: 'A safe, external-tester version of the article enhancer. Uses only the article’s own content plus SEO/AEO best practices — no SERP, competitor, or search-API data — and never inserts statistics, expert quotes, or citations. Every highlighted change is verifiable against your original article.',
+    id: 'article-enhancement-lite', path: '/article-enhancement-lite', badge: 'Verified', group: 'Optimize',
+    label: 'Article Enhancer', tagline: 'Preserves every word; adds only what’s provable',
+    description: 'Enhances an existing article using only its own content plus SEO/AEO best practices — no SERP, competitor, or search-API data — and never inserts statistics, expert quotes, or citations. Every highlighted change is grounded in and verifiable against your original article.',
     features: ['No SERP / SEMrush / web research', 'Never fabricates stats, quotes, or citations', 'Answer-first, lists & tables from existing content', 'FAQ answerable from the article itself'],
     icon: (
       <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">

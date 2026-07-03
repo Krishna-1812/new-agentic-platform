@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
-import { useTheme } from './ThemeContext';
 import { TOOL_GROUPS, getToolByPath } from '../toolsMeta';
 
 /* ── Sidebar icons (14px line-art, Lucide-style) ── */
@@ -88,20 +87,6 @@ const TOOL_ICONS = {
   ),
 };
 
-/* ── Sun / Moon icons ── */
-const SunIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="5" />
-    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-  </svg>
-);
-
-const MoonIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-  </svg>
-);
-
 const ChevronLeftIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
     <path d="M15 18l-6-6 6-6" />
@@ -112,7 +97,6 @@ const ChevronLeftIcon = () => (
 export default function MacWindow() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { theme, toggle } = useTheme();
   const [search, setSearch] = useState('');
 
   const isHome = pathname === '/';
@@ -240,37 +224,7 @@ export default function MacWindow() {
           </div>
 
           {/* Right controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingRight: 16 }}>
-            {/* Theme toggle */}
-            <button
-              onClick={toggle}
-              title="Toggle theme"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                cursor: 'pointer',
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                color: 'var(--text-2)',
-                outline: 'none',
-                transition: 'background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease)',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'var(--surface-2)';
-                e.currentTarget.style.borderColor = 'var(--border-strong)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'var(--surface)';
-                e.currentTarget.style.borderColor = 'var(--border)';
-              }}
-            >
-              {theme === 'light' ? <MoonIcon /> : <SunIcon />}
-            </button>
-          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingRight: 16 }} />
         </div>
 
         {/* ── Body: sidebar + content ── */}

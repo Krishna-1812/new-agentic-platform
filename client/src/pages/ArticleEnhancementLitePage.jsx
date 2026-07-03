@@ -29,7 +29,7 @@ function PageHeader({ navigate }) {
             All tools
           </button>
           <span style={{ color: 'var(--border)' }}>/</span>
-          <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>Enhance Article (Lite)</span>
+          <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>Article Enhancer</span>
         </div>
       </div>
     </header>
@@ -239,20 +239,6 @@ function EnhancedArticlePanel({ text }) {
   );
 }
 
-function VerifiedBanner() {
-  return (
-    <div style={{ background: 'var(--info-soft)', border: '1px solid var(--info)', borderRadius: 'var(--r-lg)', padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-      <svg style={{ width: '18px', height: '18px', color: 'var(--info)', flexShrink: 0, marginTop: '1px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      <p style={{ fontSize: '13px', color: 'var(--info)', lineHeight: 1.5, margin: 0 }}>
-        <strong>Verified mode.</strong> This tool uses only the article's own content plus SEO/AEO best practices — no SERP, competitor, or search-API data.
-        It never inserts statistics, expert quotes, or citations. Every highlighted change is grounded in — and verifiable against — your original article.
-      </p>
-    </div>
-  );
-}
-
 function CrawlFailedPanel({ manualContent, setManualContent, onContinue }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -448,7 +434,7 @@ export default function ArticleEnhancementLitePage() {
       const a = document.createElement('a');
       const slug = (articleMeta?.title || 'article').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50);
       a.href = burl;
-      a.download = `${slug}-enhancement-lite.docx`;
+      a.download = `${slug}-article-enhancer.docx`;
       a.click();
       URL.revokeObjectURL(burl);
     } catch (err) {
@@ -473,12 +459,8 @@ export default function ArticleEnhancementLitePage() {
       `}</style>
       <PageHeader navigate={navigate} />
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '28px 32px' }}>
-        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text)' }}>Enhance Article (Lite)</h1>
-          <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'var(--info-soft)', color: 'var(--info)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Beta</span>
-        </div>
-        <div style={{ marginBottom: '20px' }}>
-          <VerifiedBanner />
+        <div style={{ marginBottom: '24px' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text)' }}>Article Enhancer</h1>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px' }}>

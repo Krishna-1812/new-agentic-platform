@@ -1,23 +1,18 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 
-const ThemeContext = createContext({ theme: 'light', toggle: () => {} });
+// Dark mode is forced app-wide. The context keeps its { theme, toggle } shape so
+// existing consumers of useTheme() keep working; theme is always 'dark' and
+// toggle is a no-op.
+const ThemeContext = createContext({ theme: 'dark', toggle: () => {} });
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('seo-studio-theme');
-    if (saved === 'light' || saved === 'dark') return saved;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  });
-
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('seo-studio-theme', theme);
-  }, [theme]);
-
-  const toggle = () => setTheme(t => (t === 'light' ? 'dark' : 'light'));
+    document.documentElement.setAttribute('data-theme', 'dark');
+    try { localStorage.setItem('seo-studio-theme', 'dark'); } catch {}
+  }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggle }}>
+    <ThemeContext.Provider value={{ theme: 'dark', toggle: () => {} }}>
       {children}
     </ThemeContext.Provider>
   );

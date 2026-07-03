@@ -1,6 +1,6 @@
 {
   "module_id": "article-enhancement-lite",
-  "label": "Enhance Article (Lite)",
+  "label": "Article Enhancer",
   "description": "Verified-only, no-SERP variant of the article enhancer for external testers. Uses only the article's own content plus the enhancement KB — no SERP/SEMrush/web research — and never inserts statistics, expert quotes, or citations. Every highlighted change is grounded in the source article.",
   "required_kbs": [
     "best-practices/seo-geo-article-enhancement-knowledge-base"
