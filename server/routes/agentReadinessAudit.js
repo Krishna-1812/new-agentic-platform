@@ -233,11 +233,11 @@ async function runHttpChecks(inputUrl) {
 
 // ── Static check metadata ─────────────────────────────────────────────────────
 const CHECK_META = {
-  robots:         { cat: 'Discoverability',   label: 'robots.txt',                effort: 'done',   business: 'Crawl rules are accessible to all agents. This is the foundation — without it, agents cannot know what they are and are not allowed to index.', action: null },
-  sitemap:        { cat: 'Discoverability',   label: 'XML sitemap',               effort: 'done',   business: 'Agents can enumerate your full content structure. This accelerates discovery of all your pages, not just those linked from the homepage.', action: null },
+  robots:         { cat: 'Discoverability',   label: 'robots.txt',                effort: 'quick',  business: "Without an accessible robots.txt, agents and crawlers have no documented crawl rules to follow — many treat a missing or misconfigured robots.txt as a signal to skip the site's discovery process entirely, so your content may never get indexed by AI-driven search and citation systems.", action: 'Ensure /robots.txt exists at your domain root and is served with Content-Type: text/plain — some CMS/proxy setups serve it as text/html or return a 404 by default. ~15–30 min for a developer.' },
+  sitemap:        { cat: 'Discoverability',   label: 'XML sitemap',               effort: 'medium', business: 'Without a discoverable XML sitemap, agents can only find pages by following links from your homepage — pages more than a few clicks deep, or not linked in navigation at all, may never be discovered or indexed.', action: 'Generate an XML sitemap (most CMS platforms have a built-in option or plugin) and either declare it in robots.txt with "Sitemap: https://yoursite.com/sitemap.xml" or publish it at a common path like /sitemap.xml. ~half a day, less with an existing CMS.' },
   linkheaders:    { cat: 'Discoverability',   label: 'Link headers (RFC 8288)',   effort: 'quick',  business: 'Without Link headers, agents cannot auto-discover your API or documentation endpoints. They rely on guesswork instead of following your signposts — adding friction to every automated interaction.', action: 'Add Link: </.well-known/api-catalog>; rel="api-catalog" to your server\'s HTTP response headers. ~1–2 hours with a developer.' },
   markdown:       { cat: 'Content',           label: 'Markdown negotiation',      effort: 'medium', business: 'AI agents parse raw HTML including nav menus and footers — not your actual content. This degrades how AI tools summarize and cite your information, creating risk of misquotation or incomplete representation.', action: 'Enable Markdown for Agents via Cloudflare or server middleware. When a request includes Accept: text/markdown, respond with Content-Type: text/markdown. ~1–3 days of dev time.' },
-  aibots:         { cat: 'Bot Access',        label: 'AI bot rules',              effort: 'done',   business: "You're actively managing AI crawler access. This signals technical governance maturity to partners, platforms, and regulators.", action: null },
+  aibots:         { cat: 'Bot Access',        label: 'AI bot rules',              effort: 'quick',  business: "Without explicit AI-specific rules, your site has no documented stance on AI crawler access — it defaults to whatever your general robots.txt rules already allow, leaving partners, platforms, and regulators with no visible signal that access is a deliberate, managed decision.", action: 'Add explicit User-agent rules for AI crawlers (GPTBot, ClaudeBot, anthropic-ai, PerplexityBot, Google-Extended) to robots.txt — even an explicit "allow everything" rule signals deliberate, managed access rather than undefined default behavior. ~15–30 min for a developer.' },
   contentsignals: { cat: 'Bot Access',        label: 'Content signals',           effort: 'quick',  business: "You haven't declared whether your content can be used for AI training. That's an IP governance gap — and increasingly one partners, distributors, and regulators will ask about.", action: 'Add one line to robots.txt: Content-Signal: ai-train=no, search=yes, ai-input=yes. 15 minutes. No developer needed.' },
   webbotauth:     { cat: 'Bot Access',        label: 'Web bot auth',              effort: 'low',    business: "Your server can't cryptographically identify itself for agent-to-agent trust verification. Not urgent today — will matter as authenticated agent networks mature in 2026–27.", action: 'Backlog for H2 2026. Publish a JWKS at /.well-known/http-message-signatures-directory.' },
   apicatalog:     { cat: 'API / Auth / MCP',  label: 'API catalog (RFC 9727)',    effort: 'medium', business: "Agents and AI platforms can't auto-discover your APIs or developer resources. Your tools, integrations, and documentation are dark to the AI ecosystem.", action: 'Create /.well-known/api-catalog as application/linkset+json with service-desc and service-doc relations for any existing API. ~3–5 days.' },
@@ -293,8 +293,8 @@ Generate an executive summary. Be specific to this site's industry based on its 
 
 // Roadmap tier definitions (hard-coded to match client ROADMAP constant)
 const ROADMAP_TIERS = {
-  'This week':         ['contentsignals', 'linkheaders', 'form_labels', 'input_type', 'autocomplete', 'cookie_banner', 'vague_buttons'],
-  'This quarter':      ['markdown', 'apicatalog', 'oauth', 'schema_search', 'schema_action', 'js_rendering', 'interactive_divs'],
+  'This week':         ['robots', 'aibots', 'contentsignals', 'linkheaders', 'form_labels', 'input_type', 'autocomplete', 'cookie_banner', 'vague_buttons'],
+  'This quarter':      ['sitemap', 'markdown', 'apicatalog', 'oauth', 'schema_search', 'schema_action', 'js_rendering', 'interactive_divs'],
   'Strategic horizon': ['mcp', 'agentskills', 'webmcp', 'captcha'],
 };
 
@@ -311,8 +311,10 @@ const ROLE_MAP = {
 };
 
 const EFFORT_TIME_MAP = {
+  robots: '~15–30 min', aibots: '~30 min',
   contentsignals: '~15 min', linkheaders: '~2 hrs', form_labels: '~1 hr', input_type: '30 min',
   autocomplete: '30 min', cookie_banner: '30 min', vague_buttons: '1 hr',
+  sitemap: '~half a day',
   markdown: '1–3 days', apicatalog: '3–5 days', oauth: '1–2 wks', schema_search: '~1 day',
   schema_action: '~1 day', js_rendering: '1–2 wks', interactive_divs: '~1 day',
   mcp: '2–4 wks', agentskills: '4–6 wks', webmcp: '4–8 wks', captcha: '2–4 wks',
@@ -329,17 +331,50 @@ function buildPdfHtml(data) {
   const statusIcon  = { pass: '✓', fail: '✗', info: 'i' };
   const scoreColor  = site.score >= 70 ? '#3B6D11' : site.score >= 40 ? '#EF9F27' : '#E24B4A';
 
-  const checkRows = allChecks.map(c => `
-    <tr>
-      <td style="padding:8px 10px;border-bottom:1px solid #F3F4F6;">
-        <span style="background:${statusBg[c.status]};color:${statusColor[c.status]};padding:2px 7px;border-radius:3px;font-size:11px;font-weight:600;">
-          ${statusIcon[c.status]} ${c.status.toUpperCase()}
-        </span>
-      </td>
-      <td style="padding:8px 10px;border-bottom:1px solid #F3F4F6;font-weight:500;font-size:13px;">${c.label}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #F3F4F6;color:#6B7280;font-size:12px;">${c.cat}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#374151;">${c.tech || ''}</td>
-    </tr>`).join('');
+  const EFFORT_LABEL = { quick: 'Quick', medium: 'Medium', high: 'High' };
+
+  // Full per-check detail card — mirrors the on-screen expandable check row
+  // (technical finding, business impact, specific issues, recommended action)
+  // instead of the old single-line "finding" summary table.
+  const checkCards = allChecks.map(c => {
+    const isFlag = !!c.flagOnly;
+    const badgeColor = isFlag ? '#185FA5' : statusColor[c.status];
+    const badgeBg = isFlag ? '#E6F1FB' : statusBg[c.status];
+    const badgeLabel = isFlag ? 'FLAG' : c.status.toUpperCase();
+    const badgeIcon = isFlag ? 'i' : statusIcon[c.status];
+    const effort = EFFORT_LABEL[c.effort] || c.effort || '';
+    const showDetail = c.status !== 'pass' && c.detail && c.detail !== c.tech;
+
+    return `
+    <div style="border:1px solid #E5E7EB;border-radius:8px;padding:14px 16px;margin-bottom:10px;page-break-inside:avoid;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="background:${badgeBg};color:${badgeColor};padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;white-space:nowrap;">${badgeIcon} ${badgeLabel}</span>
+        <span style="font-weight:600;font-size:13px;flex:1;">${c.label}</span>
+        <span style="font-size:11px;color:#6B7280;white-space:nowrap;">${c.cat || ''}</span>
+        ${effort ? `<span style="font-size:10px;color:#6B7280;border:1px solid #D1D5DB;padding:1px 6px;border-radius:3px;white-space:nowrap;">${effort} effort</span>` : ''}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;${showDetail || c.action ? 'margin-bottom:8px;' : ''}">
+        <div style="background:#F9FAFB;border-radius:6px;padding:8px 10px;">
+          <div style="font-size:9px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;font-weight:600;">Technical finding</div>
+          <div style="font-size:11px;color:#374151;line-height:1.5;">${c.tech || '—'}</div>
+        </div>
+        <div style="background:#F9FAFB;border-radius:6px;padding:8px 10px;">
+          <div style="font-size:9px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;font-weight:600;">Business impact</div>
+          <div style="font-size:11px;color:#374151;line-height:1.5;">${c.business || '—'}</div>
+        </div>
+      </div>
+      ${showDetail ? `
+      <div style="background:#FAEEDA;border-left:3px solid #EF9F27;border-radius:6px;padding:8px 10px;${c.action ? 'margin-bottom:8px;' : ''}">
+        <div style="font-size:9px;font-weight:600;color:#92400E;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;">Specific issues found</div>
+        <div style="font-size:11px;color:#374151;line-height:1.5;">${c.detail}</div>
+      </div>` : ''}
+      ${c.action ? `
+      <div style="background:#E6F1FB;border-left:3px solid #185FA5;border-radius:6px;padding:8px 10px;">
+        <div style="font-size:9px;font-weight:600;color:#185FA5;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;">Recommended action</div>
+        <div style="font-size:11px;color:#374151;line-height:1.5;">${c.action}</div>
+      </div>` : ''}
+    </div>`;
+  }).join('');
 
   const catBars = cats.map(cat => {
     const w = cat.score;
@@ -476,17 +511,7 @@ function buildPdfHtml(data) {
   ${roadmapSection}
 
   <div style="font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">All Findings</div>
-  <table>
-    <thead>
-      <tr>
-        <th style="width:70px;">Status</th>
-        <th>Check</th>
-        <th style="width:140px;">Category</th>
-        <th>Finding</th>
-      </tr>
-    </thead>
-    <tbody>${checkRows}</tbody>
-  </table>
+  <div>${checkCards}</div>
 
   <div style="margin-top:24px;padding-top:16px;border-top:1px solid #E5E7EB;">
     <p style="font-size:12px;color:#6B7280;line-height:1.6;">This report covers ${allChecks.length} checks across HTTP discoverability, bot access, API/auth/MCP protocols, and on-page agent signals. Scores are weighted by business impact. On-page checks require browser rendering and are only available when additional URLs are provided. Generated by Arena · ${site.date}</p>
