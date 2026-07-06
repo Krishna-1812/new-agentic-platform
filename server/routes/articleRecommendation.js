@@ -102,7 +102,7 @@ router.get('/stream/:token', async (req, res) => {
     }).join('\n---\n');
 
     const analysisCompletion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5.4-mini',
       response_format: { type: 'json_object' },
       messages: [
         {
@@ -152,14 +152,11 @@ Analyze these pages and return a JSON object with these exact fields:
 
     const sourceUrls = top10.map((u, i) => `- [${i + 1}] ${u.url}`).join('\n');
 
-    const briefCompletion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      max_tokens: 4000,
-      messages: [
-        {
-          role: 'system',
-          content: `You are an expert SEO content strategist. Based on the analysis of the top 10 ranking pages provided, generate a detailed article content brief. The brief must follow this exact structure:`
-            + (kbContext?.systemPromptSuffix || '') + `
+    // Shared brief structure/rules template — reused for both the initial
+    // generation and the realignment pass below, so the two never drift apart.
+    const briefStructurePrompt = (extraNote = '') =>
+      `You are an expert SEO content strategist. Based on the analysis of the top 10 ranking pages provided, generate a detailed article content brief. The brief must follow this exact structure:`
+      + (kbContext?.systemPromptSuffix || '') + extraNote + `
 
 # H1: [Recommended article title]
 
@@ -188,8 +185,13 @@ Rules:
 - Every H2 must include Writing Instructions and Keywords
 - Add H3 subsections wherever the top pages show consistent sub-topics
 - Flag Visual Opportunities wherever a table, comparison, or diagram would strengthen the section
-- Base all recommendations strictly on patterns found in the top 10 pages`
-        },
+- Base all recommendations strictly on patterns found in the top 10 pages`;
+
+    const briefCompletion = await openai.chat.completions.create({
+      model: 'gpt-5.4-mini',
+      max_completion_tokens: 4000,
+      messages: [
+        { role: 'system', content: briefStructurePrompt() },
         {
           role: 'user',
           content: `Primary keyword: "${keyword}"
@@ -209,8 +211,70 @@ Generate the full content brief now.`
       ]
     });
 
-    const brief = briefCompletion.choices[0].message.content;
+    let brief = briefCompletion.choices[0].message.content;
     emit('step', { id: 'brief', status: 'done', message: 'Content brief ready' });
+
+    // ── Step 5: Theme alignment check ──────────────────────────────────
+    emit('step', { id: 'alignment', status: 'active', message: 'Checking brief alignment with primary keyword theme…' });
+
+    try {
+      const alignmentRes = await openai.chat.completions.create({
+        model: 'gpt-5.4-mini',
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: 'You are an expert SEO editor performing a quality check. Always respond with valid JSON only.' },
+          {
+            role: 'user',
+            content: `Primary keyword: "${keyword}"
+
+Content brief to review:
+${brief}
+
+Judge whether every section of this brief stays tightly on-theme for the primary keyword "${keyword}" — each H2/H3 should be a direct facet of this keyword's topic, not a tangential subject that drifted in from a source page covering a different angle.
+
+Return JSON: { "aligned": true|false, "reason": "one-sentence explanation" }`
+          }
+        ]
+      });
+
+      const alignment = JSON.parse(alignmentRes.choices[0].message.content);
+
+      if (alignment.aligned === false) {
+        emit('step', { id: 'alignment', status: 'active', message: `Realigning brief with "${keyword}" (${alignment.reason || 'drifted off-theme'})…` });
+
+        const realignCompletion = await openai.chat.completions.create({
+          model: 'gpt-5.4-mini',
+          max_completion_tokens: 4000,
+          messages: [
+            {
+              role: 'system',
+              content: briefStructurePrompt(`\n\nA review pass flagged the previous version of this brief as drifting off-theme from "${keyword}" (reason: "${alignment.reason || 'not specified'}"). Revise it so every section ties back to "${keyword}" directly, using ONLY the scraped competitor content provided by the user as source material — do not invent new facts or statistics.`)
+            },
+            {
+              role: 'user',
+              content: `Primary keyword: "${keyword}"
+
+Previous brief (flagged as off-theme):
+${brief}
+
+Scraped content from the top ranking pages (source material — ground all revisions in this):
+${contentSummary}
+
+Revise and return the FULL corrected content brief now, following the same structure rules, fully aligned with "${keyword}".`
+            }
+          ]
+        });
+
+        brief = realignCompletion.choices[0].message.content;
+        emit('step', { id: 'alignment', status: 'done', message: 'Brief realigned with primary keyword theme' });
+      } else {
+        emit('step', { id: 'alignment', status: 'done', message: 'Brief confirmed aligned with primary keyword' });
+      }
+    } catch (err) {
+      console.error('[article-recommendation] Alignment check error:', err.message);
+      emit('step', { id: 'alignment', status: 'done', message: `Alignment check skipped (${err.message})` });
+    }
+
     emit('result', { brief, sourceUrls: top10 });
 
   } catch (err) {

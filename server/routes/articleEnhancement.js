@@ -316,6 +316,7 @@ async function fetchViaReader(url) {
 // real article body is enhanced. Heuristic but conservative.
 function cleanReaderMarkdown(md, title = '') {
   let lines = md.split('\n');
+  const titleNorm = (title || '').replace(/\s+/g, ' ').trim().toLowerCase();
 
   // Lines that are pure site chrome — drop outright.
   const JUNK_LINE = /^(please enter your address|enter your address|share this( post| article)?|sign ?up|log ?in|sign in|support|contact us|see all|copyright\s*©|all rights reserved|do not sell|terms of service|privacy policy|cookie|become a driver|licensed retailers?|referral program|top cities|top brands|top categories|about us|careers|press|blog|delivery locations)/i;
@@ -362,6 +363,13 @@ function cleanReaderMarkdown(md, title = '') {
     if (JUNK_LINE.test(t)) return false;
     if (isPureLinks(t)) return false;
     if (isNavLinkLine(t)) return false;
+    // Post byline scraps the reader drags in above the body.
+    if (/^\d+\s*min\s+read$/i.test(t)) return false;                          // "5 min read"
+    if (/^[A-Z][a-z]{2,8}\.?\s+\d{1,2},?\s+\d{4}$/.test(t)) return false;     // "July 2, 2026"
+    if (titleNorm && !/^#/.test(t)) {                                          // breadcrumb duplicate of the title
+      const bare = t.replace(/^[●•·\-*\s]+/, '').replace(/\s+/g, ' ').trim().toLowerCase();
+      if (bare === titleNorm) return false;
+    }
     return true;
   });
 
@@ -375,7 +383,9 @@ function cleanReaderMarkdown(md, title = '') {
   lines = lines.slice(start);
 
   return lines.join('\n')
-    .replace(/^(#{1,6})\s+#{1,6}\s+/gm, '$1 ')  // collapse doubled heading markers ("## ## X" -> "## X")
+    .replace(/^(#{1,6})\s+#{1,6}\s+/gm, '$1 ')                              // collapse doubled heading markers ("## ## X" -> "## X")
+    .replace(/\[\[([^\]]*)\]\([^)]*\)([^\]]*)\]\([^)]*\)/g, (m, a, b) => (b || a)) // Jina doubled links -> anchor text
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')                                // any remaining markdown links -> anchor text
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }

@@ -248,6 +248,7 @@ function ToolCard({ tool, onClick }) {
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {tool.beta && <Badge variant="info">Beta</Badge>}
+          {tool.public && <Badge variant="success">Public</Badge>}
           <Badge variant="brand">{tool.badge}</Badge>
         </div>
       </div>

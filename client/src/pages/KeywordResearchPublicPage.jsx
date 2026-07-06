@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react';
 import KBContextSelector from '../components/KBContextSelector';
 
+// Public variant of KeywordResearchPage — identical backend workflow and state,
+// only the progress UI is trimmed: no query-variant list, no URL scoring detail,
+// no "SEMrush" step label (see KeywordResearchPage.jsx for the full internal view).
 const STEP_CONFIG = [
   { id: 'variants',    label: 'Query Variants',   desc: 'Expanding across intent variants' },
   { id: 'search',      label: 'SERP Analysis',    desc: 'Fetching top pages for all queries' },
-  { id: 'url_scoring', label: 'URL Scoring',      desc: 'Selecting best competitor pages' },
   { id: 'semrush',     label: 'SEMrush Keywords', desc: 'Pulling competitor rankings' },
   { id: 'analysis',    label: 'AI Shortlisting',  desc: 'Filtering & ranking keywords' },
   { id: 'validation',  label: 'Quality Check',    desc: 'Verifying primary & secondary keyword match quality' },
@@ -63,15 +65,9 @@ function DifficultyBar({ value }) {
   );
 }
 
-const PAGE_TYPE_STYLES = {
-  page:      { bg: 'var(--success-soft)', text: 'var(--success)' },
-  article:   { bg: 'var(--info-soft)',    text: 'var(--info)' },
-  directory: { bg: 'var(--surface)',      text: 'var(--text-3)' },
-};
-
 const cardShadow = '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)';
 
-export default function KeywordResearchPage() {
+export default function KeywordResearchPublicPage() {
   const [keyword, setKeyword] = useState('');
   const [intent, setIntent] = useState('commercial');
   const [client, setClient] = useState('');
@@ -422,6 +418,9 @@ export default function KeywordResearchPage() {
             if (!s.status) return null;
 
             const isActive = s.status === 'active';
+            // Public view: the SEMrush step's header (and its "SEMrush" naming)
+            // is hidden, but the underlying per-page keyword breakdown still shows.
+            const showHeader = stepCfg.id !== 'semrush';
 
             return (
               <div
@@ -436,135 +435,54 @@ export default function KeywordResearchPage() {
                 }}
               >
                 {/* Step header */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '14px 20px',
-                  background: isActive ? 'var(--primary-soft)' : 'var(--surface)',
-                }}>
-                  <StepBadge status={s.status} index={stepIndex} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>{stepCfg.label}</span>
-                      {isActive && (
-                        <span style={{
-                          fontSize: 12,
-                          padding: '2px 8px',
-                          borderRadius: 99,
-                          fontWeight: 500,
-                          background: 'var(--primary-soft)',
-                          color: 'var(--primary)',
-                          animation: 'pulse 2s infinite',
-                        }}>
-                          In progress
-                        </span>
-                      )}
-                      {s.status === 'done' && (
-                        <span style={{
-                          fontSize: 12,
-                          background: 'var(--surface)',
-                          color: 'var(--text-3)',
-                          padding: '2px 8px',
-                          borderRadius: 99,
-                          fontWeight: 500,
-                        }}>
-                          Done
-                        </span>
+                {showHeader && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '14px 20px',
+                    background: isActive ? 'var(--primary-soft)' : 'var(--surface)',
+                  }}>
+                    <StepBadge status={s.status} index={stepIndex} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>{stepCfg.label}</span>
+                        {isActive && (
+                          <span style={{
+                            fontSize: 12,
+                            padding: '2px 8px',
+                            borderRadius: 99,
+                            fontWeight: 500,
+                            background: 'var(--primary-soft)',
+                            color: 'var(--primary)',
+                            animation: 'pulse 2s infinite',
+                          }}>
+                            In progress
+                          </span>
+                        )}
+                        {s.status === 'done' && (
+                          <span style={{
+                            fontSize: 12,
+                            background: 'var(--surface)',
+                            color: 'var(--text-3)',
+                            padding: '2px 8px',
+                            borderRadius: 99,
+                            fontWeight: 500,
+                          }}>
+                            Done
+                          </span>
+                        )}
+                      </div>
+                      {s.message && (
+                        <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '2px 0 0' }}>{s.message}</p>
                       )}
                     </div>
-                    {s.message && (
-                      <p style={{ fontSize: 12, color: 'var(--text-2)', margin: '2px 0 0' }}>{s.message}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Variants step — show query chips */}
-                {stepCfg.id === 'variants' && s.status === 'done' && queries.length > 0 && (
-                  <div style={{
-                    padding: '14px 20px',
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 8,
-                    borderTop: '1px solid var(--border)',
-                  }}>
-                    {queries.map((q, i) => (
-                      <span
-                        key={i}
-                        style={i === 0
-                          ? { fontSize: 12, padding: '6px 12px', borderRadius: 99, fontWeight: 500, background: 'var(--nav-bg-top)', color: '#fff' }
-                          : { fontSize: 12, padding: '6px 12px', borderRadius: 99, fontWeight: 500, background: 'var(--surface)', color: 'var(--text)' }
-                        }
-                      >
-                        {i === 0 ? '★ ' : ''}{q}
-                      </span>
-                    ))}
                   </div>
                 )}
 
-                {/* URL scoring step — show scored URL cards */}
-                {stepCfg.id === 'url_scoring' && s.status === 'done' && urls.length > 0 && (
-                  <div style={{
-                    padding: '16px 20px',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-                    gap: 12,
-                    borderTop: '1px solid var(--border)',
-                  }}>
-                    {urls.map((u, idx) => {
-                      const ptStyle = PAGE_TYPE_STYLES[u.pageType] || PAGE_TYPE_STYLES.page;
-                      return (
-                        <div key={idx} style={{
-                          border: '1px solid var(--border)',
-                          borderRadius: 8,
-                          padding: 12,
-                          background: 'var(--surface)',
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                            <span style={{
-                              width: 20,
-                              height: 20,
-                              borderRadius: '50%',
-                              background: 'var(--primary)',
-                              color: '#fff',
-                              fontSize: 11,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontWeight: 700,
-                              flexShrink: 0,
-                            }}>
-                              {idx + 1}
-                            </span>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                              {(() => { try { return new URL(u.url).hostname; } catch { return u.url; } })()}
-                            </span>
-                          </div>
-                          <p style={{ fontSize: 12, color: 'var(--text-2)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.4, margin: '0 0 8px' }}>
-                            {u.title}
-                          </p>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: 12, padding: '2px 6px', borderRadius: 4, fontWeight: 500, background: ptStyle.bg, color: ptStyle.text }}>
-                              {u.pageType}
-                            </span>
-                            {u.queryCount > 1 && (
-                              <span style={{ fontSize: 12, padding: '2px 6px', borderRadius: 4, fontWeight: 500, background: 'var(--primary-soft)', color: 'var(--primary)' }}>
-                                {u.queryCount}/{totalQueries || queries.length} queries
-                              </span>
-                            )}
-                            <span style={{ fontSize: 12, padding: '2px 6px', borderRadius: 4, fontWeight: 500, background: 'var(--surface)', color: 'var(--text-2)', marginLeft: 'auto' }}>
-                              {u.rubricScore?.toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* SEMrush step — keywords per URL */}
+                {/* SEMrush step — keywords per URL (header hidden in public view) */}
                 {stepCfg.id === 'semrush' && (s.status === 'active' || s.status === 'done') && urls.length > 0 && (
-                  <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16, borderTop: '1px solid var(--border)' }}>
+                  <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {urls.map((u, idx) => {
                       const ud = urlData[u.url];
                       return (

@@ -314,19 +314,21 @@ Return exactly ${unique.length} scores in the same order.`
       ]
     });
 
-    const rawScores = JSON.parse(scoringRes.choices[0].message.content).scores;
-    const alignmentScores = rawScores.map(s => Math.min(Math.max(Number(s) || 0, 0), 10) / 10);
+    const rawScores = JSON.parse(scoringRes.choices[0].message.content).scores || [];
+    // Map over `unique`, not `rawScores` — the model can return fewer scores than
+    // requested for large pools, and indexing past a short array yields undefined.
+    const alignmentScores = unique.map((_, i) => Math.min(Math.max(Number(rawScores[i]) || 0, 0), 10) / 10);
 
     const volumes = unique.map(k => k.volume || 0);
     const maxVol = Math.max(...volumes, 1);
     const volumeScores = volumes.map(v => v / maxVol);
 
-    // New composite: 50% alignment + 30% urlFreq + 20% volume
+    // New composite: 80% alignment + 20% volume
     const scored = unique.map((k, i) => ({
       ...k,
       alignmentScore: alignmentScores[i],
       volumeScore: volumeScores[i],
-      compositeScore: 0.5 * alignmentScores[i] + 0.3 * k.urlFreqScore + 0.2 * volumeScores[i],
+      compositeScore: 0.8 * alignmentScores[i] + 0.2 * volumeScores[i],
     }));
     scored.sort((a, b) => b.compositeScore - a.compositeScore);
 
@@ -341,7 +343,7 @@ Return exactly ${unique.length} scores in the same order.`
       + (kbContext?.systemPromptSuffix || '');
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5.4-mini',
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: kbSystemPrompt },
@@ -353,9 +355,9 @@ Page intent: ${intent === 'informational' ? 'INFORMATIONAL / EDUCATIONAL' : 'COM
 ${kbContext ? 'Brand context is available in your system prompt — use it as a low-priority secondary signal to prefer keywords that fit the brand\'s vertical, audience, and positioning, but do not let it override the core selection rules below.' : ''}
 
 The keyword candidates below have been pre-ranked using a composite score:
-  • 50% — semantic alignment to the seed keyword (alignment score, 0–1)
-  • 30% — URL frequency: how many of the top-scoring competitor pages rank for this keyword (urlFreq, 0–1)
+  • 80% — semantic alignment to the seed keyword (alignment score, 0–1)
   • 20% — normalised search volume relative to the pool (0–1)
+(urlFreq — how many of the top-scoring competitor pages rank for this keyword — is shown below for context only and is not part of the composite score)
 Prefer higher composite-scored keywords when selecting primaries and secondaries, unless a hard rejection criterion applies.
 
 Competitor keywords from top ranking pages (via SEMrush):
@@ -368,7 +370,7 @@ PRIMARY SELECTION RULES (EXACTLY 2)
 Each primary keyword must satisfy ALL of the following simultaneously:
 
 1. Semantic core match — Directly targets the same core topic and intent as the seed keyword. Not a tangential subtopic or loose association.
-2. Topical completeness — Must preserve ALL key topical dimensions of the seed keyword. If the seed combines two concepts (e.g. "fleet management" + "last mile delivery"), a primary that drops either concept entirely is not acceptable — even if it has high search volume. A subset of the seed topic is not the same topic.
+2. Topical completeness — Must preserve ALL key topical dimensions of the seed keyword. If the seed combines two concepts (e.g. "fleet management" + "last mile delivery"), a primary that drops either concept entirely is not acceptable — even if it has high search volume. A subset of the seed topic is not the same topic. This also applies when the seed pairs a product/equipment with an industry, vertical, or use-case qualifier (e.g. "Forklifts for Chemical Industry"): a keyword about a component, accessory, or sub-part of that equipment (e.g. "forklift battery") is NOT a valid primary even if it shares a head word with the seed and has far higher volume — it drops the industry/vertical qualifier entirely and targets a different buyer intent.
 3. Intent alignment — Must match the stated page intent (${intent === 'informational' ? 'informational/educational — avoid transactional modifiers like cost, pricing, booking, near me' : 'commercial/transactional — avoid purely informational or how-to terms'}).
 4. Mutual distinctiveness — Both primaries must differ meaningfully from each other. Different modifier angle, different intent signal, or different funnel position. Near-duplicates are not permitted.
 
@@ -424,6 +426,101 @@ Use the actual volume and difficulty numbers from the input list. If data is mis
 
     const result = JSON.parse(completion.choices[0].message.content);
     emit('step', { id: 'analysis', status: 'done', message: 'Keyword shortlist ready' });
+
+    // ── Stage 4: Primary + secondary keyword quality validation ──────────
+    emit('step', { id: 'validation', status: 'active', message: 'Validating primary & secondary keyword match quality…' });
+
+    try {
+      const fullPoolList = scored.map(k =>
+        `- ${k.keyword} | volume: ${k.volume || 'N/A'} | difficulty: ${k.difficulty || 'N/A'} | alignment: ${k.alignmentScore.toFixed(3)} | composite: ${k.compositeScore.toFixed(3)}`
+      ).join('\n');
+
+      const primaryListText = (result.primary || []).map((p, i) =>
+        `${i + 1}. "${p.keyword}" | volume: ${p.volume || 'N/A'} | difficulty: ${p.difficulty || 'N/A'} | reason: ${p.reason || 'N/A'}`
+      ).join('\n');
+
+      const secondaryListText = (result.secondary || []).map((s, i) =>
+        `${i + 1}. "${s.keyword}" | volume: ${s.volume || 'N/A'} | difficulty: ${s.difficulty || 'N/A'}`
+      ).join('\n');
+
+      const validationRes = await openai.chat.completions.create({
+        model: 'gpt-5.4-mini',
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: 'You are an SEO quality-control assistant. Always respond with valid JSON only.' },
+          {
+            role: 'user',
+            content: `Seed keyword: "${keyword}"
+Page intent: ${intent === 'informational' ? 'INFORMATIONAL / EDUCATIONAL' : 'COMMERCIAL / TRANSACTIONAL'}
+
+Currently selected primary keywords:
+${primaryListText}
+
+Currently selected secondary keywords:
+${secondaryListText}
+
+Full deduplicated keyword pool for this seed keyword, sorted by composite score (highest first):
+${fullPoolList}
+
+---
+
+TASK
+
+Judge whether the currently selected primary AND secondary keywords are a strong match for the seed keyword.
+
+PRIMARY keywords (exactly 2) must satisfy ALL of:
+1. Semantic core match — directly targets the same core topic and intent as the seed keyword.
+2. Topical completeness — preserves ALL key topical dimensions of the seed keyword. Pay special attention when the seed pairs a product/equipment with an industry, vertical, or use-case qualifier (e.g. "Forklifts for Chemical Industry"): a keyword about a component, accessory, or sub-part of that equipment (e.g. "forklift battery") FAILS this rule even if it shares a head word with the seed and has far higher search volume — it drops the industry/vertical qualifier entirely and targets a different buyer.
+3. Intent alignment — matches the stated page intent (${intent}).
+4. Mutual distinctiveness — the two primaries differ meaningfully from each other.
+
+Before deciding, explicitly re-check each currently selected primary word-by-word against the seed keyword: does it preserve every core noun, industry, and qualifier in the seed, not just the head product term? If it drops any of them, it fails rule 2 regardless of volume, alignment score, or how many other pool candidates share the same flaw.
+
+SECONDARY keywords (exactly 10) must collectively:
+- Be complementary, supporting, or long-tail extensions of the seed keyword
+- Remain consistent with the ${intent} intent
+- Be viable for supporting sections on the same page, or as separate pieces within the same topical cluster
+${intent === 'commercial'
+  ? '- Not be informational by nature (e.g. "what is", "how to", "guide", "explained", "news", "trends", "statistics") regardless of volume'
+  : '- Not carry transactional/purchase intent (e.g. "pricing", "cost", "buy", "near me", "hire", "quote", "booking")'}
+
+- If everything currently selected satisfies its rules, return verdict "good" and return primary/secondary unchanged.
+- If any keyword(s) fail, search the full keyword pool above for better-matching replacements that satisfy the relevant rules. Replace only the keyword(s) that failed; keep everything that already passes.
+- If NO keyword in the full pool — including the ones currently selected — actually satisfies all the rules for a failing slot, do not settle for the least-bad option and call it "good". Return verdict "insufficient" instead, keep your best-available selections in place, and use "warning" to tell the user plainly why match quality is limited (e.g. the available keyword data has no options with adequate search volume for this specific angle, or the entire candidate pool skews toward an adjacent product/topic and lacks genuine coverage of the seed's full intent). Returning "insufficient" for a niche or narrow seed keyword is a normal, expected outcome — do not avoid it just because you found *some* keyword to fill the slot.
+
+Return this exact JSON:
+{
+  "verdict": "good" | "replaced" | "insufficient",
+  "primary": [
+    {"keyword": "...", "volume": 0, "difficulty": 0, "reason": "..."}
+  ],
+  "secondary": [
+    {"keyword": "...", "volume": 0, "difficulty": 0}
+  ],
+  "warning": null
+}
+
+"primary" must always contain exactly 2 keywords, "secondary" must always contain exactly 10. "warning" must be null unless verdict is "insufficient", in which case it must be a one-sentence explanation for the user.`
+          }
+        ]
+      });
+
+      const validation = JSON.parse(validationRes.choices[0].message.content);
+      if (Array.isArray(validation.primary) && validation.primary.length === 2) {
+        result.primary = validation.primary;
+      }
+      if (Array.isArray(validation.secondary) && validation.secondary.length === 10) {
+        result.secondary = validation.secondary;
+      }
+      if (typeof validation.warning === 'string' && validation.warning.trim()) {
+        result.warning = validation.warning.trim();
+      }
+      emit('step', { id: 'validation', status: 'done', message: result.warning ? 'Match quality warning issued' : 'Primary & secondary keywords verified' });
+    } catch (err) {
+      console.error('[keyword-research] Validation error:', err.message);
+      emit('step', { id: 'validation', status: 'done', message: `Validation skipped (${err.message})` });
+    }
+
     emit('result', result);
 
   } catch (err) {

@@ -5,6 +5,7 @@ import MacWindow from './components/MacWindow';
 import HomePage from './pages/HomePage';
 import ContentResearchPage from './pages/ContentResearchPage';
 import KeywordResearchPage from './pages/KeywordResearchPage';
+import KeywordResearchPublicPage from './pages/KeywordResearchPublicPage';
 import KnowledgeBasePage from './pages/KnowledgeBasePage';
 import KBEditorPage from './pages/KBEditorPage';
 import CreateKBPage from './pages/CreateKBPage';
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/content-research" element={<ContentResearchPage />} />
           <Route path="/keyword-research" element={<KeywordResearchPage />} />
+          <Route path="/keyword-research-public" element={<KeywordResearchPublicPage />} />
           <Route path="/kb" element={<KnowledgeBasePage />} />
           <Route path="/kb/new" element={<CreateKBPage />} />
           <Route path="/kb/audit" element={<ModuleAuditPage />} />

@@ -392,6 +392,29 @@ function splitInlineListMarkers(text) {
   });
 }
 
+// Guard: every UNMARKED (non-[NEW]) sentence in the model's output must exist in the
+// original chunk. This is the reverse of originalPreserved — it stops the model from
+// slipping in a new or lightly-reworded sentence that isn't flagged as [NEW] (which
+// would read as original article text that the reader can't actually verify). Headings
+// and list/table rows are excluded (checked/reformatted elsewhere).
+function noUnmarkedAdditions(originalMd, enhancedOut) {
+  const origNorm = normForCompare(originalMd);
+  const asOriginal = (enhancedOut || '').replace(/\[NEW\][\s\S]*?\[\/NEW\]/g, ' ');
+  const sents = [];
+  for (const line of asOriginal.split('\n')) {
+    const t = line.trim();
+    if (!t || /^#{1,6}\s/.test(t)) continue;
+    if (/^\s*(?:\d+[.)]|[-*|])/.test(t)) continue;
+    for (const s of splitSentencesLite(t)) {
+      if (normForCompare(s).replace(/ /g, '').length >= 25) sents.push(s);
+    }
+  }
+  if (!sents.length) return true;
+  let foreign = 0;
+  for (const s of sents) if (!origNorm.includes(normForCompare(s))) foreign++;
+  return (foreign / sents.length) <= 0.05;
+}
+
 // Remove self-referential meta phrasing ("the article says…") from generated FAQ
 // answers and re-capitalize the sentence starts left behind.
 function stripMetaReferences(t) {
@@ -510,6 +533,9 @@ Apply only verified, source-grounded improvements: an answer-first sentence buil
       // Guard 1 — verbatim preservation: if the model dropped or reworded original
       // text beyond a small tolerance, discard its version and keep the original.
       if (!originalPreserved(mdChunk, out)) return mdChunk;
+      // Guard 1b — no unmarked additions: every non-[NEW] sentence must be in the
+      // original, so nothing ungrounded can appear as if it were the author's text.
+      if (!noUnmarkedAdditions(mdChunk, out)) return mdChunk;
       // Guard 2 — remove [NEW] sentences that merely restate an existing sentence.
       out = dropRedundantNewSentences(out);
       return out;

@@ -72,6 +72,15 @@ function getSectionText(imgEl, $) {
   return '';
 }
 
+// Generic call-to-action link text that is never a meaningful image subject.
+// Without this filter, a "View All" CTA becomes the alt/service name
+// (e.g. "View All at Jamaica Plain") for before/after and article thumbnails.
+const GENERIC_ANCHOR_RE = /^(view|see|read|learn|find out|show)\s+(all|more|details)$|^(book( now| online| an appointment)?|schedule( now)?|call( now)?|contact( us)?|get started|explore|details|more|next|previous|view all|read more|learn more)$/i;
+
+function isUsefulAnchor(t) {
+  return t.length > 2 && !GENERIC_ANCHOR_RE.test(t);
+}
+
 function getAnchorText(imgEl, $) {
   let node = $(imgEl);
   for (let i = 0; i < 10; i++) {
@@ -80,18 +89,18 @@ function getAnchorText(imgEl, $) {
     const tag = (node.prop('tagName') || '').toUpperCase();
     if (tag === 'A') {
       const t = node.text().trim();
-      if (t.length > 2) return t;
+      if (isUsefulAnchor(t)) return t;
     }
     // Prefer service links first
     const serviceLink = node.find('a[href*="/dental-services/"]').first();
     if (serviceLink.length) {
       const t = serviceLink.text().trim();
-      if (t.length > 2) return t;
+      if (isUsefulAnchor(t)) return t;
     }
     const a = node.find('a').first();
     if (a.length) {
       const t = a.text().trim();
-      if (t.length > 2) return t;
+      if (isUsefulAnchor(t)) return t;
     }
   }
   return '';
@@ -135,7 +144,14 @@ function getDoctorInfo(imgEl, $) {
 
 // ── Filename utilities ────────────────────────────────────────────────────────
 
-const NON_DESCRIPTIVE_RE = /^(untitled|img_?|dsc_?|image|photo|\d+)/i;
+// A base name is only "non-descriptive" when the WHOLE name is a generic token
+// (optionally with a trailing number) — not merely because it starts with one.
+// Previously `image-bluecross-blueshield-logo` matched and got truncated to `image`.
+const NON_DESCRIPTIVE_RE = /^(?:untitled|img|dsc|image|photo)(?:[-_]?\d+)?$|^\d+$/i;
+
+// Matches one trailing image extension. Applied repeatedly to peel Drupal image-style
+// double extensions like `logo.png.webp` (which otherwise leave ".Png" in the alt text).
+const IMAGE_EXT_RE = /\.(?:jpe?g|png|webp|gif|svg|avif|bmp|tiff?)$/i;
 
 function slugify(text) {
   return (text || '')
@@ -146,16 +162,19 @@ function slugify(text) {
 }
 
 function cleanFilenameBase(filename) {
-  let base = filename.replace(/^[a-f0-9]+_/i, '');  // strip hash prefix
-  base = base.replace(/\.[^.]+$/, '');               // strip extension
+  let base = (filename || '').split('?')[0];         // drop any query string (e.g. ?itok=)
+  base = base.replace(/^[a-f0-9]{6,}_/i, '');        // strip hash prefix (6+ hex, so words like "aetna_" survive)
+  while (IMAGE_EXT_RE.test(base)) {                  // strip ALL trailing image extensions (.png.webp → )
+    base = base.replace(IMAGE_EXT_RE, '');
+  }
   base = base.replace(/-\d+x\d+/g, '');             // strip dimension suffix
   base = base.replace(/^[a-z]{2}\./i, '');           // strip locale prefix (e.g. nc.)
+  base = base.replace(/_\d+$/, '');                  // strip Drupal dedup suffix (_0, _1) — keeps years like -2018
   return base;
 }
 
 function isNonDescriptive(filename) {
-  const base = cleanFilenameBase(filename);
-  return NON_DESCRIPTIVE_RE.test(base.replace(/[-]+/g, '_'));
+  return NON_DESCRIPTIVE_RE.test(cleanFilenameBase(filename));
 }
 
 function getLocationSlug(url) {
@@ -320,18 +339,27 @@ function generateAltTag(type, config, locationName, doctorInfo, serviceName, pla
 
 // Bug 3: best-effort fallback for images that remain UNKNOWN after all classifiers.
 // Brand- and location-agnostic: only appends brand / location when they are provided.
-function fallbackAltTag(filename, locationName, config) {
-  const base = cleanFilenameBase(filename)
+function fallbackAltTag(filename, locationName, config, sectionText, existingAlt) {
+  let base = cleanFilenameBase(filename)
     .replace(/[-_]+/g, ' ')
     .replace(/\b\w/g, c => c.toUpperCase())
     .trim();
+  base = base.replace(/^Image\s+(?=\S)/, ''); // drop leading "Image" filename artifact (e.g. Drupal "image-bluecross-…")
   const subject = base || 'Image';
   const brand = (config.brandName || '').trim();
   const loc = `${(locationName || '').trim()}${config.locationSuffix || ''}`.trim();
-  let out = subject;
-  if (brand) out += ` at ${brand}`;
-  if (loc) out += ` in ${loc}`;
-  return out;
+
+  // Brand assets (logos, insurance/payment/award badges) are byte-identical across
+  // every location page — appending " in {location}" is inaccurate and reads as spam.
+  const isBrandAsset =
+    /logo|badge|award|readers?-?choice|honorable|magazine|best-of/i.test(filename) ||
+    /logo/i.test(existingAlt || '') ||
+    /insurance|payment|we accept|accepted|award|recognition|membership/i.test(sectionText || '');
+
+  const parts = [subject];
+  if (brand) parts.push('at', brand);
+  if (loc && !isBrandAsset) parts.push('in', loc);
+  return parts.join(' ').replace(/\s+/g, ' ').trim();
 }
 
 async function generateHeroAltWithGPT(imageUrl, locationName, config, openai) {
@@ -506,9 +534,13 @@ async function processUrl(pageUrl, config, openai) {
 
       // Bug 3: generate a best-effort fallback alt for anything still UNKNOWN
       if (type === 'UNKNOWN' && !suggestedAlt) {
-        suggestedAlt = fallbackAltTag(filename, locationName, config);
+        suggestedAlt = fallbackAltTag(filename, locationName, config, sectionText, alt);
         notes = (notes ? notes + ' | ' : '') + 'Fallback alt – classification failed, review manually';
       }
+
+      // Normalize whitespace so an empty brand/location never leaves a double space
+      // (e.g. "Veneers at  Jamaica Plain") or a dangling connective.
+      suggestedAlt = (suggestedAlt || '').replace(/\s+/g, ' ').replace(/\s+(at|in)\s*$/i, '').trim();
 
       const renamePriority = getRenamePriority(filename, type);
       if (renamePriority === 'Critical') {

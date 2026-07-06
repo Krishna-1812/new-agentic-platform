@@ -8,6 +8,7 @@ const STEPS = [
   { id: 'scrape',   label: 'Scraping Pages',        icon: '📄' },
   { id: 'analysis', label: 'Analyzing Content',     icon: '🔬' },
   { id: 'brief',    label: 'Building Brief',         icon: '✍️' },
+  { id: 'alignment', label: 'Alignment Check',       icon: '🎯' },
 ];
 
 function StepBadge({ status, number }) {
