@@ -5,6 +5,7 @@ import { Badge } from '../ui/Badge';
 import { Field } from '../ui/Field';
 import { useToast } from '../ui/Toast';
 import { mp } from '../lib/marketPotentialApi';
+import { refreshSemrushBalance } from '../lib/semrushBalanceStore';
 import USMetroMap from '../components/USMetroMap';
 import DecisionBoard, { topMarket } from '../components/marketPotential/DecisionBoard';
 import ScenarioDiff from '../components/marketPotential/ScenarioDiff';
@@ -278,6 +279,7 @@ export default function MarketPotentialPage() {
       setResult(r);
       if (r.usage) setMeta((m) => (m ? { ...m, units: { ...m.units, ...r.usage } } : m));
       setStep('results');
+      refreshSemrushBalance();
       return r;
     } catch (e) { toast.error(e.message); throw e; } finally { setBusy(false); }
   };

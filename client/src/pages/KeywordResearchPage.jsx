@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { refreshSemrushBalance } from '../lib/semrushBalanceStore';
 
 const STEP_CONFIG = [
   { id: 'variants',    label: 'Query Variants',   desc: 'Expanding across intent variants' },
@@ -133,6 +134,7 @@ export default function KeywordResearchPage() {
         throw new Error(err.error || 'Failed to start');
       }
       const { token } = await initRes.json();
+      refreshSemrushBalance();
 
       const es = new EventSource(`/api/keyword-research/stream/${token}`);
       esRef.current = es;

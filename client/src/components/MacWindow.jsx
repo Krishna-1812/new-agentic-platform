@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { TOOL_GROUPS, getToolByPath } from '../toolsMeta';
+import SemrushBalanceBadge from './SemrushBalanceBadge';
 
 /* ── Embed mode ──────────────────────────────────────────────────────────────
    When the app is framed with ?embed=1 (used by the public intelligence.position2.com
@@ -266,6 +267,11 @@ export default function MacWindow() {
             flexDirection: 'column',
             overflow: 'hidden',
           }}>
+            {/* Semrush balance */}
+            <div style={{ padding: '12px 12px 0' }}>
+              <SemrushBalanceBadge />
+            </div>
+
             {/* Search */}
             <div style={{ padding: '12px 12px 8px' }}>
               <div style={{

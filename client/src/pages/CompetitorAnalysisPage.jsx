@@ -5,6 +5,7 @@ import CompetitorConfirmation from '../components/competitorAnalysis/CompetitorC
 import ManualUpload from '../components/competitorAnalysis/ManualUpload';
 import ProgressTracker from '../components/competitorAnalysis/ProgressTracker';
 import ReportPreview from '../components/competitorAnalysis/ReportPreview';
+import { refreshSemrushBalance } from '../lib/semrushBalanceStore';
 
 const API_STEPS  = [{ id: 1, label: 'Input' }, { id: 2, label: 'Discovery' }, { id: 3, label: 'Confirm' }, { id: 4, label: 'Analysis' }, { id: 5, label: 'Report' }];
 const MANUAL_STEPS = [{ id: 1, label: 'Input' }, { id: 3, label: 'Upload' }, { id: 4, label: 'Analysis' }, { id: 5, label: 'Report' }];
@@ -123,6 +124,7 @@ export default function CompetitorAnalysisPage() {
       setCompetitors(data.competitors || []);
       setGptSummary(data.gptSummary || '');
       setStep(3);
+      refreshSemrushBalance();
     } catch (err) {
       setError(err.message);
       setStep(1);
@@ -148,6 +150,7 @@ export default function CompetitorAnalysisPage() {
       setStep(4);
       setLoading(false);
       connectSSE(jobId);
+      refreshSemrushBalance();
     } catch (err) {
       setError(err.message);
       setLoading(false);

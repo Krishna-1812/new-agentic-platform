@@ -29,6 +29,7 @@ const robotsMonitorRoutes = require('./modules/robotsMonitor/routes');
 const hubSpokeRoutes = require('./modules/hubSpoke/routes');
 const onPageAuditRoutes = require('./modules/onPageAudit/routes');
 const marketPotentialRoutes = require('./modules/marketPotential/routes');
+const semrushRoutes = require('./routes/semrush');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -96,6 +97,7 @@ app.use('/api/robots-monitor',          lpbLimiter, requireAuth, robotsMonitorRo
 app.use('/api/hub-spoke',               lpbLimiter, requireAuth, hubSpokeRoutes);
 app.use('/api/on-page-audit',           lpbLimiter, requireAuth, onPageAuditRoutes);
 app.use('/api/market-potential',        lpbLimiter, requireAuth, marketPotentialRoutes);
+app.use('/api/semrush',                 requireAuth, semrushRoutes);
 
 // ── SEO team only ────────────────────────────────────────────────────────────
 app.use('/api/search',              requireSeo, searchRoutes);
