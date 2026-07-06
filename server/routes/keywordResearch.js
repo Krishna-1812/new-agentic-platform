@@ -369,7 +369,7 @@ PRIMARY SELECTION RULES (EXACTLY 2)
 
 Each primary keyword must satisfy ALL of the following simultaneously:
 
-1. Semantic core match — Directly targets the same core topic and intent as the seed keyword. Not a tangential subtopic or loose association.
+1. Semantic core match — Directly targets the same core topic and intent as the seed keyword. Not a tangential subtopic or loose association. Pay special attention when the seed expresses a PROCESS, how-to, migration, or troubleshooting action (e.g. "How to Switch LLM Providers Without Downtime"): a keyword about COMPARING or CHOOSING BETWEEN options (e.g. "best llm", "compare llm models", "which llm is best for X") is NOT a valid match even though it shares the same topic noun — it serves a reader at the evaluation/selection stage, not a reader executing or troubleshooting the specific action the seed describes. Sharing a head noun (the product/technology/topic word) is not the same as sharing the seed's core intent.
 2. Topical completeness — Must preserve ALL key topical dimensions of the seed keyword. If the seed combines two concepts (e.g. "fleet management" + "last mile delivery"), a primary that drops either concept entirely is not acceptable — even if it has high search volume. A subset of the seed topic is not the same topic. This also applies when the seed pairs a product/equipment with an industry, vertical, or use-case qualifier (e.g. "Forklifts for Chemical Industry"): a keyword about a component, accessory, or sub-part of that equipment (e.g. "forklift battery") is NOT a valid primary even if it shares a head word with the seed and has far higher volume — it drops the industry/vertical qualifier entirely and targets a different buyer intent.
 3. Intent alignment — Must match the stated page intent (${intent === 'informational' ? 'informational/educational — avoid transactional modifiers like cost, pricing, booking, near me' : 'commercial/transactional — avoid purely informational or how-to terms'}).
 4. Mutual distinctiveness — Both primaries must differ meaningfully from each other. Different modifier angle, different intent signal, or different funnel position. Near-duplicates are not permitted.
@@ -384,6 +384,7 @@ Select exactly 10 keywords that collectively:
 - Are complementary, supporting, or long-tail extensions of the seed keyword
 - Remain consistent with the ${intent} intent
 - Are viable for supporting sections on the same page, OR as separate pieces within the same topical cluster
+- Match the seed's actual intent stage — if the seed expresses a PROCESS, how-to, migration, or troubleshooting action, do NOT fill the list with COMPARISON/SELECTION keywords (e.g. "best X", "compare X", "which X is best") just because they share a topic noun with the seed. A shared noun is not a shared intent.
 ${intent === 'commercial' ? `
 SECONDARY COMMERCIAL ENFORCEMENT — reject any secondary keyword that:
 - Starts with or contains "what is", "what does", "what are", "how to", "how long", "how does", "why", "when"
@@ -469,17 +470,18 @@ TASK
 Judge whether the currently selected primary AND secondary keywords are a strong match for the seed keyword.
 
 PRIMARY keywords (exactly 2) must satisfy ALL of:
-1. Semantic core match — directly targets the same core topic and intent as the seed keyword.
+1. Semantic core match — directly targets the same core topic and intent as the seed keyword. Pay special attention when the seed expresses a PROCESS, how-to, migration, or troubleshooting action (e.g. "How to Switch LLM Providers Without Downtime"): a keyword about COMPARING or CHOOSING BETWEEN options (e.g. "best llm", "compare llm models", "which llm is best for X") FAILS this rule even though it shares the same topic noun — it serves a reader at the evaluation/selection stage, not a reader executing or troubleshooting the specific action the seed describes.
 2. Topical completeness — preserves ALL key topical dimensions of the seed keyword. Pay special attention when the seed pairs a product/equipment with an industry, vertical, or use-case qualifier (e.g. "Forklifts for Chemical Industry"): a keyword about a component, accessory, or sub-part of that equipment (e.g. "forklift battery") FAILS this rule even if it shares a head word with the seed and has far higher search volume — it drops the industry/vertical qualifier entirely and targets a different buyer.
 3. Intent alignment — matches the stated page intent (${intent}).
 4. Mutual distinctiveness — the two primaries differ meaningfully from each other.
 
-Before deciding, explicitly re-check each currently selected primary word-by-word against the seed keyword: does it preserve every core noun, industry, and qualifier in the seed, not just the head product term? If it drops any of them, it fails rule 2 regardless of volume, alignment score, or how many other pool candidates share the same flaw.
+Before deciding, explicitly re-check each currently selected primary word-by-word against the seed keyword: does it preserve every core noun, industry, and qualifier in the seed, not just the head product term? Does it match the seed's actual intent (process/how-to vs. comparison/selection), not just its topic noun? If it fails either check, it fails rules 1/2 regardless of volume, alignment score, or how many other pool candidates share the same flaw.
 
 SECONDARY keywords (exactly 10) must collectively:
 - Be complementary, supporting, or long-tail extensions of the seed keyword
 - Remain consistent with the ${intent} intent
 - Be viable for supporting sections on the same page, or as separate pieces within the same topical cluster
+- Match the seed's actual intent stage — if the seed expresses a PROCESS, how-to, migration, or troubleshooting action, a slate dominated by COMPARISON/SELECTION keywords (e.g. "best X", "compare X", "which X is best") sharing only a topic noun with the seed FAILS this rule, even if that's most of what the candidate pool contains.
 ${intent === 'commercial'
   ? '- Not be informational by nature (e.g. "what is", "how to", "guide", "explained", "news", "trends", "statistics") regardless of volume'
   : '- Not carry transactional/purchase intent (e.g. "pricing", "cost", "buy", "near me", "hire", "quote", "booking")'}
