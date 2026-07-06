@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 
 // Verified-only, no-SERP variant of the article enhancer. Pipeline steps mirror
 // the backend (server/routes/articleEnhancementLite.js).
+const KB_ID = 'seo-geo-article-enhancement-knowledge-base';
+
 const STEPS = [
   { id: 'crawl',     label: 'Crawl Article' },
   { id: 'theme',     label: 'Theme & Query' },
@@ -297,8 +299,6 @@ export default function ArticleEnhancementLitePage() {
   const [url, setUrl] = useState('');
   const [urlError, setUrlError] = useState('');
   const [contentType, setContentType] = useState('article');
-  const [kbs, setKbs] = useState([]);
-  const [selectedKbId, setSelectedKbId] = useState('seo-geo-article-enhancement-knowledge-base');
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState('');
@@ -318,16 +318,6 @@ export default function ArticleEnhancementLitePage() {
   const [activeTab, setActiveTab] = useState('recommendations');
   const esRef = useRef(null);
   const crawlFailedRef = useRef(false);
-
-  useEffect(() => {
-    fetch('/api/kb', { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => {
-        const list = (d.knowledge_bases || []).filter(kb => kb.active);
-        setKbs(list);
-      })
-      .catch(() => {});
-  }, []);
 
   function validateUrl(val) {
     try { new URL(val); return true; } catch { return false; }
@@ -356,7 +346,7 @@ export default function ArticleEnhancementLitePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ url: url.trim(), kbId: selectedKbId, contentType, manualContent: manualContent || undefined }),
+        body: JSON.stringify({ url: url.trim(), kbId: KB_ID, contentType, manualContent: manualContent || undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to start');
@@ -511,26 +501,21 @@ export default function ArticleEnhancementLitePage() {
                   </select>
                 </div>
 
-                {/* KB selector */}
+                {/* KB selector — fixed to the single supported KB, not user-editable */}
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '6px' }}>Knowledge Base</label>
                   <select
-                    value={selectedKbId}
-                    onChange={e => setSelectedKbId(e.target.value)}
-                    disabled={running}
+                    value={KB_ID}
+                    disabled
                     style={{
                       width: '100%', padding: '10px 12px', fontSize: '14px',
                       border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
-                      background: running ? 'var(--surface)' : 'var(--card)',
-                      color: 'var(--text)', outline: 'none', boxSizing: 'border-box',
+                      background: 'var(--surface)',
+                      color: 'var(--text-2)', outline: 'none', boxSizing: 'border-box',
+                      cursor: 'not-allowed',
                     }}
                   >
-                    {kbs.length === 0 && (
-                      <option value="seo-geo-article-enhancement-knowledge-base">seo-geo-article-enhancement-knowledge-base</option>
-                    )}
-                    {kbs.map(kb => (
-                      <option key={kb.id} value={kb.id}>{kb.id}</option>
-                    ))}
+                    <option value={KB_ID}>{KB_ID}</option>
                   </select>
                 </div>
 
