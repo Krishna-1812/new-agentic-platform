@@ -152,7 +152,7 @@ router.get('/stream/:token', async (req, res) => {
 
     // Step 6: Enhance article sections (verified-only) + structural FAQ additions
     emit('step', { id: 'enhance', status: 'active', message: 'Applying verified, source-grounded improvements…' });
-    const enhancedChunks = await generateEnhancedArticleLite(openai, articleData, recommendations, kb);
+    const { text: rawEnhancedChunks, originalHasList, originalHasTable } = await generateEnhancedArticleLite(openai, articleData, recommendations, kb);
 
     const existingHeadings = [...(articleData.h2s || []), ...(articleData.h3s || [])].join(' ');
     const articleHasFaq = /faq|frequently asked/i.test(existingHeadings);
@@ -161,7 +161,7 @@ router.get('/stream/:token', async (req, res) => {
     const articleEndsWithFaq = /faq|frequently asked/i.test(lastH2);
 
     const structural = await generateStructuralAdditionsLite(openai, articleData, themeData, recommendations, kb, articleHasFaq, existingFaqHeading);
-    let enhancedText = deduplicateAdditions(enhancedChunks);
+    let enhancedText = deduplicateAdditions(rawEnhancedChunks);
     if (structural && structural.trim()) {
       enhancedText = articleEndsWithFaq
         ? insertBeforeTrailingFaq(enhancedText, structural)
@@ -172,10 +172,29 @@ router.get('/stream/:token', async (req, res) => {
     enhancedText = normalizeNewMarkers(enhancedText);
     enhancedText = enforceFaqHeadings(enhancedText);
 
+    // Minimum-structure backstop: if the ORIGINAL article had no list and/or no
+    // table anywhere, and the per-section rules above didn't happen to add one,
+    // force a single best-effort, grounded addition of each missing type.
+    const needList = !originalHasList && !textHasList(enhancedText);
+    const needTable = !originalHasTable && !textHasTable(enhancedText);
+    let addedMinimums = [];
+    if (needList || needTable) {
+      enhancedText = await ensureMinimumStructureLite(openai, enhancedText, { needList, needTable });
+      enhancedText = normalizeNewMarkers(enhancedText);
+      if (needList && textHasList(enhancedText)) addedMinimums.push('list');
+      if (needTable && textHasTable(enhancedText)) addedMinimums.push('table');
+    }
+
     // Coverage report — verified scope. Reports status only; never injects content.
     const coverage = await runCoverageVerificationLite(openai, enhancedText, articleData);
 
-    emit('step', { id: 'enhance', status: 'done', message: 'Verified enhancement complete' });
+    emit('step', {
+      id: 'enhance',
+      status: 'done',
+      message: addedMinimums.length
+        ? `Verified enhancement complete (added missing ${addedMinimums.join(' & ')})`
+        : 'Verified enhancement complete',
+    });
     emit('coverage', {
       checked: coverage.report.length,
       total: LITE_COVERAGE_PARAMETERS.length,
@@ -502,6 +521,17 @@ MARKING RULES:
     chunks = splitMarkdownByH2(sourceHtml, 8000);
   }
 
+  // Snapshot of the ORIGINAL content (same conversion the model sees, pre-enhancement)
+  // — used to decide whether a list/table is missing from the source article and
+  // needs a forced minimum, vs. already present and left to the optional per-section
+  // rules below.
+  const originalMdAll = chunks
+    .map(c => (isHtml ? htmlChunkToMarkdown(c) : c.trim()))
+    .filter(Boolean)
+    .join('\n\n');
+  const originalHasList = textHasList(originalMdAll);
+  const originalHasTable = textHasTable(originalMdAll);
+
   async function enhanceChunk(chunk, index) {
     if (!chunk.trim()) return '';
     const mdChunk = isHtml ? htmlChunkToMarkdown(chunk) : chunk.trim();
@@ -552,7 +582,75 @@ Apply only verified, source-grounded improvements: an answer-first sentence buil
     enhancedChunks.push(...results);
   }
 
-  return enhancedChunks.filter(Boolean).join('\n\n');
+  return {
+    text: enhancedChunks.filter(Boolean).join('\n\n'),
+    originalHasList,
+    originalHasTable,
+  };
+}
+
+// ── ensureMinimumStructureLite ──────────────────────────────────────────────────
+// Backstop for articles whose original content had NO list and/or NO table at all.
+// The per-section rules in generateEnhancedArticleLite only add one when a section's
+// own content happens to fit — no section knows whether another section already
+// added one — so this runs once, document-wide, after all sections are assembled.
+// It finds the single best-suited EXISTING paragraph for each missing type and
+// splices a grounded [NEW] insertion after it by exact-text anchor match. If the
+// model can't find genuinely suitable content (or its anchor can't be located
+// verbatim), that type is skipped rather than fabricated.
+async function ensureMinimumStructureLite(openai, enhancedText, { needList, needTable }) {
+  const asks = [];
+  if (needList) asks.push(`- "list": find the single best-suited EXISTING paragraph that enumerates or sequences 3+ items, steps, or attributes in prose (even loosely) — even if no section was a perfect fit, pick the closest one.`);
+  if (needTable) asks.push(`- "table": find the single best-suited EXISTING paragraph that already states costs, steps, attributes, or a comparison for 2+ items/options in prose — even if no section was a perfect fit, pick the closest one.`);
+
+  const missing = [needList && 'list', needTable && 'table'].filter(Boolean).join(' and ');
+
+  try {
+    const res = await openai.chat.completions.create({
+      model: MODEL,
+      response_format: { type: 'json_object' },
+      max_completion_tokens: 1200,
+      messages: [
+        {
+          role: 'system',
+          content: `You find the best location to add a missing structural element to an already-enhanced article, using ONLY content already stated in the article. You never invent rows, items, numbers, or comparisons that are not already present.`,
+        },
+        {
+          role: 'user',
+          content: `This article currently has no ${missing} anywhere. For each element requested below, find the single best host paragraph and produce a grounded restructuring of it.
+
+${asks.join('\n')}
+
+ARTICLE:
+${enhancedText.slice(0, 16000)}
+
+For each element you were asked for, return:
+- "anchor": the EXACT existing paragraph text (verbatim substring copied from the article above, no [NEW] tags, no truncation) that the insertion goes immediately after.
+- "insertion": a single [NEW]...[/NEW] block containing ONLY the restructured list or table, built strictly from what that paragraph (or its immediate surrounding content) already states. Do not invent anything.
+
+Only omit a key entirely if you genuinely cannot find any paragraph with suitable content without inventing data — do not force a fabricated element.
+
+Return JSON: { "list": {"anchor": "...", "insertion": "[NEW]...[/NEW]"} (omit if not applicable), "table": {"anchor": "...", "insertion": "[NEW]...[/NEW]"} (omit if not applicable) }`,
+        },
+      ],
+    });
+
+    const parsed = JSON.parse(res.choices[0].message.content || '{}');
+    let out = enhancedText;
+    for (const key of ['list', 'table']) {
+      const item = parsed[key];
+      if (!item?.anchor || !item?.insertion) continue;
+      const anchor = String(item.anchor).trim();
+      const idx = out.indexOf(anchor);
+      if (idx === -1) continue; // anchor not found verbatim — skip rather than guess where to insert
+      const insertAt = idx + anchor.length;
+      out = `${out.slice(0, insertAt)}\n\n${String(item.insertion).trim()}${out.slice(insertAt)}`;
+    }
+    return out;
+  } catch (err) {
+    console.error('[article-enhancement-lite] minimum-structure backstop error:', err.message);
+    return enhancedText;
+  }
 }
 
 // ── generateStructuralAdditionsLite ────────────────────────────────────────────
@@ -578,12 +676,14 @@ async function generateStructuralAdditionsLite(openai, articleData, themeData, r
 
 VERIFIED-ONLY MANDATE:
 - Do NOT introduce any statistic, number, date, monetary amount, expert quote, named source, citation, or any fact not already stated in the article body provided.
-- If the article's content cannot support at least 3 solid questions, output an empty string and nothing else.
+- Target 5–6 grounded questions. Try hard to reach 5 before settling for fewer — most articles support this from definitions, how something works, comparisons, considerations, common concerns, and edge cases implicit in the text, not just its explicit headings.
+- Only fall below 5 if the content genuinely cannot support that many without inventing anything; in that case write as many as it can support, down to a minimum of 3.
+- If the article's content cannot support even 3 solid questions, output an empty string and nothing else.
 
 FORMAT RULES:
 - Wrap the ENTIRE output in one [NEW]...[/NEW] block (it is all new).
 - Start with "## ${faqHeadingText}" (exactly this text) as the H2.
-- Add 3–6 questions, each as a "### " heading.
+- Add 5–6 questions (fewer, minimum 3, only if the content truly cannot support more), each as a "### " heading.
 - Write each answer as a plain prose paragraph directly below its ### heading:
   - Directly answer in the first sentence (inverted pyramid).
   - 2–5 sentences, self-contained, factual, non-promotional.
@@ -601,7 +701,7 @@ Existing H2 sections (avoid duplicating these as questions): ${(articleData.h2s 
 ARTICLE CONTENT (your ONLY source of truth — every answer must come from here):
 ${bodySample}
 
-Write the FAQ section per the rules. Every question must be answerable from the content above; add no external facts. Wrap everything in [NEW]...[/NEW], or return an empty string if the content cannot support 3 questions.`,
+Write the FAQ section per the rules — aim for 5–6 grounded questions, falling below only if the content truly cannot support that many. Every question must be answerable from the content above; add no external facts. Wrap everything in [NEW]...[/NEW], or return an empty string if the content cannot support even 3 questions.`,
         },
       ],
     });
@@ -627,13 +727,22 @@ const LITE_COVERAGE_PARAMETERS = [
 ];
 const VALID_RESULTS = new Set(['covered_present', 'covered_added', 'not_applicable']);
 
+// Shared with the minimum-structure backstop below, so "does this text have a
+// list/table" is checked identically everywhere it matters.
+function textHasList(t) {
+  return /(^|\n)\s*(?:[-*]\s|\d+[.)]\s)/.test(t || '');
+}
+function textHasTable(t) {
+  return /\n\s*\|.*\|\s*\n\s*\|[\s\-:|]+\|/.test(t || '');
+}
+
 function heuristicCoverageLite(enhancedText, articleData) {
   const t = enhancedText || '';
   const lowProse = articleData.contentType === 'hub' || articleData.contentType === 'landing-page';
 
-  const hasTable = /\n\s*\|.*\|\s*\n\s*\|[\s\-:|]+\|/.test(t);
+  const hasTable = textHasTable(t);
   const hasFaq = /(^|\n)#{2,3}\s+.*(faq|frequently asked)/i.test(t) || /faq|frequently asked/i.test((articleData.h2s || []).join(' '));
-  const hasList = /(^|\n)\s*(?:[-*]\s|\d+[.)]\s)/.test(t);
+  const hasList = textHasList(t);
   const addedSomething = /\[NEW\]/.test(t);
 
   const mk = (id, result, note) => ({ id, parameter: LITE_COVERAGE_PARAMETERS[id - 1].parameter, status: 'checked', result, note });
@@ -690,7 +799,7 @@ PARAMETERS
 3. Correct list types — steps/processes use numbered lists; attributes/features use bulleted lists.
 4. Prose enumerations (3+ items) restructured into scannable lists where helpful.
 5. Comparative/multi-attribute information already in the text restructured into tables where helpful.
-6. FAQ section present where the article's own content can answer 3+ questions (answers 2–5 sentences).
+6. FAQ section present with 5–6 grounded questions (fewer only if content genuinely can't support that many, minimum 3) (answers 2–5 sentences).
 7. Self-contained context — no dangling references a reader can't resolve from the article.
 8. Heading clarity & logical structure.
 9. Readability & fluency (active voice, 2–5 sentence paragraphs, transitions, jargon defined).
