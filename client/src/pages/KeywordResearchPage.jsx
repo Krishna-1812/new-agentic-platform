@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import KBContextSelector from '../components/KBContextSelector';
 
 const STEP_CONFIG = [
   { id: 'variants',    label: 'Query Variants',   desc: 'Expanding across intent variants' },
@@ -282,13 +281,7 @@ export default function KeywordResearchPage() {
 
       {/* ── Input Card ───────────────────────────────────────────────── */}
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 24, boxShadow: cardShadow }}>
-        <KBContextSelector
-          module="keyword-research"
-          onChange={({ client: c, feedbackKbIds: fb }) => { setClient(c); setFeedbackKbIds(fb || []); }}
-          disabled={running}
-        />
-
-        <div style={{ marginTop: 16, maxWidth: 448 }}>
+        <div style={{ maxWidth: 448 }}>
           <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
             Seed Keyword
           </label>

@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { saveAs } from 'file-saver';
-import KBContextSelector from '../components/KBContextSelector';
 
 const STEPS = [
   { id: 'search',   label: 'Searching Google US',  icon: '🔍' },
@@ -343,13 +342,7 @@ export default function ArticleRecommendationPage() {
         borderRadius: 'var(--r-lg)', padding: 24,
         boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
       }}>
-        <KBContextSelector
-          module="article-recommendation"
-          onChange={({ client: c, feedbackKbIds: fb }) => { setClient(c); setFeedbackKbIds(fb || []); }}
-          disabled={running}
-        />
-
-        <div style={{ marginTop: 16, maxWidth: 448 }}>
+        <div style={{ maxWidth: 448 }}>
           <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>
             Primary Keyword
           </label>
