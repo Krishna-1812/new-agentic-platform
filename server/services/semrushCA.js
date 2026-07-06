@@ -1,13 +1,17 @@
 const axios = require('axios');
 
 const BASE = 'https://api.semrush.com/';
+// Backlinks Analytics report types (backlinks_overview, backlinks_refdomains, ...)
+// 400 ("query type not found") on the general endpoint above — they live on a
+// separate base. Confirmed directly against the live API.
+const BACKLINKS_BASE = 'https://api.semrush.com/analytics/v1/';
 const TIMEOUT = 20000;
 
-async function semrushGet(params) {
+async function semrushGet(params, base = BASE) {
   const key = process.env.SEMRUSH_API_KEY;
   if (!key) throw new Error('SEMRUSH_API_KEY not configured');
   try {
-    const res = await axios.get(BASE, { params: { key, ...params }, timeout: TIMEOUT });
+    const res = await axios.get(base, { params: { key, ...params }, timeout: TIMEOUT });
     return (res.data || '').toString();
   } catch (err) {
     if (err.code === 'ECONNABORTED') throw new Error('Semrush request timed out');
@@ -87,7 +91,7 @@ async function getBacklinksOverview(domain) {
     target: domain,
     target_type: 'root_domain',
     export_columns: 'ascore,total,domains_num,follows_num,nofollows_num',
-  });
+  }, BACKLINKS_BASE);
   const rows = parseRows(raw);
   if (!rows.length) return null;
   const p = rows[0];
@@ -112,7 +116,7 @@ async function getBacklinksRefdomains(domain) {
     export_columns: 'domain,domain_ascore,backlinks_num',
     display_sort: 'domain_ascore_desc',
     display_limit: 200,
-  });
+  }, BACKLINKS_BASE);
   if (isSemrushError(raw)) return [];
   return parseRows(raw).map(p => ({
     domain: p[0] || '',
@@ -157,13 +161,14 @@ async function getKeywordsByPositionBucket(domain, database, minPos, maxPos, lim
 // export_columns: Ph,Po,Nq,Cp
 // row: [keyword, position, volume, cpc]
 
-async function getKeywordsFull(domain, database, limit = 3000) {
+async function getKeywordsFull(domain, database, limit = 3000, sort) {
   const raw = await semrushGet({
     type: 'domain_organic',
     domain,
     database,
     display_limit: limit,
     export_columns: 'Ph,Po,Nq,Cp',
+    ...(sort ? { display_sort: sort } : {}),
   });
   if (isSemrushError(raw)) return [];
   return parseRows(raw).map(p => ({
@@ -177,14 +182,14 @@ async function getKeywordsFull(domain, database, limit = 3000) {
 // ── Branded keyword count ─────────────────────────────────────────────────────
 // Uses +|Ph|Co|brandName filter — axios encodes '+' to %2B correctly.
 
-async function getBrandedKeywordCount(domain, database, brandName) {
+async function getBrandedKeywordCount(domain, database, brandName, limit = 10000) {
   const raw = await semrushGet({
     type: 'domain_organic',
     domain,
     database,
     display_filter: `+|Ph|Co|${brandName.toLowerCase()}`,
     export_columns: 'Ph,Po,Nq',
-    display_limit: 10000,
+    display_limit: limit,
   });
   if (isSemrushError(raw)) return 0;
   return parseRows(raw).length;
@@ -194,7 +199,7 @@ async function getBrandedKeywordCount(domain, database, brandName) {
 // Filters for SERP features containing ai_overview.
 // Falls back to empty if the plan doesn't support this filter.
 
-async function getAIOKeywords(domain, database) {
+async function getAIOKeywords(domain, database, limit = 5000) {
   try {
     const raw = await semrushGet({
       type: 'domain_organic',
@@ -202,7 +207,7 @@ async function getAIOKeywords(domain, database) {
       database,
       display_filter: '+|Fp|Co|ai_overview',
       export_columns: 'Ph,Po,Nq,Fp',
-      display_limit: 5000,
+      display_limit: limit,
     });
     if (isSemrushError(raw)) return { count: 0, keywords: [] };
     const rows = parseRows(raw).filter(p => {

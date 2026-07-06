@@ -29,6 +29,7 @@ const robotsMonitorRoutes = require('./modules/robotsMonitor/routes');
 const hubSpokeRoutes = require('./modules/hubSpoke/routes');
 const onPageAuditRoutes = require('./modules/onPageAudit/routes');
 const marketPotentialRoutes = require('./modules/marketPotential/routes');
+const competitorAnalysisTrackerRoutes = require('./modules/competitorAnalysis/routes');
 const semrushRoutes = require('./routes/semrush');
 
 const app = express();
@@ -50,7 +51,7 @@ const limiter = rateLimit({
   message: { error: 'Too many requests. Please wait a moment and try again.' },
   skip: (req) => {
     const u = req.originalUrl || req.url || '';
-    return u.startsWith('/api/location-page-builder') || u.startsWith('/api/kb') || u.startsWith('/api/modules') || u.startsWith('/api/audit') || u.startsWith('/api/market-potential');
+    return u.startsWith('/api/location-page-builder') || u.startsWith('/api/kb') || u.startsWith('/api/modules') || u.startsWith('/api/audit') || u.startsWith('/api/market-potential') || u.startsWith('/api/competitor-tracker');
   },
 });
 
@@ -97,6 +98,7 @@ app.use('/api/robots-monitor',          lpbLimiter, requireAuth, robotsMonitorRo
 app.use('/api/hub-spoke',               lpbLimiter, requireAuth, hubSpokeRoutes);
 app.use('/api/on-page-audit',           lpbLimiter, requireAuth, onPageAuditRoutes);
 app.use('/api/market-potential',        lpbLimiter, requireAuth, marketPotentialRoutes);
+app.use('/api/competitor-tracker',      lpbLimiter, requireAuth, competitorAnalysisTrackerRoutes);
 app.use('/api/semrush',                 requireAuth, semrushRoutes);
 
 // ── SEO team only ────────────────────────────────────────────────────────────
@@ -146,6 +148,10 @@ require('./modules/onPageAudit/store').init().catch(err => {
 
 require('./modules/marketPotential/store').init().catch(err => {
   console.error('[MarketPotential] Store init failed:', err.message);
+});
+
+require('./modules/competitorAnalysis/store').init().catch(err => {
+  console.error('[CompetitorAnalysis] Store init failed:', err.message);
 });
 
 require('./modules/robotsMonitor/monitorStore').init().then(() => {
