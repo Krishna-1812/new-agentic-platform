@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LLM_MODEL_OPTIONS, DEFAULT_LLM_MODEL } from '../llmModels';
 import { EMBED_MODE } from '../components/MacWindow';
-import { notifyAgentRunStarted } from '../lib/agentRunSignal';
+import { notifyAgentRunStarted, notifyAgentRunFinished } from '../lib/agentRunSignal';
 
 const MODELS = [
   'gpt-4o-mini',
@@ -380,6 +380,15 @@ export default function ArticleEnhancementPage() {
   const [activeTab, setActiveTab] = useState('recommendations');
   const esRef = useRef(null);
   const crawlFailedRef = useRef(false);
+  // The full run output is assembled from several separate SSE events, then
+  // read back inside the 'done' handler below. That handler closure is
+  // created once per run and would otherwise see stale state (the classic
+  // React closure problem) -- refs give it a live view, same trick as
+  // crawlFailedRef above.
+  const articleMetaRef = useRef(null);
+  const recommendationsRef = useRef('');
+  const enhancedTextRef = useRef('');
+  const coverageRef = useRef(null);
 
   useEffect(() => {
     fetch('/api/kb', { credentials: 'include' })
@@ -415,6 +424,10 @@ export default function ArticleEnhancementPage() {
     setCoverage(null);
     setCrawlFailed(false);
     crawlFailedRef.current = false;
+    articleMetaRef.current = null;
+    recommendationsRef.current = '';
+    enhancedTextRef.current = '';
+    coverageRef.current = null;
 
     let token;
     try {
@@ -440,7 +453,11 @@ export default function ArticleEnhancementPage() {
       const d = JSON.parse(e.data);
       setStepStates(prev => ({ ...prev, [d.id]: { status: d.status, message: d.message } }));
     });
-    es.addEventListener('article_meta', e => setArticleMeta(JSON.parse(e.data)));
+    es.addEventListener('article_meta', e => {
+      const d = JSON.parse(e.data);
+      setArticleMeta(d);
+      articleMetaRef.current = d;
+    });
     es.addEventListener('theme_query', e => {
       setThemeData(JSON.parse(e.data));
       setActiveTab('analysis');
@@ -475,11 +492,22 @@ export default function ArticleEnhancementPage() {
     es.addEventListener('serp_results', e => setSerpResults(JSON.parse(e.data).results || []));
     es.addEventListener('competitor_concepts', e => setCompetitorData(JSON.parse(e.data)));
     es.addEventListener('recommendations', e => {
-      setRecommendations(JSON.parse(e.data).recommendations || '');
+      const d = JSON.parse(e.data).recommendations || '';
+      setRecommendations(d);
+      recommendationsRef.current = d;
       setActiveTab('recommendations');
     });
-    es.addEventListener('coverage', e => setCoverage(JSON.parse(e.data)));
-    es.addEventListener('enhanced', e => { setEnhancedText(JSON.parse(e.data).text || ''); setActiveTab('enhanced'); });
+    es.addEventListener('coverage', e => {
+      const d = JSON.parse(e.data);
+      setCoverage(d);
+      coverageRef.current = d;
+    });
+    es.addEventListener('enhanced', e => {
+      const d = JSON.parse(e.data).text || '';
+      setEnhancedText(d);
+      enhancedTextRef.current = d;
+      setActiveTab('enhanced');
+    });
     es.addEventListener('crawl_failed', () => {
       crawlFailedRef.current = true;
       setCrawlFailed(true);
@@ -496,6 +524,13 @@ export default function ArticleEnhancementPage() {
       setDone(true);
       setRunning(false);
       es.close();
+      notifyAgentRunFinished('article-enhancement', {
+        url: url.trim(),
+        articleMeta: articleMetaRef.current,
+        recommendations: recommendationsRef.current,
+        enhancedText: enhancedTextRef.current,
+        coverage: coverageRef.current,
+      });
     });
     es.onerror = () => {
       setFailed('Connection lost. Please try again.');

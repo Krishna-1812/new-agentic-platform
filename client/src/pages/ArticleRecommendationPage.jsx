@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { saveAs } from 'file-saver';
-import { notifyAgentRunStarted } from '../lib/agentRunSignal';
+import { notifyAgentRunStarted, notifyAgentRunFinished } from '../lib/agentRunSignal';
 
 const STEPS = [
   { id: 'search',   label: 'Searching Google US',  icon: '🔍' },
@@ -279,7 +279,14 @@ export default function ArticleRecommendationPage() {
       });
 
       es.addEventListener('result', e => {
-        setResult(JSON.parse(e.data));
+        const d = JSON.parse(e.data);
+        setResult(d);
+        notifyAgentRunFinished('article-recommendation', {
+          keyword: keyword.trim(),
+          client: client || '',
+          brief: d.brief || '',
+          sourceUrls: d.sourceUrls || [],
+        });
       });
 
       es.addEventListener('fail', e => {

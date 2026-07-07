@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { refreshSemrushBalance } from '../lib/semrushBalanceStore';
-import { notifyAgentRunStarted } from '../lib/agentRunSignal';
+import { notifyAgentRunStarted, notifyAgentRunFinished } from '../lib/agentRunSignal';
 
 const STEP_CONFIG = [
   { id: 'variants',    label: 'Query Variants',   desc: 'Expanding across intent variants' },
@@ -178,6 +178,14 @@ export default function KeywordResearchPage() {
         setResult(d);
         setPrimaryList(d.primary || []);
         setSecondaryList(d.secondary || []);
+        notifyAgentRunFinished('keyword-research', {
+          keyword: keyword.trim(),
+          intent,
+          client: client || '',
+          primary: d.primary || [],
+          secondary: d.secondary || [],
+          warning: d.warning || '',
+        });
       });
 
       es.addEventListener('fail', e => {
