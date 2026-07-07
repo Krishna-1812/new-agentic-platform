@@ -8,7 +8,7 @@ import SemrushBalanceBadge from './SemrushBalanceBadge';
    /app agents), render ONLY the tool content — no sidebar, no "SEO Studio" header,
    no "All Tools" nav — so public users see just the single agent they opened.
    Internal /p2/seo embeds omit the param and keep the full studio. */
-const EMBED_MODE = (() => {
+export const EMBED_MODE = (() => {
   try {
     const p = new URLSearchParams(window.location.search);
     return p.get('embed') === '1' || p.get('chrome') === 'none';
