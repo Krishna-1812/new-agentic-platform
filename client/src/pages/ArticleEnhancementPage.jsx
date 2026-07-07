@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EMBED_MODE } from '../components/MacWindow';
+import { notifyAgentRunStarted } from '../lib/agentRunSignal';
 
 const MODELS = [
   'gpt-4o-mini',
@@ -397,6 +398,7 @@ export default function ArticleEnhancementPage() {
     if (!validateUrl(url.trim())) { setUrlError('Please enter a valid URL (include https://)'); return; }
     setUrlError('');
     setRunning(true);
+    notifyAgentRunStarted('article-enhancement');
     setDone(false);
     setFailed('');
     setStepStates({});

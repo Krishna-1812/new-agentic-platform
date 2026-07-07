@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { saveAs } from 'file-saver';
+import { notifyAgentRunStarted } from '../lib/agentRunSignal';
 
 const STEPS = [
   { id: 'search',   label: 'Searching Google US',  icon: '🔍' },
@@ -237,6 +238,7 @@ export default function ArticleRecommendationPage() {
     reset();
     setStarted(true);
     setRunning(true);
+    notifyAgentRunStarted('article-recommendation');
 
     try {
       const initRes = await fetch('/api/article-recommendation/init', {

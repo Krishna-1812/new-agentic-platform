@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { refreshSemrushBalance } from '../lib/semrushBalanceStore';
+import { notifyAgentRunStarted } from '../lib/agentRunSignal';
 
 const STEP_CONFIG = [
   { id: 'variants',    label: 'Query Variants',   desc: 'Expanding across intent variants' },
@@ -116,6 +117,7 @@ export default function KeywordResearchPage() {
     reset();
     setStarted(true);
     setRunning(true);
+    notifyAgentRunStarted('keyword-research');
 
     try {
       const initRes = await fetch('/api/keyword-research/init', {
