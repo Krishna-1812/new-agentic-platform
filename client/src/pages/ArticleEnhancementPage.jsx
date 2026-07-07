@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LLM_MODEL_OPTIONS, DEFAULT_LLM_MODEL } from '../llmModels';
+import { EMBED_MODE } from '../components/MacWindow';
+import { notifyAgentRunStarted } from '../lib/agentRunSignal';
 
 const MODELS = [
   'gpt-4o-mini',
@@ -398,6 +400,7 @@ export default function ArticleEnhancementPage() {
     if (!validateUrl(url.trim())) { setUrlError('Please enter a valid URL (include https://)'); return; }
     setUrlError('');
     setRunning(true);
+    notifyAgentRunStarted('article-enhancement');
     setDone(false);
     setFailed('');
     setStepStates({});
@@ -651,27 +654,44 @@ export default function ArticleEnhancementPage() {
                   </p>
                 </div>
 
-                {/* KB selector */}
+                {/* KB selector — locked to the single default KB in embed mode (public
+                    intelligence.position2.com /app agent); internal /p2/seo keeps the
+                    full picker since staff may work across multiple clients' KBs. */}
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '6px' }}>Knowledge Base</label>
-                  <select
-                    value={selectedKbId}
-                    onChange={e => setSelectedKbId(e.target.value)}
-                    disabled={running}
-                    style={{
-                      width: '100%', padding: '10px 12px', fontSize: '14px',
-                      border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
-                      background: running ? 'var(--surface)' : 'var(--card)',
-                      color: 'var(--text)', outline: 'none', boxSizing: 'border-box',
-                    }}
-                  >
-                    {kbs.length === 0 && (
-                      <option value="seo-geo-article-enhancement-knowledge-base">seo-geo-article-enhancement-knowledge-base</option>
-                    )}
-                    {kbs.map(kb => (
-                      <option key={kb.id} value={kb.id}>{kb.id}</option>
-                    ))}
-                  </select>
+                  {EMBED_MODE ? (
+                    <div
+                      title="This agent always uses its own knowledge base"
+                      style={{
+                        width: '100%', padding: '10px 12px', fontSize: '14px',
+                        border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+                        background: 'var(--surface)', color: 'var(--text-2)',
+                        boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap', cursor: 'default',
+                      }}
+                    >
+                      {selectedKbId}
+                    </div>
+                  ) : (
+                    <select
+                      value={selectedKbId}
+                      onChange={e => setSelectedKbId(e.target.value)}
+                      disabled={running}
+                      style={{
+                        width: '100%', padding: '10px 12px', fontSize: '14px',
+                        border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+                        background: running ? 'var(--surface)' : 'var(--card)',
+                        color: 'var(--text)', outline: 'none', boxSizing: 'border-box',
+                      }}
+                    >
+                      {kbs.length === 0 && (
+                        <option value="seo-geo-article-enhancement-knowledge-base">seo-geo-article-enhancement-knowledge-base</option>
+                      )}
+                      {kbs.map(kb => (
+                        <option key={kb.id} value={kb.id}>{kb.id}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 {/* Actions */}
