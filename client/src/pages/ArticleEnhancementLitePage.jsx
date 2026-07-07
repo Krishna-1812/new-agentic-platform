@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LLM_MODEL_OPTIONS, DEFAULT_LLM_MODEL } from '../llmModels';
 
 // Verified-only, no-SERP variant of the article enhancer. Pipeline steps mirror
 // the backend (server/routes/articleEnhancementLite.js).
@@ -299,6 +300,7 @@ export default function ArticleEnhancementLitePage() {
   const [url, setUrl] = useState('');
   const [urlError, setUrlError] = useState('');
   const [contentType, setContentType] = useState('article');
+  const [models, setModels] = useState([DEFAULT_LLM_MODEL]);
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState('');
@@ -346,7 +348,7 @@ export default function ArticleEnhancementLitePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ url: url.trim(), kbId: KB_ID, contentType, manualContent: manualContent || undefined }),
+        body: JSON.stringify({ url: url.trim(), kbId: KB_ID, contentType, models, manualContent: manualContent || undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to start');
@@ -403,6 +405,16 @@ export default function ArticleEnhancementLitePage() {
   function stop() {
     if (esRef.current) { esRef.current.close(); esRef.current = null; }
     setRunning(false);
+  }
+
+  function toggleModel(id) {
+    setModels(prev => {
+      if (prev.includes(id)) {
+        if (prev.length === 1) return prev; // keep at least one selected
+        return prev.filter(m => m !== id);
+      }
+      return [...prev, id];
+    });
   }
 
   async function downloadDocx() {
@@ -499,6 +511,28 @@ export default function ArticleEnhancementLitePage() {
                     <option value="hub">Hub / Resource Page (links &amp; navigation)</option>
                     <option value="thin-content">Thin Content (needs expansion)</option>
                   </select>
+                </div>
+
+                {/* Analysis & Recommendation Models — content creation always
+                    uses GPT-5.4 mini; these models inform analysis & recommendations */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text)', marginBottom: '6px' }}>Analysis &amp; Recommendation Models</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', background: running ? 'var(--surface)' : 'var(--card)' }}>
+                    {LLM_MODEL_OPTIONS.map(opt => (
+                      <label key={opt.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text)', cursor: running ? 'not-allowed' : 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={models.includes(opt.id)}
+                          onChange={() => toggleModel(opt.id)}
+                          disabled={running}
+                        />
+                        {opt.label}
+                      </label>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '6px' }}>
+                    Selecting more than one synthesizes their analysis &amp; recommendations into one. Article content is always written with GPT-5.4 mini.
+                  </p>
                 </div>
 
                 {/* KB selector — fixed to the single supported KB, not user-editable */}

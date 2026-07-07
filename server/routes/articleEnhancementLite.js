@@ -18,8 +18,9 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
-const OpenAI = require('openai');
 const store = require('../services/kbStore');
+const { createLlmClient, resolveModelIds, WRITER_MODEL_ID } = require('../services/llmProviders');
+const { synthesizeSubtopics, synthesizeRecommendations } = require('../services/llmSynthesis');
 const {
   fetchArticleResilient,
   buildArticleDataFromText,
@@ -36,9 +37,6 @@ const {
   buildDocx,
 } = require('./articleEnhancement').helpers;
 
-// Single workhorse model — matches the full tool's analysis/enhancement model.
-const MODEL = 'gpt-5.4-mini';
-
 const sessions = new Map();
 function generateToken() { return crypto.randomBytes(16).toString('hex'); }
 
@@ -46,7 +44,7 @@ function generateToken() { return crypto.randomBytes(16).toString('hex'); }
 const VALID_CONTENT_TYPES = new Set(['article', 'hub', 'thin-content']);
 
 router.post('/init', (req, res) => {
-  const { url, kbId, manualContent, contentType } = req.body;
+  const { url, kbId, manualContent, contentType, models } = req.body;
   if (!url?.trim()) return res.status(400).json({ error: 'url is required' });
   let parsedUrl;
   try { parsedUrl = new URL(url.trim()); }
@@ -58,6 +56,7 @@ router.post('/init', (req, res) => {
     kbId: kbId || 'seo-geo-article-enhancement-knowledge-base',
     manualContent: (manualContent || '').trim(),
     contentType: VALID_CONTENT_TYPES.has(contentType) ? contentType : 'article',
+    models: resolveModelIds(models),
   });
   setTimeout(() => sessions.delete(token), 120000);
   res.json({ token });
@@ -69,7 +68,7 @@ router.get('/stream/:token', async (req, res) => {
   if (!session) return res.status(404).json({ error: 'Session not found or expired.' });
   sessions.delete(req.params.token);
 
-  const { url, kbId, manualContent, contentType } = session;
+  const { url, kbId, manualContent, contentType, models } = session;
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -87,7 +86,13 @@ router.get('/stream/:token', async (req, res) => {
   };
 
   try {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // `openai` is the fixed writer (always GPT-5.4 mini) — used for crawl prep,
+    // theme extraction, and every content-creation call (enhancement, structural
+    // additions, coverage, and as the merge model when multiple analysis models
+    // are selected). `analysisClients` are the user-selected models that produce
+    // the topical analysis and recommendations, fanned out and merged if >1.
+    const openai = createLlmClient(WRITER_MODEL_ID);
+    const analysisClients = models.map(id => createLlmClient(id));
 
     // Step 1: Crawl article (or use manually pasted content)
     let articleData;
@@ -133,8 +138,13 @@ router.get('/stream/:token', async (req, res) => {
 
     // Step 3: Topical analysis — subtopics relevant to the theme, and whether the
     // article already covers each. Advisory only (topic labels, never facts).
-    emit('step', { id: 'analyze', status: 'active', message: 'Analyzing topical coverage…' });
-    const analysis = await analyzeArticleLite(openai, articleData, themeData);
+    // Runs once per selected model; if more than one, the writer model merges
+    // the independent results into one authoritative list.
+    emit('step', { id: 'analyze', status: 'active', message: `Analyzing topical coverage (${analysisClients.length} model${analysisClients.length > 1 ? 's' : ''})…` });
+    const perModelAnalysis = await Promise.all(analysisClients.map(c => analyzeArticleLite(c, articleData, themeData)));
+    const analysis = perModelAnalysis.length === 1
+      ? perModelAnalysis[0]
+      : await synthesizeSubtopics(openai, analysisClients.map((c, i) => ({ model: c.model, subtopics: perModelAnalysis[i].subtopics })));
     emit('analysis', analysis);
     const gapCount = (analysis.subtopics || []).filter(s => !s.covered).length;
     emit('step', { id: 'analyze', status: 'done', message: `${(analysis.subtopics || []).length} subtopics reviewed · ${gapCount} not yet covered` });
@@ -144,9 +154,13 @@ router.get('/stream/:token', async (req, res) => {
     const kb = await store.readKB(kbId);
     emit('step', { id: 'kb', status: 'done', message: kb ? `KB "${kbId}" loaded` : 'KB not found — using defaults' });
 
-    // Step 5: Recommendations (structure / clarity / AEO only — no external facts)
-    emit('step', { id: 'recommend', status: 'active', message: 'Generating verified enhancement recommendations…' });
-    const recommendations = await generateRecommendationsLite(openai, articleData, themeData, analysis, kb);
+    // Step 5: Recommendations (structure / clarity / AEO only — no external facts).
+    // Same fan-out-then-merge pattern as the analysis step.
+    emit('step', { id: 'recommend', status: 'active', message: `Generating verified enhancement recommendations (${analysisClients.length} model${analysisClients.length > 1 ? 's' : ''})…` });
+    const perModelRecs = await Promise.all(analysisClients.map(c => generateRecommendationsLite(c, articleData, themeData, analysis, kb)));
+    const recommendations = perModelRecs.length === 1
+      ? perModelRecs[0]
+      : await synthesizeRecommendations(openai, analysisClients.map((c, i) => ({ model: c.model, text: perModelRecs[i] })));
     emit('step', { id: 'recommend', status: 'done', message: 'Recommendations ready' });
     emit('recommendations', { recommendations });
 
@@ -218,7 +232,7 @@ router.get('/stream/:token', async (req, res) => {
 async function analyzeArticleLite(openai, articleData, themeData) {
   try {
     const res = await openai.chat.completions.create({
-      model: MODEL,
+      model: openai.model,
       response_format: { type: 'json_object' },
       max_completion_tokens: 1600,
       messages: [
@@ -272,7 +286,7 @@ async function generateRecommendationsLite(openai, articleData, themeData, analy
   const coveredText = subtopics.filter(s => s.covered).map(s => `- ${s.topic}`).join('\n') || '(none)';
 
   const res = await openai.chat.completions.create({
-    model: MODEL,
+    model: openai.model,
     max_completion_tokens: 3000,
     messages: [
       {
@@ -540,7 +554,7 @@ MARKING RULES:
     if (!hasSubstantiveProse(mdChunk)) return mdChunk;
     try {
       const res = await openai.chat.completions.create({
-        model: MODEL,
+        model: openai.model,
         messages: [
           { role: 'system', content: systemPrompt },
           {
@@ -607,7 +621,7 @@ async function ensureMinimumStructureLite(openai, enhancedText, { needList, need
 
   try {
     const res = await openai.chat.completions.create({
-      model: MODEL,
+      model: openai.model,
       response_format: { type: 'json_object' },
       max_completion_tokens: 1200,
       messages: [
@@ -667,7 +681,7 @@ async function generateStructuralAdditionsLite(openai, articleData, themeData, r
 
   try {
     const res = await openai.chat.completions.create({
-      model: MODEL,
+      model: openai.model,
       max_completion_tokens: 1800,
       messages: [
         {
@@ -820,7 +834,7 @@ ${(enhancedText || '').slice(0, 18000)}`;
 
   try {
     const res = await openai.chat.completions.create({
-      model: MODEL,
+      model: openai.model,
       max_completion_tokens: 2000,
       response_format: { type: 'json_object' },
       messages: [

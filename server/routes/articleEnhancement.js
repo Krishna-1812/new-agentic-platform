@@ -7,6 +7,8 @@ const OpenAI = require('openai');
 const { Document, Packer, Paragraph, TextRun, BorderStyle, AlignmentType, Table, TableRow, TableCell, WidthType, ShadingType } = require('docx');
 const store = require('../services/kbStore');
 const { searchGoogle } = require('../services/googleSearch');
+const { createLlmClient, resolveModelIds, WRITER_MODEL_ID } = require('../services/llmProviders');
+const { synthesizeRecommendations } = require('../services/llmSynthesis');
 
 // gpt-5-mini was removed — it failed on 100% of runs and added only noise.
 const MODELS = [
@@ -26,7 +28,7 @@ function generateToken() {
 const VALID_CONTENT_TYPES = new Set(['article', 'hub', 'thin-content']);
 
 router.post('/init', (req, res) => {
-  const { url, kbId, manualContent, contentType } = req.body;
+  const { url, kbId, manualContent, contentType, models } = req.body;
   if (!url?.trim()) return res.status(400).json({ error: 'url is required' });
   let parsedUrl;
   try { parsedUrl = new URL(url.trim()); }
@@ -38,6 +40,7 @@ router.post('/init', (req, res) => {
     kbId: kbId || 'seo-geo-article-enhancement-knowledge-base',
     manualContent: (manualContent || '').trim(),
     contentType: VALID_CONTENT_TYPES.has(contentType) ? contentType : 'article',
+    models: resolveModelIds(models),
   });
   setTimeout(() => sessions.delete(token), 120000);
   res.json({ token });
@@ -49,7 +52,7 @@ router.get('/stream/:token', async (req, res) => {
   if (!session) return res.status(404).json({ error: 'Session not found or expired.' });
   sessions.delete(req.params.token);
 
-  const { url, kbId, manualContent, contentType } = session;
+  const { url, kbId, manualContent, contentType, models } = session;
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -67,7 +70,17 @@ router.get('/stream/:token', async (req, res) => {
   };
 
   try {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // `openai` is the fixed writer (always GPT-5.4 mini) — used for crawl prep,
+    // theme extraction, every content-creation call (enhancement, structural
+    // additions, coverage), and as the merge model when multiple recommendation
+    // models are selected. `analysisClients` are the user-selected models that
+    // generate the recommendations doc, fanned out and merged if more than one.
+    // `openaiResearch` is a separate, dedicated, always-OpenAI client for the
+    // internal multi-model research fan-out and SERP/competitor analysis, which
+    // are hardcoded to specific OpenAI model ids regardless of user selection.
+    const openai = createLlmClient(WRITER_MODEL_ID);
+    const analysisClients = models.map(id => createLlmClient(id));
+    const openaiResearch = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     // Step 1: Crawl article (or use manually pasted content)
     let articleData;
@@ -119,8 +132,8 @@ router.get('/stream/:token', async (req, res) => {
     // research) run in parallel — both must finish before recommendations, but
     // neither should stack on the other's latency.
     const [llmBranch, serpBranch] = await Promise.all([
-      runLlmResearchBranch(openai, themeData, articleData, emit),
-      runSerpCompetitorBranch(openai, themeData, articleData, emit),
+      runLlmResearchBranch(openaiResearch, themeData, articleData, emit),
+      runSerpCompetitorBranch(openaiResearch, themeData, articleData, emit),
     ]);
     const { llmResults, allConcepts, llmGaps } = llmBranch;
     const { competitorGaps } = serpBranch;
@@ -130,9 +143,13 @@ router.get('/stream/:token', async (req, res) => {
     const kb = await store.readKB(kbId);
     emit('step', { id: 'kb', status: 'done', message: kb ? `KB "${kbId}" loaded` : 'KB not found — using defaults' });
 
-    // Step 6: Generate Recommendations
-    emit('step', { id: 'recommend', status: 'active', message: 'Generating enhancement recommendations…' });
-    const recommendations = await generateRecommendations(openai, articleData, themeData, allConcepts, kb, competitorGaps, llmGaps);
+    // Step 6: Generate Recommendations. Runs once per selected model; if more
+    // than one, the writer model merges the independent drafts into one doc.
+    emit('step', { id: 'recommend', status: 'active', message: `Generating enhancement recommendations (${analysisClients.length} model${analysisClients.length > 1 ? 's' : ''})…` });
+    const perModelRecs = await Promise.all(analysisClients.map(c => generateRecommendations(c, articleData, themeData, allConcepts, kb, competitorGaps, llmGaps)));
+    const recommendations = perModelRecs.length === 1
+      ? perModelRecs[0]
+      : await synthesizeRecommendations(openai, analysisClients.map((c, i) => ({ model: c.model, text: perModelRecs[i] })));
     emit('step', { id: 'recommend', status: 'done', message: 'Enhancement recommendations ready' });
     emit('recommendations', { recommendations });
 
@@ -446,7 +463,7 @@ async function classifyBoilerplateBlocks(openai, blocks, articleData) {
     .join('\n');
 
   const res = await openai.chat.completions.create({
-    model: 'gpt-5.4-mini',
+    model: openai.model,
     response_format: { type: 'json_object' },
     max_completion_tokens: 1500,
     messages: [
@@ -656,7 +673,7 @@ async function fetchArticle(url) {
 // ── generateThemeAndQuery ──────────────────────────────────────────────────────
 async function generateThemeAndQuery(openai, articleData) {
   const res = await openai.chat.completions.create({
-    model: 'gpt-5.4-mini',
+    model: openai.model,
     response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: 'You are an expert content analyst. Respond with valid JSON only.' },
@@ -1138,7 +1155,7 @@ async function generateRecommendations(openai, articleData, themeData, allConcep
     : '(No uncovered research concepts identified.)';
 
   const res = await openai.chat.completions.create({
-    model: 'gpt-5.4-mini',
+    model: openai.model,
     max_completion_tokens: 3400,
     messages: [
       {
@@ -1467,7 +1484,7 @@ async function generateStructuralAdditions(openai, articleData, themeData, recom
 
   try {
     const res = await openai.chat.completions.create({
-      model: 'gpt-5.4-mini',
+      model: openai.model,
       messages: [
         {
           role: 'system',
@@ -1597,7 +1614,7 @@ MARKING RULES:
     if (!mdChunk) return '';
     try {
       const res = await openai.chat.completions.create({
-        model: 'gpt-5.4-mini',
+        model: openai.model,
         messages: [
           { role: 'system', content: systemPrompt },
           {
@@ -1755,7 +1772,7 @@ ${(enhancedText || '').slice(0, 18000)}`;
 
   try {
     const res = await openai.chat.completions.create({
-      model: 'gpt-5.4-mini',
+      model: openai.model,
       max_completion_tokens: 3500,
       response_format: { type: 'json_object' },
       messages: [
