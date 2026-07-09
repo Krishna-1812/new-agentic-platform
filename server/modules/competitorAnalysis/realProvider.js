@@ -44,10 +44,9 @@ async function fetchDomainData(domain, ctx, { database = 'us', brandName } = {})
     brandedKeywordCount,
     brandedKeywordCountCapped: brandedKeywordCount >= ROW_LIMITS.brandedKeywordCount,
     nonBrandedKeywordCount: Math.max(0, organicKeywords - brandedKeywordCount),
-    // Not a SEMrush data point — Google PageSpeed Insights is a separate,
-    // unwired integration. Leave null rather than fabricate numbers next
-    // to real SEMrush data; the UI shows "not available" for this domain.
-    pageSpeed: null,
+    // Not a SEMrush data point. dataFetcher.js resolves the real `pageSpeed`
+    // field (batched, cached, and independent of this per-domain call) and
+    // overwrites whatever's returned here — see resolvePageSpeed().
   };
 }
 

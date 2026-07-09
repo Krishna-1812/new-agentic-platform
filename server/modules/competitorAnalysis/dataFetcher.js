@@ -1,9 +1,65 @@
 const { estimateDomainCost, MAX_UNITS_PER_RUN } = require('./unitCosts');
-const { getProvider } = require('./provider');
+const { getProvider, hasSemrushKey } = require('./provider');
 const { getDatabase } = require('../../utils/countryToDatabase');
 const gap = require('./gapAnalysis');
+const pageSpeedCA = require('../../services/pageSpeedCA');
 
 const MAX_HISTORY_POINTS = 12;
+
+// PageSpeed Insights is free but slow (~10-30s per domain) and Lighthouse
+// scores don't meaningfully shift day to day, so a fetched result is reused
+// for a week before being refreshed rather than re-run on every analysis.
+const PAGE_SPEED_CACHE_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Only runs against the real provider — the mock provider already produces
+// its own synthetic pageSpeed data (see mockProvider.js), and PSI has its
+// own independent quota/latency that shouldn't apply to simulated runs.
+// Fetches every stale domain in parallel (bounded by the slowest single
+// domain, not the sum) rather than folding into the per-domain SEMrush loop
+// below, which is intentionally sequential for its own unit-budget guard.
+async function resolvePageSpeed(domainEntries, previousSnapshot, { force = false } = {}) {
+  const now = Date.now();
+  const prevByDomain = new Map(
+    (previousSnapshot?.domains || [])
+      .filter((d) => d.pageSpeed && d.pageSpeedFetchedAt)
+      .map((d) => [d.domain, d])
+  );
+  const stale = force
+    ? domainEntries.map((e) => e.domain)
+    : domainEntries.map((e) => e.domain).filter((domain) => {
+        const prev = prevByDomain.get(domain);
+        return !prev || (now - new Date(prev.pageSpeedFetchedAt).getTime()) > PAGE_SPEED_CACHE_MS;
+      });
+
+  const enabled = !!process.env.GOOGLE_PSI_API_KEY;
+  const freshResults = enabled && stale.length ? await pageSpeedCA.getPageSpeedForAllDomains(stale) : [];
+  const freshByDomain = new Map(freshResults.map((r) => [r.domain, r]));
+
+  return (domain) => {
+    if (freshByDomain.has(domain)) return { data: freshByDomain.get(domain), fetchedAt: new Date(now).toISOString() };
+    const prev = prevByDomain.get(domain);
+    return prev ? { data: prev.pageSpeed, fetchedAt: prev.pageSpeedFetchedAt } : { data: null, fetchedAt: null };
+  };
+}
+
+// Refreshes ONLY the pageSpeed field on an existing snapshot's domains —
+// spends zero SEMrush units, since it never touches the provider. Used by
+// the Page Speed tab's own "Refresh" action so re-checking Core Web Vitals
+// doesn't count against (or wait behind) the SEMrush unit budget. Always
+// forces a fresh PSI fetch, ignoring the 7-day cache — that's the point of
+// an explicit manual refresh.
+async function refreshPageSpeedOnly(client, previousSnapshot) {
+  if (!previousSnapshot || !previousSnapshot.domains?.length) {
+    throw new Error('Run a full analysis first — there is no existing data to attach Page Speed results to.');
+  }
+  const domainEntries = previousSnapshot.domains.map((d) => ({ domain: d.domain }));
+  const pageSpeedFor = await resolvePageSpeed(domainEntries, previousSnapshot, { force: true });
+  const domains = previousSnapshot.domains.map((d) => {
+    const ps = pageSpeedFor(d.domain);
+    return { ...d, pageSpeed: ps.data, pageSpeedFetchedAt: ps.fetchedAt };
+  });
+  return { ...previousSnapshot, domains };
+}
 
 function appendHistory(previousSnapshot, newSnapshot) {
   const history = (previousSnapshot && Array.isArray(previousSnapshot.history)) ? previousSnapshot.history.slice() : [];
@@ -33,6 +89,9 @@ async function fetchClientDashboardData(client, previousSnapshot, capUnits = MAX
   const skipped = [];
   let usedUnits = 0;
 
+  const useLive = hasSemrushKey();
+  const pageSpeedFor = useLive ? await resolvePageSpeed(domainEntries, previousSnapshot) : null;
+
   for (const entry of domainEntries) {
     if (usedUnits + perDomainCost > capUnits) {
       skipped.push(entry.domain);
@@ -40,11 +99,14 @@ async function fetchClientDashboardData(client, previousSnapshot, capUnits = MAX
     }
     const raw = await provider.fetchDomainData(entry.domain, ctx, { database, brandName: client.brandName });
     usedUnits += perDomainCost;
+    const ps = useLive ? pageSpeedFor(entry.domain) : { data: raw.pageSpeed, fetchedAt: null };
     fetched.push({
       ...raw,
       label: entry.label,
       isClient: entry.isClient,
       keywordBuckets: gap.computeKeywordPositionBuckets(raw.keywords),
+      pageSpeed: ps.data,
+      pageSpeedFetchedAt: ps.fetchedAt,
     });
   }
 
@@ -71,4 +133,4 @@ async function fetchClientDashboardData(client, previousSnapshot, capUnits = MAX
   return snapshot;
 }
 
-module.exports = { fetchClientDashboardData };
+module.exports = { fetchClientDashboardData, refreshPageSpeedOnly };

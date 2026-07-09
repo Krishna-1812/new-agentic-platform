@@ -12,14 +12,14 @@ import { useToast } from '../ui/Toast';
 import { ct } from '../lib/competitorTrackerApi';
 import OverviewTab from '../components/competitorAnalysisDashboard/OverviewTab';
 import PageSpeedTab from '../components/competitorAnalysisDashboard/PageSpeedTab';
-import KeywordGapTab from '../components/competitorAnalysisDashboard/KeywordGapTab';
 import BacklinkTab from '../components/competitorAnalysisDashboard/BacklinkTab';
+import ContentAnalysisTab from '../components/competitorAnalysisDashboard/ContentAnalysisTab';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'pagespeed', label: 'Page Speed' },
-  { key: 'keywordGap', label: 'Keyword Gap' },
-  { key: 'backlinks', label: 'Backlinks' },
+  { key: 'backlinks', label: 'Authority' },
+  { key: 'contentAnalysis', label: 'Content Analysis' },
 ];
 
 const EMPTY_CLIENT_FORM = { name: '', domain: '', country: 'United States', brandName: '' };
@@ -34,6 +34,12 @@ export default function CompetitorAnalysisDashboardPage() {
   const [snapshot, setSnapshot] = useState(null);
   const [loadingDashboard, setLoadingDashboard] = useState(false);
   const [running, setRunning] = useState(false);
+  const [pageSpeedRunning, setPageSpeedRunning] = useState(false);
+  const [contentAnalysis, setContentAnalysis] = useState(null);
+  const [contentAnalysisRunning, setContentAnalysisRunning] = useState(false);
+  const [regeneratingTopPages, setRegeneratingTopPages] = useState(false);
+  const [regeneratingSitemap, setRegeneratingSitemap] = useState(false);
+  const [savingMapping, setSavingMapping] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -43,6 +49,8 @@ export default function CompetitorAnalysisDashboardPage() {
   const [newCompetitor, setNewCompetitor] = useState({ domain: '', label: '' });
 
   const pollRef = useRef(null);
+  const pageSpeedPollRef = useRef(null);
+  const contentAnalysisPollRef = useRef(null);
 
   const refreshClients = useCallback(async (selectId) => {
     const { clients: list } = await ct.clients();
@@ -70,16 +78,32 @@ export default function CompetitorAnalysisDashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const loadContentAnalysis = useCallback(async (clientId) => {
+    if (!clientId) { setContentAnalysis(null); return; }
+    try {
+      const data = await ct.contentAnalysis(clientId);
+      setContentAnalysis(data.contentAnalysis);
+    } catch {
+      setContentAnalysis(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     ct.meta().then(setMeta).catch(() => {});
     refreshClients();
-    return () => clearInterval(pollRef.current);
+    return () => {
+      clearInterval(pollRef.current);
+      clearInterval(pageSpeedPollRef.current);
+      clearInterval(contentAnalysisPollRef.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     loadDashboard(selectedClientId);
-  }, [selectedClientId, loadDashboard]);
+    loadContentAnalysis(selectedClientId);
+  }, [selectedClientId, loadDashboard, loadContentAnalysis]);
 
   function startPolling(clientId) {
     clearInterval(pollRef.current);
@@ -101,7 +125,7 @@ export default function CompetitorAnalysisDashboardPage() {
   }
 
   async function handleRun() {
-    if (!selectedClientId || running) return;
+    if (!selectedClientId || running || pageSpeedRunning) return;
     setRunning(true);
     try {
       await ct.run(selectedClientId);
@@ -109,6 +133,116 @@ export default function CompetitorAnalysisDashboardPage() {
     } catch (e) {
       setRunning(false);
       toast.add({ title: 'Could not start run', description: e.message, variant: 'danger' });
+    }
+  }
+
+  function startPageSpeedPolling(clientId) {
+    clearInterval(pageSpeedPollRef.current);
+    pageSpeedPollRef.current = setInterval(async () => {
+      try {
+        const status = await ct.runPageSpeedStatus(clientId);
+        if (status.status === 'done') {
+          clearInterval(pageSpeedPollRef.current);
+          setPageSpeedRunning(false);
+          toast.add({ title: 'Page Speed refreshed', variant: 'success' });
+          loadDashboard(clientId);
+        } else if (status.status === 'error') {
+          clearInterval(pageSpeedPollRef.current);
+          setPageSpeedRunning(false);
+          toast.add({ title: 'Page Speed refresh failed', description: status.error, variant: 'danger' });
+        }
+      } catch { /* transient — keep polling */ }
+    }, 1200);
+  }
+
+  // Refreshes only Core Web Vitals for the current client — spends no
+  // SEMrush units, independent of (and mutually exclusive with) the main
+  // "Run Analysis" action.
+  async function handleRunPageSpeed() {
+    if (!selectedClientId || running || pageSpeedRunning) return;
+    setPageSpeedRunning(true);
+    try {
+      await ct.runPageSpeed(selectedClientId);
+      startPageSpeedPolling(selectedClientId);
+    } catch (e) {
+      setPageSpeedRunning(false);
+      toast.add({ title: 'Could not start Page Speed refresh', description: e.message, variant: 'danger' });
+    }
+  }
+
+  function startContentAnalysisPolling(clientId) {
+    clearInterval(contentAnalysisPollRef.current);
+    contentAnalysisPollRef.current = setInterval(async () => {
+      try {
+        const status = await ct.runContentAnalysisStatus(clientId);
+        if (status.status === 'done') {
+          clearInterval(contentAnalysisPollRef.current);
+          setContentAnalysisRunning(false);
+          toast.add({ title: 'Content Analysis complete', variant: 'success' });
+          loadContentAnalysis(clientId);
+        } else if (status.status === 'error') {
+          clearInterval(contentAnalysisPollRef.current);
+          setContentAnalysisRunning(false);
+          toast.add({ title: 'Content Analysis failed', description: status.error, variant: 'danger' });
+        }
+      } catch { /* transient — keep polling */ }
+    }, 1200);
+  }
+
+  // Content Analysis (top-pages content mix + sitemap structure) is a third
+  // independent action — its own SEMrush sub-budget for Part 1 only, unrelated
+  // to the main dashboard run or the Page Speed refresh.
+  async function handleRunContentAnalysis() {
+    if (!selectedClientId || contentAnalysisRunning) return;
+    setContentAnalysisRunning(true);
+    try {
+      await ct.runContentAnalysis(selectedClientId);
+      startContentAnalysisPolling(selectedClientId);
+    } catch (e) {
+      setContentAnalysisRunning(false);
+      toast.add({ title: 'Could not start Content Analysis', description: e.message, variant: 'danger' });
+    }
+  }
+
+  async function handleRegenerateTopPagesSummary() {
+    if (!selectedClientId || regeneratingTopPages) return;
+    setRegeneratingTopPages(true);
+    try {
+      const data = await ct.regenerateTopPagesSummary(selectedClientId);
+      setContentAnalysis(data.contentAnalysis);
+    } catch (e) {
+      toast.add({ title: 'Could not regenerate summary', description: e.message, variant: 'danger' });
+    } finally {
+      setRegeneratingTopPages(false);
+    }
+  }
+
+  async function handleRegenerateSitemapSummary() {
+    if (!selectedClientId || regeneratingSitemap) return;
+    setRegeneratingSitemap(true);
+    try {
+      const data = await ct.regenerateSitemapSummary(selectedClientId);
+      setContentAnalysis(data.contentAnalysis);
+    } catch (e) {
+      toast.add({ title: 'Could not regenerate summary', description: e.message, variant: 'danger' });
+    } finally {
+      setRegeneratingSitemap(false);
+    }
+  }
+
+  // Save folder-mapping edits — recomputes counts server-side (no crawl/GPT)
+  // and returns the updated analysis, which we swap in so charts refresh.
+  async function handleSaveMapping(edits) {
+    if (!selectedClientId || savingMapping) return;
+    setSavingMapping(true);
+    try {
+      const data = await ct.updateContentAnalysisMapping(selectedClientId, edits);
+      setContentAnalysis(data.contentAnalysis);
+      toast.add({ title: 'Folder mapping updated', variant: 'success' });
+    } catch (e) {
+      toast.add({ title: 'Could not update mapping', description: e.message, variant: 'danger' });
+    } finally {
+      setSavingMapping(false);
     }
   }
 
@@ -205,7 +339,7 @@ export default function CompetitorAnalysisDashboardPage() {
           <>
             {client && <Button variant="secondary" onClick={openEditClient}>Manage Client</Button>}
             <Button variant="secondary" onClick={openAddClient}>Add Client</Button>
-            <Button variant="primary" onClick={handleRun} loading={running} disabled={!selectedClientId}>
+            <Button variant="primary" onClick={handleRun} loading={running} disabled={!selectedClientId || pageSpeedRunning}>
               {running ? 'Running…' : 'Run Analysis'}
             </Button>
           </>
@@ -290,7 +424,7 @@ export default function CompetitorAnalysisDashboardPage() {
           description="Add a client and its competitors to start tracking."
           action={<Button variant="primary" onClick={openAddClient}>Add Client</Button>}
         />
-      ) : !snapshot && !loadingDashboard ? (
+      ) : !snapshot && !contentAnalysis && !loadingDashboard ? (
         <EmptyState
           title="No analysis yet"
           description="Run an analysis to populate this dashboard with (simulated) SEMrush data."
@@ -301,9 +435,28 @@ export default function CompetitorAnalysisDashboardPage() {
           <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
           <div style={{ marginTop: 20 }}>
             {activeTab === 'overview' && <OverviewTab snapshot={snapshot} />}
-            {activeTab === 'pagespeed' && <PageSpeedTab snapshot={snapshot} />}
-            {activeTab === 'keywordGap' && <KeywordGapTab snapshot={snapshot} />}
+            {activeTab === 'pagespeed' && (
+              <PageSpeedTab
+                snapshot={snapshot}
+                running={pageSpeedRunning}
+                disabled={running}
+                onRun={handleRunPageSpeed}
+              />
+            )}
             {activeTab === 'backlinks' && <BacklinkTab snapshot={snapshot} />}
+            {activeTab === 'contentAnalysis' && (
+              <ContentAnalysisTab
+                contentAnalysis={contentAnalysis}
+                running={contentAnalysisRunning}
+                onRun={handleRunContentAnalysis}
+                regeneratingTopPages={regeneratingTopPages}
+                onRegenerateTopPages={handleRegenerateTopPagesSummary}
+                regeneratingSitemap={regeneratingSitemap}
+                onRegenerateSitemap={handleRegenerateSitemapSummary}
+                onSaveMapping={handleSaveMapping}
+                savingMapping={savingMapping}
+              />
+            )}
           </div>
         </>
       )}

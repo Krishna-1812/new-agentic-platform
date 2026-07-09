@@ -1,9 +1,16 @@
-import { DataTable } from '../../ui/DataTable';
+import { Card } from '../../ui/Card';
 import { Badge } from '../../ui/Badge';
-import { fmtNum, domainLabel } from './utils';
+import { DataTable } from '../../ui/DataTable';
+import { fmtNum, domainLabel, computeClientStat } from './utils';
+import { KpiScorecard } from './charts/KpiScorecard';
+import { RankedBarChart } from './charts/RankedBarChart';
+import { ScoreCompare } from './charts/ScoreCompare';
+import { CompositionBar } from './charts/CompositionBar';
+import { CollapsibleTable } from './charts/CollapsibleTable';
 
 export default function OverviewTab({ snapshot }) {
   const domains = snapshot?.domains || [];
+  const hasAio = domains.some((d) => (d.aioKeywordCount || 0) > 0);
 
   const rows = domains.map((d) => ({
     id: d.domain,
@@ -35,27 +42,59 @@ export default function OverviewTab({ snapshot }) {
     { key: 'nonBrandedKeywordCount', label: 'Non-Branded Kw', align: 'right', mono: true, render: fmtNum },
   ];
 
-  const bucketRows = domains.map((d) => ({
-    id: d.domain,
-    label: domainLabel(d),
-    page1: d.keywordBuckets.page1,
-    page2: d.keywordBuckets.page2,
-    page3to5: d.keywordBuckets.page3to5,
-    page6to10: d.keywordBuckets.page6to10,
-  }));
-
-  const bucketColumns = [
-    { key: 'label', label: 'Domain', sortable: false },
-    { key: 'page1', label: 'Pos 1–10', align: 'right', mono: true },
-    { key: 'page2', label: 'Pos 11–20', align: 'right', mono: true },
-    { key: 'page3to5', label: 'Pos 21–50', align: 'right', mono: true },
-    { key: 'page6to10', label: 'Pos 51–100', align: 'right', mono: true },
-  ];
+  if (!domains.length) {
+    return <DataTable title="Domain Comparison" columns={columns} rows={rows} emptyText="No data yet — run an analysis." />;
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <DataTable title="Domain Comparison" columns={columns} rows={rows} emptyText="No data yet — run an analysis." />
-      <DataTable title="Keyword Position Buckets" columns={bucketColumns} rows={bucketRows} emptyText="No data yet." />
+      {/* KPI scorecard strip — where do we stand, at a glance */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+        <KpiScorecard label="Organic Traffic" stat={computeClientStat(domains, (d) => d.domainRank.organicTraffic)} />
+        <KpiScorecard label="Organic Keywords" stat={computeClientStat(domains, (d) => d.domainRank.organicKeywords)} />
+        <KpiScorecard label="Authority Score" stat={computeClientStat(domains, (d) => d.authorityScore)} />
+        <KpiScorecard label="Backlinks" stat={computeClientStat(domains, (d) => d.backlinks.totalBacklinks)} />
+      </div>
+
+      {/* Magnitude metrics — ranked bars, small multiples 2x2 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 16 }}>
+        <Card title="Organic Traffic">
+          <RankedBarChart domains={domains} valueFn={(d) => d.domainRank.organicTraffic} />
+        </Card>
+        <Card title="Organic Keywords">
+          <RankedBarChart domains={domains} valueFn={(d) => d.domainRank.organicKeywords} />
+        </Card>
+        <Card title="Backlinks">
+          <RankedBarChart domains={domains} valueFn={(d) => d.backlinks.totalBacklinks} />
+        </Card>
+        <Card title="Referring Domains">
+          <RankedBarChart domains={domains} valueFn={(d) => d.backlinks.referringDomains} />
+        </Card>
+      </div>
+
+      {/* Authority Score — bounded 0-100, gauge/lollipop not a bar */}
+      <Card title="Authority Score">
+        <ScoreCompare domains={domains} />
+      </Card>
+
+      {/* Keyword mix — composition, not magnitude */}
+      <Card
+        title="Keyword Mix — Branded vs. Non-Branded"
+        actions={hasAio ? <Badge variant="info">AI Overview keywords present</Badge> : null}
+      >
+        <CompositionBar
+          domains={domains}
+          segments={[
+            { key: 'branded', label: 'Branded', color: 'var(--primary)', valueFn: (d) => d.brandedKeywordCount },
+            { key: 'nonBranded', label: 'Non-Branded', color: 'var(--text-3)', valueFn: (d) => d.nonBrandedKeywordCount },
+          ]}
+          rowEmptyText="No keyword data"
+        />
+      </Card>
+
+      <CollapsibleTable>
+        <DataTable title="Domain Comparison" columns={columns} rows={rows} emptyText="No data yet — run an analysis." />
+      </CollapsibleTable>
     </div>
   );
 }

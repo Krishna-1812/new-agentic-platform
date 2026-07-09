@@ -4,6 +4,7 @@ const crypto = require('crypto');
 
 const DATA_ROOT = path.join(__dirname, 'data');
 const SNAPSHOTS_DIR = path.join(DATA_ROOT, 'snapshots');
+const CONTENT_ANALYSIS_DIR = path.join(DATA_ROOT, 'content-analysis');
 const CLIENTS_FILE = path.join(DATA_ROOT, 'clients.json');
 const MAX_COMPETITORS = 4;
 
@@ -27,6 +28,7 @@ async function readJson(filePath, fallback) {
 
 async function init() {
   await fs.mkdir(SNAPSHOTS_DIR, { recursive: true });
+  await fs.mkdir(CONTENT_ANALYSIS_DIR, { recursive: true });
   try { await fs.access(CLIENTS_FILE); } catch { await writeAtomic(CLIENTS_FILE, []); }
 }
 
@@ -72,6 +74,7 @@ async function deleteClient(clientId) {
   const next = list.filter((c) => c.id !== clientId);
   await writeAtomic(CLIENTS_FILE, next);
   await fs.rm(path.join(SNAPSHOTS_DIR, `${clientId}.json`), { force: true });
+  await fs.rm(path.join(CONTENT_ANALYSIS_DIR, `${clientId}.json`), { force: true });
 }
 
 // ── Competitors ──────────────────────────────────────────────────────────────
@@ -111,10 +114,22 @@ async function saveSnapshot(clientId, snapshot) {
   await writeAtomic(path.join(SNAPSHOTS_DIR, `${clientId}.json`), snapshot);
 }
 
+// ── Content Analysis (separate file per client — kept apart from the main
+// SEMrush snapshot since it can carry its own sizable page-type data) ───────
+
+async function getContentAnalysis(clientId) {
+  return readJson(path.join(CONTENT_ANALYSIS_DIR, `${clientId}.json`), null);
+}
+
+async function saveContentAnalysis(clientId, data) {
+  await writeAtomic(path.join(CONTENT_ANALYSIS_DIR, `${clientId}.json`), data);
+}
+
 module.exports = {
   init,
   MAX_COMPETITORS,
   getClients, getClient, createClient, updateClient, deleteClient,
   addCompetitor, removeCompetitor,
   getSnapshot, saveSnapshot,
+  getContentAnalysis, saveContentAnalysis,
 };

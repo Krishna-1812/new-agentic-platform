@@ -28,4 +28,20 @@ export const ct = {
   dashboard: (clientId) => req(`/clients/${clientId}/dashboard`),
   run: (clientId) => req(`/clients/${clientId}/run`, { method: 'POST' }),
   runStatus: (clientId) => req(`/clients/${clientId}/run/status`),
+
+  // Page Speed-only refresh — spends no SEMrush units, runs independently
+  // of the main analysis.
+  runPageSpeed: (clientId) => req(`/clients/${clientId}/run-pagespeed`, { method: 'POST' }),
+  runPageSpeedStatus: (clientId) => req(`/clients/${clientId}/run-pagespeed/status`),
+
+  // Content Analysis — top-pages content mix (Part 1) + sitemap structure
+  // (Part 2), each with a GPT 5.4 mini summary. Independent of the main
+  // analysis and Page Speed.
+  contentAnalysis: (clientId) => req(`/clients/${clientId}/content-analysis`),
+  runContentAnalysis: (clientId) => req(`/clients/${clientId}/content-analysis/run`, { method: 'POST' }),
+  runContentAnalysisStatus: (clientId) => req(`/clients/${clientId}/content-analysis/run/status`),
+  regenerateTopPagesSummary: (clientId) => req(`/clients/${clientId}/content-analysis/summary/top-pages`, { method: 'POST' }),
+  regenerateSitemapSummary: (clientId) => req(`/clients/${clientId}/content-analysis/summary/sitemap`, { method: 'POST' }),
+  // Edit the folder → page-type mapping. edits: { "<template>": "<type>" }.
+  updateContentAnalysisMapping: (clientId, edits) => req(`/clients/${clientId}/content-analysis/mapping`, { method: 'POST', body: JSON.stringify({ edits }) }),
 };
