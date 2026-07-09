@@ -146,8 +146,8 @@ export default function MacWindow() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
-      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: '100vh' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)', overflow: 'hidden' }}>
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1, minHeight: 0 }}>
 
         {/* ── AppHeader (56px solid) ── */}
         <div style={{
