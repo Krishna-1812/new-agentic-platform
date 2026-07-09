@@ -2,6 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SectionHeader } from '../ui/SectionHeader';
 import { Badge } from '../ui/Badge';
+import { TAGS, ALL_TOOLS } from '../toolsMeta';
+
+// Status tags live in toolsMeta.js (single source, also drives the sidebar).
+// Cards look theirs up by tool id, so the two surfaces never drift; a card
+// may still set `tag` inline to override for a card-only tool.
+const TAG_BY_ID = Object.fromEntries(ALL_TOOLS.filter((t) => t.tag).map((t) => [t.id, t.tag]));
 
 const TOOLS = [
   {
@@ -38,7 +44,7 @@ const TOOLS = [
     ),
   },
   {
-    id: 'market-potential', path: '/market-potential', badge: 'Market Intel', group: 'Research', beta: true,
+    id: 'market-potential', path: '/market-potential', badge: 'Market Intel', group: 'Research',
     label: 'Healthcare Market Potential', tagline: 'Rank metros by commercial search demand',
     description: 'Enter your home market(s) and a service, then compare commercial-intent search demand across adjacent metros — indexed against your current market, with per-capita, CPC, competition and 12-month trend.',
     features: ['Agent-proposed, frozen keyword baskets', 'Geo-targeted volume (DataForSEO)', 'Adjacency suggestions + home index', 'Ranked table + US bubble map'],
@@ -210,6 +216,7 @@ const CheckIcon = () => (
 
 function ToolCard({ tool, onClick }) {
   const [hovered, setHovered] = useState(false);
+  const tag = TAGS[tool.tag || TAG_BY_ID[tool.id]];
 
   return (
     <button
@@ -247,8 +254,22 @@ function ToolCard({ tool, onClick }) {
           {tool.icon}
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          {tool.beta && <Badge variant="info">Beta</Badge>}
-          {tool.public && <Badge variant="success">Public</Badge>}
+          {tag && (
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              padding: '2px 7px',
+              borderRadius: 'var(--r-pill)',
+              lineHeight: 1.4,
+              whiteSpace: 'nowrap',
+              background: tag.bg,
+              color: tag.fg,
+            }}>
+              {tag.label}
+            </span>
+          )}
           <Badge variant="brand">{tool.badge}</Badge>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
-import { TOOL_GROUPS, getToolByPath } from '../toolsMeta';
+import { TOOL_GROUPS, TAGS, getToolByPath } from '../toolsMeta';
 import SemrushBalanceBadge from './SemrushBalanceBadge';
 
 /* ── Embed mode ──────────────────────────────────────────────────────────────
@@ -419,7 +419,7 @@ function SidebarItem({ tool, icon, isActive, onClick }) {
       }}>
         {tool.label}
       </span>
-      {tool.beta && (
+      {tool.tag && TAGS[tool.tag] && (
         <span style={{
           marginLeft: 'auto',
           flexShrink: 0,
@@ -429,26 +429,11 @@ function SidebarItem({ tool, icon, isActive, onClick }) {
           textTransform: 'uppercase',
           padding: '1px 5px',
           borderRadius: 4,
-          background: 'rgba(59,130,246,0.20)',
-          color: '#60a5fa',
+          whiteSpace: 'nowrap',
+          background: TAGS[tool.tag].bg,
+          color: TAGS[tool.tag].fg,
         }}>
-          Beta
-        </span>
-      )}
-      {tool.public && (
-        <span style={{
-          marginLeft: 'auto',
-          flexShrink: 0,
-          fontSize: 9,
-          fontWeight: 700,
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-          padding: '1px 5px',
-          borderRadius: 4,
-          background: 'rgba(34,197,94,0.20)',
-          color: '#4ade80',
-        }}>
-          Public
+          {TAGS[tool.tag].short || TAGS[tool.tag].label}
         </span>
       )}
     </button>
