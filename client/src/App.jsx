@@ -1,4 +1,7 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { getToolByPath } from './toolsMeta';
+import { notifyRouteChange } from './lib/agentRunSignal';
 import { ThemeProvider } from './components/ThemeContext';
 import { ToastProvider } from './ui/Toast';
 import MacWindow from './components/MacWindow';
@@ -29,10 +32,23 @@ import OnPageAuditPage from './pages/OnPageAuditPage';
 import MarketPotentialPage from './pages/MarketPotentialPage';
 import CompetitorAnalysisDashboardPage from './pages/CompetitorAnalysisDashboardPage';
 
+// Keeps the parent Intelligence Platform shell's URL + breadcrumb in sync with
+// the tool the user navigates to here. The shell embeds us in a cross-origin
+// iframe, so it can't read our location — we push it on every route change.
+function RouteBridge() {
+  const location = useLocation();
+  useEffect(() => {
+    const tool = getToolByPath(location.pathname);
+    if (tool) notifyRouteChange(tool.id, tool.label, location.pathname);
+  }, [location.pathname]);
+  return null;
+}
+
 export default function App() {
   return (
     <ThemeProvider>
       <ToastProvider>
+      <RouteBridge />
       <Routes>
         <Route element={<MacWindow />}>
           <Route path="/" element={<HomePage />} />

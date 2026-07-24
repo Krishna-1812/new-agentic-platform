@@ -28,3 +28,19 @@ export function notifyAgentRunFinished(tool, output) {
     // ignore — embedding context may block cross-window messaging
   }
 }
+
+// Notifies the parent window (the Intelligence Platform shell) which tool the
+// user just navigated to inside our sidebar, so the shell can keep its address
+// bar + breadcrumb in sync (e.g. /p2/seo/content-research). The iframe is
+// cross-origin, so the shell can't read our URL — this message is the only way
+// it learns the route. `tool` is the canonical slug (toolsMeta id), `name` the
+// display label. No-op when not embedded, same guards as the run signals.
+export function notifyRouteChange(tool, name, path) {
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ source: 'p2-seo-tool', type: 'route-change', tool, name, path }, '*');
+    }
+  } catch (e) {
+    // ignore — embedding context may block cross-window messaging
+  }
+}
