@@ -551,11 +551,19 @@ async function fetchArticle(url) {
     /\b(top[-_]?(cities|brands|categories|products)|see[-_]?all[-_]?(cities|brands|categories)|cities[-_]?(list|grid)|brands?[-_]?(list|grid|menu))\b/i,
   ];
 
+  const preNonContentTextLen = $('body').text().replace(/\s+/g, ' ').trim().length;
   $('[class], [id]').each((_, el) => {
     const tag = (el.tagName || '').toLowerCase();
     if (tag === 'html' || tag === 'body') return;
     const combined = `${($(el).attr('class') || '')} ${($(el).attr('id') || '')}`.toLowerCase();
-    if (NON_CONTENT.some(p => p.test(combined))) $(el).remove();
+    if (!NON_CONTENT.some(p => p.test(combined))) return;
+    // Guard: real boilerplate (sidebars, CTAs, share widgets) never holds most
+    // of a page's text. If it does, this is a main-content wrapper with a
+    // misleading class/id (e.g. Drupal's `dialog-off-canvas-main-canvas`),
+    // not actual chrome — skip removal.
+    const elTextLen = $(el).text().replace(/\s+/g, ' ').trim().length;
+    if (preNonContentTextLen > 0 && elTextLen > preNonContentTextLen * 0.5) return;
+    $(el).remove();
   });
 
   const ARTICLE_SELECTORS = [
