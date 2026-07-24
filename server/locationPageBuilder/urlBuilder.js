@@ -31,4 +31,18 @@ function breadcrumbLabel(serviceName, locationName) {
   return `${serviceName} in ${locationName}`;
 }
 
-module.exports = { slugify, pageUrl, canonicalUrl, breadcrumbLabel };
+// ── Dental (Gentle Dental) URL pattern — /dental-offices/{state}/{city}/{slug} ─
+// The location's own `location_page_url` (from Appendix B) already encodes the
+// state + city[+sub-area] segments (e.g. "/dental-offices/ma/boston/newbury-st"),
+// so the combo page is simply that path + the service slug.
+function dentalPageUrl(locationPageUrl, serviceSlug) {
+  const base = String(locationPageUrl || '').replace(/\/+$/, '');
+  return `${base}/${slugify(serviceSlug)}`;
+}
+
+function canonicalDentalUrl(baseUrl, locationPageUrl, serviceSlug) {
+  const origin = String(baseUrl || '').replace(/\/+$/, '');
+  return `${origin}${dentalPageUrl(locationPageUrl, serviceSlug)}`;
+}
+
+module.exports = { slugify, pageUrl, canonicalUrl, breadcrumbLabel, dentalPageUrl, canonicalDentalUrl };

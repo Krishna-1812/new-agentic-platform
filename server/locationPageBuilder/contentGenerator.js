@@ -231,4 +231,265 @@ Return JSON only: { "${cfg.key}": "..." }`;
   return maxChars && value.length > maxChars ? value.slice(0, maxChars) : value;
 }
 
-module.exports = { buildPrompt, generateL3, crossPageSimilarity, competitorOverlap, regenField };
+// ── Dental (Gentle Dental) content generation — Build Brief §4 (narrowed) ──
+// ONE structured call producing: hero.intro (short description below the H1),
+// meta.metaDescription, educationalBody blocks, faq items — the keyword-critical
+// fields (title is deterministic, built in compose.buildDentalScaffold).
+// servicesInCity.intro is NOT generated — it's an optional manual-entry field
+// in the wizard. No OG tags at all (dropped from the contract). NAP/breadcrumb/
+// menu/schema scaffolding are assembled in code — never by the model.
+//
+// educationalBody + faqs are modeled on REAL competitor pages: dentalWizard.js
+// SERPs the primary keyword, scrapes the top-ranking (non-Gentle-Dental) results
+// for their H2/H3 headings and any detected FAQ questions, and passes that in
+// as `competitorHeadings`/`competitorFaqs`. The model must model COVERAGE from
+// these, never copy phrasing/NAP/reviews — same guardrail as the Neuro pipeline.
+
+const DENTAL_L3_SCHEMA_HINT = `{
+  "heroIntro": "string — a SHORT description that renders directly below the H1. 1-2 sentences. Optimized for the PRIMARY keyword — the first sentence should naturally include it.",
+  "metaDescription": "string — MUST be 150-160 characters TOTAL, counting every character including spaces. This is a two-sided range: too short fails QA just like too long. Draft it, count it, and if it is under 150 characters add another short clause (a benefit, insurance note, or CTA) before finalizing. Includes the PRIMARY keyword, ends with a soft CTA.",
+  "educationalBody": [
+    { "h2": "string — heading, keyword-relevant", "html": "string — clean semantic HTML using ONLY <p>, <ul>, <li>. No inline styles/classes." }
+  ],
+  "faqs": [
+    { "q": "string", "a": "string" }
+  ]
+}`;
+
+const DENTAL_SYSTEM_PROMPT = `You are an expert local-SEO + GEO/AEO content writer for Gentle Dental of New England,
+a multi-location dental group in Massachusetts and New Hampshire.
+
+Write US English in AP style:
+- Spell out one through nine; numerals for 10+. Always use numerals for data/metrics.
+- Percentages as numerals + % (e.g. 14%). No Oxford comma unless needed to avoid ambiguity.
+- No em dashes as stylistic connectors. Title case for section headers.
+Tone: conversational but polished, trustworthy, patient-friendly. Never clinical-cold, never hypey.
+
+Hard rules:
+- Do NOT invent office addresses, phone numbers, hours, prices, dentist names, or patient reviews.
+- Localize meaningfully to the specific city so this page is not a near-duplicate of other cities'
+  pages: reference the city (and neighborhood/region where natural) in at least one H2's body and
+  in at least one FAQ.
+- The PRIMARY keyword (or a clearly recognizable close variant — plural/singular, reordered, with a
+  natural preposition like "in") MUST appear a TOTAL of 5 times across the ENTIRE generated content
+  (heroIntro + educationalBody + faqs combined) — NOT counting metaDescription. Do not just aim for
+  "5ish" — use this exact checklist so you don't undercount, then verify before answering:
+    1. heroIntro — 1 occurrence (its first sentence).
+    2. educationalBody — 1 occurrence in an H2 heading or its opening sentence.
+    3. educationalBody — 2 MORE occurrences spread across other blocks (different blocks, not the
+       same one twice).
+    4. faqs — 1 occurrence in a question or answer.
+  That is 5 checklist items — hit all 5 before finalizing. It must also appear once in the meta
+  description. Weave SECONDARY keywords where they read naturally elsewhere. Never keyword-stuff —
+  each occurrence should read as a normal sentence, not a forced insertion.
+- metaDescription is a HARD two-sided range: 150-160 characters, not "up to 160." Count it before
+  answering. A description of 130-145 characters FAILS review just as badly as one over 160 — pad
+  it with a genuine benefit, insurance note, or CTA clause until it lands in range.
+- Write answer-first: each H2 and each FAQ answer must be self-contained and directly useful when
+  lifted out of context (this is what AI answer engines cite).
+- Medical accuracy: describe procedures factually; include candidacy, benefits, risks/safety where
+  relevant. No guarantees of outcomes.
+- When COMPETITOR HEADINGS / COMPETITOR FAQ TOPICS are provided below: model your H2 coverage and
+  FAQ selection on the SUBJECT MATTER they cover — never copy their phrasing, NAP, dentist names,
+  reviews, or exact sentences. If none are provided, fall back to comprehensive standard coverage.
+
+Return ONLY JSON, no prose, no markdown fences, matching the schema provided in the user message.`;
+
+function buildDentalPrompt({ service, location, primaryKeyword, secondaryKeywords, competitorHeadings, competitorFaqs }) {
+  const officeName = location.location_name;
+  const cityState = `${location.city}, ${location.state_abbreviation}`;
+
+  const bodyStack = `EDUCATIONAL BODY — produce a service-appropriate H2 stack (adapt headings to this
+specific service; do not force every heading if it doesn't fit). Default set to draw from if no
+competitor headings are provided below:
+1. What Is ${service.name}?
+2. Benefits of ${service.name} (or "Advantages of Professional ${service.name}")
+3. What to Expect / The ${service.name} Procedure (+ duration where relevant)
+4. Who Is a Good Candidate for ${service.name}?
+5. Types / Methods / Options (where the service has variants)
+6. Effectiveness & Cost Considerations
+7. Is ${service.name} Safe? / Risks (where clinically relevant)
+For clinical/urgent services (e.g. Root Canals, Extractions, Emergency Dental Care), swap in:
+"Signs You May Need ${service.name}", "The ${service.name} Procedure", "Alternatives to ${service.name}".
+3-5 H2 blocks total, each with clean HTML (<p>/<ul>/<li> only).`;
+
+  const competitorBlock = (competitorHeadings || []).length
+    ? `COMPETITOR HEADINGS (real top-ranking pages for this keyword — model your H2 COVERAGE on the
+topics these represent; do NOT copy phrasing, NAP, names, or reviews):
+${competitorHeadings.map(h => `- ${h}`).join('\n')}`
+    : 'No competitor headings available — base the educational body on standard, comprehensive coverage for this service.';
+
+  const faqBlock = (competitorFaqs || []).length
+    ? `COMPETITOR FAQ TOPICS (real questions competitor pages answer for this keyword — write your
+own original answers, do not copy theirs):
+${competitorFaqs.map(f => `- ${f}`).join('\n')}`
+    : '';
+
+  const user = `PAGE: ${service.name} in ${officeName}, ${cityState}
+Service category: ${service.category}
+Office name: ${officeName}
+Primary keyword: ${primaryKeyword}
+Secondary keywords: ${(secondaryKeywords || []).join(', ') || '(none)'}
+
+HERO INTRO: a short description rendered directly below the H1 heading. 1-2 sentences, first
+sentence naturally includes the primary keyword.
+
+${bodyStack}
+
+${competitorBlock}
+
+FAQ: 4-6 Q&As phrased the way patients ask; localize at least one to ${location.city}.
+${faqBlock}
+
+KEYWORD FREQUENCY: "${primaryKeyword}" (or a close variant) must appear 5 times total across
+heroIntro + educationalBody + faqs combined (not counting metaDescription). Follow the 5-item
+checklist from the system prompt (heroIntro / an H2 / 2 more educationalBody spots / an FAQ) —
+count your draft against it before returning JSON.
+
+Return JSON only, matching this schema:
+${DENTAL_L3_SCHEMA_HINT}`;
+
+  return { system: DENTAL_SYSTEM_PROMPT, user };
+}
+
+async function generateDentalL3({ service, location, primaryKeyword, secondaryKeywords, competitorHeadings, competitorFaqs }) {
+  if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not configured on server.');
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const { system, user } = buildDentalPrompt({ service, location, primaryKeyword, secondaryKeywords, competitorHeadings, competitorFaqs });
+
+  let l3 = null;
+  for (let attempt = 0; attempt < 2 && !l3; attempt++) {
+    const completion = await openai.chat.completions.create({
+      model: config.llm.generationModel,
+      ...chatParams(config.llm.generationModel, { maxTokens: 3500 }),
+      response_format: { type: 'json_object' },
+      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+    });
+    try {
+      const raw = JSON.parse(completion.choices[0].message.content);
+      if (raw && (raw.metaDescription || raw.educationalBody || raw.heroIntro)) l3 = raw;
+    } catch { /* retry once */ }
+  }
+  if (!l3) throw new Error('Dental content generation returned invalid JSON after retry.');
+  l3.metaDescription = normalizeMetaDescriptionLength(l3.metaDescription, { service, location });
+  return l3;
+}
+
+// A 150-160 char TWO-SIDED range is hard for an LLM to hit reliably (it's easy
+// to cap a max, much harder to guarantee a min) — this is a deterministic
+// safety net so QC's meta_description_length check doesn't fail on an
+// otherwise-good page. Mirrors the existing Neuro pattern of clipping as a
+// safety net after generation (compose.mergeL3).
+function clipToWordBoundary(s, max) {
+  let out = s.slice(0, max);
+  const lastSpace = out.lastIndexOf(' ');
+  if (lastSpace > max - 20) out = out.slice(0, lastSpace);
+  return out.replace(/[.,;:\s]+$/, '') + '.';
+}
+
+function normalizeMetaDescriptionLength(desc, { service, location }) {
+  const s = String(desc || '').trim().replace(/\s+/g, ' ');
+  if (s.length > 160) return clipToWordBoundary(s, 160);
+  if (s.length >= 150) return s;
+
+  // Under 150 — try a set of increasingly long CTA clauses and use whichever
+  // lands the combined string inside [150, 160] without truncating mid-clause.
+  const base = s.replace(/\.?\s*$/, '');
+  const fillers = [
+    `Call ${location.city} today.`,
+    `Call our ${location.city} office today to book.`,
+    `Call our ${location.city} team to schedule your visit today.`,
+    `Ask our ${location.city} team about ${service.name.toLowerCase()} options and book your visit today.`,
+  ];
+  for (const filler of fillers) {
+    const candidate = `${base}. ${filler}`;
+    if (candidate.length >= 150 && candidate.length <= 160) return candidate;
+  }
+  // Nothing landed exactly in range — fall back to the longest filler, clipped
+  // cleanly as a whole (same safe path as the over-160 case above).
+  const longest = `${base}. ${fillers[fillers.length - 1]}`;
+  return longest.length > 160 ? clipToWordBoundary(longest, 160) : longest;
+}
+
+// ── Dental per-section regeneration ("regenerate every section") ──────────
+// One small, targeted OpenAI call per section instead of regenerating the
+// whole page. Shares the same hard rules (no fabricated NAP/reviews, AP
+// style, competitor-modeled coverage) as the main generation call.
+const DENTAL_REGEN_GUARDRAILS = `Write US English in AP style (spell out one-nine, numerals 10+, no em dashes,
+title case headers). Tone: conversational, trustworthy, patient-friendly. Do NOT invent office
+addresses, phone numbers, hours, prices, dentist names, or patient reviews. No guarantees of medical
+outcomes. When COMPETITOR context is provided, model coverage/subject matter only — never copy
+phrasing, NAP, names, or reviews. Return ONLY JSON, no prose, no markdown fences.`;
+
+function competitorContextBlock(competitorHeadings, competitorFaqs) {
+  const parts = [];
+  if ((competitorHeadings || []).length) {
+    parts.push(`COMPETITOR HEADINGS (model subject-matter coverage, don't copy phrasing):\n${competitorHeadings.map(h => `- ${h}`).join('\n')}`);
+  }
+  if ((competitorFaqs || []).length) {
+    parts.push(`COMPETITOR FAQ TOPICS (write your own original answers):\n${competitorFaqs.map(f => `- ${f}`).join('\n')}`);
+  }
+  return parts.join('\n\n');
+}
+
+async function generateDentalRegen({ service, location, primaryKeyword, secondaryKeywords, competitorHeadings, competitorFaqs, section, context = {} }) {
+  if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not configured on server.');
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const cityState = `${location.city}, ${location.state_abbreviation}`;
+  const competitorBlock = competitorContextBlock(competitorHeadings, competitorFaqs);
+  const kwLine = `Primary keyword: ${primaryKeyword}\nSecondary keywords: ${(secondaryKeywords || []).join(', ') || '(none)'}`;
+
+  let schemaHint, task;
+  if (section === 'heroIntro') {
+    schemaHint = `{ "heroIntro": "string — 1-2 sentences, first sentence naturally includes the PRIMARY keyword" }`;
+    task = `Write ONLY a fresh hero intro (short description below the H1) for "${service.name}" in ${cityState}.`;
+  } else if (section === 'metaDescription') {
+    schemaHint = `{ "metaDescription": "string — MUST be 150-160 characters total, includes the PRIMARY keyword, ends with a soft CTA" }`;
+    task = `Write ONLY a fresh meta description for "${service.name}" in ${cityState}.`;
+  } else if (section === 'educationalBlock') {
+    schemaHint = `{ "h2": "string — heading", "html": "string — clean HTML using ONLY <p>, <ul>, <li>" }`;
+    const otherHeadings = (context.otherHeadings || []).filter(Boolean);
+    task = `Write ONE fresh educational H2 block (heading + HTML body) for "${service.name}" in ${cityState}${
+      context.currentH2 ? `, replacing the current heading "${context.currentH2}"` : ''
+    }.${otherHeadings.length ? ` Do NOT duplicate these other headings already on the page: ${otherHeadings.join(' | ')}.` : ''}`;
+  } else if (section === 'educationalBody') {
+    schemaHint = `{ "educationalBody": [ { "h2": "string", "html": "string — clean HTML using ONLY <p>, <ul>, <li>" } ] }`;
+    task = `Write a fresh 3-5 block educational H2 stack for "${service.name}" in ${cityState}.`;
+  } else if (section === 'faqs') {
+    schemaHint = `{ "faqs": [ { "q": "string", "a": "string" } ] }`;
+    task = `Write a fresh set of 4-6 FAQ Q&As for "${service.name}" in ${cityState}, phrased the way patients ask; localize at least one to ${location.city}.`;
+  } else if (section === 'faqItem') {
+    schemaHint = `{ "q": "string", "a": "string" }`;
+    const otherQuestions = (context.otherQuestions || []).filter(Boolean);
+    task = `Write ONE fresh FAQ Q&A for "${service.name}" in ${cityState}${
+      context.currentQ ? `, replacing the current question "${context.currentQ}"` : ''
+    }, phrased the way a patient asks.${otherQuestions.length ? ` Do NOT duplicate these other questions already on the page: ${otherQuestions.join(' | ')}.` : ''}`;
+  } else {
+    throw new Error(`Unknown regen section "${section}".`);
+  }
+
+  const system = `${DENTAL_REGEN_GUARDRAILS}\nSchema:\n${schemaHint}`;
+  const user = `${task}\n\n${kwLine}\n\n${competitorBlock}\n\nReturn JSON only, matching the schema.`;
+
+  let result = null;
+  for (let attempt = 0; attempt < 2 && !result; attempt++) {
+    const completion = await openai.chat.completions.create({
+      model: config.llm.generationModel,
+      ...chatParams(config.llm.generationModel, { maxTokens: 1500 }),
+      response_format: { type: 'json_object' },
+      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+    });
+    try {
+      const raw = JSON.parse(completion.choices[0].message.content);
+      if (raw) result = raw;
+    } catch { /* retry once */ }
+  }
+  if (!result) throw new Error(`Dental regeneration ("${section}") returned invalid JSON after retry.`);
+  if (section === 'metaDescription') result.metaDescription = normalizeMetaDescriptionLength(result.metaDescription, { service, location });
+  return result;
+}
+
+module.exports = {
+  buildPrompt, generateL3, crossPageSimilarity, competitorOverlap, regenField,
+  buildDentalPrompt, generateDentalL3, generateDentalRegen,
+};

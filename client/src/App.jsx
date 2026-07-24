@@ -25,6 +25,8 @@ import ArticleEnhancementPage from './pages/ArticleEnhancementPage';
 import ArticleEnhancementLitePage from './pages/ArticleEnhancementLitePage';
 import LocationPageBuilderPage from './pages/LocationPageBuilderPage';
 import LocationPageDetailPage from './pages/LocationPageDetailPage';
+import LocationServiceWizardPage from './pages/LocationServiceWizardPage';
+import GentleDentalPagesPage from './pages/GentleDentalPagesPage';
 import RobotsMonitorPage from './pages/RobotsMonitorPage';
 import HubSpokePage from './pages/HubSpokePage';
 import HubSpokeProjectPage from './pages/HubSpokeProjectPage';
@@ -70,6 +72,8 @@ export default function App() {
           <Route path="/article-enhancement" element={<ArticleEnhancementPage />} />
           <Route path="/article-enhancement-lite" element={<ArticleEnhancementLitePage />} />
           <Route path="/location-page-builder" element={<LocationPageBuilderPage />} />
+          <Route path="/location-page-builder/wizard" element={<LocationServiceWizardPage />} />
+          <Route path="/location-page-builder/gentle-dental-pages" element={<GentleDentalPagesPage />} />
           <Route path="/location-page-builder/:id" element={<LocationPageDetailPage />} />
           <Route path="/robots-monitor" element={<RobotsMonitorPage />} />
           <Route path="/hub-spoke" element={<HubSpokePage />} />

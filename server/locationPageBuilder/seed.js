@@ -189,14 +189,189 @@ const TONE_PROFILE = {
 async function seedNeuroWellness() {
   await store.upsertBy('clients', 'id', CLIENT, 'client');
   await store.upsertBy('globalTemplates', 'id', GLOBAL_TEMPLATE, 'gt');
-  await store.replaceAll('services', SERVICES);
-  await store.replaceAll('locations', LOCATIONS);
-  await store.replaceAll('providers', PROVIDERS);
-  await store.replaceAll('reviews', REVIEWS);
-  await store.replaceAll('insuranceSets', INSURANCE_SETS);
-  await store.replaceAll('resources', RESOURCES);
+  // Scoped to this client_id — does NOT touch other clients' rows in the
+  // same shared table (see store.replaceAllForClient).
+  await store.replaceAllForClient('services', CLIENT_ID, SERVICES);
+  await store.replaceAllForClient('locations', CLIENT_ID, LOCATIONS);
+  await store.replaceAllForClient('providers', CLIENT_ID, PROVIDERS);
+  await store.replaceAllForClient('reviews', CLIENT_ID, REVIEWS);
+  await store.replaceAllForClient('insuranceSets', CLIENT_ID, INSURANCE_SETS);
+  await store.replaceAllForClient('resources', CLIENT_ID, RESOURCES);
   await store.upsertBy('toneProfiles', 'id', TONE_PROFILE, 'tone');
   return { client_id: CLIENT_ID, services: SERVICES.length, locations: LOCATIONS.length, providers: PROVIDERS.length };
 }
 
-module.exports = { seedNeuroWellness, CLIENT_ID };
+// ── Seed data: Gentle Dental of New England (dental location+service wizard) ─
+// NAP (address/phone/hours/directions/map) is intentionally left EMPTY — it
+// is populated manually from GBP/Birdeye later, not by this seeder or the
+// generator (never fabricated). Every office offers every service.
+
+const GD_CLIENT_ID = 'client_gentle_dental';
+const GD_BASE_URL = 'https://gentledental.com';
+
+const GD_CLIENT = {
+  id: GD_CLIENT_ID,
+  name: 'Gentle Dental of New England',
+  brand_static: {
+    logo: '',
+    org_schema: { '@type': 'Organization', name: 'Gentle Dental of New England', url: GD_BASE_URL },
+    sameAs: [],
+    base_url: GD_BASE_URL,
+  },
+  brand_rules: {
+    ymyl: true,
+    prohibited_claims: [
+      'guaranteed results', 'guarantee', 'pain-free guarantee', 'cure',
+      'permanent results', '100% effective', 'no risk', 'miracle', 'instant results',
+    ],
+  },
+  global_template_id: 'gt_gentle_dental_location_service',
+};
+
+const GD_GLOBAL_TEMPLATE = {
+  id: 'gt_gentle_dental_location_service',
+  client_id: GD_CLIENT_ID,
+  page_type: 'dental_location_service',
+  // Section order matches the Build Brief §2.2 GeneratedPage contract.
+  section_order: ['seo', 'hero', 'breadcrumb', 'officeInfo', 'servicesInCity', 'educationalBody', 'faq', 'schema'],
+  section_layouts: {},
+  seo_head_structure: {
+    meta_title_pattern: '[Service] in [City], [STATE] | Gentle Dental',
+    h1_pattern: '[Service] in [City], [STATE]',
+  },
+  schema_skeletons: { business_type: 'Dentist' },
+};
+
+// Appendix A — 26 services (category | name | slug).
+const GD_SERVICE_DEFS = [
+  ['Cosmetic', 'Teeth Whitening', 'teeth-whitening'],
+  ['Cosmetic', 'Veneers', 'veneers'],
+  ['Cosmetic', 'Smile Makeover', 'smile-makeover'],
+  ['Cosmetic', 'Invisalign', 'invisalign'],
+  ['Restorative', 'Crowns & Bridges', 'crowns-bridges'],
+  ['Restorative', 'Dental Fillings', 'dental-fillings'],
+  ['Restorative', 'Root Canals', 'root-canals'],
+  ['Restorative', 'Gum Treatments', 'gum-treatments'],
+  ['Restorative', 'Partial & Full Dentures', 'partial-and-full-dentures'],
+  ['Restorative', 'Implants', 'implants'],
+  ['Oral Surgery', 'Extractions', 'extractions'],
+  ['Oral Surgery', 'Wisdom Teeth Extractions', 'wisdom-teeth-extractions'],
+  ['Orthodontics', 'Braces', 'braces'],
+  ['Preventive', 'Exams', 'exams'],
+  ['Preventive', 'Digital X-rays', 'digital-x-rays'],
+  ['Preventive', 'Cleanings', 'cleanings'],
+  ['Preventive', 'Fluoride Treatment', 'fluoride-treatment'],
+  ['Preventive', 'Oral Cancer Screening', 'oral-cancer-screening'],
+  ['Preventive', 'Sealants', 'sealants'],
+  ['Preventive', 'Cavity Prevention (Curodont)', 'curodont'],
+  ['Preventive', 'Diabetes & Oral Health', 'diabetes-and-oral-health'],
+  ['Specialty', 'Emergency Dental Care', 'emergency-dental-care'],
+  ['Specialty', 'Pediatric Dentistry', 'pediatric-dentistry'],
+  ['Specialty', 'Sedation Dentistry', 'sedation-dentistry'],
+  ['Specialty', 'Sleep Apnea Treatment', 'sleep-apnea-treatment'],
+  ['Specialty', 'TMD/TMJ Treatment', 'tmd-tmj-treatment'],
+];
+
+const GD_SERVICES = GD_SERVICE_DEFS.map(([category, name, slug]) => ({
+  id: `dsvc_${slug}`,
+  client_id: GD_CLIENT_ID,
+  name,
+  slug,
+  category,
+}));
+
+const GD_ALL_SERVICE_IDS = GD_SERVICES.map(s => s.id);
+
+// Appendix B — 50 offices (state_abbreviation | region | city/officeName | pagePath).
+const GD_LOCATION_DEFS = [
+  ['MA', 'Boston', 'Boston', '/dental-offices/ma/boston'],
+  ['MA', 'Boston', 'Boston - Newbury Street', '/dental-offices/ma/boston/newbury-st'],
+  ['MA', 'Boston', 'Brighton', '/dental-offices/ma/boston/brighton'],
+  ['MA', 'Boston', 'Brookline', '/dental-offices/ma/brookline'],
+  ['MA', 'Boston', 'Jamaica Plain', '/dental-offices/ma/boston/jamaica-plain'],
+  ['MA', 'Boston', 'South Boston', '/dental-offices/ma/boston/south-boston'],
+  ['MA', 'Boston', 'West Roxbury', '/dental-offices/ma/boston/west-roxbury'],
+  ['MA', 'Greater Boston', 'Arlington', '/dental-offices/ma/arlington'],
+  ['MA', 'Greater Boston', 'Belmont', '/dental-offices/ma/belmont'],
+  ['MA', 'Greater Boston', 'Brockton', '/dental-offices/ma/brockton'],
+  ['MA', 'Greater Boston', 'Burlington', '/dental-offices/ma/burlington'],
+  ['MA', 'Greater Boston', 'Cambridge', '/dental-offices/ma/cambridge'],
+  ['MA', 'Greater Boston', 'Malden', '/dental-offices/ma/malden'],
+  ['MA', 'Greater Boston', 'Medford', '/dental-offices/ma/medford'],
+  ['MA', 'Greater Boston', 'Norwood', '/dental-offices/ma/norwood'],
+  ['MA', 'Greater Boston', 'Somerville', '/dental-offices/ma/somerville'],
+  ['MA', 'Greater Boston', 'Stoughton', '/dental-offices/ma/stoughton'],
+  ['MA', 'Greater Boston', 'Waltham', '/dental-offices/ma/waltham'],
+  ['MA', 'Metrowest', 'Franklin', '/dental-offices/ma/franklin'],
+  ['MA', 'Metrowest', 'Hudson', '/dental-offices/ma/hudson'],
+  ['MA', 'Metrowest', 'Milford', '/dental-offices/ma/milford'],
+  ['MA', 'Metrowest', 'Natick', '/dental-offices/ma/natick'],
+  ['MA', 'Merrimack Valley', 'Chelmsford', '/dental-offices/ma/chelmsford'],
+  ['MA', 'Merrimack Valley', 'Methuen', '/dental-offices/ma/methuen'],
+  ['MA', 'Merrimack Valley', 'North Andover', '/dental-offices/ma/north-andover'],
+  ['MA', 'North Shore', 'Beverly', '/dental-offices/ma/beverly'],
+  ['MA', 'North Shore', 'Peabody', '/dental-offices/ma/peabody'],
+  ['MA', 'North Shore', 'Saugus', '/dental-offices/ma/saugus'],
+  ['MA', 'North Shore', 'Wakefield', '/dental-offices/ma/wakefield'],
+  ['MA', 'South Coast', 'Attleboro', '/dental-offices/ma/attleboro'],
+  ['MA', 'South Coast', 'New Bedford', '/dental-offices/ma/new-bedford'],
+  ['MA', 'South Coast', 'Seekonk', '/dental-offices/ma/seekonk'],
+  ['MA', 'South Shore', 'Braintree', '/dental-offices/ma/braintree'],
+  ['MA', 'South Shore', 'Hanover', '/dental-offices/ma/hanover'],
+  ['MA', 'South Shore', 'Quincy', '/dental-offices/ma/quincy'],
+  ['MA', 'Worcester', 'Worcester', '/dental-offices/ma/worcester'],
+  ['MA', 'Worcester', 'Worcester at The Trolley Yard', '/dental-offices/ma/worcester/worcester-at-the-trolley-yard'],
+  ['MA', 'Worcester', 'Worcester - Shrewsbury Street', '/dental-offices/ma/worcester/worcester-shrewsbury-st'],
+  ['NH', 'Manchester', 'Manchester', '/dental-offices/nh/manchester'],
+  ['NH', 'Manchester', 'Manchester Elm Street', '/dental-offices/nh/manchester/elm-st'],
+  ['NH', 'Manchester', 'Manchester South Willow', '/dental-offices/nh/manchester/south-willow'],
+  ['NH', 'Nashua', 'Nashua', '/dental-offices/nh/nashua'],
+  ['NH', 'Nashua', 'Nashua - Main Street', '/dental-offices/nh/nashua/main-st'],
+  ['NH', 'Nashua', 'South Nashua', '/dental-offices/nh/nashua/south-nashua'],
+  ['NH', 'All New Hampshire', 'Concord', '/dental-offices/nh/concord/concord-south-main-st'],
+  ['NH', 'All New Hampshire', 'Derry', '/dental-offices/nh/derry'],
+  ['NH', 'All New Hampshire', 'Dover', '/dental-offices/nh/dover'],
+  ['NH', 'All New Hampshire', 'Exeter', '/dental-offices/nh/exeter'],
+  ['NH', 'All New Hampshire', 'Keene', '/dental-offices/nh/keene'],
+  ['NH', 'All New Hampshire', 'Rochester', '/dental-offices/nh/rochester'],
+];
+
+const GD_STATE_NAMES = { MA: 'Massachusetts', NH: 'New Hampshire' };
+
+const GD_LOCATIONS = GD_LOCATION_DEFS.map(([stateAbbr, region, city, pagePath]) => {
+  const idSlug = pagePath.replace(/^\/dental-offices\//, '').replace(/\//g, '-');
+  return {
+    id: `dloc_${idSlug}`,
+    client_id: GD_CLIENT_ID,
+    location_name: city, // NAP: TODO — confirm exact GBP business name
+    city,
+    region,
+    state: GD_STATE_NAMES[stateAbbr] || stateAbbr,
+    state_abbreviation: stateAbbr,
+    location_page_url: pagePath,
+    // NAP — left EMPTY on purpose (populated manually from GBP/Birdeye later).
+    street_address: '',
+    zip_code: '',
+    phone_number: '',
+    hours_by_day: {},
+    directions_url: '',
+    map_image_url: '',
+    hero_image_url: '',
+    hero_image_alt: '',
+    latitude: '', longitude: '',
+    nearby_areas: [],
+    verified: true, // eligibility guardrail passes; NAP itself still flagged below
+    services_available_ids: GD_ALL_SERVICE_IDS,
+    nap_todo: ['street_address', 'phone_number', 'hours_by_day', 'directions_url', 'map_image_url'],
+  };
+});
+
+async function seedGentleDental() {
+  await store.upsertBy('clients', 'id', GD_CLIENT, 'client');
+  await store.upsertBy('globalTemplates', 'id', GD_GLOBAL_TEMPLATE, 'gt');
+  await store.replaceAllForClient('services', GD_CLIENT_ID, GD_SERVICES);
+  await store.replaceAllForClient('locations', GD_CLIENT_ID, GD_LOCATIONS);
+  return { client_id: GD_CLIENT_ID, services: GD_SERVICES.length, locations: GD_LOCATIONS.length };
+}
+
+module.exports = { seedNeuroWellness, CLIENT_ID, seedGentleDental, GD_CLIENT_ID };

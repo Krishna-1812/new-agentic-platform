@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@sparticuz/chromium": "^130.0.0",
+    "@supabase/supabase-js": "^2.110.2",
     "axios": "^1.6.8",
     "cheerio": "^1.2.0",
     "cookie-parser": "^1.4.6",

@@ -107,4 +107,86 @@ function generateSchema(pageObject) {
   return schema;
 }
 
-module.exports = { generateSchema };
+// ── Dental (Gentle Dental) schema — Build Brief §2.2/§7, Appendix C layering ──
+// MedicalWebPage (page) > Dentist/LocalBusiness (office) > MedicalProcedure
+// (service) > FAQPage (FAQ) > BreadcrumbList. Each returned as a MINIFIED JSON
+// string (brief §5: "the single <script type=application/ld+json>...</script>
+// block, minified and valid"), not an object. NAP fields are only included when
+// present (they're pulled from the location record, which may be empty — never
+// fabricated).
+function stripHtml(html) {
+  return String(html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function generateDentalSchema({ scaffold, client, location, service }) {
+  const m = scaffold.meta;
+  const sec = scaffold.sections;
+  const brand = client.name;
+  const officeInfo = sec.officeInfo;
+
+  const breadcrumbList = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: sec.breadcrumb.items.map((it, i) => ({
+      '@type': 'ListItem', position: i + 1, name: it.label, item: it.url,
+    })),
+  };
+
+  const address = {
+    '@type': 'PostalAddress',
+    ...(officeInfo.address ? { streetAddress: officeInfo.address } : {}),
+    addressLocality: location.city,
+    addressRegion: location.state_abbreviation,
+    addressCountry: 'US',
+  };
+  const dentist = {
+    '@context': 'https://schema.org',
+    '@type': 'Dentist',
+    name: `${brand} — ${officeInfo.name}`,
+    url: m.canonical,
+    ...(officeInfo.phone ? { telephone: officeInfo.phone } : {}),
+    address,
+    ...(location.latitude && location.longitude
+      ? { geo: { '@type': 'GeoCoordinates', latitude: location.latitude, longitude: location.longitude } }
+      : {}),
+  };
+
+  const medicalWebPage = {
+    '@context': 'https://schema.org',
+    '@type': 'MedicalWebPage',
+    url: m.canonical,
+    name: m.title,
+    description: m.metaDescription || '',
+    about: { '@type': 'MedicalProcedure', name: service.name },
+  };
+
+  const procedureDescription = stripHtml(
+    (sec.educationalBody.blocks || []).map(b => b.html).join(' ')
+  ).slice(0, 500) || m.metaDescription || sec.hero.intro || '';
+  const medicalProcedure = {
+    '@context': 'https://schema.org',
+    '@type': 'MedicalProcedure',
+    name: service.name,
+    description: procedureDescription,
+    provider: { '@type': 'Dentist', name: brand },
+  };
+
+  const faqPage = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: (sec.faq.items || []).map(f => ({
+      '@type': 'Question', name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  };
+
+  return {
+    breadcrumbList: JSON.stringify(breadcrumbList),
+    dentist: JSON.stringify(dentist),
+    medicalWebPage: JSON.stringify(medicalWebPage),
+    medicalProcedure: JSON.stringify(medicalProcedure),
+    faqPage: JSON.stringify(faqPage),
+  };
+}
+
+module.exports = { generateSchema, generateDentalSchema };

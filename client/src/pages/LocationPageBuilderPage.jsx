@@ -2,6 +2,21 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { lpb } from '../lib/lpbApi';
 
+// This page's Pages dashboard + LocationPageDetailPage are built around
+// Neuro's page_object shape and approval workflow — NOT generic across
+// clients. Gentle Dental has its own dedicated flow (LocationServiceWizardPage)
+// with a different section contract. NewPageWizard below is the shared entry
+// point: it lets the user pick EITHER client, but branches at the last step —
+// Neuro goes through the existing eligibility+createPage pipeline, Gentle
+// Dental hands off to the dedicated wizard (with service/location pre-filled)
+// instead of trying to run it through Neuro's pipeline.
+const NEURO_CLIENT_ID = 'client_neuro_wellness_spa';
+const GD_CLIENT_ID = 'client_gentle_dental';
+const CLIENT_OPTIONS = [
+  { id: NEURO_CLIENT_ID, label: 'Neuro Wellness Spa' },
+  { id: GD_CLIENT_ID, label: 'Gentle Dental of New England' },
+];
+
 const STAGE_COLORS = {
   'Draft':                { bg: 'var(--surface)',       text: 'var(--text-3)' },
   'Keywords In Progress': { bg: 'var(--warning-soft)',  text: 'var(--warning)' },
@@ -35,21 +50,30 @@ function StatusPill({ status }) {
   );
 }
 
-function NewPageWizard({ onClose, onCreated }) {
+function NewPageWizard({ onClose, onCreated, onStartDentalWizard }) {
+  const [clientId, setClientId] = useState(NEURO_CLIENT_ID);
   const [data, setData] = useState(null);
   const [serviceId, setServiceId] = useState('');
   const [locationId, setLocationId] = useState('');
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const isDental = clientId === GD_CLIENT_ID;
 
   useEffect(() => {
+    setData(null); setServiceId(''); setLocationId(''); setResult(null); setError('');
     lpb.clients().then(async (clients) => {
-      if (!clients.length) { setError('No clients found. Click "Seed Neuro Wellness Spa" first.'); return; }
-      const full = await lpb.client(clients[0].id);
+      if (!clients.some(c => c.id === clientId)) {
+        setError(isDental
+          ? 'Gentle Dental reference data not found. Seed it from the Gentle Dental Wizard first.'
+          : 'Neuro Wellness Spa not found. Click "Seed Neuro Wellness Spa" first.');
+        return;
+      }
+      const full = await lpb.client(clientId);
       setData(full);
     }).catch(e => setError(e.message));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId]);
 
   async function check() {
     setBusy(true); setError(''); setResult(null);
@@ -80,15 +104,32 @@ function NewPageWizard({ onClose, onCreated }) {
     <div style={overlayStyle} onClick={onClose}>
       <div style={modalStyle} onClick={e => e.stopPropagation()}>
         <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.25rem' }}>New Page</h2>
-        <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginBottom: '1rem' }}>Select a Client · Service · Location. Eligibility is GBP-backed (§15.1).</p>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginBottom: '1rem' }}>
+          {isDental ? 'Select a Client · Service · Location, then start the Gentle Dental wizard.' : 'Select a Client · Service · Location. Eligibility is GBP-backed (§15.1).'}
+        </p>
+        <div style={{ marginBottom: '0.75rem' }}>
+          <label style={labelStyle}>Client</label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {CLIENT_OPTIONS.map(c => (
+              <button
+                key={c.id}
+                onClick={() => setClientId(c.id)}
+                style={{
+                  flex: 1, padding: '0.5rem 0.625rem', fontSize: '0.8125rem', fontWeight: 600, borderRadius: 'var(--r-md,6px)', cursor: 'pointer',
+                  border: `2px solid ${clientId === c.id ? 'var(--primary)' : 'var(--border)'}`,
+                  background: clientId === c.id ? 'var(--primary-soft)' : 'var(--card)',
+                  color: clientId === c.id ? 'var(--primary)' : 'var(--text-2)',
+                }}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
         {!data && !error && <p style={{ fontSize: '0.875rem', color: 'var(--text-2)' }}>Loading…</p>}
         {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger,#EF4444)', marginBottom: '0.75rem' }}>{error}</p>}
         {data && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div>
-              <label style={labelStyle}>Client</label>
-              <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)', padding: '0.5rem 0.75rem', background: 'var(--surface)', borderRadius: 'var(--r-md,6px)' }}>{data.client.name}</div>
-            </div>
             <div>
               <label style={labelStyle}>Service</label>
               <select style={selectStyle} value={serviceId} onChange={e => { setServiceId(e.target.value); setResult(null); }}>
@@ -104,7 +145,7 @@ function NewPageWizard({ onClose, onCreated }) {
               </select>
             </div>
 
-            {result && (
+            {!isDental && result && (
               <div style={{
                 fontSize: '0.875rem', borderRadius: 'var(--r-md,6px)', padding: '0.75rem',
                 background: result.blocked ? 'var(--danger-soft,#FEF2F2)' : result.existing ? '#FFFBEB' : 'var(--success-soft,#ECFDF5)',
@@ -118,6 +159,15 @@ function NewPageWizard({ onClose, onCreated }) {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', paddingTop: '0.5rem' }}>
               <button style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer' }} onClick={onClose}>Cancel</button>
+              {isDental ? (
+                <button
+                  disabled={!serviceId || !locationId}
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, color: '#fff', borderRadius: 'var(--r-md,6px)', border: 'none', cursor: (!serviceId || !locationId) ? 'not-allowed' : 'pointer', opacity: (!serviceId || !locationId) ? 0.5 : 1, background: 'var(--primary)' }}
+                  onClick={() => onStartDentalWizard({ serviceId, locationId })}
+                >
+                  Start Wizard →
+                </button>
+              ) : (
               <button
                 disabled={!serviceId || !locationId || busy}
                 style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, color: '#fff', borderRadius: 'var(--r-md,6px)', border: 'none', cursor: (!serviceId || !locationId || busy) ? 'not-allowed' : 'pointer', opacity: (!serviceId || !locationId || busy) ? 0.5 : 1, background: 'var(--primary)' }}
@@ -125,6 +175,7 @@ function NewPageWizard({ onClose, onCreated }) {
               >
                 {busy ? 'Checking…' : 'Check eligibility & create'}
               </button>
+              )}
             </div>
           </div>
         )}
@@ -176,6 +227,18 @@ export default function LocationPageBuilderPage() {
               style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', border: '1px solid var(--border)', background: 'var(--card)', borderRadius: 'var(--r-md,6px)', color: 'var(--text-2)', cursor: seeding ? 'not-allowed' : 'pointer', opacity: seeding ? 0.5 : 1 }}
             >
               {seeding ? 'Seeding…' : 'Seed Neuro Wellness Spa'}
+            </button>
+            <button
+              onClick={() => navigate('/location-page-builder/gentle-dental-pages')}
+              style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-md,6px)', cursor: 'pointer' }}
+            >
+              Gentle Dental Pages
+            </button>
+            <button
+              onClick={() => navigate('/location-page-builder/wizard')}
+              style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-md,6px)', cursor: 'pointer' }}
+            >
+              Gentle Dental Wizard →
             </button>
             <button
               onClick={() => setWizard(true)}
@@ -245,7 +308,16 @@ export default function LocationPageBuilderPage() {
           </table>
         </div>
       </main>
-      {wizard && <NewPageWizard onClose={() => { setWizard(false); load(); }} onCreated={(id) => navigate(`/location-page-builder/${id}`)} />}
+      {wizard && (
+        <NewPageWizard
+          onClose={() => { setWizard(false); load(); }}
+          onCreated={(id) => navigate(`/location-page-builder/${id}`)}
+          onStartDentalWizard={({ serviceId, locationId }) => {
+            setWizard(false);
+            navigate(`/location-page-builder/wizard?serviceId=${serviceId}&locationId=${locationId}`);
+          }}
+        />
+      )}
     </>
   );
 }

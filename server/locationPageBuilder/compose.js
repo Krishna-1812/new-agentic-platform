@@ -6,7 +6,7 @@
 
 const store = require('./store');
 const categoryLogic = require('./categoryLogic');
-const { pageUrl, canonicalUrl, breadcrumbLabel } = require('./urlBuilder');
+const { pageUrl, canonicalUrl, breadcrumbLabel, dentalPageUrl, canonicalDentalUrl } = require('./urlBuilder');
 
 // Pull all L2 reference data for a (client, service, location) tuple.
 async function loadLayers({ clientId, serviceId, locationId }) {
@@ -140,4 +140,103 @@ function mergeL3(pageObject, l3) {
   return pageObject;
 }
 
-module.exports = { loadLayers, buildScaffold, mergeL3 };
+// ── Dental (Gentle Dental) scaffold — Build Brief §2.2 GeneratedPage contract ─
+// Reviews are OUT OF SCOPE (added manually later) — no `reviews` section.
+// NAP (officeInfo) is PULLED from the location record, never generated; it may
+// be empty in v1 (NAP populated manually from GBP/Birdeye — see location.nap_todo).
+
+function dentalBreadcrumb({ client, service, location }) {
+  const baseUrl = (client.brand_static?.base_url || '').replace(/\/+$/, '');
+  const stateSlugMatch = /^\/dental-offices\/([^/]+)/.exec(location.location_page_url || '');
+  const stateSlug = stateSlugMatch ? stateSlugMatch[1] : (location.state_abbreviation || '').toLowerCase();
+  return {
+    items: [
+      { label: 'Home', url: `${baseUrl}/` },
+      { label: location.state_abbreviation, url: `${baseUrl}/dental-offices/${stateSlug}` },
+      { label: location.city, url: `${baseUrl}${location.location_page_url}` },
+      { label: service.name, url: `${baseUrl}${dentalPageUrl(location.location_page_url, service.slug)}` },
+    ],
+  };
+}
+
+function dentalServicesMenu({ allServices, location, currentServiceSlug }) {
+  const available = allServices.filter(s => (location.services_available_ids || []).includes(s.id));
+  const byCategory = new Map();
+  for (const s of available) {
+    if (!byCategory.has(s.category)) byCategory.set(s.category, []);
+    byCategory.get(s.category).push({
+      label: s.name,
+      url: dentalPageUrl(location.location_page_url, s.slug),
+      is_current: s.slug === currentServiceSlug,
+    });
+  }
+  return [...byCategory.entries()].map(([name, items]) => ({ name, items }));
+}
+
+function buildDentalScaffold(layers) {
+  const { client, service, location, allServices } = layers;
+  const baseUrl = client.brand_static?.base_url || '';
+  const urlPath = dentalPageUrl(location.location_page_url, service.slug);
+  const canonical = canonicalDentalUrl(baseUrl, location.location_page_url, service.slug);
+  const title = `${service.name} in ${location.city}, ${location.state_abbreviation} | Gentle Dental`;
+
+  return {
+    meta: {
+      page_id: '', client_id: client.id, service_id: service.id, location_id: location.id,
+      status: 'draft',
+      urlPath, title,
+      metaDescription: '',
+      canonical,
+    },
+    primaryKeyword: '',
+    secondaryKeywords: [],
+    sections: {
+      hero: {
+        h1: `${service.name} in ${location.city}, ${location.state_abbreviation}`,
+        intro: '',
+        ctaLabel: 'Book an Appointment',
+        ctaUrl: location.location_page_url,
+      },
+      breadcrumb: dentalBreadcrumb({ client, service, location }),
+      officeInfo: {
+        name: location.location_name,
+        address: location.street_address || '',
+        phone: location.phone_number || '',
+        directionsUrl: location.directions_url || '',
+        hoursByDay: location.hours_by_day || {},
+        moreInfo: location.location_page_url,
+        nap_todo: location.nap_todo || [],
+      },
+      servicesInCity: {
+        intro: '',
+        ctaLabel: 'View All Services',
+        ctaUrl: location.location_page_url,
+        categories: dentalServicesMenu({ allServices, location, currentServiceSlug: service.slug }),
+        internalLinks: [],
+      },
+      educationalBody: { blocks: [] },
+      faq: { heading: 'Frequently Asked Questions', items: [] },
+    },
+    schema: { breadcrumbList: '', dentist: '', medicalWebPage: '', medicalProcedure: '', faqPage: '' },
+    qc: null,
+  };
+}
+
+// Merge the LLM-generated subset (hero.intro, meta.metaDescription,
+// educationalBody.blocks, faq.items) into the scaffold. servicesInCity.intro
+// is NOT generated — it stays whatever manual value the wizard user typed
+// (default ''). No OG tags at all — dropped from the contract.
+function mergeDentalL3(scaffold, l3) {
+  const m = scaffold.meta, s = scaffold.sections;
+  if (l3.heroIntro) s.hero.intro = l3.heroIntro;
+  if (l3.metaDescription) m.metaDescription = l3.metaDescription;
+  if (Array.isArray(l3.educationalBody)) {
+    s.educationalBody.blocks = l3.educationalBody.map(b => ({ h2: b.h2 || '', html: b.html || '' }));
+  }
+  if (Array.isArray(l3.faqs)) {
+    s.faq.items = l3.faqs.map(f => ({ q: f.q || f.question || '', a: f.a || f.answer || '' }));
+  }
+  return scaffold;
+}
+
+module.exports = { loadLayers, buildScaffold, mergeL3, buildDentalScaffold, mergeDentalL3 };

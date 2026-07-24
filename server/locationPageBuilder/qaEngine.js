@@ -121,4 +121,159 @@ function runQA(pageObject, extras = {}) {
   return { checks, blocking_failures, warnings, ran_at: new Date().toISOString() };
 }
 
-module.exports = { runQA };
+// ── Dental (Gentle Dental) QC — Build Brief §6 ──────────────────────────────
+// Returns { verdict, checks: [{name, severity, pass, detail}] } per the brief's
+// QcResult contract. NAP-populated is downgraded to Minor in v1 — NAP is
+// populated manually (out of scope for this build), so it must not block
+// generation the way a truly-missing-NAP bug would.
+
+function qc(name, severity, pass, detail) {
+  return { name, severity, pass: !!pass, detail: detail || '' };
+}
+
+function dentalStripHtml(html) {
+  return String(html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+// Deterministic fields (H1/title) are built as "{Service} in {City}, {STATE}"
+// — real-world primary keywords are usually the bare "{service} {city}" form
+// (no "in", no comma), so a literal substring check would fail almost every
+// legitimate page. Match on the keyword's significant words instead.
+const STOPWORDS = new Set(['in', 'the', 'a', 'an', 'of', 'for', 'near', 'me', 'and']);
+// Light plural/singular stemming — service names are plural ("Root Canals",
+// "Veneers") but a chosen primary keyword is often the singular, bare form
+// ("root canal malden ma"). Without this, "canal" vs "canals" never match as
+// the same word even though they're an obvious close variant. Good enough
+// for this domain's regular plurals; not a real stemmer.
+function stem(word) {
+  return word.length > 3 && word.endsWith('s') && !word.endsWith('ss') ? word.slice(0, -1) : word;
+}
+function words(s) {
+  return String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean).map(stem);
+}
+function containsAllKeywordWords(haystack, phrase, exclude) {
+  const hayWords = new Set(words(haystack));
+  const kwWords = words(phrase).filter(w => !STOPWORDS.has(w) && !(exclude && exclude.has(w)));
+  return kwWords.length > 0 && kwWords.every(w => hayWords.has(w));
+}
+
+// Counts "close variant" occurrences of a keyword phrase in body text: slides
+// a word-window across the text and counts it as one occurrence whenever all
+// of the keyword's significant words appear together within that window (so
+// "veneers in Boston" / "Boston veneers" / "porcelain veneers for Boston
+// patients" all count) — a literal-substring match would miss all of these.
+// Non-overlapping: after a match, the window jumps forward so the same run of
+// words can't be counted twice.
+function countKeywordOccurrences(bodyText, keywordWords, window = 8) {
+  if (!keywordWords.length) return 0;
+  const bodyWords = words(bodyText);
+  let count = 0;
+  let i = 0;
+  while (i < bodyWords.length) {
+    const slice = new Set(bodyWords.slice(i, i + window));
+    if (keywordWords.every(w => slice.has(w))) {
+      count++;
+      i += window;
+    } else {
+      i++;
+    }
+  }
+  return count;
+}
+
+function runDentalQC(scaffold) {
+  const m = scaffold.meta;
+  const sec = scaffold.sections;
+  const primary = (scaffold.primaryKeyword || '').toLowerCase().trim();
+  const h1Match = /^(.*) in (.+),\s*([A-Za-z]{2})$/.exec(sec.hero.h1.trim());
+  const city = (h1Match?.[2] || '').toLowerCase();
+  const stateAbbr = (h1Match?.[3] || '').toLowerCase();
+  const checks = [];
+
+  const hay = (s) => String(s || '').toLowerCase();
+  const h1 = hay(sec.hero.h1), title = hay(m.title), metaDesc = hay(m.metaDescription);
+
+  // ── Critical ────────────────────────────────────────────────────────────
+  checks.push(qc('primary_keyword_in_h1_title_meta', 'Critical',
+    primary && containsAllKeywordWords(h1, primary) && containsAllKeywordWords(title, primary) && containsAllKeywordWords(metaDesc, primary),
+    `primary="${scaffold.primaryKeyword}"`));
+
+  const mdLen = (m.metaDescription || '').length;
+  checks.push(qc('meta_description_length', 'Critical', mdLen >= 150 && mdLen <= 160,
+    `meta_description length=${mdLen} (target 150-160)`));
+
+  const faqCount = (sec.faq.items || []).length;
+  checks.push(qc('faq_count_min_4', 'Critical', faqCount >= 4, `${faqCount} FAQs (min 4).`));
+
+  const schemaBlocks = scaffold.schema || {};
+  const schemaKeys = ['breadcrumbList', 'dentist', 'medicalWebPage', 'medicalProcedure', 'faqPage'];
+  const schemaParses = schemaKeys.every(k => {
+    try { JSON.parse(schemaBlocks[k] || ''); return true; } catch { return false; }
+  });
+  checks.push(qc('schema_blocks_valid_json', 'Critical', schemaParses, '5 JSON-LD blocks parse.'));
+
+  // ── Major ───────────────────────────────────────────────────────────────
+  const h2s = (sec.educationalBody.blocks || []).map(b => hay(b.h2));
+  const eduBodies = (sec.educationalBody.blocks || []).map(b => hay(dentalStripHtml(b.html)));
+  // H2 headings are short topic labels — they won't naturally include the full
+  // "{service} {city} {state}" primary phrase (city/state coverage is checked
+  // separately by city_localization below). Match on the service-only terms.
+  const geoExclude = new Set([stateAbbr, ...words(city)]);
+  const h2ServiceMatch = h2s.some(h => containsAllKeywordWords(h, primary, geoExclude));
+  checks.push(qc('primary_keyword_in_h2', 'Major', primary && h2ServiceMatch,
+    'Primary keyword\'s service terms appear in >= 1 educationalBody H2.'));
+
+  // hero.intro is generated content again (short description below the H1) —
+  // it counts toward body word count / keyword frequency / localization, same
+  // as educationalBody + faq. servicesInCity.intro stays in the join too
+  // (harmless — usually empty, it's optional/manual).
+  const bodyText = [
+    sec.hero.intro, sec.servicesInCity.intro,
+    ...(sec.educationalBody.blocks || []).map(b => dentalStripHtml(b.html)),
+    ...(sec.faq.items || []).flatMap(f => [f.q, f.a]),
+  ].join(' ');
+  const wc = text.wordCount(bodyText);
+  checks.push(qc('body_word_count_500_900', 'Major', wc >= 500 && wc <= 900, `word_count=${wc} (target 500-900).`));
+
+  // Primary keyword (or a close variant) must appear 5x across hero/body/FAQ,
+  // NOT counting metaDescription (bodyText already excludes it).
+  const freqExclude = new Set([stateAbbr]);
+  const freqWords = words(primary).filter(w => !STOPWORDS.has(w) && !freqExclude.has(w));
+  const keywordOccurrences = countKeywordOccurrences(bodyText, freqWords);
+  checks.push(qc('primary_keyword_frequency_5x', 'Major', primary && keywordOccurrences >= 5,
+    `Primary keyword (or close variants) appears ${keywordOccurrences}x across hero/body/FAQ (target >= 5, meta description excluded).`));
+
+  const cityInBody = city && eduBodies.some(t => t.includes(city));
+  const cityInFaq = city && (sec.faq.items || []).some(f => hay(f.q).includes(city) || hay(f.a).includes(city));
+  checks.push(qc('city_localization', 'Major', cityInBody && cityInFaq,
+    `city="${city}" in educationalBody=${cityInBody}, in FAQ=${cityInFaq}.`));
+
+  const linkCount = (sec.servicesInCity.internalLinks || []).length;
+  checks.push(qc('internal_links_min_3', 'Major', linkCount >= 3, `${linkCount} internal links (min 3).`));
+
+  // ── Minor ───────────────────────────────────────────────────────────────
+  const emDashOveruse = (bodyText.match(/—/g) || []).length > 2;
+  const oxfordComma = /,\s+and\s+\w+[.,]/i.test(bodyText) && /\w+,\s+\w+,\s+and\s+\w+/.test(bodyText);
+  const spelledTenPlus = /\b(ten|eleven|twelve|thirteen|fourteen|fifteen|twenty|thirty|forty|fifty)\b/i.test(bodyText);
+  checks.push(qc('ap_style', 'Minor', !emDashOveruse && !oxfordComma && !spelledTenPlus,
+    `em_dash_overuse=${emDashOveruse}, oxford_comma=${oxfordComma}, spelled_10_plus=${spelledTenPlus}.`));
+
+  const density = wc ? keywordOccurrences / wc : 0;
+  checks.push(qc('keyword_density', 'Minor', density <= 0.025, `density=${(density * 100).toFixed(1)}% based on ${keywordOccurrences} occurrences (max 2.5%).`));
+
+  const placeholderRe = /lorem ipsum|\{\{|\btodo\b|\bTBD\b/i;
+  checks.push(qc('no_placeholder_text', 'Minor', !placeholderRe.test(bodyText), 'No placeholder text detected.'));
+
+  const napPopulated = !!(sec.officeInfo.address && sec.officeInfo.phone && Object.keys(sec.officeInfo.hoursByDay || {}).length);
+  checks.push(qc('nap_populated', 'Minor', napPopulated,
+    napPopulated ? 'NAP fields populated.' : 'NAP is populated manually (out of scope) — currently empty.'));
+
+  const criticalFail = checks.some(c => c.severity === 'Critical' && !c.pass);
+  const majorFail = checks.some(c => c.severity === 'Major' && !c.pass);
+  const minorFail = checks.some(c => c.severity === 'Minor' && !c.pass);
+  const verdict = criticalFail ? 'FAIL' : majorFail ? 'REVISIONS REQUIRED' : minorFail ? 'CONDITIONAL PASS' : 'PASS';
+
+  return { verdict, checks };
+}
+
+module.exports = { runQA, runDentalQC };

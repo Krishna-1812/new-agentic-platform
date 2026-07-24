@@ -35,7 +35,7 @@ export const TOOL_GROUPS = [
   {
     label: 'Build',
     tools: [
-      { id: 'location-page-builder',  path: '/location-page-builder',  label: 'Location + Service Pages', icon: '📍', tag: 'soon' },
+      { id: 'location-page-builder',  path: '/location-page-builder',  label: 'Location + Service Pages', icon: '📍', tag: 'testing' },
       { id: 'hub-spoke',              path: '/hub-spoke',              label: 'Hub & Spoke',            icon: '🕸️', tag: 'soon' },
       { id: 'knowledge-base',         path: '/kb',                     label: 'Knowledge Base',         icon: '📚', tag: 'internal' },
     ],

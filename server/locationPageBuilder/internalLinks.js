@@ -37,4 +37,24 @@ function build({ layers }) {
   return links;
 }
 
-module.exports = { build };
+// ── Dental (Gentle Dental) sibling-location links — Build Brief Appendix C ───
+// Combo pages currently only link out to global service pages; this closes
+// the gap by linking the SAME service at a few OTHER offices (preferring the
+// same region), building a location-level topical cluster. Deterministic —
+// pulls URLs from the locations store, never invents them.
+function buildDentalSiblings({ allLocations, currentLocation, service }) {
+  const cap = config.internalLinks.maxSiblingLocations;
+  const others = allLocations.filter(l => l.id !== currentLocation.id);
+  const sameRegion = others.filter(l => l.region === currentLocation.region);
+  const rest = others.filter(l => l.region !== currentLocation.region);
+  const picked = [...sameRegion, ...rest].slice(0, cap);
+
+  return picked.map(l => ({
+    anchor_text: `${service.name} in ${l.city}`,
+    url: `${l.location_page_url}/${service.slug}`,
+    link_type: 'sibling_location',
+    placement: 'services_in_city',
+  }));
+}
+
+module.exports = { build, buildDentalSiblings };

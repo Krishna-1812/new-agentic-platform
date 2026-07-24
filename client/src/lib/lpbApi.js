@@ -18,6 +18,7 @@ async function req(path, options = {}) {
 
 export const lpb = {
   seed: () => req('/seed', { method: 'POST' }),
+  seedGentleDental: () => req('/seed-gentle-dental', { method: 'POST' }),
   clients: () => req('/clients'),
   client: (id) => req(`/clients/${id}`),
   entities: (c, clientId) => req(`/entities/${c}${clientId ? `?client_id=${clientId}` : ''}`),
@@ -42,6 +43,16 @@ export const lpb = {
   comment: (id, body) => req(`/pages/${id}/comments`, { method: 'POST', body: JSON.stringify(body) }),
 
   exportUrl: (id, format) => `${BASE}/pages/${id}/export/${format}`,
+
+  // ── Gentle Dental wizard ──────────────────────────────────────────────────
+  keywordCandidates: (body) => req('/keyword-candidates', { method: 'POST', body: JSON.stringify(body) }),
+  wizardGenerate: (body) => req('/wizard/generate', { method: 'POST', body: JSON.stringify(body) }),
+  wizardQc: (page) => req('/wizard/qc', { method: 'POST', body: JSON.stringify({ page }) }),
+  wizardExisting: ({ clientId, serviceId, locationId }) =>
+    req(`/wizard/existing?clientId=${encodeURIComponent(clientId)}&serviceId=${encodeURIComponent(serviceId)}&locationId=${encodeURIComponent(locationId)}`),
+  wizardRegenerate: (body) => req('/wizard/regenerate', { method: 'POST', body: JSON.stringify(body) }),
+  wizardPages: (clientId) => req(`/wizard/pages?clientId=${encodeURIComponent(clientId)}`),
+  wizardPage: (id) => req(`/wizard/pages/${id}`),
 };
 
 // Open an SSE stream for a minted token; returns the EventSource.
