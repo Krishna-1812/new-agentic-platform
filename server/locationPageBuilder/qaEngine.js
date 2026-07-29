@@ -123,9 +123,8 @@ function runQA(pageObject, extras = {}) {
 
 // ── Dental (Gentle Dental) QC — Build Brief §6 ──────────────────────────────
 // Returns { verdict, checks: [{name, severity, pass, detail}] } per the brief's
-// QcResult contract. NAP-populated is downgraded to Minor in v1 — NAP is
-// populated manually (out of scope for this build), so it must not block
-// generation the way a truly-missing-NAP bug would.
+// QcResult contract. NAP is populated manually (out of scope for this build),
+// so it isn't checked here — it would never reflect a real generation defect.
 
 function qc(name, severity, pass, detail) {
   return { name, severity, pass: !!pass, detail: detail || '' };
@@ -263,10 +262,6 @@ function runDentalQC(scaffold) {
 
   const placeholderRe = /lorem ipsum|\{\{|\btodo\b|\bTBD\b/i;
   checks.push(qc('no_placeholder_text', 'Minor', !placeholderRe.test(bodyText), 'No placeholder text detected.'));
-
-  const napPopulated = !!(sec.officeInfo.address && sec.officeInfo.phone && Object.keys(sec.officeInfo.hoursByDay || {}).length);
-  checks.push(qc('nap_populated', 'Minor', napPopulated,
-    napPopulated ? 'NAP fields populated.' : 'NAP is populated manually (out of scope) — currently empty.'));
 
   const criticalFail = checks.some(c => c.severity === 'Critical' && !c.pass);
   const majorFail = checks.some(c => c.severity === 'Major' && !c.pass);

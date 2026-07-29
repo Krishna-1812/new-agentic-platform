@@ -262,7 +262,7 @@ test('generateDentalSchema returns 5 parseable JSON-LD strings, FAQ mirrors visi
 });
 
 console.log('\nDental — QC (Build Brief §6 QcResult)');
-test('a fully-formed dental page with empty NAP → PASS (NAP is Minor-only, deferred)', () => {
+test('a fully-formed dental page has no Critical failures', () => {
   const layers = dentalLayers();
   const scaffold = dentalScaffoldWithContent();
   scaffold.schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
@@ -287,15 +287,6 @@ test('fewer than 4 FAQs is a Critical failure', () => {
   const qc = qaEngine.runDentalQC(scaffold);
   assert.ok(qc.checks.find(c => c.name === 'faq_count_min_4' && !c.pass));
   assert.strictEqual(qc.verdict, 'FAIL');
-});
-test('empty NAP alone only downgrades to CONDITIONAL PASS, never blocks', () => {
-  const layers = dentalLayers();
-  const scaffold = dentalScaffoldWithContent();
-  scaffold.schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
-  const qc = qaEngine.runDentalQC(scaffold);
-  const napCheck = qc.checks.find(c => c.name === 'nap_populated');
-  assert.strictEqual(napCheck.severity, 'Minor');
-  assert.strictEqual(napCheck.pass, false);
 });
 test('primary keyword frequency check counts close variants (not just literal substring), no OG check exists', () => {
   const layers = dentalLayers();
