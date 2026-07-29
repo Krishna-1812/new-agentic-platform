@@ -3,10 +3,10 @@
 // L1+L2 scaffold. Scraped competitor copy is used for MODELING coverage/structure
 // only — never to copy NAP, images, providers or reviews (Spec §7.1, §15.4).
 
-const OpenAI = require('openai');
 const config = require('./config');
 const text = require('./text');
 const { chatParams } = require('./llmParams');
+const { createLlmClient } = require('../services/llmProviders');
 
 const L3_SCHEMA_HINT = `{
   "meta_title": "string — max 60 chars, includes service + location + brand",
@@ -110,15 +110,14 @@ Return JSON only, matching the schema. Remember: 2 care_pillars, competitor_sect
 }
 
 async function generateL3({ pageObject, layers, keywords, modelCopy }) {
-  if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not configured on server.');
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const llm = createLlmClient(config.llm.generationModel);
   const { system, user } = buildPrompt({ pageObject, layers, keywords, modelCopy });
 
   let l3 = null;
   for (let attempt = 0; attempt < 2 && !l3; attempt++) {
-    const completion = await openai.chat.completions.create({
-      model: config.llm.generationModel,
-      ...chatParams(config.llm.generationModel, { maxTokens: 4096 }),
+    const completion = await llm.chat.completions.create({
+      model: llm.model,
+      ...chatParams(llm.model, { maxTokens: 4096 }),
       response_format: { type: 'json_object' },
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
     });
@@ -190,7 +189,6 @@ const REGEN_FIELD_CONFIGS = {
 };
 
 async function regenField({ pageObject, layers, keywords, field, maxChars, context = {} }) {
-  if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not configured on server.');
   const cfg = REGEN_FIELD_CONFIGS[field];
   if (!cfg) throw new Error(`Unknown regen field: "${field}".`);
 
@@ -218,10 +216,10 @@ ${localFacts}
 
 Return JSON only: { "${cfg.key}": "..." }`;
 
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const completion = await openai.chat.completions.create({
-    model: config.llm.generationModel,
-    ...chatParams(config.llm.generationModel, { maxTokens: 700 }),
+  const llm = createLlmClient(config.llm.generationModel);
+  const completion = await llm.chat.completions.create({
+    model: llm.model,
+    ...chatParams(llm.model, { maxTokens: 700 }),
     response_format: { type: 'json_object' },
     messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
   });
@@ -353,15 +351,14 @@ ${DENTAL_L3_SCHEMA_HINT}`;
 }
 
 async function generateDentalL3({ service, location, primaryKeyword, secondaryKeywords, competitorHeadings, competitorFaqs }) {
-  if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not configured on server.');
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const llm = createLlmClient(config.llm.generationModel);
   const { system, user } = buildDentalPrompt({ service, location, primaryKeyword, secondaryKeywords, competitorHeadings, competitorFaqs });
 
   let l3 = null;
   for (let attempt = 0; attempt < 2 && !l3; attempt++) {
-    const completion = await openai.chat.completions.create({
-      model: config.llm.generationModel,
-      ...chatParams(config.llm.generationModel, { maxTokens: 3500 }),
+    const completion = await llm.chat.completions.create({
+      model: llm.model,
+      ...chatParams(llm.model, { maxTokens: 3500 }),
       response_format: { type: 'json_object' },
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
     });
@@ -412,7 +409,7 @@ function normalizeMetaDescriptionLength(desc, { service, location }) {
 }
 
 // ── Dental per-section regeneration ("regenerate every section") ──────────
-// One small, targeted OpenAI call per section instead of regenerating the
+// One small, targeted LLM call per section instead of regenerating the
 // whole page. Shares the same hard rules (no fabricated NAP/reviews, AP
 // style, competitor-modeled coverage) as the main generation call.
 const DENTAL_REGEN_GUARDRAILS = `Write US English in AP style (spell out one-nine, numerals 10+, no em dashes,
@@ -433,8 +430,7 @@ function competitorContextBlock(competitorHeadings, competitorFaqs) {
 }
 
 async function generateDentalRegen({ service, location, primaryKeyword, secondaryKeywords, competitorHeadings, competitorFaqs, section, context = {} }) {
-  if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not configured on server.');
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const llm = createLlmClient(config.llm.generationModel);
   const cityState = `${location.city}, ${location.state_abbreviation}`;
   const competitorBlock = competitorContextBlock(competitorHeadings, competitorFaqs);
   const kwLine = `Primary keyword: ${primaryKeyword}\nSecondary keywords: ${(secondaryKeywords || []).join(', ') || '(none)'}`;
@@ -473,9 +469,9 @@ async function generateDentalRegen({ service, location, primaryKeyword, secondar
 
   let result = null;
   for (let attempt = 0; attempt < 2 && !result; attempt++) {
-    const completion = await openai.chat.completions.create({
-      model: config.llm.generationModel,
-      ...chatParams(config.llm.generationModel, { maxTokens: 1500 }),
+    const completion = await llm.chat.completions.create({
+      model: llm.model,
+      ...chatParams(llm.model, { maxTokens: 1500 }),
       response_format: { type: 'json_object' },
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
     });

@@ -42,7 +42,7 @@ module.exports = {
   // Stage-5 LLM relevance / generation (Spec §6 Stage 5, §7).
   llm: {
     classificationModel: process.env.LPB_LLM_MODEL || 'gpt-5.4-mini',
-    generationModel: process.env.LPB_GEN_MODEL || 'gpt-5.4-mini',
+    generationModel: process.env.LPB_GEN_MODEL || 'claude-sonnet-5',
     classificationTemperature: 0, // Spec §6 Stage 5: temperature 0
     maxKeywordsToClassify: 200,   // master pool cap
   },
