@@ -117,7 +117,11 @@ async function generateL3({ pageObject, layers, keywords, modelCopy }) {
   for (let attempt = 0; attempt < 2 && !l3; attempt++) {
     const completion = await llm.chat.completions.create({
       model: llm.model,
-      ...chatParams(llm.model, { maxTokens: 4096 }),
+      // This prompt's density (per-field char limits, structure rules, YMYL
+      // guardrails) pushes reasoning-capable models like Claude into enough
+      // internal reasoning that a low cap can exhaust the whole budget before
+      // any visible output — leaving finish_reason "length" and empty content.
+      ...chatParams(llm.model, { maxTokens: 8000 }),
       response_format: { type: 'json_object' },
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
     });
@@ -358,7 +362,10 @@ async function generateDentalL3({ service, location, primaryKeyword, secondaryKe
   for (let attempt = 0; attempt < 2 && !l3; attempt++) {
     const completion = await llm.chat.completions.create({
       model: llm.model,
-      ...chatParams(llm.model, { maxTokens: 3500 }),
+      // Same reasoning-overhead risk as generateL3 above (verified: this
+      // prompt's instruction density made Claude exhaust a 3500-token budget
+      // with zero visible output — finish_reason "length", empty content).
+      ...chatParams(llm.model, { maxTokens: 8000 }),
       response_format: { type: 'json_object' },
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
     });
