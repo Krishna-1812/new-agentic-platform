@@ -110,6 +110,17 @@ const TOOLS = [
     ),
   },
   {
+    id: 'seo-geo-snapshot', path: '/seo-geo-snapshot', badge: 'Snapshot', group: 'Optimize',
+    label: 'SEO & GEO Snapshot', tagline: 'Score dashboard only · one screen',
+    description: 'Runs the same 200+ check SEO & GEO engine but renders only the Score Dashboard — overall score with its band and points-lost waterfall, nine category bars, GEO answerability, quick wins and keyword coverage. No issue list, no schema panel.',
+    features: ['Same engine as SEO & GEO Audit', 'Overall + 9 category scores', 'GEO answerability & signal tiles', 'Keyword coverage at a glance'],
+    icon: (
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 3v18h18M8 17V9m4 8V5m4 12v-6" />
+      </svg>
+    ),
+  },
+  {
     id: 'agent-readiness-audit', path: '/agent-readiness-audit', badge: 'AI Audit', group: 'Optimize',
     label: 'Agent Readiness Audit', tagline: "Score any site's AI agent readiness in 15s",
     description: "Run 13 automated checks across discoverability, content negotiation, bot access rules, and protocol support (MCP, OAuth, Agent Skills). Get a 0–100 score with GPT-generated CMO brief.",

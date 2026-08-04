@@ -19,6 +19,8 @@ export const TOOL_GROUPS = [
       { id: 'article-recommendation', path: '/article-recommendation', label: 'Article Recommendation', icon: '📰' },
       { id: 'market-potential',       path: '/market-potential',       label: 'Market Potential',       icon: '🗺️', tag: 'beta' },
       { id: 'competitor-analysis',    path: '/competitor-analysis',    label: 'Competitor Analysis',    icon: '🆚', tag: 'beta' },
+      { id: 'comp-res-beta', path: '/comp-res-beta', label: 'Comp Res Beta', icon: '📊', tag: 'testing' },
+      { id: 'gsc-explorer', path: '/gsc-explorer', label: 'GSC Explorer', icon: '📈', tag: 'beta' },
     ],
   },
   {
@@ -28,6 +30,7 @@ export const TOOL_GROUPS = [
       { id: 'article-enhancement-lite', path: '/article-enhancement-lite', label: 'Article Enhancer', icon: '📝' },
       { id: 'on-page-audit',          path: '/on-page-audit',          label: 'On-Page SEO Audit',      icon: '🔎', tag: 'soon' },
       { id: 'seo-geo-audit',          path: '/seo-geo-audit',          label: 'SEO & GEO Audit',        icon: '🌐', tag: 'beta' },
+      { id: 'seo-geo-snapshot',       path: '/seo-geo-snapshot',       label: 'SEO & GEO Snapshot',     icon: '📊', tag: 'beta' },
       { id: 'agent-readiness-audit',  path: '/agent-readiness-audit',  label: 'Agent Readiness Audit',  icon: '🤖', tag: 'testing' },
       { id: 'image-alt-audit',        path: '/image-alt-audit',        label: 'Image Alt Tag Audit',    icon: '🖼️', tag: 'beta' },
     ],

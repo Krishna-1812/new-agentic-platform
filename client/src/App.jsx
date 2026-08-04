@@ -20,6 +20,7 @@ import TeamInsightsPage from './pages/TeamInsightsPage';
 import AgentReadinessAuditPage from './pages/AgentReadinessAuditPage';
 import AgentReadinessSummaryPage from './pages/AgentReadinessSummaryPage';
 import SeoGeoAuditPage from './pages/SeoGeoAuditPage';
+import SeoGeoSnapshotPage from './pages/SeoGeoSnapshotPage';
 import ContentEnhancementPage from './pages/ContentEnhancementPage';
 import ArticleEnhancementPage from './pages/ArticleEnhancementPage';
 import ArticleEnhancementLitePage from './pages/ArticleEnhancementLitePage';
@@ -32,7 +33,10 @@ import HubSpokePage from './pages/HubSpokePage';
 import HubSpokeProjectPage from './pages/HubSpokeProjectPage';
 import OnPageAuditPage from './pages/OnPageAuditPage';
 import MarketPotentialPage from './pages/MarketPotentialPage';
+import GscExplorerPage from './pages/GscExplorerPage';
+import GscExplorerProjectPage from './pages/GscExplorerProjectPage';
 import CompetitorAnalysisDashboardPage from './pages/CompetitorAnalysisDashboardPage';
+import CompResBetaPage from './pages/CompResBetaPage';
 
 // Keeps the parent Intelligence Platform shell's URL + breadcrumb in sync with
 // the tool the user navigates to here. The shell embeds us in a cross-origin
@@ -68,6 +72,7 @@ export default function App() {
           <Route path="/agent-readiness-audit" element={<AgentReadinessAuditPage />} />
           <Route path="/agent-readiness-audit/summary" element={<AgentReadinessSummaryPage />} />
           <Route path="/seo-geo-audit" element={<SeoGeoAuditPage />} />
+          <Route path="/seo-geo-snapshot" element={<SeoGeoSnapshotPage />} />
           <Route path="/content-enhancement" element={<ContentEnhancementPage />} />
           <Route path="/article-enhancement" element={<ArticleEnhancementPage />} />
           <Route path="/article-enhancement-lite" element={<ArticleEnhancementLitePage />} />
@@ -80,7 +85,10 @@ export default function App() {
           <Route path="/hub-spoke/:id" element={<HubSpokeProjectPage />} />
           <Route path="/on-page-audit" element={<OnPageAuditPage />} />
           <Route path="/market-potential" element={<MarketPotentialPage />} />
+          <Route path="/gsc-explorer" element={<GscExplorerPage />} />
+          <Route path="/gsc-explorer/:id" element={<GscExplorerProjectPage />} />
           <Route path="/competitor-analysis" element={<CompetitorAnalysisDashboardPage />} />
+          <Route path="/comp-res-beta" element={<CompResBetaPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

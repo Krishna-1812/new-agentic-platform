@@ -12,13 +12,45 @@ function getOpenAI() {
   return _openai;
 }
 
+// Statuses worth sending to the model. 'pass' is uninteresting; 'informational' is a measurement,
+// not a verdict; 'na'/'skipped' were never evaluated. Anything not listed here is withheld.
+const CHECK_RANK = { fail: 1, warning: 2, notice: 3 };
+// Rank BEFORE slicing so a budget cut can only ever drop the least severe findings.
+function checkRank(c) {
+  const base = CHECK_RANK[c.status];
+  return base === 1 && c.severity === 'error' ? 0 : base;
+}
+const AI_CHECK_BUDGET = 150;
+
+// Checks whose detail carries schema validation errors. Anchored on id so that rewording a detail
+// string can never silently empty this field, with a prose test kept as a fallback for validation
+// checks added later. J22 (warning) lists every openingHoursSpecification error; T12 (fail, severity
+// error) is the same finding capped at 3 — a detail-text-only filter matched J22 and missed T12, the
+// higher-severity expression of the dayOfWeek bug.
+const SCHEMA_VALIDATION_CHECK_IDS = new Set(['J22', 'T12']);
+function isSchemaValidationFinding(c) {
+  // pass / informational / na / skipped carry no errors to correct.
+  if (!Object.prototype.hasOwnProperty.call(CHECK_RANK, c.status)) return false;
+  return SCHEMA_VALIDATION_CHECK_IDS.has(c.id)
+    || /validation error|present but invalid/i.test(c.detail || '');
+}
+
 const GPT_SYSTEM_PROMPT = `You are a senior SEO and GEO strategist at a full-service SEO agency.
 
 You will receive a JSON object containing:
-1. Automated HTML audit results (checks array)
+1. Automated HTML audit results (checks array — notable findings only, ranked most severe first)
 2. Page context (pageType, brandName, vertical, isYMYL, keywords, detectedElements)
 3. Schema blocks extracted from the page
 4. Rule-based schema recommendations list
+5. pageIntent ("commercial" | "informational") and pageIntentSource ("user" | "detected")
+6. naCheckIds — the ids of checks the rule engine marked not-applicable to this page
+7. schemaValidationErrors — every schema validation finding, complete and never truncated
+8. scores — the rule-based score buckets plus breakdown, cap and band
+9. checksTruncated — how many notable checks did not fit the payload budget (0 when none)
+
+The checks array contains only checks with status "fail", "warning" or "notice". Passing checks,
+checks with status "informational" (a measurement, not a verdict) and checks with status "na" (not
+applicable to this page) are all withheld. Never read an absent check as a failure.
 
 Your tasks:
 A. Analyze audit findings and produce an expert-level report
@@ -34,9 +66,70 @@ AUDIENCE: Experienced SEO practitioners. No basic explanations. Precise technica
 PAGE TYPE CONTEXT RULES:
 - All recommendations must be appropriate for the detected page type.
 - Do not recommend Article schema for location pages.
-- Do not recommend author bylines for contact pages or product pages.
+- Do not recommend author bylines for location, contact, product, category, or pricing pages. On location pages the equivalent E-E-A-T signal is a named practitioner roster with credentials — check pageContext.namedPractitioners before claiming named experts are absent.
 - For YMYL pages (isYMYL: true), flag any missing credential, license, or expert review signals as high-priority.
 - For healthcare YMYL (Dentist, MedicalOrganization): flag absence of: named doctor, medical credential, state license reference, "Reviewed by [MD/DDS]" text.
+
+PAGE INTENT RULES (highest precedence — these override every other rule in this prompt):
+
+You receive pageIntent ("commercial" | "informational"), pageIntentSource ("user" | "detected"),
+and naCheckIds (the ids of checks the rule engine marked not-applicable for this page).
+If pageIntentSource is "user", the operator declared it explicitly. Never question it, never
+re-classify it, never hedge about it in the output.
+
+If pageIntent is "commercial":
+- Citations, statistics, and expert quotations carry ZERO weight. Do not list them as issues, do not
+  put them in quick_wins, do not put them in top_geo_fix, do not reference them in any impact,
+  fix, or content_recommendations text.
+- Every id in naCheckIds is out of scope. Do not create an issue for it, do not count it against the
+  page, do not mention it. On commercial pages these are commonly na: F8, F9, F10, F11, F14, F15,
+  F16, F17, F26, F27, I5, R1, R2, R4, R7, R11, J14.
+- NEVER recommend: adding statistics or data points; adding expert quotes or credentialed
+  quotations; adding outbound .gov/.edu/research citations; adding an author byline or author bio
+  page; adding a "Reviewed by [MD/DDS]" line as a content fix; adding Article/BlogPosting schema;
+  adding a publication date; or lengthening the page to hit a word-count band.
+- The GEO levers you MAY recommend, in this priority order:
+  1. Complete the LocalBusiness-subtype schema: address, telephone, geo (latitude/longitude),
+     openingHoursSpecification with http://schema.org/<Day> dayOfWeek URIs plus opens and closes,
+     sameAs, @id, description.
+  2. Add AggregateRating and/or Review markup for review content ALREADY visible on the page.
+  3. Add FAQPage schema and question-form H2/H3 headings that mirror real user questions.
+  4. Rewrite the opening paragraph as a direct answer naming entity + city + primary service +
+     hours or phone.
+  5. State the service area explicitly (areaServed in schema, named neighbourhoods in copy).
+  6. Remove promotional adjectives that suppress AI extraction.
+  7. Make hours, pricing, and insurance/plan acceptance machine-readable.
+- eeat_strength must be judged on entity trust: NAP consistency, license and credential references,
+  About/Contact/Privacy links, review markup. Not on bylines, not on citations.
+- word_count_verdict must be judged against a commercial page's job (350-1200 words is healthy for a
+  location page). Never call a concise commercial page "under-length".
+
+If pageIntent is "informational": behaviour is unchanged. Citations, statistics, expert quotations,
+named author, and dateModified freshness are first-class GEO signals; recommend them when missing.
+
+---
+
+SCORE BUCKET RULES:
+
+scores carries one 0-100 bar per bucket plus scores.composite (uncapped weighted mean),
+scores.overall (the headline score AFTER any blocker cap), scores.cap, scores.band and
+scores.breakdown (per-bucket points_lost and status counts, already sorted worst-first).
+
+The nine buckets and the labels to use when you name them in narrative text:
+  title_meta → "Title & Meta"                content_structure → "Content & Structure"
+  indexability → "Indexability"              schema → "Schema"
+  geo_signals → "GEO Signals"                eeat → "E-E-A-T"
+  technical → "Technical & Performance"      links_media → "Links & Media"
+  keyword → "Keyword Targeting"
+
+- summary.overall_score must echo scores.overall verbatim. Never recompute or average it.
+- A bucket whose score is null has no scored checks on this page — never comment on it.
+- Order your sections to follow scores.breakdown (worst points_lost first).
+- If scores.cap.applied is true, summary.priority_verdict must name the capping issue, and the
+  capped headline is the truth — do not describe the page by its uncapped composite.
+- sections[].category is NOT a bucket name. It must be the exact category string carried on the
+  supplied checks (e.g. "Title Tag", "Content Quality", "Schema", "GEO Signals", "E-E-A-T").
+  sections[].score is your own 0-100 read of that check category.
 
 ---
 
@@ -44,6 +137,7 @@ KEYWORD CONTEXT RULES:
 - If keywords are provided, evaluate every flagged check in the context of whether the keyword is the cause.
 - For keyword density warnings: if the over-dense keyword is the primary keyword, acknowledge this and recommend targeted reduction, not elimination.
 - For heading keyword repetition: if the keyword is in the brand name, lower urgency and note this as a context note.
+- kwChecks entries may carry tier, matchScore, evidence (the verbatim matched source substring) and flags (e.g. word_order_reversed, brand_incidental). Quote evidence rather than paraphrasing it, and let flags set the urgency — a brand_incidental match is not proof of targeting.
 
 ---
 
@@ -58,7 +152,12 @@ For each item in schemaRecommendations:
 For each detected schema with openingHoursSpecification:
 - Plain string values like "Monday" in dayOfWeek are INVALID. Must be http://schema.org/Monday
 - Property "canceldayOfWeek" is INVALID. Must be "dayOfWeek"
+- An OpeningHoursSpecification object with no dayOfWeek and no opens/closes is INVALID — it carries no machine-readable hours at all
 - Always provide the complete corrected JSON-LD block for any schema with errors
+
+schemaValidationErrors is supplied as its own payload field and is never truncated. Every entry in it
+MUST appear in schema_analysis.detected[].validation_errors with a corrected_json_ld block. Losing one
+is a failed response.
 
 ---
 
@@ -132,13 +231,12 @@ OUTPUT FORMAT (return JSON with this exact structure):
     ]
   },
   "geo_analysis": {
-    "csqaf_breakdown": {
-      "citations_c": "<score 0-2 with specific finding>",
-      "statistics_s": "<score 0-2 with specific finding>",
-      "quotations_q": "<score 0-2>",
-      "authoritativeness_a": "<score 0-2>",
-      "fluency_f": "<score 0-2>",
-      "total": "<sum>/10"
+    "answerability": {
+      "rubric": "<echo geo.answerability_rubric verbatim>",
+      "score": "<echo geo.answerability_score verbatim, e.g. 5/10>",
+      "notes": {
+        "<component key from geo.answerability_breakdown>": "<one sentence: why it scored what it scored and the single change that would raise it — no numbers>"
+      }
     },
     "platform_readiness": {
       "google_aio": "<ready|partial|not_ready — one specific reason>",
@@ -152,10 +250,12 @@ OUTPUT FORMAT (return JSON with this exact structure):
   },
   "content_recommendations": {
     "rewrite_priority": "<which section + why + example rewrite>",
-    "statistics_to_add": "<2-3 specific stat types with suggested sources>",
-    "expert_quote_guidance": "<credential + format + example>",
     "faq_recommendation": "<3-5 specific FAQ questions as a list>",
-    "word_count_verdict": "<adequate/over/under for this page type + GEO reasoning>"
+    "word_count_verdict": "<adequate/over/under for this page intent + reasoning>",
+    "statistics_to_add": "<INFORMATIONAL INTENT ONLY — 2-3 specific stat types with suggested sources. Omit this key entirely when pageIntent is commercial>",
+    "expert_quote_guidance": "<INFORMATIONAL INTENT ONLY — credential + format + example. Omit this key entirely when pageIntent is commercial>",
+    "entity_completeness_actions": "<COMMERCIAL INTENT ONLY — 2-3 concrete schema/NAP/hours/review-markup actions. Omit this key entirely when pageIntent is informational>",
+    "direct_answer_rewrite": "<COMMERCIAL INTENT ONLY — rewritten opening paragraph: entity + city + primary service + hours/phone. Omit this key entirely when pageIntent is informational>"
   }
 }
 
@@ -177,7 +277,14 @@ RULES:
 
 7. Do not include passing checks unless they are notable positive signals.
 
-8. GEO readiness: ready = CSQAF >= 7, named author, ≥4 statistics with sources, Organization schema with sameAs, dateModified present, no promotional language flags. needs_work = CSQAF 4–6 or 2–3 criteria met. not_ready = CSQAF < 4 or <2 criteria met.
+8. GEO readiness — evaluate against the rubric named in geo.answerability_rubric:
+   - CSQAF (informational): ready = score >= 7 AND named author AND >= 4 statistics with sources AND
+     Organization schema with sameAs AND dateModified present AND no promotional-language flag.
+     needs_work = score 4-6. not_ready = score < 4.
+   - NAPEF (commercial): ready = score >= 7 AND complete NAP in a LocalBusiness-subtype node AND a
+     valid non-empty openingHoursSpecification AND sameAs >= 3 AND AggregateRating or Review markup
+     AND no promotional-language flag. needs_work = score 4-6. not_ready = score < 4.
+     Statistics, citations, quotations, and author bylines must not influence this verdict.
 
 9. Be blunt. If the page is poorly optimized for GEO, say so directly.
 
@@ -185,11 +292,17 @@ RULES:
 
 11. For the Dentist schema dayOfWeek error: the corrected block must show each day as a separate OpeningHoursSpecification object with proper http://schema.org/DayName URIs.
 
-12. If rule-based statistics count appears inflated (count > 20 on a local business page), note this and use your own estimate.
+12. If a rule-based count looks implausible, say so in the relevant issue's context_note. Do not substitute a different number anywhere in the output.
 
-13. Context notes are mandatory for: E13 on brand-name-heavy pages, F22 when keyword density involves the primary keyword, F6 on location/service pages.
+13. Context notes are mandatory for: E13 on brand-name-heavy pages, F22 when keyword density involves the primary keyword, F6 on location/service pages; and F6 must be judged against the commercial 25-word threshold on commercial pages.
 
-14. Be specific about YMYL gaps. For a dental location page with no named DDS/DMD, no credential schema, no state license reference — call this out as a direct E-E-A-T risk.`;
+14. Be specific about YMYL gaps. For a YMYL commercial page (e.g. a dental location page) with no named DDS/DMD, no credential schema, and no state licence reference, call this out as a direct E-E-A-T risk. This is the ONLY author/credential recommendation permitted on a commercial page — phrase it as "name the treating dentist(s) with credentials", never as "add an author byline".
+
+15. The answerability score and its per-component points are computed by the rule engine and supplied to you in geo.answerability_score, geo.answerability_earned, geo.answerability_max, and geo.answerability_breakdown. Echo them verbatim. Never compute, adjust, average, or re-derive them. Never emit a csqaf_breakdown object. Never emit component keys that are absent from geo.answerability_breakdown.
+
+16. Do not recommend adding anything covered by an id in naCheckIds. If you believe an na decision is wrong for this specific page, say so in exactly one sentence inside summary.priority_verdict — do not manufacture an issue object for it.
+
+17. Every issue you emit must reference a check id that appears in the supplied checks array.`;
 
 async function fetchUrl(url) {
   const resp = await axios.get(url, {
@@ -213,8 +326,11 @@ async function fetchUrl(url) {
 
 // POST /api/seo-geo-audit/run  — SSE streaming
 router.post('/run', async (req, res) => {
-  const { url, html: pastedHtml, keywords } = req.body;
+  const { url, html: pastedHtml, keywords, pageIntent: pageIntentInput } = req.body;
   const kwArray = Array.isArray(keywords) ? keywords.filter(Boolean) : [];
+  // 'auto' lets the check engine infer intent from the detected page type. An explicit
+  // 'commercial'/'informational' always wins; anything unrecognised degrades to 'auto'.
+  const intentInput = ['commercial', 'informational'].includes(pageIntentInput) ? pageIntentInput : 'auto';
 
   if (!url && !pastedHtml) {
     return res.status(400).json({ error: 'Provide a URL or raw HTML.' });
@@ -274,9 +390,9 @@ router.post('/run', async (req, res) => {
 
     // ── Step 2: Run checks ───────────────────────────────────────────────────
     emit('step', { id: 'checks', status: 'active', message: 'Running all SEO & GEO checks…' });
-    const { checks, scores, geo, pageContext, detectedElements, detectedSchemas, schemaRecommendations, kwChecks } = await runAllChecks(rawHtml, finalUrl, httpHeaders, kwArray);
+    const { checks, scores, geo, pageContext, detectedElements, detectedSchemas, schemaRecommendations, kwChecks, pageIntent, pageIntentSource } = await runAllChecks(rawHtml, finalUrl, httpHeaders, kwArray, { pageIntent: intentInput });
     const kwSuffix = kwArray.length > 0 ? ` · ${kwChecks.length} keyword checks` : '';
-    emit('step', { id: 'checks', status: 'done', message: `${checks.length} checks complete — ${scores.counts.errors} errors, ${scores.counts.warnings} warnings${kwSuffix}` });
+    emit('step', { id: 'checks', status: 'done', message: `${checks.length} checks complete — ${scores.counts.errors} errors, ${scores.counts.warnings} warnings${kwSuffix} · ${pageIntent} intent` });
 
     // ── Step 3: Build findings payload ───────────────────────────────────────
     emit('step', { id: 'structure', status: 'active', message: 'Structuring findings…' });
@@ -298,6 +414,8 @@ router.post('/run', async (req, res) => {
         page_type_confidence: pageContext?.pageTypeConfidence || 0,
         is_ymyl: pageContext?.isYMYL || false,
         content_vertical: pageContext?.detectedVertical || 'other',
+        page_intent: pageIntent,
+        page_intent_source: pageIntentSource,
         keywords: kwArray,
       },
       checks,
@@ -313,9 +431,11 @@ router.post('/run', async (req, res) => {
     emit('step', { id: 'structure', status: 'done', message: 'Findings structured.' });
 
     // ── Step 3.5: Page type AI classification ─────────────────────────────────────────
-    // Only run if rule-based confidence < 0.8 and we have enough page signals
+    // Only run if rule-based confidence < 0.8 and we have enough page signals. Skipped entirely when
+    // the operator declared the intent — the classifier's only downstream use is intent inference,
+    // and an explicit declaration always wins.
     let aiPageType = null;
-    if (pageContext && pageContext.pageTypeConfidence < 0.8) {
+    if (intentInput === 'auto' && pageContext && pageContext.pageTypeConfidence < 0.8) {
       try {
         const classInput = {
           url: finalUrl || '(pasted HTML)',
@@ -346,6 +466,9 @@ router.post('/run', async (req, res) => {
         const classRaw = classCompletion.choices[0]?.message?.content || '{}';
         aiPageType = JSON.parse(classRaw);
         if (aiPageType.confidence >= 0.8) {
+          // Deliberately does NOT re-derive page_intent: scoring already ran against the rule-based
+          // intent, so re-deriving here would make findings.scores disagree with findings.meta.
+          // page_intent_source keeps the provenance visible.
           findings.meta.page_type = aiPageType.pageType;
           findings.meta.page_type_confidence = aiPageType.confidence;
           findings.meta.is_ymyl = aiPageType.isYMYL;
@@ -364,18 +487,39 @@ router.post('/run', async (req, res) => {
     // ── Step 4: GPT-4o mini analysis ─────────────────────────────────────────
     emit('step', { id: 'ai', status: 'active', message: 'Sending to GPT-4o mini for expert analysis…' });
 
+    // The old filter — `c.status !== 'pass' || c.severity === 'info'` — was a no-op: makeResult()
+    // defaults severity:'info' and pass() never clears it, so all 261 checks satisfied it and
+    // slice(0,120) then dropped 141 of them in DOM order. J22's schema validation errors sat at
+    // filtered index 128 and never reached the model, which is why the report never mentioned the
+    // dayOfWeek bug this prompt is written to fix. Filter on status, rank BEFORE slicing.
+    const notableChecks = checks
+      .filter(c => Object.prototype.hasOwnProperty.call(CHECK_RANK, c.status))
+      .sort((a, b) => checkRank(a) - checkRank(b));   // stable — DOM order kept within a rank band
+    const sentChecks = notableChecks.slice(0, AI_CHECK_BUDGET);
+    findings.meta.checks_sent_to_ai = sentChecks.length;
+    findings.meta.checks_truncated = notableChecks.length - sentChecks.length;
+
     let aiAnalysis = null;
     try {
       const gptInput = {
         meta: findings.meta,
         scores: findings.scores,
         geo: findings.geo,
+        pageIntent,
+        pageIntentSource,
         pageContext: findings.pageContext,
         detectedElements: findings.detectedElements,
         detectedSchemas: (findings.detectedSchemas || []).slice(0, 10), // limit
         schemaRecommendations: findings.schemaRecommendations || [],
         kwChecks: findings.kwChecks || [],
-        checks: checks.filter(c => c.status !== 'pass' || c.severity === 'info').slice(0, 120),
+        checks: sentChecks,
+        // Validation findings get their own field so a content budget can never drop them.
+        schemaValidationErrors: checks
+          .filter(isSchemaValidationFinding)
+          .map(c => ({ id: c.id, category: c.category, severity: c.severity, detail: c.detail })),
+        // Page-specific exclusion list — replaces a hardcoded id list in the prompt.
+        naCheckIds: checks.filter(c => c.status === 'na').map(c => c.id),
+        checksTruncated: findings.meta.checks_truncated,
       };
 
       const completion = await getOpenAI().chat.completions.create({

@@ -1,13 +1,10 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-
-const STEPS = [
-  { id: 'fetch',     label: 'Fetch Page' },
-  { id: 'checks',    label: 'Run Checks' },
-  { id: 'structure', label: 'Structure Findings' },
-  { id: 'ai',        label: 'AI Analysis' },
-];
+import { useSeoGeoAudit } from '../hooks/useSeoGeoAudit';
+import { scoreColor } from '../components/seoGeo/primitives';
+import AuditInputPanel from '../components/seoGeo/AuditInputPanel';
+import ScoreDashboard, { AuditMetaBar } from '../components/seoGeo/ScoreDashboard';
 
 const SEV_COLOR = {
   error:   { bg: 'var(--danger-soft)',  text: 'var(--danger)',  border: 'var(--danger)',  label: 'Error' },
@@ -16,82 +13,11 @@ const SEV_COLOR = {
   info:    { bg: 'var(--success-soft)', text: 'var(--success)', border: 'var(--success)', label: 'Info' },
 };
 
-const GEO_BADGE = {
-  ready:      { bg: 'var(--success-soft)', text: 'var(--success)', label: 'GEO Ready' },
-  needs_work: { bg: 'var(--warning-soft)', text: 'var(--warning)', label: 'Needs Work' },
-  not_ready:  { bg: 'var(--danger-soft)',  text: 'var(--danger)',  label: 'Not Ready' },
-};
-
-const EEAT_BADGE = {
-  strong:   { bg: 'var(--success-soft)', text: 'var(--success)' },
-  moderate: { bg: 'var(--warning-soft)', text: 'var(--warning)' },
-  weak:     { bg: 'var(--danger-soft)',  text: 'var(--danger)' },
-};
-
 const PLATFORM_BADGE = {
   ready:     { bg: 'var(--success-soft)', text: 'var(--success)' },
   partial:   { bg: 'var(--warning-soft)', text: 'var(--warning)' },
   not_ready: { bg: 'var(--danger-soft)',  text: 'var(--danger)' },
 };
-
-function scoreColor(score) {
-  return score >= 70 ? 'var(--success)' : score >= 45 ? 'var(--warning)' : 'var(--danger)';
-}
-
-function ScoreRing({ score, size = 80 }) {
-  const r = (size / 2) - 8;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (score / 100) * circ;
-  const color = scoreColor(score);
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--border)" strokeWidth="7" />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth="7"
-        strokeDasharray={circ} strokeDashoffset={offset}
-        strokeLinecap="round" transform={`rotate(-90 ${size/2} ${size/2})`} />
-      <text x={size/2} y={size/2+1} textAnchor="middle" dominantBaseline="middle"
-        fontSize="16" fontWeight="700" fill={color} fontFamily="var(--font-mono)">{score}</text>
-    </svg>
-  );
-}
-
-function StepBar({ steps }) {
-  return (
-    <>
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        {STEPS.map(s => {
-          const st = steps[s.id];
-          const isDone = st?.status === 'done';
-          const isActive = st?.status === 'active';
-          const isError = st?.status === 'error';
-          const dotBg = isDone ? 'var(--success)' : isActive ? 'var(--primary)' : isError ? 'var(--danger)' : 'var(--border)';
-          const dotColor = (isDone || isActive || isError) ? '#fff' : 'var(--text-3)';
-          const labelColor = isDone ? 'var(--success)' : isActive ? 'var(--primary)' : isError ? 'var(--danger)' : 'var(--text-3)';
-          return (
-            <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-              <span style={{
-                width: 20, height: 20, borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0, backgroundColor: dotBg, color: dotColor, fontSize: 11,
-              }}>
-                {isDone ? '✓' : isActive ? (
-                  <svg style={{ width: 12, height: 12, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none">
-                    <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                  </svg>
-                ) : isError ? '✕' : '·'}
-              </span>
-              <span style={{ color: labelColor, fontWeight: isActive ? 600 : 400 }}>
-                {st?.message || s.label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </>
-  );
-}
 
 function SeverityBadge({ severity }) {
   const c = SEV_COLOR[severity] || SEV_COLOR.info;
@@ -102,19 +28,6 @@ function SeverityBadge({ severity }) {
     }}>
       {c.label}
     </span>
-  );
-}
-
-function ScoreBar({ label, score }) {
-  const color = scoreColor(score);
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-      <span style={{ fontSize: 12, color: 'var(--text-2)', width: 128, flexShrink: 0 }}>{label}</span>
-      <div style={{ flex: 1, height: 8, background: 'var(--surface)', borderRadius: 999, overflow: 'hidden' }}>
-        <div style={{ height: '100%', borderRadius: 999, transition: 'width 500ms', width: `${score}%`, backgroundColor: color }} />
-      </div>
-      <span style={{ fontSize: 12, fontWeight: 700, width: 32, textAlign: 'right', color, fontFamily: 'var(--font-mono)' }}>{score}</span>
-    </div>
   );
 }
 
@@ -182,6 +95,7 @@ function RawCheckRow({ check }) {
   const statusColor = {
     pass: 'var(--success)', fail: 'var(--danger)',
     warning: 'var(--warning)', notice: 'var(--info)', skipped: 'var(--text-3)',
+    na: 'var(--text-3)', informational: 'var(--text-3)',
   }[check.status] || 'var(--text-3)';
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border)', fontSize: 14 }}>
@@ -192,7 +106,10 @@ function RawCheckRow({ check }) {
         {check.detail && <p style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 2 }}>{check.detail}</p>}
         {check.value && <p style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-3)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(check.value).substring(0, 120)}</p>}
       </div>
-      {check.status !== 'pass' && check.status !== 'skipped' && (
+      {/* 'na' and 'informational' rows are neutral: SEV_COLOR.info is green and
+          would render them as an "Info" pass. */}
+      {check.status !== 'pass' && check.status !== 'skipped'
+        && check.status !== 'na' && check.status !== 'informational' && (
         <SeverityBadge severity={check.severity} />
       )}
     </div>
@@ -437,6 +354,9 @@ function downloadReport(findings, ai) {
     ['Field', 'Value'],
     ['URL', findings.meta.url],
     ['Page Type', findings.meta.page_type || '—'],
+    ['Page Intent', findings.meta.page_intent
+      ? `${findings.meta.page_intent}${findings.meta.page_intent_source === 'detected' ? ' (auto)' : ''}`
+      : '—'],
     ['Content Vertical', findings.meta.content_vertical || '—'],
     ['Is YMYL', findings.meta.is_ymyl ? 'Yes' : 'No'],
     ['Audit Date', new Date(findings.meta.fetch_timestamp).toLocaleString()],
@@ -450,13 +370,21 @@ function downloadReport(findings, ai) {
     ['Keywords Audited', (findings.meta.keywords || []).join(', ') || '(none)'],
     [''],
     ['Scores', ''],
-    ['Overall Score', findings.scores.overall],
-    ['Title & Meta', findings.scores.title_meta],
-    ['Content', findings.scores.content_structure],
-    ['Technical', findings.scores.technical],
-    ['Schema', findings.scores.schema],
-    ['GEO Signals', findings.scores.geo_signals],
-    ['E-E-A-T', findings.scores.eeat],
+    ['Overall Score (after cap)', findings.scores.overall ?? '—'],
+    ['Composite (uncapped)', findings.scores.composite ?? '—'],
+    ['Band', findings.scores.band?.label ?? '—'],
+    ['Cap Applied', findings.scores.cap?.applied
+      ? `${findings.scores.cap.value} — ${(findings.scores.cap.groups || []).map(g => g.reason).join(' · ')}`
+      : 'No'],
+    ['Title & Meta', findings.scores.title_meta ?? '—'],
+    ['Content & Structure', findings.scores.content_structure ?? '—'],
+    ['Indexability', findings.scores.indexability ?? '—'],
+    ['Schema', findings.scores.schema ?? '—'],
+    ['GEO Signals', findings.scores.geo_signals ?? '—'],
+    ['E-E-A-T', findings.scores.eeat ?? '—'],
+    ['Technical & Performance', findings.scores.technical ?? '—'],
+    ['Links & Media', findings.scores.links_media ?? '—'],
+    ['Keyword Targeting', findings.scores.keyword ?? '—'],
     [''],
     ['AI Assessment', ''],
     ['GEO Readiness', ai?.summary?.geo_readiness ?? '—'],
@@ -466,18 +394,24 @@ function downloadReport(findings, ai) {
     ['Quick Wins', ''],
     ...(ai?.summary?.quick_wins ?? []).map((w, i) => [`${i + 1}`, w]),
     [''],
-    ['CSQAF Score', ai?.geo_analysis?.csqaf_breakdown?.total ?? '—'],
-    ['Citations (C)', ai?.geo_analysis?.csqaf_breakdown?.citations_c ?? '—'],
-    ['Statistics (S)', ai?.geo_analysis?.csqaf_breakdown?.statistics_s ?? '—'],
-    ['Quotations (Q)', ai?.geo_analysis?.csqaf_breakdown?.quotations_q ?? '—'],
-    ['Authoritativeness (A)', ai?.geo_analysis?.csqaf_breakdown?.authoritativeness_a ?? '—'],
-    ['Fluency (F)', ai?.geo_analysis?.csqaf_breakdown?.fluency_f ?? '—'],
+    // Rule-based answerability (F28) — the rubric and its components switch with
+    // page intent, so the rows are generated rather than hardcoded to C/S/Q/A/F.
+    ['GEO Answerability', findings.geo?.answerability_score ?? findings.geo?.csqaf_score ?? '—'],
+    ['Answerability Rubric', findings.geo?.answerability_rubric ?? '—'],
+    ['Answerability Points', Number.isFinite(findings.geo?.answerability_earned) && Number.isFinite(findings.geo?.answerability_max)
+      ? `${findings.geo.answerability_earned} of ${findings.geo.answerability_max}`
+      : '—'],
+    ...(findings.geo?.answerability_breakdown ?? []).map(c => [
+      `${c.key} — ${c.label}`,
+      `${c.points}/${c.max}${c.finding ? ` · ${c.finding}` : ''}`,
+    ]),
   ];
 
   // Sheet 2: Keyword Analysis (only if keywords provided)
-  const kwRows = [['ID', 'Check', 'Keyword', 'Status', 'Found Value', 'Fix']];
+  const kwRows = [['ID', 'Check', 'Keyword', 'Status', 'Tier', 'Evidence', 'Found Value', 'Fix']];
   for (const c of findings.kwChecks || []) {
-    kwRows.push([c.id, c.name, (findings.meta.keywords || []).join(', '), c.status, c.value ?? '', c.detail ?? '']);
+    kwRows.push([c.id, c.name, (findings.meta.keywords || []).join(', '), c.status,
+      c.tier ?? '', c.evidence ?? '', c.value ?? '', c.detail ?? '']);
   }
 
   // Sheet 3: Issues (errors + warnings)
@@ -543,6 +477,7 @@ function downloadReport(findings, ai) {
   // Sheet 7: GEO & Content
   const pr = ai?.geo_analysis?.platform_readiness ?? {};
   const cr = ai?.content_recommendations ?? {};
+  const isCommercial = findings.meta?.page_intent === 'commercial';
   const geoRows = [
     ['Platform Readiness', ''],
     ['Google AIO', pr.google_aio ?? '—'],
@@ -556,8 +491,16 @@ function downloadReport(findings, ai) {
     [''],
     ['Content Recommendations', ''],
     ['Rewrite Priority', cr.rewrite_priority ?? '—'],
-    ['Statistics to Add', cr.statistics_to_add ?? '—'],
-    ['Expert Quote Guidance', cr.expert_quote_guidance ?? '—'],
+    // Statistics / expert quotes are informational-intent only; entity completeness
+    // and the direct-answer rewrite are their commercial-intent counterparts.
+    ...(isCommercial ? [] : [
+      ['Statistics to Add', cr.statistics_to_add ?? '—'],
+      ['Expert Quote Guidance', cr.expert_quote_guidance ?? '—'],
+    ]),
+    ...(isCommercial ? [
+      ['Entity Completeness Actions', cr.entity_completeness_actions ?? '—'],
+      ['Direct Answer Rewrite', cr.direct_answer_rewrite ?? '—'],
+    ] : []),
     ['FAQ Recommendations', cr.faq_recommendation ?? '—'],
     ['Word Count Verdict', cr.word_count_verdict ?? '—'],
   ];
@@ -606,95 +549,18 @@ function downloadReport(findings, ai) {
 
 // ── Main page component ───────────────────────────────────────────────────────
 export default function SeoGeoAuditPage() {
-  const [inputType, setInputType] = useState('url');
-  const [urlInput, setUrlInput] = useState('');
-  const [htmlInput, setHtmlInput] = useState('');
-  const [keyword1, setKeyword1] = useState('');
-  const [keyword2, setKeyword2] = useState('');
-  const [running, setRunning] = useState(false);
-  const [steps, setSteps] = useState({});
-  const [findings, setFindings] = useState(null);
-  const [ai, setAi] = useState(null);
-  const [error, setError] = useState('');
+  // View-only state — not shared with the Snapshot page, which has no panels.
   const [activePanel, setActivePanel] = useState('dashboard');
   const [expandedCats, setExpandedCats] = useState({});
   const [issueTab, setIssueTab] = useState('severity');
-  const esRef = useRef(null);
 
-  function reset() {
-    if (esRef.current) { esRef.current.close(); esRef.current = null; }
-    setRunning(false); setSteps({}); setFindings(null); setAi(null); setError('');
-    // keywords intentionally not reset so users can re-run
-  }
-
-  async function runAudit() {
-    reset();
-    setRunning(true);
-    setError('');
-
-    const keywords = [keyword1.trim(), keyword2.trim()].filter(Boolean);
-    const body = inputType === 'url'
-      ? { url: urlInput.trim(), keywords }
-      : { html: htmlInput.trim(), keywords };
-
-    try {
-      const resp = await fetch('/api/seo-geo-audit/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        credentials: 'include',
-      });
-
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: 'Request failed' }));
-        setError(err.error || 'Audit request failed');
-        setRunning(false);
-        return;
-      }
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let currentEvent = null; // persists across read() chunks
-
-      const processEvents = (text) => {
-        buffer += text;
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
-        for (const line of lines) {
-          if (line.startsWith('event: ')) {
-            currentEvent = line.slice(7).trim();
-          } else if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (currentEvent === 'step') {
-                setSteps(prev => ({ ...prev, [data.id]: data }));
-              } else if (currentEvent === 'result') {
-                setFindings(data.findings);
-                setAi(data.ai);
-                setRunning(false);
-                setActivePanel('dashboard');
-              } else if (currentEvent === 'error') {
-                setError(data.message);
-                setRunning(false);
-              }
-            } catch {}
-            currentEvent = null;
-          }
-        }
-      };
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        processEvents(decoder.decode(value, { stream: true }));
-      }
-      setRunning(false);
-    } catch (err) {
-      setError(err.message || 'Connection failed');
-      setRunning(false);
-    }
-  }
+  // Inputs, the SSE run and run persistence live in the shared hook so the
+  // Snapshot page provably sends the same request body and restores the same way.
+  const ctl = useSeoGeoAudit('seo-geo-audit', {
+    onRestored: () => setActivePanel('dashboard'),
+    onResult:   () => setActivePanel('dashboard'),
+  });
+  const { findings, ai } = ctl;
 
   // Group raw checks by category
   const checksByCategory = {};
@@ -714,20 +580,7 @@ export default function SeoGeoAuditPage() {
     }
   }
 
-  const scores = findings?.scores;
-  const aiSummary = ai?.summary;
-
   const orderedCats = CATEGORY_ORDER.filter(c => checksByCategory[c]);
-
-  const inputStyle = {
-    border: '1px solid var(--border)',
-    borderRadius: 8,
-    padding: '8px 12px',
-    fontSize: 14,
-    background: 'var(--card)',
-    color: 'var(--text)',
-    outline: 'none',
-  };
 
   return (
     <main style={{ maxWidth: 1280, margin: '0 auto', padding: '24px' }}>
@@ -736,110 +589,13 @@ export default function SeoGeoAuditPage() {
       {/* Input panel */}
       {!findings && (
         <div style={{ maxWidth: 672, margin: '0 auto' }}>
-          <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-            <h1 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>SEO & GEO Audit</h1>
-            <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 20 }}>Run 200+ checks across all SEO and GEO parameters. Get a scored report with AI-powered recommendations.</p>
-
-            {/* Primary Keywords */}
-            <div style={{ marginBottom: 16 }}>
-              <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Primary Keywords (optional)</p>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="text"
-                  value={keyword1}
-                  onChange={e => setKeyword1(e.target.value)}
-                  placeholder="e.g. dentist brockton ma"
-                  style={{ ...inputStyle, flex: 1 }}
-                  onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--primary)'}
-                  onBlur={e => e.target.style.boxShadow = 'none'}
-                />
-                <input
-                  type="text"
-                  value={keyword2}
-                  onChange={e => setKeyword2(e.target.value)}
-                  placeholder="Secondary keyword (optional)"
-                  style={{ ...inputStyle, flex: 1 }}
-                  onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--primary)'}
-                  onBlur={e => e.target.style.boxShadow = 'none'}
-                />
-              </div>
-            </div>
-
-            {/* URL / HTML toggle */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              {[['url', 'URL'], ['html', 'Paste HTML']].map(([t, l]) => (
-                <button key={t} onClick={() => setInputType(t)} style={{
-                  padding: '6px 16px', borderRadius: 8, fontSize: 14, fontWeight: 500, cursor: 'pointer',
-                  border: inputType === t ? '1px solid var(--primary)' : '1px solid var(--border)',
-                  color: inputType === t ? 'var(--primary)' : 'var(--text-2)',
-                  background: inputType === t ? 'var(--primary-soft)' : 'var(--card)',
-                  transition: 'all 150ms',
-                }}>
-                  {l}
-                </button>
-              ))}
-            </div>
-
-            {inputType === 'url' ? (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="url"
-                  value={urlInput}
-                  onChange={e => setUrlInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && !running && urlInput.trim() && runAudit()}
-                  placeholder="https://example.com/page"
-                  style={{ ...inputStyle, flex: 1 }}
-                  onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--primary)'}
-                  onBlur={e => e.target.style.boxShadow = 'none'}
-                />
-                <button
-                  onClick={runAudit}
-                  disabled={running || !urlInput.trim()}
-                  style={{
-                    padding: '8px 20px', borderRadius: 8, fontSize: 14, fontWeight: 600,
-                    color: '#fff', background: 'var(--primary)', border: 'none', cursor: 'pointer',
-                    opacity: (running || !urlInput.trim()) ? 0.5 : 1, transition: 'opacity 150ms',
-                  }}
-                >
-                  {running ? 'Running…' : 'Audit'}
-                </button>
-              </div>
-            ) : (
-              <div>
-                <textarea
-                  value={htmlInput}
-                  onChange={e => setHtmlInput(e.target.value)}
-                  placeholder="Paste raw HTML here…"
-                  rows={8}
-                  style={{ ...inputStyle, width: '100%', fontFamily: 'var(--font-mono)', resize: 'none', boxSizing: 'border-box' }}
-                  onFocus={e => e.target.style.boxShadow = '0 0 0 2px var(--primary)'}
-                  onBlur={e => e.target.style.boxShadow = 'none'}
-                />
-                <button
-                  onClick={runAudit}
-                  disabled={running || !htmlInput.trim()}
-                  style={{
-                    marginTop: 8, width: '100%', padding: '8px 0', borderRadius: 8,
-                    fontSize: 14, fontWeight: 600, color: '#fff', background: 'var(--primary)',
-                    border: 'none', cursor: 'pointer',
-                    opacity: (running || !htmlInput.trim()) ? 0.5 : 1, transition: 'opacity 150ms',
-                  }}
-                >
-                  {running ? 'Running…' : 'Audit HTML'}
-                </button>
-              </div>
-            )}
-
-            {error && (
-              <p style={{ marginTop: 12, fontSize: 14, color: 'var(--danger)', background: 'var(--danger-soft)', borderRadius: 8, padding: '8px 12px' }}>{error}</p>
-            )}
-
-            {running && (
-              <div style={{ marginTop: 20, padding: 16, background: 'var(--surface)', borderRadius: 8 }}>
-                <StepBar steps={steps} />
-              </div>
-            )}
-          </div>
+          <AuditInputPanel
+            ctl={ctl}
+            title="SEO & GEO Audit"
+            subtitle="Run 200+ checks across all SEO and GEO parameters. Get a scored report with AI-powered recommendations."
+            ctaLabel="Audit"
+            ctaLabelHtml="Audit HTML"
+          />
         </div>
       )}
 
@@ -847,31 +603,7 @@ export default function SeoGeoAuditPage() {
       {findings && (
         <div>
           {/* Meta bar */}
-          <div style={{
-            background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
-            padding: '12px 20px', marginBottom: 16,
-            display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
-            fontSize: 12, color: 'var(--text-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
-          }}>
-            <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 320 }}>{findings.meta.url}</span>
-            <span>HTTP {findings.meta.http_status || '—'}</span>
-            <span>{Math.round(findings.meta.html_size_bytes / 1024)}KB</span>
-            <span>{findings.meta.fetch_time_ms}ms</span>
-            <span>{findings.meta.total_checks_run} checks</span>
-            <span style={{ color: 'var(--danger)', fontWeight: 500 }}>{findings.meta.errors} errors</span>
-            <span style={{ color: 'var(--warning)', fontWeight: 500 }}>{findings.meta.warnings} warnings</span>
-            <span style={{ color: 'var(--info)' }}>{findings.meta.notices} notices</span>
-            <span style={{ color: 'var(--success)' }}>{findings.meta.passed} passed</span>
-            {findings.meta.page_type && findings.meta.page_type !== 'unknown' && (
-              <span style={{ fontWeight: 500, textTransform: 'capitalize', color: 'var(--primary)' }}>
-                {findings.meta.page_type.replace('_', ' ')} page
-                {findings.meta.is_ymyl ? ' · YMYL' : ''}
-              </span>
-            )}
-            {findings.meta.keywords?.length > 0 && (
-              <span style={{ color: 'var(--primary)' }}>KW: {findings.meta.keywords.join(', ')}</span>
-            )}
-          </div>
+          <AuditMetaBar findings={findings} />
 
           {/* Panel tabs */}
           <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
@@ -894,157 +626,7 @@ export default function SeoGeoAuditPage() {
 
           {/* ── Panel 1: Score Dashboard ── */}
           {activePanel === 'dashboard' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-
-              {/* Overall score */}
-              <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: 20, gridColumn: 'span 1', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>Overall Score</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-                  <ScoreRing score={scores.overall} size={88} />
-                  <div>
-                    {aiSummary?.geo_readiness && (
-                      <span style={{
-                        fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 999, display: 'block', marginBottom: 8,
-                        background: GEO_BADGE[aiSummary.geo_readiness]?.bg,
-                        color: GEO_BADGE[aiSummary.geo_readiness]?.text,
-                      }}>
-                        {GEO_BADGE[aiSummary.geo_readiness]?.label}
-                      </span>
-                    )}
-                    {aiSummary?.eeat_strength && (
-                      <span style={{
-                        fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 999, display: 'block',
-                        background: EEAT_BADGE[aiSummary.eeat_strength]?.bg,
-                        color: EEAT_BADGE[aiSummary.eeat_strength]?.text,
-                      }}>
-                        E-E-A-T: {aiSummary.eeat_strength}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {aiSummary?.priority_verdict && (
-                  <div style={{ background: 'var(--danger-soft)', border: '1px solid var(--danger)', borderRadius: 8, padding: 12, marginBottom: 16 }}>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--danger)', marginBottom: 4 }}>Priority Issue</p>
-                    <p style={{ fontSize: 14, color: 'var(--danger)' }}>{aiSummary.priority_verdict}</p>
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <ScoreBar label="Title & Meta" score={scores.title_meta} />
-                  <ScoreBar label="Content" score={scores.content_structure} />
-                  <ScoreBar label="Technical" score={scores.technical} />
-                  <ScoreBar label="Schema" score={scores.schema} />
-                  <ScoreBar label="GEO Signals" score={scores.geo_signals} />
-                  <ScoreBar label="E-E-A-T" score={scores.eeat} />
-                </div>
-              </div>
-
-              {/* Quick wins + keyword analysis + CSQAF + GEO signals */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, gridColumn: 'span 2' }}>
-
-                {aiSummary?.quick_wins?.length > 0 && (
-                  <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                    <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Quick Wins</p>
-                    <ul style={{ display: 'flex', flexDirection: 'column', gap: 8, listStyle: 'none', padding: 0, margin: 0 }}>
-                      {aiSummary.quick_wins.map((w, i) => (
-                        <li key={i} style={{ display: 'flex', gap: 10, fontSize: 14 }}>
-                          <span style={{ width: 20, height: 20, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0, color: '#fff', background: 'var(--primary)' }}>{i + 1}</span>
-                          <span style={{ color: 'var(--text)' }}>{w}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Keyword Analysis */}
-                {findings.meta.keywords?.length > 0 && findings.kwChecks?.length > 0 && (
-                  <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                    <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
-                      Keyword Analysis — "{findings.meta.keywords[0]}"
-                    </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-                      {[
-                        ['Title', findings.kwChecks.find(c => c.id === 'KW1')],
-                        ['H1', findings.kwChecks.find(c => c.id === 'KW2')],
-                        ['Meta Desc', findings.kwChecks.find(c => c.id === 'KW3')],
-                        ['Density', findings.kwChecks.find(c => c.id === 'KW8')],
-                        ['URL', findings.kwChecks.find(c => c.id === 'KW5')],
-                        ['H2', findings.kwChecks.find(c => c.id === 'KW6')],
-                        ['Alt Text', findings.kwChecks.find(c => c.id === 'KW7')],
-                        ['Schema', findings.kwChecks.find(c => c.id === 'KW9')],
-                      ].map(([label, chk]) => {
-                        if (!chk) return null;
-                        const statusColor = {
-                          pass: 'var(--success)', fail: 'var(--danger)',
-                          warning: 'var(--warning)', notice: 'var(--info)', skipped: 'var(--text-3)',
-                        }[chk.status] || 'var(--text-3)';
-                        const statusIcon = chk.status === 'pass' ? '✓' : chk.status === 'fail' ? '✕' : '~';
-                        return (
-                          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, border: '1px solid var(--border)', borderRadius: 4, padding: 8 }}>
-                            <span style={{ fontWeight: 700, color: statusColor }}>{statusIcon}</span>
-                            <span style={{ color: 'var(--text-2)' }}>{label}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {ai?.keyword_analysis && (
-                      <p style={{ fontSize: 12, color: 'var(--text)', fontStyle: 'italic' }}>{ai.keyword_analysis.summary}</p>
-                    )}
-                  </div>
-                )}
-
-                {/* CSQAF */}
-                {ai?.geo_analysis?.csqaf_breakdown && (
-                  <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                      <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CSQAF Score</p>
-                      <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>{ai.geo_analysis.csqaf_breakdown.total}</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
-                      {[
-                        ['C', 'Citations', ai.geo_analysis.csqaf_breakdown.citations_c],
-                        ['S', 'Statistics', ai.geo_analysis.csqaf_breakdown.statistics_s],
-                        ['Q', 'Quotes', ai.geo_analysis.csqaf_breakdown.quotations_q],
-                        ['A', 'Authority', ai.geo_analysis.csqaf_breakdown.authoritativeness_a],
-                        ['F', 'Fluency', ai.geo_analysis.csqaf_breakdown.fluency_f],
-                      ].map(([letter, name, val]) => (
-                        <div key={letter} style={{ background: 'var(--surface)', borderRadius: 8, padding: 10, textAlign: 'center' }}>
-                          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>{letter}</div>
-                          <div style={{ fontSize: 12, color: 'var(--text-2)' }}>{name}</div>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--primary)', marginTop: 4 }}>{val?.split(' ')[0] || '—'}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* GEO data from raw checks */}
-                {findings.geo && (
-                  <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-                    <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>GEO Signals</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-                      {[
-                        ['Stats', findings.geo.statistics_count, findings.geo.statistics_count >= 4],
-                        ['Expert Quotes', findings.geo.expert_quotes, findings.geo.expert_quotes > 0],
-                        ['Named Author', findings.geo.named_author ? 'Yes' : 'No', findings.geo.named_author],
-                        ['Primary Sources', findings.geo.primary_source_citations, findings.geo.primary_source_citations > 0],
-                        ['HTML Tables', findings.geo.html_tables, findings.geo.html_tables > 0],
-                        ['FAQ Section', findings.geo.faq_section ? 'Yes' : 'No', findings.geo.faq_section],
-                        ['BLUF Opening', findings.geo.direct_answer_opening ? 'Yes' : 'No', findings.geo.direct_answer_opening],
-                        ['Promo Words', findings.geo.promotional_language_count, findings.geo.promotional_language_count === 0],
-                        ['CSQAF', `${findings.geo.csqaf_score}/10`, findings.geo.csqaf_score >= 7],
-                      ].map(([label, val, good]) => (
-                        <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--surface)', borderRadius: 8, padding: 10 }}>
-                          <span style={{ fontSize: 18, fontWeight: 700, color: good ? 'var(--success)' : 'var(--danger)', fontFamily: 'var(--font-mono)' }}>{String(val)}</span>
-                          <span style={{ fontSize: 12, color: 'var(--text-2)', textAlign: 'center', marginTop: 2 }}>{label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <ScoreDashboard findings={findings} ai={ai} />
           )}
 
           {/* ── Panel 2: Issues (3-tab layout) ── */}
@@ -1076,7 +658,10 @@ export default function SeoGeoAuditPage() {
                   {orderedCats.map(cat => {
                     const catChecks = checksByCategory[cat] || [];
                     const aiCat = aiByCategory[cat] || aiByCategory[cat?.replace(/ /g, '_')];
-                    const failures = catChecks.filter(c => c.status !== 'pass' && c.status !== 'skipped');
+                    // 'na' (not applicable for this page intent) and 'informational'
+                    // are excluded from scoring server-side; they are not failures here either.
+                    const failures = catChecks.filter(c => c.status !== 'pass' && c.status !== 'skipped'
+                      && c.status !== 'na' && c.status !== 'informational');
                     const isExpanded = expandedCats[cat] !== false;
 
                     return (
@@ -1222,8 +807,12 @@ export default function SeoGeoAuditPage() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                     {[
                       ['Rewrite Priority', ai.content_recommendations.rewrite_priority],
+                      // informational-only keys — the prompt omits them for commercial pages
                       ['Statistics to Add', ai.content_recommendations.statistics_to_add],
                       ['Expert Quote Guidance', ai.content_recommendations.expert_quote_guidance],
+                      // commercial-only keys — omitted for informational pages
+                      ['Entity Completeness Actions', ai.content_recommendations.entity_completeness_actions],
+                      ['Direct Answer Rewrite', ai.content_recommendations.direct_answer_rewrite],
                       ['Word Count Verdict', ai.content_recommendations.word_count_verdict],
                     ].filter(([, v]) => v).map(([label, value]) => (
                       <div key={label} style={{ background: 'var(--surface)', borderRadius: 8, padding: 12 }}>
