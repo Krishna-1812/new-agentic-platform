@@ -79,7 +79,10 @@ const NON_DESCRIPTIVE_ANCHORS = new Set(['click here','here','read more','learn 
 
 const STATISTIC_PATTERNS = [
   /\d+\.?\d*\s*%\s*(of\s+\w+|reduction|increase|improvement|patients|cases|adults|children|people)/i,
-  /\d+\s+(out\s+of|in\s+every|per)\s+\d+/i,
+  // "in every"/"out of"/"per" was too narrow — the far more common ratio phrasing "1 in 5 adults" /
+  // "9 in 10 dentists" has a bare "in", not "in every". Requiring digits on both sides keeps this
+  // from false-firing on unrelated "in" usage ("3 in the morning" has no second number to match).
+  /\d+\s+(out\s+of|in\s+every|in|per)\s+\d+/i,
   /\d+\s+(million|billion|thousand)\s+(people|patients|adults|Americans|cases|dentists)/i,
   /according\s+to\s+[A-Z][^,]+,\s*\d/i,
   /\d+[^.]*\(\s*(CDC|ADA|WHO|NIH|NIDCR|study|research|survey|report)/i,
@@ -612,7 +615,15 @@ function checksF($, rawHtml, intent = 'informational', pageContext = {}, lbFacts
   expertQuoteCount > 0 ? pass(F14,`${expertQuoteCount}`,`${expertQuoteCount} expert quote(s) found.`) : warn(F14,'0','No expert quotes detected (GEO +40.3% signal missing).');
 
   // CHANGE 3 — §1.3: Statistics counter fix
-  const statCount = countStatistics(bodyText);
+  // countStatistics splits on sentence-ending punctuation, but nav menus and CTA buttons have none —
+  // so a 50-city location menu with no periods fuses onto the very next real sentence into one giant
+  // "sentence". If that fused blob also contains a dollar amount from an unrelated price banner (e.g.
+  // "New Patient Offer $79"), the $-exclusion pattern (meant to filter prices, not statistics) throws
+  // out the whole blob — discarding a genuine, well-sourced statistic sitting right after it. Verified
+  // on a real article: "Nearly 73% of adults... according to a 2025 JADA study" was reported as 0
+  // statistics for exactly this reason. Scope to content-only text so nav/header/footer/form can never
+  // fuse onto real content and take it down with them.
+  const statCount = countStatistics(contentOnlyText(rawHtml));
   statCount >= 4 ? pass(F15,`${statCount}`,`${statCount} statistics found (target: 5–7).`) : warn(F15,`${statCount}`,`Only ${statCount} statistics found (target: ≥4).`);
 
   // Run against bodyText (script/style already stripped) and require a citation-SHAPED bracket. The
@@ -2642,4 +2653,5 @@ module.exports = {
   // exported for the zero-dependency test runner
   calculateScores, resolvePageIntent, computeAnswerability, summarizeLocalBusiness,
   toSameAsArray, validateOpeningHours, extractSchemaBlocks, SCORE_BUCKETS,
+  countStatistics, contentOnlyText,
 };

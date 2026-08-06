@@ -12,7 +12,8 @@ const path = require('path');
 
 const KWM = require('../keywordMatch');
 const { runAllChecks, calculateScores, resolvePageIntent, computeAnswerability,
-  summarizeLocalBusiness, toSameAsArray, validateOpeningHours, extractSchemaBlocks } = require('../seoGeoChecks');
+  summarizeLocalBusiness, toSameAsArray, validateOpeningHours, extractSchemaBlocks,
+  countStatistics, contentOnlyText } = require('../seoGeoChecks');
 
 let passed = 0, failed = 0;
 const groups = [];
@@ -248,6 +249,40 @@ test('a commercial page with no local signals drops N and A instead of scoring t
   assert.strictEqual(a.max, 6, 'max should renormalise to 6 when N and A do not apply');
   assert.deepStrictEqual(a.breakdown.map(b => b.key), ['P','E','F']);
   assert.strictEqual(a.score, 10);
+});
+
+group('statistics counting — nav/CTA pollution must not swallow real content');
+
+test('a nav block with no sentence punctuation does not fuse onto the next real sentence and get excluded by an unrelated $ price', () => {
+  // Reproduces a real bug: a 50-city nav menu (no periods anywhere) plus a "$79" price banner glued
+  // directly onto the article's opening statistic with no punctuation between them. Sentence-splitting
+  // on [.!?]+ merged them into one blob, and the $-price exclusion (meant to filter phone numbers/
+  // prices, not statistics) discarded the whole blob — reporting 0 statistics on a page that opens
+  // with "Nearly 73% of adults... according to a 2025 JADA study."
+  const navDump = 'Locations Boston Cambridge New Patient Offer$79A $400+ Value Book Now';
+  const realSentence = 'Nearly 73% of adults report some level of dental fear, according to a 2025 study.';
+  const polluted = navDump + realSentence; // no punctuation between them, exactly as scraped
+  assert.strictEqual(countStatistics(polluted), 0,
+    'sanity check: confirms the fusion bug still exists at the raw-text level');
+  assert.strictEqual(countStatistics(realSentence), 1,
+    'the real sentence alone is correctly counted once isolated from the nav');
+});
+
+test('contentOnlyText strips nav/header/footer/form so the fusion cannot happen', () => {
+  const html = `<html><body>
+    <nav><a href="/a">Locations</a><a href="/b">Boston</a><div>New Patient Offer$79A $400+ Value</div></nav>
+    <main><p>Nearly 73% of adults report some level of dental fear, according to a 2025 study.</p></main>
+  </body></html>`;
+  const text = contentOnlyText(html);
+  assert.ok(!text.includes('$79'), 'nav content must be stripped');
+  assert.strictEqual(countStatistics(text), 1);
+});
+
+test('ratio statistics with a bare "in" (not just "in every") are counted', () => {
+  assert.strictEqual(countStatistics('1 in 5 adults avoid the dentist due to anxiety.'), 1);
+  assert.strictEqual(countStatistics('9 in 10 dentists recommend this.'), 1);
+  assert.strictEqual(countStatistics('I saw him again in 5 minutes.'), 0,
+    'a bare "in" between two numbers only — must not fire without a second number nearby');
 });
 
 group('scoring model — coherence with the displayed bars');
