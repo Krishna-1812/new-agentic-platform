@@ -1,19 +1,17 @@
 import { useState } from 'react';
-import { usePersistedRun } from './usePersistedRun';
 
-// All of the SEO & GEO audit run plumbing: inputs, the SSE reader, and run
-// persistence. Shared by SeoGeoAuditPage (full report) and SeoGeoSnapshotPage
-// (score dashboard only) so both pages provably send the same request body and
-// rehydrate the same way.
+// All of the SEO & GEO audit run plumbing: inputs and the SSE reader. Shared
+// by SeoGeoAuditPage (full report) and SeoGeoSnapshotPage (score dashboard
+// only) so both pages provably send the same request body and behave the
+// same way.
 //
-//   const ctl = useSeoGeoAudit('seo-geo-audit', {
-//     onRestored: () => setActivePanel('dashboard'),
-//     onResult:   () => setActivePanel('dashboard'),
-//   });
+//   const ctl = useSeoGeoAudit();
 //
-// `persistKey` MUST be distinct per page: `runs.tool` is a plain string with no
-// notion of which page wrote the row, so a shared key means the two tools fight
-// over one rehydration slot.
+// `restoring` is always false and `persistKey`/`onRestored` are accepted but
+// unused — this hook does not persist a run across a page refresh. A prior
+// version depended on a `usePersistedRun`/`/api/runs` layer that is a
+// separate, not-yet-shipped piece of work; re-add persistence here once that
+// lands, rather than carrying an unreviewed dependency in the meantime.
 export function useSeoGeoAudit(persistKey, { onRestored, onResult } = {}) {
   const [inputType, setInputType] = useState('url');
   const [urlInput, setUrlInput] = useState('');
@@ -26,21 +24,7 @@ export function useSeoGeoAudit(persistKey, { onRestored, onResult } = {}) {
   const [findings, setFindings] = useState(null);
   const [ai, setAi] = useState(null);
   const [error, setError] = useState('');
-
-  // Persist run output so a completed audit survives a page refresh.
-  const { save, restoring } = usePersistedRun(persistKey, {
-    onRestore: (o) => {
-      setFindings(o.findings ?? null);
-      setAi(o.ai ?? null);
-      if (o.inputType !== undefined) setInputType(o.inputType);
-      if (o.url !== undefined) setUrlInput(o.url ?? '');
-      if (o.html !== undefined) setHtmlInput(o.html ?? '');
-      if (o.keyword1 !== undefined) setKeyword1(o.keyword1 ?? '');
-      if (o.keyword2 !== undefined) setKeyword2(o.keyword2 ?? '');
-      if (o.pageIntent !== undefined) setPageIntent(o.pageIntent ?? 'auto');
-      if (o.findings) onRestored?.();
-    },
-  });
+  const restoring = false;
 
   function reset() {
     setRunning(false); setSteps({}); setFindings(null); setAi(null); setError('');
@@ -58,16 +42,6 @@ export function useSeoGeoAudit(persistKey, { onRestored, onResult } = {}) {
     const body = inputType === 'url'
       ? { url: urlInput.trim(), keywords, pageIntent }
       : { html: htmlInput.trim(), keywords, pageIntent };
-
-    // Snapshot the inputs at run time so persistence isn't affected by later edits.
-    const inputsSnapshot = {
-      inputType,
-      url: urlInput.trim(),
-      html: htmlInput.trim(),
-      keyword1: keyword1.trim(),
-      keyword2: keyword2.trim(),
-      pageIntent,
-    };
 
     try {
       const resp = await fetch('/api/seo-geo-audit/run', {
@@ -106,20 +80,6 @@ export function useSeoGeoAudit(persistKey, { onRestored, onResult } = {}) {
                 setAi(data.ai);
                 setRunning(false);
                 onResult?.();
-                save({
-                  label: data.findings?.meta?.url || inputsSnapshot.url || 'HTML audit',
-                  inputs: inputsSnapshot,
-                  output: {
-                    findings: data.findings ?? null,
-                    ai: data.ai ?? null,
-                    inputType: inputsSnapshot.inputType,
-                    url: inputsSnapshot.url,
-                    html: inputsSnapshot.html,
-                    keyword1: inputsSnapshot.keyword1,
-                    keyword2: inputsSnapshot.keyword2,
-                    pageIntent: inputsSnapshot.pageIntent,
-                  },
-                });
               } else if (currentEvent === 'error') {
                 setError(data.message);
                 setRunning(false);
