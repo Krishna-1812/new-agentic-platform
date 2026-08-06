@@ -11,9 +11,10 @@ const fs = require('fs');
 const path = require('path');
 
 const KWM = require('../keywordMatch');
+const cheerio = require('cheerio');
 const { runAllChecks, calculateScores, resolvePageIntent, computeAnswerability,
   summarizeLocalBusiness, toSameAsArray, validateOpeningHours, extractSchemaBlocks,
-  countStatistics, contentOnlyText } = require('../seoGeoChecks');
+  countStatistics, contentOnlyText, detectPageType } = require('../seoGeoChecks');
 
 let passed = 0, failed = 0;
 const groups = [];
@@ -193,6 +194,33 @@ test('extractSchemaBlocks recurses into nested entities', () => {
   assert.ok(types.has('Person'), 'nested Person nodes must be collected');
   assert.ok(types.has('BreadcrumbList'), 'nested BreadcrumbList must be collected');
   assert.ok(types.has('Organization'), 'Organization must be collected');
+});
+
+group('page-type URL detection — plural section names');
+
+// Reproduces a real bug found by running the audit against a random live page:
+// brushandfloss.com/locations/apex — an unambiguous location page ("Family Dentist in Apex, NC") —
+// was detected as page_type 'other' (0.5 confidence, defaulting to informational intent) because the
+// URL pattern for 'location' only matched the literal singular segment "location", not "locations".
+// The DOM-signal fallback couldn't rescue it either, because that site's LocalBusiness/Dentist schema
+// is injected by client-side JS and so is invisible to a static fetch — exactly the scenario a plural
+// URL segment is most likely to appear in.
+const $minimal = cheerio.load('<html><body><h1>Family Dentist</h1></body></html>');
+
+test('a pluralized /locations/ URL is detected as a location page even with no LocalBusiness schema', () => {
+  const ctx = detectPageType($minimal, 'https://www.brushandfloss.com/locations/apex', []);
+  assert.strictEqual(ctx.pageType, 'location');
+  assert.ok(ctx.pageTypeConfidence >= 0.7);
+});
+test('other pluralized section names resolve too (services, resources)', () => {
+  assert.strictEqual(detectPageType($minimal, 'https://example.com/services/whitening', []).pageType, 'service');
+  assert.strictEqual(detectPageType($minimal, 'https://example.com/resources/articles/x', []).pageType, 'article',
+    'the more specific article pattern should still win over the generic resource one');
+  assert.strictEqual(detectPageType($minimal, 'https://example.com/resources/guide', []).pageType, 'resource');
+});
+test('the singular forms still work (no regression)', () => {
+  assert.strictEqual(detectPageType($minimal, 'https://example.com/location/apex', []).pageType, 'location');
+  assert.strictEqual(detectPageType($minimal, 'https://example.com/service/whitening', []).pageType, 'service');
 });
 
 group('page intent');

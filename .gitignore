@@ -11,3 +11,9 @@ data/
 
 # Robots Monitor runtime data — contains plaintext credentials, do not commit
 modules/robotsMonitor/data/
+
+# Service-account credential files (GSC Explorer, etc.) — never commit
+server/secrets/
+
+# Output of server/scripts/auditPages.js --full — regenerable, not source
+server/scripts/audit-results/

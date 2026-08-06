@@ -1961,22 +1961,30 @@ function calculateScores(checks, intent = 'informational') {
 
 // ── §2: Page type detection (rule-based) ─────────────────────────────────────
 
+// Found by running the audit against real, randomly-selected pages: a page titled "Family Dentist in
+// Apex, NC" at /locations/apex — an unambiguous location page — was detected as page_type 'other' at
+// the 0.5 default confidence (and so defaulted to informational intent) because 'location' had no
+// plural form and this site's Dentist/LocalBusiness schema is injected by client-side JS (invisible to
+// a static fetch, so the DOM-signal fallback in detectPageType() below can't rescue it either). Nearly
+// every alternative here was singular-only while real sites overwhelmingly pluralize section URLs
+// ("/locations/", "/services/", "/resources/"). Added `s?` to every single-word alternative; left
+// multi-word phrases ("who-we-are", "get-in-touch", "case-study") alone since they don't pluralize.
 const URL_PAGE_TYPE_PATTERNS = [
   { type: 'homepage',  pattern: /^https?:\/\/[^\/]+\/?$/ },
-  { type: 'article',   pattern: /\/(blog|news|article|post|editorial|insight|story|press)\// },
+  { type: 'article',   pattern: /\/(blog|news|article|post|editorial|insight|story|press)s?\// },
   { type: 'article',   pattern: /\/(blog|news|article|post)s?\/[^\/]+\/?$/ },
-  { type: 'location',  pattern: /\/(location|office|branch|store|clinic|venue|outlet|practice|dental-office|dental-offices)\// },
+  { type: 'location',  pattern: /\/(location|office|branch|store|clinic|venue|outlet|practice|dental-office)s?\// },
   { type: 'location',  pattern: /\/[a-z]{2}\/[a-z-]+\/?$/ },
-  { type: 'service',   pattern: /\/(service|treatment|procedure|offering|solution|therapy)\// },
-  { type: 'product',   pattern: /\/(product|item|shop|buy|purchase|catalog)\// },
-  { type: 'category',  pattern: /\/(category|cat|collection|department)\// },
+  { type: 'service',   pattern: /\/(service|treatment|procedure|offering|solution|therapy)s?\// },
+  { type: 'product',   pattern: /\/(product|item|shop|buy|purchase|catalog)s?\// },
+  { type: 'category',  pattern: /\/(category|cat|collection|department)s?\// },
   { type: 'about',     pattern: /\/(about|about-us|our-story|company|who-we-are)\/?$/ },
   { type: 'contact',   pattern: /\/(contact|contact-us|get-in-touch|reach-us)\/?$/ },
   { type: 'faq',       pattern: /\/(faq|faqs|frequently-asked|help|support)\// },
-  { type: 'resource',  pattern: /\/(resource|guide|whitepaper|ebook|case-study|report|template|checklist)\// },
-  { type: 'team',      pattern: /\/(team|staff|people|doctors|physicians|attorneys|our-team)\// },
+  { type: 'resource',  pattern: /\/(resource|guide|whitepaper|ebook|case-study|report|template|checklist)s?\// },
+  { type: 'team',      pattern: /\/(team|staff|people|doctors|physicians|attorneys|our-team)s?\// },
   { type: 'pricing',   pattern: /\/(pricing|plans|packages|rates|fees)\/?$/ },
-  { type: 'landing',   pattern: /\/(lp|landing|campaign)\// },
+  { type: 'landing',   pattern: /\/(lp|landing|campaign)s?\// },
 ];
 
 function detectPageType($, pageUrl, parsedSchemas) {
@@ -2653,5 +2661,5 @@ module.exports = {
   // exported for the zero-dependency test runner
   calculateScores, resolvePageIntent, computeAnswerability, summarizeLocalBusiness,
   toSameAsArray, validateOpeningHours, extractSchemaBlocks, SCORE_BUCKETS,
-  countStatistics, contentOnlyText,
+  countStatistics, contentOnlyText, detectPageType,
 };
