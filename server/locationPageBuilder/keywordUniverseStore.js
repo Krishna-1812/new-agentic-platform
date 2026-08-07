@@ -3,7 +3,7 @@
 // server/scripts/importKeywordUniverse.js for how rows get in it.
 
 const { getSupabase, isSupabaseConfigured } = require('../services/supabase');
-const { universeFilterFor, UNSPECIFIED_GEO } = require('./keywordUniverseMap');
+const { universeFilterFor } = require('./keywordUniverseMap');
 
 const TABLE = 'lpb_keyword_universe';
 
@@ -30,8 +30,11 @@ async function getUniverseCandidates({ clientId, serviceSlug, city }) {
   if (!filter || !clientId) return [];
   if (!(await hasUniverse(clientId))) return [];
 
+  // Location-specific rows only — "near me"/implicit-local rows (Geo
+  // Detected '-') are excluded on purpose (client wants city-tied keywords,
+  // not generic near-me phrasing, even at the cost of lower volume).
   let q = getSupabase().from(TABLE).select('*').eq('client_id', clientId)
-    .in('geo_detected_norm', [norm(city), UNSPECIFIED_GEO]);
+    .eq('geo_detected_norm', norm(city)).neq('geo_type', 'Implicit Local (Near Me)');
   q = filter.clusters
     ? q.in('cluster', filter.clusters)
     : q.or(filter.keywordLike.map(p => `keyword_norm.ilike.${p}`).join(','));

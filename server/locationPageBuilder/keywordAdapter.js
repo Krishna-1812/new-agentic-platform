@@ -71,10 +71,15 @@ async function getKeywordCandidates({ service, city, state, seedQuery, clientId,
     }
   }
 
+  // Client wants location-specific keywords, not generic "near me" phrasing —
+  // drop those outright rather than just deprioritizing (even a 0-volume
+  // location-specific keyword beats a high-volume "near me" one here).
+  const NEAR_ME_RE = /\bnear me\b/i;
+
   const byKeyword = new Map();
   for (const k of pool) {
     const key = (k.keyword || '').toLowerCase().trim();
-    if (!key) continue;
+    if (!key || NEAR_ME_RE.test(key)) continue;
     const existing = byKeyword.get(key);
     if (!existing || (k.volume || 0) > (existing.volume || 0)) {
       byKeyword.set(key, {

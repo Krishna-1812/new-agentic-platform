@@ -43,14 +43,8 @@ const SERVICE_UNIVERSE_MAP = {
   'diabetes-and-oral-health': { keywordLike: ['%diabet%'] },
 };
 
-// Rows with Geo Detected === '-' are not tied to any city (e.g. "near me",
-// generic head terms) — they're relevant to every location page for a
-// matching service, so they're always included alongside the city-specific
-// rows rather than requiring an exact city match.
-const UNSPECIFIED_GEO = '-';
-
 function universeFilterFor(serviceSlug) {
   return SERVICE_UNIVERSE_MAP[serviceSlug] || null;
 }
 
-module.exports = { SERVICE_UNIVERSE_MAP, universeFilterFor, UNSPECIFIED_GEO };
+module.exports = { SERVICE_UNIVERSE_MAP, universeFilterFor };
