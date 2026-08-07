@@ -14,6 +14,7 @@ const config = require('./config');
 const { searchGoogle } = require('../services/googleSearch');
 const { getUrlKeywords } = require('../services/semrush');
 const { getUniverseCandidates } = require('./keywordUniverseStore');
+const { relevanceTermsFor } = require('./keywordUniverseMap');
 
 const TOP_URLS = 5;
 const KEYWORDS_PER_URL = 20;
@@ -41,18 +42,28 @@ async function getKeywordCandidates({ service, city, state, seedQuery, clientId,
   if (!process.env.SEMRUSH_API_KEY) throw new Error('SEMRUSH_API_KEY not configured on server.');
   const seed = disambiguate(rawSeed);
 
-  const cacheK = store.cacheKey('dental-kw-adapter', seed, clientId, serviceSlug);
+  // v2: bumped after adding live-pool relevance filtering + near-me
+  // exclusion, so previously-cached (unfiltered) results don't linger.
+  const cacheK = store.cacheKey('dental-kw-adapter-v2', seed, clientId, serviceSlug);
   const cached = await store.cacheGet(cacheK, config.cache.serpTtlMs);
   if (cached) return cached;
 
   const serp = await searchGoogle(seed);
   const urls = (serp.results || []).slice(0, TOP_URLS).map(r => r.url).filter(Boolean);
 
+  // With no topical filter, a competitor URL's SEMrush ranking keywords are
+  // dominated by unrelated brand/generic-dentist terms for niche services
+  // (e.g. "Veneers" pulling in "vanguard dental", "dentist manchester nh" —
+  // nothing veneers-specific at all). Keep only keywords containing one of
+  // the service's relevance terms, when we have them for this service.
+  const relevanceTerms = serviceSlug ? relevanceTermsFor(serviceSlug) : null;
+  const isRelevant = kw => !relevanceTerms || relevanceTerms.some(t => kw.toLowerCase().includes(t));
+
   const pool = [];
   for (const url of urls) {
     try {
       const kws = await getUrlKeywords(url, process.env.SEMRUSH_API_KEY, KEYWORDS_PER_URL);
-      pool.push(...kws.map(k => ({ ...k, source: 'live' })));
+      pool.push(...kws.filter(k => isRelevant(k.keyword || '')).map(k => ({ ...k, source: 'live' })));
     } catch {
       // A single failing URL shouldn't fail the whole request — skip it.
     }
