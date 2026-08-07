@@ -18,6 +18,8 @@ require('dotenv').config({ path: require('path').join(__dirname, '../../.env') }
 const fs = require('fs');
 const readline = require('readline');
 const { getSupabase, isSupabaseConfigured } = require('../services/supabase');
+const supabaseStore = require('../services/supabaseStore');
+const { KNOWN_CITIES_SETTING_KEY } = require('../locationPageBuilder/keywordUniverseStore');
 
 const [, , csvPath, clientId] = process.argv;
 
@@ -77,6 +79,7 @@ async function main() {
   let batch = [];
   let total = 0;
   let skipped = 0;
+  const citySet = new Set();
 
   for await (const line of rl) {
     if (!line.trim()) continue;
@@ -91,6 +94,7 @@ async function main() {
     const keyword = (cols[idx['Keyword']] || '').trim();
     if (!keyword) { skipped++; continue; }
     const geoDetected = (cols[idx['Geo Detected']] || '').trim();
+    if (geoDetected && geoDetected !== '-') citySet.add(geoDetected);
 
     batch.push({
       client_id: clientId,
@@ -115,7 +119,14 @@ async function main() {
   }
   if (batch.length) { await insertBatch(sb, batch); total += batch.length; }
 
+  // Cache the full set of cities this universe knows about — used by
+  // keywordAdapter to exclude a competitor's other-city keywords (e.g.
+  // "veneers goffstown nh" on a Derry page), which is broader than just this
+  // client's own office cities.
+  await supabaseStore.setSetting(KNOWN_CITIES_SETTING_KEY(clientId), [...citySet]);
+
   console.log(`\n✓ Imported ${total} rows for ${clientId} (${skipped} skipped: no keyword text).`);
+  console.log(`✓ Cached ${citySet.size} distinct cities for other-city keyword exclusion.`);
 }
 
 main().catch(e => { console.error('✗', e.message); process.exit(1); });

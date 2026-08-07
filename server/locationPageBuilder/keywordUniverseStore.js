@@ -3,9 +3,11 @@
 // server/scripts/importKeywordUniverse.js for how rows get in it.
 
 const { getSupabase, isSupabaseConfigured } = require('../services/supabase');
+const supabaseStore = require('../services/supabaseStore');
 const { universeFilterFor } = require('./keywordUniverseMap');
 
 const TABLE = 'lpb_keyword_universe';
+const KNOWN_CITIES_SETTING_KEY = clientId => `ku-cities:${clientId}`;
 
 function norm(s) {
   return String(s || '').toLowerCase().trim();
@@ -50,4 +52,13 @@ async function getUniverseCandidates({ clientId, serviceSlug, city }) {
   }));
 }
 
-module.exports = { getUniverseCandidates, hasUniverse };
+// Every city the imported universe knows about (captured at import time —
+// see importKeywordUniverse.js) — a richer place-name vocabulary than just
+// this client's own office cities, used to exclude a competitor's
+// other-city keywords from the live SERP+SEMrush pull.
+async function getKnownCities(clientId) {
+  if (!clientId) return [];
+  return supabaseStore.getSetting(KNOWN_CITIES_SETTING_KEY(clientId), []);
+}
+
+module.exports = { getUniverseCandidates, hasUniverse, getKnownCities, KNOWN_CITIES_SETTING_KEY };

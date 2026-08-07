@@ -13,7 +13,7 @@ const store = require('./store');
 const config = require('./config');
 const { searchGoogle } = require('../services/googleSearch');
 const { getUrlKeywords } = require('../services/semrush');
-const { getUniverseCandidates } = require('./keywordUniverseStore');
+const { getUniverseCandidates, getKnownCities } = require('./keywordUniverseStore');
 const { relevanceTermsFor } = require('./keywordUniverseMap');
 
 const TOP_URLS = 5;
@@ -36,15 +36,47 @@ function disambiguate(seed) {
   return /dental|dentist/i.test(seed) ? seed : `Dental ${seed}`;
 }
 
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// A competitor's SEMrush ranking-keyword set spans every city they compete
+// in, not just the page's own — e.g. a "Veneers Derry" search surfaces a
+// multi-location competitor whose top keywords include "veneers manchester
+// nh", "veneers goffstown nh", etc. Those aren't off-topic, just off-location
+// for this page, so build a regex of every OTHER city — this client's own
+// office cities, plus the broader place-name vocabulary the imported
+// keyword universe already knows about — and drop live-pool keywords that
+// mention one.
+async function getOtherCityRegex(clientId, targetCity) {
+  if (!clientId) return null;
+  try {
+    const [locations, universeCities] = await Promise.all([
+      store.list('locations', { client_id: clientId }),
+      getKnownCities(clientId),
+    ]);
+    const target = String(targetCity || '').toLowerCase().trim();
+    const others = [...new Set([
+      ...locations.map(l => (l.city || '').trim()),
+      ...universeCities,
+    ].filter(Boolean))].filter(c => c.toLowerCase() !== target);
+    if (!others.length) return null;
+    return new RegExp(`\\b(${others.map(escapeRegex).join('|')})\\b`, 'i');
+  } catch {
+    return null;
+  }
+}
+
 async function getKeywordCandidates({ service, city, state, seedQuery, clientId, serviceSlug }) {
   const rawSeed = (seedQuery || `${service} ${city} ${state}`).trim();
   if (!rawSeed) throw new Error('A service+city+state or seedQuery is required.');
   if (!process.env.SEMRUSH_API_KEY) throw new Error('SEMRUSH_API_KEY not configured on server.');
   const seed = disambiguate(rawSeed);
 
-  // v2: bumped after adding live-pool relevance filtering + near-me
-  // exclusion, so previously-cached (unfiltered) results don't linger.
-  const cacheK = store.cacheKey('dental-kw-adapter-v2', seed, clientId, serviceSlug);
+  // v4: bumped after adding live-pool relevance filtering, near-me
+  // exclusion, and other-city exclusion, so previously-cached (unfiltered)
+  // results don't linger.
+  const cacheK = store.cacheKey('dental-kw-adapter-v4', seed, clientId, serviceSlug);
   const cached = await store.cacheGet(cacheK, config.cache.serpTtlMs);
   if (cached) return cached;
 
@@ -57,7 +89,13 @@ async function getKeywordCandidates({ service, city, state, seedQuery, clientId,
   // nothing veneers-specific at all). Keep only keywords containing one of
   // the service's relevance terms, when we have them for this service.
   const relevanceTerms = serviceSlug ? relevanceTermsFor(serviceSlug) : null;
-  const isRelevant = kw => !relevanceTerms || relevanceTerms.some(t => kw.toLowerCase().includes(t));
+  const otherCityRe = await getOtherCityRegex(clientId, city);
+  const isRelevant = kw => {
+    const lower = kw.toLowerCase();
+    if (relevanceTerms && !relevanceTerms.some(t => lower.includes(t))) return false;
+    if (otherCityRe && otherCityRe.test(lower)) return false;
+    return true;
+  };
 
   const pool = [];
   for (const url of urls) {
