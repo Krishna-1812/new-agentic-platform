@@ -361,6 +361,7 @@ export default function LocationServiceWizardPage() {
     try {
       const results = await lpb.keywordCandidates({
         service: service.name, city: location.city, state: location.state_abbreviation, seedQuery: derived.seedQuery,
+        clientId: GD_CLIENT_ID, serviceSlug: service.slug,
       });
       setCandidates(results);
       // Pre-select like the keyword-research module: top 2 by volume as
@@ -392,7 +393,7 @@ export default function LocationServiceWizardPage() {
     const kw = manualKeyword.trim();
     if (!kw) return;
     if (!candidates.some(c => keyOf(c) === kw.toLowerCase())) {
-      const entry = { keyword: kw, volume: 0, difficulty: 0, intent: 'manual' };
+      const entry = { keyword: kw, volume: 0, difficulty: 0, intent: 'manual', source: 'manual' };
       setCandidates(prev => [...prev, entry]);
       addAsSecondary(entry);
     }
@@ -640,6 +641,7 @@ export default function LocationServiceWizardPage() {
                         <th style={{ padding: '0.5rem 0.625rem' }}>Volume</th>
                         <th style={{ padding: '0.5rem 0.625rem' }}>Difficulty</th>
                         <th style={{ padding: '0.5rem 0.625rem' }}>Intent</th>
+                        <th style={{ padding: '0.5rem 0.625rem' }}>Source</th>
                         <th style={{ padding: '0.5rem 0.625rem' }}></th>
                       </tr>
                     </thead>
@@ -650,6 +652,7 @@ export default function LocationServiceWizardPage() {
                           <td style={{ padding: '0.5rem 0.625rem', color: 'var(--text-2)' }}>{kw.volume || 0}</td>
                           <td style={{ padding: '0.5rem 0.625rem', color: 'var(--text-2)' }}>{kw.difficulty || 0}</td>
                           <td style={{ padding: '0.5rem 0.625rem', color: 'var(--text-2)' }}>{kw.intent || '—'}</td>
+                          <td style={{ padding: '0.5rem 0.625rem', color: 'var(--text-3)', fontSize: '0.75rem' }}>{kw.source === 'universe' ? 'Universe' : kw.source === 'manual' ? 'Manual' : 'Live'}</td>
                           <td style={{ padding: '0.5rem 0.625rem', textAlign: 'right' }}>
                             <div style={{ display: 'flex', gap: '0.375rem', justifyContent: 'flex-end' }}>
                               <button

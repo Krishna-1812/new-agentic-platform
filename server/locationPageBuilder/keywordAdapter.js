@@ -13,6 +13,7 @@ const store = require('./store');
 const config = require('./config');
 const { searchGoogle } = require('../services/googleSearch');
 const { getUrlKeywords } = require('../services/semrush');
+const { getUniverseCandidates } = require('./keywordUniverseStore');
 
 const TOP_URLS = 5;
 const KEYWORDS_PER_URL = 20;
@@ -34,13 +35,13 @@ function disambiguate(seed) {
   return /dental|dentist/i.test(seed) ? seed : `Dental ${seed}`;
 }
 
-async function getKeywordCandidates({ service, city, state, seedQuery }) {
+async function getKeywordCandidates({ service, city, state, seedQuery, clientId, serviceSlug }) {
   const rawSeed = (seedQuery || `${service} ${city} ${state}`).trim();
   if (!rawSeed) throw new Error('A service+city+state or seedQuery is required.');
   if (!process.env.SEMRUSH_API_KEY) throw new Error('SEMRUSH_API_KEY not configured on server.');
   const seed = disambiguate(rawSeed);
 
-  const cacheK = store.cacheKey('dental-kw-adapter', seed);
+  const cacheK = store.cacheKey('dental-kw-adapter', seed, clientId, serviceSlug);
   const cached = await store.cacheGet(cacheK, config.cache.serpTtlMs);
   if (cached) return cached;
 
@@ -51,9 +52,22 @@ async function getKeywordCandidates({ service, city, state, seedQuery }) {
   for (const url of urls) {
     try {
       const kws = await getUrlKeywords(url, process.env.SEMRUSH_API_KEY, KEYWORDS_PER_URL);
-      pool.push(...kws);
+      pool.push(...kws.map(k => ({ ...k, source: 'live' })));
     } catch {
       // A single failing URL shouldn't fail the whole request — skip it.
+    }
+  }
+
+  // The live SERP+SEMrush pull borrows whatever a competitor's page ranks
+  // for — for niche service+location combos that's often off-topic (the page
+  // ranks mainly for unrelated terms). Merge in the client's own pre-scored
+  // keyword universe, when one has been imported, to fill that gap.
+  if (clientId && serviceSlug) {
+    try {
+      pool.push(...await getUniverseCandidates({ clientId, serviceSlug, city }));
+    } catch {
+      // Universe lookup is a supplement, not a dependency — never fail the
+      // whole request because of it.
     }
   }
 
@@ -68,6 +82,7 @@ async function getKeywordCandidates({ service, city, state, seedQuery }) {
         volume: k.volume || 0,
         difficulty: k.difficulty || 0,
         intent: classifyIntent(k.keyword),
+        source: k.source || 'live',
       });
     }
   }

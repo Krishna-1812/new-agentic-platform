@@ -229,9 +229,9 @@ router.post('/pages/:id/comments', async (req, res) => {
 // approval workflow.
 router.post('/keyword-candidates', async (req, res) => {
   try {
-    const { service, city, state, seedQuery } = req.body;
+    const { service, city, state, seedQuery, clientId, serviceSlug } = req.body;
     if (!service || !city || !state) return res.status(400).json({ error: 'service, city, state are required.' });
-    res.json(await keywordAdapter.getKeywordCandidates({ service, city, state, seedQuery }));
+    res.json(await keywordAdapter.getKeywordCandidates({ service, city, state, seedQuery, clientId, serviceSlug }));
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
