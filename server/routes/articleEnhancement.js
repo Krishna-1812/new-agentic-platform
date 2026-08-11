@@ -304,6 +304,10 @@ async function fetchArticleResilient(url, emit) {
 // returns clean markdown with `#`/`##` headings, which buildArticleDataFromText
 // parses into the same shape as a direct crawl.
 async function fetchViaReader(url) {
+  // Jina now puts keyless traffic behind a Cloudflare challenge (403 "Just a
+  // moment..." for every URL), so JINA_API_KEY is required for this fallback to
+  // work at all. Without it the request still goes out — it just fails as before.
+  const readerKey = process.env.JINA_API_KEY;
   const response = await axios.get(`https://r.jina.ai/${url}`, {
     timeout: 30000,
     maxRedirects: 5,
@@ -311,6 +315,7 @@ async function fetchViaReader(url) {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
       'Accept': 'text/plain',
       'X-Return-Format': 'markdown',
+      ...(readerKey ? { 'Authorization': `Bearer ${readerKey}` } : {}),
     },
     responseType: 'text',
   });
