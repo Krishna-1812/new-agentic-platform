@@ -40,6 +40,11 @@ export default function BacklinkTab({ snapshot }) {
       <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         {domainLabel(d)}
         {d.isClient && <Badge variant="brand">Client</Badge>}
+        {d.fetchErrors?.length > 0 && (
+          <span title={`Fetch failed for: ${d.fetchErrors.join(', ')} — numbers below are unverified, not confirmed zero`}>
+            <Badge variant="warning">Data incomplete</Badge>
+          </span>
+        )}
       </span>
     ),
     authorityScore: d.authorityScore,

@@ -114,6 +114,9 @@ function fetchDomainData(domain, ctx) {
     brandedKeywordCountCapped: false,
     nonBrandedKeywordCount: Math.max(0, organicKeywords - brandedKeywordCount),
     pageSpeed: pageSpeedFor(rand),
+    // Mock data never fails a fetch — kept for interface parity with
+    // realProvider.js so the UI's fetchErrors check works the same for both.
+    fetchErrors: [],
   };
 }
 
