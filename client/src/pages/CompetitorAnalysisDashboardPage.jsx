@@ -552,6 +552,7 @@ export default function CompetitorAnalysisDashboardPage() {
                 running={pageSpeedRunning && pageSpeedRunningClientId === selectedClientId}
                 disabled={running && runningClientId === selectedClientId}
                 onRun={handleRunPageSpeed}
+                pageSpeedEnabled={!!meta?.pageSpeedEnabled}
               />
             )}
             {activeTab === 'backlinks' && <BacklinkTab snapshot={snapshot} />}

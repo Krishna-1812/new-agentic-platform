@@ -108,38 +108,55 @@ function RefreshButton({ running, disabled, onRun }) {
   );
 }
 
-export default function PageSpeedTab({ snapshot, running = false, disabled = false, onRun }) {
+export default function PageSpeedTab({ snapshot, running = false, disabled = false, onRun, pageSpeedEnabled = true }) {
   const domains = snapshot?.domains || [];
 
   if (!domains.length) {
     return <EmptyState icon={SPEED_ICON} title="No data yet" description="Run an analysis to see Page Speed scores." />;
   }
 
-  const anyPageSpeedField = domains.some((d) => d.pageSpeed != null);
   const hasUsableData = domains.some((d) => isPageSpeedUsable(d.pageSpeed));
 
   // Intentional single empty state for the whole tab rather than one dead
-  // card per competitor.
+  // card per competitor. Three distinct cases, checked in order: a
+  // background fetch actively in flight (most common right after a fresh
+  // "Run Analysis", since Page Speed is no longer fetched inline) always
+  // wins over the other two, since a stale "not connected" message would be
+  // actively misleading while a fetch is already running with a valid key.
   if (!hasUsableData) {
+    let empty;
+    if (running) {
+      empty = (
+        <EmptyState
+          icon={SPEED_ICON}
+          title="Fetching Page Speed…"
+          description="This runs in the background and can take a few minutes, especially if Google's rate limit is hit. The rest of the dashboard is ready to use in the meantime."
+        />
+      );
+    } else if (!pageSpeedEnabled) {
+      empty = (
+        <EmptyState
+          icon={SPEED_ICON}
+          title="Page Speed isn't connected yet"
+          description="Add a GOOGLE_PSI_API_KEY to enable this. Once connected, each domain will show a 0-100 performance gauge plus LCP / INP / CLS for mobile and desktop."
+        />
+      );
+    } else {
+      empty = (
+        <EmptyState
+          icon={SPEED_ICON}
+          title="Page Speed data unavailable for this run"
+          description="PageSpeed Insights is connected — this can take a few minutes when Google's rate limit is hit, since a failed check retries automatically. Check back shortly, or refresh manually."
+        />
+      );
+    }
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <style>{'@keyframes spin { to { transform: rotate(360deg); } }'}</style>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <RefreshButton running={running} disabled={disabled} onRun={onRun} />
         </div>
-        {anyPageSpeedField ? (
-          <EmptyState
-            icon={SPEED_ICON}
-            title="Page Speed data unavailable for this run"
-            description="PageSpeed Insights is connected and refreshing in the background — this can take a few minutes when Google's rate limit is hit, since a failed check retries automatically. Check back shortly, or refresh manually."
-          />
-        ) : (
-          <EmptyState
-            icon={SPEED_ICON}
-            title="Page Speed isn't connected yet"
-            description="Add a GOOGLE_PSI_API_KEY to enable this. Once connected, each domain will show a 0-100 performance gauge plus LCP / INP / CLS for mobile and desktop."
-          />
-        )}
+        {empty}
       </div>
     );
   }
