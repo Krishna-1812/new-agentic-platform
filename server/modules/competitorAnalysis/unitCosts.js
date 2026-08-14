@@ -41,4 +41,21 @@ function maxDomainsForBudget(capUnits = MAX_UNITS_PER_RUN) {
   return Math.max(1, Math.floor(capUnits / PER_DOMAIN_COST));
 }
 
-module.exports = { COSTS, ROW_LIMITS, UNITS_PER_LINE, PER_DOMAIN_COST, MAX_UNITS_PER_RUN, estimateDomainCost, maxDomainsForBudget };
+// ── Discovery (one-time, per client — not per analysis run) ─────────────────
+// domain_organic_organic (the discovery report) is in the same domain_organic
+// report family as domain_rank/domain_organic — same 10-units-per-line model.
+// This is spent once when a user clicks "Find Competitors For Me", not on
+// every /run, so it's tracked and surfaced separately from
+// MAX_UNITS_PER_RUN / PER_DOMAIN_COST rather than folded into either.
+const DISCOVERY_DISPLAY_LIMIT = 20; // rows requested
+const DISCOVERY_COST = DISCOVERY_DISPLAY_LIMIT * UNITS_PER_LINE; // 200 units, worst case
+
+function estimateDiscoveryCost() {
+  return DISCOVERY_COST;
+}
+
+module.exports = {
+  COSTS, ROW_LIMITS, UNITS_PER_LINE, PER_DOMAIN_COST, MAX_UNITS_PER_RUN,
+  estimateDomainCost, maxDomainsForBudget,
+  DISCOVERY_DISPLAY_LIMIT, DISCOVERY_COST, estimateDiscoveryCost,
+};

@@ -2,7 +2,7 @@ import { Card } from '../../ui/Card';
 import { ScoreRing } from '../../ui/ScoreRing';
 import { Badge } from '../../ui/Badge';
 import { EmptyState } from '../../ui/EmptyState';
-import { domainLabel } from './utils';
+import { domainLabel, isPageSpeedUsable } from './utils';
 
 function hasUsableScore(strategy) {
   return !!strategy && typeof strategy.score === 'number';
@@ -44,10 +44,36 @@ const SPEED_ICON = (
   </svg>
 );
 
-// PSI always returns an object per domain, even on failure (dataUnavailable:
-// true with null scores) — so "usable" means more than just truthy.
-function isUsable(pageSpeed) {
-  return !!pageSpeed && !pageSpeed.dataUnavailable;
+const CHECK_ICON = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 6L9 17l-5-5" />
+  </svg>
+);
+
+function FixesList({ fixes }) {
+  if (!fixes || fixes.length === 0) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--success)' }}>
+        {CHECK_ICON}
+        <span style={{ fontSize: 13 }}>No major performance issues found — this domain is in good shape.</span>
+      </div>
+    );
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {fixes.map((fix, i) => (
+        <div key={fix.id} style={{ display: 'flex', gap: 12, padding: '10px 0', borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{fix.title}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 3, lineHeight: 1.5 }}>{fix.description}</div>
+          </div>
+          {fix.savingsMs != null && (
+            <Badge variant="warning" style={{ flexShrink: 0, alignSelf: 'flex-start' }}>~{(fix.savingsMs / 1000).toFixed(1)}s</Badge>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function fetchedAgo(iso) {
@@ -90,7 +116,7 @@ export default function PageSpeedTab({ snapshot, running = false, disabled = fal
   }
 
   const anyPageSpeedField = domains.some((d) => d.pageSpeed != null);
-  const hasUsableData = domains.some((d) => isUsable(d.pageSpeed));
+  const hasUsableData = domains.some((d) => isPageSpeedUsable(d.pageSpeed));
 
   // Intentional single empty state for the whole tab rather than one dead
   // card per competitor.
@@ -105,7 +131,7 @@ export default function PageSpeedTab({ snapshot, running = false, disabled = fal
           <EmptyState
             icon={SPEED_ICON}
             title="Page Speed data unavailable for this run"
-            description="PageSpeed Insights is connected, but every domain failed to return a score this run (rate limit, timeout, or an unreachable URL). Try refreshing."
+            description="PageSpeed Insights is connected and refreshing in the background — this can take a few minutes when Google's rate limit is hit, since a failed check retries automatically. Check back shortly, or refresh manually."
           />
         ) : (
           <EmptyState
@@ -127,7 +153,7 @@ export default function PageSpeedTab({ snapshot, running = false, disabled = fal
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
         {domains.map((d) => {
-          const usable = isUsable(d.pageSpeed);
+          const usable = isPageSpeedUsable(d.pageSpeed);
           const ago = fetchedAgo(d.pageSpeedFetchedAt);
           return (
             <Card
@@ -150,12 +176,26 @@ export default function PageSpeedTab({ snapshot, running = false, disabled = fal
                 </>
               ) : (
                 <div style={{ textAlign: 'center', padding: '20px 0', fontSize: 12, color: 'var(--text-3)' }}>
-                  {d.pageSpeed?.error || 'Not available for this domain.'}
+                  {d.pageSpeed?.strategyErrors?.mobile?.message
+                    || d.pageSpeed?.strategyErrors?.desktop?.message
+                    || d.pageSpeed?.error
+                    || 'Not available for this domain.'}
                 </div>
               )}
             </Card>
           );
         })}
+      </div>
+
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 10 }}>Fixes & Recommendations</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {domains.filter((d) => isPageSpeedUsable(d.pageSpeed)).map((d) => (
+            <Card key={`${d.domain}-fixes`} title={domainLabel(d)} actions={d.isClient ? <Badge variant="brand">Client</Badge> : null}>
+              <FixesList fixes={d.pageSpeed.fixes} />
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -2,10 +2,13 @@ const express = require('express');
 const router = express.Router();
 
 const store = require('./store');
-const { fetchClientDashboardData, refreshPageSpeedOnly } = require('./dataFetcher');
-const { MAX_UNITS_PER_RUN, estimateDomainCost, maxDomainsForBudget } = require('./unitCosts');
+const { fetchClientDashboardData, refreshPageSpeedOnly, refreshStalePageSpeed } = require('./dataFetcher');
+const { MAX_UNITS_PER_RUN, estimateDomainCost, maxDomainsForBudget, estimateDiscoveryCost } = require('./unitCosts');
 const { hasSemrushKey } = require('./provider');
 const { runContentAnalysis, applyMappingEdits, regenerateTopPagesSummary, regenerateSitemapSummary } = require('./contentAnalysis/orchestrator');
+const { discoverCompetitorsForClient, DEFAULT_DISCOVERY_LIMIT } = require('./discovery');
+const { generatePptx } = require('../../services/pptxGenerator');
+const { buildReportData } = require('./reportExport');
 
 // In-memory run tracking, one entry per client — mirrors the on-page-audit
 // module's job-map pattern. A run against the mock provider is instant; a
@@ -25,10 +28,13 @@ const contentAnalysisRuns = new Map(); // clientId -> { status, error, startedAt
 router.get('/meta', (req, res) => {
   res.json({
     liveDataSource: hasSemrushKey(),
+    pageSpeedEnabled: !!process.env.GOOGLE_PSI_API_KEY,
     capUnits: MAX_UNITS_PER_RUN,
     estimatedCostPerDomain: estimateDomainCost(),
     maxDomainsPerRun: maxDomainsForBudget(),
     maxCompetitors: store.MAX_COMPETITORS,
+    discoveryCostUnits: estimateDiscoveryCost(),
+    defaultDiscoveryLimit: DEFAULT_DISCOVERY_LIMIT,
   });
 });
 
@@ -72,6 +78,31 @@ router.delete('/clients/:clientId/competitors/:competitorId', async (req, res) =
     await store.removeCompetitor(req.params.clientId, req.params.competitorId);
     res.json({ ok: true });
   } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// Auto-discovers organic competitors — synchronous (one SEMrush call + up to
+// 2 short GPT calls, ~5-10s worst case), unlike the async-job-poll pattern
+// used below for the multi-minute SEMrush+PSI actions. Nothing is persisted
+// here; the frontend reviews the candidates and adds any it keeps via the
+// existing POST /competitors endpoint above, one call per candidate.
+router.post('/clients/:clientId/discover-competitors', async (req, res) => {
+  const { clientId } = req.params;
+  const client = await store.getClient(clientId);
+  if (!client) return res.status(404).json({ error: 'Client not found' });
+
+  const remainingSlots = store.MAX_COMPETITORS - client.competitors.length;
+  if (remainingSlots <= 0) {
+    return res.status(400).json({ error: `Maximum of ${store.MAX_COMPETITORS} competitors already added — remove one before discovering more.` });
+  }
+  const requested = parseInt(req.body?.limit, 10) || DEFAULT_DISCOVERY_LIMIT;
+  const limit = Math.min(Math.max(requested, 1), remainingSlots);
+
+  try {
+    const result = await discoverCompetitorsForClient(client, { limit });
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
 });
 
 // ── Dashboard (cached read — never triggers a fetch) ─────────────────────────
@@ -137,13 +168,21 @@ router.post('/clients/:clientId/run-pagespeed', async (req, res) => {
     return res.status(409).json({ error: 'A Page Speed refresh is already in progress for this client' });
   }
 
+  // Defaults to true (force) so the existing manual "Refresh Page Speed"
+  // button — which never sends a body — keeps its exact current behavior.
+  // The automatic post-run chain (routes below) explicitly passes false to
+  // respect the 7-day cache instead of re-checking every domain every time.
+  const force = req.body?.force !== false;
+
   pageSpeedRuns.set(clientId, { status: 'running', error: null, startedAt: Date.now(), finishedAt: null });
   res.json({ status: 'running' });
 
   (async () => {
     try {
       const previousSnapshot = await store.getSnapshot(clientId);
-      const snapshot = await refreshPageSpeedOnly(client, previousSnapshot);
+      const snapshot = force
+        ? await refreshPageSpeedOnly(client, previousSnapshot)
+        : await refreshStalePageSpeed(client, previousSnapshot);
       await store.saveSnapshot(clientId, snapshot);
       pageSpeedRuns.set(clientId, { status: 'done', error: null, startedAt: pageSpeedRuns.get(clientId).startedAt, finishedAt: Date.now() });
     } catch (err) {
@@ -236,6 +275,34 @@ router.post('/clients/:clientId/content-analysis/summary/sitemap', async (req, r
     res.json({ contentAnalysis: updated });
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+// ── Export (PPTX report) ──────────────────────────────────────────────────────
+// Synchronous — everything needed is already cached from the last analysis
+// run, so this never makes a live SEMrush or PageSpeed call. The one thing it
+// may do is a few short GPT calls for narrative text, cached on the snapshot
+// (see reportExport.js) so repeat downloads of the same run are instant.
+router.post('/clients/:clientId/export', async (req, res) => {
+  const { clientId } = req.params;
+  const client = await store.getClient(clientId);
+  if (!client) return res.status(404).json({ error: 'Client not found' });
+
+  const snapshot = await store.getSnapshot(clientId);
+  if (!snapshot) return res.status(409).json({ error: 'Run an analysis first — there is no data to export.' });
+  const contentAnalysis = await store.getContentAnalysis(clientId);
+
+  try {
+    const { reportData, narrativeChanged } = await buildReportData(client, snapshot, contentAnalysis);
+    if (narrativeChanged) await store.saveSnapshot(clientId, snapshot);
+    const buffer = await generatePptx(reportData);
+    const filename = `${(client.brandName || client.name).replace(/\s+/g, '_')}_Competitor_Analysis.pptx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (err) {
+    console.error('[CompetitorAnalysis] export error:', err.message);
+    res.status(500).json({ error: 'Report generation failed: ' + err.message });
   }
 });
 

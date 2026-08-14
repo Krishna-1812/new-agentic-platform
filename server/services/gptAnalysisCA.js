@@ -6,8 +6,13 @@ function getClient() {
   return new OpenAI({ apiKey: key });
 }
 
-// Validate and filter competitor list using GPT
-async function validateCompetitors(brandName, targetUrl, country, semrushResults) {
+// Validate and filter competitor list using GPT. `extraCriteria` is an
+// optional block of additional judging criteria appended to the system
+// prompt — used by the Competitor Analysis dashboard's auto-discovery
+// feature to weigh service/location-page similarity for multi-location
+// service businesses, without changing behavior for any existing caller
+// that doesn't pass it.
+async function validateCompetitors(brandName, targetUrl, country, semrushResults, extraCriteria = '') {
   const openai = getClient();
 
   const tableLines = semrushResults.map(r =>
@@ -21,7 +26,7 @@ You must think about:
 2. Whether they serve the same customer segment or vertical
 3. Whether they offer similar products or services (not just similar content)
 4. Whether a potential customer would realistically consider both brands
-
+${extraCriteria ? `\n${extraCriteria}\n` : ''}
 Return your analysis as a strict JSON array. Do not include any text outside the JSON.`;
 
   const userPrompt = `Brand: ${brandName}

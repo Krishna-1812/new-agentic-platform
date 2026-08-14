@@ -36,6 +36,17 @@ export function scoreColor(score) {
   return 'danger';
 }
 
+// PSI always returns an object per domain, even on failure (dataUnavailable:
+// true with null scores) — "usable" means more than just truthy. Shared by
+// the Page Speed tab and the dashboard page's self-heal-on-load check.
+export function isPageSpeedUsable(pageSpeed) {
+  return !!pageSpeed && !pageSpeed.dataUnavailable;
+}
+
+export function hasUsablePageSpeed(domains) {
+  return (domains || []).some((d) => isPageSpeedUsable(d.pageSpeed));
+}
+
 // Client-centric stat used by the KPI scorecard strip: the client's rank
 // among all domains for this metric, plus how it compares to the leader and
 // to the set's median.

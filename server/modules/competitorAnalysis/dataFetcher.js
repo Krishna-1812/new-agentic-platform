@@ -17,7 +17,9 @@ const PAGE_SPEED_CACHE_MS = 7 * 24 * 60 * 60 * 1000;
 // Fetches every stale domain in parallel (bounded by the slowest single
 // domain, not the sum) rather than folding into the per-domain SEMrush loop
 // below, which is intentionally sequential for its own unit-budget guard.
-async function resolvePageSpeed(domainEntries, previousSnapshot, { force = false } = {}) {
+// `skipFetch` carries forward whatever's cached with zero live PSI calls —
+// used by the main run, which must never block on Page Speed (see below).
+async function resolvePageSpeed(domainEntries, previousSnapshot, { force = false, skipFetch = false } = {}) {
   const now = Date.now();
   const prevByDomain = new Map(
     (previousSnapshot?.domains || [])
@@ -32,7 +34,7 @@ async function resolvePageSpeed(domainEntries, previousSnapshot, { force = false
       });
 
   const enabled = !!process.env.GOOGLE_PSI_API_KEY;
-  const freshResults = enabled && stale.length ? await pageSpeedCA.getPageSpeedForAllDomains(stale) : [];
+  const freshResults = (!skipFetch && enabled && stale.length) ? await pageSpeedCA.getPageSpeedForAllDomains(stale) : [];
   const freshByDomain = new Map(freshResults.map((r) => [r.domain, r]));
 
   return (domain) => {
@@ -43,22 +45,33 @@ async function resolvePageSpeed(domainEntries, previousSnapshot, { force = false
 }
 
 // Refreshes ONLY the pageSpeed field on an existing snapshot's domains —
-// spends zero SEMrush units, since it never touches the provider. Used by
-// the Page Speed tab's own "Refresh" action so re-checking Core Web Vitals
-// doesn't count against (or wait behind) the SEMrush unit budget. Always
-// forces a fresh PSI fetch, ignoring the 7-day cache — that's the point of
-// an explicit manual refresh.
-async function refreshPageSpeedOnly(client, previousSnapshot) {
+// spends zero SEMrush units, since it never touches the provider.
+async function applyPageSpeedRefresh(previousSnapshot, resolveOpts) {
   if (!previousSnapshot || !previousSnapshot.domains?.length) {
     throw new Error('Run a full analysis first — there is no existing data to attach Page Speed results to.');
   }
   const domainEntries = previousSnapshot.domains.map((d) => ({ domain: d.domain }));
-  const pageSpeedFor = await resolvePageSpeed(domainEntries, previousSnapshot, { force: true });
+  const pageSpeedFor = await resolvePageSpeed(domainEntries, previousSnapshot, resolveOpts);
   const domains = previousSnapshot.domains.map((d) => {
     const ps = pageSpeedFor(d.domain);
     return { ...d, pageSpeed: ps.data, pageSpeedFetchedAt: ps.fetchedAt };
   });
   return { ...previousSnapshot, domains };
+}
+
+// Used by the Page Speed tab's own explicit "Refresh" button — always forces
+// a fresh PSI fetch, ignoring the 7-day cache, since that's the point of an
+// explicit manual refresh.
+function refreshPageSpeedOnly(client, previousSnapshot) {
+  return applyPageSpeedRefresh(previousSnapshot, { force: true });
+}
+
+// Automatic companion to a main run: fires right after "Run Analysis"
+// finishes. Only refetches domains whose cached Page Speed is missing or
+// stale — since this now runs after every analysis, it must NOT multiply PSI
+// call volume the way a forced refetch would.
+function refreshStalePageSpeed(client, previousSnapshot) {
+  return applyPageSpeedRefresh(previousSnapshot, {});
 }
 
 function appendHistory(previousSnapshot, newSnapshot) {
@@ -90,7 +103,14 @@ async function fetchClientDashboardData(client, previousSnapshot, capUnits = MAX
   let usedUnits = 0;
 
   const useLive = hasSemrushKey();
-  const pageSpeedFor = useLive ? await resolvePageSpeed(domainEntries, previousSnapshot) : null;
+  // Page Speed is deliberately NOT fetched here. Real PSI calls are slow
+  // (with the reliability fix's retry/backoff, up to minutes when rate
+  // limited) and must never block Overview/Backlinks/Content Analysis. This
+  // only carries forward whatever is already cached on the previous
+  // snapshot; the actual refresh runs as an independent background job
+  // right after this run finishes (frontend chains into POST
+  // /run-pagespeed once this run's status is 'done' — see routes.js).
+  const pageSpeedFor = useLive ? await resolvePageSpeed(domainEntries, previousSnapshot, { skipFetch: true }) : null;
 
   for (const entry of domainEntries) {
     if (usedUnits + perDomainCost > capUnits) {
@@ -133,4 +153,4 @@ async function fetchClientDashboardData(client, previousSnapshot, capUnits = MAX
   return snapshot;
 }
 
-module.exports = { fetchClientDashboardData, refreshPageSpeedOnly };
+module.exports = { fetchClientDashboardData, refreshPageSpeedOnly, refreshStalePageSpeed };

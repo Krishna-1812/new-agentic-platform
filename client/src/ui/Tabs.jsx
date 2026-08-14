@@ -3,7 +3,10 @@ import { useRef, useEffect, useState } from 'react';
 /**
  * Tabs
  * @param {'underline'|'segmented'} variant
- * @param {Array} tabs — [{ key, label }]
+ * @param {Array} tabs — [{ key, label, badge? }] — badge is an optional
+ *   small React node (e.g. a spinner) rendered next to the label, for
+ *   surfacing a tab-scoped background state (see Page Speed's background
+ *   refresh indicator).
  * @param {string} active — active tab key
  * @param {function} onChange
  */
@@ -52,7 +55,10 @@ export function Tabs({ variant = 'underline', tabs = [], active, onChange }) {
                 whiteSpace: 'nowrap',
               }}
             >
-              {tab.label}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                {tab.label}
+                {tab.badge}
+              </span>
             </button>
           );
         })}
@@ -87,7 +93,10 @@ export function Tabs({ variant = 'underline', tabs = [], active, onChange }) {
                 transition: 'color var(--dur) var(--ease)',
               }}
             >
-              {tab.label}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                {tab.label}
+                {tab.badge}
+              </span>
             </button>
           );
         })}

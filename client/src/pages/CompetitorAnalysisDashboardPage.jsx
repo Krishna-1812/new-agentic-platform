@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { SectionHeader } from '../ui/SectionHeader';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -10,19 +10,26 @@ import { EmptyState } from '../ui/EmptyState';
 import { MetricCard } from '../ui/MetricCard';
 import { useToast } from '../ui/Toast';
 import { ct } from '../lib/competitorTrackerApi';
+import { hasUsablePageSpeed } from '../components/competitorAnalysisDashboard/utils';
 import OverviewTab from '../components/competitorAnalysisDashboard/OverviewTab';
 import PageSpeedTab from '../components/competitorAnalysisDashboard/PageSpeedTab';
 import BacklinkTab from '../components/competitorAnalysisDashboard/BacklinkTab';
 import ContentAnalysisTab from '../components/competitorAnalysisDashboard/ContentAnalysisTab';
-
-const TABS = [
-  { key: 'overview', label: 'Overview' },
-  { key: 'pagespeed', label: 'Page Speed' },
-  { key: 'backlinks', label: 'Authority' },
-  { key: 'contentAnalysis', label: 'Content Analysis' },
-];
+import DiscoverCompetitorsModal from '../components/competitorAnalysisDashboard/DiscoverCompetitorsModal';
 
 const EMPTY_CLIENT_FORM = { name: '', domain: '', country: 'United States', brandName: '' };
+
+function TabLoadingSpinner() {
+  return (
+    <>
+      <style>{'@keyframes spin-tab { to { transform: rotate(360deg); } }'}</style>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}
+           strokeLinecap="round" style={{ animation: 'spin-tab 0.8s linear infinite', color: 'var(--warning)' }}>
+        <path d="M21 12a9 9 0 11-9-9" />
+      </svg>
+    </>
+  );
+}
 
 export default function CompetitorAnalysisDashboardPage() {
   const toast = useToast();
@@ -34,7 +41,9 @@ export default function CompetitorAnalysisDashboardPage() {
   const [snapshot, setSnapshot] = useState(null);
   const [loadingDashboard, setLoadingDashboard] = useState(false);
   const [running, setRunning] = useState(false);
+  const [runningClientId, setRunningClientId] = useState(null);
   const [pageSpeedRunning, setPageSpeedRunning] = useState(false);
+  const [pageSpeedRunningClientId, setPageSpeedRunningClientId] = useState(null);
   const [contentAnalysis, setContentAnalysis] = useState(null);
   const [contentAnalysisRunning, setContentAnalysisRunning] = useState(false);
   const [regeneratingTopPages, setRegeneratingTopPages] = useState(false);
@@ -47,10 +56,24 @@ export default function CompetitorAnalysisDashboardPage() {
   const [savedClient, setSavedClient] = useState(null); // client being edited, once persisted
   const [savingClient, setSavingClient] = useState(false);
   const [newCompetitor, setNewCompetitor] = useState({ domain: '', label: '' });
+  const [discoverOpen, setDiscoverOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const pollRef = useRef(null);
   const pageSpeedPollRef = useRef(null);
   const contentAnalysisPollRef = useRef(null);
+  const autoPageSpeedFiredRef = useRef(new Set()); // clientIds already self-healed this session
+
+  const TABS = useMemo(() => [
+    { key: 'overview', label: 'Overview' },
+    { key: 'backlinks', label: 'Authority' },
+    { key: 'contentAnalysis', label: 'Content Analysis' },
+    {
+      key: 'pagespeed',
+      label: 'Page Speed',
+      badge: (pageSpeedRunning && pageSpeedRunningClientId === selectedClientId) ? <TabLoadingSpinner /> : null,
+    },
+  ], [pageSpeedRunning, pageSpeedRunningClientId, selectedClientId]);
 
   const refreshClients = useCallback(async (selectId) => {
     const { clients: list } = await ct.clients();
@@ -105,6 +128,23 @@ export default function CompetitorAnalysisDashboardPage() {
     loadContentAnalysis(selectedClientId);
   }, [selectedClientId, loadDashboard, loadContentAnalysis]);
 
+  // Self-heal for snapshots saved before Page Speed became a background job
+  // (or where every domain genuinely failed last time) — fires the
+  // cache-respecting background refresh at most once per client per page
+  // session, not on every render.
+  useEffect(() => {
+    if (!snapshot || !selectedClientId || !meta?.pageSpeedEnabled) return;
+    if (running && runningClientId === selectedClientId) return;
+    if (pageSpeedRunning && pageSpeedRunningClientId === selectedClientId) return;
+    if (autoPageSpeedFiredRef.current.has(selectedClientId)) return;
+    const domains = snapshot.domains || [];
+    if (domains.length && !hasUsablePageSpeed(domains)) {
+      autoPageSpeedFiredRef.current.add(selectedClientId);
+      triggerBackgroundPageSpeed(selectedClientId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snapshot, selectedClientId, meta]);
+
   function startPolling(clientId) {
     clearInterval(pollRef.current);
     pollRef.current = setInterval(async () => {
@@ -113,11 +153,14 @@ export default function CompetitorAnalysisDashboardPage() {
         if (status.status === 'done') {
           clearInterval(pollRef.current);
           setRunning(false);
+          setRunningClientId(null);
           toast.add({ title: 'Analysis complete', variant: 'success' });
           loadDashboard(clientId);
+          triggerBackgroundPageSpeed(clientId);
         } else if (status.status === 'error') {
           clearInterval(pollRef.current);
           setRunning(false);
+          setRunningClientId(null);
           toast.add({ title: 'Analysis failed', description: status.error, variant: 'danger' });
         }
       } catch { /* transient — keep polling */ }
@@ -125,13 +168,17 @@ export default function CompetitorAnalysisDashboardPage() {
   }
 
   async function handleRun() {
-    if (!selectedClientId || running || pageSpeedRunning) return;
+    if (!selectedClientId) return;
+    if (running && runningClientId === selectedClientId) return;
+    if (pageSpeedRunning && pageSpeedRunningClientId === selectedClientId) return;
     setRunning(true);
+    setRunningClientId(selectedClientId);
     try {
       await ct.run(selectedClientId);
       startPolling(selectedClientId);
     } catch (e) {
       setRunning(false);
+      setRunningClientId(null);
       toast.add({ title: 'Could not start run', description: e.message, variant: 'danger' });
     }
   }
@@ -144,11 +191,13 @@ export default function CompetitorAnalysisDashboardPage() {
         if (status.status === 'done') {
           clearInterval(pageSpeedPollRef.current);
           setPageSpeedRunning(false);
+          setPageSpeedRunningClientId(null);
           toast.add({ title: 'Page Speed refreshed', variant: 'success' });
           loadDashboard(clientId);
         } else if (status.status === 'error') {
           clearInterval(pageSpeedPollRef.current);
           setPageSpeedRunning(false);
+          setPageSpeedRunningClientId(null);
           toast.add({ title: 'Page Speed refresh failed', description: status.error, variant: 'danger' });
         }
       } catch { /* transient — keep polling */ }
@@ -157,16 +206,63 @@ export default function CompetitorAnalysisDashboardPage() {
 
   // Refreshes only Core Web Vitals for the current client — spends no
   // SEMrush units, independent of (and mutually exclusive with) the main
-  // "Run Analysis" action.
+  // "Run Analysis" action. `force` defaults true (explicit user click always
+  // bypasses the 7-day cache).
   async function handleRunPageSpeed() {
-    if (!selectedClientId || running || pageSpeedRunning) return;
+    if (!selectedClientId) return;
+    if (running && runningClientId === selectedClientId) return;
+    if (pageSpeedRunning && pageSpeedRunningClientId === selectedClientId) return;
     setPageSpeedRunning(true);
+    setPageSpeedRunningClientId(selectedClientId);
     try {
       await ct.runPageSpeed(selectedClientId);
       startPageSpeedPolling(selectedClientId);
     } catch (e) {
       setPageSpeedRunning(false);
+      setPageSpeedRunningClientId(null);
       toast.add({ title: 'Could not start Page Speed refresh', description: e.message, variant: 'danger' });
+    }
+  }
+
+  // Fires automatically after a successful "Run Analysis" (cache-respecting
+  // — does NOT force-refetch domains whose Page Speed is already fresh) and
+  // once per session if an existing snapshot has no usable Page Speed at all
+  // (see the self-heal effect below). Deliberately does not toast on failure
+  // to start — the main run already succeeded and its own toast already fired.
+  async function triggerBackgroundPageSpeed(clientId) {
+    if (!meta?.pageSpeedEnabled) return;
+    if (pageSpeedRunning && pageSpeedRunningClientId === clientId) return;
+    setPageSpeedRunning(true);
+    setPageSpeedRunningClientId(clientId);
+    try {
+      await ct.runPageSpeed(clientId, { force: false });
+      startPageSpeedPolling(clientId);
+    } catch (e) {
+      setPageSpeedRunning(false);
+      setPageSpeedRunningClientId(null);
+      console.warn('Could not auto-start Page Speed refresh', e);
+    }
+  }
+
+  // Builds and downloads a PPTX report from the already-cached snapshot —
+  // synchronous, no live SEMrush/PageSpeed calls, just a server-side render.
+  async function handleExportReport() {
+    if (!selectedClientId || exporting) return;
+    setExporting(true);
+    try {
+      const { blob, filename } = await ct.exportReport(selectedClientId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.add({ title: 'Export failed', description: e.message, variant: 'danger' });
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -339,8 +435,23 @@ export default function CompetitorAnalysisDashboardPage() {
           <>
             {client && <Button variant="secondary" onClick={openEditClient}>Manage Client</Button>}
             <Button variant="secondary" onClick={openAddClient}>Add Client</Button>
-            <Button variant="primary" onClick={handleRun} loading={running} disabled={!selectedClientId || pageSpeedRunning}>
-              {running ? 'Running…' : 'Run Analysis'}
+            {client && (
+              <Button
+                variant="secondary"
+                onClick={handleExportReport}
+                loading={exporting}
+                disabled={!snapshot || (running && runningClientId === selectedClientId)}
+              >
+                {exporting ? 'Generating…' : 'Download Report'}
+              </Button>
+            )}
+            <Button
+              variant="primary"
+              onClick={handleRun}
+              loading={running && runningClientId === selectedClientId}
+              disabled={!selectedClientId || (pageSpeedRunning && pageSpeedRunningClientId === selectedClientId)}
+            >
+              {running && runningClientId === selectedClientId ? 'Running…' : 'Run Analysis'}
             </Button>
           </>
         )}
@@ -428,7 +539,7 @@ export default function CompetitorAnalysisDashboardPage() {
         <EmptyState
           title="No analysis yet"
           description="Run an analysis to populate this dashboard with (simulated) SEMrush data."
-          action={<Button variant="primary" onClick={handleRun} loading={running}>Run Analysis</Button>}
+          action={<Button variant="primary" onClick={handleRun} loading={running && runningClientId === selectedClientId}>Run Analysis</Button>}
         />
       ) : (
         <>
@@ -438,8 +549,8 @@ export default function CompetitorAnalysisDashboardPage() {
             {activeTab === 'pagespeed' && (
               <PageSpeedTab
                 snapshot={snapshot}
-                running={pageSpeedRunning}
-                disabled={running}
+                running={pageSpeedRunning && pageSpeedRunningClientId === selectedClientId}
+                disabled={running && runningClientId === selectedClientId}
                 onRun={handleRunPageSpeed}
               />
             )}
@@ -499,20 +610,47 @@ export default function CompetitorAnalysisDashboardPage() {
                   Maximum of {maxCompetitors} competitors reached. Remove one to add another.
                 </div>
               ) : (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                  <div style={{ flex: 1 }}>
-                    <Field label="Competitor Domain" value={newCompetitor.domain} onChange={(e) => setNewCompetitor({ ...newCompetitor, domain: e.target.value })} placeholder="competitor.com" />
+                <>
+                  {meta?.liveDataSource && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                      background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 12,
+                    }}>
+                      <div style={{ fontSize: 12, color: 'var(--text-2)' }}>
+                        Don&apos;t know your competitors? Let SEMrush + AI suggest some
+                        {meta?.discoveryCostUnits ? ` (up to ${meta.discoveryCostUnits.toLocaleString()} SEMrush units, separate from the 10,000-unit analysis cap)` : ''}.
+                      </div>
+                      <Button variant="secondary" size="sm" onClick={() => setDiscoverOpen(true)}>Find Competitors For Me</Button>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                    <div style={{ flex: 1 }}>
+                      <Field label="Competitor Domain" value={newCompetitor.domain} onChange={(e) => setNewCompetitor({ ...newCompetitor, domain: e.target.value })} placeholder="competitor.com" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <Field label="Label" value={newCompetitor.label} onChange={(e) => setNewCompetitor({ ...newCompetitor, label: e.target.value })} placeholder="Main Competitor" />
+                    </div>
+                    <Button variant="secondary" onClick={handleAddCompetitor}>Add</Button>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <Field label="Label" value={newCompetitor.label} onChange={(e) => setNewCompetitor({ ...newCompetitor, label: e.target.value })} placeholder="Main Competitor" />
-                  </div>
-                  <Button variant="secondary" onClick={handleAddCompetitor}>Add</Button>
-                </div>
+                </>
               )}
             </>
           )}
         </div>
       </Drawer>
+
+      <DiscoverCompetitorsModal
+        open={discoverOpen}
+        onClose={() => setDiscoverOpen(false)}
+        client={savedClient}
+        maxSuggest={maxCompetitors - (savedClient?.competitors?.length ?? 0)}
+        onConfirmed={async () => {
+          const { clients: list } = await ct.clients();
+          setClients(list);
+          if (savedClient) setSavedClient(list.find((c) => c.id === savedClient.id));
+          if (savedClient?.id === selectedClientId) loadDashboard(selectedClientId);
+        }}
+      />
     </div>
   );
 }

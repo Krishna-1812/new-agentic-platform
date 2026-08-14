@@ -52,6 +52,19 @@ function buildKeywordPool(domains, size = 45) {
   return [...pool.values()];
 }
 
+// Mirrors the shape of pageSpeedCA.js's real extractFixes() output — titles
+// and descriptions modeled on Lighthouse's own actual audit copy, so the
+// "Fixes & Recommendations" UI is exercisable (including its "no major
+// issues" empty state) without a live GOOGLE_PSI_API_KEY.
+const MOCK_FIX_LIBRARY = [
+  { id: 'render-blocking-resources', title: 'Eliminate render-blocking resources', description: 'Resources are blocking the first paint of your page.' },
+  { id: 'unused-css-rules', title: 'Reduce unused CSS', description: 'Remove dead rules from stylesheets to reduce bytes consumed by network activity.' },
+  { id: 'unminified-javascript', title: 'Minify JavaScript', description: 'Minifying JS files can reduce payload sizes and script parse time.' },
+  { id: 'uses-responsive-images', title: 'Properly size images', description: 'Serve images sized appropriately to save data and improve load time.' },
+  { id: 'uses-optimized-images', title: 'Efficiently encode images', description: 'Optimized images load faster and consume less data.' },
+  { id: 'total-blocking-time', title: 'Reduce JavaScript execution time', description: 'Consider reducing time spent parsing, compiling, and executing JS.' },
+];
+
 function pageSpeedFor(rand) {
   const mkStrategy = () => {
     const score = 25 + Math.floor(rand() * 70);
@@ -66,7 +79,19 @@ function pageSpeedFor(rand) {
   };
   const mobile = mkStrategy();
   const desktop = mkStrategy();
-  return { mobile, desktop, coreWebVitalsPassed: mobile.score >= 50 && desktop.score >= 50 };
+
+  const fixCount = mobile.score >= 85 ? 0 : 1 + Math.floor(rand() * 3);
+  const fixes = MOCK_FIX_LIBRARY
+    .filter(() => rand() < 0.6)
+    .slice(0, fixCount)
+    .map((f) => ({ ...f, savingsMs: Math.round(200 + rand() * 2500) }));
+
+  return {
+    mobile, desktop,
+    coreWebVitalsPassed: mobile.score >= 50 && desktop.score >= 50,
+    fixes,
+    strategyErrors: { mobile: null, desktop: null },
+  };
 }
 
 // One shared context per run — call once, reuse across every domain in
