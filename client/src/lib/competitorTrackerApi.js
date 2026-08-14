@@ -51,7 +51,7 @@ export const ct = {
   // Edit the folder → page-type mapping. edits: { "<template>": "<type>" }.
   updateContentAnalysisMapping: (clientId, edits) => req(`/clients/${clientId}/content-analysis/mapping`, { method: 'POST', body: JSON.stringify({ edits }) }),
 
-  // Downloads a PPTX report — returns a binary blob, so it can't go through
+  // Downloads a PDF report — returns a binary blob, so it can't go through
   // the shared JSON req() helper above.
   exportReport: async (clientId) => {
     const res = await fetch(`${BASE}/clients/${clientId}/export`, { method: 'POST', credentials: 'include' });
@@ -62,6 +62,6 @@ export const ct = {
     }
     const blob = await res.blob();
     const match = (res.headers.get('Content-Disposition') || '').match(/filename="?([^"]+)"?/);
-    return { blob, filename: match ? match[1] : 'Competitor_Analysis.pptx' };
+    return { blob, filename: match ? match[1] : 'Competitor_Analysis.pdf' };
   },
 };

@@ -7,7 +7,7 @@ const { MAX_UNITS_PER_RUN, estimateDomainCost, maxDomainsForBudget, estimateDisc
 const { hasSemrushKey } = require('./provider');
 const { runContentAnalysis, applyMappingEdits, regenerateTopPagesSummary, regenerateSitemapSummary } = require('./contentAnalysis/orchestrator');
 const { discoverCompetitorsForClient, DEFAULT_DISCOVERY_LIMIT } = require('./discovery');
-const { generatePptx } = require('../../services/pptxGenerator');
+const { generateReportPdf } = require('../../services/competitorPdfGenerator');
 const { buildReportData } = require('./reportExport');
 
 // In-memory run tracking, one entry per client — mirrors the on-page-audit
@@ -278,7 +278,7 @@ router.post('/clients/:clientId/content-analysis/summary/sitemap', async (req, r
   }
 });
 
-// ── Export (PPTX report) ──────────────────────────────────────────────────────
+// ── Export (PDF report) ───────────────────────────────────────────────────────
 // Synchronous — everything needed is already cached from the last analysis
 // run, so this never makes a live SEMrush or PageSpeed call. The one thing it
 // may do is a few short GPT calls for narrative text, cached on the snapshot
@@ -295,9 +295,9 @@ router.post('/clients/:clientId/export', async (req, res) => {
   try {
     const { reportData, narrativeChanged } = await buildReportData(client, snapshot, contentAnalysis);
     if (narrativeChanged) await store.saveSnapshot(clientId, snapshot);
-    const buffer = await generatePptx(reportData);
-    const filename = `${(client.brandName || client.name).replace(/\s+/g, '_')}_Competitor_Analysis.pptx`;
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+    const buffer = await generateReportPdf(reportData);
+    const filename = `${(client.brandName || client.name).replace(/\s+/g, '_')}_Competitor_Analysis.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(buffer);
   } catch (err) {

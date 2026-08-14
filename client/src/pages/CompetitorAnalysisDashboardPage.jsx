@@ -244,7 +244,7 @@ export default function CompetitorAnalysisDashboardPage() {
     }
   }
 
-  // Builds and downloads a PPTX report from the already-cached snapshot —
+  // Builds and downloads a PDF report from the already-cached snapshot —
   // synchronous, no live SEMrush/PageSpeed calls, just a server-side render.
   async function handleExportReport() {
     if (!selectedClientId || exporting) return;

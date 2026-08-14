@@ -232,7 +232,6 @@ async function generatePptx(reportData) {
     sections = {},
     gptDrafts = {},
     executiveSummary = '',
-    includeGbp = true, // default preserves the exact prior output for every existing caller
   } = reportData;
 
   const allDomains = [clientDomain, ...competitors.map(c => c.domain)].filter(Boolean);
@@ -249,7 +248,7 @@ async function generatePptx(reportData) {
     'Off-Page & Backlink Analysis',
     'AI Overview Visibility',
     'Content Analysis',
-    ...(includeGbp ? ['GBP / Local Pack'] : []),
+    'GBP / Local Pack',
   ]);
 
   // ── Overall Performance ─────────────────────────────────────────────────────
@@ -429,25 +428,23 @@ async function generatePptx(reportData) {
   if (gptDrafts.contentAnalysis) addObsRecsSlide(pptx, 'Content Analysis', gptDrafts.contentAnalysis);
 
   // ── GBP Placeholder ─────────────────────────────────────────────────────────
-  if (includeGbp) {
-    addSectionDivider(pptx, 'GBP / Local Pack');
+  addSectionDivider(pptx, 'GBP / Local Pack');
 
-    addContentSlide(pptx, 'GBP / Local Pack — Location 1', (slide) => {
-      slide.addText('Screenshot placeholder — add GBP local pack screenshot here.', {
-        x: 0.5, y: 2.5, w: 12, h: 1,
-        fontSize: 16, color: C.subtext, fontFace: FONT, align: 'center',
-        border: { type: 'dashed', color: C.border, pt: 1 },
-      });
+  addContentSlide(pptx, 'GBP / Local Pack — Location 1', (slide) => {
+    slide.addText('Screenshot placeholder — add GBP local pack screenshot here.', {
+      x: 0.5, y: 2.5, w: 12, h: 1,
+      fontSize: 16, color: C.subtext, fontFace: FONT, align: 'center',
+      border: { type: 'dashed', color: C.border, pt: 1 },
     });
+  });
 
-    addContentSlide(pptx, 'GBP / Local Pack — Location 2', (slide) => {
-      slide.addText('Screenshot placeholder — add GBP local pack screenshot here.', {
-        x: 0.5, y: 2.5, w: 12, h: 1,
-        fontSize: 16, color: C.subtext, fontFace: FONT, align: 'center',
-        border: { type: 'dashed', color: C.border, pt: 1 },
-      });
+  addContentSlide(pptx, 'GBP / Local Pack — Location 2', (slide) => {
+    slide.addText('Screenshot placeholder — add GBP local pack screenshot here.', {
+      x: 0.5, y: 2.5, w: 12, h: 1,
+      fontSize: 16, color: C.subtext, fontFace: FONT, align: 'center',
+      border: { type: 'dashed', color: C.border, pt: 1 },
     });
-  }
+  });
 
   // ── Closing ─────────────────────────────────────────────────────────────────
   const closing = pptx.addSlide();

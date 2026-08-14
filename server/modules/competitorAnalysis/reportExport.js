@@ -1,15 +1,14 @@
 // Adapts this dashboard's actual snapshot + content-analysis data into the
-// exact `reportData` shape server/services/pptxGenerator.js expects (built
-// for a separate, older tool — see that file for the authoritative field
-// list). Also owns the GPT narrative (Observations/Recommendations per
+// section shape server/services/competitorPdfGenerator.js renders as a PDF
+// report. Also owns the GPT narrative (Observations/Recommendations per
 // section + one executive summary), generated once per analysis run and
 // cached on the snapshot so repeat downloads don't re-spend OpenAI calls or
 // produce different text each time.
 const gptAnalysis = require('../../services/gptAnalysisCA');
 
 // Buckets the 16-value page-type taxonomy (contentAnalysis/taxonomy.js) down
-// to the 4 buckets the reused PPTX generator's "Content Mix Summary" table
-// expects. Types not explicitly listed fall through to "Other".
+// to the 4 buckets the PDF report's "Content Mix Summary" table expects.
+// Types not explicitly listed fall through to "Other".
 function bucketContentTypeCounts(counts = {}) {
   const buckets = { 'Blog / Informational': 0, 'Location Page': 0, 'Service / Product Page': 0, 'Other': 0 };
   const MAP = {
@@ -45,7 +44,7 @@ function mapSnapshotToSections(client, snapshot, contentAnalysis) {
   }));
 
   // pageSpeed can be null (PSI disabled, or not fetched yet for this domain)
-  // — generatePptx expects the mobile/desktop sub-objects to exist.
+  // — the PDF report expects the mobile/desktop sub-objects to exist.
   const pageSpeed = domains.map((d) => ({
     domain: d.domain,
     mobile: d.pageSpeed?.mobile || { score: null, lcp: 'N/A', cls: 'N/A', ttfb: 'N/A' },
@@ -68,7 +67,7 @@ function mapSnapshotToSections(client, snapshot, contentAnalysis) {
     };
   });
 
-  // Field names already match generatePptx's expectations exactly (see
+  // Field names already match the PDF report's expectations exactly (see
   // gapAnalysis.js) — passed through as-is.
   const keywordGap = snapshot?.keywordGap || { strikingDistance: [], untapped: [], missing: [] };
 
@@ -201,7 +200,6 @@ async function buildReportData(client, snapshot, contentAnalysis) {
       ...mapped,
       gptDrafts: narrative.gptDrafts || {},
       executiveSummary: narrative.executiveSummary || '',
-      includeGbp: false, // this dashboard has no GBP/local-pack data
     },
     narrativeChanged,
   };
