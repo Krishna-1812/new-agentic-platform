@@ -67,6 +67,18 @@ function extractFixes(lighthouseResult) {
     .map(({ _score, ...fix }) => fix);
 }
 
+// Client/competitor domains are sometimes stored with a scheme and/or
+// trailing slash (e.g. a user pastes a full URL when adding a client)
+// rather than a bare hostname. Normalize once here — without this, a
+// domain already containing "https://" got double-prefixed into
+// "https://https://example.com/", which PSI rejects outright (a 400,
+// classified below as "unreachable") even though the domain itself is
+// perfectly reachable.
+function normalizeUrl(domain) {
+  const bare = domain.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+  return `https://${bare}`;
+}
+
 function classifyError(err) {
   const status = err.response?.status;
   if (status === 429) return { type: 'rate_limited', message: 'PageSpeed Insights rate limit hit' };
@@ -123,7 +135,7 @@ async function runPageSpeed(url, strategy) {
 }
 
 async function getPageSpeedForDomain(domain) {
-  const url = `https://${domain}`;
+  const url = normalizeUrl(domain);
   const mobile = await runPageSpeed(url, 'mobile');
   await sleep(STRATEGY_GAP_MS);
   const desktop = await runPageSpeed(url, 'desktop');
