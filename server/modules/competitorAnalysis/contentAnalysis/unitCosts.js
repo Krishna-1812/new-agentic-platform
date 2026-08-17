@@ -1,8 +1,8 @@
 const { UNITS_PER_LINE } = require('../unitCosts');
 
 // getTopPages (services/semrushCA.js) always requests 200 rows internally
-// (display_limit: 200) to aggregate down to the top 10 pages by traffic —
-// the SEMrush cost is for the 200 rows fetched, not the 10 returned.
+// (display_limit: 200) to aggregate down to the top 25 pages by traffic —
+// the SEMrush cost is for the 200 rows fetched, not the 25 returned.
 const TOP_PAGES_ROWS = 200;
 const TOP_PAGES_COST = TOP_PAGES_ROWS * UNITS_PER_LINE; // 2,000 units/domain
 

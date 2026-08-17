@@ -297,7 +297,7 @@ export default function ContentAnalysisTab({
     return (
       <EmptyState
         title="No Content Analysis yet"
-        description="Analyzes each domain's top 10 performing pages (content type mix) and declared sitemap structure, each with an AI summary."
+        description="Analyzes each domain's top 25 performing pages (content type mix) and declared sitemap structure, each with an AI summary."
         action={<RunButton running={running} disabled={anyBusy} onRun={onRun} />}
       />
     );
@@ -306,7 +306,6 @@ export default function ContentAnalysisTab({
   const topPagesDomains = topPages?.domains || [];
   const topPagesTypes = presentTypesFor(topPagesDomains, 'contentTypeCounts');
   const sitemapDomains = sitemap?.domains || [];
-  const sitemapTypes = presentTypesFor(sitemapDomains, 'pageTypeCounts');
   const noSitemap = sitemapDomains.filter((d) => d.sitemapStatus !== 'found');
   const cappedSitemaps = sitemapDomains.filter((d) => d.capped);
 
@@ -323,7 +322,7 @@ export default function ContentAnalysisTab({
       {/* ── Part 1: Top Pages Content Analysis ── */}
       <div>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>Top Pages Content Analysis</h3>
-        <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 16 }}>Content type mix of each domain's top 10 performing pages.</p>
+        <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 16 }}>Content type mix of each domain's top 25 performing pages.</p>
 
         {!topPages?.enabled ? (
           <EmptyState
@@ -341,7 +340,7 @@ export default function ContentAnalysisTab({
                 </div>
               </Card>
             )}
-            <Card title="Content Type Distribution — Top 10 Pages">
+            <Card title="Content Type Distribution — Top 25 Pages">
               <CompositionBar domains={topPagesDomains} segments={buildTypeSegments(topPagesDomains, 'contentTypeCounts')} rowEmptyText="No pages found" />
             </Card>
             <SummaryCard
@@ -393,16 +392,6 @@ export default function ContentAnalysisTab({
             </Card>
             <Card title="Page Type Distribution">
               <CompositionBar domains={sitemapDomains} segments={buildTypeSegments(sitemapDomains, 'pageTypeCounts')} rowEmptyText="No sitemap found" />
-            </Card>
-            <SummaryCard
-              title="AI Summary"
-              summary={sitemap.summary}
-              onRegenerate={onRegenerateSitemap}
-              regenerating={regeneratingSitemap}
-              disabled={running || regeneratingTopPages}
-            />
-            <Card title="Page Type Counts">
-              <TypeCountsTable domains={sitemapDomains} countsKey="pageTypeCounts" presentTypes={sitemapTypes} />
               {(noSitemap.length > 0 || cappedSitemaps.length > 0) && (
                 <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {noSitemap.map((d) => (
@@ -414,6 +403,13 @@ export default function ContentAnalysisTab({
                 </div>
               )}
             </Card>
+            <SummaryCard
+              title="AI Summary"
+              summary={sitemap.summary}
+              onRegenerate={onRegenerateSitemap}
+              regenerating={regeneratingSitemap}
+              disabled={running || regeneratingTopPages}
+            />
           </div>
         )}
       </div>
