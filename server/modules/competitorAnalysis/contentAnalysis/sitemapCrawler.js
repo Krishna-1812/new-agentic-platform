@@ -37,6 +37,16 @@ function stripWww(hostname) {
   return hostname.replace(/^www\./i, '');
 }
 
+// Client/competitor domains are sometimes stored with a scheme and/or
+// trailing slash (e.g. a user pastes a full URL when adding a client)
+// rather than a bare hostname. Without this, a domain already containing
+// "https://" turned every candidate URL below into
+// "https://https://example.com/...", which fails outright — surfacing as
+// a false "no accessible sitemap found" for a domain that has one.
+function stripScheme(url) {
+  return url.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+}
+
 async function fetchXml(url) {
   const res = await axios.get(url, axiosConfig());
   return parser.parse(res.data);
@@ -111,7 +121,7 @@ async function resolveAll(entryUrl, state) {
 // versa) — treating that as "no same-host URLs" would silently discard a
 // perfectly good sitemap.
 async function crawlDomain(domain) {
-  const bareHost = stripWww(domain);
+  const bareHost = stripWww(stripScheme(domain));
   const targetHost = stripWww(bareHost); // normalized comparison target
   const baseVariants = [`https://${bareHost}`, `https://www.${bareHost}`];
 
