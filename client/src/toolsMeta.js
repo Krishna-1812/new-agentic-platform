@@ -40,6 +40,7 @@ export const TOOL_GROUPS = [
     tools: [
       { id: 'location-page-builder',  path: '/location-page-builder',  label: 'Location + Service Pages', icon: '📍', tag: 'testing' },
       { id: 'hub-spoke',              path: '/hub-spoke',              label: 'Hub & Spoke',            icon: '🕸️', tag: 'soon' },
+      { id: 'content-architect',      path: '/content-architect',      label: 'Content Architect',      icon: '🗺️', tag: 'testing' },
       { id: 'knowledge-base',         path: '/kb',                     label: 'Knowledge Base',         icon: '📚', tag: 'internal' },
     ],
   },

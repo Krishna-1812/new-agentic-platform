@@ -34,6 +34,8 @@ import HubSpokeProjectPage from './pages/HubSpokeProjectPage';
 import OnPageAuditPage from './pages/OnPageAuditPage';
 import MarketPotentialPage from './pages/MarketPotentialPage';
 import CompetitorAnalysisDashboardPage from './pages/CompetitorAnalysisDashboardPage';
+import ContentArchitectPage from './pages/ContentArchitectPage';
+import ContentArchitectProjectPage from './pages/ContentArchitectProjectPage';
 // GscExplorerPage, GscExplorerProjectPage, and CompResBetaPage are separate,
 // not-yet-shipped work — their page files aren't committed yet, so their
 // imports/routes are deliberately left out here rather than added back
@@ -87,6 +89,8 @@ export default function App() {
           <Route path="/on-page-audit" element={<OnPageAuditPage />} />
           <Route path="/market-potential" element={<MarketPotentialPage />} />
           <Route path="/competitor-analysis" element={<CompetitorAnalysisDashboardPage />} />
+          <Route path="/content-architect" element={<ContentArchitectPage />} />
+          <Route path="/content-architect/:id" element={<ContentArchitectProjectPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
