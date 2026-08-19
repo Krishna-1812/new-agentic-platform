@@ -34,6 +34,9 @@ async function readJson(filePath, fallback) {
 
 const projectsFile = () => path.join(DATA_ROOT, 'projects.json');
 const patternsFile = (id) => path.join(DATA_ROOT, `${id}_patterns.json`);
+const urlsFile = (id) => path.join(DATA_ROOT, `${id}_urls.json`);
+const clustersFile = (id) => path.join(DATA_ROOT, `${id}_clusters.json`); // Stage 3 draft clusters only
+const fullAnalysisFile = (id) => path.join(DATA_ROOT, `${id}_full_analysis.json`); // Stage 4-7 real analysis
 
 async function listProjects() {
   return readJson(projectsFile(), []);
@@ -76,6 +79,9 @@ async function deleteProject(id) {
   const all = await listProjects();
   await writeAtomic(projectsFile(), all.filter((p) => p.id !== id));
   await fs.unlink(patternsFile(id)).catch(() => {});
+  await fs.unlink(urlsFile(id)).catch(() => {});
+  await fs.unlink(clustersFile(id)).catch(() => {});
+  await fs.unlink(fullAnalysisFile(id)).catch(() => {});
 }
 
 async function getPatterns(id) {
@@ -86,7 +92,37 @@ async function savePatterns(id, patterns) {
   await writeAtomic(patternsFile(id), patterns);
 }
 
+// The raw discovered/crawled URL list ({ url, lastmod }[]), persisted once at
+// discovery time. Stage 2's pattern table only keeps 3 example URLs per
+// pattern (see patternClassifier.js) — Stage 3 needs every confirmed URL and
+// must make no network calls, so the full list has to live on disk rather
+// than being re-fetched or re-derived from examples alone.
+async function getUrls(id) {
+  return readJson(urlsFile(id), null);
+}
+
+async function saveUrls(id, urls) {
+  await writeAtomic(urlsFile(id), urls);
+}
+
+async function getClusters(id) {
+  return readJson(clustersFile(id), null);
+}
+
+async function saveClusters(id, clusters) {
+  await writeAtomic(clustersFile(id), clusters);
+}
+
+async function getFullAnalysis(id) {
+  return readJson(fullAnalysisFile(id), null);
+}
+
+async function saveFullAnalysis(id, analysis) {
+  await writeAtomic(fullAnalysisFile(id), analysis);
+}
+
 module.exports = {
   listProjects, getProject, createProject, updateProject, deleteProject,
-  getPatterns, savePatterns,
+  getPatterns, savePatterns, getUrls, saveUrls, getClusters, saveClusters,
+  getFullAnalysis, saveFullAnalysis,
 };

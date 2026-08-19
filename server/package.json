@@ -26,8 +26,11 @@
     "jsonwebtoken": "^9.0.2",
     "node-cron": "^3.0.3",
     "openai": "^4.52.7",
+    "p-limit": "^7.3.1",
     "pptxgenjs": "^4.0.1",
-    "puppeteer-core": "^22.8.2"
+    "puppeteer-core": "^22.8.2",
+    "robots-parser": "^3.0.1",
+    "stemmer": "^2.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

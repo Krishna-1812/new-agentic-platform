@@ -106,6 +106,20 @@ function hasTerm(pattern, terms) {
   return terms.some((t) => lower.includes(t));
 }
 
+// Exclude terms are CMS taxonomy/system markers (WordPress tag/category/
+// author archives, pagination, feeds, AMP/print variants) that only mean
+// "exclude this" when they ARE a path segment on their own — never when
+// they're merely a substring inside an unrelated word. Matched by exact
+// segment equality (prefix-of-segment for 'wp-', which is never a whole
+// segment by itself). Plain substring matching here previously misfired on
+// real content: "/blog/tag-management/{slug}" (a genuine blog category,
+// structurally identical to Tealium's other /blog/{category}/{slug}
+// patterns) via "tag", and a blog post slug mentioning "LiveRamp" via "amp".
+function matchesExcludeTerm(pattern) {
+  const segments = pattern.toLowerCase().split('/').filter(Boolean);
+  return segments.some((s) => EXCLUDE_TERMS.some((t) => (t.endsWith('-') ? s.startsWith(t) : s === t)));
+}
+
 function matchesCityList(pattern) {
   const segs = pattern.toLowerCase().split('/').filter(Boolean);
   return segs.some((s) => CITY_LIST.has(s));
@@ -130,7 +144,7 @@ function classifyPattern(entry) {
   const { pattern, count, examples } = entry;
   const depth = pattern.split('/').filter(Boolean).length;
 
-  if (hasTerm(pattern, EXCLUDE_TERMS) || hasQueryString(examples)) return 'exclude';
+  if (matchesExcludeTerm(pattern) || hasQueryString(examples)) return 'exclude';
   if (hasTerm(pattern, SERVICE_TERMS)) return 'service';
   if (hasTerm(pattern, LOCATION_TERMS) || matchesCityList(pattern)) return 'location';
   if (hasTerm(pattern, ARTICLE_TERMS) || pattern.includes('{date}')) return 'article';
@@ -166,15 +180,22 @@ const VERTICAL_KEYWORDS = {
 };
 const VERTICAL_MIN_MATCHES = 3;
 
+// Tokenizes to individual path words (splitting on "/", "-", "_") so terms
+// match as a whole word or a stem-prefix of one ("orthodont" -> "orthodontics")
+// rather than as a substring anywhere in the joined path — the latter matched
+// "firm" (legal) inside "confirmation" and inflated a diabetes-device site's
+// count past unrelated healthcare signals.
 function detectVertical(urls) {
-  const allPaths = urls.map((u) => { try { return new URL(u).pathname.toLowerCase(); } catch { return ''; } }).join(' ');
+  const allTokens = urls.flatMap((u) => {
+    try { return new URL(u).pathname.toLowerCase().split(/[/_-]+/).filter(Boolean); } catch { return []; }
+  });
   let best = 'other';
   let bestCount = VERTICAL_MIN_MATCHES - 1;
   for (const [vertical, terms] of Object.entries(VERTICAL_KEYWORDS)) {
-    const count = terms.reduce((sum, term) => sum + (allPaths.split(term).length - 1), 0);
+    const count = allTokens.reduce((sum, tok) => sum + (terms.some((t) => tok.startsWith(t)) ? 1 : 0), 0);
     if (count > bestCount) { best = vertical; bestCount = count; }
   }
   return best;
 }
 
-module.exports = { extractTemplates, buildPatternTable, classifyPattern, detectVertical };
+module.exports = { extractTemplates, buildPatternTable, classifyPattern, detectVertical, LOCATION_TERMS, CITY_LIST };
