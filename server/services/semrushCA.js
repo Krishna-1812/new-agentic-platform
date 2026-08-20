@@ -179,22 +179,6 @@ async function getKeywordsFull(domain, database, limit = 3000, sort) {
   })).filter(r => r.keyword);
 }
 
-// ── Branded keyword count ─────────────────────────────────────────────────────
-// Uses +|Ph|Co|brandName filter — axios encodes '+' to %2B correctly.
-
-async function getBrandedKeywordCount(domain, database, brandName, limit = 10000) {
-  const raw = await semrushGet({
-    type: 'domain_organic',
-    domain,
-    database,
-    display_filter: `+|Ph|Co|${brandName.toLowerCase()}`,
-    export_columns: 'Ph,Po,Nq',
-    display_limit: limit,
-  });
-  if (isSemrushError(raw)) return 0;
-  return parseRows(raw).length;
-}
-
 // ── AI Overview keywords ──────────────────────────────────────────────────────
 // Filters for SERP features containing ai_overview.
 // Falls back to empty if the plan doesn't support this filter.
@@ -277,7 +261,6 @@ module.exports = {
   getBacklinksRefdomains,
   getKeywordsByPositionBucket,
   getKeywordsFull,
-  getBrandedKeywordCount,
   getAIOKeywords,
   getTopPages,
 };

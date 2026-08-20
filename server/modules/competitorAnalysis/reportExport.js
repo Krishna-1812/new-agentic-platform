@@ -52,20 +52,13 @@ function mapSnapshotToSections(client, snapshot, contentAnalysis) {
     coreWebVitalsPassed: !!d.pageSpeed?.coreWebVitalsPassed,
   }));
 
-  const keywordRanking = domains.map((d) => {
-    const totalOrganic = d.domainRank?.organicKeywords ?? d.keywordBuckets?.total ?? 0;
-    const nonBranded = d.nonBrandedKeywordCount ?? 0;
-    return {
-      domain: d.domain,
-      page1: d.keywordBuckets?.page1,
-      page2: d.keywordBuckets?.page2,
-      page3to5: d.keywordBuckets?.page3to5,
-      totalOrganic,
-      branded: d.brandedKeywordCount,
-      nonBranded,
-      nonBrandedPct: totalOrganic > 0 ? Math.round((nonBranded / totalOrganic) * 100) : 0,
-    };
-  });
+  const keywordRanking = domains.map((d) => ({
+    domain: d.domain,
+    page1: d.keywordBuckets?.page1,
+    page2: d.keywordBuckets?.page2,
+    page3to5: d.keywordBuckets?.page3to5,
+    totalOrganic: d.domainRank?.organicKeywords ?? d.keywordBuckets?.total ?? 0,
+  }));
 
   // Field names already match the PDF report's expectations exactly (see
   // gapAnalysis.js) — passed through as-is.

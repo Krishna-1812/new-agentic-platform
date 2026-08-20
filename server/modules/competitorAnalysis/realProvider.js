@@ -39,21 +39,17 @@ async function withRetry(fn, label, errors) {
   }
 }
 
-async function fetchDomainData(domain, ctx, { database = 'us', brandName } = {}) {
+async function fetchDomainData(domain, ctx, { database = 'us' } = {}) {
   const fetchErrors = [];
 
-  const [domainRank, backlinksOverview, keywords, aio, brandedCount] = await Promise.all([
+  const [domainRank, backlinksOverview, keywords, aio] = await Promise.all([
     withRetry(() => semrush.getDomainRank(domain, database), 'domainRank', fetchErrors),
     withRetry(() => semrush.getBacklinksOverview(domain), 'backlinksOverview', fetchErrors),
     withRetry(() => semrush.getKeywordsFull(domain, database, ROW_LIMITS.keywordsFull, 'nq_desc'), 'keywords', fetchErrors).then((r) => r || []),
     withRetry(() => semrush.getAIOKeywords(domain, database, ROW_LIMITS.aioKeywords), 'aioKeywords', fetchErrors).then((r) => r || { count: 0, keywords: [] }),
-    brandName
-      ? withRetry(() => semrush.getBrandedKeywordCount(domain, database, brandName, ROW_LIMITS.brandedKeywordCount), 'brandedKeywordCount', fetchErrors).then((r) => r || 0)
-      : Promise.resolve(0),
   ]);
 
   const organicKeywords = domainRank?.organicKeywords || 0;
-  const brandedKeywordCount = brandedCount || 0;
 
   return {
     domain,
@@ -70,9 +66,6 @@ async function fetchDomainData(domain, ctx, { database = 'us', brandName } = {})
     },
     keywords,
     aioKeywordCount: aio?.count || 0,
-    brandedKeywordCount,
-    brandedKeywordCountCapped: brandedKeywordCount >= ROW_LIMITS.brandedKeywordCount,
-    nonBrandedKeywordCount: Math.max(0, organicKeywords - brandedKeywordCount),
     // Empty array means every call succeeded. Non-empty names exactly which
     // fields are unverified zeroes rather than confirmed data — see UI badge.
     fetchErrors,

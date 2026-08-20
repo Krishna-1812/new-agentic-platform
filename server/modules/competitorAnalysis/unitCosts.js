@@ -16,8 +16,7 @@ const BACKLINKS_OVERVIEW_COST = 45; // flat, independent of row count
 // assumes it will pay for.
 const ROW_LIMITS = {
   keywordsFull: 100,        // top 100 keywords by volume — position-bucket sample
-  aioKeywords: 50,          // AI-Overview keyword count (capped, see brandedKeywordCountCapped-style flag)
-  brandedKeywordCount: 40,  // branded keyword count (capped)
+  aioKeywords: 50,          // AI-Overview keyword count (capped)
 };
 
 const COSTS = {
@@ -25,7 +24,6 @@ const COSTS = {
   backlinksOverview: BACKLINKS_OVERVIEW_COST,
   keywordsFull: ROW_LIMITS.keywordsFull * UNITS_PER_LINE,
   aioKeywords: ROW_LIMITS.aioKeywords * UNITS_PER_LINE,
-  brandedKeywordCount: ROW_LIMITS.brandedKeywordCount * UNITS_PER_LINE,
 };
 
 const PER_DOMAIN_COST = Object.values(COSTS).reduce((a, b) => a + b, 0);

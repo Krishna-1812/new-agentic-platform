@@ -117,7 +117,7 @@ async function fetchClientDashboardData(client, previousSnapshot, capUnits = MAX
       skipped.push(entry.domain);
       continue;
     }
-    const raw = await provider.fetchDomainData(entry.domain, ctx, { database, brandName: client.brandName });
+    const raw = await provider.fetchDomainData(entry.domain, ctx, { database });
     usedUnits += perDomainCost;
     const ps = useLive ? pageSpeedFor(entry.domain) : { data: raw.pageSpeed, fetchedAt: null };
     fetched.push({

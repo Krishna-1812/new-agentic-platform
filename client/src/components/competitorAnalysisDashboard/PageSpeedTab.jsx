@@ -168,7 +168,7 @@ export default function PageSpeedTab({ snapshot, running = false, disabled = fal
         <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Refreshing Page Speed does not spend SEMrush units.</span>
         <RefreshButton running={running} disabled={disabled} onRun={onRun} />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(domains.length, 5)}, minmax(0, 1fr))`, gap: 16 }}>
         {domains.map((d) => {
           const usable = isPageSpeedUsable(d.pageSpeed);
           const ago = fetchedAgo(d.pageSpeedFetchedAt);
@@ -206,7 +206,7 @@ export default function PageSpeedTab({ snapshot, running = false, disabled = fal
 
       <div>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 10 }}>Fixes & Recommendations</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
           {domains.filter((d) => isPageSpeedUsable(d.pageSpeed)).map((d) => (
             <Card key={`${d.domain}-fixes`} title={domainLabel(d)} actions={d.isClient ? <Badge variant="brand">Client</Badge> : null}>
               <FixesList fixes={d.pageSpeed.fixes} />

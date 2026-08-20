@@ -119,7 +119,6 @@ function fetchDomainData(domain, ctx) {
   const organicKeywords = 200 + Math.floor(rand() * 20000);
   const organicTraffic = 500 + Math.floor(rand() * 120000);
   const totalBacklinks = 500 + Math.floor(rand() * 200000);
-  const brandedKeywordCount = Math.floor(rand() * 400);
 
   return {
     domain,
@@ -135,9 +134,6 @@ function fetchDomainData(domain, ctx) {
     },
     keywords,
     aioKeywordCount: Math.floor(rand() * (keywords.length * 0.3)),
-    brandedKeywordCount,
-    brandedKeywordCountCapped: false,
-    nonBrandedKeywordCount: Math.max(0, organicKeywords - brandedKeywordCount),
     pageSpeed: pageSpeedFor(rand),
     // Mock data never fails a fetch — kept for interface parity with
     // realProvider.js so the UI's fetchErrors check works the same for both.

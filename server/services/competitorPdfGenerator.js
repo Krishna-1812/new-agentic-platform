@@ -125,10 +125,6 @@ function buildReportHtml(reportData) {
     const d = kwData.find((o) => o.domain === domain) || {};
     return [domain, fmt(d.page1), fmt(d.page2), fmt(d.page3to5), fmt(d.totalOrganic)];
   });
-  const kwBrandRows = allDomains.map((domain) => {
-    const d = kwData.find((o) => o.domain === domain) || {};
-    return [domain, fmt(d.totalOrganic), fmt(d.branded), fmt(d.nonBranded), d.nonBrandedPct !== undefined ? `${d.nonBrandedPct}%` : 'N/A'];
-  });
 
   const gapData = sections.keywordGap || {};
   const strikingRows = (gapData.strikingDistance || []).slice(0, 15).map((k) => [k.keyword, fmt(k.searchVolume), `#${k.clientPosition}`, `#${k.bestCompetitorPosition}`, k.bestCompetitorDomain]);
@@ -229,8 +225,7 @@ function buildReportHtml(reportData) {
 
   ${section(
     'Keyword Ranking Comparison',
-    `<h3>Keywords by Page Distribution</h3>${table(['Domain', 'Page 1 (1–10)', 'Page 2 (11–20)', 'Pages 3–5 (21–50)', 'Total Organic'], kwPageRows, clientDomain)}
-     <h3>Branded vs. Non-Branded Split</h3>${table(['Domain', 'Total Keywords', 'Branded', 'Non-Branded', 'Non-Branded %'], kwBrandRows, clientDomain)}`,
+    `<h3>Keywords by Page Distribution</h3>${table(['Domain', 'Page 1 (1–10)', 'Page 2 (11–20)', 'Pages 3–5 (21–50)', 'Total Organic'], kwPageRows, clientDomain)}`,
     obsRecsBlock(gptDrafts.keywordRanking)
   )}
 
