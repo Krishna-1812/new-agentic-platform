@@ -24,12 +24,12 @@ function findLocalBrowser() {
   return candidates.find(p => fs.existsSync(p)) || null;
 }
 
-// ── Scoring weights (must sum to 100, webbotauth = 0 = informational) ────────
+// ── Scoring weights (must sum to 100, webbotauth/webmcp = 0 = informational) ─
 const WEIGHTS = {
   robots: 7, sitemap: 7, linkheaders: 6,
   markdown: 10,
   aibots: 11, contentsignals: 9, webbotauth: 0,
-  apicatalog: 8, oauth: 8, oauthresource: 8, mcp: 10, agentskills: 10, webmcp: 6,
+  apicatalog: 8, oauth: 8, oauthresource: 8, mcp: 13, agentskills: 13, webmcp: 0,
 };
 
 const CATEGORIES = {
@@ -217,9 +217,10 @@ async function runHttpChecks(inputUrl) {
     tech: skillsPass ? 'Agent skills index found' : 'Both agent-skills index paths returned 404',
   };
 
-  // 13. WebMCP
+  // 13. WebMCP (informational — cannot be verified server-side, so it can never
+  // genuinely pass or fail an HTTP-only scan; mirrors the webbotauth pattern above)
   checks.webmcp = {
-    status: 'fail',
+    status: 'info',
     tech: 'WebMCP requires browser-side evaluation of navigator.modelContext (not detectable via HTTP)',
   };
 
