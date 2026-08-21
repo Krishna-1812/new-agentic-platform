@@ -1,6 +1,6 @@
 // ── File-based persistence (Section 7 schema) ─────────────────────────────────
 // This app has no Postgres, so the Section 7 relational schema is mapped onto the
-// same atomic-JSON store pattern used by the robotsMonitor / hubSpoke modules.
+// same atomic-JSON store pattern used by the robotsMonitor module.
 //
 //   services.json     [{ id, name, status, createdAt }]
 //   baskets.json      [{ id, serviceId, version, status, frozenAt, terms[] }]
