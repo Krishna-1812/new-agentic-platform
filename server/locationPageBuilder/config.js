@@ -68,15 +68,25 @@ module.exports = {
   // place, and so they cannot drift apart.
   //
   // They also interlock arithmetically. The page word count QC measures is
-  // hero intro + block bodies + FAQ Q&As, so at the extremes:
-  //   floor   30 + (12 paragraphs x 30 words) + (4 FAQs x ~33) = 522
-  //   ceiling 40 + (14 paragraphs x 40 words) + (6 FAQs x ~48) = 888
+  // hero intro + block bodies + FAQ Q&As, and the body is plannedBlocks plus
+  // the brand closer, so at the extremes:
+  //   floor   30 + ((12 + 2) paragraphs x 30 words) + (4 FAQs x ~33) = 582
+  //   ceiling 40 + ((14 + 2) paragraphs x 40 words) + (6 FAQs x ~48) = 968
   // Both sit inside pageWords.accept, which is what makes the instructions
   // satisfiable. Widening paragraphsPerPage or paragraphWords without checking
   // that arithmetic is how you get a prompt that cannot pass its own gate
   // (regression-tested in __tests__/run.js).
   dental: {
-    blocks: { min: 6, max: 7 },
+    // Two block counts, because two different things are being counted.
+    // dentalOutline PLANS plannedBlocks H2s; code then appends one fixed
+    // closing block ("Why Choose {brand} for {service} in {city}, {ST}?"), so
+    // what lands on the page — and what qaEngine's H2-count gate measures — is
+    // always one more. blocks MUST stay plannedBlocks + 1.
+    plannedBlocks: { min: 6, max: 7 },
+    blocks: { min: 7, max: 8 },
+    // The closer's length. It is not part of the planner's paragraph budget
+    // (paragraphsPerPage), so it adds to the page total on top of it.
+    brandBlock: { paragraphs: 2 },
     paragraphsPerBlock: { min: 1, max: 3 },
     paragraphsPerPage: { min: 12, max: 14 },
     paragraphWords: { min: 30, max: 40, hardMax: 45, hardMaxChars: 260 },
@@ -123,7 +133,7 @@ module.exports = {
     },
     // accept* is the QC gate; target* is what the writer is asked for —
     // deliberately inside the gate so normal variance still passes.
-    pageWords: { acceptMin: 500, acceptMax: 900, targetMin: 600, targetMax: 860 },
+    pageWords: { acceptMin: 550, acceptMax: 1000, targetMin: 650, targetMax: 950 },
   },
 
   keywords: {

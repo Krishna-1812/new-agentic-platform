@@ -243,9 +243,9 @@ Return JSON only: { "${cfg.key}": "..." }`;
 //
 // This runs on config.llm.dentalWriterModel (the cheaper writer). It does NOT
 // decide the H2 stack: dentalOutline.planDentalOutline already graded the
-// scraped competitor headings against the curated fallback ladder on Sonnet
-// and produced a fixed 6-7 block outline. The writer's job is to fill that
-// outline in, readably, and hit the keyword and word budgets.
+// scraped competitor headings against the curated fallback ladder on Sonnet,
+// then code appended the fixed "Why Choose ..." closer. The writer's job is to
+// fill that outline in, readably, and hit the keyword and word budgets.
 
 // Readability + word budget, all from config.dental so the writer
 // prompt and qaEngine's gates cannot drift apart (see the note there). Each
@@ -328,6 +328,17 @@ on its own when lifted out of context, because that is how AI answer engines quo
 Do NOT: sell, add a CTA to every block, restate the heading as the opening sentence, or repeat what
 another block already covered. Explain like a good dentist explaining to a patient, not like a
 brochure.`,
+
+  brandBlock: `THE FINAL BLOCK ("Why Choose ...") IS DIFFERENT. It is the one block that may make the case
+for this practice, and it closes the page.
+Who is reading: someone who now understands the treatment and is deciding where to have it done.
+Its job: give them reasons they could check — what this office actually does for THIS service, what
+makes the visit easier (scheduling, comfort options, the team's approach), and how insurance or
+payment is handled. Name the city once, naturally. End on a plain next step, not a slogan.
+Do NOT: invent credentials, awards, years in practice, dentist names, prices, patient numbers or
+review counts; claim to be the best or the leading anything; use superlatives; or repeat what an
+earlier block already said. If you cannot say something specific and true, say something plain and
+true instead — a generic paragraph is better than an invented fact.`,
 
   faqs: `SECTION: FAQ — the questions patients ask before they book.
 Where it appears: the bottom of the page, and inside Google's FAQ rich result.
@@ -479,8 +490,13 @@ function formatOutlineForPrompt(outline) {
     const bits = [`${i + 1}. H2: "${b.h2}" — ${b.paragraphs} paragraph${b.paragraphs === 1 ? '' : 's'}`];
     if (b.intent) bits.push(`   Cover: ${b.intent}`);
     if (b.localize) bits.push('   LOCALIZE: name the city (and its neighborhoods/region where natural) in this block.');
+    if (b.source === 'brand') bits.push('   This is the fixed closing block — write it to the "Why Choose" brief above.');
     return bits.join('\n');
   }).join('\n');
+}
+
+function hasBrandBlock(outline) {
+  return (outline?.blocks || []).some(b => b.source === 'brand');
 }
 
 function buildDentalPrompt({ service, location, primaryKeyword, secondaryKeywords, outline, competitorFaqs, correction, brandName }) {
@@ -495,7 +511,7 @@ function buildDentalPrompt({ service, location, primaryKeyword, secondaryKeyword
   const forcedExample = String(primaryKeyword || '').replace(/\b\w/g, c => c.toUpperCase());
 
   const bodyStack = `${DENTAL_SECTION_BRIEFS.educationalBody}
-
+${hasBrandBlock(outline) ? `\n${DENTAL_SECTION_BRIEFS.brandBlock}\n` : ''}
 Write exactly these ${blocks.length} blocks, in this order:
 ${formatOutlineForPrompt(outline)}
 
@@ -588,7 +604,7 @@ function wordBandDistance(wc) {
 
 // "THE OUTLINE IS FIXED" has to be enforced, not just requested. A writer that
 // merges two blocks or invents an eighth silently breaks three things at once:
-// the 6-7 block QC gate, the paragraph budget the word count was derived from,
+// the H2-count QC gate, the paragraph budget the word count was derived from,
 // and the index alignment between the page's blocks and outlineMeta.sources
 // (which is what labels each heading competitor/fallback/blend in the wizard).
 //
@@ -634,8 +650,8 @@ async function generateDentalL3({ service, location, primaryKeyword, secondaryKe
         // Same reasoning-overhead risk as generateL3 above (verified: this
         // prompt's instruction density made Claude exhaust a 3500-token budget
         // with zero visible output — finish_reason "length", empty content).
-        // 6-7 blocks plus 6 FAQs needs more headroom than the old 3-5 stack.
-        ...chatParams(llm.model, { maxTokens: 10000 }),
+        // 7-8 blocks plus 6 FAQs needs more headroom than the old 3-5 stack.
+        ...chatParams(llm.model, { maxTokens: 11000 }),
         response_format: { type: 'json_object' },
         messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
       });
@@ -787,11 +803,22 @@ Write ONLY a fresh meta description for "${service.name}" in ${cityState}. ${DEN
   } else if (section === 'educationalBlock') {
     schemaHint = `{ "h2": "string — heading", "html": "string — 1-3 paragraphs, each at most ${DENTAL_MAX_PARA_WORDS} words, using ONLY <p>, <ul>, <li>" }`;
     const otherHeadings = (context.otherHeadings || []).filter(Boolean);
-    task = `${DENTAL_SECTION_BRIEFS.educationalBody}
+    // The closing block's heading is a fixed client standard, so regenerating
+    // it rewrites the COPY only — a fresh heading here would quietly drop the
+    // page out of the pattern every other page follows.
+    task = context.lockedH2
+      ? `${DENTAL_SECTION_BRIEFS.educationalBody}
+
+${DENTAL_SECTION_BRIEFS.brandBlock}
+
+Write fresh copy for the closing block of the "${service.name}" page in ${cityState}. The heading is
+FIXED — return it verbatim as "${context.lockedH2}" and write only the body.${otherHeadings.length ? ` Do NOT repeat what these other blocks already cover: ${otherHeadings.join(' | ')}.` : ''}
+The block is ${config.dental.brandBlock.paragraphs} short paragraphs of ${DENTAL_PARA_WORDS_MIN}-${DENTAL_PARA_WORDS_MAX} words each (${DENTAL_MAX_PARA_WORDS} is the hard ceiling per paragraph).`
+      : `${DENTAL_SECTION_BRIEFS.educationalBody}
 
 Write ONE fresh educational H2 block (heading + HTML body) for "${service.name}" in ${cityState}${
-      context.currentH2 ? `, replacing the current heading "${context.currentH2}"` : ''
-    }.${otherHeadings.length ? ` Do NOT duplicate these other headings already on the page: ${otherHeadings.join(' | ')}.` : ''}
+        context.currentH2 ? `, replacing the current heading "${context.currentH2}"` : ''
+      }.${otherHeadings.length ? ` Do NOT duplicate these other headings already on the page: ${otherHeadings.join(' | ')}.` : ''}
 The block is 1-3 short paragraphs of ${DENTAL_PARA_WORDS_MIN}-${DENTAL_PARA_WORDS_MAX} words each (${DENTAL_MAX_PARA_WORDS} is the hard ceiling per paragraph).`;
   } else if (section === 'educationalBody') {
     // Same fixed-outline contract as the full generation call — the stack was
@@ -804,10 +831,10 @@ The block is 1-3 short paragraphs of ${DENTAL_PARA_WORDS_MIN}-${DENTAL_PARA_WORD
       ? `THE OUTLINE IS FIXED — return exactly these ${blocks.length} blocks, in this order, copying each heading
 VERBATIM. Do NOT add, drop, merge, reorder or rename blocks:
 ${formatOutlineForPrompt(outline)}`
-      : `Write a 6-7 block H2 stack covering this service the way a patient learns it: what it is, why
-or when it is needed, the process, candidacy and options, then cost, insurance and safety.`;
+      : `Write a ${config.dental.blocks.min}-${config.dental.blocks.max} block H2 stack covering this service the way a patient learns it: what it is,
+why or when it is needed, the process, candidacy and options, then cost, insurance and safety.`;
     task = `${DENTAL_SECTION_BRIEFS.educationalBody}
-
+${hasBrandBlock(outline) ? `\n${DENTAL_SECTION_BRIEFS.brandBlock}\n` : ''}
 Write the educational H2 stack for "${service.name}" in ${cityState}.
 
 ${stackRule}
@@ -835,9 +862,9 @@ question is about what the office offers; never attach it to a pain, duration, s
   const system = `${dentalRegenGuardrails(brandName)}\nSchema:\n${schemaHint}`;
   const user = `${task}\n\n${kwLine}\n\n${competitorBlock}\n\nReturn JSON only, matching the schema.`;
 
-  // The full-stack rewrite produces 6-7 blocks, so it needs the same headroom
-  // as generateDentalL3; single-field regens stay cheap.
-  const maxTokens = section === 'educationalBody' ? 8000 : 1500;
+  // The full-stack rewrite produces the whole body, so it needs the same
+  // headroom as generateDentalL3; single-field regens stay cheap.
+  const maxTokens = section === 'educationalBody' ? 9000 : 1500;
 
   // Parsing as JSON is not the same as being usable. A `faqs` rewrite that
   // comes back with a single question is valid JSON and destroys a passing

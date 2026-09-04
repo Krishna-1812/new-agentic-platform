@@ -277,7 +277,8 @@ function dentalScaffoldWithContent() {
   compose.mergeDentalL3(scaffold, {
     heroIntro: 'Teeth whitening in Quincy can brighten your smile with safe, professional care close to home.',
     metaDescription,
-    // Six blocks, mirroring the 6-7 stack dentalOutline now always plans.
+    // Six planned blocks plus the fixed "Why Choose" closer — the 7-8 stack
+    // every page carries (dentalOutline plans the first six or seven).
     educationalBody: [
       { h2: 'What Is Teeth Whitening?', html: '<p>Teeth whitening in Quincy is a cosmetic procedure that lightens stains.</p>' },
       { h2: 'Benefits of Teeth Whitening', html: '<p>A brighter smile boosts confidence for Quincy patients.</p>' },
@@ -285,6 +286,7 @@ function dentalScaffoldWithContent() {
       { h2: 'Who Is a Good Candidate for Teeth Whitening?', html: '<p>Healthy gums and enamel make teeth whitening a good fit.</p>' },
       { h2: 'Types and Options for Teeth Whitening', html: '<p>In-office trays and take-home kits are both available.</p>' },
       { h2: 'Is Teeth Whitening Safe?', html: '<p>Professional whitening is safe when a dentist supervises it.</p>' },
+      { h2: 'Why Choose Gentle Dental for Teeth Whitening in Quincy, MA?', html: '<p>Our Quincy team walks you through both options and files your insurance for you.</p>' },
     ],
     faqs: [
       { q: 'How long does teeth whitening take?', a: 'Most Quincy patients finish in one visit.' },
@@ -683,8 +685,60 @@ test('fallbackOutline yields a full 7-rung ladder tagged unavailable', () => {
   assert.ok(o.rationale.length > 0, 'the reviewer needs to know why the ladder was used');
 });
 
+console.log('\nDental — the fixed "Why Choose" closing block');
+test('the closer names the practice, the service and the city', () => {
+  assert.strictEqual(
+    dentalOutline.brandBlockHeading({
+      brandName: 'Gentle Dental',
+      service: { name: 'Teeth Whitening' },
+      location: { city: 'Boston', state_abbreviation: 'MA' },
+    }),
+    'Why Choose Gentle Dental for Teeth Whitening in Boston, MA?');
+});
+test('an office with its own brand is never called Gentle Dental in the closer', () => {
+  // The Newbury Street office trades as Newbury Dental Associates.
+  assert.strictEqual(
+    dentalOutline.brandBlockHeading({
+      brandName: 'Newbury Dental Associates',
+      service: { name: 'Veneers' },
+      location: { city: 'Boston', state_abbreviation: 'MA' },
+    }),
+    'Why Choose Newbury Dental Associates for Veneers in Boston, MA?');
+});
+test('the closer is appended last, tagged brand, and never appended twice', () => {
+  const planned = dentalOutline.fallbackOutline(OUTLINE_CTX);
+  const ctx = { service: { name: 'Teeth Whitening' }, location: { city: 'Quincy', state_abbreviation: 'MA' }, brandName: 'Gentle Dental' };
+  const withCloser = dentalOutline.withBrandBlock(planned, ctx);
+
+  assert.strictEqual(withCloser.blocks.length, planned.blocks.length + 1);
+  const last = withCloser.blocks[withCloser.blocks.length - 1];
+  assert.strictEqual(last.h2, 'Why Choose Gentle Dental for Teeth Whitening in Quincy, MA?');
+  assert.strictEqual(last.source, 'brand');
+  assert.strictEqual(last.paragraphs, config.dental.brandBlock.paragraphs);
+
+  // A cached outline re-read on a later run must not collect a second closer.
+  assert.strictEqual(dentalOutline.withBrandBlock(withCloser, ctx).blocks.length, withCloser.blocks.length);
+});
+test('the planned count and the page count stay one apart', () => {
+  // qaEngine gates the TOTAL; dentalOutline plans everything except the closer.
+  // Retuning one without the other is what makes a page fail its own gate.
+  assert.strictEqual(config.dental.blocks.min, config.dental.plannedBlocks.min + 1);
+  assert.strictEqual(config.dental.blocks.max, config.dental.plannedBlocks.max + 1);
+});
+test('a scraped "Why Choose Us" heading is still rejected from the planned stack', () => {
+  // The closer is added in code; a competitor's brand furniture must not
+  // become a second one.
+  const o = dentalOutline.normalizeOutline({
+    blocks: [
+      { h2: 'Why Choose Us for Teeth Whitening', paragraphs: 2 },
+      { h2: 'What Is Teeth Whitening?', paragraphs: 2 },
+    ],
+  }, OUTLINE_CTX);
+  assert.ok(!o.blocks.some(b => /^why choose/i.test(b.h2)));
+});
+
 console.log('\nDental — readability + block-count QC gates');
-test('a 6-block stack passes the H2 count gate, a 3-block one fails it', () => {
+test('a full stack passes the H2 count gate, a 3-block one fails it', () => {
   const layers = dentalLayers();
   const scaffold = dentalScaffoldWithContent();
   scaffold.schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
@@ -807,8 +861,11 @@ test('the instructed budget cannot overrun the QC word gate', () => {
     .blocks.reduce((n, b) => n + b.paragraphs, 0);
 
   // A short FAQ answer still carries its question, so ~8 words + the answer.
-  const thinnest = d.paragraphWords.min + totalParas(d.blocks.min, 1) * d.paragraphWords.min + 4 * (8 + 25);
-  const fattest = d.paragraphWords.max + totalParas(d.blocks.max, d.paragraphsPerBlock.max) * d.paragraphWords.max
+  // The fixed closer is written to the same per-paragraph budget as any other
+  // block, and sits on TOP of the planner's paragraph total.
+  const brandParas = d.brandBlock.paragraphs;
+  const thinnest = d.paragraphWords.min + (totalParas(d.plannedBlocks.min, 1) + brandParas) * d.paragraphWords.min + 4 * (8 + 25);
+  const fattest = d.paragraphWords.max + (totalParas(d.plannedBlocks.max, d.paragraphsPerBlock.max) + brandParas) * d.paragraphWords.max
     + 6 * (8 + d.faqAnswerMaxWords);
   assert.ok(thinnest >= d.pageWords.acceptMin, `thinnest instructed page (${thinnest}w) must clear the ${d.pageWords.acceptMin}w floor`);
   assert.ok(fattest <= d.pageWords.acceptMax, `fattest instructed page (${fattest}w) must stay under the ${d.pageWords.acceptMax}w ceiling`);
@@ -1385,11 +1442,16 @@ test('no prompt asks for a keyword frequency any more', () => {
       secondaryKeywords: [],
       competitorHeadings: ['Meet Our Team', 'Book Your Appointment Today'],
       competitorFaqs: [],
+      brandName: 'Gentle Dental',
     });
     assert.strictEqual(o.competitorQuality, 'unavailable');
-    assert.strictEqual(o.blocks.length, 7);
+    assert.strictEqual(o.blocks.length, config.dental.blocks.max);
     assert.strictEqual(o.blocks[1].h2, 'Signs You May Need Root Canals');
-    assert.ok(o.blocks.every(b => b.source === 'fallback'));
+    assert.ok(o.blocks.slice(0, -1).every(b => b.source === 'fallback'));
+    // Even with no LLM at all, the page still ends with the fixed closer.
+    assert.deepStrictEqual(
+      { h2: o.blocks[o.blocks.length - 1].h2, source: o.blocks[o.blocks.length - 1].source },
+      { h2: 'Why Choose Gentle Dental for Root Canals in Malden, MA?', source: 'brand' });
   });
 
   console.log('\nDental - Primary eligibility gate (service AND location)');

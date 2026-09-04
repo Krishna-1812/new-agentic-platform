@@ -13,6 +13,10 @@
 // take a competitor topic, use a fallback rung, or blend the two — always
 // emitting 6-7 blocks.
 //
+// On top of that plan, every page ends with ONE fixed block the planner does
+// not get a vote on: "Why Choose {brand} for {service} in {city}, {ST}?".
+// See brandBlockHeading/withBrandBlock below.
+//
 // Everything here is fault-tolerant by design (same posture as
 // researchCompetitors): a bad or missing LLM response degrades to a
 // deterministic ladder outline rather than failing the wizard.
@@ -27,8 +31,8 @@ const { createLlmClient } = require('../services/llmProviders');
 // and the QC gates read, so the plan can never be structurally valid while
 // the page it produces fails QC. The paragraph totals interlock with the word
 // budget; the arithmetic is documented in config.js.
-const MIN_BLOCKS = config.dental.blocks.min;
-const MAX_BLOCKS = config.dental.blocks.max;
+const MIN_BLOCKS = config.dental.plannedBlocks.min;
+const MAX_BLOCKS = config.dental.plannedBlocks.max;
 const MIN_PARAGRAPHS = config.dental.paragraphsPerBlock.min;
 const MAX_PARAGRAPHS = config.dental.paragraphsPerBlock.max;
 const MIN_TOTAL_PARAGRAPHS = config.dental.paragraphsPerPage.min;
@@ -180,7 +184,7 @@ function filterCompetitorHeadings(headings = []) {
 // ── Deterministic normalization / repair ───────────────────────────────────
 // The writer prompt treats the outline as fixed, so anything malformed here
 // would propagate into the page. Every constraint the writer and QC rely on
-// (6-7 blocks, 1-3 paragraphs each, a service-term H2, one localized block)
+// (the planned block count, 1-3 paragraphs each, a service-term H2, one localized block)
 // is enforced in code rather than trusted to the model.
 function clampParagraphs(n) {
   const v = Math.round(Number(n));
@@ -292,6 +296,43 @@ function fallbackOutline({ service, location, primaryKeyword, keywordPhrases }) 
   );
 }
 
+// ── The fixed closing block ────────────────────────────────────────────────
+// Every educational body ends with the same block, in the same shape, on every
+// page: "Why Choose {brand} for {service} in {city}, {ST}?". It is appended in
+// code rather than planned, for two reasons: the phrasing is a client standard
+// that must not vary page to page, and BOILERPLATE_RE deliberately rejects
+// "Why Choose ..." from the SCRAPED set (on a competitor's page it is brand
+// furniture), which would otherwise filter this heading out of the plan.
+//
+// The brand is per-office — the Newbury Street office trades as Newbury Dental
+// Associates — so it is always the caller's resolved name (compose.
+// dentalBrandName), never a constant.
+function brandBlockHeading({ brandName, service, location }) {
+  const brand = brandName || config.dental.brand.default;
+  return `Why Choose ${brand} for ${service?.name || 'Your Care'} in ${location?.city}, ${location?.state_abbreviation}?`;
+}
+
+// Idempotent: an outline read back from the cache (or from a page generated
+// before this block existed) gets exactly one closer, never a second.
+function withBrandBlock(outline, { service, location, brandName }) {
+  const blocks = outline?.blocks || [];
+  if (blocks.some(b => b.source === 'brand')) return outline;
+  const h2 = brandBlockHeading({ brandName, service, location });
+  return {
+    ...outline,
+    blocks: [
+      ...blocks.filter(b => b.h2.toLowerCase() !== h2.toLowerCase()),
+      {
+        h2,
+        source: 'brand',
+        intent: `Give the patient concrete, checkable reasons to have ${service?.name || 'this treatment'} done at this office rather than anywhere else — what the team actually does for this service, how the visit is made easier, and how insurance or payment is handled. No invented credentials, awards, prices or review counts.`,
+        paragraphs: config.dental.brandBlock.paragraphs,
+        localize: false,
+      },
+    ],
+  };
+}
+
 // ── The planning call ──────────────────────────────────────────────────────
 const OUTLINE_SYSTEM_PROMPT = `You are a local-SEO content strategist for a dental practice in
 Massachusetts or New Hampshire. You do NOT write page copy — you
@@ -312,8 +353,11 @@ Then grade the scraped set as a whole:
 - "partial" — a usable minority; blend the good ones with the fallback ladder.
 - "poor" — mostly noise, off-service, or empty; ignore them and use the fallback ladder.
 
-Then emit the final outline in reading order. Rules:
-- EXACTLY 6 or 7 blocks. Never fewer, never more.
+Then emit the outline in reading order. Rules:
+- EXACTLY ${MIN_BLOCKS} or ${MAX_BLOCKS} blocks. Never fewer, never more.
+- These are the EDUCATIONAL blocks only. The page also ends with a fixed
+  "Why Choose {practice} for {service} in {city}?" block that is added after you — do NOT plan one
+  yourself, and do not spend a block on why the practice is a good choice.
 - Order them the way a patient learns: what it is, then why/when, then process, then
   candidacy/options, then practical concerns (cost, insurance, safety, recovery).
 - Tag each block's "source": "competitor" (topic taken from the scraped set), "fallback" (a rung of
@@ -392,16 +436,19 @@ function outlineCacheKey({ service, location, primaryKeyword, headings }) {
   return store.cacheKey('dental-outline', service.id, location.id, primaryKeyword, String(hash));
 }
 
-async function planDentalOutline({ service, location, primaryKeyword, secondaryKeywords, competitorHeadings, competitorFaqs }) {
+async function planDentalOutline({ service, location, primaryKeyword, secondaryKeywords, competitorHeadings, competitorFaqs, brandName }) {
   const headings = filterCompetitorHeadings(competitorHeadings);
   // The repair inside normalizeOutline mirrors qaEngine's keyword-in-an-H2
   // gate, which accepts the primary OR any approved related keyword — so it
   // needs the same list, not just the primary.
   const ctx = { service, location, primaryKeyword, keywordPhrases: [primaryKeyword, ...(secondaryKeywords || [])] };
 
+  // The closer is deterministic and cheap, so only the PLANNED part is cached.
+  // That way a plan cached before the closer existed still gets one, and a
+  // brand rename reaches pages without waiting for the cache to expire.
   const cacheK = outlineCacheKey({ service, location, primaryKeyword, headings });
   const cached = await store.cacheGetSafe(cacheK, config.cache.llmTtlMs);
-  if (cached) return cached;
+  if (cached) return withBrandBlock(cached, { service, location, brandName });
 
   let outline = null;
   try {
@@ -429,11 +476,12 @@ async function planDentalOutline({ service, location, primaryKeyword, secondaryK
 
   if (!outline) outline = fallbackOutline(ctx);
   await store.cacheSetSafe(cacheK, outline, { kind: 'llm', ttlMs: config.cache.llmTtlMs });
-  return outline;
+  return withBrandBlock(outline, { service, location, brandName });
 }
 
 module.exports = {
   planDentalOutline, normalizeOutline, fallbackOutline,
+  brandBlockHeading, withBrandBlock,
   pickLadder, ladderHeadings, filterCompetitorHeadings, isPluralName,
   isPractitionerName, needsArticle, whatIsRung, withArticle,
   GENERAL_LADDER, CLINICAL_LADDER, PRACTITIONER_LADDER, BOILERPLATE_RE,

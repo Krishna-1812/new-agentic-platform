@@ -233,18 +233,21 @@ async function generatePage({ clientId, serviceId, locationId, primaryKeywords, 
 
   const { headings: competitorHeadings, faqs: competitorFaqs } = await researchCompetitors(primaryKeyword);
 
-  // Decide the H2 stack BEFORE writing: Sonnet grades the scraped headings and
-  // either leans on them, blends them with the curated fallback ladder, or
-  // discards them entirely (see dentalOutline.js). The writer then fills this
-  // outline in rather than choosing its own sections.
-  const outline = await dentalOutline.planDentalOutline({
-    service, location, primaryKeyword, secondaryKeywords: mergedSecondary,
-    competitorHeadings, competitorFaqs,
-  });
   // The practice name for this page: most offices are Gentle Dental, some
   // carry their own local brand. compose already resolved it onto the
-  // scaffold; pass the same value to the writer so the copy matches the title.
+  // scaffold; pass the same value to the planner (it names the practice in the
+  // closing block's heading) and the writer, so every surface agrees.
   const brandName = scaffold.meta.brandName;
+
+  // Decide the H2 stack BEFORE writing: Sonnet grades the scraped headings and
+  // either leans on them, blends them with the curated fallback ladder, or
+  // discards them entirely (see dentalOutline.js), then the fixed "Why Choose
+  // ..." closer is appended. The writer fills this outline in rather than
+  // choosing its own sections.
+  const outline = await dentalOutline.planDentalOutline({
+    service, location, primaryKeyword, secondaryKeywords: mergedSecondary,
+    competitorHeadings, competitorFaqs, brandName,
+  });
 
   const l3 = await contentGenerator.generateDentalL3({
     service, location, primaryKeyword, secondaryKeywords: mergedSecondary,
@@ -316,6 +319,9 @@ async function regenerateSection({ clientId, serviceId, locationId, section, blo
     if (blockIndex == null || !blocks[blockIndex]) throw new Error('blockIndex is required and must reference an existing block.');
     context.currentH2 = blocks[blockIndex].h2;
     context.otherHeadings = blocks.filter((_, i) => i !== blockIndex).map(b => b.h2);
+    // The "Why Choose ..." closer's heading is a fixed client standard, so this
+    // regenerates its copy only. Every other block is free to be renamed.
+    if (scaffold.outlineMeta?.sources?.[blockIndex]?.source === 'brand') context.lockedH2 = blocks[blockIndex].h2;
   } else if (section === 'faqItem') {
     const items = scaffold.sections.faq.items || [];
     if (blockIndex == null || !items[blockIndex]) throw new Error('blockIndex is required and must reference an existing FAQ item.');
@@ -330,6 +336,7 @@ async function regenerateSection({ clientId, serviceId, locationId, section, blo
   if (section === 'educationalBody') {
     outline = await dentalOutline.planDentalOutline({
       service, location, primaryKeyword, secondaryKeywords, competitorHeadings, competitorFaqs,
+      brandName: scaffold.meta.brandName,
     });
   }
 
@@ -343,13 +350,15 @@ async function regenerateSection({ clientId, serviceId, locationId, section, blo
   } else if (section === 'metaDescription') {
     scaffold.meta.metaDescription = result.metaDescription || scaffold.meta.metaDescription;
   } else if (section === 'educationalBlock') {
-    scaffold.sections.educationalBody.blocks[blockIndex] = { h2: result.h2 || '', html: result.html || '' };
+    const h2 = context.lockedH2 || result.h2 || '';
+    scaffold.sections.educationalBody.blocks[blockIndex] = { h2, html: result.html || '' };
     // This heading was written fresh, not chosen by the outline planner, so
     // its provenance tag would now be a lie. Keep the h2 in sync and drop the
-    // source rather than attributing it to a competitor or the ladder.
+    // source rather than attributing it to a competitor or the ladder. The
+    // closer keeps its tag: its heading did not change.
     const sources = scaffold.outlineMeta?.sources;
     if (Array.isArray(sources) && sources[blockIndex]) {
-      sources[blockIndex] = { h2: result.h2 || '', source: null };
+      sources[blockIndex] = { h2, source: context.lockedH2 ? 'brand' : null };
     }
   } else if (section === 'educationalBody') {
     if (Array.isArray(result.educationalBody)) {

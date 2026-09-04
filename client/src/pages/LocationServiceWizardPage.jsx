@@ -205,14 +205,14 @@ function OutlineNote({ meta }) {
   );
 }
 
-const SOURCE_TAG_LABELS = { competitor: 'competitor', fallback: 'fallback', blend: 'blend' };
+const SOURCE_TAG_LABELS = { competitor: 'competitor', fallback: 'fallback', blend: 'blend', brand: 'fixed closer' };
 
 function SourceTag({ source }) {
   const label = SOURCE_TAG_LABELS[source];
   if (!label) return null;
   return (
     <span
-      title="Where this heading came from: a competitor page's topic, the curated fallback ladder, or a blend"
+      title="Where this heading came from: a competitor page's topic, the curated fallback ladder, a blend, or the fixed 'Why Choose' closer every page ends with"
       style={{
         fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em',
         color: 'var(--text-3)', background: 'var(--surface)', border: '1px solid var(--border)',
