@@ -1363,7 +1363,7 @@ export default function LocationServiceWizardPage() {
             <FieldLabel value={page.sections.hero.h1}>H1 (deterministic)</FieldLabel>
             <div style={{ ...inputStyle, marginBottom: '0.5rem', background: 'var(--surface)', color: 'var(--text-2)' }}>{page.sections.hero.h1}</div>
             {qcNotices('hero.h1')}
-            <FieldLabel value={page.sections.hero.intro} words>
+            <FieldLabel value={page.sections.hero.intro} words limit={contentLimits.heroIntro}>
               Intro <span style={{ fontWeight: 400, color: 'var(--text-3)' }}>(below the H1 — commercial: patient outcome, then the next step)</span>
             </FieldLabel>
             <textarea style={inputStyle} rows={2} value={page.sections.hero.intro}

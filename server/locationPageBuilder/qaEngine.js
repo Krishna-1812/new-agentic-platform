@@ -153,7 +153,10 @@ const DENTAL_WORDS_MIN = config.dental.pageWords.acceptMin;
 const DENTAL_WORDS_MAX = config.dental.pageWords.acceptMax;
 const DENTAL_META_DESC_MIN = config.dental.metaDescription.min;
 const DENTAL_META_DESC_MAX = config.dental.metaDescription.max;
+const DENTAL_HERO_MIN_CHARS = config.dental.heroIntro.minChars;
+const DENTAL_HERO_MAX_CHARS = config.dental.heroIntro.maxChars;
 const DENTAL_MIN_FAQS = config.dental.faqs.min;
+const DENTAL_MAX_FAQS = config.dental.faqs.max;
 const DENTAL_MIN_LOCALIZED_FAQS = config.dental.faqs.minLocalized;
 const DENTAL_MIN_INTERNAL_LINKS = 3;
 // A MINIMUM presence, not a quota. This used to be 5, which is what produced
@@ -418,12 +421,38 @@ const DENTAL_CHECKS = [
     },
   },
   {
-    id: 'faq_count_min_4', severity: 'Critical', field: 'faq',
+    // The snippet is the only thing a searcher reads before choosing between
+    // ten near-identical dental results, so it has to end on an ask rather
+    // than trail off into a fact about the procedure.
+    id: 'meta_description_ends_with_cta', severity: 'Major', field: 'meta.metaDescription',
+    label: 'Meta description CTA',
+    fix: 'End the description with a clear next step — "Book online today.", "Call to schedule a consultation." — and vary the wording from the other pages.',
+    run: (ctx) => {
+      const desc = String(ctx.meta.metaDescription || '').trim();
+      const closing = text.lastSentence(desc);
+      return {
+        pass: !!desc && text.endsWithCta(desc),
+        detail: desc
+          ? (text.endsWithCta(desc)
+            ? `Closes on a call to action: "${closing}"`
+            : `The description ends "${closing}" — no closing call to action.`)
+          : 'No meta description to check.',
+      };
+    },
+  },
+  {
+    // The id is stable and the threshold lives in `name`. It used to be
+    // 'faq_count_min_4', which meant retuning the count in config silently
+    // renamed the check — and a saved page's "Recheck" button then asked for a
+    // check id that no longer existed.
+    id: 'faq_count',
+    name: `faq_count_min_${DENTAL_MIN_FAQS}`,
+    severity: 'Critical', field: 'faq',
     label: 'FAQ count',
-    fix: `Regenerate the FAQ block — FAQ schema needs at least ${DENTAL_MIN_FAQS} questions.`,
+    fix: `Add or remove a question, or regenerate the FAQ block — the page carries ${DENTAL_MIN_FAQS}-${DENTAL_MAX_FAQS} questions.`,
     run: (ctx) => ({
-      pass: ctx.faqItems.length >= DENTAL_MIN_FAQS,
-      detail: `${ctx.faqItems.length} FAQs (min ${DENTAL_MIN_FAQS}).`,
+      pass: ctx.faqItems.length >= DENTAL_MIN_FAQS && ctx.faqItems.length <= DENTAL_MAX_FAQS,
+      detail: `${ctx.faqItems.length} FAQs (target ${DENTAL_MIN_FAQS}-${DENTAL_MAX_FAQS}).`,
     }),
   },
   {
@@ -438,6 +467,23 @@ const DENTAL_CHECKS = [
       return {
         pass: !broken.length,
         detail: broken.length ? `Invalid JSON: ${broken.join(', ')}.` : `All ${DENTAL_SCHEMA_KEYS.length} JSON-LD blocks parse.`,
+      };
+    },
+  },
+  {
+    // Budgeted in characters, not words: this line sits above the fold and is
+    // read in about three seconds, and characters are what the SEO team
+    // measures it in. Roughly one sentence plus a short next step.
+    id: 'hero_intro_length',
+    name: `hero_intro_length_${DENTAL_HERO_MIN_CHARS}_${DENTAL_HERO_MAX_CHARS}`,
+    severity: 'Major', field: 'hero.intro',
+    label: 'Hero intro length',
+    fix: `Tighten or extend it to ${DENTAL_HERO_MIN_CHARS}-${DENTAL_HERO_MAX_CHARS} characters — one short sentence with the outcome, then the next step.`,
+    run: (ctx) => {
+      const len = String(ctx.hero.intro || '').trim().length;
+      return {
+        pass: len >= DENTAL_HERO_MIN_CHARS && len <= DENTAL_HERO_MAX_CHARS,
+        detail: `${len} characters (target ${DENTAL_HERO_MIN_CHARS}-${DENTAL_HERO_MAX_CHARS}).`,
       };
     },
   },
@@ -528,7 +574,10 @@ const DENTAL_CHECKS = [
     run: (ctx) => dentalCityCheck(ctx, ctx.blocks.some(b => dentalStripHtml(b.html).toLowerCase().includes(ctx.city)), 'body copy'),
   },
   {
-    id: `city_in_faq_min_${DENTAL_MIN_LOCALIZED_FAQS}`, severity: 'Major', field: 'faq',
+    // Stable id, threshold in `name` — same reasoning as faq_count above.
+    id: 'city_in_faq',
+    name: `city_in_faq_min_${DENTAL_MIN_LOCALIZED_FAQS}`,
+    severity: 'Major', field: 'faq',
     label: 'City named in the FAQ',
     fix: 'Name the location in another question — one about what THIS office offers ("Do you offer IV sedation at your {city} practice?"), not about the procedure itself.',
     run: (ctx) => {
@@ -688,13 +737,14 @@ function dentalVerdict(checks) {
 // worse than showing no target at all.
 const DENTAL_LIMITS = {
   metaDescription: { min: DENTAL_META_DESC_MIN, max: DENTAL_META_DESC_MAX },
+  heroIntro: { min: DENTAL_HERO_MIN_CHARS, max: DENTAL_HERO_MAX_CHARS },
   paragraphWords: { max: DENTAL_MAX_PARA_WORDS },
   paragraphsPerBlock: { max: DENTAL_MAX_PARAS_PER_BLOCK },
   listItemMaxWords: DENTAL_MAX_LIST_ITEM_WORDS,
   faqAnswerMaxWords: config.dental.faqAnswerMaxWords,
   pageWords: { min: DENTAL_WORDS_MIN, max: DENTAL_WORDS_MAX },
   blocks: { min: DENTAL_BLOCKS_MIN, max: DENTAL_BLOCKS_MAX },
-  faqs: { min: DENTAL_MIN_FAQS, max: config.dental.faqs.max, minLocalized: DENTAL_MIN_LOCALIZED_FAQS },
+  faqs: { min: DENTAL_MIN_FAQS, max: DENTAL_MAX_FAQS, minLocalized: DENTAL_MIN_LOCALIZED_FAQS },
 };
 
 function runDentalQC(scaffold) {

@@ -264,6 +264,15 @@ const DENTAL_MAX_FAQ_ANSWER_WORDS = config.dental.faqAnswerMaxWords;
 const DENTAL_MIN_LOCALIZED_FAQS = config.dental.faqs.minLocalized;
 const DENTAL_META_DESC_MIN = config.dental.metaDescription.min;
 const DENTAL_META_DESC_MAX = config.dental.metaDescription.max;
+// The hero intro is budgeted in CHARACTERS (100 ± 10) — see config.dental.
+const DENTAL_HERO_MIN_CHARS = config.dental.heroIntro.minChars;
+const DENTAL_HERO_MAX_CHARS = config.dental.heroIntro.maxChars;
+// The same window in words, for the prompt (models count words far better than
+// characters, so they get both) and for the page word budget, which is
+// expressed in words throughout. ~7 characters per word including the space:
+// "Straighten your teeth discreetly with Invisalign clear aligners in Boston.
+// Book a consultation today." is 101 characters and 14 words.
+const heroWords = (chars) => Math.round(chars / 7);
 const DENTAL_MIN_FAQS = config.dental.faqs.min;
 const DENTAL_MAX_FAQS = config.dental.faqs.max;
 // ACCEPT is qaEngine's gate; TARGET is what the writer is asked for,
@@ -291,33 +300,47 @@ Its job: win the click against nine competitors. Three moves, in this order:
   1. the outcome or service, and the city — what they get and where;
   2. one concrete reason to choose HERE (an option this office offers, who it suits, a practical
      point about the visit) — something a rival snippet could not claim identically;
-  3. a clear next step: book, schedule, call, ask about a consultation.
+  3. a closing CALL TO ACTION. This is REQUIRED and it goes LAST: the final sentence tells the
+     reader what to do next — "Book online today.", "Call to schedule a consultation.",
+     "Request an appointment with our {city} team." A description that ends on a fact about the
+     procedure has no ask, and fails review.
 Every clause has to pay for its characters.
 Do NOT: summarize the page ("learn about…", "everything you need to know"), restate the H1, reuse
 the hero intro's sentences, or promise prices, availability or outcomes you were not given. No hype,
-no "welcome to", no exclamation marks. Vary the closing step across pages — the same "Call today"
-bolted onto every description is the tell of a template.`,
+no "welcome to", no exclamation marks. Vary the closing action across pages — the same "Call today"
+bolted onto every description is the tell of a template, so pick the step that actually fits this
+service (a consultation for treatment planning, a call for urgent care, booking online for a
+check-up).`,
 
   heroIntro: `SECTION: hero intro — the short paragraph directly under the H1. COMMERCIAL.
 Where it appears: the first thing read after the click, above the fold.
 Who is reading: someone who just landed, has about three seconds, and is deciding whether this
 practice is the one to book with. They are at the point of choosing a provider.
-Its job: sell the visit, not the page. Three moves:
-  1. open with the OUTCOME the patient actually wants, in plain language;
-  2. make clear this office provides it, here — name the service and city naturally;
-  3. point at the next step: a consultation, a visit, finding out whether it suits them.
+
+LENGTH IS THE HARD PART: ${DENTAL_HERO_MIN_CHARS}-${DENTAL_HERO_MAX_CHARS} CHARACTERS in total, counting spaces. That is roughly
+${heroWords(DENTAL_HERO_MIN_CHARS)}-${heroWords(DENTAL_HERO_MAX_CHARS)} words — one sentence naming the outcome and the city, then a short next step.
+Count the characters before you answer. There is no room for a second idea, a list of features or a
+subordinate clause, so cut every word that is not doing work.
+
+Its job: sell the visit, not the page. Two moves, in this order:
+  1. open with the OUTCOME the patient actually wants, in plain language, and make clear it happens
+     here — name the service and city naturally;
+  2. close on the next step in a few words: book, call, ask about a consultation.
 Do NOT: describe the page ("learn about the process, costs and what to expect" belongs on a blog,
 not on a page whose job is to fill a chair), open with the keyword, stack the service and city into
 a label, list features, or repeat the H1. This is the sentence most often force-fitted — write it as
 if the keyword did not exist, then check the topic and city read naturally.
-GOOD: "Straighten your teeth discreetly with Invisalign clear aligners in Boston. Book a
-consultation to find out whether clear aligners suit your smile and how long treatment would take."
+GOOD (101 chars): "Straighten your teeth discreetly with Invisalign clear aligners in Boston. Book a
+consultation today."
+BAD (over length — the second sentence is a whole extra idea): "Straighten your teeth discreetly
+with Invisalign clear aligners in Boston. Book a consultation to find out whether clear aligners
+suit your smile and how long treatment would take."
 BAD (informational — describes the page instead of moving the reader): "Straighten your teeth
 discreetly with Invisalign clear aligners in Boston. Learn about the treatment process, costs, and
 what to expect from start to finish."
 BAD (force-fitted keyword): "Invisalign Boston patients trust offers a discreet way to straighten
-teeth without metal brackets. At your visit, we'll explain clear aligner treatment, discuss
-Invisalign cost Boston and help you understand what to expect from start to finish."`,
+teeth without metal brackets. At your visit, we'll explain clear aligner treatment and discuss
+Invisalign cost Boston."`,
 
   educationalBody: `SECTION: educational body — the H2 stack that makes up the page.
 Where it appears: the main body, under scannable headings.
@@ -349,9 +372,20 @@ answer it in the FIRST sentence. Cover different blockers; do not ask the same q
 Do NOT: write marketing questions ("Why choose us?"), bury the answer after a preamble, or repeat an
 educational block verbatim.
 
-LOCALIZING THE FAQ — at least ${DENTAL_MIN_LOCALIZED_FAQS} questions must name the location, and the city belongs ONLY in a
-question whose answer actually depends on it. Ask yourself: would the answer be different in another
-city? If not, the city is decoration and a reader notices.
+LOCALIZING THE FAQ — at least ${DENTAL_MIN_LOCALIZED_FAQS} of the questions must name the location, and the city belongs ONLY
+in a question whose answer actually depends on it. Ask yourself: would the answer be different in
+another city? If not, the city is decoration and a reader notices.
+
+Getting ${DENTAL_MIN_LOCALIZED_FAQS} of them is a matter of CHOOSING THE RIGHT QUESTIONS, not of adding the city to questions you
+had already written. Before you write, pick ${DENTAL_MIN_LOCALIZED_FAQS} blockers that are genuinely about this office and
+build the questions around them. Patients ask all of these:
+  - which options or techniques this office runs for the service;
+  - whether they can be seen quickly, or outside working hours;
+  - how to book, and what the first visit here involves;
+  - which insurance or payment plans this office takes;
+  - whether the office treats a particular group (children, nervous patients, emergencies).
+The remaining questions stay universal, with no city in them at all. If a city name could be
+deleted from a question without changing the answer, delete it.
 
 Local by nature — what THIS office provides, which options it runs, booking here:
   GOOD "What types of sedation dentistry are available at your Methuen location?"
@@ -374,8 +408,8 @@ office is actually called, and patients say it that way.`,
 };
 
 const DENTAL_L3_SCHEMA_HINT = `{
-  "heroIntro": "string — the short paragraph under the H1. 1-2 sentences, 30-40 words. Commercial intent: lead with the patient outcome, then point at the next step. Never the keyword first, never a description of the page.",
-  "metaDescription": "string — MUST be ${DENTAL_META_DESC_MIN}-${DENTAL_META_DESC_MAX} characters TOTAL, counting every character including spaces. A two-sided range: too short wastes the snippet, too long is truncated by Google. Count it, and if it is short, add a genuinely specific clause about THIS practice or city rather than a generic CTA. Must end as a complete sentence.",
+  "heroIntro": "string — the short paragraph under the H1. MUST be ${DENTAL_HERO_MIN_CHARS}-${DENTAL_HERO_MAX_CHARS} characters TOTAL, counting spaces (about ${heroWords(DENTAL_HERO_MIN_CHARS)}-${heroWords(DENTAL_HERO_MAX_CHARS)} words). Commercial intent: lead with the patient outcome and the city, then close on the next step in a few words. Never the keyword first, never a description of the page.",
+  "metaDescription": "string — MUST be ${DENTAL_META_DESC_MIN}-${DENTAL_META_DESC_MAX} characters TOTAL, counting every character including spaces. A two-sided range: too short wastes the snippet, too long is truncated by Google. Count it, and if it is short, earn the extra characters with a genuinely specific clause about THIS practice or city. The LAST sentence must be a call to action (book, call, schedule, request a consultation), and the whole string must read as finished prose.",
   "educationalBody": [
     { "h2": "string — the heading from the OUTLINE, in the same order", "html": "string — clean semantic HTML using ONLY <p>, <ul>, <li>. No inline styles/classes." }
   ],
@@ -442,9 +476,18 @@ Hard rules:
 - metaDescription is a HARD two-sided range: ${DENTAL_META_DESC_MIN}-${DENTAL_META_DESC_MAX} characters, not "up to ${DENTAL_META_DESC_MAX}." Count it before
   answering; a description of 130-145 characters fails review just as badly as one over ${DENTAL_META_DESC_MAX}. If it
   comes up short, earn the extra characters with something true and specific to THIS practice or
-  city — an insurance note, what makes the visit easier, who the office serves. Never pad with a
-  generic "Call us today" clause, and never hand back a sentence that stops mid-thought: the whole
-  string has to read as finished prose, because it is the only thing a searcher sees.
+  city — an insurance note, what makes the visit easier, who the office serves. Never hand back a
+  sentence that stops mid-thought: the whole string has to read as finished prose, because it is the
+  only thing a searcher sees.
+- metaDescription ALWAYS ENDS ON A CALL TO ACTION — a short closing sentence telling the reader what
+  to do next ("Book online today.", "Call to schedule a consultation.", "Request a visit with our
+  {city} team."). That closing ask is required on every page; what must vary is its WORDING, so
+  choose the step that fits this service rather than bolting the same phrase onto every page. The
+  ask is the last thing, not a clause buried in the middle, and it is never a substitute for saying
+  something specific first — a description padded out to length with stacked CTAs fails review.
+- heroIntro is a HARD range too: ${DENTAL_HERO_MIN_CHARS}-${DENTAL_HERO_MAX_CHARS} characters, about ${heroWords(DENTAL_HERO_MIN_CHARS)}-${heroWords(DENTAL_HERO_MAX_CHARS)} words. One sentence with the
+  outcome and the city, then a short next step. It is NOT a second meta description and NOT a
+  paragraph — if you have written two full ideas, it is too long.
 
 THE OUTLINE IS FIXED. The user message gives you the exact H2 blocks, in order, already decided by a
 separate editorial pass that judged real competitor pages against a curated ladder. Return exactly
@@ -538,9 +581,19 @@ ${competitorFaqs.map(f => `- ${f}`).join('\n')}`
   }
   if (correction?.metaChars != null) {
     notes.push(`- The meta description was ${correction.metaChars} characters, outside ${DENTAL_META_DESC_MIN}-${DENTAL_META_DESC_MAX}. Rewrite it to land in
-  range and END AS A COMPLETE SENTENCE. ${correction.metaChars < DENTAL_META_DESC_MIN
-    ? 'Earn the extra characters with something specific and true about this practice or city, not a generic CTA.'
-    : 'Cut the least useful clause rather than trimming mid-thought.'}`);
+  range, still ENDING ON THE CALL TO ACTION and as a complete sentence. ${correction.metaChars < DENTAL_META_DESC_MIN
+    ? 'Earn the extra characters with something specific and true about this practice or city, before the closing ask.'
+    : 'Cut the least useful clause rather than trimming mid-thought, and keep the closing ask.'}`);
+  }
+  if (correction?.metaMissingCta) {
+    notes.push(`- The meta description did not end on a call to action. Rewrite the LAST sentence as a short, clear
+  next step ("Book online today.", "Call to schedule a consultation.") and keep the whole string
+  inside ${DENTAL_META_DESC_MIN}-${DENTAL_META_DESC_MAX} characters.`);
+  }
+  if (correction?.heroChars != null) {
+    notes.push(`- The hero intro was ${correction.heroChars} characters, outside ${DENTAL_HERO_MIN_CHARS}-${DENTAL_HERO_MAX_CHARS}. ${correction.heroChars > DENTAL_HERO_MAX_CHARS
+      ? 'Cut it back to one sentence with the outcome and city, plus a few words of next step — drop the second idea entirely.'
+      : 'Extend it slightly: name the outcome and the city, then the next step.'} Count the characters.`);
   }
   const feedback = notes.length ? `\nCORRECTION — fix these and change nothing else:\n${notes.join('\n')}\n` : '';
 
@@ -552,19 +605,19 @@ Primary keyword: ${primaryKeyword}
 Secondary keywords: ${(secondaryKeywords || []).join(', ') || '(none)'}
 
 ${DENTAL_SECTION_BRIEFS.heroIntro}
-Length: 1-2 sentences, 30-40 words.
+Length: ${DENTAL_HERO_MIN_CHARS}-${DENTAL_HERO_MAX_CHARS} characters (about ${heroWords(DENTAL_HERO_MIN_CHARS)}-${heroWords(DENTAL_HERO_MAX_CHARS)} words). Count them.
 
 ${DENTAL_SECTION_BRIEFS.metaDescription}
 
 ${bodyStack}
 
 ${DENTAL_SECTION_BRIEFS.faqs}
-Write ${config.dental.faqs.min}-${config.dental.faqs.max} Q&As, each answer at most ${DENTAL_MAX_FAQ_ANSWER_WORDS} words. At least ${DENTAL_MIN_LOCALIZED_FAQS} must name ${location.city} —
+Write ${DENTAL_MIN_FAQS}-${DENTAL_MAX_FAQS} Q&As, each answer at most ${DENTAL_MAX_FAQ_ANSWER_WORDS} words. At least ${DENTAL_MIN_LOCALIZED_FAQS} must name ${location.city} —
 and only in questions about what this office offers, never in a question about pain, duration,
 safety or candidacy.
 ${faqBlock}
 
-WORD BUDGET: heroIntro 30-40 words; ${DENTAL_PARA_WORDS_MIN}-${DENTAL_PARA_WORDS_MAX} words per body paragraph; each FAQ answer at most
+WORD BUDGET: heroIntro ${heroWords(DENTAL_HERO_MIN_CHARS)}-${heroWords(DENTAL_HERO_MAX_CHARS)} words (${DENTAL_HERO_MIN_CHARS}-${DENTAL_HERO_MAX_CHARS} characters); ${DENTAL_PARA_WORDS_MIN}-${DENTAL_PARA_WORDS_MAX} words per body paragraph; each FAQ answer at most
 ${DENTAL_MAX_FAQ_ANSWER_WORDS} words. The TOTAL of heroIntro + all block bodies + all FAQ questions and answers (the meta
 description does NOT count) must land between ${DENTAL_WORDS_TARGET_MIN} and ${DENTAL_WORDS_TARGET_MAX} words, and that total is the
 binding constraint: if the per-part ranges would put you outside it, adjust paragraph length within
@@ -676,18 +729,30 @@ async function generateDentalL3({ service, location, primaryKeyword, secondaryKe
   // Skipped for a draft that already broke the block contract — that page is
   // going back to a reviewer regardless, so buying it a better length is two
   // wasted calls. Keeps whichever draft is closer overall.
+  // Distance from every length band the page has, plus a flat penalty for a
+  // meta description with no closing ask — a defect the model fixes on being
+  // told, and the one QC gate a length-only correction pass used to leave
+  // failing. The penalty is scaled like a length miss so a candidate is never
+  // preferred purely for being a few characters closer while losing the CTA.
+  const CTA_PENALTY = 25;
+  const bandOff = (n, min, max) => (n < min ? min - n : n > max ? n - max : 0);
   const deviation = (candidate) => {
-    const chars = String(candidate.metaDescription || '').trim().length;
-    const metaOff = chars < DENTAL_META_DESC_MIN ? DENTAL_META_DESC_MIN - chars
-      : chars > DENTAL_META_DESC_MAX ? chars - DENTAL_META_DESC_MAX : 0;
-    return wordBandDistance(dentalGeneratedWordCount(candidate)) + metaOff;
+    const metaChars = String(candidate.metaDescription || '').trim().length;
+    const heroChars = String(candidate.heroIntro || '').trim().length;
+    return wordBandDistance(dentalGeneratedWordCount(candidate))
+      + bandOff(metaChars, DENTAL_META_DESC_MIN, DENTAL_META_DESC_MAX)
+      + bandOff(heroChars, DENTAL_HERO_MIN_CHARS, DENTAL_HERO_MAX_CHARS)
+      + (text.endsWithCta(candidate.metaDescription) ? 0 : CTA_PENALTY);
   };
 
   if (deviation(l3) > 0 && matchesOutline(l3, outline)) {
     const metaChars = String(l3.metaDescription || '').trim().length;
+    const heroChars = String(l3.heroIntro || '').trim().length;
     const corrected = await draft({
       words: dentalGeneratedWordCount(l3),
-      metaChars: (metaChars < DENTAL_META_DESC_MIN || metaChars > DENTAL_META_DESC_MAX) ? metaChars : null,
+      metaChars: bandOff(metaChars, DENTAL_META_DESC_MIN, DENTAL_META_DESC_MAX) ? metaChars : null,
+      metaMissingCta: !text.endsWithCta(l3.metaDescription),
+      heroChars: bandOff(heroChars, DENTAL_HERO_MIN_CHARS, DENTAL_HERO_MAX_CHARS) ? heroChars : null,
     });
     if (corrected && deviation(corrected) < deviation(l3)) l3 = corrected;
   }
@@ -718,6 +783,15 @@ const DANGLING_WORDS = /\s+(?:a|an|and|about|after|as|at|before|but|by|during|ea
 // under `min` is rejected in favour of a word-boundary trim. After a word cut
 // the tail is stripped of any trailing function word, so the result cannot
 // read as "...walk you through every."
+function trimToWord(s, max) {
+  let out = s.slice(0, max);
+  const lastSpace = out.lastIndexOf(' ');
+  if (lastSpace > 0) out = out.slice(0, lastSpace);
+  out = out.replace(/[,;:\s]+$/, '');
+  while (DANGLING_WORDS.test(out)) out = out.replace(DANGLING_WORDS, '').replace(/[,;:\s]+$/, '');
+  return /[.!?]$/.test(out) ? out : `${out}.`;
+}
+
 function trimToSentence(s, max, min) {
   if (s.length <= max) return s;
 
@@ -728,17 +802,70 @@ function trimToSentence(s, max, min) {
   const sentenceEnd = Math.max(lastStop >= 0 ? lastStop + 1 : -1, endsInWindow);
   if (sentenceEnd >= min) return s.slice(0, sentenceEnd).trim();
 
-  let out = s.slice(0, max);
-  const lastSpace = out.lastIndexOf(' ');
-  if (lastSpace > 0) out = out.slice(0, lastSpace);
-  out = out.replace(/[,;:\s]+$/, '');
-  while (DANGLING_WORDS.test(out)) out = out.replace(DANGLING_WORDS, '').replace(/[,;:\s]+$/, '');
-  return /[.!?]$/.test(out) ? out : `${out}.`;
+  return trimToWord(s, max);
+}
+
+// The closing call to action is the LAST sentence, which is exactly what a
+// "keep whole sentences that fit" trim throws away first. Without this, every
+// description the model overshot came back without its ask — passing the
+// length gate and failing the CTA one.
+//
+// Prose quality still comes first: the ordinary trim runs, and if the ask
+// survived it (it often does, because the cut lands inside the closing
+// sentence) that result is kept. Only when the ordinary trim would drop the
+// ask is the description cut in the MIDDLE instead — the CTA set aside, the
+// copy before it trimmed to what is left of the budget, then the CTA put back.
+// An ask has to be a phrase, not a verb left standing on its own. A word trim
+// that happens to stop just inside the closing sentence leaves "Book." — which
+// matches every CTA test and reads as a truncation.
+const MIN_CTA_WORDS = 4;
+
+function closesOnRealAsk(s) {
+  return text.endsWithCta(s) && text.wordCount(text.lastSentence(s)) >= MIN_CTA_WORDS;
+}
+
+function trimKeepingCta(s, max, min) {
+  if (s.length <= max) return s;
+
+  const plain = trimToSentence(s, max, min);
+  // Either the ask came through the ordinary trim intact enough to read, or
+  // there was none to save in the first place.
+  if (closesOnRealAsk(plain) || !text.endsWithCta(s)) return plain;
+
+  const cta = text.lastSentence(s);
+  const head = s.slice(0, s.length - cta.length).trim();
+  const room = max - cta.length - 1; // -1 for the space that rejoins them
+  // A CTA long enough to leave no real description behind is not worth
+  // protecting — a snippet that is nothing but an ask says nothing.
+  if (!head || room < Math.floor(min / 2)) return plain;
+
+  // Whole sentences in the head first, a word boundary second. The word cut is
+  // the uglier of the two (it shortens a sentence rather than dropping one) so
+  // it is only reached when keeping whole sentences would leave the snippet
+  // under-length — and under-length is the Critical gate, where the missing
+  // ask is only Major.
+  const candidates = head.length <= room
+    ? [head]
+    : [trimToSentence(head, room, Math.floor(room / 2)), trimToWord(head, room)];
+
+  const assembled = candidates.map(k => `${k} ${cta}`.trim()).filter(o => o.length <= max);
+  const inWindow = assembled.find(o => o.length >= min);
+  if (inWindow) return inWindow;
+
+  // Nothing fits the window with the ask still attached — the copy is simply
+  // too long for this snippet and only a rewrite can fix it properly (which is
+  // what the correction pass upstream is for; this is the last-resort net).
+  // Both remaining outcomes fail a gate, so hand back the one a reviewer can
+  // fix in seconds: a complete, readable sentence that is a little short — the
+  // length gate says exactly how short — rather than a snippet that ends on a
+  // truncated verb, which has to be rewritten from scratch.
+  const longest = assembled.sort((a, b) => b.length - a.length)[0];
+  return longest || plain;
 }
 
 function normalizeMetaDescriptionLength(desc) {
   const s = String(desc || '').trim().replace(/\s+/g, ' ');
-  return s.length > DENTAL_META_DESC_MAX ? trimToSentence(s, DENTAL_META_DESC_MAX, DENTAL_META_DESC_MIN) : s;
+  return s.length > DENTAL_META_DESC_MAX ? trimKeepingCta(s, DENTAL_META_DESC_MAX, DENTAL_META_DESC_MIN) : s;
 }
 
 // ── Dental per-section regeneration ("regenerate every section") ──────────
@@ -791,15 +918,16 @@ async function generateDentalRegen({ service, location, primaryKeyword, secondar
 
   let schemaHint, task;
   if (section === 'heroIntro') {
-    schemaHint = `{ "heroIntro": "string — 1-2 sentences, 30-40 words, leading with the patient outcome and closing on the next step" }`;
+    schemaHint = `{ "heroIntro": "string — ${DENTAL_HERO_MIN_CHARS}-${DENTAL_HERO_MAX_CHARS} characters counting spaces, leading with the patient outcome and the city and closing on the next step" }`;
     task = `${DENTAL_SECTION_BRIEFS.heroIntro}
 
-Write ONLY a fresh hero intro for "${service.name}" in ${cityState}. 1-2 sentences, 30-40 words.`;
+Write ONLY a fresh hero intro for "${service.name}" in ${cityState}. ${DENTAL_HERO_MIN_CHARS}-${DENTAL_HERO_MAX_CHARS} characters — count them.`;
   } else if (section === 'metaDescription') {
-    schemaHint = `{ "metaDescription": "string — MUST be ${DENTAL_META_DESC_MIN}-${DENTAL_META_DESC_MAX} characters total, names the service and city, gives one reason to choose this office, ends with a clear next step as a complete sentence" }`;
+    schemaHint = `{ "metaDescription": "string — MUST be ${DENTAL_META_DESC_MIN}-${DENTAL_META_DESC_MAX} characters total, names the service and city, gives one reason to choose this office, and ENDS on a call to action as a complete sentence" }`;
     task = `${DENTAL_SECTION_BRIEFS.metaDescription}
 
-Write ONLY a fresh meta description for "${service.name}" in ${cityState}. ${DENTAL_META_DESC_MIN}-${DENTAL_META_DESC_MAX} characters, ending as a complete sentence.`;
+Write ONLY a fresh meta description for "${service.name}" in ${cityState}. ${DENTAL_META_DESC_MIN}-${DENTAL_META_DESC_MAX} characters, ending on a
+call to action as a complete sentence.`;
   } else if (section === 'educationalBlock') {
     schemaHint = `{ "h2": "string — heading", "html": "string — 1-3 paragraphs, each at most ${DENTAL_MAX_PARA_WORDS} words, using ONLY <p>, <ul>, <li>" }`;
     const otherHeadings = (context.otherHeadings || []).filter(Boolean);
@@ -845,7 +973,7 @@ across the whole stack, spread over different blocks.`;
     schemaHint = `{ "faqs": [ { "q": "string", "a": "string" } ] }`;
     task = `${DENTAL_SECTION_BRIEFS.faqs}
 
-Write a fresh set of ${DENTAL_MIN_FAQS}-${DENTAL_MAX_FAQS} FAQ Q&As for "${service.name}" in ${cityState}, phrased the way patients ask; each answer at most ${DENTAL_MAX_FAQ_ANSWER_WORDS} words. At least ${DENTAL_MIN_LOCALIZED_FAQS} must name ${location.city}, and only where the answer genuinely depends on it (what this office offers), never on a pain/duration/safety/candidacy question.`;
+Write a fresh set of ${DENTAL_MIN_FAQS}-${DENTAL_MAX_FAQS} FAQ Q&As for "${service.name}" in ${cityState}, phrased the way patients ask; each answer at most ${DENTAL_MAX_FAQ_ANSWER_WORDS} words. At least ${DENTAL_MIN_LOCALIZED_FAQS} must name ${location.city} — build those ${DENTAL_MIN_LOCALIZED_FAQS} around blockers the office itself answers (which options it runs, being seen quickly, booking, insurance it takes), never by adding the city to a pain/duration/safety/candidacy question.`;
   } else if (section === 'faqItem') {
     schemaHint = `{ "q": "string", "a": "string" }`;
     const otherQuestions = (context.otherQuestions || []).filter(Boolean);
@@ -871,9 +999,18 @@ question is about what the office offers; never attach it to a pain, duration, s
   // page's whole FAQ block (faq_count_min_4 is CRITICAL), so the count is part
   // of what makes a response acceptable — same principle as matchesOutline
   // rejecting a body with the wrong number of blocks.
-  const acceptable = (raw) => {
+  // `last` relaxes the band on the final attempt: a response with one FAQ too
+  // many is worth a retry, but not worth throwing away the whole regeneration
+  // for — that would leave the reviewer with nothing, where the count gate
+  // would simply have flagged an extra question they can delete. Too FEW is
+  // different and is never accepted: faq_count is Critical, and a one-question
+  // response would silently replace a good FAQ block.
+  const acceptable = (raw, last) => {
     if (!raw) return false;
-    if (section === 'faqs') return Array.isArray(raw.faqs) && raw.faqs.length >= DENTAL_MIN_FAQS;
+    if (section === 'faqs') {
+      if (!Array.isArray(raw.faqs) || raw.faqs.length < DENTAL_MIN_FAQS) return false;
+      return last || raw.faqs.length <= DENTAL_MAX_FAQS;
+    }
     return true;
   };
 
@@ -887,7 +1024,7 @@ question is about what the office offers; never attach it to a pain, duration, s
     });
     try {
       const raw = JSON.parse(completion.choices[0].message.content);
-      if (acceptable(raw)) result = raw;
+      if (acceptable(raw, attempt === 1)) result = raw;
     } catch { /* retry once */ }
   }
   if (!result) throw new Error(`Dental regeneration ("${section}") returned invalid JSON after retry.`);

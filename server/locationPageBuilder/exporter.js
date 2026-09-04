@@ -3,7 +3,7 @@
 // spec template. DOCX via the `docx` lib already used by the app's export route.
 
 const {
-  Document, Packer, Paragraph, TextRun,
+  Document, Packer, Paragraph, TextRun, HeadingLevel,
   Table, TableRow, TableCell, WidthType, ShadingType, VerticalAlign,
   BorderStyle, AlignmentType, Footer, PageNumber, TabStopType,
 } = require('docx');
@@ -13,6 +13,36 @@ const TEAL = '2C7A7B';      // section headings + content H1
 const NAVY = '1F2D3D';      // document title
 const GREY = '6B7280';      // muted labels / URL
 const LABEL_BG = 'EAF2F1';  // metadata label cells
+
+// ── Real Word heading styles ────────────────────────────────────────────────
+// The page's headings are exported as Word's BUILT-IN Heading 1/2/3 styles,
+// not as bold coloured text that merely looks like headings. It matters
+// because of what happens after the download: the document is worked on in
+// Word and pasted into a CMS, and only styled headings survive that trip —
+// they carry the outline in the navigation pane, drive a generated table of
+// contents, and paste as <h1>/<h2>/<h3> instead of <p><strong>.
+//
+// The look is defined ON the styles rather than on each run, so the visual
+// design is unchanged while the structure underneath it becomes real. Runs
+// inside a heading therefore carry no size or colour of their own — anything
+// set on the run would override the style and put us back where we started.
+const DOC_STYLES = {
+  default: {
+    title: { run: { size: 40, bold: true, color: NAVY }, paragraph: { spacing: { after: 60 } } },
+    heading1: { run: { size: 30, bold: true, color: TEAL }, paragraph: { spacing: { before: 240, after: 120 } } },
+    heading2: { run: { size: 26, bold: true, color: TEAL }, paragraph: { spacing: { before: 320, after: 120 } } },
+    heading3: { run: { size: 22, bold: true, color: '111827' }, paragraph: { spacing: { before: 160, after: 40 } } },
+  },
+};
+
+// A heading's text carries no formatting of its own — see DOC_STYLES.
+const headingRun = (t) => new TextRun({ text: String(t || '') });
+const headingRule = { bottom: { style: BorderStyle.SINGLE, size: 8, color: TEAL, space: 4 } };
+
+// The page's own H1 / H2 / H3, as Word headings.
+const h1 = (t) => new Paragraph({ heading: HeadingLevel.HEADING_1, children: [headingRun(t)] });
+const h2 = (t) => new Paragraph({ heading: HeadingLevel.HEADING_2, border: headingRule, children: [headingRun(t)] });
+const h3 = (t) => new Paragraph({ heading: HeadingLevel.HEADING_3, children: [headingRun(t)] });
 
 // ── JSON ─────────────────────────────────────────────────────────────────────
 function toJSON(pageObject) {
@@ -76,16 +106,15 @@ async function toDocxBuffer(pageObject) {
 
   // Small teal eyebrow label.
   const eyebrow = (t) => new Paragraph({ spacing: { after: 40 }, children: [run(t, { bold: true, color: TEAL, size: 17, characterSpacing: 30 })] });
-  // Big document title.
-  const title = (t) => new Paragraph({ spacing: { after: 60 }, children: [run(t, { bold: true, color: NAVY, size: 40 })] });
-  // Teal section heading with a bottom rule (e.g. "SEO Metadata", "Our Approach…").
-  const section = (t, size = 26) => new Paragraph({
+  // Big document title — Word's Title style, above the page's own H1.
+  const title = (t) => new Paragraph({ heading: HeadingLevel.TITLE, children: [headingRun(t)] });
+  // Teal furniture label with a bottom rule ("SEO Metadata", "Page Content").
+  // Not a Word heading — see the note on DOC_STYLES.
+  const section = (t) => new Paragraph({
     spacing: { before: 320, after: 120 },
-    border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: TEAL, space: 4 } },
-    children: [run(t, { bold: true, color: TEAL, size })],
+    border: headingRule,
+    children: [run(t, { bold: true, color: TEAL, size: 26 })],
   });
-  // Bold dark subheading (H3 pillars, FAQ-style).
-  const subHeading = (t, color = '111827') => new Paragraph({ spacing: { before: 160, after: 40 }, children: [run(t, { bold: true, color })] });
   const body = (t) => new Paragraph({ spacing: { after: 80 }, children: [run(t)] });
   const bullet = (t) => new Paragraph({ bullet: { level: 0 }, spacing: { after: 20 }, children: [run(t)] });
   const thickRule = () => new Paragraph({ spacing: { before: 120, after: 120 }, border: { bottom: { style: BorderStyle.SINGLE, size: 18, color: TEAL } }, children: [run('')] });
@@ -122,26 +151,26 @@ async function toDocxBuffer(pageObject) {
 
   // ── Page Content ──────────────────────────────────────────────────────────
   children.push(section('Page Content'));
-  children.push(new Paragraph({ spacing: { before: 80, after: 80 }, children: [run(pd.h1, { bold: true, color: TEAL, size: 30 })] }));
+  children.push(h1(pd.h1));
 
-  children.push(subHeading('Hero'));
+  children.push(new Paragraph({ spacing: { before: 160, after: 40 }, children: [run('Hero', { bold: true, color: '111827' })] }));
   children.push(body(pd.hero_intro));
 
   // Our approach to <Service>
-  children.push(section(pd.approach.heading));
+  children.push(h2(pd.approach.heading));
   if (pd.approach.intro) children.push(body(pd.approach.intro));
-  (pd.approach.care_pillars || []).forEach(p => { children.push(subHeading(p.heading)); children.push(body(p.copy)); });
+  (pd.approach.care_pillars || []).forEach(p => { children.push(h3(p.heading)); children.push(body(p.copy)); });
 
   // Competitor-based section (H2 → H3s)
   (pd.competitor_section?.blocks || []).forEach(b => {
-    children.push(section(b.h2));
-    (b.h3s || []).forEach(h => { children.push(subHeading(h.heading)); children.push(body(h.copy)); });
+    children.push(h2(b.h2));
+    (b.h3s || []).forEach(h => { children.push(h3(h.heading)); children.push(body(h.copy)); });
   });
 
   // FAQs
-  children.push(section('FAQs'));
+  children.push(h2('FAQs'));
   (pd.faqs || []).forEach((f, i) => {
-    children.push(subHeading(`Q${i + 1}. ${f.question}`, TEAL));
+    children.push(h3(`Q${i + 1}. ${f.question}`));
     children.push(body(f.answer));
   });
 
@@ -154,6 +183,7 @@ async function toDocxBuffer(pageObject) {
   });
 
   const doc = new Document({
+    styles: DOC_STYLES,
     sections: [{
       properties: { page: { margin: { top: 1080, bottom: 1080, left: 1080, right: 1080 } } },
       footers: { default: footer },
@@ -245,41 +275,47 @@ async function toDentalDocxBuffer(pageObject) {
   const children = [];
   const run = (t, opts = {}) => new TextRun({ text: String(t || ''), size: 22, ...opts });
   const eyebrow = (t) => new Paragraph({ spacing: { after: 40 }, children: [run(t, { bold: true, color: TEAL, size: 17, characterSpacing: 30 })] });
-  const title = (t) => new Paragraph({ spacing: { after: 60 }, children: [run(t, { bold: true, color: NAVY, size: 40 })] });
-  const section = (t, size = 26) => new Paragraph({
+  // Document furniture — the labels that organise the DELIVERABLE ("SEO
+  // Metadata", "Page Content", "Hero"). Deliberately NOT Word headings: they
+  // are not part of the page, and styling them as headings would put them in
+  // the same outline as the page's own H2s and paste into a CMS as content.
+  const section = (t) => new Paragraph({
     spacing: { before: 320, after: 120 },
-    border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: TEAL, space: 4 } },
-    children: [run(t, { bold: true, color: TEAL, size })],
+    border: headingRule,
+    children: [run(t, { bold: true, color: TEAL, size: 26 })],
   });
-  const subHeading = (t, color = '111827') => new Paragraph({ spacing: { before: 160, after: 40 }, children: [run(t, { bold: true, color })] });
+  const label = (t, color = '111827') => new Paragraph({ spacing: { before: 160, after: 40 }, children: [run(t, { bold: true, color })] });
   const body = (t) => new Paragraph({ spacing: { after: 80 }, children: [run(t)] });
   const bullet = (t) => new Paragraph({ bullet: { level: 0 }, spacing: { after: 20 }, children: [run(t)] });
 
   children.push(eyebrow('SEO PAGE CONTENT'));
-  children.push(title(s.hero?.h1 || ''));
+  // The document's title IS the page's H1, so it is exported as Heading 1
+  // rather than repeated further down as a second copy of the same string.
+  children.push(h1(s.hero?.h1 || ''));
   children.push(new Paragraph({ spacing: { after: 60 }, children: [run('Page URL:  ', { bold: true, color: GREY, size: 18 }), run(m.urlPath || '', { color: GREY, size: 18 })] }));
 
   children.push(section('SEO Metadata'));
-  children.push(subHeading('Meta Title')); children.push(body(m.title));
-  children.push(subHeading('Meta Description')); children.push(body(m.metaDescription));
-  children.push(subHeading('H1')); children.push(body(s.hero?.h1));
+  children.push(label('Meta Title')); children.push(body(m.title));
+  children.push(label('Meta Description')); children.push(body(m.metaDescription));
+  children.push(label('H1')); children.push(body(s.hero?.h1));
 
   children.push(section('Page Content'));
-  children.push(subHeading('Hero'));
+  children.push(label('Hero'));
   children.push(body(s.hero?.intro));
 
   (s.educationalBody?.blocks || []).forEach((b) => {
-    children.push(section(b.h2));
+    children.push(h2(b.h2));
     htmlToLines(b.html).forEach((ln) => {
-      if (ln.type === 'h3') children.push(subHeading(ln.text));
+      if (ln.type === 'h3') children.push(h3(ln.text));
       else if (ln.type === 'li') children.push(bullet(ln.text));
       else children.push(body(ln.text));
     });
   });
 
-  children.push(section(s.faq?.heading || 'FAQs'));
+  // The FAQ heading is an H2 on the page and each question an H3 under it.
+  children.push(h2(s.faq?.heading || 'FAQs'));
   (s.faq?.items || []).forEach((f, i) => {
-    children.push(subHeading(`Q${i + 1}. ${f.q}`, TEAL));
+    children.push(h3(`Q${i + 1}. ${f.q}`));
     children.push(body(f.a));
   });
 
@@ -292,6 +328,7 @@ async function toDentalDocxBuffer(pageObject) {
   });
 
   const doc = new Document({
+    styles: DOC_STYLES,
     sections: [{
       properties: { page: { margin: { top: 1080, bottom: 1080, left: 1080, right: 1080 } } },
       footers: { default: footer },

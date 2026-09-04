@@ -51,7 +51,10 @@ const keywordAdapter = require('../keywordAdapter');
 // The keyword-presence check carries its own threshold in its id, so it is
 // derived from config rather than hardcoded here.
 // Threshold-carrying ids are derived from config, never hardcoded.
-const FAQ_LOCALIZATION_CHECK = `city_in_faq_min_${config.dental.faqs.minLocalized}`;
+// Stable check id; the threshold rides in the check's `name` (asserted below),
+// so retuning the minimum in config cannot rename the check out from under a
+// saved page's Recheck button.
+const FAQ_LOCALIZATION_CHECK = 'city_in_faq';
 const KEYWORD_PRESENCE_CHECK = `primary_keyword_present_${config.dental.minKeywordUses}x`;
 
 let passed = 0, failed = 0;
@@ -271,11 +274,13 @@ test('buildDentalSiblings caps at maxSiblingLocations and prefers same region', 
 console.log('\nDental — schema (5 JSON-LD blocks, Appendix C layering)');
 function dentalScaffoldWithContent() {
   const scaffold = compose.buildDentalScaffold(dentalLayers());
-  let metaDescription = 'Get professional teeth whitening in Quincy, MA at Gentle Dental.';
-  while (metaDescription.length < 152) metaDescription += ' Visit our caring Quincy team today.';
-  metaDescription = metaDescription.slice(0, 158);
+  // In range (150-160) AND closing on a call to action, because those are two
+  // separate gates now.
+  const metaDescription = 'Get professional teeth whitening in Quincy, MA, with both in-office and '
+    + 'take-home options and your insurance filed for you. Book a visit with our team today.';
   compose.mergeDentalL3(scaffold, {
-    heroIntro: 'Teeth whitening in Quincy can brighten your smile with safe, professional care close to home.',
+    // 90-110 characters: one sentence with the outcome and city, then the step.
+    heroIntro: 'Brighten your smile with professional teeth whitening in Quincy, MA. Book a visit with us today.',
     metaDescription,
     // Six planned blocks plus the fixed "Why Choose" closer — the 7-8 stack
     // every page carries (dentalOutline plans the first six or seven).
@@ -288,11 +293,17 @@ function dentalScaffoldWithContent() {
       { h2: 'Is Teeth Whitening Safe?', html: '<p>Professional whitening is safe when a dentist supervises it.</p>' },
       { h2: 'Why Choose Gentle Dental for Teeth Whitening in Quincy, MA?', html: '<p>Our Quincy team walks you through both options and files your insurance for you.</p>' },
     ],
+    // Seven questions, three of them localized the way the brief asks: the
+    // city rides on what the OFFICE does (options, booking, insurance), never
+    // on the universal ones about pain, safety or how long it takes.
     faqs: [
-      { q: 'How long does teeth whitening take?', a: 'Most Quincy patients finish in one visit.' },
+      { q: 'Which whitening options are available at your Quincy office?', a: 'In-office trays and take-home kits.' },
+      { q: 'Can I book teeth whitening in Quincy before a weekend?', a: 'Yes, ask our team for the next open slot.' },
+      { q: 'Does your Quincy office file whitening claims with insurance?', a: 'We file for you where a plan contributes.' },
+      { q: 'How long does teeth whitening take?', a: 'Most patients finish in a single visit.' },
       { q: 'Is teeth whitening safe?', a: 'Yes, professional whitening is safe under a dentist’s care.' },
-      { q: 'How much does teeth whitening cost?', a: 'Cost varies by case; ask our Quincy team for a quote.' },
-      { q: 'Will insurance cover it?', a: 'Whitening is typically cosmetic and not covered.' },
+      { q: 'How much does teeth whitening cost?', a: 'Cost varies by case; ask our team for a quote.' },
+      { q: 'Will whitening work on crowns?', a: 'Whitening does not lighten crowns or veneers.' },
     ],
   });
   scaffold.primaryKeyword = 'teeth whitening quincy';
@@ -350,13 +361,13 @@ test('a close variant of the primary satisfies the H1/title gates', () => {
     assert.strictEqual(qc.checks.find(c => c.id === id).pass, true, `${id} should accept a close variant`);
   });
 });
-test('fewer than 4 FAQs is a Critical failure', () => {
+test(`fewer than ${config.dental.faqs.min} FAQs is a Critical failure`, () => {
   const layers = dentalLayers();
   const scaffold = dentalScaffoldWithContent();
   scaffold.sections.faq.items = scaffold.sections.faq.items.slice(0, 2);
   scaffold.schema = schemaGenerator.generateDentalSchema({ scaffold, client: layers.client, location: layers.location, service: layers.service });
   const qc = qaEngine.runDentalQC(scaffold);
-  assert.ok(qc.checks.find(c => c.name === 'faq_count_min_4' && !c.pass));
+  assert.ok(qc.checks.find(c => c.name === `faq_count_min_${config.dental.faqs.min}` && !c.pass));
   assert.strictEqual(qc.verdict, 'FAIL');
 });
 test('primary keyword frequency check counts close variants (not just literal substring), no OG check exists', () => {
@@ -487,14 +498,14 @@ test('a second recheck must build on the first one\'s result, not on the same sn
   scaffold.sections.faq.items = dentalScaffoldWithContent().sections.faq.items;
 
   const first = qaEngine.recheckDental(scaffold, 'meta_description_length', stale.checks);
-  const chained = qaEngine.recheckDental(scaffold, 'faq_count_min_4', first.checks);
+  const chained = qaEngine.recheckDental(scaffold, 'faq_count', first.checks);
   assert.strictEqual(chained.checks.find(c => c.id === 'meta_description_length').pass, true,
     'chaining keeps the first fix');
-  assert.strictEqual(chained.checks.find(c => c.id === 'faq_count_min_4').pass, true);
+  assert.strictEqual(chained.checks.find(c => c.id === 'faq_count').pass, true);
 
   // Against the stale snapshot instead, the first fix is silently dropped —
   // which is exactly what the client must never do.
-  const raced = qaEngine.recheckDental(scaffold, 'faq_count_min_4', stale.checks);
+  const raced = qaEngine.recheckDental(scaffold, 'faq_count', stale.checks);
   assert.strictEqual(raced.checks.find(c => c.id === 'meta_description_length').pass, false,
     'this is the failure mode the queue exists to prevent');
 });
@@ -862,11 +873,17 @@ test('the instructed budget cannot overrun the QC word gate', () => {
 
   // A short FAQ answer still carries its question, so ~8 words + the answer.
   // The fixed closer is written to the same per-paragraph budget as any other
-  // block, and sits on TOP of the planner's paragraph total.
+  // block, and sits on TOP of the planner's paragraph total. The hero intro is
+  // budgeted in characters, so it enters the word arithmetic at ~7 chars/word
+  // — the same conversion the writer prompt quotes.
   const brandParas = d.brandBlock.paragraphs;
-  const thinnest = d.paragraphWords.min + (totalParas(d.plannedBlocks.min, 1) + brandParas) * d.paragraphWords.min + 4 * (8 + 25);
-  const fattest = d.paragraphWords.max + (totalParas(d.plannedBlocks.max, d.paragraphsPerBlock.max) + brandParas) * d.paragraphWords.max
-    + 6 * (8 + d.faqAnswerMaxWords);
+  const heroWords = (chars) => Math.round(chars / 7);
+  const thinnest = heroWords(d.heroIntro.minChars)
+    + (totalParas(d.plannedBlocks.min, 1) + brandParas) * d.paragraphWords.min
+    + d.faqs.min * (8 + 25);
+  const fattest = heroWords(d.heroIntro.maxChars)
+    + (totalParas(d.plannedBlocks.max, d.paragraphsPerBlock.max) + brandParas) * d.paragraphWords.max
+    + d.faqs.max * (8 + d.faqAnswerMaxWords);
   assert.ok(thinnest >= d.pageWords.acceptMin, `thinnest instructed page (${thinnest}w) must clear the ${d.pageWords.acceptMin}w floor`);
   assert.ok(fattest <= d.pageWords.acceptMax, `fattest instructed page (${fattest}w) must stay under the ${d.pageWords.acceptMax}w ceiling`);
 });
@@ -1129,17 +1146,19 @@ test(`${config.dental.faqs.minLocalized} localized FAQs pass`, () => {
   const check = faqCheck(faqScaffold([
     { q: 'Do you offer in-office whitening in Quincy?', a: 'Yes, most visits take an hour.' },
     { q: 'Which whitening options are available at your Quincy office?', a: 'In-office trays and take-home kits.' },
+    { q: 'Can I book a whitening visit at your Quincy practice on a Saturday?', a: 'Ask our team for the next open slot.' },
     { q: 'Does whitening hurt?', a: 'Some brief sensitivity is normal.' },
     { q: 'Will insurance cover it?', a: 'Whitening is cosmetic, so usually not.' },
   ]), FAQ_LOCALIZATION_CHECK);
   assert.strictEqual(check.pass, true, check.detail);
 });
 test('hitting the count by localizing universal questions is caught', () => {
-  // Exactly the trade a bare count invites: two cities bolted onto questions
-  // whose answers do not change by city.
+  // Exactly the trade a bare count invites: cities bolted onto questions whose
+  // answers do not change by city.
   const scaffold = faqScaffold([
     { q: 'Does teeth whitening hurt in Quincy?', a: 'Some brief sensitivity is normal.' },
     { q: 'Is teeth whitening safe for me in Quincy?', a: 'Yes, under a dentist.' },
+    { q: 'How long does teeth whitening take in Quincy?', a: 'About an hour.' },
     { q: 'How long do results last?', a: 'Usually a year with good care.' },
     { q: 'Will insurance cover it?', a: 'Whitening is cosmetic, so usually not.' },
   ]);
@@ -1158,6 +1177,88 @@ test('every prompt path states the FAQ localization rule', () => {
   assert.ok(brief.includes('Does sedation dentistry hurt in Methuen?'), 'the BAD pair must be shown, not described');
   assert.ok(brief.includes('Do you offer IV sedation at your Methuen practice?'), 'the GOOD pair too');
   assert.ok(!/gentle dental/i.test(brief), 'the worked example must not hardcode one office brand');
+});
+
+console.log('\nDental - the meta description closes on a call to action');
+test('a description that ends on a next step passes; one that trails off does not', () => {
+  const withCta = dentalScaffoldWithContent();
+  const cta = qaEngine.runDentalQC(withCta).checks.find(c => c.id === 'meta_description_ends_with_cta');
+  assert.strictEqual(cta.pass, true, cta.detail);
+
+  const without = dentalScaffoldWithContent();
+  without.meta.metaDescription = 'Professional teeth whitening in Quincy, MA lifts everyday stains from '
+    + 'coffee and tea, using in-office trays or take-home kits fitted to your teeth by our dentists.';
+  const failing = qaEngine.runDentalQC(without).checks.find(c => c.id === 'meta_description_ends_with_cta');
+  assert.strictEqual(failing.pass, false, failing.detail);
+  assert.strictEqual(failing.severity, 'Major');
+});
+test('the ask has to be the CLOSE, not a mention buried mid-description', () => {
+  // "book" appears, but the snippet ends on a clinical fact, so the reader is
+  // left without a next step — which is the whole point of the gate.
+  const scaffold = dentalScaffoldWithContent();
+  scaffold.meta.metaDescription = 'Book teeth whitening in Quincy, MA. Results usually last about a year '
+    + 'with good home care, and sensitivity settles within a day or two for most patients.';
+  const check = qaEngine.runDentalQC(scaffold).checks.find(c => c.id === 'meta_description_ends_with_cta');
+  assert.strictEqual(check.pass, false, check.detail);
+});
+test('a description that merely describes booking is not an ask', () => {
+  assert.strictEqual(text.endsWithCta('Our team schedules same-day visits for urgent care.'), false);
+  assert.strictEqual(text.endsWithCta('Call our Quincy team to schedule.'), true);
+  assert.strictEqual(text.endsWithCta('Request an appointment online today.'), true);
+});
+test('trimming an over-long description keeps the closing ask', () => {
+  // The failure this guards: the ordinary trim drops whole trailing sentences,
+  // and the ask is now always the last one. This is the shape a real overshoot
+  // takes — a description a little over the window, closing on its CTA.
+  const long = 'Professional teeth whitening in Quincy, MA lifts everyday stains from coffee, tea '
+    + 'and red wine, with in-office and take-home options. Book a visit with our team today.';
+  assert.ok(long.length > config.dental.metaDescription.max, 'the fixture has to be over the window');
+
+  const out = contentGenerator.normalizeMetaDescriptionLength(long);
+  assert.ok(out.length <= config.dental.metaDescription.max, `${out.length} chars must fit the snippet`);
+  assert.ok(out.length >= config.dental.metaDescription.min, `${out.length} chars is below the floor`);
+  assert.ok(out.endsWith('Book a visit with our team today.'), `the ask must survive the trim, got ${JSON.stringify(out)}`);
+});
+test('a trim never hands back a bare verb as the ask', () => {
+  // A word cut that lands just inside the closing sentence used to leave
+  // "... insurance for you. Book." — which satisfies every CTA test and reads
+  // as a truncation. Here nothing fits 150-160 with the ask attached, so the
+  // net hands back readable copy that is slightly short (the length gate says
+  // by how much, and a reviewer adds a clause) instead of a broken snippet.
+  const long = 'Professional teeth whitening in Quincy, MA lifts stains from coffee and tea. '
+    + 'We fit take-home kits to your own teeth and file your insurance for you. Book a visit today.';
+  const out = contentGenerator.normalizeMetaDescriptionLength(long);
+  assert.ok(out.length <= config.dental.metaDescription.max, `${out.length} chars must fit the snippet`);
+  assert.ok(/[.!?]$/.test(out), 'it still has to end as a finished sentence');
+  assert.ok(!/\.\s*(Book|Call|Schedule|Visit|Request)\.$/.test(out), `a bare verb is not an ask: ${JSON.stringify(out)}`);
+  assert.ok(out.endsWith('Book a visit today.'), out);
+});
+
+console.log('\nDental - the hero intro is one line, measured in characters');
+test('the hero gate accepts the target window and rejects a paragraph', () => {
+  const scaffold = dentalScaffoldWithContent();
+  const heroCheck = (s) => qaEngine.runDentalQC(s).checks.find(c => c.id === 'hero_intro_length');
+  assert.strictEqual(heroCheck(scaffold).pass, true, heroCheck(scaffold).detail);
+
+  const long = dentalScaffoldWithContent();
+  long.sections.hero.intro = 'Teeth whitening in Quincy can brighten your smile with safe, professional '
+    + 'care close to home, and our team will walk you through the options at your first visit.';
+  assert.strictEqual(heroCheck(long).pass, false, 'a two-idea paragraph is over the window');
+  assert.strictEqual(heroCheck(long).severity, 'Major');
+
+  const short = dentalScaffoldWithContent();
+  short.sections.hero.intro = 'Whiter teeth in Quincy.';
+  assert.strictEqual(heroCheck(short).pass, false, 'a bare label wastes the slot');
+});
+test('the hero window is stated to the writer in the unit the gate measures', () => {
+  const hero = contentGenerator.DENTAL_SECTION_BRIEFS.heroIntro;
+  assert.ok(hero.includes('CHARACTERS'), 'the brief has to name the unit');
+  // The worked example must itself be inside the window it teaches.
+  const example = /GOOD \(\d+ chars\): "([^"]+)"/.exec(hero.replace(/\n/g, ' '));
+  assert.ok(example, 'the brief must show a worked example');
+  const len = example[1].replace(/\s+/g, ' ').length;
+  assert.ok(len >= config.dental.heroIntro.minChars && len <= config.dental.heroIntro.maxChars,
+    `the example is ${len} chars, outside the ${config.dental.heroIntro.minChars}-${config.dental.heroIntro.maxChars} window it teaches`);
 });
 
 console.log('\nDental - the meta description is never handed back truncated');
@@ -1354,7 +1455,9 @@ test('the page is framed as commercial intent, not a guide', () => {
 });
 test('the hero brief carries the worked good/bad example', () => {
   const hero = contentGenerator.DENTAL_SECTION_BRIEFS.heroIntro;
-  assert.ok(hero.includes('GOOD:'), 'the target has to be shown, not described');
+  assert.ok(/GOOD \(\d+ chars\):/.test(hero), 'the target has to be shown, not described — with its length');
+  assert.ok(hero.includes(`${config.dental.heroIntro.minChars}-${config.dental.heroIntro.maxChars} CHARACTERS`),
+    'the brief must state the character window the gate enforces');
   assert.ok(hero.includes('Invisalign Boston patients trust'), 'the force-fit failure is shown verbatim');
   // Two distinct failure modes, both worked: a force-fitted keyword and an
   // informational close on a page whose job is commercial.
@@ -1392,12 +1495,19 @@ test('no prompt asks for a keyword frequency any more', () => {
     assert.strictEqual(L.listItemMaxWords, config.dental.listItemMaxWords);
     assert.strictEqual(L.faqAnswerMaxWords, config.dental.faqAnswerMaxWords);
     assert.strictEqual(L.faqs.min, config.dental.faqs.min);
+    assert.strictEqual(L.faqs.max, config.dental.faqs.max);
+    assert.deepStrictEqual(L.heroIntro, { min: config.dental.heroIntro.minChars, max: config.dental.heroIntro.maxChars });
 
-    // The meta-description range has to agree with the gate that uses it.
+    // The two character ranges have to agree with the gates that use them —
+    // both are shown against their field in the wizard.
     const scaffold = dentalScaffoldWithContent();
-    const mdCheck = qaEngine.runDentalQC(scaffold).checks.find(c => c.id === 'meta_description_length');
+    const checks = qaEngine.runDentalQC(scaffold).checks;
+    const mdCheck = checks.find(c => c.id === 'meta_description_length');
     assert.ok(mdCheck.detail.includes(`${L.metaDescription.min}-${L.metaDescription.max}`),
       `the length gate reports "${mdCheck.detail}", which must use the same range the UI shows`);
+    const heroCheck = checks.find(c => c.id === 'hero_intro_length');
+    assert.ok(heroCheck.detail.includes(`${L.heroIntro.min}-${L.heroIntro.max}`),
+      `the hero gate reports "${heroCheck.detail}", which must use the same range the UI shows`);
   });
 
   console.log('\nDental - DOCX export');
@@ -1419,6 +1529,43 @@ test('no prompt asks for a keyword frequency any more', () => {
     // ones long enough not to collide, and trust the zip structure otherwise.
     const zipText = buffer.toString('latin1');
     assert.ok(zipText.includes('word/document.xml'), 'the main document part must be present');
+  });
+  await testAsync('the docx carries real Word heading styles, not bold text that looks like one', async () => {
+    // The download is worked on in Word and pasted into a CMS. Only styled
+    // headings survive that trip — they drive the navigation pane and a
+    // generated table of contents, and paste as <h1>/<h2>/<h3> rather than
+    // <p><strong>. Bold coloured runs (what this used to emit) do neither.
+    const JSZip = require('jszip');
+    const scaffold = dentalScaffoldWithContent();
+    scaffold.sections.educationalBody.blocks[0].html = '<p>Body.</p><h3>A Subheading</h3><p>More.</p>';
+
+    const zip = await JSZip.loadAsync(await exporter.toDentalDocxBuffer(scaffold));
+    const documentXml = await zip.file('word/document.xml').async('string');
+    const stylesXml = await zip.file('word/styles.xml').async('string');
+
+    const used = [...documentXml.matchAll(/w:pStyle w:val="(Heading\d)"/g)].map(m => m[1]);
+    const count = (id) => used.filter(s => s === id).length;
+
+    // One H1 (the page's own), one H2 per educational block PLUS the FAQ
+    // heading, one H3 per in-block subheading and per FAQ question.
+    assert.strictEqual(count('Heading1'), 1, 'the page H1 must be exported as Heading 1');
+    assert.strictEqual(count('Heading2'), scaffold.sections.educationalBody.blocks.length + 1,
+      'every educational H2, plus the FAQ heading, must be exported as Heading 2');
+    assert.strictEqual(count('Heading3'), scaffold.sections.faq.items.length + 1,
+      'in-block subheadings and FAQ questions must be exported as Heading 3');
+
+    // Word only treats them as headings if the styles are declared with their
+    // built-in names.
+    ['Heading 1', 'Heading 2', 'Heading 3'].forEach(name => {
+      assert.ok(stylesXml.includes(`w:val="${name}"`), `${name} must be defined in styles.xml`);
+    });
+
+    // Document furniture is deliberately NOT a heading: styling "SEO Metadata"
+    // as one would put it in the same outline as the page's own H2s.
+    const furniture = documentXml.indexOf('SEO Metadata');
+    assert.ok(furniture > 0, 'the metadata section is still in the document');
+    assert.ok(!documentXml.slice(Math.max(0, furniture - 200), furniture).includes('w:pStyle w:val="Heading'),
+      'deliverable furniture must not be exported as a page heading');
   });
   await testAsync('the docx filename is derived from the page URL path', async () => {
     const scaffold = dentalScaffoldWithContent();

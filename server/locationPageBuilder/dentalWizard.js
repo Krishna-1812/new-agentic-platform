@@ -367,7 +367,7 @@ async function regenerateSection({ clientId, serviceId, locationId, section, blo
     scaffold.outlineMeta = outlineMetaOf(outline, scaffold);
   } else if (section === 'faqs') {
     // Never let a rewrite leave the page with FEWER FAQs than it started with
-    // when that would break the Critical faq_count_min_4 gate. The generator
+    // when that would break the Critical faq_count gate. The generator
     // already retries a short response; if even the retry comes back short,
     // keeping the existing block beats destroying a passing page. The reviewer
     // can simply click regenerate again.

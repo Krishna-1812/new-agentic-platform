@@ -294,10 +294,40 @@ function countLocalizedFaqs(items, city) {
   return (items || []).filter(f => mentionsCity(`${f?.q || ''} ${f?.a || ''}`, city)).length;
 }
 
+// ── Closing call to action ────────────────────────────────────────────────
+// The meta description has to END on an ask — "Book online today.", "Call to
+// schedule a consultation." — because the snippet is the only thing a searcher
+// sees before choosing which of ten results to click.
+//
+// Detected on the LAST sentence rather than anywhere in the string: a
+// description that mentions booking in the middle and then trails off into a
+// clinical fact does not close, and that is exactly the failure this catches.
+// The verb has to be an instruction to the reader, so it is matched at the
+// start of a clause ("Book…", "…today, call…", "…and schedule…"), which is
+// what keeps a descriptive "our team schedules same-day visits" from counting.
+const CTA_VERB = '(?:book|call|schedule|request|reserve|arrange|contact|visit|ask|start|get|find out|learn how|talk to|speak to|see)';
+const CTA_RE = new RegExp(
+  `(?:^|[.!?;,]\\s+|\\b(?:and|or|then|so|to)\\s+)${CTA_VERB}\\b`,
+  'i',
+);
+
+// The last sentence of a string, or the whole string if it has no sentence
+// break. Trailing punctuation is kept — a CTA can legitimately end in "!".
+function lastSentence(s) {
+  const parts = String(s || '').trim().split(/(?<=[.!?])\s+/).filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : '';
+}
+
+// Does this copy close on a call to action?
+function endsWithCta(s) {
+  return CTA_RE.test(lastSentence(s));
+}
+
 module.exports = {
   normalize, escapeRegex, baseCity, normalizeBlockHtml,
   wordCount, shingles, similarity, pageBodyText,
   STOPWORDS, stem, words, containsAllKeywordWords, countKeywordOccurrences,
   matchAnyKeyword, countAnyKeywordOccurrences, findForcedKeywordPhrases,
   findForcedFaqLocalization, countLocalizedFaqs, mentionsCity,
+  endsWithCta, lastSentence,
 };

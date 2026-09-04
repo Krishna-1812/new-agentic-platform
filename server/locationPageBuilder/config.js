@@ -70,12 +70,14 @@ module.exports = {
   // They also interlock arithmetically. The page word count QC measures is
   // hero intro + block bodies + FAQ Q&As, and the body is plannedBlocks plus
   // the brand closer, so at the extremes:
-  //   floor   30 + ((12 + 2) paragraphs x 30 words) + (4 FAQs x ~33) = 582
-  //   ceiling 40 + ((14 + 2) paragraphs x 40 words) + (6 FAQs x ~48) = 968
+  //   floor   ~15 + ((12 + 2) paragraphs x 30 words) + (6 FAQs x ~33) = 633
+  //   ceiling ~18 + ((14 + 2) paragraphs x 40 words) + (8 FAQs x ~48) = 1042
+  // (the hero intro is budgeted in CHARACTERS now — 90-110 is roughly 15-18
+  // words — because that is what the SEO team measures it in.)
   // Both sit inside pageWords.accept, which is what makes the instructions
-  // satisfiable. Widening paragraphsPerPage or paragraphWords without checking
-  // that arithmetic is how you get a prompt that cannot pass its own gate
-  // (regression-tested in __tests__/run.js).
+  // satisfiable. Widening paragraphsPerPage, paragraphWords or faqs without
+  // checking that arithmetic is how you get a prompt that cannot pass its own
+  // gate (regression-tested in __tests__/run.js).
   dental: {
     // Two block counts, because two different things are being counted.
     // dentalOutline PLANS plannedBlocks H2s; code then appends one fixed
@@ -91,6 +93,12 @@ module.exports = {
     paragraphsPerPage: { min: 12, max: 14 },
     paragraphWords: { min: 30, max: 40, hardMax: 45, hardMaxChars: 260 },
     listItemMaxWords: 25,
+    // The paragraph under the H1, budgeted in CHARACTERS (100 ± 10) because
+    // that is the unit the SEO team reviews it in and the unit the wizard's
+    // counter shows. It is roughly one sentence plus a short next step, which
+    // is deliberately much tighter than body copy: this line is read above the
+    // fold, in about three seconds, by someone deciding whether to book.
+    heroIntro: { minChars: 90, maxChars: 110 },
     // The SERP snippet window. A two-sided range: too short wastes the slot,
     // too long gets truncated by Google. Read by the writer prompt, the QC
     // gate and the wizard's character counts.
@@ -123,17 +131,23 @@ module.exports = {
     // while the gate held its own copy of 4, and a regeneration that returned
     // a single FAQ silently replaced a passing page's whole FAQ block.
     faqs: {
-      min: 4,
-      max: 6,
-      // How many FAQs must name the location. Two, because one is easy to
-      // satisfy with a throwaway mention — but ONLY where the city genuinely
-      // changes the answer (availability, which options this office runs), never
-      // on a universal clinical question. See text.findForcedFaqLocalization.
-      minLocalized: 2,
+      // 7 ± 1. The band is what the writer is asked for AND what the count
+      // gate accepts, so a page cannot be instructed to write something the
+      // gate then rejects.
+      min: 6,
+      max: 8,
+      // How many FAQs must name the location. Three of roughly seven — but
+      // ONLY where the city genuinely changes the answer (availability, which
+      // options this office runs, booking and insurance here), never on a
+      // universal clinical question. Raising this number without the
+      // faq_localization_is_meaningful gate beside it would simply buy city
+      // names bolted onto "does it hurt" — which is the opposite of the point.
+      // See text.findForcedFaqLocalization.
+      minLocalized: 3,
     },
     // accept* is the QC gate; target* is what the writer is asked for —
     // deliberately inside the gate so normal variance still passes.
-    pageWords: { acceptMin: 550, acceptMax: 1000, targetMin: 650, targetMax: 950 },
+    pageWords: { acceptMin: 600, acceptMax: 1100, targetMin: 700, targetMax: 1050 },
   },
 
   keywords: {
