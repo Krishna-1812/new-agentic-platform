@@ -59,6 +59,10 @@ async function createProject({ domain, host }) {
     vertical: null,
     sitemapSource: null,
     crawlMode: null,
+    // Real domain names, set from the results screen and reused automatically
+    // by every "Suggest new spokes" click (competitor keyword gaps) — see
+    // spokeSuggestions.js and the PUT /competitors route.
+    competitors: [],
     stats: { urlsFound: 0, urlsSelected: 0, urlsAnalyzed: 0, urlsExcluded: 0, clusterCount: 0, gapHubCount: 0, orphanCount: 0, unassignedCount: 0, meanHealth: null },
   };
   all.push(project);

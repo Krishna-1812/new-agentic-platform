@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { saveAs } from 'file-saver';
 import { notifyAgentRunStarted, notifyAgentRunFinished } from '../lib/agentRunSignal';
@@ -204,8 +204,16 @@ async function downloadDocx(keyword, markdown) {
 }
 
 export default function ArticleRecommendationPage() {
-  const [keyword, setKeyword] = useState('');
-  const [client, setClient] = useState('');
+  // Prefill from whoever sent you here — today that is Hub and Spoke's inline
+  // keyword research, once a keyword is approved. Read once, as INITIAL
+  // state: everything stays editable afterwards.
+  const prefill = useMemo(() => {
+    const q = new URLSearchParams(window.location.search);
+    return { keyword: q.get('keyword') || '', client: q.get('client') || '' };
+  }, []);
+
+  const [keyword, setKeyword] = useState(prefill.keyword);
+  const [client, setClient] = useState(prefill.client);
   const [feedbackKbIds, setFeedbackKbIds] = useState([]);
   const [running, setRunning] = useState(false);
   const [started, setStarted] = useState(false);
