@@ -10,7 +10,7 @@ const contract = require('./cbhContract');
 const cbhCompose = require('./cbhCompose');
 const cbhQc = require('./cbhQc');
 const cbhWriter = require('./cbhWriter');
-const { getCbhBrief, normalizeCbhBrief } = require('./cbhBrief');
+const { getCbhBrief, normalizeCbhBrief, caseContext } = require('./cbhBrief');
 const { servicePhraseDisplay } = require('./keywordRelevance');
 
 const PAGE_TYPE = 'cbh_location_service';
@@ -26,7 +26,9 @@ async function generateFromBrief({ clientId, serviceId, locationId, brief: brief
   // brief is accepted because the wizard generates straight after saving, and
   // making that a second round trip would only add a race.
   const stored = await getCbhBrief({ clientId, serviceId, locationId });
-  const brief = briefInput ? normalizeCbhBrief(briefInput) : stored?.brief;
+  const brief = briefInput
+    ? normalizeCbhBrief(briefInput, await caseContext({ clientId, serviceId, locationId }))
+    : stored?.brief;
   if (!brief) throw new Error('No brief found for this location + service. Build and save a brief first.');
   if (!brief.primaryKeyword) throw new Error('The brief has no primary keyword.');
 
@@ -52,7 +54,7 @@ async function generateFromBrief({ clientId, serviceId, locationId, brief: brief
     faqPlan: brief.faqs || [],
   });
 
-  scaffold = cbhCompose.mergeCbhL3(scaffold, l3);
+  scaffold = cbhCompose.mergeCbhL3(scaffold, l3, location);
 
   // The reviewer's meta wins over the writer's. It was approved; the writer's
   // is only a draft of something nobody had opinions about yet.

@@ -247,6 +247,16 @@ ${notes.join('\n')}
 
 // `h3Plan`  : [{ heading, intent, source, sourceUrl }] from the approved brief.
 // `faqPlan` : [{ q, type }] from the approved brief.
+// See cbhBrief for why these timings exist.
+function phase(label) {
+  const started = Date.now();
+  return (note) => {
+    const ms = Date.now() - started;
+    console.log(`[lpb-timing] ${label} ${(ms / 1000).toFixed(1)}s${note ? ' — ' + note : ''}`);
+    return ms;
+  };
+}
+
 async function generateCbhL3({ scaffold, primaryKeyword, secondaryKeywords, h3Plan = [], faqPlan = [] }) {
   const llm = createLlmClient(config.llm.cbhWriterModel);
   const base = { scaffold, h3Plan, faqPlan, primaryKeyword, secondaryKeywords };
@@ -273,15 +283,29 @@ async function generateCbhL3({ scaffold, primaryKeyword, secondaryKeywords, h3Pl
         messages: [{ role: 'system', content: systemPrompt() }, { role: 'user', content: user }],
       });
       lastFinishReason = completion.choices?.[0]?.finish_reason || null;
+      const body = completion.choices?.[0]?.message?.content || '';
+      // A silent retry doubles the wall-clock of a call that already takes a
+      // minute and a half, and there was nothing in the log saying it had
+      // happened -- which is why a correction pass could take three times the
+      // draft it was correcting with no visible reason.
+      let why = '';
       try {
-        const raw = JSON.parse(completion.choices[0].message.content);
-        if (raw && (raw.metaTitle || raw.hero || raw.educational)) return raw;
-      } catch { /* retry once on schema-invalid output */ }
+        const raw = JSON.parse(body);
+        if (raw && (raw.metaTitle || raw.hero || raw.educational)) {
+          if (attempt > 0) console.log(`[lpb-timing]     attempt ${attempt + 1} ok`);
+          return raw;
+        }
+        why = 'parsed but had none of metaTitle/hero/educational';
+      } catch (e) { why = 'invalid JSON: ' + e.message.slice(0, 80); }
+      console.log(`[lpb-timing]     attempt ${attempt + 1} REJECTED — ${why}`
+        + ` (finish_reason ${lastFinishReason}, ${body.length} chars)`);
     }
     return null;
   };
 
+  let done = phase('  write: draft 1');
   const first = await draft(null);
+  done();
   if (!first) {
     // Name the actual cause. "Invalid JSON" sent whoever reads it looking for a
     // schema problem, when the response was simply cut off part-way.
@@ -298,9 +322,16 @@ async function generateCbhL3({ scaffold, primaryKeyword, secondaryKeywords, h3Pl
   provisional.primaryKeyword = primaryKeyword;
   const qc = cbhQc.runCbhQc(provisional);
   const correction = correctionFrom(qc);
+  // Worth logging: this is what a whole extra writer call is being spent on.
+  if (correction) {
+    console.log('[lpb-timing]   correction triggered by: '
+      + qc.checks.filter(c => !c.pass && CORRECTABLE.has(c.id)).map(c => c.id).join(', '));
+  }
   if (!correction) return first;
 
+  done = phase('  write: correction pass');
   const second = await draft(correction);
+  done();
   if (!second) return first;
 
   // Keep whichever draft QC likes better. A correction pass that made things

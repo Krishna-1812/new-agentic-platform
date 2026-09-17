@@ -32,9 +32,11 @@ const { LIMITS: L, PROVENANCE } = contract;
 // Everything reaching the store or the writer passes through here, so a
 // hand-edited brief cannot carry an H3 with no heading, more H3s than the
 // contract allows, or an FAQ type the QC gate does not recognise.
-function normalizeCbhBrief(brief = {}) {
+function normalizeCbhBrief(brief = {}, ctx = {}) {
   const str = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
   const validSource = new Set(Object.values(PROVENANCE));
+  const keep = contract.protectedTerms(ctx);
+  const heading = v => contract.sentenceCase(str(v), keep);
 
   return {
     primaryKeyword: str(brief.primaryKeyword),
@@ -51,7 +53,7 @@ function normalizeCbhBrief(brief = {}) {
     educational: {
       h3s: (brief.educational?.h3s || [])
         .map(h => ({
-          heading: str(h.heading),
+          heading: heading(h.heading),
           intent: str(h.intent),
           source: validSource.has(h.source) ? h.source : PROVENANCE.FALLBACK,
           sourceUrl: str(h.sourceUrl),
@@ -68,7 +70,7 @@ function normalizeCbhBrief(brief = {}) {
     faqs: (brief.faqs || [])
       .map(f => (typeof f === 'string' ? { q: f } : f))
       .map(f => ({
-        q: str(f.q),
+        q: heading(f.q),
         type: L.faqs.types.includes(f.type) ? f.type : 'intent',
       }))
       .filter(f => f.q)
@@ -86,10 +88,25 @@ function withinRange(text, { min, max }) {
 // Same table and the same deterministic id as the dental brief: one row per
 // (client, service, location), so the two flows never collide and a client
 // only ever has one brief per page.
+// The names a heading may not lower-case, for one service+location. Looked up
+// rather than stored on the brief, so a renamed location reaches briefs written
+// before the rename.
+async function caseContext({ clientId, serviceId, locationId }) {
+  const [service, location] = await Promise.all([
+    store.get('services', serviceId),
+    store.get('locations', locationId),
+  ]);
+  return { serviceName: service?.name, locationName: location?.city, location };
+}
+
 async function getCbhBrief(tuple) {
   const byId = await store.get('briefs', briefId(tuple));
-  if (byId) return byId;
-  return store.findOne('briefs', { tuple_key: tupleKey(tuple) });
+  const row = byId || await store.findOne('briefs', { tuple_key: tupleKey(tuple) });
+  if (!row?.brief) return row;
+  // Re-cased on the way out. A brief drafted before the casing rule existed is
+  // otherwise shown to the reviewer in the planner's title case, and they see
+  // it long before the page is written.
+  return { ...row, brief: normalizeCbhBrief(row.brief, await caseContext(tuple)) };
 }
 
 async function saveCbhBrief({ clientId, serviceId, locationId, brief, approved = false }) {
@@ -103,7 +120,7 @@ async function saveCbhBrief({ clientId, serviceId, locationId, brief, approved =
     // Tagged so a reader can tell which contract the stored brief belongs to
     // without inferring it from the client id.
     contract: 'cbh',
-    brief: normalizeCbhBrief(brief),
+    brief: normalizeCbhBrief(brief, await caseContext(tuple)),
     approved: !!approved,
     approved_at: approved ? store.nowIso() : (previous?.approved_at || null),
   };
@@ -281,20 +298,42 @@ async function plan({ serviceName, city, primaryKeyword, competitorHeadings, com
 
 // Builds a fresh brief. Billed: a SERP + competitor scrape (cached 7 days) and
 // one planning call (cached 30 days).
+// ── Phase timing ────────────────────────────────────────────────────────────
+// Brief and page generation are billed, slow and opaque. When a run takes three
+// minutes there was previously nothing in the log saying WHICH part took it --
+// the SERP, the scrape, the planner, the writer, or the correction pass. This
+// prints one line per phase so that question is answerable from the log.
+function phase(label) {
+  const started = Date.now();
+  return (note) => {
+    const ms = Date.now() - started;
+    console.log(`[lpb-timing] ${label} ${(ms / 1000).toFixed(1)}s${note ? ' — ' + note : ''}`);
+    return ms;
+  };
+}
+
 async function buildCbhBrief({ clientId, serviceId, locationId, primaryKeywords, secondaryKeywords }) {
   const primaries = (primaryKeywords || []).filter(Boolean);
   if (!primaries.length) throw new Error('At least one primary keyword is required to build a brief.');
   const primaryKeyword = primaries[0];
   const mergedSecondary = [...primaries.slice(1), ...(secondaryKeywords || [])];
 
+  const doneAll = phase('brief TOTAL');
+  let done = phase('  brief: load layers');
   const layers = await compose.loadLayers({ clientId, serviceId, locationId });
   const { client, location } = layers;
   const scaffold = cbhCompose.buildCbhScaffold(layers, { servicePhrase: servicePhraseDisplay });
+  done();
 
+  const caseCtx = { serviceName: scaffold.serviceName, locationName: location.city, location };
+
+  done = phase('  brief: competitor SERP + scrape');
   const research = await researchCompetitors(primaryKeyword, {
     ownDomain: ownDomainOf(client), clientId,
   });
+  done(`${(research.headings || []).length} headings, ${(research.faqs || []).length} FAQs`);
 
+  done = phase('  brief: planner LLM');
   const planned = await plan({
     serviceName: scaffold.serviceName,
     city: location.city,
@@ -302,15 +341,20 @@ async function buildCbhBrief({ clientId, serviceId, locationId, primaryKeywords,
     competitorHeadings: usableHeadings(research.headings),
     competitorFaqs: (research.faqs || []).filter(usableQuestion),
   });
+  done(`${(planned.h3s || []).length} H3s`);
 
   // Any subsection the competitors did not cover is written from a named
   // clinical authority, not from the model's own recall -- the guidelines
   // allow authoritative sources to fill gaps but forbid inventing anything.
   // Each one gets a real URL attached here; QC fails any that does not.
+  done = phase('  brief: authority source lookups');
   const sourced = await attachFallbackSources({
-    h3s: normalizeCbhBrief({ educational: { h3s: planned.h3s } }).educational.h3s,
+    h3s: normalizeCbhBrief({ educational: { h3s: planned.h3s } }, caseCtx).educational.h3s,
     serviceName: scaffold.serviceName,
   });
+  done(`${(sourced.h3s || []).filter(h => h.sourceUrl).length} sourced,`
+    + ` ${sourced.attempted} lookups attempted of ${sourced.needed} needed`);
+  doneAll();
 
   return normalizeCbhBrief({
     primaryKeyword,
@@ -336,10 +380,11 @@ async function buildCbhBrief({ clientId, serviceId, locationId, primaryKeywords,
       h3s: sourced.h3s.map(h => ({ ...h, sourceExcerpt: sourced.excerpts[h.heading] || '' })),
     },
     faqs: planned.faqs,
-  });
+  }, caseCtx);
 }
 
 module.exports = {
+  caseContext,
   withinRange,
   buildCbhBrief, getCbhBrief, saveCbhBrief, normalizeCbhBrief,
   plan, fallbackPlan, planPrompt, usableHeadings, usableQuestion,

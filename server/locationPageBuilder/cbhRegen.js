@@ -41,7 +41,7 @@ and is not counted. Include the primary keyword or a close variant. Natural and 
 End on a mental-health call to action ("Get support", "Explore treatment options", "Schedule a consultation").`,
   },
   'hero.h1': {
-    scope: 'page', kind: 'text', limit: { max: L.hero.h1MaxChars },
+    heading: true, scope: 'page', kind: 'text', limit: { max: L.hero.h1MaxChars },
     label: 'H1',
     ask: (ctx) => `Write a fresh H1. It must contain the primary keyword and "${ctx.city}". Engaging and
 service-focused, not a bare label.`,
@@ -84,7 +84,7 @@ required phrase: do not open with the practice name and close on the same "acces
 all paragraphs.`,
   },
   'educational.h3.heading': {
-    scope: 'page', kind: 'text', indexed: true, limit: { max: L.educational.h3HeadingMaxChars },
+    heading: true, scope: 'page', kind: 'text', indexed: true, limit: { max: L.educational.h3HeadingMaxChars },
     label: 'H3 heading',
     ask: (ctx) => `Write a fresh heading for this subsection. It must still describe the same content, and must not
 duplicate any other heading in the section: ${ctx.siblings.join(' | ')}`,
@@ -125,7 +125,7 @@ therefore tells the reader nothing. Do not open with "${contract.BRAND} offers" 
 and the location.`,
   },
   'treatment.heading': {
-    scope: 'page', kind: 'text', limit: { max: L.treatment.headingMaxChars },
+    heading: true, scope: 'page', kind: 'text', limit: { max: L.treatment.headingMaxChars },
     label: 'Treatment H2',
     ask: (ctx) => `Write a fresh H2 for the treatment section. Name the team, the service and the city — "Our ADHD
 treatment experts in El Monte" is the shape. Not a slogan, not a sentence, not a question. It must not
@@ -139,7 +139,7 @@ CLINICIANS — their experience and how they treat people. Do not name a qualifi
 school, a headcount or a number of years, and promise no outcome.`,
   },
   'faq.q': {
-    scope: 'page', kind: 'text', indexed: true, limit: { max: 140 },
+    heading: true, scope: 'page', kind: 'text', indexed: true, limit: { max: 140 },
     label: 'FAQ question',
     ask: (ctx) => `Write a fresh question of type "${ctx.item.type || 'intent'}". It must be specific to this service — a
 question that would read the same on a page about a different condition is filler. It must not duplicate
@@ -164,7 +164,7 @@ or a close variant.`,
 must end on a mental-health call to action.`,
   },
   'brief.h3.heading': {
-    scope: 'brief', kind: 'text', indexed: true, limit: { max: L.educational.h3HeadingMaxChars },
+    heading: true, scope: 'brief', kind: 'text', indexed: true, limit: { max: L.educational.h3HeadingMaxChars },
     label: 'H3 heading',
     ask: (ctx) => `Write a fresh heading for this subsection, covering the same ground. It must not duplicate any
 other heading in the plan: ${ctx.siblings.join(' | ')}`,
@@ -176,7 +176,7 @@ other heading in the plan: ${ctx.siblings.join(' | ')}`,
 This is the brief the writer follows, so be concrete.`,
   },
   'brief.faq.q': {
-    scope: 'brief', kind: 'text', indexed: true, limit: { max: 140 },
+    heading: true, scope: 'brief', kind: 'text', indexed: true, limit: { max: 140 },
     label: 'FAQ question',
     ask: (ctx) => `Write a fresh question of type "${ctx.item.type || 'intent'}", specific to this service. It must not
 duplicate any other question in the plan: ${ctx.siblings.join(' | ')}`,
@@ -341,6 +341,15 @@ Return JSON only.`;
     const measured = bad.map(v => `"${String(v).slice(0, 40)}…" is ${contract.textLength(v)} characters`).join('; ');
     const fixed = await attempt(`\nCORRECTION — the previous attempt broke the limit: ${measured}. It must be ${describeLimit(cfg.limit)}.`);
     if (fixed) value = fixed;
+  }
+
+  // Headings are cased the way every other heading on this page is. The model
+  // writes headlines in title case whatever the prompt says, and a regenerated
+  // field must not be the one that looks different.
+  if (cfg.heading && typeof value === 'string') {
+    value = contract.sentenceCase(value, contract.protectedTerms({
+      serviceName: page?.serviceName, locationName: page?.locationName,
+    }));
   }
 
   return { field, index: index ?? null, lineIndex: lineIndex ?? null, value, kind: cfg.kind };

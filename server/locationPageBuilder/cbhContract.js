@@ -29,20 +29,148 @@ const FIXED_HEADINGS = {
   approachPhilosophy: 'Our philosophy of compassionate care',
   approachTherapies: 'Clinical therapies offered',
   insurance: 'Insurance accepted',
-  uvp: `Why Choose ${BRAND}?`,
+  // Sentence case like every other heading, at the client's instruction. Their
+  // guidelines wrote it "Why Choose ...", which is the one place that rule and
+  // "use this H2 exactly as written" disagree; the later instruction wins.
+  uvp: `Why choose ${BRAND}?`,
 };
 
-// The headings that interpolate the page's own service and location.
+
+// ── Sentence case ───────────────────────────────────────────────────────────
+// Every heading on a CBH page is sentence case. It cannot be done by lowering
+// everything after the first word: "Treatment" and "Anaheim" are the same
+// shape, and only one of them may come down. Nothing is lowered unless it is
+// known not to be a name.
+//
+// What counts as a name is deliberately NARROW, and it is matched as a PHRASE
+// wherever the name is one. Two earlier versions got this wrong:
+//
+//   - protecting every capitalised word of the service name, which lower-cased
+//     nothing: "Anxiety", "Depression" and "Burnout" are common nouns, and the
+//     result was "Our approach to Anxiety treatment";
+//   - protecting the brand word by word, which capitalised those words
+//     everywhere else too: "Health" is in "Clear Behavioral Health", so
+//     "outpatient mental health treatment" came out "mental Health".
+//
+// So single words here are only those that are ALWAYS proper, and everything
+// else -- the brand, the city, the state, nearby areas -- is restored as a
+// phrase after the text has been lowered.
+const PROPER_NOUNS = new Set([
+  // Branded medicines that appear in service names and copy. Generic
+  // substances -- cocaine, heroin, fentanyl, marijuana, kratom -- are common
+  // nouns and are deliberately absent.
+  'adderall', 'klonopin', 'suboxone', 'valium', 'vicodin', 'xanax', 'spravato',
+  // The only state this client operates in.
+  'california',
+]);
+
+function escapeRe(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// The names worth restoring for one page, each with the casing it should have.
+function protectedTerms({ locationName, location } = {}) {
+  const phrases = [];
+  const add = (value) => {
+    const s = String(value || '').trim();
+    if (!s) return;
+    phrases.push(s);
+    // "Los Angeles – Mid Wilshire" is also two names; a heading may carry
+    // either half without the dash that joins them here.
+    s.split(/\s*[–—-]\s*/).map(p => p.trim()).filter(p => p.length > 2)
+      .forEach(p => { if (p !== s) phrases.push(p); });
+  };
+  add(BRAND);
+  add(locationName);
+  add(location?.city);
+  add(location?.state);
+  add(location?.location_name);
+  (location?.nearby_areas || []).forEach(add);
+  // Longest first, so "Clear Behavioral Health" is restored before a bare
+  // "Health" phrase could ever match part of it.
+  phrases.sort((a, b) => b.length - a.length);
+  // NOT the service name -- see the note above.
+  return { words: new Set(PROPER_NOUNS), phrases };
+}
+
+// Accepts either the object protectedTerms returns or a bare Set of words, so
+// a caller with nothing page-specific can still pass PROPER_NOUNS.
+function keepParts(keep) {
+  if (keep instanceof Set) return { words: keep, phrases: [] };
+  return { words: keep?.words instanceof Set ? keep.words : PROPER_NOUNS, phrases: keep?.phrases || [] };
+}
+
+function sentenceCase(text, keep = PROPER_NOUNS) {
+  const s = String(text || '').trim();
+  if (!s) return '';
+  const { words, phrases } = keepParts(keep);
+
+  let seenWord = false;
+  // Split KEEPING the separators, so spacing and punctuation survive untouched.
+  let out = s.split(/(\s+)/).map((tok) => {
+    if (!tok.trim()) return tok;
+    const bare = tok.replace(/[^A-Za-z0-9&'’-]/g, '');
+    const isFirst = !seenWord;
+    seenWord = true;
+    if (!bare) return tok;
+    // A possessive is the same name: "Health's" has to match "health", or
+    // "Clear Behavioral Health's approach" loses its capital on the last word.
+    const base = bare.toLowerCase().replace(/['’]s$/, '');
+    const protectedWord = /^[A-Z0-9&'’-]{2,}$/.test(bare)  // ADHD, OCD, II, CA
+      // The pronoun, including its contractions. Matching only a bare "I" left
+      // "I'm" unprotected and shipped "if i'm too drained to keep working".
+      || /^I(['’](m|ve|ll|d))?$/.test(bare)
+      || words.has(base);
+    if (protectedWord) return tok;
+    const lowered = tok.toLowerCase();
+    // Capitalise the first LETTER, not the first character: "(stress" must not
+    // be skipped because it opens with a bracket.
+    return isFirst ? lowered.replace(/[a-z]/, ch => ch.toUpperCase()) : lowered;
+  }).join('');
+
+  // Then put the multi-word names back, whole.
+  phrases.forEach((p) => {
+    const re = new RegExp(`\\b${escapeRe(p).replace(/\s+/g, '\\s+')}\\b`, 'gi');
+    out = out.replace(re, p);
+  });
+  return out;
+}
+
+// A heading built from the service, and optionally the city. Cased here so the
+// page and any gate that rebuilds the same heading always agree.
+function casedHeading(text, { serviceName, locationName } = {}) {
+  return sentenceCase(text, protectedTerms({ serviceName, locationName }));
+}
+
+// The headings that interpolate the page's own service and location. All three
+// are sentence-cased, so "Anxiety Treatment" reads "anxiety treatment" inside
+// them while "ADHD" and "Santa Clarita" keep their capitals.
 function approachHeading(serviceName) {
-  return `Our approach to ${serviceName}`;
+  return casedHeading(`Our approach to ${serviceName}`, { serviceName });
 }
 // Rendered exactly as the guideline writes it -- no question mark, no article
 // inserted. Confirmed with the client.
 function educationalHeading(serviceName) {
-  return `What is ${serviceName}`;
+  return casedHeading(`What is ${serviceName}`, { serviceName });
 }
+// The service section's H2 names a PROGRAM, at the client's instruction:
+// "Anxiety treatment in Santa Clarita" had to become "Anxiety treatment program
+// in Santa Clarita".
+//
+// Appended only where it reads as English. A phrase that already names a
+// programme keeps what it has, and one ending in an acronym or a plural is left
+// alone rather than growing "Outpatient mental health treatment (IOP) program"
+// or "Parent support groups program". In practice that means the condition
+// services -- which is exactly what the client's examples are.
+function programPhrase(serviceName) {
+  const s = String(serviceName || '').trim();
+  if (!s) return s;
+  if (/programs?/i.test(s)) return s;
+  return /(treatment|therapy)$/i.test(s) ? `${s} program` : s;
+}
+
 function serviceHeading(serviceName, locationName) {
-  return `${serviceName} in ${locationName}`;
+  return casedHeading(`${programPhrase(serviceName)} in ${locationName}`, { serviceName, locationName });
 }
 
 // ── Limits ──────────────────────────────────────────────────────────────────
@@ -251,6 +379,7 @@ module.exports = {
   BRAND, TITLE_SUFFIX, FIXED_HEADINGS, LIMITS, SECTION_ORDER, PROVENANCE,
   approachHeading, educationalHeading, serviceHeading,
   lineCount, textLength, fullTitle, titleWithoutSuffix, maxBodyChars,
+  sentenceCase, protectedTerms, casedHeading, PROPER_NOUNS, programPhrase,
   isBullet, entryForm, contentLines, breaksFor, linesUsed,
   linesPerBody, contentAllowance, sectionLineTotal,
 };

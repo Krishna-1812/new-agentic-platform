@@ -357,63 +357,13 @@ async function toDentalDocxBuffer(pageObject) {
 
 const contract = require('./cbhContract');
 
-// Every heading the CMS receives is sentence case -- the client's rule.
-//
-// It CANNOT be done by lowercasing everything after the first word. "Treatment"
-// and "Anaheim" are the same shape, and one has to come down while the other
-// must not; a blunt pass produces "adhd treatment in anaheim hills". So nothing
-// is lowered unless it is known not to be a name. Three things are protected:
-//
-//   1. anything already all-caps ("ADHD", "OCD", "PTSD", "IOP", "CA", "II"),
-//   2. the pronoun "I", which is all-caps but only one letter, and
-//   3. the proper nouns we actually hold for this page -- the brand, the city,
-//      the state, the location's own name and nearby areas, and whichever words
-//      of the service name the CLIENT capitalised.
-//
-// The service name matters most here: its display phrase is deliberately
-// lower-cased apart from acronyms ("ADHD treatment", "anxiety treatment"), so
-// taking the capitalised words from it protects "ADHD" and correctly leaves
-// "treatment" free to come down.
-function protectedTermsFor(page, location) {
-  const keep = new Set();
-  // Only the words someone capitalised on purpose. A lowercase word in a name
-  // we hold is a lowercase word in the heading too.
-  const addCapitalised = (value) => String(value || '').split(/\s+/).forEach((w) => {
-    const bare = w.replace(/[^A-Za-z0-9&'-]/g, '');
-    if (bare && /^[A-Z]/.test(bare)) keep.add(bare.toLowerCase());
-  });
-  addCapitalised(contract.BRAND);
-  addCapitalised(page?.serviceName);
-  addCapitalised(page?.locationName);
-  addCapitalised(location?.city);
-  addCapitalised(location?.state);
-  addCapitalised(location?.state_abbreviation);
-  addCapitalised(location?.location_name);
-  (location?.nearby_areas || []).forEach(addCapitalised);
-  return keep;
-}
-
-function sentenceCase(text, keep = new Set()) {
-  const s = String(text || '').trim();
-  if (!s) return '';
-  let seenWord = false;
-  // Split KEEPING the separators, so spacing and punctuation survive untouched.
-  return s.split(/(\s+)/).map((tok) => {
-    if (!tok.trim()) return tok;
-    const bare = tok.replace(/[^A-Za-z0-9&'-]/g, '');
-    const isFirst = !seenWord;
-    seenWord = true;
-    if (!bare) return tok;
-    const protectedWord = /^[A-Z0-9&'-]{2,}$/.test(bare)   // ADHD, OCD, II, CA
-      || bare === 'I'                                      // the pronoun
-      || keep.has(bare.toLowerCase());                     // a name we hold
-    if (protectedWord) return tok;
-    const lowered = tok.toLowerCase();
-    // Capitalise the first LETTER, not the first character: "(stress" must not
-    // be left alone because it opens with a bracket.
-    return isFirst ? lowered.replace(/[a-z]/, ch => ch.toUpperCase()) : lowered;
-  }).join('');
-}
+// Sentence casing lives in cbhContract, because the PAGE is cased with it too
+// -- the export is no longer the only place it happens, and two copies of the
+// rule would drift.
+const { sentenceCase, protectedTerms } = contract;
+const protectedTermsFor = (page, location) => protectedTerms({
+  serviceName: page?.serviceName, locationName: page?.locationName, location,
+});
 
 // Built from the service and city rather than the page's own H2, because the
 // CMS wants the city appended and the page's heading does not carry it.
@@ -771,4 +721,5 @@ module.exports = {
   isDentalPage, toDentalMarkdown, toDentalDocxBuffer, htmlToLines,
   isCbhPage, toCbhMarkdown, toCbhDocxBuffer, cbhProvenanceLabel,
   toCbhCmsJson, serviceTypeFor, linesToHtml, sentenceCase, protectedTermsFor,
+  // Re-exported so the tests exercise the same function the page is cased with.
 };

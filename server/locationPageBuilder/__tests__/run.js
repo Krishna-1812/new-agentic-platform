@@ -2369,7 +2369,7 @@ test('no prompt asks for a keyword frequency any more', () => {
     const j = cmsJson();
     // Sentence-cased on the way out, so the leading word is capitalised where
     // it is not already a protected acronym ("ADHD treatment in ..." keeps its).
-    assert.strictEqual(j.treatment.heading, 'Anxiety treatment in Anaheim Hills');
+    assert.strictEqual(j.treatment.heading, 'Anxiety treatment program in Anaheim Hills');
     assert.strictEqual(j.experts.heading, 'Our anxiety treatment experts in Anaheim Hills');
     assert.ok(j.experts.description.includes('clinicians'), 'the clinician copy lands under experts');
   });
@@ -2419,14 +2419,104 @@ test('no prompt asks for a keyword frequency any more', () => {
 
   test('sentence case leaves acronyms, roman numerals and the pronoun I alone', () => {
     const keep = exporter.protectedTermsFor({ serviceName: 'Bipolar I & II', locationName: 'El Monte' }, {});
+    // "bipolar" comes DOWN: it is a common noun, and the service name grants
+    // nothing protection. Protecting it was the bug that produced "Our approach
+    // to Anxiety treatment". The numerals survive on the acronym rule.
     assert.strictEqual(exporter.sentenceCase('Our Approach to Bipolar I & II in El Monte', keep),
-      'Our approach to Bipolar I & II in El Monte');
+      'Our approach to bipolar I & II in El Monte');
     // "I" is all-caps but one letter, so the acronym rule alone would lower it.
     assert.strictEqual(exporter.sentenceCase('How quickly can I get an ADHD evaluation?', keep),
       'How quickly can I get an ADHD evaluation?');
+    // And its contractions: "I'm" is neither all-caps nor a name, and shipped
+    // once as "if i'm too drained to keep working".
+    assert.strictEqual(exporter.sentenceCase("Can Therapy Help If I'm Too Drained?", keep),
+      "Can therapy help if I'm too drained?");
+    assert.strictEqual(exporter.sentenceCase("What If I've Tried Therapy Before?", keep),
+      "What if I've tried therapy before?");
     // Idempotent: running it over text already in sentence case changes nothing.
     const once = exporter.sentenceCase('What is ADHD treatment?', keep);
     assert.strictEqual(exporter.sentenceCase(once, keep), once);
+  });
+
+  test('a service name grants no word protection, but real proper nouns keep theirs', () => {
+    // The reported defect: "Our approach to Anxiety treatment", "What is
+    // Anxiety treatment". Every capitalised word in the service name was being
+    // treated as a name, and most service names are common nouns.
+    assert.strictEqual(cbhContract.approachHeading('Anxiety treatment'), 'Our approach to anxiety treatment');
+    assert.strictEqual(cbhContract.educationalHeading('Anxiety treatment'), 'What is anxiety treatment');
+    assert.strictEqual(cbhContract.serviceHeading('Anxiety treatment', 'Santa Clarita'),
+      'Anxiety treatment program in Santa Clarita', 'the leading word is still capitalised');
+    // But an acronym, a branded medicine and a city all keep their capitals.
+    assert.strictEqual(cbhContract.approachHeading('ADHD treatment'), 'Our approach to ADHD treatment');
+    assert.strictEqual(cbhContract.approachHeading('Xanax Addiction treatment'),
+      'Our approach to Xanax addiction treatment', 'a branded medicine is a proper noun');
+    assert.strictEqual(cbhContract.serviceHeading('Burnout treatment', 'Anaheim Hills'),
+      'Burnout treatment program in Anaheim Hills');
+  });
+
+  test('model-written headings are cased as they are merged, not merely asked for', () => {
+    // A prompt is a request; casing on merge is a guarantee, and it reaches
+    // pages regenerated from an older draft too.
+    const page = cbhCompose.mergeCbhL3(cbhFixture.scaffold(), {
+      hero: { h1: 'Compassionate Anxiety Treatment in Anaheim Hills, CA' },
+      educational: { paragraphs: ['x'], h3s: [{ heading: 'Understanding Anxiety and Its Symptoms', lines: ['y'] }] },
+      treatment: { heading: 'Our Anxiety Treatment Experts', paragraph: 'z' },
+      faqs: [{ q: 'How Quickly Can I Be Seen?', a: 'Soon.', type: 'location' }],
+    });
+    assert.strictEqual(page.sections.hero.h1, 'Compassionate anxiety treatment in Anaheim Hills, CA');
+    assert.strictEqual(page.sections.educational.h3s[0].heading, 'Understanding anxiety and its symptoms');
+    assert.strictEqual(page.sections.treatment.heading, 'Our anxiety treatment experts');
+    assert.strictEqual(page.sections.faq.items[0].q, 'How quickly can I be seen?');
+  });
+
+  test('a possessive form of a protected name keeps its capital', () => {
+    // "Clear Behavioral health's approach to burnout" shipped once: the token
+    // was "Health's" and the protected set holds "health".
+    const keep = cbhContract.protectedTerms({ locationName: 'Torrance' });
+    assert.strictEqual(cbhContract.sentenceCase("Clear Behavioral Health's Approach to Burnout", keep),
+      "Clear Behavioral Health's approach to burnout");
+    assert.strictEqual(cbhContract.sentenceCase("Torrance's Outpatient Team", keep),
+      "Torrance's outpatient team");
+  });
+
+  test('brief headings are cased too, not only the page', () => {
+    // The brief is what the reviewer reads and edits, and its H3 headings are
+    // copied VERBATIM onto the page. Casing only at merge left the brief in
+    // the planner's title case.
+    const b = cbhBrief.normalizeCbhBrief({
+      educational: { h3s: [{ heading: 'What Is Burnout and Executive Burnout?', source: 'competitor' }] },
+      faqs: [{ q: 'How Quickly Can Someone Be Seen In Torrance?', type: 'location' }],
+    }, { locationName: 'Torrance' });
+    assert.strictEqual(b.educational.h3s[0].heading, 'What is burnout and executive burnout?');
+    assert.strictEqual(b.faqs[0].q, 'How quickly can someone be seen in Torrance?');
+  });
+
+  test('the service H2 names a programme, where that reads as English', () => {
+    // The client's instruction: "Anxiety treatment in Santa Clarita" had to
+    // become "Anxiety treatment program in Santa Clarita".
+    const h = cbhContract.serviceHeading;
+    assert.strictEqual(h('Depression treatment', 'Anaheim Hills'), 'Depression treatment program in Anaheim Hills');
+    assert.strictEqual(h('Family Therapy', 'Torrance'), 'Family therapy program in Torrance');
+    // But NOT where it would double up or read badly. A blanket append gives
+    // "Partial hospitalization program program" and "(IOP) program".
+    assert.strictEqual(h('Partial Hospitalization Program (PHP)', 'Torrance'),
+      'Partial hospitalization program (PHP) in Torrance');
+    assert.strictEqual(h('Outpatient Mental Health Treatment (IOP)', 'Torrance'),
+      'Outpatient mental health treatment (IOP) in Torrance');
+    assert.strictEqual(h('Parent Support Groups', 'Pasadena'), 'Parent support groups in Pasadena');
+  });
+
+  test('a multi-word name is protected as a phrase, not as loose words', () => {
+    // Protecting the brand word by word capitalised those words everywhere:
+    // "Health" is in "Clear Behavioral Health", so "outpatient mental health
+    // treatment" came out "mental Health".
+    const keep = cbhContract.protectedTerms({ locationName: 'Torrance', location: { nearby_areas: ['Redondo Beach'] } });
+    assert.strictEqual(cbhContract.sentenceCase('Outpatient Mental Health Treatment In Torrance', keep),
+      'Outpatient mental health treatment in Torrance');
+    assert.strictEqual(cbhContract.sentenceCase("Clear Behavioral Health's Approach To Burnout", keep),
+      "Clear Behavioral Health's approach to burnout");
+    assert.strictEqual(cbhContract.sentenceCase('Serving Torrance And Redondo Beach', keep),
+      'Serving Torrance and Redondo Beach');
   });
 
   test('the meta title is not sentence-cased, because it is not a heading', () => {

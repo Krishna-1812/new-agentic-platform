@@ -188,8 +188,41 @@ function buildCbhSchema({ scaffold, client, location }) {
 // canonical, the meta title and description, and the FAQ pairs -- every one of
 // which a reviewer can edit afterwards. Built once, it went stale the moment
 // anyone touched them, and shipped a URL the page no longer had.
+// Re-cases every heading already on a page. Generation now cases them as it
+// merges, but pages written before that still hold what the model produced, and
+// regenerating one costs several minutes of billed calls. Idempotent, so a page
+// already correct is untouched.
+function caseCbhHeadings(page, location) {
+  const s = page?.sections;
+  if (!s) return page;
+  const keep = contract.protectedTerms({
+    serviceName: page.serviceName, locationName: page.locationName, location,
+  });
+  const cs = v => contract.sentenceCase(v, keep);
+  // Three headings are built by CODE from the service and the city, so they are
+  // REBUILT rather than re-cased: a page written before the wording changed --
+  // "Anxiety treatment in X" before it became "Anxiety treatment program in X"
+  // -- then opens with the current heading instead of needing regeneration.
+  // None of the three is editable in the wizard, so nothing hand-typed is lost.
+  const svc = page.serviceName;
+  const city = page.locationName;
+  if (s.hero) s.hero.h1 = cs(s.hero.h1);
+  if (s.approach && svc) s.approach.heading = contract.approachHeading(svc);
+  if (s.educational) {
+    if (svc) s.educational.heading = contract.educationalHeading(svc);
+    (s.educational.h3s || []).forEach((h) => { h.heading = cs(h.heading); });
+  }
+  if (s.service && svc && city) s.service.heading = contract.serviceHeading(svc, city);
+  if (s.treatment) s.treatment.heading = cs(s.treatment.heading);
+  (s.faq?.items || []).forEach((f) => { f.q = cs(f.q); });
+  // meta.title is NOT touched: it is the <title> tag, read in a SERP rather
+  // than on the page, and it ships as the SEO team wrote it.
+  return page;
+}
+
 function refreshCbhDerived(page, { client, location } = {}) {
   if (!page || !page.meta) return page;
+  caseCbhHeadings(page, location);
   const slug = slugify(page.meta.serviceSlug || '');
   page.meta.serviceSlug = slug;
   page.meta.urlPath = cbhPageUrl(location?.location_page_url, slug);
@@ -202,10 +235,17 @@ function refreshCbhDerived(page, { client, location } = {}) {
 // Merge the writer's output into the scaffold. Only the generated fields are
 // touched: every fixed heading survives whatever the model returned, which is
 // what makes "use this H2 exactly as written" a guarantee rather than a hope.
-function mergeCbhL3(scaffold, l3 = {}) {
+function mergeCbhL3(scaffold, l3 = {}, location = null) {
   const s = scaffold.sections;
   const str = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
   const list = v => (Array.isArray(v) ? v.map(str).filter(Boolean) : []);
+  // Headings the MODEL writes are cased here rather than asked for in the
+  // prompt. A prompt is a request; this is a guarantee, and it applies to
+  // every page including ones regenerated from an older draft.
+  const keep = contract.protectedTerms({
+    serviceName: scaffold.serviceName, locationName: scaffold.locationName, location,
+  });
+  const heading = v => contract.sentenceCase(str(v), keep);
 
   if (l3.metaTitle) {
     scaffold.meta.title = contract.titleWithoutSuffix(str(l3.metaTitle));
@@ -214,7 +254,7 @@ function mergeCbhL3(scaffold, l3 = {}) {
   if (l3.metaDescription) scaffold.meta.metaDescription = str(l3.metaDescription);
 
   if (l3.hero) {
-    s.hero.h1 = str(l3.hero.h1) || s.hero.h1;
+    s.hero.h1 = heading(l3.hero.h1) || s.hero.h1;
     s.hero.description = str(l3.hero.description) || s.hero.description;
   }
 
@@ -232,14 +272,14 @@ function mergeCbhL3(scaffold, l3 = {}) {
   // was already there when the model omits one -- a correction pass that
   // returns only the paragraph must not blank the heading.
   if (l3.treatment) {
-    s.treatment.heading = str(l3.treatment.heading) || s.treatment.heading;
+    s.treatment.heading = heading(l3.treatment.heading) || s.treatment.heading;
     s.treatment.paragraph = str(l3.treatment.paragraph) || s.treatment.paragraph;
   }
 
   if (l3.educational) {
     s.educational.paragraphs = list(l3.educational.paragraphs);
     s.educational.h3s = (l3.educational.h3s || []).map(h => ({
-      heading: str(h.heading),
+      heading: heading(h.heading),
       lines: list(h.lines),
       // Provenance is decided by the pipeline, not by the model: the writer
       // does not get to declare its own output competitor-backed.
@@ -251,7 +291,7 @@ function mergeCbhL3(scaffold, l3 = {}) {
   if (Array.isArray(l3.faqs)) {
     s.faq.items = l3.faqs
       .map(f => ({
-        q: str(f.q),
+        q: heading(f.q),
         a: str(f.a),
         type: ['location', 'brand', 'intent'].includes(f.type) ? f.type : null,
       }))
@@ -290,10 +330,17 @@ function ensureCbhSections(page) {
   if (!page || !page.sections) return page;
   const s = page.sections;
   if (!s.treatment) s.treatment = { heading: '', paragraph: '' };
+  // The FIXED headings are code's, not the page's: restating them here means a
+  // page written before one of them was reworded opens with the current text
+  // instead of failing the gate that checks it.
+  if (s.approach?.philosophy) s.approach.philosophy.heading = FIXED_HEADINGS.approachPhilosophy;
+  if (s.approach?.therapies) s.approach.therapies.heading = FIXED_HEADINGS.approachTherapies;
+  if (s.insurance) s.insurance.heading = FIXED_HEADINGS.insurance;
+  if (s.uvp) s.uvp.heading = FIXED_HEADINGS.uvp;
   return page;
 }
 
 module.exports = {
   buildCbhScaffold, mergeCbhL3, applyProvenance, headingService, ensureCbhSections,
-  refreshCbhDerived, buildCbhSchema,
+  refreshCbhDerived, buildCbhSchema, caseCbhHeadings,
 };
