@@ -415,12 +415,19 @@ function serviceTypeFor(service) {
 const escapeHtml = (s) => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+// Escapes first, THEN renders the only markup this contract allows: a bold
+// sub-label written "**like this**". Escaping first means the only tags in the
+// output are the ones generated here.
+function inlineToHtml(text) {
+  return escapeHtml(text).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+}
+
 // Paragraph array -> one <p> per paragraph.
 function paragraphsToHtml(paragraphs = []) {
   return (paragraphs || [])
     .map(p => String(p || '').trim())
     .filter(Boolean)
-    .map(p => `<p>${escapeHtml(p)}</p>`)
+    .map(p => `<p>${inlineToHtml(p)}</p>`)
     .join('');
 }
 
@@ -432,7 +439,7 @@ function linesToHtml(lines = []) {
   const out = [];
   let list = [];
   const flush = () => {
-    if (list.length) { out.push(`<ul>${list.map(li => `<li>${escapeHtml(li)}</li>`).join('')}</ul>`); list = []; }
+    if (list.length) { out.push(`<ul>${list.map(li => `<li>${inlineToHtml(li)}</li>`).join('')}</ul>`); list = []; }
   };
   (lines || []).forEach((raw) => {
     const s = String(raw || '').trim();
@@ -441,7 +448,7 @@ function linesToHtml(lines = []) {
       list.push(s.replace(new RegExp(contract.LIMITS.educational.bulletPattern), '').trim());
     } else {
       flush();
-      out.push(`<p>${escapeHtml(s)}</p>`);
+      out.push(`<p>${inlineToHtml(s)}</p>`);
     }
   });
   flush();
@@ -616,7 +623,18 @@ async function toCbhDocxBuffer(pageObject) {
     children: [run(t, { bold: true, color: TEAL, size: 26 })],
   });
   const label = (t) => new Paragraph({ spacing: { before: 160, after: 40 }, children: [run(t, { bold: true })] });
-  const body = (t) => new Paragraph({ spacing: { after: 80 }, children: [run(t)] });
+  // A body line may carry a bold sub-label written "**Like this**". Split on the
+  // marker pairs and bold the odd segments, or the reviewer's .docx shows the
+  // asterisks themselves.
+  const runsFor = (t) => {
+    const parts = String(t == null ? '' : t).split('**');
+    if (parts.length < 3) return [run(t)];
+    const runs = parts.map((p, i) => run(p, i % 2 ? { bold: true } : {})).filter((_, i) => parts[i] !== '');
+    // A line of nothing but markers would otherwise leave a Paragraph with no
+    // children, which the docx writer will not accept.
+    return runs.length ? runs : [run('')];
+  };
+  const body = (t) => new Paragraph({ spacing: { after: 80 }, children: runsFor(t) });
   const note = (t) => new Paragraph({ spacing: { after: 60 }, children: [run(t, { color: GREY, size: 17, italics: true })] });
   const paras = (arr) => (arr || []).filter(Boolean).forEach(pp => children.push(body(pp)));
 
@@ -720,6 +738,6 @@ module.exports = {
   toJSON, toMarkdown, toDocxBuffer, safeFilename,
   isDentalPage, toDentalMarkdown, toDentalDocxBuffer, htmlToLines,
   isCbhPage, toCbhMarkdown, toCbhDocxBuffer, cbhProvenanceLabel,
-  toCbhCmsJson, serviceTypeFor, linesToHtml, sentenceCase, protectedTermsFor,
+  toCbhCmsJson, serviceTypeFor, linesToHtml, inlineToHtml, sentenceCase, protectedTermsFor,
   // Re-exported so the tests exercise the same function the page is cased with.
 };

@@ -148,14 +148,28 @@ function casedHeading(text, { serviceName, locationName } = {}) {
 function approachHeading(serviceName) {
   return casedHeading(`Our approach to ${serviceName}`, { serviceName });
 }
-// Rendered exactly as the guideline writes it -- no question mark, no article
-// inserted. Confirmed with the client.
-function educationalHeading(serviceName) {
-  return casedHeading(`What is ${serviceName}`, { serviceName });
+// "What is depression?", not "What is depression treatment" -- the client's
+// live pages all name the CONDITION and ask a question. It takes the raw
+// service name from the record, NOT the display phrase that appends
+// "treatment": page.serviceName carries that phrase and the approach and
+// service headings both need it, so this is a separate field rather than a
+// change to that one.
+function educationalHeading(conditionName) {
+  const name = String(conditionName || '').trim();
+  return casedHeading(`What ${whatIsVerb(name)} ${name}?`, { serviceName: name });
 }
-// The service section's H2 names a PROGRAM, at the client's instruction:
-// "Anxiety treatment in Santa Clarita" had to become "Anxiety treatment program
-// in Santa Clarita".
+
+// "What ARE parent support groups?". A plural head noun needs the plural verb,
+// and the words that trip a naive "ends in s" test are exactly the ones in this
+// taxonomy: psychosis, stress, IOP & PHP.
+function whatIsVerb(name) {
+  const last = String(name || '').trim().split(/\s+/).pop() || '';
+  const plural = /s$/i.test(last) && !/(ss|us|is|os)$/i.test(last);
+  return plural ? 'are' : 'is';
+}
+// The service section's H2 names PROGRAMS, which is how every one of the
+// client's live pages reads: "Depression treatment programs in Van Nuys",
+// "Anxiety treatment programs in El Monte".
 //
 // Appended only where it reads as English. A phrase that already names a
 // programme keeps what it has, and one ending in an acronym or a plural is left
@@ -165,8 +179,8 @@ function educationalHeading(serviceName) {
 function programPhrase(serviceName) {
   const s = String(serviceName || '').trim();
   if (!s) return s;
-  if (/programs?/i.test(s)) return s;
-  return /(treatment|therapy)$/i.test(s) ? `${s} program` : s;
+  if (/\bprograms?\b/i.test(s)) return s;
+  return /\b(treatment|therapy)$/i.test(s) ? `${s} programs` : s;
 }
 
 function serviceHeading(serviceName, locationName) {
@@ -214,7 +228,15 @@ const LIMITS = {
     // or fifteen: a bullet costs one line ON TOP of its wrapped length, and
     // the mandatory break after every third line costs one line itself.
     linesBeforeBreak: 3,
-    bulletExtraLines: 1,
+    // A bullet costs a line, like any other entry -- no surcharge. It carried
+    // one briefly, and that made the client's own pages impossible: a live
+    // subsection is an eight-bullet list, which at two lines each came to
+    // sixteen against a cap of nine to fifteen.
+    //
+    // Note where the cost sits now. Eight bullets are eight lines, but the
+    // mandatory break after every third adds two more, so on a list the BREAKS
+    // are the larger charge, not the bullets.
+    bulletExtraLines: 0,
     // Serialised so the wizard's counter can apply the SAME rule the gates do
     // rather than carry a second regex that drifts from this one.
     bulletPattern: '^\\s*(?:[-\u2013\u2014\u2022*\u00b7]|\\d+[.)])\\s+',
@@ -295,10 +317,23 @@ function isBullet(text) {
   return BULLET_RE.test(String(text || ''));
 }
 
+// A body line may open with a bold sub-label -- "**Biological factors** ..." --
+// which is how the client's live pages break a long subsection up. The markers
+// are MARKUP, so they are stripped before anything is measured: this module's
+// own rule is that character counts are on rendered text, and four asterisks
+// per label would otherwise eat the line budget quietly.
+//
+// BULLET_RE requires whitespace after its marker, so "**Label**" is never
+// mistaken for a "*" bullet, and "- **Label:** ..." still matches the "-"
+// branch.
+function stripInlineMarkup(text) {
+  return String(text == null ? '' : text).replace(/\*\*/g, '');
+}
+
 // Counts one entry the way the guidelines do: a paragraph of N characters
 // occupies ceil(N / 85) lines, and a bullet costs one extra on top of that.
 function lineCount(text, lineMaxChars = LIMITS.educational.lineMaxChars) {
-  const s = String(text || '').trim();
+  const s = stripInlineMarkup(text).trim();
   if (!s) return 0;
   return Math.ceil(s.length / lineMaxChars)
     + (isBullet(s) ? LIMITS.educational.bulletExtraLines : 0);
@@ -310,7 +345,7 @@ function lineCount(text, lineMaxChars = LIMITS.educational.lineMaxChars) {
 // is neither -- it is a fragment, and a body made only of those reads like a
 // slide deck rather than a page. The gates need to be able to say so.
 function entryForm(text, lineMaxChars = LIMITS.educational.lineMaxChars) {
-  const s = String(text || '').trim();
+  const s = stripInlineMarkup(text).trim();
   if (!s) return 'empty';
   if (isBullet(s)) return 'bullet';
   return s.length > lineMaxChars ? 'paragraph' : 'fragment';
@@ -379,7 +414,7 @@ module.exports = {
   BRAND, TITLE_SUFFIX, FIXED_HEADINGS, LIMITS, SECTION_ORDER, PROVENANCE,
   approachHeading, educationalHeading, serviceHeading,
   lineCount, textLength, fullTitle, titleWithoutSuffix, maxBodyChars,
-  sentenceCase, protectedTerms, casedHeading, PROPER_NOUNS, programPhrase,
-  isBullet, entryForm, contentLines, breaksFor, linesUsed,
+  sentenceCase, protectedTerms, casedHeading, PROPER_NOUNS, programPhrase, whatIsVerb,
+  isBullet, entryForm, stripInlineMarkup, contentLines, breaksFor, linesUsed,
   linesPerBody, contentAllowance, sectionLineTotal,
 };

@@ -160,7 +160,11 @@ function usableQuestion(q) {
   return /^(what|how|why|when|where|who|which|can|do|does|did|is|are|will|would|should|am|if)\b/i.test(s);
 }
 
-function planPrompt({ serviceName, city, primaryKeyword, competitorHeadings, competitorFaqs }) {
+function planPrompt({ serviceName, conditionName, city, primaryKeyword, competitorHeadings, competitorFaqs }) {
+  // The educational subsections are about the CONDITION ("depression"), not the
+  // service phrase ("depression treatment"), which is how the client's own
+  // pages read.
+  const topic = String(conditionName || serviceName || '').trim();
   const system = `You plan the content brief for one Location + Service page for ${contract.BRAND}, a behavioral health provider in California. You do NOT write the page.
 
 Return ONLY JSON, no prose, no markdown fences:
@@ -173,8 +177,16 @@ Return ONLY JSON, no prose, no markdown fences:
 
 RULES
 - "h3s": EXACTLY ${L.educational.h3Count.min}-${L.educational.h3Count.max} headings, each at most ${L.educational.h3HeadingMaxChars} characters. These are the subsections of a single
-  "What is ..." section, so they must together answer what this care is, who it suits, what it
-  involves and how to start.
+  "What is ${topic}?" section, so they explain the CONDITION ITSELF — what it is, how it shows up, and
+  when it needs help. This is the shape the client's own pages use, and the one to follow unless the
+  competitor research clearly offers something better:
+    1. Symptoms and signs of ${topic}
+    2. What causes ${topic}
+    3. How ${topic} affects daily life
+    4. When to seek help for ${topic}
+  Reword each to read naturally for this topic; drop or add one where the research earns it.
+- Do NOT spend a subsection on treatment options, programmes, insurance or how to book. Each of those
+  has its own section elsewhere on the page, and "how do I get started" belongs in the FAQs.
 - The educational section must be based on competitor research. Take a heading from the competitor
   list wherever one covers a real topic, rewrite it in plain language, and mark it "competitor".
   Only where the competitors leave a genuine gap, propose the missing heading and mark it
@@ -244,15 +256,17 @@ function fallbackPlan({ serviceName, city }) {
   };
 }
 
-async function plan({ serviceName, city, primaryKeyword, competitorHeadings, competitorFaqs }) {
-  const cacheK = store.cacheKey('cbh-brief-plan-v1', serviceName, city, primaryKeyword,
+async function plan({ serviceName, conditionName, city, primaryKeyword, competitorHeadings, competitorFaqs }) {
+  // v2: the subsection skeleton changed, so a plan cached under v1 describes a
+  // page shape we no longer ask for.
+  const cacheK = store.cacheKey('cbh-brief-plan-v2', serviceName, conditionName, city, primaryKeyword,
     competitorHeadings.slice().sort(), competitorFaqs.slice().sort());
   try {
     const cached = await store.cacheGet(cacheK, config.cache.llmTtlMs);
     if (cached) return cached;
   } catch { /* recompute */ }
 
-  const { system, user } = planPrompt({ serviceName, city, primaryKeyword, competitorHeadings, competitorFaqs });
+  const { system, user } = planPrompt({ serviceName, conditionName, city, primaryKeyword, competitorHeadings, competitorFaqs });
   let parsed = null;
   try {
     const llm = createLlmClient(config.llm.dentalOutlineModel);
@@ -336,6 +350,7 @@ async function buildCbhBrief({ clientId, serviceId, locationId, primaryKeywords,
   done = phase('  brief: planner LLM');
   const planned = await plan({
     serviceName: scaffold.serviceName,
+    conditionName: scaffold.conditionName,
     city: location.city,
     primaryKeyword,
     competitorHeadings: usableHeadings(research.headings),

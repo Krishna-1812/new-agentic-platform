@@ -61,6 +61,10 @@ function buildCbhScaffold(layers, { servicePhrase } = {}) {
     // Denormalised onto the page because QC, the exporter and the wizard all
     // need them and none of them load the service/location rows.
     serviceName: svcPhrase,
+    // The raw service name, which is the CONDITION: "Depression", not
+    // "Depression treatment". Only the educational H2 and the schema's
+    // MedicalCondition want it; everything else wants the phrase above.
+    conditionName: String(service?.name || '').trim(),
     locationName: cityName,
     primaryKeyword: '',
     primaryKeywords: [],
@@ -87,7 +91,7 @@ function buildCbhScaffold(layers, { servicePhrase } = {}) {
       },
 
       educational: {
-        heading: contract.educationalHeading(svcPhrase),
+        heading: contract.educationalHeading(service?.name || svcPhrase),
         paragraphs: [],
         // Provenance for the intro itself; the H3s carry their own.
         source: null,
@@ -157,7 +161,7 @@ function buildCbhSchema({ scaffold, client, location }) {
     url: m.canonical,
     name: m.fullTitle || m.title,
     description: m.metaDescription,
-    about: { '@type': 'MedicalCondition', name: scaffold.serviceName },
+    about: { '@type': 'MedicalCondition', name: scaffold.conditionName || scaffold.serviceName },
   };
 
   const items = scaffold.sections.faq.items || [];
@@ -209,7 +213,9 @@ function caseCbhHeadings(page, location) {
   if (s.hero) s.hero.h1 = cs(s.hero.h1);
   if (s.approach && svc) s.approach.heading = contract.approachHeading(svc);
   if (s.educational) {
-    if (svc) s.educational.heading = contract.educationalHeading(svc);
+    // The condition where we have it; the display phrase is the fallback for a
+    // page whose service record has since been renamed or removed.
+    if (page.conditionName || svc) s.educational.heading = contract.educationalHeading(page.conditionName || svc);
     (s.educational.h3s || []).forEach((h) => { h.heading = cs(h.heading); });
   }
   if (s.service && svc && city) s.service.heading = contract.serviceHeading(svc, city);
@@ -220,8 +226,13 @@ function caseCbhHeadings(page, location) {
   return page;
 }
 
-function refreshCbhDerived(page, { client, location } = {}) {
+function refreshCbhDerived(page, { client, location, service } = {}) {
   if (!page || !page.meta) return page;
+  // A page written before the educational H2 named the condition has no raw
+  // name stored. Backfilling from the service record here is what lets it open
+  // as "What is depression?" instead of silently keeping the old heading --
+  // the same trick the read route uses for meta.serviceSlug.
+  if (!page.conditionName && service?.name) page.conditionName = String(service.name).trim();
   caseCbhHeadings(page, location);
   const slug = slugify(page.meta.serviceSlug || '');
   page.meta.serviceSlug = slug;

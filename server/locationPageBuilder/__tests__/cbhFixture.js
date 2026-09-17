@@ -14,6 +14,9 @@ const contract = require('../cbhContract');
 // every page the pipeline actually produces.
 const SERVICE = 'anxiety treatment';
 const CITY = 'Anaheim Hills';
+// The RAW service name, as the service record holds it. SERVICE above is the
+// display phrase built from it.
+const CONDITION = 'Anxiety';
 const PRIMARY = 'anxiety treatment in anaheim hills';
 
 function passingL3() {
@@ -112,6 +115,7 @@ function scaffold() {
       brandName: contract.BRAND, title: '', fullTitle: '', metaDescription: '',
     },
     serviceName: SERVICE,
+    conditionName: CONDITION,
     locationName: CITY,
     primaryKeyword: PRIMARY,
     primaryKeywords: [PRIMARY],
@@ -126,7 +130,7 @@ function scaffold() {
       },
       insurance: { heading: contract.FIXED_HEADINGS.insurance, paragraph: '' },
       educational: {
-        heading: contract.educationalHeading('anxiety treatment'),
+        heading: contract.educationalHeading(CONDITION),
         paragraphs: [], source: null, sourceUrl: '', h3s: [],
       },
       uvp: { heading: contract.FIXED_HEADINGS.uvp, paragraph: '' },
@@ -139,4 +143,4 @@ function scaffold() {
   };
 }
 
-module.exports = { passingL3, passingProvenance, scaffold, SERVICE, CITY, PRIMARY };
+module.exports = { passingL3, passingProvenance, scaffold, SERVICE, CONDITION, CITY, PRIMARY };

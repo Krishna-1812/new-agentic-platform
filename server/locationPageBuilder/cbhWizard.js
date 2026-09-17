@@ -39,7 +39,9 @@ async function generateFromBrief({ clientId, serviceId, locationId, brief: brief
   }
 
   const layers = await compose.loadLayers({ clientId, serviceId, locationId });
-  const { client, location } = layers;
+  // `service` is needed for refreshCbhDerived below, which takes the raw
+  // condition name from it for the educational H2.
+  const { client, location, service } = layers;
 
   let scaffold = cbhCompose.buildCbhScaffold(layers, { servicePhrase: servicePhraseDisplay });
   scaffold.primaryKeyword = brief.primaryKeyword;
@@ -70,7 +72,7 @@ async function generateFromBrief({ clientId, serviceId, locationId, brief: brief
 
   // URLs and schema together, so the JSON-LD can never quote a URL the page
   // does not have.
-  cbhCompose.refreshCbhDerived(scaffold, { client, location });
+  cbhCompose.refreshCbhDerived(scaffold, { client, location, service });
   scaffold.qc = cbhQc.runCbhQc(scaffold);
 
   const existing = await findExistingPage({ clientId, serviceId, locationId });
@@ -99,13 +101,18 @@ async function saveContent({ pageId, page }) {
   // The reviewer edits the SLUG; urlPath and canonical are derived from it here
   // rather than trusted from the client, so a hand-edited URL cannot disagree
   // with the slug it is supposed to come from.
-  const [client, location] = await Promise.all([
+  const [client, location, service] = await Promise.all([
     store.get('clients', existing.client_id),
     store.get('locations', existing.location_id),
+    store.get('services', existing.service_id),
   ]);
+  // Also restate the fixed headings. saveContent did not, so a page that
+  // reached save without passing the read route kept a stale one and failed a
+  // Critical gate on a heading nobody had touched. Idempotent.
+  cbhCompose.ensureCbhSections(next);
   // Rebuilds the URLs AND the JSON-LD. The schema quotes the canonical, the
   // meta and the FAQ pairs, so an edit to any of them has to reach it.
-  cbhCompose.refreshCbhDerived(next, { client, location });
+  cbhCompose.refreshCbhDerived(next, { client, location, service });
   next.qc = cbhQc.runCbhQc(next);
   const saved = await store.update('pages', pageId, { page_object: next });
   return { saved: true, updatedAt: saved.updated_at, qc: next.qc, page: next };

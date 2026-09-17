@@ -603,6 +603,13 @@ const CBH_SERVICE_DEFS = [
   [['mh-outpatient', 'teen'], 'Virtual Intensive Outpatient Program (IOP)', 'procedure', CBH_ADULT_MH],
   [['mh-outpatient', 'teen'], 'Evening Online Mental Health Treatment', 'procedure', CBH_ADULT_MH],
 
+  // Therapy modalities and support services. These appear in the client's live
+  // sitemap as pages in their own right, not only as things a programme offers.
+  [['mh-outpatient', 'teen'], 'Cognitive Behavioral Therapy', 'therapy', CBH_ADULT_MH],
+  [['mh-outpatient', 'teen'], 'Dialectical Behavioral Therapy', 'therapy', CBH_ADULT_MH],
+  [['mh-outpatient', 'teen'], 'Group Therapy', 'therapy', CBH_ADULT_MH],
+  [['mh-outpatient', 'teen'], 'Case Management', 'therapy', CBH_ADULT_MH],
+
   // Teen programs
   [['teen'], 'Teen IOP Treatment', 'procedure', CBH_TEEN_MH],
   [['teen'], 'Parent Support Groups', 'therapy', CBH_TEEN_MH],
@@ -620,11 +627,51 @@ const CBH_SERVICE_DEFS = [
   ...CBH_ADDICTION_DEFS.map(([name]) => [['addiction-residential', 'addiction-outpatient'], name, 'condition', [name]]),
 ];
 
+// The client's URLs are /depression-treatment/, not /depression/ — a bare
+// condition is not what anyone searches, and their live pages all carry the
+// service word. Agreed with the client service by service.
+//
+// Kept as a RULE plus a short exception list rather than 56 literals, so a
+// service added to the taxonomy above is slugged correctly without a second
+// edit here. The exceptions are the names where the rule would read badly: a
+// long clinical name that has a common short form, or a trailing acronym that
+// adds nothing to a URL.
+const CBH_SLUG_EXCEPTIONS = {
+  'Bipolar I & II': 'bipolar-treatment',
+  'Teen Bipolar Disorder': 'teen-bipolar-treatment',
+  'Grief Disorder': 'grief-treatment',
+  'Obsessive Compulsive Disorder (OCD)': 'ocd-treatment',
+  'Teen Obsessive Compulsive Disorder (OCD)': 'teen-ocd-treatment',
+  'Post-Traumatic Stress Disorder (PTSD)': 'ptsd-treatment',
+  'Teen PTSD (Post-Traumatic Stress Disorder)': 'teen-ptsd-treatment',
+  // The client's own live URL for this one.
+  'Stress': 'stress-relief-programs',
+  'Case Management': 'case-management',
+  // Trailing acronyms dropped: they add nothing to a URL.
+  'Outpatient Addiction Treatment (IOP & PHP)': 'outpatient-addiction-treatment',
+  'Outpatient Mental Health Treatment (IOP)': 'outpatient-mental-health-treatment',
+  'Partial Hospitalization Program (PHP)': 'partial-hospitalization-program',
+  'Virtual Intensive Outpatient Program (IOP)': 'virtual-intensive-outpatient-program',
+};
+
+// A name that already says what kind of care it is keeps its slug; anything
+// else is a bare condition and takes the service word.
+const CBH_SERVICE_WORD_RE = /\b(treatment|therapy|programs?|groups?|support|detox)\b/i;
+
+function cbhServiceSlug(name) {
+  if (CBH_SLUG_EXCEPTIONS[name]) return CBH_SLUG_EXCEPTIONS[name];
+  const base = slugify(name);
+  return CBH_SERVICE_WORD_RE.test(name) ? base : `${base}-treatment`;
+}
+
 const CBH_SERVICES = CBH_SERVICE_DEFS.map(([groups, name, category, conditions]) => {
-  const slug = slugify(name);
+  // The ID stays keyed to the NAME, not the URL slug. Page rows reference
+  // service ids, so re-slugging a service must not orphan its pages.
+  const idSlug = slugify(name);
+  const slug = cbhServiceSlug(name);
   const parent = CBH_ADDICTION_DEFS.find(([n]) => n === name)?.[1];
   return {
-    id: `cbh_${slug}`,
+    id: `cbh_${idSlug}`,
     client_id: CBH_CLIENT_ID,
     name,
     slug,

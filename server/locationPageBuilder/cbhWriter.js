@@ -171,8 +171,12 @@ they do not share it, and one body using fewer does not give another more.
 Each entry in the "lines" array is EITHER a paragraph OR a bullet:
   • A PARAGRAPH is 2-4 sentences in ONE entry. It costs one line per ${h3LineChars} characters, so a
     220-character paragraph costs three. Do NOT break a paragraph up into one sentence per entry.
-  • A BULLET starts with "- " and costs TWO lines whatever its length. Use it where the content really
-    is a list — options, steps, signs, what to bring — never for a point that needs explaining.
+  • A BULLET starts with "- " and costs ${1 + L.educational.bulletExtraLines} line${L.educational.bulletExtraLines ? 's' : ''} whatever its length. Use it where the
+    content really is a list — options, steps, signs, what to bring — never for a point that needs
+    explaining. A run of bullets still pays the paragraph break after every ${L.educational.linesBeforeBreak} lines.
+Either form may open with a BOLD SUB-LABEL, written "**Like this**" — use it where a body covers two or
+three named things ("**Biological factors** ...", "**Psychological factors** ..."). The asterisks are the
+only markup allowed anywhere, and they do not count toward the character limit.
 MIX THE TWO. A body of nothing but short standalone sentences reads like a slide, and a body of nothing
 but prose buries the list a reader is scanning for. Lead a body with a paragraph, then bullet the part
 that enumerates. Both forms must appear across the ${h3Count} subsections.

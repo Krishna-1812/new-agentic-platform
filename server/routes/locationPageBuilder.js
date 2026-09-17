@@ -427,7 +427,7 @@ router.get('/cbh/pages/:id', async (req, res) => {
       store.get('services', page.service_id),
     ]);
     if (!pageObject.meta.serviceSlug) pageObject.meta.serviceSlug = service?.slug || '';
-    cbhCompose.refreshCbhDerived(pageObject, { client, location });
+    cbhCompose.refreshCbhDerived(pageObject, { client, location, service });
     res.json({ pageId: page.id, page: pageObject, serviceId: page.service_id, locationId: page.location_id });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

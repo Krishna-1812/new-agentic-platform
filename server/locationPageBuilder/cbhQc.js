@@ -369,7 +369,11 @@ const CHECKS = [
         .filter(x => x.h.source === PROVENANCE.FALLBACK && !String(x.h.sourceUrl || '').trim());
       return {
         pass: !bad.length,
-        detail: bad.length ? `Fallback H3s with no source URL: ${bad.map(x => x.i + 1).join(', ')}.`
+        // Named, not numbered. "Fallback H3s with no source URL: 2" read as a
+        // count of two rather than subsection number two.
+        detail: bad.length
+          ? `No source URL on ${bad.length === 1 ? 'this fallback H3' : 'these fallback H3s'}: `
+            + bad.map(x => `#${x.i + 1} "${x.h.heading || ''}"`).join('; ') + '.'
           : ctx.h3s.length ? 'Every fallback section is attributed.' : 'No H3s to check.',
       };
     },

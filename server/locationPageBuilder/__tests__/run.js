@@ -2191,18 +2191,26 @@ test('no prompt asks for a keyword frequency any more', () => {
     assert.ok(cbhFails(over).includes('educational_h3_line_budget'),
       'but one body past its own twelve still fails');
   });
-  test('a bullet costs a line more than the same words as a sentence', () => {
+  test('a bullet costs the same as the words would as a sentence', () => {
+    // It carried a surcharge briefly. That made the client's own pages
+    // impossible -- one of their subsections is an eight-bullet list, which at
+    // two lines each came to sixteen against a cap of nine to fifteen.
     const words = 'Group sessions for shared skills practice.';
     assert.strictEqual(cbhContract.lineCount(words), 1);
-    assert.strictEqual(cbhContract.lineCount(`- ${words}`), 2, 'the marker adds a line');
-    assert.strictEqual(cbhContract.lineCount(`1. ${words}`), 2, 'a numbered list counts the same');
+    assert.strictEqual(cbhContract.lineCount(`- ${words}`), 1, 'the marker is free');
+    assert.strictEqual(cbhContract.lineCount(`1. ${words}`), 1);
     assert.ok(!cbhContract.isBullet('-nospace'), 'a hyphenated word is not a bullet');
-    // Which means a body of bullets holds half the writing a body of sentences
-    // does -- the gate has to see that, or bullets buy free length.
-    const L = 'y'.repeat(80);
-    const bullets = cbhPage((l3) => { l3.educational.h3s[0].lines = Array(6).fill(`- ${L}`); });
-    assert.ok(cbhFails(bullets).includes('educational_h3_line_budget'),
-      'six bullets cost twelve lines plus breaks, over the twelve');
+    // The client's real body now fits: eight bullets are eight lines, plus the
+    // two breaks they oblige.
+    const B = `- ${'y'.repeat(58)}`;
+    assert.strictEqual(cbhContract.linesUsed(Array(8).fill(B)), 10);
+    const eight = cbhPage((l3) => { l3.educational.h3s[0].lines = Array(8).fill(B); });
+    assert.ok(!cbhFails(eight).includes('educational_h3_line_budget'),
+      'ten lines is inside the twelve a four-H3 page allows');
+    // Breaks are now the larger charge on a list, so a long enough one still
+    // overruns: 14 bullets are 14 lines plus 4 breaks.
+    const overrun = cbhPage((l3) => { l3.educational.h3s[0].lines = Array(14).fill(B); });
+    assert.ok(cbhFails(overrun).includes('educational_h3_line_budget'));
   });
   test('a section of one-line fragments is flagged, a mixed one is not', () => {
     // The reported defect: every H3 body a list of short standalone sentences,
@@ -2369,17 +2377,19 @@ test('no prompt asks for a keyword frequency any more', () => {
     const j = cmsJson();
     // Sentence-cased on the way out, so the leading word is capitalised where
     // it is not already a protected acronym ("ADHD treatment in ..." keeps its).
-    assert.strictEqual(j.treatment.heading, 'Anxiety treatment program in Anaheim Hills');
+    assert.strictEqual(j.treatment.heading, 'Anxiety treatment programs in Anaheim Hills');
     assert.strictEqual(j.experts.heading, 'Our anxiety treatment experts in Anaheim Hills');
     assert.ok(j.experts.description.includes('clinicians'), 'the clinician copy lands under experts');
   });
 
   test('headings the CMS writes differently are adapted on the way out', () => {
     const j = cmsJson();
-    // The page's educational H2 has no question mark (confirmed when the
-    // contract was built); the CMS writes one.
-    assert.ok(!cbhPage().sections.educational.heading.endsWith('?'));
+    // The page's educational H2 now carries the question mark itself, so the
+    // export's asQuestion is belt-and-braces for a page that never passed the
+    // read path rather than the thing that adds it.
+    assert.ok(cbhPage().sections.educational.heading.endsWith('?'));
     assert.ok(j.what_is.heading.endsWith('?'));
+    assert.strictEqual(j.what_is.heading, cbhPage().sections.educational.heading);
     assert.strictEqual(j.jump_menu.service_label, j.what_is.heading);
     // And the UVP H2 the other way round.
     assert.ok(cbhPage().sections.uvp.heading.endsWith('?'));
@@ -2443,15 +2453,16 @@ test('no prompt asks for a keyword frequency any more', () => {
     // Anxiety treatment". Every capitalised word in the service name was being
     // treated as a name, and most service names are common nouns.
     assert.strictEqual(cbhContract.approachHeading('Anxiety treatment'), 'Our approach to anxiety treatment');
-    assert.strictEqual(cbhContract.educationalHeading('Anxiety treatment'), 'What is anxiety treatment');
+    // educationalHeading takes the RAW condition, not the display phrase.
+    assert.strictEqual(cbhContract.educationalHeading('Anxiety'), 'What is anxiety?');
     assert.strictEqual(cbhContract.serviceHeading('Anxiety treatment', 'Santa Clarita'),
-      'Anxiety treatment program in Santa Clarita', 'the leading word is still capitalised');
+      'Anxiety treatment programs in Santa Clarita', 'the leading word is still capitalised');
     // But an acronym, a branded medicine and a city all keep their capitals.
     assert.strictEqual(cbhContract.approachHeading('ADHD treatment'), 'Our approach to ADHD treatment');
     assert.strictEqual(cbhContract.approachHeading('Xanax Addiction treatment'),
       'Our approach to Xanax addiction treatment', 'a branded medicine is a proper noun');
     assert.strictEqual(cbhContract.serviceHeading('Burnout treatment', 'Anaheim Hills'),
-      'Burnout treatment program in Anaheim Hills');
+      'Burnout treatment programs in Anaheim Hills');
   });
 
   test('model-written headings are cased as they are merged, not merely asked for', () => {
@@ -2491,12 +2502,11 @@ test('no prompt asks for a keyword frequency any more', () => {
     assert.strictEqual(b.faqs[0].q, 'How quickly can someone be seen in Torrance?');
   });
 
-  test('the service H2 names a programme, where that reads as English', () => {
-    // The client's instruction: "Anxiety treatment in Santa Clarita" had to
-    // become "Anxiety treatment program in Santa Clarita".
+  test('the service H2 names programmes, where that reads as English', () => {
+    // Every live page reads "Depression treatment programs in Van Nuys".
     const h = cbhContract.serviceHeading;
-    assert.strictEqual(h('Depression treatment', 'Anaheim Hills'), 'Depression treatment program in Anaheim Hills');
-    assert.strictEqual(h('Family Therapy', 'Torrance'), 'Family therapy program in Torrance');
+    assert.strictEqual(h('Depression treatment', 'Anaheim Hills'), 'Depression treatment programs in Anaheim Hills');
+    assert.strictEqual(h('Family Therapy', 'Torrance'), 'Family therapy programs in Torrance');
     // But NOT where it would double up or read badly. A blanket append gives
     // "Partial hospitalization program program" and "(IOP) program".
     assert.strictEqual(h('Partial Hospitalization Program (PHP)', 'Torrance'),
@@ -2517,6 +2527,32 @@ test('no prompt asks for a keyword frequency any more', () => {
       "Clear Behavioral Health's approach to burnout");
     assert.strictEqual(cbhContract.sentenceCase('Serving Torrance And Redondo Beach', keep),
       'Serving Torrance and Redondo Beach');
+  });
+
+  test('a bold sub-label is markup: free to count, rendered on the way out', () => {
+    // The client's live bodies break a long subsection up with bold labels.
+    // The asterisks must not eat the line budget -- this module counts rendered
+    // text, never markup.
+    const withLabel = '**Biological factors** shape how depression develops over time.';
+    assert.strictEqual(cbhContract.lineCount(withLabel), cbhContract.lineCount(cbhContract.stripInlineMarkup(withLabel)));
+    assert.strictEqual(cbhContract.lineCount(withLabel), 1, 'four asterisks do not push it to two lines');
+    // A label does not make an entry a bullet, and a bullet keeps its form.
+    assert.strictEqual(cbhContract.entryForm(withLabel), 'fragment');
+    assert.strictEqual(cbhContract.entryForm('- **Signs:** low mood most days'), 'bullet');
+  });
+
+  test('bold labels render as <strong>, and stray HTML is still escaped', () => {
+    const html = exporter.linesToHtml([
+      '**Biological factors** include family history.',
+      '- **Signs:** low mood most days',
+      'A closer with <b>stray</b> markup & an ampersand.',
+    ]);
+    assert.ok(html.includes('<p><strong>Biological factors</strong> include'));
+    assert.ok(html.includes('<li><strong>Signs:</strong> low mood most days</li>'));
+    // Escaped FIRST, so the only tags in the output are the ones we generate.
+    assert.ok(html.includes('&lt;b&gt;stray&lt;/b&gt;'));
+    assert.ok(html.includes('&amp;'));
+    assert.ok(!html.includes('<b>'), 'a tag in the copy must not survive as markup');
   });
 
   test('the meta title is not sentence-cased, because it is not a heading', () => {

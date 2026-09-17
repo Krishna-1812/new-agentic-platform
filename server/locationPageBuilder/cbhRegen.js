@@ -94,9 +94,10 @@ duplicate any other heading in the section: ${ctx.siblings.join(' | ')}`,
     label: 'H3 body',
     ask: (ctx) => `Rewrite the body under "${ctx.item.heading}". Return each line as its own array entry; one line is at
 most ${L.educational.lineMaxChars} characters, and a longer one wraps to another line. At most ${ctx.lineAllowance} lines.
-Mix the two forms: a paragraph is 2-4 sentences in ONE entry, a bullet starts with "- " and costs two
-lines. Lead with a paragraph and bullet only what genuinely enumerates — do not return a list of
-one-sentence entries. Use fewer lines if the content does not earn them.${ctx.sourceBlock}`,
+Mix the two forms: a paragraph is 2-4 sentences in ONE entry, a bullet starts with "- " and costs
+${1 + L.educational.bulletExtraLines} line${L.educational.bulletExtraLines ? 's' : ''}. Lead with a paragraph and bullet only what genuinely enumerates — do not
+return a list of one-sentence entries. An entry may open with a bold sub-label written "**Like this**",
+which is the only markup allowed. Use fewer lines if the content does not earn them.${ctx.sourceBlock}`,
   },
   // ONE line inside an H3 body. The body as a whole has its own button; this
   // is for the common case of a single line reading badly while the rest of
@@ -106,7 +107,8 @@ one-sentence entries. Use fewer lines if the content does not earn them.${ctx.so
     scope: 'page', kind: 'text', indexed: true, limit: { max: L.educational.lineMaxChars },
     label: 'line',
     ask: (ctx) => `Rewrite this ONE entry under "${ctx.item.heading}". Keep its form: if it starts with "- " it
-stays a bullet of that shape, otherwise it stays prose of about the same length. It must not repeat
+stays a bullet of that shape, if it opens with a bold label written "**Like this**" it keeps a label,
+and otherwise it stays prose of about the same length. It must not repeat
 what the other entries here already say:
 ${ctx.siblings.map(x => `- ${x}`).join('\n')}${ctx.sourceBlock}`,
   },

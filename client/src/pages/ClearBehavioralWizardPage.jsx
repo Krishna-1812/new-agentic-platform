@@ -585,7 +585,9 @@ export default function ClearBehavioralWizardPage() {
 
   // One entry's cost, mirroring cbhContract.lineCount.
   const eduCostOf = (l) => {
-    const s = String(l || '').trim();
+    // Mirrors cbhContract.stripInlineMarkup: a bold sub-label's asterisks are
+    // markup, and a counter that charged for them would disagree with the gate.
+    const s = String(l || '').replace(/\*\*/g, '').trim();
     if (!s) return 0;
     return Math.ceil(s.length / (eduLineLimits?.lineMaxChars || 85))
       + (eduBulletRe && eduBulletRe.test(s) ? (eduLineLimits?.bulletExtraLines || 0) : 0);
@@ -1149,7 +1151,7 @@ export default function ClearBehavioralWizardPage() {
               per H3 rather than once for the card. */}
           <SectionCard
             title={page.sections?.educational?.heading}
-            note={`Intro at most ${limits.educational.introMaxChars} characters. Every H3 body may take up to ${eduLineCap} lines (${limits.educational.lineMultiplier} per H3). One row is one entry: prose wraps a line every ${limits.educational.lineMaxChars} characters, a row starting “- ” is a bullet and counts as ${1 + (limits.educational.bulletExtraLines || 0)}, and a break after every ${limits.educational.linesBeforeBreak} lines counts as 1. Mix paragraphs and bullets.`}
+            note={`Intro at most ${limits.educational.introMaxChars} characters. Every H3 body may take up to ${eduLineCap} lines (${limits.educational.lineMultiplier} per H3). One row is one entry: prose wraps a line every ${limits.educational.lineMaxChars} characters, a row starting “- ” counts as ${1 + (limits.educational.bulletExtraLines || 0)}, and a break after every ${limits.educational.linesBeforeBreak} lines counts as 1. Mix paragraphs and bullets; a row may open with a bold label written **like this**.`}
           >
             <label style={{ ...labelStyle, display: 'flex', justifyContent: 'space-between' }}>
               <span>Intro</span>
