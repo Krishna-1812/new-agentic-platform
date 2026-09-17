@@ -17,8 +17,40 @@ async function req(path, options = {}) {
 }
 
 export const lpb = {
-  seed: () => req('/seed', { method: 'POST' }),
+  // Reference-data seeding is server/scripts/seedClient.js, not an app action.
+  // This one endpoint survives because it is not seeding-as-setup: the dental
+  // wizard's "Sync list" re-imports a changed service taxonomy mid-session.
   seedGentleDental: () => req('/seed-gentle-dental', { method: 'POST' }),
+
+  // ── Clear Behavioral Health ───────────────────────────────────────────────
+  // `cbhBriefBuild` and `cbhGenerate` are the billed calls; the rest are cheap.
+  cbhLimits: () => req('/cbh/limits'),
+  cbhBrief: ({ clientId, serviceId, locationId }) =>
+    req(`/cbh/brief?clientId=${clientId}&serviceId=${serviceId}&locationId=${locationId}`),
+  cbhBriefBuild: (body) => req('/cbh/brief/build', { method: 'POST', body: JSON.stringify(body) }),
+  cbhBriefSave: (body) => req('/cbh/brief/save', { method: 'POST', body: JSON.stringify(body) }),
+  cbhGenerate: (body) => req('/cbh/generate', { method: 'POST', body: JSON.stringify(body) }),
+  cbhSavePage: (id, page) => req(`/cbh/pages/${id}`, { method: 'PUT', body: JSON.stringify({ page }) }),
+  cbhQc: (page) => req('/cbh/qc', { method: 'POST', body: JSON.stringify({ page }) }),
+  cbhRegenField: (body) => req('/cbh/regen-field', { method: 'POST', body: JSON.stringify(body) }),
+  cbhPages: (clientId) => req(`/cbh/pages?clientId=${encodeURIComponent(clientId)}`),
+  cbhPage: (id) => req(`/cbh/pages/${id}`),
+  cbhExportDocx: async (page) => {
+    const res = await fetch(`${BASE}/cbh/export/docx`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ page }),
+    });
+    if (!res.ok) {
+      let msg = `Export failed (${res.status})`;
+      try { msg = (await res.json()).error || msg; } catch { /* non-JSON error body */ }
+      throw new Error(msg);
+    }
+    const named = /filename="?([^";]+)"?/i.exec(res.headers.get('content-disposition') || '');
+    return { blob: await res.blob(), filename: named ? named[1] : 'cbh_page.docx' };
+  },
+
   clients: () => req('/clients'),
   client: (id) => req(`/clients/${id}`),
   entities: (c, clientId) => req(`/entities/${c}${clientId ? `?client_id=${clientId}` : ''}`),
@@ -89,7 +121,9 @@ export const lpb = {
     }
     const disposition = res.headers.get('content-disposition') || '';
     const named = /filename="?([^";]+)"?/i.exec(disposition);
-    return { blob: await res.blob(), filename: named ? named[1] : 'gentle_dental_page.docx' };
+    // The server names the file after the page's own URL path; this fallback
+    // is only reached when Content-Disposition is missing entirely.
+    return { blob: await res.blob(), filename: named ? named[1] : 'location_service_page.docx' };
   },
 };
 

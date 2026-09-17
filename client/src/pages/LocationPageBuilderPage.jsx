@@ -12,9 +12,15 @@ import { lpb } from '../lib/lpbApi';
 // instead of trying to run it through Neuro's pipeline.
 const NEURO_CLIENT_ID = 'client_neuro_wellness_spa';
 const GD_CLIENT_ID = 'client_gentle_dental';
+const CBH_CLIENT_ID = 'client_clear_behavioral_health';
+// Clear Behavioral Health runs the Neuro flow (same section contract, same
+// YMYL approval gates) — only Gentle Dental branches to its own wizard.
+// Reference data is seeded by server/scripts/seedClient.js at onboarding, not
+// from this dashboard — adding a client here means adding a seeder there.
 const CLIENT_OPTIONS = [
   { id: NEURO_CLIENT_ID, label: 'Neuro Wellness Spa' },
   { id: GD_CLIENT_ID, label: 'Gentle Dental of New England' },
+  { id: CBH_CLIENT_ID, label: 'Clear Behavioral Health' },
 ];
 
 const STAGE_COLORS = {
@@ -64,9 +70,10 @@ function NewPageWizard({ onClose, onCreated, onStartDentalWizard }) {
     setData(null); setServiceId(''); setLocationId(''); setResult(null); setError('');
     lpb.clients().then(async (clients) => {
       if (!clients.some(c => c.id === clientId)) {
+        const label = CLIENT_OPTIONS.find(c => c.id === clientId)?.label || 'This client';
         setError(isDental
           ? 'Gentle Dental reference data not found. Seed it from the Gentle Dental Wizard first.'
-          : 'Neuro Wellness Spa not found. Click "Seed Neuro Wellness Spa" first.');
+          : `${label} reference data not found. Run: node server/scripts/seedClient.js --all`);
         return;
       }
       const full = await lpb.client(clientId);
@@ -109,13 +116,15 @@ function NewPageWizard({ onClose, onCreated, onStartDentalWizard }) {
         </p>
         <div style={{ marginBottom: '0.75rem' }}>
           <label style={labelStyle}>Client</label>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {/* Wraps: a third client makes three long labels too tight for one
+              row in a 32rem modal. */}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             {CLIENT_OPTIONS.map(c => (
               <button
                 key={c.id}
                 onClick={() => setClientId(c.id)}
                 style={{
-                  flex: 1, padding: '0.5rem 0.625rem', fontSize: '0.8125rem', fontWeight: 600, borderRadius: 'var(--r-md,6px)', cursor: 'pointer',
+                  flex: '1 1 8rem', padding: '0.5rem 0.625rem', fontSize: '0.8125rem', fontWeight: 600, borderRadius: 'var(--r-md,6px)', cursor: 'pointer',
                   border: `2px solid ${clientId === c.id ? 'var(--primary)' : 'var(--border)'}`,
                   background: clientId === c.id ? 'var(--primary-soft)' : 'var(--card)',
                   color: clientId === c.id ? 'var(--primary)' : 'var(--text-2)',
@@ -190,7 +199,6 @@ export default function LocationPageBuilderPage() {
   const [loading, setLoading] = useState(true);
   const [wizard, setWizard] = useState(false);
   const [filter, setFilter] = useState('');
-  const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState('');
 
   async function load() {
@@ -199,12 +207,6 @@ export default function LocationPageBuilderPage() {
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
-
-  async function seed() {
-    setSeeding(true);
-    try { await lpb.seed(); await load(); } catch (e) { setError(e.message); }
-    setSeeding(false);
-  }
 
   const filtered = rows.filter(r =>
     !filter || [r.service_name, r.location_name, r.status, ...(r.primary_keywords || [])].join(' ').toLowerCase().includes(filter.toLowerCase()));
@@ -222,14 +224,7 @@ export default function LocationPageBuilderPage() {
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
-              onClick={seed}
-              disabled={seeding}
-              style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', border: '1px solid var(--border)', background: 'var(--card)', borderRadius: 'var(--r-md,6px)', color: 'var(--text-2)', cursor: seeding ? 'not-allowed' : 'pointer', opacity: seeding ? 0.5 : 1 }}
-            >
-              {seeding ? 'Seeding…' : 'Seed Neuro Wellness Spa'}
-            </button>
-            <button
-              onClick={() => navigate('/location-page-builder/gentle-dental-pages')}
+              onClick={() => navigate('/location-page-builder/gentle-dental')}
               style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-md,6px)', cursor: 'pointer' }}
             >
               Gentle Dental Pages

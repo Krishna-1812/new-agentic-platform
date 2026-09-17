@@ -29,15 +29,20 @@ function generateSchema(pageObject) {
     name: `${brand} — ${ld.location_name}`,
     description: pd.meta_description || `${sd.service_name} in ${ld.location_name}, ${ld.state}.`,
     url,
-    telephone: ld.phone_number,
+    telephone: ld.phone_number || undefined,
     image: ld.hero_image_url || undefined,
     logo: client.brand_static?.logo || undefined,
+    // Not every client puts NAP on the page (Clear Behavioral Health does
+    // not), and an empty streetAddress/postalCode is worse than an absent one
+    // — it publishes a PostalAddress asserting the office has no street and no
+    // postcode. Emit only the parts we actually hold; locality + region still
+    // carry the geographic claim the page is making.
     address: {
       '@type': 'PostalAddress',
-      streetAddress: ld.street_address,
+      streetAddress: ld.street_address || undefined,
       addressLocality: ld.city,
       addressRegion: ld.state_abbreviation,
-      postalCode: ld.zip_code,
+      postalCode: ld.zip_code || undefined,
       addressCountry: 'US',
     },
     ...(ld.latitude && ld.longitude ? { geo: { '@type': 'GeoCoordinates', latitude: ld.latitude, longitude: ld.longitude } } : {}),

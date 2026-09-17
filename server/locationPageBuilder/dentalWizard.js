@@ -15,51 +15,9 @@ const dentalOutline = require('./dentalOutline');
 const schemaGenerator = require('./schemaGenerator');
 const qaEngine = require('./qaEngine');
 const internalLinks = require('./internalLinks');
-const { disambiguate } = require('./keywordAdapter');
-const { searchGoogle } = require('../services/googleSearch');
-const { scrapeUrlsDetailed } = require('../services/scraper');
+const { researchCompetitors } = require('./competitorResearch');
 
-const COMPETITOR_URL_COUNT = 5;
 const OWN_DOMAIN = 'gentledental.com';
-
-// Real-competitor research for the primary keyword: SERP it, scrape the top
-// (non-Gentle-Dental) results for their H2/H3 headings and any detected FAQ
-// questions, so educationalBody + faqs can be modeled on actual coverage
-// rather than the LLM's unaided guess. Cached (scraping is the expensive
-// part) and fully fault-tolerant — a SERP or scrape failure falls back to
-// empty arrays rather than failing the whole generation (contentGenerator
-// already handles the no-competitor-data case).
-async function researchCompetitors(primaryKeyword) {
-  const cacheK = store.cacheKey('dental-competitor-research', primaryKeyword);
-  const cached = await store.cacheGet(cacheK, config.cache.serpTtlMs);
-  if (cached) return cached;
-
-  let result = { headings: [], faqs: [] };
-  try {
-    const serp = await searchGoogle(disambiguate(primaryKeyword));
-    const urls = (serp.results || [])
-      .filter(r => r.url && !r.url.includes(OWN_DOMAIN))
-      .slice(0, COMPETITOR_URL_COUNT)
-      .map(r => r.url);
-
-    if (urls.length) {
-      const scraped = await scrapeUrlsDetailed(urls);
-      const successes = scraped.filter(s => s.success);
-      const headings = new Set();
-      const faqs = new Set();
-      successes.forEach(s => {
-        [...(s.h2s || []), ...(s.h3s || [])].forEach(h => headings.add(h));
-        (s.faqs || []).forEach(f => faqs.add(f));
-      });
-      result = { headings: [...headings].slice(0, 25), faqs: [...faqs].slice(0, 15) };
-    }
-  } catch {
-    // SERP/scrape failure — fall back to LLM-only generation, don't fail the wizard.
-  }
-
-  await store.cacheSet(cacheK, result, { kind: 'serp', ttlMs: config.cache.serpTtlMs });
-  return result;
-}
 
 // What the wizard's review screen shows about the outline decision: the grade
 // the planner gave the scraped headings, why, and where each H2 came from.
@@ -93,6 +51,13 @@ async function findExistingPage({ clientId, serviceId, locationId }) {
 async function getExistingPage({ clientId, serviceId, locationId }) {
   return findExistingPage({ clientId, serviceId, locationId });
 }
+
+// Both wizards produce the same GeneratedPage shape and are edited, QC'd and
+// exported by the same code -- they differ only in HOW the page was planned
+// (dental: one opaque call; brief: a reviewed brief). So the guards below key
+// on "is this a wizard page?", not on which wizard made it. Keying on the
+// dental type alone made every brief-built page unsaveable: "Page not found."
+const WIZARD_PAGE_TYPES = new Set(['dental_location_service', 'location_service_brief']);
 
 async function savePage({ clientId, serviceId, locationId, scaffold, existing }) {
   const record = {
@@ -180,7 +145,7 @@ async function getSelection({ clientId, serviceId, locationId }) {
 // navigate-away; this is the write path for them.
 async function saveContent({ pageId, page }) {
   const existing = await store.get('pages', pageId);
-  if (!existing || existing.page_type !== 'dental_location_service') {
+  if (!existing || !WIZARD_PAGE_TYPES.has(existing.page_type)) {
     throw new Error('Page not found.');
   }
   // Shape guard: page_object is read unguarded by the dashboard and the
@@ -201,7 +166,7 @@ async function saveContent({ pageId, page }) {
 // Persist a QC verdict onto the saved page (POST /wizard/qc is otherwise pure).
 async function saveQc({ pageId, qc }) {
   const existing = await store.get('pages', pageId);
-  if (!existing || existing.page_type !== 'dental_location_service') return null;
+  if (!existing || !WIZARD_PAGE_TYPES.has(existing.page_type)) return null;
   const page_object = { ...existing.page_object, qc };
   return store.update('pages', pageId, { page_object });
 }
@@ -231,7 +196,8 @@ async function generatePage({ clientId, serviceId, locationId, primaryKeywords, 
   scaffold.primaryKeywords = primaries;
   scaffold.secondaryKeywords = mergedSecondary;
 
-  const { headings: competitorHeadings, faqs: competitorFaqs } = await researchCompetitors(primaryKeyword);
+  const { headings: competitorHeadings, faqs: competitorFaqs } =
+    await researchCompetitors(primaryKeyword, { ownDomain: OWN_DOMAIN, clientId });
 
   // The practice name for this page: most offices are Gentle Dental, some
   // carry their own local brand. compose already resolved it onto the
@@ -311,7 +277,8 @@ async function regenerateSection({ clientId, serviceId, locationId, section, blo
   const primaryKeyword = scaffold.primaryKeyword;
   const secondaryKeywords = scaffold.secondaryKeywords || [];
 
-  const { headings: competitorHeadings, faqs: competitorFaqs } = await researchCompetitors(primaryKeyword);
+  const { headings: competitorHeadings, faqs: competitorFaqs } =
+    await researchCompetitors(primaryKeyword, { ownDomain: OWN_DOMAIN, clientId });
 
   const context = {};
   if (section === 'educationalBlock') {
@@ -390,6 +357,7 @@ async function regenerateSection({ clientId, serviceId, locationId, section, blo
 }
 
 module.exports = {
+  WIZARD_PAGE_TYPES,
   generatePage, regenerateSection, getExistingPage,
   saveSelection, getSelection, saveContent, saveQc, tupleKey,
 };

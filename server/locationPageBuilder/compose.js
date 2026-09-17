@@ -161,29 +161,50 @@ function mergeL3(pageObject, l3) {
 // NAP (officeInfo) is PULLED from the location record, never generated; it may
 // be empty in v1 (NAP populated manually from GBP/Birdeye — see location.nap_todo).
 
-// The practice name for ONE page. Most offices trade as Gentle Dental; a few
-// carry their own local brand (the Newbury Street office is Newbury Dental
-// Associates) and calling those "Gentle Dental" is simply wrong — it is the
-// name in the title tag, the body copy, the schema and the exported document.
+// The practice name for ONE page. It is the name in the title tag, the body
+// copy, the schema and the exported document, so getting it wrong is wrong in
+// the one detail a local searcher checks first.
 //
-// Resolution order: the location row's own brand_name, then the config
-// override keyed by page URL, then the brand default.
+// Most Gentle Dental offices trade as "Gentle Dental"; a few carry their own
+// local brand (the Newbury Street office is Newbury Dental Associates).
+//
+// Resolution order, most specific first:
+//   1. the location row's own brand_name
+//   2. the config override keyed by page URL (Gentle Dental's exceptions)
+//   3. the CLIENT's own page brand name
+//   4. config.dental.brand.default
+//   5. the client's legal name
+//
+// Step 3 exists because step 4 used to be reached by every client: a Clear
+// Behavioral Health page was titled "Anxiety in Anaheim Hills, CA | Gentle
+// Dental", its closing block read "Why Choose Gentle Dental...", and the
+// writer was told the practice is called Gentle Dental. The default is one
+// client's default, not a global one.
 function dentalBrandName(location = {}, client = {}) {
   const own = String(location.brand_name || '').trim();
   if (own) return own;
   const override = config.dental.brand.byLocationPageUrl[location.location_page_url];
   if (override) return override;
+  const clientBrand = String(client.brand_static?.page_brand_name || '').trim();
+  if (clientBrand) return clientBrand;
   return config.dental.brand.default || client.name || '';
 }
 
 function dentalBreadcrumb({ client, service, location }) {
   const baseUrl = (client.brand_static?.base_url || '').replace(/\/+$/, '');
+  // The state crumb points at a state INDEX page, and only Gentle Dental has
+  // one -- its office URLs are /dental-offices/{state}/{city}. Emitting it for
+  // a client with no such page invented a link to
+  // clearbehavioralhealth.com/dental-offices/ca, which is a 404 and a dental
+  // URL on a behavioral-health site. No index page, no crumb.
   const stateSlugMatch = /^\/dental-offices\/([^/]+)/.exec(location.location_page_url || '');
-  const stateSlug = stateSlugMatch ? stateSlugMatch[1] : (location.state_abbreviation || '').toLowerCase();
+  const stateCrumb = stateSlugMatch
+    ? [{ label: location.state_abbreviation, url: `${baseUrl}/dental-offices/${stateSlugMatch[1]}` }]
+    : [];
   return {
     items: [
       { label: 'Home', url: `${baseUrl}/` },
-      { label: location.state_abbreviation, url: `${baseUrl}/dental-offices/${stateSlug}` },
+      ...stateCrumb,
       { label: location.city, url: `${baseUrl}${location.location_page_url}` },
       { label: service.name, url: `${baseUrl}${dentalPageUrl(location.location_page_url, service.slug)}` },
     ],

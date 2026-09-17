@@ -236,7 +236,11 @@ async function classifyKeywords({ service, location, keywordPool }) {
   const geo = getGeo(location);
 
   const pool = keywordPool.slice(0, config.llm.maxKeywordsToClassify);
-  const cacheK = store.cacheKey('llm-relevance', service.id, location.id, pool.map(k => k.keyword).sort());
+  // v2: the primary rule changed shape — "[service] [city]" became "[service]
+  // in [city]", with an explicit head noun for condition-named services
+  // ("anxiety brea" -> "anxiety treatment in brea"). A v1 entry is cached with
+  // exactly the keywords that change was made to stop producing.
+  const cacheK = store.cacheKey('llm-relevance-v2', service.id, location.id, pool.map(k => k.keyword).sort());
   const cached = await store.cacheGet(cacheK, config.cache.llmTtlMs);
   if (cached) return cached;
 
@@ -249,11 +253,11 @@ Rules:
 - Page context: service "${service.name}" (category: ${service.category}) in ${location.city}, ${geo.state}.
 - priority_score: weighted blend with CONVERSION intent highest, then commercial/transactional, plus volume and relevance; informational down-weighted.
 - Collapse near-duplicates.
-- primary: EXACTLY up to 2. At least one MUST be location-bearing ("[service] [city]"). The second may be a strong "near me" or head term — do NOT force two near-identical geo strings.
+- primary: EXACTLY up to 2. At least one MUST name ${location.city}, written the way a person types it into Google ("[service] in [city]"). Where the service name is a bare condition or topic rather than the service for it (e.g. "Anxiety", "ADHD"), use the phrase people actually search — "anxiety treatment in ${location.city}" — NEVER the condition pasted against the city ("anxiety ${location.city}"). The second may be a strong "near me" or head term — do NOT force two near-identical geo strings.
 - secondary: up to 10 complementary/supporting/long-tail terms.
 - Place each keyword into exactly one bucket where applicable.`;
 
-  const example = `Example (truncated): {"keywords":[{"keyword":"talk therapy brea","relevance":95,"intent_class":"commercial","local_intent":true,"priority_score":92}],"primary":["talk therapy brea","talk therapy near me"],"secondary":["therapist brea ca"],"buckets":{"local_modifier":["talk therapy brea"],"semantic":["psychotherapy brea"],"faq":["how much does talk therapy cost"],"internal_linking":["medication management brea"],"informational_low":["what is talk therapy"],"excluded":["betterhelp"]}}`;
+  const example = `Example (truncated): {"keywords":[{"keyword":"talk therapy in brea","relevance":95,"intent_class":"commercial","local_intent":true,"priority_score":92}],"primary":["talk therapy in brea","talk therapy near me"],"secondary":["therapist brea ca"],"buckets":{"local_modifier":["talk therapy in brea"],"semantic":["psychotherapy brea"],"faq":["how much does talk therapy cost"],"internal_linking":["medication management brea"],"informational_low":["what is talk therapy"],"excluded":["betterhelp"]}}`;
 
   let parsed = null;
   for (let attempt = 0; attempt < 2 && !parsed; attempt++) {

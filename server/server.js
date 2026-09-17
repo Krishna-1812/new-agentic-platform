@@ -177,4 +177,14 @@ const server = app.listen(PORT, () => {
 
 });
 
-server.timeout = 180000;
+// Long enough for the slowest legitimate request: a cold Clear Behavioral
+// Health page generation is a competitor SERP + a 5-page scrape + up to two
+// authoritative-source lookups + a Sonnet write + one correction pass. A warm
+// run measures ~65s; a cold one can take several times that, and 180s cut it
+// off mid-write. The dev proxy in client/vite.config.js must stay ABOVE this.
+//
+// Raised from 300s after a measured run: one CBH write alone is ~137s now that
+// the educational bodies carry real paragraphs, so a draft plus its correction
+// pass lands either side of 300s and was being cut off at exactly the timeout.
+// The work completed server-side and had nobody to return it to.
+server.timeout = 600000;

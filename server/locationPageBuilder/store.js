@@ -18,6 +18,9 @@ const COLLECTIONS = [
   // Approved primary/secondary keywords, saved the moment they're approved
   // (not just when a page is generated) -> lpb_keywordselections.
   'keywordSelections',
+  // The editable content brief that sits between keyword approval and
+  // generation -> lpb_briefs (supabase/migrations/0010_lpb_briefs.sql).
+  'briefs',
 ];
 
 function tableFor(collection) {

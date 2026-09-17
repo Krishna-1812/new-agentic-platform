@@ -292,9 +292,9 @@ const DENTAL_WORDS_TARGET_MAX = config.dental.pageWords.targetMax;
 // per-section regeneration calls, so a regenerated hero is written to the same
 // brief as the original.
 const DENTAL_SECTION_BRIEFS = {
-  metaDescription: `SECTION: SEO meta description — the SERP snippet. COMMERCIAL.
+  metaDescription: (v) => `SECTION: SEO meta description — the SERP snippet. COMMERCIAL.
 Where it appears: Google's results page, NOT on the page itself.
-Who is reading: someone scanning ten near-identical dental results, about to pick one practice to
+Who is reading: someone scanning ten near-identical ${verticalProfile(v).serpResults}, about to pick one practice to
 call. They are shopping, not studying.
 Its job: win the click against nine competitors. Three moves, in this order:
   1. the outcome or service, and the city — what they get and where;
@@ -312,7 +312,7 @@ bolted onto every description is the tell of a template, so pick the step that a
 service (a consultation for treatment planning, a call for urgent care, booking online for a
 check-up).`,
 
-  heroIntro: `SECTION: hero intro — the short paragraph directly under the H1. COMMERCIAL.
+  heroIntro: (v) => `SECTION: hero intro — the short paragraph directly under the H1. COMMERCIAL.
 Where it appears: the first thing read after the click, above the fold.
 Who is reading: someone who just landed, has about three seconds, and is deciding whether this
 practice is the one to book with. They are at the point of choosing a provider.
@@ -330,40 +330,33 @@ Do NOT: describe the page ("learn about the process, costs and what to expect" b
 not on a page whose job is to fill a chair), open with the keyword, stack the service and city into
 a label, list features, or repeat the H1. This is the sentence most often force-fitted — write it as
 if the keyword did not exist, then check the topic and city read naturally.
-GOOD (101 chars): "Straighten your teeth discreetly with Invisalign clear aligners in Boston. Book a
-consultation today."
-BAD (over length — the second sentence is a whole extra idea): "Straighten your teeth discreetly
-with Invisalign clear aligners in Boston. Book a consultation to find out whether clear aligners
-suit your smile and how long treatment would take."
-BAD (informational — describes the page instead of moving the reader): "Straighten your teeth
-discreetly with Invisalign clear aligners in Boston. Learn about the treatment process, costs, and
-what to expect from start to finish."
-BAD (force-fitted keyword): "Invisalign Boston patients trust offers a discreet way to straighten
-teeth without metal brackets. At your visit, we'll explain clear aligner treatment and discuss
-Invisalign cost Boston."`,
+GOOD (${workedExampleChars(verticalProfile(v).metaGood)} chars): ${verticalProfile(v).metaGood}
+BAD (over length — the second sentence is a whole extra idea): ${verticalProfile(v).metaTooLong}
+BAD (informational — describes the page instead of moving the reader): ${verticalProfile(v).metaInformational}
+BAD (force-fitted keyword): ${verticalProfile(v).metaForced}`,
 
-  educationalBody: `SECTION: educational body — the H2 stack that makes up the page.
+  educationalBody: (v) => `SECTION: educational body — the H2 stack that makes up the page.
 Where it appears: the main body, under scannable headings.
 Who is reading: someone researching the procedure and, at the same time, judging whether this
 practice actually understands their problem.
 Its job: answer the real question behind each heading, first sentence first. Each block must stand
 on its own when lifted out of context, because that is how AI answer engines quote it.
 Do NOT: sell, add a CTA to every block, restate the heading as the opening sentence, or repeat what
-another block already covered. Explain like a good dentist explaining to a patient, not like a
-brochure.`,
+another block already covered. Explain like a good ${verticalProfile(v).practitioner} explaining to a patient, not
+like a brochure.`,
 
-  brandBlock: `THE FINAL BLOCK ("Why Choose ...") IS DIFFERENT. It is the one block that may make the case
+  brandBlock: (v) => `THE FINAL BLOCK ("Why Choose ...") IS DIFFERENT. It is the one block that may make the case
 for this practice, and it closes the page.
 Who is reading: someone who now understands the treatment and is deciding where to have it done.
 Its job: give them reasons they could check — what this office actually does for THIS service, what
 makes the visit easier (scheduling, comfort options, the team's approach), and how insurance or
 payment is handled. Name the city once, naturally. End on a plain next step, not a slogan.
-Do NOT: invent credentials, awards, years in practice, dentist names, prices, patient numbers or
+Do NOT: invent credentials, awards, years in practice, ${verticalProfile(v).practitionerNames}, prices, patient numbers or
 review counts; claim to be the best or the leading anything; use superlatives; or repeat what an
 earlier block already said. If you cannot say something specific and true, say something plain and
 true instead — a generic paragraph is better than an invented fact.`,
 
-  faqs: `SECTION: FAQ — the questions patients ask before they book.
+  faqs: (v) => `SECTION: FAQ — the questions patients ask before they book.
 Where it appears: the bottom of the page, and inside Google's FAQ rich result.
 Who is reading: someone with one specific blocker left: what it costs, whether it hurts, how long it
 takes, whether insurance covers it, whether they are a candidate, what recovery is like.
@@ -388,17 +381,11 @@ The remaining questions stay universal, with no city in them at all. If a city n
 deleted from a question without changing the answer, delete it.
 
 Local by nature — what THIS office provides, which options it runs, booking here:
-  GOOD "What types of sedation dentistry are available at your Methuen location?"
-  GOOD "Is oral conscious sedation offered in Methuen?"
-  GOOD "Do you offer IV sedation at your Methuen practice?"
-  GOOD "Do you use sedation for dental implants at our Methuen office?"
+  ${verticalProfile(v).faqLocalGood}
 
 Universal by nature — pain, duration, safety, candidacy, risks. The answer is identical everywhere,
 so NEVER attach a city to one:
-  BAD  "Does sedation dentistry hurt in Methuen?"
-  BAD  "How long does sedation dentistry take in Methuen?"
-  BAD  "Is sedation dentistry safe for me in Methuen?"
-  BAD  "Who should consider sedation dentistry in Methuen?"
+  ${verticalProfile(v).faqLocalBad}
 
 Note that "in Methuen" appears in both lists, so this is not about phrasing — it is about what the
 question asks. Keep the universal questions (patients genuinely ask them) and simply leave the city
@@ -418,12 +405,117 @@ const DENTAL_L3_SCHEMA_HINT = `{
   ]
 }`;
 
+// ── Vertical profiles ───────────────────────────────────────────────────────
+// This writer produces Location + Service pages, which is not a dental idea --
+// but the prompt was written for one client and says so in half a dozen
+// places ("a dental practice in Massachusetts and New Hampshire", "explain
+// like a good dentist", "do not invent dentist names"). Handed to a
+// behavioral-health page those lines are not merely off-brand, they are
+// FALSE, and they instruct the model to write about the wrong profession.
+//
+// So the vertical-specific nouns live here. DENTAL is the default and
+// reproduces the previous prompt word for word, so an un-briefed Gentle Dental
+// page is instructed exactly as it was before this existed.
+const VERTICALS = {
+  dental: {
+    // How the practice is described in the opening line.
+    practiceDescription: 'a dental practice in Massachusetts and New Hampshire',
+    // The professional a good explanation sounds like.
+    practitioner: 'dentist',
+    // What must never be invented, named as this vertical names it.
+    practitionerNames: 'dentist names',
+    // Worked examples. These teach a rule that holds everywhere -- never paste
+    // a search query into prose, put a preposition between the service and the
+    // city -- but they teach it in this vertical's vocabulary. Handed to a
+    // behavioral-health writer, a page of Invisalign and veneers examples
+    // primes it to write about the wrong profession.
+    rawQueries: '"invisalign cost boston", "root canal dentist malden", "veneers quincy"',
+    pastedPairs: '"Invisalign Boston", "Invisalign Boston patients",\n    "veneers Quincy residents", "root canal cost Malden", "teeth whitening Quincy options"',
+    fixedPairs: '"Invisalign in Boston",\n  "the cost of Invisalign in Boston", "our Boston team", "clear aligners in Boston"',
+    wrongProse: '"Invisalign Boston patients trust offers a discreet way to straighten teeth without metal\n     brackets. At your visit, we\'ll explain clear aligner treatment, discuss Invisalign cost Boston\n     and help you understand what to expect from start to finish."',
+    rightProse: '"Straighten your teeth discreetly with Invisalign clear aligners in Boston. Learn about the\n     treatment process, costs, and what to expect from start to finish."',
+    metaGood: '"Straighten your teeth discreetly with Invisalign clear aligners in Boston. Book a\nconsultation today."',
+    metaTooLong: '"Straighten your teeth discreetly\nwith Invisalign clear aligners in Boston. Book a consultation to find out whether clear aligners\nsuit your smile and how long treatment would take."',
+    metaInformational: '"Straighten your teeth\ndiscreetly with Invisalign clear aligners in Boston. Learn about the treatment process, costs, and\nwhat to expect from start to finish."',
+    metaForced: '"Invisalign Boston patients trust offers a discreet way to straighten\nteeth without metal brackets. At your visit, we\'ll explain clear aligner treatment and discuss\nInvisalign cost Boston."',
+    // What the searcher is scanning in the results page.
+    serpResults: 'dental results',
+    // FAQ localization, worked. The rule is universal -- name the city only
+    // where the city genuinely changes the answer -- but it only teaches if
+    // the examples are questions this vertical's patients actually ask.
+    faqLocalGood: [
+      'GOOD "What types of sedation dentistry are available at your Methuen location?"',
+      'GOOD "Is oral conscious sedation offered in Methuen?"',
+      'GOOD "Do you offer IV sedation at your Methuen practice?"',
+      'GOOD "Do you use sedation for dental implants at our Methuen office?"',
+    ].join('\n  '),
+    faqLocalBad: [
+      'BAD  "Does sedation dentistry hurt in Methuen?"',
+      'BAD  "How long does sedation dentistry take in Methuen?"',
+      'BAD  "Is sedation dentistry safe for me in Methuen?"',
+      'BAD  "Who should consider sedation dentistry in Methuen?"',
+    ].join('\n  '),
+  },
+  behavioralHealth: {
+    practiceDescription: 'a behavioral health provider in California',
+    practitioner: 'clinician',
+    practitionerNames: 'clinician or therapist names',
+    rawQueries: '"anxiety treatment cost anaheim hills", "therapist van nuys", "iop pasadena"',
+    pastedPairs: '"Anxiety Treatment Anaheim Hills",\n    "Anxiety Treatment Anaheim Hills patients", "therapy Pasadena residents",\n    "outpatient program cost Van Nuys"',
+    fixedPairs: '"anxiety treatment in Anaheim Hills",\n  "the cost of anxiety treatment in Anaheim Hills", "our Anaheim Hills team",\n  "outpatient care in Anaheim Hills"',
+    wrongProse: '"Anxiety Treatment Anaheim Hills patients trust offers a structured way to manage symptoms\n     without long waits. At your first visit, we\'ll explain outpatient options, discuss anxiety\n     treatment cost Anaheim Hills and help you understand what to expect."',
+    rightProse: '"Get structured support for anxiety in Anaheim Hills. Learn what outpatient care involves,\n     what it costs, and what to expect from your first appointment."',
+    metaGood: '"Evidence-based anxiety treatment with licensed clinicians in Anaheim Hills. Book a\nconsultation today."',
+    metaTooLong: '"Evidence-based anxiety treatment\nwith licensed clinicians in Anaheim Hills. Book a consultation to find out which outpatient\nprogram fits and how long treatment usually takes."',
+    metaInformational: '"Evidence-based anxiety\ntreatment with licensed clinicians in Anaheim Hills. Learn about the intake process, costs, and\nwhat to expect from start to finish."',
+    metaForced: '"Anxiety Treatment Anaheim Hills patients trust offers a structured way to manage\nsymptoms without long waits. At your first visit, we\'ll explain outpatient options and discuss\nanxiety treatment cost Anaheim Hills."',
+    serpResults: 'behavioral health results',
+    faqLocalGood: [
+      'GOOD "Which anxiety programs run at your Anaheim Hills location?"',
+      'GOOD "Is evening outpatient care offered in Anaheim Hills?"',
+      'GOOD "How soon can I be seen at your Anaheim Hills office?"',
+      'GOOD "Which insurance plans do you take in Anaheim Hills?"',
+    ].join('\n  '),
+    faqLocalBad: [
+      'BAD  "Does anxiety treatment work in Anaheim Hills?"',
+      'BAD  "How long does anxiety treatment take in Anaheim Hills?"',
+      'BAD  "Is therapy confidential in Anaheim Hills?"',
+      'BAD  "Who is a good candidate for anxiety treatment in Anaheim Hills?"',
+    ].join('\n  '),
+  },
+};
+const DEFAULT_VERTICAL = 'dental';
+
+function verticalProfile(vertical) {
+  return VERTICALS[vertical] || VERTICALS[DEFAULT_VERTICAL];
+}
+
+// Which model writes a page. A property of the vertical because it follows
+// from how constraint-dense that vertical's contract is -- see the note on
+// config.llm.cbhWriterModel.
+const WRITER_MODEL_BY_VERTICAL = {
+  dental: () => config.llm.dentalWriterModel,
+  behavioralHealth: () => config.llm.cbhWriterModel,
+};
+
+function writerModelFor(vertical) {
+  return (WRITER_MODEL_BY_VERTICAL[vertical] || WRITER_MODEL_BY_VERTICAL[DEFAULT_VERTICAL])();
+}
+
+// The GOOD hero example is labelled with its own character count, and the
+// count has to be REAL: the example teaches a hard 90-110 character window, so
+// an example outside that window teaches the writer to miss it. Measured the
+// way the gate measures -- quotes stripped, wrapping newlines collapsed.
+function workedExampleChars(example) {
+  return String(example || '').replace(/^"|"$/g, '').replace(/\s+/g, ' ').trim().length;
+}
+
 // A FUNCTION of the practice name, not a constant. Most offices trade as
 // Gentle Dental, but some carry their own local brand (Newbury Dental
 // Associates), and a page that calls that office Gentle Dental is wrong in the
 // one detail a local searcher checks first.
-const dentalSystemPrompt = (brandName) => `You are an expert local-SEO + GEO/AEO content writer for ${brandName},
-a dental practice in Massachusetts and New Hampshire.
+const dentalSystemPrompt = (brandName, vertical) => `You are an expert local-SEO + GEO/AEO content writer for ${brandName},
+${verticalProfile(vertical).practiceDescription}.
 
 THIS IS A COMMERCIAL-INTENT PAGE. It is not a guide and not a blog post. The person reading it has
 already decided they may want this treatment and is now choosing WHERE to have it done — they are
@@ -462,7 +554,7 @@ seconds. These are hard rules, not preferences:
   inline styles, no classes, no links.
 
 Hard rules:
-- Do NOT invent office addresses, phone numbers, hours, prices, dentist names, or patient reviews.
+- Do NOT invent office addresses, phone numbers, hours, prices, ${verticalProfile(vertical).practitionerNames}, or patient reviews.
 - THE PRACTICE IS CALLED "${brandName}". Use that name, or a plain "our team" / "our office". Never
   call it anything else, and never introduce another practice name — not every office in this group
   trades under the same brand.
@@ -498,28 +590,23 @@ of blocks than the outline lists is a failed response.
 KEYWORDS — a keyword is a SEARCH QUERY, never a phrase to reproduce.
 
 Keywords tell you what the page is ABOUT. They are typed into a search box, so they are usually not
-grammatical English: "invisalign cost boston", "root canal dentist malden", "veneers quincy". NEVER
+grammatical English: ${verticalProfile(vertical).rawQueries}. NEVER
 paste one into a sentence. Write the IDEA in natural English instead.
 
 - THERE IS NO FREQUENCY TARGET. Do not count keyword uses, and never add a mention to hit a number.
   Write the page as a person would, then stop. A page that names the topic twice, naturally, is
   better than one that names it six times awkwardly.
 - NEVER put the city directly after the service, and never use that pair as a label for people or
-  things. Every one of these is wrong: "Invisalign Boston", "Invisalign Boston patients",
-  "veneers Quincy residents", "root canal cost Malden", "teeth whitening Quincy options".
+  things. Every one of these is wrong: ${verticalProfile(vertical).pastedPairs}.
   Anything shaped like "{service} {city}" or "{service} {city} + noun" is wrong.
-- Put a real preposition in, or drop the city from that sentence: "Invisalign in Boston",
-  "the cost of Invisalign in Boston", "our Boston team", "clear aligners in Boston".
+- Put a real preposition in, or drop the city from that sentence: ${verticalProfile(vertical).fixedPairs}.
 - Name the city where it carries real local meaning — a couple of times across the page and in one
   FAQ. Not in every paragraph, and never twice in one paragraph.
 
   WRONG (a keyword pasted in twice, and a phrase no person would say):
-    "Invisalign Boston patients trust offers a discreet way to straighten teeth without metal
-     brackets. At your visit, we'll explain clear aligner treatment, discuss Invisalign cost Boston
-     and help you understand what to expect from start to finish."
+    ${verticalProfile(vertical).wrongProse}
   RIGHT (same topic, same city, same coverage — written as English):
-    "Straighten your teeth discreetly with Invisalign clear aligners in Boston. Learn about the
-     treatment process, costs, and what to expect from start to finish."
+    ${verticalProfile(vertical).rightProse}
 
 - SECONDARY keywords: use one only where it already fits the sentence you were going to write. If
   it cannot be placed naturally, LEAVE IT OUT. A forced keyword is worse than a missing one.
@@ -542,7 +629,7 @@ function hasBrandBlock(outline) {
   return (outline?.blocks || []).some(b => b.source === 'brand');
 }
 
-function buildDentalPrompt({ service, location, primaryKeyword, secondaryKeywords, outline, competitorFaqs, correction, brandName }) {
+function buildDentalPrompt({ service, location, primaryKeyword, secondaryKeywords, outline, competitorFaqs, correction, brandName, brief, vertical }) {
   const officeName = location.location_name;
   const brand = brandName || config.dental.brand.default;
   const cityState = `${location.city}, ${location.state_abbreviation}`;
@@ -553,8 +640,8 @@ function buildDentalPrompt({ service, location, primaryKeyword, secondaryKeyword
   // abstract.
   const forcedExample = String(primaryKeyword || '').replace(/\b\w/g, c => c.toUpperCase());
 
-  const bodyStack = `${DENTAL_SECTION_BRIEFS.educationalBody}
-${hasBrandBlock(outline) ? `\n${DENTAL_SECTION_BRIEFS.brandBlock}\n` : ''}
+  const bodyStack = `${DENTAL_SECTION_BRIEFS.educationalBody(vertical)}
+${hasBrandBlock(outline) ? `\n${DENTAL_SECTION_BRIEFS.brandBlock(vertical)}\n` : ''}
 Write exactly these ${blocks.length} blocks, in this order:
 ${formatOutlineForPrompt(outline)}
 
@@ -562,11 +649,41 @@ That is ${totalParagraphs} paragraphs across ${blocks.length} blocks. Write ${DE
 (${DENTAL_MAX_PARA_WORDS} is the hard ceiling), so the block bodies ALONE come to roughly
 ${totalParagraphs * DENTAL_PARA_WORDS_MIN}-${totalParagraphs * DENTAL_PARA_WORDS_MAX} words. The hero intro and FAQs are counted separately, in the WORD BUDGET below.`;
 
-  const faqBlock = (competitorFaqs || []).length
-    ? `COMPETITOR FAQ TOPICS (real questions competitor pages answer for this keyword — write your
+  // Two different contracts, depending on whether a reviewer approved a brief.
+  //
+  // Without a brief the writer CHOOSES its own questions and competitor FAQs
+  // are topic inspiration. With one, the questions were reviewed and signed
+  // off: they are answered verbatim, in order, and the writer adds none of its
+  // own. Anything looser makes the review step decorative.
+  const briefFaqs = (brief?.faqs || []).map(f => f.q).filter(Boolean);
+  const faqBlock = briefFaqs.length
+    ? `THE FAQ QUESTIONS ARE FIXED. Answer these ${briefFaqs.length}, in this order, copying each question
+VERBATIM into the q field. Do not add, drop, reorder or reword them:
+${briefFaqs.map((f, i) => `${i + 1}. ${f}`).join('\n')}`
+    : (competitorFaqs || []).length
+      ? `COMPETITOR FAQ TOPICS (real questions competitor pages answer for this keyword — write your
 own original answers, do not copy theirs):
 ${competitorFaqs.map(f => `- ${f}`).join('\n')}`
-    : '';
+      : '';
+
+  // A brief carries its own approved word target; without one the config
+  // defaults stand, so an un-briefed page is instructed exactly as before.
+  const wordsTargetMin = brief?.wordTarget?.min ?? DENTAL_WORDS_TARGET_MIN;
+  const wordsTargetMax = brief?.wordTarget?.max ?? DENTAL_WORDS_TARGET_MAX;
+
+  // A brief can carry fewer questions than the localization floor. Asking for
+  // 3 localized answers out of 2 questions is an instruction that cannot be
+  // followed, and a model handed one starts improvising — usually by adding a
+  // question, which breaks the verbatim contract two lines above.
+  const briefLocalized = Math.min(DENTAL_MIN_LOCALIZED_FAQS, briefFaqs.length);
+  const faqInstruction = briefFaqs.length
+    ? `Answer the ${briefFaqs.length} fixed questions listed below, each answer at most ${DENTAL_MAX_FAQ_ANSWER_WORDS} words. At least
+${briefLocalized} of your ANSWERS must name ${location.city} — and only where the city genuinely changes the
+answer (what this office offers, being seen quickly, booking, insurance), never in an answer about
+pain, duration, safety or candidacy.`
+    : `Write ${DENTAL_MIN_FAQS}-${DENTAL_MAX_FAQS} Q&As, each answer at most ${DENTAL_MAX_FAQ_ANSWER_WORDS} words. At least ${DENTAL_MIN_LOCALIZED_FAQS} must name ${location.city} —
+and only in questions about what this office offers, never in a question about pain, duration,
+safety or candidacy.`;
 
   // Second pass only. Models cannot count their own output reliably, but they
   // correct well when handed the real numbers — so the retry names exactly
@@ -604,22 +721,20 @@ Office name: ${officeName}
 Primary keyword: ${primaryKeyword}
 Secondary keywords: ${(secondaryKeywords || []).join(', ') || '(none)'}
 
-${DENTAL_SECTION_BRIEFS.heroIntro}
+${DENTAL_SECTION_BRIEFS.heroIntro(vertical)}
 Length: ${DENTAL_HERO_MIN_CHARS}-${DENTAL_HERO_MAX_CHARS} characters (about ${heroWords(DENTAL_HERO_MIN_CHARS)}-${heroWords(DENTAL_HERO_MAX_CHARS)} words). Count them.
 
-${DENTAL_SECTION_BRIEFS.metaDescription}
+${DENTAL_SECTION_BRIEFS.metaDescription(vertical)}
 
 ${bodyStack}
 
-${DENTAL_SECTION_BRIEFS.faqs}
-Write ${DENTAL_MIN_FAQS}-${DENTAL_MAX_FAQS} Q&As, each answer at most ${DENTAL_MAX_FAQ_ANSWER_WORDS} words. At least ${DENTAL_MIN_LOCALIZED_FAQS} must name ${location.city} —
-and only in questions about what this office offers, never in a question about pain, duration,
-safety or candidacy.
+${DENTAL_SECTION_BRIEFS.faqs(vertical)}
+${faqInstruction}
 ${faqBlock}
 
 WORD BUDGET: heroIntro ${heroWords(DENTAL_HERO_MIN_CHARS)}-${heroWords(DENTAL_HERO_MAX_CHARS)} words (${DENTAL_HERO_MIN_CHARS}-${DENTAL_HERO_MAX_CHARS} characters); ${DENTAL_PARA_WORDS_MIN}-${DENTAL_PARA_WORDS_MAX} words per body paragraph; each FAQ answer at most
 ${DENTAL_MAX_FAQ_ANSWER_WORDS} words. The TOTAL of heroIntro + all block bodies + all FAQ questions and answers (the meta
-description does NOT count) must land between ${DENTAL_WORDS_TARGET_MIN} and ${DENTAL_WORDS_TARGET_MAX} words, and that total is the
+description does NOT count) must land between ${wordsTargetMin} and ${wordsTargetMax} words, and that total is the
 binding constraint: if the per-part ranges would put you outside it, adjust paragraph length within
 the ${DENTAL_PARA_WORDS_MIN}-${DENTAL_MAX_PARA_WORDS} word range rather than adding or dropping blocks. Count it before you answer.
 
@@ -631,7 +746,7 @@ ${feedback}
 Return JSON only, matching this schema:
 ${DENTAL_L3_SCHEMA_HINT}`;
 
-  return { system: dentalSystemPrompt(brand), user };
+  return { system: dentalSystemPrompt(brand, vertical), user };
 }
 
 function stripTags(html) {
@@ -687,9 +802,9 @@ function alignToOutline(l3, outline) {
   return l3;
 }
 
-async function generateDentalL3({ service, location, primaryKeyword, secondaryKeywords, outline, competitorFaqs, brandName }) {
-  const llm = createLlmClient(config.llm.dentalWriterModel);
-  const base = { service, location, primaryKeyword, secondaryKeywords, outline, competitorFaqs, brandName };
+async function generateDentalL3({ service, location, primaryKeyword, secondaryKeywords, outline, competitorFaqs, brandName, brief, vertical }) {
+  const llm = createLlmClient(writerModelFor(vertical));
+  const base = { service, location, primaryKeyword, secondaryKeywords, outline, competitorFaqs, brandName, brief, vertical };
 
   const draft = async (correction) => {
     const { system, user } = buildDentalPrompt({ ...base, correction });
@@ -910,8 +1025,8 @@ function competitorContextBlock(competitorHeadings, competitorFaqs) {
   return parts.join('\n\n');
 }
 
-async function generateDentalRegen({ service, location, primaryKeyword, secondaryKeywords, competitorHeadings, competitorFaqs, section, context = {}, outline, brandName }) {
-  const llm = createLlmClient(config.llm.dentalWriterModel);
+async function generateDentalRegen({ service, location, primaryKeyword, secondaryKeywords, competitorHeadings, competitorFaqs, section, context = {}, outline, brandName, vertical }) {
+  const llm = createLlmClient(writerModelFor(vertical));
   const cityState = `${location.city}, ${location.state_abbreviation}`;
   const competitorBlock = competitorContextBlock(competitorHeadings, competitorFaqs);
   const kwLine = `Primary keyword: ${primaryKeyword}\nSecondary keywords: ${(secondaryKeywords || []).join(', ') || '(none)'}`;
@@ -919,12 +1034,12 @@ async function generateDentalRegen({ service, location, primaryKeyword, secondar
   let schemaHint, task;
   if (section === 'heroIntro') {
     schemaHint = `{ "heroIntro": "string — ${DENTAL_HERO_MIN_CHARS}-${DENTAL_HERO_MAX_CHARS} characters counting spaces, leading with the patient outcome and the city and closing on the next step" }`;
-    task = `${DENTAL_SECTION_BRIEFS.heroIntro}
+    task = `${DENTAL_SECTION_BRIEFS.heroIntro(vertical)}
 
 Write ONLY a fresh hero intro for "${service.name}" in ${cityState}. ${DENTAL_HERO_MIN_CHARS}-${DENTAL_HERO_MAX_CHARS} characters — count them.`;
   } else if (section === 'metaDescription') {
     schemaHint = `{ "metaDescription": "string — MUST be ${DENTAL_META_DESC_MIN}-${DENTAL_META_DESC_MAX} characters total, names the service and city, gives one reason to choose this office, and ENDS on a call to action as a complete sentence" }`;
-    task = `${DENTAL_SECTION_BRIEFS.metaDescription}
+    task = `${DENTAL_SECTION_BRIEFS.metaDescription(vertical)}
 
 Write ONLY a fresh meta description for "${service.name}" in ${cityState}. ${DENTAL_META_DESC_MIN}-${DENTAL_META_DESC_MAX} characters, ending on a
 call to action as a complete sentence.`;
@@ -935,14 +1050,14 @@ call to action as a complete sentence.`;
     // it rewrites the COPY only — a fresh heading here would quietly drop the
     // page out of the pattern every other page follows.
     task = context.lockedH2
-      ? `${DENTAL_SECTION_BRIEFS.educationalBody}
+      ? `${DENTAL_SECTION_BRIEFS.educationalBody(vertical)}
 
-${DENTAL_SECTION_BRIEFS.brandBlock}
+${DENTAL_SECTION_BRIEFS.brandBlock(vertical)}
 
 Write fresh copy for the closing block of the "${service.name}" page in ${cityState}. The heading is
 FIXED — return it verbatim as "${context.lockedH2}" and write only the body.${otherHeadings.length ? ` Do NOT repeat what these other blocks already cover: ${otherHeadings.join(' | ')}.` : ''}
 The block is ${config.dental.brandBlock.paragraphs} short paragraphs of ${DENTAL_PARA_WORDS_MIN}-${DENTAL_PARA_WORDS_MAX} words each (${DENTAL_MAX_PARA_WORDS} is the hard ceiling per paragraph).`
-      : `${DENTAL_SECTION_BRIEFS.educationalBody}
+      : `${DENTAL_SECTION_BRIEFS.educationalBody(vertical)}
 
 Write ONE fresh educational H2 block (heading + HTML body) for "${service.name}" in ${cityState}${
         context.currentH2 ? `, replacing the current heading "${context.currentH2}"` : ''
@@ -961,8 +1076,8 @@ VERBATIM. Do NOT add, drop, merge, reorder or rename blocks:
 ${formatOutlineForPrompt(outline)}`
       : `Write a ${config.dental.blocks.min}-${config.dental.blocks.max} block H2 stack covering this service the way a patient learns it: what it is,
 why or when it is needed, the process, candidacy and options, then cost, insurance and safety.`;
-    task = `${DENTAL_SECTION_BRIEFS.educationalBody}
-${hasBrandBlock(outline) ? `\n${DENTAL_SECTION_BRIEFS.brandBlock}\n` : ''}
+    task = `${DENTAL_SECTION_BRIEFS.educationalBody(vertical)}
+${hasBrandBlock(outline) ? `\n${DENTAL_SECTION_BRIEFS.brandBlock(vertical)}\n` : ''}
 Write the educational H2 stack for "${service.name}" in ${cityState}.
 
 ${stackRule}
@@ -971,13 +1086,13 @@ Write ${DENTAL_PARA_WORDS_MIN}-${DENTAL_PARA_WORDS_MAX} words per paragraph. Pla
 across the whole stack, spread over different blocks.`;
   } else if (section === 'faqs') {
     schemaHint = `{ "faqs": [ { "q": "string", "a": "string" } ] }`;
-    task = `${DENTAL_SECTION_BRIEFS.faqs}
+    task = `${DENTAL_SECTION_BRIEFS.faqs(vertical)}
 
 Write a fresh set of ${DENTAL_MIN_FAQS}-${DENTAL_MAX_FAQS} FAQ Q&As for "${service.name}" in ${cityState}, phrased the way patients ask; each answer at most ${DENTAL_MAX_FAQ_ANSWER_WORDS} words. At least ${DENTAL_MIN_LOCALIZED_FAQS} must name ${location.city} — build those ${DENTAL_MIN_LOCALIZED_FAQS} around blockers the office itself answers (which options it runs, being seen quickly, booking, insurance it takes), never by adding the city to a pain/duration/safety/candidacy question.`;
   } else if (section === 'faqItem') {
     schemaHint = `{ "q": "string", "a": "string" }`;
     const otherQuestions = (context.otherQuestions || []).filter(Boolean);
-    task = `${DENTAL_SECTION_BRIEFS.faqs}
+    task = `${DENTAL_SECTION_BRIEFS.faqs(vertical)}
 
 Write ONE fresh FAQ Q&A for "${service.name}" in ${cityState}${
       context.currentQ ? `, replacing the current question "${context.currentQ}"` : ''
@@ -1046,6 +1161,7 @@ question is about what the office offers; never attach it to a pain, duration, s
 module.exports = {
   buildPrompt, generateL3, crossPageSimilarity, competitorOverlap, regenField,
   buildDentalPrompt, generateDentalL3, generateDentalRegen, DENTAL_SECTION_BRIEFS,
+  VERTICALS, DEFAULT_VERTICAL, verticalProfile, writerModelFor,
   normalizeMetaDescriptionLength, trimToSentence,
   alignToOutline, matchesOutline, dentalGeneratedWordCount,
 };

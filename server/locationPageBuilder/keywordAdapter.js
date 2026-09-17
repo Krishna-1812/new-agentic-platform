@@ -18,8 +18,9 @@ const { escapeRegex, baseCity } = require('./text');
 const { searchGoogle } = require('../services/googleSearch');
 const { getUrlKeywords } = require('../services/semrush');
 const { getUniverseCandidates, getKnownCities } = require('./keywordUniverseStore');
-const { relevanceTermsFor } = require('./keywordUniverseMap');
-const { selectPrimaryAndSecondary } = require('./keywordRelevance');
+const { relevanceTermsForService } = require('./keywordUniverseMap');
+const { seedQualifierFor } = require('./verticals');
+const { selectPrimaryAndSecondary, servicePhrase } = require('./keywordRelevance');
 
 const TOP_URLS = 10;
 
@@ -34,10 +35,18 @@ function classifyIntent(keyword) {
 // ("Sealants" and "Crowns & Bridges" read as construction/civil-engineering
 // terms, "Braces" as orthopedic, "Implants" as medical/cosmetic-surgery) — a
 // bare "{service} {city} {state}" SERP query for these returns building
-// departments, civic pages, etc. instead of dental competitors. Disambiguate
-// by ensuring "dental" is in the query whenever it isn't already implied.
-function disambiguate(seed) {
-  return /dental|dentist/i.test(seed) ? seed : `Dental ${seed}`;
+// departments, civic pages, etc. instead of dental competitors, so the query
+// is qualified with the industry word.
+//
+// The qualifier comes from the CLIENT, and a client with none gets its seed
+// back untouched. This used to be an unconditional "Dental " prefix, which
+// meant a behavioral-health page researched "Dental Anxiety Anaheim Hills" and
+// came back with a pool of dental keywords and a set of dental competitors:
+// the wrong industry, silently, with nothing in the output to show for it.
+function disambiguate(seed, clientIdOrVertical) {
+  const qualifier = seedQualifierFor(clientIdOrVertical);
+  if (!qualifier) return seed;
+  return new RegExp(qualifier, 'i').test(seed) ? seed : `${qualifier} ${seed}`;
 }
 
 // escapeRegex and baseCity now live in text.js, so compose.js can resolve the
@@ -119,10 +128,18 @@ async function getOtherCityRegex(clientId, targetCity, allowTerms = []) {
 }
 
 async function getKeywordCandidates({ service, city, state, stateName, region, seedQuery, clientId, serviceSlug }) {
-  const rawSeed = (seedQuery || `${service} ${city} ${state}`).trim();
+  // The service half of the seed has to read as a SERVICE, or the SERP
+  // answers a different question: "Anxiety Anaheim Hills CA" returned pet
+  // clinics and "do cats help with anxiety", because a bare condition next to
+  // a city is not what anyone searches. Two ways to fix that and a vertical
+  // needs exactly one -- dental prefixes its industry word (disambiguate
+  // below), everyone else adds the head noun that makes the condition a
+  // service ("anxiety" -> "anxiety treatment").
+  const searchableService = seedQualifierFor(clientId) ? service : servicePhrase(service);
+  const rawSeed = (seedQuery || `${searchableService} ${city} ${state}`).trim();
   if (!rawSeed) throw new Error('A service+city+state or seedQuery is required.');
   if (!process.env.SEMRUSH_API_KEY) throw new Error('SEMRUSH_API_KEY not configured on server.');
-  const seed = disambiguate(rawSeed);
+  const seed = disambiguate(rawSeed, clientId);
   // Strip any sub-area label before matching keywords (see baseCity).
   const searchCity = baseCity(city, region);
 
@@ -131,6 +148,9 @@ async function getKeywordCandidates({ service, city, state, stateName, region, s
   // and the LLM selection prompt so the two agree.
   const regionTerms = [region, state, stateName].filter(Boolean);
 
+  // v9: bumped when the topical filter stopped being dental-only. A client
+  // with no curated map entry was pooling EVERY keyword its competitors rank
+  // for; a v8 pool for such a client is that unfiltered set.
   // v8: bumped after two further changes to what the pool contains -- the
   // universe is now over-fetched then filtered then trimmed, and the
   // other-city filter strips allowed region mentions before matching (so
@@ -141,12 +161,12 @@ async function getKeywordCandidates({ service, city, state, stateName, region, s
   // after exempting region/state from the other-city filter (both change the
   // cached pool's contents). v5 had applied the topical relevance filter to
   // universe candidates too, previously live-pool only.
-  const cacheK = store.cacheKey('dental-kw-adapter-v8', seed, clientId, serviceSlug, regionTerms, searchCity);
+  const cacheK = store.cacheKey('dental-kw-adapter-v9', seed, clientId, serviceSlug, regionTerms, searchCity);
   // Non-fatal: a store outage (or an unconfigured Supabase) must degrade to a
   // fresh pull, not fail the request.
   let cached = null;
   try { cached = await store.cacheGet(cacheK, config.cache.serpTtlMs); } catch { /* recompute */ }
-  const relevanceTerms = serviceSlug ? relevanceTermsFor(serviceSlug) : null;
+  const relevanceTerms = relevanceTermsForService(serviceSlug, service);
   const candidates = cached || await buildCandidatePool({ seed, city: searchCity, clientId, serviceSlug, relevanceTerms, regionTerms });
   if (!cached) { try { await store.cacheSet(cacheK, candidates, { kind: 'serp', ttlMs: config.cache.serpTtlMs }); } catch { /* non-fatal */ } }
 

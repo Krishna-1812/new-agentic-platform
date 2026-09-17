@@ -7,6 +7,9 @@ const {
   Table, TableRow, TableCell, WidthType, ShadingType, VerticalAlign,
   BorderStyle, AlignmentType, Footer, PageNumber, TabStopType,
 } = require('docx');
+// The CBH line rules live in one place; the export renders the breaks they
+// charge for rather than restating how often they fall.
+const cbhContract = require('./cbhContract');
 
 // Palette tuned to the formatted reference doc.
 const TEAL = '2C7A7B';      // section headings + content H1
@@ -339,16 +342,178 @@ async function toDentalDocxBuffer(pageObject) {
 }
 
 function safeFilename(pageObject) {
-  if (isDentalPage(pageObject)) {
+  if (isDentalPage(pageObject) || isCbhPage(pageObject)) {
     // "/dental-offices/ma/boston/implants" -> "ma_boston_implants"
     const parts = String(pageObject.meta?.urlPath || '').split('/').filter(Boolean).slice(1);
-    return (parts.join('_') || 'gentle_dental_page').replace(/[^a-z0-9_-]/gi, '_');
+    return (parts.join('_') || 'location_service_page').replace(/[^a-z0-9_-]/gi, '_');
   }
   const sd = pageObject.service_data, ld = pageObject.location_data;
   return `${sd.service_slug}_${ld.location_slug}`.replace(/[^a-z0-9_-]/gi, '_');
 }
 
+
+// ── Clear Behavioral Health ─────────────────────────────────────────────────
+// The CBH contract shares no section with either shape above: nine named
+// sections, one nesting 4-5 H3s whose bodies are LINES rather than HTML, and a
+// per-section provenance tag the guidelines require to be stated.
+//
+// That tag is the reason this is a separate exporter rather than a branch. The
+// deliverable has to show, next to each educational subsection, whether it was
+// modelled on competitor research or written from an authoritative source --
+// and for the latter, which source. On the page itself it never appears.
+
+function isCbhPage(pageObject) {
+  return !!(pageObject && pageObject.sections
+    && pageObject.sections.educational && pageObject.sections.uvp);
+}
+
+function cbhProvenanceLabel(h3) {
+  if (h3.source === 'competitor') return 'Competitor-driven';
+  if (h3.source === 'fallback') return h3.sourceUrl ? `Fallback — ${h3.sourceUrl}` : 'Fallback — NO SOURCE';
+  return 'Source not stated';
+}
+
+function toCbhMarkdown(pageObject) {
+  const m = pageObject.meta || {};
+  const s = pageObject.sections || {};
+  const L = [];
+  L.push(`# ${s.hero?.h1 || ''}`);
+  L.push(`Page URL: ${m.urlPath || ''}`);
+  L.push(`## Meta Title\n${m.fullTitle || m.title || ''}`);
+  L.push(`## Meta Description\n${m.metaDescription || ''}`);
+  L.push(`## Hero\n${s.hero?.description || ''}`);
+
+  const paras = (arr) => (arr || []).join('\n\n');
+  L.push(`## ${s.approach?.heading || 'Approach'}\n${paras(s.approach?.paragraphs)}`);
+  L.push(`### ${s.approach?.philosophy?.heading || ''}\n${paras(s.approach?.philosophy?.paragraphs)}`);
+  L.push(`### ${s.approach?.therapies?.heading || ''}\n${paras(s.approach?.therapies?.paragraphs)}`);
+  L.push(`## ${s.insurance?.heading || ''}\n${s.insurance?.paragraph || ''}`);
+
+  L.push(`## ${s.educational?.heading || ''}\n${paras(s.educational?.paragraphs)}`);
+  (s.educational?.h3s || []).forEach((h) => {
+    L.push(`### ${h.heading}\n_${cbhProvenanceLabel(h)}_`);
+    (h.lines || []).forEach(line => L.push(line));
+  });
+
+  L.push(`## ${s.uvp?.heading || ''}\n${s.uvp?.paragraph || ''}`);
+  L.push(`## ${s.service?.heading || ''}\n${s.service?.paragraph || ''}`);
+  L.push(`## ${s.faq?.heading || 'FAQs'}`);
+  (s.faq?.items || []).forEach((f, i) => L.push(`### Q${i + 1}: ${f.q}\n_[${f.type || 'untyped'}]_\n${f.a}`));
+  L.push(`## Schema\n\`\`\`json\n${JSON.stringify(pageObject.schema || {}, null, 2)}\n\`\`\``);
+  return L.join('\n\n');
+}
+
+async function toCbhDocxBuffer(pageObject) {
+  const m = pageObject.meta || {};
+  const s = pageObject.sections || {};
+  const children = [];
+  const run = (t, opts = {}) => new TextRun({ text: String(t || ''), size: 22, ...opts });
+  const eyebrow = (t) => new Paragraph({ spacing: { after: 40 }, children: [run(t, { bold: true, color: TEAL, size: 17, characterSpacing: 30 })] });
+  const section = (t) => new Paragraph({
+    spacing: { before: 320, after: 120 }, border: headingRule,
+    children: [run(t, { bold: true, color: TEAL, size: 26 })],
+  });
+  const label = (t) => new Paragraph({ spacing: { before: 160, after: 40 }, children: [run(t, { bold: true })] });
+  const body = (t) => new Paragraph({ spacing: { after: 80 }, children: [run(t)] });
+  const note = (t) => new Paragraph({ spacing: { after: 60 }, children: [run(t, { color: GREY, size: 17, italics: true })] });
+  const paras = (arr) => (arr || []).filter(Boolean).forEach(pp => children.push(body(pp)));
+
+  children.push(eyebrow('SEO PAGE CONTENT'));
+  children.push(h1(s.hero?.h1 || ''));
+  children.push(new Paragraph({ spacing: { after: 60 }, children: [run('Page URL:  ', { bold: true, color: GREY, size: 18 }), run(m.urlPath || '', { color: GREY, size: 18 })] }));
+
+  children.push(section('SEO Metadata'));
+  // The shipped tag, since that is what appears in the SERP -- and separately
+  // the counted part, because the 50-60 window excludes the brand suffix and a
+  // reviewer checking the number needs to see what it was measured on.
+  children.push(label('Meta Title (as it ships)')); children.push(body(m.fullTitle || m.title));
+  children.push(label('Meta Title (counted, excluding brand)')); children.push(body(m.title));
+  children.push(label('Meta Description')); children.push(body(m.metaDescription));
+
+  children.push(section('Hero'));
+  children.push(label('H1')); children.push(body(s.hero?.h1));
+  children.push(label('Description')); children.push(body(s.hero?.description));
+
+  children.push(section('Page Content'));
+  children.push(h2(s.approach?.heading || ''));
+  paras(s.approach?.paragraphs);
+  children.push(h3(s.approach?.philosophy?.heading || ''));
+  paras(s.approach?.philosophy?.paragraphs);
+  children.push(h3(s.approach?.therapies?.heading || ''));
+  paras(s.approach?.therapies?.paragraphs);
+
+  children.push(h2(s.insurance?.heading || ''));
+  children.push(body(s.insurance?.paragraph));
+
+  children.push(h2(s.educational?.heading || ''));
+  paras(s.educational?.paragraphs);
+  (s.educational?.h3s || []).forEach((h) => {
+    children.push(h3(h.heading || ''));
+    // Required by the guidelines: every educational section states whether it
+    // is competitor-driven or fallback-based, and a fallback names its source.
+    children.push(note(cbhProvenanceLabel(h)));
+    // The guidelines require a paragraph break after every third line and
+    // charge a line for it. Render it, so the docx shows the grouping the
+    // budget paid for instead of an undifferentiated run of paragraphs.
+    //
+    // Counted in LINES, not entries: a bullet is worth two, so breaking every
+    // third entry would put the break somewhere the budget never charged for.
+    // No break after the last line -- a trailing one separates nothing.
+    //
+    // This will not always place exactly as many breaks as the budget charged.
+    // breaksFor counts on a flat line total and so can land a break inside a
+    // wrapped entry; a document can only break BETWEEN entries. The budget is
+    // the rule, this is the nearest honest rendering of it.
+    const breakEvery = cbhContract.LIMITS.educational.linesBeforeBreak;
+    const lines = (h.lines || []).filter(Boolean);
+    let since = 0;
+    lines.forEach((line, n) => {
+      children.push(body(line));
+      since += cbhContract.lineCount(line);
+      if (since >= breakEvery && n < lines.length - 1) {
+        children.push(body(''));
+        since = 0;
+      }
+    });
+  });
+
+  children.push(h2(s.uvp?.heading || ''));
+  children.push(body(s.uvp?.paragraph));
+  children.push(h2(s.service?.heading || ''));
+  children.push(body(s.service?.paragraph));
+
+  children.push(h2(s.faq?.heading || 'Frequently Asked Questions'));
+  (s.faq?.items || []).forEach((f, i) => {
+    children.push(label(`Q${i + 1}. ${f.q}`));
+    children.push(note(`[${f.type || 'untyped'}]`));
+    children.push(body(f.a));
+  });
+
+  const footer = new Footer({
+    children: [new Paragraph({
+      tabStops: [{ type: TabStopType.RIGHT, position: 9360 }],
+      border: { top: { style: BorderStyle.SINGLE, size: 4, color: 'D8DEE4', space: 6 } },
+      children: [
+        run(`${m.brandName || ''}  |  ${pageObject.locationName || ''} ${pageObject.serviceName || ''}`, { color: GREY, size: 16 }),
+        run('\tPage ', { color: GREY, size: 16 }),
+        new TextRun({ children: [PageNumber.CURRENT], color: GREY, size: 16 }),
+      ],
+    })],
+  });
+
+  const doc = new Document({
+    styles: DOC_STYLES,
+    sections: [{
+      properties: { page: { margin: { top: 1080, bottom: 1080, left: 1080, right: 1080 } } },
+      footers: { default: footer },
+      children,
+    }],
+  });
+  return Packer.toBuffer(doc);
+}
+
 module.exports = {
   toJSON, toMarkdown, toDocxBuffer, safeFilename,
   isDentalPage, toDentalMarkdown, toDentalDocxBuffer, htmlToLines,
+  isCbhPage, toCbhMarkdown, toCbhDocxBuffer, cbhProvenanceLabel,
 };

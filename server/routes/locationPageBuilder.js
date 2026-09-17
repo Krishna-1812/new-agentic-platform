@@ -9,7 +9,12 @@ const router = express.Router();
 
 const config = require('../locationPageBuilder/config');
 const store = require('../locationPageBuilder/store');
-const { seedNeuroWellness, seedGentleDental } = require('../locationPageBuilder/seed');
+const { seedGentleDental } = require('../locationPageBuilder/seed');
+const cbhBrief = require('../locationPageBuilder/cbhBrief');
+const cbhWizard = require('../locationPageBuilder/cbhWizard');
+const cbhRegen = require('../locationPageBuilder/cbhRegen');
+const cbhQc = require('../locationPageBuilder/cbhQc');
+const cbhContract = require('../locationPageBuilder/cbhContract');
 const compose = require('../locationPageBuilder/compose');
 const pageService = require('../locationPageBuilder/pageService');
 const exporter = require('../locationPageBuilder/exporter');
@@ -44,11 +49,14 @@ function mintToken(payload) {
 }
 
 // ── Reference data (L1/L2) ───────────────────────────────────────────────────
-router.post('/seed', async (req, res) => {
-  try { res.json(await seedNeuroWellness()); }
-  catch (e) { res.status(500).json({ error: e.message }); }
-});
-
+// Seeding a client is ONBOARDING and belongs to server/scripts/seedClient.js,
+// which calls the seeders directly — there is no HTTP endpoint for it, and
+// adding one would put setup back on the product surface.
+//
+// This single route is the exception, and not for setup: the Gentle Dental
+// wizard's "Sync list" re-imports a changed service/location taxonomy without
+// making the SEO team leave the page. It is re-runnable and preserves
+// hand-entered NAP (see seed.mergeLocation).
 router.post('/seed-gentle-dental', async (req, res) => {
   try { res.json(await seedGentleDental()); }
   catch (e) { res.status(500).json({ error: e.message }); }
@@ -100,7 +108,11 @@ router.delete('/entities/:collection/:id', wrap(async (req, res) => {
 // appear as broken-looking rows here or crash the detail page if clicked.
 router.get('/pages', wrap(async (req, res) => {
   const all = await store.list('pages', req.query.client_id ? { client_id: req.query.client_id } : {});
-  const pages = all.filter(p => p.page_type !== 'dental_location_service');
+  // Excludes every wizard page type: this dashboard renders the Neuro
+  // page_object shape, and none of them use it. A CBH page listed here is a
+  // row that breaks the moment it is opened.
+  const pages = all.filter(p => !dentalWizard.WIZARD_PAGE_TYPES.has(p.page_type)
+    && p.page_type !== cbhWizard.PAGE_TYPE);
   // Enrich with service/location names for the dashboard.
   const [services, locations, clients] = await Promise.all([
     store.list('services'), store.list('locations'), store.list('clients'),
@@ -288,6 +300,163 @@ router.post('/wizard/generate', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+
+
+// ── Clear Behavioral Health flow ────────────────────────────────────────────
+// Its own contract (cbhContract.js): nine fixed sections with hard character
+// caps, replacing the dental section shape entirely. Keyword research in front
+// of this is shared with the other wizards (/keyword-candidates).
+
+// The limits the wizard shows beside each field. Served rather than duplicated
+// in the client: a target displayed in the UI that differs from the one QC
+// gates on is worse than showing none.
+router.get('/cbh/limits', (req, res) => {
+  res.json({
+    limits: cbhContract.LIMITS,
+    fixedHeadings: cbhContract.FIXED_HEADINGS,
+    sectionOrder: cbhContract.SECTION_ORDER,
+    titleSuffix: cbhContract.TITLE_SUFFIX,
+  });
+});
+
+router.get('/cbh/brief', async (req, res) => {
+  try {
+    const { clientId, serviceId, locationId } = req.query;
+    if (!clientId || !serviceId || !locationId) {
+      return res.status(400).json({ error: 'clientId, serviceId, locationId are required.' });
+    }
+    res.json(await cbhBrief.getCbhBrief({ clientId, serviceId, locationId }) || null);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// BILLED: SERP + competitor scrape + one planning call (both cached). Drafts a
+// brief; does NOT save one. Saving is the reviewer's action, so a draft nobody
+// accepted never becomes the thing a page is written from.
+router.post('/cbh/brief/build', async (req, res) => {
+  try {
+    const { clientId, serviceId, locationId, primaryKeywords, secondaryKeywords } = req.body;
+    if (!clientId || !serviceId || !locationId) {
+      return res.status(400).json({ error: 'clientId, serviceId, locationId are required.' });
+    }
+    if (!Array.isArray(primaryKeywords) || !primaryKeywords.filter(Boolean).length) {
+      return res.status(400).json({ error: 'primaryKeywords (array, at least 1) is required.' });
+    }
+    res.json(await cbhBrief.buildCbhBrief({
+      clientId, serviceId, locationId,
+      primaryKeywords, secondaryKeywords: secondaryKeywords || [],
+    }));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/cbh/brief/save', async (req, res) => {
+  try {
+    const { clientId, serviceId, locationId, brief, approved } = req.body;
+    if (!clientId || !serviceId || !locationId) {
+      return res.status(400).json({ error: 'clientId, serviceId, locationId are required.' });
+    }
+    if (!brief || typeof brief !== 'object') return res.status(400).json({ error: 'brief (object) is required.' });
+    res.json(await cbhBrief.saveCbhBrief({ clientId, serviceId, locationId, brief, approved: !!approved }));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// BILLED: the writer, plus up to one correction pass.
+router.post('/cbh/generate', async (req, res) => {
+  try {
+    const { clientId, serviceId, locationId, brief } = req.body;
+    if (!clientId || !serviceId || !locationId) {
+      return res.status(400).json({ error: 'clientId, serviceId, locationId are required.' });
+    }
+    res.json(await cbhWizard.generateFromBrief({ clientId, serviceId, locationId, brief }));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Persist reviewer edits. QC is re-run server-side over what is actually
+// stored, so a saved page can never carry a verdict describing older content.
+router.put('/cbh/pages/:id', async (req, res) => {
+  try {
+    const { page } = req.body;
+    if (!page) return res.status(400).json({ error: 'page is required.' });
+    res.json(await cbhWizard.saveContent({ pageId: req.params.id, page }));
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// Every saved CBH page, newest first. Denormalised with the service and
+// location names because the list renders them and the page object stores ids.
+router.get('/cbh/pages', async (req, res) => {
+  try {
+    const clientId = req.query.clientId;
+    if (!clientId) return res.status(400).json({ error: 'clientId is required.' });
+    const [pages, services, locations] = await Promise.all([
+      store.list('pages', { client_id: clientId }),
+      store.list('services', { client_id: clientId }),
+      store.list('locations', { client_id: clientId }),
+    ]);
+    const byId = (rows) => Object.fromEntries(rows.map(r => [r.id, r]));
+    const S = byId(services); const L = byId(locations);
+    res.json(pages
+      .filter(p => p.page_type === cbhWizard.PAGE_TYPE && p.page_object)
+      .map(p => ({
+        id: p.id,
+        serviceId: p.service_id,
+        locationId: p.location_id,
+        serviceName: S[p.service_id]?.name || '',
+        locationName: L[p.location_id]?.location_name || '',
+        title: p.page_object?.meta?.title || '',
+        urlPath: p.page_object?.meta?.urlPath || '',
+        verdict: p.page_object?.qc?.verdict || null,
+        updatedAt: p.updated_at,
+      }))
+      .sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''))));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get('/cbh/pages/:id', async (req, res) => {
+  try {
+    const page = await store.get('pages', req.params.id);
+    if (!page || page.page_type !== cbhWizard.PAGE_TYPE) return res.status(404).json({ error: 'Page not found.' });
+    res.json({ pageId: page.id, page: page.page_object, serviceId: page.service_id, locationId: page.location_id });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// BILLED, but small: one focused call to rewrite a single field. The reviewer's
+// problem is usually one sentence, and regenerating the whole page to fix it
+// discards eight sections of accepted copy.
+router.post('/cbh/regen-field', async (req, res) => {
+  try {
+    const { clientId, serviceId, locationId, page, brief, field, index, lineIndex } = req.body;
+    if (!clientId || !serviceId || !locationId) {
+      return res.status(400).json({ error: 'clientId, serviceId, locationId are required.' });
+    }
+    if (!field) return res.status(400).json({ error: 'field is required.' });
+    res.json(await cbhRegen.regenerateField({ clientId, serviceId, locationId, page, brief, field, index, lineIndex }));
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// Exports what is ON SCREEN, saved or not -- a reviewer who edits then exports
+// must get the document they are looking at.
+router.post('/cbh/export/docx', async (req, res) => {
+  try {
+    const { page } = req.body;
+    // Checked against the CBH predicate FIRST: a CBH page also satisfies
+    // isDentalPage (both have sections.hero), so testing the other way round
+    // would export it through the wrong renderer.
+    if (!exporter.isCbhPage(page)) return res.status(400).json({ error: 'A CBH page object is required.' });
+    const buffer = await exporter.toCbhDocxBuffer(page);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${exporter.safeFilename(page)}.docx"`);
+    return res.send(buffer);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Re-run QC against a (possibly edited) page without regenerating or saving.
+router.post('/cbh/qc', (req, res) => {
+  try {
+    const { page } = req.body;
+    if (!cbhQc.isCbhPage(page)) return res.status(400).json({ error: 'A CBH page object is required.' });
+    res.json(cbhQc.runCbhQc(page));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Only one page per (client, service, location) tuple is ever stored — this
 // lets Step 1 detect "you've already generated this combo" and offer to open
 // the existing page instead of blindly regenerating (and re-billing).
@@ -377,7 +546,7 @@ router.get('/wizard/pages', async (req, res) => {
     const S = Object.fromEntries(services.map(s => [s.id, s]));
     const L = Object.fromEntries(locations.map(l => [l.id, l]));
     const rows = pages
-      .filter(p => p.page_type === 'dental_location_service' && p.page_object)
+      .filter(p => dentalWizard.WIZARD_PAGE_TYPES.has(p.page_type) && p.page_object)
       .map(p => ({
         id: p.id,
         service_id: p.service_id, location_id: p.location_id,
@@ -395,7 +564,7 @@ router.get('/wizard/pages', async (req, res) => {
 router.get('/wizard/pages/:id', async (req, res) => {
   try {
     const page = await store.get('pages', req.params.id);
-    if (!page || page.page_type !== 'dental_location_service') return res.status(404).json({ error: 'Page not found.' });
+    if (!page || !dentalWizard.WIZARD_PAGE_TYPES.has(page.page_type)) return res.status(404).json({ error: 'Page not found.' });
     res.json({ pageId: page.id, page: page.page_object, serviceId: page.service_id, locationId: page.location_id });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

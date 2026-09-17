@@ -26,7 +26,9 @@ import ArticleEnhancementLitePage from './pages/ArticleEnhancementLitePage';
 import LocationPageBuilderPage from './pages/LocationPageBuilderPage';
 import LocationPageDetailPage from './pages/LocationPageDetailPage';
 import LocationServiceWizardPage from './pages/LocationServiceWizardPage';
+import ClearBehavioralWizardPage from './pages/ClearBehavioralWizardPage';
 import GentleDentalPagesPage from './pages/GentleDentalPagesPage';
+import LocationPageBuilderHubPage from './pages/LocationPageBuilderHubPage';
 import RobotsMonitorPage from './pages/RobotsMonitorPage';
 import OnPageAuditPage from './pages/OnPageAuditPage';
 import MarketPotentialPage from './pages/MarketPotentialPage';
@@ -71,15 +73,21 @@ export default function App() {
           <Route path="/content-enhancement" element={<ContentEnhancementPage />} />
           <Route path="/article-enhancement" element={<ArticleEnhancementPage />} />
           <Route path="/article-enhancement-lite" element={<ArticleEnhancementLitePage />} />
-          {/* This module is used for Gentle Dental, so the Gentle Dental page
-              list is the front door. The Neuro Wellness pipeline keeps its own
-              dashboard at /neuro rather than being removed — it is a separate
-              page_object shape with its own detail view and approval flow. */}
-          <Route path="/location-page-builder" element={<GentleDentalPagesPage />} />
+          {/* The front door is a client picker. It used to be the Gentle
+              Dental page list, which was fine while dental was the only client
+              in the module and hid Clear Behavioral Health completely once it
+              was not. The Neuro Wellness pipeline keeps its own dashboard at
+              /neuro rather than being removed — it is a separate page_object
+              shape with its own detail view and approval flow. */}
+          <Route path="/location-page-builder" element={<LocationPageBuilderHubPage />} />
           <Route path="/location-page-builder/wizard" element={<LocationServiceWizardPage />} />
+          <Route path="/location-page-builder/gentle-dental" element={<GentleDentalPagesPage />} />
+          <Route path="/location-page-builder/clear-behavioral" element={<ClearBehavioralWizardPage />} />
           {/* Kept so existing links and bookmarks still resolve. */}
           <Route path="/location-page-builder/gentle-dental-pages" element={<GentleDentalPagesPage />} />
           <Route path="/location-page-builder/neuro" element={<LocationPageBuilderPage />} />
+          {/* LAST: a bare segment here is a Neuro page id, so every named
+              sub-route above must be declared before it. */}
           <Route path="/location-page-builder/:id" element={<LocationPageDetailPage />} />
           <Route path="/robots-monitor" element={<RobotsMonitorPage />} />
           <Route path="/on-page-audit" element={<OnPageAuditPage />} />

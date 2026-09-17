@@ -50,6 +50,14 @@ module.exports = {
     // silently degrades to that module's default rather than erroring.
     dentalOutlineModel: process.env.LPB_DENTAL_OUTLINE_MODEL || 'claude-sonnet-5',
     dentalWriterModel: process.env.LPB_DENTAL_WRITER_MODEL || 'gpt-5.4-mini',
+    // Clear Behavioral Health's contract stacks ten hard CHARACTER caps on one
+    // page (H1 70, hero 175, paragraphs 300, insurance 200, educational intro
+    // 500, H3 headings 60, three 85-char lines per H3, UVP 300, service 150,
+    // FAQ answers 300). Counting its own output is the one thing a small model
+    // is reliably bad at, and every miss costs a correction round-trip or a QC
+    // failure -- so this vertical writes on the stronger model. Gentle Dental,
+    // whose contract has two length gates, stays on the cheaper one.
+    cbhWriterModel: process.env.LPB_CBH_WRITER_MODEL || 'claude-sonnet-5',
     classificationTemperature: 0, // Spec §6 Stage 5: temperature 0
     // Master pool cap fed to the LLM. Must cover the full live pull
     // (TOP_URLS x semrush.keywordsPerUrl = 300) plus keywords.universePoolSize

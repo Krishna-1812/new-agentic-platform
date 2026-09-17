@@ -13,7 +13,7 @@
 // proposal plus the full candidate pool (which already includes the
 // client's imported keyword-universe rows) and picks replacements that
 // satisfy the rule; a deterministic code-side gate enforces it regardless of
-// what the model returns, and synthesizes a "{service} {city}"-style
+// what the model returns, and synthesizes a "{service} in {city}"-style
 // keyword for any Primary slot nothing in the pool can fill.
 //
 // Two LLM passes, deliberately separate:
@@ -173,7 +173,7 @@ async function reviewSelection({ service, city, state, regionTerms, primary, sec
 // relevanceTerms: this service's topical substrings (keywordUniverseMap.js), or null.
 // regionTerms: place names Secondary may legitimately mention (region + state).
 // Returns { primary, secondary, rejected, reviewFailures, lowVolume }.
-// `lowVolume` is true when Primary is the synthesized "{service} {city}" pair
+// `lowVolume` is true when Primary is the synthesized "{service} in {city}" pair
 // rather than real discovered keywords — the UI MUST say searches are low.
 async function selectPrimaryAndSecondary({ service, city, state, region, candidates, relevanceTerms, regionTerms }) {
   const maxPrimary = config.keywords.maxPrimary;
@@ -198,19 +198,32 @@ async function selectPrimaryAndSecondary({ service, city, state, region, candida
     rejected: [],
     reviewFailures: [],
   };
-  fillPrimaryFromSynthetic({
-    primary: fallback.primary,
-    usedKeys: new Set(fallback.primary.map(c => c.keyword.toLowerCase())),
-    service, city, state, maxPrimary,
-  });
-  if (!candidates.length) return withLowVolume(fallback);
+  // Synthesizing costs an LLM call (synthesizePhrases), so it is deferred
+  // until a Primary slot actually needs filling — the successful path returns
+  // real keywords and never touches `fallback`, and must not pay for it.
+  let synthetic = null;
+  const fillSynthetic = async (primary) => {
+    if (primary.length >= maxPrimary) return primary;
+    synthetic = synthetic || await synthesizePhrases({ service, city, state, maxPrimary });
+    fillPrimaryFromSynthetic({ primary, synthetic, maxPrimary });
+    return primary;
+  };
+  const returnFallback = async () => {
+    await fillSynthetic(fallback.primary);
+    return withLowVolume(fallback);
+  };
+  if (!candidates.length) return returnFallback();
 
+  // v8: bumped after the synthesized Primary changed shape — a bare
+  // "{service} {city}" concatenation ("anxiety anaheim hills") became a real
+  // search phrase ("anxiety treatment in anaheim hills"), so a v7 result is
+  // cached with keywords the SEO team has already rejected.
   // v7: bumped after keywordizeService changed the synthesized keywords a
   // cached result can contain ("cavity prevention (curodont) manchester" ->
   // "cavity prevention manchester"), and after a flagged Primary began
   // replacing only its own slot instead of the whole list. v6 added the region
   // exception, the second review pass, and the lowVolume flag.
-  const cacheK = store.cacheKey('dental-kw-primary-check-v7', service, city, state, allowedRegion, candidates.map(c => c.keyword).sort());
+  const cacheK = store.cacheKey('dental-kw-primary-check-v8', service, city, state, allowedRegion, candidates.map(c => c.keyword).sort());
   const cached = await cacheGetSafe(cacheK, config.cache.llmTtlMs);
   if (cached) return cached;
 
@@ -241,9 +254,9 @@ async function selectPrimaryAndSecondary({ service, city, state, region, candida
     // LLM unavailable/misconfigured — fall back to the raw volume sort
     // rather than blocking keyword research entirely.
     console.error('[keywordRelevance] Claude Sonnet primary check failed, falling back to volume sort:', e.message);
-    return withLowVolume(fallback);
+    return returnFallback();
   }
-  if (!parsed) return withLowVolume(fallback);
+  if (!parsed) return returnFallback();
 
   const byKeyword = new Map(candidates.map(c => [c.keyword.toLowerCase(), c]));
   const resolve = (kw) => byKeyword.get(String(kw || '').toLowerCase());
@@ -278,10 +291,10 @@ async function selectPrimaryAndSecondary({ service, city, state, region, candida
   // candidates to fill Primary (a thin/heavily-filtered pool, e.g. a niche
   // service in a small market) — Primary must still carry the page's actual
   // service+location, even at 0 volume, rather than come up short.
-  fillPrimaryFromSynthetic({ primary, usedKeys, service, city, state, maxPrimary });
+  await fillSynthetic(primary);
 
   // ── Step 3 + 4: review the selection, then act on the verdict ─────────────
-  // Synthesized entries are deterministic by construction: there is nothing
+  // Synthesized entries are built to the rules already: there is nothing
   // better to swap them for, so sending them to the critic only wastes a call
   // and produces a self-contradictory result (it rejects "invisalign
   // brookline" as not a real search phrase, and the only replacement
@@ -309,8 +322,8 @@ async function selectPrimaryAndSecondary({ service, city, state, region, candida
   );
   const reviewedSecondary = secondary.filter(c => !secondaryFailed.has(c.keyword.toLowerCase()));
 
-  // A flagged PRIMARY is dropped and its slot refilled from the deterministic
-  // "{service} {city}" pair at zero volume. Only the flagged entries go — a
+  // A flagged PRIMARY is dropped and its slot refilled from the synthesized
+  // "{service} in {city}" pair at zero volume. Only the flagged entries go — a
   // keyword the critic passed is real, location-bearing demand and keeping it
   // beats replacing it with a zero-volume synonym. lowVolume then drives the
   // explicit "searches are low" notice in the wizard.
@@ -318,11 +331,7 @@ async function selectPrimaryAndSecondary({ service, city, state, region, candida
     failures.filter(f => f.slot === 'primary').map(f => f.keyword.toLowerCase()),
   );
   const finalPrimary = primary.filter(c => !primaryFailed.has(c.keyword.toLowerCase()));
-  fillPrimaryFromSynthetic({
-    primary: finalPrimary,
-    usedKeys: new Set(finalPrimary.map(c => c.keyword.toLowerCase())),
-    service, city, state, maxPrimary,
-  });
+  await fillSynthetic(finalPrimary);
 
   const result = withLowVolume({
     primary: finalPrimary,
@@ -344,6 +353,7 @@ async function selectPrimaryAndSecondary({ service, city, state, region, candida
 function keywordizeService(service) {
   return String(service || '')
     .replace(/\([^)]*\)/g, ' ')   // drop parentheticals: "(Curodont)"
+    .replace(/[®™©]/g, ' ')        // "Invisalign® Treatment" -> "invisalign treatment"
     .replace(/&/g, ' and ')        // "Crowns & Bridges" -> "crowns and bridges"
     .replace(/[\/]/g, ' ')         // "TMD/TMJ" -> "tmd tmj"
     .replace(/\s+/g, ' ')
@@ -351,13 +361,152 @@ function keywordizeService(service) {
     .toLowerCase();
 }
 
-function fillPrimaryFromSynthetic({ primary, usedKeys, service, city, state, maxPrimary }) {
-  const svc = keywordizeService(service);
-  const synthetic = [
-    `${svc} ${city}`.trim(),
-    `${svc} ${city} ${state}`.trim(),
-  ].map(kw => kw.toLowerCase());
+// ── Making a synthesized keyword read like a real search ────────────────────
+// A service name is only half a search phrase when it names a CONDITION rather
+// than the service for it. "Teeth Whitening", "Root Canals", "Psychotherapy"
+// and "Anxiety Treatment" are things people type; "Anxiety", "ADHD" and
+// "Insomnia" are not — pasted against a city they produced "anxiety anaheim
+// hills", which nobody searches for and which reads as a mistake on the brief.
+//
+// Rather than carry a list of every condition a client might sell a page for,
+// detect the SERVICE half and add a head noun only when it is missing. Two
+// signals: a procedure/discipline/practitioner ending (which covers
+// "whitening", "treatment", "dentistry", "orthodontist", "psychiatry",
+// "sedation", "prevention"), and the everyday service nouns that have no such
+// ending.
+const SERVICE_NOUN_SUFFIX_RE = /(ment|ing|apy|iatry|istry|ology|ics|ist|ician|ation|ention|ery|ectomy|plasty|scopy)$/;
+const SERVICE_NOUNS = new Set([
+  'care', 'service', 'services', 'exam', 'exams', 'checkup', 'check-up',
+  'x-ray', 'x-rays', 'xray', 'xrays', 'crown', 'crowns', 'bridge', 'bridges',
+  'denture', 'dentures', 'veneer', 'veneers', 'brace', 'braces', 'aligner',
+  'aligners', 'sealant', 'sealants', 'implant', 'implants', 'canal', 'canals',
+  'makeover', 'injectable', 'injectables', 'filler', 'fillers', 'extraction',
+  'extractions', 'removal', 'repair', 'rehab', 'detox', 'program', 'programs',
+  'health', 'wellness', 'clinic', 'doctor', 'surgeon', 'support', 'medication',
+]);
+// The generic head noun. Deliberately the broadest one — it is right for a
+// condition page in any vertical, where "therapy" or "surgery" would not be.
+const DEFAULT_SERVICE_NOUN = 'treatment';
 
+// Does this name already say what SERVICE it is, or only what condition?
+function namesAService(phrase) {
+  return String(phrase || '').toLowerCase().split(' ')
+    .some(t => SERVICE_NOUN_SUFFIX_RE.test(t) || SERVICE_NOUNS.has(t));
+}
+
+// "Anxiety" -> "anxiety treatment"; "Teeth Whitening" -> "teeth whitening".
+// LOWERCASE, because a keyword is a search query.
+function servicePhrase(service) {
+  const svc = keywordizeService(service);
+  if (!svc) return svc;
+  return namesAService(svc) ? svc : `${svc} ${DEFAULT_SERVICE_NOUN}`;
+}
+
+// The same head-noun rule, for text a READER sees: headings, the page title,
+// the service name shown in the wizard.
+//
+// It cannot reuse servicePhrase, because that lowercases by design -- correct
+// for a search query, and wrong for a heading. Running "ADHD" through it and
+// title-casing the result produced "Adhd Treatment", and "Bipolar I & II"
+// became "Bipolar i And ii": the acronym and the numerals are destroyed by the
+// round trip. So this preserves the client's own capitalisation and only
+// appends the head noun.
+function servicePhraseDisplay(service) {
+  // Deliberately minimal. The keyword path strips parentheticals and expands
+  // "&" because a search query carries neither; a HEADING carries both, and
+  // the parenthetical is usually where the acronym lives -- stripping it turned
+  // "Obsessive Compulsive Disorder (OCD)" into a heading that never says OCD,
+  // which is the term people actually search and scan for. Only the trademark
+  // signs go, since nobody reads those.
+  const cleaned = String(service || '')
+    .replace(/[®™©]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned) return cleaned;
+  return namesAService(cleaned) ? cleaned : `${cleaned} ${DEFAULT_SERVICE_NOUN}`;
+}
+
+// The deterministic pair — used when the LLM is unavailable, and as the top-up
+// whenever it returns fewer than maxPrimary usable phrases. "in {city}" rather
+// than a bare concatenation: it is how the phrase is actually typed, and "in"
+// is a stopword in the QC matcher (text.js STOPWORDS), so adding it cannot
+// change whether a page counts as using its own keyword.
+function deterministicPhrases({ service, city, state }) {
+  const svc = servicePhrase(service);
+  const town = String(city || '').trim();
+  const st = String(state || '').trim();
+  return [
+    `${svc} in ${town}`,
+    st ? `${svc} in ${town}, ${st}` : '',
+  ].filter(Boolean).map(kw => kw.replace(/\s+/g, ' ').trim().toLowerCase());
+}
+
+// Guards against the model answering with something that isn't a usable
+// Primary for THIS page: it must name the city, stay on the service, and not
+// be the "near me" phrasing the client has explicitly ruled out (see the
+// NEAR_ME_RE note in keywordAdapter.js).
+function isUsableSynthetic(phrase, { service, city }) {
+  const kw = String(phrase || '').trim().toLowerCase();
+  if (!kw || kw.length > 80 || kw.split(/\s+/).length > 8) return false;
+  if (/\bnear me\b/.test(kw)) return false;
+  const town = String(city || '').trim().toLowerCase();
+  if (!town || !kw.includes(town)) return false;
+  // At least one word of the service itself, so an invented phrase about some
+  // other service cannot take a Primary slot.
+  return keywordizeService(service).split(' ').some(w => w.length > 2 && kw.includes(w));
+}
+
+// Asks the writer model for the phrase a person would actually type. The
+// deterministic pair above knows one head noun ("treatment"); the model knows
+// that a psychiatry page reads "anxiety treatment in anaheim hills" while the
+// same service might read "anxiety therapy" or "anxiety counseling" elsewhere.
+// Cached per service+city+state, and EVERY failure mode — no API key, an
+// outage, unparseable JSON, an off-page suggestion — degrades to the
+// deterministic pair rather than blocking keyword research.
+async function synthesizePhrases({ service, city, state, maxPrimary }) {
+  const deterministic = deterministicPhrases({ service, city, state });
+  const cacheK = store.cacheKey('dental-kw-synth-v1', service, city, state, maxPrimary);
+  const cached = await cacheGetSafe(cacheK, config.cache.llmTtlMs);
+  if (Array.isArray(cached) && cached.length) return cached;
+
+  const system = `You write the search phrases a real person types into Google to find a local provider.
+Respond ONLY with JSON (no prose, no markdown): { "keywords": ["string", ...exactly ${maxPrimary}] }
+Rules:
+- Every phrase is for the service "${service}" offered in ${city}, ${state}, and every phrase must name ${city}.
+- If the service name is a condition, symptom or bare topic (e.g. "Anxiety", "ADHD"), add the word people search alongside it — "anxiety treatment", "adhd therapy". NEVER leave a bare condition sitting next to a city ("anxiety ${city}" is wrong).
+- If the service name is already what people search for (e.g. "Teeth Whitening", "Root Canals"), keep it as it is.
+- Phrase 1 is "<service phrase> in ${city}". Phrase 2 is a natural variant — the state, or a common alternative head noun.
+- All lowercase. No brand or practice names. No "near me". No punctuation except a comma before the state.`;
+  const user = `Service: ${service}\nCity: ${city}\nState: ${state}\n\nReturn JSON only.`;
+
+  let phrases = [];
+  try {
+    const llm = createLlmClient(config.llm.generationModel);
+    const completion = await llm.chat.completions.create({
+      model: llm.model,
+      ...chatParams(llm.model, { maxTokens: 1000 }),
+      response_format: { type: 'json_object' },
+      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+    });
+    const raw = JSON.parse(completion.choices[0].message.content);
+    phrases = (Array.isArray(raw?.keywords) ? raw.keywords : [])
+      .map(k => String(k || '').trim().replace(/\s+/g, ' ').toLowerCase())
+      .filter(kw => isUsableSynthetic(kw, { service, city }));
+  } catch (e) {
+    console.error('[keywordRelevance] synthesized-keyword pass failed, using the deterministic phrase:', e.message);
+    return deterministic;
+  }
+  if (!phrases.length) return deterministic;
+
+  // Top up from the deterministic pair so a model that answers with a single
+  // usable phrase still fills every Primary slot.
+  const result = [...new Set([...phrases, ...deterministic])].slice(0, maxPrimary);
+  await cacheSetSafe(cacheK, result, { kind: 'llm', ttlMs: config.cache.llmTtlMs });
+  return result;
+}
+
+function fillPrimaryFromSynthetic({ primary, synthetic, maxPrimary }) {
+  const usedKeys = new Set(primary.map(c => c.keyword.toLowerCase()));
   for (const kw of synthetic) {
     if (primary.length >= maxPrimary) break;
     if (usedKeys.has(kw)) continue;
@@ -366,4 +515,8 @@ function fillPrimaryFromSynthetic({ primary, usedKeys, service, city, state, max
   }
 }
 
-module.exports = { selectPrimaryAndSecondary, reviewSelection, isPrimaryEligible, keywordizeService };
+module.exports = {
+  selectPrimaryAndSecondary, reviewSelection, isPrimaryEligible,
+  keywordizeService, servicePhrase, servicePhraseDisplay, namesAService,
+  deterministicPhrases, synthesizePhrases,
+};

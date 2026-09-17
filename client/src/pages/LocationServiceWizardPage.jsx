@@ -383,7 +383,7 @@ export default function LocationServiceWizardPage() {
   const [showAllKeywords, setShowAllKeywords] = useState(false);
   const [manualKeyword, setManualKeyword] = useState('');
   // Set when the server's review pass rejected the discovered Primary picks
-  // and fell back to the synthesized "{service} {city}" pair at zero volume.
+  // and fell back to the synthesized "{service} in {city}" pair at zero volume.
   const [kwLowVolume, setKwLowVolume] = useState(false);
   const [kwReviewFailures, setKwReviewFailures] = useState([]);
 
@@ -978,7 +978,7 @@ export default function LocationServiceWizardPage() {
           <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Gentle Dental — Location + Service Content Wizard</h1>
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-2)', marginTop: '0.25rem' }}>Generate a copy-paste-ready content package for a location + service combo page.</p>
         </div>
-        <button style={btnStyle(false)} onClick={() => navigate('/location-page-builder/gentle-dental-pages')}>← All Gentle Dental Pages</button>
+        <button style={btnStyle(false)} onClick={() => navigate('/location-page-builder/gentle-dental')}>← All Gentle Dental Pages</button>
       </div>
 
       <div style={{ marginBottom: '1.5rem' }}><ProgressSteps steps={progressSteps} /></div>

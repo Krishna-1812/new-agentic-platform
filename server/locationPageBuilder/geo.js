@@ -19,6 +19,24 @@ const CA_GEO = {
   'long beach':       { metro: 'Los Angeles', county: 'Los Angeles County', region: 'South Bay / Harbor' },
   'encino':           { metro: 'Los Angeles', county: 'Los Angeles County', region: 'San Fernando Valley' },
   'lake forest':      { metro: 'Los Angeles', county: 'Orange County',      region: 'South Orange County' },
+
+  // ── Clear Behavioral Health's footprint ──────────────────────────────────
+  // Without an entry, getGeo degrades silently: metro falls back to the city
+  // itself and region to empty, so generateSeeds emits a duplicate of
+  // "{service} {city}" instead of a metro seed and skips the region seed
+  // entirely — a narrower SERP pull with no error to show for it.
+  'los angeles':      { metro: 'Los Angeles', county: 'Los Angeles County', region: 'Los Angeles' },
+  'redondo beach':    { metro: 'Los Angeles', county: 'Los Angeles County', region: 'South Bay' },
+  'gardena':          { metro: 'Los Angeles', county: 'Los Angeles County', region: 'South Bay' },
+  'el segundo':       { metro: 'Los Angeles', county: 'Los Angeles County', region: 'South Bay' },
+  'el monte':         { metro: 'Los Angeles', county: 'Los Angeles County', region: 'San Gabriel Valley' },
+  'van nuys':         { metro: 'Los Angeles', county: 'Los Angeles County', region: 'San Fernando Valley' },
+  'santa clarita':    { metro: 'Los Angeles', county: 'Los Angeles County', region: 'Santa Clarita Valley' },
+  'anaheim hills':    { metro: 'Los Angeles', county: 'Orange County',      region: 'North Orange County' },
+  // Not a city — a region the client runs an office under. Its own name is
+  // therefore both city and region, which keeps the region seed from
+  // duplicating the city one.
+  'south bay':        { metro: 'Los Angeles', county: 'Los Angeles County', region: 'South Bay' },
 };
 
 function getGeo({ city, state = 'California', stateAbbreviation = 'CA' }) {

@@ -23,17 +23,22 @@ const realCreateLlmClient = llmProviders.createLlmClient;
 let LLM_STUB = null;
 llmProviders.createLlmClient = (model) => (LLM_STUB ? LLM_STUB(model) : realCreateLlmClient(model));
 
-// Drives the two passes independently: `select` answers the selection prompt,
-// `review` answers the critic prompt.
-function stubLlm({ select, review }) {
+// Drives the passes independently: `select` answers the selection prompt,
+// `review` the critic prompt, `synth` the synthesized-keyword prompt. `synth`
+// defaults to "nothing usable", which is what makes the synthesized Primary
+// the deterministic code-side pair in every test that doesn't opt in.
+function stubLlm({ select, review, synth }) {
   LLM_STUB = () => ({
     model: 'claude-sonnet-5',
     provider: 'anthropic',
     chat: {
       completions: {
         create: async ({ messages }) => {
-          const isReview = messages[0].content.includes('You are reviewing a finished keyword selection');
-          return { choices: [{ message: { content: JSON.stringify(isReview ? review : select) } }] };
+          const prompt = messages[0].content;
+          const answer = prompt.includes('You are reviewing a finished keyword selection') ? review
+            : prompt.includes('You write the search phrases') ? (synth || { keywords: [] })
+              : select;
+          return { choices: [{ message: { content: JSON.stringify(answer) } }] };
         },
       },
     },
@@ -47,6 +52,16 @@ const config = require('../config');
 const keywordUniverseMap = require('../keywordUniverseMap');
 const seed = require('../seed');
 const keywordAdapter = require('../keywordAdapter');
+const brief = require('../brief');
+const verticals = require('../verticals');
+const cbhContract = require('../cbhContract');
+const cbhQc = require('../cbhQc');
+const cbhCompose = require('../cbhCompose');
+const cbhWriter = require('../cbhWriter');
+const cbhFixture = require('./cbhFixture');
+const cbhBrief = require('../cbhBrief');
+const cbhSources = require('../cbhFallbackSources');
+const briefWizard = require('../briefWizard');
 
 // The keyword-presence check carries its own threshold in its id, so it is
 // derived from config rather than hardcoded here.
@@ -1172,7 +1187,7 @@ test('the FAQ localization minimum is published to the wizard', () => {
   assert.strictEqual(qaEngine.DENTAL_LIMITS.faqs.minLocalized, config.dental.faqs.minLocalized);
 });
 test('every prompt path states the FAQ localization rule', () => {
-  const brief = contentGenerator.DENTAL_SECTION_BRIEFS.faqs;
+  const brief = contentGenerator.DENTAL_SECTION_BRIEFS.faqs('dental');
   assert.ok(brief.includes('LOCALIZING THE FAQ'), 'the brief must carry the rule');
   assert.ok(brief.includes('Does sedation dentistry hurt in Methuen?'), 'the BAD pair must be shown, not described');
   assert.ok(brief.includes('Do you offer IV sedation at your Methuen practice?'), 'the GOOD pair too');
@@ -1251,14 +1266,22 @@ test('the hero gate accepts the target window and rejects a paragraph', () => {
   assert.strictEqual(heroCheck(short).pass, false, 'a bare label wastes the slot');
 });
 test('the hero window is stated to the writer in the unit the gate measures', () => {
-  const hero = contentGenerator.DENTAL_SECTION_BRIEFS.heroIntro;
-  assert.ok(hero.includes('CHARACTERS'), 'the brief has to name the unit');
-  // The worked example must itself be inside the window it teaches.
-  const example = /GOOD \(\d+ chars\): "([^"]+)"/.exec(hero.replace(/\n/g, ' '));
-  assert.ok(example, 'the brief must show a worked example');
-  const len = example[1].replace(/\s+/g, ' ').length;
-  assert.ok(len >= config.dental.heroIntro.minChars && len <= config.dental.heroIntro.maxChars,
-    `the example is ${len} chars, outside the ${config.dental.heroIntro.minChars}-${config.dental.heroIntro.maxChars} window it teaches`);
+  // Every vertical, not just the default: each ships its own worked example,
+  // and one written outside the window teaches the writer to miss it.
+  Object.keys(contentGenerator.VERTICALS).forEach((v) => {
+    const hero = contentGenerator.DENTAL_SECTION_BRIEFS.heroIntro(v);
+    assert.ok(hero.includes('CHARACTERS'), `the ${v} brief has to name the unit`);
+    // The worked example must itself be inside the window it teaches.
+    const example = /GOOD \(\d+ chars\): "([^"]+)"/.exec(hero.replace(/\n/g, ' '));
+    assert.ok(example, `the ${v} brief must show a worked example`);
+    const len = example[1].replace(/\s+/g, ' ').length;
+    assert.ok(len >= config.dental.heroIntro.minChars && len <= config.dental.heroIntro.maxChars,
+      `the ${v} example is ${len} chars, outside the ${config.dental.heroIntro.minChars}-${config.dental.heroIntro.maxChars} window it teaches`);
+    // The label is not decorative — a stale hand-typed count would let an
+    // out-of-window example pass the check above by lying about its length.
+    assert.strictEqual(Number(/GOOD \((\d+) chars\)/.exec(hero)[1]), len,
+      `the ${v} example's stated length must be its real length`);
+  });
 });
 
 console.log('\nDental - the meta description is never handed back truncated');
@@ -1423,11 +1446,21 @@ test('the keyword floor is a low minimum, not a quota', () => {
 
 console.log('\nDental - every generated section is written to its own brief');
 test('each section brief states where it appears, who reads it and its job', () => {
+  // A brief that names a profession is a FUNCTION of the vertical (a dental
+  // page says "dentist", a behavioral-health one says "clinician"); the rest
+  // are plain strings. Resolve either shape so the contract is checked the
+  // same way regardless.
+  const resolve = (b, vertical) => (typeof b === 'function' ? b(vertical) : b);
   ['metaDescription', 'heroIntro', 'educationalBody', 'faqs'].forEach(k => {
-    const brief = contentGenerator.DENTAL_SECTION_BRIEFS[k];
-    assert.ok(brief, `${k} needs a brief`);
-    ['Where it appears:', 'Who is reading:', 'Its job:', 'Do NOT:'].forEach(part =>
-      assert.ok(brief.includes(part), `${k} brief is missing "${part}"`));
+    const raw = contentGenerator.DENTAL_SECTION_BRIEFS[k];
+    assert.ok(raw, `${k} needs a brief`);
+    // Every vertical, not just the default — a new profile that drops one of
+    // these sections' structure is exactly what this guards.
+    Object.keys(contentGenerator.VERTICALS).forEach(vertical => {
+      const brief = resolve(raw, vertical);
+      ['Where it appears:', 'Who is reading:', 'Its job:', 'Do NOT:'].forEach(part =>
+        assert.ok(brief.includes(part), `${k} brief (${vertical}) is missing "${part}"`));
+    });
   });
 });
 test('the page is framed as commercial intent, not a guide', () => {
@@ -1443,18 +1476,18 @@ test('the page is framed as commercial intent, not a guide', () => {
   assert.ok(system.includes('THIS IS A COMMERCIAL-INTENT PAGE'), 'the page type has to be stated outright');
   assert.ok(/Commercial does NOT mean hype/.test(system), 'commercial must not be read as license to hype');
 
-  const meta = contentGenerator.DENTAL_SECTION_BRIEFS.metaDescription;
-  const hero = contentGenerator.DENTAL_SECTION_BRIEFS.heroIntro;
+  const meta = contentGenerator.DENTAL_SECTION_BRIEFS.metaDescription('dental');
+  const hero = contentGenerator.DENTAL_SECTION_BRIEFS.heroIntro('dental');
   [meta, hero].forEach(brief => assert.ok(/COMMERCIAL/.test(brief), 'both top-of-page briefs are commercial'));
   assert.ok(/next step|book|consultation/i.test(meta), 'the snippet has to move the reader');
   assert.ok(/next step|consultation/i.test(hero), 'so does the hero');
 
   // The body stays explanatory — the evidence, not the pitch.
-  assert.ok(/Do NOT: sell/.test(contentGenerator.DENTAL_SECTION_BRIEFS.educationalBody),
+  assert.ok(/Do NOT: sell/.test(contentGenerator.DENTAL_SECTION_BRIEFS.educationalBody('dental')),
     'the educational body must still explain rather than sell');
 });
 test('the hero brief carries the worked good/bad example', () => {
-  const hero = contentGenerator.DENTAL_SECTION_BRIEFS.heroIntro;
+  const hero = contentGenerator.DENTAL_SECTION_BRIEFS.heroIntro('dental');
   assert.ok(/GOOD \(\d+ chars\):/.test(hero), 'the target has to be shown, not described — with its length');
   assert.ok(hero.includes(`${config.dental.heroIntro.minChars}-${config.dental.heroIntro.maxChars} CHARACTERS`),
     'the brief must state the character window the gate enforces');
@@ -1613,10 +1646,11 @@ test('no prompt asks for a keyword frequency any more', () => {
   });
 
   console.log('\nDental - keyword selection fallback (no LLM available)');
-  await testAsync('an empty pool synthesizes the "{service} {city}" Primary pair at volume 0', async () => {
+  await testAsync('an empty pool synthesizes the "{service} in {city}" Primary pair at volume 0', async () => {
     const r = await keywordRelevance.selectPrimaryAndSecondary({ ...KW_ARGS, candidates: [] });
     assert.strictEqual(r.primary.length, 2);
-    assert.deepStrictEqual(r.primary.map(c => c.keyword), ['invisalign brookline', 'invisalign brookline ma']);
+    assert.deepStrictEqual(r.primary.map(c => c.keyword),
+      ['invisalign treatment in brookline', 'invisalign treatment in brookline, ma']);
     assert.ok(r.primary.every(c => c.volume === 0), 'synthesized Primary must report zero volume');
     assert.ok(r.primary.every(c => c.source === 'synthesized'));
   });
@@ -1734,6 +1768,49 @@ test('no prompt asks for a keyword frequency any more', () => {
     assert.strictEqual(k('Diabetes & Oral Health'), 'diabetes and oral health');
     assert.strictEqual(k('Digital X-rays'), 'digital x-rays');
     assert.strictEqual(k('Invisalign'), 'invisalign');
+    // A trademark sign is not something anyone types into Google.
+    assert.strictEqual(k('Invisalign® Treatment'), 'invisalign treatment');
+    assert.strictEqual(k('BOTOX® Cosmetic & Injectables'), 'botox cosmetic and injectables');
+  });
+
+  // The complaint this guards: a condition-named service ("Anxiety") pasted
+  // against a city produced "anxiety anaheim hills", which nobody searches.
+  test('a bare condition gains the head noun that makes it a service', () => {
+    const p = keywordRelevance.servicePhrase;
+    assert.strictEqual(p('Anxiety'), 'anxiety treatment');
+    assert.strictEqual(p('ADHD'), 'adhd treatment');
+    assert.strictEqual(p('Bipolar disorder'), 'bipolar disorder treatment');
+  });
+  test('a service name that is already search-shaped is left alone', () => {
+    const p = keywordRelevance.servicePhrase;
+    // Covers each detection route: an -ing/-ment/-istry/-ist/-ention ending,
+    // and the service nouns that have no such ending.
+    ['Anxiety Treatment', 'Teeth Whitening', 'Cosmetic Dentistry', 'Orthodontist',
+      'Cavity Prevention (Curodont)', 'Psychotherapy', 'Oral Surgery', 'Root Canals',
+      'Veneers', 'Dental Implants', 'Smile Makeover', 'Diabetes & Oral Health',
+      'Digital X-rays', 'BOTOX® Cosmetic & Injectables'].forEach((name) => {
+      assert.strictEqual(p(name), keywordRelevance.keywordizeService(name),
+        `"${name}" already names a service — no head noun should be added`);
+    });
+  });
+  test('the synthesized pair reads as a phrase, not a concatenation', () => {
+    assert.deepStrictEqual(
+      keywordRelevance.deterministicPhrases({ service: 'Anxiety', city: 'Anaheim Hills', state: 'CA' }),
+      ['anxiety treatment in anaheim hills', 'anxiety treatment in anaheim hills, ca']);
+    // No state on the location record: the second phrase is dropped rather
+    // than emitted with a trailing comma.
+    assert.deepStrictEqual(
+      keywordRelevance.deterministicPhrases({ service: 'Teeth Whitening', city: 'Quincy', state: '' }),
+      ['teeth whitening in quincy']);
+  });
+  await testAsync('the LLM phrase pass degrades to the deterministic pair', async () => {
+    // No API key in tests — synthesizePhrases must return the code-side pair
+    // rather than throw, which is what keeps Primary filled during an outage.
+    const phrases = await keywordRelevance.synthesizePhrases({
+      service: 'Anxiety', city: 'Anaheim Hills', state: 'CA', maxPrimary: 2,
+    });
+    assert.deepStrictEqual(phrases,
+      ['anxiety treatment in anaheim hills', 'anxiety treatment in anaheim hills, ca']);
   });
 
   console.log('\nDental - review pass (step 3) and its verdict (step 4)');
@@ -1785,7 +1862,8 @@ test('no prompt asks for a keyword frequency any more', () => {
       review: { ok: false, failures: [{ keyword: 'invisalign brookline', slot: 'primary', reason: 'hallucinated' }] },
     });
     const r = await keywordRelevance.selectPrimaryAndSecondary({ ...KW_ARGS, candidates: KW_POOL });
-    assert.deepStrictEqual(r.primary.map(c => c.keyword), ['invisalign brookline', 'invisalign brookline ma'],
+    assert.deepStrictEqual(r.primary.map(c => c.keyword),
+      ['invisalign treatment in brookline', 'invisalign treatment in brookline, ma'],
       'the deterministic pair must survive a bogus verdict, in order');
     assert.deepStrictEqual(r.reviewFailures, [], 'a verdict about an unsubmitted keyword must not reach the UI');
     LLM_STUB = null;
@@ -1800,6 +1878,680 @@ test('no prompt asks for a keyword frequency any more', () => {
     assert.ok(!r.primary.some(c => c.keyword === 'invisalign newton'), 'off-pool Primary must be dropped');
     assert.ok(!r.secondary.some(c => c.keyword === 'made up keyword'), 'off-pool Secondary must be dropped');
     LLM_STUB = null;
+  });
+
+  console.log('\nBrief - a hand-edited brief cannot instruct the writer to fail QC');
+  test('normalizeBrief clamps, filters and de-junks whatever the client sends', () => {
+    const b = brief.normalizeBrief({
+      primaryKeyword: '  anxiety treatment in anaheim hills ',
+      outline: { competitorQuality: 'bogus', blocks: [
+        { h2: ' Kept ', paragraphs: 99, source: 'competitor', localize: 'yes' },
+        { h2: '   ', paragraphs: 2 },
+        { h2: 'Typed by hand', paragraphs: 0, source: 'nonsense' },
+      ] },
+      faqs: ['A plain string question?', { q: 'From a rival?', source: 'competitor' }, { q: '  ' }],
+      wordTarget: { min: 99999, max: 1 },
+    });
+    assert.strictEqual(b.primaryKeyword, 'anxiety treatment in anaheim hills', 'whitespace is collapsed');
+    assert.deepStrictEqual(b.outline.blocks.map(x => x.h2), ['Kept', 'Typed by hand'],
+      'a block with no heading is dropped, not written as an empty H2');
+    assert.strictEqual(b.outline.blocks[0].paragraphs, config.dental.paragraphsPerBlock.max,
+      'a paragraph count above the band is clamped to it');
+    assert.strictEqual(b.outline.blocks[1].paragraphs, config.dental.paragraphsPerBlock.min,
+      'and one below it is clamped up');
+    assert.strictEqual(b.outline.blocks[0].localize, true, 'localize is coerced to a boolean');
+    assert.strictEqual(b.outline.blocks[1].source, null,
+      'an unrecognised provenance tag becomes none, never a fabricated one');
+    assert.strictEqual(b.outline.competitorQuality, 'unavailable', 'an unknown grade falls back');
+    assert.deepStrictEqual(b.faqs.map(f => f.q), ['A plain string question?', 'From a rival?'],
+      'a bare string is accepted as a question; an empty one is dropped');
+    assert.strictEqual(b.faqs[0].source, 'drafted');
+    assert.strictEqual(b.faqs[1].source, 'competitor');
+  });
+  test('the word target cannot be set outside what QC accepts', () => {
+    const b = brief.normalizeBrief({ wordTarget: { min: 99999, max: 1 } });
+    assert.ok(b.wordTarget.min <= b.wordTarget.max, 'an inverted range is put back in order');
+    assert.ok(b.wordTarget.min >= config.dental.pageWords.acceptMin
+      && b.wordTarget.max <= config.dental.pageWords.acceptMax,
+      'the target must sit inside the range body_word_count will accept');
+  });
+  test('only real questions reach the reviewer', () => {
+    ['How soon can I be seen?', 'What is anxiety treatment?', 'Does insurance cover this?']
+      .forEach(q => assert.ok(brief.usableQuestion(q), `"${q}" is a question`));
+    // Scraped nav/CTA furniture, which is most of what a competitor page yields.
+    ['Our Team', 'Contact us today', 'Insurance We Accept', 'Book', '?', '']
+      .forEach(q => assert.ok(!brief.usableQuestion(q), `"${q}" is not a question`));
+  });
+  test('drafted FAQs lead with what competitors answer, then top up to the QC floor', () => {
+    const drafted = brief.draftFaqs({
+      competitorFaqs: ['How long does treatment take?', 'Our Team', 'Is it confidential?'],
+      service: { name: 'Anxiety Treatment' },
+      city: 'Anaheim Hills',
+    });
+    assert.deepStrictEqual(drafted.slice(0, 2).map(f => f.q),
+      ['How long does treatment take?', 'Is it confidential?'],
+      'real competitor questions come first, in order, with the furniture filtered out');
+    assert.ok(drafted.every(f => f.source === 'competitor' || f.source === 'drafted'));
+    assert.strictEqual(drafted.length, config.dental.faqs.min,
+      'topped up to the MINIMUM only - padding to the maximum buries the real ones');
+    assert.strictEqual(new Set(drafted.map(f => f.q.toLowerCase())).size, drafted.length, 'no duplicates');
+  });
+
+  console.log('\nBrief - the writer is bound by the brief, and un-briefed pages are unchanged');
+  test('a brief fixes the FAQ questions verbatim and carries its own word target', () => {
+    const base = {
+      service: { name: 'Anxiety Treatment', category: 'condition' },
+      location: { city: 'Anaheim Hills', state_abbreviation: 'CA', location_name: 'Anaheim Hills' },
+      primaryKeyword: 'anxiety treatment in anaheim hills',
+      secondaryKeywords: [],
+      outline: { blocks: [{ h2: 'What Is It?', paragraphs: 2 }] },
+      competitorFaqs: ['A competitor topic?'],
+      brandName: 'Clear Behavioral Health',
+    };
+    const briefed = contentGenerator.buildDentalPrompt({
+      ...base,
+      brief: { faqs: [{ q: 'How soon can I be seen?' }, { q: 'Does insurance cover it?' }], wordTarget: { min: 800, max: 900 } },
+    }).user;
+    assert.ok(/THE FAQ QUESTIONS ARE FIXED/.test(briefed), 'the questions are a contract, not a suggestion');
+    assert.ok(/1\. How soon can I be seen\?/.test(briefed) && /2\. Does insurance cover it\?/.test(briefed),
+      'each approved question is listed, in order');
+    assert.ok(!/A competitor topic\?/.test(briefed),
+      'a second, looser list of topics must not sit beside the fixed one');
+    assert.ok(/land between 800 and 900 words/.test(briefed), "the brief's word target is what the writer is given");
+  });
+  test('a brief with fewer FAQs than the localization floor cannot ask for the impossible', () => {
+    const p = contentGenerator.buildDentalPrompt({
+      service: { name: 'Anxiety Treatment', category: 'condition' },
+      location: { city: 'Anaheim Hills', state_abbreviation: 'CA', location_name: 'Anaheim Hills' },
+      primaryKeyword: 'anxiety treatment in anaheim hills', secondaryKeywords: [],
+      outline: { blocks: [{ h2: 'X', paragraphs: 2 }] }, competitorFaqs: [], brandName: 'CBH',
+      brief: { faqs: [{ q: 'Only one?' }], wordTarget: { min: 700, max: 1050 } },
+    }).user;
+    const asked = Number(/At least\s+(\d+) of your ANSWERS/.exec(p.replace(/\s+/g, ' '))[1]);
+    assert.ok(asked <= 1, `cannot require ${asked} localized answers from 1 question`);
+  });
+  test('no brief means the writer is instructed exactly as it was before briefs existed', () => {
+    const p = contentGenerator.buildDentalPrompt({
+      service: { name: 'Invisalign', category: 'Cosmetic' },
+      location: { city: 'Brookline', state_abbreviation: 'MA', location_name: 'Brookline' },
+      primaryKeyword: 'invisalign brookline', secondaryKeywords: [],
+      outline: { blocks: [{ h2: 'X', paragraphs: 2 }] },
+      competitorFaqs: ['A competitor topic?'], brandName: 'Gentle Dental',
+    }).user;
+    assert.ok(new RegExp(`Write ${config.dental.faqs.min}-${config.dental.faqs.max} Q&As`).test(p),
+      'the writer still chooses its own questions');
+    assert.ok(/COMPETITOR FAQ TOPICS/.test(p), 'competitor questions are still topic inspiration');
+    assert.ok(!/THE FAQ QUESTIONS ARE FIXED/.test(p), 'and are not a contract');
+    assert.ok(new RegExp(`land between ${config.dental.pageWords.targetMin} and ${config.dental.pageWords.targetMax} words`).test(p),
+      'the config word target still applies');
+  });
+  test('a page is written in its own vertical, not always in dental', () => {
+    const args = {
+      service: { name: 'Anxiety Treatment', category: 'condition' },
+      location: { city: 'Anaheim Hills', state_abbreviation: 'CA', location_name: 'Anaheim Hills' },
+      primaryKeyword: 'anxiety treatment in anaheim hills', secondaryKeywords: [],
+      outline: { blocks: [{ h2: 'X', paragraphs: 2, source: 'brand' }] },
+      competitorFaqs: [], brandName: 'Clear Behavioral Health',
+    };
+    const bh = contentGenerator.buildDentalPrompt({ ...args, vertical: 'behavioralHealth' });
+    assert.ok(/a behavioral health provider in California/.test(bh.system),
+      'a behavioral-health page must not be told it writes for a dental practice');
+    assert.ok(/clinician/.test(bh.system + bh.user), 'and must name the right profession');
+
+    // The default is unchanged, so Gentle Dental reads exactly as before.
+    const dental = contentGenerator.buildDentalPrompt(args);
+    assert.ok(/a dental practice in Massachusetts and New Hampshire/.test(dental.system));
+    assert.strictEqual(dental.system, contentGenerator.buildDentalPrompt({ ...args, vertical: 'dental' }).system,
+      'omitting the vertical must be identical to naming the default');
+  });
+
+
+  console.log('\nVerticals - research must not be run in the wrong industry');
+  test('a dental seed is still qualified, exactly as before', () => {
+    const GD = 'client_gentle_dental';
+    // These names are why the qualifier exists: bare, they return construction
+    // and orthopedic results instead of dental competitors.
+    assert.strictEqual(keywordAdapter.disambiguate('Sealants Quincy MA', GD), 'Dental Sealants Quincy MA');
+    assert.strictEqual(keywordAdapter.disambiguate('Braces Derry NH', GD), 'Dental Braces Derry NH');
+    // Already qualified, so it is left alone rather than doubled.
+    assert.strictEqual(keywordAdapter.disambiguate('Dental Crowns Malden MA', GD), 'Dental Crowns Malden MA');
+  });
+  test('a behavioral-health seed is never prefixed with a dental word', () => {
+    const CBH = 'client_clear_behavioral_health';
+    // The regression this guards: "Dental Anxiety Anaheim Hills" researched the
+    // wrong industry entirely and returned dental keywords for a psychiatry page.
+    ['Anxiety Anaheim Hills CA', 'Xanax Addiction Gardena CA', 'Teen Depression Pasadena CA']
+      .forEach(seed => assert.strictEqual(keywordAdapter.disambiguate(seed, CBH), seed,
+        `"${seed}" must reach the SERP untouched`));
+  });
+  test('an unregistered client gets no qualifier rather than a guessed one', () => {
+    // Injecting the wrong industry word silently researches the wrong industry,
+    // so "unknown" has to mean "add nothing", never "assume dental".
+    assert.strictEqual(keywordAdapter.disambiguate('Anxiety Anaheim Hills CA', 'client_nope'),
+      'Anxiety Anaheim Hills CA');
+    assert.strictEqual(keywordAdapter.disambiguate('Anxiety Anaheim Hills CA', undefined),
+      'Anxiety Anaheim Hills CA');
+    assert.strictEqual(verticals.verticalFor('client_nope'), null);
+  });
+  test('the research vertical and the writing vertical cannot disagree', () => {
+    // One client, two consumers: the SERP seed and the writer prompt. Were
+    // these to come from separate tables, a client could be researched as
+    // dental and written as behavioral health.
+    Object.entries(verticals.VERTICAL_BY_CLIENT).forEach(([clientId, vertical]) => {
+      assert.strictEqual(briefWizard.verticalFor(clientId), vertical,
+        `${clientId} must be written in the vertical it is researched in`);
+      assert.ok(Object.prototype.hasOwnProperty.call(verticals.SEED_QUALIFIER, vertical),
+        `${vertical} needs a seed-qualifier entry (null is a valid answer)`);
+      assert.ok(contentGenerator.VERTICALS[vertical], `${vertical} needs a writer profile`);
+    });
+  });
+
+
+  console.log('\nRelevance terms - a client with no curated map still gets a topical filter');
+  test('terms are derived from the service name when the map has no entry', () => {
+    const t = (name) => keywordUniverseMap.relevanceTermsForService('not-in-map', name);
+    assert.deepStrictEqual(t('Anxiety'), ['anxiety']);
+    // The audience word is not the topic: keeping "teen" would admit "teen dentist".
+    assert.deepStrictEqual(t('Teen Depression'), ['depression']);
+    // The substance is the topic; "addiction" alone would pool every other addiction.
+    assert.deepStrictEqual(t('Xanax Addiction'), ['xanax']);
+    // A parenthetical is an acronym, not a topic.
+    assert.deepStrictEqual(t('Outpatient Mental Health Treatment (IOP)'), ['mental']);
+  });
+  test('an entirely generic name still gets a filter rather than none', () => {
+    // "Family Therapy" is all generic words. A loose filter beats null, which
+    // the live-pool check reads as "no topical filter at all".
+    const terms = keywordUniverseMap.relevanceTermsForService('not-in-map', 'Family Therapy');
+    assert.ok(Array.isArray(terms) && terms.length, 'must never fall back to null');
+  });
+  test('a curated entry always wins over the derived one', () => {
+    // Derivation cannot know that whitening keywords also say "bleach".
+    assert.deepStrictEqual(
+      keywordUniverseMap.relevanceTermsForService('teeth-whitening', 'Teeth Whitening'),
+      ['whiten', 'bleach']);
+  });
+  test('the derived filter removes the pool that was reported as irrelevant', () => {
+    // Verbatim from the report: an "Anxiety in Anaheim Hills" pool made almost
+    // entirely of veterinary and dental keywords, because no filter ran at all.
+    const reported = [
+      'anaheim hills pet clinic', 'orange county emergency pet clinic', 'route 66 emergency vet',
+      'anaheim hills dentist', 'mission hills pediatric dentist', 'veg anaheim hills',
+      'awesome dental anaheim', 'twilight dentistry', 'christian counseling orange county',
+      'anxiety therapist anaheim hills',
+    ];
+    const terms = keywordUniverseMap.relevanceTermsForService('not-in-map', 'Anxiety');
+    const kept = reported.filter(k => terms.some(t => k.includes(t)));
+    assert.deepStrictEqual(kept, ['anxiety therapist anaheim hills'],
+      'only the keyword actually about this page survives');
+  });
+
+
+  console.log('\nCBH - the contract is satisfiable, and every gate bites');
+
+  // Builds the fixture page, optionally mutating the L3 first.
+  const cbhPage = (mutate) => {
+    const l3 = cbhFixture.passingL3();
+    if (mutate) mutate(l3);
+    const page = cbhCompose.mergeCbhL3(cbhFixture.scaffold(), l3);
+    return cbhCompose.applyProvenance(page, cbhFixture.passingProvenance());
+  };
+  const cbhFails = (page) => cbhQc.runCbhQc(page).checks.filter(c => !c.pass).map(c => c.id);
+
+  test('a page written to the guidelines passes every gate', () => {
+    const r = cbhQc.runCbhQc(cbhPage());
+    assert.deepStrictEqual(r.checks.filter(c => !c.pass).map(c => c.id), [],
+      'the contract must be satisfiable - a limit no page can meet is a broken contract, not a strict one');
+    assert.strictEqual(r.verdict, 'PASS');
+  });
+
+  test('the fixed headings survive whatever the writer returns', () => {
+    // The guidelines say "use this H2 exactly as written", so the headings are
+    // never the model's to produce. Merging output that tries to reword them
+    // must change nothing.
+    const page = cbhPage();
+    const merged = cbhCompose.mergeCbhL3(page, {
+      approach: { paragraphs: ['x'], philosophy: ['y'], therapies: ['z'] },
+      insurance: 'a', uvp: 'b', service: 'c',
+      educational: { paragraphs: ['d'], h3s: [{ heading: 'Rewritten', lines: ['e'] }] },
+    });
+    assert.strictEqual(merged.sections.insurance.heading, cbhContract.FIXED_HEADINGS.insurance);
+    assert.strictEqual(merged.sections.uvp.heading, cbhContract.FIXED_HEADINGS.uvp);
+    assert.strictEqual(merged.sections.approach.philosophy.heading, cbhContract.FIXED_HEADINGS.approachPhilosophy);
+    assert.strictEqual(merged.sections.approach.therapies.heading, cbhContract.FIXED_HEADINGS.approachTherapies);
+  });
+
+  test('the brand suffix is appended once and excluded from the length count', () => {
+    const page = cbhPage(l3 => { l3.metaTitle = 'Anxiety Treatment in Anaheim Hills for Lasting Relief'; });
+    assert.ok(page.meta.fullTitle.endsWith(cbhContract.TITLE_SUFFIX), 'the shipped title carries the suffix');
+    assert.ok(!page.meta.title.includes(cbhContract.BRAND), 'the counted title does not');
+    // Idempotent: a reviewer pasting a title that already has the suffix must
+    // not end up with it twice.
+    const twice = cbhCompose.mergeCbhL3(cbhFixture.scaffold(), { metaTitle: page.meta.fullTitle });
+    assert.strictEqual(twice.meta.fullTitle, page.meta.fullTitle);
+  });
+
+  test('a meta title inside 50-60 passes and one outside it fails', () => {
+    assert.ok(!cbhFails(cbhPage()).includes('meta_title_length'));
+    assert.ok(cbhFails(cbhPage(l3 => { l3.metaTitle = 'Anxiety Treatment'; })).includes('meta_title_length'),
+      'a 17-character title is under the floor');
+    assert.ok(cbhFails(cbhPage(l3 => { l3.metaTitle = 'A'.repeat(61); })).includes('meta_title_length'));
+  });
+
+  test('the meta description needs every keyword word, in any order, plus a CTA', () => {
+    // The guidelines say explicitly that the words need not be in order.
+    const reordered = cbhPage(l3 => {
+      l3.metaDescription = 'In Anaheim Hills, treatment for anxiety is delivered by licensed clinicians '
+        + 'who tailor each plan to the person in front of them. Schedule a consultation today.';
+    });
+    assert.ok(!cbhFails(reordered).includes('meta_description_has_keyword_words'),
+      'out-of-order keyword words must satisfy the rule');
+    const noCta = cbhPage(l3 => {
+      l3.metaDescription = 'Evidence-based anxiety treatment in Anaheim Hills from licensed clinicians '
+        + 'who tailor care to your needs, your goals and the pace that actually suits you.';
+    });
+    assert.ok(cbhFails(noCta).includes('meta_description_has_cta'));
+  });
+
+  test('the H1 must carry the keyword and the city, within 70 characters', () => {
+    assert.ok(cbhFails(cbhPage(l3 => { l3.hero.h1 = 'Compassionate Care for You'; }))
+      .includes('hero_h1_keyword_and_location'), 'no keyword, no city');
+    assert.ok(cbhFails(cbhPage(l3 => { l3.hero.h1 = 'Anxiety Treatment ' + 'x'.repeat(60) + ' in Anaheim Hills'; }))
+      .includes('hero_h1_length'));
+  });
+
+  test('the approach section is capped as a whole, not just per paragraph', () => {
+    // Three paragraphs each inside the 300 limit can still breach the 1,200
+    // section cap - which is why the section gate exists separately.
+    const long = 'x'.repeat(295);
+    const page = cbhPage((l3) => {
+      l3.approach.paragraphs = [long, long];
+      l3.approach.philosophy = [long, long];
+      l3.approach.therapies = [long, long];
+    });
+    const fails = cbhFails(page);
+    assert.ok(fails.includes('approach_section_length'), 'the section total must be gated');
+    assert.ok(!fails.includes('approach_paragraph_limits'), 'while every individual paragraph is legal');
+  });
+
+  test('every H3 body gets three lines per H3 - four H3s means twelve each', () => {
+    // "3 x number of H3s" is what EACH body gets, not what the bodies share.
+    // The fixture has four H3s, so every one of them has twelve lines of its
+    // own and a short neighbour neither lends nor constrains.
+    assert.strictEqual(cbhContract.linesPerBody(4), 12);
+    assert.strictEqual(cbhContract.linesPerBody(5), 15);
+    const L = 'y'.repeat(80);
+    // Nine content lines plus the two breaks they oblige is eleven, inside the
+    // twelve. All four bodies spending that is 44 lines across the section --
+    // which a pooled reading of the same sentence would reject outright.
+    const full = cbhPage((l3) => { l3.educational.h3s.forEach((h) => { h.lines = Array(9).fill(L); }); });
+    assert.ok(!cbhFails(full).includes('educational_h3_line_budget'),
+      'four bodies of nine lines each is legal - the allowance is per body');
+    // Ten content lines oblige three breaks: thirteen, past the twelve.
+    const over = cbhPage((l3) => { l3.educational.h3s[2].lines = Array(10).fill(L); });
+    assert.ok(cbhFails(over).includes('educational_h3_line_budget'),
+      'but one body past its own twelve still fails');
+  });
+  test('a bullet costs a line more than the same words as a sentence', () => {
+    const words = 'Group sessions for shared skills practice.';
+    assert.strictEqual(cbhContract.lineCount(words), 1);
+    assert.strictEqual(cbhContract.lineCount(`- ${words}`), 2, 'the marker adds a line');
+    assert.strictEqual(cbhContract.lineCount(`1. ${words}`), 2, 'a numbered list counts the same');
+    assert.ok(!cbhContract.isBullet('-nospace'), 'a hyphenated word is not a bullet');
+    // Which means a body of bullets holds half the writing a body of sentences
+    // does -- the gate has to see that, or bullets buy free length.
+    const L = 'y'.repeat(80);
+    const bullets = cbhPage((l3) => { l3.educational.h3s[0].lines = Array(6).fill(`- ${L}`); });
+    assert.ok(cbhFails(bullets).includes('educational_h3_line_budget'),
+      'six bullets cost twelve lines plus breaks, over the twelve');
+  });
+  test('a section of one-line fragments is flagged, a mixed one is not', () => {
+    // The reported defect: every H3 body a list of short standalone sentences,
+    // which reads like a slide deck. The fixture mixes paragraphs and bullets
+    // and must stay clean; stripping either form has to be caught.
+    assert.ok(!cbhFails(cbhPage()).includes('educational_body_mix'));
+    const fragments = cbhPage((l3) => {
+      l3.educational.h3s.forEach((h) => { h.lines = ['A short standalone sentence.', 'And another one.']; });
+    });
+    assert.ok(cbhFails(fragments).includes('educational_body_mix'),
+      'one-line entries throughout is the shape the client rejected');
+    const noBullets = cbhPage((l3) => {
+      l3.educational.h3s.forEach((h) => { h.lines = h.lines.filter(l => !cbhContract.isBullet(l)); });
+    });
+    assert.ok(cbhFails(noBullets).includes('educational_body_mix'), 'all prose is one-sided too');
+    // Minor, not Major: a one-sided section is still a usable page. But the
+    // writer retries on it, which is how the shape actually gets fixed.
+    assert.strictEqual(cbhQc.runCbhQc(noBullets).verdict, 'CONDITIONAL PASS');
+    assert.ok(cbhWriter.CORRECTABLE.has('educational_body_mix'));
+  });
+  test('an entry is a bullet, a paragraph or a fragment', () => {
+    const f = cbhContract.entryForm;
+    assert.strictEqual(f('- Worry that is hard to control most days'), 'bullet');
+    assert.strictEqual(f('A short standalone sentence.'), 'fragment');
+    assert.strictEqual(f('y'.repeat(86)), 'paragraph', 'past one line of wrap it is prose');
+    assert.strictEqual(f('   '), 'empty');
+  });
+  test('the mandatory break after every third line is charged for', () => {
+    const L = 'y'.repeat(80);
+    const used = (n) => cbhContract.linesUsed(Array(n).fill(L));
+    assert.strictEqual(used(3), 3, 'no break is needed after the last line');
+    assert.strictEqual(used(4), 5, 'a fourth line obliges a break after the third');
+    assert.strictEqual(used(7), 9, 'seven lines carry two breaks');
+    // Which is why the writer is asked for nine lines and not twelve: the
+    // breaks come out of the same allowance.
+    assert.strictEqual(cbhContract.contentAllowance(12), 9);
+    assert.strictEqual(cbhContract.contentAllowance(15), 12);
+  });
+  test('a long paragraph counts as several lines against its own body', () => {
+    assert.strictEqual(cbhContract.lineCount('y'.repeat(200)), 3, 'a 200-char line is three lines');
+    assert.strictEqual(cbhContract.linesUsed(['y'.repeat(255)]), 3);
+    // 765 characters wrap to nine lines, which with two breaks fills a body.
+    assert.ok(!cbhFails(cbhPage((l3) => { l3.educational.h3s[0].lines = ['y'.repeat(765)]; }))
+      .includes('educational_h3_line_budget'));
+    assert.ok(cbhFails(cbhPage((l3) => { l3.educational.h3s[0].lines = ['y'.repeat(766)]; }))
+      .includes('educational_h3_line_budget'), 'one character more is a tenth line and overruns');
+  });
+  test('an H3 with no body fails', () => {
+    const page = cbhPage((l3) => { l3.educational.h3s[1].lines = []; });
+    assert.ok(cbhFails(page).includes('educational_h3_line_budget'));
+  });
+  test('the H3 count is gated at both ends', () => {
+    assert.ok(cbhFails(cbhPage(l3 => { l3.educational.h3s = l3.educational.h3s.slice(0, 3); }))
+      .includes('educational_h3_count'), '3 H3s is under the floor');
+    const six = cbhPage((l3) => {
+      while (l3.educational.h3s.length < 6) l3.educational.h3s.push({ heading: 'Extra section', lines: ['a line'] });
+    });
+    assert.ok(cbhFails(six).includes('educational_h3_count'), '6 H3s is over the ceiling');
+  });
+
+  test('a fallback section with no source is a failure, not a pass', () => {
+    // The guidelines forbid inventing information. An unattributed fallback is
+    // indistinguishable from an invented one.
+    const page = cbhPage();
+    page.sections.educational.h3s[2].sourceUrl = '';
+    assert.ok(cbhFails(page).includes('educational_fallback_cited'));
+  });
+
+  test('every educational section has to declare where it came from', () => {
+    const page = cbhPage();
+    page.sections.educational.h3s[0].source = null;
+    assert.ok(cbhFails(page).includes('educational_provenance_stated'));
+  });
+
+  test('the FAQ set is gated on count, answer length and type mix', () => {
+    assert.ok(cbhFails(cbhPage(l3 => { l3.faqs = l3.faqs.slice(0, 4); })).includes('faq_count'));
+    assert.ok(cbhFails(cbhPage(l3 => { l3.faqs[0].a = 'z'.repeat(301); })).includes('faq_answer_length'));
+    const noBrand = cbhPage(l3 => { l3.faqs.forEach((f) => { f.type = 'intent'; }); });
+    assert.ok(cbhFails(noBrand).includes('faq_type_mix'), 'a missing question type is flagged');
+    assert.strictEqual(cbhQc.runCbhQc(noBrand).verdict, 'CONDITIONAL PASS',
+      'but only as a Minor - a useful set that skips a category is not a failed page');
+  });
+
+  test('the writer only retries on failures a model can actually fix', () => {
+    // Told "your description is 138 characters, it must be 150-160" a model
+    // fixes it. Told "your UVP is not specific enough" it rewrites at random.
+    assert.ok(cbhWriter.CORRECTABLE.has('meta_description_length'));
+    assert.ok(cbhWriter.CORRECTABLE.has('educational_h3_line_budget'));
+    assert.ok(!cbhWriter.CORRECTABLE.has('uvp_is_specific'));
+    assert.ok(!cbhWriter.CORRECTABLE.has('insurance_heading'), 'a fixed heading is code, not a writing error');
+  });
+
+  test('a correction that made the page worse is discarded', () => {
+    const good = cbhQc.runCbhQc(cbhPage());
+    const worse = cbhQc.runCbhQc(cbhPage(l3 => { l3.faqs = []; l3.educational.h3s = []; }));
+    assert.ok(cbhWriter.failureWeight(worse) > cbhWriter.failureWeight(good),
+      'weighting must rank a broken page above a clean one so the better draft wins');
+  });
+
+  test('the correction note quotes the real measured numbers', () => {
+    const qcResult = cbhQc.runCbhQc(cbhPage(l3 => { l3.metaDescription = 'Too short.'; }));
+    const note = cbhWriter.correctionFrom(qcResult);
+    assert.ok(/meta description/i.test(note), 'the failing section is named');
+    assert.ok(/\d+ characters/.test(note), 'with the count the model has to correct against');
+  });
+
+  test('the dental gates are not applied to a CBH page, or the reverse', () => {
+    const page = cbhPage();
+    assert.ok(cbhQc.isCbhPage(page), 'a CBH page is recognisable by its own sections');
+    assert.ok(!cbhQc.isCbhPage({ meta: {}, sections: { hero: {}, educationalBody: { blocks: [] } } }),
+      'a dental page is not mistaken for one');
+  });
+
+
+  console.log('\nCBH - fallback sourcing is an allowlist, not "whatever ranked"');
+  test('only the approved clinical authorities count as a source', () => {
+    ['https://www.nimh.nih.gov/health/topics/anxiety-disorders',
+      'https://pubmed.ncbi.nlm.nih.gov/12345', 'https://www.mayoclinic.org/anxiety']
+      .forEach(u => assert.ok(cbhSources.isAllowed(u), `${u} is an approved authority`));
+    ['https://example.com/anxiety', 'https://psychologytoday.com/x', 'not a url', '']
+      .forEach(u => assert.ok(!cbhSources.isAllowed(u), `${u} is not`));
+  });
+  test('a lookalike domain cannot pass as an authority', () => {
+    // Suffix matching alone would accept the first of these; the check is host
+    // equality or a real subdomain, so a domain merely CONTAINING an
+    // allowlisted one fails.
+    assert.ok(!cbhSources.isAllowed('https://nimh.nih.gov.evil.com/anxiety'));
+    assert.ok(!cbhSources.isAllowed('https://notcdc.gov/anxiety'));
+    assert.ok(cbhSources.isAllowed('https://sub.nimh.nih.gov/anxiety'), 'a genuine subdomain is fine');
+  });
+  test('the lookup cap can never be lower than the number of sections needing one', () => {
+    // A cap below the maximum H3 count produced a page that structurally could
+    // not pass educational_fallback_cited: with all sections marked fallback,
+    // two got a source and the rest could never get one, no matter how many
+    // times it was regenerated. The cap is derived from the contract for this
+    // reason; hardcoding it is how the bug happened.
+    assert.ok(cbhSources.MAX_LOOKUPS_PER_PAGE >= cbhContract.LIMITS.educational.h3Count.max,
+      `cap ${cbhSources.MAX_LOOKUPS_PER_PAGE} must cover ${cbhContract.LIMITS.educational.h3Count.max} sections`);
+  });
+  await testAsync('a fully-fallback plan leaves no section unsourceable by the cap', async () => {
+    // The code-side plan marks EVERY section fallback, which is the case that
+    // exposed the cap. No lookups run here (max 0 keeps it offline); what is
+    // asserted is that the cap would have allowed one for each.
+    const plan = cbhBrief.fallbackPlan({ serviceName: 'Depression Treatment', city: 'Anaheim Hills' });
+    const r = await cbhSources.attachFallbackSources({
+      h3s: plan.h3s, serviceName: 'Depression Treatment', max: 0,
+    });
+    assert.ok(r.needed <= cbhSources.MAX_LOOKUPS_PER_PAGE,
+      `${r.needed} sections need a source but the cap allows ${cbhSources.MAX_LOOKUPS_PER_PAGE}`);
+  });
+  test('the search is restricted to the allowlist up front', () => {
+    const q = cbhSources.buildQuery('Signs you may need support', 'Anxiety Treatment');
+    cbhSources.ALLOWLIST.forEach(d => assert.ok(q.includes(`site:${d}`), `${d} must be in the query`));
+  });
+  await testAsync('fallback lookups are capped per page, and uncapped sections stay unsourced', async () => {
+    // Beyond the cap a section keeps its fallback tag with no URL, so QC flags
+    // it rather than the page shipping unsourced copy as if it were researched.
+    const h3s = Array.from({ length: 4 }, (_, i) => ({ heading: `Gap ${i}`, source: 'fallback', sourceUrl: '' }));
+    const r = await cbhSources.attachFallbackSources({ h3s, serviceName: 'Anxiety Treatment', max: 0 });
+    assert.strictEqual(r.needed, 4);
+    assert.strictEqual(r.attempted, 0);
+    assert.ok(r.h3s.every(h => !h.sourceUrl), 'nothing is invented when no lookup runs');
+  });
+  await testAsync('a section already carrying a source is not looked up again', async () => {
+    const h3s = [{ heading: 'Covered', source: 'fallback', sourceUrl: 'https://www.cdc.gov/x' }];
+    const r = await cbhSources.attachFallbackSources({ h3s, serviceName: 'Anxiety Treatment' });
+    assert.strictEqual(r.needed, 0, 'an attributed section needs no lookup');
+    assert.strictEqual(r.h3s[0].sourceUrl, 'https://www.cdc.gov/x');
+  });
+
+  console.log('\nCBH - the brief only offers what the guidelines leave open');
+  test('an unrecognised provenance becomes fallback, never competitor', () => {
+    // Defaulting the other way would let an untagged section pass as
+    // competitor-backed and skip the attribution gate entirely.
+    const b = cbhBrief.normalizeCbhBrief({ educational: { h3s: [{ heading: 'X', source: 'nonsense' }] } });
+    assert.strictEqual(b.educational.h3s[0].source, 'fallback');
+  });
+  test('a planner-proposed meta value outside the contract is not stored', () => {
+    // It would override the writer's output AFTER the correction pass has run,
+    // so an out-of-range proposal replaced a compliant title and then had no
+    // way of being fixed. Left empty, the writer produces it and the correction
+    // pass covers it.
+    const L = cbhContract.LIMITS;
+    assert.strictEqual(cbhBrief.withinRange('Depression Treatment in Anaheim Hills, CA', L.metaTitle), false,
+      '41 characters is under the 50 floor');
+    assert.strictEqual(cbhBrief.withinRange('Anxiety Treatment in Anaheim Hills, CA | Expert Care', L.metaTitle), true);
+    assert.strictEqual(cbhBrief.withinRange('x'.repeat(163), L.metaDescription), false);
+    assert.strictEqual(cbhBrief.withinRange('x'.repeat(155), L.metaDescription), true);
+  });
+  test('range checking measures the way the gates measure', () => {
+    // Whitespace-collapsed rendered text, so a value that only passes because
+    // of padding cannot slip through one check and fail the other.
+    const L = cbhContract.LIMITS;
+    const padded = '  ' + 'x'.repeat(155) + '   ';
+    assert.strictEqual(cbhBrief.withinRange(padded, L.metaDescription), true);
+    assert.strictEqual(cbhContract.textLength(padded), 155);
+  });
+  test('the brief stores the title without the brand suffix', () => {
+    const b = cbhBrief.normalizeCbhBrief({ meta: { title: `Anxiety Treatment in Anaheim Hills${cbhContract.TITLE_SUFFIX}` } });
+    assert.strictEqual(b.meta.title, 'Anxiety Treatment in Anaheim Hills',
+      'the reviewer edits, and QC counts, the title without the suffix');
+  });
+  test('the brief cannot carry more H3s or FAQs than the contract allows', () => {
+    const b = cbhBrief.normalizeCbhBrief({
+      educational: { h3s: Array.from({ length: 9 }, (_, i) => ({ heading: `H${i}` })) },
+      faqs: Array.from({ length: 12 }, (_, i) => ({ q: `Q${i}?` })),
+    });
+    assert.strictEqual(b.educational.h3s.length, cbhContract.LIMITS.educational.h3Count.max);
+    assert.strictEqual(b.faqs.length, cbhContract.LIMITS.faqs.count.max);
+  });
+  test('the code-side plan marks every section fallback, because none was researched', () => {
+    const plan = cbhBrief.fallbackPlan({ serviceName: 'Anxiety Treatment', city: 'Anaheim Hills' });
+    assert.ok(plan.h3s.every(h => h.source === 'fallback'),
+      'a plan written without competitor data must not claim to be competitor-driven');
+    assert.ok(plan.h3s.length >= cbhContract.LIMITS.educational.h3Count.min);
+    const types = new Set(plan.faqs.map(f => f.type));
+    ['location', 'brand', 'intent'].forEach(t => assert.ok(types.has(t), `the default FAQ set covers ${t}`));
+    assert.ok(plan.faqs.length >= cbhContract.LIMITS.faqs.count.min);
+  });
+
+
+  console.log('\nCBH - headings keep the client\'s own capitalisation');
+  test('an acronym survives into display text', () => {
+    // The regression: display text was derived from the KEYWORD phrase, which
+    // is lowercase by design, then title-cased back -- turning ADHD into
+    // "Adhd" and "Bipolar I & II" into "Bipolar i And ii".
+    const d = keywordRelevance.servicePhraseDisplay;
+    assert.strictEqual(d('ADHD'), 'ADHD treatment');
+    assert.strictEqual(d('OCD'), 'OCD treatment');
+    assert.strictEqual(d('Bipolar I & II'), 'Bipolar I & II treatment');
+  });
+  test('the acronym in a parenthetical is kept, because that is where it lives', () => {
+    // Stripping it produced a heading for an OCD page that never says OCD --
+    // the term people search and scan for.
+    const d = keywordRelevance.servicePhraseDisplay;
+    assert.strictEqual(d('Obsessive Compulsive Disorder (OCD)'),
+      'Obsessive Compulsive Disorder (OCD) treatment');
+    assert.strictEqual(d('Partial Hospitalization Program (PHP)'),
+      'Partial Hospitalization Program (PHP)');
+    assert.strictEqual(d('Outpatient Addiction Treatment (IOP & PHP)'),
+      'Outpatient Addiction Treatment (IOP & PHP)');
+  });
+  test('a trademark sign is still dropped from display text', () => {
+    assert.strictEqual(keywordRelevance.servicePhraseDisplay('Invisalign® Treatment'), 'Invisalign Treatment');
+  });
+  test('the head-noun rule is the same for display as for keywords', () => {
+    // Only the casing differs -- a name that already says what service it is
+    // gains nothing in either path.
+    ['Anxiety', 'ADHD', 'Teen IOP Treatment', 'Family Therapy', 'Psychotherapy'].forEach((n) => {
+      const kw = keywordRelevance.servicePhrase(n);
+      const disp = keywordRelevance.servicePhraseDisplay(n);
+      assert.strictEqual(disp.toLowerCase().endsWith('treatment'), kw.endsWith('treatment'),
+        `"${n}" must gain the head noun in both paths or neither`);
+    });
+  });
+  test('the keyword path is unchanged: still lowercase, parentheticals still stripped', () => {
+    // Display casing must not leak into search queries.
+    assert.strictEqual(keywordRelevance.servicePhrase('ADHD'), 'adhd treatment');
+    assert.strictEqual(keywordRelevance.servicePhrase('Obsessive Compulsive Disorder (OCD)'),
+      'obsessive compulsive disorder treatment');
+  });
+  test('every CBH heading carries the display phrase, not the keyword phrase', () => {
+    const page = cbhCompose.buildCbhScaffold({
+      client: { id: 'c', brand_static: { base_url: 'https://x.test' } },
+      service: { id: 's', name: 'ADHD', slug: 'adhd' },
+      location: { id: 'l', city: 'Anaheim Hills', location_page_url: '/locations/anaheim-hills/' },
+    }, { servicePhrase: keywordRelevance.servicePhraseDisplay });
+    assert.strictEqual(page.serviceName, 'ADHD treatment');
+    assert.ok(page.sections.approach.heading.includes('ADHD'), 'approach H2');
+    assert.ok(page.sections.educational.heading.includes('ADHD'), 'educational H2');
+    assert.ok(page.sections.service.heading.includes('ADHD'), 'service H2');
+    assert.ok(!/Adhd/.test(JSON.stringify(page)), 'no title-cased acronym anywhere on the page');
+  });
+
+
+  console.log('\nCBH - a citation means the writer actually read the source');
+  test('a block page is not accepted as source text', () => {
+    // NCBI answers automated traffic with 800 characters of perfectly
+    // scrapeable "Access Denied". Accepting it would hand the writer an error
+    // notice and then cite a clinical authority for whatever it wrote instead.
+    const blocked = 'NCBI Error Access Denied Your access to the NCBI website has been temporarily '
+      + 'blocked due to a possible misuse/abuse situation involving your site. ' + 'x'.repeat(300);
+    assert.ok(!cbhSources.usableExcerpt(blocked));
+    assert.ok(!cbhSources.usableExcerpt('Please verify you are human. ' + 'x'.repeat(300)));
+    assert.ok(!cbhSources.usableExcerpt('Enable JavaScript to continue. ' + 'x'.repeat(300)));
+  });
+  test('a stub is not accepted as source text', () => {
+    assert.ok(!cbhSources.usableExcerpt('too short'));
+    assert.ok(!cbhSources.usableExcerpt(''));
+  });
+  test('genuine clinical prose is accepted, even where it says "error" later on', () => {
+    const real = 'Depression is a common and serious medical illness that negatively affects how you '
+      + 'feel, the way you think and how you act. Fortunately, it is also treatable. It causes '
+      + 'feelings of sadness and a loss of interest in activities once enjoyed, and can lead to a '
+      + 'variety of emotional and physical problems. A diagnostic error is possible in any field.';
+    assert.ok(cbhSources.usableExcerpt(real), 'the block check reads the OPENING, not the whole body');
+  });
+  test('the query does not repeat the service word or carry page furniture', () => {
+    // "Anxiety treatment" + "Treatment options available" was concatenated raw
+    // into "anxiety treatment Treatment options available" -- the topic word
+    // twice -- and returned nothing usable across three attempts.
+    const q = cbhSources.queryTopic('Treatment options available', 'Anxiety treatment');
+    assert.strictEqual(q, 'anxiety treatment options available');
+    assert.strictEqual((q.match(/treatment/g) || []).length, 1, 'the topic word appears once');
+  });
+  test('words that distinguish one section from another are kept', () => {
+    // An earlier, over-aggressive stopword list reduced "What to expect at your
+    // first visit" to "visit" and lost a source that had been retrieving fine.
+    const q = cbhSources.queryTopic('What to expect at your first visit', 'Anxiety treatment');
+    ['expect', 'first', 'visit'].forEach(w => assert.ok(q.includes(w), `"${w}" distinguishes this section`));
+  });
+  test('a heading of pure stopwords still yields a usable query', () => {
+    assert.strictEqual(cbhSources.queryTopic('the and of', 'Anxiety treatment'), 'anxiety treatment');
+  });
+  test('the site-restricted query is tried first, then an open one', () => {
+    const [restricted, open] = cbhSources.buildQueries('Treatment options', 'Anxiety treatment');
+    assert.ok(restricted.includes('site:'), 'precision first');
+    assert.ok(!open.includes('site:'), 'then breadth, with isAllowed doing the filtering');
+  });
+  test('more than one authority is tried before a section is given up on', () => {
+    assert.ok(cbhSources.MAX_URL_ATTEMPTS > 1,
+      'stopping at the first allowed URL left a section unsourced whenever that one blocked scrapers');
+  });
+  test('the brief carries the source TEXT, not just the URL', () => {
+    // The lookup was paid for, cited, and then discarded: the excerpt never
+    // reached the brief, so the writer never saw what it was citing.
+    const b = cbhBrief.normalizeCbhBrief({
+      educational: { h3s: [{ heading: 'X', source: 'fallback', sourceUrl: 'https://www.cdc.gov/a', sourceExcerpt: 'Real source text.' }] },
+    });
+    assert.strictEqual(b.educational.h3s[0].sourceExcerpt, 'Real source text.');
+  });
+  test('a sourced section is told to write from its source; an unsourced one is not', () => {
+    const prompt = cbhWriter.userPrompt({
+      scaffold: cbhFixture.scaffold(),
+      primaryKeyword: cbhFixture.PRIMARY, secondaryKeywords: [],
+      faqPlan: [],
+      h3Plan: [
+        { heading: 'From competitors', source: 'competitor' },
+        { heading: 'From a source', source: 'fallback', sourceUrl: 'https://www.nimh.nih.gov/x', sourceExcerpt: 'NIMH states CBT is first-line.' },
+        { heading: 'Unsourced', source: 'fallback', sourceUrl: '', sourceExcerpt: '' },
+      ],
+    });
+    assert.ok(prompt.includes('NIMH states CBT is first-line.'), 'the source text reaches the writer');
+    assert.ok(/WRITE THIS ONE FROM THE SOURCE BELOW/.test(prompt), 'and it is told to stay inside it');
+    assert.ok(/nothing specific enough to need a citation/.test(prompt),
+      'while an unsourced section is told to stay general rather than invent');
+    // The competitor-backed section gets neither directive.
+    const firstSection = prompt.slice(prompt.indexOf('1. From competitors'), prompt.indexOf('2. From a source'));
+    assert.ok(!/WRITE THIS ONE FROM THE SOURCE/.test(firstSection));
   });
 
   console.log(`\n${passed} passed, ${failed} failed`);
