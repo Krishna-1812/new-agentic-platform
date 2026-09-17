@@ -2,7 +2,7 @@
 // Gates the CBH page contract (cbhContract.js). Deliberately separate from the
 // dental checks in qaEngine.js: the two contracts share no section, and the
 // dental gates would fail every CBH page on sight -- they demand 7-8 H2 blocks
-// and 600+ words, where this contract has nine fixed sections and can
+// and 600+ words, where this contract has ten sections and can
 // legitimately land near 450.
 //
 // Same result shape as runDentalQC ({ verdict, checks: [{ id, name, severity,
@@ -46,6 +46,7 @@ function context(page = {}) {
     h3s: s.educational?.h3s || [],
     uvp: s.uvp || {},
     service: s.service || {},
+    treatment: s.treatment || {},
     faqs: s.faq?.items || [],
     paragraphsOf,
     // The keyword the page targets, and its significant words. Matching is
@@ -424,6 +425,31 @@ const CHECKS = [
       detail: lenDetail('Service', ctx.service.paragraph, { max: L.service.maxChars }),
     }),
   },
+
+  // ── Treatment ───────────────────────────────────────────────────────────
+  {
+    id: 'treatment_heading_length', severity: 'Major', field: 'treatment',
+    name: `Treatment H2 is at most ${L.treatment.headingMaxChars} characters`,
+    run: (ctx) => ({
+      pass: c.textLength(ctx.treatment.heading) > 0
+        && c.textLength(ctx.treatment.heading) <= L.treatment.headingMaxChars,
+      detail: lenDetail('Treatment H2', ctx.treatment.heading, { max: L.treatment.headingMaxChars }),
+    }),
+  },
+  {
+    id: 'treatment_length', severity: 'Major', field: 'treatment',
+    name: `Treatment paragraph is at most ${L.treatment.maxChars} characters`,
+    run: (ctx) => ({
+      pass: c.textLength(ctx.treatment.paragraph) > 0
+        && c.textLength(ctx.treatment.paragraph) <= L.treatment.maxChars,
+      detail: lenDetail('Treatment', ctx.treatment.paragraph, { max: L.treatment.maxChars }),
+    }),
+  },
+  // No gate on this H2 naming the service and the city. There was one, and the
+  // client's CMS spec then showed the same heading as "Work With Experienced
+  // Mental Health Professionals" -- which names neither and is theirs to write.
+  // The writer is still ASKED for the specific shape; a reviewer who edits it
+  // to something general is no longer told the page is wrong.
 
   // ── FAQs ────────────────────────────────────────────────────────────────
   {

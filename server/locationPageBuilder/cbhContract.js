@@ -9,7 +9,7 @@
 //
 // This contract REPLACES the dental section shape for CBH. It is not a
 // variation on it: the dental body is 7-8 flat H2 blocks of HTML with headings
-// forbidden inside, and this is nine fixed sections, one of which nests 4-5
+// forbidden inside, and this is ten sections, one of which nests 4-5
 // H3s under a single H2.
 //
 // Every limit here is a MAXIMUM from the guidelines unless the name says
@@ -100,6 +100,15 @@ const LIMITS = {
     maxChars: 150,
   },
 
+  treatment: {
+    // The ONLY H2 on the page the writer composes. Every other heading is
+    // either fixed verbatim or built from the service and location by code, so
+    // this is the one that can drift into a slogan -- hence a gate on it
+    // naming the service and the city, not just on its length.
+    headingMaxChars: 60,
+    maxChars: 250,
+  },
+
   faqs: {
     count: { min: 5, max: 7 },
     answerMaxChars: 300,
@@ -124,6 +133,7 @@ function maxBodyChars() {
         + linesPerBody(l.educational.h3Count.max) * l.educational.lineMaxChars)
     + l.uvp.maxChars
     + l.service.maxChars
+    + l.treatment.headingMaxChars + l.treatment.maxChars
     + l.faqs.count.max * l.faqs.answerMaxChars;
 }
 
@@ -136,6 +146,7 @@ const SECTION_ORDER = [
   { key: 'educational', label: 'Educational' },
   { key: 'uvp', label: 'Why Choose Us' },
   { key: 'service', label: 'Service' },
+  { key: 'treatment', label: 'Treatment' },
   { key: 'faq', label: 'FAQs' },
 ];
 

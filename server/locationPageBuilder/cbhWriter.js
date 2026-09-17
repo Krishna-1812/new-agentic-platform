@@ -3,7 +3,7 @@
 //
 // Its own module rather than a branch inside contentGenerator: that writer's
 // entire prompt is built around a flat stack of H2 blocks with a fixed outline
-// contract, and this contract is nine named sections with ten hard character
+// contract, and this contract is ten named sections with hard character
 // caps, one of which nests 4-5 H3s budgeted in LINES. Bending one prompt to
 // serve both would make each harder to reason about and put Gentle Dental at
 // risk on every CBH change.
@@ -39,6 +39,7 @@ const SCHEMA_HINT = `{
   },
   "uvp": "string",
   "service": "string",
+  "treatment": { "heading": "string", "paragraph": "string" },
   "faqs": [{ "q": "string", "a": "string", "type": "location | brand | intent" }]
 }`;
 
@@ -187,6 +188,16 @@ the heading itself says neither. No superlatives, no "best", no invented credent
 SERVICE — heading "${s.service.heading}" is fixed. ONE paragraph, at most ${L.service.maxChars} characters. Natural,
 specific to the service and the location.
 
+TREATMENT — this is the ONE section where you write the H2 as well as the body. It sits between the
+section above and the FAQs.
+H2: at most ${L.treatment.headingMaxChars} characters. Name the team, and where they fit name the service and ${scaffold.locationName} too —
+"Our ADHD treatment experts in El Monte" is the shape to prefer. Not a slogan, not a sentence, not a
+question.
+PARAGRAPH: ONE paragraph directly under it, at most ${L.treatment.maxChars} characters, about the CLINICIANS — their
+experience and how they treat people. "We boast a team of experienced, compassionate clinicians with
+many years of experience, dedicated to treating you with the utmost care" is the register. Do not name
+a qualification, a licence, a school, a headcount or a number of years, and promise no outcome.
+
 FREQUENTLY ASKED QUESTIONS — each answer at most ${L.faqs.answerMaxChars} characters.
 ${faqBlock}
 Questions must be genuinely useful. Never force a keyword into a question or an answer.`;
@@ -218,6 +229,7 @@ const CORRECTABLE = new Set([
   // content is right, the shape is not.
   'educational_body_mix',
   'uvp_length', 'service_length', 'faq_answer_length',
+  'treatment_heading_length', 'treatment_length',
   'meta_description_has_cta', 'meta_description_has_keyword_words',
 ]);
 

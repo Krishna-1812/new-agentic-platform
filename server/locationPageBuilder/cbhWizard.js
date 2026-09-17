@@ -15,58 +15,6 @@ const { servicePhraseDisplay } = require('./keywordRelevance');
 
 const PAGE_TYPE = 'cbh_location_service';
 
-// ── Schema ──────────────────────────────────────────────────────────────────
-// Its own builder rather than generateDentalSchema, which reads sections this
-// contract does not have (breadcrumb, officeInfo) and emits @type Dentist.
-//
-// NAP is deliberately absent from CBH pages, so the address carries locality
-// and region only -- an empty streetAddress would assert the office has no
-// street, which is worse than omitting it.
-function buildCbhSchema({ scaffold, client, location }) {
-  const m = scaffold.meta;
-  const org = {
-    '@context': 'https://schema.org',
-    '@type': 'MedicalBusiness',
-    name: contract.BRAND,
-    url: m.canonical,
-    address: {
-      '@type': 'PostalAddress',
-      addressLocality: location.city,
-      addressRegion: location.state_abbreviation,
-      addressCountry: 'US',
-    },
-    ...(client.brand_static?.sameAs?.length ? { sameAs: client.brand_static.sameAs } : {}),
-    areaServed: [location.city, ...(location.nearby_areas || [])].filter(Boolean),
-  };
-
-  const webPage = {
-    '@context': 'https://schema.org',
-    '@type': 'MedicalWebPage',
-    url: m.canonical,
-    name: m.fullTitle || m.title,
-    description: m.metaDescription,
-    about: { '@type': 'MedicalCondition', name: scaffold.serviceName },
-  };
-
-  const items = scaffold.sections.faq.items || [];
-  const faqPage = items.length ? {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: items.map(f => ({
-      '@type': 'Question',
-      name: f.q,
-      acceptedAnswer: { '@type': 'Answer', text: f.a },
-    })),
-  } : null;
-
-  // Stored as strings, matching how the dental pages store theirs, so the
-  // exporters and the wizard render both without branching.
-  return {
-    medicalBusiness: JSON.stringify(org, null, 2),
-    medicalWebPage: JSON.stringify(webPage, null, 2),
-    faqPage: faqPage ? JSON.stringify(faqPage, null, 2) : '',
-  };
-}
 
 async function findExistingPage({ clientId, serviceId, locationId }) {
   const pages = await store.list('pages', { client_id: clientId });
@@ -118,7 +66,9 @@ async function generateFromBrief({ clientId, serviceId, locationId, brief: brief
   // declare its own output competitor-backed.
   scaffold = cbhCompose.applyProvenance(scaffold, h3s);
 
-  scaffold.schema = buildCbhSchema({ scaffold, client, location });
+  // URLs and schema together, so the JSON-LD can never quote a URL the page
+  // does not have.
+  cbhCompose.refreshCbhDerived(scaffold, { client, location });
   scaffold.qc = cbhQc.runCbhQc(scaffold);
 
   const existing = await findExistingPage({ clientId, serviceId, locationId });
@@ -144,9 +94,23 @@ async function saveContent({ pageId, page }) {
   const next = structuredClone(page);
   next.meta.title = contract.titleWithoutSuffix(next.meta.title || '');
   next.meta.fullTitle = contract.fullTitle(next.meta.title);
+  // The reviewer edits the SLUG; urlPath and canonical are derived from it here
+  // rather than trusted from the client, so a hand-edited URL cannot disagree
+  // with the slug it is supposed to come from.
+  const [client, location] = await Promise.all([
+    store.get('clients', existing.client_id),
+    store.get('locations', existing.location_id),
+  ]);
+  // Rebuilds the URLs AND the JSON-LD. The schema quotes the canonical, the
+  // meta and the FAQ pairs, so an edit to any of them has to reach it.
+  cbhCompose.refreshCbhDerived(next, { client, location });
   next.qc = cbhQc.runCbhQc(next);
   const saved = await store.update('pages', pageId, { page_object: next });
   return { saved: true, updatedAt: saved.updated_at, qc: next.qc, page: next };
 }
 
-module.exports = { generateFromBrief, saveContent, buildCbhSchema, PAGE_TYPE };
+// buildCbhSchema is re-exported from its new home in cbhCompose so existing
+// callers keep working.
+module.exports = {
+  generateFromBrief, saveContent, buildCbhSchema: cbhCompose.buildCbhSchema, PAGE_TYPE,
+};

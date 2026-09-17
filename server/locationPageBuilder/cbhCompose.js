@@ -5,7 +5,7 @@
 //
 // Separate from compose.buildDentalScaffold because the two contracts share no
 // section. The dental body is a flat list of H2 blocks whose bodies are HTML
-// with headings forbidden inside; this one has nine named sections, one of
+// with headings forbidden inside; this one has ten named sections, one of
 // which nests 4-5 H3s under a single H2 and budgets each of them in LINES.
 //
 // The fixed headings are never sent to the writer to produce. The guidelines
@@ -13,7 +13,7 @@
 // for the model to have no opportunity to reword it.
 
 const contract = require('./cbhContract');
-const { dentalPageUrl, canonicalDentalUrl } = require('./urlBuilder');
+const { cbhPageUrl, canonicalCbhUrl, slugify } = require('./urlBuilder');
 
 const { FIXED_HEADINGS } = contract;
 
@@ -32,17 +32,23 @@ function headingService(service, servicePhraseFn) {
 function buildCbhScaffold(layers, { servicePhrase } = {}) {
   const { client, service, location } = layers;
   const baseUrl = client.brand_static?.base_url || '';
-  const urlPath = dentalPageUrl(location.location_page_url, service.slug);
-  const canonical = canonicalDentalUrl(baseUrl, location.location_page_url, service.slug);
+  // The service slug is SEEDED from the service record and then belongs to the
+  // page: the client edits it per page, and the same service can be slugged
+  // differently on another location without one page's edit moving the other.
+  const serviceSlug = slugify(service.slug || service.name);
 
   const svcPhrase = headingService(service, servicePhrase);
   const cityName = location.city;
 
-  return {
+  const scaffold = {
     meta: {
       page_id: '', client_id: client.id, service_id: service.id, location_id: location.id,
       status: 'draft',
-      urlPath, canonical,
+      // Derived from serviceSlug, never stored independently of it -- see
+      // applyCbhUrls, which is the single place these two are computed.
+      urlPath: '',
+      canonical: '',
+      serviceSlug,
       brandName: contract.BRAND,
       // `title` is the part the 50-60 window applies to; `fullTitle` is what
       // ships. Both are stored so nothing downstream has to re-derive which is
@@ -103,6 +109,14 @@ function buildCbhScaffold(layers, { servicePhrase } = {}) {
         paragraph: '',
       },
 
+      // Sits between Service and the FAQs. Unlike every other section, its
+      // heading is BLANK here: the writer composes it, so there is nothing for
+      // code to fill in.
+      treatment: {
+        heading: '',
+        paragraph: '',
+      },
+
       faq: {
         heading: 'Frequently Asked Questions',
         // Each: { q, a, type } where type is location | brand | intent.
@@ -113,6 +127,76 @@ function buildCbhScaffold(layers, { servicePhrase } = {}) {
     schema: {},
     qc: null,
   };
+
+  return refreshCbhDerived(scaffold, { client, location });
+}
+
+// The page's JSON-LD. Moved here from cbhWizard so that ONE function can own
+// everything derived from the page -- see refreshCbhDerived. It reads the
+// canonical, the meta and the FAQs, all of which an editor can change.
+function buildCbhSchema({ scaffold, client, location }) {
+  const m = scaffold.meta;
+  const org = {
+    '@context': 'https://schema.org',
+    '@type': 'MedicalBusiness',
+    name: contract.BRAND,
+    url: m.canonical,
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: location.city,
+      addressRegion: location.state_abbreviation,
+      addressCountry: 'US',
+    },
+    ...(client.brand_static?.sameAs?.length ? { sameAs: client.brand_static.sameAs } : {}),
+    areaServed: [location.city, ...(location.nearby_areas || [])].filter(Boolean),
+  };
+
+  const webPage = {
+    '@context': 'https://schema.org',
+    '@type': 'MedicalWebPage',
+    url: m.canonical,
+    name: m.fullTitle || m.title,
+    description: m.metaDescription,
+    about: { '@type': 'MedicalCondition', name: scaffold.serviceName },
+  };
+
+  const items = scaffold.sections.faq.items || [];
+  const faqPage = items.length ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: items.map(f => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  } : null;
+
+  // Stored as strings, matching how the dental pages store theirs, so the
+  // exporters and the wizard render both without branching.
+  return {
+    medicalBusiness: JSON.stringify(org, null, 2),
+    medicalWebPage: JSON.stringify(webPage, null, 2),
+    faqPage: faqPage ? JSON.stringify(faqPage, null, 2) : '',
+  };
+}
+
+// The ONE place everything DERIVED from a page is computed: its URLs, and the
+// JSON-LD that quotes them. Called when the page is built, and again whenever
+// it is read or saved.
+//
+// The schema belongs here and not at generation time only. It embeds the
+// canonical, the meta title and description, and the FAQ pairs -- every one of
+// which a reviewer can edit afterwards. Built once, it went stale the moment
+// anyone touched them, and shipped a URL the page no longer had.
+function refreshCbhDerived(page, { client, location } = {}) {
+  if (!page || !page.meta) return page;
+  const slug = slugify(page.meta.serviceSlug || '');
+  page.meta.serviceSlug = slug;
+  page.meta.urlPath = cbhPageUrl(location?.location_page_url, slug);
+  page.meta.canonical = canonicalCbhUrl(
+    client?.brand_static?.base_url || '', location?.location_page_url, slug);
+  page.schema = buildCbhSchema({ scaffold: page, client: client || {}, location: location || {} });
+  return page;
 }
 
 // Merge the writer's output into the scaffold. Only the generated fields are
@@ -143,6 +227,14 @@ function mergeCbhL3(scaffold, l3 = {}) {
   if (l3.insurance) s.insurance.paragraph = str(l3.insurance);
   if (l3.uvp) s.uvp.paragraph = str(l3.uvp);
   if (l3.service) s.service.paragraph = str(l3.service);
+
+  // Both halves are the model's, so both are merged. The `||` keeps whatever
+  // was already there when the model omits one -- a correction pass that
+  // returns only the paragraph must not blank the heading.
+  if (l3.treatment) {
+    s.treatment.heading = str(l3.treatment.heading) || s.treatment.heading;
+    s.treatment.paragraph = str(l3.treatment.paragraph) || s.treatment.paragraph;
+  }
 
   if (l3.educational) {
     s.educational.paragraphs = list(l3.educational.paragraphs);
@@ -186,4 +278,22 @@ function applyProvenance(scaffold, plan = []) {
   return scaffold;
 }
 
-module.exports = { buildCbhScaffold, mergeCbhL3, applyProvenance, headingService };
+// Fills in sections a page predates. Pages are stored as whole JSONB blobs,
+// so one written before a section existed simply has no key for it -- and the
+// wizard's editors assign straight into `p.sections.<key>`, which throws on
+// undefined rather than degrading. Read paths run this so an old page opens
+// and can be edited up to the current contract instead of crashing the editor.
+//
+// It adds structure, never content: an empty section still fails its own gates,
+// which is the correct signal that the page needs regenerating.
+function ensureCbhSections(page) {
+  if (!page || !page.sections) return page;
+  const s = page.sections;
+  if (!s.treatment) s.treatment = { heading: '', paragraph: '' };
+  return page;
+}
+
+module.exports = {
+  buildCbhScaffold, mergeCbhL3, applyProvenance, headingService, ensureCbhSections,
+  refreshCbhDerived, buildCbhSchema,
+};

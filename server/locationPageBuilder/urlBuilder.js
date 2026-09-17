@@ -45,4 +45,22 @@ function canonicalDentalUrl(baseUrl, locationPageUrl, serviceSlug) {
   return `${origin}${dentalPageUrl(locationPageUrl, serviceSlug)}`;
 }
 
-module.exports = { slugify, pageUrl, canonicalUrl, breadcrumbLabel, dentalPageUrl, canonicalDentalUrl };
+// CBH URLs carry a trailing slash -- "/locations/<location>/<service>/" --
+// which is how the client's live site serves them. Kept apart from
+// dentalPageUrl because the dental pages ship without one and are not ours to
+// move.
+function cbhPageUrl(locationPageUrl, serviceSlug) {
+  const base = String(locationPageUrl || '').replace(/\/+$/, '');
+  const slug = slugify(serviceSlug);
+  return slug ? `${base}/${slug}/` : `${base}/`;
+}
+
+function canonicalCbhUrl(baseUrl, locationPageUrl, serviceSlug) {
+  const origin = String(baseUrl || '').replace(/\/+$/, '');
+  return `${origin}${cbhPageUrl(locationPageUrl, serviceSlug)}`;
+}
+
+module.exports = {
+  slugify, pageUrl, canonicalUrl, breadcrumbLabel, dentalPageUrl, canonicalDentalUrl,
+  cbhPageUrl, canonicalCbhUrl,
+};

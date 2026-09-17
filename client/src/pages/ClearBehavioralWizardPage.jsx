@@ -102,6 +102,7 @@ export default function ClearBehavioralWizardPage() {
   // Saved pages, so generated content is reachable again after you navigate
   // away. Without this a page exists only in the database.
   const [savedPages, setSavedPages] = useState([]);
+  const [deletingId, setDeletingId] = useState('');
 
   // Step 0
   const [serviceId, setServiceId] = useState(searchParams.get('serviceId') || '');
@@ -149,6 +150,27 @@ export default function ClearBehavioralWizardPage() {
 
   function refreshSavedPages() {
     lpb.cbhPages(CBH_CLIENT_ID).then(setSavedPages).catch(() => { /* list is a convenience */ });
+  }
+
+  // Deleting a page is the only destructive action in this wizard, so it
+  // confirms first and says what survives: the brief is kept, because it cost a
+  // billed research call and is usually hand-edited.
+  async function deleteSavedPage(pg) {
+    const label = `${pg.serviceName} in ${pg.locationName}`;
+    if (!window.confirm(
+      `Delete the generated page for ${label}?\n\n`
+      + 'The written content cannot be recovered. The approved brief and keywords are kept, '
+      + 'so you can generate it again without redoing the research.')) return;
+    setDeletingId(pg.id);
+    setLoadError('');
+    try {
+      await lpb.cbhDeletePage(pg.id);
+      // If the page being edited is the one just deleted, the editor is now
+      // showing something that no longer exists. Back to the start.
+      if (pageId === pg.id) { setPage(null); setPageId(''); setPageDirty(false); setStep(0); }
+      refreshSavedPages();
+    } catch (e) { setLoadError(e.message); }
+    setDeletingId('');
   }
 
   // Open a saved page straight into the editor, without re-running anything.
@@ -492,9 +514,18 @@ export default function ClearBehavioralWizardPage() {
     setExporting(false);
   }
 
-  function downloadJson() {
-    const name = (page.meta?.urlPath || 'page').split('/').filter(Boolean).join('_') || 'page';
-    saveBlob(new Blob([JSON.stringify(page, null, 2)], { type: 'application/json' }), `${name}.json`);
+  // The CMS ingest shape, built server-side -- it needs the service and
+  // location rows for the slugs and the service_type, which the page object
+  // does not carry. This replaced a dump of the raw page object, which was our
+  // internal structure and not something the CMS could read.
+  async function downloadJson() {
+    setPageError('');
+    setExporting(true);
+    try {
+      const { filename, json } = await lpb.cbhExportJson(page);
+      saveBlob(new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' }), filename);
+    } catch (e) { setPageError(e.message); }
+    setExporting(false);
   }
 
   // ── Regenerate one field ──────────────────────────────────────────────────
@@ -536,6 +567,22 @@ export default function ClearBehavioralWizardPage() {
   const eduBulletRe = useMemo(
     () => (eduLineLimits?.bulletPattern ? new RegExp(eduLineLimits.bulletPattern) : null),
     [eduLineLimits?.bulletPattern]);
+  // The read-only half of the URL: everything up to the service slug. Taken
+  // from the canonical the server computed, so the two cannot disagree -- and
+  // falling back to urlPath when a page has no canonical yet.
+  const urlPrefix = (() => {
+    const full = page?.meta?.canonical || page?.meta?.urlPath || '';
+    const slug = page?.meta?.serviceSlug || '';
+    if (!full) return '';
+    const cut = slug ? full.lastIndexOf(`/${slug}/`) : -1;
+    return cut >= 0 ? full.slice(0, cut + 1) : full.replace(/[^/]*\/?$/, '');
+  })();
+
+  // Mirrors urlBuilder.slugify. Applied on blur rather than on every keystroke,
+  // so typing "teen anxiety" is not fought character by character.
+  const slugifyInput = (v) => String(v || '').toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
   // One entry's cost, mirroring cbhContract.lineCount.
   const eduCostOf = (l) => {
     const s = String(l || '').trim();
@@ -611,27 +658,50 @@ export default function ClearBehavioralWizardPage() {
         <SectionCard title={`Saved pages (${savedPages.length})`} note="Already generated — open one to edit or export it.">
           <div style={{ maxHeight: '16rem', overflowY: 'auto' }}>
             {savedPages.map(pg => (
-              <button
+              <div
                 key={pg.id}
-                type="button"
-                onClick={() => openSavedPage(pg.id)}
                 style={{
-                  display: 'flex', width: '100%', gap: '0.5rem', alignItems: 'center', justifyContent: 'space-between',
-                  textAlign: 'left', padding: '0.5rem 0.625rem', marginBottom: '0.25rem', cursor: 'pointer',
-                  background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-md,6px)',
-                  fontSize: '0.8125rem', color: 'var(--text)',
+                  display: 'flex', gap: '0.375rem', alignItems: 'stretch', marginBottom: '0.25rem',
+                  opacity: deletingId === pg.id ? 0.5 : 1,
                 }}
               >
-                <span>
-                  <strong>{pg.serviceName}</strong> in {pg.locationName}
-                  <span style={{ color: 'var(--text-3)' }}> · {pg.urlPath}</span>
-                </span>
-                <span style={{
-                  fontSize: '0.6875rem', fontWeight: 700, padding: '1px 6px', borderRadius: '9999px', whiteSpace: 'nowrap',
-                  background: pg.verdict === 'PASS' ? 'var(--success-soft,#F0FDF4)' : 'var(--warning-soft,#FFFBEB)',
-                  color: pg.verdict === 'PASS' ? 'var(--success,#16A34A)' : 'var(--warning,#B45309)',
-                }}>{pg.verdict || '—'}</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => openSavedPage(pg.id)}
+                  disabled={!!deletingId}
+                  style={{
+                    display: 'flex', flex: 1, minWidth: 0, gap: '0.5rem', alignItems: 'center', justifyContent: 'space-between',
+                    textAlign: 'left', padding: '0.5rem 0.625rem', cursor: 'pointer',
+                    background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-md,6px)',
+                    fontSize: '0.8125rem', color: 'var(--text)',
+                  }}
+                >
+                  <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <strong>{pg.serviceName}</strong> in {pg.locationName}
+                    <span style={{ color: 'var(--text-3)' }}> · {pg.urlPath}</span>
+                  </span>
+                  <span style={{
+                    fontSize: '0.6875rem', fontWeight: 700, padding: '1px 6px', borderRadius: '9999px', whiteSpace: 'nowrap',
+                    background: pg.verdict === 'PASS' ? 'var(--success-soft,#F0FDF4)' : 'var(--warning-soft,#FFFBEB)',
+                    color: pg.verdict === 'PASS' ? 'var(--success,#16A34A)' : 'var(--warning,#B45309)',
+                  }}>{pg.verdict || '—'}</span>
+                </button>
+                <button
+                  type="button"
+                  title={`Delete the page for ${pg.serviceName} in ${pg.locationName}`}
+                  aria-label={`Delete the page for ${pg.serviceName} in ${pg.locationName}`}
+                  disabled={!!deletingId}
+                  onClick={() => deleteSavedPage(pg)}
+                  style={{
+                    padding: '0.25rem 0.625rem', fontSize: '0.8125rem', fontWeight: 600, whiteSpace: 'nowrap',
+                    color: 'var(--danger,#EF4444)', background: 'var(--surface)',
+                    border: '1px solid var(--border)', borderRadius: 'var(--r-md,6px)',
+                    cursor: deletingId ? 'default' : 'pointer',
+                  }}
+                >
+                  {deletingId === pg.id ? '…' : '×'}
+                </button>
+              </div>
             ))}
           </div>
         </SectionCard>
@@ -887,12 +957,13 @@ export default function ClearBehavioralWizardPage() {
                   <li>What is … — the subsections above</li>
                   <li>Why Choose Clear Behavioral Health?</li>
                   <li>{service?.name} in {location?.city}</li>
+                  <li>Treatment — this H2 is written, not fixed</li>
                 </ul>
               </SectionCard>
 
               {generating && (
                 <p style={{ fontSize: '0.8125rem', color: 'var(--text-2)' }}>
-                  Writing all nine sections to their character limits, then re-checking them against QC.
+                  Writing all ten sections to their character limits, then re-checking them against QC.
                   This usually takes one to two minutes — longer the first time for a location, while the
                   competitor and source lookups are still cold. Leave the tab open.
                 </p>
@@ -920,7 +991,6 @@ export default function ClearBehavioralWizardPage() {
         <>
           <SectionCard
             title="Generated page"
-            note={page.meta?.urlPath}
             actions={<>
               <button style={btnStyle(false)} onClick={() => setStep(2)}>← Edit brief</button>
               <button style={btnStyle(false)} disabled={exporting} onClick={exportDocx}>
@@ -933,6 +1003,35 @@ export default function ClearBehavioralWizardPage() {
             </>}
           >
             {pageError && <p style={{ color: 'var(--danger,#EF4444)', fontSize: '0.8125rem', marginTop: 0 }}>{pageError}</p>}
+
+            {/* The page URL, with only the service slug editable. The location
+                half comes from the location record and is not this page's to
+                change; showing it read-only is what makes the editable part
+                unambiguous. urlPath/canonical are recomputed server-side from
+                the slug on save, so what is typed here is the only source. */}
+            <label style={labelStyle}>Page URL</label>
+            <div style={{
+              display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.125rem',
+              padding: '0.5rem 0.625rem', marginBottom: '0.75rem', fontSize: '0.8125rem',
+              fontFamily: 'var(--font-mono)', background: 'var(--surface)',
+              border: '1px solid var(--border)', borderRadius: 'var(--r-md,6px)',
+            }}>
+              <span style={{ color: 'var(--text-3)', wordBreak: 'break-all' }}>{urlPrefix}</span>
+              <input
+                value={page.meta?.serviceSlug || ''}
+                onChange={e => editPage(p => { p.meta.serviceSlug = e.target.value; })}
+                onBlur={e => editPage(p => { p.meta.serviceSlug = slugifyInput(e.target.value); })}
+                spellCheck={false}
+                placeholder="service-slug"
+                style={{
+                  flex: '1 1 12rem', minWidth: '8rem', padding: '0.125rem 0.375rem',
+                  fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', fontWeight: 600,
+                  color: 'var(--text)', background: 'var(--card)',
+                  border: '1px solid var(--primary)', borderRadius: '4px',
+                }}
+              />
+              <span style={{ color: 'var(--text-3)' }}>/</span>
+            </div>
 
             {/* QC describes what is SAVED. An edit can fix or break a check, so
                 a green PASS beside unsaved copy would be a lie. */}
@@ -1140,6 +1239,30 @@ export default function ClearBehavioralWizardPage() {
                 onChange={e => editPage(p => { p.sections.service.paragraph = e.target.value; })} />
               <RegenButton busy={regenBusy === regenKey('service.paragraph')}
                 onClick={() => regenField('service.paragraph', null, v => editPage(p => { p.sections.service.paragraph = v; }))} />
+            </div>
+          </SectionCard>
+
+          {/* The only card whose heading is editable: the writer composes this
+              H2, where every other one is fixed or built from the service and
+              location by code. */}
+          <SectionCard title="Treatment" note="The H2 here is written, not fixed — it should name the team, the service and the city.">
+            <label style={{ ...labelStyle, display: 'flex', justifyContent: 'space-between' }}>
+              <span>H2</span><Count value={page.sections?.treatment?.heading} max={limits.treatment.headingMaxChars} />
+            </label>
+            <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <input style={{ ...inputStyle, fontWeight: 600 }} value={page.sections?.treatment?.heading || ''}
+                onChange={e => editPage(p => { p.sections.treatment.heading = e.target.value; })} />
+              <RegenButton busy={regenBusy === regenKey('treatment.heading')}
+                onClick={() => regenField('treatment.heading', null, v => editPage(p => { p.sections.treatment.heading = v; }))} />
+            </div>
+            <label style={{ ...labelStyle, display: 'flex', justifyContent: 'space-between' }}>
+              <span>Paragraph</span><Count value={page.sections?.treatment?.paragraph} max={limits.treatment.maxChars} />
+            </label>
+            <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'flex-start' }}>
+              <textarea rows={3} style={{ ...inputStyle, resize: 'vertical' }} value={page.sections?.treatment?.paragraph || ''}
+                onChange={e => editPage(p => { p.sections.treatment.paragraph = e.target.value; })} />
+              <RegenButton busy={regenBusy === regenKey('treatment.paragraph')}
+                onClick={() => regenField('treatment.paragraph', null, v => editPage(p => { p.sections.treatment.paragraph = v; }))} />
             </div>
           </SectionCard>
 

@@ -124,6 +124,20 @@ therefore tells the reader nothing. Do not open with "${contract.BRAND} offers" 
     ask: (ctx) => `Rewrite the paragraph under "${ctx.page.sections.service.heading}". Natural, specific to the service
 and the location.`,
   },
+  'treatment.heading': {
+    scope: 'page', kind: 'text', limit: { max: L.treatment.headingMaxChars },
+    label: 'Treatment H2',
+    ask: (ctx) => `Write a fresh H2 for the treatment section. Name the team, the service and the city — "Our ADHD
+treatment experts in El Monte" is the shape. Not a slogan, not a sentence, not a question. It must not
+repeat the wording of "${ctx.page.sections.service.heading}", which sits directly above it.`,
+  },
+  'treatment.paragraph': {
+    scope: 'page', kind: 'text', limit: { max: L.treatment.maxChars },
+    label: 'Treatment paragraph',
+    ask: (ctx) => `Rewrite the paragraph under "${ctx.page.sections.treatment.heading || 'the treatment H2'}". It is about the
+CLINICIANS — their experience and how they treat people. Do not name a qualification, a licence, a
+school, a headcount or a number of years, and promise no outcome.`,
+  },
   'faq.q': {
     scope: 'page', kind: 'text', indexed: true, limit: { max: 140 },
     label: 'FAQ question',
@@ -187,6 +201,8 @@ function readField(field, { page, brief, index, lineIndex }) {
     case 'educational.h3.line': return s.educational.h3s[index]?.lines?.[lineIndex];
     case 'uvp.paragraph': return s.uvp.paragraph;
     case 'service.paragraph': return s.service.paragraph;
+    case 'treatment.heading': return s.treatment.heading;
+    case 'treatment.paragraph': return s.treatment.paragraph;
     case 'faq.q': return s.faq.items[index]?.q;
     case 'faq.a': return s.faq.items[index]?.a;
     case 'brief.meta.title': return brief.meta.title;

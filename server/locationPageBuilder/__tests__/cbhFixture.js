@@ -8,7 +8,11 @@
 
 const contract = require('../cbhContract');
 
-const SERVICE = 'Anxiety Treatment';
+// The DISPLAY PHRASE, as cbhCompose builds it: lower case apart from
+// acronyms, because it goes straight into prose headings ("Our approach to
+// anxiety treatment"). Title-casing it here made the fixture disagree with
+// every page the pipeline actually produces.
+const SERVICE = 'anxiety treatment';
 const CITY = 'Anaheim Hills';
 const PRIMARY = 'anxiety treatment in anaheim hills';
 
@@ -65,6 +69,11 @@ function passingL3() {
     uvp: 'Choosing Clear Behavioral Health for anxiety treatment in Anaheim Hills means licensed '
       + 'clinicians, care paced to you, and practical skills you can use between sessions.',
     service: 'Anxiety treatment in Anaheim Hills, delivered in person and online by licensed clinicians.',
+    treatment: {
+      heading: 'Our anxiety treatment experts in Anaheim Hills',
+      paragraph: 'Our clinicians are experienced and compassionate, and they treat anxiety with the care '
+        + 'and patience it asks for. You are met where you are, and the work moves at a pace you set.',
+    },
     faqs: [
       { q: 'How soon can I be seen in Anaheim Hills?', type: 'location',
         a: 'Most new clients are offered an initial appointment within a week. Call and we will tell '
@@ -122,6 +131,8 @@ function scaffold() {
       },
       uvp: { heading: contract.FIXED_HEADINGS.uvp, paragraph: '' },
       service: { heading: contract.serviceHeading(SERVICE, CITY), paragraph: '' },
+      // Blank heading: this is the one H2 the writer composes.
+      treatment: { heading: '', paragraph: '' },
       faq: { heading: 'Frequently Asked Questions', items: [] },
     },
     schema: {}, qc: null,

@@ -15,6 +15,7 @@ const cbhWizard = require('../locationPageBuilder/cbhWizard');
 const cbhRegen = require('../locationPageBuilder/cbhRegen');
 const cbhQc = require('../locationPageBuilder/cbhQc');
 const cbhContract = require('../locationPageBuilder/cbhContract');
+const cbhCompose = require('../locationPageBuilder/cbhCompose');
 const compose = require('../locationPageBuilder/compose');
 const pageService = require('../locationPageBuilder/pageService');
 const exporter = require('../locationPageBuilder/exporter');
@@ -303,7 +304,7 @@ router.post('/wizard/generate', async (req, res) => {
 
 
 // ── Clear Behavioral Health flow ────────────────────────────────────────────
-// Its own contract (cbhContract.js): nine fixed sections with hard character
+// Its own contract (cbhContract.js): ten sections with hard character
 // caps, replacing the dental section shape entirely. Keyword research in front
 // of this is shared with the other wizards (/keyword-candidates).
 
@@ -414,7 +415,36 @@ router.get('/cbh/pages/:id', async (req, res) => {
   try {
     const page = await store.get('pages', req.params.id);
     if (!page || page.page_type !== cbhWizard.PAGE_TYPE) return res.status(404).json({ error: 'Page not found.' });
-    res.json({ pageId: page.id, page: page.page_object, serviceId: page.service_id, locationId: page.location_id });
+    // A page saved before a section existed has no key for it, and the wizard
+    // assigns straight into sections.<key>. Fill the shape in on the way out.
+    const pageObject = cbhCompose.ensureCbhSections(page.page_object);
+    // And rebuild the URLs, so a page written before the client sent their
+    // location slugs opens showing the URL it would ship on today rather than
+    // the one it happened to be generated with.
+    const [client, location, service] = await Promise.all([
+      store.get('clients', page.client_id),
+      store.get('locations', page.location_id),
+      store.get('services', page.service_id),
+    ]);
+    if (!pageObject.meta.serviceSlug) pageObject.meta.serviceSlug = service?.slug || '';
+    cbhCompose.refreshCbhDerived(pageObject, { client, location });
+    res.json({ pageId: page.id, page: pageObject, serviceId: page.service_id, locationId: page.location_id });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Deletes ONE generated page. The saved BRIEF for the same service+location is
+// deliberately left in place: it cost a billed research call and usually some
+// hand editing, and "delete this page" is not a request to throw that away.
+// The tuple simply returns to the state it was in between approving a brief and
+// generating from it, which the wizard already handles.
+router.delete('/cbh/pages/:id', async (req, res) => {
+  try {
+    const page = await store.get('pages', req.params.id);
+    // Type-checked before removing: this route is reachable with any id, and a
+    // CBH list must not be able to delete a dental or Neuro page.
+    if (!page || page.page_type !== cbhWizard.PAGE_TYPE) return res.status(404).json({ error: 'Page not found.' });
+    const removed = await store.remove('pages', req.params.id);
+    res.json({ removed });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -445,6 +475,25 @@ router.post('/cbh/export/docx', async (req, res) => {
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="${exporter.safeFilename(page)}.docx"`);
     return res.send(buffer);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// The CMS ingest payload. Server-side rather than a client-side stringify,
+// because the shape needs the SERVICE and LOCATION rows -- the slugs and the
+// mental_health/addiction split live there, not on the page. Exports what is ON
+// SCREEN, like the DOCX route, so a reviewer's edits are in the file.
+router.post('/cbh/export/json', async (req, res) => {
+  try {
+    const { page } = req.body;
+    if (!exporter.isCbhPage(page)) return res.status(400).json({ error: 'A CBH page object is required.' });
+    const [service, location] = await Promise.all([
+      store.get('services', page.meta?.service_id),
+      store.get('locations', page.meta?.location_id),
+    ]);
+    res.json({
+      filename: `${exporter.safeFilename(page)}.json`,
+      json: exporter.toCbhCmsJson(page, { service, location }),
+    });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

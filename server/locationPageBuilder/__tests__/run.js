@@ -2277,6 +2277,49 @@ test('no prompt asks for a keyword frequency any more', () => {
     assert.ok(cbhFails(page).includes('educational_provenance_stated'));
   });
 
+  test('the treatment section is gated on both halves', () => {
+    // The only H2 the writer composes, so unlike every other heading it can be
+    // the wrong length or drift off the service entirely.
+    assert.ok(!cbhFails(cbhPage()).includes('treatment_heading_length'));
+    assert.ok(!cbhFails(cbhPage()).includes('treatment_length'));
+    assert.ok(cbhFails(cbhPage(l3 => { l3.treatment.heading = 'z'.repeat(61); }))
+      .includes('treatment_heading_length'), '61 characters is over the H2 limit');
+    assert.ok(cbhFails(cbhPage(l3 => { l3.treatment.heading = ''; }))
+      .includes('treatment_heading_length'), 'and an empty H2 is a missing section, not a short one');
+    assert.ok(cbhFails(cbhPage(l3 => { l3.treatment.paragraph = 'z'.repeat(251); }))
+      .includes('treatment_length'));
+    assert.ok(cbhFails(cbhPage(l3 => { l3.treatment.paragraph = ''; }))
+      .includes('treatment_length'));
+    // Both are model-fixable, so both drive the correction pass.
+    assert.ok(cbhWriter.CORRECTABLE.has('treatment_heading_length'));
+    assert.ok(cbhWriter.CORRECTABLE.has('treatment_length'));
+  });
+  test('a general treatment H2 is accepted, because the CMS spec uses one', () => {
+    // There was a gate requiring the service and the city here. The client's
+    // CMS format then showed this heading as "Work With Experienced Mental
+    // Health Professionals", so a general heading has to pass.
+    const general = cbhPage(l3 => { l3.treatment.heading = 'Work With Experienced Mental Health Professionals'; });
+    const ids = cbhFails(general);
+    assert.ok(!ids.some(id => id.startsWith('treatment_')), 'no treatment gate may fail on it');
+  });
+  test('the treatment section sits between Service and the FAQs', () => {
+    // The client asked for it directly above the FAQs, and the exports walk
+    // SECTION_ORDER rather than hard-coding a sequence of their own.
+    const keys = cbhContract.SECTION_ORDER.map(x => x.key);
+    assert.deepStrictEqual(keys.slice(-3), ['service', 'treatment', 'faq']);
+  });
+  test('the scaffold leaves the treatment H2 empty for the writer', () => {
+    // Every other heading is filled in by code; this one is not, and merging
+    // must not blank it when a correction returns only the paragraph.
+    const blank = cbhFixture.scaffold();
+    assert.strictEqual(blank.sections.treatment.heading, '');
+    const merged = cbhCompose.mergeCbhL3(cbhFixture.scaffold(), cbhFixture.passingL3());
+    assert.ok(merged.sections.treatment.heading.length > 0);
+    const kept = cbhCompose.mergeCbhL3(merged, { treatment: { paragraph: 'Only the paragraph came back.' } });
+    assert.ok(kept.sections.treatment.heading.length > 0, 'the heading survives a partial correction');
+    assert.strictEqual(kept.sections.treatment.paragraph, 'Only the paragraph came back.');
+  });
+
   test('the FAQ set is gated on count, answer length and type mix', () => {
     assert.ok(cbhFails(cbhPage(l3 => { l3.faqs = l3.faqs.slice(0, 4); })).includes('faq_count'));
     assert.ok(cbhFails(cbhPage(l3 => { l3.faqs[0].a = 'z'.repeat(301); })).includes('faq_answer_length'));
@@ -2307,6 +2350,132 @@ test('no prompt asks for a keyword frequency any more', () => {
     const note = cbhWriter.correctionFrom(qcResult);
     assert.ok(/meta description/i.test(note), 'the failing section is named');
     assert.ok(/\d+ characters/.test(note), 'with the count the model has to correct against');
+  });
+
+  console.log('\nCBH - the CMS ingest JSON');
+
+  const cmsJson = (mutate) => {
+    const page = cbhPage(mutate);
+    return exporter.toCbhCmsJson(page, {
+      service: { slug: 'anxiety-treatment', groups: ['mh-outpatient'] },
+      location: { location_slug: 'anaheim-hills' },
+    });
+  };
+
+  test('the CMS block names do not match ours, and the mapping is the client\'s', () => {
+    // Confirmed with the client: their `treatment` is OUR service section, and
+    // their `experts` is our treatment section. Getting this backwards puts the
+    // clinician copy under a heading about the service, on every page.
+    const j = cmsJson();
+    // Sentence-cased on the way out, so the leading word is capitalised where
+    // it is not already a protected acronym ("ADHD treatment in ..." keeps its).
+    assert.strictEqual(j.treatment.heading, 'Anxiety treatment in Anaheim Hills');
+    assert.strictEqual(j.experts.heading, 'Our anxiety treatment experts in Anaheim Hills');
+    assert.ok(j.experts.description.includes('clinicians'), 'the clinician copy lands under experts');
+  });
+
+  test('headings the CMS writes differently are adapted on the way out', () => {
+    const j = cmsJson();
+    // The page's educational H2 has no question mark (confirmed when the
+    // contract was built); the CMS writes one.
+    assert.ok(!cbhPage().sections.educational.heading.endsWith('?'));
+    assert.ok(j.what_is.heading.endsWith('?'));
+    assert.strictEqual(j.jump_menu.service_label, j.what_is.heading);
+    // And the UVP H2 the other way round.
+    assert.ok(cbhPage().sections.uvp.heading.endsWith('?'));
+    assert.ok(!j.why_choose.heading.endsWith('?'));
+    // page_title follows the client's VALUE ("<Service> in <Location>"), not
+    // their comment, which says "same as H1" beside a different string.
+    assert.strictEqual(j.page_title, j.treatment.heading);
+    assert.notStrictEqual(j.page_title, j.banner.heading);
+  });
+
+  test('every heading comes out sentence case', () => {
+    const j = cmsJson();
+    assert.strictEqual(j.approach.heading, 'Our approach to anxiety treatment in Anaheim Hills');
+    assert.strictEqual(j.why_choose.heading, 'Why choose Clear Behavioral Health');
+    // The fixed client headings are already sentence case, so nothing moves.
+    assert.strictEqual(j.approach.items[0].heading, 'Our philosophy of compassionate care');
+  });
+
+  test('sentence case lowers title case without destroying names', () => {
+    // The whole difficulty: "Treatment" and "Anaheim" are the same shape, and
+    // one has to come down while the other must not. A blunt lowercase pass
+    // gives "adhd treatment in anaheim hills".
+    const page = { serviceName: 'ADHD treatment', locationName: 'Anaheim Hills' };
+    const loc = { city: 'Anaheim Hills', state: 'California', state_abbreviation: 'CA',
+      nearby_areas: ['Yorba Linda'] };
+    const keep = exporter.protectedTermsFor(page, loc);
+    const sc = (t) => exporter.sentenceCase(t, keep);
+    assert.strictEqual(sc('Our Approach to ADHD Treatment in Anaheim Hills'),
+      'Our approach to ADHD treatment in Anaheim Hills');
+    assert.strictEqual(sc('ADHD Treatment in Anaheim Hills That Fits Your Life'),
+      'ADHD treatment in Anaheim Hills that fits your life', 'a protected first word stays as it is');
+    assert.strictEqual(sc('Treatment Options Near Yorba Linda in California'),
+      'Treatment options near Yorba Linda in California', 'nearby areas and the state are names too');
+    assert.strictEqual(sc('(Stress) Relief Explained'), '(Stress) relief explained',
+      'the first LETTER is capitalised, not the first character');
+  });
+
+  test('sentence case leaves acronyms, roman numerals and the pronoun I alone', () => {
+    const keep = exporter.protectedTermsFor({ serviceName: 'Bipolar I & II', locationName: 'El Monte' }, {});
+    assert.strictEqual(exporter.sentenceCase('Our Approach to Bipolar I & II in El Monte', keep),
+      'Our approach to Bipolar I & II in El Monte');
+    // "I" is all-caps but one letter, so the acronym rule alone would lower it.
+    assert.strictEqual(exporter.sentenceCase('How quickly can I get an ADHD evaluation?', keep),
+      'How quickly can I get an ADHD evaluation?');
+    // Idempotent: running it over text already in sentence case changes nothing.
+    const once = exporter.sentenceCase('What is ADHD treatment?', keep);
+    assert.strictEqual(exporter.sentenceCase(once, keep), once);
+  });
+
+  test('the meta title is not sentence-cased, because it is not a heading', () => {
+    // It is the <title> tag, read in a SERP rather than on the page, and it
+    // ships as the SEO team wrote it.
+    const j = cmsJson();
+    assert.strictEqual(j.seo.title, cbhPage().meta.fullTitle);
+  });
+
+  test('educational bullets become one list, prose stays paragraphs', () => {
+    const j = cmsJson();
+    const withBullets = j.tabs.find(t => t.content.includes('<ul>'));
+    assert.ok(withBullets, 'the fixture mixes prose and bullets, so a tab must carry a list');
+    // ONE list, not one per bullet, and the marker is stripped -- it was a
+    // costing signal for the line budget, not something a reader should see.
+    assert.strictEqual((withBullets.content.match(/<ul>/g) || []).length, 1);
+    assert.ok(!withBullets.content.includes('<li>- '));
+    assert.ok(withBullets.content.startsWith('<p>'), 'the lead paragraph stays a paragraph');
+    // FAQ answers are plain text, unlike what_is and tabs.
+    assert.ok(j.faqs.length && !j.faqs[0].answer.includes('<p>'));
+    assert.ok(j.what_is.content.startsWith('<p>'));
+  });
+
+  test('HTML in the copy is escaped, not passed through', () => {
+    const j = cmsJson(l3 => { l3.educational.paragraphs = ['Care for <b>anxiety</b> & stress.']; });
+    assert.ok(j.what_is.content.includes('&lt;b&gt;'), 'a stray tag must not become markup');
+    assert.ok(j.what_is.content.includes('&amp;'));
+  });
+
+  test('service_type comes from the service groups, not a hand-kept list', () => {
+    // Approved with the client: an addiction-* group means addiction, and
+    // everything else -- including teen services, which carry only `teen` --
+    // is mental_health.
+    const t = (groups) => exporter.serviceTypeFor({ groups });
+    assert.strictEqual(t(['addiction-residential']), 'addiction');
+    assert.strictEqual(t(['addiction-outpatient', 'addiction-residential']), 'addiction');
+    assert.strictEqual(t(['mh-outpatient']), 'mental_health');
+    assert.strictEqual(t(['teen']), 'mental_health', 'teen services fall to the default');
+    assert.strictEqual(t([]), 'mental_health');
+    assert.strictEqual(t(undefined), 'mental_health');
+  });
+
+  test('every key the CMS asks for is present, even on a thin page', () => {
+    const j = cmsJson();
+    ['location_slug', 'service_slug', 'page_title', 'service_type', 'seo', 'banner', 'insurance',
+      'jump_menu', 'approach', 'what_is', 'tabs', 'why_choose', 'treatment', 'experts', 'faqs']
+      .forEach(k => assert.ok(k in j, `${k} is missing`));
+    assert.strictEqual(j.approach.items.length, 2, 'philosophy and therapies, always two');
+    assert.ok(j.seo.title.endsWith(cbhContract.TITLE_SUFFIX), 'the shipping title carries the brand suffix');
   });
 
   test('the dental gates are not applied to a CBH page, or the reverse', () => {

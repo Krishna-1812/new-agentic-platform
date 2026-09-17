@@ -22,7 +22,7 @@ const CLIENTS = [
     id: 'client_clear_behavioral_health',
     name: 'Clear Behavioral Health',
     vertical: 'Behavioral health',
-    blurb: 'Keyword research, an editable brief, then nine sections written to the client’s own section guidelines.',
+    blurb: 'Keyword research, an editable brief, then ten sections written to the client’s own section guidelines.',
     path: '/location-page-builder/clear-behavioral',
     count: () => lpb.cbhPages('client_clear_behavioral_health'),
   },

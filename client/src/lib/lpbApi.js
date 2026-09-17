@@ -35,6 +35,8 @@ export const lpb = {
   cbhRegenField: (body) => req('/cbh/regen-field', { method: 'POST', body: JSON.stringify(body) }),
   cbhPages: (clientId) => req(`/cbh/pages?clientId=${encodeURIComponent(clientId)}`),
   cbhPage: (id) => req(`/cbh/pages/${id}`),
+  cbhDeletePage: (id) => req(`/cbh/pages/${id}`, { method: 'DELETE' }),
+  cbhExportJson: (page) => req('/cbh/export/json', { method: 'POST', body: JSON.stringify({ page }) }),
   cbhExportDocx: async (page) => {
     const res = await fetch(`${BASE}/cbh/export/docx`, {
       method: 'POST',

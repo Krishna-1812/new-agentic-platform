@@ -341,6 +341,257 @@ async function toDentalDocxBuffer(pageObject) {
   return Packer.toBuffer(doc);
 }
 
+// ── CBH → CMS JSON (the client's ingest format) ─────────────────────────────
+// A DIFFERENT shape from the page object, not a dump of it. The CMS names some
+// blocks differently from the way this module names its sections, and the two
+// do not line up one to one -- confirmed with the client:
+//
+//   CMS `treatment`  <- our SERVICE section   ("<Service> in <Location>")
+//   CMS `experts`    <- our TREATMENT section (the clinicians one)
+//
+// Where a CMS value disagrees with what the page generates -- a question mark
+// the page's H2 does not carry, a heading the CMS wants title-cased and with
+// the city appended -- it is adapted HERE, not fixed in the generator. That was
+// the client's call, and it means nothing already written has to be
+// regenerated to export cleanly.
+
+const contract = require('./cbhContract');
+
+// Every heading the CMS receives is sentence case -- the client's rule.
+//
+// It CANNOT be done by lowercasing everything after the first word. "Treatment"
+// and "Anaheim" are the same shape, and one has to come down while the other
+// must not; a blunt pass produces "adhd treatment in anaheim hills". So nothing
+// is lowered unless it is known not to be a name. Three things are protected:
+//
+//   1. anything already all-caps ("ADHD", "OCD", "PTSD", "IOP", "CA", "II"),
+//   2. the pronoun "I", which is all-caps but only one letter, and
+//   3. the proper nouns we actually hold for this page -- the brand, the city,
+//      the state, the location's own name and nearby areas, and whichever words
+//      of the service name the CLIENT capitalised.
+//
+// The service name matters most here: its display phrase is deliberately
+// lower-cased apart from acronyms ("ADHD treatment", "anxiety treatment"), so
+// taking the capitalised words from it protects "ADHD" and correctly leaves
+// "treatment" free to come down.
+function protectedTermsFor(page, location) {
+  const keep = new Set();
+  // Only the words someone capitalised on purpose. A lowercase word in a name
+  // we hold is a lowercase word in the heading too.
+  const addCapitalised = (value) => String(value || '').split(/\s+/).forEach((w) => {
+    const bare = w.replace(/[^A-Za-z0-9&'-]/g, '');
+    if (bare && /^[A-Z]/.test(bare)) keep.add(bare.toLowerCase());
+  });
+  addCapitalised(contract.BRAND);
+  addCapitalised(page?.serviceName);
+  addCapitalised(page?.locationName);
+  addCapitalised(location?.city);
+  addCapitalised(location?.state);
+  addCapitalised(location?.state_abbreviation);
+  addCapitalised(location?.location_name);
+  (location?.nearby_areas || []).forEach(addCapitalised);
+  return keep;
+}
+
+function sentenceCase(text, keep = new Set()) {
+  const s = String(text || '').trim();
+  if (!s) return '';
+  let seenWord = false;
+  // Split KEEPING the separators, so spacing and punctuation survive untouched.
+  return s.split(/(\s+)/).map((tok) => {
+    if (!tok.trim()) return tok;
+    const bare = tok.replace(/[^A-Za-z0-9&'-]/g, '');
+    const isFirst = !seenWord;
+    seenWord = true;
+    if (!bare) return tok;
+    const protectedWord = /^[A-Z0-9&'-]{2,}$/.test(bare)   // ADHD, OCD, II, CA
+      || bare === 'I'                                      // the pronoun
+      || keep.has(bare.toLowerCase());                     // a name we hold
+    if (protectedWord) return tok;
+    const lowered = tok.toLowerCase();
+    // Capitalise the first LETTER, not the first character: "(stress" must not
+    // be left alone because it opens with a bracket.
+    return isFirst ? lowered.replace(/[a-z]/, ch => ch.toUpperCase()) : lowered;
+  }).join('');
+}
+
+// Built from the service and city rather than the page's own H2, because the
+// CMS wants the city appended and the page's heading does not carry it.
+function approachHeadingFor(page) {
+  const svc = String(page.serviceName || '').trim();
+  const city = String(page.locationName || '').trim();
+  if (!svc) return page.sections?.approach?.heading || '';
+  return city ? `Our approach to ${svc} in ${city}` : `Our approach to ${svc}`;
+}
+
+// The CMS writes this one as a question; the page's H2 deliberately does not
+// (confirmed with the client when the contract was built).
+function asQuestion(heading) {
+  const s = String(heading || '').trim();
+  if (!s) return '';
+  return s.endsWith('?') ? s : `${s}?`;
+}
+
+// And this one the other way round: the page's H2 is "Why Choose Clear
+// Behavioral Health?", the CMS wants it without the mark.
+function withoutQuestion(heading) {
+  return String(heading || '').trim().replace(/\?+$/, '');
+}
+
+// PROVISIONAL. The client's sample slug ("mental-health-treatment-teens-santa-
+// clarita") matches none of the 14 stored locations, whose slugs are plain
+// ("santa-clarita", "gardena-residential"), and they are sending the rule
+// separately. Until then this exports what the location record actually holds,
+// which is the honest reading of "use the location slug provided".
+//
+// Everything about that decision lives in this one function on purpose: when
+// the rule arrives, this is the only thing that changes.
+function locationSlugFor(location, page) {
+  return String(location?.location_slug || '').trim()
+    || String(page?.locationName || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+// Which of the CMS's two buckets a service falls in. Derived from the service
+// record's own groups rather than a hand-kept list, so a service added to the
+// taxonomy is classified without editing code. Approved with the client:
+// anything carrying an addiction-* group is "addiction", everything else --
+// including the teen services, which carry only a `teen` group -- is
+// "mental_health".
+function serviceTypeFor(service) {
+  const groups = Array.isArray(service?.groups) ? service.groups : [];
+  return groups.some(g => String(g).startsWith('addiction-')) ? 'addiction' : 'mental_health';
+}
+
+const escapeHtml = (s) => String(s == null ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// Paragraph array -> one <p> per paragraph.
+function paragraphsToHtml(paragraphs = []) {
+  return (paragraphs || [])
+    .map(p => String(p || '').trim())
+    .filter(Boolean)
+    .map(p => `<p>${escapeHtml(p)}</p>`)
+    .join('');
+}
+
+// An educational body -> HTML. The bodies mix prose and bullets, so consecutive
+// bullets become ONE <ul> rather than a list per item or a flattened paragraph.
+// The bullet marker is stripped: it was a costing signal for the line budget,
+// not something a reader should see inside an <li>.
+function linesToHtml(lines = []) {
+  const out = [];
+  let list = [];
+  const flush = () => {
+    if (list.length) { out.push(`<ul>${list.map(li => `<li>${escapeHtml(li)}</li>`).join('')}</ul>`); list = []; }
+  };
+  (lines || []).forEach((raw) => {
+    const s = String(raw || '').trim();
+    if (!s) return;
+    if (contract.isBullet(s)) {
+      list.push(s.replace(new RegExp(contract.LIMITS.educational.bulletPattern), '').trim());
+    } else {
+      flush();
+      out.push(`<p>${escapeHtml(s)}</p>`);
+    }
+  });
+  flush();
+  return out.join('');
+}
+
+// Paragraph array -> one plain string, for the CMS fields that are not HTML.
+function joinParagraphs(paragraphs = []) {
+  return (paragraphs || []).map(p => String(p || '').trim()).filter(Boolean).join(' ');
+}
+
+// `service` and `location` are the reference rows; the slugs, and the
+// mental_health/addiction split, live on them rather than on the page.
+function toCbhCmsJson(pageObject, { service, location } = {}) {
+  const s = pageObject.sections || {};
+  const m = pageObject.meta || {};
+
+  // Every heading is sentence-cased here, at the edge -- the page keeps its own
+  // casing, per the client's "transform on export" call. `seo.title` is NOT a
+  // heading: it is the <title> tag, it is read in a SERP rather than on the
+  // page, and it ships as the SEO team wrote it.
+  const keep = protectedTermsFor(pageObject, location);
+  const sc = (text) => sentenceCase(text, keep);
+
+  return {
+    location_slug: locationSlugFor(location, pageObject),
+    // The PAGE's slug, not the service record's: it is editable per page, and
+    // the record's value is only ever the seed for it.
+    service_slug: String(m.serviceSlug || service?.slug || '').trim(),
+    // The CMS sample sets this to "<Service> in <Location>" -- the Service H2 --
+    // even though its comment says "use same as H1", and the same sample's H1
+    // is a longer line. The VALUE is what the CMS ingests, so the value wins.
+    page_title: sc(s.service?.heading),
+    service_type: serviceTypeFor(service),
+
+    seo: {
+      // The shipping title, brand suffix included.
+      title: m.fullTitle || contract.fullTitle(m.title || ''),
+      description: m.metaDescription || '',
+    },
+
+    banner: {
+      heading: sc(s.hero?.h1),
+      description: s.hero?.description || '',
+    },
+
+    insurance: {
+      description: s.insurance?.paragraph || '',
+    },
+
+    jump_menu: {
+      service_label: sc(asQuestion(s.educational?.heading)),
+    },
+
+    approach: {
+      heading: sc(approachHeadingFor(pageObject)),
+      intro: joinParagraphs(s.approach?.paragraphs),
+      items: [
+        { heading: sc(s.approach?.philosophy?.heading), content: joinParagraphs(s.approach?.philosophy?.paragraphs) },
+        { heading: sc(s.approach?.therapies?.heading), content: joinParagraphs(s.approach?.therapies?.paragraphs) },
+      ],
+    },
+
+    what_is: {
+      heading: sc(asQuestion(s.educational?.heading)),
+      content: paragraphsToHtml(s.educational?.paragraphs),
+    },
+
+    tabs: (s.educational?.h3s || []).map(h => ({
+      title: sc(h.heading),
+      content: linesToHtml(h.lines),
+    })),
+
+    why_choose: {
+      heading: sc(withoutQuestion(s.uvp?.heading)),
+      description: s.uvp?.paragraph || '',
+    },
+
+    // Our SERVICE section. The CMS calls it treatment; the heading is already
+    // "<Service> in <Location>", which is what its sample shows.
+    treatment: {
+      heading: sc(s.service?.heading),
+      description: s.service?.paragraph || '',
+    },
+
+    // Our TREATMENT section -- the clinicians one.
+    experts: {
+      heading: sc(s.treatment?.heading),
+      description: s.treatment?.paragraph || '',
+    },
+
+    faqs: (s.faq?.items || []).map(f => ({
+      question: sc(f.q),
+      // Plain text, unlike what_is and tabs. The client's sample is explicit
+      // about the difference.
+      answer: f.a || '',
+    })),
+  };
+}
+
 function safeFilename(pageObject) {
   if (isDentalPage(pageObject) || isCbhPage(pageObject)) {
     // "/dental-offices/ma/boston/implants" -> "ma_boston_implants"
@@ -397,6 +648,7 @@ function toCbhMarkdown(pageObject) {
 
   L.push(`## ${s.uvp?.heading || ''}\n${s.uvp?.paragraph || ''}`);
   L.push(`## ${s.service?.heading || ''}\n${s.service?.paragraph || ''}`);
+  L.push(`## ${s.treatment?.heading || ''}\n${s.treatment?.paragraph || ''}`);
   L.push(`## ${s.faq?.heading || 'FAQs'}`);
   (s.faq?.items || []).forEach((f, i) => L.push(`### Q${i + 1}: ${f.q}\n_[${f.type || 'untyped'}]_\n${f.a}`));
   L.push(`## Schema\n\`\`\`json\n${JSON.stringify(pageObject.schema || {}, null, 2)}\n\`\`\``);
@@ -481,6 +733,8 @@ async function toCbhDocxBuffer(pageObject) {
   children.push(body(s.uvp?.paragraph));
   children.push(h2(s.service?.heading || ''));
   children.push(body(s.service?.paragraph));
+  children.push(h2(s.treatment?.heading || ''));
+  children.push(body(s.treatment?.paragraph));
 
   children.push(h2(s.faq?.heading || 'Frequently Asked Questions'));
   (s.faq?.items || []).forEach((f, i) => {
@@ -516,4 +770,5 @@ module.exports = {
   toJSON, toMarkdown, toDocxBuffer, safeFilename,
   isDentalPage, toDentalMarkdown, toDentalDocxBuffer, htmlToLines,
   isCbhPage, toCbhMarkdown, toCbhDocxBuffer, cbhProvenanceLabel,
+  toCbhCmsJson, serviceTypeFor, linesToHtml, sentenceCase, protectedTermsFor,
 };
