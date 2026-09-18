@@ -2709,4 +2709,9 @@ module.exports = {
   calculateScores, resolvePageIntent, computeAnswerability, summarizeLocalBusiness,
   toSameAsArray, validateOpeningHours, extractSchemaBlocks, SCORE_BUCKETS,
   countStatistics, contentOnlyText, detectPageType,
+  // Shared with services/claimVerifier.js — these patterns are hardened against
+  // real false positives (phone numbers, ZIPs, prices and copyright years read
+  // as statistics; HTML attribute delimiters read as expert quotes), so the
+  // fact-check screen reuses them rather than growing its own copies.
+  STATISTIC_EXCLUSIONS, CREDENTIAL_PATTERN, AUTHORITATIVE_DOMAINS, YEAR_EXCLUSION_CONTEXTS,
 };

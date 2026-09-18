@@ -9,6 +9,8 @@ const store = require('../services/kbStore');
 const { searchGoogle } = require('../services/googleSearch');
 const { createLlmClient, resolveModelIds, WRITER_MODEL_ID } = require('../services/llmProviders');
 const { synthesizeRecommendations } = require('../services/llmSynthesis');
+const claimVerifier = require('../services/claimVerifier');
+const { cacheKey, cacheGetSafe, cacheSetSafe } = require('../locationPageBuilder/store');
 
 // gpt-5-mini was removed — it failed on 100% of runs and added only noise.
 const MODELS = [
@@ -202,9 +204,38 @@ router.get('/stream/:token', async (req, res) => {
     // renderer and the DOCX export colour the article identically from one
     // source of truth instead of each re-deriving it.
     enhancedText = annotateChangeTypes(enhancedText);
+    emit('step', { id: 'enhance', status: 'done', message: 'Article enhancement complete' });
 
-    // Same scorer, same rubric, on the enhanced text with the markers stripped —
-    // so the delta is a like-for-like measurement rather than two opinions.
+    // Step 7c: fact-check the inserted statistics, quotes and citations, and
+    // strip the ones that actively fail. This must run AFTER annotateChangeTypes
+    // (which is what guarantees every insertion is typed, including the blocks
+    // the coverage pass just appended) and BEFORE scoreContent, so the score
+    // measures what is actually delivered rather than content since removed.
+    emit('step', { id: 'factcheck', status: 'active', message: 'Verifying inserted statistics, quotes and citations…' });
+    const factCheck = await runClaimVerification(openai, enhancedText);
+    enhancedText = factCheck.text;
+    const fc = factCheck.summary;
+    // Nothing technical is shown here. If verification could not run, that is
+    // our problem, not the user's — they are told the claims were left in place
+    // and why that matters, and the cause goes to the server log. The step is
+    // never marked 'error' either: the enhancement itself succeeded, and a red
+    // cross next to a completed article reads as a broken run.
+    if (factCheck.error) console.error('[article-enhancement] fact-check failed:', factCheck.error);
+    factCheck.report
+      .filter(r => r.debug)
+      .forEach(r => console.log(`[article-enhancement] fact-check ${r.id}: ${r.verdict} (${r.debug})`));
+
+    emit('step', {
+      id: 'factcheck',
+      status: 'done',
+      message: factCheck.error
+        ? 'Verification unavailable — all inserted claims kept for review'
+        : factCheck.skipped
+          ? 'No inserted statistics, quotes or citations to verify'
+          : `${fc.checked} claim${fc.checked === 1 ? '' : 's'} checked · ${fc.verified} verified · ${fc.removed} removed · ${fc.unverifiable} unverified`,
+    });
+
+    // Scored after removal, so the delta is honest about what shipped.
     const scoreAfter = scoreContent(enhancedText);
     emit('score', {
       phase: 'after',
@@ -213,13 +244,22 @@ router.get('/stream/:token', async (req, res) => {
       delta: scoreAfter.total - scoreBefore.total,
     });
 
-    emit('step', { id: 'enhance', status: 'done', message: 'Article enhancement complete' });
-    // Coverage Report is surfaced in its own tab (not appended to the article).
+    // Coverage Report is surfaced in its own tab (not appended to the article),
+    // reconciled so it cannot claim statistics the fact-check just removed.
+    const reconciled = reconcileCoverageAfterRemoval(coverage, enhancedText, articleData, fc.removed);
     emit('coverage', {
-      checked: coverage.report.length,
+      checked: reconciled.report.length,
       total: 12,
-      covered: coverage.coveredCount,
-      reportMarkdown: buildCoverageMarkdown(coverage.report),
+      covered: reconciled.coveredCount,
+      reportMarkdown: buildCoverageMarkdown(reconciled.report),
+    });
+    emit('factcheck', {
+      checked: fc.checked,
+      verified: fc.verified,
+      removed: fc.removed,
+      flagged: fc.flagged,
+      unverifiable: fc.unverifiable,
+      reportMarkdown: factCheck.markdown || '',
     });
     emit('enhanced', { text: enhancedText });
 
@@ -2203,6 +2243,54 @@ ${(enhancedText || '').slice(0, 18000)}`;
     const coveredCount = report.filter(r => r.result === 'covered_present' || r.result === 'covered_added').length;
     return { report, additions: '', coveredCount };
   }
+}
+
+// ── runClaimVerification ───────────────────────────────────────────────────────
+// Thin wiring layer: hands the real search, crawler, adjudicator and cache to
+// services/claimVerifier, which holds all the logic and knows nothing about
+// this route. Structurally the twin of runCoverageVerification.
+//
+// Best-effort by construction — claimVerifier.runFactCheck never throws and
+// returns the text untouched on any internal failure, and this adds a second
+// belt so a wiring mistake here still cannot cost the user their article.
+async function runClaimVerification(openai, enhancedText) {
+  try {
+    return await claimVerifier.runFactCheck(enhancedText, {
+      search: searchGoogle,
+      // The same crawler the article itself came through, so a cited page gets
+      // identical boilerplate handling and the Jina reader fallback.
+      fetchPage: (url) => fetchArticleResilient(url, () => {}),
+      llm: openai,
+      cache: {
+        key: (...parts) => cacheKey(...parts),
+        get: cacheGetSafe,
+        set: (key, value, opts) => cacheSetSafe(key, value, opts),
+      },
+    });
+  } catch (err) {
+    console.error('[article-enhancement] claim verification error:', err.message);
+    return {
+      text: enhancedText,
+      report: [],
+      summary: { checked: 0, verified: 0, removed: 0, flagged: 0, unverifiable: 0 },
+      markdown: '',
+      skipped: true,
+      error: err.message,
+    };
+  }
+}
+
+// Coverage rows 9/10/11 literally claim "Citations added", "Statistics added"
+// and "Quotations added". If the fact-check then deleted some, the model's
+// report overstates what shipped. Re-derive those rows (and row 6, attributed
+// authorities) from the post-removal text so the two tabs cannot contradict
+// each other.
+function reconcileCoverageAfterRemoval(coverage, postRemovalText, articleData, removedCount) {
+  if (!removedCount) return coverage;
+  const fallback = heuristicCoverage(postRemovalText, articleData);
+  const report = coverage.report.map(row => ([6, 9, 10, 11].includes(row.id) ? fallback[row.id - 1] : row));
+  const coveredCount = report.filter(r => r.result === 'covered_present' || r.result === 'covered_added').length;
+  return { ...coverage, report, coveredCount };
 }
 
 function buildCoverageMarkdown(report) {

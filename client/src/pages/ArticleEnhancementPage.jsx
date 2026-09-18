@@ -20,6 +20,10 @@ const STEPS = [
   { id: 'kb',         label: 'Load KB' },
   { id: 'recommend',  label: 'Generate Recommendations' },
   { id: 'enhance',    label: 'Enhance Article' },
+  // Ids are duplicated string literals between this file and
+  // server/routes/articleEnhancement.js — a step the server emits under an id
+  // that is missing here is silently swallowed, so keep 'factcheck' identical.
+  { id: 'factcheck',  label: 'Fact-Check Claims' },
 ];
 
 function PageHeader({ navigate }) {
@@ -543,6 +547,7 @@ export default function ArticleEnhancementPage() {
   const [recommendations, setRecommendations] = useState('');
   const [enhancedText, setEnhancedText] = useState('');
   const [coverage, setCoverage] = useState(null);
+  const [factCheck, setFactCheck] = useState(null);
   // { before, after, delta } — 'before' lands right after the crawl, 'after' at the end.
   const [scores, setScores] = useState({ before: null, after: null, delta: null });
   const [crawlFailed, setCrawlFailed] = useState(false);
@@ -560,6 +565,7 @@ export default function ArticleEnhancementPage() {
   const recommendationsRef = useRef('');
   const enhancedTextRef = useRef('');
   const coverageRef = useRef(null);
+  const factCheckRef = useRef(null);
 
   useEffect(() => {
     fetch('/api/kb', { credentials: 'include' })
@@ -593,6 +599,7 @@ export default function ArticleEnhancementPage() {
     setRecommendations('');
     setEnhancedText('');
     setCoverage(null);
+    setFactCheck(null);
     setScores({ before: null, after: null, delta: null });
     setCrawlFailed(false);
     crawlFailedRef.current = false;
@@ -600,6 +607,7 @@ export default function ArticleEnhancementPage() {
     recommendationsRef.current = '';
     enhancedTextRef.current = '';
     coverageRef.current = null;
+    factCheckRef.current = null;
 
     let token;
     try {
@@ -675,6 +683,11 @@ export default function ArticleEnhancementPage() {
         ? { before: d.score, after: null, delta: null }
         : { before: d.before || prev.before, after: d.score, delta: d.delta });
     });
+    es.addEventListener('factcheck', e => {
+      const d = JSON.parse(e.data);
+      setFactCheck(d);
+      factCheckRef.current = d;
+    });
     es.addEventListener('coverage', e => {
       const d = JSON.parse(e.data);
       setCoverage(d);
@@ -708,6 +721,7 @@ export default function ArticleEnhancementPage() {
         recommendations: recommendationsRef.current,
         enhancedText: enhancedTextRef.current,
         coverage: coverageRef.current,
+        factCheck: factCheckRef.current,
       });
     });
     es.onerror = () => {
@@ -765,6 +779,8 @@ export default function ArticleEnhancementPage() {
     { id: 'enhanced',        label: 'Enhanced Article', show: !!enhancedText },
     { id: 'analysis',        label: 'Analysis',         show: !!themeData },
     { id: 'recommendations', label: 'Recommendations',  show: !!recommendations },
+    { id: 'factcheck',       label: factCheck && factCheck.removed > 0 ? `Fact Check (${factCheck.removed} removed)` : 'Fact Check',
+      show: !!(factCheck && factCheck.reportMarkdown) },
     { id: 'coverage',        label: 'Coverage',         show: !!(coverage && coverage.reportMarkdown) },
   ].filter(t => t.show);
 
@@ -1109,6 +1125,7 @@ export default function ArticleEnhancementPage() {
 
                 {activeTab === 'enhanced' && <EnhancedArticlePanel text={enhancedText} />}
                 {activeTab === 'recommendations' && <RecommendationsPanel recommendations={recommendations} />}
+                {activeTab === 'factcheck' && factCheck?.reportMarkdown && <RecommendationsPanel recommendations={factCheck.reportMarkdown} />}
                 {activeTab === 'coverage' && coverage?.reportMarkdown && <RecommendationsPanel recommendations={coverage.reportMarkdown} />}
               </div>
             )}
