@@ -50,11 +50,17 @@ THIS IS A COMMERCIAL-INTENT PAGE. The reader has decided they may want this care
 to get it. They are comparing providers, not researching a topic.
 
 EVERY LIMIT BELOW IS A CHARACTER COUNT, AND EVERY ONE IS HARD.
-Count before you answer. These are not targets to approach — a value over the limit fails review, and
+Count before you answer. These are not targets to approach: a value over the limit fails review, and
 several of them are short enough that one extra clause breaks them. Where a limit is a range, landing
 under it fails exactly as badly as landing over it.
 
-KEYWORDS — a keyword is a SEARCH QUERY, never a phrase to reproduce.
+PUNCTUATION: NEVER USE AN EM DASH (—).
+Not in a heading, not in a paragraph, not in a bullet, not in a meta title or description, not in an
+FAQ question or answer. Not anywhere in your output. This is house style and it is absolute.
+Use a comma, a colon, a full stop or a pair of brackets instead, and rewrite the sentence where none
+of those fits. A bullet starts with "- ", never with a dash of any other kind.
+
+KEYWORDS: a keyword is a SEARCH QUERY, never a phrase to reproduce.
 - Keywords are typed into a search box, so they are usually not grammatical English: "anxiety treatment
   cost anaheim hills", "iop pasadena". NEVER paste one into a sentence. Write the IDEA in English.
 - NEVER put the city directly after the service, and never use that pair as a label for people or
@@ -67,7 +73,7 @@ HARD RULES
   review counts, credentials, awards or years in practice.
 - This is health content. No guarantees of outcomes, no success rates, no claim that anyone will
   recover. Describe care factually.
-- Do NOT claim insurance coverage beyond "accepts most major insurance providers" — never name a plan
+- Do NOT claim insurance coverage beyond "accepts most major insurance providers". Never name a plan
   as covered, and never promise a cost.
 - Headings are NOT yours to write. Every H2 and H3 on this page is fixed and is given to you below.
   Write the body that sits under each one. Do not restate a heading as the opening sentence.
@@ -83,7 +89,7 @@ more of them. Sentence-level duplication is what makes a set of location pages r
     "... {service} in {city} with individualized care plans ..."
     "... scheduling options, including evening appointments ..."
     "Clear Behavioral Health offers/provides ..." as the opening of the Why Choose paragraph
-- The insurance sentence MUST still say "most major insurance providers" — that wording is required.
+- The insurance sentence MUST still say "most major insurance providers". That wording is required.
   Build a different sentence around it: lead with what it means for this person, or with the care
   itself, rather than with the company name and the same trailing clause every time.
 - Vary how each section opens. If the Why Choose paragraph starts with the practice name, the
@@ -116,7 +122,7 @@ function sectionBrief({ scaffold, h3Plan, faqPlan, primaryKeyword }) {
     if (h.intent) bits.push(`   Cover: ${h.intent}`);
     if (h.source === 'fallback' && h.sourceExcerpt) {
       bits.push('   WRITE THIS ONE FROM THE SOURCE BELOW. Use only what it states; add no facts of');
-      bits.push('   your own. Rewrite in plain language — never copy its wording.');
+      bits.push('   your own. Rewrite in plain language, and never copy its wording.');
       bits.push(`   SOURCE (${h.sourceUrl}): ${h.sourceExcerpt}`);
     } else if (h.source === 'fallback') {
       bits.push('   No source text was retrieved for this one. Keep it general and factual, and state');
@@ -138,43 +144,43 @@ ${faqPlan.map((f, i) => `${i + 1}. [${f.type || 'intent'}] ${f.q}`).join('\n')}`
     : `Write ${L.faqs.count.min}-${L.faqs.count.max} FAQs with a mix of location-specific, brand-specific and
 user-intent questions, tagging each with its "type".`;
 
-  return `META TITLE — ${L.metaTitle.min}-${L.metaTitle.max} characters. Do NOT include "${contract.TITLE_SUFFIX.trim()}"; it is appended
+  return `META TITLE: ${L.metaTitle.min}-${L.metaTitle.max} characters. Do NOT include "${contract.TITLE_SUFFIX.trim()}"; it is appended
 automatically and is NOT counted. Include the primary keyword or a close variant. Natural and readable,
 never keyword-stuffed.
 
-META DESCRIPTION — ${L.metaDescription.min}-${L.metaDescription.max} characters. Every word of the primary keyword must appear, in any
+META DESCRIPTION: ${L.metaDescription.min}-${L.metaDescription.max} characters. Every word of the primary keyword must appear, in any
 order. End on a mental-health call to action ("Get support", "Explore treatment options", "Schedule a
 consultation"). Natural, not stuffed.
 
-HERO H1 — at most ${L.hero.h1MaxChars} characters. Must contain the primary keyword and "${scaffold.locationName}". Engaging and
+HERO H1: at most ${L.hero.h1MaxChars} characters. Must contain the primary keyword and "${scaffold.locationName}". Engaging and
 service-focused, not a bare label.
 
-HERO DESCRIPTION — at most ${L.hero.descriptionMaxChars} characters. Use the primary keyword or a close variation naturally.
+HERO DESCRIPTION: at most ${L.hero.descriptionMaxChars} characters. Use the primary keyword or a close variation naturally.
 State the benefit of the service. Add a call to action where it fits.
 
-APPROACH — heading "${s.approach.heading}" is fixed.
+APPROACH: heading "${s.approach.heading}" is fixed.
 The WHOLE approach section, all three bodies together, is at most ${L.approach.sectionMaxChars} characters.
   - Under the H2: ${L.approach.paragraphsPerBlock.min}-${L.approach.paragraphsPerBlock.max} paragraphs.
   - Under "${s.approach.philosophy.heading}": ${L.approach.paragraphsPerBlock.min}-${L.approach.paragraphsPerBlock.max} paragraphs.
   - Under "${s.approach.therapies.heading}": ${L.approach.paragraphsPerBlock.min}-${L.approach.paragraphsPerBlock.max} paragraphs.
-Every paragraph is at most ${L.approach.paragraphMaxChars} characters, and every one must be specific to this service — not
+Every paragraph is at most ${L.approach.paragraphMaxChars} characters, and every one must be specific to this service, not
 generic copy that would fit any page.
 
-INSURANCE — heading "${s.insurance.heading}" is fixed. ONE paragraph, at most ${L.insurance.maxChars} characters.
+INSURANCE: heading "${s.insurance.heading}" is fixed. ONE paragraph, at most ${L.insurance.maxChars} characters.
 Mention accessibility naturally. Say "most major insurance providers"; claim nothing more.
 
-EDUCATIONAL — heading "${s.educational.heading}" is fixed.
+EDUCATIONAL: heading "${s.educational.heading}" is fixed.
 Intro: ${L.educational.introParagraphs.min}-${L.educational.introParagraphs.max} paragraphs, ${L.educational.introMaxChars} characters TOTAL across them.
 ${h3Block}
-EVERY H3 BODY MAY TAKE UP TO ${h3Lines} LINES OF WRITING. That allowance belongs to EACH body separately —
+EVERY H3 BODY MAY TAKE UP TO ${h3Lines} LINES OF WRITING. That allowance belongs to EACH body separately:
 they do not share it, and one body using fewer does not give another more.
 Each entry in the "lines" array is EITHER a paragraph OR a bullet:
   • A PARAGRAPH is 2-4 sentences in ONE entry. It costs one line per ${h3LineChars} characters, so a
     220-character paragraph costs three. Do NOT break a paragraph up into one sentence per entry.
   • A BULLET starts with "- " and costs ${1 + L.educational.bulletExtraLines} line${L.educational.bulletExtraLines ? 's' : ''} whatever its length. Use it where the
-    content really is a list — options, steps, signs, what to bring — never for a point that needs
+    content really is a list (options, steps, signs, what to bring), never for a point that needs
     explaining. A run of bullets still pays the paragraph break after every ${L.educational.linesBeforeBreak} lines.
-Either form may open with a BOLD SUB-LABEL, written "**Like this**" — use it where a body covers two or
+Either form may open with a BOLD SUB-LABEL, written "**Like this**". Use it where a body covers two or
 three named things ("**Biological factors** ...", "**Psychological factors** ..."). The asterisks are the
 only markup allowed anywhere, and they do not count toward the character limit.
 MIX THE TWO. A body of nothing but short standalone sentences reads like a slide, and a body of nothing
@@ -185,24 +191,24 @@ ${h3Lines} is a CEILING, not a target. Use the lines the content genuinely earns
 subsection is worse than a short one that says something, and repeating the heading back as a sentence
 counts against you.
 
-WHY CHOOSE — heading "${s.uvp.heading}" is fixed. ONE paragraph, at most ${L.uvp.maxChars} characters.
+WHY CHOOSE: heading "${s.uvp.heading}" is fixed. ONE paragraph, at most ${L.uvp.maxChars} characters.
 Name real differentiators and what the patient gets. It must mention this service and ${scaffold.locationName}, because
 the heading itself says neither. No superlatives, no "best", no invented credentials.
 
-SERVICE — heading "${s.service.heading}" is fixed. ONE paragraph, at most ${L.service.maxChars} characters. Natural,
+SERVICE: heading "${s.service.heading}" is fixed. ONE paragraph, at most ${L.service.maxChars} characters. Natural,
 specific to the service and the location.
 
-TREATMENT — this is the ONE section where you write the H2 as well as the body. It sits between the
+TREATMENT: this is the ONE section where you write the H2 as well as the body. It sits between the
 section above and the FAQs.
-H2: at most ${L.treatment.headingMaxChars} characters. Name the team, and where they fit name the service and ${scaffold.locationName} too —
+H2: at most ${L.treatment.headingMaxChars} characters. Name the team, and where they fit name the service and ${scaffold.locationName} too.
 "Our ADHD treatment experts in El Monte" is the shape to prefer. Not a slogan, not a sentence, not a
 question.
-PARAGRAPH: ONE paragraph directly under it, at most ${L.treatment.maxChars} characters, about the CLINICIANS — their
+PARAGRAPH: ONE paragraph directly under it, at most ${L.treatment.maxChars} characters, about the CLINICIANS: their
 experience and how they treat people. "We boast a team of experienced, compassionate clinicians with
 many years of experience, dedicated to treating you with the utmost care" is the register. Do not name
 a qualification, a licence, a school, a headcount or a number of years, and promise no outcome.
 
-FREQUENTLY ASKED QUESTIONS — each answer at most ${L.faqs.answerMaxChars} characters.
+FREQUENTLY ASKED QUESTIONS: each answer at most ${L.faqs.answerMaxChars} characters.
 ${faqBlock}
 Questions must be genuinely useful. Never force a keyword into a question or an answer.`;
 }
@@ -243,7 +249,7 @@ function correctionFrom(qc) {
     .map(c => `- ${c.name}. ${c.detail}`);
   if (!notes.length) return '';
   return `
-CORRECTION — the previous draft broke these. Fix exactly these and change nothing else. Keep every
+CORRECTION: the previous draft broke these. Fix exactly these and change nothing else. Keep every
 heading, every section and the order they are in:
 ${notes.join('\n')}
 `;

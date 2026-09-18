@@ -31,7 +31,7 @@ const FIELDS = {
   'meta.title': {
     scope: 'page', kind: 'text', limit: L.metaTitle,
     label: 'meta title',
-    ask: () => `Write a fresh meta title. Do NOT include "${contract.TITLE_SUFFIX.trim()}" — it is appended automatically
+    ask: () => `Write a fresh meta title. Do NOT include "${contract.TITLE_SUFFIX.trim()}"; it is appended automatically
 and is not counted. Include the primary keyword or a close variant. Natural and readable.`,
   },
   'meta.metaDescription': {
@@ -74,7 +74,7 @@ for this service. No invented credentials.`,
     scope: 'page', kind: 'text', limit: { max: L.insurance.maxChars },
     label: 'insurance paragraph',
     ask: () => `Rewrite the insurance paragraph. It MUST say "most major insurance providers" and claim nothing
-beyond that — never name a plan as covered, never promise a cost. Build a DIFFERENT sentence around that
+beyond that: never name a plan as covered, never promise a cost. Build a DIFFERENT sentence around that
 required phrase: do not open with the practice name and close on the same "accessible and affordable" clause.`,
   },
   'educational.paragraphs': {
@@ -95,7 +95,7 @@ duplicate any other heading in the section: ${ctx.siblings.join(' | ')}`,
     ask: (ctx) => `Rewrite the body under "${ctx.item.heading}". Return each line as its own array entry; one line is at
 most ${L.educational.lineMaxChars} characters, and a longer one wraps to another line. At most ${ctx.lineAllowance} lines.
 Mix the two forms: a paragraph is 2-4 sentences in ONE entry, a bullet starts with "- " and costs
-${1 + L.educational.bulletExtraLines} line${L.educational.bulletExtraLines ? 's' : ''}. Lead with a paragraph and bullet only what genuinely enumerates — do not
+${1 + L.educational.bulletExtraLines} line${L.educational.bulletExtraLines ? 's' : ''}. Lead with a paragraph and bullet only what genuinely enumerates. Do not
 return a list of one-sentence entries. An entry may open with a bold sub-label written "**Like this**",
 which is the only markup allowed. Use fewer lines if the content does not earn them.${ctx.sourceBlock}`,
   },
@@ -116,7 +116,7 @@ ${ctx.siblings.map(x => `- ${x}`).join('\n')}${ctx.sourceBlock}`,
     scope: 'page', kind: 'text', limit: { max: L.uvp.maxChars },
     label: 'Why Choose paragraph',
     ask: (ctx) => `Rewrite the "${contract.FIXED_HEADINGS.uvp}" paragraph. The heading names neither the service nor the
-city, so this paragraph must name both. Say something true of THIS care specifically — "individualized
+city, so this paragraph must name both. Say something true of THIS care specifically. "Individualized
 treatment planning, a dedicated clinical team, flexible scheduling" is true of every service here and
 therefore tells the reader nothing. Do not open with "${contract.BRAND} offers" or "${contract.BRAND} provides".`,
   },
@@ -129,7 +129,7 @@ and the location.`,
   'treatment.heading': {
     heading: true, scope: 'page', kind: 'text', limit: { max: L.treatment.headingMaxChars },
     label: 'Treatment H2',
-    ask: (ctx) => `Write a fresh H2 for the treatment section. Name the team, the service and the city — "Our ADHD
+    ask: (ctx) => `Write a fresh H2 for the treatment section. Name the team, the service and the city. "Our ADHD
 treatment experts in El Monte" is the shape. Not a slogan, not a sentence, not a question. It must not
 repeat the wording of "${ctx.page.sections.service.heading}", which sits directly above it.`,
   },
@@ -137,13 +137,13 @@ repeat the wording of "${ctx.page.sections.service.heading}", which sits directl
     scope: 'page', kind: 'text', limit: { max: L.treatment.maxChars },
     label: 'Treatment paragraph',
     ask: (ctx) => `Rewrite the paragraph under "${ctx.page.sections.treatment.heading || 'the treatment H2'}". It is about the
-CLINICIANS — their experience and how they treat people. Do not name a qualification, a licence, a
+CLINICIANS: their experience and how they treat people. Do not name a qualification, a licence, a
 school, a headcount or a number of years, and promise no outcome.`,
   },
   'faq.q': {
     heading: true, scope: 'page', kind: 'text', indexed: true, limit: { max: 140 },
     label: 'FAQ question',
-    ask: (ctx) => `Write a fresh question of type "${ctx.item.type || 'intent'}". It must be specific to this service — a
+    ask: (ctx) => `Write a fresh question of type "${ctx.item.type || 'intent'}". It must be specific to this service: a
 question that would read the same on a page about a different condition is filler. It must not duplicate
 any other question on the page: ${ctx.siblings.join(' | ')}`,
   },
@@ -291,6 +291,8 @@ async function regenerateField({ clientId, serviceId, locationId, page, brief, f
   const system = `You are an expert local-SEO content writer for ${contract.BRAND}, a behavioral health provider in California.
 You are rewriting ONE field on an existing page. Everything else stays as it is.
 
+- NEVER use an em dash (—). Not anywhere in your output. Use a comma, a colon or a full stop, and
+  rewrite the sentence where none of those fits. A bullet starts with "- ", never with a longer dash.
 - Do NOT invent addresses, phone numbers, hours, prices, clinician names, credentials or review counts.
 - Health content: no guaranteed outcomes, no success rates, no promise of recovery.
 - A keyword is a search query, not a phrase to paste. Put a preposition between the service and the city.
@@ -323,11 +325,16 @@ Return JSON only.`;
     });
     try {
       const raw = JSON.parse(completion.choices[0].message.content);
+      // Em dashes are stripped HERE, before the limit is measured a few lines
+      // below, because removing one changes the character count: " — " ships as
+      // ", ". Measuring the model's draft and then rewriting it would check a
+      // string that is not the one the reviewer gets.
       if (isList) {
-        const lines = (Array.isArray(raw.lines) ? raw.lines : []).map(x => String(x || '').trim()).filter(Boolean);
+        const lines = (Array.isArray(raw.lines) ? raw.lines : [])
+          .map(x => contract.removeEmDashes(String(x || '').trim())).filter(Boolean);
         return lines.length ? lines : null;
       }
-      const v = String(raw.value || '').replace(/\s+/g, ' ').trim();
+      const v = contract.removeEmDashes(String(raw.value || '').replace(/\s+/g, ' ').trim());
       return v || null;
     } catch { return null; }
   };
@@ -341,7 +348,7 @@ Return JSON only.`;
     : (withinLimit(value, cfg.limit) ? [] : [value]);
   if (bad.length) {
     const measured = bad.map(v => `"${String(v).slice(0, 40)}…" is ${contract.textLength(v)} characters`).join('; ');
-    const fixed = await attempt(`\nCORRECTION — the previous attempt broke the limit: ${measured}. It must be ${describeLimit(cfg.limit)}.`);
+    const fixed = await attempt(`\nCORRECTION: the previous attempt broke the limit: ${measured}. It must be ${describeLimit(cfg.limit)}.`);
     if (fixed) value = fixed;
   }
 

@@ -84,6 +84,37 @@ function containsKeywordVariant(text, keyword) {
 
 const CTA_RE = /\b(get support|explore treatment|schedule|book|call|contact|get started|reach out|connect with|start today|learn more|talk to)\b/i;
 
+// Every piece of PROSE on the page, labelled with where a reviewer would find
+// it. Built from the context rather than by walking the page object, because a
+// walk would also pick up the URLs, the slugs and the stored JSON-LD -- none of
+// which is copy, and the last of which is rebuilt from the copy anyway.
+function prosePieces(ctx) {
+  const out = [];
+  const add = (label, field, text) => { if (String(text || '').trim()) out.push({ label, field, text }); };
+  const addAll = (label, field, list) => (list || []).forEach(t => add(label, field, t));
+
+  add('the meta title', 'meta.title', ctx.meta.title);
+  add('the meta description', 'meta.metaDescription', ctx.meta.metaDescription);
+  add('the H1', 'hero.h1', ctx.hero.h1);
+  add('the hero description', 'hero.description', ctx.hero.description);
+  ctx.approachBlocks.forEach(b => addAll('the approach section', 'approach', b.paragraphs));
+  add('the insurance paragraph', 'insurance', ctx.insurance.paragraph);
+  addAll('the educational intro', 'educational', ctx.educational.paragraphs);
+  ctx.h3s.forEach((h) => {
+    add('an educational H3 heading', 'educational', h.heading);
+    addAll('an educational H3 body', 'educational', h.lines);
+  });
+  add('the Why Choose paragraph', 'uvp', ctx.uvp.paragraph);
+  add('the service paragraph', 'service', ctx.service.paragraph);
+  add('the treatment heading', 'treatment', ctx.treatment.heading);
+  add('the treatment paragraph', 'treatment', ctx.treatment.paragraph);
+  ctx.faqs.forEach((f) => {
+    add('an FAQ question', 'faq', f.q);
+    add('an FAQ answer', 'faq', f.a);
+  });
+  return out;
+}
+
 function lenDetail(label, value, { min, max }) {
   const n = c.textLength(value);
   return `${label}: ${n} characters (${min ? `${min}-` : 'max '}${max}).`;
@@ -490,6 +521,36 @@ const CHECKS = [
       };
     },
   },
+
+  // ── House style ─────────────────────────────────────────────────────────
+  {
+    id: 'no_em_dash', severity: 'Major', field: 'page',
+    name: 'No em dash anywhere on the page',
+    // Major, not Critical: it is a stated style rule breached, which is the
+    // same class as a breached character limit, and a page carrying one is
+    // wrong rather than unusable.
+    //
+    // Expected never to fire on a generated page. mergeCbhL3 strips em dashes
+    // as the writer's output is merged and refreshCbhDerived strips them again
+    // on every read and save, so by the time a generated page reaches QC it is
+    // already clean. What this gate is FOR is the one path neither covers: a
+    // reviewer typing one into the editor and pressing Recheck, where the text
+    // has not been through a save yet. Without it, the only signal would be the
+    // value quietly changing under them at save time.
+    run: (ctx) => {
+      const hits = prosePieces(ctx).filter(p => c.hasEmDash(p.text));
+      return {
+        pass: !hits.length,
+        // Names the sections rather than quoting the text: a reviewer needs to
+        // know where to look, and the offending line is right there when they do.
+        field: hits[0]?.field || 'page',
+        detail: hits.length
+          ? `Em dash in ${[...new Set(hits.map(h => h.label))].join(', ')}. `
+            + 'Replace it with a comma, a colon or a full stop.'
+          : 'No em dashes.',
+      };
+    },
+  },
 ];
 
 const CHECKS_BY_ID = new Map(CHECKS.map(def => [def.id, def]));
@@ -534,6 +595,6 @@ function isCbhPage(page) {
 }
 
 module.exports = {
-  runCbhQc, runCbhCheck, isCbhPage, verdict, context,
+  runCbhQc, runCbhCheck, isCbhPage, verdict, context, prosePieces,
   CHECKS, CHECKS_BY_ID, containsKeywordWords, containsKeywordVariant,
 };

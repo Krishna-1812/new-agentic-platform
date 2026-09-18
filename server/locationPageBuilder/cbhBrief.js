@@ -34,34 +34,49 @@ const { LIMITS: L, PROVENANCE } = contract;
 // contract allows, or an FAQ type the QC gate does not recognise.
 function normalizeCbhBrief(brief = {}, ctx = {}) {
   const str = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+  // Every PROSE field goes through this, so no em dash can reach the store, the
+  // reviewer or the writer whatever the planner returned. `str` is kept for the
+  // one field that is not prose (sourceUrl), where rewriting a character would
+  // corrupt the value rather than clean it.
+  const clean = v => contract.removeEmDashes(str(v));
   const validSource = new Set(Object.values(PROVENANCE));
   const keep = contract.protectedTerms(ctx);
-  const heading = v => contract.sentenceCase(str(v), keep);
+  const heading = v => contract.sentenceCase(clean(v), keep);
 
   return {
-    primaryKeyword: str(brief.primaryKeyword),
-    primaryKeywords: (brief.primaryKeywords || []).map(str).filter(Boolean),
-    secondaryKeywords: (brief.secondaryKeywords || []).map(str).filter(Boolean),
+    // Cleaned like everything else. A keyword pulled from SEMrush is a lowercase
+    // search query and will never carry one, but the box that lets a reviewer
+    // type a keyword by hand has no such guarantee, and this field is quoted
+    // into the writer's prompt. Keyword MATCHING is unaffected either way:
+    // containsKeywordWords strips punctuation before it compares.
+    primaryKeyword: clean(brief.primaryKeyword),
+    primaryKeywords: (brief.primaryKeywords || []).map(clean).filter(Boolean),
+    secondaryKeywords: (brief.secondaryKeywords || []).map(clean).filter(Boolean),
 
     meta: {
       // Stored WITHOUT the brand suffix, which is what the 50-60 window counts
       // and what the reviewer edits. compose appends the suffix on the page.
-      title: contract.titleWithoutSuffix(str(brief.meta?.title)),
-      description: str(brief.meta?.description),
+      title: contract.titleWithoutSuffix(clean(brief.meta?.title)),
+      description: clean(brief.meta?.description),
     },
 
     educational: {
       h3s: (brief.educational?.h3s || [])
         .map(h => ({
           heading: heading(h.heading),
-          intent: str(h.intent),
+          intent: clean(h.intent),
           source: validSource.has(h.source) ? h.source : PROVENANCE.FALLBACK,
           sourceUrl: str(h.sourceUrl),
           // The text actually retrieved from that URL. Stored, because a
           // citation the writer never read is a claim of provenance the copy
           // does not have -- which is worse than no citation, since it looks
           // verified. The writer is given this and told to stay inside it.
-          sourceExcerpt: str(h.sourceExcerpt).slice(0, 1200),
+          //
+          // Cleaned like everything else, and not only for tidiness: this text
+          // goes into the writer's prompt, and clinical publishers use em
+          // dashes heavily. Handing the model a source full of them while
+          // telling it not to write any is an argument it will lose.
+          sourceExcerpt: clean(h.sourceExcerpt).slice(0, 1200),
         }))
         .filter(h => h.heading)
         .slice(0, L.educational.h3Count.max),
@@ -176,8 +191,10 @@ Return ONLY JSON, no prose, no markdown fences:
 }
 
 RULES
+- NEVER use an em dash (—) anywhere in your output. Not in a heading, not in an intent, not in a
+  question, not in the meta title or description. Use a comma, a colon or a full stop instead.
 - "h3s": EXACTLY ${L.educational.h3Count.min}-${L.educational.h3Count.max} headings, each at most ${L.educational.h3HeadingMaxChars} characters. These are the subsections of a single
-  "What is ${topic}?" section, so they explain the CONDITION ITSELF — what it is, how it shows up, and
+  "What is ${topic}?" section, so they explain the CONDITION ITSELF: what it is, how it shows up, and
   when it needs help. This is the shape the client's own pages use, and the one to follow unless the
   competitor research clearly offers something better:
     1. Symptoms and signs of ${topic}
@@ -190,7 +207,7 @@ RULES
 - The educational section must be based on competitor research. Take a heading from the competitor
   list wherever one covers a real topic, rewrite it in plain language, and mark it "competitor".
   Only where the competitors leave a genuine gap, propose the missing heading and mark it
-  "fallback" — that section will be written from an authoritative clinical source, not invented.
+  "fallback". That section will be written from an authoritative clinical source, not invented.
 - "intent": one sentence on what that subsection must cover. This is the instruction the writer
   follows, so be concrete.
 - "metaTitle": ${L.metaTitle.min}-${L.metaTitle.max} characters, EXCLUDING the brand suffix, which is added later and must not
@@ -204,7 +221,7 @@ RULES
     intent:   what a person researching this care actually asks (how long, what happens, who it suits)
   Include at least one of each. Never force a keyword into a question.
 - EVERY question must be SPECIFIC TO ${serviceName}. A question that would read word-for-word the
-  same on a page about a different condition is not doing any work — "How long does treatment take?"
+  same on a page about a different condition is not doing any work. "How long does treatment take?"
   is filler, "How long before ADHD medication is adjusted to the right dose?" is a real question.
   Name the condition, the therapy, or the thing people actually worry about with THIS care.
   This applies to the location and brand questions too: ask what someone seeking ${serviceName}

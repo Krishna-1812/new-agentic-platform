@@ -402,7 +402,11 @@ router.get('/cbh/pages', async (req, res) => {
         locationId: p.location_id,
         serviceName: S[p.service_id]?.name || '',
         locationName: L[p.location_id]?.location_name || '',
-        title: p.page_object?.meta?.title || '',
+        // Read straight off the stored blob rather than through the read
+        // route, so this is the one place a page written before the em-dash
+        // rule would still show one. Cleaned here too, or the list disagrees
+        // with the page it links to.
+        title: cbhContract.removeEmDashes(p.page_object?.meta?.title || ''),
         urlPath: p.page_object?.meta?.urlPath || '',
         verdict: p.page_object?.qc?.verdict || null,
         updatedAt: p.updated_at,

@@ -187,6 +187,68 @@ function serviceHeading(serviceName, locationName) {
   return casedHeading(`${programPhrase(serviceName)} in ${locationName}`, { serviceName, locationName });
 }
 
+// ── Em dashes ───────────────────────────────────────────────────────────────
+// Banned from everything this module generates, at the client's instruction:
+// no em dash in a brief, in page copy, or in a regenerated field.
+//
+// A prompt alone does not hold this. A model asked for 300 characters of warm
+// clinical prose reaches for an em dash whether or not it was told not to, and
+// the miss is invisible -- it breaks no length gate, trips no other rule, and
+// reads perfectly well. So the rule is enforced in CODE at the three points
+// every generated string passes through (normalizeCbhBrief, mergeCbhL3,
+// cbhRegen), the prompts are written without em dashes of their own so the
+// instruction is not contradicted by the text delivering it, and a QC gate
+// reports any that a reviewer types by hand.
+//
+// ONLY the em dash (U+2014). The EN dash (U+2013) is structural in this
+// module: it separates an office label from its programme ("Los Angeles – Mid
+// Wilshire", see seed.js, split on by text.baseCity) and it is a legal bullet
+// marker in bulletPattern below. Banning it would break both.
+// Written as an escape, not as the character. Everything below is the rule's
+// own implementation, and a sweep for stray em dashes across this module
+// (`grep -r` before a release) should come back with prose that NAMES the
+// character and nothing else.
+const EM_DASH = '\u2014';
+
+function hasEmDash(text) {
+  return String(text == null ? '' : text).includes(EM_DASH);
+}
+
+// What an em dash becomes: a comma. That is the job it was doing in the
+// constructions a model actually writes -- an aside ("we treat the whole
+// person — not just the symptom") or an appositive ("three formats — IOP, PHP
+// and virtual — are offered here"). Deleting it instead runs the clauses
+// together; a spaced hyphen is the same punctuation wearing a hat.
+//
+// Two places it is NOT a comma:
+//   - OPENING an entry, where it is a bullet marker rather than punctuation.
+//     Rewriting "— Evening sessions" to ", Evening sessions" would stop the
+//     entry being a bullet, and a bullet costs a different number of lines
+//     against the educational budget than the same words as prose (lineCount).
+//     It is handed the canonical "-" marker the writer is asked for instead.
+//   - BESIDE punctuation already doing that job, where a comma would produce
+//     ". ," or ", ,".
+function removeEmDashes(text) {
+  const input = String(text == null ? '' : text);
+  // The overwhelming majority of strings, including every one on a page that
+  // was already clean. Worth the guard: this runs over whole page objects.
+  if (!input.includes(EM_DASH)) return input;
+
+  let s = input;
+  // Opening a bullet.
+  s = s.replace(/^(\s*)\u2014+(\s+)/, '$1-$2');
+  // Opening anything else: a stray dash with nothing to join.
+  s = s.replace(/^(\s*)\u2014+\s*/, '$1');
+  // Beside existing punctuation, or closing the string.
+  s = s.replace(/([,.;:!?])\s*\u2014+\s*/g, '$1 ');
+  s = s.replace(/\s*\u2014+\s*$/, '');
+  // Everything left is punctuating a clause.
+  s = s.replace(/\s*\u2014+\s*/g, ', ');
+  // Tidy the seams. Both " ," and ", ," are reachable above, and a space
+  // before a comma is wrong however it got there.
+  return s.replace(/ +([,.;:!?])/g, '$1').replace(/,(\s*,)+/g, ',').replace(/ {2,}/g, ' ');
+}
+
 // ── Limits ──────────────────────────────────────────────────────────────────
 const LIMITS = {
   metaTitle: { min: 50, max: 60, excludesSuffix: true },
@@ -415,6 +477,7 @@ module.exports = {
   approachHeading, educationalHeading, serviceHeading,
   lineCount, textLength, fullTitle, titleWithoutSuffix, maxBodyChars,
   sentenceCase, protectedTerms, casedHeading, PROPER_NOUNS, programPhrase, whatIsVerb,
+  EM_DASH, hasEmDash, removeEmDashes,
   isBullet, entryForm, stripInlineMarkup, contentLines, breaksFor, linesUsed,
   linesPerBody, contentAllowance, sectionLineTotal,
 };

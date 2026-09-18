@@ -2391,9 +2391,11 @@ test('no prompt asks for a keyword frequency any more', () => {
     assert.ok(j.what_is.heading.endsWith('?'));
     assert.strictEqual(j.what_is.heading, cbhPage().sections.educational.heading);
     assert.strictEqual(j.jump_menu.service_label, j.what_is.heading);
-    // And the UVP H2 the other way round.
+    // The UVP H2 keeps its mark. An earlier reading of the CMS sample stripped
+    // it here; the client's own example carries it, so both the page and the
+    // export now end on the question.
     assert.ok(cbhPage().sections.uvp.heading.endsWith('?'));
-    assert.ok(!j.why_choose.heading.endsWith('?'));
+    assert.ok(j.why_choose.heading.endsWith('?'));
     // page_title follows the client's VALUE ("<Service> in <Location>"), not
     // their comment, which says "same as H1" beside a different string.
     assert.strictEqual(j.page_title, j.treatment.heading);
@@ -2403,7 +2405,7 @@ test('no prompt asks for a keyword frequency any more', () => {
   test('every heading comes out sentence case', () => {
     const j = cmsJson();
     assert.strictEqual(j.approach.heading, 'Our approach to anxiety treatment in Anaheim Hills');
-    assert.strictEqual(j.why_choose.heading, 'Why choose Clear Behavioral Health');
+    assert.strictEqual(j.why_choose.heading, 'Why choose Clear Behavioral Health?');
     // The fixed client headings are already sentence case, so nothing moves.
     assert.strictEqual(j.approach.items[0].heading, 'Our philosophy of compassionate care');
   });
@@ -2847,6 +2849,227 @@ test('no prompt asks for a keyword frequency any more', () => {
     // The competitor-backed section gets neither directive.
     const firstSection = prompt.slice(prompt.indexOf('1. From competitors'), prompt.indexOf('2. From a source'));
     assert.ok(!/WRITE THIS ONE FROM THE SOURCE/.test(firstSection));
+  });
+
+  // ── Em dashes ─────────────────────────────────────────────────────────────
+  console.log('\nCBH - no em dash reaches a brief, a page or an export');
+  const EM = '\u2014';
+
+  test('an aside becomes a comma, not a run-on', () => {
+    assert.strictEqual(
+      cbhContract.removeEmDashes(`We treat the whole person ${EM} not just the symptom.`),
+      'We treat the whole person, not just the symptom.');
+  });
+  test('an appositive keeps both of its commas', () => {
+    assert.strictEqual(
+      cbhContract.removeEmDashes(`Three formats ${EM} IOP, PHP and virtual ${EM} are offered here.`),
+      'Three formats, IOP, PHP and virtual, are offered here.');
+  });
+  test('a dash with no spaces around it is still a dash', () => {
+    assert.strictEqual(cbhContract.removeEmDashes(`care${EM}fast`), 'care, fast');
+  });
+  test('a dash opening a bullet becomes the canonical marker, not a comma', () => {
+    // It is a MARKER, not punctuation: ", Evening sessions" would stop being a
+    // bullet, and a bullet costs a different number of lines than the same
+    // words as prose.
+    const out = cbhContract.removeEmDashes(`${EM} Evening sessions are available.`);
+    assert.strictEqual(out, '- Evening sessions are available.');
+    assert.ok(cbhContract.isBullet(out), 'and it is still counted as a bullet');
+  });
+  test('a dash next to punctuation does not stack a comma on top', () => {
+    assert.strictEqual(cbhContract.removeEmDashes(`Ask us. ${EM} We answer.`), 'Ask us. We answer.');
+    assert.strictEqual(cbhContract.removeEmDashes(`options, ${EM} and more`), 'options, and more');
+  });
+  test('a trailing dash just goes', () => {
+    assert.strictEqual(cbhContract.removeEmDashes(`Call today ${EM}`), 'Call today');
+  });
+  test('the en dash is left alone, because this module uses it structurally', () => {
+    // Office labels ("Los Angeles – Mid Wilshire") are split on it, and it is a
+    // legal bullet marker. Banning it would break both.
+    const label = 'Los Angeles \u2013 Mid Wilshire';
+    assert.strictEqual(cbhContract.removeEmDashes(label), label);
+  });
+  test('clean text is returned untouched', () => {
+    const s = 'Anxiety treatment in Anaheim Hills, paced to you.';
+    assert.strictEqual(cbhContract.removeEmDashes(s), s);
+  });
+
+  test('the brief cannot store an em dash the planner returned', () => {
+    const b = cbhBrief.normalizeCbhBrief({
+      meta: { title: `Anxiety Treatment ${EM} Anaheim Hills`, description: `Care that fits ${EM} today.` },
+      educational: { h3s: [{
+        heading: `Signs you may need support ${EM} and when`,
+        intent: `What prompts people to seek care ${EM} and what does not.`,
+        source: 'fallback', sourceUrl: 'https://www.cdc.gov/a',
+        sourceExcerpt: `Anxiety disorders ${EM} the most common class ${EM} are treatable.`,
+      }] },
+      faqs: [{ q: `How soon can I start ${EM} realistically?`, type: 'location' }],
+    });
+    const everything = JSON.stringify(b);
+    assert.ok(!everything.includes(EM), `an em dash survived into the brief: ${everything}`);
+    // The source excerpt matters as much as the copy: it goes into the writer's
+    // prompt, and clinical publishers use em dashes heavily.
+    assert.ok(!b.educational.h3s[0].sourceExcerpt.includes(EM));
+    // And the URL is untouched, not "cleaned".
+    assert.strictEqual(b.educational.h3s[0].sourceUrl, 'https://www.cdc.gov/a');
+  });
+
+  test('the writer cannot put an em dash on a page', () => {
+    const l3 = cbhFixture.passingL3();
+    l3.hero.h1 = `Anxiety Treatment ${EM} Anaheim Hills`;
+    l3.uvp = `We treat the whole person ${EM} not just the symptom.`;
+    l3.educational.h3s[0].lines.push(`${EM} Evening appointments`);
+    l3.faqs[0].a = `Usually within a week ${EM} sometimes sooner.`;
+    const page = cbhCompose.mergeCbhL3(cbhFixture.scaffold(), l3);
+    assert.ok(!JSON.stringify(page).includes(EM), 'an em dash survived the merge');
+    assert.strictEqual(page.sections.uvp.paragraph, 'We treat the whole person, not just the symptom.');
+  });
+
+  test('a page saved before this rule existed is cleaned when it is read', () => {
+    // The retroactive path: no regeneration, no billed call, just the read.
+    const page = cbhCompose.mergeCbhL3(cbhFixture.scaffold(), cbhFixture.passingL3());
+    page.sections.insurance.paragraph = `We accept most major insurance providers ${EM} ask us.`;
+    page.meta.metaDescription = `Anxiety treatment in Anaheim Hills ${EM} get support.`;
+    cbhCompose.refreshCbhDerived(page, {
+      client: { brand_static: { base_url: 'https://clearbehavioralhealth.com' } },
+      location: { city: 'Anaheim Hills', state_abbreviation: 'CA', location_page_url: '/locations/anaheim-hills/' },
+    });
+    assert.ok(!JSON.stringify(page.sections).includes(EM));
+    // The JSON-LD quotes the meta and the FAQs, so it has to be built AFTER the
+    // strip or it ships the dash the page no longer has.
+    assert.ok(!JSON.stringify(page.schema).includes(EM), 'the schema was rebuilt from the cleaned copy');
+  });
+
+  test('a URL on the page is never rewritten by the strip', () => {
+    const page = cbhCompose.mergeCbhL3(cbhFixture.scaffold(), cbhFixture.passingL3());
+    page.sections.educational.h3s[0].sourceUrl = 'https://www.nimh.nih.gov/health/topics/anxiety';
+    cbhCompose.stripCbhEmDashes(page);
+    assert.strictEqual(page.sections.educational.h3s[0].sourceUrl,
+      'https://www.nimh.nih.gov/health/topics/anxiety');
+  });
+
+  test('QC reports an em dash a reviewer typed, and says where', () => {
+    const page = cbhCompose.mergeCbhL3(cbhFixture.scaffold(), cbhFixture.passingL3());
+    cbhCompose.applyProvenance(page, cbhFixture.passingProvenance());
+    page.primaryKeyword = cbhFixture.PRIMARY;
+    // Assigned AFTER the merge, which is the only way one gets onto a page:
+    // the reviewer edits the field and presses Recheck before saving.
+    page.sections.uvp.paragraph = `Care that fits ${EM} and a team that stays.`;
+    const check = cbhQc.runCbhCheck(page, 'no_em_dash');
+    assert.strictEqual(check.pass, false);
+    assert.ok(/Why Choose/.test(check.detail), `the detail names the section: ${check.detail}`);
+    assert.strictEqual(check.severity, 'Major');
+  });
+
+  test('QC passes the fixture, so the gate does not fire on a clean page', () => {
+    const page = cbhCompose.mergeCbhL3(cbhFixture.scaffold(), cbhFixture.passingL3());
+    cbhCompose.applyProvenance(page, cbhFixture.passingProvenance());
+    page.primaryKeyword = cbhFixture.PRIMARY;
+    assert.strictEqual(cbhQc.runCbhCheck(page, 'no_em_dash').pass, true);
+  });
+
+  test('the export cleans a page that was never saved', () => {
+    // The export routes deliberately render WHAT IS ON SCREEN, so an unsaved
+    // edit has not been through the save path that would have stripped it.
+    const page = cbhCompose.mergeCbhL3(cbhFixture.scaffold(), cbhFixture.passingL3());
+    page.sections.service.paragraph = `Care in Anaheim Hills ${EM} five days a week.`;
+    const md = exporter.toCbhMarkdown(page);
+    assert.ok(!md.includes(EM), 'an em dash reached the exported document');
+    // And the caller's own object is not mutated by exporting it.
+    assert.ok(page.sections.service.paragraph.includes(EM), 'the export worked on a copy');
+  });
+
+  test('the provenance annotation in the export carries no em dash either', () => {
+    const label = exporter.cbhProvenanceLabel({ source: 'fallback', sourceUrl: 'https://www.cdc.gov/a' });
+    assert.ok(!label.includes(EM), `the deliverable must be searchably clean: ${label}`);
+  });
+
+  test('every model-facing CBH prompt bans the em dash and uses none itself', () => {
+    // A prompt that spends forty em dashes telling a model not to write one is
+    // an argument it will lose.
+    const writer = cbhWriter.systemPrompt() + cbhWriter.userPrompt({
+      scaffold: cbhFixture.scaffold(),
+      primaryKeyword: cbhFixture.PRIMARY, secondaryKeywords: [],
+      h3Plan: [{ heading: 'Signs you may need support', intent: 'What prompts people to seek care.', source: 'competitor' }],
+      faqPlan: [{ q: 'How soon can I start?', type: 'location' }],
+    });
+    const planner = cbhBrief.planPrompt({
+      serviceName: cbhFixture.SERVICE, conditionName: cbhFixture.CONDITION, city: cbhFixture.CITY,
+      primaryKeyword: cbhFixture.PRIMARY, competitorHeadings: [], competitorFaqs: [],
+    });
+    [['writer', writer], ['planner', planner.system + planner.user]].forEach(([name, text]) => {
+      assert.ok(/em dash/i.test(text), `the ${name} prompt does not state the rule`);
+      // The one em dash each prompt may contain is the character it names.
+      const stray = text.split(EM).length - 1;
+      assert.strictEqual(stray, 1,
+        `the ${name} prompt uses ${stray} em dashes; only the one in "(\u2014)" naming the rule is allowed`);
+    });
+  });
+
+  // ── CMS JSON shape ────────────────────────────────────────────────────────
+  console.log('\nCBH - the CMS payload matches the client\'s sample');
+
+  // One built page, reused: every assertion below is about the same export.
+  const cmsPage = (() => {
+    const p = cbhCompose.mergeCbhL3(cbhFixture.scaffold(), cbhFixture.passingL3());
+    cbhCompose.applyProvenance(p, cbhFixture.passingProvenance());
+    p.primaryKeyword = cbhFixture.PRIMARY;
+    return p;
+  })();
+
+  test('the banner heading bolds the city', () => {
+    const json = exporter.toCbhCmsJson(cmsPage, {});
+    assert.ok(json.banner.heading.includes(`<b>${cbhFixture.CITY}</b>`),
+      `expected the city in bold: ${json.banner.heading}`);
+  });
+  test('the bold survives the sentence-case pass with the city still capitalised', () => {
+    // The order matters: casing first, then the tag. Wrapping first would hand
+    // sentenceCase a token starting "<b>" and lower-case the city inside it.
+    const json = exporter.toCbhCmsJson(cmsPage, {});
+    assert.ok(!/<b>anaheim/i.test(json.banner.heading) || /<b>Anaheim Hills<\/b>/.test(json.banner.heading),
+      `the city lost its capitals: ${json.banner.heading}`);
+    assert.ok(/^[A-Z]/.test(json.banner.heading), 'and the heading still opens with a capital');
+  });
+  test('only the banner carries markup; the other headings stay plain', () => {
+    const json = exporter.toCbhCmsJson(cmsPage, {});
+    [json.page_title, json.treatment.heading, json.experts.heading, json.what_is.heading]
+      .forEach(h => assert.ok(!/<b>/.test(h), `unexpected markup in "${h}"`));
+  });
+  test('the city is bolded once, not at every mention', () => {
+    const doubled = structuredClone(cmsPage);
+    doubled.sections.hero.h1 = `Anxiety treatment in ${cbhFixture.CITY} for ${cbhFixture.CITY} residents`;
+    const json = exporter.toCbhCmsJson(doubled, {});
+    assert.strictEqual(json.banner.heading.split('<b>').length - 1, 1);
+  });
+  test('a heading that never names the city exports unchanged', () => {
+    // Should not happen -- a Critical gate requires the city in the H1 -- but an
+    // export is the wrong place to start throwing.
+    const noCity = structuredClone(cmsPage);
+    noCity.sections.hero.h1 = 'Compassionate anxiety treatment';
+    const json = exporter.toCbhCmsJson(noCity, {});
+    assert.strictEqual(json.banner.heading, 'Compassionate anxiety treatment');
+  });
+  test('the Why Choose heading keeps its question mark', () => {
+    const json = exporter.toCbhCmsJson(cmsPage, {});
+    assert.strictEqual(json.why_choose.heading, 'Why choose Clear Behavioral Health?');
+  });
+  test('a stored heading that lost its question mark gets one back', () => {
+    const stripped = structuredClone(cmsPage);
+    stripped.sections.uvp.heading = 'Why choose Clear Behavioral Health';
+    const json = exporter.toCbhCmsJson(stripped, {});
+    assert.ok(json.why_choose.heading.endsWith('?'), json.why_choose.heading);
+  });
+  test('exporting does not mutate the page it was handed', () => {
+    const before = JSON.stringify(cmsPage);
+    exporter.toCbhCmsJson(cmsPage, {});
+    assert.strictEqual(JSON.stringify(cmsPage), before, 'the export wrote back into the page object');
+  });
+
+  test('the code-side fallback plan is clean', () => {
+    // It ships verbatim whenever the planner cannot run, so it is copy in its
+    // own right rather than a prompt.
+    const plan = cbhBrief.fallbackPlan({ serviceName: 'Anxiety treatment', city: 'Anaheim Hills' });
+    assert.ok(!JSON.stringify(plan).includes(EM));
   });
 
   console.log(`\n${passed} passed, ${failed} failed`);

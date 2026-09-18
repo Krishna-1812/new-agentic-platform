@@ -10,6 +10,7 @@ const {
 // The CBH line rules live in one place; the export renders the breaks they
 // charge for rather than restating how often they fall.
 const cbhContract = require('./cbhContract');
+const cbhCompose = require('./cbhCompose');
 
 // Palette tuned to the formatted reference doc.
 const TEAL = '2C7A7B';      // section headings + content H1
@@ -382,10 +383,30 @@ function asQuestion(heading) {
   return s.endsWith('?') ? s : `${s}?`;
 }
 
-// And this one the other way round: the page's H2 is "Why Choose Clear
-// Behavioral Health?", the CMS wants it without the mark.
-function withoutQuestion(heading) {
-  return String(heading || '').trim().replace(/\?+$/, '');
+// The CMS banner shows the city in bold, so the H1 ships with a <b> around it:
+//   "Stress relief program in <b>Santa Clarita</b> to support a healthier mindset"
+//
+// Applied AFTER sentence casing, never before. sentenceCase splits on
+// whitespace and strips punctuation to decide what a word is, so "<b>Santa"
+// reads to it as one token beginning with a lower-case "b" -- it would lower
+// the city and then have to be rescued by the phrase-restore pass. Casing the
+// plain heading first and wrapping the result is the order that cannot go
+// wrong, and it also means the tag never has to survive a transform.
+//
+// The FIRST occurrence only, matched as a whole phrase and case-insensitively,
+// and the matched text is what gets wrapped -- so the heading keeps whatever
+// casing the sentence-case pass gave it rather than having the city's stored
+// spelling substituted back in.
+//
+// A heading that does not name the city is returned untouched. That should not
+// happen (hero_h1_keyword_and_location is a Critical gate), but an export is
+// the wrong place to start failing over it.
+function boldTerm(heading, term) {
+  const h = String(heading || '');
+  const t = String(term || '').trim();
+  if (!h || !t) return h;
+  const pattern = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+  return h.replace(new RegExp(`\\b${pattern}\\b`, 'i'), '<b>$&</b>');
 }
 
 // PROVISIONAL. The client's sample slug ("mental-health-treatment-teens-santa-
@@ -462,7 +483,8 @@ function joinParagraphs(paragraphs = []) {
 
 // `service` and `location` are the reference rows; the slugs, and the
 // mental_health/addiction split, live on them rather than on the page.
-function toCbhCmsJson(pageObject, { service, location } = {}) {
+function toCbhCmsJson(pageObjectIn, { service, location } = {}) {
+  const pageObject = cbhExportable(pageObjectIn);
   const s = pageObject.sections || {};
   const m = pageObject.meta || {};
 
@@ -491,7 +513,9 @@ function toCbhCmsJson(pageObject, { service, location } = {}) {
     },
 
     banner: {
-      heading: sc(s.hero?.h1),
+      // The only heading in this payload carrying markup. Bold on the city,
+      // per the client's CMS sample.
+      heading: boldTerm(sc(s.hero?.h1), pageObject.locationName),
       description: s.hero?.description || '',
     },
 
@@ -523,7 +547,11 @@ function toCbhCmsJson(pageObject, { service, location } = {}) {
     })),
 
     why_choose: {
-      heading: sc(withoutQuestion(s.uvp?.heading)),
+      // Keeps its question mark. An earlier reading of the CMS sample stripped
+      // it; the client's own example shows "Why choose Clear Behavioral
+      // Health?", so the mark ships. asQuestion rather than a plain pass-through
+      // so a page whose heading somehow lost the mark still exports with one.
+      heading: sc(asQuestion(s.uvp?.heading)),
       description: s.uvp?.paragraph || '',
     },
 
@@ -575,13 +603,29 @@ function isCbhPage(pageObject) {
     && pageObject.sections.educational && pageObject.sections.uvp);
 }
 
+// Every CBH export starts here. The routes deliberately export WHAT IS ON
+// SCREEN rather than what is saved, so a reviewer's unsaved edits are in the
+// file -- which also means an em dash they typed a moment ago has not yet been
+// through the save path that would have stripped it. A copy is cleaned here so
+// the deliverable obeys the rule whether or not the page was saved first.
+//
+// On a clone: an exporter must not mutate the caller's page object.
+function cbhExportable(pageObject) {
+  return cbhCompose.stripCbhEmDashes(structuredClone(pageObject));
+}
+
+// Reviewer annotation, shown beside each educational subsection in the export
+// and nowhere on the page. Written with a colon rather than a dash so that a
+// search for an em dash in the delivered document finds nothing -- the rule is
+// about what the SEO team can see in the file, not only about page copy.
 function cbhProvenanceLabel(h3) {
   if (h3.source === 'competitor') return 'Competitor-driven';
-  if (h3.source === 'fallback') return h3.sourceUrl ? `Fallback — ${h3.sourceUrl}` : 'Fallback — NO SOURCE';
+  if (h3.source === 'fallback') return h3.sourceUrl ? `Fallback: ${h3.sourceUrl}` : 'Fallback: NO SOURCE';
   return 'Source not stated';
 }
 
-function toCbhMarkdown(pageObject) {
+function toCbhMarkdown(pageObjectIn) {
+  const pageObject = cbhExportable(pageObjectIn);
   const m = pageObject.meta || {};
   const s = pageObject.sections || {};
   const L = [];
@@ -612,7 +656,8 @@ function toCbhMarkdown(pageObject) {
   return L.join('\n\n');
 }
 
-async function toCbhDocxBuffer(pageObject) {
+async function toCbhDocxBuffer(pageObjectIn) {
+  const pageObject = cbhExportable(pageObjectIn);
   const m = pageObject.meta || {};
   const s = pageObject.sections || {};
   const children = [];

@@ -226,8 +226,54 @@ function caseCbhHeadings(page, location) {
   return page;
 }
 
+// Keys whose values are never prose. A URL or a slug cannot legitimately carry
+// an em dash, and rewriting a character inside one would corrupt the value
+// rather than clean it, so they are skipped rather than trusted.
+const NON_PROSE_KEYS = new Set([
+  'urlPath', 'canonical', 'ctaUrl', 'sourceUrl', 'serviceSlug',
+  'page_id', 'client_id', 'service_id', 'location_id', 'status', 'source', 'type',
+]);
+
+// Two subtrees are skipped whole. `schema` is rebuilt from the cleaned page a
+// few lines below, so cleaning its JSON strings first is wasted work at best;
+// `qc` is a result set written by cbhQc, not page content, and rewriting the
+// wording of a gate's own explanation would be a lie about what it said.
+const SKIP_SUBTREES = new Set(['schema', 'qc']);
+
+// Strips em dashes from every piece of prose on a page, in place.
+//
+// mergeCbhL3 already covers anything this pipeline generates. This exists for
+// the two cases it cannot reach: a page SAVED before this rule existed, and a
+// reviewer who types an em dash into the editor. Running it on every read and
+// every save means an old page opens clean and saves clean without costing a
+// regeneration -- the same approach caseCbhHeadings takes to stale headings.
+//
+// Deliberately a generic walk rather than a list of the fields that exist
+// today: a field added to the contract later is covered without a second edit
+// here, which is precisely the kind of edit that gets forgotten.
+function stripCbhEmDashes(page) {
+  if (!page || typeof page !== 'object') return page;
+  const clean = (value, key) => {
+    if (typeof value === 'string') {
+      return NON_PROSE_KEYS.has(key) ? value : contract.removeEmDashes(value);
+    }
+    if (Array.isArray(value)) return value.map(v => clean(v, key));
+    if (value && typeof value === 'object') {
+      for (const k of Object.keys(value)) {
+        if (!SKIP_SUBTREES.has(k)) value[k] = clean(value[k], k);
+      }
+    }
+    return value;
+  };
+  clean(page, null);
+  return page;
+}
+
 function refreshCbhDerived(page, { client, location, service } = {}) {
   if (!page || !page.meta) return page;
+  // Before the headings are cased and before the schema is built, so neither
+  // can carry through an em dash the page arrived with.
+  stripCbhEmDashes(page);
   // A page written before the educational H2 named the condition has no raw
   // name stored. Backfilling from the service record here is what lets it open
   // as "What is depression?" instead of silently keeping the old heading --
@@ -248,7 +294,11 @@ function refreshCbhDerived(page, { client, location, service } = {}) {
 // what makes "use this H2 exactly as written" a guarantee rather than a hope.
 function mergeCbhL3(scaffold, l3 = {}, location = null) {
   const s = scaffold.sections;
-  const str = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+  // Em dashes go here, at the seam, rather than being trusted to the prompt.
+  // Every generated string on the page passes through `str` or `list`, so this
+  // is the one edit that covers all of them -- including a section added later
+  // that nobody remembers to sanitize. See cbhContract.removeEmDashes.
+  const str = v => contract.removeEmDashes(String(v == null ? '' : v).replace(/\s+/g, ' ').trim());
   const list = v => (Array.isArray(v) ? v.map(str).filter(Boolean) : []);
   // Headings the MODEL writes are cased here rather than asked for in the
   // prompt. A prompt is a request; this is a guarantee, and it applies to
@@ -353,5 +403,5 @@ function ensureCbhSections(page) {
 
 module.exports = {
   buildCbhScaffold, mergeCbhL3, applyProvenance, headingService, ensureCbhSections,
-  refreshCbhDerived, buildCbhSchema, caseCbhHeadings,
+  refreshCbhDerived, buildCbhSchema, caseCbhHeadings, stripCbhEmDashes,
 };
