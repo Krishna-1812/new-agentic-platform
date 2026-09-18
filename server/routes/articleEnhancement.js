@@ -113,6 +113,16 @@ router.get('/stream/:token', async (req, res) => {
     // derived from word count and used to calibrate prompts, but is not displayed.
     articleData.contentType = contentType || articleData.contentType || 'article';
 
+    // Baseline score of the article as it stands today, before anything is
+    // changed. Emitted now so it is on screen while the rest of the run works,
+    // and scored from the same markdown the enhancer will see, so the "after"
+    // score at the end is measured on like for like.
+    const baselineMarkdown = articleData.mainContentHtml
+      ? htmlChunkToMarkdown(articleData.mainContentHtml)
+      : (articleData.bodyText || '');
+    const scoreBefore = scoreContent(baselineMarkdown);
+    emit('score', { phase: 'before', score: scoreBefore });
+
     emit('article_meta', {
       title: articleData.title,
       url: articleData.url,
@@ -187,6 +197,21 @@ router.get('/stream/:token', async (req, res) => {
         ? insertBeforeTrailingFaq(enhancedText, add)
         : `${enhancedText}\n\n${add}`;
     }
+
+    // Final pass: give every [NEW] block an explicit change type, so the web
+    // renderer and the DOCX export colour the article identically from one
+    // source of truth instead of each re-deriving it.
+    enhancedText = annotateChangeTypes(enhancedText);
+
+    // Same scorer, same rubric, on the enhanced text with the markers stripped —
+    // so the delta is a like-for-like measurement rather than two opinions.
+    const scoreAfter = scoreContent(enhancedText);
+    emit('score', {
+      phase: 'after',
+      score: scoreAfter,
+      before: scoreBefore,
+      delta: scoreAfter.total - scoreBefore.total,
+    });
 
     emit('step', { id: 'enhance', status: 'done', message: 'Article enhancement complete' });
     // Coverage Report is surfaced in its own tab (not appended to the article).
@@ -1250,6 +1275,52 @@ Be specific. Reference actual H2 headings. Do not give generic advice.`,
   return res.choices[0].message.content || '';
 }
 
+// ── htmlTableToMarkdown ────────────────────────────────────────────────────────
+// Convert one <table> element into markdown pipe rows. Without this, a table in
+// the source article falls through to the generic block walker and every cell is
+// emitted as its own paragraph — the table arrives at the model as a list of
+// orphan words and can never come back as a table.
+//
+// Handles: missing <thead>, nested markup inside cells, colspan/rowspan (padded
+// out), ragged rows, and cells containing a literal '|' (escaped, or it would
+// invent a column). Returns null when there is nothing tabular to emit.
+function htmlTableToMarkdown($, tableEl) {
+  // A nested table/list inside a cell would otherwise have its text run together
+  // ("I1i"), so block boundaries inside the cell become spaces first.
+  const cellText = (c) => {
+    const clone = $(c).clone();
+    clone.find('td, th, li, p, br, div').each((_, n) => $(n).append(' '));
+    return clone.text().replace(/\s+/g, ' ').replace(/\|/g, '\\|').trim();
+  };
+
+  // Only this table's own rows — a nested table is converted by its own visit.
+  const rows = $(tableEl).find('tr').toArray()
+    .filter(tr => $(tr).closest('table').get(0) === tableEl);
+
+  const grid = rows.map(tr =>
+    $(tr).find('th, td').toArray()
+      .filter(c => $(c).closest('tr').get(0) === tr)
+      .flatMap(c => {
+        const span = Math.max(parseInt($(c).attr('colspan'), 10) || 1, 1);
+        // A spanned cell occupies its text plus (span - 1) empty columns, so the
+        // columns after it stay aligned with the header.
+        return [cellText(c), ...Array(Math.min(span, 20) - 1).fill('')];
+      })
+  ).filter(cells => cells.length > 0);
+
+  if (!grid.length) return null;
+  // A single row with a single cell is a layout table, not a data table.
+  if (grid.length === 1 && grid[0].length < 2) return null;
+
+  const cols = Math.max(...grid.map(r => r.length));
+  const pad = (r) => { const o = r.slice(0, cols); while (o.length < cols) o.push(''); return o; };
+  const toRow = (r) => '| ' + pad(r).join(' | ') + ' |';
+
+  const out = [toRow(grid[0]), '| ' + Array(cols).fill('---').join(' | ') + ' |'];
+  grid.slice(1).forEach(r => out.push(toRow(r)));
+  return out;
+}
+
 // ── htmlChunkToMarkdown ────────────────────────────────────────────────────────
 function htmlChunkToMarkdown(html) {
   const $ = cheerio.load(`<body>${html}</body>`);
@@ -1287,6 +1358,19 @@ function htmlChunkToMarkdown(html) {
           }
         }
         const t = text(el); if (t) lines.push(t, ''); break;
+      }
+      case 'table': {
+        const md = htmlTableToMarkdown($, el);
+        if (md) {
+          // A table is a block: blank line either side, or the rows glue onto
+          // the preceding paragraph and stop parsing as a table downstream.
+          lines.push('', ...md, '');
+        } else {
+          // Not tabular (a layout table, or a single wrapper cell) — walk it as
+          // an ordinary container so its content is still emitted, not dropped.
+          $(el).children().each((_, c) => walk(c));
+        }
+        break;
       }
       case 'li': { const t = text(el); if (t) lines.push('- ' + t); break; }
       case 'ul': case 'ol': $(el).children('li').each((_, li) => walk(li)); lines.push(''); break;
@@ -1338,6 +1422,95 @@ function htmlChunkToMarkdown(html) {
   return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
+// ── Change-type taxonomy ───────────────────────────────────────────────────────
+// Insertions are tagged [NEW:<type>]…[/NEW] where <type> is one of the nine
+// specific kinds the enhancement prompts produce. Those nine collapse into four
+// colour groups for the reader-facing legend — nine swatches is unreadable, and
+// the groups match how the prompts themselves are organised.
+//
+// Untyped [NEW]…[/NEW] stays valid everywhere: the Lite variant emits it, and so
+// does any older stored result. annotateChangeTypes() infers a type for those.
+const CHANGE_TYPE_GROUP = {
+  stat: 'evidence', quote: 'evidence', cite: 'evidence',
+  list: 'structure', table: 'structure',
+  answer: 'clarity', context: 'clarity',
+  faq: 'section', section: 'section',
+};
+
+// Group → legend label, description, and the soft palette shared by the web
+// renderer and the DOCX export. `fill` is the run/paragraph background, `text`
+// the foreground; both are 6-digit hex without the leading '#' so DOCX can use
+// them directly and the client can prefix '#'.
+const CHANGE_GROUPS = {
+  evidence:  { label: 'Evidence added',   hint: 'statistics, expert quotes, citations', fill: 'BEE3F8', text: '2B6CB0' },
+  structure: { label: 'Restructured',     hint: 'prose turned into lists or tables',    fill: 'FEEBC8', text: '975A16' },
+  clarity:   { label: 'Clarity & context', hint: 'answer-first lines, added context',   fill: 'E9D8FD', text: '6B46C1' },
+  section:   { label: 'New section',      hint: 'FAQ or a recommended new section',     fill: 'C6F6D5', text: '276749' },
+};
+const CHANGE_GROUP_ORDER = ['evidence', 'structure', 'clarity', 'section'];
+
+// Group for a marker's type. Unknown/absent types fall back to 'clarity', which
+// is what a bare inserted sentence almost always is once the structural and
+// evidence cases below have been matched.
+const DEFAULT_CHANGE_GROUP = 'clarity';
+const DEFAULT_CHANGE_TYPE = 'context'; // the 'clarity' member used when nothing else matches
+function groupForChangeType(type) {
+  return CHANGE_TYPE_GROUP[type] || DEFAULT_CHANGE_GROUP;
+}
+
+// Shared marker patterns. The open tag carries an optional `:type`; the close
+// tag never does.
+const NEW_OPEN = /\[NEW(?::[a-z]+)?\]/;            // non-global: safe for .test()
+const NEW_OPEN_G = /\[NEW(?::([a-z]+))?\]/g;
+const NEW_BLOCK_G = /\[NEW(?::([a-z]+))?\]([\s\S]*?)\[\/NEW\]/g;
+const NEW_LINE_OPEN = /^\[NEW(?::([a-z]+))?\]/;    // anchored: strips the leading tag
+const NEW_LINE_BLOCK = /^\[NEW(?::([a-z]+))?\]([\s\S]*)\[\/NEW\]$/; // whole-line pair
+
+// Strip both markers from a line (used wherever markdown structure is detected).
+function stripNewMarkers(s) {
+  return String(s || '').replace(NEW_OPEN_G, '').replace(/\[\/NEW\]/g, '');
+}
+
+// ── inferChangeType ────────────────────────────────────────────────────────────
+// Heuristic fallback for an insertion the model left untyped or mislabelled.
+// Ordered most-structural first: markdown shape is a far more reliable signal
+// than prose patterns, so tables/lists/headings are settled before the text of
+// the block is examined for evidence cues.
+function inferChangeType(inner) {
+  const t = String(inner || '').trim();
+  if (!t) return null;
+
+  // Structural shapes.
+  if (/^\|.*\|$/.test(t.split('\n')[0].trim())) return 'table';
+  if (/^(?:[-*]\s|\d+[.)]\s)/.test(t)) return 'list';
+  if (/^#{1,4}\s/.test(t)) {
+    return /faq|frequently asked/i.test(t.split('\n')[0]) ? 'faq' : 'section';
+  }
+
+  // Evidence cues. An expert quote is checked before a plain statistic because a
+  // quoted sentence often contains a number too.
+  if (/["“][^"”]{20,}["”]/.test(t) && /\b[A-Z][a-z]+\s+[A-Z][a-z]+\b/.test(t)) return 'quote';
+  if (/\bAs\s+[A-Z][a-z]+\s+[A-Z][a-z]+/.test(t)) return 'quote';
+  if (/\d+(?:\.\d+)?%/.test(t) || /\(([^)]{2,60}),\s*(?:19|20)\d{2}\)/.test(t)) return 'stat';
+  if (/\[[^\]]+\]\(https?:\/\/[^)]+\)/.test(t) || /\baccording to\b/i.test(t)) return 'cite';
+
+  return null; // caller falls back to DEFAULT_CHANGE_GROUP
+}
+
+// ── annotateChangeTypes ────────────────────────────────────────────────────────
+// Final pass over the assembled article: every [NEW] block ends up carrying an
+// explicit type, so the web renderer and the DOCX export colour identically
+// without either having to re-run the heuristics. A type the model supplied is
+// trusted unless it isn't in the taxonomy.
+function annotateChangeTypes(text) {
+  if (!text) return '';
+  return text.replace(NEW_BLOCK_G, (_, type, inner) => {
+    const known = type && CHANGE_TYPE_GROUP[type] ? type : null;
+    const resolved = known || inferChangeType(inner) || DEFAULT_CHANGE_TYPE;
+    return `[NEW:${resolved}]${inner}[/NEW]`;
+  });
+}
+
 // ── enforceFaqHeadings ────────────────────────────────────────────────────────
 // Safety net: within any ## FAQ/Frequently Asked section, upgrade bare question
 // lines (plain text or **bold**) to ### headings. Handles WordPress-style FAQ
@@ -1347,7 +1520,7 @@ function enforceFaqHeadings(text) {
   let inFaq = false;
   const result = [];
   for (const line of lines) {
-    const stripped = line.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim();
+    const stripped = line.replace(NEW_LINE_OPEN, '').replace(/\[\/NEW\]$/, '').trim();
     if (/^## .*(faq|frequently asked)/i.test(stripped)) {
       inFaq = true;
       result.push(line);
@@ -1376,7 +1549,7 @@ function insertBeforeTrailingFaq(text, addition) {
   let faqIdx = -1;
   // Find the LAST H2 heading; only treat it as the insertion point if it's an FAQ.
   for (let i = lines.length - 1; i >= 0; i--) {
-    const s = lines[i].replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim();
+    const s = lines[i].replace(NEW_LINE_OPEN, '').replace(/\[\/NEW\]$/, '').trim();
     if (/^##\s/.test(s)) {
       if (/faq|frequently asked/i.test(s)) faqIdx = i;
       break;
@@ -1394,20 +1567,22 @@ function normalizeNewMarkers(text) {
   let t = text;
   // Collapse adjacent/doubled markers (LLMs sometimes emit [NEW][NEW]… or …[/NEW][/NEW],
   // which would otherwise leave a literal [NEW] inside a highlighted run).
-  t = t.replace(/\[\/NEW\][ \t]*\[NEW\]/g, ' ');          // close immediately followed by open
-  t = t.replace(/(?:\[NEW\][ \t]*){2,}/g, '[NEW]');        // doubled openings → single
-  t = t.replace(/(?:\[\/NEW\][ \t]*){2,}/g, '[/NEW]');     // doubled closings → single
+  // The optional `:type` on the open tag is carried through every collapse.
+  t = t.replace(/\[\/NEW\][ \t]*\[NEW(?::[a-z]+)?\]/g, ' ');   // close immediately followed by open
+  t = t.replace(/(?:\[NEW(?::[a-z]+)?\][ \t]*){2,}/g, (m) => (m.match(NEW_OPEN_G) || ['[NEW]'])[0]); // doubled openings → first
+  t = t.replace(/(?:\[\/NEW\][ \t]*){2,}/g, '[/NEW]');         // doubled closings → single
   // Re-wrap each line inside a pair; strip any nested stray markers inside the pair.
-  t = t.replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) => {
-    const clean = inner.replace(/\[NEW\]/g, '').replace(/\[\/NEW\]/g, '');
-    return clean.split('\n').map(l => l.trim() ? `[NEW]${l.trim()}[/NEW]` : '').join('\n');
+  t = t.replace(NEW_BLOCK_G, (_, type, inner) => {
+    const open = type ? `[NEW:${type}]` : '[NEW]';
+    const clean = stripNewMarkers(inner);
+    return clean.split('\n').map(l => l.trim() ? `${open}${l.trim()}[/NEW]` : '').join('\n');
   });
   // Strip orphan markers on any line that has only one side of the pair.
   t = t.split('\n').map(line => {
-    const hasOpen = line.includes('[NEW]');
+    const hasOpen = NEW_OPEN.test(line);
     const hasClose = line.includes('[/NEW]');
     if (hasOpen && hasClose) return line;
-    return line.replace(/\[NEW\]/g, '').replace(/\[\/NEW\]/g, '');
+    return stripNewMarkers(line);
   }).join('\n');
   return t;
 }
@@ -1448,10 +1623,11 @@ function normalizeTablesToMarkdown(text) {
 
 // Ensure a markdown pipe-table has a `| --- |` separator as its second row.
 function ensureSeparatorRow(pipeRows) {
-  const strip = (r) => r.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim();
-  const isSep = (r) => /^\|?[\s\-|:]+\|?$/.test(strip(r));
+  const strip = (r) => r.replace(NEW_LINE_OPEN, '').replace(/\[\/NEW\]$/, '').trim();
+  // Must contain a pipe: without it a '---' horizontal rule reads as a separator row.
+  const isSep = (r) => /\|/.test(strip(r)) && /^\|?[\s\-|:]+\|?$/.test(strip(r));
   if (pipeRows.length >= 2 && isSep(pipeRows[1])) return pipeRows;
-  const cols = Math.max((strip(pipeRows[0]).match(/\|/g) || []).length - 1, 1);
+  const cols = Math.max((strip(pipeRows[0]).match(/(?<!\\)\|/g) || []).length - 1, 1);
   const sep = '| ' + Array(cols).fill('---').join(' | ') + ' |';
   return [pipeRows[0], sep, ...pipeRows.slice(1)];
 }
@@ -1459,7 +1635,8 @@ function ensureSeparatorRow(pipeRows) {
 // ── deduplicateAdditions ───────────────────────────────────────────────────────
 function deduplicateAdditions(text) {
   const seenSentences = new Set();
-  return text.replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) => {
+  return text.replace(NEW_BLOCK_G, (_, type, inner) => {
+    const open = type ? `[NEW:${type}]` : '[NEW]';
     const sentences = inner.split(/(?<=[.!?])\s+/);
     const kept = [];
     for (const s of sentences) {
@@ -1469,7 +1646,7 @@ function deduplicateAdditions(text) {
       kept.push(s);
     }
     const cleaned = kept.join(' ').trim();
-    return cleaned ? `[NEW]${cleaned}[/NEW]` : '';
+    return cleaned ? `${open}${cleaned}[/NEW]` : '';
   });
 }
 
@@ -1501,7 +1678,7 @@ async function generateStructuralAdditions(openai, articleData, themeData, recom
       messages: [
         {
           role: 'system',
-          content: `You are an SEO and GEO content specialist. Your job is to generate ADDITIONAL SECTIONS to append after an existing article. All content you write is new, so wrap everything you produce in a single [NEW]...[/NEW] block.
+          content: `You are an SEO and GEO content specialist. Your job is to generate ADDITIONAL SECTIONS to append after an existing article. All content you write is new, so wrap everything you produce in typed [NEW:...]...[/NEW] blocks.
 
 WHAT TO GENERATE (in this order):
 
@@ -1515,8 +1692,9 @@ ${faqBlock}
    - Maximum 1 additional section beyond the FAQ.
 
 FORMAT RULES:
-- Start your output with [NEW]
-- End your output with [/NEW]
+- Wrap the FAQ block in [NEW:faq] ... [/NEW]
+- Wrap any additional recommended section in its own [NEW:section] ... [/NEW]
+- Every line you output must sit inside one of those two blocks
 - Use ## for H2 section headings, ### for FAQ question headings
 - FAQ answers must be plain prose paragraphs — no bullets, no lists, no sub-headings
 - Bullet lists with "- " prefix are allowed only in non-FAQ sections
@@ -1530,7 +1708,7 @@ FORMAT RULES:
 ENHANCEMENT RECOMMENDATIONS — scan "Priority Enhancements" and "Content Gaps" for any EXPLICITLY named new sections to add:
 ${recommendations}
 
-Generate only what is described above. Wrap all output in [NEW]...[/NEW].`,
+Generate only what is described above. Wrap the FAQ in [NEW:faq]...[/NEW] and any additional section in [NEW:section]...[/NEW].`,
         },
       ],
     });
@@ -1577,21 +1755,23 @@ ${kbGuidance}
 
 ${kbSection}CORE RULE: Existing text must appear VERBATIM. You insert additions only — never rewrite, rephrase, or modify any existing sentence.
 
-WHAT TO ADD (priority order — apply every type that fits this section):
+WHAT TO ADD (priority order — apply every type that fits this section).
+Each numbered type has a marker tag shown in [brackets] — tag every insertion with the
+tag of the type it belongs to, e.g. [NEW:stat]…[/NEW]:
 
-1. STATISTICS — Insert sourced, dated data points. Format exactly: "[X]% of [population] [action] (Source, Year)." Back any claim in the section that data can support. Aim for 1–2 per section where relevant.
+1. STATISTICS [NEW:stat] — Insert sourced, dated data points. Format exactly: "[X]% of [population] [action] (Source, Year)." Back any claim in the section that data can support. Aim for 1–2 per section where relevant.
 
-2. EXPERT QUOTES — Insert a direct quote from a named, credentialed expert when the section discusses a concept experts have publicly addressed. Format: "As [Full Name], [Credential/Title] at [Organisation] ([Year]): '[quote].'"
+2. EXPERT QUOTES [NEW:quote] — Insert a direct quote from a named, credentialed expert when the section discusses a concept experts have publicly addressed. Format: "As [Full Name], [Credential/Title] at [Organisation] ([Year]): '[quote].'"
 
-3. CITATIONS — Add outbound references to primary sources (research papers, government data, industry reports) in the format "(Source Name, Year)" or as a hyperlink anchor in the text.
+3. CITATIONS [NEW:cite] — Add outbound references to primary sources (research papers, government data, industry reports) in the format "(Source Name, Year)" or as a hyperlink anchor in the text.
 
-4. ANSWER-FIRST SENTENCES — If the section's opening paragraph does not directly answer the section's implied question, insert a direct-answer sentence at the very start.
+4. ANSWER-FIRST SENTENCES [NEW:answer] — If the section's opening paragraph does not directly answer the section's implied question, insert a direct-answer sentence at the very start.
 
-5. SELF-CONTAINED CONTEXT — If any part of the section references content elsewhere ("as mentioned above", implied context), insert a brief inline clarification so the passage makes sense in isolation.
+5. SELF-CONTAINED CONTEXT [NEW:context] — If any part of the section references content elsewhere ("as mentioned above", implied context), insert a brief inline clarification so the passage makes sense in isolation.
 
-6. SCANNABLE BULLET LISTS — If a paragraph enumerates 3+ distinct items in prose form without a list, append a [NEW] bullet summary after it. Each bullet should be a specific, scannable data point, not a paraphrase of the prose sentence.
+6. SCANNABLE BULLET LISTS [NEW:list] — If a paragraph enumerates 3+ distinct items in prose form without a list, append a [NEW:list] bullet summary after it. Each bullet should be a specific, scannable data point, not a paraphrase of the prose sentence.
 
-7. TABLES — Actively check whether this section: compares 2+ options (A vs B), lists costs or pricing tiers, describes a step-by-step process or timeline, lists symptoms or conditions, weighs pros and cons, or presents data with multiple attributes per item. If ANY of these apply, you MUST insert a markdown table. Output tables in markdown pipe syntax ONLY — never HTML <table> tags. Format: header row, then separator row (| --- | --- |), then 3–5 data rows. A table counts as your 1 allowed list/table for this section.
+7. TABLES [NEW:table] — Actively check whether this section: compares 2+ options (A vs B), lists costs or pricing tiers, describes a step-by-step process or timeline, lists symptoms or conditions, weighs pros and cons, or presents data with multiple attributes per item. If ANY of these apply, you MUST insert a markdown table. Output tables in markdown pipe syntax ONLY — never HTML <table> tags. Format: header row, then separator row (| --- | --- |), then 3–5 data rows. A table counts as your 1 allowed list/table for this section.
 
 VOLUME LIMIT — be surgical, not exhaustive:
 - Per section: at most 2 statistics, 1 expert quote, 1 bullet list or table (3–5 rows/bullets max), 1 answer-first sentence
@@ -1600,15 +1780,18 @@ VOLUME LIMIT — be surgical, not exhaustive:
 
 HARD PROHIBITIONS:
 - Do NOT insert new ## or ### headings of your own — ALL existing headings in the input MUST appear in the output verbatim, including ### FAQ question headings
-- Do NOT mark existing text with [NEW] — only your insertions get tagged
+- Do NOT mark existing text with any [NEW:...] tag — only your insertions get tagged
 - Do NOT keyword-stuff — repeating the same phrase across multiple paragraphs scores −9% on AI visibility and is an explicit anti-pattern
 - Do NOT define the same term more than once across the article — if a term was already defined in an earlier section, do not re-define it here
 - Do NOT rewrite, rephrase, or modify any existing sentence
 - Do NOT add generic filler sentences that state the obvious or repeat what the paragraph already says
 
 MARKING RULES:
-- Wrap ONLY the text you insert: [NEW]your inserted text here[/NEW]
-- Existing text must appear verbatim without any [NEW] tags
+- Wrap ONLY the text you insert, tagged with its type: [NEW:stat]your inserted text here[/NEW]
+- Valid tags are exactly: [NEW:stat] [NEW:quote] [NEW:cite] [NEW:answer] [NEW:context] [NEW:list] [NEW:table]
+- Pick the tag matching the numbered type above that the insertion came from; if an insertion genuinely spans two types, use the earlier-numbered one
+- Close every insertion with [/NEW] (the closing tag is never typed)
+- Existing text must appear verbatim without any [NEW:...] or [/NEW] tags
 - Return ONLY the section. No preamble or explanation.`;
 
   let chunks;
@@ -1640,7 +1823,7 @@ ${recommendations}
 EXISTING SECTION ${index + 1} of ${chunks.length}:
 ${mdChunk}
 
-Add statistics (with source + year), expert quotes (with name + credential + org + year), citations, answer-first sentences, and markdown tables (for comparisons, timelines, symptom/condition lists, costs, pros/cons, or multi-attribute data — markdown pipe syntax only, never HTML) where they fit. Do NOT add anything already present in this section. Do NOT repeat definitions or phrases that would have appeared in earlier sections. Mark every insertion [NEW]...[/NEW]. Existing text verbatim.`,
+Add statistics (with source + year), expert quotes (with name + credential + org + year), citations, answer-first sentences, and markdown tables (for comparisons, timelines, symptom/condition lists, costs, pros/cons, or multi-attribute data — markdown pipe syntax only, never HTML) where they fit. Do NOT add anything already present in this section. Do NOT repeat definitions or phrases that would have appeared in earlier sections. Tag every insertion with its type marker ([NEW:stat], [NEW:quote], [NEW:cite], [NEW:answer], [NEW:context], [NEW:list] or [NEW:table]) and close it with [/NEW]. Existing text verbatim.`,
           },
         ],
       });
@@ -1662,6 +1845,222 @@ Add statistics (with source + year), expert quotes (with name + credential + org
 }
 
 // ── Coverage verification (Fix 6) ──────────────────────────────────────────────
+// ── Content scoring ────────────────────────────────────────────────────────────
+// A deterministic, text-grounded score out of 100, run on the ORIGINAL article
+// before enhancement and on the ENHANCED article after, so the two are strictly
+// comparable — the delta reflects what actually changed in the text, not a
+// model's opinion of its own work.
+//
+// Every dimension is measured from the content. Nothing here returns a constant:
+// if a signal cannot be found, the article loses those points.
+const SCORE_DIMENSIONS = [
+  { id: 'answer',      label: 'Answer-first opening', max: 15 },
+  { id: 'evidence',    label: 'Evidence & sourcing',  max: 25 },
+  { id: 'scannable',   label: 'Scannability',         max: 20 },
+  { id: 'structure',   label: 'Structure & depth',    max: 20 },
+  { id: 'faq',         label: 'FAQ coverage',         max: 10 },
+  { id: 'readability', label: 'Readability',          max: 10 },
+];
+
+const OPENING_FILLER = /^(in today'?s|in this (article|post|guide)|welcome|we all know|it'?s no secret|when it comes to|there'?s no doubt|in the world of|nowadays)/i;
+
+// Split markdown into the structural pieces every dimension measures.
+function parseContentForScore(markdown) {
+  const text = stripNewMarkers(String(markdown || ''));
+  const lines = text.split('\n');
+
+  const headings = [];   // { level, text, lineIndex }
+  const paragraphs = []; // prose blocks only
+  let listItems = 0, tableRows = 0, tableBlocks = 0, blockquotes = 0;
+  let buffer = [];
+  let prevWasTableRow = false;
+
+  const flush = () => {
+    const joined = buffer.join(' ').trim();
+    if (joined) paragraphs.push(joined);
+    buffer = [];
+  };
+
+  lines.forEach((raw, i) => {
+    const line = raw.trim();
+    if (!line) { flush(); prevWasTableRow = false; return; }
+
+    const hMatch = line.match(/^(#{1,6})\s+(.*)$/);
+    if (hMatch) { flush(); headings.push({ level: hMatch[1].length, text: hMatch[2].trim(), lineIndex: i }); prevWasTableRow = false; return; }
+
+    if (/^\|.*\|$/.test(line)) {
+      flush();
+      if (!prevWasTableRow) tableBlocks++;
+      // The | --- | separator is structure, not a row of data.
+      if (!/^\|[\s\-|:]+\|$/.test(line)) tableRows++;
+      prevWasTableRow = true;
+      return;
+    }
+    prevWasTableRow = false;
+
+    if (/^(?:[-*]\s+|\d+[.)]\s+)/.test(line)) { flush(); listItems++; return; }
+    if (/^>\s?/.test(line)) { flush(); blockquotes++; return; }
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) { flush(); return; }
+
+    buffer.push(line);
+  });
+  flush();
+
+  const plain = paragraphs.join(' ');
+  const words = plain.split(/\s+/).filter(Boolean);
+  const sentences = plain.split(/(?<=[.!?])\s+(?=[A-Z"“(])/).map(s => s.trim()).filter(s => s.length > 1);
+
+  return { text, headings, paragraphs, words, sentences, listItems, tableRows, tableBlocks, blockquotes };
+}
+
+// Points awarded on a 0..max scale for a value sitting between `lo` (no points)
+// and `hi` (full points).
+function ramp(value, lo, hi, max) {
+  if (hi === lo) return value >= hi ? max : 0;
+  const t = (value - lo) / (hi - lo);
+  return Math.round(Math.max(0, Math.min(1, t)) * max);
+}
+
+function scoreContent(markdown) {
+  const p = parseContentForScore(markdown);
+  const wordCount = p.words.length;
+  // Density is per 1,000 words, but with a floor on the denominator: without it
+  // a 150-word page earns full marks for a single statistic.
+  const per1k = (n) => (n * 1000) / Math.max(wordCount, 400);
+  const dims = {};
+
+  // 1. Answer-first opening (15) — is the reader answered immediately?
+  {
+    const first = p.paragraphs[0] || '';
+    const firstSentences = first.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 1);
+    // Where the first prose paragraph starts, in words from the top.
+    const beforeWords = p.text.slice(0, p.text.indexOf(first) === -1 ? 0 : p.text.indexOf(first)).split(/\s+/).filter(Boolean).length;
+    let s = 0;
+    const detail = [];
+    if (first) {
+      s += ramp(150 - beforeWords, 0, 150, 6);
+      detail.push(beforeWords <= 150 ? `opens ${beforeWords} words in` : `first prose ${beforeWords} words in`);
+      if (firstSentences.length >= 2 && firstSentences.length <= 4) { s += 5; detail.push('2–4 sentence answer block'); }
+      else detail.push(`opening block is ${firstSentences.length} sentence${firstSentences.length === 1 ? '' : 's'}`);
+      if (!OPENING_FILLER.test(first)) { s += 4; }
+      else detail.push('opens with filler');
+    } else {
+      detail.push('no opening prose found');
+    }
+    dims.answer = { score: Math.min(s, 15), detail: detail.join(' · ') };
+  }
+
+  // 2. Evidence & sourcing (25) — statistics, citations, attributed quotes.
+  {
+    const stats = (p.text.match(/\b\d+(?:\.\d+)?\s?%/g) || []).length
+      + (p.text.match(/\b\d+(?:,\d{3})+\b/g) || []).length;
+    const citations = (p.text.match(/\([A-Za-z][^)]{2,60},\s*(?:19|20)\d{2}\)/g) || []).length
+      + (p.text.match(/\baccording to\b/gi) || []).length
+      + (p.text.match(/\[[^\]]+\]\(https?:\/\/[^)]+\)/g) || []).length;
+    const quotes = (p.text.match(/["“][^"”]{25,}["”]/g) || []).length;
+
+    const sStat = ramp(per1k(stats), 0, 4, 10);
+    const sCite = ramp(per1k(citations), 0, 3, 8);
+    const sQuote = ramp(quotes, 0, 2, 7);
+    dims.evidence = {
+      score: sStat + sCite + sQuote,
+      detail: `${stats} statistic${stats === 1 ? '' : 's'} · ${citations} citation${citations === 1 ? '' : 's'} · ${quotes} quote${quotes === 1 ? '' : 's'}`,
+    };
+  }
+
+  // 3. Scannability (20) — lists, tables, and paragraphs short enough to skim.
+  {
+    const sList = ramp(per1k(p.listItems), 0, 12, 8);
+    const sTable = p.tableBlocks > 0 ? 7 : 0;
+    const avgParaWords = p.paragraphs.length
+      ? Math.round(p.paragraphs.reduce((a, t) => a + t.split(/\s+/).filter(Boolean).length, 0) / p.paragraphs.length)
+      : 0;
+    // Best around 40–80 words; punished above 120.
+    const sPara = avgParaWords === 0 ? 0 : ramp(120 - avgParaWords, 0, 60, 5);
+    dims.scannable = {
+      score: sList + sTable + sPara,
+      detail: `${p.listItems} list item${p.listItems === 1 ? '' : 's'} · ${p.tableBlocks} table${p.tableBlocks === 1 ? '' : 's'} · ${avgParaWords}-word paragraphs`,
+    };
+  }
+
+  // 4. Structure & depth (20) — section rhythm and no thin sections.
+  {
+    const h2s = p.headings.filter(h => h.level === 2);
+    const subs = p.headings.filter(h => h.level === 3 || h.level === 4);
+    // Roughly one H2 per 300 words is a well-sectioned article.
+    const idealH2 = Math.max(2, Math.round(wordCount / 300));
+    const sSection = h2s.length === 0 ? 0 : ramp(Math.min(h2s.length / idealH2, 1), 0, 1, 8);
+
+    // Words between consecutive H2s; a section under 100 words is thin.
+    const sectionWords = [];
+    if (h2s.length) {
+      const bounds = [...h2s.map(h => h.lineIndex), Infinity];
+      const lines = p.text.split('\n');
+      for (let i = 0; i < bounds.length - 1; i++) {
+        const seg = lines.slice(bounds[i], bounds[i + 1] === Infinity ? lines.length : bounds[i + 1]).join(' ');
+        sectionWords.push(seg.split(/\s+/).filter(Boolean).length);
+      }
+    }
+    const thin = sectionWords.filter(w => w < 100).length;
+    const sThin = sectionWords.length ? ramp(1 - thin / sectionWords.length, 0, 1, 7) : 0;
+    const sSubs = subs.length > 0 ? 5 : 0;
+
+    dims.structure = {
+      score: sSection + sThin + sSubs,
+      detail: `${h2s.length} H2 · ${subs.length} sub-heading${subs.length === 1 ? '' : 's'} · ${thin} thin section${thin === 1 ? '' : 's'}`,
+    };
+  }
+
+  // 5. FAQ coverage (10) — a real FAQ with enough questions to be cited.
+  {
+    const faqIdx = p.headings.findIndex(h => /faq|frequently asked/i.test(h.text));
+    let questions = 0;
+    if (faqIdx !== -1) {
+      for (let i = faqIdx + 1; i < p.headings.length; i++) {
+        if (p.headings[i].level <= p.headings[faqIdx].level) break;
+        if (p.headings[i].text.trim().endsWith('?')) questions++;
+      }
+    }
+    const sPresent = faqIdx !== -1 ? 4 : 0;
+    const sCount = ramp(questions, 0, 5, 6);
+    dims.faq = {
+      score: sPresent + sCount,
+      detail: faqIdx === -1 ? 'no FAQ section' : `FAQ with ${questions} question${questions === 1 ? '' : 's'}`,
+    };
+  }
+
+  // 6. Readability (10) — sentence length, and how much of it runs long.
+  {
+    const lens = p.sentences.map(s => s.split(/\s+/).filter(Boolean).length);
+    const avg = lens.length ? Math.round(lens.reduce((a, b) => a + b, 0) / lens.length) : 0;
+    const longShare = lens.length ? lens.filter(l => l > 30).length / lens.length : 0;
+    // Best at or below 20 words per sentence; no points at 35.
+    const sAvg = avg === 0 ? 0 : ramp(35 - avg, 0, 15, 6);
+    const sLong = lens.length ? ramp(1 - longShare, 0.6, 1, 4) : 0;
+    dims.readability = {
+      score: sAvg + sLong,
+      detail: avg ? `${avg}-word sentences · ${Math.round(longShare * 100)}% over 30 words` : 'no prose measured',
+    };
+  }
+
+  const dimensions = SCORE_DIMENSIONS.map(d => ({
+    id: d.id, label: d.label, max: d.max,
+    score: Math.max(0, Math.min(d.max, dims[d.id].score)),
+    detail: dims[d.id].detail,
+  }));
+  const total = dimensions.reduce((a, d) => a + d.score, 0);
+
+  return { total, grade: scoreGrade(total), wordCount, dimensions };
+}
+
+function scoreGrade(total) {
+  if (total >= 85) return 'Excellent';
+  if (total >= 70) return 'Strong';
+  if (total >= 55) return 'Fair';
+  if (total >= 35) return 'Weak';
+  return 'Poor';
+}
+
 const COVERAGE_PARAMETERS = [
   { id: 1,  parameter: 'Thin sections expanded or merged' },
   { id: 2,  parameter: 'Direct answer in first 150 words' },
@@ -1777,7 +2176,7 @@ INTEGRITY GUARDRAILS (these override any instinct to mark everything covered)
 OUTPUT — return ONLY JSON:
 {
   "coverageReport": [ { "id": 1, "result": "covered_present | covered_added | not_applicable", "note": "short description" }, ... all 12 ... ],
-  "additions": "Markdown for any NET-NEW remediation blocks to APPEND after the article. Wrap every inserted passage in [NEW]...[/NEW]. Use markdown pipe tables for tabular data. Leave as an empty string if nothing genuine needs adding. Do NOT repeat existing content."
+  "additions": "Markdown for any NET-NEW remediation blocks to APPEND after the article. Wrap every inserted passage in a typed marker — [NEW:stat], [NEW:quote], [NEW:cite], [NEW:answer], [NEW:context], [NEW:list], [NEW:table], or [NEW:section] for a whole new section — closed with [/NEW]. Use markdown pipe tables for tabular data. Leave as an empty string if nothing genuine needs adding. Do NOT repeat existing content."
 }
 
 ENHANCED ARTICLE:
@@ -1863,7 +2262,21 @@ function truncateAfterArticleEnd($, $mainEl) {
 // ── splitHtmlSafely ────────────────────────────────────────────────────────────
 function splitHtmlSafely(html, maxChars) {
   if (html.length <= maxChars) return [html];
-  const SAFE_BREAK = /<\/(?:p|li|div|blockquote|section|h[1-6])>/gi;
+  const SAFE_BREAK = /<\/(?:p|li|div|blockquote|section|table|h[1-6])>/gi;
+
+  // A cut that lands between <table> and </table> tears the table across two
+  // model calls, and neither half can be reproduced as a table. Push the cut
+  // past the end of that table instead, even though the chunk goes oversized —
+  // an intact table matters more than an even chunk size.
+  const endOfOpenTable = (upto) => {
+    const head = html.slice(0, upto);
+    const open = (head.match(/<table\b/gi) || []).length;
+    const closed = (head.match(/<\/table\s*>/gi) || []).length;
+    if (open <= closed) return -1;
+    const close = html.slice(upto).search(/<\/table\s*>/i);
+    return close === -1 ? html.length : upto + close + html.slice(upto + close).match(/<\/table\s*>/i)[0].length;
+  };
+
   const chunks = [];
   let start = 0;
   while (start < html.length) {
@@ -1873,9 +2286,11 @@ function splitHtmlSafely(html, maxChars) {
     }
     const window = html.slice(start, start + maxChars);
     const matches = [...window.matchAll(SAFE_BREAK)];
-    const cut = matches.length > 0
+    let cut = matches.length > 0
       ? start + matches[matches.length - 1].index + matches[matches.length - 1][0].length
       : start + maxChars;
+    const tableEnd = endOfOpenTable(cut);
+    if (tableEnd > cut) cut = tableEnd;
     chunks.push(html.slice(start, cut));
     start = cut;
   }
@@ -1888,7 +2303,9 @@ router.post('/export/docx', async (req, res) => {
   if (!recommendations) return res.status(400).json({ error: 'recommendations is required' });
 
   try {
-    const buf = await buildDocx({ articleMeta, themeData, llmResults, recommendations, enhancedText });
+    // 'typed' → four-colour change legend. The Lite route calls buildDocx without
+    // this and keeps the original single-green highlight.
+    const buf = await buildDocx({ articleMeta, themeData, llmResults, recommendations, enhancedText, legendMode: 'typed' });
     const slug = (articleMeta?.title || 'article').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="${slug}-enhancement.docx"`);
@@ -1900,10 +2317,16 @@ router.post('/export/docx', async (req, res) => {
 });
 
 // ── buildDocx ──────────────────────────────────────────────────────────────────
-async function buildDocx({ articleMeta, themeData, llmResults, recommendations, enhancedText }) {
+async function buildDocx({ articleMeta, themeData, llmResults, recommendations, enhancedText, legendMode = 'green' }) {
   const TEAL = '2C7A7B';
   const NAVY = '1F2D3D';
   const GREY = '6B7280';
+
+  // 'typed'  → each insertion is shaded by its change group and a four-entry
+  //            legend is printed above the article (full article-enhancement).
+  // 'green'  → the original single green highlight (article-enhancement-lite,
+  //            which emits untyped [NEW] markers and is unchanged by this).
+  const typedLegend = legendMode === 'typed';
 
   const run = (text, opts = {}) => new TextRun({ text: String(text || ''), size: 22, font: 'Calibri', ...opts });
   const sectionHeading = t => new Paragraph({
@@ -1926,35 +2349,55 @@ async function buildDocx({ articleMeta, themeData, llmResults, recommendations, 
 
   function normalizeNewMarkersLocal(text) {
     if (!text) return '';
-    let t = text.replace(/\[\/NEW\][ \t]*\[NEW\]/g, ' ');
-    return t.replace(/\[NEW\]([\s\S]*?)\[\/NEW\]/g, (_, inner) =>
-      inner.split('\n').map(l => l.trim() ? `[NEW]${l.trim()}[/NEW]` : '').join('\n')
-    );
+    let t = text.replace(/\[\/NEW\][ \t]*\[NEW(?::[a-z]+)?\]/g, ' ');
+    return t.replace(NEW_BLOCK_G, (_, type, inner) => {
+      const open = type ? `[NEW:${type}]` : '[NEW]';
+      return inner.split('\n').map(l => l.trim() ? `${open}${l.trim()}[/NEW]` : '').join('\n');
+    });
+  }
+
+  // Formatting for an inserted run/paragraph of the given change type. In
+  // 'green' mode the type is ignored and the original highlight is used.
+  function newMarkOpts(type) {
+    if (!typedLegend) return { highlight: 'green' };
+    const g = CHANGE_GROUPS[groupForChangeType(type)];
+    return { shading: { type: ShadingType.CLEAR, color: 'auto', fill: g.fill } };
   }
 
   function inlineRuns(text, baseOpts = {}) {
-    const parts = text.split(/(\*\*[^*]+\*\*|\[NEW\].*?\[\/NEW\])/g);
+    const parts = text.split(/(\*\*[^*]+\*\*|\[NEW(?::[a-z]+)?\].*?\[\/NEW\])/g);
     return parts.map(part => {
       if (!part) return null;
       if (part.startsWith('**') && part.endsWith('**')) {
         return run(part.slice(2, -2), { bold: true, ...baseOpts });
       }
-      if (part.startsWith('[NEW]') && part.endsWith('[/NEW]')) {
-        return run(part.slice(5, -6), { highlight: 'green', ...baseOpts });
+      const m = part.match(NEW_LINE_BLOCK);
+      if (m) {
+        return run(m[2], { ...newMarkOpts(m[1]), ...baseOpts });
       }
       return run(part, baseOpts);
     }).filter(Boolean);
   }
 
-  const stripRowMarks = (r) => r.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim();
+  const stripRowMarks = (r) => r.replace(NEW_LINE_OPEN, '').replace(/\[\/NEW\]$/, '').trim();
   const isTableRow = (raw) => { const s = stripRowMarks(raw.trim()); return s.startsWith('|') && s.endsWith('|'); };
-  const isSeparatorRow = (raw) => /^\|?[\s\-|:]+\|?$/.test(stripRowMarks(raw.trim()));
-  const parseCells = (raw) => stripRowMarks(raw.trim()).replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+  // Must contain a pipe, or a '---' rule right after a table is swallowed into it.
+  const isSeparatorRow = (raw) => /\|/.test(stripRowMarks(raw.trim())) && /^\|?[\s\-|:]+\|?$/.test(stripRowMarks(raw.trim()));
+  // Splits on unescaped pipes only; '\|' is a literal pipe inside a cell.
+  const parseCells = (raw) => stripRowMarks(raw.trim())
+    .replace(/^\|/, '').replace(/\|$/, '')
+    .split(/(?<!\\)\|/)
+    .map(c => c.replace(/\\\|/g, '|').trim());
 
-  function buildTable(rows, isNew) {
+  // `newType` is the change type of the rows when the table itself was inserted,
+  // or null when the table already existed in the article.
+  function buildTable(rows, newType) {
     const headerCells = parseCells(rows[0]);
     const cols = Math.max(headerCells.length, 1);
-    const shade = isNew ? { shading: { type: ShadingType.CLEAR, color: 'auto', fill: 'C6F6D5' } } : {};
+    const fill = newType === null ? null
+      : typedLegend ? CHANGE_GROUPS[groupForChangeType(newType)].fill
+      : 'C6F6D5';
+    const shade = fill ? { shading: { type: ShadingType.CLEAR, color: 'auto', fill } } : {};
     const makeCell = (txt, header) => new TableCell({
       ...shade,
       margins: { top: 40, bottom: 40, left: 80, right: 80 },
@@ -1988,15 +2431,17 @@ async function buildDocx({ articleMeta, themeData, llmResults, recommendations, 
           li++;
         }
         li--; // outer loop re-increments
-        const isNew = tableLines.some(l => l.startsWith('[NEW]'));
+        // Type of the first marked row, or null when no row is marked.
+        const markedRow = tableLines.find(l => NEW_LINE_OPEN.test(l));
+        const newType = markedRow ? (markedRow.match(NEW_LINE_OPEN)[1] || 'table') : null;
         const nonSep = tableLines.filter(l => !isSeparatorRow(l));
-        if (nonSep.length) { paras.push(buildTable(nonSep, isNew)); paras.push(gap()); }
+        if (nonSep.length) { paras.push(buildTable(nonSep, newType)); paras.push(gap()); }
         continue;
       }
 
-      const isNewLine = trimmed.startsWith('[NEW]') && trimmed.endsWith('[/NEW]');
-      const content = isNewLine ? trimmed.slice(5, -6).trim() : trimmed;
-      const newOpt = isNewLine ? { highlight: 'green' } : {};
+      const lineMatch = trimmed.match(NEW_LINE_BLOCK);
+      const content = lineMatch ? lineMatch[2].trim() : trimmed;
+      const newOpt = lineMatch ? newMarkOpts(lineMatch[1]) : {};
 
       if (content.startsWith('## ')) {
         paras.push(new Paragraph({ spacing: { before: 180, after: 60 }, children: inlineRuns(content.slice(3), { bold: true, color: NAVY, size: 24, ...newOpt }) }));
@@ -2030,10 +2475,47 @@ async function buildDocx({ articleMeta, themeData, llmResults, recommendations, 
   // Enhanced Article
   if (enhancedText) {
     children.push(sectionHeading('Enhanced Article'));
-    children.push(new Paragraph({
-      spacing: { after: 120 },
-      children: [run('Content ', { italic: true, color: GREY, size: 20 }), run('highlighted in green', { italic: true, highlight: 'green', size: 20 }), run(' was added during enhancement.', { italic: true, color: GREY, size: 20 })],
-    }));
+    // Only the groups this article actually contains are listed, so the DOCX
+    // never advertises a colour the reader will not find. Matches ChangeLegend
+    // on the web.
+    const presentGroups = new Set(
+      [...enhancedText.matchAll(NEW_OPEN_G)].map(m => groupForChangeType(m[1]))
+    );
+    const legendGroups = CHANGE_GROUP_ORDER.filter(g => presentGroups.has(g));
+
+    if (typedLegend && legendGroups.length) {
+      // One line per change group, each led by a shaded swatch in that group's
+      // colour, then the plain-text baseline.
+      children.push(new Paragraph({
+        spacing: { after: 100 },
+        children: [run('WHAT THE HIGHLIGHT COLOURS MEAN', { bold: true, color: GREY, size: 18 })],
+      }));
+      legendGroups.forEach(key => {
+        const g = CHANGE_GROUPS[key];
+        children.push(new Paragraph({
+          spacing: { after: 50 },
+          children: [
+            run('     ', { shading: { type: ShadingType.CLEAR, color: 'auto', fill: g.fill }, size: 20 }),
+            run('  ' + g.label, { bold: true, color: NAVY, size: 20 }),
+            run(' — ' + g.hint, { color: GREY, size: 20 }),
+          ],
+        }));
+      });
+      children.push(new Paragraph({
+        spacing: { after: 120 },
+        children: [
+          run('     ', { size: 20 }),
+          run('  Unhighlighted', { bold: true, color: NAVY, size: 20 }),
+          run(' — your original text, reproduced verbatim.', { color: GREY, size: 20 }),
+        ],
+      }));
+    } else if (!typedLegend) {
+      children.push(new Paragraph({
+        spacing: { after: 120 },
+        children: [run('Content ', { italic: true, color: GREY, size: 20 }), run('highlighted in green', { italic: true, highlight: 'green', size: 20 }), run(' was added during enhancement.', { italic: true, color: GREY, size: 20 })],
+      }));
+    }
+    // typed mode with no insertions at all: no legend, since nothing is highlighted.
     children.push(gap());
     markdownToParagraphs(enhancedText).forEach(p => children.push(p));
     children.push(rule());
@@ -2089,6 +2571,11 @@ module.exports.helpers = {
   splitMarkdownByH2,
   normalizeTablesToMarkdown,
   normalizeNewMarkers,
+  annotateChangeTypes,
+  scoreContent,
+  SCORE_DIMENSIONS,
+  CHANGE_GROUPS,
+  CHANGE_GROUP_ORDER,
   enforceFaqHeadings,
   insertBeforeTrailingFaq,
   deduplicateAdditions,

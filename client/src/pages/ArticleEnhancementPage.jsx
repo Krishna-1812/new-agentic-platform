@@ -92,6 +92,87 @@ function StepIndicator({ stepStates }) {
   );
 }
 
+// ── Content score ──────────────────────────────────────────────────────────────
+// Before/after score of the article, measured server-side by one deterministic
+// scorer run on both versions (see scoreContent in routes/articleEnhancement.js).
+// The 'before' arrives as soon as the crawl finishes, so it is on screen while
+// the rest of the run works; the 'after' fills in at the end.
+function scoreColor(total) {
+  if (total >= 85) return 'var(--success)';
+  if (total >= 70) return 'var(--chg-section)';
+  if (total >= 55) return 'var(--warning)';
+  return 'var(--danger)';
+}
+
+function ScorePanel({ scores }) {
+  const { before, after, delta } = scores;
+  if (!before) return null;
+  const current = after || before;
+  const pending = !after;
+
+  return (
+    <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+      <h3 style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
+        Content Score
+      </h3>
+
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '4px' }}>
+        <span style={{ fontSize: '30px', fontWeight: 700, lineHeight: 1, color: scoreColor(before.total), fontVariantNumeric: 'tabular-nums' }}>
+          {before.total}
+        </span>
+        {after && (
+          <>
+            <span style={{ fontSize: '16px', color: 'var(--text-3)' }}>→</span>
+            <span style={{ fontSize: '30px', fontWeight: 700, lineHeight: 1, color: scoreColor(after.total), fontVariantNumeric: 'tabular-nums' }}>
+              {after.total}
+            </span>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: delta > 0 ? 'var(--success)' : delta < 0 ? 'var(--danger)' : 'var(--text-3)' }}>
+              {delta > 0 ? `+${delta}` : delta}
+            </span>
+          </>
+        )}
+        <span style={{ fontSize: '12px', color: 'var(--text-3)', marginLeft: 'auto' }}>/ 100</span>
+      </div>
+      <p style={{ fontSize: '12px', color: 'var(--text-2)', margin: '0 0 14px' }}>
+        {pending ? `${before.grade} before enhancement · scoring again when complete` : `${before.grade} → ${after.grade}`}
+      </p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+        {current.dimensions.map(d => {
+          const wasDim = after ? before.dimensions.find(x => x.id === d.id) : null;
+          const pctNow = d.max ? (d.score / d.max) * 100 : 0;
+          const pctWas = wasDim && d.max ? (wasDim.score / d.max) * 100 : 0;
+          const gained = wasDim ? d.score - wasDim.score : 0;
+          return (
+            <div key={d.id}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px', marginBottom: '3px' }}>
+                <span style={{ fontSize: '12px', color: 'var(--text)' }}>{d.label}</span>
+                <span style={{ fontSize: '12px', color: 'var(--text-2)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                  {wasDim && gained !== 0 && (
+                    <span style={{ color: gained > 0 ? 'var(--success)' : 'var(--danger)', marginRight: '5px' }}>
+                      {gained > 0 ? `+${gained}` : gained}
+                    </span>
+                  )}
+                  {d.score}/{d.max}
+                </span>
+              </div>
+              {/* Filled bar is the current score; the paler band behind it is the
+                  score before enhancement, so the gain is visible at a glance. */}
+              <div style={{ position: 'relative', height: '5px', borderRadius: '3px', background: 'var(--surface)', overflow: 'hidden' }}>
+                {wasDim && (
+                  <div style={{ position: 'absolute', inset: 0, width: `${pctWas}%`, background: 'var(--border)' }} />
+                )}
+                <div style={{ position: 'absolute', inset: 0, width: `${pctNow}%`, background: scoreColor(current.total), opacity: wasDim ? 0.85 : 0.7 }} />
+              </div>
+              <p style={{ fontSize: '11px', color: 'var(--text-3)', margin: '3px 0 0' }}>{d.detail}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function LLMResultPanel({ llmResults }) {
   const [expanded, setExpanded] = useState(null);
 
@@ -135,18 +216,48 @@ function LLMResultPanel({ llmResults }) {
   );
 }
 
+// ── Change-type legend ─────────────────────────────────────────────────────────
+// The server tags every insertion [NEW:<type>]…[/NEW]; the nine types collapse
+// into these four colour groups. Keep in step with CHANGE_TYPE_GROUP and
+// CHANGE_GROUPS in server/routes/articleEnhancement.js.
+const CHANGE_TYPE_GROUP = {
+  stat: 'evidence', quote: 'evidence', cite: 'evidence',
+  list: 'structure', table: 'structure',
+  answer: 'clarity', context: 'clarity',
+  faq: 'section', section: 'section',
+};
+const CHANGE_GROUPS = {
+  evidence:  { label: 'Evidence added',    hint: 'statistics, expert quotes, citations' },
+  structure: { label: 'Restructured',      hint: 'prose turned into lists or tables' },
+  clarity:   { label: 'Clarity & context', hint: 'answer-first lines, added context' },
+  section:   { label: 'New section',       hint: 'FAQ or a recommended new section' },
+};
+const CHANGE_GROUP_ORDER = ['evidence', 'structure', 'clarity', 'section'];
+// An untyped [NEW] (older stored results) reads as a clarity insertion, matching
+// the server's fallback.
+const changeGroup = type => CHANGE_TYPE_GROUP[type] || 'clarity';
+const changeFill = type => `var(--chg-${changeGroup(type)}-soft)`;
+const changeText = type => `var(--chg-${changeGroup(type)})`;
+
+// Marker patterns. The open tag carries an optional `:type`; the close tag never does.
+const NEW_SPLIT = /(\[NEW(?::[a-z]+)?\][\s\S]*?\[\/NEW\]|\*\*[^*]+\*\*)/g;
+const NEW_LINE_OPEN = /^\[NEW(?::([a-z]+))?\]/;
+const NEW_LINE_BLOCK = /^\[NEW(?::([a-z]+))?\]([\s\S]*)\[\/NEW\]$/;
+const stripLineMarkers = s => s.replace(NEW_LINE_OPEN, '').replace(/\[\/NEW\]$/, '').trim();
+
 // ── Shared markdown rendering (Fix 5) ──────────────────────────────────────────
 // One renderer for both the Recommendations and Enhanced Article tabs. Handles
 // headings, **bold**, ---, ordered/unordered lists, blockquotes, pipe tables,
-// and [NEW]…[/NEW] highlight markers.
+// and [NEW:type]…[/NEW] highlight markers.
 function parseInline(str) {
-  const parts = str.split(/(\[NEW\][\s\S]*?\[\/NEW\]|\*\*[^*]+\*\*)/g);
+  const parts = str.split(NEW_SPLIT);
   return parts.map((part, i) => {
     if (!part) return null;
-    if (part.startsWith('[NEW]') && part.endsWith('[/NEW]')) {
+    const m = part.match(NEW_LINE_BLOCK);
+    if (m) {
       return (
-        <mark key={i} style={{ backgroundColor: 'var(--success-soft)', borderRadius: '2px', padding: '0 2px', color: 'var(--success)' }}>
-          {part.slice(5, -6)}
+        <mark key={i} style={{ backgroundColor: changeFill(m[1]), borderRadius: '2px', padding: '0 2px', color: changeText(m[1]) }}>
+          {m[2]}
         </mark>
       );
     }
@@ -157,15 +268,20 @@ function parseInline(str) {
   });
 }
 function parseTableLine(raw) {
-  const stripped = raw.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim();
-  return stripped.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+  // \| is an escaped pipe inside a cell, not a column break.
+  return stripLineMarkers(raw)
+    .replace(/^\||\|$/g, '')
+    .split(/(?<!\\)\|/)
+    .map(c => c.replace(/\\\|/g, '|').trim());
 }
 function isTableRow(raw) {
-  const s = raw.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim();
+  const s = stripLineMarkers(raw);
   return s.startsWith('|') && s.endsWith('|');
 }
 function isSeparatorRow(raw) {
-  return /^\|?[\s\-|:]+\|?$/.test(raw.replace(/^\[NEW\]/, '').replace(/\[\/NEW\]$/, '').trim());
+  const s = stripLineMarkers(raw);
+  // Must contain a pipe, or a '---' rule right after a table is swallowed into it.
+  return /\|/.test(s) && /^\|?[\s\-|:]+\|?$/.test(s);
 }
 
 function renderMarkdown(text) {
@@ -185,11 +301,18 @@ function renderMarkdown(text) {
       }
       i--; // outer loop will increment
       const nonSep = tableLines.filter(l => !isSeparatorRow(l));
-      const isNew = tableLines.some(l => l.startsWith('[NEW]'));
-      const headerCells = parseTableLine(nonSep[0] || '');
-      const bodyRows = nonSep.slice(1);
+      // Type of the first marked row, or null when the table already existed.
+      const markedRow = tableLines.find(l => NEW_LINE_OPEN.test(l));
+      const newType = markedRow ? (markedRow.match(NEW_LINE_OPEN)[1] || 'table') : null;
+      // Pad every row to the widest one, as the DOCX export does. A ragged row
+      // otherwise shifts all the cells after it into the wrong columns.
+      const grid = nonSep.map(parseTableLine);
+      const cols = Math.max(1, ...grid.map(r => r.length));
+      const pad = (r) => { const o = r.slice(0, cols); while (o.length < cols) o.push(''); return o; };
+      const headerCells = pad(grid[0] || []);
+      const bodyRows = grid.slice(1).map(pad);
       elements.push(
-        <div key={i} style={{ overflowX: 'auto', margin: '12px 0', ...(isNew ? { backgroundColor: 'var(--success-soft)', borderRadius: '4px', padding: '4px' } : {}) }}>
+        <div key={i} style={{ overflowX: 'auto', margin: '12px 0', ...(markedRow ? { backgroundColor: changeFill(newType), borderRadius: '4px', padding: '4px' } : {}) }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', fontFamily: 'inherit' }}>
             <thead>
               <tr>
@@ -203,7 +326,7 @@ function renderMarkdown(text) {
             <tbody>
               {bodyRows.map((row, ri) => (
                 <tr key={ri} style={{ borderBottom: '1px solid var(--border)', background: ri % 2 === 1 ? 'var(--surface)' : 'transparent' }}>
-                  {parseTableLine(row).map((cell, ci) => (
+                  {row.map((cell, ci) => (
                     <td key={ci} style={{ padding: '7px 12px', color: 'var(--text)', verticalAlign: 'top' }}>
                       {parseInline(cell)}
                     </td>
@@ -217,9 +340,9 @@ function renderMarkdown(text) {
       continue;
     }
 
-    const isNewLine = trimmed.startsWith('[NEW]') && trimmed.endsWith('[/NEW]');
-    const content = isNewLine ? trimmed.slice(5, -6).trim() : trimmed;
-    const wrapStyle = isNewLine ? { backgroundColor: 'var(--success-soft)', borderRadius: '3px', display: 'block', padding: '0 4px' } : {};
+    const lineMatch = trimmed.match(NEW_LINE_BLOCK);
+    const content = lineMatch ? lineMatch[2].trim() : trimmed;
+    const wrapStyle = lineMatch ? { backgroundColor: changeFill(lineMatch[1]), borderRadius: '3px', display: 'block', padding: '0 4px' } : {};
 
     // Horizontal rule
     if (/^(-{3,}|\*{3,}|_{3,})$/.test(content)) {
@@ -229,19 +352,30 @@ function renderMarkdown(text) {
 
     // Ordered list — group consecutive numbered items into a single <ol>
     if (/^\d+[.)]\s+/.test(content)) {
+      // Each item keeps its own change type — an inserted numbered list must stay
+      // highlighted, or the legend's "unhighlighted = original" would be a lie.
       const items = [];
       while (i < lines.length) {
         const lt = lines[i].trim();
-        const inner = (lt.startsWith('[NEW]') && lt.endsWith('[/NEW]')) ? lt.slice(5, -6).trim() : lt;
+        const m = lt.match(NEW_LINE_BLOCK);
+        const inner = m ? m[2].trim() : lt;
         if (!/^\d+[.)]\s+/.test(inner)) break;
-        items.push(inner.replace(/^\d+[.)]\s+/, ''));
+        items.push({ text: inner.replace(/^\d+[.)]\s+/, ''), type: m ? (m[1] || 'list') : null });
         i++;
       }
       i--;
       elements.push(
         <ol key={i} style={{ paddingLeft: '1.4rem', margin: '8px 0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {items.map((li, idx) => (
-            <li key={idx} style={{ fontSize: '14px', color: 'var(--text)', lineHeight: 1.6 }}>{parseInline(li)}</li>
+            <li
+              key={idx}
+              style={{
+                fontSize: '14px', color: 'var(--text)', lineHeight: 1.6,
+                ...(li.type ? { backgroundColor: changeFill(li.type), borderRadius: '3px', padding: '0 4px' } : {}),
+              }}
+            >
+              {parseInline(li.text)}
+            </li>
           ))}
         </ol>
       );
@@ -282,14 +416,49 @@ function RecommendationsPanel({ recommendations }) {
   );
 }
 
+// Legend for the highlight colours in the enhanced article. Only the groups that
+// actually occur in this article are listed, so a run with no new tables doesn't
+// advertise a colour the reader will never see.
+function ChangeLegend({ text }) {
+  const present = new Set();
+  for (const m of text.matchAll(/\[NEW(?::([a-z]+))?\]/g)) present.add(changeGroup(m[1]));
+  const groups = CHANGE_GROUP_ORDER.filter(g => present.has(g));
+  if (!groups.length) return null;
+
+  return (
+    <div style={{ marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: '10px' }}>
+        What the highlights mean
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 18px', alignItems: 'center' }}>
+        {groups.map(g => (
+          <span key={g} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: 'var(--text-2)' }}>
+            <span
+              aria-hidden="true"
+              style={{ width: '13px', height: '13px', borderRadius: '3px', flexShrink: 0, backgroundColor: `var(--chg-${g}-soft)`, border: `1px solid var(--chg-${g})` }}
+            />
+            <span style={{ fontWeight: 600, color: 'var(--text)' }}>{CHANGE_GROUPS[g].label}</span>
+            <span style={{ color: 'var(--text-3)' }}>— {CHANGE_GROUPS[g].hint}</span>
+          </span>
+        ))}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '12px', color: 'var(--text-2)' }}>
+          <span
+            aria-hidden="true"
+            style={{ width: '13px', height: '13px', borderRadius: '3px', flexShrink: 0, backgroundColor: 'transparent', border: '1px dashed var(--border)' }}
+          />
+          <span style={{ fontWeight: 600, color: 'var(--text)' }}>Unhighlighted</span>
+          <span style={{ color: 'var(--text-3)' }}>— your original text, verbatim</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function EnhancedArticlePanel({ text }) {
   if (!text) return null;
   return (
     <div style={{ background: 'var(--card)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
-        <span style={{ fontSize: '12px', color: 'var(--text-2)' }}>New content is</span>
-        <mark style={{ backgroundColor: 'var(--success-soft)', borderRadius: '3px', padding: '1px 7px', fontSize: '11px', fontWeight: 600, color: 'var(--success)' }}>highlighted in green</mark>
-      </div>
+      <ChangeLegend text={text} />
       <div style={{ fontFamily: 'Georgia, "Times New Roman", serif', lineHeight: '1.75' }}>
         {renderMarkdown(text)}
       </div>
@@ -374,6 +543,8 @@ export default function ArticleEnhancementPage() {
   const [recommendations, setRecommendations] = useState('');
   const [enhancedText, setEnhancedText] = useState('');
   const [coverage, setCoverage] = useState(null);
+  // { before, after, delta } — 'before' lands right after the crawl, 'after' at the end.
+  const [scores, setScores] = useState({ before: null, after: null, delta: null });
   const [crawlFailed, setCrawlFailed] = useState(false);
   const [manualContent, setManualContent] = useState('');
 
@@ -422,6 +593,7 @@ export default function ArticleEnhancementPage() {
     setRecommendations('');
     setEnhancedText('');
     setCoverage(null);
+    setScores({ before: null, after: null, delta: null });
     setCrawlFailed(false);
     crawlFailedRef.current = false;
     articleMetaRef.current = null;
@@ -496,6 +668,12 @@ export default function ArticleEnhancementPage() {
       setRecommendations(d);
       recommendationsRef.current = d;
       setActiveTab('recommendations');
+    });
+    es.addEventListener('score', e => {
+      const d = JSON.parse(e.data);
+      setScores(prev => d.phase === 'before'
+        ? { before: d.score, after: null, delta: null }
+        : { before: d.before || prev.before, after: d.score, delta: d.delta });
     });
     es.addEventListener('coverage', e => {
       const d = JSON.parse(e.data);
@@ -815,6 +993,9 @@ export default function ArticleEnhancementPage() {
                 )}
               </div>
             )}
+
+            {/* Content score — appears as soon as the article is crawled */}
+            <ScorePanel scores={scores} />
 
             {/* Pipeline progress */}
             {Object.keys(stepStates).length > 0 && (

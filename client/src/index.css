@@ -43,6 +43,14 @@
   --danger:       #DE350B;  --danger-soft:  #FDEBE7;
   --info:         #0073E6;  --info-soft:    #E6F0FB;
 
+  /* Enhancement change types — the highlight legend in Enhance Existing Article.
+     Groups mirror CHANGE_GROUPS in server/routes/articleEnhancement.js. The soft
+     token is the highlight fill, the solid one the text/swatch border. */
+  --chg-evidence:  #0073E6;  --chg-evidence-soft:  #D6E8FA;
+  --chg-structure: #B7791F;  --chg-structure-soft: #FCEBCB;
+  --chg-clarity:   #7C3AED;  --chg-clarity-soft:   #EADDFD;
+  --chg-section:   #1FA871;  --chg-section-soft:   #D4F3E5;
+
   /* Data-viz ramp */
   --viz-1:#635BFF; --viz-2:#00B3A4; --viz-3:#0073E6;
   --viz-4:#B7791F; --viz-5:#DE350B; --viz-6:#8792A2;
@@ -117,6 +125,11 @@
   --warning:#FBBF55; --warning-soft:rgba(251,191,85,0.15);
   --danger: #F87171; --danger-soft: rgba(248,113,113,0.15);
   --info:   #5AA9FF; --info-soft:   rgba(90,169,255,0.15);
+
+  --chg-evidence:  #5AA9FF; --chg-evidence-soft:  rgba(90,169,255,0.20);
+  --chg-structure: #FBBF55; --chg-structure-soft: rgba(251,191,85,0.20);
+  --chg-clarity:   #C4A6FF; --chg-clarity-soft:   rgba(196,166,255,0.22);
+  --chg-section:   #34D399; --chg-section-soft:   rgba(52,211,153,0.20);
 
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.40);
   --shadow-md: 0 4px 14px rgba(0,0,0,0.45);
