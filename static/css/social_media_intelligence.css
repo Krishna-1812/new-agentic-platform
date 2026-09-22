@@ -70,7 +70,7 @@ html::-webkit-scrollbar-thumb:hover { background-image: var(--s1); }
 .user-menu { position: relative; }
 .user-pill { display: flex; align-items: center; gap: 9px; background: var(--s2); border: 0; border-radius: var(--radius-pill, 80px); padding: 4px 14px 4px 4px; cursor: pointer; user-select: none; transition: background .15s, border-color .15s; }
 .user-pill:hover, .user-pill.open { background: var(--s2); border-color: rgba(251,146,60,.4); }
-.user-avatar { width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: var(--s1); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; color: var(--s1); flex-shrink: 0; }
+.user-avatar { width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: var(--s1); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; color:var(--tx); flex-shrink: 0; }
 .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .user-name { font-size: 13px; font-weight: 500; color: var(--tx); }
 .pill-chevron { font-size: 10px; color: var(--tx3); margin-left: 2px; transition: transform .2s; }

@@ -131,7 +131,7 @@ body{font-family:'Space Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;min
 .user-avatar{
   width:28px;height:28px;border-radius:50%;overflow:hidden;flex-shrink:0;
   background:var(--sp-grad);
-  display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;color:var(--s1);
+  display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;color:var(--tx);
 }
 .user-avatar img{width:100%;height:100%;object-fit:cover;}
 .user-name{font-size:13px;font-weight:500;color:var(--tx2);}
@@ -240,7 +240,7 @@ body{font-family:'Space Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;min
 #tlprName::placeholder{color:var(--tx3);}
 
 .tlpr-resolve-btn{
-  border:0;color:var(--s1);font-weight:700;border-radius:var(--radius-pill);
+  border:0;color:var(--tx-on-fill);font-weight:700;border-radius:var(--radius-pill);
   padding:0 var(--sp5);white-space:nowrap;font-size:var(--fs-md);
   display:inline-flex;align-items:center;gap:9px;cursor:pointer;font-family:inherit;
   background:var(--sp-grad);
@@ -282,7 +282,7 @@ body{font-family:'Space Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;min
   background:var(--sp-grad);
 }
 .tlpr-suggest-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-.tlpr-suggest-initial{display:none;font-size:13px;font-weight:800;color:var(--s1);}
+.tlpr-suggest-initial{display:none;font-size:13px;font-weight:800;color:var(--tx);}
 .tlpr-suggest-avatar.tlpr-suggest-noavatar .tlpr-suggest-initial{display:flex;}
 .tlpr-suggest-info{min-width:0;flex:1;}
 .tlpr-suggest-name{font-size:13.5px;font-weight:700;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -442,10 +442,10 @@ body{font-family:'Space Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;min
 
 .tlpr-actions{display:flex;gap:var(--sp3);position:relative;z-index:1;flex-wrap:wrap;align-items:center;}
 .tlpr-btn-confirm{
-  border:0;color:var(--s1);font-weight:700;border-radius:var(--radius-pill);
+  border:0;color:var(--tx-on-fill);font-weight:700;border-radius:var(--radius-pill);
   padding:13px 24px;font-size:var(--fs-sm);cursor:pointer;font-family:inherit;
   display:inline-flex;align-items:center;gap:8px;
-  background: var(--s1);
+  background:var(--acc);
   transition:transform .18s var(--ease),box-shadow .2s;
 }
 .tlpr-btn-confirm:hover{}
@@ -481,7 +481,7 @@ body{font-family:'Space Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;min
 .tlpr-posts-cta-text h3{font-family:var(--tlpr-display);font-size:var(--fs-xl);font-weight:800;color:var(--tx);margin:0 0 5px;}
 .tlpr-posts-cta-text p{color:var(--tx2);font-size:var(--fs-sm);margin:0;}
 .tlpr-btn-collect{
-  border:0;color:var(--s1);font-weight:700;border-radius:var(--radius-pill);
+  border:0;color:var(--tx-on-fill);font-weight:700;border-radius:var(--radius-pill);
   padding:13px 24px;font-size:var(--fs-sm);cursor:pointer;font-family:inherit;white-space:nowrap;
   display:inline-flex;align-items:center;gap:8px;
   background:var(--sp-grad);
@@ -759,7 +759,7 @@ body{font-family:'Space Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;min
 }
 .tlpr-history-avatar{
   width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  font-size:12.5px;font-weight:700;color:var(--s1);background:var(--sp-grad);
+  font-size:12.5px;font-weight:700;color:var(--tx);background:var(--sp-grad);
   position:relative;overflow:hidden;
 }
 .tlpr-history-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}

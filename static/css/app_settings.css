@@ -1,0 +1,45 @@
+
+  .swrap{ flex:1; width:100%; max-width:800px; margin:0 auto; padding:34px 32px 64px; position:relative; z-index:1 }
+  .swrap h1{ margin:0 0 8px; font-size:clamp(24px,3vw,32px); font-weight:700; letter-spacing: var(--ls-tight); color:var(--tx) }
+  .swrap .sub{ margin:0 0 30px; font-size:15px; color:var(--tx2) }
+  .scard{
+    border-radius: var(--radius-lg); border:1px solid var(--line); background:var(--s3);
+    padding:28px; margin-bottom:22px;
+  }
+  .scard .sh{ display:flex; align-items:center; gap:13px; margin-bottom:20px }
+  .scard .si{ width:38px; height:38px; border-radius: var(--radius-md); flex:none; display:flex; align-items:center; justify-content:center;
+    background: var(--s1)}
+  .scard .si svg{ width:19px; height:19px; stroke:var(--tx) }
+  .scard h2{ margin:0; font-size:17px; font-weight:600; color:var(--tx) }
+
+  .acct{ display:flex; align-items:center; gap:16px; padding:16px; border-radius: var(--radius-md); border:1px solid var(--line); background:var(--s2) }
+  .acct .aa{ width:52px; height:52px; border-radius:50%; overflow:hidden; flex:none;
+    display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:700; color:var(--tx);
+    background: var(--s1)}
+  .acct .aa img{ width:100%; height:100%; object-fit:cover }
+  .acct .at b{ display:block; font-size:17px; color:var(--tx); font-weight:600 }
+  .acct .at span{ display:block; font-size:13px; color:var(--tx2); margin-top:2px }
+
+  .row{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 4px }
+  .row + .row{ border-top:1px solid var(--line) }
+  .row .rl{ font-size:13px; color:var(--tx2) }
+  .row .rv{ font-size:13px; color:var(--tx); font-weight:500; text-align:right }
+
+  .wa-list{ display:flex; flex-direction:column; gap:2px }
+  .wa-row{ display:flex; align-items:center; gap:13px; padding:12px 8px; border-radius: var(--radius-md); text-decoration:none; color:inherit; transition:background .15s ease }
+  .wa-row:hover{ background:var(--s2) }
+  .wa-row .wic{ width:34px; height:34px; border-radius: var(--radius-sm); flex:none; display:flex; align-items:center; justify-content:center;
+    background: var(--s1)}
+  .wa-row .wic svg{ width:16px; height:16px; stroke:var(--tx) }
+  .wa-row b{ flex:1; font-size:15px; font-weight:500; color:var(--tx) }
+  .wa-row .go{ font-size:var(--fs-sm); color:var(--tx2) }
+  .wa-row:hover .go{ color:var(--acc) }
+
+  .signout-btn{
+    display:inline-flex; align-items:center; gap:9px; padding:11px 18px; border-radius: var(--radius-md);
+     background:var(--s2); color:var(--danger);
+    text-decoration:none; font-size:13px; font-weight:600; transition:.2s;
+  }
+  .signout-btn:hover{ background:var(--s3); border-color:var(--s3) }
+  .signout-btn svg{ width:15px; height:15px }
+  @media (max-width:720px){ .swrap{ padding:24px 16px 48px } }

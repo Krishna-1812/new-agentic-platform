@@ -1,28 +1,35 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}{{ client.name }} · Intelligence by Position2{% endblock %}</title>
+  <title>{% block title %}{{ client.name }} &middot; {{ brand.name }}{% endblock %}</title>
   <meta name="robots" content="noindex, nofollow">
-  <meta name="theme-color" content="#040510">
-  <link rel="icon" href="/favicon.svg?v=4" type="image/svg+xml">
+  <meta name="theme-color" content="#131315">
+  <link rel="icon" href="/static/favicon.svg?v=5" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/grid-tokens.css">
-  <link rel="stylesheet" href="/static/css/client-portal.css?v=3">
+  <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  {# Same shell as /app -- see static/css/workspace.css for why these two
+     surfaces keep a sidebar while /p2 keeps a breadcrumb bar. #}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bento-tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bento-components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bento-motion.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/workspace.css') }}?v=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/client-portal.css') }}?v=4">
   {% block styles %}{% endblock %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bento-compat.css') }}">
+  <script defer src="{{ url_for('static', filename='js/bento-motion.js') }}"></script>
 </head>
 <body data-email="{{ user.email }}" style="--brand:{{ client.accent }}; --brand2:{{ client.accent2 }}">
   <div class="appshell">
     <div class="sb-overlay" id="sbOverlay" onclick="toggleSidebar(false)"></div>
     <aside class="sidebar" id="sidebar">
       <a class="sb-brand" href="/{{ client.slug }}">
-        <img src="/static/logo-lockup.svg?v=1" alt="Intelligence by Position2">
+        <span class="bn-mark"></span>
+        <span class="bn-word">{{ brand.name }}</span>
       </a>
       <div class="sb-client">
-        <span class="st">✦</span>
         <span class="nm"><b>{{ client.name }}</b></span>
       </div>
       <div class="sb-div"></div>
@@ -95,8 +102,8 @@
                 <div class="dd-email">{{ user.email }}</div>
               </div>
               <div class="dd-items">
-                <a href="/{{ client.slug }}" class="dd-item"><span class="dd-item-icon">&#9632;</span> All agents</a>
-                <a href="/logout" class="dd-item danger"><span class="dd-item-icon">&rarr;</span> Sign out</a>
+                <a href="/{{ client.slug }}" class="dd-item"><span class="dd-item-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg></span> All agents</a>
+                <a href="/logout" class="dd-item danger"><span class="dd-item-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 17l5-5-5-5M20 12H9M13 21H6a2 2 0 01-2-2V5a2 2 0 012-2h7"/></svg></span> Sign out</a>
               </div>
             </div>
           </div>
@@ -107,7 +114,6 @@
     </div>
   </div>
 
-  <script src="/static/js/pfx_bg.js?v=3" defer></script>
   <script>
     function toggleMenu(e){ if(e) e.stopPropagation(); document.getElementById('userMenu').classList.toggle('open'); }
     function toggleSidebar(force){

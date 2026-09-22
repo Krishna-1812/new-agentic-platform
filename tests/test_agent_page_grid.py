@@ -67,6 +67,17 @@ BENTO_PAGES = [
     ("admin_external_usage.css", "External Usage"),
     ("admin_agent_feedback.css", "Agent Feedback"),
     ("embed.css", "the embedded-tool wrapper"),
+    # The workspace family: /app and the co-branded client portals. They keep
+    # a sidebar rather than a breadcrumb bar (see workspace.css for why), but
+    # they are on the same tokens as everything else and held to the same rule.
+    ("workspace.css", "the shared sidebar shell"),
+    ("client-portal.css", "the client portal"),
+    ("app.css", "the member dashboard"),
+    ("app_detail.css", "an agent's detail page"),
+    ("app_embed.css", "the agent runner"),
+    ("app_history.css", "run history"),
+    ("app_history_detail.css", "a single run"),
+    ("app_settings.css", "account settings"),
 ]
 
 

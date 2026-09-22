@@ -1,0 +1,57 @@
+
+  .eglow{ position:fixed; inset:0; z-index:0; pointer-events:none;
+    background: var(--s1)}
+  .ewrap{ flex:1; display:flex; flex-direction:column; min-height:0; position:relative; z-index:1;
+    padding:32px 34px 34px; gap:20px; max-width:1320px; width:100%; margin:0 auto; box-sizing:border-box }
+  .ebar{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    padding:14px 20px; border-radius: var(--radius-lg); border:1px solid var(--line);
+    background:var(--s3); -webkit-backdrop-filter:blur(10px) }
+  .ebar .eleft{ display:flex; align-items:center; gap:14px; min-width:0 }
+  .ebar a.back{ display:inline-flex; align-items:center; gap:7px; text-decoration:none; color:var(--tx2);
+    font-size:13px; font-weight:600; padding:8px 14px; border-radius: var(--radius-pill); flex:none;
+    border:1px solid var(--line); background:var(--s2);
+    transition:border-color .2s ease, background .2s ease, color .2s ease, transform .2s ease }
+  .ebar a.back:hover{ color:var(--tx); border-color:var(--s3); background:var(--s2); transform:translateX(-2px) }
+  .ebar .etitle{ display:flex; align-items:center; gap:13px; min-width:0 }
+  .ebar .etxt{ min-width:0 }
+  .ebar .etxt b{ display:block; font-weight:700; color:var(--tx); font-size:17px; letter-spacing: var(--ls-tight); line-height: var(--lh-tight)}
+  .ebar .etxt span{ display:block; font-size:11.5px; color:var(--tx2); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+  .ebar .eicon{ width:38px; height:38px; border-radius: var(--radius-md); flex:none; display:flex; align-items:center; justify-content:center;
+    background: var(--s1);}
+  .ebar .eicon svg{ width:18px; height:18px; stroke:var(--tx) }
+  .ebar .elive{ display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:600; letter-spacing: var(--ls-caps);
+    text-transform:uppercase; color:color-mix(in srgb, var(--ac) 75%, var(--tx)); flex:none }
+  .ebar .elive .d{ width:7px; height:7px; border-radius:50%; background:var(--ac); animation:epulse 2s ease-in-out infinite }
+  @keyframes epulse{ 0%,100%{ opacity:1 } 50%{ opacity:.4 } }
+  .ebar .eruns{ display:flex; align-items:center; gap:9px; font-size:11.5px; font-weight:600; color:var(--tx2); flex:none;
+    padding:7px 13px; border-radius: var(--radius-pill); border:1px solid var(--line); background:var(--s2) }
+  .ebar .eruns.at-cap{ color:var(--danger); border-color:var(--s3); background:var(--s2) }
+  .limit-wrap{ flex:1; display:flex; align-items:center; justify-content:center; text-align:center;
+    border-radius: var(--radius-xl);  background:var(--s2); padding:48px 24px }
+  .limit-box{ max-width:420px }
+  .limit-box .li{ width:56px; height:56px; margin:0 auto 20px; border-radius: var(--radius-lg); display:flex; align-items:center; justify-content:center;
+    background: var(--s1); box-shadow:0 16px 40px -14px var(--s3) }
+  .limit-box .li svg{ width:26px; height:26px; stroke:var(--tx) }
+  .limit-box h2{ margin:0 0 10px; font-size:24px; font-weight:700; color:var(--tx); letter-spacing: var(--ls-tight)}
+  .limit-box p{ margin:0 0 22px; font-size:15px; color:var(--tx2); line-height: var(--lh-body)}
+  .limit-box a{ display:inline-flex; align-items:center; gap:8px; padding:11px 20px; border-radius: var(--radius-md);
+    text-decoration:none; font-size:13px; font-weight:600; color:var(--tx); border:1px solid var(--line);
+    background:var(--s2); transition:.2s }
+  .limit-box a:hover{ background:var(--s2); border-color:var(--s3) }
+  .frame-wrap{ flex:1; position:relative; min-height:0; background:var(--s1);
+    border-radius: var(--radius-xl); 22%, var(--line)); overflow:hidden;
+    box-shadow:0 30px 70px -30px var(--s3), 0 0 0 1px var(--s2) inset }
+  .frame-wrap::before{ content:""; position:absolute; top:0; left:0; right:0; height:3px; z-index:2;
+    background: var(--s1)}
+  .frame-loader{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:var(--tx2); font-size:13px; gap:10px; transition:opacity .4s ease }
+  .frame-loader.hidden{ opacity:0; pointer-events:none }
+  .frame-loader .sp{ width:18px; height:18px; border-radius:50%; 
+    border-top-color:var(--ac); animation:esp 1s linear infinite }
+  @keyframes esp{ to{ transform:rotate(360deg) } }
+  iframe.tool{ position:absolute; inset:0; width:100%; height:100%; border:0; display:block }
+  @media (max-width:720px){
+    .ewrap{ padding:18px 16px 20px; gap:14px }
+    .ebar .etxt span{ display:none }
+    .ebar .elive{ display:none }
+  }

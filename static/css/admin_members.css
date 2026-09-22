@@ -76,7 +76,7 @@ a{color:inherit;text-decoration:none}
 .pt-badge{font-size:9.5px;font-weight:600;color:var(--acc);background:var(--s3);border-radius: var(--r);padding:1px 7px;flex-shrink:0}
 .pt-co{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11.5px;color:var(--dim);
   background:var(--s2);border-radius: var(--r);padding:4px 11px 4px 8px}
-.pt-co i{width:16px;height:16px;border-radius: var(--r-sm);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--s1);font-style:normal;flex-shrink:0}
+.pt-co i{width:16px;height:16px;border-radius: var(--r-sm);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--tx2);font-style:normal;flex-shrink:0}
 .pt-metric{display:inline-flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pt-chip{display:inline-flex;align-items:center;gap:5px;font-size:14px;font-weight:700;line-height:1;padding:4px 9px;border-radius: var(--r);min-width:42px;justify-content:center}
 .pt-chip svg{width:13px;height:13px;opacity:.85}
@@ -126,7 +126,7 @@ tr:hover td{background:var(--s2);color:var(--ink)}
 .muted{color:var(--dim2)}
 .who{display:flex;align-items:center;gap:9px;min-width:0}
 .mavatar{width:28px;height:28px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden;
-  background: var(--s1);color:var(--s1);font-size:11.5px;font-weight:800;font-family:var(--display)}
+  background: var(--s1);color:var(--tx);font-size:11.5px;font-weight:800;font-family:var(--display)}
 .mavatar img{width:100%;height:100%;object-fit:cover}
 .who .nm{min-width:0}.who .nm b{display:block;color:var(--ink);font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis}
 .who .nm small{display:block;color:var(--dim2);font-size:11.5px;overflow:hidden;text-overflow:ellipsis}

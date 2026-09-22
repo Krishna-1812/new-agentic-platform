@@ -1,0 +1,279 @@
+/* ════════════════════════════════════════════════════════════════════════
+   WORKSPACE — the shared sidebar shell
+
+   Two surfaces use it: the member workspace at /app, and the co-branded
+   client portal at /<client>. Both had their own copy of this shell --
+   app_base.html carried 194 lines inline, client-portal.css carried the same
+   shell again in its first 120 -- with the same class names, the same
+   structure and small drifts between them (268px vs 272px, a client chip on
+   one side only). One sheet now, and the drifts are gone.
+
+   THIS IS DELIBERATELY NOT THE /p2 CHROME. The internal side is a breadcrumb
+   bar over a full-width page, because you arrive there from a hub and leave
+   for another tool. These two are workspaces you stay in, with a roster of
+   agents you move between, so the roster is a persistent rail. That is an
+   information architecture, not a decoration, and re-skinning it into a
+   breadcrumb would make both products worse to use in order to make one
+   screenshot match.
+
+   What the shell does share with /p2 is everything else: the same tokens,
+   the same surfaces, the same one radius, the same selected-is-a-fill rule.
+   Somebody moving between the two sides should recognise the product
+   immediately and never once be confused about which side they are on.
+
+   THE CLIENT ACCENT IS KEPT. client_base.html sets --brand / --brand2 on
+   <body> from the client's own record: a co-branded portal that is not in
+   the client's colour is not co-branded. Rule 4 says colour is load-bearing,
+   and here it is -- it says "this is your workspace". What changed is the
+   discipline: the accent marks IDENTITY and POSITION (the client chip, the
+   current nav item, the avatar) and nothing else. It used to be on those
+   plus the search ring, two radial hero washes, the eyebrow, buttons, links
+   and a gradient-clipped headline, which is how a client's colour stops
+   meaning anything. /app has no client, so --brand falls back to --acc.
+   ──────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* The per-client accent, defaulted. client_base.html overrides both on
+     <body>, which wins over :root for everything inside it. */
+  --brand:  var(--acc);
+  --brand2: var(--acc);
+  --sb-w:   268px;
+}
+
+html, body { margin: 0; padding: 0; background: var(--bg); }
+body {
+  min-height: 100vh;
+  color: var(--tx);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+a { color: inherit; text-decoration: none; }
+svg { display: block; }
+
+/* ── SHELL ────────────────────────────────────────────────────────────── */
+
+.appshell { flex: 1; display: flex; min-height: 100vh; position: relative; }
+
+/* ── SIDEBAR ──────────────────────────────────────────────────────────── */
+/* An opaque surface, not glass over a particle canvas. Rule 1. */
+
+.sidebar {
+  width: var(--sb-w); flex: none;
+  display: flex; flex-direction: column;
+  background: var(--s1);
+  position: sticky; top: 0; height: 100vh; z-index: 30;
+}
+
+.sb-brand { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-5) var(--sp-5) var(--sp-4); flex: none; }
+.sb-brand .bn-mark {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--brand); flex: none;
+}
+.sb-brand .bn-word {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight); color: var(--tx);
+}
+/* The old markup wrapped a logo lockup in a tinted tile. Nothing paints it
+   now; the rule stays so a stray .brand-icon does not fall back to a box. */
+.sb-brand .brand-icon { background: none; box-shadow: none; padding: 0; }
+
+/* The client chip: the one place the client's own colour carries a fill,
+   because this is the element whose whole job is to say whose workspace
+   this is. */
+.sb-client {
+  margin: 0 var(--sp-4) var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r);
+  background: var(--brand);
+  color: var(--tx-on-fill);
+  font-size: var(--fs-sm); font-weight: var(--fw-semi);
+  display: flex; align-items: center; gap: var(--sp-2);
+}
+.sb-client .st { display: none; }
+.sb-client .nm b { font-weight: var(--fw-semi); }
+
+.sb-div { height: 1px; background: var(--line); margin: 0 var(--sp-5) var(--sp-4); }
+
+.sb-nav { flex: 1; overflow-y: auto; padding: 0 var(--sp-3) var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-6); }
+.sb-group { display: flex; flex-direction: column; gap: 2px; }
+/* flex:none, so the Workspace group never scrolls away however long the
+   agent roster above it gets. */
+.sb-workspace { flex: none; padding: var(--sp-3) var(--sp-3) 0; border-top: 1px solid var(--line); }
+
+.sb-eyebrow {
+  font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label); text-transform: uppercase;
+  color: var(--tx3); padding: 0 var(--sp-3); margin-bottom: var(--sp-2);
+}
+
+.sb-item {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: 9px var(--sp-3);
+  border-radius: var(--r-sm);
+  color: var(--tx2);
+  font-size: var(--fs-sm); font-weight: var(--fw-medium);
+  position: relative;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.sb-item svg, .sb-item .si svg { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none; }
+.sb-item .si { display: inline-flex; flex: none; }
+.sb-item span.lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-item:hover { background: var(--s2); color: var(--tx); }
+
+/* Where you are. A fill, like every other selected thing in this product --
+   the old build used a fading gradient plus a glowing dot, which is two
+   signals for one fact. */
+.sb-item.active {
+  background: var(--brand);
+  color: var(--tx-on-fill);
+  font-weight: var(--fw-semi);
+}
+.sb-item.active::after { content: none; }
+
+/* An agent still being set up. The dot is the only status mark in the rail,
+   so it can afford to be a colour. */
+.sb-item .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--acc); margin-left: auto; flex: none; }
+.sb-item .sdot.soon { background: var(--tx3); }
+.sb-item.active .sdot { background: var(--tx-on-fill); }
+
+.sb-foot { flex: none; padding: var(--sp-3); border-top: 1px solid var(--line); display: flex; align-items: center; gap: var(--sp-3); }
+.sb-foot .sfa {
+  width: 30px; height: 30px; border-radius: 50%; overflow: hidden; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--brand); color: var(--tx-on-fill);
+  font-size: var(--fs-xs); font-weight: var(--fw-bold);
+}
+.sb-foot .sfa img { width: 100%; height: 100%; object-fit: cover; }
+.sb-foot .sft { min-width: 0; flex: 1; }
+.sb-foot .sft b { display: block; font-size: var(--fs-sm); color: var(--tx); font-weight: var(--fw-semi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-foot .sft span { display: block; font-size: var(--fs-xs); color: var(--tx3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-foot a.sfo {
+  flex: none; width: 30px; height: 30px; border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--tx3);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.sb-foot a.sfo:hover { color: var(--tx); background: var(--s2); }
+.sb-foot a.sfo svg { width: 15px; height: 15px; }
+
+/* ── MAIN COLUMN ──────────────────────────────────────────────────────── */
+
+.maincol { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 100vh; }
+
+.tb {
+  height: var(--topbar-h); flex: none;
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: 0 var(--page-pad);
+  background: var(--s1);
+  position: sticky; top: 0; z-index: 20;
+}
+.tb-spacer { flex: 1; }
+.tb-right { display: flex; align-items: center; gap: var(--sp-2); }
+
+.tb-search {
+  display: flex; align-items: center; gap: var(--sp-2);
+  background: var(--s2);
+  border-radius: var(--r-sm);
+  padding: 7px var(--sp-3);
+  width: min(320px, 38vw);
+  transition: background var(--dur) var(--ease);
+}
+.tb-search:focus-within { background: var(--s3); }
+.tb-search svg { width: 15px; height: 15px; stroke: var(--tx3); fill: none; flex: none; }
+.tb-search input {
+  border: 0; background: transparent; color: var(--tx);
+  font: inherit; font-size: var(--fs-sm); width: 100%; outline: none;
+}
+.tb-search input::placeholder { color: var(--tx3); }
+
+.tb-icon-btn {
+  width: 32px; height: 32px; border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--tx2); cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.tb-icon-btn:hover { background: var(--s2); color: var(--tx); }
+.tb-icon-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; }
+
+.tb-pop-wrap { position: relative; }
+.tb-pop {
+  display: none; position: absolute; right: 0; top: calc(100% + 8px);
+  width: 260px; padding: var(--sp-4);
+  background: var(--s2); border-radius: var(--r);
+  box-shadow: var(--shadow-overlay);
+  font-size: var(--fs-sm); color: var(--tx2); z-index: 60;
+}
+.tb-pop-wrap.open .tb-pop { display: block; }
+
+/* ── USER MENU ────────────────────────────────────────────────────────── */
+
+.user-menu { position: relative; }
+.user-pill {
+  width: 32px; height: 32px; border-radius: 50%; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--brand); color: var(--tx-on-fill);
+  font-size: var(--fs-xs); font-weight: var(--fw-bold);
+  cursor: pointer; user-select: none;
+}
+.user-pill img { width: 100%; height: 100%; object-fit: cover; }
+.user-dropdown {
+  display: none; position: absolute; right: 0; top: calc(100% + 8px);
+  width: 240px; z-index: 100;
+  background: var(--s2); border-radius: var(--r); overflow: hidden;
+  box-shadow: var(--shadow-overlay);
+}
+.user-menu.open .user-dropdown { display: block; }
+.dd-header { padding: var(--sp-3) var(--sp-4); }
+.dd-name { font-size: var(--fs-sm); font-weight: var(--fw-semi); color: var(--tx); }
+.dd-email { font-size: var(--fs-xs); color: var(--tx3); margin-top: 1px; }
+.dd-items { padding: var(--sp-1); border-top: 1px solid var(--line); }
+.dd-item {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: 8px var(--sp-3); border-radius: var(--r-sm);
+  font-size: var(--fs-sm); color: var(--tx2);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.dd-item:hover { background: var(--s3); color: var(--tx); }
+.dd-item.danger { color: var(--clay); }
+.dd-item-icon { display: inline-flex; width: 16px; height: 16px; flex: none; }
+.dd-item-icon svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── NARROW ───────────────────────────────────────────────────────────── */
+/* Below 960px the rail slides over the content rather than squeezing it. */
+
+.sb-overlay { display: none; }
+.sb-toggle { display: none; }
+
+@media (max-width: 960px) {
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0;
+    transform: translateX(-100%);
+    transition: transform var(--dur-slow) var(--ease);
+    box-shadow: var(--shadow-overlay);
+  }
+  .sidebar.open { transform: none; }
+  .sb-overlay {
+    display: block; position: fixed; inset: 0; z-index: 25;
+    background: rgba(0,0,0,.6);
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--dur) var(--ease);
+  }
+  .sb-overlay.show { opacity: 1; pointer-events: auto; }
+  .sb-toggle {
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: var(--r-sm);
+    color: var(--tx2); cursor: pointer; flex: none;
+  }
+  .sb-toggle:hover { background: var(--s2); color: var(--tx); }
+  .sb-toggle svg { width: 18px; height: 18px; stroke: currentColor; fill: none; }
+  .tb-search { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none; }
+}

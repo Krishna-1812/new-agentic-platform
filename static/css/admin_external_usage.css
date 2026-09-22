@@ -130,7 +130,7 @@
 
     /* ── Tabs ── */
     .tabs { display: flex;  }
-    .tab-btn { padding: 14px 22px; font-size: 13px; font-weight: 600; color: var(--s3); background: none; border: none; cursor: pointer; font-family: inherit; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }
+    .tab-btn { padding: 14px 22px; font-size: 13px; font-weight: 600; color:var(--tx2); background: none; border: none; cursor: pointer; font-family: inherit; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }
     .tab-btn:hover { color: var(--tx2); }
     .tab-btn.active { color: var(--acc); border-bottom-color: var(--acc); }
     .tab-pane { display: none; }
@@ -156,7 +156,7 @@
     .skel { background: var(--s1); background-size: 200% 100%; border-radius: var(--radius-xs); }
     @keyframes skel-slide { from{background-position:200% 0} to{background-position:-200% 0} }
 
-    .empty { padding: 48px; text-align: center; color: var(--s2); font-size: 13px; }
+    .empty { padding: 48px; text-align: center; color:var(--tx2); font-size: 13px; }
     .err   { padding: 32px; text-align: center; color: var(--danger); font-size: 13px; }
 
     /* ── Pre-login journey drawer (mirrors Public Page Analytics / Anonymous Traffic) ── */
@@ -232,7 +232,7 @@
     .pt-badge{font-size:9.5px;font-weight:600;color:var(--acc);background:var(--s3);border-radius: var(--r);padding:1px 7px;flex-shrink:0}
     .pt-co{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono,monospace);font-size:11.5px;color:var(--tx);
       background:var(--s2);border-radius: var(--r);padding:4px 11px 4px 8px}
-    .pt-co i{width:16px;height:16px;border-radius: var(--r-sm);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--s1);font-style:normal;flex-shrink:0}
+    .pt-co i{width:16px;height:16px;border-radius: var(--r-sm);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--tx2);font-style:normal;flex-shrink:0}
     /* metric chips */
     .pt-metric{display:inline-flex;flex-direction:column;align-items:flex-end;gap:4px}
     .pt-chip{display:inline-flex;align-items:center;gap:5px;font-size:14px;font-weight:700;line-height:1;padding:4px 9px;border-radius: var(--r);min-width:42px;justify-content:center}
@@ -259,7 +259,7 @@
     .drawer .dh{padding:22px 22px 18px;position:relative}
     .drawer .dh .top{display:flex;align-items:center;gap:13px}
     .drawer .dh .mavatar{width:46px;height:46px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
-      background: var(--s1);color:var(--s1);font-size:17px;font-weight:800}
+      background: var(--s1);color:var(--tx);font-size:17px;font-weight:800}
     .drawer .dh h3{margin:0;font-weight:700;font-size:20px;color:var(--tx)}
     .drawer .dh .em{color:var(--tx2);font-size:13px;font-family:monospace}
     .drawer .dh .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
@@ -426,7 +426,7 @@ html,body{scrollbar-width:none;-ms-overflow-style:none;}
       border-radius: var(--r);padding:15px 16px;margin-bottom:11px}
     .pm-cotop{display:flex;gap:13px;align-items:center;min-width:0}
     .pm-colg{width:46px;height:46px;border-radius: var(--r);flex:none;background:var(--tx);overflow:hidden;
-      display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--s1);font-size:17px}
+      display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--tx2);font-size:17px}
     .pm-colg img{width:100%;height:100%;object-fit:contain;display:block;padding:4px;box-sizing:border-box}
     .pm-coname{font-size:16px;font-weight:700;color:var(--tx);line-height:1.25}
     .pm-coind{font-size:11.5px;color:var(--tx);margin-top:3px;text-transform:capitalize}

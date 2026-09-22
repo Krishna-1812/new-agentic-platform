@@ -1,0 +1,88 @@
+
+  .dash{ flex:1; width:100%; max-width:1240px; margin:0 auto; padding:34px 32px 64px; position:relative; z-index:1 }
+  .sect{ margin-bottom:44px }
+.eyebrow{display:inline-flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-xs);font-weight:var(--fw-semi);letter-spacing:var(--ls-label);text-transform:uppercase;color:var(--acc);margin-bottom:var(--sp-2)}
+  .sect h2{ margin:0 0 6px; font-size:clamp(22px,2.6vw,30px); font-weight:700; letter-spacing: var(--ls-tight); color:var(--tx) }
+  .sect .sub{ margin:0; font-size:15px; color:var(--tx2); line-height: var(--lh-body)}
+
+  /* hero */
+  .hero{
+    border-radius: var(--radius-xl); border:1px solid var(--line); padding:36px 38px; margin-bottom:44px;
+    background: var(--s1); position:relative; overflow:hidden;
+  }
+.eyebrow{display:inline-flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-xs);font-weight:var(--fw-semi);letter-spacing:var(--ls-label);text-transform:uppercase;color:var(--acc);margin-bottom:var(--sp-2)}
+  .hero h1{ margin:0 0 10px; font-size:clamp(26px,3.4vw,38px); font-weight:700; letter-spacing: var(--ls-tight); color:var(--tx) }
+  .hero p{ margin:0; font-size:15px; color:var(--tx2) }
+  .hero p b{ color:var(--tx); font-weight:600 }
+
+  .cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:22px }
+  .card{
+    display:flex; flex-direction:column; text-decoration:none; color:inherit;
+    background: var(--s1);
+    26%, var(--s2));
+    border-radius: var(--radius-lg); padding:26px; min-height:206px;
+    position:relative; overflow:hidden; -webkit-
+    box-shadow:0 10px 40px -18px var(--s3);
+    transition:border-color .25s ease, transform .25s ease, box-shadow .25s ease;
+  }
+  .card::before{ content:""; position:absolute; top:0; left:0; right:0; height:3px;
+    background: var(--s1)}
+  .card:hover{ 
+    border-color:color-mix(in srgb, var(--ac) 55%, transparent);}
+  .card .ctop{ display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px }
+  .card .cicon{ width:48px; height:48px; border-radius: var(--radius-md); flex:none;
+    display:flex; align-items:center; justify-content:center;
+    background: var(--s1);}
+  .card .cicon svg{ width:24px; height:24px; stroke:var(--tx) }
+  .card .cext{ color:var(--tx3); font-size:15px; opacity:.7; transition:opacity .2s ease, transform .2s ease }
+  .card:hover .cext{ opacity:1; transform:translate(2px,-2px) }
+  .card h3{ margin:0 0 6px; font-size:20px; font-weight:600; letter-spacing: var(--ls-tight); color:var(--tx) }
+  .card p{ margin:0; font-size:13px; line-height: var(--lh-body); color:var(--tx2) }
+  .card .cruns{ margin-top:16px }
+  .card .cruns-top{ display:flex; align-items:center; justify-content:space-between; font-size:11.5px; color:var(--tx3); margin-bottom:6px }
+  .card .cruns-top b{ color:var(--tx2); font-weight:600 }
+  .card .cruns-top.at-cap b{ color:var(--danger) }
+  .card .cruns-track{ height:5px; border-radius: var(--radius-xs); background:var(--s2); overflow:hidden }
+  .card .cruns-fill{ height:100%; border-radius: var(--radius-xs); background: var(--s1)}
+  .card .cruns-fill.at-cap{ background: var(--s1)}
+  .card .cmeta{ display:flex; align-items:center; gap:6px; margin-top:12px; font-size:11.5px; color:var(--tx3) }
+  .card .cmeta svg{ width:13px; height:13px; stroke:currentColor; flex:none }
+  .card .more{ margin-top:auto; padding-top:16px; font-size:13px; font-weight:600;
+    color:color-mix(in srgb, var(--ac) 72%, var(--tx)) }
+
+  .card.locked{ opacity:.88 }
+  .card.locked:hover{ opacity:1 }
+  .card.locked .cicon{ filter:saturate(.75) }
+  .card .lockpill{ display:inline-flex; align-items:center; gap:7px; margin-top:16px;
+    padding:6px 12px; border-radius: var(--radius-pill); font-size:11.5px; font-weight:600; color:var(--tx3);
+    border:1px dashed var(--line); background:var(--s2); width:fit-content }
+  .card .lockpill svg{ width:12px; height:12px; stroke:currentColor; flex:none }
+  .card.requested .lockpill{ color:color-mix(in srgb, var(--ac) 78%, var(--tx));
+    40%, transparent); border-style:solid;
+    background:color-mix(in srgb, var(--ac) 10%, transparent) }
+  .card.requested .more{ color:color-mix(in srgb, var(--ac) 78%, var(--tx)) }
+  .card.inert .more{ color:var(--tx3) }
+
+  .activity-box{
+    border-radius: var(--radius-lg); border:1px solid var(--line); background:var(--s3);
+    padding:28px; min-height:120px;
+  }
+  .act-empty{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+    padding:24px 10px; color:var(--tx2); font-size:13px; text-align:center }
+  .act-empty svg{ width:34px; height:34px; stroke:var(--tx3); opacity:.7 }
+  .act-list{ display:flex; flex-direction:column; gap:2px }
+  .act-row{
+    display:flex; align-items:center; gap:14px; padding:12px 8px; border-radius: var(--radius-md);
+    text-decoration:none; color:inherit; transition:background .15s ease;
+  }
+  .act-row:hover{ background:var(--s2) }
+  .act-row .aic{ width:36px; height:36px; border-radius: var(--radius-sm); flex:none; display:flex; align-items:center; justify-content:center;
+    background: var(--s1)}
+  .act-row .aic svg{ width:17px; height:17px; stroke:var(--tx) }
+  .act-row .at{ flex:1; min-width:0 }
+  .act-row .at b{ display:block; font-size:15px; font-weight:600; color:var(--tx) }
+  .act-row .at span{ display:block; font-size:11.5px; color:var(--tx3); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .act-row .ats{ flex:none; font-size:11.5px; color:var(--tx3); font-family:ui-monospace,monospace }
+
+  @media (max-width:900px){ .cards{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:720px){ .cards{grid-template-columns:1fr} .dash{padding:24px 16px 48px} .hero{padding:26px 22px} }

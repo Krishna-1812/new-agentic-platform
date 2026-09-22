@@ -127,7 +127,7 @@
 
     /* ── Tabs ── */
     .tabs { display: flex;  }
-    .tab-btn { padding: 14px 22px; font-size: 13px; font-weight: 600; color: var(--s3); background: none; border: none; cursor: pointer; font-family: inherit; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }
+    .tab-btn { padding: 14px 22px; font-size: 13px; font-weight: 600; color:var(--tx2); background: none; border: none; cursor: pointer; font-family: inherit; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }
     .tab-btn:hover { color: var(--tx2); }
     .tab-btn.active { color: var(--acc); border-bottom-color: var(--acc); }
     .tab-pane { display: none; }
@@ -153,7 +153,7 @@
     .skel { background: var(--s1); background-size: 200% 100%; border-radius: var(--radius-xs); }
     @keyframes skel-slide { from{background-position:200% 0} to{background-position:-200% 0} }
 
-    .empty { padding: 48px; text-align: center; color: var(--s2); font-size: 13px; }
+    .empty { padding: 48px; text-align: center; color:var(--tx2); font-size: 13px; }
     .err   { padding: 32px; text-align: center; color: var(--danger); font-size: 13px; }
 
     /* ── Pre-login journey drawer (mirrors Public Page Analytics / Anonymous Traffic) ── */
@@ -169,7 +169,7 @@
     .drawer .dh{padding:22px 22px 18px;position:relative}
     .drawer .dh .top{display:flex;align-items:center;gap:13px}
     .drawer .dh .mavatar{width:46px;height:46px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
-      background: var(--s1);color:var(--s1);font-size:17px;font-weight:800}
+      background: var(--s1);color:var(--tx);font-size:17px;font-weight:800}
     .drawer .dh h3{margin:0;font-weight:700;font-size:20px;color:var(--tx)}
     .drawer .dh .em{color:var(--tx2);font-size:13px;font-family:monospace}
     .drawer .dh .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
