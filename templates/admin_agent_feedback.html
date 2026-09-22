@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>(function(){try{if('scrollRestoration' in history)history.scrollRestoration='manual';}catch(e){}window.addEventListener('load',function(){window.scrollTo(0,0);});})();</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Feedback — Admin</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ds-tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/grid-tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+  <script src="/static/js/theme.js"></script>
+  <link rel="stylesheet" href="/static/css/aurora-app.css?v=3">
+  <style>
+    .af-lede{margin:10px 0 0;max-width:680px;font-size:13px;line-height:1.55;color:var(--tx2)}
+
+    .af-kpis{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin:22px 0 26px}
+    .af-kpis .card.kpi{
+      cursor:default;position:relative;overflow:hidden;
+      transition:transform .15s ease,border-color .15s ease;
+      border-top:3px solid var(--accent) !important;
+      background:linear-gradient(165deg, var(--accent-d) 0%, rgba(13,15,24,.85) 55%) !important;
+    }
+    .af-kpis .card.kpi:hover{transform:translateY(-2px)}
+    .af-kpi-icon{
+      width:32px;height:32px;border-radius:10px;font-size:15px;
+      display:flex;align-items:center;justify-content:center;margin-bottom:10px;
+    }
+    .af-kpi-total .af-kpi-icon{background:rgba(124,131,245,.18);color:#9b87fd}
+    .af-kpi-up{border-top-color:#34d399 !important;background:linear-gradient(165deg, rgba(52,211,153,.18) 0%, rgba(13,15,24,.85) 55%) !important}
+    .af-kpi-up .af-kpi-icon{background:rgba(52,211,153,.18);color:#34d399}
+    .af-kpi-up b{color:#34d399}
+    .af-kpi-down{border-top-color:#fb7185 !important;background:linear-gradient(165deg, rgba(251,113,133,.18) 0%, rgba(13,15,24,.85) 55%) !important}
+    .af-kpi-down .af-kpi-icon{background:rgba(251,113,133,.18);color:#fb7185}
+    .af-kpi-down b{color:#fb7185}
+    .af-kpi-rate{border-top-color:#f5a623 !important;background:linear-gradient(165deg, rgba(245,166,35,.18) 0%, rgba(13,15,24,.85) 55%) !important}
+    .af-kpi-rate .af-kpi-icon{background:rgba(245,166,35,.18);color:#f5a623}
+    .af-kpi-rate b{background:linear-gradient(135deg,#fb7185,#f5a623);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+    .af-toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:18px 0 22px}
+    .af-select-wrap{position:relative;display:inline-flex}
+    .af-select-wrap::after{
+      content:'⌄';position:absolute;right:13px;top:50%;transform:translateY(-50%);
+      color:#7e89b8;pointer-events:none;font-size:13px;
+    }
+    .af-toolbar select{
+      appearance:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+      color:#cbd5f5;border-radius:var(--radius-pill);padding:9px 34px 9px 16px;
+      font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;
+      transition:background .15s,border-color .15s;
+    }
+    .af-toolbar select:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.18)}
+
+    .af-segment{
+      display:inline-flex;padding:3px;gap:2px;
+      background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+      border-radius:var(--radius-pill);
+    }
+    .af-segment button{
+      appearance:none;border:none;background:transparent;color:#8b94be;
+      font-size:12.5px;font-weight:700;padding:7px 16px;border-radius:var(--radius-pill);
+      cursor:pointer;white-space:nowrap;
+      transition:background .18s var(--ease),color .18s var(--ease);
+    }
+    .af-segment button:hover{color:#e2e8f0}
+    .af-segment button.active{color:#fff;box-shadow:0 3px 12px -4px rgba(0,0,0,.5)}
+    .af-segment button.active[data-val="down"]{background:linear-gradient(135deg,#fb7185,#f43f5e)}
+    .af-segment button.active[data-val="up"]{background:linear-gradient(135deg,#34d399,#10b981)}
+    .af-segment button.active[data-val=""]{background:linear-gradient(135deg,#7c83f5,#9b87fd)}
+
+    .af-rating{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;
+      padding:4px 10px;border-radius:var(--radius-pill);white-space:nowrap}
+    .af-rating.up{color:#34d399;background:rgba(52,211,153,.12)}
+    .af-rating.down{color:#fb7185;background:rgba(251,113,133,.12)}
+
+    .af-rank{
+      display:inline-flex;align-items:center;justify-content:center;flex:none;
+      width:19px;height:19px;border-radius:50%;background:rgba(255,255,255,.06);
+      font-size:10px;font-weight:800;color:#8b94be;margin-right:8px;
+    }
+    .af-rank.sev-1{background:linear-gradient(135deg,#fb7185,#f43f5e);color:#fff;box-shadow:0 0 10px -2px rgba(251,113,133,.7)}
+    .af-rank.sev-23{background:rgba(245,166,35,.2);color:#f5a623}
+    .af-section{color:#e2e8f0;font-weight:600;display:flex;align-items:center}
+    .af-agent{
+      display:inline-flex;align-items:center;gap:6px;font-size:11px;
+      color:var(--ag-color,#7e89b8);font-weight:700;letter-spacing:.02em;
+    }
+    .af-agent::before{content:'';width:6px;height:6px;border-radius:50%;
+      background:var(--ag-color,var(--cyan));box-shadow:0 0 6px var(--ag-color,var(--cyan));flex:none}
+
+    .af-bar-wrap{display:flex;align-items:center;gap:10px;min-width:150px}
+    .af-bar{flex:1;height:7px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden}
+    .af-bar-fill{height:100%;border-radius:4px;width:0;transition:width .7s var(--ease)}
+    .af-bar-fill.sev-hi{background:linear-gradient(90deg,#fb7185,#f43f5e)}
+    .af-bar-fill.sev-mid{background:linear-gradient(90deg,#f5a623,#fb923c)}
+    .af-bar-fill.sev-lo{background:linear-gradient(90deg,#34d399,#10b981)}
+    .af-bar-pct{font-weight:700;color:#e2e8f0;font-variant-numeric:tabular-nums;min-width:36px;text-align:right}
+    .af-bar-pct.sev-hi{color:#fb7185}
+    .af-bar-pct.sev-mid{color:#f5a623}
+    .af-bar-pct.sev-lo{color:#34d399}
+
+    .af-who{display:inline-flex;align-items:center;gap:8px}
+    .af-avatar{
+      width:22px;height:22px;border-radius:50%;flex:none;
+      display:inline-flex;align-items:center;justify-content:center;
+      font-size:9px;font-weight:800;
+    }
+
+    .af-reason{color:#cbd5f5;max-width:420px;white-space:pre-wrap;line-height:1.5}
+    .af-reason.has-text{padding-left:10px;border-left:2px solid rgba(251,113,133,.5)}
+    .af-reason.none{color:#5a6488;font-style:italic}
+
+    .th-down{color:#fb7185 !important}
+    .th-up{color:#34d399 !important}
+
+    tr.af-row-down{background:rgba(251,113,133,.045)}
+    tr.af-row-down:hover{background:rgba(251,113,133,.09)}
+    tr.af-row-down td:first-child{box-shadow:inset 3px 0 0 rgba(251,113,133,.55)}
+    tr.af-row-up{background:rgba(52,211,153,.035)}
+    tr.af-row-up:hover{background:rgba(52,211,153,.08)}
+    tr.af-row-up td:first-child{box-shadow:inset 3px 0 0 rgba(52,211,153,.5)}
+
+    [data-theme="light"] .af-toolbar select{background:#fff;color:#17213a;border-color:rgba(18,26,54,.14)}
+    [data-theme="light"] .af-select-wrap::after{color:#828cac}
+    [data-theme="light"] .af-segment{background:rgba(18,26,54,.03);border-color:rgba(18,26,54,.1)}
+    [data-theme="light"] .af-segment button{color:#4d5680}
+    [data-theme="light"] .af-segment button:hover{color:#17213a}
+    [data-theme="light"] .af-bar{background:rgba(18,26,54,.07)}
+    [data-theme="light"] .af-section{color:#17213a}
+    [data-theme="light"] .af-bar-pct{color:#17213a}
+    [data-theme="light"] .af-rank{background:rgba(18,26,54,.07);color:#4d5680}
+    [data-theme="light"] .af-reason{color:#334155}
+    [data-theme="light"] tr.af-row-down{background:rgba(251,113,133,.07)}
+    [data-theme="light"] tr.af-row-up{background:rgba(52,211,153,.06)}
+
+    /* Everything that opens a detail popup gets a hand cursor and a hover
+       lift/tint so the affordance reads before anyone actually clicks. */
+    .af-kpis .card.kpi{cursor:pointer}
+    #summaryBody tr,#recentBody tr{cursor:pointer;transition:background .12s,box-shadow .12s}
+    #summaryBody tr:focus-visible,#recentBody tr:focus-visible,.af-kpis .card.kpi:focus-visible{
+      outline:2px solid var(--accent);outline-offset:-2px;
+    }
+
+    .af-modal-overlay{
+      position:fixed;inset:0;z-index:9999;
+      background:rgba(4,6,16,.72);backdrop-filter:blur(6px);
+      display:flex;align-items:center;justify-content:center;padding:24px;
+      opacity:0;pointer-events:none;transition:opacity .2s var(--ease);
+    }
+    .af-modal-overlay.open{opacity:1;pointer-events:auto}
+    .af-modal{
+      width:min(700px,100%);max-height:82vh;overflow-y:auto;
+      background:linear-gradient(165deg, rgba(34,38,64,.98), rgba(10,12,22,.98));
+      border:1px solid rgba(255,255,255,.1);border-radius:20px;
+      box-shadow:0 40px 120px -20px rgba(0,0,0,.85);
+      transform:scale(.94) translateY(10px);opacity:0;
+      transition:transform .22s var(--ease),opacity .22s var(--ease);
+    }
+    .af-modal-overlay.open .af-modal{transform:scale(1) translateY(0);opacity:1}
+    .af-modal-head{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.08);
+      position:sticky;top:0;background:inherit;border-radius:20px 20px 0 0;z-index:1;
+    }
+    .af-modal-head h3{margin:0;font-size:16px;font-weight:700;color:#f1f5f9;
+      display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .af-modal-close{
+      appearance:none;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);
+      color:#8b94be;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;
+      display:inline-flex;align-items:center;justify-content:center;flex:none;
+      transition:background .15s,color .15s,transform .15s;
+    }
+    .af-modal-close:hover{background:rgba(251,113,133,.15);color:#fb7185;transform:rotate(90deg)}
+    .af-modal-body{padding:20px 24px 26px}
+
+    .af-detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px;margin-bottom:22px}
+    .af-detail-item{display:flex;flex-direction:column;gap:6px}
+    .af-detail-k{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#5a6488}
+    .af-detail-v{font-size:14px;font-weight:600;color:#e2e8f0}
+
+    .af-modal-subhead{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+      color:#7e89b8;margin:6px 0 10px}
+    .af-modal-body .empty{padding:20px 0;text-align:center}
+
+    .af-mini-row{
+      display:grid;grid-template-columns:auto auto 1fr auto;gap:12px;align-items:center;
+      padding:10px 12px;border-radius:10px;cursor:pointer;
+      border:1px solid transparent;transition:background .15s,border-color .15s;
+    }
+    .af-mini-row:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
+    .af-mini-row.down{box-shadow:inset 2px 0 0 rgba(251,113,133,.5)}
+    .af-mini-row.up{box-shadow:inset 2px 0 0 rgba(52,211,153,.5)}
+    .af-mini-who{font-size:12px;color:#cbd5f5;white-space:nowrap}
+    .af-mini-when{font-size:11px;color:#5a6488;white-space:nowrap}
+    .af-mini-reason{font-size:12px;color:#8b94be;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .af-mini-agent{font-size:12px;font-weight:700}
+
+    [data-theme="light"] .af-modal{background:linear-gradient(165deg,#fff,#f3f5fb)}
+    [data-theme="light"] .af-modal-head h3{color:#17213a}
+    [data-theme="light"] .af-detail-v{color:#17213a}
+    [data-theme="light"] .af-mini-who{color:#334155}
+    [data-theme="light"] .af-mini-row:hover{background:rgba(18,26,54,.05)}
+
+    @media(max-width:640px){
+      .af-toolbar{flex-direction:column;align-items:stretch}
+      .af-segment{justify-content:center}
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="tl">
+      <a href="/p2/hub" class="brand">
+        <div class="brand-icon" style="background:#151b2e;box-shadow:none;border-radius:var(--radius-md);overflow:hidden;display:inline-flex;align-items:center;justify-content:center;padding:5px 8px"><img src="/static/logo-lockup.svg?v=1" alt="arena by Position2" style="display:block;width:auto;height:36px;object-fit:contain"></div>
+      </a>
+      <div class="bc">
+        <a href="/p2/hub">Hub</a><span class="bc-sep">›</span>
+        <a href="/p2/admin/internal-usage">Admin</a><span class="bc-sep">›</span>
+        <span class="bc-cur">Agent Feedback</span>
+      </div>
+    </div>
+    <div class="tr">
+      <div class="user-menu" id="userMenu">
+        <div class="user-pill" id="userPill" onclick="toggleMenu()">
+          <div class="avatar">
+            {% if user.picture %}<img src="{{ user.picture }}" alt="" />
+            {% else %}{{ (user.name or 'U')[:2]|upper }}{% endif %}
+          </div>
+          <span class="uname">{{ user.given_name or user.name or 'Admin' }}</span>
+          <span class="pill-chevron">▼</span>
+        </div>
+        <div class="user-dropdown" id="userDropdown">
+          <div class="dd-header">
+            <div class="dd-name">{{ user.name or 'User' }}</div>
+            <div class="dd-email">{{ user.email }}</div>
+          </div>
+          <div class="dd-items">{% include "_admin_menu.html" %}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="ph">
+      <div class="ph-left">
+        <div class="eyebrow">Admin · Platform Intelligence</div>
+        <h1>Agent Feedback</h1>
+        <p class="af-lede">
+          Every thumbs up/down left on a Strategic Agent's generated report, grouped by which
+          section of which agent it was on. Sorted by what's being rejected most, so the first
+          row here is where to look first.
+        </p>
+      </div>
+      <a class="refresh-btn" href="#" onclick="load();return false;"><span class="refresh-icon">↻</span> Refresh</a>
+    </div>
+
+    <div class="grid af-kpis" id="kpis"></div>
+
+    <div class="af-toolbar">
+      <div class="af-select-wrap">
+        <select id="agentFilter" onchange="load()">
+          <option value="">All agents</option>
+          {% for slug, label in agent_labels.items() %}
+          <option value="{{ slug }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="af-segment" id="ratingSeg" role="group" aria-label="Filter by rating">
+        <button type="button" data-val="down" class="active">👎 Down</button>
+        <button type="button" data-val="up">👍 Up</button>
+        <button type="button" data-val="">Both</button>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h2>By section, last 30 days</h2>
+      <div class="card" style="padding:6px">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Agent</th><th>Section</th><th class="th-down">Down</th><th class="th-up">Up</th><th>Down share</th></tr></thead>
+            <tbody id="summaryBody"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h2>Recent feedback</h2>
+      <div class="card" style="padding:6px">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>When</th><th>Agent</th><th>Section</th><th>Who</th><th>Rating</th><th>Reason</th></tr></thead>
+            <tbody id="recentBody"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="af-modal-overlay" id="afModalOverlay">
+    <div class="af-modal" role="dialog" aria-modal="true" aria-labelledby="afModalTitle">
+      <div class="af-modal-head">
+        <h3 id="afModalTitle"></h3>
+        <button type="button" class="af-modal-close" id="afModalClose" aria-label="Close">✕</button>
+      </div>
+      <div class="af-modal-body" id="afModalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    var AGENT_LABELS = {{ agent_labels|tojson }};
+    /* One stable hue per agent so the same agent reads as the same color in
+       both tables -- picked to stay clear of green/rose, which already mean
+       up/down everywhere else on this page. */
+    var AGENT_COLORS = {
+      'company-people-intelligence': '#22d3ee',
+      'linkedin-strategy-researcher': '#b78bfa',
+      'social-media-intelligence': '#ff7a59',
+      'event-conference-intelligence': '#f5a623',
+      '42-north-dental-slot-checker': '#36c5f0'
+    };
+    var AVATAR_COLORS = ['#22d3ee','#b78bfa','#f5a623','#ff7a59','#36c5f0','#34d399','#fb7185','#9b87fd'];
+    function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+    function agentLabel(slug){ return AGENT_LABELS[slug] || slug; }
+    function agentColor(slug){ return AGENT_COLORS[slug] || '#22d3ee'; }
+    function severity(pct){ return pct>=50?'sev-hi':(pct>=20?'sev-mid':'sev-lo'); }
+    function emailColor(email){
+      var h=0;
+      for(var i=0;i<email.length;i++){ h=(h*31+email.charCodeAt(i))>>>0; }
+      return AVATAR_COLORS[h%AVATAR_COLORS.length];
+    }
+    function initials(email){
+      var name=(email.split('@')[0]||'').replace(/[._-]+/g,' ').trim();
+      var parts=name.split(' ').filter(Boolean);
+      if(!parts.length) return '?';
+      if(parts.length===1) return parts[0].slice(0,2).toUpperCase();
+      return (parts[0][0]+parts[1][0]).toUpperCase();
+    }
+    function relTime(iso){
+      if(!iso)return '—';
+      var d=new Date(iso), s=Math.floor((Date.now()-d.getTime())/1000);
+      if(s<0)s=0;
+      var units=[[31536000,'y'],[2592000,'mo'],[86400,'d'],[3600,'h'],[60,'m']];
+      for(var i=0;i<units.length;i++){var v=Math.floor(s/units[i][0]);if(v>=1)return v+units[i][1]+' ago';}
+      return 'just now';
+    }
+
+    function renderKpis(rows){
+      var up=0, down=0;
+      rows.forEach(function(r){ up+=r.up; down+=r.down; });
+      var total=up+down, rate=total?Math.round(down/total*100):0;
+      document.getElementById('kpis').innerHTML=
+        '<div class="card kpi af-kpi-total" data-kpi="total" tabindex="0"><div class="af-kpi-icon">💬</div><b>'+total+'</b><span>Total feedback</span></div>'+
+        '<div class="card kpi af-kpi-up" data-kpi="up" tabindex="0"><div class="af-kpi-icon">👍</div><b>'+up+'</b><span>Thumbs up</span></div>'+
+        '<div class="card kpi af-kpi-down" data-kpi="down" tabindex="0"><div class="af-kpi-icon">👎</div><b>'+down+'</b><span>Thumbs down</span></div>'+
+        '<div class="card kpi af-kpi-rate" data-kpi="rate" tabindex="0"><div class="af-kpi-icon">📉</div><b>'+rate+'%</b><span>Down rate</span></div>';
+    }
+
+    function renderSummary(rows){
+      var body=document.getElementById('summaryBody');
+      if(!rows.length){ body.innerHTML='<tr><td colspan="5" class="empty">No feedback recorded in the last 30 days.</td></tr>'; return; }
+      body.innerHTML=rows.map(function(r,i){
+        var rankClass = i===0 ? 'sev-1' : (i<3 ? 'sev-23' : '');
+        var sev = severity(r.down_pct);
+        return '<tr data-summary-idx="'+i+'" tabindex="0">'+
+          '<td class="af-agent" style="--ag-color:'+agentColor(r.agent_slug)+'">'+esc(agentLabel(r.agent_slug))+'</td>'+
+          '<td class="af-section"><span class="af-rank '+rankClass+'">'+(i+1)+'</span>'+esc(r.section_label||r.section_key)+'</td>'+
+          '<td class="af-rating down">👎 '+r.down+'</td>'+
+          '<td class="af-rating up">👍 '+r.up+'</td>'+
+          '<td><div class="af-bar-wrap"><div class="af-bar"><div class="af-bar-fill '+sev+'" data-w="'+r.down_pct+'"></div></div><span class="af-bar-pct '+sev+'">'+r.down_pct+'%</span></div></td>'+
+        '</tr>';
+      }).join('');
+      /* Double rAF so the browser paints the 0%-width bars first, then the
+         transition to their real width is what actually animates. */
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          Array.prototype.forEach.call(body.querySelectorAll('.af-bar-fill'), function(el){
+            el.style.width=el.getAttribute('data-w')+'%';
+          });
+        });
+      });
+    }
+
+    function renderRecent(rows){
+      var body=document.getElementById('recentBody');
+      if(!rows.length){ body.innerHTML='<tr><td colspan="6" class="empty">No feedback recorded yet.</td></tr>'; return; }
+      body.innerHTML=rows.map(function(r,i){
+        var ac=emailColor(r.email);
+        return '<tr class="'+(r.rating==='down'?'af-row-down':'af-row-up')+'" data-recent-idx="'+i+'" tabindex="0">'+
+          '<td title="'+esc(r.created_at)+'">'+relTime(r.created_at)+'</td>'+
+          '<td class="af-agent" style="--ag-color:'+agentColor(r.agent_slug)+'">'+esc(agentLabel(r.agent_slug))+'</td>'+
+          '<td class="af-section">'+esc(r.section_label||r.section_key)+'</td>'+
+          '<td><span class="af-who"><span class="af-avatar" style="background:'+ac+'26;color:'+ac+'">'+esc(initials(r.email))+'</span>'+esc(r.email)+'</span></td>'+
+          '<td><span class="af-rating '+r.rating+'">'+(r.rating==='up'?'👍 Up':'👎 Down')+'</span></td>'+
+          '<td class="af-reason'+(r.reason?' has-text':' none')+'">'+esc(r.reason||'No reason given')+'</td>'+
+        '</tr>';
+      }).join('');
+    }
+
+    var currentRating='down';
+    document.getElementById('ratingSeg').addEventListener('click', function(e){
+      var b=e.target.closest('button');
+      if(!b) return;
+      currentRating=b.getAttribute('data-val');
+      Array.prototype.forEach.call(document.querySelectorAll('#ratingSeg button'), function(x){
+        x.classList.toggle('active', x===b);
+      });
+      load();
+    });
+
+    /* Snapshots of the last fetch, kept around so a click on a row/card can
+       look up its full record without re-fetching -- renderSummary/renderRecent
+       give each row a data-*-idx pointing straight back into these. */
+    var lastSummary=[];
+    var lastRecent=[];
+    /* Rows shown inside the currently-open section-detail popup (fetched
+       fresh per open, since the toolbar's rating filter may be hiding half
+       of a section's actual history) -- a separate array so a click inside
+       the modal never collides with the page's own two tables. */
+    var modalEntries=[];
+
+    function load(){
+      var agent=document.getElementById('agentFilter').value;
+      var qs=[];
+      if(agent) qs.push('agent_slug='+encodeURIComponent(agent));
+      if(currentRating) qs.push('rating='+encodeURIComponent(currentRating));
+      fetch('/p2/admin/agent-feedback/data'+(qs.length?'?'+qs.join('&'):''))
+        .then(function(r){return r.json();})
+        .then(function(d){
+          lastSummary=d.summary||[];
+          lastRecent=d.recent||[];
+          renderKpis(lastSummary);
+          renderSummary(lastSummary);
+          renderRecent(lastRecent);
+        })
+        .catch(function(){
+          document.getElementById('summaryBody').innerHTML='<tr><td colspan="5" class="empty">Could not load feedback.</td></tr>';
+          document.getElementById('recentBody').innerHTML='<tr><td colspan="6" class="empty">Could not load feedback.</td></tr>';
+        });
+    }
+    load();
+
+    function toggleMenu(){var d=document.getElementById('userDropdown'),p=document.getElementById('userPill');var o=d.classList.contains('open');d.classList.toggle('open',!o);p.classList.toggle('open',!o);}
+    document.addEventListener('click',function(e){var m=document.getElementById('userMenu');if(m&&!m.contains(e.target)){document.getElementById('userDropdown').classList.remove('open');document.getElementById('userPill').classList.remove('open');}});
+
+    /* ── Click-to-detail: KPI cards, both tables, and the mini-rows inside a
+       section popup all open the same modal with a view-specific body. ── */
+
+    function openModal(titleHtml, bodyHtml){
+      document.getElementById('afModalTitle').innerHTML=titleHtml;
+      document.getElementById('afModalBody').innerHTML=bodyHtml;
+      document.getElementById('afModalOverlay').classList.add('open');
+      document.body.style.overflow='hidden';
+    }
+    function closeModal(){
+      document.getElementById('afModalOverlay').classList.remove('open');
+      document.body.style.overflow='';
+    }
+    document.getElementById('afModalClose').addEventListener('click', closeModal);
+    document.getElementById('afModalOverlay').addEventListener('click', function(e){
+      if(e.target===e.currentTarget) closeModal();
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key==='Escape'){ closeModal(); return; }
+      if(e.key==='Enter' || e.key===' '){
+        var el=document.activeElement;
+        if(el && el.matches('[data-kpi],[data-summary-idx],[data-recent-idx],.af-mini-row[data-entry-idx]')){
+          e.preventDefault(); el.click();
+        }
+      }
+    });
+
+    function detailRow(k, v){
+      return '<div class="af-detail-item"><span class="af-detail-k">'+esc(k)+'</span><span class="af-detail-v">'+v+'</span></div>';
+    }
+
+    function openRecentDetail(r){
+      var ac=emailColor(r.email);
+      var html='<div class="af-detail-grid">'+
+        detailRow('Agent', '<span class="af-agent" style="--ag-color:'+agentColor(r.agent_slug)+'">'+esc(agentLabel(r.agent_slug))+'</span>')+
+        detailRow('Section', esc(r.section_label||r.section_key))+
+        detailRow('Rating', '<span class="af-rating '+r.rating+'">'+(r.rating==='up'?'👍 Up':'👎 Down')+'</span>')+
+        detailRow('When', esc(r.created_at||'—')+' <span style="color:#5a6488">('+relTime(r.created_at)+')</span>')+
+        detailRow('Who', '<span class="af-who"><span class="af-avatar" style="background:'+ac+'26;color:'+ac+'">'+esc(initials(r.email))+'</span>'+esc(r.email)+'</span>')+
+        '</div>'+
+        '<div class="af-modal-subhead">Reason</div>'+
+        '<div class="af-reason'+(r.reason?' has-text':' none')+'" style="max-width:none">'+esc(r.reason||'No reason given')+'</div>';
+      openModal('Feedback detail', html);
+    }
+
+    function miniRow(x, idx){
+      return '<div class="af-mini-row '+(x.rating==='down'?'down':'up')+'" data-entry-idx="'+idx+'" tabindex="0">'+
+        '<span class="af-rating '+x.rating+'">'+(x.rating==='up'?'👍':'👎')+'</span>'+
+        '<span class="af-mini-who">'+esc(x.email)+'</span>'+
+        '<span class="af-mini-reason">'+esc(x.reason||(x.rating==='down'?'No reason given':'—'))+'</span>'+
+        '<span class="af-mini-when">'+relTime(x.created_at)+'</span>'+
+      '</div>';
+    }
+
+    function openSectionDetail(r){
+      var sev=severity(r.down_pct);
+      var titleHtml='<span class="af-agent" style="--ag-color:'+agentColor(r.agent_slug)+'">'+esc(agentLabel(r.agent_slug))+'</span> &rsaquo; '+esc(r.section_label||r.section_key);
+      var html='<div class="af-detail-grid">'+
+        detailRow('Down', '<span class="af-rating down">👎 '+r.down+'</span>')+
+        detailRow('Up', '<span class="af-rating up">👍 '+r.up+'</span>')+
+        detailRow('Down share', '<span class="af-bar-pct '+sev+'">'+r.down_pct+'%</span>')+
+        '</div>'+
+        '<div class="af-modal-subhead">Individual entries</div>'+
+        '<div id="afSectionEntries" class="empty">Loading…</div>';
+      openModal(titleHtml, html);
+
+      fetch('/p2/admin/agent-feedback/data?agent_slug='+encodeURIComponent(r.agent_slug))
+        .then(function(x){return x.json();})
+        .then(function(d){
+          var el=document.getElementById('afSectionEntries');
+          if(!el) return; /* modal moved on to something else meanwhile */
+          modalEntries=(d.recent||[]).filter(function(x){ return x.section_key===r.section_key; });
+          if(!modalEntries.length){ el.outerHTML='<div class="empty">No individual entries in the recent-feedback window.</div>'; return; }
+          el.outerHTML=modalEntries.map(miniRow).join('');
+        })
+        .catch(function(){
+          var el=document.getElementById('afSectionEntries');
+          if(el) el.outerHTML='<div class="empty">Could not load entries.</div>';
+        });
+    }
+
+    function aggregateByAgent(rows){
+      var m={};
+      rows.forEach(function(r){
+        var a=m[r.agent_slug] || (m[r.agent_slug]={agent_slug:r.agent_slug, down:0, up:0});
+        a.down+=r.down; a.up+=r.up;
+      });
+      return Object.keys(m).map(function(k){
+        var a=m[k], total=a.down+a.up;
+        a.total=total; a.rate=total?Math.round(a.down/total*100):0;
+        return a;
+      });
+    }
+
+    function openKpiDetail(kind){
+      var sortKey = kind==='rate' ? 'rate' : (kind==='up' ? 'up' : (kind==='down' ? 'down' : 'total'));
+      var agg=aggregateByAgent(lastSummary).sort(function(a,b){ return b[sortKey]-a[sortKey]; });
+      var titles={total:'💬 Total feedback', up:'👍 Thumbs up', down:'👎 Thumbs down', rate:'📉 Down rate'};
+      var bodyHtml;
+      if(!agg.length){
+        bodyHtml='<div class="empty">No feedback recorded in the last 30 days.</div>';
+      } else {
+        bodyHtml='<div class="af-modal-subhead">By agent, last 30 days</div>'+agg.map(function(a){
+          var sev=severity(a.rate);
+          return '<div class="af-mini-row" style="grid-template-columns:1.4fr auto auto auto">'+
+            '<span class="af-mini-agent af-agent" style="--ag-color:'+agentColor(a.agent_slug)+'">'+esc(agentLabel(a.agent_slug))+'</span>'+
+            '<span class="af-rating down">👎 '+a.down+'</span>'+
+            '<span class="af-rating up">👍 '+a.up+'</span>'+
+            '<span class="af-bar-pct '+sev+'">'+a.rate+'%</span>'+
+          '</div>';
+        }).join('');
+      }
+      openModal(titles[kind]||'Feedback', bodyHtml);
+    }
+
+    document.addEventListener('click', function(e){
+      var kpi=e.target.closest('[data-kpi]');
+      if(kpi){ openKpiDetail(kpi.getAttribute('data-kpi')); return; }
+
+      var srow=e.target.closest('#summaryBody tr[data-summary-idx]');
+      if(srow){ var si=+srow.getAttribute('data-summary-idx'); if(lastSummary[si]) openSectionDetail(lastSummary[si]); return; }
+
+      var rrow=e.target.closest('#recentBody tr[data-recent-idx]');
+      if(rrow){ var ri=+rrow.getAttribute('data-recent-idx'); if(lastRecent[ri]) openRecentDetail(lastRecent[ri]); return; }
+
+      var mrow=e.target.closest('.af-mini-row[data-entry-idx]');
+      if(mrow){ var mi=+mrow.getAttribute('data-entry-idx'); if(modalEntries[mi]) openRecentDetail(modalEntries[mi]); return; }
+    });
+  </script>
+  <script>(function(){if(window.__trk)return;window.__trk=1;var _s=Date.now(),_d=false;function f(){if(_d)return;_d=true;var s=Math.round((Date.now()-_s)/1000);fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:location.pathname,title:'Agent Feedback',seconds:s,email:'{{ user.email if user else "" }}'}),keepalive:true}).catch(function(){});}document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')f();});window.addEventListener('beforeunload',f);})();</script>
+</body>
+</html>
