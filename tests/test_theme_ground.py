@@ -29,9 +29,10 @@ pseudo-CLASS, not a type selector, so the intuitive reading is wrong:
 
 aurora's light ground must beat aurora's own `html{...}` dark base (so it wins on
 specificity rather than on load order), and must NOT beat a page that declares
-its own `html[data-theme="light"]{...}` later -- templates/context.html keeps its
-light gradient that way, and spelling aurora's rule `:root[data-theme="light"]`
-(0,2,0) instead flattens that gradient to a solid fill.
+its own `html[data-theme="light"]{...}` later -- spelling aurora's rule
+`:root[data-theme="light"]` (0,2,0) instead flattens such a page's gradient to a
+solid fill. templates/context.html was that page until it moved to the single-
+dark Bento system; the test itself notes why the check is kept anyway.
 """
 import os
 import re
@@ -138,9 +139,19 @@ def test_aurora_light_ground_outweighs_its_own_dark_base():
 def test_aurora_light_ground_yields_to_a_pages_own_light_ground():
     """A page that sets `html[data-theme="light"]` later must still win.
 
-    templates/context.html relies on this for its light gradient. If aurora's
-    rule is raised to :root[data-theme="light"] (0,2,0) it outranks the page and
-    silently replaces that gradient with a flat fill.
+    templates/context.html used to be the example: it carried its own light
+    gradient and relied on this comparison to keep it. That page was rebuilt on
+    the Bento design system, which is a single dark theme, so it no longer loads
+    aurora-app.css or declares a light ground at all -- and no template in the
+    repo currently does.
+
+    The assertion stays because the property is what is protected, not the
+    example. Raising aurora's rule to :root[data-theme="light"] (0,2,0) would
+    make it outrank any page-level `html[data-theme="light"]` (0,1,1) and
+    silently replace that page's ground with a flat fill -- a failure with no
+    error, no warning and no symptom in the default theme, which is the exact
+    bug this file exists for. The next page to declare one should not have to
+    rediscover it.
     """
     light = [s for s, _ in _root_bg_rules(_read(AURORA)) if 'data-theme="light"' in s]
     page_rule = _specificity('html[data-theme="light"]')

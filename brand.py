@@ -35,6 +35,18 @@ BRAND = {
     "handbook": "Field Guide",
     "assistant": "Atlas",
 
+    # The agent runtime the product is a front end for. The Field Guide is the
+    # one page that has to name it -- its whole second chapter is "the engine
+    # existed, nobody had a front door" -- and it was typed in as the previous
+    # company's internal system name in seven places there.
+    "engine": "Foundry",
+
+    # The email domain the /p2 gate accepts. Named here because the Field
+    # Guide tells a reader which address to sign in with, and a wrong domain
+    # in that sentence is a support ticket rather than a cosmetic slip. Kept
+    # in step with access_note below, which states the same rule.
+    "staff_domain": "northaxis.com",
+
     # ── auth ────────────────────────────────────────────────────────────────
     # Mirrors the server-side gate; shown to a user who is refused access.
     # Who to ask when a page refuses you. Named here rather than typed into

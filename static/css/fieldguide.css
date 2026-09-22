@@ -1,0 +1,681 @@
+/* ════════════════════════════════════════════════════════════════════════
+   FIELD GUIDE — page styles
+
+   Serves both routes of templates/context.html: the chapter index at
+   /p2/playbook and a single chapter at /p2/playbook/<slug>.
+
+   THIS PAGE IS NOT A DASHBOARD, AND IT SHOULD NOT LOOK LIKE ONE.
+
+   Every other surface in this product is made of tiles: the workspace is a
+   bento grid, the agent directory is a column of filled rows, an agent page
+   is panels of figures. That is right for a screen you are scanning for a
+   number. This one is a document -- eight short chapters somebody reads
+   start to finish, once, in their first week.
+
+   So it is built from two things the rest of the product does not use:
+
+     RULES INSTEAD OF FILLS.  The chapter index is a contents page: hairline
+       rules between entries, a large numeral, and nothing else. A tile says
+       "this is a thing you act on"; a rule says "this is a list you read".
+       It is the only surface in the product not made of tiles, and that is
+       the whole point -- you know you are in the manual before you have
+       read a word of it.
+
+     A MEASURE.  Running prose is capped at 68 characters. The rest of the
+       product is a fluid grid because a table wants the width; a paragraph
+       does not, and a 1400px line is the reason nobody finishes the page.
+       Diagrams and card grids break out of the measure deliberately.
+
+   What it does NOT do, though the page it replaces did: give each chapter
+   its own hue. There were eight, one per chapter, applied to a card, a
+   glow, a numeral and a border. Rule 4 of this design system says colour is
+   load-bearing -- a fill means "this is the thing you came for". Eight
+   decorative hues spend that signal on navigation furniture. The numeral
+   carries chapter identity now, and it does it better, because "chapter 6"
+   is a thing you can say out loud and "the magenta one" is not.
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* ── SHARED FRAME ─────────────────────────────────────────────────────── */
+
+.fg-wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 var(--page-pad);
+}
+
+/* The measure. Applied to the prose column of every chapter; anything that
+   wants the full width opts out with .fg-wide below. */
+.fg-body       { padding-bottom: var(--sp-10); }
+.fg-body p,
+.fg-body > .fg-lede { max-width: 68ch; }
+
+.fg-wide { max-width: none; }
+
+/* ── HERO (both routes) ───────────────────────────────────────────────── */
+
+.fg-hero {
+  padding: var(--sp-9) 0 var(--sp-8);
+}
+
+.fg-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--acc);
+  margin-bottom: var(--sp-4);
+}
+.fg-kicker::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--acc);
+}
+
+.fg-hero h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-4xl);
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-display);
+  line-height: var(--lh-tight);
+  color: var(--tx);
+  margin: 0;
+  max-width: 20ch;
+}
+.fg-hero > p {
+  font-size: var(--fs-lg);
+  color: var(--tx2);
+  margin: var(--sp-4) 0 0;
+  max-width: 62ch;
+}
+
+/* The four figures under the index hero. Plain text on the page ground, not
+   four tiles: they are the guide's table of contents in miniature, not
+   metrics somebody acts on. */
+.fg-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-7);
+  margin-top: var(--sp-7);
+  padding-top: var(--sp-6);
+  border-top: 1px solid var(--line);
+}
+.fg-figures div { display: flex; flex-direction: column; gap: 2px; }
+.fg-figures b {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-semi);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ls-tight);
+  color: var(--tx);
+  line-height: 1;
+}
+.fg-figures span {
+  font-size: var(--fs-sm);
+  color: var(--tx2);
+}
+
+/* ── THE CONTENTS PAGE ────────────────────────────────────────────────── */
+
+.fg-toc-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2) var(--sp-4);
+  padding-bottom: var(--sp-4);
+}
+.fg-toc-head h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-tight);
+  color: var(--tx);
+  margin: 0;
+}
+.fg-toc-head p { font-size: var(--fs-sm); color: var(--tx3); margin: 0; }
+
+/* One rule per entry, and one under the last, so the list reads as a
+   contents page rather than as eight things that happen to be stacked. */
+.fg-toc { border-top: 1px solid var(--line); }
+
+.fg-ch {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  align-items: baseline;
+  gap: var(--sp-5);
+  padding: var(--sp-6) var(--sp-4);
+  border-bottom: 1px solid var(--line);
+  transition: background var(--dur) var(--ease);
+}
+.fg-ch:hover { background: var(--s1); }
+
+.fg-ch-num {
+  font-family: var(--font-display);
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-semi);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ls-display);
+  line-height: 1;
+  color: var(--tx3);
+  transition: color var(--dur) var(--ease);
+}
+.fg-ch:hover .fg-ch-num { color: var(--acc); }
+
+.fg-ch-t h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-tight);
+  color: var(--tx);
+  margin: 0 0 var(--sp-1);
+}
+.fg-ch-t p { font-size: var(--fs-md); color: var(--tx2); margin: 0; max-width: 56ch; }
+
+.fg-ch-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--tx3);
+  white-space: nowrap;
+}
+.fg-ch-meta svg {
+  width: 16px; height: 16px;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+  transition: color var(--dur) var(--ease);
+}
+.fg-ch:hover .fg-ch-meta svg { color: var(--acc); }
+
+@media (max-width: 720px) {
+  .fg-ch { grid-template-columns: 44px 1fr; gap: var(--sp-4); padding: var(--sp-5) 0; }
+  .fg-ch-num  { font-size: var(--fs-2xl); }
+  .fg-ch-meta { grid-column: 2; padding-top: var(--sp-2); }
+}
+
+/* ── CHAPTER NAV ──────────────────────────────────────────────────────── */
+
+.fg-chnav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-5);
+  flex-wrap: wrap;
+  padding: var(--sp-5) 0;
+}
+.fg-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--tx2);
+  transition: color var(--dur) var(--ease);
+}
+.fg-back:hover { color: var(--tx); }
+.fg-back svg {
+  width: 16px; height: 16px;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* Eight numbered stops. The current one is a raised fill, which is how a
+   selected thing is marked everywhere else in this product. */
+.fg-stops { display: flex; gap: var(--sp-1); }
+.fg-stop {
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-sm);
+  background: var(--s1);
+  color: var(--tx3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  font-variant-numeric: tabular-nums;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.fg-stop:hover { background: var(--s2); color: var(--tx2); }
+.fg-stop[aria-current] { background: var(--acc); color: var(--tx-on-fill); }
+
+/* ── CHAPTER HEAD ─────────────────────────────────────────────────────── */
+
+.fg-chead { padding: var(--sp-5) 0 var(--sp-8); border-bottom: 1px solid var(--line); }
+.fg-chead h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-4xl);
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-display);
+  line-height: var(--lh-tight);
+  color: var(--tx);
+  margin: var(--sp-3) 0 0;
+  max-width: 18ch;
+}
+.fg-chead > p {
+  font-size: var(--fs-lg);
+  color: var(--tx2);
+  margin: var(--sp-4) 0 0;
+  max-width: 62ch;
+}
+.fg-cnum {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--tx3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── PROSE ────────────────────────────────────────────────────────────── */
+
+.fg-sec { padding-top: var(--sp-8); }
+.fg-sec > h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-tight);
+  color: var(--tx);
+  margin: 0 0 var(--sp-4);
+}
+.fg-body p { font-size: var(--fs-md); color: var(--tx2); line-height: var(--lh-body); margin: 0 0 var(--sp-4); }
+.fg-body p b, .fg-body p strong { color: var(--tx); font-weight: var(--fw-semi); }
+.fg-body code {
+  font-family: var(--font-body);
+  font-size: 0.92em;
+  background: var(--s2);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: var(--tx);
+}
+
+.fg-lede { font-size: var(--fs-xl) !important; color: var(--tx) !important; line-height: var(--lh-snug); }
+
+/* The one quote in the guide. --cream is documented as the featured fill,
+   and a pull quote is the single thing on this page that earns one. */
+.fg-quote {
+  background: var(--cream);
+  color: var(--tx-on-fill);
+  border-radius: var(--r);
+  padding: var(--sp-7);
+  margin: var(--sp-7) 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-tight);
+  line-height: var(--lh-snug);
+  max-width: 24ch;
+}
+.fg-quote b { font-weight: var(--fw-bold); }
+
+/* ── CARDS & GRIDS (the breakout content) ─────────────────────────────── */
+
+.fg-card {
+  background: var(--s1);
+  border-radius: var(--r);
+  padding: var(--sp-6);
+}
+.fg-card h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-tight);
+  color: var(--tx);
+  margin: 0 0 var(--sp-3);
+}
+.fg-card p { font-size: var(--fs-sm); color: var(--tx2); margin: 0; line-height: var(--lh-body); }
+.fg-card p + p { margin-top: var(--sp-3); }
+
+/* min(Npx, 100%) rather than a bare Npx: auto-fit will not shrink a track
+   below its stated minimum, so a 420px floor on a 390px phone pushes the
+   grid 54px past the viewport and the whole page scrolls sideways. */
+.fg-grid   { display: grid; gap: var(--gap); margin: var(--sp-6) 0; }
+.fg-grid-2 { grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); }
+.fg-grid-3 { grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); }
+
+/* A label above a card, in place of the coloured cap the old cards wore. */
+.fg-tag {
+  display: inline-block;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--tx3);
+  margin-bottom: var(--sp-3);
+}
+.fg-tag-acc { color: var(--acc); }
+/* A URL path is not a label: upper-casing "/app" into "/APP" states a route
+   that does not exist. */
+.fg-tag-path { text-transform: none; letter-spacing: var(--ls-normal); font-size: var(--fs-sm); }
+
+/* A checked list. */
+.fg-list { display: flex; flex-direction: column; gap: var(--sp-3); margin: var(--sp-5) 0 0; }
+.fg-list div { display: flex; gap: var(--sp-3); font-size: var(--fs-sm); color: var(--tx2); }
+.fg-list svg {
+  flex: 0 0 auto; width: 16px; height: 16px; margin-top: 3px;
+  fill: none; stroke: var(--acc); stroke-width: 2.2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* Chips naming agents. */
+.fg-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-4); }
+.fg-chip {
+  font-size: var(--fs-xs);
+  color: var(--tx2);
+  background: var(--s2);
+  border-radius: var(--r-sm);
+  padding: 4px 10px;
+}
+
+/* The foot of a persona card: a note on the left, a link on the right. */
+.fg-cfoot {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--sp-4); flex-wrap: wrap;
+  margin-top: var(--sp-5); padding-top: var(--sp-4);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-xs); color: var(--tx3);
+}
+.fg-cfoot a { color: var(--acc); }
+.fg-cfoot a:hover { color: var(--acc-hi); }
+
+/* ── FLOW (chapter 2) ─────────────────────────────────────────────────── */
+
+.fg-flow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); margin: var(--sp-6) 0; }
+.fg-flow-step {
+  background: var(--s1); border-radius: var(--r);
+  padding: var(--sp-3) var(--sp-5);
+  font-size: var(--fs-sm); color: var(--tx2);
+}
+.fg-flow-step[data-hi] { background: var(--acc); color: var(--tx-on-fill); font-weight: var(--fw-semi); }
+.fg-flow-sep { color: var(--tx3); font-size: var(--fs-sm); }
+
+/* ── STEP TRACKS (chapter 4) ──────────────────────────────────────────── */
+
+.fg-track { display: flex; flex-direction: column; gap: var(--sp-3); margin-top: var(--sp-5); }
+.fg-step { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-sm); color: var(--tx2); }
+.fg-step svg {
+  flex: 0 0 auto; width: 18px; height: 18px; color: var(--tx3);
+  fill: none; stroke: currentColor; stroke-width: 1.9;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.fg-note {
+  display: flex; gap: var(--sp-3);
+  margin-top: var(--sp-5); padding-top: var(--sp-4);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-sm); color: var(--tx2);
+}
+.fg-note svg {
+  flex: 0 0 auto; width: 16px; height: 16px; margin-top: 3px; color: var(--acc);
+  fill: none; stroke: currentColor; stroke-width: 1.9;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.fg-pill {
+  display: inline-block; margin-top: var(--sp-5);
+  font-size: var(--fs-xs); color: var(--tx2);
+  background: var(--s2); border-radius: var(--r-sm); padding: 5px 11px;
+}
+.fg-pill[data-hi] { background: var(--acc); color: var(--tx-on-fill); font-weight: var(--fw-semi); }
+
+/* The surface you are currently signed into, marked once. */
+.fg-here { background: var(--s2); }
+.fg-badge-here {
+  margin-left: var(--sp-3);
+  font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  color: var(--tx-on-fill); background: var(--acc);
+  border-radius: var(--r-sm); padding: 2px 8px;
+}
+
+/* ── BUCKETS (chapter 5) ──────────────────────────────────────────────── */
+
+.fg-bkt {
+  background: var(--s1);
+  border-radius: var(--r);
+  padding: var(--sp-6);
+  cursor: pointer;
+  /* A column so the disclosure can be pushed to the bottom: the three cards
+     carry two, three and two lines of copy, and a toggle that floats with the
+     text puts three identical controls at three different heights. */
+  display: flex;
+  flex-direction: column;
+  transition: background var(--dur) var(--ease);
+}
+.fg-bkt:hover { background: var(--s2); }
+.fg-bkt-n {
+  font-family: var(--font-display);
+  font-size: var(--fs-4xl);
+  font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-display);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--tx);
+}
+.fg-bkt h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-tight); color: var(--tx);
+  margin: var(--sp-3) 0 var(--sp-2);
+}
+.fg-bkt > p { font-size: var(--fs-sm); color: var(--tx2); margin: 0 0 var(--sp-5); line-height: var(--lh-body); }
+
+.fg-bkt-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sp-3);
+  margin-top: auto; padding-top: var(--sp-4);
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-sm); color: var(--tx2);
+}
+.fg-bkt-toggle svg {
+  width: 16px; height: 16px;
+  fill: none; stroke: currentColor; stroke-width: 2.2;
+  stroke-linecap: round; stroke-linejoin: round;
+  transition: transform var(--dur) var(--ease);
+}
+.fg-bkt.is-open .fg-bkt-toggle svg { transform: rotate(180deg); }
+
+.fg-bkt-agents { display: none; margin-top: var(--sp-4); }
+.fg-bkt.is-open .fg-bkt-agents { display: block; }
+.fg-bkt-agents .fg-chip { background: var(--s3); }
+.fg-bkt-explore { display: inline-block; margin-top: var(--sp-4); font-size: var(--fs-xs); color: var(--acc); }
+
+/* The 3/6/7 split, as one bar. A single hue at three steps: these are
+   proportions of one whole, not three things that mean different things. */
+.fg-split { display: flex; gap: 3px; height: 10px; margin: var(--sp-6) 0 var(--sp-3); }
+.fg-split i { display: block; height: 100%; border-radius: var(--r-sm); width: 0; transition: width .6s var(--ease); }
+.fg-split i:nth-child(1) { background: var(--tx); }
+.fg-split i:nth-child(2) { background: var(--tx2); }
+.fg-split i:nth-child(3) { background: var(--s3); }
+.fg-split-labels { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--tx3); }
+
+/* ── AGENT DIRECTORY (chapter 6) ──────────────────────────────────────── */
+
+.fg-filter { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: var(--sp-6) 0; }
+.fg-filter button {
+  font-size: var(--fs-sm); color: var(--tx2);
+  background: var(--s1); border-radius: var(--r-sm);
+  padding: 7px 14px; cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.fg-filter button:hover { background: var(--s2); color: var(--tx); }
+.fg-filter button.on { background: var(--s3); color: var(--tx); }
+.fg-filter .cnt { color: var(--tx3); margin-left: 4px; font-variant-numeric: tabular-nums; }
+.fg-filter button.on .cnt { color: var(--tx2); }
+
+.fg-agrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: var(--gap); }
+.fg-ag {
+  background: var(--s1); border-radius: var(--r);
+  padding: var(--sp-5);
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  transition: background var(--dur) var(--ease);
+}
+.fg-ag:hover { background: var(--s2); }
+.fg-ag-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-md); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-tight); color: var(--tx);
+}
+.fg-ag-d { font-size: var(--fs-sm); color: var(--tx2); margin-top: var(--sp-2); line-height: var(--lh-body); flex: 1; }
+.fg-ag-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sp-3); margin-top: var(--sp-5);
+}
+.fg-badges { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+.fg-b { font-size: var(--fs-xs); color: var(--tx3); background: var(--s2); border-radius: var(--r-sm); padding: 3px 9px; }
+.fg-ag:hover .fg-b { background: var(--s3); }
+.fg-ag-view { font-size: var(--fs-xs); color: var(--tx3); display: inline-flex; align-items: center; gap: 4px; }
+.fg-ag-view svg {
+  width: 13px; height: 13px;
+  fill: none; stroke: currentColor; stroke-width: 2.4;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.fg-ag:hover .fg-ag-view { color: var(--acc); }
+
+/* ── LAYER STACK (chapter 7) ──────────────────────────────────────────── */
+
+.fg-layer { background: var(--s1); border-radius: var(--r); padding: var(--sp-6); }
+.fg-layer-h { display: flex; align-items: baseline; gap: var(--sp-4); margin-bottom: var(--sp-4); }
+.fg-layer-h span {
+  font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--tx3);
+  font-variant-numeric: tabular-nums;
+}
+.fg-layer-h h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-tight); color: var(--tx); margin: 0;
+}
+.fg-techs { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.fg-tech {
+  font-size: var(--fs-sm); color: var(--tx);
+  background: var(--s2); border-radius: var(--r-sm);
+  padding: 6px 12px;
+}
+.fg-tech small { color: var(--tx3); font-size: var(--fs-xs); margin-left: 6px; }
+
+/* ── VIDEO (chapter 8) ────────────────────────────────────────────────── */
+
+.fg-video { position: relative; border-radius: var(--r); overflow: hidden; background: var(--s1); margin-top: var(--sp-6); }
+.fg-video iframe { display: block; width: 100%; aspect-ratio: 16/9; border: 0; }
+.fg-facade {
+  display: block; position: relative; width: 100%;
+  aspect-ratio: 16/9; padding: 0; cursor: pointer; background: var(--s1);
+}
+.fg-facade img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fg-play {
+  position: absolute; inset: 0; margin: auto;
+  width: 64px; height: 64px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--acc);
+  transition: background var(--dur) var(--ease);
+}
+.fg-facade:hover .fg-play { background: var(--acc-hi); }
+.fg-play svg { width: 26px; height: 26px; fill: var(--tx-on-fill); margin-left: 3px; }
+
+/* ── PAGER ────────────────────────────────────────────────────────────── */
+
+.fg-pager {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap);
+  margin-top: var(--sp-9); padding-top: var(--sp-7);
+  border-top: 1px solid var(--line);
+}
+.fg-pg {
+  background: var(--s1); border-radius: var(--r);
+  padding: var(--sp-5) var(--sp-6);
+  display: flex; flex-direction: column; gap: var(--sp-1);
+  transition: background var(--dur) var(--ease);
+}
+.fg-pg:hover { background: var(--s2); }
+.fg-pg-next { text-align: right; }
+.fg-pg-label { font-size: var(--fs-xs); color: var(--tx3); }
+.fg-pg-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-md); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-tight); color: var(--tx);
+}
+.fg-pg-done { background: var(--acc); }
+.fg-pg-done:hover { background: var(--acc-hi); }
+.fg-pg-done .fg-pg-label,
+.fg-pg-done .fg-pg-title { color: var(--tx-on-fill); }
+.fg-spacer { display: block; }
+@media (max-width: 640px) {
+  .fg-pager { grid-template-columns: 1fr; }
+  .fg-pg-next { text-align: left; }
+}
+
+/* ── FOOT ─────────────────────────────────────────────────────────────── */
+
+.fg-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sp-4); flex-wrap: wrap;
+  max-width: 1080px; margin: 0 auto;
+  padding: var(--sp-7) var(--page-pad) var(--sp-9);
+  font-size: var(--fs-sm); color: var(--tx3);
+}
+.fg-foot a { color: var(--tx2); }
+.fg-foot a:hover { color: var(--tx); }
+
+/* ── AGENT DETAIL DIALOG ──────────────────────────────────────────────── */
+
+.fg-modal {
+  position: fixed; inset: 0; z-index: 3000;
+  display: none; align-items: center; justify-content: center;
+  padding: var(--sp-5);
+  background: rgba(0,0,0,.62);
+}
+.fg-modal.is-open { display: flex; }
+.fg-panel {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: 86vh; overflow-y: auto;
+  background: var(--s1);
+  border-radius: var(--r);
+  padding: var(--sp-7);
+  box-shadow: var(--shadow-overlay);
+}
+.fg-close {
+  position: absolute; top: var(--sp-4); right: var(--sp-4);
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--r-sm);
+  background: var(--s2); color: var(--tx2); cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.fg-close:hover { background: var(--s3); color: var(--tx); }
+.fg-close svg {
+  width: 14px; height: 14px;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.fg-panel h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-tight); color: var(--tx);
+  margin: var(--sp-2) 0 0; padding-right: var(--sp-8);
+}
+.fg-tier {
+  font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--tx3);
+}
+.fg-msec { margin-top: var(--sp-6); }
+.fg-mlabel {
+  display: block;
+  font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--tx3);
+  margin-bottom: var(--sp-2);
+}
+.fg-msec p { font-size: var(--fs-sm); color: var(--tx2); margin: 0; line-height: var(--lh-body); }
+.fg-mgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: var(--sp-5); margin-top: var(--sp-6); }
+.fg-mchips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.fg-mchip { font-size: var(--fs-xs); color: var(--tx2); background: var(--s2); border-radius: var(--r-sm); padding: 4px 10px; }
+.fg-mchip[data-ok] { background: var(--acc); color: var(--tx-on-fill); font-weight: var(--fw-semi); }
+
+/* ── PRINT ────────────────────────────────────────────────────────────── */
+
+@media print {
+  .bn-top, .fg-stops, .fg-back, .fg-pager, .fg-modal { display: none; }
+  /* The whole point of printing a guide is the prose, and half of it lives
+     behind a disclosure on the landscape chapter. */
+  .fg-bkt-agents { display: block; }
+  .fg-quote { background: #fff; color: #000; }
+}

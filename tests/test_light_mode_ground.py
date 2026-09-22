@@ -192,7 +192,14 @@ def test_a_moved_ground_never_carries_important(page):
     `html:root` (0,0,2) on class level, which is what gives them a light mode
     for free. An `!important` on the page's ground defeats that comparison
     outright and pins the page to a dark gradient in light mode. admin.css
-    carried one before the move, so this is a real regression path."""
+    carried one before the move, so this is a real regression path.
+
+    gtm.css is a special case as of the Bento rebuild: templates/call_sentiment
+    was its last consumer and now loads sentiment_pulse.css instead, so nothing
+    in the repo links it. It stays in this list only because the file is still
+    on disk; retiring the sheet and this parameter is cleanup-pass work, and
+    doing one without the other is how a dead file outlives everyone who knew
+    it was dead."""
     body = _strip_comments(_read(page))
     m = re.search(r"html:root\s*\{([^}]*)\}", body)
     assert m, "%s no longer sets its ground on html:root" % page

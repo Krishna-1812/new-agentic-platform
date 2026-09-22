@@ -3964,38 +3964,41 @@ def hub():
                            tracked_companies=_tracked_company_floor())
 
 CX_CHAPTERS = [
-    {"slug": "what-it-is", "num": 1, "icon": "💡", "title": "What it is",
+    # Presentation-only keys were dropped when this page was rebuilt: each
+    # chapter used to carry an emoji plus four colours (ac/ac2/bg/bd) that the
+    # template painted a card in. The design system this page now uses has
+    # four accent roles, not eight, and a chapter is not one of the things
+    # colour is for -- the numeral carries the identity. Nothing read these
+    # keys but templates/context.html, and nothing reads them now.
+    {"slug": "what-it-is", "num": 1, "title": "What it is",
      "teaser": "The one-line version, and the big idea behind it.",
-     "stat": "30 sec read", "ac": "#22d3ee", "ac2": "#818cf8",
-     "bg": "rgba(34,211,238,.14)", "bd": "rgba(34,211,238,.34)"},
-    {"slug": "why-we-built-it", "num": 2, "icon": "🚀", "title": "Why we built it",
-     "teaser": "Arena had the agents. Nobody had the front door.",
-     "stat": "1 min read", "ac": "#fb7185", "ac2": "#34d399",
-     "bg": "rgba(251,113,133,.14)", "bd": "rgba(251,113,133,.34)"},
-    {"slug": "who-its-for", "num": 3, "icon": "🎯", "title": "Who it's for",
+     "stat": "30 sec read"},
+    {"slug": "why-we-built-it", "num": 2, "title": "Why we built it",
+     "teaser": "The engine had the agents. Nobody had the front door.",
+     "stat": "1 min read"},
+    {"slug": "who-its-for", "num": 3, "title": "Who it's for",
      "teaser": "Four teams, one shared workspace.",
-     "stat": "30 sec read", "ac": "#a78bfa", "ac2": "#38bdf8",
-     "bg": "rgba(167,139,250,.14)", "bd": "rgba(167,139,250,.34)"},
-    {"slug": "how-to-navigate", "num": 4, "icon": "🧭", "title": "How to navigate",
-     "teaser": "Sign in → Hub → run an agent. That's it.",
-     "stat": "1 min read", "ac": "#6366f1", "ac2": "#8b5cf6",
-     "bg": "rgba(99,102,241,.14)", "bd": "rgba(99,102,241,.34)"},
-    {"slug": "agent-landscape", "num": 5, "icon": "🗺️", "title": "The agent landscape",
-     "teaser": "15 agents, 3 buckets, at a glance.",
-     "stat": "15 agents", "ac": "#22d3ee", "ac2": "#38bdf8",
-     "bg": "rgba(34,211,238,.14)", "bd": "rgba(34,211,238,.34)"},
-    {"slug": "every-agent", "num": 6, "icon": "🤖", "title": "Every agent, explained",
+     "stat": "30 sec read"},
+    {"slug": "how-to-navigate", "num": 4, "title": "How to navigate",
+     "teaser": "Sign in → Workspace → run an agent. That's it.",
+     "stat": "1 min read"},
+    # Neither of these states a count any more. They used to say "15 agents"
+    # and "15 cards" while the chapters themselves said 16 in four places and
+    # the bucket cards added up to a third number -- the roster had changed
+    # under all of them. Every count on the rebuilt page is computed from the
+    # roster at render time, so there is nothing left here to fall out of date.
+    {"slug": "agent-landscape", "num": 5, "title": "The agent landscape",
+     "teaser": "The whole roster, three buckets, at a glance.",
+     "stat": "At a glance"},
+    {"slug": "every-agent", "num": 6, "title": "Every agent, explained",
      "teaser": "What each does, how it's built, who runs it.",
-     "stat": "15 cards", "ac": "#e879f9", "ac2": "#818cf8",
-     "bg": "rgba(232,121,249,.14)", "bd": "rgba(232,121,249,.34)"},
-    {"slug": "tech-stack", "num": 7, "icon": "🧬", "title": "Tech stack",
+     "stat": "Full detail"},
+    {"slug": "tech-stack", "num": 7, "title": "Tech stack",
      "teaser": "Five layers, full candor.",
-     "stat": "5 layers", "ac": "#fbbf24", "ac2": "#34d399",
-     "bg": "rgba(251,191,36,.14)", "bd": "rgba(251,191,36,.34)"},
-    {"slug": "demo", "num": 8, "icon": "▶️", "title": "Watch the demo",
+     "stat": "5 layers"},
+    {"slug": "demo", "num": 8, "title": "Watch the demo",
      "teaser": "The whole platform, in one watch.",
-     "stat": "Demo video", "ac": "#fb7185", "ac2": "#f472b6",
-     "bg": "rgba(251,113,133,.14)", "bd": "rgba(251,113,133,.34)"},
+     "stat": "Demo video"},
 ]
 
 @app.route("/p2/playbook")
