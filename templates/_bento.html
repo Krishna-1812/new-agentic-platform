@@ -97,6 +97,15 @@
     </nav>
   </div>
   <div class="bn-top-right">
+    {#- The palette's permanent entry point. It cannot rely on a keyboard
+        shortcut: Ctrl+K is already the assistant's on six pages, and the
+        previous build's palette was undiscoverable precisely because a chord
+        announced once by a toast was the only way in. -#}
+    <button type="button" class="bn-top-jump" data-bn-palette aria-label="Jump to any tool or section">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-3.4-3.4"/></svg>
+      <span class="bn-top-jump-t">Jump to</span>
+      <span class="bn-kbd bn-top-k"><kbd>&#8984;</kbd><kbd>K</kbd></span>
+    </button>
     <div id="tbUserMenu" style="position:relative">
       <button type="button" class="bn-btn" id="tbUserPill" onclick="toggleTbMenu()">
         <span class="bn-av" style="width:22px;height:22px">
@@ -134,6 +143,17 @@ document.addEventListener('click', function(e){
   var d = document.getElementById('tbDropdown');
   if (m && d && !m.contains(e.target)) d.classList.remove('is-open');
 });
+/* Mark the menu entry for the page you are already on. This was pasted into
+   eleven templates, each writing the previous palette's purple as inline
+   styles; the class is all that is set now and the colour lives in CSS. */
+(function(){
+  try {
+    var here = location.pathname;
+    document.querySelectorAll('a.dd-item[href], a.tb-dd-item[href]').forEach(function(a){
+      if (a.getAttribute('href') === here) a.classList.add('active');
+    });
+  } catch (e) {}
+})();
 </script>
 {%- endmacro %}
 

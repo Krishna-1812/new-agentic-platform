@@ -112,13 +112,30 @@
   });
   ov.addEventListener("mousedown", function (e) { if (e.target === ov) close(); });
 
+  /* Ctrl/Cmd+K is claimed by the assistant widget on the six pages that
+     include it, and that binding predates this palette. Taking it would break
+     a shortcut people already use, and two handlers on one chord means both
+     fire. So the palette binds it only where it is free, and its click
+     affordance -- in the topbar, on every page -- is the entry point that
+     always works. A hidden shortcut was the old palette's whole problem. */
+  var assistantOwnsK = !!document.getElementById("k-root");
+
   document.addEventListener("keydown", function (e) {
-    if ((e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === "k") {
+    if (!assistantOwnsK && (e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === "k") {
       e.preventDefault();
       ov.classList.contains("on") ? close() : open();
     } else if (e.key === "Escape" && ov.classList.contains("on")) {
       close();
     }
+  });
+
+  /* The topbar control says which chord actually works on this page rather
+     than advertising one that does nothing. */
+  document.addEventListener("DOMContentLoaded", function () {
+    if (!assistantOwnsK) return;
+    document.querySelectorAll("[data-bn-palette] .bn-kbd, .bn-top-k").forEach(function (el) {
+      el.hidden = true;
+    });
   });
 
   /* Anything with data-bn-palette opens it by click, so the shortcut is not the
