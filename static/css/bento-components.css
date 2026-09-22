@@ -1,0 +1,264 @@
+/* ════════════════════════════════════════════════════════════════════════
+   BENTO — COMPONENT LIBRARY
+   Reusable pieces built on bento-tokens.css. Every page in the product
+   should reach for these before writing page-local CSS.
+
+   Naming: .bn-* so it can never collide with the page-local vocabularies
+   inherited from the previous codebase (.cpi-*, .ds-*, .lx-*).
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* ── TOPBAR ────────────────────────────────────────────────────────────── */
+.bn-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sp-6);
+  height: var(--topbar-h);
+  padding: 0 var(--page-pad);
+  background: var(--s1);
+  position: sticky; top: 0; z-index: 500;
+}
+.bn-top-left  { display: flex; align-items: center; gap: var(--sp-5); min-width: 0; }
+.bn-top-right { display: flex; align-items: center; gap: var(--sp-3); }
+
+.bn-brand { display: flex; align-items: center; gap: var(--sp-3); flex-shrink: 0; }
+.bn-mark  { width: 14px; height: 14px; border-radius: var(--r-sm); background: var(--acc); display: block; }
+.bn-word  {
+  font-family: var(--font-display); font-weight: var(--fw-bold);
+  font-size: var(--fs-lg); letter-spacing: var(--ls-display); color: var(--tx);
+}
+
+/* Breadcrumb — plain text, no chevrons-as-images. */
+.bn-crumbs { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; font-size: var(--fs-sm); }
+.bn-crumb     { color: var(--tx2); white-space: nowrap; transition: color var(--dur-fast) var(--ease); }
+.bn-crumb:hover { color: var(--tx); }
+.bn-crumb-sep { color: var(--tx3); }
+.bn-crumb-cur { color: var(--tx); font-weight: var(--fw-semi); white-space: nowrap; }
+
+.bn-nav { display: flex; align-items: center; gap: var(--sp-1); }
+.bn-nav a {
+  font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--tx2);
+  padding: var(--sp-2) var(--sp-4); border-radius: var(--r);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.bn-nav a:hover  { background: var(--s2); color: var(--tx); }
+.bn-nav a.is-on  { background: var(--acc); color: var(--tx-on-fill); font-weight: var(--fw-semi); }
+
+/* ── TILE — the one surface primitive ──────────────────────────────────── */
+.bn-tile {
+  background: var(--s1);
+  border-radius: var(--r);
+  padding: var(--sp-5);
+}
+.bn-tile--flush   { padding: 0; }
+.bn-tile--tight   { padding: var(--sp-4); }
+/* Fill variants. Rule 4: use these for the figure that matters, not decoration. */
+.bn-tile--cream { background: var(--cream); color: var(--tx-on-fill); }
+.bn-tile--clay  { background: var(--clay);  color: var(--tx-on-fill); }
+.bn-tile--lime  { background: var(--acc);   color: var(--tx-on-fill); }
+.bn-tile--sky   { background: var(--sky);   color: var(--tx-on-fill); }
+/* On a filled tile, secondary text is the fill's own ink at reduced alpha —
+   not --tx2, which would be invisible. */
+.bn-tile--cream .bn-label, .bn-tile--clay .bn-label,
+.bn-tile--lime  .bn-label, .bn-tile--sky  .bn-label,
+.bn-tile--cream .bn-dim,   .bn-tile--clay .bn-dim,
+.bn-tile--lime  .bn-dim,   .bn-tile--sky  .bn-dim { color: rgba(19,19,21,.66); }
+
+/* ── TYPE HELPERS ──────────────────────────────────────────────────────── */
+.bn-h1 {
+  font-family: var(--font-display); font-weight: var(--fw-bold);
+  font-size: var(--fs-4xl); line-height: var(--lh-tight);
+  letter-spacing: var(--ls-display); margin: 0;
+}
+.bn-h2 {
+  font-family: var(--font-display); font-weight: var(--fw-bold);
+  font-size: var(--fs-xl); line-height: var(--lh-snug);
+  letter-spacing: var(--ls-tight); margin: 0;
+}
+.bn-h3 {
+  font-family: var(--font-display); font-weight: var(--fw-semi);
+  font-size: var(--fs-lg); line-height: var(--lh-snug);
+  letter-spacing: var(--ls-tight); margin: 0;
+}
+.bn-label {
+  font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--tx2);
+}
+.bn-dim { color: var(--tx2); }
+.bn-sub { color: var(--tx2); font-size: var(--fs-md); }
+
+/* ── BUTTONS ───────────────────────────────────────────────────────────── */
+.bn-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: 40px; padding: var(--sp-3) var(--sp-5);
+  border: 0; border-radius: var(--r);
+  background: var(--s2); color: var(--tx);
+  font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-semi);
+  cursor: pointer; white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.bn-btn:hover { background: var(--s3); }
+.bn-btn--primary { background: var(--acc); color: var(--tx-on-fill); }
+.bn-btn--primary:hover { background: #D4FA63; }
+.bn-btn--ghost { background: transparent; color: var(--tx2); }
+.bn-btn--ghost:hover { background: var(--s2); color: var(--tx); }
+.bn-btn--danger { background: var(--clay); color: var(--tx-on-fill); }
+.bn-btn[disabled], .bn-btn.is-disabled { opacity: .4; cursor: not-allowed; }
+.bn-btn--sm { min-height: 32px; padding: var(--sp-2) var(--sp-3); font-size: var(--fs-xs); }
+
+/* ── CHIP (filter / toggle) ────────────────────────────────────────────── */
+.bn-chip {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border: 0; border-radius: var(--r);
+  background: var(--s2); color: var(--tx2);
+  font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-medium);
+  cursor: pointer; white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.bn-chip:hover  { background: var(--s3); color: var(--tx); }
+.bn-chip.is-on  { background: var(--clay); color: var(--tx-on-fill); font-weight: var(--fw-semi); }
+
+/* ── BADGE (read-only status) ──────────────────────────────────────────── */
+.bn-badge {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  padding: 3px var(--sp-2); border-radius: var(--r-sm);
+  background: var(--s2); color: var(--tx2);
+  font-size: var(--fs-xs); font-weight: var(--fw-semi); white-space: nowrap;
+}
+.bn-badge--lime { background: var(--acc);  color: var(--tx-on-fill); }
+.bn-badge--clay { background: var(--clay); color: var(--tx-on-fill); }
+.bn-badge--sky  { background: var(--sky);  color: var(--tx-on-fill); }
+
+/* ── INPUT ─────────────────────────────────────────────────────────────── */
+.bn-input {
+  width: 100%; min-width: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border: 0; border-radius: var(--r);
+  background: var(--s2); color: var(--tx);
+  font-family: var(--font-body); font-size: var(--fs-md);
+  transition: background var(--dur-fast) var(--ease);
+}
+.bn-input::placeholder { color: var(--tx3); }
+.bn-input:focus { background: var(--s3); outline: 2px solid var(--acc); outline-offset: 0; }
+.bn-select { appearance: none; cursor: pointer; padding-right: var(--sp-7); }
+.bn-select option { background: var(--s1); color: var(--tx); }
+
+/* ── STAT TILE ─────────────────────────────────────────────────────────── */
+.bn-stats { display: grid; gap: var(--gap); }
+.bn-stat  { background: var(--s1); border-radius: var(--r); padding: var(--sp-5); }
+.bn-stat-v {
+  font-family: var(--font-display); font-weight: var(--fw-bold);
+  font-size: var(--fs-3xl); line-height: 1.1; letter-spacing: var(--ls-display);
+  font-variant-numeric: tabular-nums; margin-top: var(--sp-1); color: inherit;
+}
+.bn-stat-d { font-size: var(--fs-xs); color: var(--acc); margin-top: 2px; }
+
+/* ── SKELETON — the loading paradigm ───────────────────────────────────── */
+/* A skeleton is the SHAPE of the content that replaces it. No shimmer sweep,
+   no pulse: a flat block. Movement during loading is what the previous
+   product did, and it is deliberately absent here. */
+.bn-skel { display: block; background: var(--s2); border-radius: var(--r); height: 14px; }
+.bn-skel-stack { display: flex; flex-direction: column; gap: var(--sp-2); }
+.bn-skel-stack .bn-skel:nth-child(1) { width: 68%; }
+.bn-skel-stack .bn-skel:nth-child(2) { width: 50%; }
+.bn-skel-stack .bn-skel:nth-child(3) { width: 59%; }
+
+/* Determinate progress. Top-only radius so the fill reads against its track. */
+.bn-prog { height: 6px; background: var(--s2); border-radius: var(--r); overflow: hidden; }
+.bn-prog > i { display: block; height: 100%; background: var(--acc); border-radius: var(--r); }
+
+/* ── EMPTY STATE ───────────────────────────────────────────────────────── */
+.bn-empty {
+  text-align: center; padding: var(--sp-9) var(--sp-4);
+  color: var(--tx2); background: var(--s1); border-radius: var(--r);
+}
+.bn-empty-t { font-family: var(--font-display); font-size: var(--fs-lg);
+  font-weight: var(--fw-semi); color: var(--tx); margin-bottom: var(--sp-2); }
+
+/* ── OVERLAY / DRAWER / MODAL ──────────────────────────────────────────── */
+.bn-ovl {
+  position: fixed; inset: 0; z-index: 3000;
+  background: rgba(10,10,12,.7);
+  opacity: 0; visibility: hidden;
+  transition: opacity var(--dur) var(--ease), visibility var(--dur) var(--ease);
+}
+.bn-ovl.is-open { opacity: 1; visibility: visible; }
+
+.bn-drawer {
+  position: fixed; top: 0; right: 0; height: 100%;
+  width: 460px; max-width: 92vw; z-index: 3100;
+  background: var(--s1); box-shadow: var(--shadow-overlay);
+  display: flex; flex-direction: column;
+  transform: translateX(100%);
+  transition: transform var(--dur-slow) var(--ease);
+}
+.bn-drawer.is-open { transform: none; }
+
+/* ── TOAST ─────────────────────────────────────────────────────────────── */
+.bn-toast {
+  position: fixed; left: 50%; bottom: var(--sp-7); transform: translateX(-50%);
+  z-index: 4000; padding: var(--sp-3) var(--sp-5); border-radius: var(--r);
+  background: var(--cream); color: var(--tx-on-fill);
+  font-size: var(--fs-sm); font-weight: var(--fw-semi);
+  opacity: 0; visibility: hidden;
+  transition: opacity var(--dur) var(--ease), visibility var(--dur) var(--ease);
+}
+.bn-toast.is-on { opacity: 1; visibility: visible; }
+
+/* ── AVATAR ────────────────────────────────────────────────────────────── */
+.bn-av {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 36px; height: 36px; border-radius: var(--r);
+  background: var(--s2); color: var(--tx2);
+  font-family: var(--font-display); font-size: var(--fs-xs); font-weight: var(--fw-bold);
+  overflow: hidden;
+}
+.bn-av img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+
+/* ── MENU (dropdown) ───────────────────────────────────────────────────── */
+.bn-menu {
+  position: absolute; z-index: 2000;
+  background: var(--s2); border-radius: var(--r); padding: var(--sp-2);
+  box-shadow: var(--shadow-overlay); min-width: 200px;
+  opacity: 0; visibility: hidden;
+  transition: opacity var(--dur) var(--ease), visibility var(--dur) var(--ease);
+}
+.bn-menu.is-open { opacity: 1; visibility: visible; }
+.bn-menu-item {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3); border-radius: var(--r-sm);
+  font-size: var(--fs-sm); color: var(--tx2); cursor: pointer; width: 100%;
+  background: transparent; border: 0; text-align: left;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.bn-menu-item:hover { background: var(--s3); color: var(--tx); }
+.bn-menu-item.is-danger { color: var(--clay); }
+.bn-menu-sep { height: 1px; background: var(--line); margin: var(--sp-2) var(--sp-1); }
+.bn-menu-item .dd-item-icon { display: inline-flex; width: 18px; height: 18px;
+  align-items: center; justify-content: center; flex-shrink: 0; opacity: .8; }
+.bn-menu-item .dd-item-icon svg { width: 16px; height: 16px; display: block; }
+
+/* The shared _admin_menu.html partial ships .dd-item / .dd-divider markup.
+   Map it onto the bento menu so the partial needs no per-page edits. */
+.bn-menu .dd-item {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3); border-radius: var(--r-sm);
+  font-size: var(--fs-sm); color: var(--tx2); cursor: pointer; width: 100%;
+  background: transparent; border: 0; text-align: left; line-height: 1.3;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.bn-menu .dd-item:hover { background: var(--s3); color: var(--tx); }
+.bn-menu .dd-item.danger { color: var(--clay); }
+.bn-menu .dd-divider { height: 1px; background: var(--line); margin: var(--sp-2) var(--sp-1); }
+.bn-menu .dd-item-icon { display: inline-flex; width: 18px; height: 18px;
+  align-items: center; justify-content: center; flex-shrink: 0; opacity: .8; }
+.bn-menu .dd-item-icon svg { width: 16px; height: 16px; display: block; }
+
+/* ── PAGE SHELL ────────────────────────────────────────────────────────── */
+.bn-shell { max-width: var(--maxw); margin: 0 auto; padding: var(--sp-6) var(--page-pad) var(--sp-9); }
+
+@media (max-width: 720px) {
+  .bn-top { height: auto; padding: var(--sp-3) var(--page-pad); flex-wrap: wrap; gap: var(--sp-3); }
+  .bn-crumbs { display: none; }
+  .bn-h1 { font-size: var(--fs-2xl); }
+  .bn-drawer { width: 100%; }
+}

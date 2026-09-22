@@ -29,7 +29,6 @@ CSS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 PAGES = [
     ("gtm.css", ".main"),                          # the Strategic Agents listing
     ("social_media_intelligence.css", ".main"),
-    ("company_people_intelligence.css", ".shell"),  # Contact Finder
     ("linkedin.css", ".shell"),                     # LinkedIn Intelligence
     ("job_change_alert.css", ".main"),
     ("42_north_dental_slot_checker.css", ".main"),
@@ -42,6 +41,16 @@ PAGES = [
 # Both are the shared scale: --margin-app is documented in grid-tokens.css as an
 # alias of --margin, kept for existing call sites.
 MARGIN_TOKENS = ("var(--margin)", "var(--margin-app)")
+
+# Pages migrated to the Bento design system. They are held to the same rule --
+# never hand-type a px value where a shared token exists -- but their tokens
+# live in bento-tokens.css (--page-pad, --topbar-h) and their shell and topbar
+# are shared components in bento-components.css rather than page-local CSS.
+# A page belongs in exactly one of these two lists; rows move across as they
+# are rebuilt, so a page can never quietly sit on neither grid.
+BENTO_PAGES = [
+    ("company_people_intelligence.css", "Contact Finder"),
+]
 
 
 def _rule(css, selector):
@@ -110,3 +119,45 @@ def test_the_embed_wrapper_matches_that_height_without_borrowing_bleed():
     pad = _padding(body)
     assert "var(--margin-app)" in pad, (
         "the embed bar should keep --margin-app, not --bleed: %r" % pad)
+
+
+# ── Pages on the Bento design system ─────────────────────────────────────────
+
+def _bento(name):
+    return open(os.path.join(CSS_DIR, name), encoding="utf-8").read()
+
+
+@pytest.mark.parametrize("sheet,label", BENTO_PAGES,
+                         ids=[p[0].replace(".css", "") for p in BENTO_PAGES])
+def test_a_bento_page_is_not_still_on_the_arena_grid(sheet, label):
+    """Half-migrated is the state that actually breaks: an Arena container
+    under a Bento topbar lines up with neither."""
+    css = _bento(sheet)
+    assert ".shell{" not in re.sub(r"\s+", "", css), (
+        "%s still defines the Arena .shell container" % sheet)
+    for token in ("var(--margin-app)", "var(--bleed)", "var(--gutter)"):
+        assert token not in css, "%s still uses the Arena token %s" % (sheet, token)
+
+
+@pytest.mark.parametrize("sheet,label", BENTO_PAGES,
+                         ids=[p[0].replace(".css", "") for p in BENTO_PAGES])
+def test_a_bento_page_hand_types_no_side_padding(sheet, label):
+    """The shell and the topbar are shared components; the page sheet must not
+    re-declare their side padding with a number of its own."""
+    css = re.sub(r"/\*.*?\*/", "", _bento(sheet), flags=re.S)
+    for selector in (".bn-shell", ".bn-top"):
+        assert re.search(r"(?:^|[};])\s*%s\s*\{" % re.escape(selector), css) is None, (
+            "%s redefines the shared component %s" % (sheet, selector))
+
+
+def test_the_shared_bento_shell_and_bar_take_their_padding_from_tokens():
+    comp = open(os.path.join(CSS_DIR, "bento-components.css"), encoding="utf-8").read()
+    for selector in (".bn-shell", ".bn-top"):
+        body = _rule(comp, selector)
+        assert body, "no base %s rule in bento-components.css" % selector
+        pad = _padding(body)
+        assert pad and "var(--page-pad)" in pad, (
+            "%s hand-types its side padding instead of taking --page-pad: %r"
+            % (selector, pad))
+    assert "var(--topbar-h)" in _rule(comp, ".bn-top"), (
+        ".bn-top does not take its height from --topbar-h")

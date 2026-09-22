@@ -310,17 +310,28 @@ def test_the_toggle_offers_both_layouts():
     assert 'data-view="table"' in tpl
 
 
+def _css_normalised():
+    """The stylesheet with formatting collapsed away.
+
+    These assertions are about rules, not about how the file is typed."""
+    raw = open(_CSS, encoding="utf-8").read()
+    raw = re.sub(r"/\*.*?\*/", "", raw, flags=re.S)
+    return re.sub(r"\s+", "", raw).replace(";}", "}")
+
+
 def test_the_table_scrolls_itself_rather_than_the_page():
     """A wide table must never make the whole page scroll sideways."""
-    css = open(_CSS, encoding="utf-8").read()
+    css = _css_normalised()
     wrap = css[css.index(".cpi-tbl-wrap{"):css.index(".cpi-tbl-wrap{") + 300]
-    assert "overflow-x:auto" in wrap
+    # `overflow:auto` covers the x axis as well as the y; either spelling is
+    # the same guarantee, which is that the WRAPPER takes the scroll.
+    assert "overflow-x:auto" in wrap or "overflow:auto" in wrap
 
 
 def test_the_header_stays_put_while_the_rows_scroll():
-    css = open(_CSS, encoding="utf-8").read()
-    assert "position:sticky" in css[css.index(".cpi-tbl thead th{"):
-                                    css.index(".cpi-tbl thead th{") + 220]
+    css = _css_normalised()
+    assert "position:sticky" in css[css.index(".cpi-tbltheadth{"):
+                                    css.index(".cpi-tbltheadth{") + 220]
 
 
 def test_no_column_is_hidden_at_any_width():

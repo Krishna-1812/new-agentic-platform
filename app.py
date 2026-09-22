@@ -20,6 +20,7 @@ from flask import (
     request, session, redirect, url_for,
     make_response, render_template, g,
 )
+from brand import brand_context  # user-facing product naming (single source of truth)
 import requests
 from collections import Counter
 
@@ -3166,7 +3167,7 @@ def _inject_app_agents():
     _u = _get_user() or {}
     _is_admin = (_u.get("email", "").lower() in ADMIN_EMAILS)
     return {"app_agents": _visible_app_agents(), "google_client_id": GOOGLE_CLIENT_ID,
-            "is_admin": _is_admin}
+            "is_admin": _is_admin, **brand_context()}
 
 @app.route("/app")
 @login_required

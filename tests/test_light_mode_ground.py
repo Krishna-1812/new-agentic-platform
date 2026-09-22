@@ -119,6 +119,25 @@ def test_a_page_with_its_own_light_ground_still_outranks_auroras(page):
             "its gradient in light mode" % (page, sel.strip()))
 
 
+def _loaded_with_aurora(sheet):
+    """True if any template loads `sheet` in the same document as aurora-app.css.
+
+    If nothing does, aurora's `body{background:transparent!important}` never
+    lands on a page that uses this sheet, and the rule below does not apply."""
+    tpl_dir = os.path.join(os.path.dirname(_CSS), "..", "templates")
+    tpl_dir = os.path.normpath(tpl_dir)
+    for name in os.listdir(tpl_dir):
+        if not name.endswith(".html"):
+            continue
+        try:
+            markup = open(os.path.join(tpl_dir, name), encoding="utf-8").read()
+        except OSError:
+            continue
+        if sheet in markup and "aurora-app.css" in markup:
+            return True
+    return False
+
+
 def test_no_page_sets_a_body_background_that_is_silently_discarded():
     """aurora-app.css loads after every page stylesheet and carries
     `body{background:transparent!important}`, so a body background in a page
@@ -128,6 +147,13 @@ def test_no_page_sets_a_body_background_that_is_silently_discarded():
     offenders = []
     for f in sorted(os.listdir(_CSS)):
         if not f.endswith(".css") or f == "aurora-app.css":
+            continue
+        # The premise is "aurora-app.css loads after this sheet". Pages migrated
+        # to the Bento design system do not load aurora at all, so their body
+        # background is the page's real ground rather than a discarded
+        # declaration. Derived from the templates instead of an exemption list,
+        # so it stays true by itself as more pages are rebuilt.
+        if not _loaded_with_aurora(f):
             continue
         for m in re.finditer(r"(?:^|\})\s*body\s*\{([^}]*)\}",
                              _strip_comments(_read(f))):

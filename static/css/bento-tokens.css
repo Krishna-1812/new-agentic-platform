@@ -1,0 +1,226 @@
+/* ════════════════════════════════════════════════════════════════════════
+   BENTO — DESIGN TOKENS
+   Canonical source of truth for colour, surface, type, spacing, shape and
+   motion. Every page is authored against these variables; no page should
+   hard-code a colour, a radius or a duration.
+
+   The system has five rules. They are not stylistic preferences — breaking
+   any one of them is what makes a design system drift:
+
+     1. SURFACES ARE OPAQUE.   Never rgba-white-over-dark. A surface is a
+                               flat colour you can name. This is what keeps
+                               the product from reading as "glass".
+     2. THERE ARE NO BORDERS.  Separation is a fill boundary plus a gap.
+                               --line exists only for the rare hairline
+                               inside a tile (table header rules).
+     3. ONE RADIUS.            --r, on everything. No mixing pill and card.
+     4. COLOUR IS LOAD-BEARING. A filled tile means "this is the number you
+                               opened the page for". If everything is
+                               coloured, nothing is.
+     5. ONE MOTION.            A 150ms opacity cross-fade. No lift, no
+                               stagger, no delay-per-index, no choreography.
+
+   ──────────────────────────────────────────────────────────────────────── */
+
+:root {
+
+  /* ── CANVAS & SURFACES ────────────────────────────────────────────────
+     Four opaque steps. --bg is the page; --s1 is a tile on it; --s2 is a
+     tile inside a tile; --s3 is a pressed/hover state. Because they are
+     opaque, nesting never compounds into mud the way alpha layers do. */
+  --bg:      #131315;
+  --s1:      #1C1C1F;
+  --s2:      #26262A;
+  --s3:      #303036;
+
+  /* ── TEXT ─────────────────────────────────────────────────────────────
+     Three tiers only. --tx on --s1 is 13.7:1; --tx2 is 5.6:1; --tx3 is for
+     non-essential metadata and never carries meaning on its own. */
+  --tx:      #EFE9DC;
+  --tx2:     #8B8B93;
+  --tx3:     #5E5E66;
+  --tx-on-fill: #131315;   /* text placed on any vivid fill below */
+
+  /* ── ACCENT & SEMANTIC ────────────────────────────────────────────────
+     A four-hue set, used as FILLS not tints. --acc is the single primary
+     action colour; --clay marks the one figure that needs attention;
+     --sky is the neutral data hue; --cream is the "featured" fill. */
+  --acc:     #C6F24E;   /* lime  — primary action, positive, in-progress */
+  --clay:    #E8663D;   /* clay  — attention, spend, negative sentiment  */
+  --sky:     #5AA9E6;   /* sky   — neutral data, secondary series        */
+  --cream:   #EFE9DC;   /* cream — featured tile, quotes                 */
+
+  /* Muted companions, for the rare case where a fill is too loud (a dot,
+     a 1px bar). Never used as a background behind body text. */
+  --acc-dim:  #2A3313;
+  --clay-dim: #33201A;
+  --sky-dim:  #17303F;
+
+  /* Semantic aliases. Pages reference these, not the hues, so the meaning
+     survives a palette change. */
+  --ok:      var(--acc);
+  --warn:    var(--clay);
+  --danger:  #FF5C5C;
+  --info:    var(--sky);
+
+  /* ── HAIRLINE ─────────────────────────────────────────────────────────
+     Rule 2 means this is nearly unused. It exists for a table header rule
+     and nothing else. If you are reaching for it to separate two tiles,
+     use a gap instead. */
+  --line:    #2E2E34;
+
+  /* ── TYPE ─────────────────────────────────────────────────────────────
+     Two families. Familjen Grotesk is the display face: geometric, tight,
+     used for headings and every number. Instrument Sans is the text face:
+     open, neutral, used for body, labels and UI. No monospace anywhere —
+     that was the previous product's signature and its absence is load-
+     bearing here. */
+  --font-display: 'Familjen Grotesk', system-ui, -apple-system, sans-serif;
+  --font-body:    'Instrument Sans', system-ui, -apple-system, sans-serif;
+
+  /* Scale — 8 steps, ratio ~1.22. Numbers are set in --font-display with
+     tabular figures so columns align. */
+  --fs-xs:   11px;
+  --fs-sm:   13px;
+  --fs-md:   15px;   /* body default */
+  --fs-lg:   17px;
+  --fs-xl:   21px;
+  --fs-2xl:  26px;
+  --fs-3xl:  34px;
+  --fs-4xl:  42px;
+
+  --lh-tight: 1.05;  /* display headings */
+  --lh-snug:  1.3;   /* subheads, card titles */
+  --lh-body:  1.5;   /* running text */
+
+  /* Display type is tracked in; body type is not. */
+  --ls-display: -0.035em;
+  --ls-tight:   -0.02em;
+  --ls-normal:  0;
+  --ls-label:   0.08em;   /* uppercase labels only */
+
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semi:    600;
+  --fw-bold:    700;
+
+  /* ── SPACING ──────────────────────────────────────────────────────────
+     Strict 4px base. Every margin, padding and gap in the product is one
+     of these. There is no 7px, no 9px, no 18px. */
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-7:  32px;
+  --sp-8:  40px;
+  --sp-9:  56px;
+  --sp-10: 72px;
+
+  /* The gap between tiles. One value, so every grid in the product has the
+     same rhythm. */
+  --gap:   10px;
+
+  /* ── SHAPE ────────────────────────────────────────────────────────────
+     Rule 3: one radius. --r-sm exists only for elements under ~24px tall
+     where 12px would round them into a circle. */
+  --r:     12px;
+  --r-sm:  8px;
+
+  /* ── ELEVATION ────────────────────────────────────────────────────────
+     There isn't any. Tiles are distinguished by fill, not by shadow. The
+     one exception is an overlay surface (drawer, modal) which must read as
+     floating above the page. */
+  --shadow-overlay: 0 24px 64px -16px rgba(0,0,0,.72);
+
+  /* ── MOTION ───────────────────────────────────────────────────────────
+     Rule 5: one paradigm. --dur is the cross-fade; --dur-fast is for
+     hover state only. `--ease` is a plain ease, deliberately not a spring
+     or a custom bezier with overshoot. */
+  --dur-fast: 100ms;
+  --dur:      150ms;
+  --dur-slow: 220ms;   /* drawer slide only */
+  --ease:     cubic-bezier(.4, 0, .2, 1);
+
+  /* ── LAYOUT ───────────────────────────────────────────────────────────*/
+  --maxw:       1600px;
+  --page-pad:   24px;
+  --topbar-h:   60px;
+
+  /* Base element defaults */
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  color: var(--tx);
+}
+
+@media (min-width: 900px)  { :root { --page-pad: 32px; } }
+@media (min-width: 1400px) { :root { --page-pad: 40px; } }
+
+/* ── GLOBAL RESET / BASELINE ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--tx);
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numbers are display-face and tabular everywhere, so a column of figures
+   lines up without per-table effort. */
+.num, [data-num] {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ls-tight);
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* The reset is wrapped in :where() so it contributes ZERO specificity. A
+   plain element-qualified reset (0,1,1) outranks single-class component
+   rules (0,1,0) and silently blanks every button; omitting the reset instead
+   leaves unstyled buttons with the browser's grey chrome. :where() gives the
+   clean default without ever winning a fight with a component class. */
+:where(button, input, select, textarea) {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+}
+
+/* ── MOTION: the one paradigm ──────────────────────────────────────────── */
+@keyframes bento-in { from { opacity: 0 } to { opacity: 1 } }
+
+/* Applied to content that replaces a loading state. No transform: nothing
+   moves, nothing is staggered, nothing is delayed per index. */
+.bento-in { animation: bento-in var(--dur) var(--ease) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bento-in { animation: none; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── FOCUS ─────────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* ── SCROLLBAR ─────────────────────────────────────────────────────────── */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--s3);
+  border-radius: var(--r);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--tx3); background-clip: content-box; }

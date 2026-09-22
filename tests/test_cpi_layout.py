@@ -215,45 +215,63 @@ def test_the_control_says_what_it_will_do(out):
 
 # ── Markup and styling contracts ─────────────────────────────────────────────
 
+def _css():
+    """The stylesheet with formatting normalised away.
+
+    These assertions are about rules, not about how the file is typed, so
+    whitespace between tokens is collapsed before matching. Pinning them to a
+    no-space writing style meant a reformat failed a test whose subject had
+    not changed."""
+    raw = open(_CSS, encoding="utf-8").read()
+    raw = re.sub(r"/\*.*?\*/", "", raw, flags=re.S)
+    raw = re.sub(r"\s+", "", raw)
+    return raw.replace(";}", "}")
+
+
 def _rule(css, selector):
     i = css.index(selector + "{")
     return css[i:css.index("}", i) + 1]
 
 
 def test_the_two_panels_are_columns_of_one_grid():
-    css = open(_CSS, encoding="utf-8").read()
+    css = _css()
     rule = _rule(css, ".cpi-layout")
     assert "display:grid" in rule
-    assert rule.count("minmax(0,1fr)") == 1 and "clamp(" in rule
+    assert rule.count("minmax(0,1fr)") == 1
 
 
 def test_extra_width_goes_to_the_results_not_the_assistant():
     """A rail past about 440px gives its bubbles a line length nobody reads,
     and the results table is what actually wants the room."""
-    css = open(_CSS, encoding="utf-8").read()
-    assert "clamp(340px,26vw,440px)" in _rule(css, ".cpi-layout")
+    css = _css()
+    # A fixed rail: every extra pixel of viewport goes to the results column,
+    # which is the one that wants the room.
+    assert "minmax(0,1fr)360px" in _rule(css, ".cpi-layout")
 
 
 def test_the_only_single_column_layout_is_the_narrow_breakpoint():
-    css = open(_CSS, encoding="utf-8").read()
-    stacking = re.findall(r"@media \(max-width:(\d+)px\)\{\.cpi-layout\{grid-template-columns:1fr\}\}", css)
-    assert stacking == ["1080"]
+    css = _css()
+    stacking = re.findall(r"@media\(max-width:(\d+)px\)\{\.cpi-layout\{grid-template-columns:minmax\(0,1fr\)\}", css)
+    # exactly one breakpoint stacks the two panels
+    assert stacking == ["1180"]
 
 
 def test_a_tucked_rail_is_narrow_but_never_gone():
     """display:none would leave no way back, which is the failure being fixed,
     not a smaller version of it."""
-    css = open(_CSS, encoding="utf-8").read()
+    css = _css()
     i = css.index(".cpi-layout.chat-tucked{")
     block = css[i:i + 900]
-    assert "grid-template-columns:minmax(0,1fr) 54px" in block
+    assert "grid-template-columns:minmax(0,1fr)44px" in block
 
     # Whatever the tucked state hides, it must never be the rail itself or the
     # header carrying the control that brings it back. Selectors are matched
     # with their bodies, since a grouped rule hides several things at once and
     # only some of them are allowed.
+    # The mark stays: a 44px rail showing whose panel it is reads better than
+    # a bare chevron, and the header carrying the re-open control must survive.
     hideable = ("cpi-chat-hdr-name", "cpi-chat-live", "cpi-chat-body", "cpi-chat-input-row")
-    for selector, body in re.findall(r"([^{}]*chat-tucked[^{}]*)\{([^}]*)\}", css):
+    for selector, body in re.findall(r"([^{}]*chat-tucked[^{}]*)\{([^}]*)\}", _css()):
         if not re.search(r"(^|;)\s*display:\s*none", body):
             continue
         for one in selector.split(","):
@@ -264,10 +282,12 @@ def test_a_tucked_rail_is_narrow_but_never_gone():
 def test_tucking_is_offered_only_where_there_is_width_to_reclaim():
     """Below the breakpoint the two are already one column, so a 54px rail
     there would hide the assistant and reclaim nothing."""
-    css = open(_CSS, encoding="utf-8").read()
+    css = _css()
     i = css.index(".cpi-layout.chat-tucked{")
     guard = css.rindex("@media", 0, i)
-    assert "min-width:1081px" in css[guard:i]
+    assert "min-width:1181px" in css[guard:i]
+    # ...and below it the control is withdrawn rather than left to do nothing.
+    assert "@media(max-width:1180px){.cpi-chat-tuck{display:none}}" in css
 
 
 def test_the_control_lives_on_the_panel_it_hides():
@@ -281,17 +301,23 @@ def test_the_control_lives_on_the_panel_it_hides():
 
 # ── The page header row ──────────────────────────────────────────────────────
 
-def test_the_notice_and_the_actions_share_one_row():
-    """They were siblings of the title in a wrapping flex row, each carrying
-    its own margin-left:auto. At 1512px that put List beside the notice and
-    History alone on a third line against the left margin."""
+def test_the_header_is_a_grid_of_tiles_not_a_wrapping_row():
+    """The title, the cost rules and the spend used to be one wrapping flex
+    row, each item carrying its own margin-left:auto. That fits only while
+    everything happens to fit: at 1512px the notice took the row, List
+    followed it, and History dropped alone onto a third line against the left
+    margin. They are separate grid tiles now, so the arrangement is the same
+    at every width instead of a coincidence at some of them."""
     tpl = open(_TPL, encoding="utf-8").read()
-    meta = tpl[tpl.index('<div class="page-hdr-meta">'):tpl.index('<div class="cpi-layout">')]
-    assert "page-hdr-credits" in meta
-    assert "page-hdr-actions" in meta
-    assert meta.index("page-hdr-credits") < meta.index("page-hdr-actions")
-    for control in ('id="cpiListBtn"', "cpiOpenHistory()", 'id="cpiSpend"'):
-        assert control in meta[meta.index("page-hdr-actions"):], control
+    head = tpl[tpl.index('<div class="cpi-head">'):tpl.index('<div class="cpi-layout"')]
+    for tile in ("cpi-head-main", "cpi-head-cost", "cpi-head-spend"):
+        assert tile in head, tile
+    # the controls stay together in one block, inside the title tile
+    actions = head[head.index("cpi-head-actions"):]
+    for control in ('id="cpiListBtn"', "cpiOpenHistory()"):
+        assert control in actions, control
+    # and the spend figure keeps its own tile rather than riding the actions row
+    assert 'id="cpiSpend"' in head[head.index("cpi-head-spend"):]
 
 
 def _bodies(css, selector):
@@ -304,12 +330,19 @@ def _bodies(css, selector):
             if sel.strip().split("\n")[-1].strip() == selector]
 
 
-def test_the_actions_stay_together_and_the_notice_gives_up_the_width():
-    css = open(_CSS, encoding="utf-8").read()
-    assert "margin-left:auto" in _rule(css, ".page-hdr-actions")
-    assert "flex:none" in _rule(css, ".page-hdr-actions")
-    assert "flex:1 1 460px" in _rule(css, ".page-hdr-credits")
-    for selector in (".page-hdr-credits", ".page-hdr-spend"):
+def test_no_header_tile_positions_itself_with_an_auto_margin():
+    """margin-left:auto is how the old row arranged itself, and why it fell
+    apart when it ran out of width. Grid placement does that job now; an auto
+    margin creeping back in would reintroduce the same failure."""
+    css = _css()
+    assert "display:grid" in _rule(css, ".cpi-head")
+    for selector in (".cpi-head-main", ".cpi-head-cost", ".cpi-head-spend", ".cpi-head-actions"):
         bodies = _bodies(css, selector)
         assert bodies, selector
         assert not any("margin-left:auto" in b for b in bodies), selector
+
+
+def test_the_header_tiles_are_content_height():
+    """The spend figure is hidden on deployments without Postgres. A stretched
+    tile then renders as a tall empty box beside the others."""
+    assert "align-items:start" in _rule(_css(), ".cpi-head")

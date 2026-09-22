@@ -2,15 +2,11 @@
 (function(){
 "use strict";
 
-/* Mounts a thinking-orb into every [data-orb-state] placeholder just
-   written into `root`. Dynamic import (not a <script type="module">) so
-   this is callable from anywhere in this classic, deferred script with no
-   load-order dependency; a failed import just leaves the plain loading
-   text in place. See static/js/thinking-orb.js's own header for why the
-   engine itself is vendored rather than pulled from a CDN. */
-function mountOrbsIn(root){
-  import('/static/js/thinking-orb.js').then(function(m){ m.autoMountOrbPlaceholders(root); }).catch(function(){});
-}
+/* Retired. The canvas "thinking orb" was the previous product's loading
+   signature; this design system uses skeletons -- the shape of the content
+   that replaces them -- and nothing that moves while you wait. Kept as a
+   no-op rather than deleted so every existing call site stays valid. */
+function mountOrbsIn(root){ /* no-op: loading states are skeletons now */ }
 
 var SEARCH_URL = window.__CPI_SEARCH_URL__;
 var ENRICH_URL = window.__CPI_ENRICH_URL__;
@@ -1732,7 +1728,7 @@ window.cpiOpenHistory = function(){
   document.getElementById("cpiDrawerOvl").classList.add("on");
   document.getElementById("cpiDrawer").classList.add("on");
   var body=document.getElementById("cpiDrawerBody");
-  body.innerHTML='<div class="cpi-loading"><div class="thinking-orb-slot" data-orb-state="listening" data-orb-size="64">Loading history…</div></div>';
+  body.innerHTML='<div class="cpi-loading"><div class="cpi-skel-row"><div class="cpi-sk-av"></div><div style="flex:1"><i class="cpi-sk-b"></i><i class="cpi-sk-b" style="margin-top:8px"></i></div></div><div class="cpi-skel-row"><div class="cpi-sk-av"></div><div style="flex:1"><i class="cpi-sk-b"></i><i class="cpi-sk-b" style="margin-top:8px"></i></div></div><div class="cpi-skel-row"><div class="cpi-sk-av"></div><div style="flex:1"><i class="cpi-sk-b"></i><i class="cpi-sk-b" style="margin-top:8px"></i></div></div><div class="cpi-skel-row"><div class="cpi-sk-av"></div><div style="flex:1"><i class="cpi-sk-b"></i><i class="cpi-sk-b" style="margin-top:8px"></i></div></div></div>';
   mountOrbsIn(body);
   fetch(window.__CPI_HISTORY_URL__).then(function(r){ return r.json(); }).then(function(d){
     if(!d || d.available===false){
@@ -2315,7 +2311,7 @@ document.addEventListener("keydown", function(e){ if(e.key==="Escape") window.cp
 /* ── Chat ── */
 /* The assistant's avatar is the Arena mark, matching the panel header. Kept as a
    constant so the markup stays identical everywhere it is injected. */
-var ARENA_AV = '<img src="/static/logo-mark.svg?v=1" alt="Arena">';
+var ARENA_AV = '<span aria-hidden="true">' + (window.__BRAND_INITIAL__ || 'A') + '</span>';
 
 function chatScroll(){ var b=document.getElementById("cpiChatBody"); b.scrollTop=b.scrollHeight; }
 function addUserMsg(text){
@@ -2326,7 +2322,7 @@ function addUserMsg(text){
 }
 function addTyping(){
   var b=document.getElementById("cpiChatBody");
-  b.insertAdjacentHTML("beforeend", '<div class="cpi-msg assistant" id="cpiTyping"><div class="cpi-msg-av">'+ARENA_AV+'</div><div class="cpi-bub"><div class="thinking-orb-slot" data-orb-state="breathing" data-orb-size="20"></div></div></div>');
+  b.insertAdjacentHTML("beforeend", '<div class="cpi-msg assistant" id="cpiTyping"><div class="cpi-msg-av">'+ARENA_AV+'</div><div class="cpi-bub"><div class="cpi-skel-stack"><i class="cpi-sk-b"></i><i class="cpi-sk-b"></i><i class="cpi-sk-b"></i></div></div></div>');
   mountOrbsIn(document.getElementById("cpiTyping"));
   chatScroll();
 }
@@ -2931,7 +2927,7 @@ window.cpiOpenList = function(){
   if(ov) ov.classList.add("on");
   var body=document.getElementById("cpiListBody");
   if(body){
-    body.innerHTML='<div class="cpi-loading"><div class="thinking-orb-slot" data-orb-state="listening" data-orb-size="64">Loading…</div></div>';
+    body.innerHTML='<div class="cpi-loading"><div class="cpi-skel-row"><div class="cpi-sk-av"></div><div style="flex:1"><i class="cpi-sk-b"></i><i class="cpi-sk-b" style="margin-top:8px"></i></div></div><div class="cpi-skel-row"><div class="cpi-sk-av"></div><div style="flex:1"><i class="cpi-sk-b"></i><i class="cpi-sk-b" style="margin-top:8px"></i></div></div><div class="cpi-skel-row"><div class="cpi-sk-av"></div><div style="flex:1"><i class="cpi-sk-b"></i><i class="cpi-sk-b" style="margin-top:8px"></i></div></div><div class="cpi-skel-row"><div class="cpi-sk-av"></div><div style="flex:1"><i class="cpi-sk-b"></i><i class="cpi-sk-b" style="margin-top:8px"></i></div></div></div>';
     mountOrbsIn(body);
   }
   loadList().then(function(){ renderList(); })
