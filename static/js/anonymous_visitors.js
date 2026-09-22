@@ -50,7 +50,7 @@
           '<div class="drw-sub">'+esc(p.title||'No title available')+'</div>'+
         '</div>'+
       '</div>'+
-      '<button class="drw-close" onclick="closeDrawer()">✕</button>';
+ '<button class="drw-close" onclick="closeDrawer()"></button>';
     var h='';
     h+='<div class="drw-section"><div class="drw-chips">';
     h+='<span class="seniority-badge '+senClass(sen)+'">'+esc(sen)+'</span>';
@@ -69,11 +69,11 @@
     h+='<div class="drw-info-box full"><div style="display:flex;align-items:center;gap:12px">';
     h+='<div class="company-av">'+esc(initials(p.website||'?'))+'</div>';
     h+='<div style="flex:1">';
-    if(p.website)h+='<div class="drw-info-value"><a href="https://'+esc(p.website)+'" target="_blank" style="color:#a5b4fc;text-decoration:none">'+esc(p.website)+' ↗</a></div>';
+ if(p.website)h+='<div class="drw-info-value"><a href="https://'+esc(p.website)+'" target="_blank" style="color:#a5b4fc;text-decoration:none">'+esc(p.website)+' </a></div>';
     else h+='<div class="drw-info-value muted">Unknown company</div>';
     if(p.industry)h+='<div class="drw-info-label" style="margin-bottom:0;margin-top:3px">'+esc(p.industry)+'</div>';
     h+='</div>';
-    if(p.website)h+='<button class="drw-btn drw-btn-ghost" style="margin-left:auto;white-space:nowrap" onclick="filterByCompany(\''+esc(p.website)+'\')">All visitors →</button>';
+ if(p.website)h+='<button class="drw-btn drw-btn-ghost" style="margin-left:auto;white-space:nowrap" onclick="filterByCompany(\''+esc(p.website)+'\')">All visitors </button>';
     h+='</div></div></div>';
     if(colleagues.length){
       h+='<div class="drw-section"><div class="drw-section-label">Others from this company ('+colleagues.length+')</div><div class="drw-person-list">';
@@ -89,9 +89,9 @@
       h+='</div></div>';
     }
     h+='<div class="drw-section"><div class="drw-section-label">Quick Actions</div><div class="drw-actions">';
-    h+='<a class="drw-btn drw-btn-secondary" href="'+liUrl(p.name)+'" target="_blank">🔗 Search LinkedIn</a>';
-    if(p.email)h+='<a class="drw-btn drw-btn-secondary" href="mailto:'+esc(p.email)+'">✉ Send Email</a>';
-    if(p.website)h+='<a class="drw-btn drw-btn-ghost" href="https://'+esc(p.website)+'" target="_blank">🌐 Website</a>';
+ h+='<a class="drw-btn drw-btn-secondary" href="'+liUrl(p.name)+'" target="_blank">Search LinkedIn</a>';
+ if(p.email)h+='<a class="drw-btn drw-btn-secondary" href="mailto:'+esc(p.email)+'">Send Email</a>';
+ if(p.website)h+='<a class="drw-btn drw-btn-ghost" href="https://'+esc(p.website)+'" target="_blank">Website</a>';
     h+='</div></div>';
     document.getElementById('drwBody').innerHTML=h;
     openDrawer();
@@ -112,7 +112,7 @@
           '<div class="drw-sub">'+esc(c.website||'No website on record')+'</div>'+
         '</div>'+
       '</div>'+
-      '<button class="drw-close" onclick="closeDrawer()">✕</button>';
+ '<button class="drw-close" onclick="closeDrawer()"></button>';
     var h='';
     h+='<div class="drw-section"><div class="drw-chips">';
     if(c.industry)h+='<span class="drw-chip purple">'+esc(c.industry)+'</span>';
@@ -124,7 +124,7 @@
     h+='<div class="drw-info-box"><div class="drw-info-label">Employees</div><div class="drw-info-value">'+(c.employees&&c.employees!=='Unavailable'?fmtEmp(c.employees):'<span class="muted">—</span>')+'</div></div>';
     h+='<div class="drw-info-box"><div class="drw-info-label">Revenue</div><div class="drw-info-value">'+esc(fmtRevenue(c.revenue))+'</div></div>';
     if(c.country&&c.country!==c.state)h+='<div class="drw-info-box"><div class="drw-info-label">Country</div><div class="drw-info-value">'+esc(c.country)+'</div></div>';
-    if(c.website)h+='<div class="drw-info-box"><div class="drw-info-label">Website</div><div class="drw-info-value"><a href="https://'+esc(c.website)+'" target="_blank" style="color:#a5b4fc;text-decoration:none">'+esc(c.website)+' ↗</a></div></div>';
+ if(c.website)h+='<div class="drw-info-box"><div class="drw-info-label">Website</div><div class="drw-info-value"><a href="https://'+esc(c.website)+'" target="_blank" style="color:#a5b4fc;text-decoration:none">'+esc(c.website)+' </a></div></div>';
     h+='</div></div>';
 
     h+='<div class="drw-section"><div class="drw-section-label">Identified Visitors'+(visitors.length?' ('+visitors.length+')':'')+'</div>';
@@ -142,9 +142,9 @@
     }else{h+='<div class="drw-empty">No individual visitors matched yet.</div>';}
     h+='</div>';
     h+='<div class="drw-section"><div class="drw-section-label">Quick Actions</div><div class="drw-actions">';
-    if(c.website)h+='<a class="drw-btn drw-btn-primary" href="https://'+esc(c.website)+'" target="_blank">🌐 Website</a>';
-    h+='<a class="drw-btn drw-btn-secondary" href="https://www.linkedin.com/company/'+encodeURIComponent(c.name||'')+'" target="_blank">🔗 LinkedIn</a>';
-    if(c.industry)h+='<button class="drw-btn drw-btn-ghost" onclick="filterByIndustry(\''+esc(c.industry)+'\')">🏭 Filter by Industry</button>';
+ if(c.website)h+='<a class="drw-btn drw-btn-primary" href="https://'+esc(c.website)+'" target="_blank">Website</a>';
+ h+='<a class="drw-btn drw-btn-secondary" href="https://www.linkedin.com/company/'+encodeURIComponent(c.name||'')+'" target="_blank">LinkedIn</a>';
+ if(c.industry)h+='<button class="drw-btn drw-btn-ghost" onclick="filterByIndustry(\''+esc(c.industry)+'\')">Filter by Industry</button>';
     h+='</div></div>';
     document.getElementById('drwBody').innerHTML=h;
     openDrawer();
@@ -156,13 +156,13 @@
     var ppl=_allPeople.filter(function(p){return p.industry===industry;});
     document.getElementById('drwHead').innerHTML=
       '<div class="drw-avatar-wrap">'+
-        '<div class="drw-av-lg drw-av-industry">🏭</div>'+
+ '<div class="drw-av-lg drw-av-industry"></div>'+
         '<div class="drw-title-block">'+
           '<div class="drw-name">'+esc(industry)+'</div>'+
           '<div class="drw-sub">Industry details</div>'+
         '</div>'+
       '</div>'+
-      '<button class="drw-close" onclick="closeDrawer()">✕</button>';
+ '<button class="drw-close" onclick="closeDrawer()"></button>';
     var h='';
     var totalPg=ppl.reduce(function(s,p){return s+(parseInt(p.pages)||0);},0);
     h+='<div class="drw-section"><div class="drw-section-label">Industry Stats</div><div class="drw-grid">';
@@ -194,7 +194,7 @@
       h+='</div></div>';
     }
     h+='<div class="drw-section"><div class="drw-actions">';
-    h+='<button class="drw-btn drw-btn-primary" onclick="filterByIndustry(\''+esc(industry)+'\')">Show all in table →</button>';
+ h+='<button class="drw-btn drw-btn-primary" onclick="filterByIndustry(\''+esc(industry)+'\')">Show all in table </button>';
     h+='</div></div>';
     document.getElementById('drwBody').innerHTML=h;
     openDrawer();

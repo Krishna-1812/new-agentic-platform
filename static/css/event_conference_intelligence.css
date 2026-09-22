@@ -1,5 +1,5 @@
 /* event_conference_intelligence - page styles
-   Brand: sky -> indigo -> violet (#38bdf8 -> #6366f1 -> #8b5cf6), matching
+   Brand: sky -> indigo -> violet (var(--sky) -> var(--acc) -> var(--acc)), matching
    this agent's dash-card (b2b_agents.html .c-evi) and its APP_AGENTS accent.
    Deliberately cool: every warm family is already claimed (.c-sci orange,
    .c-adint amber, .c-gdsc lime), and starting on sky rather than teal keeps
@@ -12,7 +12,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* Ground on html:root, not body. aurora-app.css loads AFTER this file and
-   carries body{background:transparent!important} plus html{background:#070912},
+   carries body{background:transparent!important} plus html{background:var(--bg)},
    so a body background is discarded and a bare :root loses the later-wins
    tiebreak. html:root scores 0,0,2 against that 0,0,1 and wins either way.
    background-color is its own line after the gradient shorthand because a
@@ -21,54 +21,47 @@
    document edge on a fast scroll. Both bugs are already documented in
    [[feedback-platform-css-gotchas]]. */
 html:root {
-  background:
-    radial-gradient(ellipse 76% 46% at 12% -2%, rgba(56,189,248,.13) 0%, transparent 60%),
-    radial-gradient(ellipse 56% 40% at 92% 44%, rgba(99,102,241,.12) 0%, transparent 55%),
-    radial-gradient(ellipse 55% 55% at 50% 104%, rgba(49,26,120,.30) 0%, transparent 68%),
-    linear-gradient(160deg, #070c18 0%, #0a0d1e 44%, #080a16 100%);
-  background-color: #080a16;
+  background: var(--s1);
+  background-color: var(--s1);
   background-attachment: fixed;
 }
 html:root[data-theme="light"] {
-  background:
-    radial-gradient(ellipse 76% 46% at 12% -2%, rgba(56,189,248,.16) 0%, transparent 60%),
-    radial-gradient(ellipse 56% 40% at 92% 44%, rgba(99,102,241,.13) 0%, transparent 55%),
-    linear-gradient(160deg, #f6f8fd 0%, #eef2fb 50%, #f7f9fe 100%);
-  background-color: #f6f8fd;
+  background: var(--s1);
+  background-color: var(--tx);
   background-attachment: fixed;
 }
 
 :root {
-  --evi-a1: #38bdf8;
-  --evi-a2: #6366f1;
-  --evi-a3: #8b5cf6;
+  --evi-a1: var(--acc);
+  --evi-a2: var(--acc);
+  --evi-a3: var(--acc);
   /* Gradient-on-text stops. Same as the accents in dark, overridden in light. */
-  --evi-g1: #38bdf8; --evi-g2: #6366f1; --evi-g3: #8b5cf6;
-  --evi-ink: #e8ecf8;
-  --evi-ink-2: #a9b4d8;
-  --evi-ink-3: #808cb0;
-  --evi-line: rgba(255,255,255,.09);
-  --evi-line-2: rgba(255,255,255,.06);
+  --evi-g1: var(--sky); --evi-g2: var(--acc); --evi-g3: var(--acc);
+  --evi-ink: var(--tx);
+  --evi-ink-2: var(--tx2);
+  --evi-ink-3: var(--tx3);
+  --evi-line: var(--s2);
+  --evi-line-2: var(--s2);
   --evi-panel: rgba(13,17,33,.72);
   --evi-panel-2: rgba(18,23,42,.6);
-  --evi-ok: #4ade80;
-  --evi-warn: #fbbf24;
-  --evi-bad: #fb7185;
+  --evi-ok: var(--acc);
+  --evi-warn: var(--clay);
+  --evi-bad: var(--danger);
 }
 :root[data-theme="light"] {
   /* Deeper stops for anything that paints the accent gradient onto text.
      The dark-theme sky/violet washes out to near-invisible on a white ground. */
-  --evi-g1: #0284c7; --evi-g2: #4f46e5; --evi-g3: #7c3aed;
-  --evi-ink: #131a2e;
-  --evi-ink-2: #4a5578;
-  --evi-ink-3: #5f6a88;
+  --evi-g1: var(--sky); --evi-g2: var(--acc); --evi-g3: var(--acc);
+  --evi-ink: var(--tx);
+  --evi-ink-2: var(--tx2);
+  --evi-ink-3: var(--tx3);
   --evi-line: rgba(20,30,60,.12);
   --evi-line-2: rgba(20,30,60,.07);
-  --evi-panel: rgba(255,255,255,.86);
+  --evi-panel: var(--s3);
   --evi-panel-2: rgba(248,250,255,.8);
-  --evi-ok: #15803d;
-  --evi-warn: #a16207;
-  --evi-bad: #be123c;
+  --evi-ok: var(--acc);
+  --evi-warn: var(--clay);
+  --evi-bad: var(--danger);
 }
 
 body {
@@ -83,7 +76,7 @@ body {
   display: flex; align-items: center; justify-content: space-between;
   height: 62px; padding: 0 var(--bleed);
   border-bottom: 1px solid var(--evi-line);
-  background: var(--evi-panel); backdrop-filter: blur(14px);
+  background: var(--evi-panel);
   position: sticky; top: 0; z-index: 60;
 }
 .topbar .tl { display: flex; align-items: center; gap: 18px; min-width: 0; }
@@ -113,17 +106,17 @@ body {
 .user-menu { position: relative; }
 .user-pill {
   display: flex; align-items: center; gap: 9px; cursor: pointer; user-select: none;
-  background: rgba(255,255,255,.04); border: 1px solid var(--evi-line);
+  background: var(--s2); border: 1px solid var(--evi-line);
   border-radius: var(--radius-pill, 80px); padding: 4px 14px 4px 4px;
   transition: background .15s, border-color .15s;
 }
-.user-pill:hover, .user-pill.open { background: rgba(255,255,255,.08);
+.user-pill:hover, .user-pill.open { background: var(--s2);
   border-color: rgba(99,102,241,.4); }
 .user-avatar {
   width: 28px; height: 28px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--evi-a1), var(--evi-a3));
+  background: var(--s1);
   display: flex; align-items: center; justify-content: center;
-  font-size: 11.5px; font-weight: 700; color: #05132a;
+  font-size: 11.5px; font-weight: 700; color: var(--s1);
 }
 .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .user-name { font-size: 13px; font-weight: 500; color: var(--evi-ink-2); }
@@ -134,7 +127,7 @@ body {
   display: none; position: absolute; top: calc(100% + 10px); right: 0; width: 220px;
   z-index: 9999; background: rgba(10,13,30,.97); border: 1px solid var(--evi-line);
   border-radius: var(--radius-md, 12px); overflow: hidden;
-  box-shadow: 0 16px 48px rgba(0,0,0,.6); backdrop-filter: blur(20px);
+  box-shadow: 0 16px 48px rgba(0,0,0,.6);
 }
 .user-dropdown.open { display: block; }
 .dd-header { padding: 14px 16px 12px; border-bottom: 1px solid var(--evi-line-2); }
@@ -146,14 +139,14 @@ body {
   border-radius: var(--radius-sm, 8px); font-size: 13px; color: var(--evi-ink-2);
   text-decoration: none; transition: background .12s, color .12s;
 }
-.dd-item:hover { background: rgba(255,255,255,.05); color: var(--evi-ink); }
+.dd-item:hover { background: var(--s2); color: var(--evi-ink); }
 .dd-item-icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
 .dd-divider { height: 1px; background: var(--evi-line-2); margin: 4px 6px; }
-.dd-item.danger:hover { background: rgba(239,68,68,.08); color: #f87171; }
+.dd-item.danger:hover { background: rgba(239,68,68,.08); color: var(--danger); }
 :root[data-theme="light"] .user-pill { background: rgba(18,26,54,.04); }
-:root[data-theme="light"] .user-dropdown { background: rgba(255,255,255,.98); }
+:root[data-theme="light"] .user-dropdown { background: var(--s3); }
 :root[data-theme="light"] .dd-item:hover { background: rgba(18,26,54,.05); }
-:root[data-theme="light"] .user-avatar { color: #fff; }
+:root[data-theme="light"] .user-avatar { color: var(--tx); }
 
 .main {
   position: relative; z-index: 1; width: 100%;
@@ -161,20 +154,6 @@ body {
   padding: 36px var(--margin) 72px;
 }
 
-/* The dot grid. `.bg-grid` was already in the markup with nothing styling it,
-   so the page rendered on flat colour. Masked to a soft ellipse so the texture
-   reads under the hero and fades out before the fold rather than tiling to the
-   bottom of a long report. */
-.bg-grid {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background-image: radial-gradient(circle, rgba(124,160,255,.16) 1px, transparent 1px);
-  background-size: 34px 34px;
-  mask-image: radial-gradient(ellipse 90% 62% at 50% 6%, #000 8%, transparent 78%);
-  -webkit-mask-image: radial-gradient(ellipse 90% 62% at 50% 6%, #000 8%, transparent 78%);
-}
-:root[data-theme="light"] .bg-grid {
-  background-image: radial-gradient(circle, rgba(40,60,130,.14) 1px, transparent 1px);
-}
 
 /* ── hero ───────────────────────────────────────────────────────────── */
 /* One column since the scoring card came out of it. The headline gets the
@@ -192,7 +171,7 @@ body {
   letter-spacing: .12em; text-transform: uppercase; color: var(--evi-ink-2);
   font-weight: 600; margin-bottom: 16px; padding: 6px 14px 6px 11px;
   border-radius: var(--radius-pill, 80px);
-  background: linear-gradient(95deg, rgba(56,189,248,.10), rgba(139,92,246,.08));
+  background: var(--s1);
   border: 1px solid rgba(99,102,241,.24);
 }
 .evi-hero .eyebrow .dot {
@@ -205,8 +184,8 @@ body {
 }
 .evi-hero h1 em {
   font-family: 'Instrument Serif', serif; font-style: italic; font-weight: 400;
-  background: linear-gradient(100deg, var(--evi-g1), var(--evi-g2) 55%, var(--evi-g3));
-  -webkit-background-clip: text; background-clip: text; color: transparent;
+  background: none;
+  -webkit-background-clip: border-box; background-clip: border-box; color: var(--acc);
 }
 .evi-hero p { color: var(--evi-ink-2); font-size: 15.5px; line-height: 1.7; }
 
@@ -214,7 +193,7 @@ body {
    pages use to mark their primary surface. */
 .evi-card-main::before {
   content: ""; position: absolute; inset: 0 0 auto 0; height: 2px;
-  background: linear-gradient(90deg, var(--evi-a1), var(--evi-a2) 52%, var(--evi-a3));
+  background: var(--s1);
   opacity: .85;
 }
 
@@ -261,37 +240,32 @@ body {
   padding: 22px 20px 0;
   border-radius: var(--radius-lg, 16px);
   border: 1px solid var(--evi-line);
-  background:
-    radial-gradient(ellipse 130% 90% at 0% 0%,
-      color-mix(in srgb, var(--p1) 9%, transparent), transparent 62%),
-    var(--evi-panel);
+  background: var(--s1);
   box-shadow: 0 10px 30px rgba(0,0,0,.22);
   transition: border-color .22s var(--ease, ease), transform .22s var(--ease, ease),
               box-shadow .22s var(--ease, ease), background .22s;
 }
-.evi-play.p-recommend { --p1: #38bdf8; --p2: #6366f1; }
-.evi-play.p-lookup    { --p1: #22d3ee; --p2: #38bdf8; }
-.evi-play.p-discover  { --p1: #818cf8; --p2: #a78bfa; }
-.evi-play.p-workroom  { --p1: #2dd4aa; --p2: #22d3ee; }
+.evi-play.p-recommend { --p1: var(--sky); --p2: var(--acc); }
+.evi-play.p-lookup    { --p1: var(--sky); --p2: var(--sky); }
+.evi-play.p-discover  { --p1: var(--acc); --p2: var(--sky); }
+.evi-play.p-workroom  { --p1: var(--acc); --p2: var(--sky); }
 
 /* The hairline reads as a lit edge rather than a border: dim at rest, full
    when the play is the one selected. */
 .evi-play::before {
   content: ""; position: absolute; inset: 0 0 auto 0; height: 2px; z-index: 2;
-  background: linear-gradient(90deg, var(--p1), var(--p2));
+  background: var(--s1);
   opacity: .34; transition: opacity .22s;
 }
 /* A wash of the card's own hue that lifts on hover and stays up when selected,
    so the colour is part of the surface rather than a border trick. */
 .evi-play::after {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: linear-gradient(160deg,
-    color-mix(in srgb, var(--p1) 15%, transparent),
-    color-mix(in srgb, var(--p2) 7%, transparent) 58%, transparent 88%);
+  background: var(--s1);
   opacity: 0; transition: opacity .22s;
 }
 .evi-play:hover {
-  transform: translateY(-3px); border-color: color-mix(in srgb, var(--p1) 40%, var(--evi-line));
+   border-color: color-mix(in srgb, var(--p1) 40%, var(--evi-line));
   box-shadow: 0 20px 46px rgba(0,0,0,.34),
               0 0 0 1px color-mix(in srgb, var(--p1) 16%, transparent);
 }
@@ -351,15 +325,15 @@ body {
   position: relative; z-index: 1;
   width: 42px; height: 42px; border-radius: var(--radius-md, 12px);
   display: inline-flex; align-items: center; justify-content: center;
-  color: #06121f; margin-bottom: 15px;
-  background: linear-gradient(140deg, var(--p1), var(--p2));
+  color: var(--s1); margin-bottom: 15px;
+  background: var(--s1);
   box-shadow: 0 6px 18px color-mix(in srgb, var(--p1) 34%, transparent),
-              inset 0 1px 0 rgba(255,255,255,.34);
+              inset 0 1px 0 var(--s3);
   transition: transform .22s var(--ease, ease), box-shadow .22s;
 }
 .evi-play .pi svg { width: 21px; height: 21px; }
 .evi-play:hover .pi { transform: scale(1.06) rotate(-3deg); }
-:root[data-theme="light"] .evi-play .pi { color: #fff; }
+:root[data-theme="light"] .evi-play .pi { color: var(--tx); }
 
 .evi-play .pn {
   position: relative; z-index: 1;
@@ -412,7 +386,7 @@ body {
 .evi-play[aria-selected="true"] .pgo i { transform: translateX(0); opacity: 1; }
 .evi-play[aria-selected="true"] .pi { box-shadow:
   0 8px 24px color-mix(in srgb, var(--p1) 46%, transparent),
-  inset 0 1px 0 rgba(255,255,255,.4); }
+  inset 0 1px 0 var(--s3); }
 
 @media (max-width: 620px) { .evi-play { flex-basis: 100%; } }
 
@@ -440,19 +414,15 @@ body {
 #profileForm {
   margin-top: 18px; padding: 20px 20px 22px;
   border: 1px solid var(--evi-line); border-radius: var(--radius-lg, 16px);
-  background:
-    linear-gradient(180deg,
-      color-mix(in srgb, var(--evi-a1) 5%, transparent), transparent 120px),
-    var(--evi-panel-2);
+  background: var(--s1);
   position: relative;
 }
 /* The one bright edge on the panel, along the top, so it reads as opened
    rather than as another box on the card. */
 #profileForm::before {
   content: ""; position: absolute; left: 20px; right: 20px; top: -1px;
-  height: 2px; border-radius: 2px;
-  background: linear-gradient(90deg, var(--evi-a1), var(--evi-a3) 70%,
-                              transparent);
+  height: 2px; border-radius: var(--r-sm);
+  background: var(--s1);
   opacity: .8;
 }
 #profileForm > .evi-group:first-child {
@@ -468,8 +438,8 @@ body {
    where one group of fields stops and the next begins. */
 .evi-group .gh::before {
   content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-  width: 3px; height: 12px; border-radius: 2px;
-  background: linear-gradient(180deg, var(--evi-a1), var(--evi-a3));
+  width: 3px; height: 12px; border-radius: var(--r-sm);
+  background: var(--s1);
 }
 .evi-group .gs { font-size: 11.5px; color: var(--evi-ink-3); padding-left: 10px; }
 
@@ -495,9 +465,8 @@ body {
 .evi-group.step .gn {
   flex: 0 0 auto; display: inline-flex; align-items: center;
   justify-content: center; width: 24px; height: 24px; border-radius: 50%;
-  font-size: 11.5px; font-weight: 700; color: #fff; letter-spacing: 0;
-  background: linear-gradient(145deg, var(--evi-a1), var(--evi-a3));
-  box-shadow: 0 3px 10px rgba(99,102,241,.32);
+  font-size: 11.5px; font-weight: 700; color: var(--tx); letter-spacing: 0;
+  background: var(--s1);
 }
 .evi-row.evi-row-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 1000px) { .evi-row.evi-row-3 { grid-template-columns: 1fr; } }
@@ -508,9 +477,7 @@ body {
   border-radius: var(--radius-lg, 16px); overflow: hidden;
   box-shadow: 0 18px 60px rgba(0,0,0,.28);
 }
-.evi-card-main { background:
-  radial-gradient(ellipse 90% 60% at 0% 0%, rgba(56,189,248,.06), transparent 58%),
-  var(--evi-panel); }
+.evi-card-main { background: var(--s1); }
 .evi-card + .evi-card { margin-top: 20px; }
 .evi-card-pad { padding: 24px 26px; }
 
@@ -527,7 +494,7 @@ body {
 }
 .evi-field textarea { min-height: 78px; resize: vertical; line-height: 1.55; }
 .evi-field input:focus, .evi-field textarea:focus {
-  border-color: rgba(99,102,241,.55); box-shadow: 0 0 0 3px rgba(99,102,241,.14);
+  border-color: rgba(99,102,241,.55);
 }
 .evi-field .hint { font-size: 11.5px; color: var(--evi-ink-3); line-height: 1.5; }
 
@@ -554,10 +521,10 @@ body {
 .evi-suggest-logo {
   position: relative; width: 34px; height: 34px; border-radius: var(--radius-sm, 8px);
   flex-shrink: 0; overflow: hidden; display: flex; align-items: center;
-  justify-content: center; background: linear-gradient(135deg, var(--evi-a1), var(--evi-a3));
+  justify-content: center; background: var(--s1);
 }
 .evi-suggest-logo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.evi-suggest-initial { display: none; font-size: 13px; font-weight: 800; color: #0a0f1f; }
+.evi-suggest-initial { display: none; font-size: 13px; font-weight: 800; color: var(--s1); }
 .evi-suggest-logo.evi-suggest-nologo .evi-suggest-initial { display: flex; }
 .evi-suggest-info { min-width: 0; flex: 1; }
 .evi-suggest-name {
@@ -659,7 +626,7 @@ body {
 .evi-read {
   margin-top: 14px; padding: 15px 17px;
   border-radius: var(--radius-md, 12px);
-  background: linear-gradient(102deg, rgba(56,189,248,.09), rgba(139,92,246,.06));
+  background: var(--s1);
   border: 1px solid rgba(99,102,241,.24);
 }
 .evi-read .rh {
@@ -723,12 +690,11 @@ body {
 
 .evi-btn {
   appearance: none; border: none; cursor: pointer; font: inherit;
-  font-size: 14.5px; font-weight: 600; color: #fff; padding: 14px 30px;
+  font-size: 14.5px; font-weight: 600; color: var(--tx); padding: 14px 30px;
   border-radius: var(--radius-pill, 80px); justify-self: start;
-  background: linear-gradient(95deg, var(--evi-a1), var(--evi-a2) 60%, var(--evi-a3));
-  box-shadow: 0 10px 30px rgba(99,102,241,.34); transition: transform .18s, box-shadow .18s;
+  background: var(--s1); transition: transform .18s, box-shadow .18s;
 }
-.evi-btn:hover { transform: translateY(-1px); box-shadow: 0 16px 40px rgba(99,102,241,.46); }
+.evi-btn:hover { }
 .evi-btn-ghost { border-radius: var(--radius-md, 12px); padding: 11px 20px;
   font-size: 13.5px; }
 .evi-actions {
@@ -783,19 +749,17 @@ body {
      half to one, and the label on the most consequential button in the panel
      has to be readable. */
   background: var(--evi-a2);
-  border: 1px solid color-mix(in srgb, #fff 22%, var(--evi-a2));
-  box-shadow: 0 6px 20px rgba(99,102,241,.26);
+  border: 1px solid color-mix(in srgb, var(--tx) 22%, var(--evi-a2));
 }
 .evi-btn-save:hover {
-  background: color-mix(in srgb, var(--evi-a2) 84%, #fff);
-  box-shadow: 0 10px 26px rgba(99,102,241,.36);
+  background: color-mix(in srgb, var(--evi-a2) 84%, var(--tx));
 }
 
 /* ── the coverage banner: the most important element on the page ─────── */
 .evi-coverage {
   display: flex; gap: 13px; align-items: flex-start;
   padding: 14px 16px; border-radius: var(--radius-md, 10px);
-  background: linear-gradient(95deg, rgba(56,189,248,.10), rgba(139,92,246,.07));
+  background: var(--s1);
   border: 1px solid rgba(99,102,241,.26); margin-bottom: 18px;
 }
 .evi-coverage .ic { flex-shrink: 0; color: var(--evi-a1); margin-top: 1px; }
@@ -821,10 +785,10 @@ body {
   color: var(--evi-ink-2); transition: .16s;
 }
 .evi-chip[aria-pressed="true"] {
-  color: #fff; border-color: rgba(99,102,241,.45);
-  background: linear-gradient(95deg, rgba(56,189,248,.24), rgba(139,92,246,.2));
+  color: var(--tx); border-color: rgba(99,102,241,.45);
+  background: var(--s1);
 }
-:root[data-theme="light"] .evi-chip[aria-pressed="true"] { color: #1b2440; }
+:root[data-theme="light"] .evi-chip[aria-pressed="true"] { color: var(--sky); }
 .evi-chip .n { opacity: .65; font-weight: 500; margin-left: 5px; }
 
 /* The roster is the one surface that can arrive with four hundred rows and
@@ -844,11 +808,11 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   text-align: left; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
   color: var(--evi-ink-3); font-weight: 600; padding: 11px 14px;
   border-bottom: 1px solid var(--evi-line);
-  background: var(--evi-panel-solid, #141a2e);
+  background: var(--evi-panel-solid, var(--sky));
   position: sticky; top: 0; z-index: 2;
   font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
 }
-:root[data-theme="light"] .evi-table th { background: #eef1f8; }
+:root[data-theme="light"] .evi-table th { background: var(--tx); }
 .evi-table td { padding: 11px 14px; border-bottom: 1px solid var(--evi-line-2);
   vertical-align: top; overflow: hidden; text-overflow: ellipsis; }
 .evi-table tbody tr:nth-child(even) td { background: rgba(127,140,180,.035); }
@@ -871,18 +835,18 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   text-transform: uppercase; padding: 3px 8px; border-radius: var(--radius-xs, 5px);
   white-space: nowrap;
 }
-.evi-role.r-exhibitor { background: rgba(56,189,248,.16); color: #7dd3fc; border: 1px solid rgba(56,189,248,.3); }
-.evi-role.r-sponsor { background: rgba(139,92,246,.16); color: #c4b5fd; border: 1px solid rgba(139,92,246,.3); }
-.evi-role.r-speaker { background: rgba(74,222,128,.14); color: #86efac; border: 1px solid rgba(74,222,128,.28); }
-.evi-role.r-partner { background: rgba(251,191,36,.14); color: #fcd34d; border: 1px solid rgba(251,191,36,.28); }
-.evi-role.r-media { background: rgba(148,163,184,.16); color: #cbd5e1; border: 1px solid rgba(148,163,184,.3); }
-.evi-role.r-attendee_declared { background: rgba(244,114,182,.16); color: #f9a8d4; border: 1px solid rgba(244,114,182,.32); }
-:root[data-theme="light"] .evi-role.r-exhibitor { color: #0369a1; }
-:root[data-theme="light"] .evi-role.r-sponsor { color: #6d28d9; }
-:root[data-theme="light"] .evi-role.r-speaker { color: #15803d; }
-:root[data-theme="light"] .evi-role.r-partner { color: #a16207; }
-:root[data-theme="light"] .evi-role.r-media { color: #475569; }
-:root[data-theme="light"] .evi-role.r-attendee_declared { color: #be185d; }
+.evi-role.r-exhibitor { background: rgba(56,189,248,.16); color: var(--sky); border: 1px solid rgba(56,189,248,.3); }
+.evi-role.r-sponsor { background: rgba(139,92,246,.16); color: var(--acc); border: 1px solid rgba(139,92,246,.3); }
+.evi-role.r-speaker { background: rgba(74,222,128,.14); color: var(--acc); border: 1px solid rgba(74,222,128,.28); }
+.evi-role.r-partner { background: rgba(251,191,36,.14); color: var(--clay); border: 1px solid rgba(251,191,36,.28); }
+.evi-role.r-media { background: rgba(148,163,184,.16); color: var(--sky); border: 1px solid rgba(148,163,184,.3); }
+.evi-role.r-attendee_declared { background: rgba(244,114,182,.16); color: var(--acc); border: 1px solid rgba(244,114,182,.32); }
+:root[data-theme="light"] .evi-role.r-exhibitor { color: var(--sky); }
+:root[data-theme="light"] .evi-role.r-sponsor { color: var(--acc); }
+:root[data-theme="light"] .evi-role.r-speaker { color: var(--acc); }
+:root[data-theme="light"] .evi-role.r-partner { color: var(--clay); }
+:root[data-theme="light"] .evi-role.r-media { color: var(--sky); }
+:root[data-theme="light"] .evi-role.r-attendee_declared { color: var(--danger); }
 
 .evi-contacts { margin-top: 7px; display: flex; flex-direction: column; gap: 3px; }
 .evi-contact { font-size: 11.5px; color: var(--evi-ink-2); }
@@ -923,30 +887,30 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 /* Band colours. Declared once and consumed by .f-* below, so the rail, the
    spread and the gauge cannot drift apart. */
 :root {
-  --evi-f-hi: #38bdf8;
-  --evi-f-mid: #6366f1;
-  --evi-f-low: #8b5cf6;
-  --evi-f-weak: #64748b;
-  --evi-f-na: #4b5675;
+  --evi-f-hi: var(--sky);
+  --evi-f-mid: var(--acc);
+  --evi-f-low: var(--acc);
+  --evi-f-weak: var(--sky);
+  --evi-f-na: var(--sky);
   /* The second tier. Deliberately OFF the cyan-to-violet spectrum the
      recommendation uses, so it cannot be misread as a weak P2, and
      deliberately not --evi-warn, because amber on this page means something
      went wrong and a worth-a-look event is a viable option rather than a
      problem. Teal reads as "available, not urgent". */
-  --evi-f-look: #2dd4bf;
+  --evi-f-look: var(--sky);
 }
 :root[data-theme="light"] {
-  --evi-f-hi: #0284c7;
-  --evi-f-mid: #4f46e5;
-  --evi-f-low: #7c3aed;
-  --evi-f-weak: #64748b;
-  --evi-f-na: #94a3b8;
+  --evi-f-hi: var(--sky);
+  --evi-f-mid: var(--acc);
+  --evi-f-low: var(--acc);
+  --evi-f-weak: var(--sky);
+  --evi-f-na: var(--sky);
   /* Darker than the dark-theme teal, and deliberately not the obvious
-     #0d9488: on this page's light card that scores 3.6:1, under AA and well
+     var(--sky): on this page's light card that scores 3.6:1, under AA and well
      under the 5.7 and 6.8 the P1 and P2 badges already manage. This is
      5.2:1, which puts the second tier's badge on the same footing as the
      two above it. */
-  --evi-f-look: #0f766e;
+  --evi-f-look: var(--sky);
 }
 .f-hi { --band: var(--evi-f-hi); }
 .f-mid { --band: var(--evi-f-mid); }
@@ -1028,7 +992,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 .evi-legend button.lg:hover { color: var(--evi-ink); }
 .evi-legend button.lg[aria-pressed="true"] { color: var(--evi-ink); font-weight: 650; }
 .evi-legend .lg i {
-  width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0;
+  width: 9px; height: 9px; border-radius: var(--r-sm); flex-shrink: 0;
   background: var(--band, var(--evi-f-na));
 }
 .evi-legend button.lg[aria-pressed="true"] i {
@@ -1052,18 +1016,15 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   line-height: 1.28; text-wrap: balance;
 }
 .evi-bars .bt {
-  position: relative; height: 9px; border-radius: 5px;
+  position: relative; height: 9px; border-radius: var(--r-sm);
   background: var(--evi-line-2); overflow: hidden;
 }
 .evi-bars .bt .fl {
-  position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px;
+  position: absolute; left: 0; top: 0; bottom: 0; border-radius: var(--r-sm);
   /* Lit along its length rather than filled flat. At full width a solid
      slab of one colour is the heaviest thing on the page, and it is not the
      most important. */
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--band, var(--evi-a2)) 62%, transparent),
-    var(--band, var(--evi-a2)));
+  background: var(--s1);
 }
 .evi-anim .evi-bars .bt .fl {
   animation: evi-grow-w .6s cubic-bezier(.22,.85,.3,1) both;
@@ -1105,7 +1066,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 }
 .evi-why .nl { display: grid; gap: 6px; }
 .evi-why .nr {
-  border: 1px solid var(--evi-line); border-radius: 11px;
+  border: 1px solid var(--evi-line); border-radius: var(--r);
   background: var(--evi-bg-2);
 }
 .evi-anim .evi-why .nr {
@@ -1120,7 +1081,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 .evi-why .nr > summary { cursor: pointer; }
 .evi-why .nr > summary::-webkit-details-marker { display: none; }
 .evi-why .nr > summary:focus-visible {
-  outline: 2px solid var(--evi-a1); outline-offset: 2px; border-radius: 11px;
+  outline: 2px solid var(--evi-a1); outline-offset: 2px; border-radius: var(--r);
 }
 .evi-why .nr .nd {
   flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%;
@@ -1217,7 +1178,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 .evi-cols .cl {
   display: block; width: 100%; border-radius: 3px 3px 1px 1px;
   background: var(--band, var(--evi-f-na));
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
+  box-shadow: inset 0 0 0 1px var(--s3);
   transition: filter .14s ease, transform .14s ease;
 }
 .evi-anim .evi-cols .cl {
@@ -1232,7 +1193,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   box-shadow: inset 0 0 0 1px var(--evi-line);
 }
 .evi-cols button.cx:hover .cl, .evi-cols button.cx:focus-visible .cl {
-  filter: brightness(1.28); transform: translateY(-2px);
+  filter: brightness(1.28); 
 }
 .evi-cols button.cx:focus-visible { outline: 2px solid var(--evi-a1); outline-offset: 2px; }
 .evi-cols .fo {
@@ -1247,7 +1208,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   position: absolute; left: 100%; margin-left: 5px; top: -7px;
   white-space: nowrap; font-size: 9.5px; font-weight: 650;
   letter-spacing: .05em; text-transform: uppercase; color: var(--evi-ink-3);
-  background: var(--evi-panel); padding: 1px 5px; border-radius: 4px;
+  background: var(--evi-panel); padding: 1px 5px; border-radius: var(--r-sm);
 }
 .evi-cols .cn { font-size: 11.5px; color: var(--evi-ink-3); line-height: 1.55; }
 .evi-cols .cn b { color: var(--evi-ink); font-weight: 650; }
@@ -1271,11 +1232,9 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 .evi-funnel .fl { grid-area: label; margin-top: 0; }
 .evi-funnel .fn { grid-area: note; }
 .evi-funnel .fb {
-  height: 26px; border-radius: 7px; display: flex; align-items: center;
+  height: 26px; border-radius: var(--r-sm); display: flex; align-items: center;
   padding: 0 11px; min-width: 44px;
-  background: linear-gradient(96deg,
-    color-mix(in srgb, var(--band, var(--evi-a2)) 78%, transparent),
-    color-mix(in srgb, var(--band, var(--evi-a2)) 34%, transparent));
+  background: var(--s1);
   border: 1px solid color-mix(in srgb, var(--band, var(--evi-a2)) 40%, transparent);
 }
 .evi-anim .evi-funnel .fb {
@@ -1354,27 +1313,25 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 
 /* Role bands, taken off the table's own role pills so a slice of the donut
    and the pill on the row it stands for are the same colour. */
-.rb-exhibitor { --band: #38bdf8; }
-.rb-sponsor { --band: #8b5cf6; }
-.rb-speaker { --band: #4ade80; }
-.rb-partner { --band: #fbbf24; }
-.rb-media { --band: #94a3b8; }
-.rb-declared { --band: #f472b6; }
-:root[data-theme="light"] .rb-exhibitor { --band: #0284c7; }
-:root[data-theme="light"] .rb-sponsor { --band: #7c3aed; }
-:root[data-theme="light"] .rb-speaker { --band: #15803d; }
-:root[data-theme="light"] .rb-partner { --band: #a16207; }
-:root[data-theme="light"] .rb-media { --band: #64748b; }
-:root[data-theme="light"] .rb-declared { --band: #be185d; }
+.rb-exhibitor { --band: var(--sky); }
+.rb-sponsor { --band: var(--acc); }
+.rb-speaker { --band: var(--acc); }
+.rb-partner { --band: var(--clay); }
+.rb-media { --band: var(--sky); }
+.rb-declared { --band: var(--danger); }
+:root[data-theme="light"] .rb-exhibitor { --band: var(--sky); }
+:root[data-theme="light"] .rb-sponsor { --band: var(--acc); }
+:root[data-theme="light"] .rb-speaker { --band: var(--acc); }
+:root[data-theme="light"] .rb-partner { --band: var(--clay); }
+:root[data-theme="light"] .rb-media { --band: var(--sky); }
+:root[data-theme="light"] .rb-declared { --band: var(--danger); }
 
 /* ── the event, at the top of a lookup ─────────────────────────────────── */
 .evi-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .evi-hero-ev {
   display: flex; flex-direction: column; gap: 11px; margin-bottom: 18px;
   padding: 17px 19px 16px; border-radius: var(--radius-md, 12px);
-  background:
-    linear-gradient(150deg, rgba(56,189,248,.09), transparent 62%),
-    var(--evi-panel-2);
+  background: var(--s1);
   border: 1px solid var(--evi-line);
 }
 .evi-anim .evi-hero-ev { animation: evi-rise .45s ease-out both; }
@@ -1411,8 +1368,8 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 }
 .evi-tile .tv {
   font-size: 34px; font-weight: 700; letter-spacing: -.03em; line-height: 1;
-  background: linear-gradient(100deg, var(--evi-g1), var(--evi-g3));
-  -webkit-background-clip: text; background-clip: text; color: transparent;
+  background: none;
+  -webkit-background-clip: border-box; background-clip: border-box; color: var(--acc);
   margin-top: auto;
 }
 .evi-tile .tn { font-size: 11.5px; color: var(--evi-ink-3); line-height: 1.5; }
@@ -1429,11 +1386,11 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   appearance: none; padding: 0; border: 0; font: inherit; cursor: pointer;
   flex: 1 1 0; min-width: 4px; border-radius: 3px 3px 1px 1px;
   background: var(--band, var(--evi-f-na));
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
+  box-shadow: inset 0 0 0 1px var(--s3);
   transition: filter .14s ease, transform .14s ease;
 }
 .evi-tile .tbars button:hover, .evi-tile .tbars button:focus-visible {
-  filter: brightness(1.28); transform: translateY(-2px); outline: none;
+  filter: brightness(1.28);  outline: none;
 }
 .evi-tile .tbars button:focus-visible { box-shadow: 0 0 0 2px var(--evi-a1); }
 .evi-tile .tstack {
@@ -1466,7 +1423,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 .evi-tile .lg:hover { color: var(--evi-ink); }
 .evi-tile .lg[aria-pressed="true"] { color: var(--evi-ink); font-weight: 650; }
 .evi-tile .lg:focus-visible { outline: 2px solid var(--evi-a1); outline-offset: 2px; }
-.evi-tile .lg i { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.evi-tile .lg i { width: 8px; height: 8px; border-radius: var(--r-sm); flex-shrink: 0; }
 .evi-tile .lg.s-in_person { background: none; }
 .evi-tile .lg.s-hybrid { background: none; }
 .evi-tile .lg.s-virtual { background: none; }
@@ -1517,14 +1474,13 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   appearance: none; cursor: pointer; font: inherit; font-size: 11px; font-weight: 700;
   width: 26px; height: 26px; border-radius: 50%; padding: 0;
   display: flex; align-items: center; justify-content: center;
-  color: #061021; background: var(--band, var(--evi-f-na));
+  color: var(--s1); background: var(--band, var(--evi-f-na));
   border: 2px solid var(--evi-panel);
-  box-shadow: 0 2px 10px rgba(2,8,24,.5);
   transition: transform .14s ease, box-shadow .14s ease;
 }
-:root[data-theme="light"] .evi-cal .mk { color: #fff; border-color: #fff; }
+:root[data-theme="light"] .evi-cal .mk { color: var(--tx); border-color: var(--tx); }
 .evi-cal .mk:hover, .evi-cal .mk:focus-visible {
-  transform: translateX(-50%) scale(1.16); box-shadow: 0 3px 16px rgba(56,189,248,.45);
+  transform: translateX(-50%) scale(1.16);
   outline: none;
 }
 /* Outside the filter, not gone from the calendar. See the note in
@@ -1627,7 +1583,6 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 }
 .evi-ev.lit {
   border-color: var(--band, var(--evi-a1));
-  box-shadow: 0 0 0 1px var(--band, var(--evi-a1)), 0 6px 26px rgba(56,189,248,.22);
 }
 /* The whole card opens the event's page. The title inside is still a real
    anchor, which is the keyboard and screen-reader route to the same place,
@@ -1637,16 +1592,15 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 .evi-ev.link { cursor: pointer; }
 .evi-ev.link:hover {
   border-color: var(--evi-line); border-left-color: var(--band, var(--evi-f-na));
-  box-shadow: 0 6px 26px rgba(2,8,24,.42);
-  transform: translateY(-1px);
+  
 }
-:root[data-theme="light"] .evi-ev.link:hover { box-shadow: 0 6px 22px rgba(30,45,90,.12); }
+:root[data-theme="light"] .evi-ev.link:hover { }
 .evi-ev.link:hover .nm a { color: var(--evi-a1); }
 .evi-ev.link:hover .nm a svg { opacity: 1; }
 .evi-ev .rk {
   font-size: 12.5px; font-weight: 700; line-height: 26px; text-align: center;
   width: 26px; height: 26px; border-radius: 50%; color: var(--evi-ink-3);
-  background: rgba(255,255,255,.05); border: 1px solid var(--evi-line-2);
+  background: var(--s2); border: 1px solid var(--evi-line-2);
 }
 :root[data-theme="light"] .evi-ev .rk { background: rgba(20,30,60,.05); }
 .evi-ev .bd { min-width: 0; }
@@ -1664,7 +1618,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 .evi-ev .nm .ed {
   font-size: 10.5px; font-weight: 650; letter-spacing: .05em; text-transform: uppercase;
   color: var(--evi-ink-3); padding: 2px 7px; border-radius: var(--radius-xs, 5px);
-  background: rgba(255,255,255,.05); border: 1px solid var(--evi-line-2);
+  background: var(--s2); border: 1px solid var(--evi-line-2);
 }
 :root[data-theme="light"] .evi-ev .nm .ed { background: rgba(20,30,60,.05); }
 .evi-ev .org { font-size: 11.5px; color: var(--evi-ink-3); margin-top: 4px; }
@@ -1673,7 +1627,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   display: inline-flex; align-items: center; gap: 5px; min-width: 0;
   font-size: 11.5px; font-weight: 550; line-height: 1.35; color: var(--evi-ink-2);
   padding: 4px 9px; border-radius: var(--radius-xs, 5px);
-  background: rgba(255,255,255,.045); border: 1px solid var(--evi-line-2);
+  background: var(--s2); border: 1px solid var(--evi-line-2);
 }
 :root[data-theme="light"] .evi-tag { background: rgba(20,30,60,.04); }
 .evi-tag svg { width: 12px; height: 12px; flex-shrink: 0; color: var(--evi-ink-3); }
@@ -1790,8 +1744,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 
 /* ── drawer ─────────────────────────────────────────────────────────── */
 .evi-scrim {
-  position: fixed; inset: 0; z-index: 200; background: rgba(3,6,18,.74);
-  backdrop-filter: blur(7px); display: none; padding: 3vh 3vw;
+  position: fixed; inset: 0; z-index: 200; background: rgba(3,6,18,.74); display: none; padding: 3vh 3vw;
 }
 .evi-scrim.on { display: block; }
 .evi-drawer {
@@ -1801,17 +1754,17 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
      the report: 50px of blurred type across the score chart's band, in a
      document a client opens. Light mode was already solid, so the two themes
      disagreed about it too.
-     #040713 is what the scrim composites to, so the panel laid over it lands
+     var(--bg) is what the scrim composites to, so the panel laid over it lands
      on exactly the colour the drawer has always rendered and every card
      inside keeps the contrast it had. */
-  background-color: #040713;
-  background-image: linear-gradient(var(--evi-panel), var(--evi-panel));
+  background-color: var(--bg);
+  background-image: var(--s1);
   border: 1px solid var(--evi-line);
   border-radius: var(--radius-lg, 16px); overflow: hidden;
   box-shadow: 0 40px 120px rgba(0,0,0,.6);
 }
 :root[data-theme="light"] .evi-drawer {
-  background-color: #fff; background-image: none;
+  background-color: var(--tx); background-image: none;
 }
 .evi-drawer-head {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
@@ -1847,7 +1800,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   gap: 9px; padding: 34px 30px; min-height: min(300px, 40vh);
   text-align: center; color: var(--evi-ink-3); font-size: 13px; line-height: 1.6;
   border: 1px dashed var(--evi-line); border-radius: var(--radius-md, 10px);
-  background: linear-gradient(180deg, rgba(99,102,241,.05), rgba(99,102,241,0));
+  background: var(--s1);
 }
 .evi-empty .ic {
   display: flex; align-items: center; justify-content: center;
@@ -1875,10 +1828,9 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 .evi-steps li.done { color: var(--evi-ink-2); }
 .evi-steps li.done .dot { background: var(--evi-a2); }
 .evi-steps li.now { color: var(--evi-ink); font-weight: 600; }
-.evi-steps li.now .dot { background: var(--evi-a1);
-  box-shadow: 0 0 0 4px rgba(99,102,241,.18); animation: evi-pulse 1.5s ease-in-out infinite; }
+.evi-steps li.now .dot { background: var(--evi-a1); }
 @keyframes evi-pulse {
-  50% { box-shadow: 0 0 0 7px rgba(99,102,241,.05); }
+  50% { }
 }
 @media (prefers-reduced-motion: reduce) {
   .evi-steps li.now .dot { animation: none; }
@@ -1903,7 +1855,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
    ring goes round the options rather than round nothing. */
 #classGroup:focus { outline: none; }
 #classGroup:focus-visible {
-  outline: 2px solid var(--evi-a1); outline-offset: 6px; border-radius: 14px;
+  outline: 2px solid var(--evi-a1); outline-offset: 6px; border-radius: var(--r);
 }
 
 /* The drawer had no rule at any width, so on a phone it rendered as a
@@ -1935,13 +1887,13 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
    kept deliberately, because a printed roster with the caveat stripped off
    is exactly the artefact this agent exists to not produce. */
 @media print {
-  html:root, html:root[data-theme="light"] { background: #fff; }
+  html:root, html:root[data-theme="light"] { background: var(--tx); }
   .topbar, .evi-modes, .evi-btn, .evi-rolebar, .evi-x, .evi-seg, #eviHistoryCard { display: none !important; }
-  .evi-scrim { position: static; background: none; backdrop-filter: none; padding: 0; display: block; }
+  .evi-scrim { position: static; background: none; padding: 0; display: block; }
   .evi-drawer { height: auto; max-width: none; border: none; box-shadow: none; }
   .evi-drawer-body { overflow: visible; }
   .evi-card, .evi-drawer, .evi-stat, .evi-source, .evi-ev, .evi-tile, .evi-cal,
-  .evi-panel, .evi-hero-ev, .evi-window { background: #fff; border-color: #d8dde8; }
+  .evi-panel, .evi-hero-ev, .evi-window { background: var(--tx); border-color: var(--sky); }
   /* A print can start while a draw-in is halfway through, and a bar caught at
      40% of its width prints at 40% of its width. Nothing here animates on
      paper. */
@@ -1954,11 +1906,11 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   .evi-funnel .fb, .evi-legend .lg i { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   /* The rail's numbers sit on a coloured disc, and the blanket dark-ink
      rule above would print them dark-on-dark. */
-  .evi-cal .mk { color: #fff !important; border-color: #fff; box-shadow: none; }
-  .evi-coverage { background: #f4f7ff; border-color: #b9c6ea; }
-  * { color: #10162a !important; }
+  .evi-cal .mk { color: var(--tx) !important; border-color: var(--tx); box-shadow: none; }
+  .evi-coverage { background: var(--tx); border-color: var(--sky); }
+  * { color: var(--s1) !important; }
   .evi-table { min-width: 0; font-size: 11px; }
-  .evi-src-link::after { content: " (" attr(href) ")"; font-size: 9px; color: #5b6480 !important; }
+  .evi-src-link::after { content: " (" attr(href) ")"; font-size: 9px; color: var(--sky) !important; }
 
   /* ── the report has to actually be on the paper ──────────────────────
      Everything below is one bug, found by printing the page rather than
@@ -2000,7 +1952,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
     background: none !important;
     -webkit-background-clip: border-box !important;
     background-clip: border-box !important;
-    color: #3b3f9e !important;
+    color: var(--sky) !important;
   }
 
   /* What a person is printing.
@@ -2012,8 +1964,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   body.evi-reading .evi-hero,
   body.evi-reading .evi-plays,
   body.evi-reading .evi-card-main,
-  body.evi-reading .evi-runs,
-  body.evi-reading .bg-grid { display: none !important; }
+  body.evi-reading .evi-runs { display: none !important; }
   /* The scrim is the page now, so it must not reserve the margins the
      screen gives it, and neither must the emptied page behind it. Without
      the second rule the report started a third of the way down page one,
@@ -2029,14 +1980,14 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
      nothing at all. */
   .evi-funnel .fb, .evi-bars .bt .fl, .evi-cols .cl, .evi-donut .sg,
   .evi-ring .vl, .evi-sub .st span {
-    outline: 1px solid #6b6fbf; outline-offset: -1px;
+    outline: 1px solid var(--sky); outline-offset: -1px;
   }
   /* The severity dot on a pointer row is the only thing scanned in that
      column, and it is painted as a background. With graphics off the whole
      column read as one flat list. */
-  .evi-exec .nr .nd { outline: 3px solid #6b6fbf; outline-offset: -3px; }
-  .evi-exec .nr.n-gap .nd { outline-color: #be123c; }
-  .evi-exec .nr.n-thin .nd { outline-color: #a16207; }
+  .evi-exec .nr .nd { outline: 3px solid var(--sky); outline-offset: -3px; }
+  .evi-exec .nr.n-gap .nd { outline-color: var(--danger); }
+  .evi-exec .nr.n-thin .nd { outline-color: var(--clay); }
   /* Opened for the print by beforeprint, so the marker beside a head that
      is now showing its reason anyway is just noise on paper. */
   .evi-exec .nr .nmore, .evi-why .nr .nmore { display: none; }
@@ -2054,7 +2005,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
      has a width, so with no fill the whole breakdown printed as three
      numbers and no bars at all. The track gets a line too, or a 30/40 and a
      38/40 look identical. */
-  .evi-sub .st { outline: 1px solid #c9cde6; outline-offset: -1px; }
+  .evi-sub .st { outline: 1px solid var(--sky); outline-offset: -1px; }
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -2075,16 +2026,13 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   padding: 26px 26px 22px; margin-bottom: 26px;
   border-radius: var(--radius-lg, 16px);
   border: 1px solid rgba(99,102,241,.24);
-  background:
-    radial-gradient(ellipse 70% 120% at 6% 0%, rgba(56,189,248,.13), transparent 62%),
-    radial-gradient(ellipse 60% 130% at 96% 100%, rgba(139,92,246,.12), transparent 60%),
-    var(--evi-panel-2);
+  background: var(--s1);
 }
 /* A hairline of the brand gradient along the top edge. One decorative
    element on the page, on the one block that earns it. */
 .evi-exec::before {
   content: ""; position: absolute; inset: 0 0 auto 0; height: 2px;
-  background: linear-gradient(95deg, var(--evi-a1), var(--evi-a2) 55%, var(--evi-a3));
+  background: var(--s1);
   opacity: .85;
 }
 .evi-exec .ex-eyebrow {
@@ -2203,13 +2151,13 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 .evi-answer .at {
   display: grid; grid-template-columns: 1fr auto; gap: 2px 12px;
   width: 100%; text-align: left; cursor: pointer;
-  padding: 11px 14px; border-radius: 10px; font: inherit;
+  padding: 11px 14px; border-radius: var(--r); font: inherit;
   border: 1px solid var(--evi-line-2);
   border-left: 3px solid var(--band, var(--evi-a2));
   background: var(--evi-panel-2);
   transition: border-color .18s, transform .18s;
 }
-.evi-answer .at:hover { transform: translateY(-1px); border-color: var(--evi-a1); }
+.evi-answer .at:hover {  border-color: var(--evi-a1); }
 .evi-answer .at:focus-visible { outline: 2px solid var(--evi-a1); outline-offset: 2px; }
 .evi-answer .an {
   font-weight: 650; font-size: 14px; color: var(--evi-ink); min-width: 0;
@@ -2255,7 +2203,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 
 .evi-exec .nl { display: grid; gap: 6px; }
 .evi-exec .nr {
-  border-radius: 9px; border: 1px solid var(--evi-line-2);
+  border-radius: var(--r); border: 1px solid var(--evi-line-2);
   background: color-mix(in srgb, var(--evi-panel-2) 70%, transparent);
 }
 .evi-anim .evi-exec .nr {
@@ -2271,7 +2219,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 .evi-exec .nr > summary { cursor: pointer; }
 .evi-exec .nr > summary::-webkit-details-marker { display: none; }
 .evi-exec .nr > summary:focus-visible {
-  outline: 2px solid var(--evi-a1); outline-offset: 2px; border-radius: 9px;
+  outline: 2px solid var(--evi-a1); outline-offset: 2px; border-radius: var(--r);
 }
 /* The severity dot. Colour is the only thing scanned in a column of rows,
    so it is a shape rather than a word the eye has to read. */
@@ -2336,8 +2284,8 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   content: counter(top); position: absolute; left: 16px; top: 15px; z-index: 1;
   width: 24px; height: 24px; border-radius: 50%;
   display: grid; place-items: center;
-  font-size: 12px; font-weight: 700; color: #fff;
-  background: linear-gradient(135deg, var(--evi-a1), var(--evi-a2));
+  font-size: 12px; font-weight: 700; color: var(--tx);
+  background: var(--s1);
 }
 /* The whole entry is the control when it has somewhere to go, so the target
    is the card rather than a link at the end of the sentence. */
@@ -2346,16 +2294,16 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   padding: 0; font: inherit; color: inherit; cursor: pointer;
 }
 .evi-top li.go:hover { border-color: color-mix(in srgb, var(--band, var(--evi-a2)) 45%, transparent); }
-.evi-top .tw:focus-visible { outline: 2px solid var(--evi-a1); outline-offset: 4px; border-radius: 8px; }
+.evi-top .tw:focus-visible { outline: 2px solid var(--evi-a1); outline-offset: 4px; border-radius: var(--r-sm); }
 .evi-top .ts i { font-style: normal; font-weight: 500; color: var(--evi-ink-3); }
 /* The score as a length as well as a number, against the same 110 the
    spread above uses, so the two charts agree about what a 99 looks like. */
 .evi-top .tb {
-  height: 4px; border-radius: 3px; background: var(--evi-line-2);
+  height: 4px; border-radius: var(--r-sm); background: var(--evi-line-2);
   overflow: hidden; margin-top: 8px;
 }
 .evi-top .tb span {
-  display: block; height: 100%; border-radius: 3px;
+  display: block; height: 100%; border-radius: var(--r-sm);
   background: var(--band, var(--evi-a2));
 }
 .evi-anim .evi-top .tb span { animation: evi-grow-w .6s cubic-bezier(.22,.85,.3,1) both; }
@@ -2389,7 +2337,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
   border-radius: var(--radius-md, 12px) 0 0 var(--radius-md, 12px);
 }
-.evi-cand.t-P1::before { background: linear-gradient(180deg, var(--evi-a1), var(--evi-a2)); }
+.evi-cand.t-P1::before { background: var(--s1); }
 .evi-cand.t-P2::before { background: rgba(139,92,246,.5); }
 .evi-cand.t-P3::before { background: color-mix(in srgb, var(--evi-f-look) 60%, transparent); }
 
@@ -2407,14 +2355,14 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   border: 1px solid var(--evi-line);
 }
 .evi-cand.t-P1 .cn .tier {
-  background: linear-gradient(95deg, rgba(56,189,248,.24), rgba(99,102,241,.22));
-  color: #7dd3fc; border-color: rgba(56,189,248,.36);
+  background: var(--s1);
+  color: var(--sky); border-color: rgba(56,189,248,.36);
 }
 .evi-cand.t-P2 .cn .tier {
-  background: rgba(139,92,246,.16); color: #c4b5fd; border-color: rgba(139,92,246,.3);
+  background: rgba(139,92,246,.16); color: var(--acc); border-color: rgba(139,92,246,.3);
 }
-:root[data-theme="light"] .evi-cand.t-P1 .cn .tier { color: #0369a1; }
-:root[data-theme="light"] .evi-cand.t-P2 .cn .tier { color: #6d28d9; }
+:root[data-theme="light"] .evi-cand.t-P1 .cn .tier { color: var(--sky); }
+:root[data-theme="light"] .evi-cand.t-P2 .cn .tier { color: var(--acc); }
 
 /* ── the second tier ───────────────────────────────────────────────────
    Below the priority bar and above both relevance gates. It gets the same
@@ -2511,12 +2459,12 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 }
 .evi-sub .sl i { font-style: normal; font-weight: 500; color: var(--evi-ink-3); }
 .evi-sub .st {
-  height: 5px; border-radius: 3px; overflow: hidden;
+  height: 5px; border-radius: var(--r-sm); overflow: hidden;
   background: var(--evi-line-2);
 }
 .evi-sub .st span {
-  display: block; height: 100%; border-radius: 3px;
-  background: linear-gradient(90deg, var(--evi-a1), var(--evi-a2));
+  display: block; height: 100%; border-radius: var(--r-sm);
+  background: var(--s1);
   transition: width .5s cubic-bezier(.22,.9,.3,1);
   /* banded below: a fill that is the same colour at 90% of the max and at 20%
      of it tells the reader nothing the number did not already say */
@@ -2627,7 +2575,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 .evi-ruled { display: grid; gap: 7px; margin-top: 12px; }
 .evi-ruled .rr {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px;
-  padding: 9px 12px; border-radius: 10px;
+  padding: 9px 12px; border-radius: var(--r);
   background: var(--evi-panel-2);
   border: 1px solid var(--evi-line-2);
   border-left: 2px solid color-mix(in srgb, var(--evi-warn) 55%, transparent);
@@ -2667,11 +2615,10 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   background: var(--evi-panel-2); border: 1px solid var(--evi-line);
   transition: border-color .18s, background .18s, transform .18s;
 }
-.evi-class:hover { border-color: rgba(99,102,241,.35); transform: translateY(-1px); }
+.evi-class:hover { border-color: rgba(99,102,241,.35);  }
 .evi-class[aria-checked="true"] {
   border-color: rgba(99,102,241,.55);
-  background: linear-gradient(140deg, rgba(56,189,248,.14), rgba(139,92,246,.1));
-  box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+  background: var(--s1);
 }
 .evi-class .cl { font-size: 13.5px; font-weight: 600; color: var(--evi-ink); }
 .evi-class .cw { font-size: 11.5px; line-height: 1.5; color: var(--evi-ink-3);
@@ -2713,7 +2660,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 }
 .evi-field select:hover { border-color: rgba(99,102,241,.38); }
 .evi-field select:focus {
-  border-color: rgba(99,102,241,.55); box-shadow: 0 0 0 3px rgba(99,102,241,.14);
+  border-color: rgba(99,102,241,.55);
 }
 /* The arrow is a data URI, so its colour cannot inherit. One stop per theme
    rather than one grey that is too pale on white and too dark on navy. */
@@ -2752,13 +2699,13 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 }
 .evi-window .wn { font-size: 12.3px; line-height: 1.6; color: var(--evi-ink-2); }
 .evi-window.ok { border-left-color: var(--evi-ok);
-  background: linear-gradient(95deg, rgba(74,222,128,.09), transparent 60%), var(--evi-panel-2); }
+  background: var(--s1); }
 .evi-window.ok .wt { color: var(--evi-ok); }
 .evi-window.warn { border-left-color: var(--evi-warn);
-  background: linear-gradient(95deg, rgba(251,191,36,.09), transparent 60%), var(--evi-panel-2); }
+  background: var(--s1); }
 .evi-window.warn .wt { color: var(--evi-warn); }
 .evi-window.bad { border-left-color: var(--evi-bad);
-  background: linear-gradient(95deg, rgba(251,113,133,.09), transparent 60%), var(--evi-panel-2); }
+  background: var(--s1); }
 .evi-window.bad .wt { color: var(--evi-bad); }
 .evi-window.idle { border-left-color: var(--evi-line); }
 
@@ -2770,9 +2717,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   padding: 16px 18px; margin-bottom: 18px;
   border-radius: var(--radius-md, 12px);
   border: 1px solid rgba(99,102,241,.22);
-  background:
-    radial-gradient(ellipse 60% 140% at 4% 0%, rgba(56,189,248,.1), transparent 60%),
-    var(--evi-panel-2);
+  background: var(--s1);
 }
 .evi-classplay .pl {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -2789,7 +2734,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 .evi-classplay .pp b { color: var(--evi-ink); }
 
 .evi-coverage.warn {
-  background: linear-gradient(95deg, rgba(251,191,36,.1), rgba(251,113,133,.06));
+  background: var(--s1);
   border-color: rgba(251,191,36,.3);
 }
 .evi-coverage.warn .ic { color: var(--evi-warn); font-weight: 800; }
@@ -2808,7 +2753,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
   border-radius: var(--radius-md, 12px) 0 0 var(--radius-md, 12px);
   background: var(--evi-line);
 }
-.evi-out.s-ok::before { background: linear-gradient(180deg, var(--evi-a1), var(--evi-a2)); }
+.evi-out.s-ok::before { background: var(--s1); }
 /* A rewritten draft is marked at the spine, not only in the footnote. The
    whole point is that it cannot be skimmed past. */
 .evi-out.s-rewritten_no_booth_note::before,
@@ -2937,10 +2882,10 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 }
 .evi-dec .dbtn:hover { color: var(--evi-ink); border-color: rgba(99,102,241,.4); }
 .evi-dec .dbtn.on {
-  color: #fff; border-color: rgba(99,102,241,.5);
-  background: linear-gradient(95deg, rgba(56,189,248,.24), rgba(139,92,246,.2));
+  color: var(--tx); border-color: rgba(99,102,241,.5);
+  background: var(--s1);
 }
-:root[data-theme="light"] .evi-dec .dbtn.on { color: #1b2440; }
+:root[data-theme="light"] .evi-dec .dbtn.on { color: var(--sky); }
 
 /* The budget the user recorded. Deliberately in the summary block and never
    beside a score: a number placed next to a score is a number that starts
@@ -2980,9 +2925,7 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
 /* ── the locked profile, restated ───────────────────────────────────── */
 .evi-psum {
   margin-top: 16px; padding: 16px 18px; border-radius: var(--radius-md, 12px);
-  border: 1px solid var(--evi-line); background:
-    radial-gradient(ellipse 100% 120% at 0% 0%, rgba(56,189,248,.07), transparent 60%),
-    var(--evi-panel-2);
+  border: 1px solid var(--evi-line); background: var(--s1);
 }
 .evi-psum[hidden] { display: none; }
 .ps-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 9px;
@@ -3021,9 +2964,9 @@ table.evi-table { width: 100%; border-collapse: separate; border-spacing: 0;
    so a weak dimension is legible as weak at a glance rather than only after
    reading two numbers at the end of the row. */
 .evi-sub.s-mid .st span {
-  background: linear-gradient(90deg, rgba(56,189,248,.72), rgba(99,102,241,.62));
+  background: var(--s1);
 }
 .evi-sub.s-lo .st span {
-  background: linear-gradient(90deg, rgba(245,166,35,.85), rgba(245,166,35,.55));
+  background: var(--s1);
 }
 .evi-sub.s-lo .sl b { color: var(--evi-warn); }

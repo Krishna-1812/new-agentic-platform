@@ -2,7 +2,7 @@
 let D = {posts:[],people:[],companies:[],company_lb:[],stats:{}};
 let _pfCard=null, _pfJob=0;  // applyPF()'s progressive-render helpers
 let _cfCard=null, _cfJob=0;  // applyCF()'s progressive-render helpers
-/* ── helpers ── */
+/* helpers */
 const esc=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const ini=n=>(n||'?').trim().split(/\s+/).map(w=>w[0]||'').join('').toUpperCase().slice(0,2);
 const GRAD=[['#6366f1','#22d3ee'],['#8b5cf6','#06b6d4'],['#059669','#818cf8'],['#d97706','#f472b6'],['#0ea5e9','#a78bfa'],['#10b981','#f59e0b']];
@@ -13,7 +13,7 @@ function av(name,pic,sz,cls){
   const img=(pic&&pic.startsWith('http'))?`<img src="${esc(pic)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit" onerror="this.style.display='none'">`:'';
   return`<div class="${c}" style="width:${s}px;height:${s}px;position:relative;background:linear-gradient(135deg,${g[0]},${g[1]})">${ini(name)}${img}</div>`;
 }
-const RICO={LIKE:'👍',PRAISE:'🙌',INTEREST:'🤔',APPRECIATION:'❤️',EMPATHY:'🫂'};
+const RICO={LIKE:'',PRAISE:'',INTEREST:'',APPRECIATION:'',EMPATHY:''};
 const RCLS={LIKE:'blike',PRAISE:'bprs',INTEREST:'bint',APPRECIATION:'bapp',EMPATHY:'bemp'};
 const SCLS=s=>!s?'bic':s.includes('C-Level')||s.includes('Founder')?'bcs':s.includes('VP')?'bvp':s.includes('Director')?'bvp':s.includes('Manager')?'bmg':'bic';
 const SLBL=s=>(s||'Unknown').replace('IC / Individual Contributor','IC').replace('C-Level / Founder','C-Level');
@@ -29,7 +29,7 @@ const EMP_SHORT=LI_CFG.employerShort||'P²';
 const EMP_TOKENS=(LI_CFG.employerTokens&&LI_CFG.employerTokens.length?LI_CFG.employerTokens:['position']).map(t=>String(t).toLowerCase());
 const isEmployee=p=>p&&(p.relationship==='Employee'||EMP_TOKENS.some(t=>(p.company||'').toLowerCase().includes(t)));
 
-/* ── state ── */
+/* state */
 let PF={sen:'all',deg:'all',react:'all',q:'',comp:'',dFrom:'',dTo:'',sort:'none'};
 let _filteredPosts=[];
 let PLF={sen:'all',deg:'all',minP:0,country:'all',city:'all',dFrom:'',dTo:'',q:'',excludeP2:false,dm:false,rel:'all'};
@@ -39,7 +39,7 @@ let activeStatFilter=null;
 let _liLoading=false;
 let _liOrb=null;
 
-/* ── counter animation ── */
+/* counter animation */
 function countUp(){
   document.querySelectorAll('[data-count]').forEach(el=>{
     const t=parseInt(el.dataset.count)||0;let s=0;const inc=t/600*16;
@@ -48,7 +48,7 @@ function countUp(){
   });
 }
 
-/* ── tab switch ── */
+/* tab switch */
 function switchTab(t){
   ['overview','post','people','companies'].forEach(k=>{
     document.getElementById('tab-'+k).classList.toggle('active',k===t);
@@ -57,9 +57,9 @@ function switchTab(t){
   setTimeout(countUp,50);
 }
 
-/* ═══════════════════════════════════
-   CROSS-FILTER NAV — overview blocks → detail tabs, filter pre-applied
-═══════════════════════════════════ */
+/* 
+ CROSS-FILTER NAV — overview blocks detail tabs, filter pre-applied
+ */
 function _scrollTabs(){var m=document.querySelector('.mega-tabs');if(m)m.scrollIntoView({behavior:'smooth',block:'start'});}
 function _blankPLF(){return {sen:'all',deg:'all',minP:0,country:'all',city:'all',dFrom:'',dTo:'',q:'',excludeP2:false,dm:false,rel:'all'};}
 function _blankPF(){return {sen:'all',deg:'all',react:'all',q:'',comp:'',dFrom:'',dTo:'',sort:'none'};}
@@ -98,9 +98,9 @@ function _senToBucket(k){
   return'all';
 }
 
-/* ═══════════════════════════════════
+/* 
    LIVE DATA — load / refresh / toast
-═══════════════════════════════════ */
+ */
 function liToast(msg,kind){
   const t=document.getElementById('liToast');if(!t)return;
   t.textContent=msg;t.className='li-toast show'+(kind?' '+kind:'');
@@ -176,21 +176,21 @@ async function loadLinkedInData(force){
 }
 function refreshLI(){loadLinkedInData(true);}
 
-/* ═══════════════════════════════════
+/* 
    OVERVIEW
-═══════════════════════════════════ */
+ */
 function buildOverviewTab(){
   const el=document.getElementById('tab-overview');if(!el)return;
   const st=D.stats||{};
   const kpis=[
-    {v:st.total_engagements||0,l:'Total Engagements',c:'vi',kc:'#7c83f5',ic:'⚡',go:'goPosts({})',t:'See every post & engager'},
-    {v:st.total_people||0,l:'Unique People',c:'vg',kc:'#2dd4aa',ic:'👥',go:'goPeople({})',t:'Browse all people'},
-    {v:st.total_dms||0,l:'Decision Makers',c:'va',kc:'#f5a623',ic:'🎯',go:'goPeople({dm:true})',t:'People flagged as decision-makers'},
-    {v:st.csuite_count||0,l:'C-Suite Reached',c:'vp',kc:'#b78bfa',ic:'👑',go:"goPeople({sen:'csuite'})",t:'C-level & founders'},
-    {v:st.total_companies||0,l:'Companies Reached',c:'vc',kc:'#22d3ee',ic:'🏢',go:'goCompanies()',t:'Company intelligence'},
-    {v:st.total_comments||0,l:'Comments',c:'vr',kc:'#fb7185',ic:'💬',go:'goPosts({})',t:'Posts & comment signal'},
+ {v:st.total_engagements||0,l:'Total Engagements',c:'vi',kc:'#7c83f5',ic:'',go:'goPosts({})',t:'See every post & engager'},
+ {v:st.total_people||0,l:'Unique People',c:'vg',kc:'#2dd4aa',ic:'',go:'goPeople({})',t:'Browse all people'},
+ {v:st.total_dms||0,l:'Decision Makers',c:'va',kc:'#f5a623',ic:'',go:'goPeople({dm:true})',t:'People flagged as decision-makers'},
+ {v:st.csuite_count||0,l:'C-Suite Reached',c:'vp',kc:'#b78bfa',ic:'',go:"goPeople({sen:'csuite'})",t:'C-level & founders'},
+ {v:st.total_companies||0,l:'Companies Reached',c:'vc',kc:'#22d3ee',ic:'',go:'goCompanies()',t:'Company intelligence'},
+ {v:st.total_comments||0,l:'Comments',c:'vr',kc:'#fb7185',ic:'',go:'goPosts({})',t:'Posts & comment signal'},
   ];
-  /* navFn(key) → a JS onclick string, or null for non-clickable rows */
+ /* navFn(key) a JS onclick string, or null for non-clickable rows */
   function barList(counts,total,colorFn,navFn){
     const entries=Object.entries(counts||{}).sort((a,b)=>b[1]-a[1]);
     if(!entries.length)return'<div class="nores" style="padding:24px"><p>No data yet</p></div>';
@@ -211,28 +211,28 @@ function buildOverviewTab(){
   const relTotal=Object.values(st.relationship_breakdown||{}).reduce((a,b)=>a+b,0);
   el.innerHTML=`
   <div class="ov-kpis">
-    ${kpis.map(k=>`<div class="ov-kpi ov-kpi-click" style="--kc:${k.kc}" onclick="${k.go}" title="${k.t}"><div class="ov-kpi-ic">${k.ic}</div><div class="ov-kpi-val ${k.c}" data-count="${k.v}">0</div><div class="ov-kpi-lbl">${k.l}</div><div class="ov-kpi-go">View →</div></div>`).join('')}
+ ${kpis.map(k=>`<div class="ov-kpi ov-kpi-click" style="--kc:${k.kc}" onclick="${k.go}" title="${k.t}"><div class="ov-kpi-ic">${k.ic}</div><div class="ov-kpi-val ${k.c}" data-count="${k.v}">0</div><div class="ov-kpi-lbl">${k.l}</div><div class="ov-kpi-go">View </div></div>`).join('')}
   </div>
   <div class="ov-grid">
     <div class="lbcard ov-card" style="--kc:#22d3ee">
-      <div class="lbtitle"><span class="ov-chip">⚡</span> Reaction Mix</div>
+ <div class="lbtitle"><span class="ov-chip"></span>Reaction Mix</div>
       ${barList(st.reaction_breakdown,st.total_engagements,k=>({LIKE:'#60a5fa',PRAISE:'#fbbf24',INTEREST:'#a5b4fc',APPRECIATION:'#fca5a5',EMPATHY:'#f9a8d4'}[k]||'var(--accent)'),k=>"goPosts({react:'"+jsstr(k)+"'})")}
     </div>
     <div class="lbcard ov-card" style="--kc:#f5a623">
-      <div class="lbtitle"><span class="ov-chip">🏅</span> Seniority Mix</div>
+ <div class="lbtitle"><span class="ov-chip"></span>Seniority Mix</div>
       ${barList(st.seniority_breakdown,st.total_people,k=>({'C-Level / Founder':'#fbbf24','VP':'#818cf8','Director':'#a5b4fc','Manager':'#2dd4aa','IC / Individual Contributor':'#94a3b8'}[k]||'var(--accent)'),k=>"goPeople({sen:'"+_senToBucket(k)+"'})")}
     </div>
     <div class="lbcard ov-card" style="--kc:#2dd4aa">
-      <div class="lbtitle"><span class="ov-chip">🌍</span> Top Locations</div>
+ <div class="lbtitle"><span class="ov-chip"></span>Top Locations</div>
       ${barList(st.country_breakdown,st.total_people,()=>'linear-gradient(90deg,#2dd4aa,#22d3ee)',k=>"goPeople({country:'"+jsstr(k)+"'})")}
     </div>
     <div class="lbcard ov-card" style="--kc:#fb7185">
-      <div class="lbtitle"><span class="ov-chip">🎯</span> Employee vs. External</div>
+ <div class="lbtitle"><span class="ov-chip"></span>Employee vs. External</div>
       ${barList(st.relationship_breakdown,relTotal,k=>k==='Employee'?'#f5a623':'linear-gradient(90deg,#fb7185,#b78bfa)',k=>"goPeople({rel:'"+jsstr(k)+"'})")}
       <div class="ov-note">External reactions are real prospect signal — employee amplification is tracked separately so it doesn't inflate reach. <span class="ov-note-hint">Click any row to drill in.</span></div>
     </div>
   </div>
-  <div class="sec-hdr" style="margin-top:22px"><div class="sec-ttl"><span class="ov-chip" style="--kc:#7c83f5">🏆</span> Top Companies by Engagement</div></div>
+ <div class="sec-hdr" style="margin-top:22px"><div class="sec-ttl"><span class="ov-chip" style="--kc:#7c83f5"></span>Top Companies by Engagement</div></div>
   <div class="lbcard ov-card ov-card-lb" style="--kc:#7c83f5">
     ${(D.company_lb||[]).length?D.company_lb.map(([name,cnt],i)=>{
       const maxLb=D.company_lb[0][1]||1;
@@ -246,9 +246,9 @@ function buildOverviewTab(){
   </div>`;
 }
 
-/* ═══════════════════════════════════
+/* 
    POST INTELLIGENCE
-═══════════════════════════════════ */
+ */
 function buildPostTab(){
   const {posts,stats}=D;
   const el=document.getElementById('tab-post');
@@ -268,19 +268,19 @@ function buildPostTab(){
     <div class="fgroup">
       <div class="chips" id="pf-react">
         <button class="chip on" onclick="setPF('react','all',this)">All reactions</button>
-        <button class="chip" onclick="setPF('react','LIKE',this)">👍 Like</button>
-        <button class="chip" onclick="setPF('react','PRAISE',this)">🙌 Praise</button>
-        <button class="chip" onclick="setPF('react','EMPATHY',this)">🫂 Empathy</button>
-        <button class="chip" onclick="setPF('react','APPRECIATION',this)">❤️ Appreciation</button>
-        <button class="chip" onclick="setPF('react','INTEREST',this)">🤔 Interest</button>
+ <button class="chip" onclick="setPF('react','LIKE',this)">Like</button>
+ <button class="chip" onclick="setPF('react','PRAISE',this)">Praise</button>
+ <button class="chip" onclick="setPF('react','EMPATHY',this)">Empathy</button>
+ <button class="chip" onclick="setPF('react','APPRECIATION',this)">Appreciation</button>
+ <button class="chip" onclick="setPF('react','INTEREST',this)">Interest</button>
       </div>
     </div>
     <div class="sep"></div>
     <select class="comp-sel" id="pf-comp" onchange="PF.comp=this.value;applyPF()">${_compOpts}</select>
-    <div class="lkf-dwrap" title="Filter posts by date"><span class="lkf-dlbl">📅</span><input type="date" class="lkf-date" onchange="PF.dFrom=this.value;applyPF()"><span class="lkf-dsep">→</span><input type="date" class="lkf-date" onchange="PF.dTo=this.value;applyPF()"></div>
-    <button class="chip" id="pf-sort" onclick="PF.sort=(PF.sort==='eng'?'none':'eng');this.classList.toggle('on',PF.sort==='eng');applyPF()">↕ Most engaged</button>
+ <div class="lkf-dwrap" title="Filter posts by date"><span class="lkf-dlbl"></span><input type="date" class="lkf-date" onchange="PF.dFrom=this.value;applyPF()"><span class="lkf-dsep"></span><input type="date" class="lkf-date" onchange="PF.dTo=this.value;applyPF()"></div>
+ <button class="chip" id="pf-sort" onclick="PF.sort=(PF.sort==='eng'?'none':'eng');this.classList.toggle('on',PF.sort==='eng');applyPF()">Most engaged</button>
     <div class="srch">
-      <span class="srch-ico">🔍</span>
+ <span class="srch-ico"></span>
       <input placeholder="Search people…" oninput="PF.q=this.value;applyPF()">
     </div>
   </div>
@@ -331,7 +331,7 @@ function applyPF(){
   }).filter(p=>p.fe.length>0);
   document.getElementById('pst-cnt').textContent=filtered.length+' posts';
   document.getElementById('tc-post').textContent=filtered.length;
-  if(!filtered.length){g.innerHTML='<div class="nores" style="grid-column:1/-1"><div class="nores-ico">🔍</div><h3>No results</h3><p>Try adjusting filters</p></div>';return;}
+ if(!filtered.length){g.innerHTML='<div class="nores" style="grid-column:1/-1"><div class="nores-ico"></div><h3>No results</h3><p>Try adjusting filters</p></div>';return;}
   if(PF.sort==='eng')filtered.sort((a,b)=>b.fe.length-a.fe.length);
   _filteredPosts=filtered;
   _pfCard=function(p,pi){
@@ -348,10 +348,10 @@ function applyPF(){
       <div class="psnip">${esc(p.snippet)}</div>
       <div class="pmets">
         <div class="mpill mp-g">${eng.length} Engager${eng.length!==1?'s':''}</div>
-        ${cmN?`<div class="mpill mp-c">💬 ${cmN} Comment${cmN!==1?'s':''}</div>`:''}
+ ${cmN?`<div class="mpill mp-c"> ${cmN} Comment${cmN!==1?'s':''}</div>`:''}
         ${dmN?`<div class="mpill mp-a">${dmN} DM${dmN!==1?'s':''}</div>`:''}
         ${csN?`<div class="mpill mp-p">${csN} C-Suite</div>`:''}
-        ${p.url?`<a href="${esc(p.url)}" target="_blank" class="post-view-btn" onclick="event.stopPropagation()">View Post ↗</a>`:''}
+ ${p.url?`<a href="${esc(p.url)}" target="_blank" class="post-view-btn" onclick="event.stopPropagation()">View Post </a>`:''}
       </div>
     </div>`;
   };
@@ -381,19 +381,19 @@ function filterToDM(postIdx){PF.dm=true;document.getElementById('pf-dm').classLi
 function togglePost(pi){
   const el=document.getElementById('el-'+pi),btn=document.getElementById('eb-'+pi);
   const op=el.classList.contains('open');
-  el.classList.toggle('open',!op);btn.textContent=op?'Show ▾':'Hide ▴';
+ el.classList.toggle('open',!op);btn.textContent=op?'Show ':'Hide ';
   document.getElementById('pc-'+pi).classList.toggle('expanded',!op);
 }
 
-/* ═══════════════════════════════════
+/* 
    PEOPLE & COMPANIES
-═══════════════════════════════════ */
+ */
 const BKT=[
-  {k:'csuite',l:'C-Suite / Founders',i:'👑',c:'#fbbf24'},
-  {k:'vpdirector',l:'VP / Director Level',i:'📈',c:'#818cf8'},
-  {k:'managers',l:'Managers',i:'🏗️',c:'#00e5a0'},
-  {k:'ics',l:'Individual Contributors',i:'💼',c:'#94a3b8'},
-  {k:'unknown',l:'Unknown Seniority',i:'❓',c:'#64748b'},
+ {k:'csuite',l:'C-Suite / Founders',i:'',c:'#fbbf24'},
+ {k:'vpdirector',l:'VP / Director Level',i:'',c:'#818cf8'},
+ {k:'managers',l:'Managers',i:'',c:'#00e5a0'},
+ {k:'ics',l:'Individual Contributors',i:'',c:'#94a3b8'},
+ {k:'unknown',l:'Unknown Seniority',i:'',c:'#64748b'},
 ];
 let maxP=1;
 
@@ -412,8 +412,8 @@ function buildPeopleTab(){
   if(!window.PDATES){window.PDATES={};(D.posts||[]).forEach(function(po){(po.engagers||[]).forEach(function(e){var k=(e.name||'').toLowerCase();(window.PDATES[k]=window.PDATES[k]||[]).push(po.date);});});}
   var _countries=[...new Set(D.people.map(function(p){return p._country;}).filter(Boolean))].sort();
   var _cities=[...new Set(D.people.map(function(p){return p._city;}).filter(Boolean))].sort();
-  var _ctryOpts='<option value="all">🌍 All countries</option>'+_countries.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>';}).join('');
-  var _cityOpts='<option value="all">📍 All locations</option>'+_cities.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>';}).join('');
+ var _ctryOpts='<option value="all">All countries</option>'+_countries.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>';}).join('');
+ var _cityOpts='<option value="all">All locations</option>'+_cities.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>';}).join('');
   el.innerHTML=`
 
   <div class="fbar-wrap">
@@ -422,14 +422,14 @@ function buildPeopleTab(){
         <span class="flabel">Seniority</span>
         <div class="chips">
           <button class="chip on" onclick="setPLF('sen','all',this)">All</button>
-          <button class="chip" onclick="setPLF('sen','csuite',this)">👑 C-Suite</button>
-          <button class="chip" onclick="setPLF('sen','vpdirector',this)">📈 VP/Dir</button>
-          <button class="chip" onclick="setPLF('sen','managers',this)">🏗 Manager</button>
-          <button class="chip" onclick="setPLF('sen','ics',this)">💼 IC</button>
+ <button class="chip" onclick="setPLF('sen','csuite',this)">C-Suite</button>
+ <button class="chip" onclick="setPLF('sen','vpdirector',this)">VP/Dir</button>
+ <button class="chip" onclick="setPLF('sen','managers',this)">Manager</button>
+ <button class="chip" onclick="setPLF('sen','ics',this)">IC</button>
         </div>
       </div>
       <div style="flex:1"></div>
-      <div class="srch"><span class="srch-ico">🔍</span><input placeholder="Search name, title, company…" oninput="PLF.q=this.value;applyPLF()"></div>
+ <div class="srch"><span class="srch-ico"></span><input placeholder="Search name, title, company…" oninput="PLF.q=this.value;applyPLF()"></div>
       <span class="lkf-count" id="plf-count">—</span>
     </div>
     <div class="fbar fbar-secondary">
@@ -442,21 +442,21 @@ function buildPeopleTab(){
         <option value="0">Any activity</option><option value="1">1+ posts</option><option value="2">2+ posts</option><option value="3">3+ posts</option>
       </select>
       <div class="lkf-dwrap" title="Filter by engagement date">
-        <span class="lkf-dlbl">📅</span>
+ <span class="lkf-dlbl"></span>
         <input type="date" class="lkf-date" onchange="PLF.dFrom=this.value;applyPLF()">
-        <span class="lkf-dsep">→</span>
+ <span class="lkf-dsep"></span>
         <input type="date" class="lkf-date" onchange="PLF.dTo=this.value;applyPLF()">
       </div>
-      <button class="chip" id="plf-dm" onclick="PLF.dm=!PLF.dm;this.classList.toggle('on',PLF.dm);applyPLF()">🎯 Decision Makers</button>
-      <button class="chip p2-exclude-btn" id="plf-p2" onclick="PLF.excludeP2=!PLF.excludeP2;this.classList.toggle('on',PLF.excludeP2);applyPLF()">🚫 Hide ${esc(EMP_SHORT)}</button>
-      <button class="lkf-reset" onclick="resetPLF()">↺ Reset</button>
+ <button class="chip" id="plf-dm" onclick="PLF.dm=!PLF.dm;this.classList.toggle('on',PLF.dm);applyPLF()">Decision Makers</button>
+ <button class="chip p2-exclude-btn" id="plf-p2" onclick="PLF.excludeP2=!PLF.excludeP2;this.classList.toggle('on',PLF.excludeP2);applyPLF()">Hide ${esc(EMP_SHORT)}</button>
+ <button class="lkf-reset" onclick="resetPLF()">Reset</button>
     </div>
   </div>
   <div class="peoplayout">
     <div id="people-main"></div>
     <div>
       <div class="lbcard">
-        <div class="lbtitle">🏆 Company Leaderboard</div>
+ <div class="lbtitle">Company Leaderboard</div>
         ${company_lb.map(([name,cnt],i)=>`
         <div class="lbitem" onclick="openCompanyDrawerByName('${esc(name)}')">
           <div class="lbrank ${i===0?'rank-g':i===1?'rank-s':i===2?'rank-b':''}">${i+1}</div>
@@ -494,7 +494,7 @@ function buildCompaniesTab(){
       </div>
     </div>
     <div class="sep"></div>
-    <div class="srch"><span class="srch-ico">🔍</span><input placeholder="Search companies…" oninput="CF.q=this.value;applyCF()"></div>
+ <div class="srch"><span class="srch-ico"></span><input placeholder="Search companies…" oninput="CF.q=this.value;applyCF()"></div>
   </div>
   <div class="sec-hdr"><div class="sec-ttl">Company Intelligence</div><div class="sec-cnt" id="co-cnt">${companies.length} companies</div></div>
   <div class="cgrid" id="cgrid"></div>`;
@@ -559,7 +559,7 @@ function applyPLF(){
   });
   var _tc=document.getElementById('tc-people');if(_tc)_tc.textContent=fil.length;
   var _pc=document.getElementById('plf-count');if(_pc)_pc.textContent=fil.length+' '+(fil.length===1?'person':'people');
-  if(!fil.length){main.innerHTML='<div class="nores"><div class="nores-ico">🔍</div><h3>No results</h3><p>Adjust filters</p></div>';return;}
+ if(!fil.length){main.innerHTML='<div class="nores"><div class="nores-ico"></div><h3>No results</h3><p>Adjust filters</p></div>';return;}
   const bkts={};BKT.forEach(b=>{bkts[b.k]=fil.filter(p=>p.bucket===b.k);});
   main.innerHTML=BKT.map(b=>{
     const grp=bkts[b.k];if(!grp||!grp.length)return'';
@@ -567,7 +567,7 @@ function applyPLF(){
       <button class="bhdr" onclick="toggleBucket('${b.k}')">
         <div class="bico" style="background:${b.c}22">${b.i}</div>
         <div class="binfo"><div class="bname">${b.l}</div><div class="bsub">${grp.length} people</div></div>
-        <div class="bchev up" id="bc-${b.k}">▾</div>
+ <div class="bchev up" id="bc-${b.k}"></div>
       </button>
       <div class="bbody" id="bb-${b.k}" style="max-height:4000px">
         <div class="pgrd">
@@ -578,18 +578,18 @@ function applyPLF(){
               <div class="pctop">${av(p.name,p.pic,44,'pcav')}<div><div class="pcn">${esc(p.name)}</div><div class="pct">${esc(p.title||p.headline)}</div></div></div>
               <div class="pcbdg">
                 ${p.seniority?`<span class="b ${SCLS(p.seniority)}">${esc(SLBL(p.seniority))}</span>`:''}
-                ${p.dm==='Yes'?`<span class="b bdm">🎯 DM</span>`:''}
-                ${isEmployee(p)?`<span class="b brel-emp">🏢 ${esc(EMP_SHORT)} Employee</span>`:''}
+ ${p.dm==='Yes'?`<span class="b bdm">DM</span>`:''}
+ ${isEmployee(p)?`<span class="b brel-emp"> ${esc(EMP_SHORT)} Employee</span>`:''}
                 ${p.degree?`<span class="b bdeg">${DLBL(p.degree)}</span>`:''}
-                ${p.country?`<span class="b bic">🌏 ${esc(p.country)}</span>`:''}
+ ${p.country?`<span class="b bic"> ${esc(p.country)}</span>`:''}
                 ${p.industry?`<span class="b bic" style="background:rgba(79,70,229,0.18);border-color:rgba(79,70,229,0.35)">${esc(p.industry)}</span>`:''}
               </div>
               <div class="pcmeta">
-                ${p.company?`<div class="pcmi">🏢 <span>${esc(p.company)}</span></div>`:''}
-                ${p.location?`<div class="pcmi">📍 <span>${esc(p.location)}</span></div>`:''}
-                ${p.size?`<div class="pcmi">👥 <span>${esc(p.size)}</span></div>`:''}
-                ${p.followers?`<div class="pcmi">📶 <span>${fmtN(p.followers)} followers</span></div>`:''}
-                ${p.url?`<div class="pcmi"><a href="${esc(p.url)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:none;font-size:10px;font-weight:600">↗ LinkedIn</a></div>`:''}
+ ${p.company?`<div class="pcmi"> <span>${esc(p.company)}</span></div>`:''}
+ ${p.location?`<div class="pcmi"> <span>${esc(p.location)}</span></div>`:''}
+ ${p.size?`<div class="pcmi"> <span>${esc(p.size)}</span></div>`:''}
+ ${p.followers?`<div class="pcmi"> <span>${fmtN(p.followers)} followers</span></div>`:''}
+ ${p.url?`<div class="pcmi"><a href="${esc(p.url)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:none;font-size:10px;font-weight:600">LinkedIn</a></div>`:''}
               </div>
               ${p.posts_engaged>0?`<div class="actbar"><div class="acttrack"><div class="actfill" style="width:${pct}%"></div></div><div class="actlbl">${p.posts_engaged} post${p.posts_engaged!==1?'s':''}</div></div>`:''}
             </div>`;
@@ -609,7 +609,7 @@ function toggleBucket(k){
   if(!isOpen)setTimeout(()=>b.style.maxHeight='4000px',420);
 }
 
-/* ── COMPANY FILTERS ── */
+/* COMPANY FILTERS */
 function setCF(k,v,el){CF[k]=v;el.closest('.chips').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');applyCF();}
 function toggleCFDM(){CF.dm=!CF.dm;document.getElementById('cf-dm').classList.toggle('on',CF.dm);applyCF();}
 
@@ -627,7 +627,7 @@ function applyCF(){
   });
   document.getElementById('co-cnt').textContent=fil.length+' companies';
   var tcco=document.getElementById('tc-companies');if(tcco)tcco.textContent=fil.length;
-  if(!fil.length){g.innerHTML='<div class="nores" style="grid-column:1/-1"><div class="nores-ico">🔍</div><h3>No results</h3></div>';return;}
+ if(!fil.length){g.innerHTML='<div class="nores" style="grid-column:1/-1"><div class="nores-ico"></div><h3>No results</h3></div>';return;}
   const maxCnt=Math.max(...fil.map(c=>c.people_count),1);
   _cfCard=function(c,ci){
     const idx=D.companies.indexOf(c);
@@ -653,7 +653,7 @@ function applyCF(){
         <div class="cc-stat"><div class="cc-stat-val va" data-count="${c.dm_count}">0</div><div class="cc-stat-lbl">Decision Makers</div></div>
       </div>
       ${(c.hq||c.country)?`<div class="pcmeta" style="margin-top:6px;gap:6px">
-        ${c.hq?`<div class="pcmi">🏙 <span>${esc(c.hq)}</span></div>`:''}
+ ${c.hq?`<div class="pcmi"> <span>${esc(c.hq)}</span></div>`:''}
       </div>`:``}
       <div class="cc-bar">${segs}</div>
     </div>`;
@@ -680,9 +680,9 @@ function applyCF(){
   }
 }
 
-/* ═══════════════════════════════════
+/* 
    DRAWERS
-═══════════════════════════════════ */
+ */
 function openDrawer(){document.getElementById('overlay').classList.add('open');document.getElementById('drawer').classList.add('open');}
 function closeDrawer(){document.getElementById('overlay').classList.remove('open');document.getElementById('drawer').classList.remove('open');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
@@ -693,14 +693,14 @@ function openEngDrawer(pi,ei){
   document.getElementById('dhdr').innerHTML=`
     ${av(e.name,e.pic,58,'dav')}
     <div style="flex:1"><div class="dname">${esc(e.name)}</div><div class="dsub">${esc(e.title||e.headline)}</div>
-    ${e.url?`<a href="${esc(e.url)}" target="_blank" class="lilink">🔗 LinkedIn Profile</a>`:''}</div>
-    <button class="dclose" onclick="closeDrawer()">✕</button>`;
+ ${e.url?`<a href="${esc(e.url)}" target="_blank" class="lilink">LinkedIn Profile</a>`:''}</div>
+ <button class="dclose" onclick="closeDrawer()"></button>`;
   const badges=[
     e.seniority?`<span class="b ${SCLS(e.seniority)}" style="font-size:12px;padding:4px 11px">${esc(SLBL(e.seniority))}</span>`:'',
-    isEmployee(e)?`<span class="b brel-emp" style="font-size:12px;padding:4px 11px">🏢 ${esc(EMP_FULL)} Employee</span>`:'',
+ isEmployee(e)?`<span class="b brel-emp" style="font-size:12px;padding:4px 11px"> ${esc(EMP_FULL)} Employee</span>`:'',
     e.degree?`<span class="b bdeg" style="font-size:12px;padding:4px 11px">${DLBL(e.degree)} degree</span>`:'',
     e.reaction?`<span class="b ${RCLS[e.reaction]||'bic'}" style="font-size:12px;padding:4px 11px">${RICO[e.reaction]||''} ${e.reaction.charAt(0)+e.reaction.slice(1).toLowerCase()}</span>`:'',
-    e.commented?`<span class="b blike" style="font-size:12px;padding:4px 11px">💬 Commented</span>`:'',
+ e.commented?`<span class="b blike" style="font-size:12px;padding:4px 11px">Commented</span>`:'',
   ].filter(Boolean);
   document.getElementById('dbody').innerHTML=`
     <div class="dsec"><div class="tagrow">${badges.join('')}</div></div>
@@ -716,8 +716,8 @@ function openEngDrawer(pi,ei){
     </div>
     <div class="dsec"><div class="dslbl">Post Engaged With</div>
       <div class="snippetbox">${esc(p.snippet)}</div>
-      <div style="margin-top:8px;font-size:12px;color:var(--muted)">📅 ${esc(p.date)} · ${esc(p.author)}</div>
-      ${p.url?`<a href="${esc(p.url)}" target="_blank" class="lilink" style="margin-top:8px">↗ View Post</a>`:''}
+ <div style="margin-top:8px;font-size:12px;color:var(--muted)"> ${esc(p.date)} · ${esc(p.author)}</div>
+ ${p.url?`<a href="${esc(p.url)}" target="_blank" class="lilink" style="margin-top:8px">View Post</a>`:''}
     </div>
     ${e.headline&&e.headline!==e.title?`<div class="dsec"><div class="dslbl">Headline</div><div class="snippetbox">${esc(e.headline)}</div></div>`:''}`;
   openDrawer();
@@ -729,14 +729,14 @@ function openPersonDrawer(idx){
   document.getElementById('dhdr').innerHTML=`
     ${av(p.name,p.pic,58,'dav')}
     <div style="flex:1"><div class="dname">${esc(p.name)}</div><div class="dsub">${esc(p.title||p.headline)}</div>
-    ${p.url?`<a href="${esc(p.url)}" target="_blank" class="lilink">🔗 LinkedIn Profile</a>`:''}</div>
-    <button class="dclose" onclick="closeDrawer()">✕</button>`;
+ ${p.url?`<a href="${esc(p.url)}" target="_blank" class="lilink">LinkedIn Profile</a>`:''}</div>
+ <button class="dclose" onclick="closeDrawer()"></button>`;
   const badges=[
     p.seniority?`<span class="b ${SCLS(p.seniority)}" style="font-size:12px;padding:4px 11px">${esc(SLBL(p.seniority))}</span>`:'',
-    p.dm==='Yes'?`<span class="b bdm" style="font-size:12px;padding:4px 11px">🎯 Decision Maker</span>`:'',
-    isEmployee(p)?`<span class="b brel-emp" style="font-size:12px;padding:4px 11px">🏢 ${esc(EMP_FULL)} Employee</span>`:'',
+ p.dm==='Yes'?`<span class="b bdm" style="font-size:12px;padding:4px 11px">Decision Maker</span>`:'',
+ isEmployee(p)?`<span class="b brel-emp" style="font-size:12px;padding:4px 11px"> ${esc(EMP_FULL)} Employee</span>`:'',
     p.degree?`<span class="b bdeg" style="font-size:12px;padding:4px 11px">${DLBL(p.degree)} degree</span>`:'',
-    p.posts_engaged>0?`<span class="b bmg" style="font-size:12px;padding:4px 11px">⚡ ${p.posts_engaged} post${p.posts_engaged!==1?'s':''}</span>`:'',
+ p.posts_engaged>0?`<span class="b bmg" style="font-size:12px;padding:4px 11px"> ${p.posts_engaged} post${p.posts_engaged!==1?'s':''}</span>`:'',
   ].filter(Boolean);
   document.getElementById('dbody').innerHTML=`
     <div class="dsec"><div class="tagrow">${badges.join('')}</div></div>
@@ -753,7 +753,7 @@ function openPersonDrawer(idx){
         </div>
         <div style="font-size:26px;font-weight:700;color:var(--green)">${p.posts_engaged}</div>
       </div>
-      ${p.comments_count?`<div style="margin-top:8px;font-size:11px;color:var(--muted)">💬 Commented ${p.comments_count} time${p.comments_count!==1?'s':''}</div>`:''}
+ ${p.comments_count?`<div style="margin-top:8px;font-size:11px;color:var(--muted)">Commented ${p.comments_count} time${p.comments_count!==1?'s':''}</div>`:''}
     </div>`:''}
     <div class="dsec"><div class="dslbl">Profile Details</div>
       <div class="igrid">
@@ -775,15 +775,15 @@ function openCompanyDrawer(idx){
   const SEN_COLS=['#fbbf24','#818cf8','#818cf8','#00e5a0','#94a3b8'];
   const [cc1,cc2]=gradFor(c.name);
   const coLinks=[
-    c.website?`<a href="${esc(/^https?:/.test(c.website)?c.website:'https://'+c.website)}" target="_blank" class="lilink">🌐 Website</a>`:'',
-    c.li_url?`<a href="${esc(c.li_url)}" target="_blank" class="lilink">🔗 LinkedIn Page</a>`:'',
+ c.website?`<a href="${esc(/^https?:/.test(c.website)?c.website:'https://'+c.website)}" target="_blank" class="lilink">Website</a>`:'',
+ c.li_url?`<a href="${esc(c.li_url)}" target="_blank" class="lilink">LinkedIn Page</a>`:'',
   ].filter(Boolean).join('');
   document.getElementById('dhdr').innerHTML=`
     <div class="dav" style="border-radius:14px;background:linear-gradient(135deg,${cc1},${cc2})">${ini(c.name)}</div>
     <div style="flex:1"><div class="dname">${esc(c.name)}</div><div class="dsub">${esc(c.industry||'-')} ${c.size?'· '+esc(c.size)+' employees':''}</div>
-    ${c.hq?`<div class="dsub" style="margin-top:2px">🏙 ${esc(c.hq)}</div>`:''}
+ ${c.hq?`<div class="dsub" style="margin-top:2px"> ${esc(c.hq)}</div>`:''}
     ${coLinks?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${coLinks}</div>`:''}</div>
-    <button class="dclose" onclick="closeDrawer()">✕</button>`;
+ <button class="dclose" onclick="closeDrawer()"></button>`;
   const total=c.people_count||1;
   const senBars=SEN_C.map((s,i)=>{const cnt=c.seniority_map[s]||0;if(!cnt)return'';return`<div class="cc-bar-seg" style="width:${Math.round(cnt/total*100)}%;background:${SEN_COLS[i]};height:8px"></div>`;}).join('');
   const senBreakdown=SEN_C.map((s,i)=>{const cnt=c.seniority_map[s]||0;if(!cnt)return'';return`<div class="ibox"><div class="ilbl">${s}</div><div class="ival" style="color:${SEN_COLS[i]}">${cnt}</div></div>`;}).join('');
@@ -793,7 +793,7 @@ function openCompanyDrawer(idx){
       ${av(p.name,'',32,'pcav')}
       <div style="flex:1"><div style="font-size:13px;font-weight:500">${esc(p.name)}</div><div style="font-size:11px;color:var(--muted)">${esc(p.title||p.headline)}</div></div>
       <div style="display:flex;gap:4px">
-        ${p.dm?.toLowerCase()==='yes'?'<span class="b bdm">🎯</span>':''}
+ ${p.dm?.toLowerCase()==='yes'?'<span class="b bdm"></span>':''}
         ${p.seniority?`<span class="b ${SCLS(p.seniority)}">${esc(SLBL(p.seniority))}</span>`:''}
       </div>
     </div>`;
@@ -826,7 +826,7 @@ function openCompanyDrawerByName(name){
 }
 
 
-/* ── POST MODAL ── */
+/* POST MODAL */
 function openPostModal(pi){
   const p=_filteredPosts[pi];if(!p)return;
   const eng=p.fe&&p.fe.length?p.fe:p.engagers;
@@ -836,7 +836,7 @@ function openPostModal(pi){
     '<div class="pdot"></div>'+
     '<div class="pauth">'+esc(p.author||EMP_FULL)+'</div>'+
     '<div class="pdate">'+esc(p.date)+'</div>'+
-    (p.url?'<a href="'+esc(p.url)+'" target="_blank" class="post-view-btn" onclick="event.stopPropagation()">View Post ↗</a>':'');
+ (p.url?'<a href="'+esc(p.url)+'" target="_blank" class="post-view-btn" onclick="event.stopPropagation()">View Post </a>':'');
   document.getElementById('modal-snip').textContent=p.snippet||'';
   document.getElementById('modal-metrics').innerHTML=
     '<div class="mpill mp-g">'+eng.length+' Engager'+(eng.length!==1?'s':'')+'</div>'+
@@ -849,11 +849,11 @@ function openPostModal(pi){
       av(e.name,e.pic,36,'eavtr')+
       '<div><div class="ename">'+esc(e.name)+'</div>'+
       '<div class="esub">'+esc(subLine)+'</div>'+
-      (e.location?'<div class="esub" style="margin-top:1px;font-size:10px;opacity:0.65">📍 '+esc(e.location)+'</div>':'')+
+ (e.location?'<div class="esub" style="margin-top:1px;font-size:10px;opacity:0.65"> '+esc(e.location)+'</div>':'')+
       (e.headline&&e.headline!==subLine&&e.headline!==_t?'<div class="esub" style="margin-top:1px;font-size:10px;opacity:0.55;font-style:italic">'+esc(e.headline)+'</div>':'')+
       '</div>'+
       '<div class="ebadges">'+
-        (e.commented?'<span class="b blike" title="Commented">💬</span>':'')+
+ (e.commented?'<span class="b blike" title="Commented"></span>':'')+
         (e.seniority?'<span class="b '+SCLS(e.seniority)+'">'+esc(SLBL(e.seniority))+'</span>':'')+
         (e.reaction?'<span class="b '+(RCLS[e.reaction]||'bic')+'">'+(RICO[e.reaction]||'')+' '+e.reaction.charAt(0)+e.reaction.slice(1).toLowerCase()+'</span>':'')+
         (e.degree?'<span class="b bdeg">'+DLBL(e.degree)+'</span>':'')+
@@ -866,7 +866,7 @@ function closePostModal(){
   document.getElementById('post-modal-bg').classList.remove('open');
   document.body.style.overflow='';
 }
-/* ── INIT ── */
+/* INIT */
 switchTab('overview');
 loadLinkedInData(false);
 

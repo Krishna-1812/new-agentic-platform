@@ -41,7 +41,12 @@ def _page_script(html=None):
     blocks = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>",
                         html if html is not None else _page_html(), re.S)
     assert blocks, "the page has no inline script"
-    return blocks[0]
+    # The LARGEST block, not the first. The shared shell emits a small inline
+    # script in <head> (the command palette's destination list), so "the first
+    # inline script" stopped being this page's own logic, and every test that
+    # drives that logic started failing on the IIFE assertion below -- about
+    # ninety of them, none to do with the palette.
+    return max(blocks, key=len)
 
 
 def _draft_label():

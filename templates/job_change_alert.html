@@ -1,57 +1,16 @@
 <!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
 <html lang="en">
 <head>
-<script>(function(){try{if('scrollRestoration' in history)history.scrollRestoration='manual';}catch(e){}var toTop=function(){window.scrollTo(0,0);};window.addEventListener('load',toTop);window.addEventListener('pageshow',function(e){if(e.persisted)toTop();});})();</script>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Job Change Alert — Platform</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ds-tokens.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ds-components.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/job_change_alert.css') }}?v=9">
-  <link rel="stylesheet" href="/static/css/thinking-orb.css">
-  <link rel="stylesheet" href="/static/css/border-beam.css">
-  <script src="/static/js/theme.js"></script>
-  <link rel="stylesheet" href="/static/css/aurora-app.css?v=3">
-  <link rel="stylesheet" href="/static/css/grid-tokens.css">
-  <script src="/static/js/pfx_bg.js?v=3" defer></script>
+{{ head("Job Change Alert", [
+     "job_change_alert.css?v=2",
+   ], [], compat=True) }}
 </head>
 <body>
-  <div class="bg-grid"></div>
   <div class="jc-aurora"><div class="b b1"></div><div class="b b2"></div><div class="b b3"></div></div>
   <div class="jc-grain"></div>
 
-  <div class="topbar">
-    <div class="tl">
-      <a href="/p2/hub" class="brand">
-        <div class="brand-icon" style="background:#151b2e;box-shadow:none;border-radius:var(--radius-md);overflow:hidden;display:inline-flex;align-items:center;justify-content:center;padding:5px 8px;width:auto;height:auto"><img src="/static/logo-lockup.svg?v=1" alt="arena by Position2" style="display:block;width:auto;height:36px;object-fit:contain"></div>
-      </a>
-      <div class="bc">
-        <a href="/p2/hub">Hub</a><span class="bc-sep">›</span>
-        <a href="/p2/strategic-agents">Strategic Agents</a><span class="bc-sep">›</span>
-        <span class="bc-cur">Job Change Alert</span>
-      </div>
-    </div>
-    <div class="user-menu" id="userMenu">
-      <div class="user-pill" id="userPill" onclick="toggleMenu()">
-        <div class="user-avatar">
-          {% if user.picture %}<img src="{{ user.picture }}" alt="" />
-          {% else %}{{ (user.name or 'U')[:2]|upper }}{% endif %}
-        </div>
-        <span class="user-name">{{ user.given_name or user.name or 'User' }}</span>
-        <span class="pill-chevron">▼</span>
-      </div>
-      <div class="user-dropdown" id="userDropdown">
-        <div class="dd-header">
-          <div class="dd-name">{{ user.name or 'User' }}</div>
-          <div class="dd-email">{{ user.email }}</div>
-        </div>
-        <div class="dd-items">{% include "_admin_menu.html" %}</div>
-      </div>
-    </div>
-  </div>
+  {{ topbar([(brand.agents_plural, "/p2/strategic-agents"), ("Job Change Alert", none)]) }}
 
   <div class="main">
     <div class="ph">
@@ -61,7 +20,7 @@
         <p>Key people at target accounts who recently started a new role — the best time to reach out is within days of a job change — plus the full roster of people and companies being watched for the next one.</p>
       </div>
       {% if is_admin %}
-      <button class="sync-btn" id="syncBtn" onclick="runSync()"><span class="sync-icon" id="syncIcon">↻</span> Sync now</button>
+ <button class="sync-btn" id="syncBtn" onclick="runSync()"><span class="sync-icon" id="syncIcon"></span>Sync now</button>
       {% endif %}
     </div>
 
@@ -77,25 +36,25 @@
         <div class="sc-glow"></div>
         <div class="stat-label">Job Changes Detected</div>
         <div class="stat-value" id="statEvents"><span class="skel" style="width:56px;height:34px;display:inline-block"></span></div>
-        <div class="stat-hint">View feed →</div>
+ <div class="stat-hint">View feed </div>
       </div>
       <div class="stat-card sc-week" id="scWeek" onclick="switchTab('events')">
         <div class="sc-glow"></div>
         <div class="stat-label">In the Last 7 Days</div>
         <div class="stat-value" id="statWeek"><span class="skel" style="width:40px;height:34px;display:inline-block"></span></div>
-        <div class="stat-hint">View feed →</div>
+ <div class="stat-hint">View feed </div>
       </div>
       <div class="stat-card sc-people" id="scPeople" onclick="switchTab('people')">
         <div class="sc-glow"></div>
         <div class="stat-label">People Tracked</div>
         <div class="stat-value" id="statPeople"><span class="skel" style="width:56px;height:34px;display:inline-block"></span></div>
-        <div class="stat-hint">View roster →</div>
+ <div class="stat-hint">View roster </div>
       </div>
       <div class="stat-card sc-companies" id="scCompanies" onclick="switchTab('companies')">
         <div class="sc-glow"></div>
         <div class="stat-label">Companies Tracked</div>
         <div class="stat-value" id="statCompanies"><span class="skel" style="width:40px;height:34px;display:inline-block"></span></div>
-        <div class="stat-hint">View roster →</div>
+ <div class="stat-hint">View roster </div>
       </div>
     </div>
 
@@ -103,7 +62,7 @@
       <div class="card" id="momentumCard">
         <div class="card-head">
           <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
-            <span class="card-title">📈 Weekly Momentum</span>
+ <span class="card-title">Weekly Momentum</span>
             <span class="card-meta">job changes detected, last 8 weeks</span>
           </div>
         </div>
@@ -111,7 +70,7 @@
       </div>
       <div class="card" id="industriesCard">
         <div class="card-head">
-          <span class="card-title">🏭 Top Industries Tracked</span>
+ <span class="card-title">Top Industries Tracked</span>
           <span class="card-meta">by tracked-contact count</span>
         </div>
         <div class="card-body" id="industriesBody"><div class="skel" style="height:150px"></div></div>
@@ -128,14 +87,14 @@
 
       <div class="toolbar">
         <div class="search-box">
-          <span>⌕</span>
+ <span></span>
           <input id="searchInput" placeholder="Search…" oninput="onSearch()">
         </div>
         <div class="filter-row" id="filterRow">
           <select class="filter-select" id="filter1" onchange="onFilterChange()"></select>
           <select class="filter-select" id="filter2" onchange="onFilterChange()"></select>
           <select class="filter-select" id="filter3" onchange="onFilterChange()"></select>
-          <button class="clear-btn" onclick="clearFilters()">✕ Clear</button>
+ <button class="clear-btn" onclick="clearFilters()">Clear</button>
         </div>
         <span class="result-count" id="resultCount"></span>
         <span class="sync-msg" id="syncMsg"></span>
@@ -157,20 +116,13 @@
 
   <div class="jc-drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
   <div class="jc-drawer" id="drawer">
-    <button class="jc-drawer-close" onclick="closeDrawer()" aria-label="Close">✕</button>
+ <button class="jc-drawer-close" onclick="closeDrawer()" aria-label="Close"></button>
     <div id="drawerBody"></div>
   </div>
 
   {% include 'ppc_chat_widget.html' %}
 
-  <script>
-    function toggleMenu() {
-      var pill=document.getElementById('userPill'), dd=document.getElementById('userDropdown');
-      pill.classList.toggle('open',!dd.classList.contains('open')); dd.classList.toggle('open');
-    }
-    document.addEventListener('click',function(e){ var m=document.getElementById('userMenu'); if(m&&!m.contains(e.target)){document.getElementById('userPill').classList.remove('open');document.getElementById('userDropdown').classList.remove('open');} });
-    document.addEventListener('keydown',function(e){ if(e.key==='Escape'){document.getElementById('userPill').classList.remove('open');document.getElementById('userDropdown').classList.remove('open');} });
-  </script>
+  
 
   <script>
     var TAB = 'events';
@@ -294,7 +246,7 @@
       return hit?hit.website:'';
     }
 
-    /* ── Detail modal ────────────────────────────────────────────────────── */
+ /* Detail modal */
     function drw(label,val){
       if(val==null||val==='')return '';
       return '<div class="drw-cell"><span class="drw-label">'+esc(label)+'</span><span class="drw-value">'+val+'</span></div>';
@@ -304,7 +256,7 @@
     }
     function drwLinks(links){
       var html=(links||[]).filter(function(l){return l&&l.href;}).map(function(l){
-        return '<a class="drw-link-btn" href="'+esc(l.href)+'" target="_blank" rel="noopener">'+esc(l.label)+' ↗</a>';
+ return '<a class="drw-link-btn" href="'+esc(l.href)+'" target="_blank" rel="noopener">'+esc(l.label)+' </a>';
       }).join('');
       return html?'<div class="drw-links">'+html+'</div>':'';
     }
@@ -367,7 +319,7 @@
       document.body.style.overflow='';
     }
 
-    /* ── Active filter chips ─────────────────────────────────────────────── */
+ /* Active filter chips */
     function filterValueLabel(tab,key,value){
       var f=(getFilterConfig(tab)||[]).filter(function(c){return c.key===key;})[0];
       if(!f)return value;
@@ -390,7 +342,7 @@
       if(!chips.length){row.innerHTML='';row.classList.remove('has-chips');return;}
       row.classList.add('has-chips');
       row.innerHTML=chips.map(function(c){
-        return '<span class="jc-chip">'+esc(c.label)+'<button type="button" onclick="'+c.onclick+'" aria-label="Remove filter">✕</button></span>';
+ return '<span class="jc-chip">'+esc(c.label)+'<button type="button" onclick="'+c.onclick+'" aria-label="Remove filter"></button></span>';
       }).join('');
     }
     function removeChipFilter(key){
@@ -403,7 +355,7 @@
       render();
     }
 
-    /* ── Latest-signal ticker ────────────────────────────────────────────── */
+ /* Latest-signal ticker */
     var TICKER_ITEMS=[], TICKER_IDX=0, TICKER_TIMER=null;
     function showTickerItem(){
       var e=TICKER_ITEMS[TICKER_IDX];
@@ -599,9 +551,9 @@
 
       if(deltaEl){
         var last=counts[7], prev=counts[6], diff=last-prev, cls, txt;
-        if(diff>0){cls='up';txt='▲ +'+diff+' vs prior week';}
-        else if(diff<0){cls='down';txt='▼ '+diff+' vs prior week';}
-        else {cls='flat';txt='→ flat vs prior week';}
+ if(diff>0){cls='up';txt=' +'+diff+' vs prior week';}
+ else if(diff<0){cls='down';txt=' '+diff+' vs prior week';}
+ else {cls='flat';txt=' flat vs prior week';}
         deltaEl.className='delta-badge '+cls;
         deltaEl.textContent=txt;
       }
@@ -869,7 +821,7 @@
     }
     function _jcSyncIconStop(){
       if(_jcSyncOrb){ _jcSyncOrb.destroy(); _jcSyncOrb=null; }
-      document.getElementById('syncIcon').innerHTML='↻';
+ document.getElementById('syncIcon').innerHTML='';
     }
     function runSync(){
       var btn=document.getElementById('syncBtn'), msg=document.getElementById('syncMsg');
@@ -902,97 +854,7 @@
     loadTracked();
   </script>
 
-<script>
-/* ════ Platform command palette — Ctrl/Cmd+K ════ */
-(function(){
-  if(window.__kpal)return;window.__kpal=1;
-  var BASE=[
-    {t:'Hub',d:'Platform home',u:'/p2/hub',i:'⌂'},
-    {t:'Strategic Agents',d:'Go-to-market intelligence',u:'/p2/strategic-agents',i:'◎'},
-    {t:'SEO + AEO Tools',d:'Organic intelligence',u:'/p2/seo-aeo',i:'⌕'},
-    {t:'ABM Signal Tracker — Healthcare',d:'Company signals & insights',u:'/p2/abm-signal-tracker/healthcare',i:'☆'},
-    {t:'ABM Signal Tracker — CSG',d:'Company signals & insights',u:'/p2/abm-signal-tracker/csg',i:'☆'},
-    {t:'LinkedIn Intelligence',d:'People, companies & posts',u:'/p2/strategic-agents/linkedin-intelligence',i:'⦿'},
-    {t:'Ad Intelligence',d:'Competitor ad monitoring',u:'/p2/strategic-agents/ad-intelligence',i:'◈'},
-    {t:'Anonymous Visitors',d:'Website visitor signals',u:'/p2/strategic-agents/anonymous-visitors',i:'◌'},
-    {t:'Job Change Alert',d:'Decision-maker job changes',u:'/p2/strategic-agents/job-change-alert',i:'⇉'},
-    {t:'LinkedIn Strategy Researcher',d:'Competitive strategy playbooks',u:'/p2/strategic-agents/linkedin-strategy-researcher',i:'▤'},
-    {t:'42 North Dental Slot Checker',d:'Appointment availability',u:'/p2/strategic-agents/42-north-dental-slot-checker',i:'◷'},
-    {t:'Social Media Intelligence',d:'Cross-platform social analysis',u:'/p2/strategic-agents/social-media-intelligence',i:'▣'},
-    {t:'Switch Account',d:'Healthcare / CSG picker',u:'/p2/abm-signal-tracker/accounts',i:'⇄'}
-  ];
-  var ITEMS=(window.__KP_ITEMS||[]).concat(BASE);
-  var css=document.createElement('style');
-  css.textContent='#kpal{position:fixed;inset:0;z-index:99999;display:none;background:rgba(2,4,14,.72);backdrop-filter:blur(8px)}'
-    +'#kpal.on{display:block;animation:kpalF .14s ease}'
-    +'@keyframes kpalF{from{opacity:0}to{opacity:1}}'
-    +'.kpal-box{position:absolute;top:16%;left:50%;transform:translateX(-50%);width:min(580px,92vw);background:rgba(11,14,28,.96);border:1px solid rgba(129,140,248,.3);border-radius:var(--radius-lg);box-shadow:0 40px 120px rgba(0,0,0,.8),0 0 60px rgba(99,102,241,.12);overflow:hidden;animation:kpalIn .22s cubic-bezier(.22,1.3,.36,1)}'
-    +'@keyframes kpalIn{from{opacity:0;transform:translateX(-50%) translateY(-12px) scale(.97)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}'
-    +'.kpal-iw{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid rgba(255,255,255,.07)}'
-    +'.kpal-iw .ic{color:#7c83f5;font-size:15px}'
-    +'#kpal-in{flex:1;background:none;border:none;outline:none;color:#e8ecf8;font-family:inherit;font-size:15px}'
-    +'#kpal-in::placeholder{color:#4b5572}'
-    +'.kpal-iw kbd{font-family:inherit;font-size:10px;font-weight:700;color:#55617a;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-xs);padding:3px 7px}'
-    +'#kpal-list{max-height:330px;overflow-y:auto;padding:7px}'
-    +'.kpal-it{display:flex;align-items:center;gap:12px;padding:10px 13px;border-radius:var(--radius-md);cursor:pointer;border:1px solid transparent}'
-    +'.kpal-it .ki{width:30px;height:30px;border-radius:var(--radius-sm);background:rgba(99,102,241,.12);border:1px solid rgba(129,140,248,.22);display:flex;align-items:center;justify-content:center;font-size:13px;color:#a5b4fc;flex-shrink:0}'
-    +'.kpal-it .kt{font-size:13px;font-weight:600;color:#dbe2f1}'
-    +'.kpal-it .kd{font-size:11.5px;color:#55617a;margin-top:1px}'
-    +'.kpal-it.sel{background:linear-gradient(95deg,rgba(79,70,229,.22),rgba(124,58,237,.12));border-color:rgba(129,140,248,.35)}'
-    +'.kpal-it.sel .kt{color:#fff}'
-    +'.kpal-empty{padding:26px;text-align:center;color:#55617a;font-size:13px}'
-    +'.kpal-foot{padding:9px 16px;border-top:1px solid rgba(255,255,255,.06);font-size:10px;color:#3b4763;display:flex;gap:14px}'
-    +'#kpal-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99998;background:rgba(11,14,28,.95);border:1px solid rgba(129,140,248,.35);color:#a9b4d8;border-radius:var(--radius-pill);font-size:11.5px;padding:9px 18px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:kpalF .3s ease}'
-    +'#kpal-toast b{color:#c7d2fe}';
-  document.head.appendChild(css);
-  var ov=document.createElement('div');ov.id='kpal';
-  ov.innerHTML='<div class="kpal-box">'
-    +'<div class="kpal-iw"><span class="ic">⌘</span><input id="kpal-in" placeholder="Jump to any tool or section…" autocomplete="off"><kbd>ESC</kbd></div>'
-    +'<div id="kpal-list"></div>'
-    +'<div class="kpal-foot"><span>↑↓ navigate</span><span>↵ open</span><span>esc close</span></div></div>';
-  document.body.appendChild(ov);
-  var inp=document.getElementById('kpal-in'),list=document.getElementById('kpal-list');
-  var cur=[],sel=0;
-  function esc2(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-  function render(){
-    if(!cur.length){list.innerHTML='<div class="kpal-empty">No matches — try fewer letters</div>';return;}
-    list.innerHTML=cur.map(function(x,i){
-      return '<div class="kpal-it'+(i===sel?' sel':'')+'" data-i="'+i+'"><span class="ki">'+x.i+'</span><span style="min-width:0"><div class="kt">'+esc2(x.t)+'</div><div class="kd">'+esc2(x.d||'')+'</div></span></div>';
-    }).join('');
-    var s=list.querySelector('.sel');if(s)s.scrollIntoView({block:'nearest'});
-  }
-  function filter(q){
-    q=(q||'').toLowerCase().trim();
-    cur=!q?ITEMS.slice():ITEMS.filter(function(x){return (x.t+' '+(x.d||'')).toLowerCase().indexOf(q)>=0;});
-    sel=0;render();
-  }
-  function go(x){
-    if(!x)return;
-    close();
-    if(x.u==='!vimi'){if(window.irChat)window.irChat();return;}
-    if(x.u.charAt(0)==='#'){location.hash=x.u;return;}
-    if(location.pathname===x.u)return;
-    window.location.href=x.u;
-  }
-  function open(){ov.classList.add('on');inp.value='';filter('');setTimeout(function(){inp.focus();},30);}
-  function close(){ov.classList.remove('on');}
-  inp.addEventListener('input',function(){filter(inp.value);});
-  inp.addEventListener('keydown',function(e){
-    if(e.key==='ArrowDown'){e.preventDefault();sel=Math.min(sel+1,cur.length-1);render();}
-    else if(e.key==='ArrowUp'){e.preventDefault();sel=Math.max(sel-1,0);render();}
-    else if(e.key==='Enter'){e.preventDefault();go(cur[sel]);}
-  });
-  list.addEventListener('click',function(e){
-    var it=e.target.closest('.kpal-it');if(it)go(cur[parseInt(it.getAttribute('data-i'),10)]);
-  });
-  ov.addEventListener('mousedown',function(e){if(e.target===ov)close();});
-  document.addEventListener('keydown',function(e){
-    if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='k'){e.preventDefault();ov.classList.contains('on')?close():open();}
-    else if(e.key==='Escape'&&ov.classList.contains('on')){close();}
-  });
-})();
-</script>
-<script>(function(){try{var p=location.pathname;document.querySelectorAll('a.dd-item[href],a.tb-dd-item[href]').forEach(function(a){if(a.getAttribute('href')===p){a.classList.add('active');a.style.background='rgba(124,92,255,.18)';a.style.color='#fff';}});}catch(e){}})();</script>
 <script>(function(){if(window.__trk)return;window.__trk=1;var _s=Date.now(),_d=false;function f(){if(_d)return;_d=true;var s=Math.round((Date.now()-_s)/1000);fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:location.pathname,title:'Job Change Alert',seconds:s,email:'{{ user.email if user else "" }}'}),keepalive:true}).catch(function(){});}document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')f();});window.addEventListener('beforeunload',f);})();</script>
+{{ topbar_script() }}
 </body>
 </html>

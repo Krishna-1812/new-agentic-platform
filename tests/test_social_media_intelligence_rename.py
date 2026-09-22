@@ -41,6 +41,17 @@ def _read(*parts):
     return io.open(os.path.join(_ROOT, *parts), encoding="utf-8").read()
 
 
+def _rendered_page():
+    """The page as a browser receives it. Several of the strings these tests
+    check now come from the shared shell rather than from this template."""
+    c = appmod.app.test_client()
+    with c.session_transaction() as sess:
+        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+    r = c.get("/p2/strategic-agents/%s" % _SLUG)
+    assert r.status_code == 200, r.status_code
+    return r.get_data(as_text=True)
+
+
 def _entry():
     return [a for a in appmod.APP_AGENTS if a["slug"] == _SLUG][0]
 
@@ -96,11 +107,22 @@ def test_the_registry_entry_carries_the_new_name():
 
 
 def test_the_page_names_itself_the_new_way_in_all_four_places():
-    page = _read("templates", "social_media_intelligence.html")
-    assert "<title>%s, Platform</title>" % _NEW in page          # browser tab
-    assert '<span class="bc-cur">%s</span>' % _NEW in page       # breadcrumb
-    assert "title:'%s'" % _NEW in page                           # /api/track
-    assert "{t:'%s'" % _NEW in page                              # command palette
+    """Read from the RENDERED page, not the template.
+
+    Three of the four places moved into the shared shell when this page was
+    rebuilt: the <title> and the breadcrumb come from the head()/topbar()
+    macros, and the palette entry comes from one roster rather than from a
+    copy pasted into this file. Asserting on the template source would now be
+    asserting that this page hand-writes chrome it is supposed to inherit.
+
+    What has to stay true is that all four SAY THE SAME THING, which is the
+    thing a rename breaks.
+    """
+    body = _rendered_page()
+    assert "<title>%s &middot;" % _NEW in body or "<title>%s " % _NEW in body  # browser tab
+    assert 'aria-current="page">%s<' % _NEW in body              # breadcrumb
+    assert "title:'%s'" % _NEW in body                           # /api/track
+    assert '"t": "%s"' % _NEW in body                            # command palette
 
 
 def test_every_template_carrying_the_roster_names_it_the_same_way():
@@ -323,7 +345,9 @@ def test_the_renamed_files_are_where_the_route_expects_them():
     assert os.path.exists(os.path.join(_ROOT, "templates", "social_media_intelligence.html"))
     assert os.path.exists(os.path.join(_ROOT, "static", "css", "social_media_intelligence.css"))
     page = _read("templates", "social_media_intelligence.html")
-    assert "/static/css/social_media_intelligence.css" in page
+    # Served through url_for() by the shell macro now, so the path is
+    # asserted on the rendered page rather than on the template text.
+    assert "/static/css/social_media_intelligence.css" in _rendered_page()
 
 
 def test_the_tracker_modules_and_tables_are_deliberately_untouched():

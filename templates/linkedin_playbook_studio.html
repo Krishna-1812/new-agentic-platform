@@ -1,59 +1,17 @@
 <!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
 <html lang="en">
 <head>
-<script>(function(){try{if('scrollRestoration' in history)history.scrollRestoration='manual';}catch(e){}var toTop=function(){window.scrollTo(0,0);};window.addEventListener('load',toTop);window.addEventListener('pageshow',function(e){if(e.persisted)toTop();});})();</script>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>LinkedIn Strategy Researcher — Platform</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ds-tokens.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ds-components.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/linkedin_playbook_studio.css') }}?v=4">
-  <link rel="stylesheet" href="/static/css/thinking-orb.css">
-  <link rel="stylesheet" href="/static/css/border-beam.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/agent-feedback.css') }}">
-  <script src="/static/js/theme.js"></script>
-  <link rel="stylesheet" href="/static/css/aurora-app.css?v=3">
-  <link rel="stylesheet" href="/static/css/grid-tokens.css">
-  <script src="/static/js/pfx_bg.js?v=3" defer></script>
-  <script src="{{ url_for('static', filename='js/agent_feedback.js') }}"></script>
+{{ head("LinkedIn Strategy Researcher", [
+     "linkedin_playbook_studio.css?v=2",
+     "agent-feedback.css",
+   ], [], compat=True) }}
 </head>
 <body>
-  <div class="bg-grid"></div>
   <div class="lps-aurora"><div class="b b1"></div><div class="b b2"></div><div class="b b3"></div></div>
   <div class="lps-grain"></div>
 
-  <div class="topbar">
-    <div class="tl">
-      <a href="/p2/hub" class="brand">
-        <div class="brand-icon" style="background:#151b2e;box-shadow:none;border-radius:var(--radius-md);overflow:hidden;display:inline-flex;align-items:center;justify-content:center;padding:5px 8px;width:auto;height:auto"><img src="/static/logo-lockup.svg?v=1" alt="arena by Position2" style="display:block;width:auto;height:36px;object-fit:contain"></div>
-      </a>
-      <div class="bc">
-        <a href="/p2/hub">Hub</a><span class="bc-sep">›</span>
-        <a href="/p2/strategic-agents">Strategic Agents</a><span class="bc-sep">›</span>
-        <span class="bc-cur">LinkedIn Strategy Researcher</span>
-      </div>
-    </div>
-    <div class="user-menu" id="userMenu">
-      <div class="user-pill" id="userPill" onclick="toggleMenu()">
-        <div class="user-avatar">
-          {% if user.picture %}<img src="{{ user.picture }}" alt="" />
-          {% else %}{{ (user.name or 'U')[:2]|upper }}{% endif %}
-        </div>
-        <span class="user-name">{{ user.given_name or user.name or 'User' }}</span>
-        <span class="pill-chevron">▼</span>
-      </div>
-      <div class="user-dropdown" id="userDropdown">
-        <div class="dd-header">
-          <div class="dd-name">{{ user.name or 'User' }}</div>
-          <div class="dd-email">{{ user.email }}</div>
-        </div>
-        <div class="dd-items">{% include "_admin_menu.html" %}</div>
-      </div>
-    </div>
-  </div>
+  {{ topbar([(brand.agents_plural, "/p2/strategic-agents"), ("LinkedIn Strategy Researcher", none)]) }}
 
   <div class="main">
     <div class="ph">
@@ -69,25 +27,25 @@
         <div class="sc-glow"></div>
         <div class="stat-label">Analyses Run</div>
         <div class="stat-value" id="statTotal"><span class="skel" style="width:56px;height:34px;display:inline-block"></span></div>
-        <div class="stat-hint">View history →</div>
+ <div class="stat-hint">View history </div>
       </div>
       <div class="stat-card sc-own" id="scOwn" onclick="switchMainTab('history')">
         <div class="sc-glow"></div>
         <div class="stat-label">Own-Brand Runs</div>
         <div class="stat-value" id="statOwn"><span class="skel" style="width:40px;height:34px;display:inline-block"></span></div>
-        <div class="stat-hint">View history →</div>
+ <div class="stat-hint">View history </div>
       </div>
       <div class="stat-card sc-comp" id="scComp" onclick="switchMainTab('history')">
         <div class="sc-glow"></div>
         <div class="stat-label">Competitor Runs</div>
         <div class="stat-value" id="statComp"><span class="skel" style="width:40px;height:34px;display:inline-block"></span></div>
-        <div class="stat-hint">View history →</div>
+ <div class="stat-hint">View history </div>
       </div>
       <div class="stat-card sc-score" id="scScore" onclick="switchMainTab('history')">
         <div class="sc-glow"></div>
         <div class="stat-label">Avg Competitive Score</div>
         <div class="stat-value" id="statScore"><span class="skel" style="width:40px;height:34px;display:inline-block"></span></div>
-        <div class="stat-hint">View history →</div>
+ <div class="stat-hint">View history </div>
       </div>
     </div>
 
@@ -101,7 +59,7 @@
       <div id="pane-search" class="tab-pane active">
         <div class="toolbar">
           <div class="search-box">
-            <span>⌕</span>
+ <span></span>
             <input id="companySearchInput" placeholder="Search for a company by name…" oninput="onCompanySearchInput()">
           </div>
         </div>
@@ -118,7 +76,7 @@
             <select id="parentRunSelect" class="filter-select" style="max-width:none;width:100%"></select>
             <button class="lps-mode-btn comp" style="margin-top:10px" onclick="startAnalysis('COMPETITOR')">Run comparison</button>
           </div>
-          <button class="lps-mode-cancel" onclick="cancelModeSelect()">✕ Cancel</button>
+ <button class="lps-mode-cancel" onclick="cancelModeSelect()">Cancel</button>
         </div>
 
         <div id="runningWrap" style="display:none">
@@ -132,7 +90,7 @@
       <div id="pane-history" class="tab-pane">
         <div class="toolbar">
           <div class="search-box">
-            <span>⌕</span>
+ <span></span>
             <input id="historySearchInput" placeholder="Search by company…" oninput="renderHistory()">
           </div>
           <div class="filter-row">
@@ -151,7 +109,7 @@
 
   <div class="lps-drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
   <div class="lps-drawer" id="drawer">
-    <button class="lps-drawer-close" onclick="closeDrawer()" aria-label="Close">✕</button>
+ <button class="lps-drawer-close" onclick="closeDrawer()" aria-label="Close"></button>
     <div id="drawerBody"></div>
   </div>
 
@@ -159,11 +117,15 @@
 
   <script>
     function toggleMenu() {
+      /* No-op: the shared topbar (templates/_bento.html) owns the user
+         menu, so #userPill and #userDropdown no longer exist on this page.
+         Kept rather than deleted because the handlers below call it. */
       var pill=document.getElementById('userPill'), dd=document.getElementById('userDropdown');
+      if(!pill||!dd) return;
       pill.classList.toggle('open',!dd.classList.contains('open')); dd.classList.toggle('open');
     }
-    document.addEventListener('click',function(e){ var m=document.getElementById('userMenu'); if(m&&!m.contains(e.target)){document.getElementById('userPill').classList.remove('open');document.getElementById('userDropdown').classList.remove('open');} });
-    document.addEventListener('keydown',function(e){ if(e.key==='Escape'){document.getElementById('userPill').classList.remove('open');document.getElementById('userDropdown').classList.remove('open');} });
+    document.addEventListener('click',function(e){ var m=document.getElementById('userMenu'); if(m&&!m.contains(e.target)){/* the shared topbar owns the user menu now */} });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape'){/* the shared topbar owns the user menu now */} });
   </script>
 
   <script>
@@ -186,16 +148,16 @@
        real run, so it was a permanently empty nav item. Its fields still
        render, folded into Content & Creative, if a run ever returns them. */
     var AGENT_TABS = [
-      {ns: 'overview',             label: 'Overview',          icon: '✦'},
-      {ns: 'aienrichment',         label: 'AI Insights',       icon: '✨'},
-      {ns: 'engagement',           label: 'Engagement',        icon: '◔'},
-      {ns: 'audience',             label: 'Audience',          icon: '⬢'},
-      {ns: 'strategyagent',        label: 'Strategy',          icon: '◈'},
-      {ns: 'contentcreativeagent', label: 'Content & Creative', icon: '✎'},
-      {ns: 'messagingagent',       label: 'Messaging',         icon: '✉'},
-      {ns: 'competitiveagent',     label: 'Competitive',       icon: '⚔'},
-      {ns: 'getcompanyprofile',    label: 'Company',           icon: '⬡'},
-      {ns: 'getcompanypost',       label: 'Posts',             icon: '▤'},
+ {ns: 'overview', label: 'Overview', icon: ''},
+ {ns: 'aienrichment', label: 'AI Insights', icon: ''},
+ {ns: 'engagement', label: 'Engagement', icon: ''},
+ {ns: 'audience', label: 'Audience', icon: ''},
+ {ns: 'strategyagent', label: 'Strategy', icon: ''},
+ {ns: 'contentcreativeagent', label: 'Content & Creative', icon: ''},
+ {ns: 'messagingagent', label: 'Messaging', icon: ''},
+ {ns: 'competitiveagent', label: 'Competitive', icon: ''},
+ {ns: 'getcompanyprofile', label: 'Company', icon: ''},
+ {ns: 'getcompanypost', label: 'Posts', icon: ''},
     ];
 
     function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -265,7 +227,7 @@
       if(tab==='history')renderHistory();
     }
 
-    /* ── Search & Analyze ────────────────────────────────────────────────── */
+ /* Search & Analyze */
     /* An empty result and a failed call are different things and now look
        different: the page only claims "nothing matched" when the provider
        actually answered that, and otherwise names the failure. */
@@ -320,7 +282,7 @@
           out.style.display='block';
           out.textContent=
             'Key configured: '+(d.configured?'yes ('+d.key_len+' chars)':'NO')+'\n'
-            +'Probe: '+(d.probe||'?')+' → '+(d.companies||0)+' companies'
+ +'Probe: '+(d.probe||'?')+' '+(d.companies||0)+' companies'
             +(d.sample&&d.sample.length?' ('+d.sample.join(', ')+')':'')+'\n'
             +'Attempts: '+(d.attempts||0)+' · '+(d.elapsed_ms||0)+'ms'
             +(d.http_status?' · HTTP '+d.http_status:'')+'\n'
@@ -461,7 +423,7 @@
       check();
     }
 
-    /* ── History ─────────────────────────────────────────────────────────── */
+ /* History */
     function loadStatsAndHistory(){
       fetch('/p2/strategic-agents/linkedin-strategy-researcher/history').then(function(r){return r.json();}).then(function(data){
         RUNS=data.runs||[];
@@ -545,7 +507,7 @@
       if(row.status==='complete')openRunDrawer(row.id);
     });
 
-    /* ── Report drawer: field-shape-aware rendering ──────────────────────────
+ /* Report drawer: field-shape-aware rendering 
        The Arena API returns ~30 dotted-key fields per run, each shaped
        differently (prose, string lists, {l,v} distributions, richer objects,
        or nested groups of any of the above) and frequently PARTIALLY empty --
@@ -648,7 +610,7 @@
     /* LinkedIn's own CDN serves logos and post media from extension-less
        paths (media.licdn.com/dms/image/…), so an extension test alone
        classified every logo field as a plain link and rendered it as a bare
-       "Open link ↗" instead of the image. */
+ "Open link " instead of the image. */
     function looksLikeImageUrl(s){
       return looksLikeUrl(s)&&(/\.(png|jpe?g|svg|webp|gif)(\?|$)/i.test(s)
         ||/licdn\.com|\/dms\/image\/|company-logo/i.test(s));
@@ -832,7 +794,7 @@
       return cards?'<div class="lps-card-grid">'+cards+'</div>':null;
     }
 
-    /* ── Chart primitives for the computed metrics ──────────────────────────
+ /* Chart primitives for the computed metrics 
        All hand-rolled SVG, matching the rest of this page (no chart library
        is loaded anywhere in this app). Each one carries direct value labels,
        so none of them relies on axis-reading or color alone. */
@@ -965,10 +927,10 @@
           +'<div class="lps-ranked-meta">'
             +(r.format?'<span class="lps-tag">'+esc(r.format)+'</span>':'')
             +(r.date?'<span>'+esc(r.date)+'</span>':'')
-            +'<span>♥ '+esc(fullNum(r.reactions))+'</span>'
-            +'<span>💬 '+esc(fullNum(r.comments))+'</span>'
-            +'<span>↻ '+esc(fullNum(r.reposts))+'</span>'
-            +(r.url?'<a href="'+esc(r.url)+'" target="_blank" rel="noopener">View ↗</a>':'')
+ +'<span> '+esc(fullNum(r.reactions))+'</span>'
+ +'<span> '+esc(fullNum(r.comments))+'</span>'
+ +'<span> '+esc(fullNum(r.reposts))+'</span>'
+ +(r.url?'<a href="'+esc(r.url)+'" target="_blank" rel="noopener">View </a>':'')
           +'</div>'
           +'<div class="lps-ranked-track"><div class="lps-ranked-bar" style="width:'+pct+'%"></div></div>'
           +'</div>'
@@ -1049,7 +1011,7 @@
       var s=String(v).trim();
       if(!s)return null;
       if(looksLikeImageUrl(s))return '<img class="lps-inline-logo" src="'+esc(s)+'" loading="lazy" onerror="this.remove()">';
-      if(looksLikeUrl(s))return '<a class="lps-inline-link" href="'+esc(s)+'" target="_blank" rel="noopener">Open link ↗</a>';
+ if(looksLikeUrl(s))return '<a class="lps-inline-link" href="'+esc(s)+'" target="_blank" rel="noopener">Open link </a>';
       return s.length>140?'<p class="lps-prose">'+esc(s)+'</p>':'<span>'+esc(s)+'</span>';
     }
 
@@ -1099,7 +1061,7 @@
       return sections.length?sections.join(''):emptyState(ns);
     }
 
-    /* ── Engagement: entirely computed, not vendor-reported ──────────────────
+ /* Engagement: entirely computed, not vendor-reported 
        The vendor's own contentcreativeagent.engagement.{activity,best,stats,
        worst} arrays came back empty on every real run, while the same
        response carried up to 100 full posts. tracker/lps_analytics.py does
@@ -1116,7 +1078,7 @@
       var voice=output['derived.voice']||{};
       if(isEmptyValue(act)&&isEmptyValue(eng))return emptyState('engagement');
 
-      var html='<div class="lps-derived-badge">◔ Computed from this company\'s '
+ var html='<div class="lps-derived-badge">Computed from this company\'s '
         +esc(String(act.postsAnalyzed||0))+' most recent posts, not vendor-reported</div>';
 
       html+=renderMetricBand([
@@ -1158,7 +1120,7 @@
       return html;
     }
 
-    /* ── Audience: pulled out of Strategy into its own section ───────────────
+ /* Audience: pulled out of Strategy into its own section 
        personas, the seniority/industry/experience breakdowns, and the
        audience split inside strategyagent.strategy all answer the same
        question ("who is this for") and were previously buried three sections
@@ -1214,7 +1176,7 @@
       if(!isEmptyValue(content.signals))derivedBits+='<div class="lps-split-col"><div class="lps-subfield-label">Content Signals</div>'
         +renderDistribution(content.signals)+'</div>';
       if(derivedBits){
-        html+='<div class="lps-derived-badge">◔ Computed from the post feed</div>';
+ html+='<div class="lps-derived-badge">Computed from the post feed</div>';
         html+=section('How They Actually Post','<div class="lps-split">'+derivedBits+'</div>',
           'Share of posts, computed across the window analyzed');
       }
@@ -1286,8 +1248,8 @@
         +(desc?'<p class="lps-profile-desc">'+esc(desc)+'</p>':'')
         +(tags.length?'<div class="lps-chips" style="margin-top:12px">'+tags.slice(0,14).map(function(t){return '<span class="lps-chip lps-chip-sm">'+esc(String(t))+'</span>';}).join('')+'</div>':'')
         +((website||profileUrl)?'<div class="lps-profile-links">'
-          +(website?'<a href="'+esc(website)+'" target="_blank" rel="noopener">'+esc(website)+' ↗</a>':'')
-          +(profileUrl?'<a href="'+esc(profileUrl)+'" target="_blank" rel="noopener">LinkedIn profile ↗</a>':'')
+ +(website?'<a href="'+esc(website)+'" target="_blank" rel="noopener">'+esc(website)+' </a>':'')
+ +(profileUrl?'<a href="'+esc(profileUrl)+'" target="_blank" rel="noopener">LinkedIn profile </a>':'')
           +'</div>':'')+'</div>'
         +(stats.length?'<div class="lps-profile-stats">'+stats.map(function(s){
             return '<div class="lps-profile-stat"><div class="lps-profile-stat-val">'+esc(String(s.v))+'</div><div class="lps-profile-stat-label">'+esc(s.l)+'</div></div>';
@@ -1350,10 +1312,10 @@
         }
         var meta=[];
         if(!isEmptyValue(p.date))meta.push('<span>'+esc(String(p.date))+'</span>');
-        if(!isEmptyValue(p.reaction_counter))meta.push('<span>♥ '+Number(p.reaction_counter).toLocaleString('en-US')+'</span>');
-        if(!isEmptyValue(p.comment_counter))meta.push('<span>💬 '+Number(p.comment_counter).toLocaleString('en-US')+'</span>');
-        if(!isEmptyValue(p.repost_counter))meta.push('<span>↻ '+Number(p.repost_counter).toLocaleString('en-US')+'</span>');
-        if(!isEmptyValue(p.share_url))meta.push('<a href="'+esc(p.share_url)+'" target="_blank" rel="noopener">View ↗</a>');
+ if(!isEmptyValue(p.reaction_counter))meta.push('<span> '+Number(p.reaction_counter).toLocaleString('en-US')+'</span>');
+ if(!isEmptyValue(p.comment_counter))meta.push('<span> '+Number(p.comment_counter).toLocaleString('en-US')+'</span>');
+ if(!isEmptyValue(p.repost_counter))meta.push('<span> '+Number(p.repost_counter).toLocaleString('en-US')+'</span>');
+ if(!isEmptyValue(p.share_url))meta.push('<a href="'+esc(p.share_url)+'" target="_blank" rel="noopener">View </a>');
         var fmt=postFormatLabel(p);
         return '<div class="lps-post-card">'
           +(thumb?'<img class="lps-post-thumb" src="'+esc(thumb)+'" loading="lazy" onerror="this.remove()">':'')
@@ -1476,7 +1438,7 @@
         +'</svg><div class="lps-gauge-center"><div class="lps-gauge-num">'+esc(String(overall))+'</div><div class="lps-gauge-label">/ '+maxVal+'</div></div></div>';
     }
 
-    /* ── AI Insights ────────────────────────────────────────────────────────
+ /* AI Insights 
        A single Claude call (tracker/lps_enrichment.py), run once per completed
        analysis, that reads everything the vendor's five agents returned plus
        the computed derived.* metrics and writes ONE point of view across all
@@ -1509,9 +1471,9 @@
         return '<div id="lpsInsightsBody">'
           +'<div class="lps-empty">This run was analyzed before AI Insights existed, so no synthesis was saved for it.'
           +'<div class="lps-empty-note">Generating reads the analysis already stored for this run, so it takes seconds and does not re-run the five-agent workflow.</div></div>'
-          +'<div style="text-align:center"><button class="lps-act primary" style="margin-top:18px" onclick="generateInsights()">✨ Generate AI insights</button></div></div>';
+ +'<div style="text-align:center"><button class="lps-act primary" style="margin-top:18px" onclick="generateInsights()">Generate AI insights</button></div></div>';
       }
-      var html='<div class="lps-ai-badge">✨ AI-synthesized — combines signal across every section on this report, not vendor data on its own</div>';
+ var html='<div class="lps-ai-badge">AI-synthesized — combines signal across every section on this report, not vendor data on its own</div>';
       if(!isEmptyValue(headline))html+='<div class="lps-ai-headline">'+esc(headline)+'</div>';
       if(!isEmptyValue(synthesis)){
         var paras=String(synthesis).split(/\n\s*\n/).map(function(p){return p.trim();}).filter(Boolean);
@@ -1607,7 +1569,7 @@
       return tabPaneContent(output,ns,run).indexOf('class="lps-empty"')===-1;
     }
 
-    /* ── Overview: a synthesized first look ─────────────────────────────────
+ /* Overview: a synthesized first look 
        Instead of making the reader click nine tabs to get oriented: what the
        company is, the computed findings, the vendor's executive summary, the
        best hooks, and an honest list of which sections this particular run
@@ -1633,7 +1595,7 @@
       if(!isEmptyValue(desc)||!isEmptyValue(website)){
         html+='<div class="lps-ov-hero">'
           +(desc?'<p class="lps-ov-desc">'+esc(desc)+'</p>':'')
-          +(website?'<a class="lps-ov-website" href="'+esc(website)+'" target="_blank" rel="noopener">'+esc(website)+' ↗</a>':'')
+ +(website?'<a class="lps-ov-website" href="'+esc(website)+'" target="_blank" rel="noopener">'+esc(website)+' </a>':'')
           +'</div>';
       }
 
@@ -1643,13 +1605,13 @@
       var aiHeadline=output['aienrichment.headline'];
       if(!isEmptyValue(aiHeadline)){
         html+='<button class="lps-ov-ai-teaser" onclick="switchDrawerTab(\'aienrichment\')">'
-          +'<span class="lps-ov-ai-icon">✨</span><span class="lps-ov-ai-text">'+esc(aiHeadline)+'</span>'
-          +'<span class="lps-ov-ai-link">Full AI insights →</span></button>';
+ +'<span class="lps-ov-ai-icon"></span><span class="lps-ov-ai-text">'+esc(aiHeadline)+'</span>'
+ +'<span class="lps-ov-ai-link">Full AI insights </span></button>';
       }
 
       if(!isEmptyValue(insights)){
         html+=section('Key Findings',renderStringList(insights.slice(0,6))
-          +(insights.length>6?'<button class="lps-ov-more" onclick="switchDrawerTab(\'engagement\')">All engagement analysis →</button>':''),
+ +(insights.length>6?'<button class="lps-ov-more" onclick="switchDrawerTab(\'engagement\')">All engagement analysis </button>':''),
           'Computed from the post feed');
       }
 
@@ -1666,7 +1628,7 @@
       } else if(!isEmptyValue(strategy)&&typeof strategy==='string'){
         var s=String(strategy), long=s.length>320, excerpt=long?s.slice(0,320).trim()+'…':s;
         html+=section('Strategy Snapshot','<p class="lps-prose">'+esc(excerpt)+'</p>'
-          +(long?'<button class="lps-ov-more" onclick="switchDrawerTab(\'strategyagent\')">Read full strategy →</button>':''));
+ +(long?'<button class="lps-ov-more" onclick="switchDrawerTab(\'strategyagent\')">Read full strategy </button>':''));
       }
 
       if(summary&&typeof summary==='object'&&!isEmptyValue(summary.moves))
@@ -1708,7 +1670,7 @@
 
       var chips='<span class="lps-badge '+(run.run_type==='COMPETITOR'?'comp':'own')+'">'+esc(typeLabel)+'</span>';
       if(!isEmptyValue(foot.industry))chips+='<span class="lps-chip lps-chip-sm">'+esc(foot.industry)+'</span>';
-      if(!isEmptyValue(act.windowStart))chips+='<span class="lps-chip lps-chip-sm">'+esc(act.windowStart)+' → '+esc(act.windowEnd)+'</span>';
+ if(!isEmptyValue(act.windowStart))chips+='<span class="lps-chip lps-chip-sm">'+esc(act.windowStart)+' '+esc(act.windowEnd)+'</span>';
 
       /* LinkedIn's logo CDN URLs carry an expiry, so a logo captured at
          search time can 404 by the time an older report is reopened.
@@ -1726,9 +1688,9 @@
         +'<div class="drw-sub">Analyzed '+esc(relTime(run.created_at))+'</div>'
         +'</div></div>'
         +'<div class="lps-rep-actions">'
-        +(profileUrl?'<a class="lps-act" href="'+esc(profileUrl)+'" target="_blank" rel="noopener">↗ LinkedIn</a>':'')
+ +(profileUrl?'<a class="lps-act" href="'+esc(profileUrl)+'" target="_blank" rel="noopener">LinkedIn</a>':'')
         +'<button class="lps-act" onclick="copyReportSummary()" id="lpsCopyBtn">⧉ Copy findings</button>'
-        +'<button class="lps-act primary" onclick="printReport()">⎙ Save as PDF</button>'
+ +'<button class="lps-act primary" onclick="printReport()">Save as PDF</button>'
         +'</div></div>';
 
       var band=renderMetricBand([
@@ -1778,7 +1740,7 @@
       var done=function(ok){
         if(!btn)return;
         var prev=btn.textContent;
-        btn.textContent=ok?'✓ Copied':'Copy failed';
+ btn.textContent=ok?' Copied':'Copy failed';
         setTimeout(function(){btn.textContent=prev;},1600);
       };
       if(navigator.clipboard&&navigator.clipboard.writeText){
@@ -1903,7 +1865,7 @@
       return fetch('/p2/strategic-agents/linkedin-strategy-researcher/runs/'+DRAWER_RUN.id+'/playbook?mode='+mode)
         .then(function(r){return r.json();}).then(function(data){
           if(data.playbook&&data.playbook.content){
-            wrap.innerHTML='<button class="lps-act" style="margin-bottom:16px" onclick="generatePlaybook()">↻ Regenerate playbook</button>'
+ wrap.innerHTML='<button class="lps-act" style="margin-bottom:16px" onclick="generatePlaybook()">Regenerate playbook</button>'
               +renderPlaybookContent(data.playbook.content)
               +(window.agentFeedbackHtml?window.agentFeedbackHtml({agentSlug:'linkedin-strategy-researcher',runId:DRAWER_RUN.id,sectionKey:'playbook:'+mode,sectionLabel:'Playbook'}):'');
             if(pane)pane.setAttribute('data-empty','0');
@@ -1978,7 +1940,7 @@
         }).join('')
           +'<div class="lps-drw-nav-sep"></div>'
           +'<button class="lps-drw-tab'+(wanted==='playbook'?' active':'')+'" data-ns="playbook" onclick="switchDrawerTab(\'playbook\')">'
-          +'<span class="lps-drw-tab-ic">⎘</span><span class="lps-drw-tab-label">Playbook</span></button>';
+ +'<span class="lps-drw-tab-ic"></span><span class="lps-drw-tab-label">Playbook</span></button>';
         /* Feedback is per-pane, not per-run: a reader who thinks Messaging is
            off base and Strategy is spot on needs to say so separately, which
            is why the control is threaded through tabRender rather than
@@ -2025,97 +1987,8 @@
     loadStatsAndHistory();
   </script>
 
-<script>
-/* ════ Platform command palette — Ctrl/Cmd+K ════ */
-(function(){
-  if(window.__kpal)return;window.__kpal=1;
-  var BASE=[
-    {t:'Hub',d:'Platform home',u:'/p2/hub',i:'⌂'},
-    {t:'Strategic Agents',d:'Go-to-market intelligence',u:'/p2/strategic-agents',i:'◎'},
-    {t:'SEO + AEO Tools',d:'Organic intelligence',u:'/p2/seo-aeo',i:'⌕'},
-    {t:'ABM Signal Tracker — Healthcare',d:'Company signals & insights',u:'/p2/abm-signal-tracker/healthcare',i:'☆'},
-    {t:'ABM Signal Tracker — CSG',d:'Company signals & insights',u:'/p2/abm-signal-tracker/csg',i:'☆'},
-    {t:'LinkedIn Intelligence',d:'People, companies & posts',u:'/p2/strategic-agents/linkedin-intelligence',i:'⦿'},
-    {t:'Ad Intelligence',d:'Competitor ad monitoring',u:'/p2/strategic-agents/ad-intelligence',i:'◈'},
-    {t:'Anonymous Visitors',d:'Website visitor signals',u:'/p2/strategic-agents/anonymous-visitors',i:'◌'},
-    {t:'Job Change Alert',d:'Decision-maker job changes',u:'/p2/strategic-agents/job-change-alert',i:'⇉'},
-    {t:'LinkedIn Strategy Researcher',d:'Competitive strategy playbooks',u:'/p2/strategic-agents/linkedin-strategy-researcher',i:'▤'},
-    {t:'42 North Dental Slot Checker',d:'Appointment availability',u:'/p2/strategic-agents/42-north-dental-slot-checker',i:'◷'},
-    {t:'Social Media Intelligence',d:'Cross-platform social analysis',u:'/p2/strategic-agents/social-media-intelligence',i:'▣'},
-    {t:'Switch Account',d:'Healthcare / CSG picker',u:'/p2/abm-signal-tracker/accounts',i:'⇄'}
-  ];
-  var ITEMS=(window.__KP_ITEMS||[]).concat(BASE);
-  var css=document.createElement('style');
-  css.textContent='#kpal{position:fixed;inset:0;z-index:99999;display:none;background:rgba(2,4,14,.72);backdrop-filter:blur(8px)}'
-    +'#kpal.on{display:block;animation:kpalF .14s ease}'
-    +'@keyframes kpalF{from{opacity:0}to{opacity:1}}'
-    +'.kpal-box{position:absolute;top:16%;left:50%;transform:translateX(-50%);width:min(580px,92vw);background:rgba(11,14,28,.96);border:1px solid rgba(129,140,248,.3);border-radius:var(--radius-lg);box-shadow:0 40px 120px rgba(0,0,0,.8),0 0 60px rgba(99,102,241,.12);overflow:hidden;animation:kpalIn .22s cubic-bezier(.22,1.3,.36,1)}'
-    +'@keyframes kpalIn{from{opacity:0;transform:translateX(-50%) translateY(-12px) scale(.97)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}'
-    +'.kpal-iw{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid rgba(255,255,255,.07)}'
-    +'.kpal-iw .ic{color:#7c83f5;font-size:15px}'
-    +'#kpal-in{flex:1;background:none;border:none;outline:none;color:#e8ecf8;font-family:inherit;font-size:15px}'
-    +'#kpal-in::placeholder{color:#4b5572}'
-    +'.kpal-iw kbd{font-family:inherit;font-size:10px;font-weight:700;color:#55617a;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-xs);padding:3px 7px}'
-    +'#kpal-list{max-height:330px;overflow-y:auto;padding:7px}'
-    +'.kpal-it{display:flex;align-items:center;gap:12px;padding:10px 13px;border-radius:var(--radius-md);cursor:pointer;border:1px solid transparent}'
-    +'.kpal-it .ki{width:30px;height:30px;border-radius:var(--radius-sm);background:rgba(99,102,241,.12);border:1px solid rgba(129,140,248,.22);display:flex;align-items:center;justify-content:center;font-size:13px;color:#a5b4fc;flex-shrink:0}'
-    +'.kpal-it .kt{font-size:13px;font-weight:600;color:#dbe2f1}'
-    +'.kpal-it .kd{font-size:11.5px;color:#55617a;margin-top:1px}'
-    +'.kpal-it.sel{background:linear-gradient(95deg,rgba(79,70,229,.22),rgba(124,58,237,.12));border-color:rgba(129,140,248,.35)}'
-    +'.kpal-it.sel .kt{color:#fff}'
-    +'.kpal-empty{padding:26px;text-align:center;color:#55617a;font-size:13px}'
-    +'.kpal-foot{padding:9px 16px;border-top:1px solid rgba(255,255,255,.06);font-size:10px;color:#3b4763;display:flex;gap:14px}'
-    +'#kpal-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99998;background:rgba(11,14,28,.95);border:1px solid rgba(129,140,248,.35);color:#a9b4d8;border-radius:var(--radius-pill);font-size:11.5px;padding:9px 18px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:kpalF .3s ease}'
-    +'#kpal-toast b{color:#c7d2fe}';
-  document.head.appendChild(css);
-  var ov=document.createElement('div');ov.id='kpal';
-  ov.innerHTML='<div class="kpal-box">'
-    +'<div class="kpal-iw"><span class="ic">⌘</span><input id="kpal-in" placeholder="Jump to any tool or section…" autocomplete="off"><kbd>ESC</kbd></div>'
-    +'<div id="kpal-list"></div>'
-    +'<div class="kpal-foot"><span>↑↓ navigate</span><span>↵ open</span><span>esc close</span></div></div>';
-  document.body.appendChild(ov);
-  var inp=document.getElementById('kpal-in'),list=document.getElementById('kpal-list');
-  var cur=[],sel=0;
-  function esc2(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-  function render(){
-    if(!cur.length){list.innerHTML='<div class="kpal-empty">No matches — try fewer letters</div>';return;}
-    list.innerHTML=cur.map(function(x,i){
-      return '<div class="kpal-it'+(i===sel?' sel':'')+'" data-i="'+i+'"><span class="ki">'+x.i+'</span><span style="min-width:0"><div class="kt">'+esc2(x.t)+'</div><div class="kd">'+esc2(x.d||'')+'</div></span></div>';
-    }).join('');
-    var s=list.querySelector('.sel');if(s)s.scrollIntoView({block:'nearest'});
-  }
-  function filter(q){
-    q=(q||'').toLowerCase().trim();
-    cur=!q?ITEMS.slice():ITEMS.filter(function(x){return (x.t+' '+(x.d||'')).toLowerCase().indexOf(q)>=0;});
-    sel=0;render();
-  }
-  function go(x){
-    if(!x)return;
-    close();
-    if(x.u==='!vimi'){if(window.irChat)window.irChat();return;}
-    if(x.u.charAt(0)==='#'){location.hash=x.u;return;}
-    if(location.pathname===x.u)return;
-    window.location.href=x.u;
-  }
-  function open(){ov.classList.add('on');inp.value='';filter('');setTimeout(function(){inp.focus();},30);}
-  function close(){ov.classList.remove('on');}
-  inp.addEventListener('input',function(){filter(inp.value);});
-  inp.addEventListener('keydown',function(e){
-    if(e.key==='ArrowDown'){e.preventDefault();sel=Math.min(sel+1,cur.length-1);render();}
-    else if(e.key==='ArrowUp'){e.preventDefault();sel=Math.max(sel-1,0);render();}
-    else if(e.key==='Enter'){e.preventDefault();go(cur[sel]);}
-  });
-  list.addEventListener('click',function(e){
-    var it=e.target.closest('.kpal-it');if(it)go(cur[parseInt(it.getAttribute('data-i'),10)]);
-  });
-  ov.addEventListener('mousedown',function(e){if(e.target===ov)close();});
-  document.addEventListener('keydown',function(e){
-    if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='k'){e.preventDefault();ov.classList.contains('on')?close():open();}
-    else if(e.key==='Escape'&&ov.classList.contains('on')){close();}
-  });
-})();
-</script>
 <script>(function(){try{var p=location.pathname;document.querySelectorAll('a.dd-item[href],a.tb-dd-item[href]').forEach(function(a){if(a.getAttribute('href')===p){a.classList.add('active');a.style.background='rgba(124,92,255,.18)';a.style.color='#fff';}});}catch(e){}})();</script>
 <script>(function(){if(window.__trk)return;window.__trk=1;var _s=Date.now(),_d=false;function f(){if(_d)return;_d=true;var s=Math.round((Date.now()-_s)/1000);fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:location.pathname,title:'LinkedIn Strategy Researcher',seconds:s,email:'{{ user.email if user else "" }}'}),keepalive:true}).catch(function(){});}document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')f();});window.addEventListener('beforeunload',f);})();</script>
+{{ topbar_script() }}
 </body>
 </html>

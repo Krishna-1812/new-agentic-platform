@@ -49,7 +49,8 @@ def test_the_report_cuts_at_the_rubric_s_floor_rather_than_a_typed_number():
     html = _page()
     assert "var RANK_FLOOR = %d;" % rubric.RANK_FLOOR in html, (
         "the report script does not take the floor from the rubric")
-    script = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.S)[0]
+    script = max(re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.S),
+                 key=len)  # the page's own logic, not the shell's palette list in <head>
     for stale in ("Nothing cleared 70", "Below 70."):
         assert stale not in script, (
             "%r is still typed into the report, so it will keep saying 70 after "
@@ -91,7 +92,8 @@ def test_the_report_renders_a_second_tier_section():
     aimed at this client are offered, with the card the recommendation gets
     rather than a name and a number."""
     html = _page()
-    script = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.S)[0]
+    script = max(re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.S),
+                 key=len)  # the page's own logic, not the shell's palette list in <head>
     assert "worth_a_look" in script, "the page never reads the second tier"
     assert "Worth a look" in script, "the section has no heading"
     assert "belowBarReason" in script, (
@@ -322,7 +324,8 @@ def test_the_mode_cards_do_not_share_a_class_with_the_report_s_play_block():
     for card in re.findall(r'<button class="(evi-play[^"]*)"', html):
         card_classes.update(card.split())
     assert card_classes, "no mode cards found"
-    script = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.S)[0]
+    script = max(re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.S),
+                 key=len)  # the page's own logic, not the shell's palette list in <head>
     rendered = set()
     for cls in re.findall(r"""<div class=\\?["']([a-z0-9 _-]+)""", script):
         rendered.update(cls.split())
@@ -518,7 +521,8 @@ global.clearInterval = function(){};
 
 def _exec(probe, pick="new", profile_ids=("3", "4")):
     html = _page()
-    script = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.S)[0]
+    script = max(re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.S),
+                 key=len)  # the page's own logic, not the shell's palette list in <head>
     assert _IIFE_CLOSE in script, "the page's IIFE no longer closes as expected"
     at = script.index(_IIFE_CLOSE)
     script = script[:at] + "\n" + probe + script[at:]
@@ -646,10 +650,24 @@ def _rule(css, selector):
 
 def test_the_page_loads_the_shared_grid_tokens():
     """`var(--margin)` with no sheet defining it makes the whole padding
-    declaration invalid, which silently computes to zero."""
+    declaration invalid, which silently computes to zero.
+
+    The sheet that defines it changed -- this page was rebuilt on the Bento
+    design system, where bento-compat.css redefines the ds-tokens vocabulary
+    in Bento terms rather than grid-tokens.css supplying it. What matters is
+    unchanged: SOME loaded sheet defines the token this page's padding reads,
+    so the name rather than the filename is what is asserted."""
     html = _page()
-    assert "grid-tokens.css" in html, (
-        "the page uses the grid tokens but does not load the sheet that defines them")
+    defining = ("grid-tokens.css", "bento-compat.css")
+    assert any(sheet in html for sheet in defining), (
+        "the page uses --margin but loads none of %s, so its padding computes "
+        "to zero" % (defining,))
+    import os as _os
+    css_dir = _os.path.join(_ROOT, "static", "css")
+    loaded = [s for s in defining if s in html]
+    assert any("--margin:" in open(_os.path.join(css_dir, s), encoding="utf-8").read()
+               for s in loaded), (
+        "%s is loaded but none of them actually defines --margin" % loaded)
 
 
 def test_the_content_container_takes_its_side_margin_from_the_token():
@@ -724,7 +742,8 @@ def test_the_choice_grids_are_not_left_to_auto_fit():
 
 def test_the_score_chart_tells_the_css_how_many_columns_it_has():
     html = _page()
-    script = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.S)[0]
+    script = max(re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.S),
+                 key=len)  # the page's own logic, not the shell's palette list in <head>
     assert "--n:' + items.length" in script, (
         "the chart no longer states its column count, so the CSS calc that "
         "sizes the plot falls back to its default and the floor line stops "

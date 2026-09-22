@@ -1,0 +1,271 @@
+/* ════════════════════════════════════════════════════════════════════════
+   BENTO — COMPATIBILITY LAYER
+
+   The agent pages were authored against ds-tokens.css. Eight of them carry
+   between 400 and 3,000 lines of page CSS referencing that vocabulary, and
+   rewriting every var() call by hand would be eight chances to introduce a
+   typo that CSS reports by silently rendering nothing.
+
+   So the vocabulary is redefined here in Bento terms instead. Loaded AFTER
+   bento-tokens.css and INSTEAD OF ds-tokens.css, it gives a legacy page
+   sheet every name it asks for, with this design system's values behind it.
+
+   Twenty-seven names overlap already (--bg, --s1..--s3, --tx..--tx3, --r,
+   --fs-*, --sp-*, --ease and the rest); bento-tokens.css defines those and
+   they need nothing here. What follows is the other fifty-two.
+
+   This is not a recolour. Three of the system's five rules are enforced by
+   the mapping itself, and each one loses information on purpose:
+
+     EIGHT HUES BECOME FOUR.  The old vocabulary had indigo, violet, green,
+       amber, purple, cyan, rose and orange, each with a 10%-alpha tint.
+       This system has four, and Rule 4 says a fill means "this is the
+       number you opened the page for". Eight accent hues cannot all mean
+       that, so they collapse onto the four by MEANING -- positive, spend,
+       neutral data, featured -- not by hue similarity.
+
+     SEVEN RADII BECOME TWO.  Rule 3. --radius-xs through --radius-full all
+       resolve to --r or --r-sm, so a page cannot mix a pill and a card.
+
+     BORDERS BECOME A HAIRLINE OR NOTHING.  Rule 2. The three rgba-white
+       border steps were how the old system separated surfaces; here
+       separation is a fill boundary and a gap.
+
+   Two colours are deliberately NOT remapped: --slack and --linkedin are
+   other companies' marks, and recolouring somebody else's logo to match
+   your palette makes it wrong rather than consistent.
+   ──────────────────────────────────────────────────────────────────────── */
+
+:root {
+
+  /* ── SURFACES ─────────────────────────────────────────────────────────
+     --bg2 was a second, slightly different page ground. Rule 1 says a
+     surface is a flat colour you can name, and two grounds a shade apart
+     is a gradient by another route. */
+  --bg2: var(--bg);
+
+  /* ── BORDERS ──────────────────────────────────────────────────────────
+     Three alpha steps become one hairline. b1 was the faintest, used
+     everywhere as a default; it resolves to nothing so the pages stop
+     drawing outlines they do not need. b2 and b3 were deliberate, so they
+     keep a visible rule. */
+  --b1: transparent;
+  --b2: var(--line);
+  --b3: var(--line);
+
+  /* ── ACCENTS ──────────────────────────────────────────────────────────
+     By meaning, not by hue. The old indigo was the primary action colour,
+     so it becomes lime; the old green also meant positive, so it becomes
+     lime too -- two names that meant the same thing now look the same,
+     which is the point. */
+  --accent:    var(--acc);      /* primary action, was indigo #7c83f5  */
+  --accent2:   var(--acc);      /* its gradient partner, was violet    */
+  --accent-d:  var(--s2);
+  --accent-g:  var(--s2);
+
+  --green:     var(--acc);      /* positive / healthy                  */
+  --green-d:   var(--s2);
+
+  --amber:     var(--clay);     /* attention, cost, degraded           */
+  --amber-d:   var(--s2);
+
+  --hub:       var(--clay);     /* was orange, used for the same thing */
+  --hub-d:     var(--s2);
+
+  --rose:      var(--danger);   /* failure / negative                  */
+  --rose-d:    var(--s2);
+
+  --cyan:      var(--sky);      /* neutral data series                 */
+  --cyan-d:    var(--s2);
+
+  --purple:    var(--sky);      /* secondary data series               */
+  --purple-d:  var(--s2);
+
+  /* Other companies' marks. Left alone on purpose. */
+  --slack:     #36c5f0;
+  --linkedin:  #0a66c2;
+
+  --logo-bg:   var(--s2);
+
+  /* ── SHAPE ────────────────────────────────────────────────────────────
+     Rule 3: one radius, plus a smaller one for anything under ~24px tall
+     that 12px would round into a circle. Everything else resolves to one
+     of those two, including the pill and the full circle -- a page cannot
+     opt out of the shape language by reaching for a different token.
+
+     --radius-full is the exception that stays a circle: it is used for
+     avatars and status dots, which are round because they are round, not
+     because of a shape language. */
+  --rl:           var(--r);
+  --rxl:          var(--r);
+  --r2xl:         var(--r);
+  --rpill:        var(--r);
+  --radius-xs:    var(--r-sm);
+  --radius-sm:    var(--r-sm);
+  --radius-md:    var(--r);
+  --radius-lg:    var(--r);
+  --radius-xl:    var(--r);
+  --radius-pill:  var(--r);
+  --radius-full:  9999px;
+
+  /* ── SPACING ──────────────────────────────────────────────────────────
+     The old scale ran 4/8/12/16/24/32/48. Bento's runs 4/8/12/16/20/24/32,
+     so the low end maps exactly and the top three shift down one step --
+     which is the intended difference: this system is denser. */
+  --sp1: var(--sp-1);
+  --sp2: var(--sp-2);
+  --sp3: var(--sp-3);
+  --sp4: var(--sp-4);
+  --sp5: var(--sp-6);
+  --sp6: var(--sp-7);
+  --sp7: var(--sp-8);
+
+  /* ── LAYOUT ───────────────────────────────────────────────────────────
+     The page container's side margin comes from one token now, the same
+     one the shared shell uses, so a legacy page lines up with the topbar
+     above it instead of being a few pixels out. */
+  --gutter:     var(--gap);
+  --margin:     var(--page-pad);
+  --margin-app: var(--page-pad);
+  --bleed:      max(var(--page-pad), calc((100vw - var(--maxw)) / 2 + var(--page-pad)));
+
+  /* ── TYPE ─────────────────────────────────────────────────────────────*/
+  --fs-2xs:  10px;
+  --fs-5xl:  var(--fs-4xl);
+  --ls-caps: var(--ls-label);
+
+  /* ── ELEVATION ────────────────────────────────────────────────────────
+     There isn't any. Tiles are distinguished by fill. The three shadow
+     steps resolve to nothing, except the largest, which is what a drawer
+     or modal needs to read as floating above the page. */
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: var(--shadow-overlay);
+
+  --dur-slower: var(--dur-slow);
+}
+
+/* ── THE RETIRED AMBIENT LAYERS ──────────────────────────────────────────
+   Every one of these pages paints a grid, one or more blurred colour blobs,
+   a grain overlay or a glow behind its content. They are the previous
+   product's ground and they are the first thing that gives away a shared
+   lineage, so they are suppressed here rather than page by page -- a page
+   that still emits the markup simply renders nothing for it. */
+.bg-grid, .bg-glow, .bg-blob, .aurora, .au-bg, .grain,
+.lx-band, #lx-ghost, #lx-halo, .cz-prog { display: none !important; }
+
+/* ── THE RETIRED ENTRANCE ────────────────────────────────────────────────
+   The old kits marked content with .lx-rv / .cz-reveal and animated it in
+   with opacity AND a 26-34px lift, staggered per element. That is one of
+   the three effects this design system does not reuse.
+
+   These rules matter even though the scripts are gone: those classes set
+   `opacity:0` and the SCRIPT was what set it back. A page whose kit has
+   been removed but whose markup still carries the class would render
+   permanently invisible -- content present, laid out, and at zero opacity,
+   with nothing in the console. */
+.lx-rv, .cz-reveal, [data-cz-reveal] {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* ── THE RETIRED ORB ─────────────────────────────────────────────────────
+   thinking-orb.css is no longer loaded, but several pages still emit the
+   slot element. Left visible it is an empty box in the middle of a loading
+   state; the sweep-carrying skeleton beside it is the loading state now. */
+.thinking-orb-slot, .thinking-orb, [data-orb-state] { display: none !important; }
+
+/* ── THE RETIRED FOCUS RING ──────────────────────────────────────────────
+   border-beam.css drew an animated conic-gradient ring around focused
+   inputs. Same story: the sheet is gone, the markup may remain. */
+.border-beam, .beam, .bb-ring { display: none !important; }
+
+
+/* ── ROLE CORRECTIONS ────────────────────────────────────────────────────
+   A token table cannot fix an assignment that was wrong in the old system's
+   terms rather than in its values. These are the three that recur across
+   every legacy page, and all three are Rule 4: colour is load-bearing, so it
+   cannot also be decoration.
+
+   Specificity is why this file loads after the page sheets -- `.ph h1` is
+   (0,1,1) and would beat a bare `h1` no matter what it said. */
+
+/* A heading is text. Several pages gave their h1 the page's accent hue, so
+   every page shouted in a different colour and the accent stopped meaning
+   "this is the thing you came for". */
+h1, h2, h3,
+.ph h1, .page-title, .page-hdr-title, .hero h1, .page-header h1 {
+  color: var(--tx);
+}
+
+/* One kicker colour across the product, for the same reason. */
+.eyebrow, .au-eyebrow, .kick, .p-eyebrow, .page-hdr-eyebrow {
+  color: var(--acc);
+}
+
+/* The per-tile glow washes. Each tile carried a blurred blob of its own hue
+   behind the number -- eight tiles, eight colours, none of them saying
+   anything a label did not already say. */
+.sc-glow, .card-glow, .lc-glow, .glow, [class$="-glow"] { display: none !important; }
+
+/* The diagonal sheen that swept across a card on hover. Rule 5: one motion,
+   and it is not this one. */
+.stat-card::after, .card::after, .dash-card::after { content: none !important; }
+
+/* A card's title is text too, for the same reason as a page heading. Several
+   pages coloured every section title with the page's accent, which is how a
+   screen ends up with nine accented things and no hierarchy. */
+.card-title, .sec-ttl, .sec-hdr, .panel-title, .cd-title, .blk-title {
+  color: var(--tx);
+}
+
+/* The selected tab. The old build marked it with a coloured ring and a glow;
+   in this system a selected thing is a raised fill, and that is the whole
+   signal. */
+.tab-btn.active, .tabs .active, .mtab.active, .seg.on, .seg-btn.active {
+  background: var(--s3) !important;
+  color: var(--tx) !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+/* ── PER-ITEM ACCENT HUES ────────────────────────────────────────────────
+   Several pages pass a colour per item through an inline custom property --
+   style="--kc:#b78bfa" on a KPI tile, a tab, a chart legend -- set both in
+   the template and by the renderers. Six KPI tiles in six hues is Rule 4
+   exactly backwards: if every tile is coloured, the colour is decoration and
+   the one tile that matters cannot say so.
+
+   Overridden here rather than at each call site because they are spread
+   across templates AND JS string builders, and because this is the kind of
+   thing that comes back one call site at a time. !important is load-bearing:
+   an author rule only beats an inline style that way. */
+[style*="--kc"] { --kc: var(--tx2) !important; }
+[style*="--ac"]:not([class*="btn"]) { --ac: var(--acc) !important; }
+[style*="--accent"] { --accent: var(--acc) !important; }
+
+/* ── HEROES ──────────────────────────────────────────────────────────────
+   Three of these pages open with a centred hero: a display headline at 44 to
+   56px, centred, with one word in a gradient. Every rebuilt page opens the
+   same way instead -- kicker, heading, one line, left-aligned -- because a
+   reader should not have to find the title again when they open a different
+   tool in the same product.
+
+   The heading keeps its size; it stops being a billboard. */
+.evi-hero, .sci-hero, .lps-hero, .gd-hero, .hero {
+  text-align: left !important;
+}
+.evi-hero h1, .sci-hero h1, .lps-hero h1, .gd-hero h1, .hero h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-display);
+  line-height: var(--lh-tight);
+  color: var(--tx);
+  margin: 0 0 var(--sp-2);
+  max-width: 24ch;
+}
+.evi-hero p, .sci-hero p, .lps-hero p, .gd-hero p, .hero p {
+  margin: 0; max-width: 62ch; color: var(--tx2);
+}

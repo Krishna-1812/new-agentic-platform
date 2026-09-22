@@ -32,7 +32,7 @@
            system sheets are always loaded first and never passed in.
    scripts page scripts, same form. bento-motion.js is always loaded.
    ──────────────────────────────────────────────────────────────────────- #}
-{% macro head(title, sheets=[], scripts=[], palette=True) -%}
+{% macro head(title, sheets=[], scripts=[], palette=True, compat=False) -%}
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ title }} &middot; {{ brand.name }}</title>
@@ -49,6 +49,16 @@
 {%- set name, _, ver = sheet.partition('?') %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/' + name) }}{% if ver %}?{{ ver }}{% endif %}">
 {%- endfor %}
+{%- if compat %}
+{# The ds-tokens vocabulary, redefined in Bento terms, loaded only by pages
+   whose stylesheet still speaks it.
+
+   AFTER the page sheets on purpose. It is not only a token table: it also
+   corrects the handful of role assignments the old vocabulary made that this
+   system does not (a heading wearing an accent, a per-card glow), and a
+   correction that loads first is a correction the page overrides. #}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bento-compat.css') }}">
+{%- endif %}
 {%- for script in scripts %}
 {%- set name, _, ver = script.partition('?') %}
 <script src="{{ url_for('static', filename='js/' + name) }}{% if ver %}?{{ ver }}{% endif %}"></script>

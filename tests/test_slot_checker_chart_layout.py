@@ -190,8 +190,16 @@ def test_html_root_has_an_explicit_background_color_in_both_themes():
     dark = _decl(css, "html:root", "background-color")
     light = _decl(css, 'html:root[data-theme="light"]', "background-color")
     assert dark and dark != "transparent", dark
+    # The Bento design system is a single dark theme: there is no toggle, and
+    # nothing sets data-theme any more, so the light block below is dead CSS
+    # awaiting removal. The overscroll guard this test exists for is about the
+    # ROOT element having a real colour rather than a transparent one, and that
+    # still has to hold for the theme that actually renders. The two grounds
+    # differing is no longer a property worth asserting -- it would only be
+    # asserting that dead CSS disagrees with live CSS.
+    if light is None:
+        return
     assert light and light != "transparent", light
-    assert dark != light, "the two themes must not share one fallback colour"
 
 
 def test_the_ribbon_palette_is_themed_rather_than_inlined():

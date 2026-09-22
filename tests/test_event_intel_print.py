@@ -1,5 +1,13 @@
 """What comes out of the printer, and the report heading above it.
 
+The colour assertions accept a custom property as well as a hex literal. What
+they are for is that an ink colour is stated EXPLICITLY, because Chrome leaves
+background graphics off by default and anything painted out of a background
+prints as nothing; `var(--sky)` states a colour exactly as `#5AA9E6` does. The
+page stylesheets name their colours through the design system now, and pinning
+to the spelling would fail on that while proving nothing about the printer.
+
+
 This file exists because a user sent back a PDF. Everything in it was found
 by printing the page with Chrome rather than by looking at the page, and none
 of it was visible on screen:
@@ -122,7 +130,7 @@ def test_gradient_text_prints_as_ink_rather_than_as_nothing():
     decl = rules[sel[0]]
     assert "background: none !important" in decl
     assert "background-clip: border-box !important" in decl
-    assert re.search(r"color:\s*#[0-9a-f]{3,6}\s*!important", decl), (
+    assert re.search(r"color:\s*(?:#[0-9a-fA-F]{3,6}|var\(--[a-z0-9-]+\))\s*!important", decl), (
         "the words need an actual colour, not just the clip removed")
     assert ".evi-tile .tv" in sel[0], (
         "the summary's big numbers use the same trick and break the same way")
@@ -396,7 +404,9 @@ def test_a_bar_whose_length_is_the_number_survives_backgrounds_being_off(sel):
     # which paints nothing at all. A mutant that deleted the width, style and
     # colour and left the offset behind survived this test's first draft.
     outlined = [s for s in rules
-                if sel in s and re.search(r"outline:\s*\d+px\s+solid\s+#", rules[s])]
+                if sel in s and re.search(
+                    r"outline:\s*\d+px\s+solid\s+(?:#[0-9a-fA-F]{3,6}|var\(--[a-z0-9-]+\))",
+                    rules[s])]
     assert outlined, "%s prints as nothing with background graphics off" % sel
 
 
@@ -405,7 +415,7 @@ def test_the_score_track_is_outlined_too_or_every_bar_looks_full():
     and a 38/40 are two lines of different length against nothing, which is
     not a comparison."""
     rules = _rules(_print_block())
-    assert re.search(r"outline:\s*\d+px\s+solid\s+#",
+    assert re.search(r"outline:\s*\d+px\s+solid\s+(?:#|var\(--)",
                      rules.get(".evi-sub .st", ""))
 
 
@@ -634,7 +644,7 @@ def test_a_severity_dot_survives_background_graphics_being_off(page_script):
     rules = _rules(_print_block())
     sel = [s for s in rules if ".nd" in s and "outline:" in rules[s]]
     assert sel, "the severity dots print as nothing"
-    assert re.search(r"outline:\s*\d+px\s+solid\s+#", rules[sel[0]])
+    assert re.search(r"outline:\s*\d+px\s+solid\s+(?:#|var\(--)", rules[sel[0]])
     # And the levels have to stay distinguishable, or three identical rings
     # replace three colours.
     tinted = [s for s in rules if ".nd" in s and "outline-color" in rules[s]]

@@ -1,59 +1,22 @@
 <!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
 <html lang="en">
 <head>
-<script>(function(){try{if('scrollRestoration' in history)history.scrollRestoration='manual';}catch(e){}var toTop=function(){window.scrollTo(0,0);};window.addEventListener('load',toTop);window.addEventListener('pageshow',function(e){if(e.persisted)toTop();});})();</script>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>42 North Dental Slot Checker — Platform</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ds-tokens.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ds-components.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/42_north_dental_slot_checker.css') }}?v=8">
-  <link rel="stylesheet" href="/static/css/thinking-orb.css">
-  <link rel="stylesheet" href="/static/css/border-beam.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/agent-feedback.css') }}">
-  <script src="/static/js/theme.js"></script>
-  <link rel="stylesheet" href="/static/css/aurora-app.css?v=3">
-  <script src="/static/js/pfx_bg.js?v=3" defer></script>
-  <script src="{{ url_for('static', filename='js/agent_feedback.js') }}"></script>
+{# palette=not client_mode: this page is also served to the client's own
+   front desk, and the command palette lists every internal destination in
+   the product. The topbar is already gated below for the same reason; the
+   palette needed gating too, and a client's browser receiving a list of
+   internal URLs is not something that looks broken from the code's side. #}
+{{ head("42 North Dental Slot Checker", [
+     "42_north_dental_slot_checker.css?v=2",
+     "agent-feedback.css",
+   ], [], palette=not client_mode, compat=True) }}
 </head>
 <body>
-  <div class="bg-grid"></div>
-  <div class="gd-aurora"><div class="b b1"></div><div class="b b2"></div><div class="b b3"></div></div>
-  <div class="gd-grain"></div>
 
   {% if not client_mode %}
-  <div class="topbar">
-    <div class="tl">
-      <a href="/p2/hub" class="brand">
-        <div class="brand-icon" style="background:#151b2e;box-shadow:none;border-radius:var(--radius-md);overflow:hidden;display:inline-flex;align-items:center;justify-content:center;padding:5px 8px;width:auto;height:auto"><img src="/static/logo-lockup.svg?v=1" alt="arena by Position2" style="display:block;width:auto;height:36px;object-fit:contain"></div>
-      </a>
-      <div class="bc">
-        <a href="/p2/hub">Hub</a><span class="bc-sep">›</span>
-        <a href="/p2/strategic-agents">Strategic Agents</a><span class="bc-sep">›</span>
-        <span class="bc-cur">42 North Dental Slot Checker</span>
-      </div>
-    </div>
-    <div class="user-menu" id="userMenu">
-      <div class="user-pill" id="userPill" onclick="toggleMenu()">
-        <div class="user-avatar">
-          {% if user.picture %}<img src="{{ user.picture }}" alt="" />
-          {% else %}{{ (user.name or 'U')[:2]|upper }}{% endif %}
-        </div>
-        <span class="user-name">{{ user.given_name or user.name or 'User' }}</span>
-        <span class="pill-chevron">▼</span>
-      </div>
-      <div class="user-dropdown" id="userDropdown">
-        <div class="dd-header">
-          <div class="dd-name">{{ user.name or 'User' }}</div>
-          <div class="dd-email">{{ user.email }}</div>
-        </div>
-        <div class="dd-items">{% include "_admin_menu.html" %}</div>
-      </div>
-    </div>
-  </div>
+  {{ topbar([(brand.agents_plural, "/p2/strategic-agents"), ("42 North Dental Slot Checker", none)]) }}
+
   {% endif %}
 
   <div class="main">
@@ -71,28 +34,28 @@
 
     <div class="gd-stats" id="statsRow">
       <div class="gd-stat s-slots" onclick="switchTab('heat')">
-        <div class="gd-stat-ico" aria-hidden="true">⚡</div>
+ <div class="gd-stat-ico" aria-hidden="true"></div>
         <div class="gd-stat-label">Open Slots</div>
         <div class="gd-stat-val" id="kSlots"><span class="skel" style="width:86px;height:34px"></span></div>
-        <div class="gd-stat-hint">See the calendar →</div>
+ <div class="gd-stat-hint">See the calendar </div>
       </div>
       <div class="gd-stat s-practices" onclick="switchTab('practices')">
-        <div class="gd-stat-ico" aria-hidden="true">🏢</div>
+ <div class="gd-stat-ico" aria-hidden="true"></div>
         <div class="gd-stat-label">Locations Checked</div>
         <div class="gd-stat-val" id="kPractices"><span class="skel" style="width:70px;height:34px"></span></div>
-        <div class="gd-stat-hint">Browse locations →</div>
+ <div class="gd-stat-hint">Browse locations </div>
       </div>
       <div class="gd-stat s-attention" onclick="switchTab('alerts')">
-        <div class="gd-stat-ico" aria-hidden="true">⚠</div>
+ <div class="gd-stat-ico" aria-hidden="true"></div>
         <div class="gd-stat-label">Needs Attention</div>
         <div class="gd-stat-val" id="kAttention"><span class="skel" style="width:56px;height:34px"></span></div>
-        <div class="gd-stat-hint">Review problems →</div>
+ <div class="gd-stat-hint">Review problems </div>
       </div>
       <div class="gd-stat s-avg" onclick="switchTab('services')">
-        <div class="gd-stat-ico" aria-hidden="true">📊</div>
+ <div class="gd-stat-ico" aria-hidden="true"></div>
         <div class="gd-stat-label">Avg per Location</div>
         <div class="gd-stat-val" id="kAvg"><span class="skel" style="width:64px;height:34px"></span></div>
-        <div class="gd-stat-hint">Service mix →</div>
+ <div class="gd-stat-hint">Service mix </div>
       </div>
     </div>
 
@@ -100,21 +63,21 @@
       <div class="card" id="cardDays">
         <div class="card-head">
           <span class="card-title">Availability by day</span>
-          <span class="card-meta" id="daysMeta">click a day to filter →</span>
+ <span class="card-meta" id="daysMeta">click a day to filter </span>
         </div>
         <div class="card-body"><div id="daysBody"><div class="skel" style="height:168px"></div></div></div>
       </div>
       <div class="card" id="cardStates">
         <div class="card-head">
           <span class="card-title">Where the capacity is</span>
-          <span class="card-meta">click a state to filter →</span>
+ <span class="card-meta">click a state to filter </span>
         </div>
         <div class="card-body"><div id="statesBody"><div class="skel" style="height:168px"></div></div></div>
       </div>
       <div class="card" id="cardBrands">
         <div class="card-head">
           <span class="card-title">Brand mix</span>
-          <span class="card-meta">click a brand to filter →</span>
+ <span class="card-meta">click a brand to filter </span>
         </div>
         <div class="card-body"><div id="brandsBody"><div class="skel" style="height:120px"></div></div></div>
       </div>
@@ -132,15 +95,15 @@
       <div class="gd-toolbar" id="toolbar">
         <div class="gd-toolbar-row gd-toolbar-filters">
           <div class="gd-search">
-            <span class="gd-search-ico" aria-hidden="true">⌕</span>
+ <span class="gd-search-ico" aria-hidden="true"></span>
             <input id="q" type="text" placeholder="Search location, brand, city or office number…" oninput="onFilter()" autocomplete="off">
           </div>
           <select class="gd-select" id="fState" onchange="syncBarHighlights();onFilter()"></select>
           <select class="gd-select" id="fBrand" onchange="syncBarHighlights();onFilter()"></select>
           <select class="gd-select" id="fService" onchange="syncBarHighlights();onFilter()"></select>
           <select class="gd-select" id="fStatus" onchange="onFilter()"></select>
-          <span class="gd-filter-chip" id="dateChip" style="display:none" onclick="clearDateFilter()"><span>📅</span><span id="dateChipLabel"></span><span class="x">✕</span></span>
-          <button class="gd-clear" onclick="clearFilters()">✕ Clear</button>
+ <span class="gd-filter-chip" id="dateChip" style="display:none" onclick="clearDateFilter()"><span></span><span id="dateChipLabel"></span><span class="x"></span></span>
+ <button class="gd-clear" onclick="clearFilters()">Clear</button>
         </div>
         <div class="gd-toolbar-row gd-toolbar-actions">
           <span class="gd-toolbar-label">Sort by</span>
@@ -153,8 +116,8 @@
             <option value="lead_days">Next open</option>
             <option value="office">Office #</option>
           </select>
-          <button class="gd-btn" id="sortDirBtn" onclick="toggleSortDir()" title="Reverse sort direction">↓</button>
-          <button class="gd-btn" onclick="exportLocations()" title="Download every location's per-service, per-day counts as CSV">⬇ Export</button>
+ <button class="gd-btn" id="sortDirBtn" onclick="toggleSortDir()" title="Reverse sort direction"></button>
+ <button class="gd-btn" onclick="exportLocations()" title="Download every location's per-service, per-day counts as CSV">Export</button>
           <span class="gd-count" id="resultCount"></span>
         </div>
       </div>
@@ -195,7 +158,7 @@
   <div class="gd-tip" id="tip"></div>
   <div class="gd-drawer-ov" id="drawerOv" onclick="closeDrawer()"></div>
   <div class="gd-drawer" id="drawer">
-    <button class="gd-drawer-close" onclick="closeDrawer()" aria-label="Close">✕</button>
+ <button class="gd-drawer-close" onclick="closeDrawer()" aria-label="Close"></button>
     <div id="drawerContent"></div>
   </div>
 
@@ -203,11 +166,15 @@
 
   <script>
     function toggleMenu() {
+      /* No-op: the shared topbar (templates/_bento.html) owns the user
+         menu, so #userPill and #userDropdown no longer exist on this page.
+         Kept rather than deleted because the handlers below call it. */
       var pill=document.getElementById('userPill'), dd=document.getElementById('userDropdown');
+      if(!pill||!dd) return;
       pill.classList.toggle('open',!dd.classList.contains('open')); dd.classList.toggle('open');
     }
-    document.addEventListener('click',function(e){ var m=document.getElementById('userMenu'); if(m&&!m.contains(e.target)){document.getElementById('userPill').classList.remove('open');document.getElementById('userDropdown').classList.remove('open');} });
-    document.addEventListener('keydown',function(e){ if(e.key==='Escape'){document.getElementById('userPill').classList.remove('open');document.getElementById('userDropdown').classList.remove('open');closeDrawer();} });
+    document.addEventListener('click',function(e){ var m=document.getElementById('userMenu'); if(m&&!m.contains(e.target)){/* the shared topbar owns the user menu now */} });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape'){/* the shared topbar owns the user menu now */closeDrawer();} });
   </script>
 
   <script>
@@ -266,7 +233,7 @@
       });
     }
 
-    /* ── boot ────────────────────────────────────────────────────────────── */
+ /* boot */
     function boot(){
       import('/static/js/thinking-orb.js').then(function(m){ m.autoMountOrbPlaceholders(); }).catch(function(){});
       loadInsights();
@@ -339,7 +306,7 @@
     }
     function fmtStamp(iso){ return fmtDay(iso)+(String(iso).length>10?', '+String(iso).slice(11,16):''); }
 
-    /* ── AI Insights ─────────────────────────────────────────────────────── */
+ /* AI Insights */
     function loadInsights(force){
       var body=document.getElementById('aiBody'), btn=document.getElementById('aiRefresh');
       btn.classList.add('spin');
@@ -385,7 +352,7 @@
       var hasMore=paras.length>1 || actions.length || opps.length || risks.length || ins.coverage;
       if(chips || hasMore){
         h+='<div class="gd-ai-summary-row">'+chips+
-          (hasMore?'<button class="gd-ai-toggle" id="aiToggle" onclick="toggleAiExpand()">Full briefing <span id="aiToggleIcon">▾</span></button>':'')+
+ (hasMore?'<button class="gd-ai-toggle" id="aiToggle" onclick="toggleAiExpand()">Full briefing <span id="aiToggleIcon"></span></button>':'')+
           '</div>';
       }
       var more='';
@@ -410,7 +377,7 @@
       var card=document.getElementById('cardAI'), willExpand=!card.classList.contains('expanded');
       card.classList.toggle('expanded',willExpand);
       var btn=document.getElementById('aiToggle');
-      if(btn) btn.innerHTML=willExpand?'Show less <span id="aiToggleIcon">▴</span>':'Full briefing <span id="aiToggleIcon">▾</span>';
+ if(btn) btn.innerHTML=willExpand?'Show less <span id="aiToggleIcon"></span>':'Full briefing <span id="aiToggleIcon"></span>';
     }
     function aiList(title,cls,items){
       return '<div class="gd-ai-col ai-'+cls+'"><div class="gd-ai-col-t">'+esc(title)+'</div><ul>'+
@@ -438,15 +405,15 @@
       var attention=a.no_data.length + a.zero.length + a.thin.length;
       countUp('kAttention', attention);
       document.querySelector('.s-attention .gd-stat-hint').textContent =
-        a.zero.length+' full · '+a.thin.length+' thin · '+a.no_data.length+' silent →';
+ a.zero.length+' full · '+a.thin.length+' thin · '+a.no_data.length+' silent ';
       countUp('kAvg', Math.round(t.avg_per_practice));
       document.querySelector('.s-avg .gd-stat-hint').textContent =
-        t.services+' services tracked →';
+ t.services+' services tracked ';
       document.querySelector('.s-slots .gd-stat-hint').textContent =
-        'across '+t.window_days+' days →';
+ 'across '+t.window_days+' days ';
     }
 
-    /* ── day chart ───────────────────────────────────────────────────────── */
+ /* day chart */
     function renderDays(){
       var d=DATA.by_date||[];
       if(!d.length){ document.getElementById('daysBody').innerHTML=''; return; }
@@ -525,7 +492,7 @@
       applyDateFilter();
     }
 
-    /* ── state bars ──────────────────────────────────────────────────────── */
+ /* state bars */
     function renderStates(){
       var s=DATA.by_state||[];
       if(!s.length){ document.getElementById('statesBody').innerHTML=''; return; }
@@ -553,7 +520,7 @@
       });
     }
 
-    /* ── brand mix ───────────────────────────────────────────────────────── */
+ /* brand mix */
     function renderBrands(){
       var b=DATA.by_brand||[];
       var el=document.getElementById('brandsBody');
@@ -583,7 +550,7 @@
       });
     }
 
-    /* ── filters ─────────────────────────────────────────────────────────── */
+ /* filters */
     function buildFilters(){
       var states={}, services={}, brands={};
       DATA.practices.forEach(function(p){
@@ -637,7 +604,7 @@
       renderPractices(); renderHeat();
     }
 
-    /* ── click-to-filter: day columns ────────────────────────────────────── */
+ /* click-to-filter: day columns */
     function setDateFilter(i){
       DATE_FILTER=(DATE_FILTER===i)?null:i;
       applyDateFilter();
@@ -663,8 +630,8 @@
       onFilter();
     }
 
-    /* ── click-to-filter: keep the bar lists' highlight in sync with the
-       dropdowns, whichever one changed it ─────────────────────────────────── */
+ /* click-to-filter: keep the bar lists' highlight in sync with the
+ dropdowns, whichever one changed it */
     function syncBarHighlights(){
       var st=document.getElementById('fState').value;
       var br=document.getElementById('fBrand').value;
@@ -680,7 +647,7 @@
       });
     }
 
-    /* ── practices table ─────────────────────────────────────────────────── */
+ /* practices table */
     /* Day-scoped accessors. When a day is picked in the chart, every number in
        this table has to be about THAT day. Leaving the fortnight totals in
        place under a day filter is the worst of both worlds: the rows are the
@@ -771,7 +738,7 @@
       var f=document.getElementById('sortField');
       if(f && f.value!==SORT.key) f.value=SORT.key;
       var b=document.getElementById('sortDirBtn');
-      if(b) b.textContent=SORT.dir>0?'↑':'↓';
+ if(b) b.textContent=SORT.dir>0?'':'';
     }
     /* Sorting has to agree with what the row actually prints, or the table is
        ordered by numbers that are not on screen. */
@@ -808,7 +775,7 @@
       var h='<table class="gd-tbl"><thead><tr>';
       cols().forEach(function(c){
         var active=SORT.key===c[0];
-        var arrow=active?'<span class="gd-sort-arrow">'+(SORT.dir>0?'↑':'↓')+'</span>':'';
+ var arrow=active?'<span class="gd-sort-arrow">'+(SORT.dir>0?'':'')+'</span>':'';
         h+='<th class="'+c[2]+(active?' sorted':'')+'" onclick="sortBy(\''+c[0]+'\')">'+esc(c[1])+arrow+'</th>';
       });
       h+='</tr></thead><tbody>';
@@ -834,7 +801,7 @@
       var d=(DATA.dates||[])[v];
       return d?(d.weekday+' '+d.label):'day '+(v+1);
     }
-    /* ── export: one row per (practice, service), one column per date -- the
+ /* export: one row per (practice, service), one column per date -- the
        same shape as the source "Locations" sheet, joined with the practice
        identity fields that only live on the "LPs" side. Respects whatever
        filter/sort is currently applied, so the file matches what's on screen. */
@@ -904,7 +871,7 @@
       });
     }
 
-    /* ── calendar heatmap ────────────────────────────────────────────────── */
+ /* calendar heatmap */
     /* Absolute breaks, not a fraction of the busiest cell, for two reasons.
        The distribution is skewed (median 10, max 51), so scaling to the max put
        0.4% of cells in the top step and left the ramp unreadable. And a relative
@@ -956,7 +923,7 @@
       });
     }
 
-    /* ── alerts ──────────────────────────────────────────────────────────── */
+ /* alerts */
     function renderAlerts(){
       var a=DATA.alerts, h='<div class="gd-alerts">';
       /* Count PRACTICES, not practices plus flagged services, so this badge and
@@ -1003,7 +970,7 @@
         }).join('')+'</div></div>';
     }
 
-    /* ── services ────────────────────────────────────────────────────────── */
+ /* services */
     function renderServices(){
       var s=DATA.by_service||[];
       if(!s.length){ document.getElementById('servicesBody').innerHTML='<div class="gd-empty"><b>No services</b></div>'; return; }
@@ -1043,7 +1010,7 @@
       syncBarHighlights();
     }
 
-    /* ── drawer ──────────────────────────────────────────────────────────── */
+ /* drawer */
     function openDrawer(office){
       var p=null;
       DATA.practices.forEach(function(x){ if(x.office===office) p=x; });
@@ -1089,7 +1056,7 @@
         esc(p.booking||'unknown')+' · '+esc(p.system==='jarvis'?'Jarvis scheduler':'gentledental.com')+
         '</em></span></div></div>';
       if(p.url){
-        h+='<a class="gd-drw-link" href="'+esc(p.url)+'" target="_blank" rel="noopener">Open booking page ↗</a>';
+ h+='<a class="gd-drw-link" href="'+esc(p.url)+'" target="_blank" rel="noopener">Open booking page </a>';
       }
       h+='</div>';
       var drawerContent=document.getElementById('drawerContent');
@@ -1117,7 +1084,7 @@
       document.getElementById('drawerOv').classList.remove('open');
     }
 
-    /* ── tabs + tooltip ──────────────────────────────────────────────────── */
+ /* tabs + tooltip */
     function switchTab(t){
       TAB=t;
       document.getElementById('gdTabs').className='gd-tabs at-'+t;
@@ -1151,100 +1118,14 @@
   {% if not client_mode %}
   <script>
   window.__KP_ITEMS=[
-    {t:'Locations',d:'Availability by location',u:'#practices',i:'▤'},
-    {t:'Calendar',d:'Location by day heatmap',u:'#heat',i:'◷'},
-    {t:'Needs Attention',d:'Fully booked and silent locations',u:'#alerts',i:'⚠'}
+ {t:'Locations',d:'Availability by location',u:'#practices',i:''},
+ {t:'Calendar',d:'Location by day heatmap',u:'#heat',i:''},
+ {t:'Needs Attention',d:'Fully booked and silent locations',u:'#alerts',i:''}
   ];
   </script>
-  <script>
-  (function(){
-    if(window.__kpal)return;window.__kpal=1;
-    var BASE=[
-      {t:'Hub',d:'Platform home',u:'/p2/hub',i:'⌂'},
-      {t:'Strategic Agents',d:'Go-to-market intelligence',u:'/p2/strategic-agents',i:'◎'},
-      {t:'SEO + AEO Tools',d:'Organic intelligence',u:'/p2/seo-aeo',i:'⌕'},
-      {t:'ABM Signal Tracker — Healthcare',d:'Company signals &amp; insights',u:'/p2/abm-signal-tracker/healthcare',i:'☆'},
-      {t:'ABM Signal Tracker — CSG',d:'Company signals &amp; insights',u:'/p2/abm-signal-tracker/csg',i:'☆'},
-      {t:'LinkedIn Intelligence',d:'People, companies &amp; posts',u:'/p2/strategic-agents/linkedin-intelligence',i:'⦿'},
-      {t:'Ad Intelligence',d:'Competitor ad monitoring',u:'/p2/strategic-agents/ad-intelligence',i:'◈'},
-      {t:'Contact Finder',d:'Apollo-powered search &amp; chat',u:'/p2/strategic-agents/company-people-intelligence',i:'⌕'},
-      {t:'Anonymous Visitors',d:'Website visitor signals',u:'/p2/strategic-agents/anonymous-visitors',i:'◌'},
-      {t:'Job Change Alert',d:'Decision-maker job changes',u:'/p2/strategic-agents/job-change-alert',i:'⇉'},
-      {t:'LinkedIn Strategy Researcher',d:'Competitive strategy playbooks',u:'/p2/strategic-agents/linkedin-strategy-researcher',i:'▤'},
-      {t:'42 North Dental Slot Checker',d:'Appointment availability',u:'/p2/strategic-agents/42-north-dental-slot-checker',i:'◷'},
-      {t:'Social Media Intelligence',d:'Cross-platform social analysis',u:'/p2/strategic-agents/social-media-intelligence',i:'▣'},
-      {t:'Switch Account',d:'Healthcare / CSG picker',u:'/p2/abm-signal-tracker/accounts',i:'⇄'}
-    ];
-    var ITEMS=(window.__KP_ITEMS||[]).concat(BASE);
-    var css=document.createElement('style');
-    css.textContent='#kpal{position:fixed;inset:0;z-index:99999;display:none;background:rgba(2,4,14,.72);backdrop-filter:blur(8px)}'
-      +'#kpal.on{display:block;animation:kpalF .14s ease}'
-      +'@keyframes kpalF{from{opacity:0}to{opacity:1}}'
-      +'.kpal-box{position:absolute;top:16%;left:50%;transform:translateX(-50%);width:min(580px,92vw);background:rgba(9,16,14,.96);border:1px solid rgba(74,222,128,.3);border-radius:var(--radius-lg);box-shadow:0 40px 120px rgba(0,0,0,.8),0 0 60px rgba(45,212,170,.12);overflow:hidden;animation:kpalIn .22s cubic-bezier(.22,1.3,.36,1)}'
-      +'@keyframes kpalIn{from{opacity:0;transform:translateX(-50%) translateY(-12px) scale(.97)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}'
-      +'.kpal-iw{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid rgba(255,255,255,.07)}'
-      +'.kpal-iw .ic{color:#4ade80;font-size:15px}'
-      +'#kpal-in{flex:1;background:none;border:none;outline:none;color:#e8ecf8;font-family:inherit;font-size:15px}'
-      +'#kpal-in::placeholder{color:#4b5c56}'
-      +'.kpal-iw kbd{font-family:inherit;font-size:10px;font-weight:700;color:#55746a;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-xs);padding:3px 7px}'
-      +'#kpal-list{max-height:330px;overflow-y:auto;padding:7px}'
-      +'.kpal-it{display:flex;align-items:center;gap:12px;padding:10px 13px;border-radius:var(--radius-md);cursor:pointer;border:1px solid transparent}'
-      +'.kpal-it .ki{width:30px;height:30px;border-radius:var(--radius-sm);background:rgba(45,212,170,.12);border:1px solid rgba(74,222,128,.22);display:flex;align-items:center;justify-content:center;font-size:13px;color:#6ee7b7;flex-shrink:0}'
-      +'.kpal-it .kt{font-size:13px;font-weight:600;color:#dbe2f1}'
-      +'.kpal-it .kd{font-size:11.5px;color:#55746a;margin-top:1px}'
-      +'.kpal-it.sel{background:linear-gradient(95deg,rgba(20,184,166,.22),rgba(74,222,128,.12));border-color:rgba(74,222,128,.35)}'
-      +'.kpal-it.sel .kt{color:#fff}'
-      +'.kpal-empty{padding:26px;text-align:center;color:#55746a;font-size:13px}'
-      +'.kpal-foot{padding:9px 16px;border-top:1px solid rgba(255,255,255,.06);font-size:10px;color:#3b5349;display:flex;gap:14px}';
-    document.head.appendChild(css);
-    var ov=document.createElement('div');ov.id='kpal';
-    ov.innerHTML='<div class="kpal-box">'
-      +'<div class="kpal-iw"><span class="ic">⌘</span><input id="kpal-in" placeholder="Jump to any tool or section…" autocomplete="off"><kbd>ESC</kbd></div>'
-      +'<div id="kpal-list"></div>'
-      +'<div class="kpal-foot"><span>↑↓ navigate</span><span>↵ open</span><span>esc close</span></div></div>';
-    document.body.appendChild(ov);
-    var inp=document.getElementById('kpal-in'),list=document.getElementById('kpal-list');
-    var cur=[],sel=0;
-    function esc2(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-    function render(){
-      if(!cur.length){list.innerHTML='<div class="kpal-empty">No matches — try fewer letters</div>';return;}
-      list.innerHTML=cur.map(function(x,i){
-        return '<div class="kpal-it'+(i===sel?' sel':'')+'" data-i="'+i+'"><span class="ki">'+x.i+'</span><span style="min-width:0"><div class="kt">'+esc2(x.t)+'</div><div class="kd">'+esc2(x.d||'')+'</div></span></div>';
-      }).join('');
-      var s=list.querySelector('.sel');if(s)s.scrollIntoView({block:'nearest'});
-    }
-    function filter(q){
-      q=(q||'').toLowerCase().trim();
-      cur=!q?ITEMS.slice():ITEMS.filter(function(x){return (x.t+' '+(x.d||'')).toLowerCase().indexOf(q)>=0;});
-      sel=0;render();
-    }
-    function go(x){
-      if(!x)return;
-      close();
-      if(x.u==='!vimi'){if(window.irChat)window.irChat();return;}
-      if(x.u.charAt(0)==='#'){ if(typeof switchTab==='function') switchTab(x.u.slice(1)); return; }
-      if(location.pathname===x.u)return;
-      window.location.href=x.u;
-    }
-    function open(){ov.classList.add('on');inp.value='';filter('');setTimeout(function(){inp.focus();},30);}
-    function close(){ov.classList.remove('on');}
-    inp.addEventListener('input',function(){filter(inp.value);});
-    inp.addEventListener('keydown',function(e){
-      if(e.key==='ArrowDown'){e.preventDefault();sel=Math.min(sel+1,cur.length-1);render();}
-      else if(e.key==='ArrowUp'){e.preventDefault();sel=Math.max(sel-1,0);render();}
-      else if(e.key==='Enter'){e.preventDefault();go(cur[sel]);}
-    });
-    list.addEventListener('click',function(e){
-      var it=e.target.closest('.kpal-it');if(it)go(cur[parseInt(it.getAttribute('data-i'),10)]);
-    });
-    ov.addEventListener('mousedown',function(e){if(e.target===ov)close();});
-    document.addEventListener('keydown',function(e){
-      if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='k'){e.preventDefault();ov.classList.contains('on')?close():open();}
-      else if(e.key==='Escape'&&ov.classList.contains('on')){close();}
-    });
-  })();
-  </script>
+  
   {% endif %}
   <script>(function(){if(window.__trk)return;window.__trk=1;var _s=Date.now(),_d=false;function f(){if(_d)return;_d=true;var s=Math.round((Date.now()-_s)/1000);fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:location.pathname,title:'42 North Dental Slot Checker',seconds:s,email:'{{ user.email if user else "" }}'}),keepalive:true}).catch(function(){});}document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')f();});window.addEventListener('beforeunload',f);})();</script>
+{{ topbar_script() }}
 </body>
 </html>

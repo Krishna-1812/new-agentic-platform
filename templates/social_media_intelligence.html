@@ -1,57 +1,17 @@
 <!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Social Media Intelligence, Platform</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ds-tokens.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ds-components.css') }}">
-  <script src="/static/js/theme.js"></script>
-  <link rel="stylesheet" href="/static/css/grid-tokens.css">
-  <link rel="stylesheet" href="/static/css/social_media_intelligence.css?v=11">
-  <link rel="stylesheet" href="/static/css/thinking-orb.css">
-  <link rel="stylesheet" href="/static/css/border-beam.css">
-  <link rel="stylesheet" href="/static/css/aurora-app.css?v=3">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/agent-feedback.css') }}">
-  <script src="{{ url_for('static', filename='js/agent_feedback.js') }}"></script>
+{{ head("Social Media Intelligence", [
+     "social_media_intelligence.css?v=2",
+     "agent-feedback.css",
+   ], [], compat=True) }}
 </head>
 <body>
-  <div class="bg-grid"></div>
   <div class="sci-aurora"><div class="b b1"></div><div class="b b2"></div><div class="b b3"></div></div>
   <div class="sci-grain"></div>
 
-  <div class="topbar">
-    <div class="tl">
-      <a href="/p2/hub" class="brand">
-        <div class="brand-icon" style="background:#151b2e;box-shadow:none;border-radius:var(--radius-md);overflow:hidden;display:inline-flex;align-items:center;justify-content:center;padding:5px 8px;width:auto;height:auto"><img src="/static/logo-lockup.svg?v=1" alt="arena by Position2" style="display:block;width:auto;height:36px;object-fit:contain"></div>
-      </a>
-      <div class="bc">
-        <a href="/p2/hub">Hub</a><span class="bc-sep">›</span>
-        <a href="/p2/strategic-agents">Strategic Agents</a><span class="bc-sep">›</span>
-        <span class="bc-cur">Social Media Intelligence</span>
-      </div>
-    </div>
-    <div class="user-menu" id="userMenu">
-      <div class="user-pill" id="userPill" onclick="toggleMenu()">
-        <div class="user-avatar">
-          {% if user.picture %}<img src="{{ user.picture }}" alt="" />
-          {% else %}{{ (user.name or 'U')[:2]|upper }}{% endif %}
-        </div>
-        <span class="user-name">{{ user.given_name or user.name or 'User' }}</span>
-        <span class="pill-chevron">▼</span>
-      </div>
-      <div class="user-dropdown" id="userDropdown">
-        <div class="dd-header">
-          <div class="dd-name">{{ user.name or 'User' }}</div>
-          <div class="dd-email">{{ user.email }}</div>
-        </div>
-        <div class="dd-items">{% include "_admin_menu.html" %}</div>
-      </div>
-    </div>
-  </div>
+  {{ topbar([(brand.agents_plural, "/p2/strategic-agents"), ("Social Media Intelligence", none)]) }}
 
   <div class="main">
     <div class="ph">
@@ -60,12 +20,12 @@
         <h1>See what a company is really doing on <em>social</em>.</h1>
         <p>Give it a company name or URL. It finds the company's organic presence across seven platforms, then reports what they post and how often, which posts earn engagement, the messaging and tone behind them, what every image and video actually shows, and what people are saying about the brand, all cited back to real posts.</p>
         <div class="ph-platforms" aria-hidden="true">
-          <div class="ph-plat-ic" title="Instagram" style="color:#e1306c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg></div>
+          <div class="ph-plat-ic" title="Instagram" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg></div>
           <div class="ph-plat-ic" title="LinkedIn" style="color:#0a66c2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><circle cx="8" cy="8.3" r="1" fill="currentColor" stroke="none"/><path d="M8 11.3v6.2M12.6 17.5v-3.6c0-1.6 1-2.5 2.2-2.5s2 .9 2 2.5v3.6"/></svg></div>
-          <div class="ph-plat-ic" title="X" style="color:#cbd5e1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l14 16M19 4L5 20"/></svg></div>
-          <div class="ph-plat-ic" title="TikTok" style="color:#fe2c55"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.5v11.2a3.3 3.3 0 11-2.7-3.24M14 3.5c.5 2.6 2.4 4.5 4.8 4.9"/></svg></div>
-          <div class="ph-plat-ic" title="YouTube" style="color:#ff0033"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.7" y="6" width="18.6" height="12" rx="3.6"/><path d="M10.3 9.6l5 2.4-5 2.4z" fill="currentColor" stroke="none"/></svg></div>
-          <div class="ph-plat-ic" title="Facebook" style="color:#1877f2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 21v-7.2h2.4l.4-2.8h-2.8v-1.8c0-.8.2-1.4 1.4-1.4h1.5V5.3A20 20 0 0015.6 5c-2.3 0-3.9 1.4-3.9 4v2h-2.4v2.8h2.4V21"/></svg></div>
+          <div class="ph-plat-ic" title="X" style="color:var(--sky)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l14 16M19 4L5 20"/></svg></div>
+          <div class="ph-plat-ic" title="TikTok" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.5v11.2a3.3 3.3 0 11-2.7-3.24M14 3.5c.5 2.6 2.4 4.5 4.8 4.9"/></svg></div>
+          <div class="ph-plat-ic" title="YouTube" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.7" y="6" width="18.6" height="12" rx="3.6"/><path d="M10.3 9.6l5 2.4-5 2.4z" fill="currentColor" stroke="none"/></svg></div>
+          <div class="ph-plat-ic" title="Facebook" style="color:var(--sky)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 21v-7.2h2.4l.4-2.8h-2.8v-1.8c0-.8.2-1.4 1.4-1.4h1.5V5.3A20 20 0 0015.6 5c-2.3 0-3.9 1.4-3.9 4v2h-2.4v2.8h2.4V21"/></svg></div>
         </div>
       </div>
     </div>
@@ -81,7 +41,7 @@
             <label for="companyUrl">Website (optional)</label>
             <input type="text" id="companyUrl" placeholder="acme.com" />
           </div>
-          <button type="submit" class="sci-btn" id="analyzeBtn">Analyze →</button>
+ <button type="submit" class="sci-btn" id="analyzeBtn">Analyze </button>
         </form>
 
         <div class="sci-suggest-panel" id="sciSuggestPanel" style="display:none"></div>
@@ -126,7 +86,7 @@
               <div class="r-meta" data-created="{{ r.created_at }}">{{ r.created_at }}</div>
             </div>
             <span class="status-pill {{ st }}"><span class="d"></span>{{ r.status }}</span>
-            <span class="sci-run-arrow">→</span>
+ <span class="sci-run-arrow"></span>
           </div>
           {% endfor %}
         {% else %}
@@ -154,11 +114,15 @@
 
   <script>
     function toggleMenu() {
+      /* No-op: the shared topbar (templates/_bento.html) owns the user
+         menu, so #userPill and #userDropdown no longer exist on this page.
+         Kept rather than deleted because the handlers below call it. */
       var pill=document.getElementById('userPill'), dd=document.getElementById('userDropdown');
+      if(!pill||!dd) return;
       pill.classList.toggle('open',!dd.classList.contains('open')); dd.classList.toggle('open');
     }
-    document.addEventListener('click',function(e){ var m=document.getElementById('userMenu'); if(m&&!m.contains(e.target)){document.getElementById('userPill').classList.remove('open');document.getElementById('userDropdown').classList.remove('open');} });
-    document.addEventListener('keydown',function(e){ if(e.key==='Escape'){document.getElementById('userPill').classList.remove('open');document.getElementById('userDropdown').classList.remove('open');} });
+    document.addEventListener('click',function(e){ var m=document.getElementById('userMenu'); if(m&&!m.contains(e.target)){/* the shared topbar owns the user menu now */} });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape'){/* the shared topbar owns the user menu now */} });
   </script>
 
   <script>
@@ -200,14 +164,14 @@
     }
     function monogram(name){ var s = String(name||'?').trim(); return (s[0]||'?').toUpperCase(); }
 
-    // ── Company disambiguation -- shown as the user types, so an ambiguous
+ // Company disambiguation -- shown as the user types, so an ambiguous
     // name (e.g. "apple") can be resolved to one real company + domain
     // before the seven-platform identify step has to guess. Same pattern as
     // the LinkedIn Strategy Researcher's company search, minus its own
     // mode picker (SCI has none): picking a card just fills the two form
     // fields, which stay editable -- there's no hard requirement to pick
     // one, since SCI (unlike LSR) has to work for companies Arena's own
-    // database doesn't know about too. ──────────────────────────────────
+ // database doesn't know about too. 
     function debounce(fn, ms){
       var t = null;
       return function(){ var a = arguments; clearTimeout(t); t = setTimeout(function(){ fn.apply(null, a); }, ms); };
@@ -246,7 +210,7 @@
           out.style.display = 'block';
           out.textContent =
             'Key configured: ' + (d.configured ? 'yes (' + d.key_len + ' chars)' : 'NO') + '\n' +
-            'Probe: ' + (d.probe || '?') + ' → ' + (d.companies || 0) + ' companies' +
+ 'Probe: ' + (d.probe || '?') + ' ' + (d.companies || 0) + ' companies' +
             (d.sample && d.sample.length ? ' (' + d.sample.join(', ') + ')' : '') + '\n' +
             'Attempts: ' + (d.attempts || 0) + ' · ' + (d.elapsed_ms || 0) + 'ms' +
             (d.http_status ? ' · HTTP ' + d.http_status : '') + '\n' +
@@ -651,7 +615,7 @@ function dsApifyRow(platform, entry){
     // card. The full wording still shows on the platform's own pane.
     var STATUS_SHORT = {no_presence:'No presence found', handle_not_found:'No account found',
       scrape_failed:'Collection failed', error:'Failed', low_activity:'Low activity'};
-    var VIEW_GLYPH = '↗';
+ var VIEW_GLYPH = '';
 
     // Categorical hues live in CSS as .sci-c0 … .sci-c5 (each sets --c), never
     // as an inline style: the dark steps are chosen against the dark panel and
@@ -686,7 +650,7 @@ function dsApifyRow(platform, entry){
       views: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>'
     };
 
-    // ── Small formatting helpers ────────────────────────────────────────────
+ // Small formatting helpers 
     function fmtNum(n){
       if(n == null || isNaN(n)) return null;
       n = Number(n);
@@ -746,9 +710,9 @@ function dsApifyRow(platform, entry){
       return [];
     }
 
-    // ── Mechanical, client-side pattern reads over the raw posts -- accurate
+ // Mechanical, client-side pattern reads over the raw posts -- accurate
     // and instant regardless of what the AI narrative says, and the source
-    // for every chart/card below. Mirrors tracker/sci_classify.py's logic. ──
+ // for every chart/card below. Mirrors tracker/sci_classify.py's logic. 
     function engagementScore(metrics){
       if(!metrics) return 0;
       var s = 0;
@@ -793,10 +757,10 @@ function dsApifyRow(platform, entry){
       return Object.keys(counts).sort(function(a,b){ return counts[b] - counts[a]; }).slice(0, n || 8);
     }
 
-    // ── Real thumbnails, resolved per-platform from the raw scraped item --
+ // Real thumbnails, resolved per-platform from the raw scraped item --
     // media_urls[0] is often a playable video file (fine for vision, useless
     // in an <img>), so this looks for the platform's own cover/display image
-    // instead. Returns null (never a broken-image glyph) when none exists. ──
+ // instead. Returns null (never a broken-image glyph) when none exists. 
     function postThumbnail(post){
       var raw = post.raw || {}, platform = post.platform;
       if(platform === 'youtube'){
@@ -879,7 +843,7 @@ function dsApifyRow(platform, entry){
     // says plainly when a reading was never run or failed (see cdetailInsights)
     // rather than needing this card to pre-filter which posts are "worth"
     // opening. A plain click-through to the real post used to be the card's
-    // only affordance; that is now a single explicit "View ↗" link in the
+ // only affordance; that is now a single explicit "View " link in the
     // footer (stopPropagation so it does not also open the modal underneath
     // it), so both destinations stay one click away without fighting for the
     // same click. tabindex/role/onkeydown carry the keyboard behaviour a
@@ -922,7 +886,7 @@ function dsApifyRow(platform, entry){
         '</div></div>';
     }
 
-    // ── Creative detail modal: what the AI made of one post's creative. ──
+ // Creative detail modal: what the AI made of one post's creative. 
     // FIELD_ORDER mirrors tracker/sci_vision.FIELDS' own order (minus
     // "summary", handled separately as the lead line) plus the two extra
     // fields a video-shaped analysis can carry (dialogue_transcript,
@@ -1041,9 +1005,9 @@ function dsApifyRow(platform, entry){
         return;
       }
       panel.innerHTML =
-        '<button type="button" class="sci-cdetail-close" onclick="closeCreativeDetail()" aria-label="Close">✕</button>' +
+ '<button type="button" class="sci-cdetail-close" onclick="closeCreativeDetail()" aria-label="Close"></button>' +
         cdetailHero(post) +
-        '<div class="sci-cdetail-section-label"><span>◆</span>What the AI sees</div>' +
+ '<div class="sci-cdetail-section-label"><span></span>What the AI sees</div>' +
         cdetailInsights(post);
       overlay.classList.add('open');
     }
@@ -1058,9 +1022,9 @@ function dsApifyRow(platform, entry){
       }
     });
 
-    // ── "Top performing posts" toolbar: Top/Most-recent sort + a capped grid
+ // "Top performing posts" toolbar: Top/Most-recent sort + a capped grid
     // with a "Show all" expand -- reads live from CURRENT_RUN so a toggle
-    // click only needs to swap this one platform's #sci-postsec-<platform>. ──
+ // click only needs to swap this one platform's #sci-postsec-<platform>. 
     function renderPostsSection(platform){
       var everything = sortedPlatformPosts(platform);
       if(!everything.length) return '';
@@ -1151,7 +1115,7 @@ function dsApifyRow(platform, entry){
       return {counts: counts, total: total};
     }
 
-    // ══ Chart toolkit ═══════════════════════════════════════════════════════
+ // Chart toolkit 
     //
     // Four primitives cover every chart in the report: a trend (magnitude over
     // time), ranked bars (magnitude by category), a mix (parts of a whole) and
@@ -1281,7 +1245,7 @@ function dsApifyRow(platform, entry){
       return step * mag;
     }
 
-    // ── Trend: one series, magnitude over time ───────────────────────────────
+ // Trend: one series, magnitude over time 
     // Points are pre-bucketed by the caller; empty buckets arrive as zeros and
     // are plotted as zeros. Dropping them would draw a straight line over a
     // silence, and a silence in a publishing calendar is the finding.
@@ -1410,7 +1374,7 @@ function dsApifyRow(platform, entry){
       '</svg></div>';
     }
 
-    // ── Ranked bars: magnitude by category, biggest first ────────────────────
+ // Ranked bars: magnitude by category, biggest first 
     // Horizontal, because the labels are words. A vertical bar chart with
     // category names under it either rotates the text or truncates it.
     function rankBars(rows, o){
@@ -1433,7 +1397,7 @@ function dsApifyRow(platform, entry){
       }).join('') + '</div>';
     }
 
-    // ── Mix: one 100% bar plus a key, both hoverable as one object ───────────
+ // Mix: one 100% bar plus a key, both hoverable as one object 
     // Every segment is named and counted in the key, so the split survives
     // being read by someone who cannot separate two of the hues.
     function mixBar(segs, o){
@@ -1456,7 +1420,7 @@ function dsApifyRow(platform, entry){
         '<div class="sci-mixkey">' + key + '</div></div>';
     }
 
-    // ── Donut: parts of a whole where the whole is itself the headline ───────
+ // Donut: parts of a whole where the whole is itself the headline 
     // pathLength="100" makes the dash array literally a percentage, so the arc
     // lengths cannot drift from the numbers printed beside them.
     function donut(segs, o){
@@ -1488,7 +1452,7 @@ function dsApifyRow(platform, entry){
         '<div class="sci-mixkey sci-mixkey-col">' + key + '</div></div>';
     }
 
-    // ── Heat grid: two categorical axes, one magnitude ───────────────────────
+ // Heat grid: two categorical axes, one magnitude 
     // Sequential, one hue, five steps. Continuous alpha looks smoother and
     // lies: nobody reads a 6% opacity difference, and the legend would have to
     // claim they can. Five steps is what a reader can actually match back.
@@ -1515,7 +1479,7 @@ function dsApifyRow(platform, entry){
         '<span>' + esc(o.high || 'busiest') + '</span></div></div>';
     }
 
-    // ── Radar: several entities compared on the same handful of measures ─────
+ // Radar: several entities compared on the same handful of measures 
     // Each axis is scaled to its OWN peak, because posts-per-week and average
     // interactions share no unit and never will. That makes the polygon a
     // profile rather than a size: a wide shape means "leads on most of these",
@@ -1610,7 +1574,7 @@ function dsApifyRow(platform, entry){
         '<div class="sci-mixkey sci-mixkey-col sci-rd-key">' + key + '</div></div>';
     }
 
-    // ── Format mix, now with what each format actually earns ─────────────────
+ // Format mix, now with what each format actually earns 
     // Share and performance are two different questions and two different
     // scales, so they are two charts side by side rather than one plot with a
     // second axis. Reading them together is the whole point: a company can
@@ -1686,7 +1650,7 @@ function dsApifyRow(platform, entry){
       );
     }
 
-    // ── Recurring creative themes ────────────────────────────────────────────
+ // Recurring creative themes 
     // The old chip row said which themes recur but not how much, so a theme
     // seen twice looked identical to one seen in half the library. Counted
     // bars answer "how dominant", which is the actual question.
@@ -1717,7 +1681,7 @@ function dsApifyRow(platform, entry){
       }), 'sci-rank-theme');
     }
 
-    // ══ Links out ═════════════════════════════════════════════════════════
+ // Links out 
     //
     // Every URL in this report is one the collection actually returned: a
     // platform row's profile_url, a post's post_url, the company's own site.
@@ -1770,7 +1734,7 @@ function dsApifyRow(platform, entry){
     }
     function accountUrl(platform){ return ACCOUNT_URL[platform] || null; }
 
-    // ── Section source links ──────────────────────────────────────────────
+ // Section source links 
     //
     // Each section links to the specific thing it is describing, not to a
     // generic "open profile" repeated eight times down a pane. The cadence
@@ -1845,7 +1809,7 @@ function dsApifyRow(platform, entry){
         sectionLink(link) + '</div>' + innerHtml + '</div>';
     }
 
-    // ── The account directory ─────────────────────────────────────────────
+ // The account directory 
     // Every way out of this report in one grid: the company's own site, each
     // account we resolved, and the subreddit the conversation lives in. The
     // platforms with nothing behind them are listed too, unclickable and
@@ -1878,7 +1842,7 @@ function dsApifyRow(platform, entry){
           '<span class="sci-acc-n">' + esc(o.name) + '</span>' +
           (o.sub ? '<span class="sci-acc-s">' + esc(o.sub) + '</span>' : '') +
           // The bare URL is printed, not just linked. On paper a link is a
-          // piece of text, and a card that only said "Instagram ↗" would be
+ // piece of text, and a card that only said "Instagram " would be
           // an instruction to click something that is not there.
           (live ? '<span class="sci-acc-u">' + esc(prettyUrl(o.url)) + '</span>' : badge) +
         '</span>' +
@@ -1947,15 +1911,15 @@ function dsApifyRow(platform, entry){
     function renderStrategy(text, link){
       var pts = toPoints(text);
       if(!pts.length) return '';
-      return '<div class="sci-section"><div class="sci-section-label sci-section-label-strategy"><span>◆</span>Messaging &amp; strategy' +
+ return '<div class="sci-section"><div class="sci-section-label sci-section-label-strategy"><span></span>Messaging &amp; strategy' +
         sectionLink(link) + '</div>' +
         '<ul class="sci-strategy-list">' + pts.map(function(p){ return '<li>' + esc(p) + '</li>'; }).join('') + '</ul></div>';
     }
 
-    // ── Cross-platform overview dashboard: stat tiles + a platform post-count
+ // Cross-platform overview dashboard: stat tiles + a platform post-count
     // bar chart, both computed straight from run.platforms/posts -- accurate
-    // even before/without a synthesis narrative. ──────────────────────────
-    // ── Stat tiles ──────────────────────────────────────────────────────────
+ // even before/without a synthesis narrative. 
+ // Stat tiles 
     // A tile whose value is missing is dropped rather than rendered holding a
     // dash. An empty tile reads as a broken metric; an absent one reads as
     // "this platform doesn't report that", which is what is actually true --
@@ -2072,7 +2036,7 @@ function dsApifyRow(platform, entry){
       }).join('') + '</div>';
     }
 
-    // ── Reddit conversation ("pulse") ─────────────────────────────────────
+ // Reddit conversation ("pulse") 
     //
     // Structurally different from the six owned-content sections above and
     // rendered to look different on purpose. Those answer "what does this
@@ -2314,7 +2278,7 @@ function dsApifyRow(platform, entry){
       return '<div class="rd-section">' + head + verdict + tiles + community + body + '</div>';
     }
 
-    // ── The report shell ────────────────────────────────────────────────────
+ // The report shell 
     //
     // A left rail of platforms, one pane each, rather than one long scroll.
     // Seven platforms of posts, format mixes, creative themes and cited
@@ -2422,7 +2386,7 @@ function dsApifyRow(platform, entry){
         .forEach(function(el, i){ setTimeout(function(){ el.classList.add('drawn'); }, 60 + i * 90); });
     }
 
-    // ── While a run is still collecting ──────────────────────────────────────
+ // While a run is still collecting 
     // There is nothing to plot yet, and an empty panel reads as "finished, found
     // nothing". These are placeholders for the charts that are coming, with a
     // sweep travelling across them, so the panel reads as working. They are
@@ -2451,7 +2415,7 @@ function dsApifyRow(platform, entry){
     function overviewPane(run, allPosts, names, byName){
       var html = '';
       if(run.status === 'running'){
-        html += '<div class="sci-banner"><span class="bic">⏳</span><div>This run is still in progress. Leave this open and it keeps polling, or come back from History once it finishes.</div></div>';
+ html += '<div class="sci-banner"><span class="bic"></span><div>This run is still in progress. Leave this open and it keeps polling, or come back from History once it finishes.</div></div>';
       }
       // run.error was being computed and stored (see sci_store.
       // update_run_status) but never actually shown anywhere on this page --
@@ -2459,13 +2423,13 @@ function dsApifyRow(platform, entry){
       // no way for whoever is looking at it to tell a stalled-and-abandoned
       // run apart from a real vendor failure.
       if(run.status === 'error' && run.error){
-        html += '<div class="sci-banner sci-banner-none"><span class="bic">⚠</span><div>' + esc(run.error) + '</div></div>';
+ html += '<div class="sci-banner sci-banner-none"><span class="bic"></span><div>' + esc(run.error) + '</div></div>';
       }
       // Every platform unresolved at once is the shape of the identify step
       // itself failing (a broken vendor call), not seven independent "this
       // company has no account here" verdicts -- surface the admin check.
       if((run.platforms || []).length && (run.platforms || []).every(function(p){ return p.status === 'handle_not_found'; })){
-        html += '<div class="sci-banner sci-banner-none"><span class="bic">⚠</span><div>Every platform failed identification at once. That usually means the identification step itself broke, not that none of these accounts exist.' +
+ html += '<div class="sci-banner sci-banner-none"><span class="bic"></span><div>Every platform failed identification at once. That usually means the identification step itself broke, not that none of these accounts exist.' +
           sciIdentifyDiagControl() + '</div></div>';
       }
       // Each section carries a link to the exact thing it is talking about.
@@ -2477,22 +2441,22 @@ function dsApifyRow(platform, entry){
         return (byName[b].post_count || 0) - (byName[a].post_count || 0); })[0];
 
       if(run.status === 'running' && !allPosts.length){
-        html += renderSection('Coming next', '◴',
+ html += renderSection('Coming next', '',
           duo(skeletonChart('Publishing rhythm', 'area'), skeletonChart('Platform scorecard', 'rows')));
       }
-      html += renderSection('Where they show up', '◎', renderPlatformCards(names, byName, allPosts),
+ html += renderSection('Where they show up', '', renderPlatformCards(names, byName, allPosts),
         siteLink(run));
       html += renderSection('How the platforms compare', '⊞', renderScorecard(run),
         busiest ? profileLink(busiest, 'Busiest: ' + platformLabel(busiest)) : null);
-      html += renderSection('Cadence and timing', '▨',
+ html += renderSection('Cadence and timing', '',
         renderRhythm(allPosts, 'all') + renderClock(allPosts),
         postLink(newest, 'Most recent post'));
-      html += renderSection('What they publish, everywhere', '▦', renderFormatBlock(allPosts, null),
+ html += renderSection('What they publish, everywhere', '', renderFormatBlock(allPosts, null),
         typical ? postLink(typical, 'A typical ' + postFormatLabel(typical)) : null);
-      html += renderSection('How the audience responds', '◍',
+ html += renderSection('How the audience responds', '',
         duo(renderEngageMix(allPosts, null), renderPerfSpread(allPosts, null)),
         postLink(strongest, 'The post that earned most'));
-      html += renderSection('Strongest posts anywhere', '★', renderTopPostsAnywhere(allPosts),
+ html += renderSection('Strongest posts anywhere', '', renderTopPostsAnywhere(allPosts),
         strongest ? profileLink(strongest.platform,
           'These live on ' + platformLabel(strongest.platform)) : null);
       html += renderSection('Every account, in one place', '⁂', renderAccounts(run),
@@ -2641,7 +2605,7 @@ function dsApifyRow(platform, entry){
       return d.toLocaleDateString(undefined, {month: 'short', day: 'numeric', timeZone: 'UTC'});
     }
 
-    // ── When they post ───────────────────────────────────────────────────────
+ // When they post 
     // Day of week against time of day. Two categorical axes and one count, so
     // a grid rather than a chart: it makes a posting calendar legible at a
     // glance in a way no bar chart of 7 or 24 values does, and it is the one
@@ -2688,7 +2652,7 @@ function dsApifyRow(platform, entry){
         sub: 'Posts by day and time of day, in your timezone', body: body});
     }
 
-    // ── Platform scorecard ───────────────────────────────────────────────────
+ // Platform scorecard 
     // The comparison the launcher cards cannot make. Every column is its own
     // scale, so each cell carries a bar measured against that COLUMN's max,
     // never a shared one: interactions and posts-per-week share no unit and
@@ -2735,7 +2699,7 @@ function dsApifyRow(platform, entry){
         SCORE_COLS.map(function(c){
           return '<button type="button" class="sci-sc-h' + (c.k === sortKey ? ' active' : '') +
             '" onclick="setScoreSort(\'' + c.k + '\')">' + esc(c.label) +
-            '<span class="sci-sc-arrow">' + (c.k === sortKey ? (dir < 0 ? '▾' : '▴') : '') + '</span></button>';
+ '<span class="sci-sc-arrow">' + (c.k === sortKey ? (dir < 0 ? '' : '') : '') + '</span></button>';
         }).join('') + '</div>';
 
       var tableRows = rows.map(function(r){
@@ -2794,7 +2758,7 @@ function dsApifyRow(platform, entry){
           : 'A dash means the platform does not report that number, not that it is zero.'});
     }
 
-    // ── Engagement composition ───────────────────────────────────────────────
+ // Engagement composition 
     // Where the response actually lands. A like is one tap; a comment or a
     // share is somebody spending something. The centre number is that ratio,
     // because it is the read, and the arcs are how it was arrived at.
@@ -2820,7 +2784,7 @@ function dsApifyRow(platform, entry){
         note: 'Comments and shares cost the audience something. Likes do not, which is why the split is worth reading.'});
     }
 
-    // ── Concentration of performance ─────────────────────────────────────────
+ // Concentration of performance 
     // Ranked bars over the top posts, with the median drawn in. The gap
     // between the best post and the median is the finding: a library where one
     // post carries everything is a different problem from one that performs
@@ -2865,13 +2829,13 @@ function dsApifyRow(platform, entry){
       var claims = (cross.claims || []).length
         ? '<div class="sci-claims">' + renderClaims(cross.claims, postsById) + '</div>' : '';
       return '<div class="sci-cross-lede">One read across every platform at once, cited back to the individual posts it came from.</div>' +
-        renderSection('Content patterns', '◈', renderBulletList(cross.summary, 'sci-summary-list'),
+ renderSection('Content patterns', '', renderBulletList(cross.summary, 'sci-summary-list'),
           siteLink(run)) +
         renderStrategy(cross.messaging_and_strategy, siteLink(run)) +
         // Evidence gets no chip on purpose. Every line inside it is already a
         // link to the post it cites; a ninth link in the heading would point
         // somewhere less specific than the eight below it.
-        renderSection('Evidence from real posts', '◇', claims) +
+ renderSection('Evidence from real posts', '', claims) +
         renderSection('Every account, in one place', '⁂', renderAccounts(run));
     }
 
@@ -2928,26 +2892,26 @@ function dsApifyRow(platform, entry){
         var newest = latestPost(own, name), strongest = bestPost(own, name);
         var typical = dominantFormatPost(own, name), theme = themePost(allPosts, name);
         body = platformTiles(name, stats) +
-          renderSection('Cadence and timing', '▨',
+ renderSection('Cadence and timing', '',
             renderRhythm(own, name) + renderClock(own, {title: 'When they post here'}),
             postLink(newest, 'Most recent post')) +
-          renderSection('Format mix', '▦', renderFormatBlock(allPosts, name),
+ renderSection('Format mix', '', renderFormatBlock(allPosts, name),
             typical ? postLink(typical, 'A typical ' + postFormatLabel(typical)) : null) +
-          renderSection('How the audience responds', '◍',
+ renderSection('How the audience responds', '',
             duo(renderEngageMix(allPosts, name), renderPerfSpread(allPosts, name)),
             postLink(strongest, 'The post that earned most')) +
-          renderSection('Recurring creative themes', '✦',
+ renderSection('Recurring creative themes', '',
             chartCard({title: 'What the creative keeps showing',
               sub: 'Counted across every image and video we described on ' + platformLabel(name),
               body: renderThemeChips(allPosts, name)}),
             theme ? postLink(theme.post, 'A post showing “' + theme.theme + '”') : null) +
-          renderSection('Posts', '▣', renderPostsSection(name),
+ renderSection('Posts', '', renderPostsSection(name),
             profileLink(name, 'All of them on ' + platformLabel(name)));
         if(entry){
-          body += renderSection('Content patterns', '◈', renderBulletList(entry.summary, 'sci-summary-list'),
+ body += renderSection('Content patterns', '', renderBulletList(entry.summary, 'sci-summary-list'),
               profileLink(name)) +
             renderStrategy(entry.messaging_and_strategy, profileLink(name)) +
-            renderSection('Evidence from real posts', '◇',
+ renderSection('Evidence from real posts', '',
               (entry.claims && entry.claims.length) ? '<div class="sci-claims">' + renderClaims(entry.claims, postsById) + '</div>' : '');
         } else if(synthState){
           body += '<div class="sci-pane-note">' + esc(synthState) + ' The posts and creative themes above were still collected.</div>';
@@ -2976,7 +2940,7 @@ function dsApifyRow(platform, entry){
       var actions = renderSocialRail(run) +
         (siteUrl ? '<a class="sci-act" href="' + esc(siteUrl) + '" target="_blank" rel="noopener">' +
           '<i class="sci-act-ic">' + GLOBE_ICON + '</i>' + esc(prettyUrl(siteUrl)) + '</a>' : '') +
-        '<button type="button" class="sci-act" onclick="printReport()">⎙ Save as PDF</button>';
+ '<button type="button" class="sci-act" onclick="printReport()">Save as PDF</button>';
 
       var videoLike = allPosts.filter(function(p){ return ['video','reel','short'].indexOf(p.post_type) >= 0; }).length;
       var described = allPosts.filter(function(p){ return postHasAnalysis(p); }).length;
@@ -2992,7 +2956,7 @@ function dsApifyRow(platform, entry){
          note: (pulse && pulse.subreddit_count) ? 'across ' + pulse.subreddit_count + ' subreddits' : null}
       ], 'sci-tiles-band');
 
-      return '<button class="sci-drawer-close" onclick="closeReport()" aria-label="Close report">✕</button>' +
+ return '<button class="sci-drawer-close" onclick="closeReport()" aria-label="Close report"></button>' +
         '<div class="sci-rep-head">' +
           '<div class="sci-rep-id">' + logo +
             '<div class="sci-rep-txt"><h3>' + esc(run.company_name) + '</h3>' +
@@ -3151,94 +3115,8 @@ function dsApifyRow(platform, entry){
       m.mountBorderBeam(document.getElementById('companyName'), { color: '#fb923c', color2: '#c2410c' });
     }).catch(function(){});
   </script>
-  <script>
-  (function(){
-    if(window.__kpal)return;window.__kpal=1;
-    var BASE_KP=[
-      {t:'Hub',d:'Platform home',u:'/p2/hub',i:'⌂'},
-      {t:'Strategic Agents',d:'Go-to-market intelligence',u:'/p2/strategic-agents',i:'◎'},
-      {t:'SEO + AEO Tools',d:'Organic intelligence',u:'/p2/seo-aeo',i:'⌕'},
-      {t:'ABM Signal Tracker: Healthcare',d:'Company signals & insights',u:'/p2/abm-signal-tracker/healthcare',i:'☆'},
-      {t:'ABM Signal Tracker: CSG',d:'Company signals & insights',u:'/p2/abm-signal-tracker/csg',i:'☆'},
-      {t:'LinkedIn Intelligence',d:'People, companies & posts',u:'/p2/strategic-agents/linkedin-intelligence',i:'⦿'},
-      {t:'Ad Intelligence',d:'Competitor ad monitoring',u:'/p2/strategic-agents/ad-intelligence',i:'◈'},
-      {t:'Contact Finder',d:'Apollo-powered search & chat',u:'/p2/strategic-agents/company-people-intelligence',i:'⌕'},
-      {t:'Anonymous Visitors',d:'Website visitor signals',u:'/p2/strategic-agents/anonymous-visitors',i:'◌'},
-      {t:'Job Change Alert',d:'Decision-maker job changes',u:'/p2/strategic-agents/job-change-alert',i:'⇉'},
-      {t:'LinkedIn Strategy Researcher',d:'Competitive strategy playbooks',u:'/p2/strategic-agents/linkedin-strategy-researcher',i:'▤'},
-      {t:'42 North Dental Slot Checker',d:'Appointment availability',u:'/p2/strategic-agents/42-north-dental-slot-checker',i:'◷'},
-      {t:'Social Media Intelligence',d:'Cross-platform social analysis',u:'/p2/strategic-agents/social-media-intelligence',i:'▣'},
-      {t:'Switch Account',d:'Healthcare / CSG picker',u:'/p2/abm-signal-tracker/accounts',i:'⇄'}
-    ];
-    var ITEMS=(window.__KP_ITEMS||[]).concat(BASE_KP);
-    var css=document.createElement('style');
-    css.textContent='#kpal{position:fixed;inset:0;z-index:99999;display:none;background:rgba(2,4,14,.72);backdrop-filter:blur(8px)}'
-      +'#kpal.on{display:block;animation:kpalF .14s ease}'
-      +'@keyframes kpalF{from{opacity:0}to{opacity:1}}'
-      +'.kpal-box{position:absolute;top:16%;left:50%;transform:translateX(-50%);width:min(580px,92vw);background:rgba(11,14,28,.96);border:1px solid rgba(251,146,60,.3);border-radius:var(--radius-lg);box-shadow:0 40px 120px rgba(0,0,0,.8),0 0 60px rgba(251,146,60,.12);overflow:hidden;animation:kpalIn .22s cubic-bezier(.22,1.3,.36,1)}'
-      +'@keyframes kpalIn{from{opacity:0;transform:translateX(-50%) translateY(-12px) scale(.97)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}'
-      +'.kpal-iw{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid rgba(255,255,255,.07)}'
-      +'.kpal-iw .ic{color:#fb923c;font-size:15px}'
-      +'#kpal-in{flex:1;background:none;border:none;outline:none;color:#e8ecf8;font-family:inherit;font-size:15px}'
-      +'#kpal-in::placeholder{color:#4b5572}'
-      +'.kpal-iw kbd{font-family:inherit;font-size:10px;font-weight:700;color:#55617a;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-xs);padding:3px 7px}'
-      +'#kpal-list{max-height:330px;overflow-y:auto;padding:7px}'
-      +'.kpal-it{display:flex;align-items:center;gap:12px;padding:10px 13px;border-radius:var(--radius-md);cursor:pointer;border:1px solid transparent}'
-      +'.kpal-it .ki{width:30px;height:30px;border-radius:var(--radius-sm);background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.22);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fdba74;flex-shrink:0}'
-      +'.kpal-it .kt{font-size:13px;font-weight:600;color:#dbe2f1}'
-      +'.kpal-it .kd{font-size:11.5px;color:#55617a;margin-top:1px}'
-      +'.kpal-it.sel{background:linear-gradient(95deg,rgba(251,146,60,.22),rgba(244,114,182,.12));border-color:rgba(251,146,60,.35)}'
-      +'.kpal-it.sel .kt{color:#fff}'
-      +'.kpal-empty{padding:26px;text-align:center;color:#55617a;font-size:13px}'
-      +'.kpal-foot{padding:9px 16px;border-top:1px solid rgba(255,255,255,.06);font-size:10px;color:#3b4460;display:flex;gap:14px}';
-    document.head.appendChild(css);
-    var ov=document.createElement('div');ov.id='kpal';
-    ov.innerHTML='<div class="kpal-box">'
-      +'<div class="kpal-iw"><span class="ic">⌘</span><input id="kpal-in" placeholder="Jump to any tool or section…" autocomplete="off"><kbd>ESC</kbd></div>'
-      +'<div id="kpal-list"></div>'
-      +'<div class="kpal-foot"><span>↑↓ navigate</span><span>↵ open</span><span>esc close</span></div></div>';
-    document.body.appendChild(ov);
-    var inp=document.getElementById('kpal-in'),list=document.getElementById('kpal-list');
-    var cur=[],sel=0;
-    function esc2(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-    function render(){
-      if(!cur.length){list.innerHTML='<div class="kpal-empty">No matches, try fewer letters</div>';return;}
-      list.innerHTML=cur.map(function(x,i){
-        return '<div class="kpal-it'+(i===sel?' sel':'')+'" data-i="'+i+'"><span class="ki">'+x.i+'</span><span style="min-width:0"><div class="kt">'+esc2(x.t)+'</div><div class="kd">'+esc2(x.d||'')+'</div></span></div>';
-      }).join('');
-      var s=list.querySelector('.sel');if(s)s.scrollIntoView({block:'nearest'});
-    }
-    function filter(q){
-      q=(q||'').toLowerCase().trim();
-      cur=!q?ITEMS.slice():ITEMS.filter(function(x){return (x.t+' '+(x.d||'')).toLowerCase().indexOf(q)>=0;});
-      sel=0;render();
-    }
-    function go(x){
-      if(!x)return;
-      closeKpal();
-      if(x.u==='!vimi'){if(window.irChat)window.irChat();return;}
-      if(x.u.charAt(0)==='#'){ if(typeof switchTab==='function') switchTab(x.u.slice(1)); return; }
-      if(location.pathname===x.u)return;
-      window.location.href=x.u;
-    }
-    function openKpal(){ov.classList.add('on');inp.value='';filter('');setTimeout(function(){inp.focus();},30);}
-    function closeKpal(){ov.classList.remove('on');}
-    inp.addEventListener('input',function(){filter(inp.value);});
-    inp.addEventListener('keydown',function(e){
-      if(e.key==='ArrowDown'){e.preventDefault();sel=Math.min(sel+1,cur.length-1);render();}
-      else if(e.key==='ArrowUp'){e.preventDefault();sel=Math.max(sel-1,0);render();}
-      else if(e.key==='Enter'){e.preventDefault();go(cur[sel]);}
-    });
-    list.addEventListener('click',function(e){
-      var it=e.target.closest('.kpal-it');if(it)go(cur[parseInt(it.getAttribute('data-i'),10)]);
-    });
-    ov.addEventListener('mousedown',function(e){if(e.target===ov)closeKpal();});
-    document.addEventListener('keydown',function(e){
-      if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='k'){e.preventDefault();ov.classList.contains('on')?closeKpal():openKpal();}
-      else if(e.key==='Escape'&&ov.classList.contains('on')){closeKpal();}
-    });
-  })();
-  </script>
+  
   <script>(function(){if(window.__trk)return;window.__trk=1;var _s=Date.now(),_d=false;function f(){if(_d)return;_d=true;var s=Math.round((Date.now()-_s)/1000);fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:location.pathname,title:'Social Media Intelligence',seconds:s,email:'{{ user.email if user else "" }}'}),keepalive:true}).catch(function(){});}document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')f();});window.addEventListener('beforeunload',f);})();</script>
+{{ topbar_script() }}
 </body>
 </html>

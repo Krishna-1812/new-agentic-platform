@@ -1,55 +1,15 @@
 <!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Event &amp; Conference Intelligence, Platform</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ds-tokens.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ds-components.css') }}">
-  <script src="/static/js/theme.js"></script>
-  <link rel="stylesheet" href="/static/css/grid-tokens.css">
-  <link rel="stylesheet" href="/static/css/event_conference_intelligence.css?v=3">
-  <link rel="stylesheet" href="/static/css/thinking-orb.css">
-  <link rel="stylesheet" href="/static/css/border-beam.css">
-  <link rel="stylesheet" href="/static/css/aurora-app.css?v=3">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/agent-feedback.css') }}">
-  <script src="{{ url_for('static', filename='js/agent_feedback.js') }}"></script>
+{{ head("Event & Conference Intelligence", [
+     "event_conference_intelligence.css?v=2",
+     "agent-feedback.css",
+   ], [], compat=True) }}
 </head>
 <body>
-  <div class="bg-grid"></div>
 
-  <div class="topbar">
-    <div class="tl">
-      <a href="/p2/hub" class="brand">
-        <div class="brand-icon" style="background:#151b2e;box-shadow:none;border-radius:var(--radius-md);overflow:hidden;display:inline-flex;align-items:center;justify-content:center;padding:5px 8px;width:auto;height:auto"><img src="/static/logo-lockup.svg?v=1" alt="arena by Position2" style="display:block;width:auto;height:36px;object-fit:contain"></div>
-      </a>
-      <div class="bc">
-        <a href="/p2/hub">Hub</a><span class="bc-sep">›</span>
-        <a href="/p2/strategic-agents">Strategic Agents</a><span class="bc-sep">›</span>
-        <span class="bc-cur">Event &amp; Conference Intelligence</span>
-      </div>
-    </div>
-    <div class="user-menu" id="userMenu">
-      <div class="user-pill" id="userPill" onclick="toggleMenu()">
-        <div class="user-avatar">
-          {% if user.picture %}<img src="{{ user.picture }}" alt="" />
-          {% else %}{{ (user.name or 'U')[:2]|upper }}{% endif %}
-        </div>
-        <span class="user-name">{{ user.given_name or user.name or 'User' }}</span>
-        <span class="pill-chevron">▼</span>
-      </div>
-      <div class="user-dropdown" id="userDropdown">
-        <div class="dd-header">
-          <div class="dd-name">{{ user.name or 'User' }}</div>
-          <div class="dd-email">{{ user.email }}</div>
-        </div>
-        <div class="dd-items">{% include "_admin_menu.html" %}</div>
-      </div>
-    </div>
-  </div>
+  {{ topbar([(brand.agents_plural, "/p2/strategic-agents"), ("Event & Conference Intelligence", none)]) }}
 
   <div class="main">
     <div class="evi-hero">
@@ -482,7 +442,7 @@
           <div class="evi-field"><label for="runOffer">Product or service for this research</label>
             <input id="runOffer" type="text" placeholder="Use the saved offer, or enter a specific product or service" /></div>
           <div class="evi-actions">
-            <button type="submit" class="evi-btn" id="runBtn">Run →</button>
+ <button type="submit" class="evi-btn" id="runBtn">Run </button>
             {# Says so BEFORE the click. The button stays live, because a
                refusal that puts the cursor in the right field is more useful
                than one that cannot be pressed, but it stops looking like the
@@ -745,7 +705,7 @@
       setMode(mode);
     }
 
-    /* ── reading a client's site to fill this form in ──────────────────
+ /* reading a client's site to fill this form in 
 
        Thirteen fields, only two of them required, and the person filling them
        in is usually answering questions about somebody else's business. Most
@@ -1794,7 +1754,7 @@
       }).join('') + '</div>';
     }
 
-    /* ── the event set, drawn ────────────────────────────────────────────
+ /* the event set, drawn 
        Six events used to arrive as six paragraphs, and the three things a
        reader actually compares across them, when it lands, how well it
        fits, and whether it is a room they can physically walk into, were
@@ -2243,7 +2203,7 @@
         (sub ? '<i>' + esc(sub) + '</i>' : '') + '</span></div>';
     }
 
-    /* ── at a glance ───────────────────────────────────────────────────── */
+ /* at a glance */
     function glanceHtml(rows, sm){
       var tiles = [];
       var scored = rows.map(function(r){ return fitOf(r.ev); })
@@ -2486,7 +2446,7 @@
       '</div>';
     }
 
-    /* ── the calendar rail ─────────────────────────────────────────────── */
+ /* the calendar rail */
     /* Markers are laid out in percentages of the rail rather than pixels,
        because the rail is whatever the drawer is wide. The separation below
        is the one number that has to assume a width: it is the room a marker
@@ -2625,7 +2585,7 @@
         '<div class="axis">' + axis + '</div></div></div>' + tail + '</div>';
     }
 
-    /* ── the cards ─────────────────────────────────────────────────────── */
+ /* the cards */
     function eventCard(r, overlap, sampled, knowSampled){
       var ev = r.ev, n = fitOf(ev), cls = bandClass(n);
       var site = safeUrl(ev.website);
@@ -2895,7 +2855,7 @@
         });
     };
 
-    /* ── the recommendation report ──────────────────────────────────────
+ /* the recommendation report 
        Five elements, in the order the rubric's own output contract sets, and
        nothing else. Everything rendered here came out of the run summary,
        which was assembled from stored rows rather than written by a model, so
@@ -3614,7 +3574,7 @@
         searchFunnelHtml(s);
     }
 
-    /* ── the answer, before the workings ──────────────────────────────
+ /* the answer, before the workings 
        A reader had to pass the profile, the counts, the funnel, everything
        that was not measured, the spread and the top five before learning
        which event to book. The answer goes first now, in one line, with the
@@ -3680,7 +3640,7 @@
       '</div>';
     }
 
-    /* ── what was not measured, as pointers ────────────────────────────
+ /* what was not measured, as pointers 
        This was fifteen possible paragraphs printed in full, and a real
        report came back with a 180-word block of them. Every one of those
        facts earns its place: an agent whose value is that it says what it
@@ -4035,7 +3995,7 @@
       armAnim('recommend:' + run.id + ':' + run.status);
     }
 
-    /* ── work the room ──────────────────────────────────────────────────
+ /* work the room 
        The one thing this view must never do is present a rewritten draft as
        if the model had written it that way. Every rewrite shows its reason
        and the exact phrase that triggered it, because a silent edit to a
@@ -4419,13 +4379,15 @@
   /* 'open', not 'on': the stylesheet's .user-dropdown.open is what reveals it,
      and the two must agree or the menu never opens. */
   function toggleMenu(){
-    var pill = document.getElementById('userPill'), dd = document.getElementById('userDropdown');
-    pill.classList.toggle('open', !dd.classList.contains('open'));
-    dd.classList.toggle('open');
+    /* The shared topbar owns the user menu now (see
+       templates/_bento.html); these ids no longer exist. */
   }
   function closeUserMenu(){
-    document.getElementById('userPill').classList.remove('open');
-    document.getElementById('userDropdown').classList.remove('open');
+    /* No-op: the shared topbar owns the user menu. Kept rather
+       than deleted because Escape handlers on this page call it
+       unguarded, and an unguarded call to a deleted function throws
+       exactly as hard as the getElementById(...).classList it used
+       to contain. */
   }
   document.addEventListener('click', function(e){
     var m = document.getElementById('userMenu');
@@ -4440,5 +4402,6 @@
   </script>
 
   <script>(function(){if(window.__trk)return;window.__trk=1;var _s=Date.now(),_d=false;function f(){if(_d)return;_d=true;var s=Math.round((Date.now()-_s)/1000);fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:location.pathname,title:'Event & Conference Intelligence',seconds:s,email:{{ (user.email if user else "")|tojson }}}),keepalive:true}).catch(function(){});}document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')f();});window.addEventListener('beforeunload',f);})();</script>
+{{ topbar_script() }}
 </body>
 </html>
