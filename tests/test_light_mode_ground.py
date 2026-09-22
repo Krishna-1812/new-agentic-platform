@@ -182,12 +182,19 @@ def test_aurora_still_forces_body_transparent():
         "test_no_page_sets_a_body_background_that_is_silently_discarded")
 
 
+# admin.css is NOT in this list any more. It was, and it belonged: it set its
+# ground on html:root and took its light mode from aurora for free, exactly as
+# the docstring below describes. The nine admin dashboards were rebuilt on the
+# Bento design system in the same pass as this edit -- they no longer load
+# aurora-app.css, there is no second theme for the comparison to be about, and
+# admin.css now sets a flat `html:root{background:var(--bg)}`. Keeping the row
+# would pin a property the file cannot have to a file that no longer wants it.
 @pytest.mark.parametrize("page", [
-    "admin.css", "anonymous_visitors.css", "gtm.css", "job_change_alert.css",
+    "anonymous_visitors.css", "gtm.css", "job_change_alert.css",
     "linkedin_playbook_studio.css", "seo.css",
 ])
 def test_a_moved_ground_never_carries_important(page):
-    """These six deliberately do NOT define a light ground: they rely on
+    """These deliberately do NOT define a light ground: they rely on
     aurora's `html[data-theme="light"]` (0,1,1) outranking their own
     `html:root` (0,0,2) on class level, which is what gives them a light mode
     for free. An `!important` on the page's ground defeats that comparison

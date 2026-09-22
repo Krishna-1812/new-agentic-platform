@@ -1,246 +1,11 @@
+{% from "_bento.html" import head, topbar, topbar_script with context %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>(function(){try{if('scrollRestoration' in history)history.scrollRestoration='manual';}catch(e){}window.addEventListener('load',function(){window.scrollTo(0,0);});})();</script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Agent Feedback — Admin</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4">
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/ds-tokens.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/grid-tokens.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
-  <script src="/static/js/theme.js"></script>
-  <link rel="stylesheet" href="/static/css/aurora-app.css?v=3">
-  <style>
-    .af-lede{margin:10px 0 0;max-width:680px;font-size:13px;line-height:1.55;color:var(--tx2)}
-
-    .af-kpis{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin:22px 0 26px}
-    .af-kpis .card.kpi{
-      cursor:default;position:relative;overflow:hidden;
-      transition:transform .15s ease,border-color .15s ease;
-      border-top:3px solid var(--accent) !important;
-      background:linear-gradient(165deg, var(--accent-d) 0%, rgba(13,15,24,.85) 55%) !important;
-    }
-    .af-kpis .card.kpi:hover{transform:translateY(-2px)}
-    .af-kpi-icon{
-      width:32px;height:32px;border-radius:10px;font-size:15px;
-      display:flex;align-items:center;justify-content:center;margin-bottom:10px;
-    }
-    .af-kpi-total .af-kpi-icon{background:rgba(124,131,245,.18);color:#9b87fd}
-    .af-kpi-up{border-top-color:#34d399 !important;background:linear-gradient(165deg, rgba(52,211,153,.18) 0%, rgba(13,15,24,.85) 55%) !important}
-    .af-kpi-up .af-kpi-icon{background:rgba(52,211,153,.18);color:#34d399}
-    .af-kpi-up b{color:#34d399}
-    .af-kpi-down{border-top-color:#fb7185 !important;background:linear-gradient(165deg, rgba(251,113,133,.18) 0%, rgba(13,15,24,.85) 55%) !important}
-    .af-kpi-down .af-kpi-icon{background:rgba(251,113,133,.18);color:#fb7185}
-    .af-kpi-down b{color:#fb7185}
-    .af-kpi-rate{border-top-color:#f5a623 !important;background:linear-gradient(165deg, rgba(245,166,35,.18) 0%, rgba(13,15,24,.85) 55%) !important}
-    .af-kpi-rate .af-kpi-icon{background:rgba(245,166,35,.18);color:#f5a623}
-    .af-kpi-rate b{background:linear-gradient(135deg,#fb7185,#f5a623);-webkit-background-clip:text;background-clip:text;color:transparent}
-
-    .af-toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:18px 0 22px}
-    .af-select-wrap{position:relative;display:inline-flex}
-    .af-select-wrap::after{
-      content:'⌄';position:absolute;right:13px;top:50%;transform:translateY(-50%);
-      color:#7e89b8;pointer-events:none;font-size:13px;
-    }
-    .af-toolbar select{
-      appearance:none;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
-      color:#cbd5f5;border-radius:var(--radius-pill);padding:9px 34px 9px 16px;
-      font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;
-      transition:background .15s,border-color .15s;
-    }
-    .af-toolbar select:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.18)}
-
-    .af-segment{
-      display:inline-flex;padding:3px;gap:2px;
-      background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
-      border-radius:var(--radius-pill);
-    }
-    .af-segment button{
-      appearance:none;border:none;background:transparent;color:#8b94be;
-      font-size:12.5px;font-weight:700;padding:7px 16px;border-radius:var(--radius-pill);
-      cursor:pointer;white-space:nowrap;
-      transition:background .18s var(--ease),color .18s var(--ease);
-    }
-    .af-segment button:hover{color:#e2e8f0}
-    .af-segment button.active{color:#fff;box-shadow:0 3px 12px -4px rgba(0,0,0,.5)}
-    .af-segment button.active[data-val="down"]{background:linear-gradient(135deg,#fb7185,#f43f5e)}
-    .af-segment button.active[data-val="up"]{background:linear-gradient(135deg,#34d399,#10b981)}
-    .af-segment button.active[data-val=""]{background:linear-gradient(135deg,#7c83f5,#9b87fd)}
-
-    .af-rating{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;
-      padding:4px 10px;border-radius:var(--radius-pill);white-space:nowrap}
-    .af-rating.up{color:#34d399;background:rgba(52,211,153,.12)}
-    .af-rating.down{color:#fb7185;background:rgba(251,113,133,.12)}
-
-    .af-rank{
-      display:inline-flex;align-items:center;justify-content:center;flex:none;
-      width:19px;height:19px;border-radius:50%;background:rgba(255,255,255,.06);
-      font-size:10px;font-weight:800;color:#8b94be;margin-right:8px;
-    }
-    .af-rank.sev-1{background:linear-gradient(135deg,#fb7185,#f43f5e);color:#fff;box-shadow:0 0 10px -2px rgba(251,113,133,.7)}
-    .af-rank.sev-23{background:rgba(245,166,35,.2);color:#f5a623}
-    .af-section{color:#e2e8f0;font-weight:600;display:flex;align-items:center}
-    .af-agent{
-      display:inline-flex;align-items:center;gap:6px;font-size:11px;
-      color:var(--ag-color,#7e89b8);font-weight:700;letter-spacing:.02em;
-    }
-    .af-agent::before{content:'';width:6px;height:6px;border-radius:50%;
-      background:var(--ag-color,var(--cyan));box-shadow:0 0 6px var(--ag-color,var(--cyan));flex:none}
-
-    .af-bar-wrap{display:flex;align-items:center;gap:10px;min-width:150px}
-    .af-bar{flex:1;height:7px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden}
-    .af-bar-fill{height:100%;border-radius:4px;width:0;transition:width .7s var(--ease)}
-    .af-bar-fill.sev-hi{background:linear-gradient(90deg,#fb7185,#f43f5e)}
-    .af-bar-fill.sev-mid{background:linear-gradient(90deg,#f5a623,#fb923c)}
-    .af-bar-fill.sev-lo{background:linear-gradient(90deg,#34d399,#10b981)}
-    .af-bar-pct{font-weight:700;color:#e2e8f0;font-variant-numeric:tabular-nums;min-width:36px;text-align:right}
-    .af-bar-pct.sev-hi{color:#fb7185}
-    .af-bar-pct.sev-mid{color:#f5a623}
-    .af-bar-pct.sev-lo{color:#34d399}
-
-    .af-who{display:inline-flex;align-items:center;gap:8px}
-    .af-avatar{
-      width:22px;height:22px;border-radius:50%;flex:none;
-      display:inline-flex;align-items:center;justify-content:center;
-      font-size:9px;font-weight:800;
-    }
-
-    .af-reason{color:#cbd5f5;max-width:420px;white-space:pre-wrap;line-height:1.5}
-    .af-reason.has-text{padding-left:10px;border-left:2px solid rgba(251,113,133,.5)}
-    .af-reason.none{color:#5a6488;font-style:italic}
-
-    .th-down{color:#fb7185 !important}
-    .th-up{color:#34d399 !important}
-
-    tr.af-row-down{background:rgba(251,113,133,.045)}
-    tr.af-row-down:hover{background:rgba(251,113,133,.09)}
-    tr.af-row-down td:first-child{box-shadow:inset 3px 0 0 rgba(251,113,133,.55)}
-    tr.af-row-up{background:rgba(52,211,153,.035)}
-    tr.af-row-up:hover{background:rgba(52,211,153,.08)}
-    tr.af-row-up td:first-child{box-shadow:inset 3px 0 0 rgba(52,211,153,.5)}
-
-    [data-theme="light"] .af-toolbar select{background:#fff;color:#17213a;border-color:rgba(18,26,54,.14)}
-    [data-theme="light"] .af-select-wrap::after{color:#828cac}
-    [data-theme="light"] .af-segment{background:rgba(18,26,54,.03);border-color:rgba(18,26,54,.1)}
-    [data-theme="light"] .af-segment button{color:#4d5680}
-    [data-theme="light"] .af-segment button:hover{color:#17213a}
-    [data-theme="light"] .af-bar{background:rgba(18,26,54,.07)}
-    [data-theme="light"] .af-section{color:#17213a}
-    [data-theme="light"] .af-bar-pct{color:#17213a}
-    [data-theme="light"] .af-rank{background:rgba(18,26,54,.07);color:#4d5680}
-    [data-theme="light"] .af-reason{color:#334155}
-    [data-theme="light"] tr.af-row-down{background:rgba(251,113,133,.07)}
-    [data-theme="light"] tr.af-row-up{background:rgba(52,211,153,.06)}
-
-    /* Everything that opens a detail popup gets a hand cursor and a hover
-       lift/tint so the affordance reads before anyone actually clicks. */
-    .af-kpis .card.kpi{cursor:pointer}
-    #summaryBody tr,#recentBody tr{cursor:pointer;transition:background .12s,box-shadow .12s}
-    #summaryBody tr:focus-visible,#recentBody tr:focus-visible,.af-kpis .card.kpi:focus-visible{
-      outline:2px solid var(--accent);outline-offset:-2px;
-    }
-
-    .af-modal-overlay{
-      position:fixed;inset:0;z-index:9999;
-      background:rgba(4,6,16,.72);backdrop-filter:blur(6px);
-      display:flex;align-items:center;justify-content:center;padding:24px;
-      opacity:0;pointer-events:none;transition:opacity .2s var(--ease);
-    }
-    .af-modal-overlay.open{opacity:1;pointer-events:auto}
-    .af-modal{
-      width:min(700px,100%);max-height:82vh;overflow-y:auto;
-      background:linear-gradient(165deg, rgba(34,38,64,.98), rgba(10,12,22,.98));
-      border:1px solid rgba(255,255,255,.1);border-radius:20px;
-      box-shadow:0 40px 120px -20px rgba(0,0,0,.85);
-      transform:scale(.94) translateY(10px);opacity:0;
-      transition:transform .22s var(--ease),opacity .22s var(--ease);
-    }
-    .af-modal-overlay.open .af-modal{transform:scale(1) translateY(0);opacity:1}
-    .af-modal-head{
-      display:flex;align-items:center;justify-content:space-between;gap:14px;
-      padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.08);
-      position:sticky;top:0;background:inherit;border-radius:20px 20px 0 0;z-index:1;
-    }
-    .af-modal-head h3{margin:0;font-size:16px;font-weight:700;color:#f1f5f9;
-      display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    .af-modal-close{
-      appearance:none;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);
-      color:#8b94be;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;
-      display:inline-flex;align-items:center;justify-content:center;flex:none;
-      transition:background .15s,color .15s,transform .15s;
-    }
-    .af-modal-close:hover{background:rgba(251,113,133,.15);color:#fb7185;transform:rotate(90deg)}
-    .af-modal-body{padding:20px 24px 26px}
-
-    .af-detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px;margin-bottom:22px}
-    .af-detail-item{display:flex;flex-direction:column;gap:6px}
-    .af-detail-k{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#5a6488}
-    .af-detail-v{font-size:14px;font-weight:600;color:#e2e8f0}
-
-    .af-modal-subhead{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-      color:#7e89b8;margin:6px 0 10px}
-    .af-modal-body .empty{padding:20px 0;text-align:center}
-
-    .af-mini-row{
-      display:grid;grid-template-columns:auto auto 1fr auto;gap:12px;align-items:center;
-      padding:10px 12px;border-radius:10px;cursor:pointer;
-      border:1px solid transparent;transition:background .15s,border-color .15s;
-    }
-    .af-mini-row:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)}
-    .af-mini-row.down{box-shadow:inset 2px 0 0 rgba(251,113,133,.5)}
-    .af-mini-row.up{box-shadow:inset 2px 0 0 rgba(52,211,153,.5)}
-    .af-mini-who{font-size:12px;color:#cbd5f5;white-space:nowrap}
-    .af-mini-when{font-size:11px;color:#5a6488;white-space:nowrap}
-    .af-mini-reason{font-size:12px;color:#8b94be;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .af-mini-agent{font-size:12px;font-weight:700}
-
-    [data-theme="light"] .af-modal{background:linear-gradient(165deg,#fff,#f3f5fb)}
-    [data-theme="light"] .af-modal-head h3{color:#17213a}
-    [data-theme="light"] .af-detail-v{color:#17213a}
-    [data-theme="light"] .af-mini-who{color:#334155}
-    [data-theme="light"] .af-mini-row:hover{background:rgba(18,26,54,.05)}
-
-    @media(max-width:640px){
-      .af-toolbar{flex-direction:column;align-items:stretch}
-      .af-segment{justify-content:center}
-    }
-  </style>
+{{ head("Agent Feedback", ["admin_agent_feedback.css?v=1", "admin.css?v=6"], compat=True) }}
 </head>
 <body>
-  <div class="topbar">
-    <div class="tl">
-      <a href="/p2/hub" class="brand">
-        <div class="brand-icon" style="background:#151b2e;box-shadow:none;border-radius:var(--radius-md);overflow:hidden;display:inline-flex;align-items:center;justify-content:center;padding:5px 8px"><img src="/static/logo-lockup.svg?v=1" alt="arena by Position2" style="display:block;width:auto;height:36px;object-fit:contain"></div>
-      </a>
-      <div class="bc">
-        <a href="/p2/hub">Hub</a><span class="bc-sep">›</span>
-        <a href="/p2/admin/internal-usage">Admin</a><span class="bc-sep">›</span>
-        <span class="bc-cur">Agent Feedback</span>
-      </div>
-    </div>
-    <div class="tr">
-      <div class="user-menu" id="userMenu">
-        <div class="user-pill" id="userPill" onclick="toggleMenu()">
-          <div class="avatar">
-            {% if user.picture %}<img src="{{ user.picture }}" alt="" />
-            {% else %}{{ (user.name or 'U')[:2]|upper }}{% endif %}
-          </div>
-          <span class="uname">{{ user.given_name or user.name or 'Admin' }}</span>
-          <span class="pill-chevron">▼</span>
-        </div>
-        <div class="user-dropdown" id="userDropdown">
-          <div class="dd-header">
-            <div class="dd-name">{{ user.name or 'User' }}</div>
-            <div class="dd-email">{{ user.email }}</div>
-          </div>
-          <div class="dd-items">{% include "_admin_menu.html" %}</div>
-        </div>
-      </div>
-    </div>
-  </div>
+{{ topbar([("Admin", "/p2/admin/internal-usage"), ("Agent Feedback", none)]) }}
 
   <div class="main">
     <div class="ph">
@@ -253,7 +18,7 @@
           row here is where to look first.
         </p>
       </div>
-      <a class="refresh-btn" href="#" onclick="load();return false;"><span class="refresh-icon">↻</span> Refresh</a>
+      <a class="refresh-btn" href="#" onclick="load();return false;"><span class="refresh-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg></span> Refresh</a>
     </div>
 
     <div class="grid af-kpis" id="kpis"></div>
@@ -268,8 +33,8 @@
         </select>
       </div>
       <div class="af-segment" id="ratingSeg" role="group" aria-label="Filter by rating">
-        <button type="button" data-val="down" class="active">👎 Down</button>
-        <button type="button" data-val="up">👍 Up</button>
+        <button type="button" data-val="down" class="active"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 13V5H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h3zM7 13l4.5 7a1.8 1.8 0 0 0 3.2-1.4L13.8 15H19a2 2 0 0 0 2-2.3l-1.1-6A2 2 0 0 0 17.9 5H10a3 3 0 0 0-3 3"/></svg> Down</button>
+        <button type="button" data-val="up"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11v8H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h3zM7 11l4.5-7a1.8 1.8 0 0 1 3.2 1.4L13.8 9H19a2 2 0 0 1 2 2.3l-1.1 6A2 2 0 0 1 17.9 19H10a3 3 0 0 1-3-3"/></svg> Up</button>
         <button type="button" data-val="">Both</button>
       </div>
     </div>
@@ -303,7 +68,7 @@
     <div class="af-modal" role="dialog" aria-modal="true" aria-labelledby="afModalTitle">
       <div class="af-modal-head">
         <h3 id="afModalTitle"></h3>
-        <button type="button" class="af-modal-close" id="afModalClose" aria-label="Close">✕</button>
+        <button type="button" class="af-modal-close" id="afModalClose" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       </div>
       <div class="af-modal-body" id="afModalBody"></div>
     </div>
@@ -352,10 +117,10 @@
       rows.forEach(function(r){ up+=r.up; down+=r.down; });
       var total=up+down, rate=total?Math.round(down/total*100):0;
       document.getElementById('kpis').innerHTML=
-        '<div class="card kpi af-kpi-total" data-kpi="total" tabindex="0"><div class="af-kpi-icon">💬</div><b>'+total+'</b><span>Total feedback</span></div>'+
-        '<div class="card kpi af-kpi-up" data-kpi="up" tabindex="0"><div class="af-kpi-icon">👍</div><b>'+up+'</b><span>Thumbs up</span></div>'+
-        '<div class="card kpi af-kpi-down" data-kpi="down" tabindex="0"><div class="af-kpi-icon">👎</div><b>'+down+'</b><span>Thumbs down</span></div>'+
-        '<div class="card kpi af-kpi-rate" data-kpi="rate" tabindex="0"><div class="af-kpi-icon">📉</div><b>'+rate+'%</b><span>Down rate</span></div>';
+        '<div class="card kpi af-kpi-total" data-kpi="total" tabindex="0"><div class="af-kpi-icon"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M21 11.5a8.4 8.4 0 0 1-9 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.2A8.4 8.4 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8.5z\"/></svg></div><b>'+total+'</b><span>Total feedback</span></div>'+
+        '<div class="card kpi af-kpi-up" data-kpi="up" tabindex="0"><div class="af-kpi-icon"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 11v8H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h3zM7 11l4.5-7a1.8 1.8 0 0 1 3.2 1.4L13.8 9H19a2 2 0 0 1 2 2.3l-1.1 6A2 2 0 0 1 17.9 19H10a3 3 0 0 1-3-3\"/></svg></div><b>'+up+'</b><span>Thumbs up</span></div>'+
+        '<div class="card kpi af-kpi-down" data-kpi="down" tabindex="0"><div class="af-kpi-icon"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 13V5H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h3zM7 13l4.5 7a1.8 1.8 0 0 0 3.2-1.4L13.8 15H19a2 2 0 0 0 2-2.3l-1.1-6A2 2 0 0 0 17.9 5H10a3 3 0 0 0-3 3\"/></svg></div><b>'+down+'</b><span>Thumbs down</span></div>'+
+        '<div class="card kpi af-kpi-rate" data-kpi="rate" tabindex="0"><div class="af-kpi-icon"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M3 7l6.5 6.5 4-4L21 17M21 17v-5M21 17h-5\"/></svg></div><b>'+rate+'%</b><span>Down rate</span></div>';
     }
 
     function renderSummary(rows){
@@ -367,8 +132,8 @@
         return '<tr data-summary-idx="'+i+'" tabindex="0">'+
           '<td class="af-agent" style="--ag-color:'+agentColor(r.agent_slug)+'">'+esc(agentLabel(r.agent_slug))+'</td>'+
           '<td class="af-section"><span class="af-rank '+rankClass+'">'+(i+1)+'</span>'+esc(r.section_label||r.section_key)+'</td>'+
-          '<td class="af-rating down">👎 '+r.down+'</td>'+
-          '<td class="af-rating up">👍 '+r.up+'</td>'+
+          '<td class="af-rating down"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 13V5H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h3zM7 13l4.5 7a1.8 1.8 0 0 0 3.2-1.4L13.8 15H19a2 2 0 0 0 2-2.3l-1.1-6A2 2 0 0 0 17.9 5H10a3 3 0 0 0-3 3\"/></svg> '+r.down+'</td>'+
+          '<td class="af-rating up"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 11v8H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h3zM7 11l4.5-7a1.8 1.8 0 0 1 3.2 1.4L13.8 9H19a2 2 0 0 1 2 2.3l-1.1 6A2 2 0 0 1 17.9 19H10a3 3 0 0 1-3-3\"/></svg> '+r.up+'</td>'+
           '<td><div class="af-bar-wrap"><div class="af-bar"><div class="af-bar-fill '+sev+'" data-w="'+r.down_pct+'"></div></div><span class="af-bar-pct '+sev+'">'+r.down_pct+'%</span></div></td>'+
         '</tr>';
       }).join('');
@@ -393,7 +158,7 @@
           '<td class="af-agent" style="--ag-color:'+agentColor(r.agent_slug)+'">'+esc(agentLabel(r.agent_slug))+'</td>'+
           '<td class="af-section">'+esc(r.section_label||r.section_key)+'</td>'+
           '<td><span class="af-who"><span class="af-avatar" style="background:'+ac+'26;color:'+ac+'">'+esc(initials(r.email))+'</span>'+esc(r.email)+'</span></td>'+
-          '<td><span class="af-rating '+r.rating+'">'+(r.rating==='up'?'👍 Up':'👎 Down')+'</span></td>'+
+          '<td><span class="af-rating '+r.rating+'">'+(r.rating==='up'?'<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 11v8H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h3zM7 11l4.5-7a1.8 1.8 0 0 1 3.2 1.4L13.8 9H19a2 2 0 0 1 2 2.3l-1.1 6A2 2 0 0 1 17.9 19H10a3 3 0 0 1-3-3\"/></svg> Up':'<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 13V5H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h3zM7 13l4.5 7a1.8 1.8 0 0 0 3.2-1.4L13.8 15H19a2 2 0 0 0 2-2.3l-1.1-6A2 2 0 0 0 17.9 5H10a3 3 0 0 0-3 3\"/></svg> Down')+'</span></td>'+
           '<td class="af-reason'+(r.reason?' has-text':' none')+'">'+esc(r.reason||'No reason given')+'</td>'+
         '</tr>';
       }).join('');
@@ -481,8 +246,8 @@
       var html='<div class="af-detail-grid">'+
         detailRow('Agent', '<span class="af-agent" style="--ag-color:'+agentColor(r.agent_slug)+'">'+esc(agentLabel(r.agent_slug))+'</span>')+
         detailRow('Section', esc(r.section_label||r.section_key))+
-        detailRow('Rating', '<span class="af-rating '+r.rating+'">'+(r.rating==='up'?'👍 Up':'👎 Down')+'</span>')+
-        detailRow('When', esc(r.created_at||'—')+' <span style="color:#5a6488">('+relTime(r.created_at)+')</span>')+
+        detailRow('Rating', '<span class="af-rating '+r.rating+'">'+(r.rating==='up'?'<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 11v8H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h3zM7 11l4.5-7a1.8 1.8 0 0 1 3.2 1.4L13.8 9H19a2 2 0 0 1 2 2.3l-1.1 6A2 2 0 0 1 17.9 19H10a3 3 0 0 1-3-3\"/></svg> Up':'<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 13V5H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h3zM7 13l4.5 7a1.8 1.8 0 0 0 3.2-1.4L13.8 15H19a2 2 0 0 0 2-2.3l-1.1-6A2 2 0 0 0 17.9 5H10a3 3 0 0 0-3 3\"/></svg> Down')+'</span>')+
+        detailRow('When', esc(r.created_at||'—')+' <span style="color:var(--tx2)">('+relTime(r.created_at)+')</span>')+
         detailRow('Who', '<span class="af-who"><span class="af-avatar" style="background:'+ac+'26;color:'+ac+'">'+esc(initials(r.email))+'</span>'+esc(r.email)+'</span>')+
         '</div>'+
         '<div class="af-modal-subhead">Reason</div>'+
@@ -492,7 +257,7 @@
 
     function miniRow(x, idx){
       return '<div class="af-mini-row '+(x.rating==='down'?'down':'up')+'" data-entry-idx="'+idx+'" tabindex="0">'+
-        '<span class="af-rating '+x.rating+'">'+(x.rating==='up'?'👍':'👎')+'</span>'+
+        '<span class="af-rating '+x.rating+'">'+(x.rating==='up'?'<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 11v8H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h3zM7 11l4.5-7a1.8 1.8 0 0 1 3.2 1.4L13.8 9H19a2 2 0 0 1 2 2.3l-1.1 6A2 2 0 0 1 17.9 19H10a3 3 0 0 1-3-3\"/></svg>':'<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 13V5H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h3zM7 13l4.5 7a1.8 1.8 0 0 0 3.2-1.4L13.8 15H19a2 2 0 0 0 2-2.3l-1.1-6A2 2 0 0 0 17.9 5H10a3 3 0 0 0-3 3\"/></svg>')+'</span>'+
         '<span class="af-mini-who">'+esc(x.email)+'</span>'+
         '<span class="af-mini-reason">'+esc(x.reason||(x.rating==='down'?'No reason given':'—'))+'</span>'+
         '<span class="af-mini-when">'+relTime(x.created_at)+'</span>'+
@@ -503,8 +268,8 @@
       var sev=severity(r.down_pct);
       var titleHtml='<span class="af-agent" style="--ag-color:'+agentColor(r.agent_slug)+'">'+esc(agentLabel(r.agent_slug))+'</span> &rsaquo; '+esc(r.section_label||r.section_key);
       var html='<div class="af-detail-grid">'+
-        detailRow('Down', '<span class="af-rating down">👎 '+r.down+'</span>')+
-        detailRow('Up', '<span class="af-rating up">👍 '+r.up+'</span>')+
+        detailRow('Down', '<span class="af-rating down"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 13V5H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h3zM7 13l4.5 7a1.8 1.8 0 0 0 3.2-1.4L13.8 15H19a2 2 0 0 0 2-2.3l-1.1-6A2 2 0 0 0 17.9 5H10a3 3 0 0 0-3 3\"/></svg> '+r.down+'</span>')+
+        detailRow('Up', '<span class="af-rating up"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 11v8H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h3zM7 11l4.5-7a1.8 1.8 0 0 1 3.2 1.4L13.8 9H19a2 2 0 0 1 2 2.3l-1.1 6A2 2 0 0 1 17.9 19H10a3 3 0 0 1-3-3\"/></svg> '+r.up+'</span>')+
         detailRow('Down share', '<span class="af-bar-pct '+sev+'">'+r.down_pct+'%</span>')+
         '</div>'+
         '<div class="af-modal-subhead">Individual entries</div>'+
@@ -542,7 +307,7 @@
     function openKpiDetail(kind){
       var sortKey = kind==='rate' ? 'rate' : (kind==='up' ? 'up' : (kind==='down' ? 'down' : 'total'));
       var agg=aggregateByAgent(lastSummary).sort(function(a,b){ return b[sortKey]-a[sortKey]; });
-      var titles={total:'💬 Total feedback', up:'👍 Thumbs up', down:'👎 Thumbs down', rate:'📉 Down rate'};
+      var titles={total:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.2A8.4 8.4 0 0 1 4 11.5 8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8.5z"/></svg> Total feedback', up:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11v8H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h3zM7 11l4.5-7a1.8 1.8 0 0 1 3.2 1.4L13.8 9H19a2 2 0 0 1 2 2.3l-1.1 6A2 2 0 0 1 17.9 19H10a3 3 0 0 1-3-3"/></svg> Thumbs up', down:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 13V5H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h3zM7 13l4.5 7a1.8 1.8 0 0 0 3.2-1.4L13.8 15H19a2 2 0 0 0 2-2.3l-1.1-6A2 2 0 0 0 17.9 5H10a3 3 0 0 0-3 3"/></svg> Thumbs down', rate:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7l6.5 6.5 4-4L21 17M21 17v-5M21 17h-5"/></svg> Down rate'};
       var bodyHtml;
       if(!agg.length){
         bodyHtml='<div class="empty">No feedback recorded in the last 30 days.</div>';
@@ -551,8 +316,8 @@
           var sev=severity(a.rate);
           return '<div class="af-mini-row" style="grid-template-columns:1.4fr auto auto auto">'+
             '<span class="af-mini-agent af-agent" style="--ag-color:'+agentColor(a.agent_slug)+'">'+esc(agentLabel(a.agent_slug))+'</span>'+
-            '<span class="af-rating down">👎 '+a.down+'</span>'+
-            '<span class="af-rating up">👍 '+a.up+'</span>'+
+            '<span class="af-rating down"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 13V5H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h3zM7 13l4.5 7a1.8 1.8 0 0 0 3.2-1.4L13.8 15H19a2 2 0 0 0 2-2.3l-1.1-6A2 2 0 0 0 17.9 5H10a3 3 0 0 0-3 3\"/></svg> '+a.down+'</span>'+
+            '<span class="af-rating up"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 11v8H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h3zM7 11l4.5-7a1.8 1.8 0 0 1 3.2 1.4L13.8 9H19a2 2 0 0 1 2 2.3l-1.1 6A2 2 0 0 1 17.9 19H10a3 3 0 0 1-3-3\"/></svg> '+a.up+'</span>'+
             '<span class="af-bar-pct '+sev+'">'+a.rate+'%</span>'+
           '</div>';
         }).join('');
@@ -575,5 +340,6 @@
     });
   </script>
   <script>(function(){if(window.__trk)return;window.__trk=1;var _s=Date.now(),_d=false;function f(){if(_d)return;_d=true;var s=Math.round((Date.now()-_s)/1000);fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:location.pathname,title:'Agent Feedback',seconds:s,email:'{{ user.email if user else "" }}'}),keepalive:true}).catch(function(){});}document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')f();});window.addEventListener('beforeunload',f);})();</script>
+{{ topbar_script() }}
 </body>
 </html>

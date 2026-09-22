@@ -1,0 +1,69 @@
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg); color: var(--tx);
+      height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    /* ── Topbar ── */
+    .breadcrumb {
+      display: flex; align-items: center; gap: 7px;
+      margin-left: 16px; padding-left: 16px;
+      
+    }
+};
+    }
+
+    .user-avatar {
+      width: 26px; height: 26px; border-radius: 50%; overflow: hidden;
+      background: var(--s1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: var(--tx); flex-shrink: 0;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-name { font-size: 11.5px; color: var(--tx2); }
+    @keyframes dd-in { from{opacity:0;transform:translateY(-6px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+    /* Accent line under topbar */
+}, transparent 60%);
+      opacity: 0.6;
+    }
+
+    /* ── Iframe container ── */
+    .iframe-wrap {
+      flex: 1; position: relative; overflow: hidden;
+    }
+
+    .iframe-loader {
+      position: absolute; inset: 0; z-index: 5;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 16px; background: var(--bg);
+      transition: opacity 0.4s ease;
+    }
+    .iframe-loader.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 36px; height: 36px; border-radius: 50%;
+      
+      border-top-color: {{ accent }};
+    }
+    
+    .loader-text { font-size: 13px; color: var(--tx3); }
+
+    iframe {
+      width: 100%; height: 100%; border: none;
+      display: block;
+    }
+  
+/* The page's own :root block redefined the Bento token names. Rewritten in
+   Bento terms rather than deleted, because ~200 var() calls below still ask
+   for these names. */
+:root{
+  --ink:var(--tx); --dim:var(--tx2); --dim2:var(--tx2); --dim3:var(--tx3);
+  --page:var(--acc); --pink:var(--acc);
+  --display:var(--font-display); --serif:var(--font-display);
+  --sans:var(--font-body); --mono:var(--font-body);
+}
+
+html,body{scrollbar-width:none;-ms-overflow-style:none;}
+*{scrollbar-width:none;-ms-overflow-style:none;}

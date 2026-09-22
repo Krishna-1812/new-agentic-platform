@@ -51,6 +51,22 @@ BENTO_PAGES = [
     ("directory.css", "the agent and SEO listings"),
     ("accounts.css", "ABM Signal Tracker"),
     ("anonymous_visitors.css", "Anonymous Visitors"),
+    ("fieldguide.css", "the Field Guide"),
+    ("sentiment_pulse.css", "Sentiment Pulse"),
+    # The admin family. admin.css is the sheet that harmonizes all nine and is
+    # loaded last by each of them; the per-page sheets hold what is specific to
+    # one dashboard.
+    ("admin.css", "the shared admin layer"),
+    ("admin_requests.css", "Access Requests"),
+    ("admin_agent_runs.css", "Agent Runs"),
+    ("admin_client_usage.css", "Client Usage"),
+    ("admin_client_detail.css", "Client Detail"),
+    ("admin_visitors.css", "Anonymous Traffic"),
+    ("admin_members.css", "Members"),
+    ("admin_usage.css", "Internal Usage"),
+    ("admin_external_usage.css", "External Usage"),
+    ("admin_agent_feedback.css", "Agent Feedback"),
+    ("embed.css", "the embedded-tool wrapper"),
 ]
 
 
@@ -107,19 +123,25 @@ def test_the_bar_is_the_same_height_on_every_agent_page(sheet, container):
         % (sheet, m.group(1)))
 
 
-def test_the_embed_wrapper_matches_that_height_without_borrowing_bleed():
-    """embed.html is a full-bleed iframe with no content container. It shares
-    the bar height, but --bleed would inset its bar by the centering offset of
-    a box that is not there (520px at 2560px wide), so it keeps --margin-app."""
+def test_the_embed_wrapper_has_no_bar_of_its_own():
+    """embed.html used to hand-roll a .topbar in an inline <style>, at the same
+    62px as its siblings but on --margin-app rather than --bleed, because a
+    full-bleed iframe has no centered container for --bleed to line up with.
+
+    It takes the shared shell's bar now, so the thing to protect is no longer
+    the number -- it is that the page has not grown a second bar of its own
+    beside the shared one. Its side padding is checked with every other Bento
+    page above.
+    """
     tpl = os.path.join(os.path.dirname(CSS_DIR), "..", "templates", "embed.html")
     tpl = os.path.normpath(tpl)
-    css = open(tpl, encoding="utf-8").read()
-    body = _rule(css, ".topbar")
-    assert body, "embed.html has no .topbar rule"
-    assert re.search(r"height:\s*62px", body), "the embed bar is not 62px"
-    pad = _padding(body)
-    assert "var(--margin-app)" in pad, (
-        "the embed bar should keep --margin-app, not --bleed: %r" % pad)
+    markup = open(tpl, encoding="utf-8").read()
+    assert "topbar(" in markup, "embed.html no longer calls the shared topbar()"
+    assert "<style" not in markup, (
+        "embed.html has an inline <style> again; its rules belong in embed.css")
+    css = open(os.path.join(CSS_DIR, "embed.css"), encoding="utf-8").read()
+    assert _rule(css, ".topbar") is None, (
+        "embed.css redefines .topbar; the shared .bn-top owns the bar now")
 
 
 # ── Pages on the Bento design system ─────────────────────────────────────────

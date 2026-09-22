@@ -1,0 +1,173 @@
+
+    .af-lede{margin:10px 0 0;max-width:680px;font-size:13px;line-height:1.55;color:var(--tx2)}
+
+    .af-kpis{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin:22px 0 26px}
+    /* The 3px cap bar, and the four hues it wore. Rule 4: when every tile is
+       marked, the mark says nothing. These four are flat surfaces; the icon
+       beside each label already says which is which, and the numbers say the
+       rest. */
+    .af-kpis .card.kpi{
+      cursor:default;position:relative;overflow:hidden;
+      background: var(--s1);
+    }
+    .af-kpi-icon{
+      width:32px;height:32px;border-radius: var(--r);font-size:15px;
+      display:flex;align-items:center;justify-content:center;margin-bottom:10px;
+    }
+    
+
+    .af-toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:18px 0 22px}
+    .af-select-wrap{position:relative;display:inline-flex}
+    .af-select-wrap::after{
+      content:'⌄';position:absolute;right:13px;top:50%;transform:translateY(-50%);
+      color:var(--tx2);pointer-events:none;font-size:13px;
+    }
+    .af-toolbar select{
+      appearance:none;background:var(--s2);
+      color:var(--tx2);border-radius:var(--radius-pill);padding:9px 34px 9px 16px;
+      font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;
+      transition:background .15s,border-color .15s;
+    }
+    .af-toolbar select:hover{background:var(--s2);border-color:var(--s3)}
+
+    .af-segment{
+      display:inline-flex;padding:3px;gap:2px;
+      background:var(--s2);
+      border-radius:var(--radius-pill);
+    }
+    .af-segment button{
+      appearance:none;border:none;background:transparent;color:var(--tx);
+      font-size:12.5px;font-weight:700;padding:7px 16px;border-radius:var(--radius-pill);
+      cursor:pointer;white-space:nowrap;
+      transition:background .18s var(--ease),color .18s var(--ease);
+    }
+    .af-segment button:hover{color:var(--tx)}
+    .af-segment button.active{color:var(--tx);background:var(--s3)}
+    
+    
+    
+
+    .af-rating{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;
+      padding:4px 10px;border-radius:var(--radius-pill);white-space:nowrap}
+    .af-rating.up{color:var(--acc);background:var(--s2)}
+    .af-rating.down{color:var(--danger);background:var(--s2)}
+
+    .af-rank{
+      display:inline-flex;align-items:center;justify-content:center;flex:none;
+      width:19px;height:19px;border-radius:50%;background:var(--s2);
+      font-size:10px;font-weight:800;color:var(--tx);margin-right:8px;
+    }
+    .af-rank.sev-1{background: var(--s1);color:var(--tx);box-shadow:0 0 10px -2px var(--s3)}
+    .af-rank.sev-23{background:var(--s3);color:var(--clay)}
+    .af-section{color:var(--tx);font-weight:600;display:flex;align-items:center}
+    .af-agent{
+      display:inline-flex;align-items:center;gap:6px;font-size:11px;
+      color:var(--ag-color,var(--tx2));font-weight:700;letter-spacing:.02em;
+    }
+    .af-agent::before{content:'';width:6px;height:6px;border-radius:50%;
+      background:var(--ag-color,var(--cyan));box-shadow:0 0 6px var(--ag-color,var(--cyan));flex:none}
+
+    .af-bar-wrap{display:flex;align-items:center;gap:10px;min-width:150px}
+    .af-bar{flex:1;height:7px;border-radius: var(--r-sm);background:var(--s2);overflow:hidden}
+    .af-bar-fill{height:100%;border-radius: var(--r-sm);width:0;transition:width .7s var(--ease)}
+    .af-bar-fill.sev-hi{background: var(--s1)}
+    .af-bar-fill.sev-mid{background: var(--s1)}
+    .af-bar-fill.sev-lo{background: var(--s1)}
+    .af-bar-pct{font-weight:700;color:var(--tx);font-variant-numeric:tabular-nums;min-width:36px;text-align:right}
+    .af-bar-pct.sev-hi{color:var(--danger)}
+    .af-bar-pct.sev-mid{color:var(--clay)}
+    .af-bar-pct.sev-lo{color:var(--acc)}
+
+    .af-who{display:inline-flex;align-items:center;gap:8px}
+    .af-avatar{
+      width:22px;height:22px;border-radius:50%;flex:none;
+      display:inline-flex;align-items:center;justify-content:center;
+      font-size:9px;font-weight:800;
+    }
+
+    .af-reason{color:var(--tx2);max-width:420px;white-space:pre-wrap;line-height:1.5}
+    .af-reason.has-text{padding-left:10px;}
+    .af-reason.none{color:var(--tx2);font-style:italic}
+
+    .th-down{color:var(--danger) !important}
+    .th-up{color:var(--acc) !important}
+
+    tr.af-row-down{background:var(--s2)}
+    tr.af-row-down:hover{background:var(--s2)}
+    tr.af-row-down td:first-child{box-shadow:inset 3px 0 0 var(--s3)}
+    tr.af-row-up{background:var(--s2)}
+    tr.af-row-up:hover{background:var(--s2)}
+    tr.af-row-up td:first-child{box-shadow:inset 3px 0 0 var(--s3)}
+
+    /* Everything that opens a detail popup gets a hand cursor and a hover
+       lift/tint so the affordance reads before anyone actually clicks. */
+    .af-kpis .card.kpi{cursor:pointer}
+    #summaryBody tr,#recentBody tr{cursor:pointer;transition:background .12s,box-shadow .12s}
+    #summaryBody tr:focus-visible,#recentBody tr:focus-visible,.af-kpis .card.kpi:focus-visible{
+      outline:2px solid var(--accent);outline-offset:-2px;
+    }
+
+    .af-modal-overlay{
+      position:fixed;inset:0;z-index:9999;
+      background:var(--s3);
+      display:flex;align-items:center;justify-content:center;padding:24px;
+      opacity:0;pointer-events:none;transition:opacity .2s var(--ease);
+    }
+    .af-modal-overlay.open{opacity:1;pointer-events:auto}
+    .af-modal{
+      width:min(700px,100%);max-height:82vh;overflow-y:auto;
+      background: var(--s1);
+      border-radius: var(--r);
+      box-shadow:0 40px 120px -20px var(--s3);
+      transform:scale(.94) translateY(10px);opacity:0;
+      transition:transform .22s var(--ease),opacity .22s var(--ease);
+    }
+    .af-modal-overlay.open .af-modal{transform:scale(1) translateY(0);opacity:1}
+    .af-modal-head{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      padding:20px 24px;
+      position:sticky;top:0;background:inherit;border-radius:20px 20px 0 0;z-index:1;
+    }
+    .af-modal-head h3{margin:0;font-size:16px;font-weight:700;color:var(--tx);
+      display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .af-modal-close{
+      appearance:none;background:var(--s2);
+      color:var(--tx);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:13px;
+      display:inline-flex;align-items:center;justify-content:center;flex:none;
+      transition:background .15s,color .15s,transform .15s;
+    }
+    .af-modal-close:hover{background:var(--s3);color:var(--danger);transform:rotate(90deg)}
+    .af-modal-body{padding:20px 24px 26px}
+
+    .af-detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px;margin-bottom:22px}
+    .af-detail-item{display:flex;flex-direction:column;gap:6px}
+    .af-detail-k{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--tx2)}
+    .af-detail-v{font-size:14px;font-weight:600;color:var(--tx)}
+
+    .af-modal-subhead{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+      color:var(--tx2);margin:6px 0 10px}
+    .af-modal-body .empty{padding:20px 0;text-align:center}
+
+    .af-mini-row{
+      display:grid;grid-template-columns:auto auto 1fr auto;gap:12px;align-items:center;
+      padding:10px 12px;border-radius: var(--r);cursor:pointer;
+      border:1px solid transparent;transition:background .15s,border-color .15s;
+    }
+    .af-mini-row:hover{background:var(--s2);border-color:var(--s2)}
+    .af-mini-row.down{box-shadow:inset 2px 0 0 var(--s3)}
+    .af-mini-row.up{box-shadow:inset 2px 0 0 var(--s3)}
+    .af-mini-who{font-size:12px;color:var(--tx2);white-space:nowrap}
+    .af-mini-when{font-size:11px;color:var(--tx2);white-space:nowrap}
+    .af-mini-reason{font-size:12px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .af-mini-agent{font-size:12px;font-weight:700}
+
+    @media(max-width:640px){
+      .af-toolbar{flex-direction:column;align-items:stretch}
+      .af-segment{justify-content:center}
+    }
+  
+/* Up and down are the one pair on this page where the colour IS the meaning.
+   It lives on the 18px icon, not on a 34px numeral and a 3px bar as well. */
+.af-kpi-icon{background:var(--s2);color:var(--tx3)}
+.af-kpi-up   .af-kpi-icon{color:var(--acc)}
+.af-kpi-down .af-kpi-icon{color:var(--clay)}
