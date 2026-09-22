@@ -166,9 +166,12 @@ def test_the_abm_card_stays_a_sentence_when_nothing_can_be_counted(client, monke
 # ── The two surfaces agree ─────────────────────────────────────────────────
 
 def _band_companies(body):
-    band = body.split('class="lx-stats2"', 1)[1].split("</section>", 1)[0]
-    m = re.search(r'data-lxn="(\d+)"[^>]*>0</b><span>companies tracked</span>', band)
-    return int(m.group(1)) if m else None
+    """The figure is a tile of the hub grid now rather than a band beneath it,
+    and it renders its value directly instead of being counted up from zero by
+    a script -- so the number is read from the element's text, not from the
+    data attribute that used to carry it for the counter."""
+    m = re.search(r'data-figure="companies">([\d,]+)\+?<', body)
+    return int(m.group(1).replace(",", "")) if m else None
 
 
 def test_the_hub_band_quotes_the_derived_figure(client):
@@ -186,8 +189,11 @@ def test_neither_surface_still_carries_the_old_hardcoded_numbers(client):
     """The exact mismatch this fixed. Both figures came from a template literal;
     if either string reappears, someone has typed a count back in."""
     hub = client.get("/p2/hub").get_data(as_text=True)
-    band = hub.split('class="lx-stats2"', 1)[1].split("</section>", 1)[0]
-    assert 'data-lxn="1200"' not in band
+    # Asserted against the figure the page actually reports rather than against
+    # a literal in one region of markup: the region moved, and pinning the check
+    # to a container class is how it stopped checking anything at all.
+    assert _band_companies(hub) == appmod._tracked_company_floor()
+    assert _band_companies(hub) != 1200 or appmod._tracked_company_floor() == 1200
     b2b = client.get("/p2/strategic-agents").get_data(as_text=True)
     assert "1,500+ companies" not in b2b or appmod._tracked_company_floor() == 1500
 

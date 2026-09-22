@@ -262,3 +262,102 @@
   .bn-h1 { font-size: var(--fs-2xl); }
   .bn-drawer { width: 100%; }
 }
+
+/* ── COMMAND PALETTE ─────────────────────────────────────────────────────
+   Behaviour in bento-palette.js. The old build generated this stylesheet
+   from a JS string inside each of twelve page templates, which is how it
+   ended up with hardcoded hexes from the previous palette and no way to
+   change any of them in one place. */
+.bn-pal {
+  position: fixed; inset: 0; z-index: 9000; display: none;
+  background: rgba(10, 10, 12, .74);
+}
+.bn-pal.on { display: block; animation: bento-in var(--dur) var(--ease) both; }
+
+.bn-pal-box {
+  position: absolute; top: 14%; left: 50%; transform: translateX(-50%);
+  width: min(560px, calc(100vw - 2 * var(--page-pad)));
+  background: var(--s1); border-radius: var(--r);
+  box-shadow: var(--shadow-overlay); overflow: hidden;
+}
+
+.bn-pal-head { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-4) var(--sp-5); }
+.bn-pal-head svg {
+  width: 15px; height: 15px; flex: none;
+  fill: none; stroke: var(--tx3); stroke-width: 1.8; stroke-linecap: round;
+}
+.bn-pal-head input {
+  flex: 1; min-width: 0; background: none; border: 0; outline: none;
+  font-family: var(--font-body); font-size: var(--fs-md); color: var(--tx);
+}
+.bn-pal-head input::placeholder { color: var(--tx3); }
+.bn-pal-head kbd {
+  font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  color: var(--tx3); background: var(--s2); border-radius: var(--r-sm);
+  padding: var(--sp-1) var(--sp-2); flex: none;
+}
+
+.bn-pal-list { max-height: 340px; overflow-y: auto; padding: 0 var(--sp-2) var(--sp-2); }
+.bn-pal-it {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3); border-radius: var(--r-sm); cursor: pointer;
+}
+/* Selection is a fill, not a gradient and not a border: the same way every
+   other selected thing in this system reads. */
+.bn-pal-it.on { background: var(--s3); }
+.bn-pal-k {
+  width: 26px; height: 26px; border-radius: var(--r-sm); flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--s2); color: var(--tx2);
+  font-family: var(--font-display); font-size: var(--fs-sm); font-weight: var(--fw-bold);
+}
+.bn-pal-it.on .bn-pal-k { background: var(--acc); color: var(--tx-on-fill); }
+.bn-pal-txt { min-width: 0; }
+.bn-pal-txt b {
+  display: block; font-size: var(--fs-sm); font-weight: var(--fw-semi); color: var(--tx);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bn-pal-txt i {
+  display: block; font-style: normal; font-size: var(--fs-xs); color: var(--tx3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bn-pal-empty { padding: var(--sp-7); text-align: center; color: var(--tx3); font-size: var(--fs-sm); }
+.bn-pal-foot {
+  display: flex; gap: var(--sp-4); padding: var(--sp-3) var(--sp-5);
+  background: var(--s2); font-size: var(--fs-xs); color: var(--tx3);
+}
+
+/* ── STANDALONE NOTICE ───────────────────────────────────────────────────
+   For pages with no shell: 403, access-denied, anything that refuses the
+   request. One centred tile, no topbar -- a navigation bar on a page that
+   has just told you that you cannot navigate there is an odd thing to
+   offer, and half its links would refuse you too. */
+.bn-notice {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: var(--page-pad);
+}
+.bn-notice-card {
+  background: var(--s1); border-radius: var(--r);
+  padding: var(--sp-8) var(--sp-7);
+  width: 100%; max-width: 460px;
+}
+.bn-notice-mark { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-7); }
+.bn-notice-code {
+  font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label); text-transform: uppercase;
+  color: var(--clay); margin-bottom: var(--sp-3);
+}
+.bn-notice-card h1 {
+  font-family: var(--font-display); font-size: var(--fs-2xl); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-display); line-height: var(--lh-tight);
+  margin: 0 0 var(--sp-3); color: var(--tx);
+}
+.bn-notice-card p {
+  margin: 0 0 var(--sp-6); font-size: var(--fs-md); color: var(--tx2);
+  line-height: var(--lh-body);
+}
+.bn-notice-who {
+  display: block; font-size: var(--fs-xs); color: var(--tx3);
+  margin: calc(var(--sp-6) * -1 + var(--sp-2)) 0 var(--sp-6);
+}
+.bn-notice-acts { display: flex; flex-wrap: wrap; gap: var(--sp-2); }

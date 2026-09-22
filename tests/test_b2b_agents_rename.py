@@ -30,6 +30,7 @@ Also pinned here: the two meanings of "GTM" that must NOT be renamed, because
 """
 
 import os
+import re
 import sys
 
 import pytest
@@ -65,17 +66,21 @@ def test_old_links_eventually_reach_the_current_name(client):
     """Following an old bookmark all the way through must land on a page
     that says the CURRENT name, not either prior one."""
     body = client.get("/p2/b2b-agents", follow_redirects=True).get_data(as_text=True)
-    assert "Strategic Agents" in body
+    from brand import BRAND
+    assert BRAND["agents_plural"] in body
     assert ">GTM<" not in body
     assert ">B2B Agents<" not in body
 
 
 def test_the_hub_card_carries_the_current_name(client):
     body = client.get("/p2/hub").get_data(as_text=True)
-    assert '<div class="card-title">Strategic Agents</div>' in body
+    from brand import BRAND
+    # The hub tile is named from brand.py and identified by data attributes now.
+    # The retired names are still checked, because THAT is what this test is
+    # for: a rename that reaches the routes but not the page people click.
+    assert re.search(r'data-ws-name>\s*%s\s*<' % re.escape(BRAND["agents_plural"]), body)
     assert 'href="/p2/strategic-agents"' in body
-    assert '<div class="card-title">GTM</div>' not in body
-    assert '<div class="card-title">B2B Agents</div>' not in body
+    assert not re.search(r'data-ws-name>\s*(GTM|B2B Agents)\s*<', body)
 
 
 @pytest.mark.parametrize("path", [

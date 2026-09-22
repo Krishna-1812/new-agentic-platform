@@ -20,47 +20,83 @@ added here should make that state visible again, not silently).
 
 import os
 import re
+import sys
 
 import pytest
 
+os.environ.setdefault("GOOGLE_CLIENT_ID", "test")
+os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test")
+os.environ.setdefault("FLASK_SECRET_KEY", "test")
+
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_HUB = os.path.join(_ROOT, "templates", "hub.html")
-_B2B = os.path.join(_ROOT, "templates", "b2b_agents.html")
+sys.path.insert(0, _ROOT)
+
+import app as appmod  # noqa: E402
 
 
-def _strip_comments(html: str) -> str:
-    """Cards that have been retired are commented out rather than deleted (see
-    Sentiment Pulse), and a commented-out card is not on the page. Counting it
-    would overstate the dashboard count."""
-    return re.sub(r"<!--.*?-->", "", html, flags=re.S)
+def _render(path):
+    """Read the RENDERED page rather than the template source.
+
+    Both pages were re-skinned onto the Bento design system, and with that the
+    withdrawn rows moved from HTML comments to Jinja comments -- which never
+    reach the browser at all, instead of shipping a hidden agent's name and URL
+    to every visitor. So there is nothing left to strip here: what renders IS
+    the roster.
+
+    What these tests read is data attributes, not class names. The presentation
+    is expected to change again; data-agent, data-state, data-count and
+    data-figure are the contract, and a re-skin that drops one of them should
+    fail loudly rather than quietly stop checking anything.
+    """
+    c = appmod.app.test_client()
+    with c.session_transaction() as sess:
+        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+    r = c.get(path)
+    assert r.status_code == 200, "%s -> %s" % (path, r.status_code)
+    return r.get_data(as_text=True)
 
 
 @pytest.fixture(scope="module")
 def dashboard_cards():
-    with open(_B2B) as fh:
-        body = _strip_comments(fh.read())
-    classes = re.findall(r'class="dash-card ([^"]*)"', body)
-    names = [re.sub(r"\s+", " ", n).strip()
-             for n in re.findall(r'class="card-name">(.*?)</div>', body, re.S)]
-    return {
-        "live": [n for c, n in zip(classes, names) if c.split()[0] == "active"],
-        "soon": [n for c, n in zip(classes, names) if c.split()[0] == "soon"],
-        "total": len(classes),
-    }
+    """Two independent axes, and folding them together is a real bug:
+
+      data-state   is this dashboard on the roster at all (active / soon)
+      data-badge   is the one on the roster finished (live / building)
+
+    The hub's "N live" counts the FIRST. Two rows are on the roster while still
+    being built, so counting data-badge instead would quietly report 9.
+    """
+    body = _render("/p2/strategic-agents")
+    rows = re.findall(
+        r'data-agent="[^"]*"\s+data-state="(\w+)"(?:\s+data-badge="(\w+)")?(.*?)</a>',
+        body, re.S)
+    out = {"live": [], "soon": [], "building": []}
+    for state, badge, block in rows:
+        m = re.search(r"data-agent-name>(.*?)<", block, re.S)
+        name = re.sub(r"\s+", " ", m.group(1)).strip() if m else "?"
+        out["live" if state == "active" else "soon"].append(name)
+        if badge == "building":
+            out["building"].append(name)
+    out["total"] = len(out["live"]) + len(out["soon"])
+    return out
+
+
+def _workspace(slug):
+    """One workspace tile on the hub, parsed from the rendered page."""
+    body = _render("/p2/hub")
+    block = body.split('data-ws="%s"' % slug, 1)[1].split("</a>", 1)[0]
+    stats = dict((label, int(n)) for label, n in
+                 re.findall(r'data-count="(\w+)">(\d+)<', block))
+    desc = re.sub(r"\s+", " ",
+                  re.search(r"data-ws-desc>(.*?)</p>", block, re.S).group(1)).strip()
+    title = re.sub(r"\s+", " ",
+                   re.search(r"data-ws-name>(.*?)</div>", block, re.S).group(1)).strip()
+    return {"stats": stats, "desc": desc, "title": title}
 
 
 @pytest.fixture(scope="module")
 def hub_card():
-    with open(_HUB) as fh:
-        body = _strip_comments(fh.read())
-    # The Strategic Agents card, up to the start of the next card.
-    block = body.split('href="/p2/strategic-agents"', 1)[1].split("</a>", 1)[0]
-    stats = dict((label, int(n)) for n, label in
-                 re.findall(r'class="card-stat"><span>(\d+)</span>\s*(\w+)', block))
-    desc = re.sub(r"\s+", " ",
-                  re.search(r'class="card-desc">(.*?)</div>', block, re.S).group(1)).strip()
-    title = re.search(r'class="card-title">(.*?)</div>', block, re.S).group(1).strip()
-    return {"stats": stats, "desc": desc, "title": title}
+    return _workspace("strategic-agents")
 
 
 # ── The numbers ─────────────────────────────────────────────────────────────
@@ -110,7 +146,17 @@ def test_linkedin_playbook_studio_is_one_of_the_live_dashboards(dashboard_cards)
 # ── The prose ───────────────────────────────────────────────────────────────
 
 def test_the_card_is_named_b2b_agents(hub_card):
-    assert hub_card["title"] == "Strategic Agents"
+    """Named from brand.py rather than pinned to a string.
+
+    This started life guarding a rename ("GTM" -> "B2B Agents" -> "Strategic
+    Agents") reaching the hub. The section's name is now a single value in
+    brand.py that every surface reads, so asserting today's literal would only
+    re-break on the next rename while proving nothing; what still matters is
+    that the tile agrees with that value and carries no retired name.
+    """
+    from brand import BRAND
+    assert hub_card["title"] == BRAND["agents_plural"]
+    assert hub_card["title"] not in ("GTM", "B2B Agents")
 
 
 def test_the_description_mentions_contact_lookup(hub_card):
@@ -165,40 +211,21 @@ def test_the_description_has_no_em_dash(hub_card):
 # ── The other card, so this file covers the whole hub ───────────────────────
 
 def test_the_seo_card_count_matches_the_tool_list():
-    """Same class of drift, different card: this one is generated from
+    """Same class of drift, different tile: this count is generated from
     _seo_tools(), so it can be checked against the source of truth directly."""
-    os.environ.setdefault("GOOGLE_CLIENT_ID", "test")
-    os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test")
-    os.environ.setdefault("FLASK_SECRET_KEY", "test")
-    import sys
-    sys.path.insert(0, _ROOT)
-    import app as appmod
-    with open(_HUB) as fh:
-        body = _strip_comments(fh.read())
-    block = body.split('href="/p2/seo-aeo"', 1)[1].split("</a>", 1)[0]
-    stats = dict((label, int(n)) for n, label in
-                 re.findall(r'class="card-stat"><span>(\d+)</span>\s*(\w+)', block))
-    assert stats["dashboards"] == len(appmod._seo_tools())
+    assert _workspace("seo-aeo")["stats"]["dashboards"] == len(appmod._seo_tools())
 
 
 # ── The "by the numbers" band, same hand-maintained-number risk ─────────────
 
 def _hub_band():
-    """Parsed from the RENDERED page, not the template: the companies figure is a
-    Jinja expression now, so the template source no longer holds the number."""
-    os.environ.setdefault("GOOGLE_CLIENT_ID", "test")
-    os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test")
-    os.environ.setdefault("FLASK_SECRET_KEY", "test")
-    import sys
-    sys.path.insert(0, _ROOT)
-    import app as appmod
-    c = appmod.app.test_client()
-    with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
-    body = _strip_comments(c.get("/p2/hub").get_data(as_text=True))
-    band = body.split('class="lx-stats2"', 1)[1].split("</section>", 1)[0]
-    return dict((label.strip(), int(n)) for n, label in
-                re.findall(r'data-lxn="(\d+)"[^>]*>0</b><span>([^<]+)</span>', band))
+    """The figures are tiles of the hub grid now rather than a band beneath it,
+    and each renders its value directly instead of being counted up from zero by
+    a script. data-figure is what identifies them."""
+    body = _render("/p2/hub")
+    return dict((label, int(n.replace(",", "").rstrip("+")))
+                for label, n in
+                re.findall(r'data-figure="(\w+)">([\d,]+\+?)<', body))
 
 
 def test_the_hub_band_dashboard_total_matches_the_live_cards(hub_card, dashboard_cards):
@@ -206,12 +233,6 @@ def test_the_hub_band_dashboard_total_matches_the_live_cards(hub_card, dashboard
     it drifts on exactly the same trigger as the card stats above. If someone
     later decides it should count every card including "Coming soon" ones, this
     is the test to change deliberately rather than discover by accident."""
-    os.environ.setdefault("GOOGLE_CLIENT_ID", "test")
-    os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test")
-    os.environ.setdefault("FLASK_SECRET_KEY", "test")
-    import sys
-    sys.path.insert(0, _ROOT)
-    import app as appmod
     expected = len(dashboard_cards["live"]) + len(appmod._seo_tools())
     assert _hub_band()["dashboards"] == expected, (
         "band says %d dashboards, live cards total %d"

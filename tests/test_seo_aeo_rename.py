@@ -38,6 +38,7 @@ because none of them name this section:
 """
 
 import os
+import re
 import sys
 
 import pytest
@@ -77,7 +78,9 @@ def test_the_page_says_seo_plus_aeo_not_bare_seo(client):
 
 def test_the_hub_card_is_renamed_and_points_at_the_new_path(client):
     body = client.get("/p2/hub").get_data(as_text=True)
-    assert '<div class="card-title">SEO + AEO</div>' in body
+    # Same re-skin, same reason as test_strategic_agents_rename: the tile is
+    # identified by its data attributes rather than by a presentational class.
+    assert re.search(r'data-ws-name>\s*SEO \+ AEO\s*<', body)
     assert 'href="/p2/seo-aeo"' in body
     assert '<div class="card-title">SEO</div>' not in body
 

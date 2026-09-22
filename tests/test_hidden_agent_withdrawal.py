@@ -85,7 +85,13 @@ def test_the_command_palette_does_not_offer_it(client):
     """Ctrl+K is a second listing on the same page and was missed the first time
     a card was pulled from it. The card and the palette entry hide together."""
     body = _rendered(client, "/p2/strategic-agents")
-    palette = body.split("var BASE=", 1)[1].split("];", 1)[0]
+    # The palette used to be pasted into twelve templates, each with its own
+    # `var BASE=[...]` and its own hand-commented-out entry -- which is exactly
+    # how an entry survived in some copies. It is one shared script now, and its
+    # destination list is rendered server-side and FILTERED on
+    # HIDDEN_AGENT_SLUGS, so this is no longer something a person has to
+    # remember to do in twelve places.
+    palette = body.split("window.__KP_BASE__ = ", 1)[1].split("];", 1)[0]
     assert _SLUG not in palette
     assert "/p2/strategic-agents/linkedin-intelligence" in palette, "the palette emptied out"
 
@@ -175,14 +181,22 @@ def test_one_set_drives_every_data_driven_surface():
 
 
 def test_the_hand_written_card_says_how_to_come_back():
-    """b2b_agents.html is not driven by HIDDEN_AGENT_SLUGS -- the cards are typed
-    out by hand -- so the commented-out card has to carry the restore note itself
-    or the two halves of this change come apart."""
+    """b2b_agents.html is not driven by HIDDEN_AGENT_SLUGS -- the rows are typed
+    out by hand -- so the commented-out row has to carry the restore note itself
+    or the two halves of this change come apart.
+
+    The comment is a JINJA comment now rather than an HTML one. That is not
+    cosmetic: an HTML comment is still sent to the browser, so the old build
+    shipped a withdrawn agent's name, description and URL to every visitor of a
+    page it had been pulled from. A Jinja comment never reaches the response.
+    """
     with open(os.path.join(_ROOT, "templates", "b2b_agents.html")) as fh:
         body = fh.read()
-    hidden = re.findall(r"<!--(.*?)-->", body, flags=re.S)
+    hidden = re.findall(r"\{#(.*?)#\}", body, flags=re.S)
     note = [h for h in hidden if _NAME in h]
-    assert note, "the card is not commented out"
+    assert note, "the row is not commented out"
     assert "HIDDEN_AGENT_SLUGS" in note[0], "no pointer to the other half of the hide"
-    assert 'class="dash-card active c-lir"' in note[0], (
-        "the card markup was deleted rather than commented out")
+    assert 'data-agent="c-lir"' in note[0], (
+        "the row markup was deleted rather than commented out")
+    assert "<!--" not in body.split(_NAME, 1)[0][-400:], (
+        "the row is back inside an HTML comment, which ships it to the browser")

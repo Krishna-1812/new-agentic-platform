@@ -1,0 +1,112 @@
+/* ════════════════════════════════════════════════════════════════════════
+   AGENT DIRECTORY (/p2/strategic-agents) — BENTO
+
+   The old page was eleven identical thumbnail cards in a three-column grid,
+   each with a decorative icon panel taking the top third. At eleven items
+   that is a lot of scrolling to answer "which one was the job-change one",
+   and the thumbnails carried no information: every card's icon was a
+   different abstract glyph for a tool nobody identifies by its glyph.
+
+   This is a list of rows instead, two columns wide at desktop. A row is the
+   name, what it does in one line, and its state. Names sit in a column, so
+   the eye runs down them instead of hunting across a mosaic. Search lives
+   in the command palette rather than being duplicated here.
+   ──────────────────────────────────────────────────────────────────────── */
+
+html:root { background-color: var(--bg); }
+
+.dir-shell { max-width: var(--maxw); margin: 0 auto; padding: var(--sp-7) var(--page-pad) var(--sp-9); }
+
+.dir-lead { margin: 0 0 var(--sp-6); max-width: 54ch; }
+.dir-kicker {
+  font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--acc);
+  margin-bottom: var(--sp-3);
+}
+.dir-h1 {
+  font-family: var(--font-display); font-size: var(--fs-3xl); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-display); line-height: var(--lh-tight);
+  margin: 0 0 var(--sp-2); color: var(--tx);
+}
+.dir-sub { margin: 0; font-size: var(--fs-md); color: var(--tx2); line-height: var(--lh-body); }
+
+/* ── The list ────────────────────────────────────────────────────────────*/
+.dir-list {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap);
+  align-items: start;
+}
+
+.dir-row {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: var(--sp-4);
+  align-items: center;
+  background: var(--s1); border-radius: var(--r); padding: var(--sp-4) var(--sp-5);
+  color: var(--tx); text-decoration: none;
+  transition: background var(--dur-fast) var(--ease);
+}
+.dir-row:hover { background: var(--s2); }
+
+.dir-ic {
+  width: 38px; height: 38px; border-radius: var(--r-sm); flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--s2); color: var(--tx2);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.dir-row:hover .dir-ic { background: var(--acc); color: var(--tx-on-fill); }
+/* The page's SVGs arrive from the old markup with a viewBox and nothing else.
+   An inline <svg> with no width and no stroke renders at 300x150 in solid
+   black, so the defaults are set here rather than on each of eleven glyphs. */
+.dir-ic svg {
+  width: 18px; height: 18px;
+  fill: none; stroke: currentColor; stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+.dir-txt { min-width: 0; }
+.dir-name {
+  font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-tight); line-height: var(--lh-snug);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dir-desc {
+  font-size: var(--fs-sm); color: var(--tx2); line-height: var(--lh-snug); margin-top: 2px;
+  /* Two lines, then ellipsis: a row whose description wraps to four lines
+     stops being a row and the column loses its rhythm. */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.dir-tags { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-top: var(--sp-2); }
+.dir-tag {
+  font-size: var(--fs-xs); color: var(--tx3); background: var(--s2);
+  border-radius: var(--r-sm); padding: 2px var(--sp-2);
+}
+.dir-row:hover .dir-tag { background: var(--s3); }
+
+/* ── State ───────────────────────────────────────────────────────────────
+   Three states, three treatments, and only one of them is coloured. "Live"
+   is the default and therefore needs no emphasis at all -- marking every
+   row green would make the two that are NOT simply live invisible. */
+.dir-state {
+  display: inline-flex; align-items: center; gap: var(--sp-2); flex: none;
+  font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--tx3);
+}
+.dir-state i { width: 6px; height: 6px; border-radius: 50%; background: var(--tx3); }
+.dir-state--live i  { background: var(--acc); }
+.dir-state--build   { color: var(--clay); }
+.dir-state--build i { background: var(--clay); }
+
+.dir-foot { margin-top: var(--sp-7); font-size: var(--fs-xs); color: var(--tx3); }
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────────────*/
+@media (max-width: 1000px) {
+  .dir-list { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .dir-h1 { font-size: var(--fs-2xl); }
+  /* The state chip moves under the text rather than squeezing the name into
+     a few characters on a narrow screen. */
+  .dir-row { grid-template-columns: 38px minmax(0, 1fr); }
+  .dir-state { grid-column: 2; margin-top: var(--sp-1); }
+}

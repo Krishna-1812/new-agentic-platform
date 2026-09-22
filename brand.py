@@ -37,6 +37,10 @@ BRAND = {
 
     # ── auth ────────────────────────────────────────────────────────────────
     # Mirrors the server-side gate; shown to a user who is refused access.
+    # Who to ask when a page refuses you. Named here rather than typed into
+    # the 403 template, where it sat as a bare first name that meant nothing to
+    # anyone who had not met them.
+    "support": "your platform admin",
     "access_note": "Access is limited to @northaxis.com accounts.",
 }
 

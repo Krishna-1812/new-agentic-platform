@@ -3167,6 +3167,10 @@ def _inject_app_agents():
     _u = _get_user() or {}
     _is_admin = (_u.get("email", "").lower() in ADMIN_EMAILS)
     return {"app_agents": _visible_app_agents(), "google_client_id": GOOGLE_CLIENT_ID,
+            # Exposed so the shell's command palette can filter itself. The
+            # palette is a listing like any other, and a withdrawn agent that
+            # is still offered there is the exact bug this set exists to stop.
+            "hidden_agent_slugs": sorted(HIDDEN_AGENT_SLUGS),
             "is_admin": _is_admin, **brand_context()}
 
 @app.route("/app")

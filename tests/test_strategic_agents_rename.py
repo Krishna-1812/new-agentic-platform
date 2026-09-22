@@ -27,6 +27,7 @@ text a reader sees.
 """
 
 import os
+import re
 import sys
 
 import pytest
@@ -56,14 +57,19 @@ def test_the_section_is_served_at_its_new_path(client):
 
 def test_the_page_says_strategic_agents_not_b2b_agents(client):
     body = client.get("/p2/strategic-agents").get_data(as_text=True)
-    assert "Strategic Agents" in body
+    from brand import BRAND
+    assert BRAND["agents_plural"] in body
     assert ">B2B Agents<" not in body
     assert ">GTM<" not in body
 
 
 def test_the_hub_card_is_renamed_and_points_at_the_new_path(client):
     body = client.get("/p2/hub").get_data(as_text=True)
-    assert '<div class="card-title">Strategic Agents</div>' in body
+    # The tile is named from brand.py now, and its markup is data-attributed
+    # rather than class-named, so this checks the same thing through the
+    # contract that survives a re-skin.
+    from brand import BRAND
+    assert re.search(r'data-ws-name>\s*%s\s*<' % re.escape(BRAND["agents_plural"]), body)
     assert 'href="/p2/strategic-agents"' in body
     assert '<div class="card-title">B2B Agents</div>' not in body
 

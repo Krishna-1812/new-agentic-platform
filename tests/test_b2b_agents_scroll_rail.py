@@ -1,90 +1,98 @@
-"""The scroll rail on /p2/strategic-agents (rendered from templates/b2b_agents.html,
-whose filename kept its pre-rename name on purpose -- see test_b2b_agents_rename.py).
+"""Why /p2/strategic-agents no longer ships a substitute scrollbar.
 
-gtm.css zeroes the native scrollbar on every element it touches, so this page
-ships its own hairline rail instead. Its behaviour (sizing, dragging, going
-quiet, staying off a page that does not scroll) is exercised in a browser; what
-is checked here is the wiring, which is the part that breaks silently: a
-renamed file or a dropped <link> leaves the page loading fine and the rail
-simply absent, with nothing in any log to say so.
+The rail existed for one reason: gtm.css zeroes the native scrollbar on every
+element it touches --
+
+    *{scrollbar-width:none}
+    *::-webkit-scrollbar{width:0 !important;display:none !important}
+
+-- so the page had no scroll indicator at all and drew its own hairline one to
+put it back. Two files, a <link>, a deferred <script> and a fixed-position
+overlay, to restore something the page had removed from itself.
+
+The page was rebuilt on the Bento design system and does not load gtm.css. The
+native scrollbar is styled there (bento-tokens.css) rather than suppressed, so
+there is nothing to substitute for and the rail is retired.
+
+This file therefore no longer tests the rail's wiring. It tests the PREMISE,
+which is the part that can silently come back: if a Bento page starts hiding
+the native scrollbar again, it needs a rail again, and the failure mode is a
+long page with no scroll affordance whatsoever -- which nothing errors on and
+nobody files a bug about, they just stop scrolling.
 """
 
 import os
 import re
-import sys
-
-os.environ.setdefault("GOOGLE_CLIENT_ID", "test")
-os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test")
-os.environ.setdefault("FLASK_SECRET_KEY", "test")
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import app as appmod  # noqa: E402
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_CSS = "static/css/scroll-rail.css"
-_JS = "static/js/scroll-rail.js"
+_CSS = os.path.join(_ROOT, "static", "css")
+_TPL = os.path.join(_ROOT, "templates")
 
 
-def _client(email="staff@position2.com"):
-    c = appmod.app.test_client()
-    with c.session_transaction() as sess:
-        sess["google_user"] = {"email": email, "name": "T"}
-    return c
+def _read(*parts):
+    with open(os.path.join(*parts), encoding="utf-8") as fh:
+        return fh.read()
 
 
-def _page(monkeypatch):
-    # Via monkeypatch, never by assigning onto the module: this is the same
-    # process every other test file runs in, and a permanent stub here is a
-    # stub in tests/test_tracked_company_count.py too.
-    monkeypatch.setattr(appmod, "_tracked_company_floor", lambda *a, **k: 1200)
-    r = _client().get("/p2/strategic-agents")
-    assert r.status_code == 200, r.status_code
-    return r.get_data(as_text=True)
+def _strip_comments(css):
+    return re.sub(r"/\*.*?\*/", "", css, flags=re.S)
 
 
-def test_the_page_links_both_halves_of_the_rail(monkeypatch):
-    """Either half alone is a silent no-op: the stylesheet without the script
-    draws an empty track that never moves, the script without the stylesheet
-    builds an invisible element."""
-    html = _page(monkeypatch)
-    assert "css/scroll-rail.css" in html
-    assert "js/scroll-rail.js" in html
+def _bento_pages():
+    """Pages on the Bento system, found by what they load rather than by a list
+    somebody has to remember to update."""
+    return [n for n in sorted(os.listdir(_TPL))
+            if n.endswith(".html") and not n.startswith("_")
+            and ("_bento.html" in _read(_TPL, n) or "bento-tokens.css" in _read(_TPL, n))]
 
 
-def test_both_rail_files_are_actually_served():
-    """A <link> to a path that 404s looks identical to a working one in the
-    HTML, and the page renders without complaint either way."""
-    c = _client()
-    for path in ("/" + _CSS, "/" + _JS):
-        r = c.get(path)
-        assert r.status_code == 200, "%s served %s" % (path, r.status_code)
-        assert r.get_data(), "%s served an empty body" % path
+def _sheets_of(page):
+    """Every stylesheet a page loads, including the ones the shell macro adds."""
+    markup = _read(_TPL, page)
+    named = set(re.findall(r"css/([\w./-]+\.css)", markup))
+    if "_bento.html" in markup:
+        named |= {"bento-tokens.css", "bento-components.css", "bento-motion.css"}
+    return named
 
 
-def test_the_rail_script_is_deferred_so_it_finds_a_body_to_attach_to(monkeypatch):
-    """It is linked in <head> and appends to document.body. Without defer it
-    runs against a document that has no body yet."""
-    html = _page(monkeypatch)
-    tag = re.search(r"<script[^>]*js/scroll-rail\.js[^>]*>", html)
-    assert tag, "no script tag for the rail"
-    assert "defer" in tag.group(0), tag.group(0)
+def test_the_agent_directory_no_longer_hides_its_own_scrollbar():
+    """The whole reason the rail existed. Loading gtm.css here would zero the
+    native scrollbar again and leave the page with no scroll indicator."""
+    assert "gtm.css" not in _sheets_of("b2b_agents.html")
 
 
-def test_the_rail_is_scoped_to_this_page_only():
-    """It is a fix for one page's hidden scrollbar, not a platform-wide
-    change. Picking it up elsewhere would put a second scroll indicator on
-    pages that already show the native one."""
-    tpl = os.path.join(_ROOT, "templates")
-    linking = [n for n in os.listdir(tpl)
-               if n.endswith(".html")
-               and "scroll-rail" in open(os.path.join(tpl, n), encoding="utf-8").read()]
-    assert linking == ["b2b_agents.html"], linking
+def test_no_bento_page_suppresses_the_native_scrollbar():
+    """Stated as a property of every Bento page rather than of one file, because
+    the next page rebuilt is the one that would reintroduce it."""
+    offenders = []
+    for page in _bento_pages():
+        for sheet in _sheets_of(page):
+            path = os.path.join(_CSS, sheet)
+            if not os.path.exists(path):
+                continue
+            css = _strip_comments(_read(path))
+            if re.search(r"scrollbar-width\s*:\s*none", css) or \
+               re.search(r"::-webkit-scrollbar\s*\{[^}]*display\s*:\s*none", css):
+                offenders.append("%s -> %s" % (page, sheet))
+    assert not offenders, (
+        "these Bento pages hide the native scrollbar, so they have no scroll "
+        "indicator and would need a substitute rail put back: %s" % offenders)
 
 
-def test_the_rail_never_takes_layout_space():
-    """The page reserves no scrollbar gutter, so a rail that was not fixed and
-    overlaid would reflow the whole card grid inward."""
-    css = open(os.path.join(_ROOT, _CSS), encoding="utf-8").read()
-    block = css[css.index(".p2-rail {"):css.index(".p2-rail.on {")]
-    assert "position: fixed" in block, block
+def test_the_bento_tokens_style_the_scrollbar_rather_than_removing_it():
+    """The positive half of the rule above: a styled scrollbar is what makes the
+    rail unnecessary. If this block goes away the page falls back to the
+    browser's default, which is still visible -- so this is about the system
+    being deliberate, not about it being broken."""
+    css = _strip_comments(_read(_CSS, "bento-tokens.css"))
+    assert "::-webkit-scrollbar-thumb" in css
+    assert not re.search(r"scrollbar-width\s*:\s*none", css)
+
+
+def test_the_rail_is_not_linked_by_any_page_now():
+    """It is retired, not disabled. A page picking it up again would draw a
+    second scroll indicator beside the native one -- which is the exact failure
+    the old version of this file guarded against in the other direction."""
+    linking = [n for n in sorted(os.listdir(_TPL))
+               if n.endswith(".html") and "scroll-rail" in _read(_TPL, n)]
+    assert linking == [], linking

@@ -32,7 +32,7 @@
            system sheets are always loaded first and never passed in.
    scripts page scripts, same form. bento-motion.js is always loaded.
    ──────────────────────────────────────────────────────────────────────- #}
-{% macro head(title, sheets=[], scripts=[]) -%}
+{% macro head(title, sheets=[], scripts=[], palette=True) -%}
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ title }} &middot; {{ brand.name }}</title>
@@ -53,8 +53,12 @@
 {%- set name, _, ver = script.partition('?') %}
 <script src="{{ url_for('static', filename='js/' + name) }}{% if ver %}?{{ ver }}{% endif %}"></script>
 {%- endfor %}
-{# Deferred so it never blocks paint, and because it only needs the DOM. #}
+{# Deferred so they never block paint, and because both only need the DOM. #}
 <script defer src="{{ url_for('static', filename='js/bento-motion.js') }}"></script>
+{%- if palette %}
+<script>window.__KP_BASE__ = {{ palette_items()|safe }};</script>
+<script defer src="{{ url_for('static', filename='js/bento-palette.js') }}"></script>
+{%- endif %}
 {%- endmacro %}
 
 
@@ -74,7 +78,14 @@
       <span class="bn-word">{{ brand.name }}</span>
     </a>
     <nav class="bn-crumbs" aria-label="Breadcrumb">
+      {#- With no crumbs the hub IS the current page, so it must not link to
+          itself: a breadcrumb that navigates nowhere is a dead control, and on
+          the busiest page in the app it is the first one anybody clicks. -#}
+      {%- if crumbs %}
       <a href="/p2/hub" class="bn-crumb">{{ brand.hub }}</a>
+      {%- else %}
+      <span class="bn-crumb-cur" aria-current="page">{{ brand.hub }}</span>
+      {%- endif %}
       {%- for label, href in crumbs %}
       <span class="bn-crumb-sep">/</span>
       {%- if href %}
@@ -124,4 +135,39 @@ document.addEventListener('click', function(e){
   if (m && d && !m.contains(e.target)) d.classList.remove('is-open');
 });
 </script>
+{%- endmacro %}
+
+
+{# ── palette_items ──────────────────────────────────────────────────────
+   The platform-wide destinations, rendered server-side so the brand strings
+   come from brand.py rather than being frozen into a JS file. `k` is the
+   single character shown in the row's square.
+
+   A page adds its own entries by setting window.__KP_ITEMS before the script
+   loads; those are listed first.
+   ──────────────────────────────────────────────────────────────────────- #}
+{% macro palette_items() -%}
+{%- set entries = [
+ {"t": brand.hub, "d": "Platform home", "u": "/p2/hub", "k": "W"},
+ {"t": brand.agents_plural, "d": "Go-to-market intelligence", "u": "/p2/strategic-agents", "k": "A"},
+ {"t": "SEO + AEO", "d": "Organic intelligence", "u": "/p2/seo-aeo", "k": "S"},
+ {"t": brand.handbook, "d": "How the platform works", "u": "/p2/playbook", "k": "G"},
+ {"t": "Contact Finder", "d": "Find and enrich decision-makers", "u": "/p2/strategic-agents/company-people-intelligence", "k": "C", "slug": "company-people-intelligence"},
+ {"t": "ABM Signal Tracker", "d": "Company signals and insights", "u": "/p2/abm-signal-tracker/accounts", "k": "T", "slug": "signal-tracker"},
+ {"t": "Ad Intelligence", "d": "Competitor ad monitoring", "u": "/p2/strategic-agents/ad-intelligence", "k": "D", "slug": "ad-intelligence"},
+ {"t": "Anonymous Visitors", "d": "Website visitor signals", "u": "/p2/strategic-agents/anonymous-visitors", "k": "V", "slug": "anonymous-visitors"},
+ {"t": "Job Change Alert", "d": "Decision-maker job changes", "u": "/p2/strategic-agents/job-change-alert", "k": "J", "slug": "job-change-alert"},
+ {"t": "LinkedIn Intelligence", "d": "People, companies and posts", "u": "/p2/strategic-agents/linkedin-intelligence", "k": "L", "slug": "linkedin-intelligence"},
+ {"t": "LinkedIn Social Researcher", "d": "Competitive LinkedIn content analysis", "u": "/p2/strategic-agents/linkedin-social-researcher", "k": "R", "slug": "linkedin-social-researcher"},
+ {"t": "LinkedIn Strategy Researcher", "d": "Competitive strategy playbooks", "u": "/p2/strategic-agents/linkedin-strategy-researcher", "k": "Y", "slug": "linkedin-strategy-researcher"},
+ {"t": "Social Media Intelligence", "d": "Cross-platform social analysis", "u": "/p2/strategic-agents/social-media-intelligence", "k": "M", "slug": "social-media-intelligence"},
+ {"t": "Event & Conference Intelligence", "d": "Event and speaker signals", "u": "/p2/strategic-agents/event-conference-intelligence", "k": "E", "slug": "event-conference-intelligence"},
+ {"t": "Thought Leader Intelligence", "d": "Executive presence and PR", "u": "/p2/strategic-agents/thought-leader-pr", "k": "P", "slug": "thought-leader-pr"},
+ {"t": "42 North Dental Slot Checker", "d": "Appointment availability", "u": "/p2/strategic-agents/42-north-dental-slot-checker", "k": "N", "slug": "42-north-dental-slot-checker"}
+] -%}
+{#- A withdrawn agent must not be offered here. The old build handled this by
+    commenting out the palette entry by hand in each of twelve copies, which is
+    how the entry survived in some of them; the filter is structural now, so
+    adding a slug to HIDDEN_AGENT_SLUGS removes it from every page at once. -#}
+{{- entries | rejectattr("slug", "in", hidden_agent_slugs | default([])) | list | tojson -}}
 {%- endmacro %}

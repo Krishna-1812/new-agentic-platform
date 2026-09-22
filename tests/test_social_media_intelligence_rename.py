@@ -178,9 +178,12 @@ def test_the_page_hero_is_no_longer_only_about_creative():
 
 
 def test_the_listing_card_says_seven_platforms_not_six():
+    # Located by data-agent rather than by the presentational class: the page
+    # is a list of rows on the Bento system now, and the class that used to
+    # name this row no longer exists.
     card = _read("templates", "b2b_agents.html")
-    block = card[card.index('class="dash-card active c-sci"'):]
-    block = block[:block.index("card-footer")]
+    block = card[card.index('data-agent="c-sci"'):]
+    block = block[:block.index("dir-tags")]
     assert "seven platforms" in block
     assert "six platforms" not in block
 
