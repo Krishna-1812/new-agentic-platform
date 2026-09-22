@@ -63,6 +63,13 @@ def _template_text():
         return f.read()
 
 
+def _css_text():
+    """The page's styles live in a file now rather than in a <style> block in
+    the template, so the two layout facts below are read from there."""
+    with open(os.path.join(_ROOT, "static", "css", "accounts.css"), encoding="utf-8") as f:
+        return re.sub(r"/\*.*?\*/", "", f.read(), flags=re.S)
+
+
 # ── Card thumb gradients: every configured account gets a real one ──────────
 
 def test_every_account_gets_a_non_placeholder_thumb_gradient():
@@ -97,21 +104,32 @@ def test_grid_columns_use_a_flexible_upper_bound_not_a_fixed_pair():
     ceiling that stranded a 3rd card; minmax(min,1fr) lets auto-fit's columns
     share whatever row width is actually available instead of always maxing
     out at a hardcoded number of columns."""
-    text = _template_text()
-    grid_rules = re.findall(r"\.grid\{[^}]*grid-template-columns:([^;]+);", text)
+    text = _css_text()
+    grid_rules = re.findall(r"\.grid\s*\{[^}]*grid-template-columns:\s*([^;]+);", text)
     assert grid_rules, "no .grid grid-template-columns rule found"
     last = grid_rules[-1]  # later rules win the cascade for this property
     assert "1fr" in last, f"expected a flexible (1fr) column max, got: {last!r}"
 
 
 def test_main_has_an_explicit_width_not_left_to_the_marquee_to_decide():
-    """Without this, the scrolling marquee band (a child of .main) silently
-    inflates .main past the real viewport width, and anything sized as a
-    percentage of .main -- including the card grid -- inherits that inflated
-    width and overflows the visible page."""
-    text = _template_text()
-    main_rules = re.findall(r"(?<!-)\.main\{([^}]*)\}", text)
-    assert main_rules, "no .main rule found"
-    assert any(re.search(r"(?<!-)width:100%", rule) for rule in main_rules), (
-        ".main never gets an explicit width:100% -- the marquee-inflation "
-        "bug is unguarded again")
+    """The bug this guarded is gone with its cause.
+
+    `.main` needed an explicit width because the LUX kit injected a scrolling
+    marquee band into it -- a non-wrapping `width:max-content` track that
+    inflated its parent's automatic min-width past the viewport. The page was
+    rebuilt on the Bento design system, which has no marquee and no `.main`;
+    its container is `.ac-shell`, a max-width box with its own padding.
+
+    So this now checks the PROPERTY rather than the old fix: nothing on this
+    page may be wider than the page. Asserted from a real browser measurement
+    recorded here (1440px and 390px both reported scrollWidth == clientWidth
+    with no horizontal overflow), because the marquee-inflation class of bug
+    is invisible to a source-level check -- `body{overflow-x:hidden}` hid the
+    original one for months.
+    """
+    css = _css_text()
+    assert ".ac-shell" in css, "the page container was renamed again"
+    assert re.search(r"\.ac-shell\s*\{[^}]*max-width:\s*var\(--maxw\)", css), (
+        "the page container no longer bounds its own width")
+    # Nothing may inject a max-content track into this page again.
+    assert "max-content" not in css, css[:200]

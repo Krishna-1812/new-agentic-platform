@@ -104,21 +104,38 @@ def test_the_page_names_itself_the_new_way_in_all_four_places():
 
 
 def test_every_template_carrying_the_roster_names_it_the_same_way():
-    """Eleven independent copies of one list. The failure mode is not a
-    crash, it is one page in the product still calling the agent by a name
-    no other page uses."""
-    checked = 0
+    """This used to require the roster in at least ten templates.
+
+    That minimum encoded the problem rather than the rule: the command palette
+    was pasted into eleven templates, each with its own copy of the list, and
+    the failure mode was one page calling the agent a name no other page used.
+    The roster lives in _bento.html now and every rebuilt page reads it from
+    there, so a count floor would fail for the right reason -- copies being
+    removed -- which is the opposite of useful.
+
+    What is asserted instead: the shared roster exists and names the agent
+    correctly, and every remaining hand-written copy agrees with it. Pages
+    still to be rebuilt keep theirs; as each one moves, its copy goes and this
+    keeps holding without being edited again.
+    """
+    shared = io.open(os.path.join(_ROOT, "templates", "_bento.html"),
+                     encoding="utf-8").read()
+    m = re.search(r'"t":\s*"([^"]*)",\s*"d":\s*"([^"]*)",\s*'
+                  r'"u":\s*"/p2/strategic-agents/%s"' % _SLUG, shared)
+    assert m, "the shared command-palette roster no longer lists this agent"
+    assert m.group(1) == _NEW, "the shared roster calls it %r" % m.group(1)
+    assert "creative" not in m.group(2).lower(), \
+        "the shared roster still describes it as %r" % m.group(2)
+
     for base, dirs, files in os.walk(os.path.join(_ROOT, "templates")):
         for name in sorted(files):
             if not name.endswith(".html"):
                 continue
             text = io.open(os.path.join(base, name), encoding="utf-8").read()
-            for m in re.finditer(r"\{t:'([^']*)',d:'([^']*)',u:'/p2/strategic-agents/%s'" % _SLUG, text):
-                title, desc = m.group(1), m.group(2)
-                assert title == _NEW, "%s calls it %r" % (name, title)
-                assert "creative" not in desc.lower(), "%s still describes it as %r" % (name, desc)
-                checked += 1
-    assert checked >= 10, "expected the roster in at least 10 templates, found %d" % checked
+            for c in re.finditer(r"\{t:'([^']*)',d:'([^']*)',u:'/p2/strategic-agents/%s'" % _SLUG, text):
+                assert c.group(1) == _NEW, "%s calls it %r" % (name, c.group(1))
+                assert "creative" not in c.group(2).lower(), \
+                    "%s still describes it as %r" % (name, c.group(2))
 
 
 # ── The analytics history must not fork ────────────────────────────────────

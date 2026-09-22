@@ -110,3 +110,18 @@ html:root { background-color: var(--bg); }
   .dir-row { grid-template-columns: 38px minmax(0, 1fr); }
   .dir-state { grid-column: 2; margin-top: var(--sp-1); }
 }
+
+/* ── LETTER MARK ─────────────────────────────────────────────────────────
+   The SEO + AEO tools arrive from a remote manifest, icons included, and
+   every one of those icons is an emoji. Emoji bring their own palette and
+   their own vertical metrics into a system built on four named hues and one
+   type scale, and they render from a different font on every OS.
+
+   A slug-to-SVG map would fix that for today's sixteen tools and silently
+   fall back to nothing for the seventeenth, because the list is not ours.
+   The tool's initial always works, and it is the same mark the command
+   palette uses for the same reason. */
+.dir-ic--letter {
+  font-family: var(--font-display); font-size: var(--fs-md); font-weight: var(--fw-bold);
+  letter-spacing: 0;
+}

@@ -1,0 +1,109 @@
+/* ════════════════════════════════════════════════════════════════════════
+   ABM SIGNAL TRACKER — ACCOUNT PICKER — BENTO
+
+   The card markup for this page is generated in app.py, not in the template,
+   so the class names below are a CONTRACT rather than a style choice: .card,
+   .card-band, .card-thumb, .card-thumb-icon, .card-badge, .badge-dot,
+   .card-body, .card-name, .card-desc, .card-footer, .stat, .arrow. Renaming
+   any of them means editing the generator, which is backend code this work
+   does not touch.
+
+   The generator also sets four inline custom properties per card --
+   --accent, --accent-text, --glow and --thumb -- giving every account list
+   its own hue and its own gradient thumbnail. Nothing here reads them. Eight
+   accounts in eight colours is eight colours that mean nothing; in this
+   system a fill says "this is the thing you came for", and on a page where
+   every row is equally the thing you came for, that is no fill at all.
+
+   Same row layout as the two directories, so choosing an account list reads
+   the same way as choosing an agent.
+   ──────────────────────────────────────────────────────────────────────── */
+
+html:root { background-color: var(--bg); }
+
+.ac-shell { max-width: var(--maxw); margin: 0 auto; padding: var(--sp-7) var(--page-pad) var(--sp-9); }
+
+.ac-lead { margin: 0 0 var(--sp-6); max-width: 54ch; }
+.ac-kicker {
+  font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--acc);
+  margin-bottom: var(--sp-3);
+}
+.ac-h1 {
+  font-family: var(--font-display); font-size: var(--fs-3xl); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-display); line-height: var(--lh-tight);
+  margin: 0 0 var(--sp-2); color: var(--tx);
+}
+.ac-sub { margin: 0; font-size: var(--fs-md); color: var(--tx2); line-height: var(--lh-body); }
+
+/* ── The generated cards ─────────────────────────────────────────────────*/
+/* auto-fit, not a fixed pair. With exactly three accounts a two-column grid
+   orphans the third alone on a second row with a card-width of empty space
+   beside it -- which is the bug test_accounts_layout.py was written for, and
+   which a fixed `repeat(2, ...)` reintroduces. auto-fit collapses the empty
+   track so three cards settle into three even columns. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--gap); align-items: start;
+}
+
+.grid .card {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--sp-4); align-items: center;
+  background: var(--s1); border-radius: var(--r); padding: var(--sp-4) var(--sp-5);
+  color: var(--tx); text-decoration: none;
+  transition: background var(--dur-fast) var(--ease);
+}
+.grid .card:hover { background: var(--s2); }
+
+/* The decorative band and the emoji thumbnail are the two pieces that only
+   existed to fill the card's top third. The icons come from the generator as
+   emoji, which bring their own palette and their own metrics into a system
+   built on four named hues -- and there is no way to restyle an emoji, only
+   to stop showing it. */
+.grid .card-band,
+.grid .card-thumb-icon { display: none; }
+
+/* .card-thumb now wraps only the state chip, so it sits inline at the end of
+   the row rather than being a panel of its own. */
+.grid .card-thumb { display: contents; }
+
+/* Explicit placement, because display:contents on .card-thumb makes the badge
+   a direct grid child that auto-places BEFORE the body -- which put it alone
+   on row one and left a card-height gap above every name. */
+.grid .card-body  { grid-column: 1; grid-row: 1; min-width: 0; }
+.grid .card-name {
+  font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-tight); line-height: var(--lh-snug);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.grid .card-desc {
+  font-size: var(--fs-sm); color: var(--tx2); line-height: var(--lh-snug); margin-top: 2px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.grid .card-footer { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-3); }
+.grid .stat {
+  display: inline-flex; align-items: baseline; gap: var(--sp-2);
+  font-size: var(--fs-xs); color: var(--tx3);
+}
+.grid .stat span {
+  font-family: var(--font-display); font-size: var(--fs-md); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight); font-variant-numeric: tabular-nums; color: var(--tx);
+}
+/* The generator emits a literal "→" rather than an icon, so it is text. */
+.grid .arrow { margin-left: auto; color: var(--tx3); font-size: var(--fs-md); }
+.grid .card:hover .arrow { color: var(--acc); }
+
+.grid .card-badge {
+  grid-column: 2; grid-row: 1; align-self: start;
+  display: inline-flex; align-items: center; gap: var(--sp-2); flex: none;
+  font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--tx3);
+}
+.grid .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--acc); }
+
+.ac-foot { margin-top: var(--sp-7); font-size: var(--fs-xs); color: var(--tx3); }
+
+@media (max-width: 1000px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px)  { .ac-h1 { font-size: var(--fs-2xl); } }
