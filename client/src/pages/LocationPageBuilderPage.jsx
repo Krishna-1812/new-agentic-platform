@@ -15,8 +15,9 @@ const GD_CLIENT_ID = 'client_gentle_dental';
 const CBH_CLIENT_ID = 'client_clear_behavioral_health';
 // Clear Behavioral Health runs the Neuro flow (same section contract, same
 // YMYL approval gates) — only Gentle Dental branches to its own wizard.
-// Reference data is seeded by server/scripts/seedClient.js at onboarding, not
-// from this dashboard — adding a client here means adding a seeder there.
+// Reference data is seeded at onboarding, not from this dashboard. The two
+// clients with a wizard of their own re-import their taxonomy from it ("Sync
+// list"); Neuro Wellness has no such route, so its seeder is run by hand.
 const CLIENT_OPTIONS = [
   { id: NEURO_CLIENT_ID, label: 'Neuro Wellness Spa' },
   { id: GD_CLIENT_ID, label: 'Gentle Dental of New England' },
@@ -73,7 +74,9 @@ function NewPageWizard({ onClose, onCreated, onStartDentalWizard }) {
         const label = CLIENT_OPTIONS.find(c => c.id === clientId)?.label || 'This client';
         setError(isDental
           ? 'Gentle Dental reference data not found. Seed it from the Gentle Dental Wizard first.'
-          : `${label} reference data not found. Run: node server/scripts/seedClient.js --all`);
+          : clientId === CBH_CLIENT_ID
+            ? 'Clear Behavioral Health reference data not found. Seed it from the Clear Behavioral Health Wizard first.'
+            : `${label} reference data not found. Its seeder has to be run against the database by hand.`);
         return;
       }
       const full = await lpb.client(clientId);

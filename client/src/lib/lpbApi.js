@@ -17,10 +17,11 @@ async function req(path, options = {}) {
 }
 
 export const lpb = {
-  // Reference-data seeding is server/scripts/seedClient.js, not an app action.
-  // This one endpoint survives because it is not seeding-as-setup: the dental
-  // wizard's "Sync list" re-imports a changed service taxonomy mid-session.
+  // Not seeding-as-setup: each wizard's "Sync list" re-imports a changed
+  // service/location taxonomy mid-session, so a change to seed.js reaches the
+  // pickers without a deploy step. Re-runnable; hand-entered NAP is preserved.
   seedGentleDental: () => req('/seed-gentle-dental', { method: 'POST' }),
+  seedClearBehavioral: () => req('/seed-clear-behavioral', { method: 'POST' }),
 
   // ── Clear Behavioral Health ───────────────────────────────────────────────
   // `cbhBriefBuild` and `cbhGenerate` are the billed calls; the rest are cheap.

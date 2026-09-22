@@ -9,7 +9,7 @@ const router = express.Router();
 
 const config = require('../locationPageBuilder/config');
 const store = require('../locationPageBuilder/store');
-const { seedGentleDental } = require('../locationPageBuilder/seed');
+const { seedGentleDental, seedClearBehavioral } = require('../locationPageBuilder/seed');
 const cbhBrief = require('../locationPageBuilder/cbhBrief');
 const cbhWizard = require('../locationPageBuilder/cbhWizard');
 const cbhRegen = require('../locationPageBuilder/cbhRegen');
@@ -50,16 +50,25 @@ function mintToken(payload) {
 }
 
 // ── Reference data (L1/L2) ───────────────────────────────────────────────────
-// Seeding a client is ONBOARDING and belongs to server/scripts/seedClient.js,
-// which calls the seeders directly — there is no HTTP endpoint for it, and
-// adding one would put setup back on the product surface.
+// Seeding a client is ONBOARDING and is not a general product surface: there is
+// no route that seeds an arbitrary client, and adding one would put setup back
+// in the app.
 //
-// This single route is the exception, and not for setup: the Gentle Dental
-// wizard's "Sync list" re-imports a changed service/location taxonomy without
-// making the SEO team leave the page. It is re-runnable and preserves
-// hand-entered NAP (see seed.mergeLocation).
+// These two routes are the exception, and not for setup: each wizard's
+// "Sync list" re-imports a changed service/location taxonomy without making the
+// SEO team leave the page. Both are re-runnable and preserve hand-entered NAP
+// (see seed.mergeLocation).
+//
+// They re-seed ONE client each, by calling that client's seeder directly, so a
+// sync from the dental wizard cannot touch Clear Behavioral's rows or the other
+// way round (the seeders are scoped with store.replaceAllForClient).
 router.post('/seed-gentle-dental', async (req, res) => {
   try { res.json(await seedGentleDental()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.post('/seed-clear-behavioral', async (req, res) => {
+  try { res.json(await seedClearBehavioral()); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 

@@ -96,6 +96,7 @@ export default function ClearBehavioralWizardPage() {
   const [step, setStep] = useState(0);
   const [data, setData] = useState(null);
   const [loadError, setLoadError] = useState('');
+  const [seeding, setSeeding] = useState(false);
   // Fetched rather than hardcoded: a limit shown in the UI that differs from
   // the one QC gates on is worse than showing no limit at all.
   const [limits, setLimits] = useState(null);
@@ -201,8 +202,20 @@ export default function ClearBehavioralWizardPage() {
     try {
       setData(await lpb.client(CBH_CLIENT_ID));
     } catch (e) {
-      setLoadError(`${e.message} — if the client is missing, run: node server/scripts/seedClient.js clear-behavioral`);
+      setLoadError(`${e.message} — if the reference data is missing, sync it.`);
     }
+  }
+
+  // The service and location lists are reference data in the DATABASE, so a
+  // taxonomy change in seed.js reaches this picker only after a re-seed. Safe
+  // to re-run: it is scoped to this client, and hand-entered NAP is preserved
+  // (see seed.mergeLocation). Services are replaced outright, so an edit made
+  // directly to a service row does not survive.
+  async function syncList() {
+    setSeeding(true); setLoadError('');
+    try { await lpb.seedClearBehavioral(); await loadReferenceData(); }
+    catch (e) { setLoadError(e.message); }
+    setSeeding(false);
   }
 
   const service = data?.services.find(s => s.id === serviceId) || null;
@@ -622,15 +635,16 @@ export default function ClearBehavioralWizardPage() {
       <div style={{ marginBottom: '1.5rem' }}><ProgressSteps steps={progressSteps} /></div>
 
       {loadError && (
-        <div style={{ padding: '0.75rem 1rem', borderRadius: 'var(--r-lg)', background: 'var(--danger-soft,#FEF2F2)', color: 'var(--danger,#EF4444)', fontSize: '0.8125rem', marginBottom: '1rem' }}>
-          {loadError}
+        <div style={{ padding: '0.75rem 1rem', borderRadius: 'var(--r-lg)', background: 'var(--danger-soft,#FEF2F2)', color: 'var(--danger,#EF4444)', fontSize: '0.8125rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+          <span>{loadError}</span>
+          <button style={btnStyle(true)} disabled={seeding} onClick={syncList}>{seeding ? 'Syncing…' : 'Sync list'}</button>
         </div>
       )}
       {!data && !loadError && <p style={{ fontSize: '0.875rem', color: 'var(--text-2)' }}>Loading…</p>}
 
       {/* ── Step 0 ───────────────────────────────────────────────────────── */}
       {data && step === 0 && (
-        <SectionCard title="Location + Service" note="The service list narrows to what this office actually runs.">
+        <SectionCard title="Location + Service" note="Every office offers the full service list.">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(16rem, 1fr))', gap: '1rem' }}>
             <div>
               <label style={labelStyle}>Location <span style={{ fontWeight: 400 }}>({data.locations.length})</span></label>
@@ -638,8 +652,16 @@ export default function ClearBehavioralWizardPage() {
               <PickerList groups={groupedLocations} selectedId={locationId} onSelect={selectLocation} emptyMessage="No locations match." />
             </div>
             <div>
-              <label style={labelStyle}>
-                Service <span style={{ fontWeight: 400 }}>({availableServices.length} available{location ? ` at ${location.location_name}` : ''})</span>
+              <label style={{ ...labelStyle, display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                <span>Service <span style={{ fontWeight: 400 }}>({availableServices.length} available{location ? ` at ${location.location_name}` : ''})</span></span>
+                <button
+                  style={{ background: 'none', border: 'none', padding: 0, marginLeft: 'auto', fontSize: '0.6875rem', color: 'var(--primary)', cursor: seeding ? 'default' : 'pointer', textDecoration: 'underline' }}
+                  disabled={seeding}
+                  title="Re-import the service and location list. Addresses, phone numbers and hours you have entered are kept."
+                  onClick={syncList}
+                >
+                  {seeding ? 'Syncing…' : 'Sync list'}
+                </button>
               </label>
               <input style={{ ...inputStyle, marginBottom: '0.5rem' }} placeholder="Filter by service…" value={svcFilter} onChange={e => setSvcFilter(e.target.value)} />
               <PickerList groups={groupedServices} selectedId={serviceId} onSelect={selectService} emptyMessage="No services match." />
