@@ -572,10 +572,17 @@ const CBH_ADDICTION_DEFS = [
 ];
 const CBH_ADDICTIONS = CBH_ADDICTION_DEFS.map(([name]) => name);
 
-// Every service carries the PROGRAM GROUP it belongs to. A location declares
-// which groups it runs and services_available_ids is derived from that — which
-// is what keeps a residential-only office from advertising an outpatient IOP,
-// and what the doorway-page guardrail (pipeline.checkEligibility) enforces.
+// Every service carries the PROGRAM GROUP it belongs to. It is what the
+// wizard's service picker groups under (ClearBehavioralWizardPage GROUP_LABELS),
+// which is how the whole catalogue stays scannable, and what available_virtual
+// and teen_available are derived from below.
+//
+// It does NOT decide where a service can be generated. Every office offers the
+// whole catalogue (CBH_ALL_SERVICE_IDS), which is how Neuro Wellness and Gentle
+// Dental are seeded too. Deriving services_available_ids from the groups hid
+// any service whose group an office had not declared -- the therapy modalities
+// never appeared at Anaheim Hills, for one -- and the SEO team wants every
+// service reachable from every office.
 //
 // `category` is NOT free text: categoryLogic.js switches on it to choose the
 // section headings, and only therapy | medication | procedure | condition |
@@ -605,8 +612,8 @@ const CBH_SERVICE_DEFS = [
 
   // Therapy modalities and support services. These appear in the client's live
   // sitemap as pages in their own right, not only as things a programme offers.
-  [['mh-outpatient', 'teen'], 'Cognitive Behavioral Therapy', 'therapy', CBH_ADULT_MH],
-  [['mh-outpatient', 'teen'], 'Dialectical Behavioral Therapy', 'therapy', CBH_ADULT_MH],
+  [['mh-outpatient', 'teen'], 'Cognitive Behavioral Therapy (CBT)', 'therapy', CBH_ADULT_MH],
+  [['mh-outpatient', 'teen'], 'Dialectical Behavioral Therapy (DBT)', 'therapy', CBH_ADULT_MH],
   [['mh-outpatient', 'teen'], 'Group Therapy', 'therapy', CBH_ADULT_MH],
   [['mh-outpatient', 'teen'], 'Case Management', 'therapy', CBH_ADULT_MH],
 
@@ -658,6 +665,16 @@ const CBH_SLUG_EXCEPTIONS = {
 // else is a bare condition and takes the service word.
 const CBH_SERVICE_WORD_RE = /\b(treatment|therapy|programs?|groups?|support|detox)\b/i;
 
+// The ID is derived from the NAME, so adding an acronym to a name changes it
+// -- and a page or brief row holds the OLD id, which would leave it pointing at
+// a service that no longer exists once the seed re-runs. These two were seeded
+// before the acronyms were added, so their ids are pinned to what those rows
+// already reference. New services need no entry here.
+const CBH_ID_EXCEPTIONS = {
+  'Cognitive Behavioral Therapy (CBT)': 'cognitive-behavioral-therapy',
+  'Dialectical Behavioral Therapy (DBT)': 'dialectical-behavioral-therapy',
+};
+
 function cbhServiceSlug(name) {
   if (CBH_SLUG_EXCEPTIONS[name]) return CBH_SLUG_EXCEPTIONS[name];
   const base = slugify(name);
@@ -666,8 +683,9 @@ function cbhServiceSlug(name) {
 
 const CBH_SERVICES = CBH_SERVICE_DEFS.map(([groups, name, category, conditions]) => {
   // The ID stays keyed to the NAME, not the URL slug. Page rows reference
-  // service ids, so re-slugging a service must not orphan its pages.
-  const idSlug = slugify(name);
+  // service ids, so re-slugging a service must not orphan its pages -- and for
+  // the same reason a RENAME keeps the id it was first seeded under.
+  const idSlug = CBH_ID_EXCEPTIONS[name] || slugify(name);
   const slug = cbhServiceSlug(name);
   const parent = CBH_ADDICTION_DEFS.find(([n]) => n === name)?.[1];
   return {
@@ -693,7 +711,13 @@ const CBH_SERVICES = CBH_SERVICE_DEFS.map(([groups, name, category, conditions])
   };
 });
 
+const CBH_ALL_SERVICE_IDS = CBH_SERVICES.map(s => s.id);
+
 // city | office label | program groups | nearby areas
+// `program groups` records what each office actually runs. It is kept as the
+// office's own description — the label only says so for the sites that share a
+// city — and is no longer read when building services_available_ids.
+//
 // The label is the office's identity; `city` is the geographic claim and is
 // resolved from the label by compose.loadLayers via text.baseCity, which
 // splits on " – ". That is why the multi-program sites are named
@@ -715,7 +739,7 @@ const CBH_LOCATION_DEFS = [
   ['Van Nuys', 'Van Nuys', ['mh-outpatient', 'teen'], ['Sherman Oaks', 'Panorama City', 'Reseda', 'North Hollywood']],
 ];
 
-const CBH_LOCATIONS = CBH_LOCATION_DEFS.map(([city, label, groups, nearby]) => {
+const CBH_LOCATIONS = CBH_LOCATION_DEFS.map(([city, label, , nearby]) => {
   const slug = slugify(label);
   return {
     id: `cbhloc_${slug}`,
@@ -735,9 +759,7 @@ const CBH_LOCATIONS = CBH_LOCATION_DEFS.map(([city, label, groups, nearby]) => {
     // Required: checkEligibility refuses to generate for an unverified
     // location (doorway-page guardrail, Spec §15.1).
     verified: true,
-    services_available_ids: CBH_SERVICES
-      .filter(s => s.groups.some(g => groups.includes(g)))
-      .map(s => s.id),
+    services_available_ids: CBH_ALL_SERVICE_IDS, // every service at every office
   };
 });
 
