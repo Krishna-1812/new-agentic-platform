@@ -10,7 +10,7 @@
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=5">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bento-tokens.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bento-components.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/company_people_intelligence.css') }}?v=27">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/company_people_intelligence.css') }}?v=28">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/agent-feedback.css') }}">
 <script src="{{ url_for('static', filename='js/agent_feedback.js') }}"></script>
 </head>
@@ -97,8 +97,8 @@
   <div class="cpi-layout" id="cpiLayout">
     <div class="cpi-main">
       <div class="cpi-toggle" id="cpiEntityToggle">
-        <button class="on" data-entity="people" onclick="cpiSetEntity('people')">&#128100; People</button>
-        <button data-entity="companies" onclick="cpiSetEntity('companies')">&#127970; Companies</button>
+        <button class="on" data-entity="people" onclick="cpiSetEntity('people')"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20v-1.2a5.3 5.3 0 0 1 5.3-5.3h2.4a5.3 5.3 0 0 1 5.3 5.3V20"/></svg><span>People</span></button>
+        <button data-entity="companies" onclick="cpiSetEntity('companies')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="M6 20V5.5A1.5 1.5 0 0 1 7.5 4h6A1.5 1.5 0 0 1 15 5.5V20"/><path d="M15 10h2.5A1.5 1.5 0 0 1 19 11.5V20"/><path d="M9 8h3M9 11.5h3M9 15h3"/></svg><span>Companies</span></button>
       </div>
 
       {# One sentence in, filters out. This is the same intent parse the chat
@@ -672,7 +672,7 @@ window.__CPI_CREDITS_URL__ = "{{ credits_url }}";
 window.__CPI_LIST_URL__ = "{{ list_url }}";
 window.__CPI_PARSE_URL__ = "{{ parse_url }}";
 </script>
-<script src="/static/js/company_people_intelligence.js?v=27" defer></script>
+<script src="/static/js/company_people_intelligence.js?v=28" defer></script>
 <script>
 function toggleTbMenu(){
   var dd=document.getElementById('tbDropdown');

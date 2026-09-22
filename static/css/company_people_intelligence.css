@@ -110,10 +110,20 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 .cpi-toggle { display: inline-flex; gap: var(--sp-1); background: var(--s1);
   border-radius: var(--r); padding: var(--sp-1); }
 .cpi-toggle button {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
   border: 0; border-radius: var(--r-sm); background: transparent; color: var(--tx2);
   font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-semi);
-  padding: var(--sp-2) var(--sp-5); cursor: pointer;
+  padding: var(--sp-2) var(--sp-4) var(--sp-2) var(--sp-3); cursor: pointer;
   transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+/* The toggle's glyphs are line icons, not emoji: emoji drag their own colour
+   palette and their own vertical metrics into a system whose whole premise is
+   four named hues and one type scale. Sized and stroked here because an inline
+   <svg> with no width and no stroke falls back to 300x150 of solid black. */
+.cpi-toggle svg {
+  width: 15px; height: 15px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
 }
 .cpi-toggle button:hover { color: var(--tx); }
 .cpi-toggle button.on { background: var(--acc); color: var(--tx-on-fill); }
