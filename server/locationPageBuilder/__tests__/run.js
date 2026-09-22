@@ -2285,22 +2285,29 @@ test('no prompt asks for a keyword frequency any more', () => {
     assert.ok(cbhFails(page).includes('educational_provenance_stated'));
   });
 
-  test('the treatment section is gated on both halves', () => {
-    // The only H2 the writer composes, so unlike every other heading it can be
-    // the wrong length or drift off the service entirely.
-    assert.ok(!cbhFails(cbhPage()).includes('treatment_heading_length'));
+  test('the treatment H2 is gated on presence, no longer on length', () => {
+    // The only H2 the writer composes. Its LENGTH gate went at the client's
+    // instruction: the shape they asked for -- "<service> treatment experts at
+    // Clear Behavioral Health, <city>" -- is longer than the cap it replaced.
+    // So the remaining gate has to still catch a heading that is not there.
+    assert.ok(!cbhFails(cbhPage()).includes('treatment_heading_present'));
     assert.ok(!cbhFails(cbhPage()).includes('treatment_length'));
-    assert.ok(cbhFails(cbhPage(l3 => { l3.treatment.heading = 'z'.repeat(61); }))
-      .includes('treatment_heading_length'), '61 characters is over the H2 limit');
+
+    const asked = 'Anger management treatment experts at Clear Behavioral Health, Anaheim Hills';
+    assert.ok(asked.length > 60, 'the requested shape is over the cap that used to gate it');
+    assert.ok(!cbhFails(cbhPage(l3 => { l3.treatment.heading = asked; }))
+      .includes('treatment_heading_present'), 'and it passes');
+
     assert.ok(cbhFails(cbhPage(l3 => { l3.treatment.heading = ''; }))
-      .includes('treatment_heading_length'), 'and an empty H2 is a missing section, not a short one');
+      .includes('treatment_heading_present'), 'but an empty H2 still fails');
     assert.ok(cbhFails(cbhPage(l3 => { l3.treatment.paragraph = 'z'.repeat(251); }))
       .includes('treatment_length'));
     assert.ok(cbhFails(cbhPage(l3 => { l3.treatment.paragraph = ''; }))
       .includes('treatment_length'));
     // Both are model-fixable, so both drive the correction pass.
-    assert.ok(cbhWriter.CORRECTABLE.has('treatment_heading_length'));
+    assert.ok(cbhWriter.CORRECTABLE.has('treatment_heading_present'));
     assert.ok(cbhWriter.CORRECTABLE.has('treatment_length'));
+    assert.ok(!cbhWriter.CORRECTABLE.has('treatment_heading_length'), 'the old id is gone');
   });
   test('a general treatment H2 is accepted, because the CMS spec uses one', () => {
     // There was a gate requiring the service and the city here. The client's
@@ -2515,7 +2522,28 @@ test('no prompt asks for a keyword frequency any more', () => {
       'Partial hospitalization program (PHP) in Torrance');
     assert.strictEqual(h('Outpatient Mental Health Treatment (IOP)', 'Torrance'),
       'Outpatient mental health treatment (IOP) in Torrance');
-    assert.strictEqual(h('Parent Support Groups', 'Pasadena'), 'Parent support groups in Pasadena');
+  });
+
+  test('a name that says neither "treatment" nor "programs" takes both', () => {
+    // "Anger management in Anaheim Hills" named the condition and stopped
+    // there: "management", "groups" and "support" read as service nouns, so
+    // neither of the earlier rules fired and the heading never said what the
+    // care was. The client asked for both words on exactly these.
+    const h = cbhContract.serviceHeading;
+    assert.strictEqual(h('Anger Management', 'Anaheim Hills'),
+      'Anger management treatment programs in Anaheim Hills');
+    assert.strictEqual(h('Case Management', 'Pasadena'),
+      'Case management treatment programs in Pasadena');
+    assert.strictEqual(h('Parent Support Groups', 'Pasadena'),
+      'Parent support groups treatment programs in Pasadena');
+    // A trailing acronym is still left alone -- it would read as a second
+    // programme -- and a name that already says "program" keeps its own.
+    assert.strictEqual(h('Outpatient Addiction Treatment (IOP & PHP)', 'Gardena'),
+      'Outpatient addiction treatment (IOP & PHP) in Gardena');
+    assert.strictEqual(h('Cognitive Behavioral Therapy (CBT)', 'Van Nuys'),
+      'Cognitive behavioral therapy (CBT) in Van Nuys');
+    assert.strictEqual(h('Legal Diversion Program', 'El Monte'),
+      'Legal diversion program in El Monte');
   });
 
   test('a multi-word name is protected as a phrase, not as loose words', () => {

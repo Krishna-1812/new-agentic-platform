@@ -200,9 +200,13 @@ specific to the service and the location.
 
 TREATMENT: this is the ONE section where you write the H2 as well as the body. It sits between the
 section above and the FAQs.
-H2: at most ${L.treatment.headingMaxChars} characters. Name the team, and where they fit name the service and ${scaffold.locationName} too.
-"Our ADHD treatment experts in El Monte" is the shape to prefer. Not a slogan, not a sentence, not a
-question.
+H2: name the service, the team and the city, in this shape:
+"<service> treatment experts at ${contract.BRAND}, ${scaffold.locationName}".
+So "Anger management treatment experts at ${contract.BRAND}, ${scaffold.locationName}" and
+"Family therapy treatment experts at ${contract.BRAND}, ${scaffold.locationName}" are both right.
+No comma between the service and "treatment experts", and do not open with "Our". Where the service
+name already ends in "treatment", do not write the word twice. At most
+${L.treatment.headingMaxChars} characters. Not a slogan, not a sentence, not a question.
 PARAGRAPH: ONE paragraph directly under it, at most ${L.treatment.maxChars} characters, about the CLINICIANS: their
 experience and how they treat people. "We boast a team of experienced, compassionate clinicians with
 many years of experience, dedicated to treating you with the utmost care" is the register. Do not name
@@ -239,7 +243,7 @@ const CORRECTABLE = new Set([
   // content is right, the shape is not.
   'educational_body_mix',
   'uvp_length', 'service_length', 'faq_answer_length',
-  'treatment_heading_length', 'treatment_length',
+  'treatment_heading_present', 'treatment_length',
   'meta_description_has_cta', 'meta_description_has_keyword_words',
 ]);
 

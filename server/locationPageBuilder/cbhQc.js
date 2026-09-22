@@ -462,13 +462,19 @@ const CHECKS = [
   },
 
   // ── Treatment ───────────────────────────────────────────────────────────
+  // No LENGTH gate on this H2, at the client's instruction: the shape they
+  // asked for runs past any cap that would have caught a runaway heading, and
+  // they would rather have the shape. What is left is a PRESENCE check -- the
+  // old gate also failed an empty H2, and dropping that too would have let a
+  // page ship with no heading at all on the one section code does not write.
   {
-    id: 'treatment_heading_length', severity: 'Major', field: 'treatment',
-    name: `Treatment H2 is at most ${L.treatment.headingMaxChars} characters`,
+    id: 'treatment_heading_present', severity: 'Major', field: 'treatment',
+    name: 'Treatment H2 is present',
     run: (ctx) => ({
-      pass: c.textLength(ctx.treatment.heading) > 0
-        && c.textLength(ctx.treatment.heading) <= L.treatment.headingMaxChars,
-      detail: lenDetail('Treatment H2', ctx.treatment.heading, { max: L.treatment.headingMaxChars }),
+      pass: c.textLength(ctx.treatment.heading) > 0,
+      detail: c.textLength(ctx.treatment.heading) > 0
+        ? `Treatment H2: ${c.textLength(ctx.treatment.heading)} characters.`
+        : 'Treatment H2 is empty.',
     }),
   },
   {

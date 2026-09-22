@@ -129,9 +129,11 @@ and the location.`,
   'treatment.heading': {
     heading: true, scope: 'page', kind: 'text', limit: { max: L.treatment.headingMaxChars },
     label: 'Treatment H2',
-    ask: (ctx) => `Write a fresh H2 for the treatment section. Name the team, the service and the city. "Our ADHD
-treatment experts in El Monte" is the shape. Not a slogan, not a sentence, not a question. It must not
-repeat the wording of "${ctx.page.sections.service.heading}", which sits directly above it.`,
+    ask: (ctx) => `Write a fresh H2 for the treatment section. The shape is "<service> treatment experts at
+${contract.BRAND}, <city>" -- e.g. "Anger management treatment experts at ${contract.BRAND}, Anaheim Hills".
+No comma between the service and "treatment experts", and do not open with "Our". Not a slogan, not a
+sentence, not a question. It must not repeat the wording of "${ctx.page.sections.service.heading}",
+which sits directly above it.`,
   },
   'treatment.paragraph': {
     scope: 'page', kind: 'text', limit: { max: L.treatment.maxChars },

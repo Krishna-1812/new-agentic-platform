@@ -171,16 +171,28 @@ function whatIsVerb(name) {
 // client's live pages reads: "Depression treatment programs in Van Nuys",
 // "Anxiety treatment programs in El Monte".
 //
-// Appended only where it reads as English. A phrase that already names a
-// programme keeps what it has, and one ending in an acronym or a plural is left
-// alone rather than growing "Outpatient mental health treatment (IOP) program"
-// or "Parent support groups program". In practice that means the condition
-// services -- which is exactly what the client's examples are.
+// Appended only where it reads as English:
+//
+//   - a phrase that already names a programme keeps what it has ("Partial
+//     hospitalization program (PHP)", "Legal Diversion Program");
+//   - one ending in "treatment" or "therapy" takes "programs". That covers
+//     every condition service, because servicePhraseDisplay has already given
+//     a bare condition its head noun: "Depression" -> "Depression treatment";
+//   - one ending in an ACRONYM is left alone rather than growing "Outpatient
+//     mental health treatment (IOP) programs";
+//   - anything left ends in a noun that reads as a service without naming the
+//     care at all -- "Anger Management", "Case Management", "Parent Support
+//     Groups", "Labor Union Support". Those never picked up either word, so
+//     they take BOTH, at the client's instruction: "Anger management treatment
+//     programs in Anaheim Hills".
+const ACRONYM_TAIL_RE = /\([A-Z0-9][A-Z0-9&.\s]*\)$/;
+
 function programPhrase(serviceName) {
   const s = String(serviceName || '').trim();
   if (!s) return s;
   if (/\bprograms?\b/i.test(s)) return s;
-  return /\b(treatment|therapy)$/i.test(s) ? `${s} programs` : s;
+  if (/\b(treatment|therapy)$/i.test(s)) return `${s} programs`;
+  return ACRONYM_TAIL_RE.test(s) ? s : `${s} treatment programs`;
 }
 
 function serviceHeading(serviceName, locationName) {
@@ -314,10 +326,15 @@ const LIMITS = {
 
   treatment: {
     // The ONLY H2 on the page the writer composes. Every other heading is
-    // either fixed verbatim or built from the service and location by code, so
-    // this is the one that can drift into a slogan -- hence a gate on it
-    // naming the service and the city, not just on its length.
-    headingMaxChars: 60,
+    // either fixed verbatim or built from the service and location by code.
+    //
+    // This is NOT a QC gate any more, at the client's instruction. The shape
+    // they want -- "<service> treatment experts at Clear Behavioral Health,
+    // <city>" -- runs to 104 characters on the longest service and city, so a
+    // gate at 60 failed every page that wrote the heading correctly. What is
+    // left is a CEILING: it guides the writer, bounds a regenerated heading and
+    // drives the wizard's counter. No page fails over it.
+    headingMaxChars: 110,
     maxChars: 250,
   },
 
