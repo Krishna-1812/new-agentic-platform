@@ -1,0 +1,127 @@
+{# ═══════════════════════════════════════════════════════════════════════
+   BENTO — SHARED SHELL
+
+   Every page in this codebase is a standalone document: only app_base and
+   client_base use inheritance, so the other ~40 templates each hand-roll
+   their own <head> and topbar. That is why the old design drifted -- a
+   change to the header had forty places to land and never reached them
+   all.
+
+   These macros are the one place the shell lives now. They are macros
+   rather than a base template on purpose: the pages are standalone
+   documents with wildly different body structures, and converting all of
+   them to `{% extends %}` in one move would be a far larger diff than
+   re-skinning them. A page calls head() and topbar() and keeps full
+   control of everything between.
+
+   Imported with context so `brand` (from brand.py, via the app context
+   processor) and `user` resolve without being threaded through every call.
+
+   Usage:
+     {% from "_bento.html" import head, topbar with context %}
+     {{ head("Contact Finder", ["company_people_intelligence.css?v=28"]) }}
+     {{ topbar([(brand.agents_plural, "/p2/strategic-agents"),
+                ("Contact Finder", none)]) }}
+   ═══════════════════════════════════════════════════════════════════════ #}
+
+
+{# ── head ───────────────────────────────────────────────────────────────
+   title   page name; the product name is appended here so no page has to
+           remember the separator or the brand string
+   sheets  page stylesheets, each "name.css" or "name.css?v=N". The three
+           system sheets are always loaded first and never passed in.
+   scripts page scripts, same form. bento-motion.js is always loaded.
+   ──────────────────────────────────────────────────────────────────────- #}
+{% macro head(title, sheets=[], scripts=[]) -%}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ title }} &middot; {{ brand.name }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=5">
+{# Order is load-bearing: tokens define the variables the other two read,
+   and motion overrides nothing but adds the animation layer. #}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bento-tokens.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bento-components.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bento-motion.css') }}">
+{%- for sheet in sheets %}
+{%- set name, _, ver = sheet.partition('?') %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/' + name) }}{% if ver %}?{{ ver }}{% endif %}">
+{%- endfor %}
+{%- for script in scripts %}
+{%- set name, _, ver = script.partition('?') %}
+<script src="{{ url_for('static', filename='js/' + name) }}{% if ver %}?{{ ver }}{% endif %}"></script>
+{%- endfor %}
+{# Deferred so it never blocks paint, and because it only needs the DOM. #}
+<script defer src="{{ url_for('static', filename='js/bento-motion.js') }}"></script>
+{%- endmacro %}
+
+
+{# ── topbar ─────────────────────────────────────────────────────────────
+   crumbs  a list of (label, href) pairs. A pair whose href is falsy is the
+           current page and renders as text rather than a link, so a page
+           cannot accidentally link to itself.
+
+   No theme toggle: this design system is a single dark theme rather than a
+   light/dark pair, so the control would have nothing to switch between.
+   ──────────────────────────────────────────────────────────────────────- #}
+{% macro topbar(crumbs=[]) -%}
+<header class="bn-top">
+  <div class="bn-top-left">
+    <a href="/p2/hub" class="bn-brand">
+      <span class="bn-mark"></span>
+      <span class="bn-word">{{ brand.name }}</span>
+    </a>
+    <nav class="bn-crumbs" aria-label="Breadcrumb">
+      <a href="/p2/hub" class="bn-crumb">{{ brand.hub }}</a>
+      {%- for label, href in crumbs %}
+      <span class="bn-crumb-sep">/</span>
+      {%- if href %}
+      <a href="{{ href }}" class="bn-crumb">{{ label }}</a>
+      {%- else %}
+      <span class="bn-crumb-cur" aria-current="page">{{ label }}</span>
+      {%- endif %}
+      {%- endfor %}
+    </nav>
+  </div>
+  <div class="bn-top-right">
+    <div id="tbUserMenu" style="position:relative">
+      <button type="button" class="bn-btn" id="tbUserPill" onclick="toggleTbMenu()">
+        <span class="bn-av" style="width:22px;height:22px">
+          {% if user.picture %}<img src="{{ user.picture }}" alt="">
+          {% else %}{{ (user.name or 'U')[:2]|upper }}{% endif %}
+        </span>
+        {{ user.given_name or user.name or 'User' }}
+      </button>
+      <div class="bn-menu" id="tbDropdown" style="right:0;top:calc(100% + 8px)">
+        <div style="padding:8px 12px 10px">
+          <div style="font-weight:600;font-size:13px">{{ user.name or 'User' }}</div>
+          <div style="font-size:11px;color:var(--tx3)">{{ user.email }}</div>
+        </div>
+        <div class="bn-menu-sep"></div>
+        {% include "_admin_menu.html" %}
+      </div>
+    </div>
+  </div>
+</header>
+{%- endmacro %}
+
+
+{# ── topbar_script ──────────────────────────────────────────────────────
+   The three lines that open and close the user menu. Every page that calls
+   topbar() needs them; duplicating them forty times is how they drift.
+   ──────────────────────────────────────────────────────────────────────- #}
+{% macro topbar_script() -%}
+<script>
+function toggleTbMenu(){
+  var d = document.getElementById('tbDropdown');
+  if (d) d.classList.toggle('is-open');
+}
+document.addEventListener('click', function(e){
+  var m = document.getElementById('tbUserMenu');
+  var d = document.getElementById('tbDropdown');
+  if (m && d && !m.contains(e.target)) d.classList.remove('is-open');
+});
+</script>
+{%- endmacro %}

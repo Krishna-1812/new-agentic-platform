@@ -174,7 +174,9 @@ def test_the_js_and_css_bundles_are_cache_busted_together():
     html = open(os.path.join(_ROOT, "templates",
                              "company_people_intelligence.html")).read()
     js = _re.search(r"company_people_intelligence\.js\?v=(\d+)", html)
-    css = _re.search(r"company_people_intelligence\.css'\) \}\}\?v=(\d+)", html)
+    # Same reason as above: the stylesheet comes from the shell macro now, so
+    # the version is matched without assuming the inline url_for() spelling.
+    css = _re.search(r"company_people_intelligence\.css['\"]?\s*\)?\s*\}?\}?\?v=(\d+)", html)
     assert js, "the JS bundle must carry a ?v= cache buster"
     assert css, "the stylesheet must carry a ?v= cache buster"
     assert js.group(1) == css.group(1), (

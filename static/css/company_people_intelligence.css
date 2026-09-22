@@ -12,7 +12,7 @@
 
    Deliberately absent, because they are the previous product's signature:
      · the canvas "thinking orb" loading indicator   -> skeletons instead
-     · staggered fade+lift card entrance             -> one 150ms cross-fade
+     · staggered fade+lift card entrance             -> one wipe, per region
      · the conic-gradient glow ring on input focus   -> a flat focus outline
    ──────────────────────────────────────────────────────────────────────── */
 
@@ -150,7 +150,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
   padding: var(--sp-3) var(--sp-5); cursor: pointer; white-space: nowrap; min-height: 44px;
   transition: background var(--dur-fast) var(--ease);
 }
-.cpi-ask-btn:hover { background: #D4FA63; }
+.cpi-ask-btn:hover { background: var(--acc-hi); }
 .cpi-ask-btn[disabled] { opacity: .45; cursor: default; }
 .cpi-ask-note { background: var(--s1); border-radius: var(--r); padding: var(--sp-3) var(--sp-4);
   font-size: var(--fs-sm); color: var(--tx2); }
@@ -280,8 +280,29 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
   padding: var(--sp-3) var(--sp-7); min-height: 44px; cursor: pointer;
   transition: background var(--dur-fast) var(--ease);
 }
-.cpi-search-btn:hover { background: #D4FA63; }
-.cpi-search-btn[disabled] { opacity: .45; cursor: default; }
+.cpi-search-btn:hover { background: var(--acc-hi); }
+/* "Searching..." is a BUSY state, not a disabled one, and they must not look
+   alike. opacity:.45 on a lime fill over a near-black ground composites to a
+   muddy olive that reads as an error, and it says nothing about the wait. The
+   button keeps its own colour and takes the system's sweep instead, so a
+   running search is the same gesture as the skeletons underneath it. */
+.cpi-search-btn[disabled] {
+  cursor: default;
+  color: var(--tx-on-fill);
+  background-color: var(--acc);
+  background-image: linear-gradient(90deg,
+    rgba(19,19,21,0) 0%, rgba(19,19,21,.14) 45%,
+    rgba(19,19,21,.14) 55%, rgba(19,19,21,0) 100%);
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  animation: bn-sweep var(--dur-sweep) linear infinite;
+}
+/* A control the user genuinely cannot use still dims -- that distinction is
+   the point of the rule above. */
+.cpi-search-btn[disabled][aria-disabled="true"] { opacity: .45; animation: none; background-image: none; }
+@media (prefers-reduced-motion: reduce) {
+  .cpi-search-btn[disabled] { animation: none; background-image: none; }
+}
 .cpi-clear-btn {
   border: 0; border-radius: var(--r); background: transparent; color: var(--tx2);
   font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-semi);
@@ -326,7 +347,11 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 }
 .cpi-viewtoggle button svg { width: 13px; height: 13px; fill: none; stroke: currentColor;
   stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.cpi-viewtoggle button.on { background: var(--sky); color: var(--tx-on-fill); }
+/* Rule 4, colour is load-bearing: switching between cards and table costs
+   nothing and changes nothing, so it must not wear the same fill as Enrich,
+   which spends a credit. A raised neutral surface is the whole signal a view
+   preference needs. */
+.cpi-viewtoggle button.on { background: var(--s3); color: var(--tx); }
 
 .cpi-menu-wrap { position: relative; }
 .cpi-menu {
@@ -353,8 +378,10 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
   background: var(--s1); border-radius: var(--r); padding: var(--sp-5);
   display: flex; flex-direction: column; gap: var(--sp-3); position: relative;
   transition: background var(--dur-fast) var(--ease);
-  /* One cross-fade. No lift, no stagger, no per-index delay. */
-  animation: bento-in var(--dur) var(--ease) both;
+  /* No entrance of its own. The results region is wiped in as ONE object by
+     renderResults (bentoRevealNow); animating each card here would put the
+     motion back on the per-card level, which is the distinction between this
+     paradigm and the staggered entrance it replaced. */
 }
 .cpi-card:hover { background: var(--s2); }
 .cpi-card-top { display: flex; align-items: flex-start; gap: var(--sp-3); }
@@ -410,7 +437,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
   padding: var(--sp-2) var(--sp-3); cursor: pointer; white-space: nowrap;
   transition: background var(--dur-fast) var(--ease);
 }
-.cpi-enrich-btn:hover { background: #7ABDF0; }
+.cpi-enrich-btn:hover { background: var(--sky-hi); }
 .cpi-enrich-btn[disabled] { opacity: .45; cursor: default; }
 .cpi-enrich-chip { font-size: var(--fs-xs); color: var(--tx3); }
 .cpi-ghost-btn {
@@ -445,8 +472,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 .cpi-empty svg { width: 26px; height: 26px; stroke: var(--tx3); }
 
 /* ── RESULTS: TABLE ────────────────────────────────────────────────────── */
-.cpi-tbl-wrap { background: var(--s1); border-radius: var(--r); overflow: auto;
-  animation: bento-in var(--dur) var(--ease) both; }
+.cpi-tbl-wrap { background: var(--s1); border-radius: var(--r); overflow: auto; }
 /* Fixed layout: the declared column widths are honoured and long values
    ellipsize on one line, instead of Location wrapping to four lines and the
    action column being pushed out of the container. */
@@ -503,16 +529,36 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 .cpi-row b { color: var(--tx); font-weight: var(--fw-semi); }
 
 /* ── LOADING — skeletons only ──────────────────────────────────────────── */
-/* The shape of the content that will replace it. Flat blocks: no shimmer
-   sweep, no pulse, nothing moving. */
+/* The shape of the content that will replace it. The blocks carry the
+   system's sweep (bento-motion.css): a band crossing left to right at a
+   constant rate, on the same axis as the wipe that reveals the finished
+   content. Loading and arriving are the same gesture at two speeds, which
+   is the whole reason the sweep is linear -- an eased pulse would imply a
+   progress this page does not have. */
 .cpi-loading { display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
   gap: var(--gap); }
 .cpi-skel-card { background: var(--s1); border-radius: var(--r); padding: var(--sp-5);
   display: flex; flex-direction: column; gap: var(--sp-3); }
 .cpi-skel-row { background: var(--s1); border-radius: var(--r); padding: var(--sp-4);
   display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-2); }
-.cpi-sk-av { width: 38px; height: 38px; border-radius: var(--r); background: var(--s2); flex-shrink: 0; }
-.cpi-sk-b { display: block; height: 12px; border-radius: var(--r); background: var(--s2); }
+.cpi-sk-av { width: 38px; height: 38px; border-radius: var(--r); flex-shrink: 0; }
+.cpi-sk-b { display: block; height: 12px; border-radius: var(--r); }
+/* Opt the two skeleton block shapes into the shared sweep. The keyframes,
+   the band and the duration all live in bento-motion.css; this only names
+   the elements, because the JS emits these classes and changing 40 emit
+   sites to add .bn-sweep would be a renderer change for a purely visual
+   decision. */
+.cpi-sk-b, .cpi-sk-av {
+  background-color: var(--s2);
+  background-image: var(--sweep-band);
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  animation: bn-sweep var(--dur-sweep) linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cpi-sk-b, .cpi-sk-av { animation: none; background-image: none; }
+}
+
 .cpi-skel-stack { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 120px; }
 .cpi-skel-stack .cpi-sk-b { height: 10px; }
 .cpi-skel-stack .cpi-sk-b:nth-child(1) { width: 100%; }
@@ -747,7 +793,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
   width: 42px; flex-shrink: 0; cursor: pointer; font-size: var(--fs-md);
   transition: background var(--dur-fast) var(--ease);
 }
-.cpi-chat-send:hover { background: #D4FA63; }
+.cpi-chat-send:hover { background: var(--acc-hi); }
 .cpi-chat-send[disabled] { opacity: .45; cursor: default; }
 
 /* ── PERSON MODAL ──────────────────────────────────────────────────────── */

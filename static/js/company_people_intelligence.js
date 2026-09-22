@@ -4,8 +4,8 @@
 
 /* Retired. The canvas "thinking orb" was the previous product's loading
    signature; this design system uses skeletons -- the shape of the content
-   that replaces them -- and nothing that moves while you wait. Kept as a
-   no-op rather than deleted so every existing call site stays valid. */
+   that replaces them, carrying the sweep defined in bento-motion.css. Kept
+   as a no-op rather than deleted so every existing call site stays valid. */
 function mountOrbsIn(root){ /* no-op: loading states are skeletons now */ }
 
 var SEARCH_URL = window.__CPI_SEARCH_URL__;
@@ -965,6 +965,7 @@ function noun(n){
   return n===1 ? "company" : "companies";
 }
 
+var _lastShown = 0;   /* rows on screen at the last render; see the append note below */
 function renderResults(){
   var wrap=document.getElementById("cpiResultsWrap");
   var bar=document.getElementById("cpiToolbar");
@@ -984,6 +985,11 @@ function renderResults(){
         : "No matches. Try widening the filters.")+
       "</span>"+(why?rejectedActions():"")+"</div>";
     if(bar) bar.style.display="none";
+    /* Reset, or the next successful search is mistaken for an append: going
+       24 -> 0 -> 30 would leave _lastShown at 24, read 30 as growth, and
+       silently skip the entrance on a genuinely new result set. */
+    _lastShown = 0;
+    if(window.bentoRevealNow) window.bentoRevealNow(wrap);
     updateBulk();
     return;
   }
@@ -996,11 +1002,19 @@ function renderResults(){
       : "<b>"+pmNum(shown)+"</b> <s>"+noun(shown)+"</s>")
       + firmoNote() + rejectedNote() + unconfirmedNote();
   }
+  /* Load more APPENDS to STATE.results and then re-renders the whole region.
+     Wiping on an append would redraw rows the user has already read, so the
+     entrance fires only when the region is genuinely new content: a fresh
+     search, or a switch between cards and table. */
+  var grew = shown > _lastShown && _lastShown > 0;
+  _lastShown = shown;
+
   wrap.innerHTML = STATE.view==="table"
     ? renderTable()
     : '<div class="cpi-grid">'+STATE.results.map(function(r,i){
         return STATE.shownEntity==="people" ? personCard(r,i) : companyCard(r,i);
       }).join("")+"</div>";
+  if(!grew && window.bentoRevealNow) window.bentoRevealNow(wrap);
   updateBulk();
   syncSelectAllLabel();
 }

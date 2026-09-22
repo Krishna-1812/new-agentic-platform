@@ -673,6 +673,10 @@ def test_the_bundles_move_together():
                              "company_people_intelligence.html"),
                 encoding="utf-8").read()
     import re
-    versions = set(re.findall(r"company_people_intelligence\.(?:js|css)'?\s*\)?\s*}}?\?v=(\d+)",
+    # Matched without depending on HOW the version is written: the stylesheet
+    # now reaches the page through the shell macro in _bento.html as a bare
+    # "name.css?v=N" string while the script is still a plain src=. What this
+    # test protects is the two numbers agreeing, not the spelling.
+    versions = set(re.findall(r"company_people_intelligence\.(?:js|css)['\"]?\s*\)?\s*\}?\}?\?v=(\d+)",
                               html))
     assert len(versions) == 1, versions

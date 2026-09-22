@@ -1,57 +1,20 @@
 <!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contact Finder &middot; {{ brand.name }}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=5">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bento-tokens.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/bento-components.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/company_people_intelligence.css') }}?v=28">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/agent-feedback.css') }}">
-<script src="{{ url_for('static', filename='js/agent_feedback.js') }}"></script>
+{{ head("Contact Finder", [
+     "company_people_intelligence.css?v=29",
+     "agent-feedback.css",
+   ], [
+     "agent_feedback.js",
+   ]) }}
 </head>
 <body>
 
-{# Topbar. No theme toggle: this design system is a single dark theme rather
-   than a light/dark pair, so the control has nothing to switch between. #}
-<header class="bn-top">
-  <div class="bn-top-left">
-    <a href="/p2/hub" class="bn-brand">
-      <span class="bn-mark"></span>
-      <span class="bn-word">{{ brand.name }}</span>
-    </a>
-    <nav class="bn-crumbs" aria-label="Breadcrumb">
-      <a href="/p2/hub" class="bn-crumb">{{ brand.hub }}</a>
-      <span class="bn-crumb-sep">/</span>
-      <a href="/p2/strategic-agents" class="bn-crumb">{{ brand.agents_plural }}</a>
-      <span class="bn-crumb-sep">/</span>
-      <span class="bn-crumb-cur">Contact Finder</span>
-    </nav>
-  </div>
-  <div class="bn-top-right">
-    <div id="tbUserMenu" style="position:relative">
-      <button type="button" class="bn-btn" id="tbUserPill" onclick="toggleTbMenu()">
-        <span class="bn-av" style="width:22px;height:22px">
-          {% if user.picture %}<img src="{{ user.picture }}" alt="">
-          {% else %}{{ (user.name or 'U')[:2]|upper }}{% endif %}
-        </span>
-        {{ user.given_name or user.name or 'User' }}
-      </button>
-      <div class="bn-menu" id="tbDropdown" style="right:0;top:calc(100% + 8px)">
-        <div style="padding:8px 12px 10px">
-          <div style="font-weight:600;font-size:13px">{{ user.name or 'User' }}</div>
-          <div style="font-size:11px;color:var(--tx3)">{{ user.email }}</div>
-        </div>
-        <div class="bn-menu-sep"></div>
-        {% include "_admin_menu.html" %}
-      </div>
-    </div>
-  </div>
-</header>
+{{ topbar([
+     (brand.agents_plural, "/p2/strategic-agents"),
+     ("Contact Finder", none),
+   ]) }}
 
 <div class="bn-shell">
   {# Header as a bento row. The credit rules used to be a three-clause
@@ -59,7 +22,7 @@
      spending; they are a tile of their own now, and the live spend figure
      sits beside them rather than hiding inside the actions row. #}
   <div class="cpi-head">
-    <div class="cpi-head-main">
+    <div class="bn-reveal cpi-head-main">
       <p class="cpi-head-eyebrow">Prospecting</p>
       <h1 class="cpi-head-title">Contact Finder</h1>
       <p class="cpi-head-sub">Find and enrich decision-makers at your target accounts. Describe who you want, or set the filters yourself.</p>
@@ -75,7 +38,7 @@
       </div>
     </div>
 
-    <div class="cpi-head-cost">
+    <div class="bn-reveal cpi-head-cost">
       <span class="cpi-head-k">What costs a credit</span>
       <ul class="cpi-cost-list">
         <li><b>0</b><span>Finding people</span></li>
@@ -87,7 +50,7 @@
     {# Spend, not balance: no endpoint reports the account total, and the same
        key funds other tools, so a "remaining" figure would be a guess.
        Hidden entirely when Postgres is absent. #}
-    <div class="cpi-head-spend">
+    <div class="bn-reveal cpi-head-spend">
       <span class="cpi-head-k">Spent by this tool</span>
       <div class="page-hdr-spend" id="cpiSpend" style="display:none"></div>
       <div class="cpi-head-k" style="margin-top:auto;color:var(--tx3);text-transform:none;letter-spacing:0;font-weight:400">From the shared credit pool.</div>
@@ -672,16 +635,7 @@ window.__CPI_CREDITS_URL__ = "{{ credits_url }}";
 window.__CPI_LIST_URL__ = "{{ list_url }}";
 window.__CPI_PARSE_URL__ = "{{ parse_url }}";
 </script>
-<script src="/static/js/company_people_intelligence.js?v=28" defer></script>
-<script>
-function toggleTbMenu(){
-  var dd=document.getElementById('tbDropdown');
-  dd.classList.toggle('is-open', !dd.classList.contains('is-open'));
-}
-document.addEventListener('click',function(e){
-  var m=document.getElementById('tbUserMenu');
-  if(m&&!m.contains(e.target)) document.getElementById('tbDropdown').classList.remove('is-open');
-});
-</script>
+<script src="/static/js/company_people_intelligence.js?v=29" defer></script>
+{{ topbar_script() }}
 </body>
 </html>

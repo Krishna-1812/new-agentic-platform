@@ -50,6 +50,15 @@
   --sky:     #5AA9E6;   /* sky   — neutral data, secondary series        */
   --cream:   #EFE9DC;   /* cream — featured tile, quotes                 */
 
+  /* Hover lightenings. A filled control cannot darken on hover the way a
+     surface does -- on a vivid fill that reads as "disabled" -- so it goes
+     one step lighter instead. These exist as tokens because the pages had
+     started hand-writing #D4FA63 and #7ABDF0 inline, which is how two
+     buttons end up with two different hover states. */
+  --acc-hi:  #D4FA63;
+  --sky-hi:  #7ABDF0;
+  --clay-hi: #F07A54;
+
   /* Muted companions, for the rare case where a fill is too loud (a dot,
      a 1px bar). Never used as a background behind body text. */
   --acc-dim:  #2A3313;

@@ -1,0 +1,170 @@
+/* ════════════════════════════════════════════════════════════════════════
+   BENTO — MOTION
+   The one entrance paradigm, plus the transitions built on top of it.
+
+   Rule 5 of the design system says ONE MOTION. This file does not break
+   that rule, it states it properly. Everything below is one idea applied
+   consistently:
+
+       CONTENT IS DRAWN IN FROM THE LEFT.
+
+   A tile reveals by a horizontal wipe. A skeleton loads by a bar sweeping
+   the same direction. A drawer arrives on the same axis. Nothing rises,
+   nothing bounces, nothing is staggered per index. The metaphor is a
+   plotter drawing a sheet, which is why there is no overshoot anywhere in
+   this file: overshoot reads as playful, and a tool that spends the user's
+   credits should not read as playful.
+
+   The wipe eases out and the sweep is linear, and that difference carries
+   meaning rather than being an oversight. A reveal is a finished event, so
+   it decelerates into place. A loading sweep is an unfinished one, and any
+   easing on a loop reads as a pulse -- which implies progress the page does
+   not actually know about.
+
+   The curve was picked by measurement, not by taste: an expo-out
+   (.22,1,.36,1) is 96% complete at the halfway point, so the "wipe" lands
+   as a flash with a long tail and the direction stops being legible. The
+   quadratic below measures 77% at half time (clip-path inset 22.9%), which
+   still reads as a traversal.
+
+   Three effects are deliberately absent, because they are the previous
+   product's visual signature and reusing them -- even recoloured -- would
+   make the two read as the same platform:
+
+       - a canvas "thinking orb" loading indicator
+       - a card entrance that fades AND lifts, staggered per card
+       - a conic-gradient glow ring around inputs on focus
+
+   The wipe is the deliberate replacement for the first two. The focus ring
+   is a flat outline in bento-tokens.css.
+   ──────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* The reveal. Longer than the 150ms cross-fade because a wipe has to be
+     legible as a direction -- under ~300ms it just reads as a flash. */
+  --dur-wipe:  420ms;
+  --ease-wipe: cubic-bezier(.25, .46, .45, .94);   /* easeOutQuad */
+
+  /* The sweep that runs under a skeleton. Deliberately LINEAR and slow:
+     an eased shimmer pulses, and a pulse implies progress it does not
+     have. A constant rate says "working", not "nearly done". */
+  --dur-sweep: 1400ms;
+
+  /* The band itself, as a token, so a page can opt its own skeleton class
+     into the sweep without restating the gradient. CSS has no @extend, and
+     a second hand-written copy of this gradient is how two skeletons end up
+     subtly different. */
+  --sweep-band: linear-gradient(90deg,
+    rgba(255,255,255,0)    0%,
+    rgba(255,255,255,.055) 45%,
+    rgba(255,255,255,.055) 55%,
+    rgba(255,255,255,0)    100%);
+
+  /* Interaction feedback. Motion for something the user did is faster than
+     motion for something the system did, so a press feels connected to the
+     finger rather than animated. */
+  --dur-press: 80ms;
+  --ease-press: cubic-bezier(.4, 0, 1, 1);
+}
+
+/* ── THE WIPE ────────────────────────────────────────────────────────────
+   Applied to a CONTAINER, never to each child. That is the whole
+   difference from a staggered card entrance: one wipe crosses the whole
+   region at one rate, so the region reads as a single object being drawn
+   rather than as a queue of cards arriving.
+
+   clip-path rather than opacity because a wipe has an edge, and the edge
+   is what carries the direction. `round var(--r)` keeps the corners while
+   the clip animates, otherwise a rounded tile squares off mid-reveal. */
+@keyframes bn-wipe {
+  from { clip-path: inset(0 100% 0 0 round var(--r)); }
+  to   { clip-path: inset(0 0 0 0 round var(--r)); }
+}
+
+.bn-wipe {
+  animation: bn-wipe var(--dur-wipe) var(--ease-wipe) both;
+}
+
+/* Scroll reveal. The element is hidden until bento-motion.js marks it in
+   view, so content below the fold is drawn as it is reached rather than
+   all at once on load.
+
+   `.bn-reveal` alone does NOT hide the element: with JS unavailable the
+   page must still be fully readable. The hidden state is applied by the
+   script itself (it adds `bn-armed`), so a no-JS page renders everything
+   visible and static. */
+.bn-armed            { clip-path: inset(0 100% 0 0 round var(--r)); }
+.bn-armed.bn-shown   { animation: bn-wipe var(--dur-wipe) var(--ease-wipe) both; }
+
+/* ── THE SWEEP ───────────────────────────────────────────────────────────
+   The loading state. A skeleton block is --s2; a slightly lighter band
+   crosses it left to right, on the same axis as the wipe, so loading and
+   arriving are visibly the same gesture at different speeds.
+
+   The band is a background-position animation on a fixed gradient rather
+   than a translated pseudo-element: it composites on the same layer and
+   cannot spill outside a rounded corner. */
+.bn-sweep {
+  background-color: var(--s2);
+  background-image: var(--sweep-band);
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  animation: bn-sweep var(--dur-sweep) linear infinite;
+}
+
+@keyframes bn-sweep {
+  from { background-position: -120% 0; }
+  to   { background-position:  220% 0; }
+}
+
+/* ── PRESS ───────────────────────────────────────────────────────────────
+   The only transform in the system. No scale on hover (hover is a colour
+   change); a press dips 1% so the control acknowledges the finger. Scoped
+   to :active so it can never fire from a mouse merely passing over. */
+.bn-btn:active,
+.bn-tile[role="button"]:active,
+button.bn-pressable:active {
+  transform: scale(.99);
+  transition: transform var(--dur-press) var(--ease-press);
+}
+
+/* ── ROUTE TRANSITIONS ───────────────────────────────────────────────────
+   Cross-document view transitions, where the browser supports them. This
+   is progressive enhancement in the strict sense: no JS, no polyfill, and
+   a browser without support simply navigates the way it always did.
+
+   The topbar is given a name so it is treated as the SAME element across
+   the navigation and holds still while the page under it changes. Without
+   this the whole viewport cross-fades and the fixed chrome visibly
+   flickers, which is worse than no transition at all. */
+@view-transition { navigation: auto; }
+
+.bn-top   { view-transition-name: bn-top; }
+.bn-brand { view-transition-name: bn-brand; }
+
+::view-transition-old(root) {
+  animation: bn-vt-out 90ms var(--ease) both;
+}
+::view-transition-new(root) {
+  animation: bn-vt-in 200ms var(--ease-wipe) both;
+}
+
+@keyframes bn-vt-out { to   { opacity: 0 } }
+@keyframes bn-vt-in  { from { opacity: 0 } }
+
+/* ── REDUCED MOTION ──────────────────────────────────────────────────────
+   Everything above resolves to its finished state. Note the wipe must be
+   explicitly un-clipped: killing the animation on `.bn-armed` alone would
+   leave the element clipped to zero width and permanently invisible, which
+   is how reduced-motion implementations usually break. */
+@media (prefers-reduced-motion: reduce) {
+  .bn-wipe,
+  .bn-armed,
+  .bn-armed.bn-shown { animation: none; clip-path: none; }
+  .bn-sweep          { animation: none; }
+  .bn-btn:active,
+  .bn-tile[role="button"]:active,
+  button.bn-pressable:active { transform: none; }
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none; }
+}
