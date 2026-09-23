@@ -43,8 +43,16 @@ MARGIN_TOKENS = ("var(--margin)", "var(--margin-app)")
 # never hand-type a px value where a shared token exists -- but their tokens
 # live in bento-tokens.css (--page-pad, --topbar-h) and their shell and topbar
 # are shared components in bento-components.css rather than page-local CSS.
-# A page belongs in exactly one of these two lists; rows move across as they
-# are rebuilt, so a page can never quietly sit on neither grid.
+# A PRODUCT page belongs in exactly one of these two lists; rows move across as
+# they are rebuilt, so a page can never quietly sit on neither grid.
+#
+# The PUBLIC site is the one deliberate exception and is in neither. It runs on
+# its own system (static/css/press.css: paper ground, a serif at display sizes,
+# square corners, rules instead of fills) because a marketing page and an
+# instrument have opposite jobs. That separation is held by
+# tests/test_press_site.py, which asserts the mirror of the rule below --
+# press.css must use NEITHER vocabulary -- so the public site cannot quietly
+# half-migrate into a system it was never meant to join.
 BENTO_PAGES = [
     ("company_people_intelligence.css", "Contact Finder"),
     ("hub.css", "Workspace"),

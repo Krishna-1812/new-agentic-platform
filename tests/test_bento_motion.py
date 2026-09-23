@@ -117,18 +117,31 @@ def test_reduced_motion_unclips_rather_than_only_stopping_the_animation():
 
 _BENTO_SHEETS = ("bento-tokens.css", "bento-components.css", "bento-motion.css")
 
+# The three inherited effects are banned across the WHOLE product, not just the
+# product's own design system. press.css is the public site's separate system
+# (a light editorial ground, its own motion vocabulary -- see its header), and
+# it is the likeliest place for one of the three to reappear, because a
+# marketing page is where somebody reaches for a flourish. So the two file-level
+# guards below run over both systems.
+_SYSTEM_SHEETS = _BENTO_SHEETS + ("press.css",)
 
-@pytest.mark.parametrize("sheet", _BENTO_SHEETS)
+
+@pytest.mark.parametrize("sheet", _SYSTEM_SHEETS)
 def test_no_conic_gradient_focus_ring_comes_back(sheet):
     """The animated conic-gradient ring around a focused input is the previous
-    product's signature. Focus here is a flat outline."""
+    product's signature. Focus is a flat outline in both systems."""
     assert "conic-gradient" not in _strip_comments(_read(_CSS, sheet)), sheet
 
 
-@pytest.mark.parametrize("sheet", _BENTO_SHEETS)
+@pytest.mark.parametrize("sheet", _SYSTEM_SHEETS)
 def test_nothing_is_staggered_per_index(sheet):
     """A per-card animation-delay IS the banned entrance, whatever it is called.
-    An nth-child delay is the usual way it creeps back in."""
+    An nth-child delay is the usual way it creeps back in.
+
+    press.css does stagger, but per LINE of one headline and with
+    transition-delay, which is a typographic device rather than a grid of cards
+    arriving one after another. The check below is deliberately about
+    animation-delay under nth-child, which is the card version."""
     css = _strip_comments(_read(_CSS, sheet))
     for m in re.finditer(r"nth-child\([^)]*\)[^{}]*\{([^}]*)\}", css):
         assert "animation-delay" not in m.group(1), (

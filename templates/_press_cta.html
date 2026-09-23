@@ -1,0 +1,21 @@
+{#- THE CLOSING BAND.
+
+    The site's one lime ground, and the last thing on every page. Set
+    cta_h / cta_p / cta_btn before the include to change the words; the
+    defaults below are the home page's.
+-#}
+<section class="limeband">
+  <div class="wrap">
+    <div class="shead">
+      <div class="shead-l"><span class="lbl" style="color:var(--ink2)">Next step</span></div>
+      <div class="shead-r">
+        <h2 class="d2 rv"><span class="ln"><span>{{ cta_h|default('See it on your accounts.') }}</span></span></h2>
+        <p class="lead rv fade" style="color:var(--ink2);margin-top:var(--s5)">{{ cta_p|default('Sign up and watch the signal layer light up on the companies you actually care about.') }}</p>
+        <div class="btns rv fade" style="margin-top:var(--s6)">
+          <button class="btn btn-1" data-signup>{{ cta_btn|default('Sign up') }}</button>
+          <button class="btn btn-2" type="button" data-demo{% if cta_interest %} data-interest="{{ cta_interest }}"{% endif %}>Talk to us</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

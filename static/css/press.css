@@ -1,0 +1,1223 @@
+/* ════════════════════════════════════════════════════════════════════════
+   PRESS — THE PUBLIC SITE
+   The marketing site's own design system. It is NOT the product's.
+
+   WHY THERE ARE TWO SYSTEMS.
+   bento-tokens.css dresses an instrument: a dark, dense, quiet surface you
+   sit in front of for an hour, where every rule exists to stop the interface
+   competing with the data. A public page has the opposite job. Nobody lives
+   here; a visitor gives it one scroll and decides whether the company is
+   any good. So this system is loud where the product is quiet, and it is
+   built out of the product's own materials turned inside out:
+
+       the product's ink      #131315   becomes this site's PAPER-side ink
+       the product's text     #EFE9DC   becomes this site's PAPER
+       the product's accent   #C6F24E   stays exactly itself
+
+   That inversion is the brand tie. Somebody who uses both will feel the
+   relation without being able to name it; somebody who sees only one will
+   never guess the other exists.
+
+   THE FIVE RULES OF THIS SYSTEM. They are deliberately the opposite of the
+   product's five, one for one:
+
+     1. THE GROUND IS PAPER.    Warm off-white, opaque, no gradients, no
+                                mesh, no glow, no blur. Two ink bands per
+                                page invert it; that inversion is the only
+                                "effect" the site owns.
+     2. RULES, NOT FILLS.       Bento separates with a gap and a fill edge.
+                                Print separates with a line. Every section,
+                                every cell, every list row is bounded by a
+                                hairline. A filled box is reserved for one
+                                thing per page.
+     3. NOTHING IS ROUNDED.     --r is 0 and there are no exceptions, save
+                                the marker highlight, whose lopsided radii
+                                exist to read as a hand, not a shape.
+     4. TWO VOICES.             Fraunces sets every statement the site makes
+                                -- a variable serif with a wonk axis, at
+                                sizes the product would never permit.
+                                Familjen Grotesk, the product's own text
+                                face, sets everything that is merely
+                                information. A page never mixes them inside
+                                one sentence except through .mk.
+     5. MOTION IS TYPOGRAPHIC.  Words arrive from behind a mask, rules draw
+                                themselves from the left, figures wipe. Cards
+                                do not fade, do not lift, and are never
+                                staggered per index -- that is another
+                                product's signature and it is banned here.
+                                600ms and a real expo curve, against the
+                                product's 150ms cross-fade.
+
+   ──────────────────────────────────────────────────────────────────────── */
+
+:root {
+
+  /* ── GROUND ───────────────────────────────────────────────────────────
+     Three paper tones and three ink tones. Opaque, all six. An alpha wash
+     over paper goes grey-green; these were picked by eye against the lime. */
+  --paper:   #F1EDE3;
+  --paper2:  #E8E3D6;   /* inset / hover / alternating band              */
+  --paper3:  #DCD6C5;   /* pressed, and the bar track of a chart          */
+  --ink:     #14140F;   /* body text on paper, and the inverted band      */
+  --ink2:    #55534A;   /* secondary text — 6.2:1 on --paper              */
+  --ink3:    #6B6860;   /* metadata — 4.7:1 on --paper, the floor         */
+
+  /* ── RULE ─────────────────────────────────────────────────────────────
+     Rule 2's whole vocabulary. --rule is the hairline that bounds a cell;
+     --rule-strong is the structural line that bounds a section and is drawn
+     on scroll; --rule-ink is full ink, used once or twice per page. */
+  --rule:        #CFC9B7;
+  --rule-strong: #A9A395;
+  --rule-ink:    #14140F;
+
+  /* ── ACCENT ───────────────────────────────────────────────────────────
+     The product's lime, unchanged. On paper it is a FILL ONLY -- lime text
+     on paper is 1.6:1 and unreadable, so there is no --acc text token and
+     no rule that sets colour:var(--acc) outside an ink band. */
+  --acc:     #C6F24E;
+  --acc-hi:  #D4FA63;
+  --acc-ink: #14140F;   /* text sitting on the lime                       */
+
+  /* ── INK BAND ─────────────────────────────────────────────────────────
+     A full-bleed inverted section. Inside .inkband these five are swapped
+     onto the same names, so every component below works on both grounds
+     without a single .inkband .foo override. */
+  --ink-paper:  #F1EDE3;
+  --ink-ink2:   #A8A499;
+  --ink-rule:   #302F26;
+
+  /* ── TYPE ─────────────────────────────────────────────────────────────
+     Rule 4. Fraunces is variable on opsz/wght/SOFT/WONK; the site runs it
+     soft-0 wonk-1 at display sizes, which is where its ear and its leaning
+     'y' show. Familjen Grotesk is the product's text face, carried over
+     deliberately: it is the one material both systems share. */
+  --face-display: 'Fraunces', 'Times New Roman', Georgia, serif;
+  --face-text:    'Familjen Grotesk', system-ui, -apple-system, sans-serif;
+
+  /* Fluid, and much wider-ranging than the product's fixed eight steps: a
+     marketing hero at 132px and a footnote at 12px belong to one page. */
+  --fs-hero:  clamp(46px, 8.6vw, 128px);
+  --fs-h1:    clamp(38px, 6.0vw,  88px);
+  --fs-h2:    clamp(31px, 4.4vw,  62px);
+  --fs-h3:    clamp(23px, 2.4vw,  34px);
+  --fs-h4:    clamp(19px, 1.5vw,  23px);
+  --fs-lead:  clamp(17px, 1.35vw, 21px);
+  --fs-body:  16px;
+  --fs-sm:    14px;
+  --fs-xs:    12.5px;
+  --fs-label: 11px;     /* the tracked uppercase label, one size only     */
+
+  --lh-display: 0.94;   /* display type is set tight enough to read as a
+                           block; the mask reveal depends on it            */
+  --lh-snug:    1.22;
+  --lh-body:    1.58;
+  --lh-lead:    1.5;
+
+  --ls-display: -0.028em;
+  --ls-h:       -0.02em;
+  --ls-body:    0;
+  --ls-label:   0.16em;  /* far wider than the product's 0.08em            */
+
+  --fw-book:   400;
+  --fw-med:    500;
+  --fw-semi:   600;
+  --fw-bold:   700;
+
+  /* ── MEASURE ──────────────────────────────────────────────────────────
+     Prose gets a measure. The product has no running text so it has no
+     equivalent; a marketing page that lets a paragraph run 140 characters
+     is the single most common reason one looks amateur. */
+  --measure:      64ch;
+  --measure-wide: 78ch;
+
+  /* ── SPACE ────────────────────────────────────────────────────────────
+     8px base, and the section steps are fluid: a 160px gap that survives
+     a 390px phone has to be allowed to become 72px. */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px; --s5: 24px;
+  --s6: 32px; --s7: 48px; --s8: 64px; --s9: 96px;
+  --sec:     clamp(72px, 9vw, 148px);   /* between sections               */
+  --sec-sm:  clamp(44px, 5vw,  80px);
+
+  /* ── SHAPE ────────────────────────────────────────────────────────────*/
+  --r: 0;
+  /* Rule 3's one exception. Four unequal corners on two axes: the shape a
+     highlighter leaves, not the shape a component library leaves. */
+  --r-marker: 0.05em 0.17em 0.06em 0.2em / 0.17em 0.06em 0.2em 0.05em;
+
+  /* ── LAYOUT ───────────────────────────────────────────────────────────*/
+  --wrap: 1340px;
+  --mar:  clamp(20px, 5.2vw, 84px);
+  --nav-h: 66px;
+
+  /* ── MOTION ───────────────────────────────────────────────────────────
+     Rule 5. --ease is expo-out: it arrives fast and settles, which is what
+     makes a 600ms move feel decisive instead of slow. The product uses a
+     symmetric 150ms cubic-bezier(.4,0,.2,1) and nothing else. */
+  --dur:      620ms;
+  --dur-mid:  380ms;
+  --dur-fast: 200ms;
+  --ease:     cubic-bezier(.16, 1, .3, 1);
+  --ease-io:  cubic-bezier(.65, 0, .35, 1);
+}
+
+/* ── RESET / BASELINE ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--paper); -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--face-text);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  letter-spacing: var(--ls-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+h1, h2, h3, h4, h5, p, figure, ul, ol, blockquote { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+img, svg, video { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+/* Zero-specificity, for the reason bento-tokens.css spells out: an
+   element-qualified reset outranks every single-class component rule. */
+:where(button, input, select, textarea) {
+  font: inherit; color: inherit; background: transparent; border: 0;
+}
+:where(button) { cursor: pointer; }
+
+::selection { background: var(--acc); color: var(--acc-ink); }
+
+/* The site is one long scroll; a heavy scrollbar competes with the rules. */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: var(--paper2); }
+*::-webkit-scrollbar-thumb { background: var(--rule-strong); }
+*::-webkit-scrollbar-thumb:hover { background: var(--ink3); }
+
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.inkband :focus-visible { outline-color: var(--acc); }
+
+/* ── VIEW TRANSITIONS ──────────────────────────────────────────────────
+   Replaces the previous site's full-screen loading overlay outright. That
+   overlay held navigation for 470ms so a spinner could be seen; this hands
+   the same continuity to the browser, costs nothing, and degrades to an
+   ordinary instant navigation where it is unsupported. */
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: pr-out 180ms var(--ease-io) both; }
+::view-transition-new(root) { animation: pr-in  320ms var(--ease)    both; }
+@keyframes pr-out { to { opacity: 0 } }
+@keyframes pr-in  { from { opacity: 0; transform: translateY(10px) } }
+
+/* ════════════════════════════════════════════════════════════════════════
+   MOTION PRIMITIVES  (Rule 5)
+   Three devices, and the site uses no others.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* 1. THE MASK REVEAL. A line of display type sits inside an overflow-hidden
+      box and rises into it. .ln is the box, .ln > span is the line.
+
+      The stagger here is PER LINE OF ONE HEADLINE, which is a typographic
+      device: the sentence assembles itself in reading order. It is not the
+      banned per-card stagger, and no grid in this stylesheet carries a
+      transition-delay. */
+.ln { display: block; overflow: hidden; padding-bottom: 0.08em; }
+.ln > span {
+  display: block;
+  transform: translateY(105%);
+  transition: transform var(--dur) var(--ease);
+}
+.in .ln > span,
+.ln.in > span { transform: translateY(0); }
+.ln:nth-child(2) > span { transition-delay: 70ms; }
+.ln:nth-child(3) > span { transition-delay: 140ms; }
+.ln:nth-child(4) > span { transition-delay: 210ms; }
+
+/* 2. THE RULE DRAW. Structural rules draw themselves left to right. */
+.rule {
+  display: block; height: 1px; background: var(--rule-strong);
+  transform: scaleX(0); transform-origin: 0 50%;
+  transition: transform var(--dur) var(--ease);
+}
+.rule.in, .in > .rule { transform: scaleX(1); }
+.rule-ink { background: var(--ink); height: 2px; }
+.inkband .rule { background: var(--ink-rule); }
+
+/* 3. THE WIPE. A figure is uncovered left to right. Square, never rounded:
+      the product's reveal is a rounded inset wipe and this must not read as
+      the same gesture at a different radius.
+
+      .wipe ALWAYS sits on a child of the observed .rv element, never on the
+      .rv element itself. Chromium folds a target's own clip-path into the
+      rect it hands IntersectionObserver, so an element that is both observed
+      and clipped to zero width never reports as intersecting: it waits
+      forever for a callback that cannot fire, and the figure never appears.
+      The one-line rule is: observe the wrapper, clip the child. */
+.wipe { clip-path: inset(0 100% 0 0); transition: clip-path var(--dur) var(--ease); }
+.in > .wipe, .in .wipe { clip-path: inset(0 0 0 0); }
+
+/* Plain copy blocks fade in place. No transform: a paragraph that slides is
+   a paragraph you read twice. */
+.fade { opacity: 0; transition: opacity var(--dur-mid) var(--ease); }
+.fade.in, .in > .fade { opacity: 1; }
+
+/* THE NO-JS CONTRACT. Every hidden state above is applied by a class the
+   script adds, so a page with JS off or still parsing shows finished type
+   rather than an empty column. (This is the one lesson from the product
+   build that transfers unchanged.) */
+html:not(.js) .ln > span { transform: none; }
+html:not(.js) .rule      { transform: scaleX(1); }
+html:not(.js) .wipe      { clip-path: none; }
+html:not(.js) .fade      { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ln > span { transform: none !important; transition: none !important; }
+  .rule { transform: scaleX(1) !important; transition: none !important; }
+  .wipe { clip-path: none !important; transition: none !important; }
+  .fade { opacity: 1 !important; transition: none !important; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important; scroll-behavior: auto !important;
+  }
+  @view-transition { navigation: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   TYPE  (Rule 4)
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* Fraunces' variable axes. opsz is set per size class rather than left on
+   `auto`, because `auto` keys off the COMPUTED px and a clamp()'d hero that
+   lands at 48px on a phone would silently get text-grade serifs there. */
+.d1, .d2, .d3, .d4, .dq {
+  font-family: var(--face-display);
+  font-weight: var(--fw-semi);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
+  text-wrap: balance;
+}
+.d1 { font-size: var(--fs-hero); }
+.d2 { font-size: var(--fs-h1);   }
+.d3 { font-size: var(--fs-h2);   }
+.d4 { font-size: var(--fs-h3); line-height: var(--lh-snug); letter-spacing: var(--ls-h);
+      font-variation-settings: 'SOFT' 0, 'WONK' 0, 'opsz' 48; }
+
+/* The emphasised phrase. Italic Fraunces with wonk on is the site's single
+   most recognisable mark -- it is why this face was chosen. */
+.it { font-style: italic; font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144; }
+
+/* THE MARKER. Rule 2 says a filled box is reserved; this is what it is
+   reserved for. Lime behind one phrase, ink on top, on the lopsided radius
+   Rule 3 carves out. It is drawn ONCE per page.
+   It is set as a background on an inline box rather than a pseudo-element
+   so it breaks correctly across two lines, which is the whole point of a
+   highlighter. */
+.mk {
+  background: var(--acc); color: var(--acc-ink);
+  border-radius: var(--r-marker);
+  padding: 0.02em 0.18em; margin: 0 -0.06em;
+  box-decoration-break: clone; -webkit-box-decoration-break: clone;
+}
+
+/* Running text. */
+.lead {
+  font-size: var(--fs-lead); line-height: var(--lh-lead);
+  color: var(--ink2); max-width: var(--measure);
+}
+.prose { max-width: var(--measure); color: var(--ink2); }
+.prose p + p { margin-top: 1.1em; }
+
+/* THE LABEL. Uppercase, tracked to 0.16em, 11px, always in the text face.
+   Every eyebrow, every category, every column head on the site is this one
+   object -- the previous site had a pill with a pulsing dot in the same
+   slot, which is a component; this is a piece of typography. */
+.lbl {
+  font-family: var(--face-text); font-size: var(--fs-label);
+  font-weight: var(--fw-semi); letter-spacing: var(--ls-label);
+  text-transform: uppercase; color: var(--ink3);
+  display: inline-block;
+}
+.lbl-ink { color: var(--ink); }
+
+/* THE INDEX. A section's number, set in the margin. Print's way of telling
+   you where you are; the product uses a breadcrumb because it has routes,
+   the site uses a numeral because it has a sequence. */
+.idx {
+  font-family: var(--face-text); font-size: var(--fs-label);
+  font-weight: var(--fw-semi); letter-spacing: var(--ls-label);
+  color: var(--ink3); font-variant-numeric: tabular-nums;
+}
+
+/* Numbers. Display face, tabular, tracked tighter than the type around it. */
+.num {
+  font-family: var(--face-display); font-variant-numeric: tabular-nums;
+  font-weight: var(--fw-semi); letter-spacing: -0.04em;
+  font-variation-settings: 'SOFT' 0, 'WONK' 0, 'opsz' 96;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   LAYOUT
+   ════════════════════════════════════════════════════════════════════════ */
+
+.wrap { width: 100%; max-width: var(--wrap); margin-inline: auto; padding-inline: var(--mar); }
+
+/* A section is a rule, a two-column head, and a body. That is the entire
+   page grammar; every page on the site is a stack of these. */
+.sec { padding-block: var(--sec); }
+.sec-sm { padding-block: var(--sec-sm); }
+.sec > .rule:first-child { margin-bottom: var(--s7); }
+
+/* The head: index + label pinned to a narrow left column, statement and
+   lead in the wide one. Below 900px the columns stack and the index sits
+   inline with the label, because a 3-character column on a phone is a
+   column of one character per line. */
+.shead { display: grid; grid-template-columns: 148px 1fr; gap: var(--s7); align-items: start; }
+.shead-l { display: flex; flex-direction: column; gap: var(--s2); padding-top: 0.5em; }
+.shead-r { min-width: 0; }
+.shead-r .lead { margin-top: var(--s5); }
+@media (max-width: 900px) {
+  .shead { grid-template-columns: 1fr; gap: var(--s5); }
+  .shead-l { flex-direction: row; align-items: baseline; gap: var(--s4); padding-top: 0; }
+}
+
+/* THE INK BAND. Rule 1's one inversion. Full-bleed out of .wrap using the
+   100vw trick rather than a wrapper element, so it can be dropped into any
+   page's flow. The five ground tokens are reassigned here, which is why no
+   component below needs an .inkband variant. */
+.inkband {
+  --paper: var(--ink); --paper2: #1D1C16; --paper3: #26251D;
+  /* --ink3 is lighter on the ink ground than on paper. The same value on
+     both would be 4.3:1 here, and every eyebrow and every stat label on the
+     site is set in it -- the floor for this token is 4.5:1 on whatever it
+     sits on, not one hex that happens to pass on one of the two grounds. */
+  --ink: var(--ink-paper); --ink2: var(--ink-ink2); --ink3: #8B877A;
+  --rule: var(--ink-rule); --rule-strong: #3E3C31; --rule-ink: var(--ink-paper);
+  background: #14140F; color: var(--ink-paper);
+  width: 100vw; margin-inline: calc(50% - 50vw);
+  padding-block: var(--sec);
+}
+.inkband > .wrap { max-width: var(--wrap); }
+/* A lime band. Used once on the site, on the final call to action. */
+.limeband {
+  --paper: var(--acc); --paper2: #BCE93F; --paper3: #B0DE2E;
+  --ink: var(--acc-ink); --ink2: #2F3A12; --ink3: #45521D;
+  --rule: #A9D633; --rule-strong: #93BE24; --rule-ink: var(--acc-ink);
+  background: var(--acc); color: var(--acc-ink);
+  width: 100vw; margin-inline: calc(50% - 50vw);
+  padding-block: var(--sec);
+}
+
+/* Full-bleed hairline across the page, outside any band. */
+.hr { width: 100vw; margin-inline: calc(50% - 50vw); height: 1px; background: var(--rule); border: 0; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   CONTROLS
+   Square, ink-filled, and there are exactly three.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.btn {
+  display: inline-flex; align-items: center; gap: var(--s3);
+  height: 50px; padding-inline: var(--s6);
+  font-family: var(--face-text); font-size: var(--fs-sm);
+  font-weight: var(--fw-semi); letter-spacing: 0.02em;
+  border-radius: var(--r); white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease-io),
+              color var(--dur-fast) var(--ease-io),
+              box-shadow var(--dur-fast) var(--ease-io);
+}
+/* Primary: solid ink. On an ink band it inverts to paper automatically
+   because both sides are named tokens. */
+.btn-1 { background: var(--ink); color: var(--paper); }
+.btn-1:hover { background: var(--acc); color: var(--acc-ink); }
+/* Secondary: a hairline box that fills on hover. box-shadow, not border, so
+   the button's height never shifts by 2px between the two states. */
+.btn-2 { box-shadow: inset 0 0 0 1px var(--rule-strong); color: var(--ink); }
+.btn-2:hover { box-shadow: inset 0 0 0 1px var(--ink); background: var(--ink); color: var(--paper); }
+/* Tertiary: a text link with an arrow. */
+.btn-3 { padding: 0; height: auto; color: var(--ink); }
+.btn-3 svg { width: 16px; height: 16px; transition: transform var(--dur-fast) var(--ease-io); }
+.btn-3:hover svg { transform: translateX(4px); }
+.btn svg { width: 17px; height: 17px; flex: 0 0 auto; }
+
+.btns { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; }
+
+/* THE DRAWN UNDERLINE. Every inline link on the site. The rule is a
+   pseudo-element scaled from the right on rest and the left on hover, so
+   the old underline retracts and the new one draws -- one gesture, not a
+   fade. */
+.lk { position: relative; color: inherit; }
+.lk::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 1px;
+  background: currentColor; transform: scaleX(1); transform-origin: 100% 50%;
+  transition: transform var(--dur-mid) var(--ease);
+}
+.lk:hover::after { transform: scaleX(0); transform-origin: 0 50%; }
+/* The inverse: no rule at rest, drawn on hover. For links inside prose. */
+.lk-d::after { transform: scaleX(0); transform-origin: 0 50%; }
+.lk-d:hover::after { transform: scaleX(1); transform-origin: 0 50%; }
+.prose a { color: var(--ink); border-bottom: 1px solid var(--rule-strong); }
+.prose a:hover { border-bottom-color: var(--ink); background: var(--acc); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE MASTHEAD
+   A newspaper masthead, not an app bar: it is transparent over the hero,
+   and the only thing that changes on scroll is that a rule appears under it.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.nv {
+  position: fixed; inset: 0 0 auto; z-index: 800;
+  height: var(--nav-h);
+  display: flex; align-items: center; gap: var(--s6);
+  padding-inline: var(--mar);
+  background: transparent;
+  transition: background var(--dur-mid) var(--ease-io),
+              box-shadow var(--dur-mid) var(--ease-io);
+}
+.nv.stuck {
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: saturate(140%) blur(14px);
+  -webkit-backdrop-filter: saturate(140%) blur(14px);
+  box-shadow: inset 0 -1px 0 var(--rule);
+}
+body { padding-top: var(--nav-h); }
+
+/* The lockup. A filled lime square and the name -- the same two parts the
+   product's sidebar uses, set in the display face at the site's scale. */
+.nv-brand { display: inline-flex; align-items: center; gap: var(--s3); }
+.bn-mark { width: 13px; height: 13px; background: var(--acc); flex: 0 0 auto; }
+.bn-word {
+  font-family: var(--face-display); font-size: 21px; font-weight: var(--fw-semi);
+  letter-spacing: -0.03em; font-variation-settings: 'SOFT' 0, 'WONK' 0, 'opsz' 24;
+  line-height: 1;
+}
+
+.nv-links { display: flex; align-items: center; gap: var(--s6); margin-left: var(--s5); }
+.nv-link {
+  font-size: var(--fs-label); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label); text-transform: uppercase;
+  color: var(--ink2); position: relative; padding-block: var(--s2);
+}
+.nv-link::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: var(--ink); transform: scaleX(0); transform-origin: 0 50%;
+  transition: transform var(--dur-mid) var(--ease);
+}
+.nv-link:hover { color: var(--ink); }
+.nv-link:hover::after { transform: scaleX(1); }
+.nv-link.active { color: var(--ink); }
+.nv-link.active::after { background: var(--acc); transform: scaleX(1); height: 3px; }
+
+.nv-cta { margin-left: auto; display: flex; align-items: center; gap: var(--s5); }
+.nv-cta .btn { height: 40px; padding-inline: var(--s5); }
+.nv-signin {
+  font-size: var(--fs-label); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--ink2);
+}
+.nv-signin:hover { color: var(--ink); }
+
+/* The burger draws two rules and crosses them. */
+.nv-burger { display: none; width: 34px; height: 34px; position: relative; }
+.nv-burger i {
+  position: absolute; left: 6px; right: 6px; height: 1.5px; background: var(--ink);
+  transition: transform var(--dur-mid) var(--ease), opacity var(--dur-fast) linear;
+}
+.nv-burger i:nth-child(1) { top: 13px; }
+.nv-burger i:nth-child(2) { bottom: 13px; }
+body.menu-open .nv-burger i:nth-child(1) { transform: translateY(3.5px) rotate(45deg); }
+body.menu-open .nv-burger i:nth-child(2) { transform: translateY(-3.5px) rotate(-45deg); }
+body.menu-open .nv-burger i { background: var(--ink-paper); }
+/* The masthead sits ON TOP of the sheet, so the wordmark has to invert with
+   it or it vanishes into the ink. */
+body.menu-open .nv { background: transparent; box-shadow: none; }
+body.menu-open .nv .bn-word { color: var(--ink-paper); }
+
+/* The phone menu is a full-screen ink page with the links set at display
+   size. It is the site's argument in one screen: the product would never
+   show a nav item at 40px, and this is not the product. */
+.nv-sheet {
+  position: fixed; inset: 0; z-index: 790;
+  background: #14140F; color: var(--ink-paper);
+  padding: calc(var(--nav-h) + var(--s7)) var(--mar) var(--s7);
+  display: flex; flex-direction: column; justify-content: center; gap: var(--s4);
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path var(--dur) var(--ease);
+  visibility: hidden;
+}
+.nv-sheet.open { clip-path: inset(0 0 0 0); visibility: visible; }
+/* Direct children only. The sheet's foot holds two ordinary buttons, and
+   an unscoped `.nv-sheet a` set the "Log in" control in 56px Fraunces. */
+.nv-sheet > a {
+  font-family: var(--face-display); font-size: clamp(34px, 11vw, 56px);
+  font-weight: var(--fw-semi); letter-spacing: -0.03em; line-height: 1.06;
+  font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 72;
+  color: var(--ink-paper);
+  display: flex; align-items: baseline; gap: var(--s4);
+}
+.nv-sheet > a .idx { color: #6E6A5D; }
+.nv-sheet > a:hover { color: var(--acc); }
+.nv-sheet .nv-sheet-foot { margin-top: var(--s7); display: flex; gap: var(--s3); }
+body.menu-open { overflow: hidden; }
+
+@media (max-width: 1040px) {
+  .nv-links { display: none; }
+  .nv-burger { display: block; }
+  .nv-cta .nv-signin { display: none; }
+}
+@media (max-width: 560px) { .nv-cta .btn { display: none; } }
+
+/* THE SCROLL RULE. A 2px lime line across the very top that fills as you
+   read. The previous site had the same idea as a gradient bar; this one is
+   flat, because Rule 1 has no gradients in it. */
+.prog {
+  position: fixed; top: 0; left: 0; height: 2px; width: 0; z-index: 900;
+  background: var(--acc); pointer-events: none;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE HERO
+   ════════════════════════════════════════════════════════════════════════ */
+
+.hero { padding-block: clamp(56px, 9vw, 130px) clamp(40px, 5vw, 72px); }
+.hero .d1 { margin-block: var(--s5) 0; }
+.hero-2col { display: grid; grid-template-columns: 1fr minmax(320px, 420px); gap: var(--s7) var(--s9); align-items: end; }
+.hero-2col .lead { max-width: none; }
+@media (max-width: 1000px) { .hero-2col { grid-template-columns: 1fr; gap: var(--s6); align-items: start; } }
+
+/* The hero's foot: the lead and the buttons sit under the statement, on a
+   rule, with the index of what follows in the margin. */
+.hero-foot { display: grid; grid-template-columns: 148px 1fr auto; gap: var(--s6) var(--s7); align-items: start; margin-top: var(--s7); }
+@media (max-width: 900px) { .hero-foot { grid-template-columns: 1fr; align-items: start; } }
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE TICKER
+   Continuous horizontal type. Editorial, and load-bearing: it is how the
+   site says "there are twenty-six of these" without a number.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.tick { width: 100vw; margin-inline: calc(50% - 50vw); overflow: hidden;
+        border-block: 1px solid var(--rule); padding-block: var(--s4); }
+.tick-track { display: flex; width: max-content; animation: tick 46s linear infinite; }
+.tick:hover .tick-track { animation-play-state: paused; }
+.tick-track > * { display: flex; align-items: center; flex: 0 0 auto; }
+.tick-i {
+  font-family: var(--face-display); font-size: clamp(20px, 2.4vw, 32px);
+  font-weight: var(--fw-med); letter-spacing: -0.02em; color: var(--ink);
+  font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 48;
+  padding-inline: var(--s5); white-space: nowrap;
+}
+.tick-i::after { content: ''; width: 7px; height: 7px; background: var(--acc); margin-left: var(--s5); flex: 0 0 auto; }
+a.tick-i:hover { font-style: italic; }
+@keyframes tick { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .tick-track { animation: none; } }
+
+/* A quieter ticker for logos / integration names, in the text face. */
+.tick-sm { border-block: 1px solid var(--rule); }
+.tick-sm .tick-i {
+  font-family: var(--face-text); font-size: var(--fs-label); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--ink2);
+}
+.tick-sm .tick-track { animation-duration: 38s; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE CELL GRID  (Rule 2)
+   The site's answer to a card. No fill, no shadow, no lift: a cell is the
+   area between four rules. Hover washes the ground one step and turns the
+   top rule lime. NOTHING in here carries a transition-delay.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* THE SEPARATORS ARE BOX-SHADOWS, NOT BORDERS, and the reason is the last
+   column. A border is painted INSIDE the element, so `overflow: hidden` on
+   the grid cannot clip the right-hand rule of the right-hand column: every
+   cells grid closed itself with a stray vertical line at the page margin
+   while the left side stayed open. A box-shadow is painted outside the
+   border box, so the last column's falls beyond the grid and IS clipped.
+   The bottom row loses its shadow the same way, so the grid supplies that
+   rule itself. */
+.cells { display: grid; gap: 0; overflow: hidden;
+         border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.cells-2 { grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); }
+.cells-3 { grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); }
+.cells-4 { grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); }
+
+.cell {
+  position: relative; display: flex; flex-direction: column;
+  padding: var(--s6) var(--s5) var(--s7);
+  box-shadow: 1px 0 0 var(--rule), 0 1px 0 var(--rule);
+  transition: background var(--dur-fast) var(--ease-io);
+  min-width: 0;
+}
+/* The lime edge. A 2px line drawn across the top of the cell on hover --
+   the same left-origin scaleX as every other rule on the site, so hovering
+   a cell reads as the page drawing a line, not as a card waking up. */
+/* top:0, not -1px: the grid clips to its content box, so a lime edge hung
+   one pixel above the first row would never be drawn. */
+.cell::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--acc); transform: scaleX(0); transform-origin: 0 50%;
+  transition: transform var(--dur-mid) var(--ease);
+}
+a.cell:hover, button.cell:hover { background: var(--paper2); }
+a.cell:hover::before, button.cell:hover::before { transform: scaleX(1); }
+
+.cell-idx { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s5); }
+.cell h3, .cell h4 {
+  font-family: var(--face-display); font-size: var(--fs-h4);
+  font-weight: var(--fw-semi); line-height: var(--lh-snug); letter-spacing: var(--ls-h);
+  font-variation-settings: 'SOFT' 0, 'WONK' 0, 'opsz' 36;
+  margin-bottom: var(--s3);
+}
+.cell p { color: var(--ink2); font-size: var(--fs-sm); }
+.cell .more { margin-top: auto; padding-top: var(--s5); display: inline-flex; align-items: center; gap: var(--s2);
+              font-size: var(--fs-label); font-weight: var(--fw-semi); letter-spacing: var(--ls-label);
+              text-transform: uppercase; color: var(--ink); }
+.cell .more svg { width: 14px; height: 14px; transition: transform var(--dur-fast) var(--ease-io); }
+a.cell:hover .more svg { transform: translateX(4px); }
+
+/* A cell's icon. Line art at one size, inheriting the ink -- the previous
+   site gave every card a coloured gradient tile, which is what made forty
+   cards read as forty products. */
+.cell-ic { width: 26px; height: 26px; margin-bottom: var(--s5); color: var(--ink); }
+.cell-ic svg { width: 100%; height: 100%; stroke: currentColor; fill: none; stroke-width: 1.5; }
+.cell-ic svg [fill]:not([fill="none"]) { fill: currentColor; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   FIGURES
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* THE STAT. A number at display scale over a label, under a rule. No tile,
+   no border, no background -- the size IS the emphasis. */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: var(--s6) var(--s7); }
+.stat { border-top: 2px solid var(--ink); padding-top: var(--s4); }
+.stat b { display: block; font-family: var(--face-display); font-size: clamp(44px, 5.4vw, 76px);
+          font-weight: var(--fw-semi); line-height: 0.92; letter-spacing: -0.045em;
+          font-variation-settings: 'SOFT' 0, 'WONK' 0, 'opsz' 96; font-variant-numeric: tabular-nums; }
+.stat span { display: block; margin-top: var(--s3); font-size: var(--fs-label); font-weight: var(--fw-semi);
+             letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--ink3); }
+a.stat { transition: border-color var(--dur-fast) var(--ease-io); }
+a.stat:hover { border-top-color: var(--acc); }
+
+/* THE LEDGER. A numbered list of rows divided by hairlines. Used wherever
+   the previous site used a column of glass cards: steps, pains, plays,
+   points, signal groups. */
+.ledger { border-top: 1px solid var(--rule); }
+.ledger-row {
+  display: grid; grid-template-columns: 56px 1fr; gap: var(--s5);
+  padding-block: var(--s5); border-bottom: 1px solid var(--rule);
+  align-items: start;
+}
+.ledger-row > .idx { padding-top: 0.35em; }
+.ledger-row h4 { font-family: var(--face-display); font-size: var(--fs-h4); font-weight: var(--fw-semi);
+                 letter-spacing: var(--ls-h); line-height: var(--lh-snug);
+                 font-variation-settings: 'SOFT' 0, 'WONK' 0, 'opsz' 36; }
+.ledger-row p { color: var(--ink2); font-size: var(--fs-sm); margin-top: var(--s2); max-width: var(--measure); }
+a.ledger-row { transition: background var(--dur-fast) var(--ease-io); }
+a.ledger-row:hover { background: var(--paper2); }
+@media (max-width: 640px) { .ledger-row { grid-template-columns: 40px 1fr; gap: var(--s4); } }
+
+/* THE PULL QUOTE. The one place the display face runs at hero size inside
+   the page body. */
+.pull { font-family: var(--face-display); font-size: var(--fs-h2); font-weight: var(--fw-book);
+        line-height: 1.08; letter-spacing: var(--ls-display); font-style: italic;
+        font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
+        max-width: 22ch; }
+
+/* TAGS. A tag is a word on a rule, not a pill. */
+.tags { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.tag {
+  font-size: var(--fs-xs); color: var(--ink2);
+  padding: var(--s1) var(--s3); box-shadow: inset 0 0 0 1px var(--rule);
+  white-space: nowrap;
+}
+.tag-fill { background: var(--acc); color: var(--acc-ink); box-shadow: none; font-weight: var(--fw-semi); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   SEARCH AND FILTER
+   The banned-effects note in the brief singles out "an animated conic-
+   gradient glowing ring around search inputs on focus". There is no ring
+   here at all: the field is a single rule that goes ink and 2px on focus.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.srch { display: flex; align-items: center; gap: var(--s3); position: relative;
+        border-bottom: 1px solid var(--rule-strong); padding-block: var(--s3); min-width: 220px; }
+.srch::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+  background: var(--ink); transform: scaleX(0); transform-origin: 0 50%;
+  transition: transform var(--dur-mid) var(--ease);
+}
+.srch:focus-within::after { transform: scaleX(1); }
+.srch svg { width: 16px; height: 16px; flex: 0 0 auto; stroke: var(--ink3); fill: none; stroke-width: 1.8; }
+.srch input { flex: 1; min-width: 0; outline: 0; font-size: var(--fs-sm); }
+.srch input::placeholder { color: var(--ink3); }
+
+/* Filter chips: text on a rule, and the selected one is the only fill. */
+.chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.chip {
+  font-size: var(--fs-label); font-weight: var(--fw-semi); letter-spacing: var(--ls-label);
+  text-transform: uppercase; color: var(--ink2);
+  padding: var(--s2) var(--s4); box-shadow: inset 0 0 0 1px var(--rule);
+  transition: color var(--dur-fast) var(--ease-io), box-shadow var(--dur-fast) var(--ease-io),
+              background var(--dur-fast) var(--ease-io);
+}
+.chip:hover { color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.chip.on { background: var(--ink); color: var(--paper); box-shadow: none; }
+
+.empty { padding: var(--s8) 0; text-align: center; color: var(--ink3); font-size: var(--fs-sm); display: none; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE COLOPHON  (footer)
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* No top margin: every page ends on the closing band, whose own padding
+   is the gap. A --sec margin here put 148px of dead paper between the
+   band and the rule. */
+.foot { border-top: 2px solid var(--ink); }
+.foot-in { display: grid; grid-template-columns: minmax(280px, 1fr) auto; gap: var(--s8) var(--s9); padding-block: var(--s8); }
+.foot-tag { font-family: var(--face-display); font-size: var(--fs-h3); font-weight: var(--fw-book);
+            font-style: italic; line-height: 1.12; letter-spacing: var(--ls-h); max-width: 18ch;
+            font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 48; margin-block: var(--s5) var(--s6); }
+.foot-cols { display: flex; gap: var(--s9); }
+.foot-col { display: flex; flex-direction: column; gap: var(--s3); min-width: 120px; }
+.foot-col h5 { font-size: var(--fs-label); font-weight: var(--fw-semi); letter-spacing: var(--ls-label);
+               text-transform: uppercase; color: var(--ink3); margin-bottom: var(--s2); }
+.foot-col a { font-size: var(--fs-sm); color: var(--ink2); }
+.foot-col a:hover { color: var(--ink); }
+.foot-bottom { display: flex; flex-wrap: wrap; gap: var(--s5); justify-content: space-between;
+               padding-block: var(--s5); border-top: 1px solid var(--rule); font-size: var(--fs-xs); color: var(--ink3); }
+.foot-links { display: flex; gap: var(--s5); }
+@media (max-width: 900px) { .foot-in { grid-template-columns: 1fr; } .foot-cols { flex-wrap: wrap; gap: var(--s7); } }
+
+/* ════════════════════════════════════════════════════════════════════════
+   OVERLAYS
+   One shell for the lead form, the sign-up pop-up and the video. It enters
+   as a clip wipe from the top edge -- the same gesture as the phone menu,
+   because they are the same kind of object.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.ov { position: fixed; inset: 0; z-index: 1000; display: none; }
+.ov.on { display: block; }
+.ov-bg { position: absolute; inset: 0; background: rgba(20,20,15,.62); animation: ovbg var(--dur-mid) var(--ease) both; }
+@keyframes ovbg { from { opacity: 0 } }
+.ov-panel {
+  position: absolute; top: 0; right: 0; bottom: 0; width: min(520px, 100%);
+  background: var(--paper); border-left: 1px solid var(--rule-strong);
+  padding: var(--s7) clamp(20px, 4vw, 44px) var(--s8);
+  overflow-y: auto;
+  animation: ovin var(--dur) var(--ease) both;
+}
+@keyframes ovin { from { transform: translateX(100%) } }
+@media (max-width: 560px) { .ov-panel { width: 100%; border-left: 0; } }
+
+/* A centred panel, for the video and the sign-up pop-up. */
+.ov-mid {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: min(880px, calc(100% - 2 * var(--mar))); max-height: calc(100% - 2 * var(--s7));
+  overflow-y: auto; background: var(--paper);
+  padding: var(--s7) clamp(20px, 4vw, 44px) var(--s7);
+  animation: ovmid var(--dur) var(--ease) both;
+}
+@keyframes ovmid { from { opacity: 0; transform: translate(-50%, calc(-50% + 18px)) } }
+.ov-sm { width: min(460px, calc(100% - 2 * var(--mar))); }
+
+.ov-x { position: absolute; top: var(--s5); right: var(--s5); width: 34px; height: 34px;
+        display: grid; place-items: center; color: var(--ink2); z-index: 2; }
+.ov-x:hover { color: var(--ink); background: var(--paper2); }
+.ov-x svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 1.6; fill: none; }
+.ov-h { margin-bottom: var(--s6); }
+.ov-h h3 { font-family: var(--face-display); font-size: var(--fs-h3); font-weight: var(--fw-semi);
+           letter-spacing: var(--ls-h); line-height: var(--lh-snug); margin-block: var(--s3) var(--s2);
+           font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 48; }
+.ov-h p { color: var(--ink2); font-size: var(--fs-sm); }
+
+/* ── FORM ────────────────────────────────────────────────────────────────
+   Underlined fields, no boxes. The label sits above and shrinks to a
+   tracked cap when the field has content, so a filled form still reads as
+   a list of named things. */
+.f-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s5); }
+@media (max-width: 560px) { .f-row { grid-template-columns: 1fr; } }
+.f { position: relative; margin-bottom: var(--s6); }
+.f label { display: block; font-size: var(--fs-label); font-weight: var(--fw-semi);
+           letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--ink3); margin-bottom: var(--s2); }
+.f label .opt { text-transform: none; letter-spacing: 0; font-weight: var(--fw-book); }
+.f input, .f textarea {
+  width: 100%; outline: 0; font-size: var(--fs-body); color: var(--ink);
+  border-bottom: 1px solid var(--rule-strong); padding-block: var(--s2) var(--s3);
+  resize: vertical;
+}
+.f input::placeholder, .f textarea::placeholder { color: var(--ink3); }
+.f::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+            background: var(--ink); transform: scaleX(0); transform-origin: 0 50%;
+            transition: transform var(--dur-mid) var(--ease); }
+.f:focus-within::after { transform: scaleX(1); }
+.f.bad input, .f.bad textarea { border-bottom-color: #C0392B; }
+.f.bad::after { background: #C0392B; transform: scaleX(1); }
+.f.ok::after { background: var(--acc); transform: scaleX(1); }
+
+.f-err { color: #A5301F; font-size: var(--fs-sm); min-height: 1.2em; }
+.f-note { font-size: var(--fs-xs); color: var(--ink3); margin-top: var(--s5); }
+.f-submit { width: 100%; justify-content: center; margin-top: var(--s3); }
+.f-submit.loading { opacity: .6; pointer-events: none; }
+
+/* The two-way toggle at the top of the lead form. */
+.f-pills { display: flex; gap: var(--s2); margin-bottom: var(--s6); }
+.f-pill { flex: 1; text-align: center; font-size: var(--fs-label); font-weight: var(--fw-semi);
+          letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--ink2);
+          padding: var(--s3); box-shadow: inset 0 0 0 1px var(--rule);
+          transition: background var(--dur-fast) var(--ease-io), color var(--dur-fast) var(--ease-io); }
+.f-pill.on { background: var(--ink); color: var(--paper); box-shadow: none; }
+
+/* The success state. No confetti: a rule draws, a mark is struck, done. */
+.f-done { display: none; text-align: left; }
+.f-done.on { display: block; }
+.f-done .mark { width: 44px; height: 44px; background: var(--acc); display: grid; place-items: center; margin-bottom: var(--s5); }
+.f-done .mark svg { width: 22px; height: 22px; stroke: var(--acc-ink); stroke-width: 2.4; fill: none; }
+.f-done h3 { font-family: var(--face-display); font-size: var(--fs-h3); font-weight: var(--fw-semi);
+             letter-spacing: var(--ls-h); font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 48; }
+.f-done p { color: var(--ink2); margin-block: var(--s3) var(--s6); }
+
+/* The Google button host. GSI draws its own pill; the site boxes it so the
+   surrounding square geometry is not broken by one rounded control. */
+.gbtn { display: flex; justify-content: center; padding: var(--s4); box-shadow: inset 0 0 0 1px var(--rule); min-height: 60px; }
+.gbtn > div { max-width: 100%; }
+.g-alt { display: none; margin-top: var(--s4); }
+.g-err, .g-ok { display: flex; gap: var(--s2); font-size: var(--fs-sm); padding: var(--s3) var(--s4); margin-bottom: var(--s5); }
+.g-err { background: #F6E3DF; color: #8C2A19; }
+.g-ok { background: var(--acc); color: var(--acc-ink); }
+.g-secure { display: flex; align-items: center; justify-content: center; gap: var(--s2);
+            font-size: var(--fs-xs); color: var(--ink3); margin-top: var(--s5); }
+.g-secure svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+
+/* The video frame. 16:9, square corners, ink ground so the player edge
+   never shows against paper. */
+.vframe { position: relative; aspect-ratio: 16 / 9; background: #14140F; overflow: hidden; }
+.vframe iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.vph { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+       justify-content: center; gap: var(--s4); text-align: center; padding: var(--s7); color: var(--ink-paper); }
+.vph b { font-family: var(--face-display); font-size: var(--fs-h4); font-weight: var(--fw-semi); }
+.vph span { font-size: var(--fs-xs); color: #8B8779; max-width: 44ch; }
+.vph .play { width: 58px; height: 58px; background: var(--acc); display: grid; place-items: center; }
+.vph .play svg { width: 22px; height: 22px; fill: var(--acc-ink); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE DIRECTORY  (/agents)
+   ════════════════════════════════════════════════════════════════════════ */
+
+.dir-bar { display: flex; flex-wrap: wrap; gap: var(--s5); align-items: end; justify-content: space-between; margin-bottom: var(--s6); }
+.dir { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); overflow: hidden;
+       border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+/* An agent cell leads with its name in the display face, because in a
+   directory the name is the thing you are scanning for. The category and
+   the badge are labels above it; the summary is beneath. */
+.ag { position: relative; display: flex; flex-direction: column; padding: var(--s6) var(--s5) var(--s6);
+      box-shadow: 1px 0 0 var(--rule), 0 1px 0 var(--rule);
+      transition: background var(--dur-fast) var(--ease-io); min-width: 0; }
+.ag::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--acc);
+              transform: scaleX(0); transform-origin: 0 50%; transition: transform var(--dur-mid) var(--ease); }
+.ag:hover { background: var(--paper2); }
+.ag:hover::before { transform: scaleX(1); }
+.ag-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s5); }
+.ag-badge { font-size: var(--fs-label); font-weight: var(--fw-semi); letter-spacing: var(--ls-label);
+            text-transform: uppercase; background: var(--acc); color: var(--acc-ink); padding: 2px var(--s2); }
+.ag-badge.building { background: var(--paper3); color: var(--ink2); }
+.ag h3 { font-family: var(--face-display); font-size: clamp(22px, 2vw, 28px); font-weight: var(--fw-semi);
+         letter-spacing: var(--ls-h); line-height: 1.1; font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 36; }
+.ag-role { font-size: var(--fs-xs); color: var(--ink3); margin-top: var(--s2); }
+.ag p { font-size: var(--fs-sm); color: var(--ink2); margin-top: var(--s4); }
+.ag-metric { margin-top: var(--s4); font-family: var(--face-display); font-size: var(--fs-sm);
+             font-weight: var(--fw-semi); color: var(--ink); }
+.ag-foot { margin-top: auto; padding-top: var(--s6); display: flex; align-items: center; justify-content: space-between; }
+.ag-foot .arrow svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.6;
+                      transition: transform var(--dur-fast) var(--ease-io); }
+.ag:hover .arrow svg { transform: translateX(5px); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE AGENT PAGE
+   ════════════════════════════════════════════════════════════════════════ */
+
+.crumb { display: flex; align-items: center; gap: var(--s3); font-size: var(--fs-label); font-weight: var(--fw-semi);
+         letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--ink3); padding-top: var(--s6); }
+.crumb a:hover { color: var(--ink); }
+.crumb .sep { color: var(--rule-strong); }
+
+.agp { display: grid; grid-template-columns: 1fr minmax(260px, 340px); gap: var(--s7) var(--s9); align-items: start; }
+@media (max-width: 960px) { .agp { grid-template-columns: 1fr; } }
+.agp-side { display: flex; flex-direction: column; gap: var(--s6); position: sticky; top: calc(var(--nav-h) + var(--s5)); }
+@media (max-width: 960px) { .agp-side { position: static; } }
+.side-block { border-top: 1px solid var(--rule); padding-top: var(--s4); }
+.side-block + .side-block { margin-top: var(--s2); }
+.side-block .lbl { display: block; margin-bottom: var(--s3); }
+.side-cta { background: var(--ink); color: var(--ink-paper); padding: var(--s6) var(--s5); }
+.side-cta b { font-family: var(--face-display); font-size: var(--fs-h4); font-weight: var(--fw-semi); display: block; }
+.side-cta p { color: var(--ink-ink2); font-size: var(--fs-sm); margin-block: var(--s3) var(--s5); }
+.side-cta .btn-1 { background: var(--acc); color: var(--acc-ink); width: 100%; justify-content: center; }
+.side-cta .btn-1:hover { background: var(--acc-hi); }
+.side-cta .btn-2 { box-shadow: inset 0 0 0 1px #3E3C31; color: var(--ink-paper); width: 100%; justify-content: center; margin-top: var(--s2); }
+.side-cta .btn-2:hover { background: var(--ink-paper); color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink-paper); }
+
+/* The three-up "why / how / who" block: three columns under one rule. */
+.trips { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: var(--s6) var(--s7); }
+.trip { border-top: 1px solid var(--rule); padding-top: var(--s4); }
+.trip h4 { font-size: var(--fs-label); font-weight: var(--fw-semi); letter-spacing: var(--ls-label);
+           text-transform: uppercase; color: var(--ink3); margin-bottom: var(--s3); }
+.trip p { font-size: var(--fs-sm); color: var(--ink2); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE PRODUCT FIGURE
+   The one dark rectangle on the site, and the reason it is dark: it is the
+   product. This block is deliberately authored in the PRODUCT's tokens --
+   #131315, #1C1C1F, Familjen Grotesk, the lime as a fill -- so a visitor
+   sees exactly what they are signing up for, and so the paper around it
+   reads as the wrapper rather than the thing. It is the only place the two
+   systems appear on one screen, and the contrast is the point.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.shot { background: #131315; color: #EFE9DC; padding: clamp(14px, 1.6vw, 22px);
+        font-family: var(--face-text); font-size: 13px; line-height: 1.5; }
+.shot-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.shot-ttl { display: flex; align-items: center; gap: 8px; font-weight: var(--fw-semi); font-size: 13px; }
+.shot-ttl i { width: 7px; height: 7px; background: #C6F24E; border-radius: 50%; }
+.shot-live { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 11px;
+             letter-spacing: .1em; text-transform: uppercase; color: #8B8B93; }
+.shot-live i { width: 6px; height: 6px; background: #C6F24E; border-radius: 50%; animation: shotpulse 2.2s ease-in-out infinite; }
+@keyframes shotpulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+.shot-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+.shot-kpi { background: #1C1C1F; border-radius: 12px; padding: 14px 16px; }
+/* Rule 4 of the PRODUCT's system, honoured here: exactly one tile is filled. */
+.shot-kpi.lead { background: #C6F24E; color: #131315; }
+.shot-kpi .kl { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #8B8B93; }
+.shot-kpi.lead .kl { color: #131315; opacity: .72; }
+.shot-kpi .kv { display: block; font-family: var(--face-text); font-size: 26px; font-weight: var(--fw-semi);
+                letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.shot-grid { display: grid; grid-template-columns: 1fr 1.25fr; gap: 10px; }
+@media (max-width: 720px) { .shot-grid { grid-template-columns: 1fr; } .shot-kpis { grid-template-columns: 1fr; } }
+.shot-panel { background: #1C1C1F; border-radius: 12px; padding: 14px 16px; min-width: 0;
+               display: flex; flex-direction: column; }
+.shot-ph { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #8B8B93; margin-bottom: 12px; }
+.shot-bars { display: flex; align-items: flex-end; gap: 5px; flex: 1; min-height: 92px; }
+.shot-bars span { flex: 1; background: #303036; border-radius: 3px; height: var(--h); }
+.shot-bars span.hi { background: #C6F24E; }
+.shot-wl { display: flex; flex-direction: column; gap: 8px; }
+.shot-wlr { display: grid; grid-template-columns: 16px 1fr 90px 34px; gap: 10px; align-items: center; font-size: 12.5px; }
+.shot-wlr .rk { color: #5E5E66; font-variant-numeric: tabular-nums; }
+.shot-wlr .co { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shot-wlr .bar { height: 6px; background: #303036; border-radius: 3px; overflow: hidden; }
+.shot-wlr .bar i { display: block; height: 100%; width: var(--w); background: #5AA9E6; }
+.shot-wlr:first-child .bar i { background: #C6F24E; }
+.shot-wlr .sc { text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--fw-semi); }
+.shot-feed { margin-top: 10px; background: #1C1C1F; border-radius: 12px; padding: 14px 16px; }
+.shot-frow { display: grid; grid-template-columns: 1fr auto 46px 34px; gap: 10px; align-items: center;
+             padding-block: 7px; font-size: 12.5px; opacity: 0; transform: translateY(-6px);
+             transition: opacity 260ms ease, transform 260ms ease; }
+.shot-frow + .shot-frow { border-top: 1px solid #26262A; }
+.shot-frow.in { opacity: 1; transform: none; }
+.shot-frow.out { opacity: 0; }
+.shot-frow .fchip { font-size: 11px; color: #8B8B93; white-space: nowrap; }
+.shot-frow .fwhen { font-size: 11px; color: #5E5E66; text-align: right; }
+.shot-frow .fsc { text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--fw-semi); }
+@media (max-width: 560px) { .shot-frow { grid-template-columns: 1fr 46px 34px; } .shot-frow .fchip { display: none; } }
+.shot-cap { font-size: var(--fs-xs); color: var(--ink3); margin-top: var(--s3); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE COMPARISON  (/why)
+   A real table, set like a table: hairlines, tabular, no fills. The only
+   coloured column is ours, and it is coloured with the lime top rule.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.cmp { overflow-x: auto; }
+.cmp table { border-collapse: collapse; width: 100%; min-width: 860px; font-size: var(--fs-sm); }
+.cmp th, .cmp td { text-align: left; padding: var(--s4) var(--s4); border-bottom: 1px solid var(--rule); vertical-align: top; }
+.cmp thead th { border-bottom: 1px solid var(--rule-strong); padding-bottom: var(--s5); }
+.cmp thead th .ttl { display: block; font-weight: var(--fw-semi); font-size: var(--fs-sm); }
+.cmp thead th .sub { display: block; font-size: var(--fs-xs); color: var(--ink3); margin-top: var(--s1); }
+.cmp .own { background: var(--paper2); }
+.cmp thead th.own { border-top: 3px solid var(--acc); }
+.cmp tbody th { font-weight: var(--fw-med); color: var(--ink); width: 28%; }
+/* Not scoped under .cmp: the legend sits OUTSIDE the table, and an inline
+   <svg> with no width and no matching rule falls back to 300x150, not to
+   the font size. */
+.mk-y, .mk-p, .mk-n { display: inline-grid; place-items: center; width: 20px; height: 20px; flex: 0 0 auto; }
+.mk-y svg, .mk-p svg, .mk-n svg { width: 15px; height: 15px; stroke-width: 2.2; fill: none; }
+.mk-y { color: var(--ink); }
+.cmp .own .mk-y { background: var(--acc); color: var(--acc-ink); }
+.mk-p { color: var(--ink3); }
+.mk-n { color: var(--rule-strong); }
+.fnb { font-size: 10px; vertical-align: super; color: var(--ink3); margin-left: 2px; }
+.cmp-legend { display: flex; flex-wrap: wrap; gap: var(--s5); margin-top: var(--s5); font-size: var(--fs-xs); color: var(--ink3); }
+.cmp-legend span { display: inline-flex; align-items: center; gap: var(--s2); }
+.fnotes { columns: 2; column-gap: var(--s7); font-size: var(--fs-xs); color: var(--ink3); margin-top: var(--s6); }
+.fnotes p { break-inside: avoid; margin-bottom: var(--s3); }
+@media (max-width: 720px) { .fnotes { columns: 1; } }
+
+/* ════════════════════════════════════════════════════════════════════════
+   LEGAL
+   A long document wants one column, a measure, and rules between sections.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.legal { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: var(--s9); align-items: start; }
+@media (max-width: 1000px) { .legal { grid-template-columns: 1fr; gap: var(--s6); } }
+.legal-side { position: sticky; top: calc(var(--nav-h) + var(--s6)); }
+@media (max-width: 1000px) { .legal-side { position: static; } }
+.legal-body { max-width: var(--measure-wide); font-size: var(--fs-sm); color: var(--ink2); }
+.legal-body p { margin-bottom: 1.05em; }
+.legal-body h2 { font-family: var(--face-display); font-size: var(--fs-h3); font-weight: var(--fw-semi);
+                 letter-spacing: var(--ls-h); line-height: var(--lh-snug); color: var(--ink);
+                 font-variation-settings: 'SOFT' 0, 'WONK' 0, 'opsz' 48;
+                 margin-top: var(--s8); padding-top: var(--s5); border-top: 1px solid var(--rule); margin-bottom: var(--s4); }
+.legal-body h4 { font-size: var(--fs-label); font-weight: var(--fw-semi); letter-spacing: var(--ls-label);
+                 text-transform: uppercase; color: var(--ink); margin-top: var(--s6); margin-bottom: var(--s3); }
+.legal-body ul { margin-bottom: 1.05em; }
+.legal-body li { position: relative; padding-left: var(--s5); margin-bottom: var(--s2); }
+.legal-body li::before { content: ''; position: absolute; left: 0; top: 0.65em; width: 8px; height: 1px; background: var(--rule-strong); }
+.legal-meta { font-size: var(--fs-xs); color: var(--ink3); }
+.legal-cats { border-top: 1px solid var(--rule); margin-block: var(--s5) 1.05em; }
+.legal-cat { display: grid; grid-template-columns: 1fr 150px; gap: var(--s5); padding-block: var(--s4);
+             border-bottom: 1px solid var(--rule); }
+.legal-cat b { color: var(--ink); font-weight: var(--fw-semi); }
+.legal-cat p { margin: var(--s1) 0 0; font-size: var(--fs-xs); }
+.legal-cat > span { font-size: var(--fs-xs); color: var(--ink3); text-align: right; }
+@media (max-width: 640px) { .legal-cat { grid-template-columns: 1fr; } .legal-cat > span { text-align: left; } }
+
+/* ════════════════════════════════════════════════════════════════════════
+   LOGIN
+   No card, no glow, no orbiting rings. A rule, a statement, a button.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.login { min-height: calc(100vh - var(--nav-h) - 120px); display: grid; place-items: center; padding-block: var(--sec-sm); }
+.login-in { width: min(420px, 100%); text-align: center; }
+.login-in .d3 { margin-block: var(--s4) var(--s3); }
+.login-sub { color: var(--ink2); font-size: var(--fs-sm); margin-bottom: var(--s6); }
+.login-foot { font-size: var(--fs-xs); color: var(--ink3); margin-top: var(--s6);
+              padding-top: var(--s5); border-top: 1px solid var(--rule); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE STORY  (home · how it works)
+   The previous site pinned this section and scrubbed six CSS variables off
+   scroll position through a lerp loop -- 40 lines of JS whose entire output
+   was "which step is lit". This is the same story told with position:
+   sticky and one IntersectionObserver: the figure holds while the steps
+   scroll past it, and the active step is marked by a rule, not a glow.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.story { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s9); align-items: stretch; }
+@media (max-width: 960px) { .story { grid-template-columns: 1fr; gap: var(--s7); } }
+/* The sticky element is the figure's CHILD, not the grid item. A grid item
+   stretched to the row height cannot travel inside itself, and one aligned
+   to `start` is only as tall as its content -- either way `position: sticky`
+   on the item is a no-op. Stretching the item and sticking its child gives
+   the child the full column to move in. */
+.story-fig > * { position: sticky; top: calc(var(--nav-h) + var(--s7)); }
+@media (max-width: 960px) { .story-fig { order: -1; } .story-fig > * { position: static; } }
+.story-steps { border-top: 1px solid var(--rule); }
+.story-step {
+  display: grid; grid-template-columns: 56px 1fr; gap: var(--s5);
+  padding-block: clamp(var(--s6), 6vw, var(--s8));
+  border-bottom: 1px solid var(--rule); align-items: start;
+  transition: opacity var(--dur-mid) var(--ease);
+}
+.story-step:not(.on) { opacity: .42; }
+.story-step h4 { font-family: var(--face-display); font-size: var(--fs-h3); font-weight: var(--fw-semi);
+                 letter-spacing: var(--ls-h); line-height: 1.1;
+                 font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 48; }
+.story-step p { color: var(--ink2); font-size: var(--fs-sm); margin-top: var(--s3); max-width: 46ch; }
+.story-step .idx { padding-top: 0.5em; position: relative; }
+.story-step.on .idx { color: var(--ink); }
+.story-step.on .idx::before { content: ''; position: absolute; left: 0; top: 0; width: 26px; height: 2px; background: var(--acc); }
+@media (max-width: 640px) { .story-step { grid-template-columns: 40px 1fr; gap: var(--s4); } }
+
+/* The figure itself: a single account card in the product's own palette,
+   reusing .shot's ground so the two product figures on the home page are
+   demonstrably the same product. */
+.acct { background: #131315; color: #EFE9DC; padding: clamp(18px, 2vw, 26px); font-size: 13px; }
+.acct-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); margin-bottom: var(--s6); }
+.acct-co { display: flex; align-items: center; gap: 8px; font-weight: var(--fw-semi); font-size: 15px; }
+.acct-co i { width: 7px; height: 7px; background: #C6F24E; border-radius: 50%; }
+.acct-tag { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #8B8B93; }
+.acct-score { display: flex; align-items: baseline; gap: 12px; padding-block: var(--s5); border-block: 1px solid #26262A; }
+.acct-score b { font-size: clamp(52px, 6vw, 82px); font-weight: var(--fw-semi); line-height: .9;
+                letter-spacing: -.045em; font-variant-numeric: tabular-nums; color: #C6F24E; }
+.acct-score span { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #8B8B93; }
+.acct-why { margin-top: var(--s5); }
+.acct-why .kl { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #8B8B93; }
+.acct-why p { margin-top: 6px; color: #EFE9DC; font-size: 13.5px; }
+.acct-draft { margin-top: var(--s5); background: #C6F24E; color: #131315; width: 100%;
+              justify-content: center; height: 44px; font-weight: var(--fw-semi); font-size: 13px;
+              display: inline-flex; align-items: center; gap: 8px; }
+.acct-draft:hover { background: #D4FA63; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   INDUSTRIES
+   ════════════════════════════════════════════════════════════════════════ */
+
+.ind-flag { display: grid; grid-template-columns: 1fr minmax(260px, 380px); gap: var(--s7);
+            border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule);
+            padding: var(--s6) 0 var(--s7); transition: background var(--dur-fast) var(--ease-io); }
+.ind-flag:hover { background: var(--paper2); }
+@media (max-width: 860px) { .ind-flag { grid-template-columns: 1fr; } }
+.ind-segs { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); font-size: var(--fs-xs); color: var(--ink3); }
+.ind-segs span { display: inline-flex; align-items: center; gap: var(--s2); }
+.ind-segs span::before { content: ''; width: 5px; height: 5px; background: var(--acc); flex: 0 0 auto; }
+.ind-others { display: flex; flex-wrap: wrap; gap: var(--s3); }
+.ind-other { font-size: var(--fs-sm); padding: var(--s2) var(--s4); box-shadow: inset 0 0 0 1px var(--rule); }
+.ind-other:hover { background: var(--ink); color: var(--paper); box-shadow: none; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   INTEGRATIONS
+   ════════════════════════════════════════════════════════════════════════ */
+
+.ig-list { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s4); }
+.ig-list span { font-size: var(--fs-xs); color: var(--ink2); padding: var(--s1) var(--s3); background: var(--paper2); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   PRINT
+   Somebody will print the privacy policy. The site is already paper.
+   ════════════════════════════════════════════════════════════════════════ */
+
+@media print {
+  .nv, .nv-sheet, .prog, .tick, .ov, .foot-cols, .btns, .btn { display: none !important; }
+  body { padding-top: 0; }
+  .inkband, .limeband { background: none !important; color: #000 !important; width: auto; margin-inline: 0; }
+  .ln > span, .rule, .wipe, .fade { transform: none !important; clip-path: none !important; opacity: 1 !important; }
+  .legal-body { max-width: none; color: #000; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE NARRATIVE  (/login-preview)
+   A full-height scroll sequence. Each panel is one statement; the ground
+   alternates paper / ink so the argument is carried by the page inverting
+   under you rather than by anything moving. The rail on the left is the
+   only fixed element and is the same numeral the section heads use.
+
+   This replaces a page that pulled three.js, GSAP and Lenis off three CDNs
+   to morph a WebGL mesh between nine shapes, scramble its own headings a
+   character at a time, run a custom cursor and offer a sound toggle.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.narr-rail {
+  position: fixed; left: var(--mar); top: 50%; transform: translateY(-50%);
+  z-index: 600; display: flex; flex-direction: column; gap: var(--s3);
+  mix-blend-mode: difference;
+}
+.narr-rail a { display: block; font-size: var(--fs-label); font-weight: var(--fw-semi);
+               letter-spacing: var(--ls-label); color: #6E6A5D; font-variant-numeric: tabular-nums; }
+.narr-rail a.on { color: #F1EDE3; }
+@media (max-width: 900px) { .narr-rail { display: none; } }
+
+.narr-panel {
+  min-height: 100svh; display: grid; place-items: center;
+  padding: var(--s9) var(--mar); scroll-snap-align: start;
+}
+.narr-panel .inner { width: 100%; max-width: 980px; }
+.narr-panel.ink { background: #14140F; color: var(--ink-paper);
+  --paper: #14140F; --paper2: #1D1C16; --ink: var(--ink-paper); --ink2: var(--ink-ink2);
+  --ink3: #8B877A; --rule: var(--ink-rule); --rule-strong: #3E3C31; }
+.narr-panel .d2 { margin-block: var(--s5) var(--s6); }
+.narr-panel .lead { max-width: var(--measure); }
+.narr-panel.center { text-align: center; }
+.narr-panel.center .lead, .narr-panel.center .inner > * { margin-inline: auto; }
+.narr-panel.right .inner { margin-left: auto; text-align: right; }
+.narr-panel.right .lead { margin-left: auto; }
+
+/* The sign-in panel. A single block on the ink, with the Google button
+   boxed by a rule like every other control on the site. */
+.narr-card { width: min(420px, 100%); margin-inline: auto; text-align: center; }
+.narr-card .d3 { margin-block: var(--s4) var(--s3); }
+.narr-card .gbtn { box-shadow: inset 0 0 0 1px var(--rule-strong); }

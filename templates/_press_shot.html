@@ -1,0 +1,54 @@
+{#- THE PRODUCT FIGURE.
+
+    Authored in the PRODUCT's design tokens -- #131315 ground, #1C1C1F tiles,
+    #C6F24E as a fill on exactly one of them, Familjen Grotesk, tabular
+    figures -- and not in the site's. That is the point: it is the one dark
+    rectangle on a paper site, and what it shows is what you get after you
+    sign up. Styling lives under .shot in static/css/press.css.
+
+    The feed animates via the #liveDash script at the foot of agents.html.
+    Four rows are server-rendered so the figure is complete before any script
+    runs and on a print-out.
+-#}
+<div class="shot" id="liveDash" role="img" aria-label="Preview of the signal tracker, surfacing live buying signals ranked by intent">
+  <div class="shot-bar">
+    <span class="shot-ttl"><i></i>Signal Tracker</span>
+    <span class="shot-live"><i></i>Live</span>
+  </div>
+  <div class="shot-kpis">
+    {#- Rule 4 of the product's system, honoured inside the figure: exactly
+        one tile is filled, and it is the number you opened the page for. -#}
+    <div class="shot-kpi lead"><span class="kl">In-market accounts</span><b class="kv" id="kAcc">128</b></div>
+    <div class="shot-kpi"><span class="kl">Signals detected</span><b class="kv" id="kSig">341</b></div>
+    <div class="shot-kpi"><span class="kl">Avg intent</span><b class="kv" id="kInt">7.8</b></div>
+  </div>
+  <div class="shot-grid">
+    <div class="shot-panel">
+      <div class="shot-ph">Signal volume &middot; 26 types</div>
+      <div class="shot-bars">
+        <span style="--h:54%"></span><span style="--h:70%"></span><span style="--h:42%"></span>
+        <span style="--h:84%"></span><span style="--h:58%"></span><span style="--h:76%"></span>
+        <span style="--h:48%"></span><span class="hi" style="--h:96%"></span><span style="--h:64%"></span>
+        <span style="--h:80%"></span><span style="--h:50%"></span><span style="--h:72%"></span>
+      </div>
+    </div>
+    <div class="shot-panel">
+      <div class="shot-ph">Prioritised worklist &middot; ranked by intent</div>
+      <div class="shot-wl">
+        <div class="shot-wlr"><span class="rk">1</span><span class="co">Quanta Retail</span><span class="bar"><i style="--w:96%"></i></span><span class="sc">9.6</span></div>
+        <div class="shot-wlr"><span class="rk">2</span><span class="co">Acme Cloud</span><span class="bar"><i style="--w:94%"></i></span><span class="sc">9.4</span></div>
+        <div class="shot-wlr"><span class="rk">3</span><span class="co">Cedar Finance</span><span class="bar"><i style="--w:91%"></i></span><span class="sc">9.1</span></div>
+        <div class="shot-wlr"><span class="rk">4</span><span class="co">Orbit Health</span><span class="bar"><i style="--w:89%"></i></span><span class="sc">8.9</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="shot-feed">
+    <div class="shot-ph">Live signal stream</div>
+    <div id="dashFeed">
+      <div class="shot-frow in"><span class="co">Acme Cloud</span><span class="fchip">Funding round</span><span class="fwhen">now</span><span class="fsc">9.4</span></div>
+      <div class="shot-frow in"><span class="co">Northwind</span><span class="fchip">High-intent visit</span><span class="fwhen">2m</span><span class="fsc">8.7</span></div>
+      <div class="shot-frow in"><span class="co">Vertex Labs</span><span class="fchip">New CMO joined</span><span class="fwhen">6m</span><span class="fsc">8.1</span></div>
+      <div class="shot-frow in"><span class="co">Beacon AI</span><span class="fchip">Competitor ad spike</span><span class="fwhen">14m</span><span class="fsc">7.5</span></div>
+    </div>
+  </div>
+</div>

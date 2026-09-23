@@ -47,6 +47,16 @@ BRAND = {
     # in step with access_note below, which states the same rule.
     "staff_domain": "northaxis.com",
 
+    # The registered entity the privacy policy and the terms of use bind.
+    # It is deliberately separate from "name": a brand and a company are not
+    # the same string, and a legal document that names the trading brand
+    # instead of the incorporated entity is the one cosmetic slip on this
+    # site that has consequences. templates/_press_privacy.html and
+    # _press_terms.html carry the previous company's counsel's WORDS with
+    # this brand's name substituted -- coherent, not correct. Both files open
+    # with that warning; the text needs your own counsel before launch.
+    "legal_entity": "Northaxis, Inc.",
+
     # ── auth ────────────────────────────────────────────────────────────────
     # Mirrors the server-side gate; shown to a user who is refused access.
     # Who to ask when a page refuses you. Named here rather than typed into

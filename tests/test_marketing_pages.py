@@ -1,5 +1,5 @@
 """Tests for the public marketing pages: /security removal, and that the real
-Position2 privacy policy and terms of use render without stray compliance
+corporate privacy policy and terms of use render without stray compliance
 certification claims (HIPAA/SOC 2/ISO 27001) that don't apply to this product.
 """
 
@@ -49,13 +49,26 @@ def test_privacy_page_has_no_compliance_certification_claims(client):
     assert "HIPAA-aware" not in body and "HIPAA aware" not in body
 
 
-def test_privacy_and_terms_reference_position2_inc(client):
-    """These are meant to be Position2's real corporate policy and terms, not
-    the placeholder plain-language summaries this page shipped with before."""
-    for path, marker in (("/privacy", "Position2, Inc. takes your privacy seriously"),
-                         ("/terms", "Position2, Inc.")):
+def test_privacy_and_terms_name_the_registered_entity(client):
+    """These are meant to be the real corporate policy and terms, not the
+    placeholder plain-language summaries this page shipped with before.
+
+    The marker used to be the literal "Position2, Inc.". Under the rebrand that
+    string is exactly what must NOT be on these pages, so the test now reads
+    the entity out of brand.py -- which is also the stronger assertion: it
+    fails if a legal document ever names the trading BRAND (brand.name) where
+    it should name the incorporated ENTITY (brand.legal_entity), which are
+    deliberately two different strings.
+
+    The second marker is a sentence that only exists in the full policy, so a
+    page that renamed itself correctly but lost the body still fails."""
+    from brand import BRAND
+    entity = BRAND["legal_entity"]
+    for path in ("/privacy", "/terms"):
         body = client.get(path).data.decode("utf-8")
-        assert marker in body
+        assert entity in body, "%s does not name the registered entity" % path
+    privacy = client.get("/privacy").data.decode("utf-8")
+    assert "%s takes your privacy seriously" % entity in privacy
 
 
 def test_terms_links_to_our_own_privacy_page_not_a_different_product(client):
