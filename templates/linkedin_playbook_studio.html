@@ -161,13 +161,8 @@
     ];
 
     function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-    // Mounts a thinking-orb into every [data-orb-state] placeholder just
-    // written into `root`. Dynamic import so this is callable from anywhere
-    // in this classic inline script with no load-order dependency; a
-    // failed import just leaves the plain loading text in place.
-    function mountOrbsIn(root){
-      import('/static/js/thinking-orb.js').then(function(m){ m.autoMountOrbPlaceholders(root); }).catch(function(){});
-    }
+    // Loading placeholders ([data-orb-state]) are plain text now, styled as
+    // the Bento loading line in bento-compat.css. Nothing mounts into them.
     function initials(name){
       var parts=(name||'').trim().split(/\s+/);
       return ((parts[0]||'')[0]||'?').toUpperCase()+((parts[1]||'')[0]||'').toUpperCase();
@@ -208,9 +203,9 @@
     }
     function revealCards(){
       var cards = document.querySelectorAll('.stat-card,.card');
-      import('/static/js/cube-motion.js').then(function(m){
-        m.rise(cards, { stagger: 55 });
-      }).catch(function(){});
+      // One cross-fade for all of them at once -- not cube-motion's rise(),
+      // whose per-card lift and 55ms stagger is the banned entrance.
+      [].forEach.call(cards, function(el){ el.classList.add('bento-in'); });
     }
     function debounce(fn,ms){
       var t=null;
@@ -240,7 +235,6 @@
       LAST_SEARCH_Q=q;
       if(!q){wrap.innerHTML='<div class="lps-empty">Search for a company to get started.</div>';return;}
       wrap.innerHTML='<div class="lps-loading"><div class="thinking-orb-slot" data-orb-state="searching" data-orb-size="64">Searching…</div></div>';
-      mountOrbsIn(wrap);
       fetch('/p2/strategic-agents/linkedin-strategy-researcher/search?q='+encodeURIComponent(q))
         .then(function(r){return r.json();}).then(function(data){
           renderCompanyResults(data.companies||[],data.error||null,q);
@@ -391,7 +385,6 @@
       }
       document.getElementById('modeSelectWrap').style.display='none';
       document.getElementById('runningWrap').style.display='block';
-      mountOrbsIn(document.getElementById('runningWrap'));
       fetch('/p2/strategic-agents/linkedin-strategy-researcher/analyze',{
         method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
       }).then(function(r){return r.json();}).then(function(data){
@@ -1510,7 +1503,6 @@
       if(wrap){
         wrap.innerHTML='<div class="lps-running"><div class="thinking-orb-slot" data-orb-state="solving" data-orb-size="64"></div>'
           +'<div class="lps-running-text">Reading everything this analysis returned and writing one point of view across it…</div></div>';
-        mountOrbsIn(wrap);
       }
       fetch('/p2/strategic-agents/linkedin-strategy-researcher/runs/'+runId+'/insights',{method:'POST'})
         .then(function(r){return r.json().then(function(d){return {ok:r.ok,data:d};});})
@@ -1861,7 +1853,6 @@
       if(!DRAWER_RUN||!wrap)return Promise.resolve();
       var mode=DRAWER_RUN.run_type==='COMPETITOR'?'COMPETITOR':'OWN';
       wrap.innerHTML='<div class="lps-loading"><div class="thinking-orb-slot" data-orb-state="listening" data-orb-size="64">Loading…</div></div>';
-      mountOrbsIn(wrap);
       return fetch('/p2/strategic-agents/linkedin-strategy-researcher/runs/'+DRAWER_RUN.id+'/playbook?mode='+mode)
         .then(function(r){return r.json();}).then(function(data){
           if(data.playbook&&data.playbook.content){
@@ -1886,7 +1877,6 @@
       var mode=DRAWER_RUN.run_type==='COMPETITOR'?'COMPETITOR':'OWN';
       var wrap=document.getElementById('lpsPlaybookBody');
       wrap.innerHTML='<div class="lps-running"><div class="thinking-orb-slot" data-orb-state="weaving" data-orb-size="64"></div><div class="lps-running-text">Generating the strategic playbook — this can take a few minutes.</div></div>';
-      mountOrbsIn(wrap);
       fetch('/p2/strategic-agents/linkedin-strategy-researcher/runs/'+DRAWER_RUN.id+'/playbook',{
         method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mode:mode})
       }).then(function(){ pollPlaybook(); }).catch(function(){
@@ -1910,7 +1900,6 @@
       var d=document.getElementById('drawer');
       var _drawerBody=document.getElementById('drawerBody');
       _drawerBody.innerHTML='<div class="lps-loading" style="padding:60px"><div class="thinking-orb-slot" data-orb-state="listening" data-orb-size="64">Loading report…</div></div>';
-      mountOrbsIn(_drawerBody);
       d.classList.add('open');
       document.getElementById('drawerOverlay').classList.add('open');
       document.body.style.overflow='hidden';
@@ -1979,11 +1968,6 @@
     document.addEventListener('keydown',function(e){ if(e.key==='Escape')closeDrawer(); });
 
     revealCards();
-    mountOrbsIn(document);
-    import('/static/js/border-beam.js').then(function(m){
-      var el = document.getElementById('companySearchInput');
-      m.mountBorderBeamOn(el.closest('.search-box'), el, { color: '#7c83f5', color2: '#9b87fd' });
-    }).catch(function(){});
     loadStatsAndHistory();
   </script>
 

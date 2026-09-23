@@ -209,9 +209,9 @@
     }
     function revealCards(){
       var cards = document.querySelectorAll('.stat-card,.card');
-      import('/static/js/cube-motion.js').then(function(m){
-        m.rise(cards, { stagger: 55 });
-      }).catch(function(){});
+      // One cross-fade for all of them at once -- not cube-motion's rise(),
+      // whose per-card lift and 55ms stagger is the banned entrance.
+      [].forEach.call(cards, function(el){ el.classList.add('bento-in'); });
     }
 
     function distinct(arr,key){
@@ -654,7 +654,6 @@
       if(TAB==='events') renderEvents();
       else if(TAB==='people') renderPeople();
       else renderCompanies();
-      import('/static/js/thinking-orb.js').then(function(m){ m.autoMountOrbPlaceholders(); }).catch(function(){});
     }
 
     function renderEvents(){
@@ -812,24 +811,13 @@
       renderTableProgressive('tableWrap-companies', head, rows, companiesRow);
     }
 
-    var _jcSyncOrb=null;
-    function _jcSyncIconStart(){
-      var ic=document.getElementById('syncIcon');
-      import('/static/js/thinking-orb.js').then(function(m){
-        if(!ic.querySelector('canvas')){ ic.innerHTML=''; _jcSyncOrb=m.mountThinkingOrb(ic, {state:'working', size:20}); }
-      }).catch(function(){});
-    }
-    function _jcSyncIconStop(){
-      if(_jcSyncOrb){ _jcSyncOrb.destroy(); _jcSyncOrb=null; }
- document.getElementById('syncIcon').innerHTML='';
-    }
     function runSync(){
       var btn=document.getElementById('syncBtn'), msg=document.getElementById('syncMsg');
       btn.disabled=true; btn.classList.add('spinning'); msg.className='sync-msg'; msg.textContent='Syncing…';
-      _jcSyncIconStart();
+      
       fetch('/p2/strategic-agents/job-change-alert/sync',{method:'POST'}).then(function(r){return r.json();}).then(function(data){
         btn.disabled=false; btn.classList.remove('spinning');
-        _jcSyncIconStop();
+        
         if(data.ok){
           msg.className='sync-msg ok'; msg.textContent='Synced — '+(data.added||0)+' new event(s).';
           loadEvents();
@@ -838,18 +826,13 @@
         }
       }).catch(function(){
         btn.disabled=false; btn.classList.remove('spinning');
-        _jcSyncIconStop();
+        
         msg.className='sync-msg err'; msg.textContent='Sync failed.';
       });
     }
 
     revealCards();
-    import('/static/js/border-beam.js').then(function(m){
-      var el = document.getElementById('searchInput');
-      m.mountBorderBeamOn(el.closest('.search-box'), el, { color: '#f5a623', color2: '#fb7185' });
-    }).catch(function(){});
     populateFilters();
-    import('/static/js/thinking-orb.js').then(function(m){ m.autoMountOrbPlaceholders(); }).catch(function(){});
     loadEvents();
     loadTracked();
   </script>

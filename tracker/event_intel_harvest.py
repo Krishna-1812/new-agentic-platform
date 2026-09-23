@@ -25,6 +25,7 @@ Railway build for one extractor.
 
 from __future__ import annotations
 
+from brand import BRAND
 import html as _html
 import logging
 import re
@@ -40,8 +41,9 @@ from .event_intel_store import (SOURCE_BLOCKED, SOURCE_ERROR, SOURCE_NOT_FOUND,
 
 logger = logging.getLogger(__name__)
 
-_UA = ("Mozilla/5.0 (compatible; Position2-Intelligence/1.0; "
-       "+https://intelligence.position2.com)")
+# The crawler's name and operator contact; see tracker/sci_vision.py._FETCH_UA.
+_UA = ("Mozilla/5.0 (compatible; %s-Intelligence/1.0; +https://%s)"
+       % (BRAND["name"], BRAND["domain"]))
 _TIMEOUT = 20
 _MAX_BYTES = 3_000_000
 # What we hand the model. Past this, the page is truncated and the source row

@@ -14,6 +14,15 @@ arithmetically from the selector text, not by rendering. The rendered check was
 done in a browser against the real pages (Contact Finder, and all three pages
 that carry their own ground, in both themes) and is not reproducible in pytest
 without a headless browser, so it is recorded here rather than automated.
+
+WHERE THIS STANDS NOW. aurora-app.css was deleted in the cleanup pass: no page
+loaded it after the Bento rebuild, and the five tests here that measured its
+cascade went with it. Light mode survives in exactly one place -- three pages
+(Social Media, LinkedIn Strategy Researcher, Event Intelligence) switch to
+data-theme="light" for the moment before window.print(), so a report prints
+on white paper. What is left below guards properties that still hold on the
+pages that exist: no rule made only of selectors that cannot match, and a
+page's own html:root ground always carrying a real background-color.
 """
 
 import os
@@ -71,148 +80,30 @@ def test_no_rule_is_made_entirely_of_selectors_that_cannot_match():
         "%s" % doomed)
 
 
-def test_aurora_defines_a_light_ground_on_the_themed_element_itself():
-    """Either compound form is correct, because :root IS html: what must never
-    come back is the DESCENDANT form. Accepting both keeps this from rejecting
-    a valid refactor while still failing the bug."""
-    body = _strip_comments(_read("aurora-app.css"))
-    m = re.search(r'(?:html|:root)\[data-theme="light"\]\s*\{([^}]*)\}', body)
-    assert m, ("aurora-app.css no longer sets a light ground on the themed "
-               "element, so every page without its own falls back to the dark one")
-    assert "background" in m.group(1), m.group(1)
-
-
-def _specificity(sel):
-    """(ids, classes+attrs+pseudo-classes, elements). Enough for these rules."""
-    ids = len(re.findall(r"#[\w-]+", sel))
-    cls = (len(re.findall(r"\.[\w-]+", sel))
-           + len(re.findall(r"\[[^\]]+\]", sel))
-           + len(re.findall(r":(?!:)[\w-]+", sel)))
-    els = len(re.findall(r"(?:^|[\s>+~])([a-z][\w-]*)", sel))
-    return (ids, cls, els)
-
-
-def test_the_light_ground_outranks_the_unconditional_one():
-    """It must not depend on source order. Both rules live in the same file
-    today, but a later `html{...}` anywhere would otherwise silently win."""
-    assert _specificity('html[data-theme="light"]') > _specificity("html")
-
 
 @pytest.mark.parametrize("page", [
-    "event_conference_intelligence.css",
-    "social_media_intelligence.css",
-    "42_north_dental_slot_checker.css",
-])
-def test_a_page_with_its_own_light_ground_still_outranks_auroras(page):
-    """These three paint gradients, not aurora's flat colour. Fixing aurora's
-    selector raised it from unmatchable to 0,1,1, so anything at 0,1,1 or below
-    in these files would now lose and the page would render aurora's flat grey
-    instead of its own gradient."""
-    body = _strip_comments(_read(page))
-    grounds = [s for s in re.findall(r"([^{}]+)\{[^}]*background", body)
-               if 'data-theme="light"' in s and "html" in s]
-    assert grounds, "%s no longer defines its own light ground" % page
-    aurora = _specificity('html[data-theme="light"]')
-    for sel in grounds:
-        assert _specificity(sel.strip()) > aurora, (
-            "%s: `%s` no longer beats aurora's light ground, so this page loses "
-            "its gradient in light mode" % (page, sel.strip()))
-
-
-def _loaded_with_aurora(sheet):
-    """True if any template loads `sheet` in the same document as aurora-app.css.
-
-    If nothing does, aurora's `body{background:transparent!important}` never
-    lands on a page that uses this sheet, and the rule below does not apply."""
-    tpl_dir = os.path.join(os.path.dirname(_CSS), "..", "templates")
-    tpl_dir = os.path.normpath(tpl_dir)
-    for name in os.listdir(tpl_dir):
-        if not name.endswith(".html"):
-            continue
-        try:
-            markup = open(os.path.join(tpl_dir, name), encoding="utf-8").read()
-        except OSError:
-            continue
-        if sheet in markup and "aurora-app.css" in markup:
-            return True
-    return False
-
-
-def test_no_page_sets_a_body_background_that_is_silently_discarded():
-    """aurora-app.css loads after every page stylesheet and carries
-    `body{background:transparent!important}`, so a body background in a page
-    file has no effect whatsoever. Two files carried one for a long time and
-    read as though the page controlled its own ground. A ground belongs on
-    `html:root`, which outranks aurora's `html{...}` regardless of order."""
-    offenders = []
-    for f in sorted(os.listdir(_CSS)):
-        if not f.endswith(".css") or f == "aurora-app.css":
-            continue
-        # The premise is "aurora-app.css loads after this sheet". Pages migrated
-        # to the Bento design system do not load aurora at all, so their body
-        # background is the page's real ground rather than a discarded
-        # declaration. Derived from the templates instead of an exemption list,
-        # so it stays true by itself as more pages are rebuilt.
-        if not _loaded_with_aurora(f):
-            continue
-        for m in re.finditer(r"(?:^|\})\s*body\s*\{([^}]*)\}",
-                             _strip_comments(_read(f))):
-            for d in re.finditer(r"\bbackground(?:-color|-image)?\s*:([^;]*)",
-                                 m.group(1)):
-                # `transparent` agrees with aurora instead of fighting it, so
-                # it is not a silent loss. Anything else is.
-                # A suffix, removed as a suffix: str.rstrip takes a character
-                # SET, so rstrip("!important") turns "transparent" into
-                # "transpare" and this test fails on the very thing it allows.
-                val = re.sub(r"\s*!important\s*$", "", d.group(1).strip()).strip()
-                if val != "transparent":
-                    offenders.append("%s: %s" % (f, " ".join(d.group(0).split())[:70]))
-    assert not offenders, (
-        "these declarations are discarded by aurora-app.css's !important and "
-        "have no effect: %s" % offenders)
-
-
-def test_aurora_still_forces_body_transparent():
-    """The rule above depends on this one existing. If the particle-canvas fix
-    is ever removed, page files may set a body background again and the
-    previous test should be deleted with it rather than left to mislead."""
-    body = _strip_comments(_read("aurora-app.css"))
-    assert re.search(r"body\{background:transparent!important\}", body), (
-        "the body-transparent rule is gone; revisit "
-        "test_no_page_sets_a_body_background_that_is_silently_discarded")
-
-
-# admin.css is NOT in this list any more. It was, and it belonged: it set its
-# ground on html:root and took its light mode from aurora for free, exactly as
-# the docstring below describes. The nine admin dashboards were rebuilt on the
-# Bento design system in the same pass as this edit -- they no longer load
-# aurora-app.css, there is no second theme for the comparison to be about, and
-# admin.css now sets a flat `html:root{background:var(--bg)}`. Keeping the row
-# would pin a property the file cannot have to a file that no longer wants it.
-@pytest.mark.parametrize("page", [
-    "anonymous_visitors.css", "gtm.css", "job_change_alert.css",
-    "linkedin_playbook_studio.css", "seo.css",
+    "anonymous_visitors.css", "job_change_alert.css", "linkedin_playbook_studio.css",
 ])
 def test_a_moved_ground_never_carries_important(page):
-    """These deliberately do NOT define a light ground: they rely on
-    aurora's `html[data-theme="light"]` (0,1,1) outranking their own
-    `html:root` (0,0,2) on class level, which is what gives them a light mode
-    for free. An `!important` on the page's ground defeats that comparison
-    outright and pins the page to a dark gradient in light mode. admin.css
-    carried one before the move, so this is a real regression path.
+    """A page's dark ground on html:root must not be !important.
 
-    gtm.css is a special case as of the Bento rebuild: templates/call_sentiment
-    was its last consumer and now loads sentiment_pulse.css instead, so nothing
-    in the repo links it. It stays in this list only because the file is still
-    on disk; retiring the sheet and this parameter is cleanup-pass work, and
-    doing one without the other is how a dead file outlives everyone who knew
-    it was dead."""
+    The original reason was aurora's light rule, which had to outrank these
+    grounds on specificity; aurora is gone. The reason that remains is the
+    print path: linkedin_playbook_studio.html switches the document to
+    data-theme="light" before window.print(), and an !important on the dark
+    ground would beat the light one and print a dark page. The other two
+    have no light mode at all, but the same rule costs nothing there and
+    keeps the three grounds written one way.
+
+    gtm.css and seo.css were in this list. Both were deleted in the cleanup
+    pass -- nothing had loaded either since the Bento rebuild -- and their
+    rows went with them, as the note here asked."""
     body = _strip_comments(_read(page))
     m = re.search(r"html:root\s*\{([^}]*)\}", body)
     assert m, "%s no longer sets its ground on html:root" % page
     assert "!important" not in m.group(1), (
-        "%s: !important on the page ground beats aurora's light rule and "
-        "removes this page's light mode: %s" % (page, m.group(1).strip()[:80]))
+        "%s: !important on the dark page ground beats the light ground the "
+        "print path switches to: %s" % (page, m.group(1).strip()[:80]))
     assert "background-color" in m.group(1), (
         "%s: a gradient-only `background` shorthand resets background-color to "
         "transparent, and macOS overscroll then paints white past the document "
@@ -226,10 +117,8 @@ def test_a_moved_ground_never_carries_important(page):
     "thought_leader_pr.css",
 ])
 def test_a_page_with_its_own_dark_ground_still_sets_a_background_color(page):
-    """These four define BOTH grounds themselves (see
-    test_a_page_with_its_own_light_ground_still_outranks_auroras above for the
-    light half) rather than falling back to aurora's, so trap #3 has to be
-    checked on their own unconditional `html:root{...}` too: a gradient-only
+    """These four set their own dark ground on html:root, so trap #3 has to be
+    checked there too: a gradient-only
     `background` shorthand resets background-color to transparent, and
     whatever the four radial gradients don't tile -- a wide/tall viewport, or
     what a fast overscroll bounce exposes beyond the document box -- falls

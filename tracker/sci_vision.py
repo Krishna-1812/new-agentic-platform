@@ -11,6 +11,7 @@ it answers, without a second copy of either drifting out of sync."""
 
 from __future__ import annotations
 
+from brand import BRAND
 import json
 import logging
 import os
@@ -116,8 +117,10 @@ def _parse(raw: str) -> dict | None:
 # to that feature.
 IMAGE_FETCH_TIMEOUT = 20
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
-_FETCH_UA = ("Mozilla/5.0 (compatible; Position2-Intelligence/1.0; "
-             "+https://intelligence.position2.com)")
+# Names this crawler to every site it fetches, and where to reach its operator.
+# It named the previous company, and its contact URL sent site owners there.
+_FETCH_UA = ("Mozilla/5.0 (compatible; %s-Intelligence/1.0; +https://%s)"
+             % (BRAND["name"], BRAND["domain"]))
 
 # What the vendor will actually accept. An image in any other format is
 # not worth sending: it would come back as the same error we are retrying.

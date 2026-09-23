@@ -11,6 +11,8 @@ prefixes and Python identifiers are deliberately NOT part of this: they stay on
 their existing values so the backend and its tests are untouched.
 """
 
+import os
+
 BRAND = {
     # ── identity ────────────────────────────────────────────────────────────
     # Placeholder until the sister company's name is confirmed. Replace the
@@ -41,11 +43,19 @@ BRAND = {
     # company's internal system name in seven places there.
     "engine": "Foundry",
 
-    # The email domain the /p2 gate accepts. Named here because the Field
-    # Guide tells a reader which address to sign in with, and a wrong domain
-    # in that sentence is a support ticket rather than a cosmetic slip. Kept
-    # in step with access_note below, which states the same rule.
-    "staff_domain": "northaxis.com",
+    # The email domain the /p2 staff gate accepts. This is ACCESS CONTROL, not
+    # a label: app.py's gate reads this same value (STAFF_EMAIL_SUFFIX), and
+    # so does every page that tells a user which address to sign in with.
+    #
+    # It used to be two values. This key said "northaxis.com" while the gate
+    # checked a hard-coded "@position2.com" in twelve places, so the 403 page
+    # told northaxis.com users they would get in and then refused them. The
+    # default below is the domain the gate has always enforced, so nothing
+    # changes for anyone signed in today. Set STAFF_EMAIL_DOMAIN in Railway to
+    # move staff access to your own domain -- and change ADMIN_EMAILS in
+    # app.py in the same deploy, or every admin is locked out of /p2.
+    "staff_domain": (os.environ.get("STAFF_EMAIL_DOMAIN") or "position2.com")
+                    .strip().lower().lstrip("@"),
 
     # The registered entity the privacy policy and the terms of use bind.
     # It is deliberately separate from "name": a brand and a company are not
@@ -63,8 +73,11 @@ BRAND = {
     # the 403 template, where it sat as a bare first name that meant nothing to
     # anyone who had not met them.
     "support": "your platform admin",
-    "access_note": "Access is limited to @northaxis.com accounts.",
+    # access_note is derived below, from staff_domain, so the two cannot drift.
 }
+
+
+BRAND["access_note"] = "Access is limited to @%s accounts." % BRAND["staff_domain"]
 
 
 def brand_context():

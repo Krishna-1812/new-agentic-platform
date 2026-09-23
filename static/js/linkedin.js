@@ -37,7 +37,6 @@ const jsstr=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 let CF={q:'',dm:false,minPpl:0};
 let activeStatFilter=null;
 let _liLoading=false;
-let _liOrb=null;
 
 /* counter animation */
 function countUp(){
@@ -130,23 +129,10 @@ function setLoading(on){
   const btn=document.getElementById('liRefreshBtn'),ic=document.getElementById('liRefreshIc');
   if(btn)btn.disabled=on;
   if(ic)ic.classList.toggle('spin',on);
-  // While actively (re-)pulling the sheet, swap the plain sync-status dot
-  // for the orb; the dot comes back once updateSyncLabel() has a real
-  // ok/bad state to show. Re-fetches from this sheet are usually near-
-  // instant, so the orb mostly matters on the FIRST load / a slow network.
-  const dot=document.getElementById('liSyncDot'), orbHost=document.getElementById('liSyncOrb');
-  if(dot) dot.hidden=on;
-  if(orbHost){
-    if(on){
-      import('/static/js/thinking-orb.js').then(m=>{
-        if(_liLoading && !_liOrb) _liOrb=m.mountThinkingOrb(orbHost, {state:'listening', size:20, layout:'row'});
-      }).catch(()=>{});
-    } else if(_liOrb){
-      _liOrb.destroy();
-      _liOrb=null;
-      orbHost.innerHTML='';
-    }
-  }
+  // The sync-status dot stays visible while loading. It used to be hidden
+  // and swapped for the retired canvas orb; with the orb gone, hiding it
+  // would leave the row with no state indicator at all. The refresh icon's
+  // .spin is the loading signal.
 }
 function renderAll(){
   buildOverviewTab();buildPostTab();buildPeopleTab();buildCompaniesTab();

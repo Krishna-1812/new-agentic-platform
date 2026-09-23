@@ -165,6 +165,58 @@ def test_the_retired_orb_is_not_reintroduced_by_the_page_script():
         "the canvas orb is back in the Contact Finder renderer")
 
 
+def _page_sources():
+    """Every template and first-party script, where an import would live."""
+    for d, ext in ((_TPL, ".html"), (_JS, ".js")):
+        for name in sorted(os.listdir(d)):
+            if name.endswith(ext):
+                yield name, _read(d, name)
+
+
+@pytest.mark.parametrize("script", ["thinking-orb.js", "border-beam.js", "cube-motion.js"])
+def test_no_page_imports_a_retired_effect_script(script):
+    """Hiding the output is not the same as removing the effect.
+
+    Phase 2 retired both effects by hiding their classes in bento-compat.css
+    and left the imports in place. For the orb that meant a canvas mounting
+    into an invisible slot. For the beam it was worse: border-beam.js MOVES
+    each search input into a wrapper carrying the hidden class, so on seven
+    pages -- the Contact Finder's ask box among them -- the search field
+    disappeared the moment the script loaded. Nothing in the console.
+
+    cube-motion.js is the third banned effect by name: its rise() lifted each
+    card 12px and delayed it 55ms per index, on four agent pages. All three
+    scripts are deleted; this keeps them from being vendored back in."""
+    offenders = [name for name, src in _page_sources()
+                 if "/static/js/%s" % script in src]
+    assert not offenders, "%s is still imported by %s" % (script, offenders)
+
+
+def _display_none_selectors(css):
+    body = _strip_comments(css)
+    out = []
+    for m in re.finditer(r"([^{}]+)\{([^{}]*)\}", body):
+        if re.search(r"display\s*:\s*none", m.group(2)):
+            out.extend(sel.strip() for sel in m.group(1).split(","))
+    return out
+
+
+def test_the_loading_placeholder_is_never_hidden():
+    """[data-orb-state] elements are mostly the loading MESSAGE itself
+    ("Loading availability...", "Writing the reputation report..."), not an
+    empty slot beside one. Hiding them left six pages with no loading state."""
+    hidden = _display_none_selectors(_read(_CSS, "bento-compat.css"))
+    assert not [s for s in hidden if "data-orb-state" in s or "thinking-orb-slot" in s], hidden
+
+
+def test_nothing_hides_the_class_a_search_input_gets_wrapped_in():
+    """.border-beam is the class border-beam.js put on a search input's
+    wrapper. A display:none on it is a hidden search field waiting to happen."""
+    for sheet in ("bento-compat.css", "bento-components.css", "bento-motion.css"):
+        hidden = _display_none_selectors(_read(_CSS, sheet))
+        assert not [s for s in hidden if "border-beam" in s], (sheet, hidden)
+
+
 # ── Loading vs. arriving ─────────────────────────────────────────────────────
 
 def test_the_loading_sweep_is_linear():

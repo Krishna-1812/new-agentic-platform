@@ -22,6 +22,7 @@ The public entry point is :func:`filter_relevant_articles`.
 
 from __future__ import annotations
 
+from brand import BRAND
 import json
 import logging
 import re
@@ -250,7 +251,7 @@ def _ai_keep_indices(company_name: str, candidates: list[dict], ai_key: str,
         "%d. %s" % (i, (a.get("title", "") or "")[:140]) for i, a in enumerate(candidates)
     )
     system = (
-        "You are Vimi, a B2B sales-intelligence filter for Position2 (a digital "
+        f"You are {BRAND['assistant']}, a B2B sales-intelligence filter for {BRAND['name']} (a digital "
         "marketing agency). From a list of news headlines about a company, return "
         "ONLY the ones that signal a real business event a sales team would act on "
         "— funding, M&A, leadership change, expansion, product launch, partnership, "

@@ -56,7 +56,9 @@ def test_a_static_js_file_carries_the_new_cache_header():
     """The built-in /static/<path> route, not an explicit send_from_directory call
     -- must be covered by the same app-wide config, not a per-route change."""
     client = appmod.app.test_client()
-    resp = client.get("/static/js/theme.js")
+    # Any real file under /static proves the point. This was theme.js until the
+    # cleanup pass retired it; bento-motion.js is loaded by every product page.
+    resp = client.get("/static/js/bento-motion.js")
     assert resp.status_code == 200
     assert resp.headers.get("Cache-Control") == "public, max-age=3600"
 

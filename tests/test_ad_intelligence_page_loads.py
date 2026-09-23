@@ -100,16 +100,27 @@ def test_the_favicon_reference_is_the_plain_site_root_path(client):
     m = re.search(r'<link[^>]+rel="icon"[^>]+href="([^"]+)"', body)
     assert m, "expected an <link rel=\"icon\"> tag in index.html"
     href = m.group(1)
-    assert href == "/favicon.svg?v=4", (
+    # Compared with what the templates actually use rather than a literal, so
+    # bumping the cache-buster site-wide (it went v=4 -> v=6 with the rebrand)
+    # moves this page with everyone else instead of failing here.
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    tpl_dir = os.path.join(root, "templates")
+    site = set()
+    for name in os.listdir(tpl_dir):
+        if name.endswith(".html"):
+            site.update(re.findall(r'href="(/favicon\.svg\?v=\d+)"',
+                                   open(os.path.join(tpl_dir, name), encoding="utf-8").read()))
+    assert len(site) == 1, "the templates disagree on the favicon URL: %s" % sorted(site)
+    assert href in site, (
         f"favicon href is {href!r}; every other page on the site uses "
-        "/favicon.svg?v=4 (see templates/*.html) -- this one has drifted "
+        f"{sorted(site)[0]} (see templates/*.html) -- this one has drifted "
         "and will show a different browser-tab icon"
     )
 
 
 def test_the_favicon_byte_matches_the_site_wide_static_file(client):
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    served = client.get("/favicon.svg?v=4").get_data()
+    served = client.get("/favicon.svg").get_data()
     on_disk = open(os.path.join(root, "static", "favicon.svg"), "rb").read()
     assert served == on_disk
 
@@ -123,16 +134,19 @@ def test_the_app_no_longer_bundles_its_own_favicon():
     assert not os.path.exists(os.path.join(root, "ad_intelligence", "favicon.svg"))
 
 
-# ── Header must use the Arena logo (not a lightning-bolt icon) and the
-#    current "Strategic Agents" naming (not the stale "PPC" name it shipped with) ──
+# ── Header must show the product's own mark and name (not a lightning-bolt
+#    icon, and not the previous company's logo files) and the current
+#    "Strategic Agents" naming (not the stale "PPC" name it shipped with) ──
 #
 # App.tsx's PlatformBar (its site-wide nav strip), sidebar logo, and page
 # header all used a lucide-react `Zap` (lightning bolt) icon as a stand-in
 # brand mark, and PlatformBar's breadcrumb hardcoded "Hub › PPC › Ad
-# Intelligence" from when this section was still called PPC. Both went stale:
-# every other page uses the real static/logo-lockup.svg ("arena by
-# Position2") / static/logo-mark.svg, and the section has been "Strategic Agents"
-# since #22-26 above. Checked at both the TSX source (authoritative, survives
+# Intelligence" from when this section was still called PPC. Both went stale.
+# The first fix swapped the bolt for static/logo-lockup.svg ("arena by
+# Position2") and static/logo-mark.svg, which was right at the time and became
+# the previous company's branding after the rebrand. The brand slot now draws
+# the product mark (a lime square) and reads the name from window.__BRAND__,
+# which the Flask route injects from brand.py on every request. Checked at both the TSX source (authoritative, survives
 # a rebuild) and the compiled bundle actually being served (catches a source
 # edit that was never rebuilt into ad_intelligence/) -- string literals like
 # these survive minification intact, unlike logic/structure, so grepping the
@@ -148,10 +162,12 @@ def test_source_has_no_lightning_bolt_icon():
     assert "Zap" not in src, "App.tsx should no longer import or render the lucide 'Zap' (lightning bolt) icon"
 
 
-def test_source_uses_the_arena_logo_files():
+def test_source_draws_the_product_mark_and_reads_the_served_name():
     src = _read("apps", "ad-intelligence", "src", "App.tsx")
-    assert "/static/logo-lockup.svg" in src, "top brand slot should render the arena wordmark, like every other page"
-    assert "/static/logo-mark.svg" in src, "the sidebar/header icon badges should render the arena mark"
+    assert "window.__BRAND__" in src, "the brand slot should read the name the route injects"
+    assert "<Mark " in src, "the brand slot and icon badges should draw the product mark"
+    for old in ("/static/logo-lockup.svg", "/static/logo-mark.svg", "Position2", "Arena mark"):
+        assert old not in src, "App.tsx still carries the previous brand: %s" % old
 
 
 def test_source_breadcrumb_says_b2b_agents_not_ppc():
@@ -170,7 +186,26 @@ def test_compiled_bundle_matches_the_source_fix():
     js_files = [f for f in os.listdir(assets_dir) if f.endswith(".js")]
     assert js_files, "expected a built JS bundle in ad_intelligence/assets/"
     bundle = open(os.path.join(assets_dir, js_files[0]), encoding="utf-8").read()
-    assert "/static/logo-lockup.svg" in bundle
-    assert "/static/logo-mark.svg" in bundle
+    assert "__BRAND__" in bundle, "the served bundle predates the brand-slot change"
+    assert "/static/logo-lockup.svg" not in bundle and "/static/logo-mark.svg" not in bundle
     assert "Strategic Agents" in bundle
     assert ">PPC<" not in bundle
+
+
+def test_the_route_hands_the_page_its_brand_and_fills_the_widget():
+    """The route injects window.__BRAND__ and fills the __BRAND_*__ tokens the
+    build-time chat widget carries, so the page never shows a raw token or the
+    previous assistant's name."""
+    import re
+    from brand import BRAND
+    appmod.app.config["TESTING"] = True
+    client = appmod.app.test_client()
+    with client.session_transaction() as sess:
+        sess["google_user"] = {"email": "x" + appmod.STAFF_EMAIL_SUFFIX, "name": "T",
+                               "given_name": "T", "picture": None}
+    html = client.get("/p2/strategic-agents/ad-intelligence").get_data(as_text=True)
+    m = re.search(r"<script>window\.__BRAND__=(\{[^<]*\});</script>", html)
+    assert m and BRAND["name"] in m.group(1), "the page was not handed its brand"
+    assert not re.search(r"__BRAND_[A-Z]+__", html), "a brand token reached the browser unfilled"
+    assert 'aria-label="Open %s"' % BRAND["assistant"] in html
+    assert not re.search(r"\bVimi\b(?! atom logo)", html)

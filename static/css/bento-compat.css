@@ -170,16 +170,61 @@
   transition: none !important;
 }
 
-/* ── THE RETIRED ORB ─────────────────────────────────────────────────────
-   thinking-orb.css is no longer loaded, but several pages still emit the
-   slot element. Left visible it is an empty box in the middle of a loading
-   state; the sweep-carrying skeleton beside it is the loading state now. */
-.thinking-orb-slot, .thinking-orb, [data-orb-state] { display: none !important; }
+/* ── THE LOADING PLACEHOLDER ─────────────────────────────────────────────
+   Pages still emit [data-orb-state] elements where the retired canvas orb
+   used to mount. This rule used to HIDE them, on the assumption that they
+   were empty slots beside a separate loading message. Most of them are not:
+   they ARE the loading message -- "Loading availability...", "Reading this
+   week's numbers...", "Writing the reputation report..." -- so hiding them
+   left six pages with no loading state at all, nothing in the console.
 
-/* ── THE RETIRED FOCUS RING ──────────────────────────────────────────────
-   border-beam.css drew an animated conic-gradient ring around focused
-   inputs. Same story: the sheet is gone, the markup may remain. */
-.border-beam, .beam, .bb-ring { display: none !important; }
+   So they are shown, as the product's one loading gesture: the text in the
+   secondary ink over a 2px track with a lime band crossing it at the sweep's
+   constant rate. Lime because Rule 4 gives it "in-progress". inline-block so
+   the element follows whatever text-align its container sets, and the track
+   (a block ::after at 100%) sits exactly under the words.
+
+   An EMPTY slot -- the 20px ones that sat in front of a separate label --
+   draws the track alone, at a fixed short width. */
+[data-orb-state] {
+  display: inline-block;
+  max-width: 100%;
+  color: var(--tx2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+}
+[data-orb-state]::after {
+  content: "";
+  display: block;
+  height: 2px;
+  margin-top: var(--sp-2);
+  border-radius: 1px;
+  background-color: var(--s3);
+  background-image: linear-gradient(90deg, transparent 0%, var(--acc) 45%,
+                                    var(--acc) 55%, transparent 100%);
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: bn-track var(--dur-sweep, 1400ms) linear infinite;
+}
+[data-orb-state]:empty { width: 40px; vertical-align: middle; margin-inline-end: var(--sp-2); }
+[data-orb-state]:empty::after { margin-top: 0; }
+@keyframes bn-track {
+  from { background-position: -60% 0; }
+  to   { background-position: 160% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-orb-state]::after { animation: none; background-position: 50% 0; }
+}
+
+/* A canvas the retired script already mounted, on a cached page. */
+.thinking-orb { display: none !important; }
+
+/* NO RULE FOR .border-beam, DELIBERATELY. There used to be one, hiding it,
+   and border-beam.js put that class on the WRAPPER it moved each search
+   input into -- so on seven pages, including the Contact Finder's ask box,
+   the search field vanished the moment the script loaded. The script and its
+   seven imports are gone; a hide rule left here would only make the same
+   mistake again the next time anything added the class. */
 
 
 /* ── ROLE CORRECTIONS ────────────────────────────────────────────────────

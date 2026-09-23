@@ -1,6 +1,5 @@
 /* LinkedIn Scraper — page styles */
 
-
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 html,body{height:100%;overflow-x:hidden}
@@ -509,7 +508,6 @@ body::before{
 }
 .dpitem:hover{background:var(--s2)}
 
-
 /* === v3 POST POPUP + 2-COL GRID === */
 .post-modal-bg{
   position:fixed;inset:0;background:rgba(0,0,0,0.75);
@@ -648,12 +646,10 @@ body::before{
 .tb-dd-item.danger:hover{background:rgba(239,68,68,0.1);color:var(--danger);}
 .tb-dd-divider{height:1px;background:var(--s2);margin:4px 0;}
 
-
 html,body{scrollbar-width:none;-ms-overflow-style:none;}
 html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;display:none;}
 *{scrollbar-width:none;-ms-overflow-style:none;}
 *::-webkit-scrollbar{width:0 !important;height:0 !important;display:none !important;}
-
 
 /* ===== CINEMA kit ===== */
 html.lenis,html.lenis body{height:auto}
@@ -667,7 +663,6 @@ html.lenis,html.lenis body{height:auto}
 .cz-reveal{opacity:0;transform:translateY(34px);transition:opacity .9s cubic-bezier(.22,1,.36,1),transform .9s cubic-bezier(.22,1,.36,1)}
 .cz-reveal.cz-in{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){.cz-prog{display:none}.cz-reveal{opacity:1;transform:none;transition:none}}
-
 
 /* ===== LinkedIn Intelligence — showpiece layer ===== */
 .li-aurora{position:fixed;inset:-25%;z-index:0;pointer-events:none;filter:blur(72px)}
@@ -689,14 +684,12 @@ html.lenis,html.lenis body{height:auto}
 .tab-val{font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){.li-aurora .b,.pcard,.bar-seg{animation:none}}
 
-
 #alive-spot{position:fixed;width:620px;height:620px;border-radius:50%;pointer-events:none;z-index:2;transform:translate(-50%,-50%);background: var(--s1);mix-blend-mode:screen;opacity:0;transition:opacity .45s;will-change:left,top}
 .alive-rv{opacity:0;transform:translateY(30px);transition:opacity .85s cubic-bezier(.22,1,.36,1),transform .85s cubic-bezier(.22,1,.36,1)}
 .alive-rv.alive-in{opacity:1;transform:none}
 .alive-mag{transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
 .alive-tilt{transition:transform .3s cubic-bezier(.22,1,.36,1)}
 @media (prefers-reduced-motion:reduce){.alive-rv{opacity:1 !important;transform:none !important;transition:none}#alive-spot{display:none}}
-
 
 /* LinkedIn — race-style leaderboard */
 .lbfill{transition:width 1.1s cubic-bezier(.22,1,.36,1)}
@@ -707,7 +700,6 @@ html.lenis,html.lenis body{height:auto}
 .lbitem{transition:background .2s}
 .lbitem:hover{background:rgba(129,140,248,.07)}
 @media (prefers-reduced-motion:reduce){.lbfill{transition:none}}
-
 
 .ke-drw-banner{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:13px 15px;border-radius: var(--radius-md);cursor:pointer;
   background: var(--s1);border:1px solid rgba(124,131,245,.4);
@@ -720,7 +712,6 @@ html.lenis,html.lenis body{height:auto}
 .ke-drw-h{font-size:13px;font-weight:700;color:var(--tx);}
 .ke-drw-s{font-size:11.5px;color:var(--sky);margin-top:2px;}
 .ke-drw-go{font-size:11.5px;font-weight:700;color:var(--sky);white-space:nowrap;}
-
 
 :root{--ke-accent:var(--acc);--ke-accent2:var(--acc);--ke-green:var(--acc);--ke-amber:var(--clay);--ke-hub:var(--clay);--ke-slack:#36c5f0;--ke-tx:var(--tx);--ke-mut:var(--sky);--ke-card:var(--s1);--ke-line:var(--s2);}
 .ke-ov{position:fixed;inset:0;z-index:5000;display:none;align-items:flex-start;justify-content:center;padding:38px 18px;overflow-y:auto;background: var(--s1);will-change:opacity;}
@@ -856,21 +847,6 @@ html.lenis,html.lenis body{height:auto}
 .ke-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 @media(max-width:560px){.ke-meta{grid-template-columns:1fr}.ke-int{flex-direction:column}}
 
-
-
-/* ════ LIGHT THEME OVERRIDES ════ */
-[data-theme="light"] body{color:var(--sky)}
-[data-theme="light"] .tb-topbar,[data-theme="light"] .topbar{background:var(--s3) !important;border-bottom-color:rgba(18,26,54,.10) !important}
-[data-theme="light"] .tb-brand-name,[data-theme="light"] .brand-name{color:var(--sky) !important}
-[data-theme="light"] .tb-bc-cur,[data-theme="light"] .page-hdr-title{color:var(--sky) !important}
-[data-theme="light"] .tb-bc-link,[data-theme="light"] .tb-bc-sep{color:var(--sky) !important}
-[data-theme="light"] .tb-user-pill,[data-theme="light"] .user-pill{background:rgba(18,26,54,.05) !important;border-color:rgba(18,26,54,.12) !important;color:var(--sky) !important}
-[data-theme="light"] .tb-dd-menu,[data-theme="light"] .user-dropdown{background:var(--tx) !important;border-color:rgba(18,26,54,.12) !important;box-shadow:0 24px 60px rgba(30,40,80,.18) !important}
-[data-theme="light"] .tb-dd-item,[data-theme="light"] .dd-item{color:var(--sky) !important}
-[data-theme="light"] .tb-dd-item:hover,[data-theme="light"] .dd-item:hover{background:rgba(18,26,54,.06) !important;color:var(--sky) !important}
-[data-theme="light"] .card,[data-theme="light"] .glass,[data-theme="light"] .panel{background:var(--tx) !important;border-color:rgba(18,26,54,.10) !important}
-
-
 /* ══════════════════════════════════════════════════════════════════
    RICH REDESIGN v2 — colour, depth & opacity pass (LinkedIn page only)
    Richer tinted glass surfaces, per-section accent colour, vivid tabs,
@@ -976,8 +952,6 @@ body::before{
 .ov-card-lb .lbitem{cursor:pointer;border-radius: var(--radius-sm);transition:background .18s}
 .ov-card-lb .lbitem:hover{background:color-mix(in srgb,var(--kc,var(--accent)) 12%,transparent)}
 .ov-note-hint{color:color-mix(in srgb,var(--kc,var(--accent)) 70%,var(--tx));font-weight:600;white-space:nowrap}
-[data-theme="light"] .ov-kpi-click:hover .ov-kpi-lbl{opacity:1}
-[data-theme="light"] .ov-kpi-go{color:color-mix(in srgb,var(--kc,var(--accent)) 55%,var(--bg))}
 
 /* ══ OVERVIEW — BREAKDOWN CARDS (--kc accent) ══ */
 .ov-card{
@@ -1067,21 +1041,6 @@ body::before{
   .mtab-val{font-size:24px}
   .mtab-label{font-size:10px;letter-spacing: var(--ls-caps);margin-bottom:5px}
 }
-
-/* ══ LIGHT THEME — keep the colour, calm the glass ══ */
-[data-theme="light"]:root{
-  --s1:rgba(18,26,54,.03);--s2:rgba(18,26,54,.05);--s3:rgba(18,26,54,.08);
-  --b1:rgba(18,26,54,.10);--b2:rgba(18,26,54,.16);
-}
-[data-theme="light"] .page-hdr-title{-webkit-text-fill-color:initial;background:none;color:var(--sky)}
-[data-theme="light"] .ov-kpi{
-  background: var(--s1);
-}
-[data-theme="light"] .ov-card{background: var(--s1)}
-[data-theme="light"] .pcrd,[data-theme="light"] .ccrd,[data-theme="light"] .pcard{
-  background:var(--tx) !important;
-}
-[data-theme="light"] .mtab-val{-webkit-text-fill-color:initial;background:none;color:var(--kc,var(--accent));filter:none}
 
 /* The full trail does not fit a 62px bar on a phone: it wrapped and pushed the
    account pill past the right edge (104px of overflow at 390px). The ancestors are

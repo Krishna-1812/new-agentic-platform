@@ -155,13 +155,8 @@
       return PLATFORM_LABEL[s] || (s.charAt(0).toUpperCase() + s.slice(1));
     }
     function esc(s){return String(s == null ? '' : s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-    // Mounts a thinking-orb into every [data-orb-state] placeholder just
-    // written into `root`. Dynamic import so this is callable from anywhere
-    // in this classic inline script with no load-order dependency; a
-    // failed import just leaves the plain loading text in place.
-    function mountOrbsIn(root){
-      import('/static/js/thinking-orb.js').then(function(m){ m.autoMountOrbPlaceholders(root); }).catch(function(){});
-    }
+    // Loading placeholders ([data-orb-state]) are plain text now, styled as
+    // the Bento loading line in bento-compat.css. Nothing mounts into them.
     function monogram(name){ var s = String(name||'?').trim(); return (s[0]||'?').toUpperCase(); }
 
  // Company disambiguation -- shown as the user types, so an ambiguous
@@ -517,7 +512,6 @@ function dsApifyRow(platform, entry){
       if(q.length < 2){ panel.style.display = 'none'; panel.innerHTML = ''; return; }
       panel.style.display = 'block';
       panel.innerHTML = '<div class="sci-suggest-loading"><span class="thinking-orb-slot" data-orb-state="searching" data-orb-size="20">Searching…</span></div>';
-      mountOrbsIn(panel);
       fetch(BASE + '/search?q=' + encodeURIComponent(q))
         .then(function(r){ return r.json(); })
         .then(function(data){ renderCompanySuggestions(data.companies || [], data.error || null, q); })
@@ -554,7 +548,6 @@ function dsApifyRow(platform, entry){
           return;
         }
         document.getElementById('runningWrap').style.display = 'block';
-        mountOrbsIn(document.getElementById('runningWrap'));
         pollRun(data.run_id);
       }).catch(function(){
         document.getElementById('analyzeBtn').disabled = false;
@@ -2365,11 +2358,11 @@ function dsApifyRow(platform, entry){
       if(!tiles.length) return;
       // .visible is now just the "already risen" bookkeeping mark -- it no
       // longer carries the animation itself, so it's safe to add immediately
-      // rather than staggered, before cube-motion runs the actual reveal.
+      // rather than staggered, before the cross-fade below.
       tiles.forEach(function(el){ el.classList.add('visible'); });
-      import('/static/js/cube-motion.js').then(function(m){
-        m.rise(tiles, { stagger: 55 });
-      }).catch(function(){});
+      // One cross-fade for all of them at once -- not cube-motion's rise(),
+      // whose per-card lift and 55ms stagger is the banned entrance.
+      tiles.forEach(function(el){ el.classList.add('bento-in'); });
     }
 
     // Charts draw themselves in the same way, and for the same reason: only
@@ -3095,7 +3088,6 @@ function dsApifyRow(platform, entry){
       // a loading state, same as every other drawer/panel load on this page.
       var panel = document.getElementById('drawerPanel');
       panel.innerHTML = '<div style="padding:60px;text-align:center"><div class="thinking-orb-slot" data-orb-state="listening" data-orb-size="64">Loading report…</div></div>';
-      mountOrbsIn(panel);
       document.getElementById('drawerOverlay').classList.add('open');
       fetch(BASE + '/runs/' + runId)
         .then(function(r){ return r.json(); })
@@ -3111,9 +3103,6 @@ function dsApifyRow(platform, entry){
     });
 
     renderDataSourcesPanel();
-    import('/static/js/border-beam.js').then(function(m){
-      m.mountBorderBeam(document.getElementById('companyName'), { color: '#fb923c', color2: '#c2410c' });
-    }).catch(function(){});
   </script>
   
   <script>(function(){if(window.__trk)return;window.__trk=1;var _s=Date.now(),_d=false;function f(){if(_d)return;_d=true;var s=Math.round((Date.now()-_s)/1000);fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:location.pathname,title:'Social Media Intelligence',seconds:s,email:'{{ user.email if user else "" }}'}),keepalive:true}).catch(function(){});}document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')f();});window.addEventListener('beforeunload',f);})();</script>

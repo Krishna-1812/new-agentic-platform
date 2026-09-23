@@ -15,6 +15,18 @@ import { InsightsTab }   from './components/InsightsTab';
 import { fetchSheetData } from './lib/sheets';
 import embeddedAds from './data/ads.json';
 
+// The product's name comes from the Flask route that serves this page, which
+// injects window.__BRAND__ from brand.py on every request. The app used to
+// ship the previous company's logo files (its wordmark and mark) baked into
+// this bundle; reading the name at runtime means a rename in brand.py reaches
+// this app without a rebuild.
+declare global { interface Window { __BRAND__?: { name?: string } } }
+const BRAND_NAME = (typeof window !== 'undefined' && window.__BRAND__?.name) || 'Workspace'
+// The product mark (.bn-mark in static/css/bento-components.css): a lime square.
+const Mark = ({ size }: { size: number }) => (
+  <span aria-hidden="true" style={{ width: size, height: size, borderRadius: Math.round(size / 3), background: '#C6F24E', display: 'block', flexShrink: 0 }} />
+)
+
 /* ── Count-up ─────────────────────────────────────────── */
 function useCountUp(target: number, duration = 1200) {
   const [val, setVal] = useState(0);
@@ -152,8 +164,9 @@ function PlatformBar() {
   return (
     <div style={{ height: 46, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 14, padding: '0 18px', background: 'rgba(6,9,20,.96)', borderBottom: '1px solid rgba(129,140,248,.16)', position: 'relative', zIndex: 60 }}>
       <a href="/p2/hub" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '5px 8px', borderRadius: 8, background: '#151b2e' }}>
-          <img src="/static/logo-lockup.svg?v=4" alt="arena by Position2" style={{ height: 26, width: 'auto', display: 'block' }} />
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 10px', borderRadius: 8, background: '#151b2e' }}>
+          <Mark size={12} />
+          <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-0.02em', color: '#EFE9DC', lineHeight: 1 }}>{BRAND_NAME}</span>
         </span>
       </a>
       <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 8, fontSize: 12.5, minWidth: 0, marginLeft: 2, paddingLeft: 14, borderLeft: '1px solid rgba(255,255,255,.1)' }}>
@@ -260,7 +273,7 @@ export default function App() {
         <div className="flex items-center justify-between px-5 py-5 border-b border-white/5">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#151b2e' }}>
-              <img src="/static/logo-mark.svg?v=4" alt="Arena mark" style={{ width: 20, height: 20, display: 'block' }} />
+              <Mark size={16} />
             </div>
             <div>
               <p className="gradient-text-anim font-bold text-sm leading-none">Ad Intelligence</p>
@@ -332,7 +345,7 @@ export default function App() {
           {/* Left: breadcrumb-style title */}
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: '#151b2e' }}>
-              <img src="/static/logo-mark.svg?v=4" alt="Arena mark" style={{ width: 15, height: 15, display: 'block' }} />
+              <Mark size={12} />
             </div>
             <div className="hidden sm:flex items-center gap-1.5 font-medium">
               <span className="text-[13px] text-white/70">Ad Intelligence</span>

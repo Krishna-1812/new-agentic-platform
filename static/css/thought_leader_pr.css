@@ -31,11 +31,6 @@ html:root{
   background-color:var(--bg);
   background-attachment:fixed;
 }
-html:root[data-theme="light"]{
-  background: var(--s1);
-  background-color:var(--tx);
-  background-attachment:fixed;
-}
 
 *, *::before, *::after{box-sizing:border-box;}
 /* .tlpr-hero-glow (below) is a deliberately oversized decorative bleed --
@@ -147,9 +142,6 @@ body{font-family:'Space Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;min
 .dd-name{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:2px;}
 .dd-email{font-size:11.5px;color:var(--tx3);}
 .dd-items{padding:6px;}
-[data-theme="light"] .user-dropdown{background:var(--s3);}
-[data-theme="light"] .user-pill{background:var(--s2);}
-[data-theme="light"] .user-avatar{color:var(--s1);}
 
 /* --margin (ds-tokens.css) is meant for a FULL-BLEED layout, where content
    width = min(viewport,--maxw) − 2×--margin -- it grows all the way to
@@ -793,23 +785,6 @@ body{font-family:'Space Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;min
   .tlpr-sent-fill{transition:none!important;}
 }
 
-/* ---- Light theme ---- */
-[data-theme="light"] .tlpr-loading,
-[data-theme="light"] .tlpr-card,
-[data-theme="light"] .tlpr-history-row,
-[data-theme="light"] .tlpr-reaction-col,
-[data-theme="light"] .tlpr-post-card{
-  background: var(--s2);
-}
-[data-theme="light"] .tlpr-search-card::before{background: var(--s1);}
-[data-theme="light"] #tlprName{color:var(--sky);}
-[data-theme="light"] .tlpr-resolve-btn,
-[data-theme="light"] .tlpr-btn-confirm,
-[data-theme="light"] .tlpr-btn-collect{color:var(--s1);}
-[data-theme="light"] .tlpr-name-row h2{color:var(--sky);}
-[data-theme="light"] .user-avatar,[data-theme="light"] .tlpr-history-avatar,
-[data-theme="light"] .tlpr-suggest-avatar{color:var(--s1);}
-[data-theme="light"] .tlpr-card--identity::after,[data-theme="light"] .tlpr-card--synthesis::after{opacity:.6;}
 /* ════════════════════════════════════════════════════════════════════════
    BENTO CORRECTIONS
 

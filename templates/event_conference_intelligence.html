@@ -546,13 +546,8 @@
         return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
       });
     }
-    // Mounts a thinking-orb into every [data-orb-state] placeholder just
-    // written into `root`. Dynamic import so this is callable from anywhere
-    // in this classic inline script with no load-order dependency; a
-    // failed import just leaves the plain loading text in place.
-    function mountOrbsIn(root){
-      import('/static/js/thinking-orb.js').then(function(m){ m.autoMountOrbPlaceholders(root); }).catch(function(){});
-    }
+    // Loading placeholders ([data-orb-state]) are plain text now, styled as
+    // the Bento loading line in bento-compat.css. Nothing mounts into them.
 
     /* Thumbs up/down for one section of a report, keyed by run + a stable
        section key (never a name or count, which would mint a brand-new,
@@ -1054,7 +1049,6 @@
       }
       panel.style.display = 'block';
       panel.innerHTML = '<div class="evi-suggest-loading"><div class="thinking-orb-slot" data-orb-state="searching" data-orb-size="20">Searching…</div></div>';
-      mountOrbsIn(panel);
       // Returned, same as draftProfile(), so a test can wait for it. Nothing
       // in the page uses the return value itself.
       return fetch(BASE + '/search?q=' + encodeURIComponent(q))
@@ -1266,7 +1260,6 @@
       var btn = document.getElementById('runBtn');
       btn.disabled = true;
       document.getElementById('runningWrap').style.display = '';
-      mountOrbsIn(document.getElementById('runningWrap'));
       document.getElementById('runningText').textContent =
         mode === 'recommend'
           ? 'Searching all six event categories. This takes a few minutes and runs in the background, so you can leave this page.'
@@ -1467,7 +1460,6 @@
         '<b>Loading this run</b>' +
         '<span id="drawerLive" role="status" aria-live="polite">Reading what it ' +
         'stored.</span></div>';
-      mountOrbsIn(_drawerBody);
       activeRoles = null;
       /* Per-run state, not per-session: a reader who sorted one roster by
          date should not find the next run they open already sorted. */
@@ -3991,7 +3983,6 @@
         html += recommendHtml(run);
       }
       document.getElementById('drawerBody').innerHTML = html;
-      mountOrbsIn(document.getElementById('drawerBody'));
       armAnim('recommend:' + run.id + ':' + run.status);
     }
 
@@ -4160,7 +4151,6 @@
       if (run.status === 'failed') {
         html += '<div class="evi-err">' + esc(run.error || 'This run failed.') + '</div>';
         document.getElementById('drawerBody').innerHTML = html;
-        mountOrbsIn(document.getElementById('drawerBody'));
         return;
       }
       if (run.status === 'running') {
@@ -4171,7 +4161,6 @@
         html += '<div class="evi-coverage"><span class="ic">i</span><span class="tx">' +
           esc(s.note) + '</span></div>';
         document.getElementById('drawerBody').innerHTML = html;
-        mountOrbsIn(document.getElementById('drawerBody'));
         return;
       }
 
@@ -4284,7 +4273,6 @@
           '</div></div>';
       }
       document.getElementById('drawerBody').innerHTML = html;
-      mountOrbsIn(document.getElementById('drawerBody'));
       armAnim('workroom:' + run.id + ':' + run.status);
     }
 
@@ -4365,7 +4353,6 @@
         '<b>No events matched</b><span>' +
         esc(s.note || s.discover_note ||
             'Nothing to show for this run.') + '</span></div>';
-      mountOrbsIn(document.getElementById('drawerBody'));
       armAnim(run.mode + ':' + run.id + ':' + run.status);
     }
 
@@ -4396,9 +4383,6 @@
   document.addEventListener('keydown', function(e){
     if (e.key === 'Escape') closeUserMenu();
   });
-  import('/static/js/border-beam.js').then(function(m){
-    m.mountBorderBeam(document.getElementById('clientName'), { color: '#6366f1', color2: '#38bdf8' });
-  }).catch(function(){});
   </script>
 
   <script>(function(){if(window.__trk)return;window.__trk=1;var _s=Date.now(),_d=false;function f(){if(_d)return;_d=true;var s=Math.round((Date.now()-_s)/1000);fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:location.pathname,title:'Event & Conference Intelligence',seconds:s,email:{{ (user.email if user else "")|tojson }}}),keepalive:true}).catch(function(){});}document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')f();});window.addEventListener('beforeunload',f);})();</script>

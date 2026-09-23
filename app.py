@@ -20,7 +20,12 @@ from flask import (
     request, session, redirect, url_for,
     make_response, render_template, g,
 )
-from brand import brand_context  # user-facing product naming (single source of truth)
+from brand import BRAND, brand_context  # user-facing product naming (single source of truth)
+
+# The /p2 staff gate. Every check that decides whether an account is staff
+# reads this, and so does every page that states the rule (brand.staff_domain),
+# so the gate and what the UI says about it cannot disagree. See brand.py.
+STAFF_EMAIL_SUFFIX = "@" + BRAND["staff_domain"]
 import requests
 from collections import Counter
 
@@ -76,7 +81,7 @@ def forbidden(e):
 def server_error(e):
     """Always answer API routes with JSON so the frontend never chokes on an HTML error page."""
     if request.path.startswith("/api/"):
-        return jsonify({"error": "Vimi is taking longer than usual - please try again."}), 500
+        return jsonify({"error": f"{BRAND['assistant']} is taking longer than usual - please try again."}), 500
     return ("Internal Server Error", 500)
 
 # ── Google OAuth ────────────────────────────────────────────────────────────────
@@ -735,7 +740,7 @@ INDUSTRIES = [
         "eyebrow": "Industry · Health Tech",
         "headline": "Win the health system",
         "headline_ital": "before the market moves.",
-        "lead": "Selling into healthcare is slow, committee-driven and built on trust. Intelligence watches every provider, payer, digital-health and medtech org for the signals that precede a budget, funding, mergers, new facilities, service-line launches and leadership moves, then hands your team the account, the committee and the next move.",
+        "lead": f"Selling into healthcare is slow, committee-driven and built on trust. {BRAND['name']} watches every provider, payer, digital-health and medtech org for the signals that precede a budget, funding, mergers, new facilities, service-line launches and leadership moves, then hands your team the account, the committee and the next move.",
         "stats": [
             {"v": "1,251", "l": "health-tech orgs tracked"},
             {"v": "26",    "l": "buying-signal types"},
@@ -820,7 +825,7 @@ INDUSTRIES = [
         "eyebrow": "Industry · Healthcare · Patient Growth",
         "headline": "You take care of your patients.",
         "headline_ital": "We take care of finding them.",
-        "lead": "Patients choose the practice they trust, the one that shows up when they search, answers their questions and earns strong reviews. Intelligence watches every search, answer engine, review and call, then helps your team win the near-me moment, build the trust and turn quiet interest into booked visits, across every location you run.",
+        "lead": f"Patients choose the practice they trust, the one that shows up when they search, answers their questions and earns strong reviews. {BRAND['name']} watches every search, answer engine, review and call, then helps your team win the near-me moment, build the trust and turn quiet interest into booked visits, across every location you run.",
         "stats": [
             {"v": "4",    "l": "AI answer engines tracked"},
             {"v": "3",    "l": "patient-voice sources unified"},
@@ -924,7 +929,7 @@ INDUSTRIES = [
         "eyebrow": "Industry · Technology & SaaS",
         "headline": "Catch the buying cycle",
         "headline_ital": "before the RFP.",
-        "lead": "B2B software buying starts long before a form fill, in funding rounds, tech-stack changes, hiring surges and product launches. Intelligence watches all of it across your target accounts and tells your team who’s entering a cycle, and why.",
+        "lead": f"B2B software buying starts long before a form fill, in funding rounds, tech-stack changes, hiring surges and product launches. {BRAND['name']} watches all of it across your target accounts and tells your team who’s entering a cycle, and why.",
         "stats": [
             {"v": "26",   "l": "buying-signal types"},
             {"v": "24/7", "l": "real-time detection"},
@@ -977,7 +982,7 @@ INDUSTRIES = [
         "eyebrow": "Industry · Financial Services",
         "headline": "Open the high-value conversation",
         "headline_ital": "at the right moment.",
-        "lead": "In banking, fintech, insurance and wealth management, the deals are large, the cycles are regulated, and trust is non-negotiable. Intelligence spots the M&A, leadership and growth signals that open a conversation, and keeps your visibility compliant and credible.",
+        "lead": f"In banking, fintech, insurance and wealth management, the deals are large, the cycles are regulated, and trust is non-negotiable. {BRAND['name']} spots the M&A, leadership and growth signals that open a conversation, and keeps your visibility compliant and credible.",
         "stats": [
             {"v": "26",   "l": "buying-signal types"},
             {"v": "24/7", "l": "real-time detection"},
@@ -1031,7 +1036,7 @@ INDUSTRIES = [
         "eyebrow": "Industry · Professional Services",
         "headline": "Land the engagement",
         "headline_ital": "when the need appears.",
-        "lead": "Consulting, legal, accounting and agencies sell expertise into moments of change, growth, M&A, new leadership, expansion. Intelligence detects those moments across your target accounts and hands your partners a reason to reach out first.",
+        "lead": f"Consulting, legal, accounting and agencies sell expertise into moments of change, growth, M&A, new leadership, expansion. {BRAND['name']} detects those moments across your target accounts and hands your partners a reason to reach out first.",
         "stats": [
             {"v": "26",   "l": "buying-signal types"},
             {"v": "24/7", "l": "real-time detection"},
@@ -1299,7 +1304,7 @@ def admin_required(f):
         if not user:
             return _login_redirect()
         email = user.get("email", "").lower()
-        if not email.endswith("@position2.com"):
+        if not email.endswith(STAFF_EMAIL_SUFFIX):
             return redirect("/app")          # external users never see internal /p2
         if email not in ADMIN_EMAILS:
             abort(403)                        # Position2 non-admins: forbidden
@@ -1315,7 +1320,7 @@ def position2_required(f):
         user = _get_user()
         if not user:
             return _login_redirect()
-        if not user.get("email", "").lower().endswith("@position2.com"):
+        if not user.get("email", "").lower().endswith(STAFF_EMAIL_SUFFIX):
             return redirect("/app")
         return f(*args, **kwargs)
     return decorated
@@ -1373,11 +1378,11 @@ def auth_google():
         # No deep link: @position2.com staff land on the internal hub (/p2/hub);
         # everyone else lands on the public signed-in home (/app). An explicit
         # next_url (e.g. a shared /p2/admin/... link) still takes precedence.
-        nxt = "/p2/hub" if email.lower().endswith("@position2.com") else "/app"
+        nxt = "/p2/hub" if email.lower().endswith(STAFF_EMAIL_SUFFIX) else "/app"
     # Route sign-in logging: @position2.com -> always Internal Usage,
     # PLUS Public Page Analytics too when landing on the public /app surface (not
     # deep-linking straight into /p2). Everyone else -> Public Page Analytics only.
-    if email.lower().endswith("@position2.com"):
+    if email.lower().endswith(STAFF_EMAIL_SUFFIX):
         _log_login_to_sheet(session["google_user"])   # fire-and-forget, fails silently
         if not nxt.startswith("/p2"):
             _log_member_signin(session["google_user"])
@@ -1412,7 +1417,7 @@ def index():
     u = _get_user()
     if u:
         # Staff go straight to the internal hub; everyone else to the public home.
-        return redirect("/p2/hub" if u.get("email", "").lower().endswith("@position2.com") else "/app")
+        return redirect("/p2/hub" if u.get("email", "").lower().endswith(STAFF_EMAIL_SUFFIX) else "/app")
     return render_template("agents.html", page="home", agents=AGENTS, agent=None,
                            related=[], signals_list=SIGNALS)
 
@@ -1778,7 +1783,7 @@ AGENT_RUN_CAP_INTERNAL = 100  # @position2.com staff get a higher ceiling than
 
 def _agent_run_cap(email: str) -> int:
     """Per-agent run cap for one user, by email domain."""
-    return AGENT_RUN_CAP_INTERNAL if (email or "").lower().endswith("@position2.com") else AGENT_RUN_CAP
+    return AGENT_RUN_CAP_INTERNAL if (email or "").lower().endswith(STAFF_EMAIL_SUFFIX) else AGENT_RUN_CAP
 
 _AR_TAB = "Agent Runs"
 _AR_HEADER = ["Timestamp (IST)", "Date", "Email", "Name", "Agent Slug", "Agent Name"]
@@ -3531,6 +3536,36 @@ def _nodash(s):
     return (s.replace(" — ", ", ").replace("—", ", ")
              .replace(" – ", ", ").replace("–", "-"))
 
+# Brand tokens in the pre-built dashboard files under reports/. They are static
+# HTML, generated weeks apart or -- for two of them -- never regenerated at all,
+# so a name baked into them at build time goes stale the day brand.py changes.
+# They carry tokens instead and are filled here, on every request, from the same
+# brand.py every other page reads. tracker/dashboard_builder.py writes the same
+# tokens.
+_DASHBOARD_BRAND_TOKENS = (
+    ("__BRAND_NAME__",      BRAND["name"]),
+    ("__BRAND_INITIAL__",   BRAND["name"][:1].upper()),
+    ("__BRAND_ASSISTANT__", BRAND["assistant"]),
+)
+
+
+def _send_dashboard_file(path):
+    """A pre-built dashboard, brand tokens filled, never cached.
+
+    Replaces `make_response(send_file(path))` in the two routes that serve these
+    files, with the same no-cache headers they set. The files are a few hundred
+    KB of HTML read once per view, so there is nothing for send_file's
+    streaming to save."""
+    html = Path(path).read_text(encoding="utf-8")
+    for token, value in _DASHBOARD_BRAND_TOKENS:
+        html = html.replace(token, value)
+    resp = make_response(html)
+    resp.mimetype = "text/html"
+    resp.headers.update({"Cache-Control": "no-cache, no-store, must-revalidate",
+                         "Pragma": "no-cache", "Expires": "0"})
+    return resp
+
+
 def _client_dashboard_path(client, agent_slug):
     """Path to this client's wired dashboard for an agent, or None. Returns None if
     the file hasn't been generated yet so the agent falls back to the setup shell."""
@@ -3598,7 +3633,7 @@ def _client_allowed(client, email):
     if client.get("open_to_all"):
         return True
     email = (email or "").lower()
-    if email.endswith("@position2.com"):
+    if email.endswith(STAFF_EMAIL_SUFFIX):
         return True
     return any(email.endswith("@" + d.lower()) for d in client.get("domains", []))
 
@@ -3750,10 +3785,7 @@ def _client_agent_dashboard(client_slug, agent_slug):
     path = _client_dashboard_path(client, agent_slug)
     if not path:
         abort(404)
-    resp = make_response(send_file(str(path)))
-    resp.headers.update({"Cache-Control": "no-cache, no-store, must-revalidate",
-                         "Pragma": "no-cache", "Expires": "0"})
-    return resp
+    return _send_dashboard_file(path)
 
 def _client_dashboard_data(client_slug, agent_slug):
     """Gated JSON data endpoint for a client's live dashboard-backed agent. Dispatches
@@ -4179,7 +4211,21 @@ AD_INTEL_SHEET_ID = "16U5_QSxMmrAGKvK5dHScBu1Et4BJ1p8Q1ns5LycRA0s"
 @app.route("/p2/strategic-agents/ad-intelligence/")
 @position2_required
 def ad_intelligence():
-    return send_from_directory("ad_intelligence", "index.html")
+    """The built React app, with the brand handed to it at serve time.
+
+    The bundle reads window.__BRAND__ for its name, and the chat widget that
+    scripts/build-frontend.sh injects carries the same __BRAND_*__ tokens as
+    the pre-built dashboards. Both are filled here, so a rename in brand.py
+    reaches this page without a rebuild."""
+    html = (Path(__file__).parent / "ad_intelligence" / "index.html").read_text(encoding="utf-8")
+    for token, value in _DASHBOARD_BRAND_TOKENS:
+        html = html.replace(token, value)
+    # json.dumps escapes quotes; replacing "</" stops a value closing the tag.
+    payload = json.dumps({"name": BRAND["name"], "assistant": BRAND["assistant"]}).replace("</", "<\\/")
+    html = html.replace("</head>", "<script>window.__BRAND__=%s;</script>\n</head>" % payload, 1)
+    resp = make_response(html)
+    resp.mimetype = "text/html"
+    return resp
 
 @app.route("/p2/strategic-agents/ad-intelligence/assets/<path:filename>")
 @app.route("/p2/b2b-agents/ad-intelligence/assets/<path:filename>")
@@ -4619,10 +4665,7 @@ def dashboard(account_id: str, section: str = None):
     path: Path = cfg["dashboard"]
     if not path.exists():
         abort(404, f"Dashboard for '{cfg['name']}' not generated yet.")
-    resp = make_response(send_file(str(path)))
-    resp.headers.update({"Cache-Control": "no-cache, no-store, must-revalidate",
-                         "Pragma": "no-cache", "Expires": "0"})
-    return resp
+    return _send_dashboard_file(path)
 
 @app.route("/p2/signal-tracker/<account_id>")
 @app.route("/p2/signal-tracker/<account_id>/<section>")
@@ -5138,7 +5181,7 @@ def _login_events_by_vid(ms_rows=None, login_rows=None) -> dict:
 
     for entry in out.values():
         entry["events"].sort(key=lambda e: e["ts"] or "")
-        entry["type"] = "staff" if (entry["email"] or "").lower().endswith("@position2.com") else "member"
+        entry["type"] = "staff" if (entry["email"] or "").lower().endswith(STAFF_EMAIL_SUFFIX) else "member"
         entry["first_ts"] = entry["events"][0]["ts"] if entry["events"] else ""
         entry["last_ts"] = entry["events"][-1]["ts"] if entry["events"] else ""
         entry["count"] = len(entry["events"])
@@ -5908,7 +5951,7 @@ def _fetch_member_analytics_uncached() -> dict:
     for r in pv:
         e = (pc(r, 4) or "").lower()
         path = pc(r, 6) or ""
-        if e and (not e.endswith("@position2.com") or path.startswith("/app")):
+        if e and (not e.endswith(STAFF_EMAIL_SUFFIX) or path.startswith("/app")):
             pv_by_email[e].append(r)
 
     members = {}
@@ -6055,7 +6098,7 @@ def _fetch_member_analytics_uncached() -> dict:
     # staff never arrive as anonymous visitors, so they're excluded from this ratio
     # (they still count toward the "Members" KPI above, which intentionally covers
     # all /app usage per the two-tier design).
-    external_out = [x for x in out_members if not x["email"].lower().endswith("@position2.com")]
+    external_out = [x for x in out_members if not x["email"].lower().endswith(STAFF_EMAIL_SUFFIX)]
     external_members = len(external_out)
     external_returning = sum(1 for x in external_out if x["status"] == "returning")
 
@@ -6207,7 +6250,7 @@ def _fetch_usage_data(internal: bool = True) -> dict:
 
     # Internal Usage keeps @position2.com only; External Usage keeps everyone
     # else (any real non-P2 email). One predicate, inverted by mode.
-    def _is_p2(e): return (e or "").lower().endswith("@position2.com")
+    def _is_p2(e): return (e or "").lower().endswith(STAFF_EMAIL_SUFFIX)
     def keep(e):
         e = (e or "").strip()
         if not e:
@@ -6725,7 +6768,7 @@ def _person_summary_facts(email: str, activity: dict, profile: dict) -> dict:
 
 
 _PS_SYSTEM = (
-    "You are a B2B revenue-intelligence analyst for Position2, a B2B digital marketing "
+    f"You are a B2B revenue-intelligence analyst for {BRAND['name']}, a B2B digital marketing "
     "agency. You are given every fact a first-party analytics platform holds about ONE "
     "person who signed in to it: who they are, how they arrived, what they read, which AI "
     "agents they ran, and which agents they asked for access to.\n\n"
@@ -6790,7 +6833,7 @@ def _person_ai_summary(email: str, facts: dict) -> dict:
 
 
 _AI_SORT_SYSTEM = (
-    "You are a B2B revenue-intelligence analyst for Position2, a B2B digital marketing "
+    f"You are a B2B revenue-intelligence analyst for {BRAND['name']}, a B2B digital marketing "
     "agency. You are given a JSON list of external people who signed in to a first-party "
     "analytics platform, each with facts about how they arrived, how much they engaged, "
     "and which AI agents they ran.\n\n"
@@ -7322,7 +7365,7 @@ def _fetch_client_usage(slug, force=False):
     def col(r, i, d=""):
         return r[i] if len(r) > i else d
 
-    p2_dom = "@position2.com"
+    p2_dom = STAFF_EMAIL_SUFFIX
     cli_doms = ["@" + d.lower() for d in client.get("domains", [])]
 
     def seg_of(email):
@@ -7514,7 +7557,7 @@ def _fetch_client_usage(slug, force=False):
             "first_activity": first_activity[:10], "last_activity": last_activity[:10],
         },
         "segments": {
-            "p2": {"label": "Position² team", "people": seg_people["p2"],
+            "p2": {"label": "%s team" % BRAND["name"], "people": seg_people["p2"],
                    "views": seg_stats["p2"]["views"], "time": _fmt_secs(seg_stats["p2"]["seconds"]),
                    "logins": _seg_sum("p2", "logins"), "runs": _seg_sum("p2", "agent_runs")},
             "client": {"label": "%s team" % client.get("short", client["name"]),
@@ -16795,7 +16838,7 @@ CHATBOT_FUNCTIONS = [
     {
         "name": "get_anonymous_visitors",
         "description": (
-            "Get people who visited position2.com — identified and enriched via Apollo. "
+            "Get people who visited your website — identified and enriched via Apollo. "
             "Use for: who visited, how many, which companies, seniority levels, industry breakdown, "
             "recent visitors, visitors in a date range."
         ),
@@ -16897,18 +16940,21 @@ def _cap_rows(lines: list, key: str) -> tuple:
 # with CONTEXT_FOR_NEW_CHAT_V17.md when that doc changes; it is intentionally short
 # (cheap to inject on every request) and internal-only (this prompt only reaches
 # @position2_required routes).
-_VIMI_PLATFORM_KNOWLEDGE = """=== ABOUT THIS PLATFORM (ground truth for questions about the platform itself) ===
-Intelligence by Position2 (intelligence.position2.com) is Position2's internal B2B revenue-intelligence
-platform. Position2 is a B2B digital-marketing agency (SEO/organic growth, paid media, paid social,
+# An f-string so the product, domain and staff rule come from brand.py: the
+# assistant is how most users ask what this product is, and it used to answer
+# with the previous company's name and domain. Contains no literal braces.
+_VIMI_PLATFORM_KNOWLEDGE = f"""=== ABOUT THIS PLATFORM (ground truth for questions about the platform itself) ===
+{BRAND['product']} ({BRAND['domain']}) is {BRAND['name']}'s internal B2B revenue-intelligence
+platform. {BRAND['name']} is a B2B digital-marketing agency (SEO/organic growth, paid media, paid social,
 content, brand & website, RevOps). The platform surfaces buying signals, de-anonymises website visitors,
 tracks competitor ads and AI-answer-engine brand visibility, and runs a suite of SEO/GEO tools.
 
 THREE SURFACES: (1) public marketing site, logged out; (2) /app member workspace, any signed-in Google
-account, curated SEO/GEO agents + saved run history; (3) /p2/* internal staff app, @position2.com only
+account, curated SEO/GEO agents + saved run history; (3) /p2/* internal staff app, {STAFF_EMAIL_SUFFIX} only
 (this chat lives here) — Hub, GTM tools, SEO Studio, Accounts/ABM Signal Tracker, Admin dashboards.
 
 ANONYMOUS VISITORS (de-anonymisation engine, /p2/admin/anonymous-traffic, /p2/strategic-agents/anonymous-visitors):
-Identifies which COMPANIES (not usually individual people) visit the Position2 site, by fusing three
+Identifies which COMPANIES (not usually individual people) visit the {BRAND['name']} site, by fusing three
 signals per visitor IP: IPinfo (org/ASN/hostname/privacy), reverse DNS, and RDAP registrant/netblock.
 Each visitor gets a connection_type: "business" (a real company network — the only type that gets
 identified), or "isp"/"mobile"/"hosting"/"proxy"/"education"/"government" (residential, cellular, cloud,
@@ -16937,7 +16983,7 @@ Some are fully live and connected; others are request-access only.
 ADMIN DASHBOARDS (/p2/admin/*, admin-only): Internal Usage, Anonymous Traffic (the visitor de-anon
 dashboard above), Public Page Analytics, Public Agent Usage, Agent Runs, Access Requests.
 
-Auth: Google Sign-In is open to any Google account; only @position2.com reaches /p2/* internal pages; a
+Auth: Google Sign-In is open to any Google account; only {STAFF_EMAIL_SUFFIX} reaches /p2/* internal pages; a
 small admin allowlist reaches /p2/admin/*.
 
 Ground rule: answer questions about how a platform feature/number/term works from the facts above, precisely
@@ -17267,7 +17313,7 @@ def ppc_chat():
         }
         fmt_instruction = f"\n\nOUTPUT FORMAT REQUIRED: {fmt_map.get(export_fmt, f'Format the output as {export_fmt}.')}\nDo NOT include any explanation before or after the data."
 
-    system_prompt = f"""You are Vimi, the Intelligence Assistant for Position2, a B2B marketing agency.
+    system_prompt = f"""You are {BRAND['assistant']}, the intelligence assistant for {BRAND['name']}, a B2B marketing agency.
 You are highly intelligent, direct, and always give complete answers in one response — no follow-up questions.
 
 TODAY: {today} | THIS WEEK: {week_start} to {today} | YESTERDAY: {(now_ist - timedelta(days=1)).strftime('%Y-%m-%d')}
@@ -17898,7 +17944,7 @@ def insights_generate(account_id):
         )
 
         system_prompt = (
-            "You are Vimi, Position2's elite revenue-intelligence AI. Position2 is a B2B digital "
+            f"You are {BRAND['assistant']}, {BRAND['name']}'s elite revenue-intelligence AI. {BRAND['name']} is a B2B digital "
             "marketing agency. Services: SEO & Organic Growth | Performance Marketing "
             "(Google/Meta/LinkedIn Ads) | Content Strategy | Brand & Website | Revenue Operations & HubSpot. "
             "You brief the CEO and Head of Sales on THIS WEEK's pipeline priorities. "
@@ -18128,7 +18174,7 @@ def company_analysis(account_id):
         co_domain = signals[0].get("domain","") if signals else ""
         co_loc = ", ".join(x for x in [signals[0].get("city") or "", signals[0].get("state") or ""] if x) if signals else ""
         system = (
-            "You are Vimi, senior B2B sales strategist at Position2 (SEO & Organic Growth, PPC/Performance "
+            f"You are {BRAND['assistant']}, senior B2B sales strategist at {BRAND['name']} (SEO & Organic Growth, PPC/Performance "
             "Marketing, Content Strategy, Brand & Website, RevOps & HubSpot). Build a rigorous, signal-grounded "
             "prospect analysis. Reason first: what do the signals (their types, severity, dates, and sequence) "
             "imply about budget timing, internal change, and marketing gaps? Score honestly — most prospects are "
@@ -18219,7 +18265,7 @@ def generate_email(account_id):
         }.get(tone, "TONE: confident and direct, zero fluff.")
 
         system = (
-            "You are Vimi, writing outreach for Position2, a B2B digital marketing agency "
+            f"You are {BRAND['assistant']}, writing outreach for {BRAND['name']}, a B2B digital marketing agency "
             "(SEO | Performance Marketing/PPC | Content Strategy | Brand & Website | Revenue Operations). "
             "Write an email a thoughtful senior consultant would actually send - never anything that smells of "
             "AI or mail-merge.\n\n"
@@ -18312,7 +18358,7 @@ def research_company(account_id):
             pass
 
         system = (
-            "You are Vimi, Position2’s sales-intelligence research AI. Position2 is a digital marketing agency. "
+            f"You are {BRAND['assistant']}, {BRAND['name']}’s sales-intelligence research AI. {BRAND['name']} is a digital marketing agency. "
             "Services: SEO & Organic Growth | Performance Marketing (Google/Meta/LinkedIn Ads) | "
             "Content Strategy | Brand & Website | Revenue Operations & HubSpot. "
             "Research the given company using web search. Find what they do, recent news, "
@@ -18500,7 +18546,7 @@ def vimi_chat(account_id):
             ", ".join("%s %d" % (k, v) for k, v in sorted(counts.items(), key=lambda x: -x[1])))
         ctx_str = "\n".join(ctx) or "(no specific company matched - use the overview and web search)"
         system = (
-            "You are Vimi, Position2's signal-intelligence assistant. Position2 is a B2B digital marketing "
+            f"You are {BRAND['assistant']}, {BRAND['name']}'s signal-intelligence assistant. {BRAND['name']} is a B2B digital marketing "
             "agency (SEO, PPC, Content, Brand & Website, RevOps). Answer the user accurately and concisely. "
             "Use the ACCOUNT SIGNAL DATA below for questions about tracked companies and signals; use web search "
             "for company research, recent news, people, contacts, or anything not in the data. If asked to draft an "
@@ -18610,7 +18656,8 @@ def vimi_export():
     body = request.get_json(silent=True) or {}
     fmt = (body.get("format") or "").lower().strip()
     content = str(body.get("content") or "").strip()
-    title = (body.get("title") or "Vimi Insights").strip()[:80] or "Vimi Insights"
+    _default_title = "%s Insights" % BRAND["assistant"]
+    title = (body.get("title") or _default_title).strip()[:80] or _default_title
     if not content:
         return jsonify({"error": "no content"}), 400
     if fmt not in ("csv", "xlsx", "docx", "pdf", "pptx"):
@@ -18634,7 +18681,7 @@ def vimi_export():
         if fmt == "xlsx":
             import openpyxl
             from openpyxl.styles import Font
-            wb = openpyxl.Workbook(); ws = wb.active; ws.title = "Vimi"
+            wb = openpyxl.Workbook(); ws = wb.active; ws.title = BRAND["assistant"][:31]
             rows = _md_table_rows(content)
             if rows:
                 for ri, r in enumerate(rows, 1):
@@ -18779,7 +18826,7 @@ def refresh_dashboard():
         })
         if r.status_code in (201, 204):
             return jsonify({"ok": True,
-                "message": "Refresh started. Vimi is fetching the latest HIGH signals (Sheets) and "
+                "message": f"Refresh started. {BRAND['assistant']} is fetching the latest HIGH signals (Sheets) and "
                            "LOW signals (Google News, filtered) for both accounts, rebuilding, and "
                            "publishing. Your dashboard updates automatically in a few minutes — reload then.",
                 "actions_url": "https://github.com/%s/actions/workflows/%s" % (repo, workflow)})

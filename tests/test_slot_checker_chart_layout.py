@@ -203,14 +203,18 @@ def test_html_root_has_an_explicit_background_color_in_both_themes():
 
 
 def test_the_ribbon_palette_is_themed_rather_than_inlined():
-    """Inline background colours from JS cannot be restyled per theme, and the
-    dark ramp tops out near 2:1 on a white card."""
+    """Inline background colours from JS cannot be restyled by a stylesheet,
+    so every ribbon step has to be a class.
+
+    This also asserted a separate light-theme step per class, because the dark
+    ramp tops out near 2:1 on a white card. The cleanup pass removed those
+    rules: nothing can put this page in light mode any more (the toggle was
+    deleted with theme.js, and unlike three other agent pages it has no
+    print-to-light path), so they could never apply. The rest of the reason
+    -- one class per step, never an inline colour -- still holds."""
     css, tpl = _read(CSS), _read(TPL)
     for cls in ("r1", "r2", "r3", "r0"):
         assert _decl(css, ".gd-ribbon-seg.%s" % cls, "background"), cls
-        assert _decl(
-            css, ':root[data-theme="light"] .gd-ribbon-seg.%s' % cls, "background"
-        ), "light theme needs its own step for %s" % cls
     assert "style=\"background:'+RIB" not in tpl, (
         "ribbon colours must come from a class, not an inline style"
     )

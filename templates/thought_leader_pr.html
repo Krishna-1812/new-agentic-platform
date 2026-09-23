@@ -69,15 +69,8 @@
       return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
         {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
-    // Mounts a thinking-orb into every [data-orb-state] placeholder just
-    // written into `root` (a *LoadingHtml() card). Fire-and-forget: the
-    // dynamic import keeps this callable from anywhere in this classic
-    // script with no module-vs-script load-order dependency, and a failed
-    // import just leaves the plain loading text in place (see
-    // static/js/thinking-orb.js's own header for why).
-    function mountOrbsIn(root){
-      import('/static/js/thinking-orb.js').then(function(m){ m.autoMountOrbPlaceholders(root); }).catch(function(){});
-    }
+    // Loading placeholders ([data-orb-state]) are plain text now, styled as
+    // the Bento loading line in bento-compat.css. Nothing mounts into them.
     function initials(name){
       const parts = (name || '').trim().split(/\s+/).filter(Boolean);
       if (!parts.length) return '?';
@@ -348,7 +341,7 @@
       if (!el || !run) return;
       const status = run.posts_status || 'idle';
       if (status === 'ready') el.innerHTML = postsReadyHtml(run);
-      else if (status === 'collecting') { el.innerHTML = postsLoadingHtml(); mountOrbsIn(el); pollPosts(run.id); }
+      else if (status === 'collecting') { el.innerHTML = postsLoadingHtml(); pollPosts(run.id); }
       else if (status === 'failed') el.innerHTML = postsFailedHtml(run.id, (run.posts_errors || {})._run);
       else el.innerHTML = postsIdleHtml(run.id);
       // The reaction step follows posts, once they're actually ready to
@@ -378,7 +371,7 @@
 
     async function startCollecting(runId){
       const _el = document.getElementById('tlprPostsSection');
-      _el.innerHTML = postsLoadingHtml(); mountOrbsIn(_el);
+      _el.innerHTML = postsLoadingHtml();
       try {
         const res = await fetch(`/p2/strategic-agents/thought-leader-pr/runs/${runId}/collect`, {method: 'POST'});
         const out = await res.json();
@@ -635,7 +628,7 @@
       if (!el || !run) return;
       const status = run.reaction_status || 'idle';
       if (status === 'ready') el.innerHTML = reactionReadyHtml(run);
-      else if (status === 'collecting') { el.innerHTML = reactionLoadingHtml(); mountOrbsIn(el); pollReaction(run.id); }
+      else if (status === 'collecting') { el.innerHTML = reactionLoadingHtml(); pollReaction(run.id); }
       else if (status === 'failed') el.innerHTML = reactionFailedHtml(run.id, (run.reaction_errors || {})._run);
       else el.innerHTML = reactionIdleHtml(run.id);
       maybeAutoRun(run);
@@ -658,7 +651,7 @@
 
     async function startAnalyzingReaction(runId){
       const _el = document.getElementById('tlprReactionSection');
-      _el.innerHTML = reactionLoadingHtml(); mountOrbsIn(_el);
+      _el.innerHTML = reactionLoadingHtml();
       try {
         const res = await fetch(`/p2/strategic-agents/thought-leader-pr/runs/${runId}/collect-reaction`, {method: 'POST'});
         const out = await res.json();
@@ -764,7 +757,7 @@
       if (!el || !run) return;
       const status = run.press_status || 'idle';
       if (status === 'ready') el.innerHTML = pressReadyHtml(run);
-      else if (status === 'collecting') { el.innerHTML = pressLoadingHtml(); mountOrbsIn(el); pollPress(run.id); }
+      else if (status === 'collecting') { el.innerHTML = pressLoadingHtml(); pollPress(run.id); }
       else if (status === 'failed') el.innerHTML = pressFailedHtml(run.id, (run.press_errors || {})._run);
       else el.innerHTML = pressIdleHtml(run.id);
       maybeAutoRun(run);
@@ -787,7 +780,7 @@
 
     async function startFindingPress(runId){
       const _el = document.getElementById('tlprPressSection');
-      _el.innerHTML = pressLoadingHtml(); mountOrbsIn(_el);
+      _el.innerHTML = pressLoadingHtml();
       try {
         const res = await fetch(`/p2/strategic-agents/thought-leader-pr/runs/${runId}/collect-press`, {method: 'POST'});
         const out = await res.json();
@@ -880,7 +873,7 @@
       if (!el || !run) return;
       const status = run.synthesis_status || 'idle';
       if (status === 'ready') el.innerHTML = synthesisReadyHtml(run);
-      else if (status === 'collecting') { el.innerHTML = synthesisLoadingHtml(); mountOrbsIn(el); pollSynthesis(run.id); }
+      else if (status === 'collecting') { el.innerHTML = synthesisLoadingHtml(); pollSynthesis(run.id); }
       else if (status === 'failed') el.innerHTML = synthesisFailedHtml(run.id, (run.synthesis_errors || {})._run);
       else el.innerHTML = synthesisIdleHtml(run.id);
     }
@@ -954,7 +947,7 @@
 
     async function startSynthesizing(runId){
       const _el = document.getElementById('tlprSynthesisSection');
-      _el.innerHTML = synthesisLoadingHtml(); mountOrbsIn(_el);
+      _el.innerHTML = synthesisLoadingHtml();
       try {
         const res = await fetch(`/p2/strategic-agents/thought-leader-pr/runs/${runId}/collect-synthesis`, {method: 'POST'});
         const out = await res.json();
@@ -1204,10 +1197,6 @@
         panel.innerHTML = '';
       }
     });
-    import('/static/js/border-beam.js').then(function(m){
-      var el = document.getElementById('tlprName');
-      m.mountBorderBeamOn(el.closest('.tlpr-input-wrap'), el, { color: '#ffb74d', color2: '#b78bfa' });
-    }).catch(function(){});
   </script>
 
   <script>(function(){if(window.__trk)return;window.__trk=1;var _s=Date.now(),_d=false;function f(){if(_d)return;_d=true;var s=Math.round((Date.now()-_s)/1000);fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:location.pathname,title:'Thought Leader Intelligence',seconds:s,email:{{ (user.email if user else "")|tojson }}}),keepalive:true}).catch(function(){});}document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')f();});window.addEventListener('beforeunload',f);})();</script>

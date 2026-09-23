@@ -129,7 +129,11 @@ def test_it_goes_through_the_ssrf_guarded_helper_with_a_real_user_agent(monkeypa
     sci_vision.fetch_image_bytes("https://cdn/a.jpg")
     url, kwargs = seen[0]
     assert url == "https://cdn/a.jpg"
-    assert "Position2-Intelligence" in kwargs["headers"]["User-Agent"]
+    # The crawler names itself to every site it fetches. It used to name the
+    # previous company; it names this product now, from brand.py.
+    from brand import BRAND
+    assert "%s-Intelligence" % BRAND["name"] in kwargs["headers"]["User-Agent"]
+    assert "position2" not in kwargs["headers"]["User-Agent"].lower()
     assert kwargs["timeout"] == sci_vision.IMAGE_FETCH_TIMEOUT
 
 
