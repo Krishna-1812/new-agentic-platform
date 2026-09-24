@@ -398,7 +398,7 @@ export default function KeywordResearchPublicPage() {
       {error && (
         <div style={{
           padding: 16,
-          background: 'var(--danger-soft, #FEF2F2)',
+          background: 'var(--danger-soft, #FFE1DE)',
           border: '1px solid var(--danger)',
           borderRadius: 'var(--r-lg)',
           display: 'flex',
@@ -657,7 +657,7 @@ export default function KeywordResearchPublicPage() {
           {result.warning && (
             <div style={{
               padding: 16,
-              background: 'var(--warning-soft, #FFFBEB)',
+              background: 'var(--warning-soft, #FFE4D8)',
               border: '1px solid var(--warning)',
               borderRadius: 'var(--r-lg)',
               display: 'flex',
@@ -675,7 +675,7 @@ export default function KeywordResearchPublicPage() {
               <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Primary Keywords</h2>
               <span style={{
                 fontSize: 12,
-                background: primaryList.length === 2 ? 'var(--success-soft)' : 'var(--danger-soft, #FEF2F2)',
+                background: primaryList.length === 2 ? 'var(--success-soft)' : 'var(--danger-soft, #FFE1DE)',
                 color: primaryList.length === 2 ? 'var(--success)' : 'var(--danger)',
                 fontWeight: 600,
                 padding: '2px 8px',
@@ -717,7 +717,7 @@ export default function KeywordResearchPublicPage() {
                           style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             width: 20, height: 20, borderRadius: '50%', border: 'none',
-                            background: 'var(--danger-soft, #FEF2F2)', color: 'var(--danger)',
+                            background: 'var(--danger-soft, #FFE1DE)', color: 'var(--danger)',
                             cursor: 'pointer', fontSize: 13, fontWeight: 700, lineHeight: 1, padding: 0,
                           }}
                         >
@@ -748,7 +748,7 @@ export default function KeywordResearchPublicPage() {
               <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Secondary Keywords</h2>
               <span style={{
                 fontSize: 12,
-                background: secondaryList.length === 10 ? 'var(--success-soft)' : 'var(--danger-soft, #FEF2F2)',
+                background: secondaryList.length === 10 ? 'var(--success-soft)' : 'var(--danger-soft, #FFE1DE)',
                 color: secondaryList.length === 10 ? 'var(--success)' : 'var(--danger)',
                 fontWeight: 600,
                 padding: '2px 8px',
@@ -788,7 +788,7 @@ export default function KeywordResearchPublicPage() {
                             style={{
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               width: 20, height: 20, borderRadius: '50%', border: 'none',
-                              background: 'var(--danger-soft, #FEF2F2)', color: 'var(--danger)',
+                              background: 'var(--danger-soft, #FFE1DE)', color: 'var(--danger)',
                               cursor: 'pointer', fontSize: 13, fontWeight: 700, lineHeight: 1, padding: 0,
                             }}
                           >

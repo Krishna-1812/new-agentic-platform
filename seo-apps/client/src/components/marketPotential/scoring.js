@@ -79,8 +79,8 @@ export function tierOf(score, confidence) {
 
 // Label + color chip per tier. Text label ALWAYS present (never color alone, §6.3).
 export const TIER_META = {
-  prioritize:   { label: 'Prioritize',        color: '#0B7A4B', bg: 'var(--success-soft)' },
-  strong:       { label: 'Strong',            color: '#0E9384', bg: 'rgba(0,179,164,0.14)' },
+  prioritize:   { label: 'Prioritize',        color: '#17753F', bg: 'var(--success-soft)' },
+  strong:       { label: 'Strong',            color: '#1D65A6', bg: 'rgba(0,179,164,0.14)' },
   monitor:      { label: 'Monitor',           color: 'var(--warning)', bg: 'var(--warning-soft)' },
   deprioritize: { label: 'Deprioritize',      color: 'var(--text-3)', bg: 'var(--surface)' },
   insufficient: { label: 'Insufficient Data', color: 'var(--text-3)', bg: 'var(--surface)', dashed: true },

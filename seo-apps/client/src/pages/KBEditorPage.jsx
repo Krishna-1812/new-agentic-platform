@@ -124,7 +124,7 @@ export default function KBEditorPage() {
       {error && (
         <div style={{
           margin: '1rem 1.5rem 0', padding: '0.75rem 1rem',
-          background: 'var(--danger-soft, #FEF2F2)', border: '1px solid var(--danger-border, #FECACA)',
+          background: 'var(--danger-soft, #FFE1DE)', border: '1px solid var(--danger-border, #FFC2BC)',
           borderRadius: 'var(--r-lg)', fontSize: '0.875rem', color: 'var(--danger)',
           flexShrink: 0,
         }}>{error}</div>
@@ -142,15 +142,15 @@ export default function KBEditorPage() {
         </span>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           {saved && (
-            <span style={{ fontSize: '0.75rem', color: 'var(--success, #16a34a)' }}>Saved</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--success, #17753F)' }}>Saved</span>
           )}
           <button
             onClick={handleDelete}
             disabled={deleting}
             style={{
               padding: '0.375rem 0.875rem', borderRadius: 'var(--r-lg)',
-              border: '1px solid var(--danger-border, #FECACA)',
-              background: 'var(--danger-soft, #FEF2F2)', color: 'var(--danger)',
+              border: '1px solid var(--danger-border, #FFC2BC)',
+              background: 'var(--danger-soft, #FFE1DE)', color: 'var(--danger)',
               fontSize: '0.8125rem', fontWeight: 500, cursor: deleting ? 'not-allowed' : 'pointer',
               opacity: deleting ? 0.6 : 1,
             }}

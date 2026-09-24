@@ -59,7 +59,7 @@ export default function GentleDentalPagesPage() {
         </div>
       </div>
 
-      {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger,#EF4444)', marginBottom: '0.75rem' }}>{error}</p>}
+      {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger,#C8261B)', marginBottom: '0.75rem' }}>{error}</p>}
 
       <input
         value={filter}
@@ -100,7 +100,7 @@ export default function GentleDentalPagesPage() {
                 <td style={{ padding: '0.75rem 1rem', color: 'var(--text-3)', fontSize: '0.75rem' }}>{new Date(r.updated_at).toLocaleString()}</td>
                 <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
                   <button
-                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', fontWeight: 500, color: 'var(--danger,#EF4444)', background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--r-md,6px)', cursor: 'pointer' }}
+                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', fontWeight: 500, color: 'var(--danger,#C8261B)', background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--r-md,6px)', cursor: 'pointer' }}
                     disabled={deletingId === r.id}
                     // The row itself opens the page — don't do both.
                     onClick={e => { e.stopPropagation(); remove(r); }}

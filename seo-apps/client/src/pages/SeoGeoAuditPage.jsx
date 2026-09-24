@@ -84,7 +84,7 @@ function IssueCard({ issue }) {
           {issue.code_example && (
             <div>
               <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Code Example</p>
-              <pre style={{ fontSize: 12, background: '#1E293B', color: '#E2E8F0', borderRadius: 8, padding: 12, overflowX: 'auto', whiteSpace: 'pre-wrap', margin: 0 }}>{asText(issue.code_example)}</pre>
+              <pre style={{ fontSize: 12, background: '#121213', color: '#E0DCD6', borderRadius: 8, padding: 12, overflowX: 'auto', whiteSpace: 'pre-wrap', margin: 0 }}>{asText(issue.code_example)}</pre>
             </div>
           )}
         </div>
@@ -291,7 +291,7 @@ function SchemaDetectedCard({ schema }) {
           {correctedJsonLd && (
             <div>
               <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4 }}>Corrected JSON-LD</p>
-              <pre style={{ fontSize: 12, background: '#1E293B', color: '#E2E8F0', borderRadius: 8, padding: 12, overflowX: 'auto', whiteSpace: 'pre-wrap', maxHeight: 256, margin: 0 }}>{correctedJsonLd}</pre>
+              <pre style={{ fontSize: 12, background: '#121213', color: '#E0DCD6', borderRadius: 8, padding: 12, overflowX: 'auto', whiteSpace: 'pre-wrap', maxHeight: 256, margin: 0 }}>{correctedJsonLd}</pre>
             </div>
           )}
         </div>
@@ -339,7 +339,7 @@ function SchemaRecommendedCard({ rec }) {
           {starter && (
             <div>
               <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 4 }}>Starter template</p>
-              <pre style={{ fontSize: 12, background: '#1E293B', color: '#E2E8F0', borderRadius: 8, padding: 12, overflowX: 'auto', whiteSpace: 'pre-wrap', maxHeight: 192, margin: 0 }}>{starter}</pre>
+              <pre style={{ fontSize: 12, background: '#121213', color: '#E0DCD6', borderRadius: 8, padding: 12, overflowX: 'auto', whiteSpace: 'pre-wrap', maxHeight: 192, margin: 0 }}>{starter}</pre>
             </div>
           )}
         </div>

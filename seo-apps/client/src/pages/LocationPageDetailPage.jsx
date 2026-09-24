@@ -110,11 +110,11 @@ function KeywordsTab({ page, reload }) {
     return (
       <div style={{ marginBottom: '1rem' }} key={key}>
         <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.375rem' }}>
-          {label} <span style={{ color: over ? 'var(--danger,#EF4444)' : 'var(--text-3)' }}>({arr.length}{cap ? `/${cap}` : ''})</span>
+          {label} <span style={{ color: over ? 'var(--danger,#C8261B)' : 'var(--text-3)' }}>({arr.length}{cap ? `/${cap}` : ''})</span>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', alignItems: 'center' }}>
           {arr.map((k, i) => (
-            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', background: isLocked(k) ? '#FFFBEB' : 'var(--surface)', color: isLocked(k) ? '#92400E' : 'var(--text)', border: isLocked(k) ? '1px solid #FDE68A' : '1px solid var(--border)', fontFamily: 'var(--font-mono)' }}>
+            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', background: isLocked(k) ? '#FFE4D8' : 'var(--surface)', color: isLocked(k) ? '#8A5A00' : 'var(--text)', border: isLocked(k) ? '1px solid #FFE9BF' : '1px solid var(--border)', fontFamily: 'var(--font-mono)' }}>
               {isObj && <button title="lock/unlock" onClick={() => toggleLock(k)} style={{ opacity: 0.6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{isLocked(k) ? '🔒' : '🔓'}</button>}
               <span>{kwStr(k)}{isObj && k.volume ? <span style={{ color: 'var(--text-3)' }}> · {k.volume}</span> : null}</span>
               {isObj && key === 'secondary' && <button title="promote" onClick={() => move('secondary', 'primary', i)} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>↑</button>}
@@ -138,12 +138,12 @@ function KeywordsTab({ page, reload }) {
         <p style={{ fontSize: '0.875rem', color: 'var(--text-2)' }}>Stages 2–5: seeds → location-forced SERP → SEMrush → LLM prioritization.</p>
         <button onClick={run} disabled={running} style={primaryBtnStyle(running)}>{running ? 'Running…' : ks ? 'Re-run pipeline' : 'Run keyword pipeline'}</button>
       </div>
-      {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger,#EF4444)', marginBottom: '0.5rem' }}>{error}</p>}
-      {msg && <p style={{ fontSize: '0.875rem', color: 'var(--success,#10B981)', marginBottom: '0.5rem' }}>{msg}</p>}
+      {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger,#C8261B)', marginBottom: '0.5rem' }}>{error}</p>}
+      {msg && <p style={{ fontSize: '0.875rem', color: 'var(--success,#17753F)', marginBottom: '0.5rem' }}>{msg}</p>}
       <StepList steps={steps} />
       {ks && (
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '1.25rem', marginTop: '0.75rem' }}>
-          {finalized && <div style={{ fontSize: '0.75rem', color: 'var(--success,#065F46)', background: 'var(--success-soft,#ECFDF5)', borderRadius: '0.25rem', padding: '0.5rem 0.75rem', marginBottom: '0.75rem' }}>✓ Keywords finalized (status: {page.status}). You can still edit and re-save.</div>}
+          {finalized && <div style={{ fontSize: '0.75rem', color: 'var(--success,#0F4A29)', background: 'var(--success-soft,#E9F5ED)', borderRadius: '0.25rem', padding: '0.5rem 0.75rem', marginBottom: '0.75rem' }}>✓ Keywords finalized (status: {page.status}). You can still edit and re-save.</div>}
           {KW_BUCKETS.map(bucketView)}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.5rem', borderTop: '1px solid var(--border)' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>🔒 locked keywords survive a pipeline re-run.</span>
@@ -176,8 +176,8 @@ const FAQ_TYPES = ['service', 'location', 'insurance', 'virtual', 'provider', 'a
 const inputStyle = { width: '100%', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.5rem 0.75rem', fontSize: '0.875rem', background: 'var(--card)', color: 'var(--text)', boxSizing: 'border-box', fontFamily: 'inherit' };
 const areaStyle = { width: '100%', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.5rem 0.75rem', fontSize: '0.875rem', background: 'var(--card)', color: 'var(--text)', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' };
 
-const NAVY = '#0A2540';
-const PRIMARY = '#635BFF';
+const NAVY = '#121213';
+const PRIMARY = '#FF6022';
 
 const gbar = (w, h = 8) => ({ width: typeof w === 'number' ? `${w}px` : w, height: `${h}px`, background: 'var(--border)', borderRadius: '3px', display: 'block' });
 const dbar = (w, h = 8) => ({ width: typeof w === 'number' ? `${w}px` : w, height: `${h}px`, background: 'rgba(255,255,255,0.18)', borderRadius: '3px', display: 'block' });
@@ -190,8 +190,8 @@ const GEN_CARD = { border: '2px solid rgba(220,38,38,0.28)', borderRadius: '8px'
 const TPL_CARD = { border: '2px solid rgba(109,40,217,0.18)', borderRadius: '8px', overflow: 'hidden' };
 const GEN_HEAD = { background: 'rgba(220,38,38,0.05)', borderBottom: '1px solid rgba(220,38,38,0.12)', padding: '5px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' };
 const TPL_HEAD = { background: 'rgba(109,40,217,0.04)', borderBottom: '1px solid rgba(109,40,217,0.1)', padding: '5px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' };
-const GEN_BADGE = <span style={{ background: 'rgba(220,38,38,0.12)', color: '#DC2626', padding: '1px 6px', borderRadius: '3px', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase' }}>Generated</span>;
-const TPL_BADGE = <span style={{ background: 'rgba(109,40,217,0.09)', color: '#7C3AED', padding: '1px 6px', borderRadius: '3px', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase' }}>Template</span>;
+const GEN_BADGE = <span style={{ background: 'rgba(220,38,38,0.12)', color: '#C8261B', padding: '1px 6px', borderRadius: '3px', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase' }}>Generated</span>;
+const TPL_BADGE = <span style={{ background: 'rgba(109,40,217,0.09)', color: '#6B3FA0', padding: '1px 6px', borderRadius: '3px', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase' }}>Template</span>;
 const MINI_LBL = { fontSize: '0.6rem', fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.2rem' };
 
 function FieldRegenBtn({ pageId, field, maxChars, context, onResult, darkBg }) {
@@ -218,7 +218,7 @@ function FieldRegenBtn({ pageId, field, maxChars, context, onResult, darkBg }) {
       >
         {loading ? '…' : '⟳ regen'}
       </button>
-      {err && <span title={err} style={{ fontSize: '0.5rem', color: '#EF4444' }}>!</span>}
+      {err && <span title={err} style={{ fontSize: '0.5rem', color: '#C8261B' }}>!</span>}
     </span>
   );
 }
@@ -227,7 +227,7 @@ function CharCounter({ value, max, darkBg }) {
   const len = (value || '').length;
   const over = len > max;
   const color = over
-    ? (darkBg ? '#FCA5A5' : '#EF4444')
+    ? (darkBg ? '#FFB0A9' : '#C8261B')
     : (darkBg ? 'rgba(255,255,255,0.32)' : 'var(--text-3)');
   return (
     <span style={{ fontSize: '0.58rem', color, fontWeight: over ? 700 : 400, letterSpacing: '0.02em' }}>
@@ -309,8 +309,8 @@ function ContentTab({ page, reload }) {
         <p style={{ fontSize: '0.875rem', color: 'var(--text-2)' }}>Stage 7: layer-aware generation. Edit inline below; Save resets cleared gates &amp; re-runs QA.</p>
         <button onClick={run} disabled={running} style={primaryBtnStyle(running)}>{running ? 'Generating…' : po ? 'Regenerate content' : 'Generate content'}</button>
       </div>
-      {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger,#EF4444)', marginBottom: '0.5rem' }}>{error}</p>}
-      {msg && <p style={{ fontSize: '0.875rem', color: 'var(--success,#10B981)', marginBottom: '0.5rem' }}>{msg}</p>}
+      {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger,#C8261B)', marginBottom: '0.5rem' }}>{error}</p>}
+      {msg && <p style={{ fontSize: '0.875rem', color: 'var(--success,#17753F)', marginBottom: '0.5rem' }}>{msg}</p>}
       <StepList steps={steps} />
 
       {po && draft && (
@@ -319,15 +319,15 @@ function ContentTab({ page, reload }) {
 
           {/* Legend */}
           <div style={{ display: 'flex', gap: '1rem', margin: '0.75rem 0 0.375rem', fontSize: '0.65rem', color: 'var(--text-3)' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#DC2626', display: 'inline-block' }} /> Generated — click any field to edit</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#7C3AED', display: 'inline-block' }} /> Template — content managed separately</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#C8261B', display: 'inline-block' }} /> Generated — click any field to edit</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#6B3FA0', display: 'inline-block' }} /> Template — content managed separately</span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
 
             {/* ══ 1. SEO METADATA ══ */}
             <div style={GEN_CARD}>
-              <div style={GEN_HEAD}>{sectionLbl('SEO Metadata — not rendered on page', '#DC2626')}{GEN_BADGE}</div>
+              <div style={GEN_HEAD}>{sectionLbl('SEO Metadata — not rendered on page', '#C8261B')}{GEN_BADGE}</div>
               <div style={{ padding: '0.875rem 1.125rem', background: 'var(--card)', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
                 <div>
                   <div style={MINI_LBL}>Title Tag</div>
@@ -342,16 +342,16 @@ function ContentTab({ page, reload }) {
 
             {/* ══ 2. NAVIGATION ══ */}
             <div style={TPL_CARD}>
-              <div style={TPL_HEAD}>{sectionLbl('Navigation', '#7C3AED')}{TPL_BADGE}</div>
-              <div style={{ background: '#fff', borderBottom: '1px solid #E5E7EB', padding: '0.5rem 1.125rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                <div style={{ width: '80px', height: '22px', background: `linear-gradient(90deg, ${PRIMARY} 0%, #818CF8 100%)`, borderRadius: '4px', flexShrink: 0 }} />
+              <div style={TPL_HEAD}>{sectionLbl('Navigation', '#6B3FA0')}{TPL_BADGE}</div>
+              <div style={{ background: '#fff', borderBottom: '1px solid #E0DCD6', padding: '0.5rem 1.125rem', display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                <div style={{ width: '80px', height: '22px', background: `linear-gradient(90deg, ${PRIMARY} 0%, #4A8FC4 100%)`, borderRadius: '4px', flexShrink: 0 }} />
                 <div style={{ display: 'flex', gap: '0.875rem', flex: 1 }}>
                   {['For Teens', 'For Adults', 'Telehealth', 'Conditions We Treat', 'Our Locations'].map((t, i) => (
-                    <span key={i} style={{ fontSize: '0.62rem', color: '#374151', fontWeight: 500, whiteSpace: 'nowrap' }}>{t}</span>
+                    <span key={i} style={{ fontSize: '0.62rem', color: '#444444', fontWeight: 500, whiteSpace: 'nowrap' }}>{t}</span>
                   ))}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
-                  <span style={{ fontSize: '0.62rem', color: '#6B7280' }}>📞 (310) 997-1166</span>
+                  <span style={{ fontSize: '0.62rem', color: '#6F6B66' }}>📞 (310) 997-1166</span>
                   <div style={{ background: PRIMARY, color: '#fff', fontSize: '0.62rem', fontWeight: 600, padding: '4px 12px', borderRadius: '4px' }}>Get Started</div>
                 </div>
               </div>
@@ -359,17 +359,17 @@ function ContentTab({ page, reload }) {
 
             {/* ══ 3. HERO BANNER ══ */}
             <div style={GEN_CARD}>
-              <div style={GEN_HEAD}>{sectionLbl('Hero Banner', '#DC2626')}{GEN_BADGE}</div>
+              <div style={GEN_HEAD}>{sectionLbl('Hero Banner', '#C8261B')}{GEN_BADGE}</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.25fr', minHeight: '210px' }}>
                 {/* Map / location image placeholder */}
-                <div style={{ background: '#1B3A5C', position: 'relative', overflow: 'hidden', minHeight: '210px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ background: '#121213', position: 'relative', overflow: 'hidden', minHeight: '210px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <div style={{ position: 'absolute', inset: 0, backgroundImage: `linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)`, backgroundSize: '28px 28px' }} />
                   <div style={{ position: 'absolute', top: '38%', left: 0, right: 0, height: '3px', background: 'rgba(255,255,255,0.08)' }} />
                   <div style={{ position: 'absolute', top: '62%', left: 0, right: 0, height: '5px', background: 'rgba(255,255,255,0.06)' }} />
                   <div style={{ position: 'absolute', top: 0, bottom: 0, left: '35%', width: '3px', background: 'rgba(255,255,255,0.08)' }} />
                   <div style={{ position: 'absolute', top: 0, bottom: 0, left: '60%', width: '5px', background: 'rgba(255,255,255,0.06)' }} />
                   <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
-                    <div style={{ width: '22px', height: '22px', borderRadius: '50% 50% 50% 0', background: '#EF4444', transform: 'rotate(-45deg)', margin: '0 auto 0.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }} />
+                    <div style={{ width: '22px', height: '22px', borderRadius: '50% 50% 50% 0', background: '#C8261B', transform: 'rotate(-45deg)', margin: '0 auto 0.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }} />
                     <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>Location Map</div>
                   </div>
                 </div>
@@ -379,7 +379,7 @@ function ContentTab({ page, reload }) {
                     Personalized care that meets you where you are, including in-person and virtual
                   </div>
                   <div style={{ display: 'flex', gap: '2px', marginBottom: '0.5rem' }}>
-                    {[1,2,3,4,5].map(s => <span key={s} style={{ color: '#F59E0B', fontSize: '0.65rem' }}>★</span>)}
+                    {[1,2,3,4,5].map(s => <span key={s} style={{ color: '#FFB500', fontSize: '0.65rem' }}>★</span>)}
                     <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.6rem', marginLeft: '0.25rem' }}>4.9 · 200+ reviews</span>
                   </div>
                   <div style={{ marginBottom: '0.625rem' }}>
@@ -414,7 +414,7 @@ function ContentTab({ page, reload }) {
                     />
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <div style={{ background: '#22C55E', color: '#fff', fontSize: '0.65rem', fontWeight: 700, padding: '6px 14px', borderRadius: '5px' }}>Get Started</div>
+                    <div style={{ background: '#17753F', color: '#fff', fontSize: '0.65rem', fontWeight: 700, padding: '6px 14px', borderRadius: '5px' }}>Get Started</div>
                     <div style={{ border: '1px solid rgba(255,255,255,0.35)', color: 'rgba(255,255,255,0.85)', fontSize: '0.65rem', fontWeight: 500, padding: '6px 14px', borderRadius: '5px' }}>📞 Call Now</div>
                   </div>
                 </div>
@@ -423,17 +423,17 @@ function ContentTab({ page, reload }) {
 
             {/* ══ 4. SUB NAVIGATION ══ */}
             <div style={TPL_CARD}>
-              <div style={TPL_HEAD}>{sectionLbl('Sub Navigation', '#7C3AED')}{TPL_BADGE}</div>
-              <div style={{ background: '#fff', borderBottom: '2px solid #E5E7EB', padding: '0 1.125rem', display: 'flex', gap: 0 }}>
+              <div style={TPL_HEAD}>{sectionLbl('Sub Navigation', '#6B3FA0')}{TPL_BADGE}</div>
+              <div style={{ background: '#fff', borderBottom: '2px solid #E0DCD6', padding: '0 1.125rem', display: 'flex', gap: 0 }}>
                 {['Our Approach', 'What Is It?', 'Benefits', 'Telehealth', 'Conditions', 'Treatment Plans', 'Resources', 'Contact'].map((t, i) => (
-                  <div key={i} style={{ fontSize: '0.62rem', padding: '0.5rem 0.75rem', color: i === 0 ? PRIMARY : '#6B7280', fontWeight: i === 0 ? 700 : 500, borderBottom: i === 0 ? `2px solid ${PRIMARY}` : '2px solid transparent', marginBottom: '-2px', whiteSpace: 'nowrap' }}>{t}</div>
+                  <div key={i} style={{ fontSize: '0.62rem', padding: '0.5rem 0.75rem', color: i === 0 ? PRIMARY : '#6F6B66', fontWeight: i === 0 ? 700 : 500, borderBottom: i === 0 ? `2px solid ${PRIMARY}` : '2px solid transparent', marginBottom: '-2px', whiteSpace: 'nowrap' }}>{t}</div>
                 ))}
               </div>
             </div>
 
             {/* ══ 5. APPROACH SECTION ══ */}
             <div style={GEN_CARD}>
-              <div style={GEN_HEAD}>{sectionLbl('Approach Section', '#DC2626')}{GEN_BADGE}</div>
+              <div style={GEN_HEAD}>{sectionLbl('Approach Section', '#C8261B')}{GEN_BADGE}</div>
               <div style={{ background: 'var(--card)', padding: '1.125rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.875rem', alignItems: 'start' }}>
                   <div style={{ border: `2px solid ${PRIMARY}`, borderRadius: '8px', padding: '0.875rem', background: `rgba(99,91,255,0.04)`, display: 'flex', alignItems: 'center', minHeight: '85px' }}>
@@ -464,7 +464,7 @@ function ContentTab({ page, reload }) {
             {/* ══ 6. CONDITION / SERVICE SECTION ══ */}
             <div style={GEN_CARD}>
               <div style={GEN_HEAD}>
-                {sectionLbl('Condition / Service Section', '#DC2626')}
+                {sectionLbl('Condition / Service Section', '#C8261B')}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
                   <button onClick={() => setBlocks([...blocks, { h2: '', description: '', h3s: [{ heading: '', copy: '' }] }])} style={addBtn}>+ Add H2 block</button>
                   {GEN_BADGE}
@@ -547,7 +547,7 @@ function ContentTab({ page, reload }) {
 
             {/* ══ 7. WHY CHOOSE BRAND ══ */}
             <div style={TPL_CARD}>
-              <div style={TPL_HEAD}>{sectionLbl('Why Choose the Brand', '#7C3AED')}{TPL_BADGE}</div>
+              <div style={TPL_HEAD}>{sectionLbl('Why Choose the Brand', '#6B3FA0')}{TPL_BADGE}</div>
               <div style={{ background: 'var(--card)', padding: '1rem 1.125rem' }}>
                 <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.25rem' }}>Why Choose {'{Brand Name}'}</div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-2)', marginBottom: '0.75rem' }}>Our commitment to compassionate, evidence-based mental health care sets us apart.</div>
@@ -569,7 +569,7 @@ function ContentTab({ page, reload }) {
 
             {/* ══ 8. STATISTICS ══ */}
             <div style={TPL_CARD}>
-              <div style={TPL_HEAD}>{sectionLbl('Statistics Section', '#7C3AED')}{TPL_BADGE}</div>
+              <div style={TPL_HEAD}>{sectionLbl('Statistics Section', '#6B3FA0')}{TPL_BADGE}</div>
               <div style={{ background: NAVY, padding: '1.125rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
                   {[{ n: '10+', l: 'Years of Service' }, { n: '92%', l: 'Seen within 24 Hours' }, { n: '16', l: 'Treatment Locations' }, { n: '50+', l: 'Care Providers' }].map(({ n, l }, i) => (
@@ -584,7 +584,7 @@ function ContentTab({ page, reload }) {
 
             {/* ══ 9. TREATMENT PROGRAMS ══ */}
             <div style={TPL_CARD}>
-              <div style={TPL_HEAD}>{sectionLbl('Treatment Programs Section', '#7C3AED')}{TPL_BADGE}</div>
+              <div style={TPL_HEAD}>{sectionLbl('Treatment Programs Section', '#6B3FA0')}{TPL_BADGE}</div>
               <div style={{ background: 'var(--card)', padding: '1rem 1.125rem' }}>
                 <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.25rem' }}>Treatment Programs in {'{Location}'}</div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-2)', marginBottom: '0.75rem' }}>Compassionate, evidence-based care at every level of need — residential, outpatient, and beyond.</div>
@@ -605,7 +605,7 @@ function ContentTab({ page, reload }) {
 
             {/* ══ 10. EXPERTS ══ */}
             <div style={TPL_CARD}>
-              <div style={TPL_HEAD}>{sectionLbl('Experts Section', '#7C3AED')}{TPL_BADGE}</div>
+              <div style={TPL_HEAD}>{sectionLbl('Experts Section', '#6B3FA0')}{TPL_BADGE}</div>
               <div style={{ background: 'var(--card)', padding: '1rem 1.125rem' }}>
                 <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.25rem' }}>{'{Condition}'} Treatment Experts in {'{Location}'}</div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-2)', marginBottom: '0.75rem' }}>With expertise and empathy, our specialists guide you through personalized treatment for lasting recovery.</div>
@@ -626,7 +626,7 @@ function ContentTab({ page, reload }) {
 
             {/* ══ 11. INSURANCE ══ */}
             <div style={TPL_CARD}>
-              <div style={TPL_HEAD}>{sectionLbl('Insurance Section', '#7C3AED')}{TPL_BADGE}</div>
+              <div style={TPL_HEAD}>{sectionLbl('Insurance Section', '#6B3FA0')}{TPL_BADGE}</div>
               <div style={{ background: 'var(--card)', padding: '1rem 1.125rem', display: 'grid', gridTemplateColumns: '1fr auto', gap: '1.5rem', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.25rem' }}>Insurance accepted</div>
@@ -646,14 +646,14 @@ function ContentTab({ page, reload }) {
 
             {/* ══ 12. TESTIMONIALS ══ */}
             <div style={TPL_CARD}>
-              <div style={TPL_HEAD}>{sectionLbl('Testimonials', '#7C3AED')}{TPL_BADGE}</div>
+              <div style={TPL_HEAD}>{sectionLbl('Testimonials', '#6B3FA0')}{TPL_BADGE}</div>
               <div style={{ background: 'var(--card)', padding: '1rem 1.125rem' }}>
                 <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.625rem' }}>Testimonials</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                   {[1, 2].map(n => (
                     <div key={n} style={{ border: '1px solid var(--border)', borderRadius: '8px', padding: '0.875rem', background: 'var(--surface)' }}>
                       <div style={{ display: 'flex', gap: '2px', marginBottom: '0.375rem' }}>
-                        {[1,2,3,4,5].map(s => <span key={s} style={{ color: '#F59E0B', fontSize: '0.65rem' }}>★</span>)}
+                        {[1,2,3,4,5].map(s => <span key={s} style={{ color: '#FFB500', fontSize: '0.65rem' }}>★</span>)}
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginBottom: '0.5rem' }}>
                         {[100, 95, 80, 60].map((w, j) => <div key={j} style={gbar(`${w}%`, 6)} />)}
@@ -670,7 +670,7 @@ function ContentTab({ page, reload }) {
 
             {/* ══ 13. RESOURCES ══ */}
             <div style={TPL_CARD}>
-              <div style={TPL_HEAD}>{sectionLbl('Resources Section', '#7C3AED')}{TPL_BADGE}</div>
+              <div style={TPL_HEAD}>{sectionLbl('Resources Section', '#6B3FA0')}{TPL_BADGE}</div>
               <div style={{ background: 'var(--card)', padding: '1rem 1.125rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.625rem' }}>
                   <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)' }}>Resources</div>
@@ -699,7 +699,7 @@ function ContentTab({ page, reload }) {
 
             {/* ══ 14. CONTACT FORM ══ */}
             <div style={TPL_CARD}>
-              <div style={TPL_HEAD}>{sectionLbl('Contact / Form Section', '#7C3AED')}{TPL_BADGE}</div>
+              <div style={TPL_HEAD}>{sectionLbl('Contact / Form Section', '#6B3FA0')}{TPL_BADGE}</div>
               <div style={{ background: 'var(--card)', padding: '1.25rem 1.125rem' }}>
                 <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.25rem' }}>Let's Take the First Step Toward Healing Together</div>
@@ -725,7 +725,7 @@ function ContentTab({ page, reload }) {
             {/* ══ 15. FAQ SECTION ══ */}
             <div style={GEN_CARD}>
               <div style={GEN_HEAD}>
-                {sectionLbl(`FAQ Section (${draft.faqs.length} — target 7–11)`, '#DC2626')}
+                {sectionLbl(`FAQ Section (${draft.faqs.length} — target 7–11)`, '#C8261B')}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
                   <button onClick={() => set({ faqs: [...draft.faqs, { question: '', answer: '', faq_type: 'service' }] })} style={addBtn}>+ Add FAQ</button>
                   {GEN_BADGE}
@@ -754,7 +754,7 @@ function ContentTab({ page, reload }) {
                         placeholder="Question…"
                       />
                       <select
-                        style={{ fontSize: '0.62rem', border: '1px solid rgba(109,40,217,0.25)', borderRadius: '3px', background: 'rgba(109,40,217,0.07)', color: '#7C3AED', padding: '2px 5px', fontWeight: 600, flexShrink: 0 }}
+                        style={{ fontSize: '0.62rem', border: '1px solid rgba(109,40,217,0.25)', borderRadius: '3px', background: 'rgba(109,40,217,0.07)', color: '#6B3FA0', padding: '2px 5px', fontWeight: 600, flexShrink: 0 }}
                         value={f.faq_type}
                         onChange={e => set({ faqs: draft.faqs.map((x, j) => j === i ? { ...x, faq_type: e.target.value } : x) })}
                       >
@@ -786,7 +786,7 @@ function ContentTab({ page, reload }) {
 
             {/* ══ 16. FOOTER ══ */}
             <div style={TPL_CARD}>
-              <div style={TPL_HEAD}>{sectionLbl('Footer', '#7C3AED')}{TPL_BADGE}</div>
+              <div style={TPL_HEAD}>{sectionLbl('Footer', '#6B3FA0')}{TPL_BADGE}</div>
               <div style={{ background: NAVY, padding: '1.125rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '1rem', marginBottom: '0.875rem' }}>
                   <div>
@@ -831,7 +831,7 @@ function ContentTab({ page, reload }) {
 function QAPanel({ qa }) {
   const passing = !qa.blocking_failures;
   return (
-    <div style={{ border: `1px solid ${passing ? 'var(--success,#10B981)' : 'var(--danger,#EF4444)'}`, borderRadius: 'var(--r-lg)', padding: '1rem', background: passing ? 'var(--success-soft,#ECFDF5)' : 'var(--danger-soft,#FEF2F2)' }}>
+    <div style={{ border: `1px solid ${passing ? 'var(--success,#17753F)' : 'var(--danger,#C8261B)'}`, borderRadius: 'var(--r-lg)', padding: '1rem', background: passing ? 'var(--success-soft,#E9F5ED)' : 'var(--danger-soft,#FFE1DE)' }}>
       <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text)' }}>
         {passing ? '✓ QA clean' : `⛔ ${qa.blocking_failures} blocking failure(s)`}{qa.warnings ? ` · ${qa.warnings} warning(s)` : ''}
       </div>
@@ -852,7 +852,7 @@ function SchemaTab({ page }) {
   const schema = page.page_object?.page_data?.schema;
   if (!schema) return <p style={{ fontSize: '0.875rem', color: 'var(--text-2)' }}>Generate content to produce schema.</p>;
   return (
-    <pre style={{ background: '#1E1E1E', color: '#D4D4D4', fontSize: '0.75rem', borderRadius: 'var(--r-lg)', padding: '1rem', overflow: 'auto', maxHeight: '600px', fontFamily: 'var(--font-mono)' }}>
+    <pre style={{ background: '#121213', color: '#DBD7D1', fontSize: '0.75rem', borderRadius: 'var(--r-lg)', padding: '1rem', overflow: 'auto', maxHeight: '600px', fontFamily: 'var(--font-mono)' }}>
       {JSON.stringify(schema, null, 2)}
     </pre>
   );
@@ -872,12 +872,12 @@ function ApprovalTab({ page, reload }) {
     catch (e) { setError(e.message); }
   }
 
-  const gateStatusColor = (st) => st === 'approved' ? 'var(--success,#10B981)' : st === 'rejected' ? 'var(--danger,#EF4444)' : 'var(--text-3)';
+  const gateStatusColor = (st) => st === 'approved' ? 'var(--success,#17753F)' : st === 'rejected' ? 'var(--danger,#C8261B)' : 'var(--text-3)';
 
   return (
     <div>
       <p style={{ fontSize: '0.875rem', color: 'var(--text-2)', marginBottom: '1rem' }}>Sequential gates with reject-back. SEO requires QA blocking_failures = 0. Editing content resets cleared gates.</p>
-      {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger,#EF4444)', marginBottom: '0.5rem' }}>{error}</p>}
+      {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger,#C8261B)', marginBottom: '0.5rem' }}>{error}</p>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
         {gates.map(g => {
           const st = page.approval_status[g];
@@ -889,7 +889,7 @@ function ApprovalTab({ page, reload }) {
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button onClick={() => act(g, 'approve')} style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', fontWeight: 500, color: '#fff', background: PRIMARY, borderRadius: '6px', border: 'none', cursor: 'pointer' }}>Approve</button>
-                <button onClick={() => act(g, 'reject')} style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', fontWeight: 500, color: 'var(--danger,#EF4444)', border: '1px solid var(--danger,#FECACA)', borderRadius: '6px', background: 'var(--card)', cursor: 'pointer' }}>Reject</button>
+                <button onClick={() => act(g, 'reject')} style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', fontWeight: 500, color: 'var(--danger,#C8261B)', border: '1px solid var(--danger,#FFC2BC)', borderRadius: '6px', background: 'var(--card)', cursor: 'pointer' }}>Reject</button>
               </div>
             </div>
           );
@@ -900,7 +900,7 @@ function ApprovalTab({ page, reload }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
         {(page.approval_records || []).slice().reverse().map(r => (
           <div key={r.id} style={{ fontSize: '0.75rem', color: 'var(--text-2)' }}>
-            <span style={{ color: r.action === 'approve' ? 'var(--success,#10B981)' : 'var(--danger,#EF4444)' }}>{r.action}</span>
+            <span style={{ color: r.action === 'approve' ? 'var(--success,#17753F)' : 'var(--danger,#C8261B)' }}>{r.action}</span>
             {' · '}<span style={{ textTransform: 'capitalize' }}>{r.gate}</span>
             {' · '}{r.actor_id}
             {' · '}{new Date(r.created_at).toLocaleString()}
@@ -949,13 +949,13 @@ export default function LocationPageDetailPage() {
   }
   useEffect(() => { reload(); }, [id]);
 
-  if (error) return <div style={{ padding: '2rem', color: 'var(--danger,#EF4444)' }}>{error}</div>;
+  if (error) return <div style={{ padding: '2rem', color: 'var(--danger,#C8261B)' }}>{error}</div>;
   if (!page) return <div style={{ padding: '2rem', color: 'var(--text-2)' }}>Loading…</div>;
 
   return (
     <main style={{ maxWidth: '64rem', margin: '0 auto', padding: '1.5rem 2rem' }}>
       {!page.eligibility?.eligible && (
-        <div style={{ background: 'var(--danger-soft,#FEF2F2)', color: 'var(--danger,#EF4444)', fontSize: '0.875rem', borderRadius: '6px', padding: '0.75rem', marginBottom: '1rem' }}>
+        <div style={{ background: 'var(--danger-soft,#FFE1DE)', color: 'var(--danger,#C8261B)', fontSize: '0.875rem', borderRadius: '6px', padding: '0.75rem', marginBottom: '1rem' }}>
           ⛔ {page.eligibility?.reason}
         </div>
       )}

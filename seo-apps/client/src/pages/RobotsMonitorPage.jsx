@@ -106,8 +106,8 @@ function EnvBadge({ env }) {
       fontWeight: 600,
       padding: '0.125rem 0.5rem',
       borderRadius: '9999px',
-      background: isProd ? 'var(--success-soft, #D1FAE5)' : 'var(--warning-soft, #FEF3C7)',
-      color: isProd ? 'var(--success, #065F46)' : 'var(--warning-text, #92400E)',
+      background: isProd ? 'var(--success-soft, #DCEEE2)' : 'var(--warning-soft, #FFF3D6)',
+      color: isProd ? 'var(--success, #0F4A29)' : 'var(--warning-text, #8A5A00)',
     }}>{env}</span>
   );
 }
@@ -197,8 +197,8 @@ function Toast({ message, type = 'error', onClose }) {
   }, [onClose]);
 
   const styles = {
-    error:   { background: 'var(--danger-soft, #FEF2F2)',   border: '1px solid var(--danger-border, #FECACA)',   color: 'var(--danger)' },
-    success: { background: 'var(--success-soft, #D1FAE5)',  border: '1px solid var(--success-border, #6EE7B7)',  color: 'var(--success, #065F46)' },
+    error:   { background: 'var(--danger-soft, #FFE1DE)',   border: '1px solid var(--danger-border, #FFC2BC)',   color: 'var(--danger)' },
+    success: { background: 'var(--success-soft, #DCEEE2)',  border: '1px solid var(--success-border, #6FBE93)',  color: 'var(--success, #0F4A29)' },
     info:    { background: 'var(--primary-soft)',            border: '1px solid var(--primary)',                  color: 'var(--primary-text)' },
   };
   const s = styles[type] || styles.error;
@@ -692,13 +692,13 @@ function ClientsTab({ showToast }) {
 
 function SitemapBadge({ status, error }) {
   if (status === 'found') return (
-    <span style={{ fontSize: '0.75rem', background: 'var(--success-soft, #D1FAE5)', color: 'var(--success, #065F46)', padding: '0.125rem 0.5rem', borderRadius: '9999px' }}>Sitemap found</span>
+    <span style={{ fontSize: '0.75rem', background: 'var(--success-soft, #DCEEE2)', color: 'var(--success, #0F4A29)', padding: '0.125rem 0.5rem', borderRadius: '9999px' }}>Sitemap found</span>
   );
   if (status === 'not-found') return (
-    <span style={{ fontSize: '0.75rem', background: 'var(--warning-soft, #FEF3C7)', color: 'var(--warning-text, #92400E)', padding: '0.125rem 0.5rem', borderRadius: '9999px' }}>No sitemap — homepage only</span>
+    <span style={{ fontSize: '0.75rem', background: 'var(--warning-soft, #FFF3D6)', color: 'var(--warning-text, #8A5A00)', padding: '0.125rem 0.5rem', borderRadius: '9999px' }}>No sitemap — homepage only</span>
   );
   return (
-    <span style={{ fontSize: '0.75rem', background: 'var(--danger-soft, #FEF2F2)', color: 'var(--danger)', padding: '0.125rem 0.5rem', borderRadius: '9999px' }}>Sitemap error{error ? `: ${error}` : ''}</span>
+    <span style={{ fontSize: '0.75rem', background: 'var(--danger-soft, #FFE1DE)', color: 'var(--danger)', padding: '0.125rem 0.5rem', borderRadius: '9999px' }}>Sitemap error{error ? `: ${error}` : ''}</span>
   );
 }
 
@@ -724,7 +724,7 @@ function PageResultRow({ page, env }) {
       fontSize: '0.75rem',
       borderBottom: '1px solid var(--surface)',
     }}>
-      <span style={{ marginTop: '0.125rem', flexShrink: 0, fontWeight: 700, color: isIssue ? 'var(--danger)' : 'var(--success, #059669)' }}>
+      <span style={{ marginTop: '0.125rem', flexShrink: 0, fontWeight: 700, color: isIssue ? 'var(--danger)' : 'var(--success, #17753F)' }}>
         {isIssue ? '✗' : '✓'}
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -737,7 +737,7 @@ function PageResultRow({ page, env }) {
             borderRadius: '4px',
             fontSize: '0.625rem',
             fontWeight: 500,
-            background: page.noindex ? 'var(--danger-soft, #FEF2F2)' : 'var(--surface)',
+            background: page.noindex ? 'var(--danger-soft, #FFE1DE)' : 'var(--surface)',
             color: page.noindex ? 'var(--danger)' : 'var(--text-2)',
           }}>
             {signalLabel}
@@ -861,8 +861,8 @@ function RunSummaryRow({ run }) {
             fontWeight: 600,
             padding: '0.125rem 0.5rem',
             borderRadius: '9999px',
-            background: issueCount > 0 ? 'var(--danger-soft, #FEF2F2)' : 'var(--success-soft, #D1FAE5)',
-            color: issueCount > 0 ? 'var(--danger)' : 'var(--success, #065F46)',
+            background: issueCount > 0 ? 'var(--danger-soft, #FFE1DE)' : 'var(--success-soft, #DCEEE2)',
+            color: issueCount > 0 ? 'var(--danger)' : 'var(--success, #0F4A29)',
           }}>
             {issueCount > 0 ? `${issueCount} issue${issueCount !== 1 ? 's' : ''}` : 'Clean'}
           </span>
@@ -1131,17 +1131,17 @@ function SettingsTab({ showToast }) {
           </button>
         </div>
 
-        {saveMsg && <p style={{ fontSize: '0.75rem', color: 'var(--success, #059669)', margin: 0 }}>{saveMsg}</p>}
-        {testMsg && <p style={{ fontSize: '0.75rem', color: testMsg.startsWith('✅') ? 'var(--success, #059669)' : 'var(--danger)', margin: 0 }}>{testMsg}</p>}
+        {saveMsg && <p style={{ fontSize: '0.75rem', color: 'var(--success, #17753F)', margin: 0 }}>{saveMsg}</p>}
+        {testMsg && <p style={{ fontSize: '0.75rem', color: testMsg.startsWith('✅') ? 'var(--success, #17753F)' : 'var(--danger)', margin: 0 }}>{testMsg}</p>}
       </div>
 
       <div style={{
-        background: 'var(--warning-soft, #FFFBEB)',
-        border: '1px solid var(--warning-border, #FDE68A)',
+        background: 'var(--warning-soft, #FFE4D8)',
+        border: '1px solid var(--warning-border, #FFE9BF)',
         borderRadius: 'var(--r-lg)',
         padding: '1rem',
         fontSize: '0.75rem',
-        color: 'var(--warning-text, #92400E)',
+        color: 'var(--warning-text, #8A5A00)',
         display: 'flex',
         flexDirection: 'column',
         gap: '0.25rem',
@@ -1151,8 +1151,8 @@ function SettingsTab({ showToast }) {
       </div>
 
       <div style={{
-        background: 'var(--danger-soft, #FEF2F2)',
-        border: '1px solid var(--danger-border, #FECACA)',
+        background: 'var(--danger-soft, #FFE1DE)',
+        border: '1px solid var(--danger-border, #FFC2BC)',
         borderRadius: 'var(--r-lg)',
         padding: '1rem',
         fontSize: '0.75rem',

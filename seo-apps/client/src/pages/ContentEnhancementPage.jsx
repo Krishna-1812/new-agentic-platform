@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 
 const CATEGORY_COLORS = {
-  'Content Structure': '#2563EB',
-  Authority: '#DC2626',
-  Schema: '#7C3AED',
-  'Entity Clarity': '#0F766E',
+  'Content Structure': '#1D65A6',
+  Authority: '#C8261B',
+  Schema: '#6B3FA0',
+  'Entity Clarity': '#1D65A6',
   Input: 'var(--text-2)',
 };
 

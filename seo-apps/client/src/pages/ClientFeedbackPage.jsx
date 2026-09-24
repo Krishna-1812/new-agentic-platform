@@ -102,8 +102,8 @@ export default function ClientFeedbackPage() {
         {error && (
           <div style={{
             padding: '0.75rem',
-            background: 'var(--danger-soft, #FEF2F2)',
-            border: '1px solid var(--danger-border, #FECACA)',
+            background: 'var(--danger-soft, #FFE1DE)',
+            border: '1px solid var(--danger-border, #FFC2BC)',
             borderRadius: 'var(--r-md, 8px)',
             fontSize: '0.875rem',
             color: 'var(--danger)',

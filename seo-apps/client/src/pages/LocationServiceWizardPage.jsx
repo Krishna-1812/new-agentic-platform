@@ -148,7 +148,7 @@ function CharCount({ value, words: showWords, limit, limitWords }) {
   // most have neither and just show their count.
   const outOfRange = limit && (chars < limit.min || chars > limit.max);
   const overWords = limitWords && wordCount > limitWords;
-  const color = (outOfRange || overWords) ? 'var(--warning,#B45309)' : 'var(--text-3)';
+  const color = (outOfRange || overWords) ? 'var(--warning,#B83C0C)' : 'var(--text-3)';
 
   return (
     <span style={{ fontWeight: 400, fontSize: '0.6875rem', color, marginLeft: 'auto', whiteSpace: 'nowrap' }}>
@@ -188,9 +188,9 @@ function RegenButton({ busy, onClick, label }) {
 // the H2 came from a competitor page, the curated fallback ladder, or a blend
 // of the two. Surfacing that tells the SEO reviewer WHY this stack exists.
 const OUTLINE_QUALITY_LABELS = {
-  good: { label: 'Competitor headings: good', color: 'var(--success, #15803d)' },
-  partial: { label: 'Competitor headings: mixed', color: 'var(--warning, #b45309)' },
-  poor: { label: 'Competitor headings: poor — used fallback', color: 'var(--warning, #b45309)' },
+  good: { label: 'Competitor headings: good', color: 'var(--success, #12602F)' },
+  partial: { label: 'Competitor headings: mixed', color: 'var(--warning, #B83C0C)' },
+  poor: { label: 'Competitor headings: poor — used fallback', color: 'var(--warning, #B83C0C)' },
   unavailable: { label: 'Outline planner unavailable — used fallback', color: 'var(--text-3)' },
 };
 
@@ -235,11 +235,11 @@ function SourceTag({ source }) {
 // Amber and neutral, never red: these are review notes on a draft, not errors,
 // and a wall of red on a freshly generated page reads as breakage.
 const QC_TONES = {
-  Critical: { bg: 'var(--warning-soft,#FFFBEB)', bar: 'var(--warning,#B45309)', text: 'var(--warning,#B45309)' },
-  Major: { bg: 'var(--warning-soft,#FFFBEB)', bar: 'var(--warning,#B45309)', text: 'var(--warning,#B45309)' },
+  Critical: { bg: 'var(--warning-soft,#FFE4D8)', bar: 'var(--warning,#B83C0C)', text: 'var(--warning,#B83C0C)' },
+  Major: { bg: 'var(--warning-soft,#FFE4D8)', bar: 'var(--warning,#B83C0C)', text: 'var(--warning,#B83C0C)' },
   Minor: { bg: 'var(--surface)', bar: 'var(--border)', text: 'var(--text-2)' },
 };
-const QC_PASS_TONE = { bg: 'var(--success-soft,#ECFDF5)', bar: 'var(--success,#059669)', text: 'var(--success,#059669)' };
+const QC_PASS_TONE = { bg: 'var(--success-soft,#E9F5ED)', bar: 'var(--success,#17753F)', text: 'var(--success,#17753F)' };
 
 // Fields with a control on this page. Anything else — internal links, or a
 // result stored before checks carried fields — falls back to the page-level
@@ -352,7 +352,7 @@ function PickerList({ groups, selectedId, onSelect, emptyMessage }) {
 const removeBtnStyle = {
   display: 'flex', alignItems: 'center', justifyContent: 'center',
   width: 20, height: 20, borderRadius: '50%', border: 'none',
-  background: 'var(--danger-soft, #FEF2F2)', color: 'var(--danger)',
+  background: 'var(--danger-soft, #FFE1DE)', color: 'var(--danger)',
   cursor: 'pointer', fontSize: 13, fontWeight: 700, lineHeight: 1, padding: 0, flexShrink: 0,
 };
 
@@ -984,7 +984,7 @@ export default function LocationServiceWizardPage() {
       <div style={{ marginBottom: '1.5rem' }}><ProgressSteps steps={progressSteps} /></div>
 
       {loadError && (
-        <div style={{ padding: '0.75rem 1rem', borderRadius: 'var(--r-lg)', background: 'var(--danger-soft,#FEF2F2)', color: 'var(--danger,#EF4444)', fontSize: '0.8125rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+        <div style={{ padding: '0.75rem 1rem', borderRadius: 'var(--r-lg)', background: 'var(--danger-soft,#FFE1DE)', color: 'var(--danger,#C8261B)', fontSize: '0.8125rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
           <span>{loadError}</span>
           <button style={btnStyle(true)} disabled={seeding} onClick={seedGentleDental}>{seeding ? 'Seeding…' : 'Seed Gentle Dental data'}</button>
         </div>
@@ -1001,7 +1001,7 @@ export default function LocationServiceWizardPage() {
               <PickerList groups={groupedLocations} selectedId={locationId} onSelect={selectLocation} emptyMessage="No locations match." />
               <div style={{ marginTop: '0.375rem', fontSize: '0.75rem', minHeight: '1.25rem' }}>
                 {location
-                  ? <span style={{ color: 'var(--success,#10B981)' }}>✓ Selected: <strong>{location.city}</strong></span>
+                  ? <span style={{ color: 'var(--success,#17753F)' }}>✓ Selected: <strong>{location.city}</strong></span>
                   : <span style={{ color: 'var(--text-3)' }}>No location selected</span>}
               </div>
             </div>
@@ -1028,7 +1028,7 @@ export default function LocationServiceWizardPage() {
               <PickerList groups={groupedServices} selectedId={serviceId} onSelect={selectService} emptyMessage="No services match." />
               <div style={{ marginTop: '0.375rem', fontSize: '0.75rem', minHeight: '1.25rem' }}>
                 {service
-                  ? <span style={{ color: 'var(--success,#10B981)' }}>✓ Selected: <strong>{service.name}</strong></span>
+                  ? <span style={{ color: 'var(--success,#17753F)' }}>✓ Selected: <strong>{service.name}</strong></span>
                   : <span style={{ color: 'var(--text-3)' }}>No service selected</span>}
               </div>
             </div>
@@ -1044,7 +1044,7 @@ export default function LocationServiceWizardPage() {
 
           {checkingExisting && <p style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: '0.75rem' }}>Checking for an existing page…</p>}
           {existingPage && (
-            <div style={{ marginTop: '0.75rem', padding: '0.875rem 1rem', background: 'var(--warning-soft,#FFFBEB)', borderRadius: 'var(--r-lg)', fontSize: '0.8125rem', color: 'var(--warning,#B45309)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <div style={{ marginTop: '0.75rem', padding: '0.875rem 1rem', background: 'var(--warning-soft,#FFE4D8)', borderRadius: 'var(--r-lg)', fontSize: '0.8125rem', color: 'var(--warning,#B83C0C)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
               <span>A page already exists for this combination{existingPage.updatedAt ? ` (updated ${new Date(existingPage.updatedAt).toLocaleDateString()})` : ''}. Only one page per location + service is kept — generating again will update it, not duplicate it.</span>
               <button style={btnStyle(true)} onClick={openExisting}>Open existing →</button>
             </div>
@@ -1065,7 +1065,7 @@ export default function LocationServiceWizardPage() {
             <button style={btnStyle(false)} disabled={kwLoading} onClick={runKeywordResearch}>{kwLoading ? 'Researching…' : 'Re-run research'}</button>
           </div>
 
-          {kwError && <p style={{ color: 'var(--danger,#EF4444)', fontSize: '0.8125rem' }}>{kwError}</p>}
+          {kwError && <p style={{ color: 'var(--danger,#C8261B)', fontSize: '0.8125rem' }}>{kwError}</p>}
           {kwLoading && <p style={{ color: 'var(--text-2)', fontSize: '0.8125rem' }}>Pulling competitor keyword data…</p>}
 
           {/* At least one Primary slot could not be filled from real research
@@ -1087,7 +1087,7 @@ export default function LocationServiceWizardPage() {
             if (!synth.length && !kwReviewFailures.length) return null;
             return (
               <div style={{
-                background: 'var(--warning-soft,#FFFBEB)', color: 'var(--warning,#B45309)',
+                background: 'var(--warning-soft,#FFE4D8)', color: 'var(--warning,#B83C0C)',
                 padding: '0.875rem 1rem', borderRadius: 'var(--r-lg)', fontSize: '0.8125rem',
               }}>
                 {!!synth.length && (
@@ -1128,7 +1128,7 @@ export default function LocationServiceWizardPage() {
                   <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Primary Keywords</h4>
                   <span style={{
                     fontSize: '0.6875rem', fontWeight: 600, padding: '2px 8px', borderRadius: 99,
-                    background: primaryList.length === MAX_PRIMARY ? 'var(--success-soft)' : 'var(--danger-soft,#FEF2F2)',
+                    background: primaryList.length === MAX_PRIMARY ? 'var(--success-soft)' : 'var(--danger-soft,#FFE1DE)',
                     color: primaryList.length === MAX_PRIMARY ? 'var(--success)' : 'var(--danger)',
                   }}>
                     {primaryList.length} / {MAX_PRIMARY} selected
@@ -1260,7 +1260,7 @@ export default function LocationServiceWizardPage() {
           )}
           {!generating && genError && (
             <>
-              <p style={{ color: 'var(--danger,#EF4444)', fontSize: '0.875rem', marginBottom: '1rem' }}>{genError}</p>
+              <p style={{ color: 'var(--danger,#C8261B)', fontSize: '0.875rem', marginBottom: '1rem' }}>{genError}</p>
               <button style={btnStyle(true)} onClick={() => generate(false)}>Retry</button>
               <button style={{ ...btnStyle(false), marginLeft: '0.5rem' }} onClick={() => setStep(1)}>← Back</button>
             </>
@@ -1292,21 +1292,21 @@ export default function LocationServiceWizardPage() {
           </div>
 
           {saveError && (
-            <div style={{ padding: '0.625rem 0.875rem', borderRadius: 'var(--r-lg)', marginBottom: '0.75rem', fontSize: '0.8125rem', background: 'var(--danger-soft,#FEF2F2)', color: 'var(--danger,#EF4444)', display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
+            <div style={{ padding: '0.625rem 0.875rem', borderRadius: 'var(--r-lg)', marginBottom: '0.75rem', fontSize: '0.8125rem', background: 'var(--danger-soft,#FFE1DE)', color: 'var(--danger,#C8261B)', display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
               <span>Could not save your edits: {saveError}</span>
               <button style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontWeight: 700 }} onClick={() => setSaveError('')}>×</button>
             </div>
           )}
 
           {docxError && (
-            <div style={{ padding: '0.625rem 0.875rem', borderRadius: 'var(--r-lg)', marginBottom: '0.75rem', fontSize: '0.8125rem', background: 'var(--danger-soft,#FEF2F2)', color: 'var(--danger,#EF4444)', display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
+            <div style={{ padding: '0.625rem 0.875rem', borderRadius: 'var(--r-lg)', marginBottom: '0.75rem', fontSize: '0.8125rem', background: 'var(--danger-soft,#FFE1DE)', color: 'var(--danger,#C8261B)', display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
               <span>Could not build the DOCX: {docxError}</span>
               <button style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontWeight: 700 }} onClick={() => setDocxError('')}>×</button>
             </div>
           )}
 
           {regenError && (
-            <div style={{ padding: '0.625rem 0.875rem', borderRadius: 'var(--r-lg)', marginBottom: '0.75rem', fontSize: '0.8125rem', background: 'var(--danger-soft,#FEF2F2)', color: 'var(--danger,#EF4444)', display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
+            <div style={{ padding: '0.625rem 0.875rem', borderRadius: 'var(--r-lg)', marginBottom: '0.75rem', fontSize: '0.8125rem', background: 'var(--danger-soft,#FFE1DE)', color: 'var(--danger,#C8261B)', display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
               <span>{regenError}</span>
               <button style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontWeight: 700 }} onClick={() => setRegenError('')}>×</button>
             </div>
@@ -1327,7 +1327,7 @@ export default function LocationServiceWizardPage() {
                 <div style={{
                   padding: '0.5rem 0.75rem', borderRadius: 'var(--r-lg)', fontSize: '0.75rem',
                   background: 'var(--surface)', border: '1px solid var(--border)',
-                  color: open.length ? 'var(--warning,#B45309)' : 'var(--success,#059669)',
+                  color: open.length ? 'var(--warning,#B83C0C)' : 'var(--success,#17753F)',
                 }}>
                   {open.length
                     ? `QC flagged ${open.length} item${open.length === 1 ? '' : 's'} — each is marked below, next to the field it came from. Fix it, then hit Recheck on that notice.`
