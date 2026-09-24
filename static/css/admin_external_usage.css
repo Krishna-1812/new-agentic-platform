@@ -519,12 +519,6 @@ tbody tr:nth-child(n+45){animation:none}
 .card:hover{border-color:var(--s3)}
 @media (prefers-reduced-motion:reduce){tbody tr{animation:none}}
 
-#alive-spot{position:fixed;width:620px;height:620px;border-radius:50%;pointer-events:none;z-index:2;transform:translate(-50%,-50%);background: var(--s1);mix-blend-mode:screen;opacity:0;transition:opacity .45s;will-change:left,top}
-.alive-rv{opacity:0;transform:translateY(30px);transition:opacity .85s cubic-bezier(.22,1,.36,1),transform .85s cubic-bezier(.22,1,.36,1)}
-.alive-rv.alive-in{opacity:1;transform:none}
-.alive-mag{transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
-.alive-tilt{transition:transform .3s cubic-bezier(.22,1,.36,1)}
-@media (prefers-reduced-motion:reduce){.alive-rv{opacity:1 !important;transform:none !important;transition:none}#alive-spot{display:none}}
 
 /* clickable KPI cards */
 .stat-card{cursor:pointer;position:relative}
