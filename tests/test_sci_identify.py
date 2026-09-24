@@ -195,8 +195,13 @@ def test_identify_handles_treats_a_real_anthropic_timeout_as_transient(monkeypat
     pointlessly retry it against two more versions, each equally likely to
     also time out) and the real timeout detail must reach the caller."""
     import anthropic
-    import httpx
-    timeout_err = anthropic.APITimeoutError(request=httpx.Request("POST", "https://api.anthropic.com/v1/messages"))
+    # anthropic 1.x builds its errors on httpx2; earlier releases on httpx.
+    # Use whichever one the installed SDK depends on.
+    try:
+        import httpx2 as http_lib
+    except ImportError:
+        import httpx as http_lib
+    timeout_err = anthropic.APITimeoutError(request=http_lib.Request("POST", "https://api.anthropic.com/v1/messages"))
     newest = sci_identify._WEB_SEARCH_TOOL_VERSIONS[0]
     client = _FakeClient(fail_types={newest: timeout_err})
     monkeypatch.setattr(sci_identify, "_anthropic", lambda: client)
