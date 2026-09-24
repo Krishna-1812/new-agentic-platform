@@ -4169,7 +4169,8 @@ def ppc_linkedin_scraper_redirect():
 @app.route("/seo-aeo")
 @position2_required
 def seo():
-    return render_template("seo.html", user=_get_user(), seo_tools=_seo_tools())
+    return render_template("seo.html", user=_get_user(), seo_tools=_seo_tools(),
+                           seo_tool_groups=_seo_tool_groups())
 
 
 # ── /seo/* -> /seo-aeo/* ───────────────────────────────────────────────
@@ -4604,24 +4605,24 @@ def slot_checker_insights_route():
 # at /tools.json, but the studio never served that, so this list was always
 # the one in use; the fetch only cost a request every five minutes.)
 _SEO_TOOLS = [
-    {"slug": "keyword-research",       "path": "/keyword-research",       "name": "Keyword Research",         "desc": "AI-powered keyword shortlisting",              "icon": "🔑", "tags": ["Keywords", "SEMrush"]},
-    {"slug": "content-research",       "path": "/content-research",       "name": "Content Research",         "desc": "Competitor-based content briefs",              "icon": "🔎", "tags": ["Content", "SERP"]},
-    {"slug": "competitor-analysis",    "path": "/competitor-analysis",    "name": "Competitor Analysis",      "desc": "Traffic, keywords & backlinks vs. competitors","icon": "🎯", "tags": ["Competitors", "SEMrush"]},
-    {"slug": "market-potential",       "path": "/market-potential",       "name": "Market Potential",         "desc": "Rank metros by commercial search demand",      "icon": "🗺️", "tags": ["Healthcare", "Demand"]},
-    {"slug": "article-recommendation", "path": "/article-recommendation", "name": "Article Recommendation",   "desc": "Structured content briefs from SERP data",     "icon": "📋", "tags": ["Briefs", "SERP"]},
-    {"slug": "content-enhancement",    "path": "/content-enhancement",    "name": "Content Enhancement",      "desc": "Structure & authority recommendations",        "icon": "⚡", "tags": ["AEO", "E-E-A-T"]},
-    {"slug": "article-enhancement",    "path": "/article-enhancement",    "name": "Enhance Existing Article", "desc": "Multi-LLM + SERP competitor enhancement",      "icon": "✨", "tags": ["Enhance", "LLM"]},
-    {"slug": "article-enhancement-lite", "path": "/article-enhancement-lite", "name": "Article Enhancer",     "desc": "Keeps every word, adds only what is provable",  "icon": "📝", "tags": ["Enhance", "Fact-check"]},
-    {"slug": "on-page-audit",          "path": "/on-page-audit",          "name": "On-Page SEO Audit",        "desc": "23 sections · live data · PageSpeed + CWV",   "icon": "🔬", "tags": ["On-Page", "CWV"]},
-    {"slug": "seo-geo-audit",          "path": "/seo-geo-audit",          "name": "SEO & GEO Audit",          "desc": "200+ checks · scored · AI recommendations",   "icon": "✅", "tags": ["SEO", "GEO", "AI"]},
-    {"slug": "seo-geo-snapshot",       "path": "/seo-geo-snapshot",       "name": "SEO & GEO Snapshot",       "desc": "The audit's scores on one screen",             "icon": "📊", "tags": ["SEO", "GEO"]},
-    {"slug": "agent-readiness-audit",  "path": "/agent-readiness-audit",  "name": "Agent Readiness Audit",    "desc": "Score AI agent readiness, 0–100",             "icon": "🤖", "tags": ["AI Audit"]},
-    {"slug": "image-alt-audit",        "path": "/image-alt-audit",        "name": "Image Alt Tag Audit",      "desc": "Bulk alt tag generation for location pages",   "icon": "🖼️", "tags": ["Images"]},
-    {"slug": "location-page-builder",  "path": "/location-page-builder",  "name": "Location + Service Pages", "desc": "Composed, approved, dev-ready location pages", "icon": "📍", "tags": ["Local SEO", "Pages"]},
-    {"slug": "content-architect",      "path": "/content-architect",      "name": "Content Architect",        "desc": "Site structure, clusters and hub & spoke gaps", "icon": "🕸️", "tags": ["Internal Linking", "Structure"]},
-    {"slug": "gbp-qc",                 "path": "/gbp-qc",                 "name": "GBP QC Agent",             "desc": "Quality control & content generation for GBP posts", "icon": "🏪", "tags": ["Local SEO", "GBP"]},
-    {"slug": "knowledge-base",         "path": "/kb",                     "name": "Knowledge Base",           "desc": "Client & industry context management",         "icon": "📚", "tags": ["Knowledge", "Context"]},
-    {"slug": "robots-monitor",         "path": "/robots-monitor",         "name": "Robots Monitor",           "desc": "Daily noindex health checks across domains",   "icon": "🛰️", "tags": ["Technical SEO"]},
+    {"slug": "keyword-research",       "path": "/keyword-research",       "name": "Keyword Research",         "desc": "AI-powered keyword shortlisting",              "icon": "🔑", "tags": ["Keywords", "SEMrush"], "group": "Research"},
+    {"slug": "content-research",       "path": "/content-research",       "name": "Content Research",         "desc": "Competitor-based content briefs",              "icon": "🔎", "tags": ["Content", "SERP"], "group": "Research"},
+    {"slug": "competitor-analysis",    "path": "/competitor-analysis",    "name": "Competitor Analysis",      "desc": "Traffic, keywords & backlinks vs. competitors","icon": "🎯", "tags": ["Competitors", "SEMrush"], "group": "Research"},
+    {"slug": "market-potential",       "path": "/market-potential",       "name": "Market Potential",         "desc": "Rank metros by commercial search demand",      "icon": "🗺️", "tags": ["Healthcare", "Demand"], "group": "Research"},
+    {"slug": "article-recommendation", "path": "/article-recommendation", "name": "Article Recommendation",   "desc": "Structured content briefs from SERP data",     "icon": "📋", "tags": ["Briefs", "SERP"], "group": "Research"},
+    {"slug": "content-enhancement",    "path": "/content-enhancement",    "name": "Content Enhancement",      "desc": "Structure & authority recommendations",        "icon": "⚡", "tags": ["AEO", "E-E-A-T"], "group": "Optimize"},
+    {"slug": "article-enhancement",    "path": "/article-enhancement",    "name": "Enhance Existing Article", "desc": "Multi-LLM + SERP competitor enhancement",      "icon": "✨", "tags": ["Enhance", "LLM"], "group": "Optimize"},
+    {"slug": "article-enhancement-lite", "path": "/article-enhancement-lite", "name": "Article Enhancer",     "desc": "Keeps every word, adds only what is provable",  "icon": "📝", "tags": ["Enhance", "Fact-check"], "group": "Optimize"},
+    {"slug": "on-page-audit",          "path": "/on-page-audit",          "name": "On-Page SEO Audit",        "desc": "23 sections · live data · PageSpeed + CWV",   "icon": "🔬", "tags": ["On-Page", "CWV"], "group": "Optimize"},
+    {"slug": "seo-geo-audit",          "path": "/seo-geo-audit",          "name": "SEO & GEO Audit",          "desc": "200+ checks · scored · AI recommendations",   "icon": "✅", "tags": ["SEO", "GEO", "AI"], "group": "Optimize"},
+    {"slug": "seo-geo-snapshot",       "path": "/seo-geo-snapshot",       "name": "SEO & GEO Snapshot",       "desc": "The audit's scores on one screen",             "icon": "📊", "tags": ["SEO", "GEO"], "group": "Optimize"},
+    {"slug": "agent-readiness-audit",  "path": "/agent-readiness-audit",  "name": "Agent Readiness Audit",    "desc": "Score AI agent readiness, 0–100",             "icon": "🤖", "tags": ["AI Audit"], "group": "Optimize"},
+    {"slug": "image-alt-audit",        "path": "/image-alt-audit",        "name": "Image Alt Tag Audit",      "desc": "Bulk alt tag generation for location pages",   "icon": "🖼️", "tags": ["Images"], "group": "Optimize"},
+    {"slug": "location-page-builder",  "path": "/location-page-builder",  "name": "Location + Service Pages", "desc": "Composed, approved, dev-ready location pages", "icon": "📍", "tags": ["Local SEO", "Pages"], "group": "Build"},
+    {"slug": "content-architect",      "path": "/content-architect",      "name": "Content Architect",        "desc": "Site structure, clusters and hub & spoke gaps", "icon": "🕸️", "tags": ["Internal Linking", "Structure"], "group": "Build"},
+    {"slug": "gbp-qc",                 "path": "/gbp-qc",                 "name": "GBP QC Agent",             "desc": "Quality control & content generation for GBP posts", "icon": "🏪", "tags": ["Local SEO", "GBP"], "group": "Build"},
+    {"slug": "knowledge-base",         "path": "/kb",                     "name": "Knowledge Base",           "desc": "Client & industry context management",         "icon": "📚", "tags": ["Knowledge", "Context"], "group": "Build"},
+    {"slug": "robots-monitor",         "path": "/robots-monitor",         "name": "Robots Monitor",           "desc": "Daily noindex health checks across domains",   "icon": "🛰️", "tags": ["Technical SEO"], "group": "Build"},
 ]
 
 # Old slugs, sent on so links and bookmarks still land somewhere useful. Hub &
@@ -4635,6 +4636,22 @@ _SEO_TOOL_ALIASES = {"hub-spoke": "content-architect", "team-insights": None,
 
 def _seo_tools():
     return _SEO_TOOLS
+
+
+# Same 18 tools, bucketed for the directory page (templates/seo.html), in the
+# fixed Research -> Optimize -> Build order rather than however Jinja's
+# groupby (which sorts by key first) would put them. Mirrors the grouping
+# the studio's own sidebar uses (seo-apps/client/src/toolsMeta.js).
+_SEO_GROUP_ORDER = ["Research", "Optimize", "Build"]
+
+
+def _seo_tool_groups():
+    tools = _seo_tools()
+    by_group = {g: [] for g in _SEO_GROUP_ORDER}
+    for t in tools:
+        by_group.setdefault(t.get("group") or "Build", []).append(t)
+    order = _SEO_GROUP_ORDER + [g for g in by_group if g not in _SEO_GROUP_ORDER]
+    return [(g, by_group[g]) for g in order if by_group.get(g)]
 
 @app.route("/seo-aeo/<tool_slug>")
 @position2_required

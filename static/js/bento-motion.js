@@ -22,21 +22,64 @@
   var REDUCED = window.matchMedia &&
                 window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* One observer for the whole document. rootMargin pulls the trigger 10%
-     up from the bottom edge so a tile finishes its wipe at about the moment
-     it is comfortably in view, rather than starting as its first pixel
-     appears and finishing off-screen. */
-  var io = null;
-  function observer() {
-    if (io || !("IntersectionObserver" in window)) return io;
-    io = new IntersectionObserver(function (entries) {
-      for (var i = 0; i < entries.length; i++) {
-        if (!entries[i].isIntersecting) continue;
-        entries[i].target.classList.add("bn-shown");
-        io.unobserve(entries[i].target);   /* reveal once, never replay */
+  /* Watches every armed-but-not-yet-shown element and reveals it once its
+     box enters the trigger zone -- the bottom 10% of the viewport held
+     back, same margin an IntersectionObserver would use here.
+
+     This is a manual scroll/resize check with getBoundingClientRect(),
+     not an IntersectionObserver, on purpose: the element being watched is
+     the SAME one .bn-armed clips to zero width (clip-path: inset(0 100%
+     0 0)), and Chromium computes an IntersectionObserver target's
+     intersection against its rendered (i.e. clipped) box, not its layout
+     box. A zero-width clipped box never intersects anything, at any
+     scroll position -- so the observer would arm an element and then
+     never fire for it, leaving it permanently invisible. getBoundingClientRect()
+     reads layout geometry, which clip-path does not touch, so it does not
+     have that failure mode. Confirmed directly: the same element, same
+     scroll, an IntersectionObserver reports isIntersecting: false forever
+     while clipped and starts reporting true/false correctly the instant
+     the clip-path is removed. */
+  var armed = [];
+  var watching = false;
+  var ticking = false;
+
+  function checkArmed() {
+    ticking = false;
+    var limit = (window.innerHeight || 0) * 0.9;
+    for (var i = armed.length - 1; i >= 0; i--) {
+      var box = armed[i].getBoundingClientRect();
+      if (box.bottom > 0 && box.top < limit) {
+        armed[i].classList.add("bn-shown");
+        armed.splice(i, 1);
       }
-    }, { rootMargin: "0px 0px -10% 0px", threshold: 0.01 });
-    return io;
+    }
+    if (!armed.length && watching) {
+      window.removeEventListener("scroll", onScrollOrResize);
+      window.removeEventListener("resize", onScrollOrResize);
+      watching = false;
+    }
+  }
+
+  function onScrollOrResize() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(checkArmed);
+  }
+
+  /* Arms el for the check above. Distinct from the immediate-show path in
+     reveal() below, which is for whatever is already on screen when this
+     runs. */
+  function watch(el) {
+    armed.push(el);
+    if (!watching) {
+      window.addEventListener("scroll", onScrollOrResize, { passive: true });
+      window.addEventListener("resize", onScrollOrResize, { passive: true });
+      watching = true;
+    }
+    /* Catches anything armed after the page's own scroll position has
+       already moved (e.g. a JS-rendered region added below the fold, or a
+       reveal() call that runs after the user has scrolled). */
+    onScrollOrResize();
   }
 
   /* Arm everything inside `root` that asks to be revealed.
@@ -49,21 +92,20 @@
     var nodes = root.querySelectorAll(".bn-reveal:not(.bn-armed)");
     if (!nodes.length) return;
 
-    if (REDUCED || !("IntersectionObserver" in window)) {
+    if (REDUCED) {
       /* Nothing to do: un-armed elements are already visible. Marking them
          shown keeps the DOM honest for anything inspecting state. */
       for (var i = 0; i < nodes.length; i++) nodes[i].classList.add("bn-shown");
       return;
     }
 
-    var ob = observer();
     for (var j = 0; j < nodes.length; j++) {
       var el = nodes[j];
       var box = el.getBoundingClientRect();
       var onscreen = box.top < (window.innerHeight || 0) && box.bottom > 0;
       el.classList.add("bn-armed");
       if (onscreen) el.classList.add("bn-shown");
-      else ob.observe(el);
+      else watch(el);
     }
   }
 

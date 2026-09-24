@@ -94,6 +94,35 @@ def test_content_already_on_screen_is_never_armed_without_being_shown():
         "before arming it")
 
 
+def test_armed_elements_are_not_watched_with_intersectionobserver():
+    """.bn-armed clips its element to clip-path: inset(0 100% 0 0) -- zero
+    rendered width. Confirmed directly in a real browser (two
+    IntersectionObservers on the same element, same scroll: the one watching
+    the clipped element reports isIntersecting: false forever, at every
+    scroll position, while an identical observer on the same element with
+    the clip-path removed correctly reports true/false as it crosses the
+    viewport): Chromium computes an IntersectionObserver target's
+    intersection against its RENDERED box, and a clip-path'd-to-zero-width
+    box never intersects anything. An element armed off-screen was
+    therefore queued to be revealed and then never was, however much the
+    page was scrolled -- on any page with enough content below the fold at
+    load (the agent and SEO+AEO directories both have one, once grouped
+    into sections, were the first pages in this codebase tall enough to
+    make it reproduce reliably).
+
+    The fix is a manual scroll/resize-driven getBoundingClientRect() check
+    instead (proven unaffected by clip-path in the same test above), so
+    this asserts IntersectionObserver is not back in the reveal path."""
+    js = _read(_JS, "bento-motion.js")
+    assert "checkArmed" in js and "watch(el)" in js, (
+        "the getBoundingClientRect-based watcher is gone")
+    assert "new IntersectionObserver(" not in js, (
+        "an IntersectionObserver construction is back in bento-motion.js -- "
+        "it cannot correctly watch a clip-path'd .bn-armed element (see "
+        "this test's docstring), so an element armed off-screen would "
+        "never be revealed")
+
+
 # ── Reduced motion ───────────────────────────────────────────────────────────
 
 def test_reduced_motion_unclips_rather_than_only_stopping_the_animation():
