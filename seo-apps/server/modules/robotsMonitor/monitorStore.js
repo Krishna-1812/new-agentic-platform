@@ -1,7 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 
-const DATA_DIR    = path.join(__dirname, 'data');
+const DATA_DIR    = require('../../utils/dataRoot').dataDir('robotsMonitor', path.join(__dirname, 'data'));
 const CLIENTS_PATH = path.join(DATA_DIR, 'clients.json');
 const SLACK_PATH   = path.join(DATA_DIR, 'slackConfig.json');
 const HISTORY_DIR  = path.join(DATA_DIR, 'history');

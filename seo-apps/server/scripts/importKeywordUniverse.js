@@ -7,7 +7,8 @@
 // Geo Type/Geo Detected, Data Confidence) into `lpb_keyword_universe` so
 // keywordAdapter can merge in matching rows (see keywordUniverseStore.js).
 //
-// Usage (from repo root, with SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY set):
+// Usage (from repo root, with SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY set,
+// or with DATABASE_URL pointing at the Railway Postgres):
 //   node server/scripts/importKeywordUniverse.js <csvPath> <clientId>
 //
 // Idempotent per client: wipes that client's existing universe rows first,
@@ -17,7 +18,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
 const fs = require('fs');
 const readline = require('readline');
-const { getSupabase, isSupabaseConfigured } = require('../services/supabase');
+const { getSupabase, databaseBackend } = require('../services/supabase');
 const supabaseStore = require('../services/supabaseStore');
 const { KNOWN_CITIES_SETTING_KEY } = require('../locationPageBuilder/keywordUniverseStore');
 
@@ -27,8 +28,8 @@ if (!csvPath || !clientId) {
   console.error('Usage: node server/scripts/importKeywordUniverse.js <csvPath> <clientId>');
   process.exit(1);
 }
-if (!isSupabaseConfigured()) {
-  console.error('✗ SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set. Aborting.');
+if (!databaseBackend()) {
+  console.error('✗ Neither SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY nor DATABASE_URL is set. Aborting.');
   process.exit(1);
 }
 
@@ -59,17 +60,20 @@ function norm(s) {
 }
 
 async function wipeExisting(sb) {
+  if (!sb) return supabaseStore.universeWipe(clientId);
   const { error } = await sb.from('lpb_keyword_universe').delete().eq('client_id', clientId);
   if (error) throw new Error(`[wipe] ${error.message}`);
 }
 
 async function insertBatch(sb, rows) {
+  if (!sb) return supabaseStore.universeInsert(rows);
   const { error } = await sb.from('lpb_keyword_universe').insert(rows);
   if (error) throw new Error(`[insert] ${error.message}`);
 }
 
 async function main() {
-  const sb = getSupabase();
+  // null = Railway Postgres, where supabaseStore is pgStore.
+  const sb = databaseBackend() === 'supabase' ? getSupabase() : null;
   console.log(`Wiping existing universe rows for ${clientId}…`);
   await wipeExisting(sb);
 
@@ -129,4 +133,6 @@ async function main() {
   console.log(`✓ Cached ${citySet.size} distinct cities for other-city keyword exclusion.`);
 }
 
-main().catch(e => { console.error('✗', e.message); process.exit(1); });
+main()
+  .then(() => supabaseStore.close && supabaseStore.close())
+  .catch(e => { console.error('✗', e.message); process.exit(1); });

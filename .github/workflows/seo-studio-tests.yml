@@ -1,0 +1,59 @@
+name: SEO Studio tests
+
+# seo-apps/ is a Node service of its own (see seo-apps/railway.json), so the
+# pytest workflow never touches it. This runs its test suites, the Postgres
+# store included against a real database, and checks the client still builds.
+
+on:
+  pull_request:
+    paths:
+      - 'seo-apps/**'
+      - '.github/workflows/seo-studio-tests.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'seo-apps/**'
+      - '.github/workflows/seo-studio-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: seo_test
+          POSTGRES_PASSWORD: disposable_test_only
+          POSTGRES_DB: seo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U seo_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://seo_test:disposable_test_only@localhost:5432/seo_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install
+        working-directory: seo-apps
+        run: npm ci --prefix server && npm ci --prefix client
+
+      - name: Server tests
+        working-directory: seo-apps/server
+        run: npm test
+
+      - name: Client build
+        working-directory: seo-apps/client
+        run: npm run build

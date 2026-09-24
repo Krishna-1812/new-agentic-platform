@@ -1611,7 +1611,7 @@ APP_AGENTS = [
         "tags": ["Semrush", "Ahrefs", "Sheets"],
         # no_request removed 2026-08-14: the tool this card describes is now a
         # real, live SEO Studio agent (see competitor-analysis in
-        # _SEO_TOOLS_FALLBACK), so a member asking for it is a real request
+        # _SEO_TOOLS), so a member asking for it is a real request
         # again. Still not connected (no seo_slug/external_url) -- the live
         # tool's client picker shows every client's data (Tealium, Beta
         # Bionics, ...) with no per-member scoping, so opening it to any
@@ -3175,11 +3175,10 @@ def _app_embed_url(agent):
     ext = (tool or {}).get("url")
     if ext:
         return ext
-    pt = os.environ.get("SERP_PLATFORM_TOKEN", "")
     # embed=1 tells the SERP app to render chrome-less (no sidebar / studio nav),
     # so public users only see the single agent they opened. Internal /seo-aeo does
     # NOT pass this, so staff keep the full SEO Studio.
-    qs = ([("pt", pt)] if pt else []) + [("embed", "1")]
+    qs = _studio_auth_params() + [("embed", "1")]
     sep = "&" if "?" in path else "?"
     return f"{_SERP_BASE}{path}{sep}" + "&".join("%s=%s" % kv for kv in qs)
 
@@ -3982,7 +3981,8 @@ def p2_legacy_redirect(rest=""):
 @position2_required
 def hub():
     return render_template("hub.html", user=_get_user(),
-                           tracked_companies=_tracked_company_floor())
+                           tracked_companies=_tracked_company_floor(),
+                           seo_tool_count=len(_seo_tools()))
 
 CX_CHAPTERS = [
     # Presentation-only keys were dropped when this page was rebuilt: each
@@ -4191,7 +4191,44 @@ def seo_aeo_legacy_redirect(rest=""):
 
 
 # ── Embedded dashboards ─────────────────────────────────────────────────────────
-_SERP_BASE = "https://seo-apps-production-37a6.up.railway.app"
+# SEO Studio (seo-apps/ in this repo) runs as its own Railway service. Its
+# public URL comes from SEO_STUDIO_URL; the fallback is the service it was
+# first deployed as, so nothing breaks before the variable is set.
+_SERP_BASE = (os.environ.get("SEO_STUDIO_URL", "").strip().rstrip("/")
+              or "https://seo-apps-production-37a6.up.railway.app")
+# Shared with the SEO Studio service, which refuses every API call without a
+# pass signed with it (seo-apps/server/routes/auth.js).
+SEO_STUDIO_SECRET = os.environ.get("SEO_STUDIO_SECRET", "")
+_STUDIO_PASS_TTL = 12 * 3600
+
+
+def _studio_pass(email, role):
+    """A signed, short-lived pass that lets this user into SEO Studio.
+
+    base64url(JSON {e, r, x}) + "." + base64url(HMAC-SHA256). role "staff"
+    reaches every tool; "app" (a public /app or client-portal user) only the
+    tools /app offers. The studio iframe is cross-site to this app, so a
+    cookie would be a third-party cookie; the pass travels in the iframe URL
+    instead and the studio sends it back as a header."""
+    import base64, hashlib, hmac
+    def b64(raw):
+        return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
+    payload = {"e": (email or "").lower(), "r": role, "x": int(time.time()) + _STUDIO_PASS_TTL}
+    body = b64(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
+    sig = b64(hmac.new(SEO_STUDIO_SECRET.encode("utf-8"), body.encode("ascii"), hashlib.sha256).digest())
+    return body + "." + sig
+
+
+def _studio_auth_params(role=None):
+    """Query parameters that authenticate the current user to SEO Studio:
+    a signed pass when SEO_STUDIO_SECRET is set, else the legacy shared
+    SERP_PLATFORM_TOKEN (what the original seo-apps deployment reads)."""
+    user = _get_user() or {}
+    email = user.get("email", "")
+    if SEO_STUDIO_SECRET and email:
+        return [("st", _studio_pass(email, role or ("staff" if _is_staff(email) else "app")))]
+    pt = os.environ.get("SERP_PLATFORM_TOKEN", "")
+    return [("pt", pt)] if pt else []
 
 # ── Ad Intelligence (built React app served directly — no iframe) ────────────
 AD_INTEL_SHEET_ID = "16U5_QSxMmrAGKvK5dHScBu1Et4BJ1p8Q1ns5LycRA0s"
@@ -4560,65 +4597,62 @@ def slot_checker_insights_route():
     return _slot_checker_insights_json(force)
 
 
-_SEO_TOOLS_FALLBACK = [
+# The SEO Studio tools /seo-aeo lists, each opened at /seo-aeo/<slug> in an
+# iframe onto SEO Studio (seo-apps/, its own Railway service) at "path". This
+# mirrors seo-apps/client/src/toolsMeta.js, which is the studio's own menu:
+# add a tool there and here together. (It used to be fetched from the studio
+# at /tools.json, but the studio never served that, so this list was always
+# the one in use; the fetch only cost a request every five minutes.)
+_SEO_TOOLS = [
     {"slug": "keyword-research",       "path": "/keyword-research",       "name": "Keyword Research",         "desc": "AI-powered keyword shortlisting",              "icon": "🔑", "tags": ["Keywords", "SEMrush"]},
     {"slug": "content-research",       "path": "/content-research",       "name": "Content Research",         "desc": "Competitor-based content briefs",              "icon": "🔎", "tags": ["Content", "SERP"]},
     {"slug": "competitor-analysis",    "path": "/competitor-analysis",    "name": "Competitor Analysis",      "desc": "Traffic, keywords & backlinks vs. competitors","icon": "🎯", "tags": ["Competitors", "SEMrush"]},
+    {"slug": "market-potential",       "path": "/market-potential",       "name": "Market Potential",         "desc": "Rank metros by commercial search demand",      "icon": "🗺️", "tags": ["Healthcare", "Demand"]},
     {"slug": "article-recommendation", "path": "/article-recommendation", "name": "Article Recommendation",   "desc": "Structured content briefs from SERP data",     "icon": "📋", "tags": ["Briefs", "SERP"]},
     {"slug": "content-enhancement",    "path": "/content-enhancement",    "name": "Content Enhancement",      "desc": "Structure & authority recommendations",        "icon": "⚡", "tags": ["AEO", "E-E-A-T"]},
     {"slug": "article-enhancement",    "path": "/article-enhancement",    "name": "Enhance Existing Article", "desc": "Multi-LLM + SERP competitor enhancement",      "icon": "✨", "tags": ["Enhance", "LLM"]},
+    {"slug": "article-enhancement-lite", "path": "/article-enhancement-lite", "name": "Article Enhancer",     "desc": "Keeps every word, adds only what is provable",  "icon": "📝", "tags": ["Enhance", "Fact-check"]},
     {"slug": "on-page-audit",          "path": "/on-page-audit",          "name": "On-Page SEO Audit",        "desc": "23 sections · live data · PageSpeed + CWV",   "icon": "🔬", "tags": ["On-Page", "CWV"]},
     {"slug": "seo-geo-audit",          "path": "/seo-geo-audit",          "name": "SEO & GEO Audit",          "desc": "200+ checks · scored · AI recommendations",   "icon": "✅", "tags": ["SEO", "GEO", "AI"]},
+    {"slug": "seo-geo-snapshot",       "path": "/seo-geo-snapshot",       "name": "SEO & GEO Snapshot",       "desc": "The audit's scores on one screen",             "icon": "📊", "tags": ["SEO", "GEO"]},
     {"slug": "agent-readiness-audit",  "path": "/agent-readiness-audit",  "name": "Agent Readiness Audit",    "desc": "Score AI agent readiness, 0–100",             "icon": "🤖", "tags": ["AI Audit"]},
     {"slug": "image-alt-audit",        "path": "/image-alt-audit",        "name": "Image Alt Tag Audit",      "desc": "Bulk alt tag generation for location pages",   "icon": "🖼️", "tags": ["Images"]},
     {"slug": "location-page-builder",  "path": "/location-page-builder",  "name": "Location + Service Pages", "desc": "Composed, approved, dev-ready location pages", "icon": "📍", "tags": ["Local SEO", "Pages"]},
-    {"slug": "hub-spoke",              "path": "/hub-spoke",              "name": "Hub & Spoke",              "desc": "AI internal-linking strategy & recommendations","icon": "🕸️", "tags": ["Internal Linking"]},
+    {"slug": "content-architect",      "path": "/content-architect",      "name": "Content Architect",        "desc": "Site structure, clusters and hub & spoke gaps", "icon": "🕸️", "tags": ["Internal Linking", "Structure"]},
+    {"slug": "gbp-qc",                 "path": "/gbp-qc",                 "name": "GBP QC Agent",             "desc": "Quality control & content generation for GBP posts", "icon": "🏪", "tags": ["Local SEO", "GBP"]},
     {"slug": "knowledge-base",         "path": "/kb",                     "name": "Knowledge Base",           "desc": "Client & industry context management",         "icon": "📚", "tags": ["Knowledge", "Context"]},
     {"slug": "robots-monitor",         "path": "/robots-monitor",         "name": "Robots Monitor",           "desc": "Daily noindex health checks across domains",   "icon": "🛰️", "tags": ["Technical SEO"]},
-    {"slug": "team-insights",          "path": "/team-insights",          "name": "Team Insights",            "desc": "Live SEO PM dashboard from Google Sheets",     "icon": "📊", "tags": ["PM", "Sheets"]},
-    {"slug": "gbp-qc-agent",           "path": "", "url": "https://gbp-qc-agent-production.up.railway.app", "name": "GBP QC Agent", "desc": "Quality control & content generation for GBP posts", "icon": "🏪", "tags": ["Local SEO", "GBP"]},
 ]
 
-# Live SEO tool list is fetched from the SERP app's /tools.json manifest (cached).
-# Add a tool on the SERP side -> it appears here automatically, no redeploy needed.
-_SEO_MANIFEST = {"ts": 0.0, "tools": None}
-_SEO_MANIFEST_TTL = 300  # seconds
+# Old slugs, sent on so links and bookmarks still land somewhere useful. Hub &
+# Spoke became part of Content Architect; Team Insights was removed outright
+# (seo-apps commit b948d6c); the GBP QC Agent was a separate service
+# (gbp-qc-agent-production, now gone) and is a studio tool at /gbp-qc, whose
+# id the studio reports back when the address bar is kept in sync.
+_SEO_TOOL_ALIASES = {"hub-spoke": "content-architect", "team-insights": None,
+                     "gbp-qc-agent": "gbp-qc"}
+
 
 def _seo_tools():
-    now = time.time()
-    cached = _SEO_MANIFEST["tools"]
-    if cached is not None and now - _SEO_MANIFEST["ts"] < _SEO_MANIFEST_TTL:
-        return cached
-    tools = None
-    try:
-        pt = os.environ.get("SERP_PLATFORM_TOKEN", "")
-        url = f"{_SERP_BASE}/tools.json" + (f"?pt={pt}" if pt else "")
-        r = requests.get(url, timeout=5)
-        r.raise_for_status()
-        data = r.json().get("tools")
-        if isinstance(data, list) and data:
-            tools = data
-    except Exception as e:
-        logging.warning("SEO manifest fetch failed, using fallback: %s", e)
-    if tools is None:
-        tools = _SEO_TOOLS_FALLBACK
-    _SEO_MANIFEST.update(ts=now, tools=tools)
-    return tools
+    return _SEO_TOOLS
 
 @app.route("/seo-aeo/<tool_slug>")
 @position2_required
 def seo_tool(tool_slug: str):
+    if tool_slug in _SEO_TOOL_ALIASES:
+        target = _SEO_TOOL_ALIASES[tool_slug]
+        return redirect("/seo-aeo" + ("/" + target if target else ""), code=301)
     tool = next((t for t in _seo_tools() if t.get("slug") == tool_slug), None)
     if not tool:
         abort(404)
-    pt = os.environ.get("SERP_PLATFORM_TOKEN", "")
     ext = tool.get("url")
     if ext:
         embed_url = ext
     else:
         path = tool["path"]
+        qs = _studio_auth_params("staff")
         sep = "?" if "?" not in path else "&"
-        embed_url = f"{_SERP_BASE}{path}{sep + 'pt=' + pt if pt else ''}"
+        embed_url = f"{_SERP_BASE}{path}" + ((sep + urlencode(qs)) if qs else "")
     return render_template("embed.html",
         user=_get_user(),
         title=tool["name"],

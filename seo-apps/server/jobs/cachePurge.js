@@ -13,7 +13,7 @@
 // explicitly deleted, and are never touched here.
 
 const cron = require('node-cron');
-const { isSupabaseConfigured } = require('../services/supabase');
+const { isDatabaseConfigured } = require('../services/supabase');
 const supabaseStore = require('../services/supabaseStore');
 
 // Daily at 03:15 — off-peak, and frequent enough that the table never carries
@@ -23,7 +23,7 @@ const SCHEDULE = process.env.LPB_CACHE_PURGE_CRON || '15 3 * * *';
 let scheduledJob = null;
 
 async function runPurge() {
-  if (!isSupabaseConfigured()) return null;
+  if (!isDatabaseConfigured()) return null;
   const result = await supabaseStore.purgeExpired();
   console.log(`[CachePurge] Removed ${result.expired} expired + ${result.stale} stale cache rows.`);
   return result;
@@ -34,8 +34,8 @@ function init() {
     scheduledJob.destroy();
     scheduledJob = null;
   }
-  if (!isSupabaseConfigured()) {
-    console.log('[CachePurge] Supabase not configured — sweeper not scheduled.');
+  if (!isDatabaseConfigured()) {
+    console.log('[CachePurge] No database configured — sweeper not scheduled.');
     return;
   }
   if (!cron.validate(SCHEDULE)) {

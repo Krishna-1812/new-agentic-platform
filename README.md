@@ -193,14 +193,22 @@ leaving the page. Two backends so account data never crosses a boundary it shoul
 
 ### SEO / GEO Suite (`/seo-aeo/*`, staff-only)
 
-16 SEO/GEO tools, most backed by a separate React/Vite frontend (`seo-apps`, its own Railway
-service) embedded here: **Keyword Research**, **Content Research**, **Competitor Analysis**,
-**Article Recommendation**, **Content Enhancement**, **Enhance Existing Article**, **On-Page SEO
-Audit**, **SEO & GEO Audit**, **Agent Readiness Audit**, **Image Alt Tag Audit**, **Location +
-Service Pages**, **Hub & Spoke**, **Knowledge Base**, **Robots Monitor**, **Team Insights**, and
-**GBP QC Agent**. `On-Page SEO Audit` runs 23 sections against live Core Web Vitals/PageSpeed
-data; `Robots Monitor` crawls sitemaps daily and fires a Slack alert the moment a production page
-goes unexpectedly noindexed.
+18 SEO/GEO tools from **SEO Studio**, the Node/React app in `seo-apps/` (imported with its
+history from the original `seo-apps` repository; every branch of that repository is kept in
+`archive/`). It runs as its own Railway service and is embedded here in an iframe:
+**Keyword Research**, **Content Research**, **Competitor Analysis**, **Market Potential**,
+**Article Recommendation**, **Content Enhancement**, **Enhance Existing Article**, **Article
+Enhancer**, **On-Page SEO Audit**, **SEO & GEO Audit**, **SEO & GEO Snapshot**, **Agent Readiness
+Audit**, **Image Alt Tag Audit**, **Location + Service Pages**, **Content Architect**, **GBP QC
+Agent**, **Knowledge Base** and **Robots Monitor**. `On-Page SEO Audit` runs 23 sections against
+live Core Web Vitals/PageSpeed data; `Robots Monitor` crawls sitemaps daily and fires a Slack
+alert the moment a production page goes unexpectedly noindexed.
+
+The studio refuses every API call without a pass this app signs per user (HMAC with the shared
+`SEO_STUDIO_SECRET`, 12 hours): staff get every tool, public `/app` members only the three `/app`
+agents. Location + Service Pages keeps its data in the project's Postgres, in its own
+`seo_studio` schema; the file-backed tools write to a Railway volume at `SEO_DATA_ROOT`. See
+`seo-apps/.env.example` for the service's variables and `seo-apps/railway.json` for its build.
 
 ---
 
@@ -292,7 +300,7 @@ each agent's section above for what specifically goes inert.
 | `YOUTUBE_API_KEY` | Social Media Intelligence's YouTube collection (opt) |
 | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT` | Social Media Intelligence's Reddit brand-conversation read (not currently set) |
 | `SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID`, `SLACK_WEBHOOK_URL` | Job Change Alert ingestion, ABM Signal Tracker alerts |
-| `SERP_PLATFORM_TOKEN` | SEO Suite's embedded `seo-apps` service |
+| `SEO_STUDIO_URL`, `SEO_STUDIO_SECRET` | SEO Studio (`seo-apps/`): its public URL, and the secret shared with it for signing each user's pass |
 | `IPINFO_TOKEN`, `IDENTIFY_TOKEN` (opt) | Visitor de-anonymization |
 | `LOGIN_LOG_SHEET_ID`, `DEMO_REQUEST_SHEET_ID`, `ANON_VISITORS_SHEET_ID`, `AD_INTEL_SHEET_ID` | Various Sheets-backed logs |
 | `GH_DISPATCH_TOKEN` | Triggers GitHub Actions from the app |

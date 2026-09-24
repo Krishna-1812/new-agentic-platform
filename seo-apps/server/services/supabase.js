@@ -37,4 +37,17 @@ function isSupabaseConfigured() {
   return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 }
 
-module.exports = { getSupabase, isSupabaseConfigured };
+// Which database the stores use. Supabase wins when both are configured, so an
+// existing Supabase deployment behaves exactly as before; otherwise a plain
+// Postgres DATABASE_URL (Railway's) is used through services/pgStore.js.
+function databaseBackend() {
+  if (isSupabaseConfigured()) return 'supabase';
+  if (process.env.DATABASE_URL) return 'postgres';
+  return null;
+}
+
+function isDatabaseConfigured() {
+  return databaseBackend() !== null;
+}
+
+module.exports = { getSupabase, isSupabaseConfigured, databaseBackend, isDatabaseConfigured };

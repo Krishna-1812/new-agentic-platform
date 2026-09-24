@@ -6,7 +6,7 @@ const fsSync = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const DATA_ROOT = path.join(__dirname, 'data');
+const DATA_ROOT = require('../../utils/dataRoot').dataDir('contentArchitect', path.join(__dirname, 'data'));
 
 function genId(prefix = 'id') {
   return `${prefix}_${Date.now().toString(36)}${crypto.randomBytes(4).toString('hex')}`;

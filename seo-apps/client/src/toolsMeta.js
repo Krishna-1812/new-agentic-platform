@@ -38,6 +38,7 @@ export const TOOL_GROUPS = [
     tools: [
       { id: 'location-page-builder',  path: '/location-page-builder',  label: 'Location + Service Pages', icon: '📍', tag: 'testing' },
       { id: 'content-architect',      path: '/content-architect',      label: 'Content Architect',      icon: '🗺️', tag: 'testing' },
+      { id: 'gbp-qc',                 path: '/gbp-qc',                 label: 'GBP Quality Check',      icon: '🏪', tag: 'beta' },
       { id: 'knowledge-base',         path: '/kb',                     label: 'Knowledge Base',         icon: '📚', tag: 'internal' },
     ],
   },

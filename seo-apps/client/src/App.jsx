@@ -35,6 +35,7 @@ import MarketPotentialPage from './pages/MarketPotentialPage';
 import CompetitorAnalysisDashboardPage from './pages/CompetitorAnalysisDashboardPage';
 import ContentArchitectPage from './pages/ContentArchitectPage';
 import ContentArchitectProjectPage from './pages/ContentArchitectProjectPage';
+import GbpQcPage from './pages/GbpQcPage';
 
 // Keeps the parent Intelligence Platform shell's URL + breadcrumb in sync with
 // the tool the user navigates to here. The shell embeds us in a cross-origin
@@ -95,6 +96,7 @@ export default function App() {
           <Route path="/competitor-analysis" element={<CompetitorAnalysisDashboardPage />} />
           <Route path="/content-architect" element={<ContentArchitectPage />} />
           <Route path="/content-architect/:id" element={<ContentArchitectProjectPage />} />
+          <Route path="/gbp-qc" element={<GbpQcPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

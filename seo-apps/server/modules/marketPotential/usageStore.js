@@ -23,7 +23,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
 
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = require('../../utils/dataRoot').dataDir('marketPotential', path.join(__dirname, 'data'));
 const LEDGER_PATH = path.join(DATA_DIR, 'semrushUsage.json');
 const MAX_RUNS_PER_DAY_LOG = 500; // audit trail cap to keep the file bounded
 

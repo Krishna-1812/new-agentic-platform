@@ -2,7 +2,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
 
-const DATA_ROOT = path.join(__dirname, 'data');
+const DATA_ROOT = require('../../utils/dataRoot').dataDir('competitorAnalysis', path.join(__dirname, 'data'));
 const SNAPSHOTS_DIR = path.join(DATA_ROOT, 'snapshots');
 const CONTENT_ANALYSIS_DIR = path.join(DATA_ROOT, 'content-analysis');
 const CLIENTS_FILE = path.join(DATA_ROOT, 'clients.json');

@@ -2,7 +2,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
 
-const DATA_ROOT = path.join(__dirname, 'data');
+const DATA_ROOT = require('../../utils/dataRoot').dataDir('onPageAudit', path.join(__dirname, 'data'));
 
 function genId() {
   return `audit_${Date.now().toString(36)}${crypto.randomBytes(4).toString('hex')}`;

@@ -69,13 +69,13 @@
         <div class="hb-ws-name" data-ws-name>SEO + AEO</div>
         <p class="hb-ws-desc" data-ws-desc>
           SEO &amp; GEO audits, content research, article briefs, keyword research,
-          agent readiness, image alt audits, knowledge base, and team insights.
+          location pages, agent readiness, image alt audits, GBP checks and a knowledge base.
         </p>
       </div>
       <div class="hb-ws-foot">
         <div class="hb-ws-counts">
-          <span class="hb-c"><b data-count="dashboards">16</b><span>dashboards</span></span>
-          <span class="hb-c"><b data-count="live">16</b><span>live</span></span>
+          <span class="hb-c"><b data-count="dashboards">{{ seo_tool_count }}</b><span>dashboards</span></span>
+          <span class="hb-c"><b data-count="live">{{ seo_tool_count }}</b><span>live</span></span>
         </div>
         <span class="hb-go">Open &rarr;</span>
       </div>
@@ -104,7 +104,9 @@
        stops meaning anything, so it marks the number that says the platform
        is running rather than merely installed. #}
     <div class="hb-t hb-n hb-n--fill bn-reveal">
-      <b data-figure="dashboards">27</b>
+      {# 11 live strategic dashboards (counted by hand, checked by
+         tests/test_hub_card_counts.py) plus every SEO Studio tool. #}
+      <b data-figure="dashboards">{{ 11 + seo_tool_count }}</b>
       <span>dashboards across both</span>
     </div>
 

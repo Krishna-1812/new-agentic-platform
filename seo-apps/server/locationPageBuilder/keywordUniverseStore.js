@@ -2,7 +2,7 @@
 // See supabase/migrations/0007_keyword_universe.sql for the table and
 // server/scripts/importKeywordUniverse.js for how rows get in it.
 
-const { getSupabase, isSupabaseConfigured } = require('../services/supabase');
+const { getSupabase, isSupabaseConfigured, databaseBackend } = require('../services/supabase');
 const supabaseStore = require('../services/supabaseStore');
 const config = require('./config');
 const { universeFilterFor } = require('./keywordUniverseMap');
@@ -17,6 +17,9 @@ function norm(s) {
 // True once a client has actually imported a universe (avoids a wasted query
 // + a Supabase-not-configured throw for clients that never will).
 async function hasUniverse(clientId) {
+  if (databaseBackend() === 'postgres') {
+    try { return (await supabaseStore.universeCount(clientId)) > 0; } catch { return false; }
+  }
   if (!isSupabaseConfigured()) return false;
   const { count, error } = await getSupabase()
     .from(TABLE).select('id', { count: 'exact', head: true }).eq('client_id', clientId);
@@ -32,6 +35,14 @@ async function getUniverseCandidates({ clientId, serviceSlug, city, limit }) {
   const filter = universeFilterFor(serviceSlug);
   if (!filter || !clientId) return [];
   if (!(await hasUniverse(clientId))) return [];
+
+  // Railway Postgres: the same query, in SQL (supabaseStore is pgStore here).
+  if (databaseBackend() === 'postgres') {
+    const rows = await supabaseStore.universeCandidates({
+      clientId, city, filter, limit: limit || config.keywords.universePoolSize,
+    });
+    return rows.map(r => ({ keyword: r.keyword, volume: r.semrush_sv || 0, difficulty: 0, source: 'universe' }));
+  }
 
   // Location-specific rows only — "near me"/implicit-local rows (Geo
   // Detected '-') are excluded on purpose (client wants city-tied keywords,

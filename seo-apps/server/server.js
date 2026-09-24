@@ -29,6 +29,7 @@ const marketPotentialRoutes = require('./modules/marketPotential/routes');
 const competitorAnalysisTrackerRoutes = require('./modules/competitorAnalysis/routes');
 const contentArchitectRoutes = require('./modules/contentArchitect/routes');
 const semrushRoutes = require('./routes/semrush');
+const gbpQcRoutes = require('./modules/gbpQc/routes');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -49,7 +50,17 @@ const limiter = rateLimit({
   message: { error: 'Too many requests. Please wait a moment and try again.' },
   skip: (req) => {
     const u = req.originalUrl || req.url || '';
-    return u.startsWith('/api/location-page-builder') || u.startsWith('/api/kb') || u.startsWith('/api/modules') || u.startsWith('/api/audit') || u.startsWith('/api/market-potential') || u.startsWith('/api/competitor-tracker');
+    // robots-monitor, on-page-audit and content-architect carry lpbLimiter
+    // (300/min) but were missing here, so this 20/min cap throttled them
+    // anyway. The SEMrush balance is read by every page's header, so it
+    // would otherwise eat the cap just from moving between tools.
+    return u.startsWith('/api/location-page-builder') || u.startsWith('/api/kb') || u.startsWith('/api/modules') || u.startsWith('/api/audit') || u.startsWith('/api/market-potential') || u.startsWith('/api/competitor-tracker')
+      || u.startsWith('/api/robots-monitor') || u.startsWith('/api/on-page-audit') || u.startsWith('/api/content-architect') || u.startsWith('/api/gbp-qc')
+      || u.startsWith('/api/semrush/balance')
+      // The client asks /api/auth/verify on every full page load; throttling
+      // it would show the "open this from Northaxis" screen to someone who
+      // simply clicked around quickly. It only checks a signature.
+      || u.startsWith('/api/auth/');
   },
 });
 
@@ -98,6 +109,7 @@ app.use('/api/market-potential',        lpbLimiter, requireAuth, marketPotential
 app.use('/api/competitor-tracker',      lpbLimiter, requireAuth, competitorAnalysisTrackerRoutes);
 app.use('/api/content-architect',       lpbLimiter, requireAuth, contentArchitectRoutes);
 app.use('/api/semrush',                 requireAuth, semrushRoutes);
+app.use('/api/gbp-qc',                  lpbLimiter, requireAuth, gbpQcRoutes);
 
 // ── SEO team only ────────────────────────────────────────────────────────────
 app.use('/api/search',              requireSeo, searchRoutes);
@@ -105,26 +117,6 @@ app.use('/api/scrape',              requireSeo, scrapeRoutes);
 app.use('/api/analyze',             requireSeo, analyzeRoutes);
 app.use('/api/export',              requireSeo, exportRoutes);
 
-
-// ── Platform auto-login (Position2 Intelligence Platform) ────────────────────
-// Intercepts any page load carrying ?pt=<PLATFORM_TOKEN>, sets the JWT session
-// cookie server-side, then redirects to the clean URL — all before React renders.
-const _jwt = require('jsonwebtoken');
-app.use((req, res, next) => {
-  const pt = req.query.pt;
-  const platformToken = process.env.PLATFORM_TOKEN;
-  if (pt && platformToken && pt === platformToken && !req.path.startsWith('/api/')) {
-    const secret  = process.env.JWT_SECRET || 'seo-automation-fallback-secret';
-    const role    = process.env.PLATFORM_DEFAULT_ROLE || 'seo';
-    const token   = _jwt.sign({ username: 'platform_embed', role }, secret, { expiresIn: '7d' });
-    const ss      = ((process.env.COOKIE_SAME_SITE || process.env.COOKIE_SAMESITE || 'lax')).toLowerCase();
-    const secure  = ss === 'none' ? true : process.env.NODE_ENV !== 'development';
-    res.cookie('seo_session', token, { httpOnly: true, secure, sameSite: ss, maxAge: 604800000 });
-    const rest    = Object.entries(req.query).filter(([k]) => k !== 'pt').map(([k,v]) => k+'='+v).join('&');
-    return res.redirect(302, req.path + (rest ? '?' + rest : ''));
-  }
-  next();
-});
 
 // ── Serve React frontend ─────────────────────────────────────────────────────
 const clientBuild = path.join(__dirname, '../client/dist');
@@ -170,9 +162,8 @@ const server = app.listen(PORT, () => {
   console.log(`   ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? '✓' : '○ optional (Claude Sonnet 5 in Article Enhancer)'}`);
   console.log(`   GEMINI_API_KEY:    ${process.env.GEMINI_API_KEY ? '✓' : '○ optional (Gemini 3.5 Flash in Article Enhancer)'}`);
   console.log(`   SEMRUSH_API_KEY:   ${process.env.SEMRUSH_API_KEY ? '✓' : '✗ missing'}`);
-  console.log(`   APP_USERNAME:      ${process.env.APP_USERNAME ? '✓' : '✗ missing'}`);
-  console.log(`   JWT_SECRET:        ${process.env.JWT_SECRET ? '✓' : '✗ missing'}`);
-  console.log(`   GOOGLE_SHEETS_ID:  ${process.env.GOOGLE_SHEETS_ID ? '✓' : '✗ missing (team insights disabled)'}`);
+  console.log(`   SEO_STUDIO_SECRET: ${process.env.SEO_STUDIO_SECRET ? '✓' : (process.env.NODE_ENV === 'development' ? '○ unset: studio open (development)' : '✗ missing — every API call will be refused')}`);
+  console.log(`   DATABASE:          ${require('./services/supabase').databaseBackend() || '✗ missing (Location + Service Pages disabled)'}`);
   console.log(`   GOOGLE_PSI_KEY:    ${process.env.GOOGLE_PSI_API_KEY ? '✓' : '○ optional (PageSpeed)'}`);
 
 });

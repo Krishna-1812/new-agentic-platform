@@ -2,8 +2,10 @@ const fs = require('fs').promises;
 const path = require('path');
 const matter = require('gray-matter');
 
-const KB_ROOT = process.env.KB_ROOT || path.join(__dirname, '../../knowledge-base');
-const MODULES_ROOT = process.env.MODULES_ROOT || path.join(__dirname, '../../modules');
+const { seededDir } = require('../utils/dataRoot');
+
+const KB_ROOT = process.env.KB_ROOT || seededDir('knowledge-base', path.join(__dirname, '../../knowledge-base'));
+const MODULES_ROOT = process.env.MODULES_ROOT || seededDir('modules', path.join(__dirname, '../../modules'));
 const INDEX_PATH = path.join(KB_ROOT, '_index.json');
 
 // ── Index ────────────────────────────────────────────────────────────────────

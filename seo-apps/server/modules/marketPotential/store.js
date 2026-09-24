@@ -19,7 +19,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
 
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = require('../../utils/dataRoot').dataDir('marketPotential', path.join(__dirname, 'data'));
 const SERVICES_PATH = path.join(DATA_DIR, 'services.json');
 const BASKETS_PATH = path.join(DATA_DIR, 'baskets.json');
 const CACHE_PATH = path.join(DATA_DIR, 'volumeCache.json');

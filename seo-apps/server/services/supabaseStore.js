@@ -12,7 +12,7 @@
 // key, ordering, and expression-indexed filters (e.g. data->>'project_id').
 
 const crypto = require('crypto');
-const { getSupabase } = require('./supabase');
+const { getSupabase, databaseBackend } = require('./supabase');
 
 function newId(prefix) {
   return `${prefix}_${crypto.randomBytes(8).toString('hex')}`;
@@ -265,10 +265,15 @@ async function setSetting(key, value) {
   return value;
 }
 
-module.exports = {
+const supabaseImpl = {
   newId, nowIso,
   list, get, findOne,
   insert, update, remove, upsertBy, upsertById, replaceAll, removeWhere,
   cacheGet, cacheSet, cacheKey, purgeExpired,
   getSetting, setSetting,
 };
+
+// Without Supabase credentials but with a Postgres DATABASE_URL, the same API
+// is served by pgStore (same table shapes, own schema). Decided once, at load:
+// server.js loads .env before requiring anything that reaches this module.
+module.exports = databaseBackend() === 'postgres' ? require('./pgStore') : supabaseImpl;

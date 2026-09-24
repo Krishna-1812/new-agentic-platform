@@ -49,8 +49,11 @@ async function searchSerper(keyword) {
 async function searchGoogle(keyword) {
   resetIfNewDay();
 
-  // Google quota exhausted — skip straight to Serper
-  if (dailySearchCount >= 100) {
+  // Google quota exhausted, or Google Custom Search not configured at all
+  // (only SERPER_API_KEY set) — skip straight to Serper. Without the second
+  // check a keyless call earns a 400 from Google, which is not a fallback case.
+  const googleConfigured = process.env.GOOGLE_API_KEY && process.env.GOOGLE_CX;
+  if (dailySearchCount >= 100 || (!googleConfigured && process.env.SERPER_API_KEY)) {
     return searchSerper(keyword);
   }
 

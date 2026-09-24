@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { withStudioToken } from '../lib/studioToken';
 
 const STEPS = [
   { id: 'scrape', label: 'Scraping Pages',      icon: '🔍' },
@@ -218,7 +219,7 @@ export default function ImageAltAuditPage() {
 
   function handleDownload() {
     if (!download) return;
-    window.location.href = `/api/image-alt-audit/download/${download.token}`;
+    window.location.href = withStudioToken(`/api/image-alt-audit/download/${download.token}`);
   }
 
   const urlStatusList = Object.values(urlStatuses);
