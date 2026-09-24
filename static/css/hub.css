@@ -32,11 +32,11 @@ html:root { background-color: var(--bg); }
 .hb-lead { margin: 0 0 var(--sp-6); max-width: 46ch; }
 .hb-kicker {
   font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-semi);
-  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--acc);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--acc-tx);
   margin-bottom: var(--sp-3);
 }
 .hb-h1 {
-  font-family: var(--font-display); font-size: var(--fs-3xl); font-weight: var(--fw-bold);
+  font-family: var(--font-display); font-size: var(--fs-3xl); font-weight: var(--display-weight);
   letter-spacing: var(--ls-display); line-height: var(--lh-tight);
   margin: 0 0 var(--sp-2); color: var(--tx);
 }
@@ -70,9 +70,9 @@ a.hb-t:hover { background: var(--s2); }
 .hb-ws-ic {
   width: 44px; height: 44px; border-radius: var(--r-sm); flex: none;
   display: flex; align-items: center; justify-content: center;
-  background: var(--acc-dim); color: var(--acc);
+  background: var(--acc-dim); color: var(--acc-tx);
 }
-.hb-ws--sky .hb-ws-ic { background: var(--sky-dim); color: var(--sky); }
+.hb-ws--sky .hb-ws-ic { background: var(--sky-dim); color: var(--sky-tx); }
 .hb-ws-ic svg { width: 21px; height: 21px; fill: none; stroke: currentColor;
   stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -90,7 +90,7 @@ a.hb-t:hover { background: var(--s2); }
   text-transform: uppercase; color: var(--tx3); margin-bottom: var(--sp-2);
 }
 .hb-ws-name {
-  font-family: var(--font-display); font-size: var(--fs-2xl); font-weight: var(--fw-bold);
+  font-family: var(--font-display); font-size: var(--fs-2xl); font-weight: var(--display-weight);
   letter-spacing: var(--ls-display); line-height: var(--lh-tight); margin: 0 0 var(--sp-3);
 }
 .hb-ws-desc { font-size: var(--fs-sm); color: var(--tx2); line-height: var(--lh-body); margin: 0; }
@@ -102,7 +102,7 @@ a.hb-t:hover { background: var(--s2); }
 .hb-ws-counts { display: flex; gap: var(--sp-5); }
 .hb-c { display: flex; align-items: baseline; gap: var(--sp-2); }
 .hb-c b {
-  font-family: var(--font-display); font-size: var(--fs-xl); font-weight: var(--fw-bold);
+  font-family: var(--font-num); font-size: var(--fs-xl); font-weight: var(--fw-bold);
   letter-spacing: var(--ls-tight); font-variant-numeric: tabular-nums; color: var(--tx);
 }
 .hb-c span { font-size: var(--fs-xs); color: var(--tx3); }
@@ -121,7 +121,7 @@ a.hb-t:hover .hb-go { background: var(--acc); color: var(--tx-on-fill); }
    and the label sits under it rather than beside it. */
 .hb-n { justify-content: flex-end; gap: var(--sp-1); min-height: 112px; }
 .hb-n b {
-  font-family: var(--font-display); font-size: var(--fs-3xl); font-weight: var(--fw-bold);
+  font-family: var(--font-num); font-size: var(--fs-3xl); font-weight: var(--fw-bold);
   letter-spacing: var(--ls-display); line-height: 1; font-variant-numeric: tabular-nums;
 }
 .hb-n span { font-size: var(--fs-xs); color: var(--tx2); line-height: var(--lh-snug); }
@@ -138,8 +138,8 @@ a.hb-t:hover .hb-go { background: var(--acc); color: var(--tx-on-fill); }
 .hb-av {
   width: 38px; height: 38px; border-radius: var(--r-sm); flex: none;
   display: flex; align-items: center; justify-content: center;
-  background: var(--sky-dim); color: var(--sky);
-  font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--fw-bold);
+  background: var(--sky-dim); color: var(--sky-tx);
+  font-family: var(--font-num); font-size: var(--fs-lg); font-weight: var(--fw-bold);
 }
 /* These are spans inside a span, so they inherit `display:inline` and run
    together on one line -- "Atlas On every page, in every tool" -- which reads

@@ -27,11 +27,11 @@ html:root { background-color: var(--bg); }
 .ph-left { min-width: 0; max-width: 62ch; }
 .eyebrow {
   font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-semi);
-  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--acc);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--acc-tx);
   margin-bottom: var(--sp-3);
 }
 .ph h1 {
-  font-family: var(--font-display); font-size: var(--fs-3xl); font-weight: var(--fw-bold);
+  font-family: var(--font-display); font-size: var(--fs-3xl); font-weight: var(--display-weight);
   letter-spacing: var(--ls-display); line-height: var(--lh-tight);
   margin: 0 0 var(--sp-2); color: var(--tx);
 }
@@ -81,7 +81,7 @@ html:root { background-color: var(--bg); }
 }
 .sc-people .stat-label { color: rgba(19,19,21,.66); }
 .stat-value {
-  font-family: var(--font-display); font-size: var(--fs-3xl); font-weight: var(--fw-bold);
+  font-family: var(--font-num); font-size: var(--fs-3xl); font-weight: var(--fw-bold);
   letter-spacing: var(--ls-display); line-height: 1; font-variant-numeric: tabular-nums;
   color: var(--tx); overflow: hidden; text-overflow: ellipsis;
 }
@@ -102,7 +102,7 @@ html:root { background-color: var(--bg); }
 }
 .card-title {
   display: inline-flex; align-items: center; gap: var(--sp-2);
-  font-family: var(--font-display); font-size: var(--fs-md); font-weight: var(--fw-semi);
+  font-family: var(--font-display); font-size: var(--fs-md); font-weight: var(--display-weight);
   letter-spacing: var(--ls-tight); color: var(--tx);
 }
 .card-title svg { width: 15px; height: 15px; fill: none; stroke: var(--tx3); stroke-width: 1.8;
@@ -118,7 +118,7 @@ html:root { background-color: var(--bg); }
   text-overflow: ellipsis; white-space: nowrap; }
 .bar-row:hover .bar-name { color: var(--tx); }
 .bar-num {
-  font-family: var(--font-display); font-size: var(--fs-sm); font-weight: var(--fw-bold);
+  font-family: var(--font-num); font-size: var(--fs-sm); font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums; color: var(--tx);
 }
 .bar-track { grid-column: 1 / -1; height: 6px; background: var(--s2); border-radius: 3px; overflow: hidden; }
@@ -194,7 +194,7 @@ html:root { background-color: var(--bg); }
   width: 30px; height: 30px; border-radius: var(--r-sm); flex: none;
   display: flex; align-items: center; justify-content: center;
   background: var(--s3); color: var(--tx2);
-  font-family: var(--font-display); font-size: var(--fs-xs); font-weight: var(--fw-bold);
+  font-family: var(--font-num); font-size: var(--fs-xs); font-weight: var(--fw-bold);
 }
 .person-name, .company-name { color: var(--tx); font-weight: var(--fw-semi);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -231,7 +231,7 @@ html:root { background-color: var(--bg); }
 .loading-overlay {
   position: fixed; inset: 0; z-index: 4000; display: none;
   align-items: center; justify-content: center; flex-direction: column; gap: var(--sp-4);
-  background: rgba(19,19,21,.82);
+  background: rgba(241,239,237,.9);
 }
 .loading-overlay.active { display: flex; }
 .loader-ring {
@@ -247,7 +247,7 @@ html:root { background-color: var(--bg); }
 
 /* ── DRAWER ──────────────────────────────────────────────────────────────*/
 .drawer-backdrop {
-  position: fixed; inset: 0; z-index: 4500; background: rgba(10,10,12,.66);
+  position: fixed; inset: 0; z-index: 4500; background: rgba(18,18,19,.42);
   opacity: 0; visibility: hidden; transition: opacity var(--dur) var(--ease), visibility var(--dur);
 }
 .drawer-backdrop.open { opacity: 1; visibility: visible; }
@@ -274,14 +274,14 @@ html:root { background-color: var(--bg); }
   width: 46px; height: 46px; border-radius: var(--r-sm);
   display: flex; align-items: center; justify-content: center;
   background: var(--s3); color: var(--tx);
-  font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--fw-bold);
+  font-family: var(--font-num); font-size: var(--fs-lg); font-weight: var(--fw-bold);
 }
 .drw-av-person { background: var(--acc); color: var(--tx-on-fill); }
 .drw-av-company { background: var(--sky); color: var(--tx-on-fill); }
 .drw-av-industry { background: var(--s3); color: var(--tx2); }
 .drw-title-block { min-width: 0; }
 .drw-name {
-  font-family: var(--font-display); font-size: var(--fs-xl); font-weight: var(--fw-bold);
+  font-family: var(--font-display); font-size: var(--fs-xl); font-weight: var(--display-weight);
   letter-spacing: var(--ls-display); line-height: var(--lh-tight); color: var(--tx);
 }
 .drw-sub { font-size: var(--fs-sm); color: var(--tx2); margin-top: 2px; }

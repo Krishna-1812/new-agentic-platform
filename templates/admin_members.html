@@ -110,7 +110,7 @@ function avatar(m,big){
 var MEMBERS=[];
 var LAST_DATA=null;
 // ── rich Members table (mirrors External Usage's People table) ──
-function palette(s){var C=['#6366f1','#8b5cf6','#0ea5e9','#14b8a6','#f5a623','#ec4899','#22d3ee','#a855f7'];var h=0;s=String(s||'');for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return C[h%C.length];}
+function palette(s){var C=['#FF6022','#FF6022','#8CCBFF','#17753F','#FFB500','#FF3B30','#8CCBFF','#FF6022'];var h=0;s=String(s||'');for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return C[h%C.length];}
 function devIcon(m){
   var d=(m.device||'').toLowerCase();
   if(d.indexOf('mobile')>=0||d.indexOf('phone')>=0)return '<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 2h8a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zM11 18.5h2\"/></svg>';
@@ -162,7 +162,7 @@ function renderMembersTable(members){
     var devTxt=(m.browser&&m.browser!=='—')?m.browser:((m.device&&m.device!=='—')?m.device:m.os);
     var dev=(devTxt&&devTxt!=='—')?('<span class="pt-dev" title="'+esc([m.browser,m.os,m.device].filter(function(x){return x&&x!=='—';}).join(' · '))+'"><span class="di">'+devIcon(m)+'</span>'+esc(devTxt)+'</span>'):'<span class="muted">—</span>';
     var fs=shortTs(m.first_seen), la=shortTs(m.last_active);
-    return '<tr class="pt-row" style="--rc:'+col+';animation-delay:'+Math.min(i*32,480)+'ms" onclick="openDrawer('+i+')">'
+    return '<tr class="pt-row" style="--rc:'+col+';" onclick="openDrawer('+i+')">'
       +'<td><div class="pt-person">'+pav(m)+'<div style="min-width:0"><div class="pt-name">'+esc(m.name&&m.name!=='—'?m.name:m.email)+badge+'</div><div class="pt-email">'+esc(m.email)+'</div></div></div></td>'
       +'<td>'+co+'</td>'
       +'<td style="text-align:right">'+metric(m.signins,'c-log',ICO.log)+'</td>'

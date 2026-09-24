@@ -44,7 +44,7 @@
    Bento shell now owns, so this page was loading 442 lines to borrow these. */
 .main{flex:1}
 .page-header{display:block;margin:0 0 22px}
-.page-title{font-family:var(--font-display);font-size:var(--fs-4xl);font-weight:var(--fw-semi);letter-spacing:var(--ls-display);line-height:var(--lh-tight);color:var(--tx);margin:0}
+.page-title{font-family:var(--font-display);font-size:var(--fs-4xl);font-weight: var(--display-weight);letter-spacing:var(--ls-display);line-height:var(--lh-tight);color:var(--tx);margin:0}
 .page-title em{font-style:normal;color:var(--tx2)}
 .page-sub{font-size:var(--fs-md);color:var(--tx2);margin:10px 0 0;max-width:62ch}
 .cs-seclabel{display:flex;align-items:center;gap:14px;margin:32px 0 16px;font-size:var(--fs-xs);font-weight:var(--fw-semi);letter-spacing:var(--ls-label);text-transform:uppercase;color:var(--tx3)}
@@ -103,7 +103,7 @@
 .cs-panel{position:relative;border-radius: var(--r);background: var(--s1);
   padding:24px;overflow:hidden}
 .cs-ph{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:20px}
-.cs-ph h3{font-size:var(--fs-md);font-weight:var(--fw-semi);color:var(--tx);font-family:var(--font-display);letter-spacing:var(--ls-tight)}
+.cs-ph h3{font-size:var(--fs-md);font-weight: var(--display-weight);color:var(--tx);font-family:var(--font-display);letter-spacing:var(--ls-tight)}
 .cs-ph .sub{font-size:11.5px;color:var(--tx3);margin-top:3px}
 .cs-ph .hint{font-size:10px;font-family:var(--mono);color:var(--tx3);letter-spacing: var(--ls-caps);text-transform:uppercase}
 
@@ -112,7 +112,7 @@
 .cs-kpi .kl{font-size:10px;letter-spacing: var(--ls-caps);text-transform:uppercase;color:var(--tx3);font-family:var(--mono);display:flex;align-items:center;gap:8px;line-height: var(--lh-tight);min-height:26px}
 .cs-kpi .ki{flex:0 0 auto;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;color:var(--tx3)}
 .cs-kpi .ki svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.cs-kpi .kv{font-family:var(--font-display);font-size:var(--fs-3xl);font-weight:var(--fw-semi);color:var(--tx);margin-top:12px;line-height:1;letter-spacing:var(--ls-tight);font-variant-numeric:tabular-nums}
+.cs-kpi .kv{font-family:var(--font-num);font-size:var(--fs-3xl);font-weight:var(--fw-semi);color:var(--tx);margin-top:12px;line-height:1;letter-spacing:var(--ls-tight);font-variant-numeric:tabular-nums}
 .cs-kpi .kv small{font-size:15px;color:var(--tx3);font-weight:500;text-shadow:none;margin-left:1px}
 .cs-kpi .kd{margin-top:10px;font-size:var(--fs-xs);display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:var(--r-sm);background:var(--s2);width:fit-content}
 .cs-kpi .kd.up{color:var(--pos)}.cs-kpi .kd.dn{color:var(--neg)}.cs-kpi .kd.fl{color:var(--tx3)}
@@ -151,7 +151,7 @@
   font-weight:500;padding:0 12px 12px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
 .cs-loc-tbl th:hover{color:var(--tx2)}
 .cs-loc-tbl th .ar{opacity:0;margin-left:4px}
-.cs-loc-tbl th.sort .ar{opacity:1;color:var(--accent)}
+.cs-loc-tbl th.sort .ar{opacity:1;color:var(--acc-tx)}
 .cs-loc-tbl td{padding:13px 12px;font-size:var(--fs-sm);vertical-align:middle}
 .cs-loc-tbl tr{cursor:pointer;transition:background var(--dur)}
 .cs-loc-tbl tbody tr:hover{background:var(--s2)}
@@ -192,7 +192,7 @@
 .cs-feed{display:flex;flex-direction:column;gap:10px;max-height:560px;overflow-y:auto;padding-right:4px}
 .cs-fi{display:grid;grid-template-columns:40px 1fr auto;gap:13px;padding:14px;border-radius:var(--r);background:var(--s2);transition:background var(--dur)}
 .cs-fi:hover{background:var(--s3)}
-.cs-fi.flag{box-shadow:inset 3px 0 0 var(--clay)}
+.cs-fi.flag{box-shadow:none}
 .cs-fi .fic{width:40px;height:40px;border-radius: var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:17px;background:var(--s3)}
 .cs-fi .ft{display:flex;flex-direction:column;gap:5px;min-width:0}
 .cs-fi .frow1{display:flex;align-items:center;gap:9px;flex-wrap:wrap}

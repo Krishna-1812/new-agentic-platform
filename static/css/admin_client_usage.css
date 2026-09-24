@@ -18,6 +18,6 @@
     .cu-stat b{display:block;font-size:21px;font-weight:700;color:var(--tx);line-height:1}
     .cu-stat small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--tx2);margin-top:5px}
     .cu-foot{display:flex;align-items:center;justify-content:space-between;margin-top:16px;font-size:11.5px;color:var(--tx2)}
-    .cu-open{color:var(--acc);font-weight:600}
+    .cu-open{color:var(--acc-tx);font-weight:600}
     .cu-empty{margin-top:40px;padding:44px;text-align:center;color:var(--tx2);border:1px dashed var(--s2);border-radius: var(--r)}
   

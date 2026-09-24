@@ -5,7 +5,7 @@ let _cfCard=null, _cfJob=0;  // applyCF()'s progressive-render helpers
 /* helpers */
 const esc=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const ini=n=>(n||'?').trim().split(/\s+/).map(w=>w[0]||'').join('').toUpperCase().slice(0,2);
-const GRAD=[['#6366f1','#22d3ee'],['#8b5cf6','#06b6d4'],['#059669','#818cf8'],['#d97706','#f472b6'],['#0ea5e9','#a78bfa'],['#10b981','#f59e0b']];
+const GRAD=[['#FF6022','#8CCBFF'],['#FF6022','#8CCBFF'],['#17753F','#FF6022'],['#FFB500','#FF3B30'],['#8CCBFF','#FF6022'],['#17753F','#FFB500']];
 function gradFor(name){const i=Math.abs((name||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0))%GRAD.length;return GRAD[i]}
 function av(name,pic,sz,cls){
   const s=sz||44,c=cls||'pcav';
@@ -169,12 +169,12 @@ function buildOverviewTab(){
   const el=document.getElementById('tab-overview');if(!el)return;
   const st=D.stats||{};
   const kpis=[
- {v:st.total_engagements||0,l:'Total Engagements',c:'vi',kc:'#7c83f5',ic:'',go:'goPosts({})',t:'See every post & engager'},
- {v:st.total_people||0,l:'Unique People',c:'vg',kc:'#2dd4aa',ic:'',go:'goPeople({})',t:'Browse all people'},
- {v:st.total_dms||0,l:'Decision Makers',c:'va',kc:'#f5a623',ic:'',go:'goPeople({dm:true})',t:'People flagged as decision-makers'},
- {v:st.csuite_count||0,l:'C-Suite Reached',c:'vp',kc:'#b78bfa',ic:'',go:"goPeople({sen:'csuite'})",t:'C-level & founders'},
- {v:st.total_companies||0,l:'Companies Reached',c:'vc',kc:'#22d3ee',ic:'',go:'goCompanies()',t:'Company intelligence'},
- {v:st.total_comments||0,l:'Comments',c:'vr',kc:'#fb7185',ic:'',go:'goPosts({})',t:'Posts & comment signal'},
+ {v:st.total_engagements||0,l:'Total Engagements',c:'vi',kc:'#FF6022',ic:'',go:'goPosts({})',t:'See every post & engager'},
+ {v:st.total_people||0,l:'Unique People',c:'vg',kc:'#17753F',ic:'',go:'goPeople({})',t:'Browse all people'},
+ {v:st.total_dms||0,l:'Decision Makers',c:'va',kc:'#FFB500',ic:'',go:'goPeople({dm:true})',t:'People flagged as decision-makers'},
+ {v:st.csuite_count||0,l:'C-Suite Reached',c:'vp',kc:'#FF6022',ic:'',go:"goPeople({sen:'csuite'})",t:'C-level & founders'},
+ {v:st.total_companies||0,l:'Companies Reached',c:'vc',kc:'#8CCBFF',ic:'',go:'goCompanies()',t:'Company intelligence'},
+ {v:st.total_comments||0,l:'Comments',c:'vr',kc:'#FF3B30',ic:'',go:'goPosts({})',t:'Posts & comment signal'},
   ];
  /* navFn(key) a JS onclick string, or null for non-clickable rows */
   function barList(counts,total,colorFn,navFn){
@@ -200,26 +200,26 @@ function buildOverviewTab(){
  ${kpis.map(k=>`<div class="ov-kpi ov-kpi-click" style="--kc:${k.kc}" onclick="${k.go}" title="${k.t}"><div class="ov-kpi-ic">${k.ic}</div><div class="ov-kpi-val ${k.c}" data-count="${k.v}">0</div><div class="ov-kpi-lbl">${k.l}</div><div class="ov-kpi-go">View </div></div>`).join('')}
   </div>
   <div class="ov-grid">
-    <div class="lbcard ov-card" style="--kc:#22d3ee">
+    <div class="lbcard ov-card" style="--kc:#8CCBFF">
  <div class="lbtitle"><span class="ov-chip"></span>Reaction Mix</div>
-      ${barList(st.reaction_breakdown,st.total_engagements,k=>({LIKE:'#60a5fa',PRAISE:'#fbbf24',INTEREST:'#a5b4fc',APPRECIATION:'#fca5a5',EMPATHY:'#f9a8d4'}[k]||'var(--accent)'),k=>"goPosts({react:'"+jsstr(k)+"'})")}
+      ${barList(st.reaction_breakdown,st.total_engagements,k=>({LIKE:'#8CCBFF',PRAISE:'#FFB500',INTEREST:'#FF6022',APPRECIATION:'#FF3B30',EMPATHY:'#FF3B30'}[k]||'var(--accent)'),k=>"goPosts({react:'"+jsstr(k)+"'})")}
     </div>
-    <div class="lbcard ov-card" style="--kc:#f5a623">
+    <div class="lbcard ov-card" style="--kc:#FFB500">
  <div class="lbtitle"><span class="ov-chip"></span>Seniority Mix</div>
-      ${barList(st.seniority_breakdown,st.total_people,k=>({'C-Level / Founder':'#fbbf24','VP':'#818cf8','Director':'#a5b4fc','Manager':'#2dd4aa','IC / Individual Contributor':'#94a3b8'}[k]||'var(--accent)'),k=>"goPeople({sen:'"+_senToBucket(k)+"'})")}
+      ${barList(st.seniority_breakdown,st.total_people,k=>({'C-Level / Founder':'#FFB500','VP':'#FF6022','Director':'#FF6022','Manager':'#17753F','IC / Individual Contributor':'#6F6B66'}[k]||'var(--accent)'),k=>"goPeople({sen:'"+_senToBucket(k)+"'})")}
     </div>
-    <div class="lbcard ov-card" style="--kc:#2dd4aa">
+    <div class="lbcard ov-card" style="--kc:#17753F">
  <div class="lbtitle"><span class="ov-chip"></span>Top Locations</div>
-      ${barList(st.country_breakdown,st.total_people,()=>'linear-gradient(90deg,#2dd4aa,#22d3ee)',k=>"goPeople({country:'"+jsstr(k)+"'})")}
+      ${barList(st.country_breakdown,st.total_people,()=>'linear-gradient(90deg,#17753F,#8CCBFF)',k=>"goPeople({country:'"+jsstr(k)+"'})")}
     </div>
-    <div class="lbcard ov-card" style="--kc:#fb7185">
+    <div class="lbcard ov-card" style="--kc:#FF3B30">
  <div class="lbtitle"><span class="ov-chip"></span>Employee vs. External</div>
-      ${barList(st.relationship_breakdown,relTotal,k=>k==='Employee'?'#f5a623':'linear-gradient(90deg,#fb7185,#b78bfa)',k=>"goPeople({rel:'"+jsstr(k)+"'})")}
+      ${barList(st.relationship_breakdown,relTotal,k=>k==='Employee'?'#FFB500':'linear-gradient(90deg,#FF3B30,#FF6022)',k=>"goPeople({rel:'"+jsstr(k)+"'})")}
       <div class="ov-note">External reactions are real prospect signal — employee amplification is tracked separately so it doesn't inflate reach. <span class="ov-note-hint">Click any row to drill in.</span></div>
     </div>
   </div>
- <div class="sec-hdr" style="margin-top:22px"><div class="sec-ttl"><span class="ov-chip" style="--kc:#7c83f5"></span>Top Companies by Engagement</div></div>
-  <div class="lbcard ov-card ov-card-lb" style="--kc:#7c83f5">
+ <div class="sec-hdr" style="margin-top:22px"><div class="sec-ttl"><span class="ov-chip" style="--kc:#FF6022"></span>Top Companies by Engagement</div></div>
+  <div class="lbcard ov-card ov-card-lb" style="--kc:#FF6022">
     ${(D.company_lb||[]).length?D.company_lb.map(([name,cnt],i)=>{
       const maxLb=D.company_lb[0][1]||1;
       return`<div class="lbitem" onclick="switchTab('companies');setTimeout(()=>openCompanyDrawerByName('${esc(name)}'),120)">
@@ -325,7 +325,7 @@ function applyPF(){
     const csN=eng.filter(e=>e.seniority?.includes('C-Level')||e.seniority?.includes('Founder')).length;
     const cmN=eng.filter(e=>e.commented).length;
     const reacts=[...new Set(eng.map(e=>e.reaction).filter(Boolean))].slice(0,2);
-    return`<div class="pcard" id="pc-${pi}" onclick="openPostModal(${pi})" style="animation-delay:${Math.min(pi,40)*.05}s">
+    return`<div class="pcard" id="pc-${pi}" onclick="openPostModal(${pi})" >
       <div class="ptop">
         <div class="pdot"></div>
         <div class="pauth">${esc(p.author||EMP_FULL)}</div>
@@ -375,11 +375,11 @@ function togglePost(pi){
    PEOPLE & COMPANIES
  */
 const BKT=[
- {k:'csuite',l:'C-Suite / Founders',i:'',c:'#fbbf24'},
- {k:'vpdirector',l:'VP / Director Level',i:'',c:'#818cf8'},
- {k:'managers',l:'Managers',i:'',c:'#00e5a0'},
- {k:'ics',l:'Individual Contributors',i:'',c:'#94a3b8'},
- {k:'unknown',l:'Unknown Seniority',i:'',c:'#64748b'},
+ {k:'csuite',l:'C-Suite / Founders',i:'',c:'#FFB500'},
+ {k:'vpdirector',l:'VP / Director Level',i:'',c:'#FF6022'},
+ {k:'managers',l:'Managers',i:'',c:'#17753F'},
+ {k:'ics',l:'Individual Contributors',i:'',c:'#6F6B66'},
+ {k:'unknown',l:'Unknown Seniority',i:'',c:'#444444'},
 ];
 let maxP=1;
 
@@ -560,7 +560,7 @@ function applyPLF(){
           ${grp.map((p,pi)=>{
             const idx=D.people.indexOf(p);
                       const pct=Math.round(p.posts_engaged/maxP*100);
-            return`<div class="pcrd" onclick="openPersonDrawer(${idx})" style="animation-delay:${pi*.04}s">
+            return`<div class="pcrd" onclick="openPersonDrawer(${idx})" >
               <div class="pctop">${av(p.name,p.pic,44,'pcav')}<div><div class="pcn">${esc(p.name)}</div><div class="pct">${esc(p.title||p.headline)}</div></div></div>
               <div class="pcbdg">
                 ${p.seniority?`<span class="b ${SCLS(p.seniority)}">${esc(SLBL(p.seniority))}</span>`:''}
@@ -568,14 +568,14 @@ function applyPLF(){
  ${isEmployee(p)?`<span class="b brel-emp"> ${esc(EMP_SHORT)} Employee</span>`:''}
                 ${p.degree?`<span class="b bdeg">${DLBL(p.degree)}</span>`:''}
  ${p.country?`<span class="b bic"> ${esc(p.country)}</span>`:''}
-                ${p.industry?`<span class="b bic" style="background:rgba(79,70,229,0.18);border-color:rgba(79,70,229,0.35)">${esc(p.industry)}</span>`:''}
+                ${p.industry?`<span class="b bic" style="background:rgba(255,96,34,0.18);border-color:rgba(255,96,34,0.35)">${esc(p.industry)}</span>`:''}
               </div>
               <div class="pcmeta">
  ${p.company?`<div class="pcmi"> <span>${esc(p.company)}</span></div>`:''}
  ${p.location?`<div class="pcmi"> <span>${esc(p.location)}</span></div>`:''}
  ${p.size?`<div class="pcmi"> <span>${esc(p.size)}</span></div>`:''}
  ${p.followers?`<div class="pcmi"> <span>${fmtN(p.followers)} followers</span></div>`:''}
- ${p.url?`<div class="pcmi"><a href="${esc(p.url)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:none;font-size:10px;font-weight:600">LinkedIn</a></div>`:''}
+ ${p.url?`<div class="pcmi"><a href="${esc(p.url)}" target="_blank" onclick="event.stopPropagation()" style="color:var(--acc-tx);text-decoration:none;font-size:10px;font-weight:600">LinkedIn</a></div>`:''}
               </div>
               ${p.posts_engaged>0?`<div class="actbar"><div class="acttrack"><div class="actfill" style="width:${pct}%"></div></div><div class="actlbl">${p.posts_engaged} post${p.posts_engaged!==1?'s':''}</div></div>`:''}
             </div>`;
@@ -603,7 +603,7 @@ function applyCF(){
   const g=document.getElementById('cgrid');if(!g)return;
   const {q,dm,minPpl}=CF;const ql=q.toLowerCase();
   const SEN_C=['C-Level / Founder','VP','Director','Manager','IC / Individual Contributor'];
-  const SEN_COLS=['#fbbf24','#818cf8','#818cf8','#00e5a0','#94a3b8'];
+  const SEN_COLS=['#FFB500','#FF6022','#FF6022','#17753F','#6F6B66'];
   const fil=D.companies.filter(c=>{
     if(c.name==='(Unknown)')return false;
     if(minPpl>0&&c.people_count<minPpl)return false;
@@ -629,7 +629,7 @@ function applyCF(){
     // mini avatars
     const ppl=c.people.slice(0,5);
     const avs=ppl.map(p=>{const[c1,c2]=gradFor(p.name);return`<div class="mini-av" style="background:linear-gradient(135deg,${c1},${c2})" title="${esc(p.name)}">${ini(p.name)}</div>`;}).join('');
-    return`<div class="ccrd" onclick="openCompanyDrawer(${idx})" style="animation-delay:${Math.min(ci,40)*.04}s">
+    return`<div class="ccrd" onclick="openCompanyDrawer(${idx})" >
       <div class="cctop">
         <div class="ccico" style="background:linear-gradient(135deg,${cc1},${cc2})">${icos}</div>
         <div><div class="ccn">${esc(c.name)}</div><div class="ccsub">${esc(c.industry||'-')}${c.size?' · '+esc(c.size):''}</div></div>
@@ -733,11 +733,11 @@ function openPersonDrawer(idx){
       </div>
     </div>`:''}
     ${p.posts_engaged>0?`<div class="dsec"><div class="dslbl">Engagement Activity</div>
-      <div style="display:flex;align-items:center;gap:12px;padding:14px;background:rgba(255,255,255,.03);border:1px solid var(--card-b);border-radius:10px">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--s2);border:1px solid var(--card-b);border-radius:10px">
         <div style="flex:1"><div style="font-size:11px;color:var(--muted);margin-bottom:6px">Relative activity vs. most active person</div>
           <div class="acttrack" style="height:5px"><div class="actfill" style="width:${pct}%"></div></div>
         </div>
-        <div style="font-size:26px;font-weight:700;color:var(--green)">${p.posts_engaged}</div>
+        <div style="font-size:26px;font-weight:700;color:var(--ok)">${p.posts_engaged}</div>
       </div>
  ${p.comments_count?`<div style="margin-top:8px;font-size:11px;color:var(--muted)">Commented ${p.comments_count} time${p.comments_count!==1?'s':''}</div>`:''}
     </div>`:''}
@@ -758,7 +758,7 @@ function openPersonDrawer(idx){
 function openCompanyDrawer(idx){
   const c=D.companies[idx];if(!c)return;
   const SEN_C=['C-Level / Founder','VP','Director','Manager','IC / Individual Contributor'];
-  const SEN_COLS=['#fbbf24','#818cf8','#818cf8','#00e5a0','#94a3b8'];
+  const SEN_COLS=['#FFB500','#FF6022','#FF6022','#17753F','#6F6B66'];
   const [cc1,cc2]=gradFor(c.name);
   const coLinks=[
  c.website?`<a href="${esc(/^https?:/.test(c.website)?c.website:'https://'+c.website)}" target="_blank" class="lilink">Website</a>`:'',
@@ -787,10 +787,10 @@ function openCompanyDrawer(idx){
   document.getElementById('dbody').innerHTML=`
     <div class="dsec">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-        <div class="cc-stat" style="background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.15);border-radius:12px;padding:16px">
+        <div class="cc-stat" style="background:rgba(23,117,63,.06);border:1px solid rgba(23,117,63,.15);border-radius:12px;padding:16px">
           <div class="cc-stat-val vg">${c.people_count}</div><div class="cc-stat-lbl">People</div>
         </div>
-        <div class="cc-stat" style="background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.15);border-radius:12px;padding:16px">
+        <div class="cc-stat" style="background:rgba(255,181,0,.06);border:1px solid rgba(255,181,0,.15);border-radius:12px;padding:16px">
           <div class="cc-stat-val va">${c.dm_count}</div><div class="cc-stat-lbl">Decision Makers</div>
         </div>
       </div>
@@ -799,7 +799,7 @@ function openCompanyDrawer(idx){
       <div class="igrid">${senBreakdown}</div>
     </div>
     ${c.posts_engaged?`<div class="dsec"><div class="dslbl">Post Engagement</div>
-      <div class="ibox"><div class="ilbl">Posts Engaged With</div><div class="ival" style="color:var(--green);font-size:20px">${c.posts_engaged}</div></div>
+      <div class="ibox"><div class="ilbl">Posts Engaged With</div><div class="ival" style="color:var(--ok);font-size:20px">${c.posts_engaged}</div></div>
     </div>`:''}
     <div class="dsec"><div class="dslbl">People from this Company (${c.people_count})</div>
       <div class="dplist">${pplHtml}</div>
@@ -831,7 +831,7 @@ function openPostModal(pi){
     const oi=p.engagers.indexOf(e);
     const _t=(e.title&&!/^[\d.,\s]+$/.test(e.title))?e.title:'';
     const subLine=[_t,e.company].filter(Boolean).join(' · ')||e.headline||'';
-    return'<div class="eitem" onclick="openEngDrawer('+ori+','+oi+')" style="animation-delay:'+(ei*.025)+'s">'+
+    return'<div class="eitem" onclick="openEngDrawer('+ori+','+oi+')" >'+
       av(e.name,e.pic,36,'eavtr')+
       '<div><div class="ename">'+esc(e.name)+'</div>'+
       '<div class="esub">'+esc(subLine)+'</div>'+

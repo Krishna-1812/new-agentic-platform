@@ -28,7 +28,7 @@
         <div class="kc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
         <div class="stat-label">Page Views</div>
         <div class="stat-value" id="k-views"><span class="skel" style="width:48px;height:36px;display:inline-block"></span></div>
-        <div class="stat-small" style="color:var(--acc)">View all activity →</div>
+        <div class="stat-small" style="color:var(--acc-tx)">View all activity →</div>
       </div>
       <div class="stat-card kc clik" style="--kc:var(--acc)" onclick="openPeople()" title="See everyone">
         <div class="sc-glow"></div>
@@ -104,7 +104,7 @@
     document.addEventListener('click',function(e){var m=document.getElementById('userMenu');if(m&&!m.contains(e.target)){document.getElementById('userDropdown').classList.remove('open');document.getElementById('userPill').classList.remove('open');}});
 
     var SLUG=document.body.getAttribute('data-slug');
-    var AC=document.body.getAttribute('data-ac')||'#5b9dff', AC2=document.body.getAttribute('data-ac2')||'#8b5cf6';
+    var AC=document.body.getAttribute('data-ac')||'#8CCBFF', AC2=document.body.getAttribute('data-ac2')||'#FF6022';
     function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
     function ini(n){return (n||'?').trim().split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);}
     function shortDate(s){if(!s)return '—';var m=String(s).slice(5,10);return m||s;}
@@ -220,10 +220,10 @@
       var sub=document.getElementById('k-people-sub');
       if(sub)sub.textContent=(k.p2_people||0)+' {{ brand.name }} · '+(k.client_people||0)+' '+(D.client&&D.client.short||'client');
       var seg=D.segments||{};
-      var html=segPanel('p2',seg.p2||{label:'{{ brand.name }} team',people:[]},'#818cf8','@{{ brand.staff_domain }}')
+      var html=segPanel('p2',seg.p2||{label:'{{ brand.name }} team',people:[]},'#FF6022','@{{ brand.staff_domain }}')
               +segPanel('client',seg.client||{label:'Client team',people:[]},AC,(D.client&&D.client.domains||[]).join(', '));
       if(seg.other&&seg.other.people&&seg.other.people.length)
-        html+=segPanel('other',seg.other,'#94a3b8','Other email domains');
+        html+=segPanel('other',seg.other,'#6F6B66','Other email domains');
       document.getElementById('segGrid').innerHTML=html;
       document.getElementById('timeline-wrap').innerHTML=renderTimeline(D.timeline);
       var bd='';
@@ -240,7 +240,7 @@
       if(!m)return String(ts).slice(0,16);
       return MON[(+m[2])-1]+' '+(+m[3])+', '+m[4]+':'+m[5];
     }
-    function segColor(s){return s==='p2'?'#818cf8':(s==='other'?'#94a3b8':AC);}
+    function segColor(s){return s==='p2'?'#FF6022':(s==='other'?'#6F6B66':AC);}
     function segLabel(s){return s==='p2'?'{{ brand.name }}':(s==='other'?'Other':(DATA.client&&DATA.client.short)||'Client');}
     function badge(s){var c=segColor(s);return '<span class="dr-badge" style="color:'+c+';border-color:'+c+'55;background:'+c+'1a">'+esc(segLabel(s))+' team</span>';}
     function evItem(e){

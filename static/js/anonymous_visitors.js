@@ -7,7 +7,7 @@
   function initials(n){return(n||'?').split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase();}
   function pagesClass(p){var n=parseInt(p)||0;return n>=30?'pages-hi':n>=15?'pages-mid':'pages-lo';}
   function engLabel(p){var n=parseInt(p)||0;return n>=30?'High':n>=15?'Medium':'Low';}
-  function engColor(p){var n=parseInt(p)||0;return n>=30?'#34d399':n>=15?'#818cf8':'#64748b';}
+  function engColor(p){var n=parseInt(p)||0;return n>=30?'#17753F':n>=15?'#FF6022':'#444444';}
   function engPct(p){var n=parseInt(p)||0;return Math.min(100,Math.round(n/60*100));}
   function getSeniority(title){
     var t=(title||'').toLowerCase();
@@ -69,7 +69,7 @@
     h+='<div class="drw-info-box full"><div style="display:flex;align-items:center;gap:12px">';
     h+='<div class="company-av">'+esc(initials(p.website||'?'))+'</div>';
     h+='<div style="flex:1">';
- if(p.website)h+='<div class="drw-info-value"><a href="https://'+esc(p.website)+'" target="_blank" style="color:#a5b4fc;text-decoration:none">'+esc(p.website)+' </a></div>';
+ if(p.website)h+='<div class="drw-info-value"><a href="https://'+esc(p.website)+'" target="_blank" style="color:#B83C0C;text-decoration:none">'+esc(p.website)+' </a></div>';
     else h+='<div class="drw-info-value muted">Unknown company</div>';
     if(p.industry)h+='<div class="drw-info-label" style="margin-bottom:0;margin-top:3px">'+esc(p.industry)+'</div>';
     h+='</div>';
@@ -82,7 +82,7 @@
         h+='<div class="drw-person-item" onclick="openPersonDrawer('+c.idx+',true)">';
         h+='<div class="drw-person-av-sm">'+esc(initials(c.person.name))+'</div>';
         h+='<div style="flex:1;min-width:0"><div class="drw-person-name-sm">'+esc(c.person.name)+'</div><div class="drw-person-title-sm">'+esc(c.person.title||'-')+'</div></div>';
-        h+='<div class="drw-person-meta"><span class="seniority-badge '+senClass(cs)+'" style="font-size:9px">'+esc(cs)+'</span><span style="font-size:10px;color:#64748b">'+esc(c.person.date||'')+'</span></div>';
+        h+='<div class="drw-person-meta"><span class="seniority-badge '+senClass(cs)+'" style="font-size:9px">'+esc(cs)+'</span><span style="font-size:10px;color:#444444">'+esc(c.person.date||'')+'</span></div>';
         h+='</div>';
       });
       if(colleagues.length>5)h+='<div class="drw-empty" style="padding:10px">+'+(colleagues.length-5)+' more</div>';
@@ -124,7 +124,7 @@
     h+='<div class="drw-info-box"><div class="drw-info-label">Employees</div><div class="drw-info-value">'+(c.employees&&c.employees!=='Unavailable'?fmtEmp(c.employees):'<span class="muted">—</span>')+'</div></div>';
     h+='<div class="drw-info-box"><div class="drw-info-label">Revenue</div><div class="drw-info-value">'+esc(fmtRevenue(c.revenue))+'</div></div>';
     if(c.country&&c.country!==c.state)h+='<div class="drw-info-box"><div class="drw-info-label">Country</div><div class="drw-info-value">'+esc(c.country)+'</div></div>';
- if(c.website)h+='<div class="drw-info-box"><div class="drw-info-label">Website</div><div class="drw-info-value"><a href="https://'+esc(c.website)+'" target="_blank" style="color:#a5b4fc;text-decoration:none">'+esc(c.website)+' </a></div></div>';
+ if(c.website)h+='<div class="drw-info-box"><div class="drw-info-label">Website</div><div class="drw-info-value"><a href="https://'+esc(c.website)+'" target="_blank" style="color:#B83C0C;text-decoration:none">'+esc(c.website)+' </a></div></div>';
     h+='</div></div>';
 
     h+='<div class="drw-section"><div class="drw-section-label">Identified Visitors'+(visitors.length?' ('+visitors.length+')':'')+'</div>';
@@ -166,8 +166,8 @@
     var h='';
     var totalPg=ppl.reduce(function(s,p){return s+(parseInt(p.pages)||0);},0);
     h+='<div class="drw-section"><div class="drw-section-label">Industry Stats</div><div class="drw-grid">';
-    h+='<div class="drw-info-box"><div class="drw-info-label">Companies</div><div class="drw-info-value" style="color:#a5b4fc">'+cos.length+'</div></div>';
-    h+='<div class="drw-info-box"><div class="drw-info-label">People</div><div class="drw-info-value" style="color:#6ee7b7">'+ppl.length+'</div></div>';
+    h+='<div class="drw-info-box"><div class="drw-info-label">Companies</div><div class="drw-info-value" style="color:#B83C0C">'+cos.length+'</div></div>';
+    h+='<div class="drw-info-box"><div class="drw-info-label">People</div><div class="drw-info-value" style="color:#17753F">'+ppl.length+'</div></div>';
     h+='<div class="drw-info-box"><div class="drw-info-label">Total Pages</div><div class="drw-info-value">'+totalPg+'</div></div>';
     h+='<div class="drw-info-box"><div class="drw-info-label">Avg Pages</div><div class="drw-info-value">'+(ppl.length?Math.round(totalPg/ppl.length):0)+'</div></div>';
     h+='</div></div>';
@@ -243,12 +243,12 @@
       return'<div class="recent-row" onclick="openPersonDrawer('+ri+',true)" title="Click to view profile">'+
         '<div class="person-av">'+esc(initials(p.name))+'</div>'+
         '<div style="flex:1;min-width:0">'+
-          '<div style="font-size:12px;font-weight:600;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(p.name)+'</div>'+
-          '<div style="font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(p.title)+'</div>'+
+          '<div style="font-size:12px;font-weight:600;color:#444444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(p.name)+'</div>'+
+          '<div style="font-size:11px;color:#444444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(p.title)+'</div>'+
         '</div>'+
         '<span class="seniority-badge '+senClass(sen)+'">'+esc(sen)+'</span>'+
-        '<div style="font-size:10px;color:#64748b;margin-left:8px;white-space:nowrap">'+esc(p.date)+'</div>'+
-        '<div style="font-size:14px;color:#334155;margin-left:6px">›</div>'+
+        '<div style="font-size:10px;color:#444444;margin-left:8px;white-space:nowrap">'+esc(p.date)+'</div>'+
+        '<div style="font-size:14px;color:#444444;margin-left:6px">›</div>'+
       '</div>';
     }).join('');
   }
@@ -266,8 +266,8 @@
       '<td><span class="seniority-badge '+senClass(sen)+'">'+esc(sen)+'</span></td>'+
       '<td>'+(p.website?'<span class="domain-pill">'+esc(p.website)+'</span>':'\u2014')+'</td>'+
       '<td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.location)+'</td>'+
-      '<td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cbd5e1">'+esc(p.industry)+'</td>'+
-      '<td style="color:#64748b;white-space:nowrap">'+esc(p.date)+'</td>'+
+      '<td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#444444">'+esc(p.industry)+'</td>'+
+      '<td style="color:#444444;white-space:nowrap">'+esc(p.date)+'</td>'+
     '</tr>';
   }
   function _peopleRows(rows,start,end){var o='';for(var i=start;i<end;i++)o+=_personRow(rows[i],i);return o;}
@@ -305,9 +305,9 @@
         '<div class="company-av">'+esc(initials(c.name))+'</div>'+
         '<div style="min-width:0;overflow:hidden"><div class="company-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.name)+'</div><div class="company-site" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.website)+'</div></div>'+
       '</div></td>'+
-      '<td style="color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.industry)+'</td>'+
+      '<td style="color:#444444;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.industry)+'</td>'+
       '<td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(loc)+'</td>'+
-      '<td style="color:#94a3b8">'+fmtEmp(c.employees)+'</td>'+
+      '<td style="color:#6F6B66">'+fmtEmp(c.employees)+'</td>'+
       '<td><span class="revenue-badge">'+fmtRevenue(c.revenue)+'</span></td>'+
     '</tr>';
   }
@@ -407,7 +407,7 @@
     Object.keys(locs).sort().forEach(function(l){var o=document.createElement('option');o.value=l.toLowerCase();o.textContent=l;locSel.appendChild(o);});
   }
   function animateBars(){setTimeout(function(){document.querySelectorAll('.bar-fill[data-w]').forEach(function(b){b.style.width=b.dataset.w+'%';});},80);}
-  function revealCards(){document.querySelectorAll('.stat-card,.card').forEach(function(c,i){setTimeout(function(){c.classList.add('visible');},i*55);});}
+  function revealCards(){document.querySelectorAll('.stat-card,.card').forEach(function(c){c.classList.add('visible');});}
   function animateCount(el,target){var start=0,dur=800,step=14;var t=setInterval(function(){start+=Math.ceil(target/(dur/step));if(start>=target){el.textContent=target;clearInterval(t);}else el.textContent=start;},step);}
 
   /* LOAD DATA */
@@ -439,7 +439,7 @@
         setTimeout(function(){ov.style.display='none';},400);
       })
       .catch(function(){
-        document.getElementById('pane-people').innerHTML='<div class="empty" style="color:#f87171">Failed to load. <a href="" style="color:#34d399">Retry</a></div>';
+        document.getElementById('pane-people').innerHTML='<div class="empty" style="color:#C8261B">Failed to load. <a href="" style="color:#17753F">Retry</a></div>';
         document.getElementById('overlay').classList.add('fade-out');
       });
   }

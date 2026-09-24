@@ -779,7 +779,7 @@
       });
       h+='</tr></thead><tbody>';
       rows.forEach(function(p,i){
-        h+='<tr class="gd-row-in" style="animation-delay:'+Math.min(i*11,420)+'ms" onclick="openDrawer(\''+esc(p.office)+'\')">'+
+        h+='<tr class="gd-row-in" onclick="openDrawer(\''+esc(p.office)+'\')">'+
           '<td><span class="gd-office">'+esc(p.office||'—')+'</span></td>'+
           '<td><div class="gd-name">'+esc(p.name)+'</div>'+
             (p.account&&p.account!==p.name?'<div class="gd-sub">'+esc(p.account)+'</div>':'')+'</td>'+

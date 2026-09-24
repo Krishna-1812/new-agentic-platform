@@ -52,7 +52,7 @@
     {% endif %}
 
     <div class="sect-head"><h2>Agent access <span class="ital" style="font-weight:400">requests.</span> <span class="hnote">(post-login, per-agent)</span><span class="cnt">{{ agent_count }}</span></h2></div>
-    <div class="sub" style="margin-bottom:22px">Signed-in users asking for access to agents on <a href="/app" style="color:var(--acc)">/app</a> that aren&rsquo;t connected to a live tool yet &mdash; newest first.</div>
+    <div class="sub" style="margin-bottom:22px">Signed-in users asking for access to agents on <a href="/app" style="color:var(--acc-tx)">/app</a> that aren&rsquo;t connected to a live tool yet &mdash; newest first.</div>
 
     {% if agent_requests %}
     <div class="toolbar">
@@ -80,7 +80,7 @@
     <div class="resn" id="aresn"></div>
     {% else %}
     <div class="card"><div class="empty">
-      <div class="eorb" style="background:linear-gradient(145deg,var(--sky),var(--acc));box-shadow:0 16px 40px -16px var(--acc)"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><path d="M9 10l2 2 4-4"/></svg></div>
+      <div class="eorb" style="background:linear-gradient(145deg,var(--sky),var(--acc));box-shadow:none"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><path d="M9 10l2 2 4-4"/></svg></div>
       <b>No agent access requests yet</b>
       <p>When a signed-in user hits &ldquo;Request Access&rdquo; on an agent that isn&rsquo;t connected yet, it will appear here (and post to Slack).</p>
     </div></div>

@@ -49,7 +49,7 @@
 
     .af-rating{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;
       padding:4px 10px;border-radius:var(--radius-pill);white-space:nowrap}
-    .af-rating.up{color:var(--acc);background:var(--s2)}
+    .af-rating.up{color:var(--acc-tx);background:var(--s2)}
     .af-rating.down{color:var(--danger);background:var(--s2)}
 
     .af-rank{
@@ -58,14 +58,14 @@
       font-size:10px;font-weight:800;color:var(--tx);margin-right:8px;
     }
     .af-rank.sev-1{background: var(--s1);color:var(--tx);box-shadow:0 0 10px -2px var(--s3)}
-    .af-rank.sev-23{background:var(--s3);color:var(--clay)}
+    .af-rank.sev-23{background:var(--s3);color:var(--clay-tx)}
     .af-section{color:var(--tx);font-weight:600;display:flex;align-items:center}
     .af-agent{
       display:inline-flex;align-items:center;gap:6px;font-size:11px;
       color:var(--ag-color,var(--tx2));font-weight:700;letter-spacing:.02em;
     }
     .af-agent::before{content:'';width:6px;height:6px;border-radius:50%;
-      background:var(--ag-color,var(--cyan));box-shadow:0 0 6px var(--ag-color,var(--cyan));flex:none}
+      background:var(--ag-color,var(--cyan));box-shadow:none;flex:none}
 
     .af-bar-wrap{display:flex;align-items:center;gap:10px;min-width:150px}
     .af-bar{flex:1;height:7px;border-radius: var(--r-sm);background:var(--s2);overflow:hidden}
@@ -75,8 +75,8 @@
     .af-bar-fill.sev-lo{background: var(--s1)}
     .af-bar-pct{font-weight:700;color:var(--tx);font-variant-numeric:tabular-nums;min-width:36px;text-align:right}
     .af-bar-pct.sev-hi{color:var(--danger)}
-    .af-bar-pct.sev-mid{color:var(--clay)}
-    .af-bar-pct.sev-lo{color:var(--acc)}
+    .af-bar-pct.sev-mid{color:var(--clay-tx)}
+    .af-bar-pct.sev-lo{color:var(--acc-tx)}
 
     .af-who{display:inline-flex;align-items:center;gap:8px}
     .af-avatar{
@@ -90,7 +90,7 @@
     .af-reason.none{color:var(--tx2);font-style:italic}
 
     .th-down{color:var(--danger) !important}
-    .th-up{color:var(--acc) !important}
+    .th-up{color:var(--acc-tx) !important}
 
     tr.af-row-down{background:var(--s2)}
     tr.af-row-down:hover{background:var(--s2)}
@@ -169,5 +169,5 @@
 /* Up and down are the one pair on this page where the colour IS the meaning.
    It lives on the 18px icon, not on a 34px numeral and a 3px bar as well. */
 .af-kpi-icon{background:var(--s2);color:var(--tx3)}
-.af-kpi-up   .af-kpi-icon{color:var(--acc)}
-.af-kpi-down .af-kpi-icon{color:var(--clay)}
+.af-kpi-up   .af-kpi-icon{color:var(--acc-tx)}
+.af-kpi-down .af-kpi-icon{color:var(--clay-tx)}

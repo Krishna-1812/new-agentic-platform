@@ -20,11 +20,11 @@ html:root { background-color: var(--bg); }
 .dir-lead { margin: 0 0 var(--sp-6); max-width: 54ch; }
 .dir-kicker {
   font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-semi);
-  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--acc);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--acc-tx);
   margin-bottom: var(--sp-3);
 }
 .dir-h1 {
-  font-family: var(--font-display); font-size: var(--fs-3xl); font-weight: var(--fw-bold);
+  font-family: var(--font-display); font-size: var(--fs-3xl); font-weight: var(--display-weight);
   letter-spacing: var(--ls-display); line-height: var(--lh-tight);
   margin: 0 0 var(--sp-2); color: var(--tx);
 }
@@ -65,7 +65,7 @@ html:root { background-color: var(--bg); }
 
 .dir-txt { min-width: 0; }
 .dir-name {
-  font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--fw-semi);
+  font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--display-weight);
   letter-spacing: var(--ls-tight); line-height: var(--lh-snug);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
@@ -94,7 +94,7 @@ html:root { background-color: var(--bg); }
 }
 .dir-state i { width: 6px; height: 6px; border-radius: 50%; background: var(--tx3); }
 .dir-state--live i  { background: var(--acc); }
-.dir-state--build   { color: var(--clay); }
+.dir-state--build   { color: var(--clay-tx); }
 .dir-state--build i { background: var(--clay); }
 
 .dir-foot { margin-top: var(--sp-7); font-size: var(--fs-xs); color: var(--tx3); }
@@ -122,6 +122,6 @@ html:root { background-color: var(--bg); }
    The tool's initial always works, and it is the same mark the command
    palette uses for the same reason. */
 .dir-ic--letter {
-  font-family: var(--font-display); font-size: var(--fs-md); font-weight: var(--fw-bold);
+  font-family: var(--font-num); font-size: var(--fs-md); font-weight: var(--fw-bold);
   letter-spacing: 0;
 }

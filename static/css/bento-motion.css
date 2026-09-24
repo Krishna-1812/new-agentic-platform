@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════
-   BENTO — MOTION
+   MOTION
    The one entrance paradigm, plus the transitions built on top of it.
 
    Rule 5 of the design system says ONE MOTION. This file does not break
@@ -55,10 +55,10 @@
      a second hand-written copy of this gradient is how two skeletons end up
      subtly different. */
   --sweep-band: linear-gradient(90deg,
-    rgba(255,255,255,0)    0%,
-    rgba(255,255,255,.055) 45%,
-    rgba(255,255,255,.055) 55%,
-    rgba(255,255,255,0)    100%);
+    rgba(255,255,255,0)   0%,
+    rgba(255,255,255,.65) 45%,
+    rgba(255,255,255,.65) 55%,
+    rgba(255,255,255,0)   100%);
 
   /* Interaction feedback. Motion for something the user did is faster than
      motion for something the system did, so a press feels connected to the
@@ -81,8 +81,12 @@
   to   { clip-path: inset(0 0 0 0 round var(--r)); }
 }
 
+/* Fill mode is `backwards`, not `both`: holding the final keyframe would
+   leave `inset(0 round var(--r))` on the element forever, and a 16px
+   rounded clip shaves the first letter of any text that sits in the
+   element's corner. Once the wipe has run, nothing is clipped. */
 .bn-wipe {
-  animation: bn-wipe var(--dur-wipe) var(--ease-wipe) both;
+  animation: bn-wipe var(--dur-wipe) var(--ease-wipe) backwards;
 }
 
 /* Scroll reveal. The element is hidden until bento-motion.js marks it in
@@ -94,7 +98,7 @@
    script itself (it adds `bn-armed`), so a no-JS page renders everything
    visible and static. */
 .bn-armed            { clip-path: inset(0 100% 0 0 round var(--r)); }
-.bn-armed.bn-shown   { animation: bn-wipe var(--dur-wipe) var(--ease-wipe) both; }
+.bn-armed.bn-shown   { clip-path: none; animation: bn-wipe var(--dur-wipe) var(--ease-wipe) backwards; }
 
 /* ── THE SWEEP ───────────────────────────────────────────────────────────
    The loading state. A skeleton block is --s2; a slightly lighter band

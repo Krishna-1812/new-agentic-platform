@@ -1,7 +1,7 @@
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: var(--font-body);
       background: var(--bg); color: var(--tx);
       height: 100vh; display: flex; flex-direction: column; overflow: hidden;
     }
@@ -23,7 +23,7 @@
     }
     .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .user-name { font-size: 11.5px; color: var(--tx2); }
-    @keyframes dd-in { from{opacity:0;transform:translateY(-6px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+    @keyframes dd-in { from{opacity:0} to{opacity:1} }
 
     /* Accent line under topbar */
 }, transparent 60%);

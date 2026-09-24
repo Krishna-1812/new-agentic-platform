@@ -73,7 +73,7 @@
   .use-card.requested .uc-arrow{ background:color-mix(in srgb, var(--ac) 18%, transparent);
     color:color-mix(in srgb, var(--ac) 80%, var(--tx)) }
   .use-card.pending{ opacity:.7; cursor:default }
-  .scard{ background:var(--s3); border:1px solid var(--line); border-radius: var(--radius-lg); padding:24px; -webkit-backdrop-filter:blur(8px) }
+  .scard{ background:var(--s1); border:1px solid var(--line); border-radius: var(--radius-lg); padding:24px; -webkit-backdrop-filter:blur(8px) }
   .scard .lbl{ font-family:ui-monospace,monospace; font-size:11.5px; letter-spacing: var(--ls-caps); text-transform:uppercase;
     color:var(--tx3); margin-bottom:15px }
   .builtby{ display:flex; align-items:center; gap:13px; padding:13px 15px;

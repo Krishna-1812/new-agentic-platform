@@ -65,7 +65,7 @@
   font-weight: var(--fw-semi);
   letter-spacing: var(--ls-label);
   text-transform: uppercase;
-  color: var(--acc);
+  color: var(--acc-tx);
   margin-bottom: var(--sp-4);
 }
 .fg-kicker::before {
@@ -78,7 +78,7 @@
 .fg-hero h1 {
   font-family: var(--font-display);
   font-size: var(--fs-4xl);
-  font-weight: var(--fw-semi);
+  font-weight: var(--display-weight);
   letter-spacing: var(--ls-display);
   line-height: var(--lh-tight);
   color: var(--tx);
@@ -105,7 +105,7 @@
 }
 .fg-figures div { display: flex; flex-direction: column; gap: 2px; }
 .fg-figures b {
-  font-family: var(--font-display);
+  font-family: var(--font-num);
   font-size: var(--fs-2xl);
   font-weight: var(--fw-semi);
   font-variant-numeric: tabular-nums;
@@ -131,7 +131,7 @@
 .fg-toc-head h2 {
   font-family: var(--font-display);
   font-size: var(--fs-xl);
-  font-weight: var(--fw-semi);
+  font-weight: var(--display-weight);
   letter-spacing: var(--ls-tight);
   color: var(--tx);
   margin: 0;
@@ -154,7 +154,7 @@
 .fg-ch:hover { background: var(--s1); }
 
 .fg-ch-num {
-  font-family: var(--font-display);
+  font-family: var(--font-num);
   font-size: var(--fs-3xl);
   font-weight: var(--fw-semi);
   font-variant-numeric: tabular-nums;
@@ -163,12 +163,12 @@
   color: var(--tx3);
   transition: color var(--dur) var(--ease);
 }
-.fg-ch:hover .fg-ch-num { color: var(--acc); }
+.fg-ch:hover .fg-ch-num { color: var(--acc-tx); }
 
 .fg-ch-t h3 {
   font-family: var(--font-display);
   font-size: var(--fs-xl);
-  font-weight: var(--fw-semi);
+  font-weight: var(--display-weight);
   letter-spacing: var(--ls-tight);
   color: var(--tx);
   margin: 0 0 var(--sp-1);
@@ -189,7 +189,7 @@
   stroke-linecap: round; stroke-linejoin: round;
   transition: color var(--dur) var(--ease);
 }
-.fg-ch:hover .fg-ch-meta svg { color: var(--acc); }
+.fg-ch:hover .fg-ch-meta svg { color: var(--acc-tx); }
 
 @media (max-width: 720px) {
   .fg-ch { grid-template-columns: 44px 1fr; gap: var(--sp-4); padding: var(--sp-5) 0; }
@@ -245,7 +245,7 @@
 .fg-chead h1 {
   font-family: var(--font-display);
   font-size: var(--fs-4xl);
-  font-weight: var(--fw-semi);
+  font-weight: var(--display-weight);
   letter-spacing: var(--ls-display);
   line-height: var(--lh-tight);
   color: var(--tx);
@@ -273,7 +273,7 @@
 .fg-sec > h2 {
   font-family: var(--font-display);
   font-size: var(--fs-xl);
-  font-weight: var(--fw-semi);
+  font-weight: var(--display-weight);
   letter-spacing: var(--ls-tight);
   color: var(--tx);
   margin: 0 0 var(--sp-4);
@@ -318,7 +318,7 @@
 .fg-card h3 {
   font-family: var(--font-display);
   font-size: var(--fs-lg);
-  font-weight: var(--fw-semi);
+  font-weight: var(--display-weight);
   letter-spacing: var(--ls-tight);
   color: var(--tx);
   margin: 0 0 var(--sp-3);
@@ -343,7 +343,7 @@
   color: var(--tx3);
   margin-bottom: var(--sp-3);
 }
-.fg-tag-acc { color: var(--acc); }
+.fg-tag-acc { color: var(--acc-tx); }
 /* A URL path is not a label: upper-casing "/app" into "/APP" states a route
    that does not exist. */
 .fg-tag-path { text-transform: none; letter-spacing: var(--ls-normal); font-size: var(--fs-sm); }
@@ -375,8 +375,8 @@
   border-top: 1px solid var(--line);
   font-size: var(--fs-xs); color: var(--tx3);
 }
-.fg-cfoot a { color: var(--acc); }
-.fg-cfoot a:hover { color: var(--acc-hi); }
+.fg-cfoot a { color: var(--acc-tx); }
+.fg-cfoot a:hover { color: var(--acc-tx); }
 
 /* ── FLOW (chapter 2) ─────────────────────────────────────────────────── */
 
@@ -405,7 +405,7 @@
   font-size: var(--fs-sm); color: var(--tx2);
 }
 .fg-note svg {
-  flex: 0 0 auto; width: 16px; height: 16px; margin-top: 3px; color: var(--acc);
+  flex: 0 0 auto; width: 16px; height: 16px; margin-top: 3px; color: var(--acc-tx);
   fill: none; stroke: currentColor; stroke-width: 1.9;
   stroke-linecap: round; stroke-linejoin: round;
 }
@@ -441,7 +441,7 @@
 }
 .fg-bkt:hover { background: var(--s2); }
 .fg-bkt-n {
-  font-family: var(--font-display);
+  font-family: var(--font-num);
   font-size: var(--fs-4xl);
   font-weight: var(--fw-semi);
   letter-spacing: var(--ls-display);
@@ -451,7 +451,7 @@
 }
 .fg-bkt h3 {
   font-family: var(--font-display);
-  font-size: var(--fs-lg); font-weight: var(--fw-semi);
+  font-size: var(--fs-lg); font-weight: var(--display-weight);
   letter-spacing: var(--ls-tight); color: var(--tx);
   margin: var(--sp-3) 0 var(--sp-2);
 }
@@ -475,7 +475,7 @@
 .fg-bkt-agents { display: none; margin-top: var(--sp-4); }
 .fg-bkt.is-open .fg-bkt-agents { display: block; }
 .fg-bkt-agents .fg-chip { background: var(--s3); }
-.fg-bkt-explore { display: inline-block; margin-top: var(--sp-4); font-size: var(--fs-xs); color: var(--acc); }
+.fg-bkt-explore { display: inline-block; margin-top: var(--sp-4); font-size: var(--fs-xs); color: var(--acc-tx); }
 
 /* The 3/6/7 split, as one bar. A single hue at three steps: these are
    proportions of one whole, not three things that mean different things. */
@@ -511,7 +511,7 @@
 .fg-ag:hover { background: var(--s2); }
 .fg-ag-name {
   font-family: var(--font-display);
-  font-size: var(--fs-md); font-weight: var(--fw-semi);
+  font-size: var(--fs-md); font-weight: var(--display-weight);
   letter-spacing: var(--ls-tight); color: var(--tx);
 }
 .fg-ag-d { font-size: var(--fs-sm); color: var(--tx2); margin-top: var(--sp-2); line-height: var(--lh-body); flex: 1; }
@@ -528,7 +528,7 @@
   fill: none; stroke: currentColor; stroke-width: 2.4;
   stroke-linecap: round; stroke-linejoin: round;
 }
-.fg-ag:hover .fg-ag-view { color: var(--acc); }
+.fg-ag:hover .fg-ag-view { color: var(--acc-tx); }
 
 /* ── LAYER STACK (chapter 7) ──────────────────────────────────────────── */
 
@@ -541,7 +541,7 @@
 }
 .fg-layer-h h3 {
   font-family: var(--font-display);
-  font-size: var(--fs-lg); font-weight: var(--fw-semi);
+  font-size: var(--fs-lg); font-weight: var(--display-weight);
   letter-spacing: var(--ls-tight); color: var(--tx); margin: 0;
 }
 .fg-techs { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
@@ -590,7 +590,7 @@
 .fg-pg-label { font-size: var(--fs-xs); color: var(--tx3); }
 .fg-pg-title {
   font-family: var(--font-display);
-  font-size: var(--fs-md); font-weight: var(--fw-semi);
+  font-size: var(--fs-md); font-weight: var(--display-weight);
   letter-spacing: var(--ls-tight); color: var(--tx);
 }
 .fg-pg-done { background: var(--acc); }
@@ -649,7 +649,7 @@
 }
 .fg-panel h3 {
   font-family: var(--font-display);
-  font-size: var(--fs-2xl); font-weight: var(--fw-semi);
+  font-size: var(--fs-2xl); font-weight: var(--display-weight);
   letter-spacing: var(--ls-tight); color: var(--tx);
   margin: var(--sp-2) 0 0; padding-right: var(--sp-8);
 }

@@ -49,7 +49,7 @@
 /* ── LEGACY TOKEN NAMES ───────────────────────────────────────────────────
    This file loads after bento-tokens.css, so anything it redefines wins for
    the rest of the cascade. --line is the one that matters: the old value was
-   rgba(255,255,255,.06), and leaving it would silently replace the Bento
+   rgba(255,255,255,.06), and leaving it would silently replace the shared
    hairline on every admin page. --mono and --serif resolve to the body face
    because this system has neither; the names stay so the 300-odd var() calls
    in the nine templates' own <style> blocks still resolve. */
@@ -58,8 +58,8 @@
   --sans:    var(--font-body);
   --serif:   var(--font-display);
   --mono:    var(--font-body);
-  --line:    #2E2E34;
-  --line2:   #2E2E34;
+  --line:    #E0DCD6;
+  --line2:   #E0DCD6;
   --logo-bg: var(--s1);
   --indigo:  var(--acc);
   --violet:  var(--acc);
@@ -88,7 +88,7 @@ a { color: inherit; text-decoration: none; }
 
 h1, h2, h3,
 .ph-left h1, .stat-value, .stat b, .kpi b, .card-title, .hero h1 {
-  font-family: var(--font-display);
+  font-family: var(--font-display); font-weight: var(--display-weight);
   color: var(--tx);
 }
 .ital { font-style: normal; }
@@ -107,7 +107,7 @@ h1, h2, h3,
   display: inline-flex; align-items: center; gap: var(--sp-2);
   font-size: var(--fs-xs); font-weight: var(--fw-semi);
   letter-spacing: var(--ls-label); text-transform: uppercase;
-  color: var(--acc);
+  color: var(--acc-tx);
   margin-bottom: var(--sp-2);
 }
 .eyebrow .dt { width: 6px; height: 6px; border-radius: 50%; background: var(--acc); }
@@ -173,7 +173,7 @@ h1, h2, h3,
 }
 .stat-value, .stat b, .kpi b {
   display: block;
-  font-family: var(--font-display);
+  font-family: var(--font-num);
   font-size: var(--fs-3xl); font-weight: var(--fw-semi);
   letter-spacing: var(--ls-display); line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -287,17 +287,17 @@ h1, h2, h3,
 
 .funnel { display: flex; gap: var(--gap); flex-wrap: wrap; }
 .funnel .step { flex: 1; min-width: 120px; text-align: center; padding: var(--sp-4) var(--sp-2); border-radius: var(--r); background: var(--s2); }
-.funnel .step b { display: block; font-family: var(--font-display); font-size: var(--fs-2xl); font-weight: var(--fw-semi); color: var(--tx); font-variant-numeric: tabular-nums; }
+.funnel .step b { display: block; font-family: var(--font-num); font-size: var(--fs-2xl); font-weight: var(--fw-semi); color: var(--tx); font-variant-numeric: tabular-nums; }
 .funnel .step span { font-size: var(--fs-xs); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--tx3); }
 
 .cwv { display: flex; gap: var(--gap); flex-wrap: wrap; }
 .cwv .m { flex: 1; min-width: 120px; text-align: center; padding: var(--sp-4); border-radius: var(--r); background: var(--s2); }
-.cwv .m b { display: block; font-family: var(--font-display); font-size: var(--fs-2xl); font-weight: var(--fw-semi); font-variant-numeric: tabular-nums; }
+.cwv .m b { display: block; font-family: var(--font-num); font-size: var(--fs-2xl); font-weight: var(--fw-semi); font-variant-numeric: tabular-nums; }
 .cwv .m span { font-size: var(--fs-xs); color: var(--tx3); letter-spacing: var(--ls-label); }
 /* Here colour IS the meaning: a Core Web Vital is pass / needs-work / fail. */
-.cwv .good { color: var(--acc); }
-.cwv .ni   { color: var(--sky); }
-.cwv .bad  { color: var(--clay); }
+.cwv .good { color: var(--acc-tx); }
+.cwv .ni   { color: var(--sky-tx); }
+.cwv .bad  { color: var(--clay-tx); }
 
 /* ── TABS ─────────────────────────────────────────────────────────────── */
 
@@ -342,8 +342,8 @@ tbody tr:hover { background: var(--s2); }
 tbody tr:hover td { color: var(--tx); }
 td.hi, .nm { color: var(--tx); font-weight: var(--fw-semi); }
 td.dim { color: var(--tx3); }
-.em a { color: var(--acc); }
-.em a:hover { color: var(--acc-hi); }
+.em a { color: var(--acc-tx); }
+.em a:hover { color: var(--acc-tx); }
 
 /* ── PILLS / TAGS / STATUS ────────────────────────────────────────────── */
 
@@ -363,7 +363,7 @@ td.dim { color: var(--tx3); }
 
 .note { margin: var(--sp-4) 0; padding: var(--sp-4); border-radius: var(--r); color: var(--tx2); font-size: var(--fs-sm); background: var(--s2); }
 .empty { padding: var(--sp-9); text-align: center; color: var(--tx3); font-size: var(--fs-sm); }
-.err   { padding: var(--sp-8); text-align: center; color: var(--clay); font-size: var(--fs-sm); }
+.err   { padding: var(--sp-8); text-align: center; color: var(--clay-tx); font-size: var(--fs-sm); }
 .muted { color: var(--tx3); }
 .resn  { font-size: var(--fs-xs); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--tx3); margin: var(--sp-4) var(--sp-1) 0; }
 .meta  { font-size: var(--fs-xs); color: var(--tx3); margin-top: var(--sp-1); }
@@ -389,8 +389,8 @@ td.dim { color: var(--tx3); }
 .ad-ic svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }
 .ad-ic-sm svg { width: 13px; height: 13px; }
 .ad-ic-lg svg { width: 20px; height: 20px; }
-.ad-ic-pos { color: var(--acc); }
-.ad-ic-neg { color: var(--clay); }
+.ad-ic-pos { color: var(--acc-tx); }
+.ad-ic-neg { color: var(--clay-tx); }
 
 /* ── INNER SCROLL AREAS ───────────────────────────────────────────────── */
 /* The page scrollbar is NOT hidden here. The previous version carried
@@ -412,8 +412,8 @@ td.dim { color: var(--tx3); }
 .af-kpi-icon { color: var(--tx3); }
 /* Up and down are the one place on these pages where the colour IS the
    meaning, so they keep it. */
-.af-rating.up   { color: var(--acc); }
-.af-rating.down { color: var(--clay); }
+.af-rating.up   { color: var(--acc-tx); }
+.af-rating.down { color: var(--clay-tx); }
 
 /* An inline <svg> with no width/height falls back to the SVG default of
    300x150, not to the surrounding font size. Anywhere an emoji used to sit

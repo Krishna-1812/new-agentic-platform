@@ -23,7 +23,7 @@
   margin-right:auto;
   display:inline-flex;align-items:center;gap:6px;
 }
-.agent-fb-q::before{content:'✦';color:var(--accent2);font-size:11px;line-height:1;}
+.agent-fb-q::before{content:'✦';color:var(--acc-tx);font-size:11px;line-height:1;}
 
 .agent-fb-btn{
   appearance:none;border:1px solid var(--b1);background:var(--s2);
@@ -42,13 +42,13 @@
 .agent-fb-btn:active{transform:scale(0.9);}
 
 .agent-fb-btn.agent-fb-up.active{
-  background:linear-gradient(135deg, var(--green-d), rgba(45,212,170,.24));
+  background:linear-gradient(135deg, var(--green-d), rgba(23,117,63,.24));
   border-color:var(--green);
   box-shadow:0 0 0 3px var(--green-d);
   animation:agentFbPop var(--dur-slow) var(--ease);
 }
 .agent-fb-btn.agent-fb-down.active{
-  background:linear-gradient(135deg, var(--rose-d), rgba(251,113,133,.24));
+  background:linear-gradient(135deg, var(--rose-d), rgba(255,59,48,.24));
   border-color:var(--rose);
   box-shadow:0 0 0 3px var(--rose-d);
   animation:agentFbPop var(--dur-slow) var(--ease);
@@ -70,10 +70,10 @@
   animation:agentFbFadeIn var(--dur-slow) var(--ease);
 }
 .agent-fb-ack[hidden]{display:none;}
-.agent-fb-ack::before{content:'✓';color:var(--green);font-weight:700;}
-@keyframes agentFbFadeIn{
-  from{opacity:0;transform:translateY(-3px);}
-  to{opacity:1;transform:translateY(0);}
+.agent-fb-ack::before{content:'✓';color:var(--ok);font-weight:700;}
+@keyframes agentFbFadeIn {
+  from{opacity:0;}
+  to{opacity:1;}
 }
 
 .agent-fb-reason{
@@ -89,9 +89,9 @@
    not. Caught by rendering the real widget in a browser, not by the Node
    suite, which only checks the `hidden` property, never the computed style. */
 .agent-fb-reason[hidden]{display:none;}
-@keyframes agentFbSlideDown{
-  from{opacity:0;transform:translateY(-6px);}
-  to{opacity:1;transform:translateY(0);}
+@keyframes agentFbSlideDown {
+  from{opacity:0;}
+  to{opacity:1;}
 }
 .agent-fb-reason-input{
   flex:1 1 auto;min-width:180px;min-height:38px;max-height:120px;

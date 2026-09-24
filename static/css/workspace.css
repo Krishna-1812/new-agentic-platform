@@ -75,7 +75,7 @@ svg { display: block; }
 }
 .sb-brand .bn-word {
   font-family: var(--font-display);
-  font-size: var(--fs-lg); font-weight: var(--fw-bold);
+  font-size: var(--fs-lg); font-weight: var(--display-weight);
   letter-spacing: var(--ls-tight); color: var(--tx);
 }
 /* The old markup wrapped a logo lockup in a tinted tile. Nothing paints it
@@ -239,7 +239,7 @@ svg { display: block; }
   transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
 }
 .dd-item:hover { background: var(--s3); color: var(--tx); }
-.dd-item.danger { color: var(--clay); }
+.dd-item.danger { color: var(--clay-tx); }
 .dd-item-icon { display: inline-flex; width: 16px; height: 16px; flex: none; }
 .dd-item-icon svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 

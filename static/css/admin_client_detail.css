@@ -31,7 +31,7 @@
       transform:translateX(-120%);transition:transform .65s ease}
     .stat-card.kc:hover::after{transform:translateX(120%)}
     .stat-card.kc:hover{border-color:color-mix(in srgb,var(--kc) 55%,var(--s3)) !important;
-      box-shadow:0 22px 54px -26px var(--s3),0 0 46px -16px color-mix(in srgb,var(--kc) 55%,transparent) !important}
+      box-shadow:0 22px 54px -26px var(--s3) !important}
     .stat-card.kc:hover .kc-ico{transform:scale(1.08) rotate(-4deg);background:color-mix(in srgb,var(--kc) 30%,transparent)}
     .stat-card.kc:hover .stat-label{color:color-mix(in srgb,var(--kc) 55%,var(--tx))}
     .stat-card.kc .stat-value{position:relative;z-index:2;
@@ -116,7 +116,7 @@
     .dr-head{padding:20px 22px 16px;display:flex;align-items:flex-start;gap:14px;flex-shrink:0}
     .dr-av{width:46px;height:46px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:var(--tx);overflow:hidden;background: var(--s1)}
     .dr-av img{width:100%;height:100%;object-fit:cover}
-    .dr-ic{width:46px;height:46px;border-radius: var(--r);flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--s3);color:var(--acc)}
+    .dr-ic{width:46px;height:46px;border-radius: var(--r);flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--s3);color:var(--acc-tx)}
     .dr-name{font-size:16px;font-weight:600;color:var(--tx);line-height:1.25}
     .dr-mail{font-size:12px;color:var(--tx2);font-family:var(--mono,monospace);margin-top:2px;word-break:break-all}
     .dr-x{margin-left:auto;background:var(--s2);color:var(--tx);width:30px;height:30px;border-radius: var(--r);cursor:pointer;font-size:15px;flex-shrink:0}
@@ -139,7 +139,7 @@
     .tev-ttl{font-size:13px;font-weight:600;color:var(--tx);line-height:1.3}
     .tev-time{margin-left:auto;font-size:11px;color:var(--tx2);white-space:nowrap;font-family:var(--mono,monospace)}
     .tev-url{font-size:11px;color:var(--tx2);font-family:var(--mono,monospace);margin-top:3px;word-break:break-all}
-    .tev-dur{display:inline-block;font-size:10px;color:var(--acc);background:var(--s2);border-radius: var(--r-sm);padding:2px 7px;margin-top:6px}
+    .tev-dur{display:inline-block;font-size:10px;color:var(--acc-tx);background:var(--s2);border-radius: var(--r-sm);padding:2px 7px;margin-top:6px}
     .tev-who{font-size:11.5px;color:var(--tx);margin-top:2px}
     .dr-empty{padding:40px 10px;text-align:center;color:var(--tx2);font-size:12.5px}
   

@@ -33,7 +33,7 @@
   .wa-row .wic svg{ width:16px; height:16px; stroke:var(--tx) }
   .wa-row b{ flex:1; font-size:15px; font-weight:500; color:var(--tx) }
   .wa-row .go{ font-size:var(--fs-sm); color:var(--tx2) }
-  .wa-row:hover .go{ color:var(--acc) }
+  .wa-row:hover .go{ color:var(--acc-tx) }
 
   .signout-btn{
     display:inline-flex; align-items:center; gap:9px; padding:11px 18px; border-radius: var(--radius-md);

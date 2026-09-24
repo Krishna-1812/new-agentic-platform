@@ -220,21 +220,21 @@
       var st = document.createElement("style");
       st.textContent =
         "#p2cc{position:fixed;right:18px;bottom:18px;z-index:99990;max-width:300px;" +
-        "background:rgba(9,12,24,.93);border:1px solid rgba(124,140,220,.22);border-radius:14px;" +
-        "padding:12px 14px 11px;font-family:'Inter',system-ui,sans-serif;" +
-        "box-shadow:0 12px 40px rgba(2,4,12,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);" +
+        "background:var(--s1);border:1px solid rgba(255,96,34,.22);border-radius:14px;" +
+        "padding:12px 14px 11px;font-family:var(--font-body);" +
+        "box-shadow:0 12px 40px rgba(18,18,19,0.14);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);" +
         "opacity:0;transform:translateY(10px);transition:opacity .5s ease,transform .5s ease}" +
         "#p2cc.on{opacity:1;transform:none}" +
         "#p2cc,#p2cc *{cursor:auto!important}" +
-        "#p2cc .k{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:9px;letter-spacing:.14em;" +
-        "text-transform:uppercase;color:#7e89b8;margin-bottom:5px}" +
-        "#p2cc .t{font-size:11.5px;line-height:1.5;color:#a6b0d6;margin-bottom:9px}" +
-        "#p2cc .t a{color:#c7d0f2;text-decoration:underline;text-underline-offset:2px}" +
+        "#p2cc .k{font-family:var(--font-num);font-size:9px;letter-spacing:.14em;" +
+        "text-transform:uppercase;color:#6F6B66;margin-bottom:5px}" +
+        "#p2cc .t{font-size:11.5px;line-height:1.5;color:#6F6B66;margin-bottom:9px}" +
+        "#p2cc .t a{color:#444444;text-decoration:underline;text-underline-offset:2px}" +
         "#p2cc .r{display:flex;gap:8px}" +
         "#p2cc button{font-family:inherit;font-size:11.5px;font-weight:600;border-radius:999px;" +
         "padding:5px 14px;border:1px solid transparent}" +
-        "#p2cc .ok{background:linear-gradient(120deg,#6366f1,#8b5cf6);color:#fff}" +
-        "#p2cc .no{background:transparent;border-color:rgba(124,140,220,.3);color:#99a4cc}" +
+        "#p2cc .ok{background:linear-gradient(120deg,#FF6022,#FF6022);color:#fff}" +
+        "#p2cc .no{background:transparent;border-color:rgba(255,96,34,.3);color:#6F6B66}" +
         "@media (max-width:640px){#p2cc{left:12px;right:12px;bottom:12px;max-width:none}}";
       var el = document.createElement("div");
       el.id = "p2cc";

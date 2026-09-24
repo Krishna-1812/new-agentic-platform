@@ -1,121 +1,142 @@
 /* ════════════════════════════════════════════════════════════════════════
-   BENTO — DESIGN TOKENS
+   DESIGN TOKENS — the Outcomes language
    Canonical source of truth for colour, surface, type, spacing, shape and
    motion. Every page is authored against these variables; no page should
    hard-code a colour, a radius or a duration.
 
-   The system has five rules. They are not stylistic preferences — breaking
-   any one of them is what makes a design system drift:
+   The language is taken from the sister company's site (outcomes.digital),
+   measured in a browser on 2026-09-24, with one deliberate exception: the
+   headings stay in Fraunces, exactly as the public site already set them.
 
-     1. SURFACES ARE OPAQUE.   Never rgba-white-over-dark. A surface is a
-                               flat colour you can name. This is what keeps
-                               the product from reading as "glass".
-     2. THERE ARE NO BORDERS.  Separation is a fill boundary plus a gap.
-                               --line exists only for the rare hairline
-                               inside a tile (table header rules).
-     3. ONE RADIUS.            --r, on everything. No mixing pill and card.
-     4. COLOUR IS LOAD-BEARING. A filled tile means "this is the number you
-                               opened the page for". If everything is
-                               coloured, nothing is.
-     5. ONE MOTION.            A 150ms opacity cross-fade. No lift, no
-                               stagger, no delay-per-index, no choreography.
+     1. PAPER, NOT CHROME.     The page is warm paper (#F1EFED); a working
+                               surface is a white card on it; a card inside
+                               a card is stone. Light ground throughout.
+     2. COLOUR COMES IN BLOCKS. Orange, amber, sky, red and ink are used as
+                               whole-card fills with ink text on them -- never
+                               as tints, gradients or glows. One filled block
+                               marks the figure you opened the page for.
+     3. INK PILLS FOR ACTION.  The primary action is a black pill with light
+                               text; the secondary is an outlined pill. Chips
+                               and tags are pills too. Cards are rounded
+                               rectangles (--r, --r-lg); only controls are
+                               pills.
+     4. TWO FACES.             Fraunces for headings (semi-bold, WONK on,
+                               optical size 144 -- unchanged from the public
+                               site). Zalando Sans for everything else,
+                               including every number, which is set in
+                               tabular figures.
+     5. QUIET MOTION.          A 150ms opacity cross-fade. No lift, no
+                               stagger, no delay-per-index, no glow.
 
    ──────────────────────────────────────────────────────────────────────── */
 
 :root {
 
   /* ── CANVAS & SURFACES ────────────────────────────────────────────────
-     Four opaque steps. --bg is the page; --s1 is a tile on it; --s2 is a
-     tile inside a tile; --s3 is a pressed/hover state. Because they are
-     opaque, nesting never compounds into mud the way alpha layers do. */
-  --bg:      #131315;
-  --s1:      #1C1C1F;
-  --s2:      #26262A;
-  --s3:      #303036;
+     Four opaque steps, light to dark. --bg is the page (outcomes.digital's
+     body colour); --s1 is a card on it; --s2 is a card inside a card and
+     the resting fill of a control; --s3 is a pressed/hover state (the
+     site's "Systems, not silos" stone). */
+  --bg:      #F1EFED;
+  --s1:      #FFFFFF;
+  --s2:      #EBE9E5;
+  --s3:      #DBD7D1;
 
   /* ── TEXT ─────────────────────────────────────────────────────────────
-     Three tiers only. --tx on --s1 is 13.7:1; --tx2 is 5.6:1; --tx3 is for
-     non-essential metadata and never carries meaning on its own. */
-  --tx:      #EFE9DC;
-  --tx2:     #8B8B93;
-  --tx3:     #5E5E66;
-  --tx-on-fill: #131315;   /* text placed on any vivid fill below */
+     Three tiers. On white, --tx is 18.9:1, --tx2 9.7:1 and --tx3 5.3:1
+     (4.6:1 on paper); --tx3 is for metadata only. */
+  --tx:      #121213;
+  --tx2:     #444444;
+  --tx3:     #6F6B66;
+  --tx-on-fill: #121213;   /* text placed on any vivid fill below        */
+  --tx-on-ink:  #F6F4F0;   /* text placed on an ink (black) fill         */
+  --ink:        #121213;   /* the black block and the primary pill       */
 
   /* ── ACCENT & SEMANTIC ────────────────────────────────────────────────
-     A four-hue set, used as FILLS not tints. --acc is the single primary
-     action colour; --clay marks the one figure that needs attention;
-     --sky is the neutral data hue; --cream is the "featured" fill. */
-  --acc:     #C6F24E;   /* lime  — primary action, positive, in-progress */
-  --clay:    #E8663D;   /* clay  — attention, spend, negative sentiment  */
-  --sky:     #5AA9E6;   /* sky   — neutral data, secondary series        */
-  --cream:   #EFE9DC;   /* cream — featured tile, quotes                 */
+     The site's block colours, used as FILLS. The variable names are the
+     ones the pages were written against; the values are Outcomes'.
+       --acc   orange  #FF6022  active state, the one filled block, marker
+       --clay  red     #FF3B30  attention, spend, negative sentiment
+       --sky   sky     #8CCBFF  neutral data, secondary series
+       --cream amber   #FFB500  featured block, quotes                    */
+  --acc:     #FF6022;
+  --clay:    #FF3B30;
+  --sky:     #8CCBFF;
+  --cream:   #FFB500;
 
-  /* Hover lightenings. A filled control cannot darken on hover the way a
-     surface does -- on a vivid fill that reads as "disabled" -- so it goes
-     one step lighter instead. These exist as tokens because the pages had
-     started hand-writing #D4FA63 and #7ABDF0 inline, which is how two
-     buttons end up with two different hover states. */
-  --acc-hi:  #D4FA63;
-  --sky-hi:  #7ABDF0;
-  --clay-hi: #F07A54;
+  /* Hover steps. A filled control goes one step lighter on hover. */
+  --acc-hi:  #FF7A45;
+  --sky-hi:  #A8D8FF;
+  --clay-hi: #FF5A50;
 
-  /* Muted companions, for the rare case where a fill is too loud (a dot,
-     a 1px bar). Never used as a background behind body text. */
-  --acc-dim:  #2A3313;
-  --clay-dim: #33201A;
-  --sky-dim:  #17303F;
+  /* Light companions, for a dot, a 1px bar or a quiet status pill. Never
+     behind body text at length. */
+  --acc-dim:  #FFE4D8;
+  --clay-dim: #FFE1DE;
+  --sky-dim:  #E2F1FF;
+
+  /* TEXT-SAFE companions. The block colours are fills; as text on white
+     they fail (orange 3.0:1, red 3.6:1, sky 1.7:1, amber 1.8:1). Wherever
+     a hue is used as the colour OF text, it is one of these, each at
+     least 4.6:1 on white and 4.2:1 on paper. */
+  --acc-tx:   #B83C0C;
+  --clay-tx:  #C8261B;
+  --sky-tx:   #1D65A6;
+  --cream-tx: #8A5A00;
 
   /* Semantic aliases. Pages reference these, not the hues, so the meaning
-     survives a palette change. */
-  --ok:      var(--acc);
-  --warn:    var(--clay);
-  --danger:  #FF5C5C;
+     survives a palette change. --ok is the one hue the site does not have:
+     a positive figure needs to read as positive, and orange reads as
+     warning. */
+  --ok:      #17753F;
+  --warn:    var(--acc);
+  --danger:  var(--clay-tx);
   --info:    var(--sky);
 
   /* ── HAIRLINE ─────────────────────────────────────────────────────────
-     Rule 2 means this is nearly unused. It exists for a table header rule
-     and nothing else. If you are reaching for it to separate two tiles,
-     use a gap instead. */
-  --line:    #2E2E34;
+     The site does use hairlines -- under a tab, between list rows, round
+     an outlined pill -- so this is a real token here, not an apology. */
+  --line:    #E0DCD6;
+  --line-strong: #121213;
 
   /* ── TYPE ─────────────────────────────────────────────────────────────
-     Two families. Familjen Grotesk is the display face: geometric, tight,
-     used for headings and every number. Instrument Sans is the text face:
-     open, neutral, used for body, labels and UI. No monospace anywhere —
-     that was the previous product's signature and its absence is load-
-     bearing here. */
-  --font-display: 'Familjen Grotesk', system-ui, -apple-system, sans-serif;
-  --font-body:    'Instrument Sans', system-ui, -apple-system, sans-serif;
+     Fraunces is the display face and is set exactly as the public site
+     sets it (see --display-axes). Zalando Sans is the text face: body,
+     labels, UI, and numbers. */
+  --font-display: 'Fraunces', 'Times New Roman', Georgia, serif;
+  --font-body:    'Zalando Sans', system-ui, -apple-system, sans-serif;
+  --font-num:     'Zalando Sans', system-ui, -apple-system, sans-serif;
+  --display-axes: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
+  --display-weight: 600;
 
-  /* Scale — 8 steps, ratio ~1.22. Numbers are set in --font-display with
-     tabular figures so columns align. */
-  --fs-xs:   11px;
-  --fs-sm:   13px;
-  --fs-md:   15px;   /* body default */
-  --fs-lg:   17px;
-  --fs-xl:   21px;
-  --fs-2xl:  26px;
-  --fs-3xl:  34px;
-  --fs-4xl:  42px;
+  /* Scale -- 8 steps, ratio ~1.22. */
+  --fs-xs:   12px;
+  --fs-sm:   14px;
+  --fs-md:   16px;   /* body default -- the site sets 16.4px */
+  --fs-lg:   18px;
+  --fs-xl:   22px;
+  --fs-2xl:  28px;
+  --fs-3xl:  36px;
+  --fs-4xl:  46px;
 
   --lh-tight: 1.05;  /* display headings */
   --lh-snug:  1.3;   /* subheads, card titles */
   --lh-body:  1.5;   /* running text */
 
-  /* Display type is tracked in; body type is not. */
-  --ls-display: -0.035em;
-  --ls-tight:   -0.02em;
-  --ls-normal:  0;
-  --ls-label:   0.08em;   /* uppercase labels only */
+  /* The site tracks everything slightly in, and labels out. */
+  --ls-display: -0.02em;
+  --ls-tight:   -0.01em;
+  --ls-normal:  -0.01em;
+  --ls-label:   0.04em;   /* uppercase labels only */
 
   --fw-regular: 400;
   --fw-medium:  500;
   --fw-semi:    600;
   --fw-bold:    700;
+  --fw-black:   800;      /* the hero CTA's uppercase label */
 
   /* ── SPACING ──────────────────────────────────────────────────────────
-     Strict 4px base. Every margin, padding and gap in the product is one
-     of these. There is no 7px, no 9px, no 18px. */
+     Strict 4px base. */
   --sp-1:  4px;
   --sp-2:  8px;
   --sp-3:  12px;
@@ -127,26 +148,25 @@
   --sp-9:  56px;
   --sp-10: 72px;
 
-  /* The gap between tiles. One value, so every grid in the product has the
-     same rhythm. */
-  --gap:   10px;
+  /* The gap between cards. */
+  --gap:   16px;
 
   /* ── SHAPE ────────────────────────────────────────────────────────────
-     Rule 3: one radius. --r-sm exists only for elements under ~24px tall
-     where 12px would round them into a circle. */
-  --r:     12px;
-  --r-sm:  8px;
+     Measured: the site's big colour cards are 24px, its smaller cards 14-
+     15px, its menu items 8px, and every button and chip a full pill. */
+  --r-lg:   24px;
+  --r:      16px;
+  --r-sm:   8px;
+  --r-pill: 999px;
 
   /* ── ELEVATION ────────────────────────────────────────────────────────
-     There isn't any. Tiles are distinguished by fill, not by shadow. The
-     one exception is an overlay surface (drawer, modal) which must read as
-     floating above the page. */
-  --shadow-overlay: 0 24px 64px -16px rgba(0,0,0,.72);
+     A white card on paper needs no shadow. A colour block and the primary
+     pill carry the site's soft drop; an overlay floats. */
+  --shadow-block:   0 20px 40px rgba(0,0,0,.08);
+  --shadow-pill:    0 8px 20px rgba(0,0,0,.2);
+  --shadow-overlay: 0 24px 64px -16px rgba(18,18,19,.28);
 
-  /* ── MOTION ───────────────────────────────────────────────────────────
-     Rule 5: one paradigm. --dur is the cross-fade; --dur-fast is for
-     hover state only. `--ease` is a plain ease, deliberately not a spring
-     or a custom bezier with overshoot. */
+  /* ── MOTION ───────────────────────────────────────────────────────────*/
   --dur-fast: 100ms;
   --dur:      150ms;
   --dur-slow: 220ms;   /* drawer slide only */
@@ -155,7 +175,7 @@
   /* ── LAYOUT ───────────────────────────────────────────────────────────*/
   --maxw:       1600px;
   --page-pad:   24px;
-  --topbar-h:   60px;
+  --topbar-h:   64px;
 
   /* Base element defaults */
   font-family: var(--font-body);
@@ -176,14 +196,25 @@ body {
   font-family: var(--font-body);
   font-size: var(--fs-md);
   line-height: var(--lh-body);
+  letter-spacing: var(--ls-normal);
   -webkit-font-smoothing: antialiased;
 }
 
-/* Numbers are display-face and tabular everywhere, so a column of figures
-   lines up without per-table effort. */
+/* Any heading a page styles with the display face gets Fraunces' wonky
+   italics and hard (SOFT 0) terminals, whatever class set it. opsz is left
+   to the browser here; the page-title classes pin it at 144. */
+h1, h2, h3, h4, h5, h6 { font-variation-settings: 'SOFT' 0, 'WONK' 1; }
+
+/* Numbers are Zalando Sans with its ordinary (proportional) figures.
+   Zalando's tabular figures draw a slashed zero -- the monospace-terminal
+   look -- and no OpenType feature turns the slash off, so the pages' many
+   `tabular-nums` declarations are overridden here once rather than edited
+   one by one. outcomes.digital sets its figures the same way ("3X", "40%",
+   "$5M+"). A column of figures loses exact digit alignment; right-aligned
+   cells keep it close enough to scan. */
+*, *::before, *::after { font-variant-numeric: proportional-nums !important; }
 .num, [data-num] {
-  font-family: var(--font-display);
-  font-variant-numeric: tabular-nums;
+  font-family: var(--font-num);
   letter-spacing: var(--ls-tight);
 }
 

@@ -80,16 +80,16 @@
        both tables -- picked to stay clear of green/rose, which already mean
        up/down everywhere else on this page. */
     var AGENT_COLORS = {
-      'company-people-intelligence': '#22d3ee',
-      'linkedin-strategy-researcher': '#b78bfa',
-      'social-media-intelligence': '#ff7a59',
-      'event-conference-intelligence': '#f5a623',
+      'company-people-intelligence': '#8CCBFF',
+      'linkedin-strategy-researcher': '#FF6022',
+      'social-media-intelligence': '#FFB500',
+      'event-conference-intelligence': '#FFB500',
       '42-north-dental-slot-checker': '#36c5f0'
     };
-    var AVATAR_COLORS = ['#22d3ee','#b78bfa','#f5a623','#ff7a59','#36c5f0','#34d399','#fb7185','#9b87fd'];
+    var AVATAR_COLORS = ['#8CCBFF','#FF6022','#FFB500','#FFB500','#36c5f0','#17753F','#FF3B30','#FF6022'];
     function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
     function agentLabel(slug){ return AGENT_LABELS[slug] || slug; }
-    function agentColor(slug){ return AGENT_COLORS[slug] || '#22d3ee'; }
+    function agentColor(slug){ return AGENT_COLORS[slug] || '#8CCBFF'; }
     function severity(pct){ return pct>=50?'sev-hi':(pct>=20?'sev-mid':'sev-lo'); }
     function emailColor(email){
       var h=0;

@@ -54,32 +54,33 @@
   --b3: var(--line);
 
   /* ── ACCENTS ──────────────────────────────────────────────────────────
-     By meaning, not by hue. The old indigo was the primary action colour,
-     so it becomes lime; the old green also meant positive, so it becomes
-     lime too -- two names that meant the same thing now look the same,
-     which is the point. */
-  --accent:    var(--acc);      /* primary action, was indigo #7c83f5  */
-  --accent2:   var(--acc);      /* its gradient partner, was violet    */
-  --accent-d:  var(--s2);
-  --accent-g:  var(--s2);
+     By meaning, not by hue. The old primary (indigo, violet) is Outcomes
+     orange; positive is --ok green; attention and cost are amber; failure
+     is the text-safe red; the two neutral data series are sky. Text uses of
+     these names were rewritten to the text-safe tokens in the page CSS, so
+     what is left here is fills, strokes and dots. */
+  --accent:    var(--acc);
+  --accent2:   var(--acc);
+  --accent-d:  var(--acc-dim);
+  --accent-g:  var(--acc-dim);
 
-  --green:     var(--acc);      /* positive / healthy                  */
-  --green-d:   var(--s2);
+  --green:     var(--ok);
+  --green-d:   #DDF0E4;
 
-  --amber:     var(--clay);     /* attention, cost, degraded           */
-  --amber-d:   var(--s2);
+  --amber:     var(--cream);
+  --amber-d:   #FFF0CC;
 
-  --hub:       var(--clay);     /* was orange, used for the same thing */
-  --hub-d:     var(--s2);
+  --hub:       var(--acc);
+  --hub-d:     var(--acc-dim);
 
-  --rose:      var(--danger);   /* failure / negative                  */
-  --rose-d:    var(--s2);
+  --rose:      var(--danger);
+  --rose-d:    var(--clay-dim);
 
-  --cyan:      var(--sky);      /* neutral data series                 */
-  --cyan-d:    var(--s2);
+  --cyan:      var(--sky);
+  --cyan-d:    var(--sky-dim);
 
-  --purple:    var(--sky);      /* secondary data series               */
-  --purple-d:  var(--s2);
+  --purple:    var(--sky);
+  --purple-d:  var(--sky-dim);
 
   /* Other companies' marks. Left alone on purpose. */
   --slack:     #36c5f0;
@@ -88,24 +89,19 @@
   --logo-bg:   var(--s2);
 
   /* ── SHAPE ────────────────────────────────────────────────────────────
-     Rule 3: one radius, plus a smaller one for anything under ~24px tall
-     that 12px would round into a circle. Everything else resolves to one
-     of those two, including the pill and the full circle -- a page cannot
-     opt out of the shape language by reaching for a different token.
-
-     --radius-full is the exception that stays a circle: it is used for
-     avatars and status dots, which are round because they are round, not
-     because of a shape language. */
+     The old names resolve onto the three Outcomes radii and the pill. A
+     page that asked for a pill gets a real pill again: the site's buttons
+     and chips are pills. */
   --rl:           var(--r);
-  --rxl:          var(--r);
-  --r2xl:         var(--r);
-  --rpill:        var(--r);
+  --rxl:          var(--r-lg);
+  --r2xl:         var(--r-lg);
+  --rpill:        var(--r-pill);
   --radius-xs:    var(--r-sm);
   --radius-sm:    var(--r-sm);
   --radius-md:    var(--r);
   --radius-lg:    var(--r);
-  --radius-xl:    var(--r);
-  --radius-pill:  var(--r);
+  --radius-xl:    var(--r-lg);
+  --radius-pill:  var(--r-pill);
   --radius-full:  9999px;
 
   /* ── SPACING ──────────────────────────────────────────────────────────
@@ -246,7 +242,7 @@ h1, h2, h3,
 
 /* One kicker colour across the product, for the same reason. */
 .eyebrow, .au-eyebrow, .kick, .p-eyebrow, .page-hdr-eyebrow {
-  color: var(--acc);
+  color: var(--acc-tx);
 }
 
 /* The per-tile glow washes. Each tile carried a blurred blob of its own hue
@@ -314,3 +310,17 @@ h1, h2, h3,
 .evi-hero p, .sci-hero p, .lps-hero p, .gd-hero p, .hero p {
   margin: 0; max-width: 62ch; color: var(--tx2);
 }
+
+/* ── PAGE TITLES ─────────────────────────────────────────────────────────
+   Every page's own <h1> is set in Fraunces, exactly as the public site's
+   hero, whichever page stylesheet styled it first. The pages each carried
+   their own title class and several named a sans face directly, so this is
+   stated once here, with !important, rather than in twenty places. The
+   size stays the page's own. */
+body h1 {
+  font-family: var(--font-display) !important;
+  font-weight: var(--display-weight) !important;
+  font-variation-settings: var(--display-axes) !important;
+  letter-spacing: var(--ls-display) !important;
+}
+body h1 em, body h1 i { font-style: italic; font-weight: var(--display-weight); }

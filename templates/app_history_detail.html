@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app_history_detail.css') }}?v=1">
 {% endblock %}
 {% block content %}
-<div class="dwrap" style="--ac:{{ agent.ac or '#8b5cf6' }};--ac2:{{ agent.ac2 or '#22d3ee' }}">
+<div class="dwrap" style="--ac:{{ agent.ac or '#FF6022' }};--ac2:{{ agent.ac2 or '#8CCBFF' }}">
   <nav class="crumb">
     <a href="/app">Home</a><span class="sep">&rsaquo;</span><a href="/app/history">History</a><span class="sep">&rsaquo;</span><span>{{ run.title or run.agent_name }}</span>
   </nav>
@@ -84,7 +84,7 @@
     <div class="panel">
       <div class="metarow">
         {% if meta.title %}<span><b>Article</b> &middot; {{ meta.title }}</span>{% endif %}
-        {% if o.url %}<span><b>URL</b> &middot; <a href="{{ o.url }}" target="_blank" rel="noopener" style="color:#9b8bff">{{ o.url }}</a></span>{% endif %}
+        {% if o.url %}<span><b>URL</b> &middot; <a href="{{ o.url }}" target="_blank" rel="noopener" style="color:#B83C0C">{{ o.url }}</a></span>{% endif %}
         {% if meta.wordCount %}<span><b>Word count</b> &middot; {{ meta.wordCount }}</span>{% endif %}
         {% if o.coverage and o.coverage.score is not none %}<span><b>Coverage score</b> &middot; {{ o.coverage.score }}</span>{% endif %}
       </div>

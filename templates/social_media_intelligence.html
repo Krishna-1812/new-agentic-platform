@@ -22,10 +22,10 @@
         <div class="ph-platforms" aria-hidden="true">
           <div class="ph-plat-ic" title="Instagram" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg></div>
           <div class="ph-plat-ic" title="LinkedIn" style="color:#0a66c2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><circle cx="8" cy="8.3" r="1" fill="currentColor" stroke="none"/><path d="M8 11.3v6.2M12.6 17.5v-3.6c0-1.6 1-2.5 2.2-2.5s2 .9 2 2.5v3.6"/></svg></div>
-          <div class="ph-plat-ic" title="X" style="color:var(--sky)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l14 16M19 4L5 20"/></svg></div>
+          <div class="ph-plat-ic" title="X" style="color:var(--sky-tx)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l14 16M19 4L5 20"/></svg></div>
           <div class="ph-plat-ic" title="TikTok" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.5v11.2a3.3 3.3 0 11-2.7-3.24M14 3.5c.5 2.6 2.4 4.5 4.8 4.9"/></svg></div>
           <div class="ph-plat-ic" title="YouTube" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.7" y="6" width="18.6" height="12" rx="3.6"/><path d="M10.3 9.6l5 2.4-5 2.4z" fill="currentColor" stroke="none"/></svg></div>
-          <div class="ph-plat-ic" title="Facebook" style="color:var(--sky)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 21v-7.2h2.4l.4-2.8h-2.8v-1.8c0-.8.2-1.4 1.4-1.4h1.5V5.3A20 20 0 0015.6 5c-2.3 0-3.9 1.4-3.9 4v2h-2.4v2.8h2.4V21"/></svg></div>
+          <div class="ph-plat-ic" title="Facebook" style="color:var(--sky-tx)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 21v-7.2h2.4l.4-2.8h-2.8v-1.8c0-.8.2-1.4 1.4-1.4h1.5V5.3A20 20 0 0015.6 5c-2.3 0-3.9 1.4-3.9 4v2h-2.4v2.8h2.4V21"/></svg></div>
         </div>
       </div>
     </div>
@@ -68,12 +68,12 @@
              (orange/pink/purple/amber/rose/cyan), so it reads as variety
              within one palette rather than an unrelated rainbow. #}
           {% set monograms = [
-            'linear-gradient(135deg,#fb923c,#f472b6)',
-            'linear-gradient(135deg,#f472b6,#a855f7)',
-            'linear-gradient(135deg,#a855f7,#818cf8)',
-            'linear-gradient(135deg,#fbbf24,#fb923c)',
-            'linear-gradient(135deg,#fb7185,#e879f9)',
-            'linear-gradient(135deg,#22d3ee,#60a5fa)'] %}
+            'linear-gradient(135deg,#FFB500,#FF3B30)',
+            'linear-gradient(135deg,#FF3B30,#FF6022)',
+            'linear-gradient(135deg,#FF6022,#FF6022)',
+            'linear-gradient(135deg,#FFB500,#FFB500)',
+            'linear-gradient(135deg,#FF3B30,#FF6022)',
+            'linear-gradient(135deg,#8CCBFF,#8CCBFF)'] %}
           {% for r in runs %}
           {% set st = 'st-running' if r.status == 'running' else ('st-error' if r.status == 'error' else 'st-done') %}
           <div class="sci-run-row" onclick="viewRun({{ r.id }})">
@@ -133,13 +133,13 @@
     var PLATFORM_META = {
       instagram: {color:'#e1306c', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>'},
       linkedin: {color:'#0a66c2', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><circle cx="8" cy="8.3" r="1" fill="currentColor" stroke="none"/><path d="M8 11.3v6.2M12.6 17.5v-3.6c0-1.6 1-2.5 2.2-2.5s2 .9 2 2.5v3.6"/></svg>'},
-      x: {color:'#cbd5e1', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l14 16M19 4L5 20"/></svg>'},
+      x: {color:'#444444', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l14 16M19 4L5 20"/></svg>'},
       tiktok: {color:'#fe2c55', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.5v11.2a3.3 3.3 0 11-2.7-3.24M14 3.5c.5 2.6 2.4 4.5 4.8 4.9"/></svg>'},
       youtube: {color:'#ff0033', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.7" y="6" width="18.6" height="12" rx="3.6"/><path d="M10.3 9.6l5 2.4-5 2.4z" fill="currentColor" stroke="none"/></svg>'},
       reddit: {color:'#ff4500', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7.3"/><circle cx="9.3" cy="12.4" r="1" fill="currentColor" stroke="none"/><circle cx="14.7" cy="12.4" r="1" fill="currentColor" stroke="none"/><path d="M9.4 16.1c1.5 1 3.7 1 5.2 0"/><path d="M15.6 5.7l.9 3.9"/><circle cx="16.1" cy="4.6" r="1.3"/></svg>'},
       facebook: {color:'#1877f2', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 21v-7.2h2.4l.4-2.8h-2.8v-1.8c0-.8.2-1.4 1.4-1.4h1.5V5.3A20 20 0 0015.6 5c-2.3 0-3.9 1.4-3.9 4v2h-2.4v2.8h2.4V21"/></svg>'}
     };
-    var DEFAULT_META = {color:'#8b86a0', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/></svg>'};
+    var DEFAULT_META = {color:'#6F6B66', icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/></svg>'};
     var PLATFORM_ORDER = ['instagram','linkedin','x','tiktok','youtube','facebook','reddit'];
 
     // Platform names are stored lowercase, and CSS capitalize turns them into
@@ -375,7 +375,7 @@
 // Status severity drives the card's accent (--dsc), not the platform's own
     // brand colour -- the icon already says which platform this is; the
     // colour's job here is to say at a glance whether it needs attention.
-    var DS_OK = '#4ade80', DS_WARN = '#fbbf24', DS_ERR = '#fb7185', DS_OFF = '#948899';
+    var DS_OK = '#17753F', DS_WARN = '#8A5A00', DS_ERR = '#C8261B', DS_OFF = '#6F6B66';
 
     function dsRow(platform, working, listed){
       var meta = platformMeta(platform);
@@ -2042,17 +2042,17 @@ function dsApifyRow(platform, entry){
     // swatch ships with its label and count -- never color alone (a
     // red/green split is invisible to the most common form of colorblindness).
     var RD_SENTIMENT = [
-      {key:'positive', label:'Positive', color:'#4ade80'},
-      {key:'mixed',    label:'Mixed',    color:'#fbbf24'},
-      {key:'neutral',  label:'Neutral',  color:'#94a3b8'},
-      {key:'negative', label:'Negative', color:'#f87171'}
+      {key:'positive', label:'Positive', color:'#17753F'},
+      {key:'mixed',    label:'Mixed',    color:'#8A5A00'},
+      {key:'neutral',  label:'Neutral',  color:'#6F6B66'},
+      {key:'negative', label:'Negative', color:'#C8261B'}
     ];
     var RD_STANCE = {
-      praise:     {label:'Praise',     color:'#4ade80'},
-      complaint:  {label:'Complaint',  color:'#f87171'},
-      question:   {label:'Question',   color:'#60a5fa'},
-      comparison: {label:'Comparison', color:'#c084fc'},
-      neutral:    {label:'Observation',color:'#94a3b8'}
+      praise:     {label:'Praise',     color:'#17753F'},
+      complaint:  {label:'Complaint',  color:'#C8261B'},
+      question:   {label:'Question',   color:'#1D65A6'},
+      comparison: {label:'Comparison', color:'#B83C0C'},
+      neutral:    {label:'Observation',color:'#6F6B66'}
     };
 
     function rdMonthLabel(ym){

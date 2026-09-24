@@ -1772,7 +1772,7 @@ window.cpiOpenHistory = function(){
         /* A bulk reveal. Its rows are in search-row shape, so unlike a single
            enriched contact it reopens into the grid and exports like a search. */
         var isRevealed=e.entity==="revealed";
-        var style='style="animation-delay:'+Math.min(idx++,10)*28+'ms"';
+        var style='';
         /* Three kinds of entry now share this drawer, so each says what it is
            and what reopening it will do, rather than all reading "N rows". */
         var ic, cls, meta;
@@ -1996,7 +1996,7 @@ function pmCompanyCard(c,tag){
     '<div class="pm-cocard"><div class="pm-cotop"><div class="pm-colg">'+logo+'</div>'+
       '<div style="min-width:0"><div class="pm-coname">'+esc(c.name)+'</div>'+
       (c.industry?'<div class="pm-coind">'+esc(c.industry)+'</div>':"")+"</div></div>"+
-      (c.description?'<div style="font-size:12.3px;color:#98a3c2;line-height:1.6;margin-top:12px">'+esc(c.description)+'</div>':"")+
+      (c.description?'<div style="font-size:12.3px;color:#6F6B66;line-height:1.6;margin-top:12px">'+esc(c.description)+'</div>':"")+
     "</div>"+
     '<div class="pm-kv">'+
       pmKV("Employees",c.employees?pmNum(c.employees):"")+
@@ -2041,7 +2041,7 @@ function personBody(p){
   var emails=(p.emails&&p.emails.length)?p.emails:[];
   var phones=p.phones||[];
   var ct=emails.map(function(e){
-    var badge=e.verified?'<span class="pm-vf">verified</span>':(e.status?'<span class="pm-vf" style="color:#9aa5c6;border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.05)">'+esc(e.status)+"</span>":"");
+    var badge=e.verified?'<span class="pm-vf">verified</span>':(e.status?'<span class="pm-vf" style="color:var(--tx2);border-color:var(--line);background:var(--s2)">'+esc(e.status)+"</span>":"");
     return pmCt(SVG_MAIL,e.primary?"Email":"Other email",e.email,"mailto:"+e.email,badge);
   }).join("")+phones.map(function(ph){
     var lbl=(ph.owner==="company")?"Company phone":(ph.label||"Phone");
@@ -2080,7 +2080,7 @@ function companyHero(c){
   if(c.hq) chips+='<span class="pm-chip">&#128205; '+esc(c.hq)+"</span>";
   if(c.revenue) chips+='<span class="pm-chip">$'+esc(c.revenue)+" revenue</span>";
   var so=pmSo(c.linkedin,SVG_LI,"LinkedIn")+pmSo(c.website,SVG_WEB,"Website");
-  return '<div class="pm-hero-in"><div class="pm-avw"><div class="pm-av" style="border-radius:16px;background:#fff;color:#0b1020">'+logo+"</div></div>"+
+  return '<div class="pm-hero-in"><div class="pm-avw"><div class="pm-av" style="border-radius:16px;background:#fff;color:#121213">'+logo+"</div></div>"+
     '<div class="pm-id"><h3 class="pm-name">'+esc(c.name||"Unknown")+"</h3>"+
     (c.industry?'<div class="pm-role">'+esc(c.industry)+"</div>":"")+
     (c.description?'<div class="pm-head">'+esc(c.description)+"</div>":"")+
@@ -2188,7 +2188,7 @@ function detailEmployer(r, pre){
   var card = name ? ('<div class="pm-cocard"><div class="pm-cotop"><div class="pm-colg">'+head+"</div>"+
     '<div style="min-width:0"><div class="pm-coname">'+esc(name)+"</div>"+
     (industry?'<div class="pm-coind">'+esc(industry)+"</div>":"")+"</div></div>"+
-    (desc?'<div style="font-size:12.3px;color:#98a3c2;line-height:1.6;margin-top:12px">'+esc(desc)+"</div>":"")+
+    (desc?'<div style="font-size:12.3px;color:#6F6B66;line-height:1.6;margin-top:12px">'+esc(desc)+"</div>":"")+
     "</div>") : "";
   var website=pre?g("website"):r.website_url;
   var hq=pre?coHq(r,pre):placeLine(r.city,r.state,r.country);
@@ -2242,7 +2242,7 @@ function personDetailsBody(r, idx){
   ));
 
   var ct=(r.email?pmCt(SVG_MAIL,"Email",r.email,"mailto:"+r.email,
-            r.email_status?('<span class="pm-vf"'+(r.email_status==="verified"?"":' style="color:#9aa5c6;border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.05)"')+">"+esc(String(r.email_status).replace(/_/g," "))+"</span>"):""):"")+
+            r.email_status?('<span class="pm-vf"'+(r.email_status==="verified"?"":' style="color:var(--tx2);border-color:var(--line);background:var(--s2)"')+">"+esc(String(r.email_status).replace(/_/g," "))+"</span>"):""):"")+
     (r.phones||[]).map(function(n){ return pmCt(SVG_PH,"Phone",n,"tel:"+String(n).replace(/[^\d+]/g,""),""); }).join("");
   if(ct){
     out+=pmSection("Contact", "revealed", '<div class="pm-ct">'+ct+"</div>");

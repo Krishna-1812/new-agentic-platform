@@ -498,12 +498,12 @@
         '<svg class="momentum-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" id="momentumSvg">'+
           '<defs>'+
             '<linearGradient id="jcMomentumArea" x1="0" y1="0" x2="0" y2="1">'+
-              '<stop offset="0%" stop-color="#f5a623" stop-opacity=".38"></stop>'+
-              '<stop offset="100%" stop-color="#f5a623" stop-opacity="0"></stop>'+
+              '<stop offset="0%" stop-color="#FFB500" stop-opacity=".38"></stop>'+
+              '<stop offset="100%" stop-color="#FFB500" stop-opacity="0"></stop>'+
             '</linearGradient>'+
             '<linearGradient id="jcMomentumLine" x1="0" y1="0" x2="1" y2="0">'+
-              '<stop offset="0%" stop-color="#f5a623"></stop>'+
-              '<stop offset="100%" stop-color="#fb7185"></stop>'+
+              '<stop offset="0%" stop-color="#FFB500"></stop>'+
+              '<stop offset="100%" stop-color="#FF3B30"></stop>'+
             '</linearGradient>'+
           '</defs>'+
           gridLines+
@@ -695,7 +695,7 @@
       function eventRow(e,i){
         var hot=e.detected_at&&new Date(e.detected_at).getTime()>=cutoff;
         var fresh=e.detected_at&&new Date(e.detected_at).getTime()>=freshCutoff;
-        return '<tr class="jc-row-in'+(fresh?' jc-fresh':'')+'" data-idx="'+i+'" style="animation-delay:'+Math.min(i*25,400)+'ms">'
+        return '<tr class="jc-row-in'+(fresh?' jc-fresh':'')+'" data-idx="'+i+'" >'
           +'<td><div class="jc-person"><div class="jc-avatar ev">'+esc(initials(e.person_name))+'</div>'
           +'<span class="jc-name">'+esc(e.person_name||'Unknown')+'</span>'
           +'</div></td>'
@@ -745,7 +745,7 @@
         +'<th onclick="sortBy(\'city\')">Location</th>'
         +'</tr></thead>';
       function peopleRow(c,i){
-        return '<tr class="jc-row-in" data-idx="'+i+'" style="animation-delay:'+Math.min(i*12,400)+'ms">'
+        return '<tr class="jc-row-in" data-idx="'+i+'" >'
           +'<td><div class="jc-person"><div class="jc-avatar roster">'+esc(initials(c.name))+'</div>'
           +'<div><div class="jc-name">'+esc(c.name||'Unknown')+'</div>'
           +'<div class="jc-muted" style="font-size:11px">'+esc(c.title||'')+'</div></div>'
@@ -796,7 +796,7 @@
         +'<th onclick="sortBy(\'total_funding\')">Funding</th>'
         +'</tr></thead>';
       function companiesRow(c,i){
-        return '<tr class="jc-row-in" data-idx="'+i+'" style="animation-delay:'+Math.min(i*12,400)+'ms">'
+        return '<tr class="jc-row-in" data-idx="'+i+'" >'
           +'<td><div class="jc-person">'+logoAvatar(c.website,(c.name||'?')[0].toUpperCase())
           +'<div><div class="jc-name">'+esc(c.name||'Unknown')+'</div>'
           +(c.website?'<div class="jc-muted" style="font-size:11px">'+esc(c.website.replace(/^https?:\/\//,''))+'</div>':'')+'</div>'

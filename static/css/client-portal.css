@@ -27,7 +27,7 @@ body { --acc: var(--brand); }
 /* ══════════ dashboard content ══════════ */
 .dash{ flex:1; width:100%; max-width:1240px; margin:0 auto; padding:34px 32px 64px; position:relative; z-index:1 }
 .sect{ margin-bottom:44px }
-.eyebrow{display:inline-flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-xs);font-weight:var(--fw-semi);letter-spacing:var(--ls-label);text-transform:uppercase;color:var(--acc);margin-bottom:var(--sp-2)}
+.eyebrow{display:inline-flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-xs);font-weight:var(--fw-semi);letter-spacing:var(--ls-label);text-transform:uppercase;color:var(--acc-tx);margin-bottom:var(--sp-2)}
 .sect h2{ margin:0 0 6px; font-size:clamp(22px,2.6vw,30px); font-weight:700; letter-spacing: var(--ls-tight); color:var(--tx) }
 .sect .sub{ margin:0; font-size:15px; color:var(--tx2); line-height: var(--lh-body) }
 
@@ -45,7 +45,7 @@ body { --acc: var(--brand); }
   .hero-brand{ flex-direction:row; align-items:center; justify-content:center; gap:16px; padding:14px 18px }
   .hero-brand .cl-logo{ height:44px }
 }
-.eyebrow{display:inline-flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-xs);font-weight:var(--fw-semi);letter-spacing:var(--ls-label);text-transform:uppercase;color:var(--acc);margin-bottom:var(--sp-2)}
+.eyebrow{display:inline-flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-xs);font-weight:var(--fw-semi);letter-spacing:var(--ls-label);text-transform:uppercase;color:var(--acc-tx);margin-bottom:var(--sp-2)}
 .hero .eyebrow .st{ filter:drop-shadow(0 0 6px color-mix(in srgb,var(--brand) 70%,transparent)) }
 .hero h1{ margin:0 0 12px; font-size:clamp(28px,3.6vw,42px); font-weight:700; letter-spacing: var(--ls-tight); color:var(--tx); line-height:1.06 }
 .hero h1 .g{;color:var(--tx2)}
@@ -83,8 +83,8 @@ body { --acc: var(--brand); }
 
 .status{ display:inline-flex; align-items:center; gap:7px; padding:5px 11px; border-radius: var(--radius-pill);
   font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; white-space:nowrap }
-.status.live{ color:var(--acc); background:color-mix(in srgb,var(--ok) 16%,transparent); 40%,transparent) }
-.status.soon{ color:var(--clay); background:color-mix(in srgb,var(--warn) 15%,transparent); 38%,transparent) }
+.status.live{ color:var(--acc-tx); background:color-mix(in srgb,var(--ok) 16%,transparent); 40%,transparent) }
+.status.soon{ color:var(--clay-tx); background:color-mix(in srgb,var(--warn) 15%,transparent); 38%,transparent) }
 .status .dot{ width:6px; height:6px; border-radius:50%; background:currentColor }
 
 /* ══════════ agent detail ══════════ */
@@ -181,7 +181,7 @@ body { --acc: var(--brand); }
 .panel{ background:var(--s3); border:1px solid var(--line); border-radius: var(--radius-lg); padding:28px; margin-bottom:22px }
 .panel h3{ margin:0 0 16px; font-size:15px; font-weight:700; color:var(--tx); letter-spacing: var(--ls-tight) }
 .metarow{ display:flex; gap:22px; flex-wrap:wrap; font-size:13px; color:var(--tx3) } .metarow b{ color:var(--tx2) }
-.warn{ padding:12px 16px; border-radius: var(--radius-md);  background:var(--s2); color:var(--clay); font-size:13px; margin-bottom:18px }
+.warn{ padding:12px 16px; border-radius: var(--radius-md);  background:var(--s2); color:var(--clay-tx); font-size:13px; margin-bottom:18px }
 .kwtable{ width:100%; border-collapse:collapse; font-size:13px }
 .kwtable th{ text-align:left; font-size:10px; letter-spacing: var(--ls-caps); text-transform:uppercase; color:var(--tx3); padding:8px 12px; border-bottom:1px solid var(--line) }
 .kwtable td{ padding:10px 12px;  color:var(--tx2) }
@@ -202,7 +202,7 @@ body { --acc: var(--brand); }
 .md table{ width:100%; border-collapse:collapse; font-size:13px; margin:12px 0 18px }
 .md th{ text-align:left; padding:8px 12px; font-weight:600; color:var(--tx); border-bottom:2px solid var(--line) }
 .md td{ padding:7px 12px; color:var(--tx2);  vertical-align:top }
-.md mark.new-ins{ background:var(--s3); color:var(--acc); border-radius: var(--radius-xs); padding:0 3px }
+.md mark.new-ins{ background:var(--s3); color:var(--acc-tx); border-radius: var(--radius-xs); padding:0 3px }
 .md b{ color:var(--tx) }
 .rawdump{ font-family:var(--mono); font-size:11.5px; color:var(--tx2); white-space:pre-wrap; word-break:break-word }
 .setup{ min-height:calc(100vh - 57px); display:grid; place-items:center; padding:48px 24px; position:relative; z-index:1 }
@@ -268,5 +268,5 @@ body { --acc: var(--brand); }
 }
 .denied .mk .bn-word, .emb-head .mk .bn-word {
   font-family: var(--font-display); font-size: var(--fs-lg);
-  font-weight: var(--fw-bold); letter-spacing: var(--ls-tight); color: var(--tx);
+  font-weight: var(--display-weight); letter-spacing: var(--ls-tight); color: var(--tx);
 }

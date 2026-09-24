@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════
-   BENTO — COMPONENT LIBRARY
+   COMPONENT LIBRARY — the Outcomes language
    Reusable pieces built on bento-tokens.css. Every page in the product
    should reach for these before writing page-local CSS.
 
@@ -13,17 +13,18 @@
   gap: var(--sp-6);
   height: var(--topbar-h);
   padding: 0 var(--page-pad);
-  background: var(--s1);
+  background: var(--bg);
   position: sticky; top: 0; z-index: 500;
 }
 .bn-top-left  { display: flex; align-items: center; gap: var(--sp-5); min-width: 0; }
 .bn-top-right { display: flex; align-items: center; gap: var(--sp-3); }
 
 .bn-brand { display: flex; align-items: center; gap: var(--sp-3); flex-shrink: 0; }
-.bn-mark  { width: 14px; height: 14px; border-radius: var(--r-sm); background: var(--acc); display: block; }
+.bn-mark  { width: 14px; height: 14px; border-radius: var(--r-pill); background: var(--acc); display: block; }
 .bn-word  {
-  font-family: var(--font-display); font-weight: var(--fw-bold);
-  font-size: var(--fs-lg); letter-spacing: var(--ls-display); color: var(--tx);
+  font-family: var(--font-display); font-weight: var(--display-weight);
+  font-variation-settings: var(--display-axes);
+  font-size: var(--fs-xl); letter-spacing: var(--ls-display); color: var(--tx);
 }
 
 /* Breadcrumb — plain text, no chevrons-as-images. */
@@ -36,71 +37,99 @@
 .bn-nav { display: flex; align-items: center; gap: var(--sp-1); }
 .bn-nav a {
   font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--tx2);
-  padding: var(--sp-2) var(--sp-4); border-radius: var(--r);
+  padding: var(--sp-2) var(--sp-4); border-radius: var(--r-pill);
   transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
 .bn-nav a:hover  { background: var(--s2); color: var(--tx); }
-.bn-nav a.is-on  { background: var(--acc); color: var(--tx-on-fill); font-weight: var(--fw-semi); }
+/* The page you are on is an ink pill -- the site's "Get Started" button. */
+.bn-nav a.is-on  { background: var(--ink); color: var(--tx-on-ink); }
 
 /* ── TILE — the one surface primitive ──────────────────────────────────── */
+/* A white card on paper. No border and no shadow: the fill boundary is
+   enough on a light ground, exactly as on the site's "Thinking" cards. */
 .bn-tile {
   background: var(--s1);
   border-radius: var(--r);
-  padding: var(--sp-5);
+  padding: var(--sp-6);
 }
 .bn-tile--flush   { padding: 0; }
 .bn-tile--tight   { padding: var(--sp-4); }
-/* Fill variants. Rule 4: use these for the figure that matters, not decoration. */
+/* Colour blocks. Rule 2: use these for the figure that matters, not
+   decoration. --lime is the historical name of the primary block, which is
+   now Outcomes orange; --cream is amber. They carry the site's soft drop. */
+.bn-tile--cream, .bn-tile--clay, .bn-tile--lime, .bn-tile--sky, .bn-tile--ink {
+  border-radius: var(--r-lg); box-shadow: var(--shadow-block);
+}
 .bn-tile--cream { background: var(--cream); color: var(--tx-on-fill); }
 .bn-tile--clay  { background: var(--clay);  color: var(--tx-on-fill); }
 .bn-tile--lime  { background: var(--acc);   color: var(--tx-on-fill); }
 .bn-tile--sky   { background: var(--sky);   color: var(--tx-on-fill); }
+.bn-tile--ink   { background: var(--ink);   color: var(--tx-on-ink); }
+.bn-tile--ink .bn-label, .bn-tile--ink .bn-dim { color: rgba(246,244,240,.7); }
 /* On a filled tile, secondary text is the fill's own ink at reduced alpha —
    not --tx2, which would be invisible. */
 .bn-tile--cream .bn-label, .bn-tile--clay .bn-label,
 .bn-tile--lime  .bn-label, .bn-tile--sky  .bn-label,
 .bn-tile--cream .bn-dim,   .bn-tile--clay .bn-dim,
-.bn-tile--lime  .bn-dim,   .bn-tile--sky  .bn-dim { color: rgba(19,19,21,.66); }
+.bn-tile--lime  .bn-dim,   .bn-tile--sky  .bn-dim { color: rgba(18,18,19,.72); }
 
 /* ── TYPE HELPERS ──────────────────────────────────────────────────────── */
+/* Headings are Fraunces, set exactly as the public site's hero: semi-bold,
+   WONK on, SOFT off. The page title takes the full optical size (144); the
+   smaller heading steps leave opsz to the browser (font-optical-sizing:
+   auto) so an 18px card title gets text-grade serifs rather than hairlines. */
 .bn-h1 {
-  font-family: var(--font-display); font-weight: var(--fw-bold);
+  font-family: var(--font-display); font-weight: var(--display-weight);
+  font-variation-settings: var(--display-axes);
   font-size: var(--fs-4xl); line-height: var(--lh-tight);
   letter-spacing: var(--ls-display); margin: 0;
 }
 .bn-h2 {
-  font-family: var(--font-display); font-weight: var(--fw-bold);
+  font-family: var(--font-display); font-weight: var(--display-weight);
   font-size: var(--fs-xl); line-height: var(--lh-snug);
   letter-spacing: var(--ls-tight); margin: 0;
 }
 .bn-h3 {
-  font-family: var(--font-display); font-weight: var(--fw-semi);
+  font-family: var(--font-display); font-weight: var(--display-weight);
   font-size: var(--fs-lg); line-height: var(--lh-snug);
   letter-spacing: var(--ls-tight); margin: 0;
 }
+/* The site's small caps label: "THINKING", "SAY HELLO", "WHY US". */
 .bn-label {
-  font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  font-size: var(--fs-xs); font-weight: var(--fw-medium);
   letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--tx2);
 }
 .bn-dim { color: var(--tx2); }
 .bn-sub { color: var(--tx2); font-size: var(--fs-md); }
 
 /* ── BUTTONS ───────────────────────────────────────────────────────────── */
+/* Every button is a pill. The default is the site's outlined pill ("Get
+   Growth Plan"); primary is the ink pill ("Get Started"). */
 .bn-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
-  min-height: 40px; padding: var(--sp-3) var(--sp-5);
-  border: 0; border-radius: var(--r);
-  background: var(--s2); color: var(--tx);
-  font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-semi);
+  min-height: 40px; padding: var(--sp-2) var(--sp-5);
+  border: 1px solid var(--s3); border-radius: var(--r-pill);
+  background: transparent; color: var(--tx);
+  font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-medium);
   cursor: pointer; white-space: nowrap;
-  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
 }
-.bn-btn:hover { background: var(--s3); }
-.bn-btn--primary { background: var(--acc); color: var(--tx-on-fill); }
-.bn-btn--primary:hover { background: #D4FA63; }
-.bn-btn--ghost { background: transparent; color: var(--tx2); }
+.bn-btn:hover { background: var(--s2); border-color: var(--s2); }
+.bn-btn--primary { background: var(--ink); border-color: var(--ink); color: var(--tx-on-ink); }
+.bn-btn--primary:hover { background: #2B2B2E; border-color: #2B2B2E; }
+.bn-btn--ghost { background: transparent; border-color: transparent; color: var(--tx2); }
 .bn-btn--ghost:hover { background: var(--s2); color: var(--tx); }
-.bn-btn--danger { background: var(--clay); color: var(--tx-on-fill); }
+.bn-btn--danger { background: var(--clay); border-color: var(--clay); color: var(--tx-on-fill); }
+.bn-btn--danger:hover { background: var(--clay-hi); border-color: var(--clay-hi); }
+/* The one loud action on a page: the site's hero CTA, uppercase and heavy
+   with its arrow, on the ink pill with a soft drop. */
+.bn-btn--hero {
+  background: var(--ink); border-color: var(--ink); color: var(--tx-on-ink);
+  min-height: 52px; padding: var(--sp-3) var(--sp-7);
+  font-weight: var(--fw-black); text-transform: uppercase; font-size: var(--fs-md);
+  box-shadow: var(--shadow-pill);
+}
+.bn-btn--hero:hover { background: #2B2B2E; border-color: #2B2B2E; }
 .bn-btn[disabled], .bn-btn.is-disabled { opacity: .4; cursor: not-allowed; }
 .bn-btn--sm { min-height: 32px; padding: var(--sp-2) var(--sp-3); font-size: var(--fs-xs); }
 
@@ -108,21 +137,21 @@
 .bn-chip {
   display: inline-flex; align-items: center; gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-4);
-  border: 0; border-radius: var(--r);
+  border: 0; border-radius: var(--r-pill);
   background: var(--s2); color: var(--tx2);
   font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-medium);
   cursor: pointer; white-space: nowrap;
   transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
 .bn-chip:hover  { background: var(--s3); color: var(--tx); }
-.bn-chip.is-on  { background: var(--clay); color: var(--tx-on-fill); font-weight: var(--fw-semi); }
+.bn-chip.is-on  { background: var(--ink); color: var(--tx-on-ink); }
 
 /* ── BADGE (read-only status) ──────────────────────────────────────────── */
 .bn-badge {
   display: inline-flex; align-items: center; gap: var(--sp-1);
-  padding: 3px var(--sp-2); border-radius: var(--r-sm);
+  padding: 3px var(--sp-3); border-radius: var(--r-pill);
   background: var(--s2); color: var(--tx2);
-  font-size: var(--fs-xs); font-weight: var(--fw-semi); white-space: nowrap;
+  font-size: var(--fs-xs); font-weight: var(--fw-medium); white-space: nowrap;
 }
 .bn-badge--lime { background: var(--acc);  color: var(--tx-on-fill); }
 .bn-badge--clay { background: var(--clay); color: var(--tx-on-fill); }
@@ -132,13 +161,14 @@
 .bn-input {
   width: 100%; min-width: 0;
   padding: var(--sp-3) var(--sp-4);
-  border: 0; border-radius: var(--r);
-  background: var(--s2); color: var(--tx);
+  border: 1px solid var(--line); border-radius: var(--r-sm);
+  background: var(--s1); color: var(--tx);
   font-family: var(--font-body); font-size: var(--fs-md);
-  transition: background var(--dur-fast) var(--ease);
+  transition: border-color var(--dur-fast) var(--ease);
 }
 .bn-input::placeholder { color: var(--tx3); }
-.bn-input:focus { background: var(--s3); outline: 2px solid var(--acc); outline-offset: 0; }
+.bn-input:hover { border-color: var(--s3); }
+.bn-input:focus { border-color: var(--ink); outline: 0; }
 .bn-select { appearance: none; cursor: pointer; padding-right: var(--sp-7); }
 .bn-select option { background: var(--s1); color: var(--tx); }
 
@@ -146,11 +176,11 @@
 .bn-stats { display: grid; gap: var(--gap); }
 .bn-stat  { background: var(--s1); border-radius: var(--r); padding: var(--sp-5); }
 .bn-stat-v {
-  font-family: var(--font-display); font-weight: var(--fw-bold);
-  font-size: var(--fs-3xl); line-height: 1.1; letter-spacing: var(--ls-display);
+  font-family: var(--font-num); font-weight: var(--fw-semi);
+  font-size: var(--fs-3xl); line-height: 1.1; letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums; margin-top: var(--sp-1); color: inherit;
 }
-.bn-stat-d { font-size: var(--fs-xs); color: var(--acc); margin-top: 2px; }
+.bn-stat-d { font-size: var(--fs-xs); color: var(--ok); margin-top: 2px; }
 
 /* ── SKELETON — the loading paradigm ───────────────────────────────────── */
 /* A skeleton is the SHAPE of the content that replaces it. No shimmer sweep,
@@ -177,7 +207,7 @@
 /* ── OVERLAY / DRAWER / MODAL ──────────────────────────────────────────── */
 .bn-ovl {
   position: fixed; inset: 0; z-index: 3000;
-  background: rgba(10,10,12,.7);
+  background: rgba(18,18,19,.42);
   opacity: 0; visibility: hidden;
   transition: opacity var(--dur) var(--ease), visibility var(--dur) var(--ease);
 }
@@ -196,9 +226,9 @@
 /* ── TOAST ─────────────────────────────────────────────────────────────── */
 .bn-toast {
   position: fixed; left: 50%; bottom: var(--sp-7); transform: translateX(-50%);
-  z-index: 4000; padding: var(--sp-3) var(--sp-5); border-radius: var(--r);
-  background: var(--cream); color: var(--tx-on-fill);
-  font-size: var(--fs-sm); font-weight: var(--fw-semi);
+  z-index: 4000; padding: var(--sp-3) var(--sp-5); border-radius: var(--r-pill);
+  background: var(--ink); color: var(--tx-on-ink);
+  font-size: var(--fs-sm); font-weight: var(--fw-medium);
   opacity: 0; visibility: hidden;
   transition: opacity var(--dur) var(--ease), visibility var(--dur) var(--ease);
 }
@@ -207,9 +237,9 @@
 /* ── AVATAR ────────────────────────────────────────────────────────────── */
 .bn-av {
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  width: 36px; height: 36px; border-radius: var(--r);
+  width: 36px; height: 36px; border-radius: var(--r-pill);
   background: var(--s2); color: var(--tx2);
-  font-family: var(--font-display); font-size: var(--fs-xs); font-weight: var(--fw-bold);
+  font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-semi);
   overflow: hidden;
 }
 .bn-av img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
@@ -217,7 +247,7 @@
 /* ── MENU (dropdown) ───────────────────────────────────────────────────── */
 .bn-menu {
   position: absolute; z-index: 2000;
-  background: var(--s2); border-radius: var(--r); padding: var(--sp-2);
+  background: var(--s1); border-radius: var(--r); padding: var(--sp-2);
   box-shadow: var(--shadow-overlay); min-width: 200px;
   opacity: 0; visibility: hidden;
   transition: opacity var(--dur) var(--ease), visibility var(--dur) var(--ease);
@@ -230,8 +260,8 @@
   background: transparent; border: 0; text-align: left;
   transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
-.bn-menu-item:hover { background: var(--s3); color: var(--tx); }
-.bn-menu-item.is-danger { color: var(--clay); }
+.bn-menu-item:hover { background: var(--s2); color: var(--tx); }
+.bn-menu-item.is-danger { color: var(--danger); }
 .bn-menu-sep { height: 1px; background: var(--line); margin: var(--sp-2) var(--sp-1); }
 .bn-menu-item .dd-item-icon { display: inline-flex; width: 18px; height: 18px;
   align-items: center; justify-content: center; flex-shrink: 0; opacity: .8; }
@@ -246,8 +276,8 @@
   background: transparent; border: 0; text-align: left; line-height: 1.3;
   transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
-.bn-menu .dd-item:hover { background: var(--s3); color: var(--tx); }
-.bn-menu .dd-item.danger { color: var(--clay); }
+.bn-menu .dd-item:hover { background: var(--s2); color: var(--tx); }
+.bn-menu .dd-item.danger { color: var(--danger); }
 .bn-menu .dd-divider { height: 1px; background: var(--line); margin: var(--sp-2) var(--sp-1); }
 .bn-menu .dd-item-icon { display: inline-flex; width: 18px; height: 18px;
   align-items: center; justify-content: center; flex-shrink: 0; opacity: .8; }
@@ -270,7 +300,7 @@
    change any of them in one place. */
 .bn-pal {
   position: fixed; inset: 0; z-index: 9000; display: none;
-  background: rgba(10, 10, 12, .74);
+  background: rgba(18, 18, 19, .42);
 }
 .bn-pal.on { display: block; animation: bento-in var(--dur) var(--ease) both; }
 
@@ -304,14 +334,14 @@
 }
 /* Selection is a fill, not a gradient and not a border: the same way every
    other selected thing in this system reads. */
-.bn-pal-it.on { background: var(--s3); }
+.bn-pal-it.on { background: var(--s2); }
 .bn-pal-k {
   width: 26px; height: 26px; border-radius: var(--r-sm); flex: none;
   display: flex; align-items: center; justify-content: center;
   background: var(--s2); color: var(--tx2);
-  font-family: var(--font-display); font-size: var(--fs-sm); font-weight: var(--fw-bold);
+  font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-semi);
 }
-.bn-pal-it.on .bn-pal-k { background: var(--acc); color: var(--tx-on-fill); }
+.bn-pal-it.on .bn-pal-k { background: var(--ink); color: var(--tx-on-ink); }
 .bn-pal-txt { min-width: 0; }
 .bn-pal-txt b {
   display: block; font-size: var(--fs-sm); font-weight: var(--fw-semi); color: var(--tx);
@@ -337,7 +367,7 @@
   padding: var(--page-pad);
 }
 .bn-notice-card {
-  background: var(--s1); border-radius: var(--r);
+  background: var(--s1); border-radius: var(--r-lg);
   padding: var(--sp-8) var(--sp-7);
   width: 100%; max-width: 460px;
 }
@@ -345,10 +375,11 @@
 .bn-notice-code {
   font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-semi);
   letter-spacing: var(--ls-label); text-transform: uppercase;
-  color: var(--clay); margin-bottom: var(--sp-3);
+  color: var(--acc-tx); margin-bottom: var(--sp-3);
 }
 .bn-notice-card h1 {
-  font-family: var(--font-display); font-size: var(--fs-2xl); font-weight: var(--fw-bold);
+  font-family: var(--font-display); font-size: var(--fs-2xl); font-weight: var(--display-weight);
+  font-variation-settings: var(--display-axes);
   letter-spacing: var(--ls-display); line-height: var(--lh-tight);
   margin: 0 0 var(--sp-3); color: var(--tx);
 }
@@ -367,7 +398,7 @@
    eleven copies of that script, each carrying the previous palette's purple
    as a literal. */
 .bn-menu .dd-item.active,
-.bn-menu-item.active { background: var(--s3); color: var(--tx); }
+.bn-menu-item.active { background: var(--s2); color: var(--tx); font-weight: var(--fw-semi); }
 
 /* ── TOPBAR: JUMP-TO ─────────────────────────────────────────────────────
    The palette's entry point on every page. The keycap hides itself where the
@@ -375,12 +406,12 @@
    advertises a chord that does nothing on the page you are looking at. */
 .bn-top-jump {
   display: inline-flex; align-items: center; gap: var(--sp-2);
-  background: var(--s2); color: var(--tx2); border-radius: var(--r-sm);
-  font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-semi);
-  padding: var(--sp-2) var(--sp-3); cursor: pointer;
+  background: var(--s1); color: var(--tx2); border-radius: var(--r-pill);
+  font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-medium);
+  padding: var(--sp-2) var(--sp-4); cursor: pointer;
   transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
-.bn-top-jump:hover { background: var(--s3); color: var(--tx); }
+.bn-top-jump:hover { background: var(--s2); color: var(--tx); }
 .bn-top-jump svg {
   width: 14px; height: 14px; flex: none;
   fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round;
@@ -388,7 +419,7 @@
 .bn-top-jump .bn-kbd { display: inline-flex; gap: 2px; }
 .bn-top-jump kbd {
   font-family: var(--font-body); font-size: 10px; font-weight: var(--fw-semi);
-  color: var(--tx3); background: var(--s1); border-radius: 4px;
+  color: var(--tx3); background: var(--s2); border-radius: 4px;
   padding: 1px 5px; min-width: 18px; text-align: center;
 }
 /* On a narrow screen the label goes and the control becomes the icon alone;

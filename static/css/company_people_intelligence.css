@@ -48,9 +48,9 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 }
 .cpi-head-main { background: var(--s1); border-radius: var(--r); padding: var(--sp-6); }
 .cpi-head-eyebrow { font-size: var(--fs-xs); font-weight: var(--fw-semi);
-  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--acc); }
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--acc-tx); }
 .cpi-head-title {
-  font-family: var(--font-display); font-weight: var(--fw-bold);
+  font-family: var(--font-display); font-weight: var(--display-weight);
   font-size: var(--fs-4xl); line-height: var(--lh-tight);
   letter-spacing: var(--ls-display); margin: var(--sp-2) 0 var(--sp-2);
 }
@@ -65,7 +65,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
   font-size: var(--fs-sm); line-height: 1.45; }
 .cpi-cost-list li { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-2); }
 .cpi-cost-list li:last-child { margin-bottom: 0; }
-.cpi-cost-list b { font-family: var(--font-display); font-weight: var(--fw-bold); flex-shrink: 0; }
+.cpi-cost-list b { font-family: var(--font-num); font-weight: var(--fw-bold); flex-shrink: 0; }
 
 .cpi-head-spend { background: var(--s1); border-radius: var(--r); padding: var(--sp-5);
   display: flex; flex-direction: column; gap: var(--sp-2); }
@@ -74,9 +74,9 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 
 /* The live spend figure, injected by JS. Clay: it is the number that costs money. */
 .page-hdr-spend, .cpi-spend-v {
-  font-family: var(--font-display); font-weight: var(--fw-bold);
+  font-family: var(--font-num); font-weight: var(--fw-bold);
   font-size: var(--fs-3xl); line-height: 1.1; letter-spacing: var(--ls-display);
-  font-variant-numeric: tabular-nums; color: var(--clay); margin-top: var(--sp-1);
+  font-variant-numeric: tabular-nums; color: var(--clay-tx); margin-top: var(--sp-1);
 }
 
 /* Header buttons (List / History). */
@@ -90,7 +90,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 .page-hdr-hist-btn:hover { background: var(--s3); }
 .page-hdr-hist-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor;
   stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-.cpi-list-n { font-family: var(--font-display); font-weight: var(--fw-bold);
+.cpi-list-n { font-family: var(--font-num); font-weight: var(--fw-bold);
   font-size: var(--fs-xs); background: var(--acc); color: var(--tx-on-fill);
   border-radius: var(--r-sm); padding: 1px 6px; }
 
@@ -136,7 +136,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
   background: var(--s1); border-radius: var(--r); padding: var(--sp-3);
 }
 .cpi-ask-ic { width: 20px; height: 20px; flex-shrink: 0; margin-left: var(--sp-3);
-  color: var(--acc); }
+  color: var(--acc-tx); }
 .cpi-ask-input {
   flex: 1; min-width: 0; border: 0; background: transparent; color: var(--tx);
   font-family: var(--font-body); font-size: var(--fs-lg); padding: var(--sp-3) 0;
@@ -232,7 +232,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 }
 .cpi-opt:hover, .cpi-opt.cur { background: var(--s3); color: var(--tx); }
 .cpi-opt-tag { margin-left: auto; font-size: var(--fs-xs); color: var(--tx3); }
-.cpi-opt-warn { color: var(--clay); font-size: var(--fs-xs); }
+.cpi-opt-warn { color: var(--clay-tx); font-size: var(--fs-xs); }
 .cpi-opt-none, .cpi-opt-more { padding: var(--sp-2) var(--sp-3); font-size: var(--fs-xs); color: var(--tx3); }
 
 /* Boolean chips (seniority, email status, …). */
@@ -253,7 +253,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 .cpi-check-cost { font-size: var(--fs-sm); }
 /* The template marks the price note up as <s>. It is a parenthetical, not a
    deletion, so the strikethrough is removed rather than the markup changed. */
-.cpi-check-cost s { text-decoration: none; font-size: var(--fs-xs); color: var(--clay); margin-left: var(--sp-1); }
+.cpi-check-cost s { text-decoration: none; font-size: var(--fs-xs); color: var(--clay-tx); margin-left: var(--sp-1); }
 .cpi-check-cost.off s { color: var(--tx3); }
 
 /* Advanced section. */
@@ -269,7 +269,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
   transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
 .cpi-more-btn:hover { background: var(--s3); color: var(--tx); }
-.cpi-more-n { font-family: var(--font-display); font-weight: var(--fw-bold);
+.cpi-more-n { font-family: var(--font-num); font-weight: var(--fw-bold);
   background: var(--acc); color: var(--tx-on-fill); border-radius: var(--r-sm);
   font-size: var(--fs-xs); padding: 1px 5px; margin-left: var(--sp-2); }
 
@@ -311,7 +311,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 .cpi-clear-btn:hover { background: var(--s2); color: var(--tx); }
 .cpi-count-live, .cpi-live-count { font-size: var(--fs-sm); color: var(--tx2);
   font-variant-numeric: tabular-nums; }
-.cpi-count-live b { font-family: var(--font-display); color: var(--tx); }
+.cpi-count-live b { font-family: var(--font-num); color: var(--tx); }
 .cpi-search-input { /* legacy alias kept for JS-emitted markup */
   border: 0; border-radius: var(--r); background: var(--s2); color: var(--tx);
   font-family: var(--font-body); font-size: var(--fs-sm); padding: var(--sp-3); }
@@ -321,7 +321,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2);
   background: var(--s1); border-radius: var(--r); padding: var(--sp-3) var(--sp-4);
 }
-.cpi-tb-count { font-family: var(--font-display); font-weight: var(--fw-bold);
+.cpi-tb-count { font-family: var(--font-num); font-weight: var(--fw-bold);
   font-size: var(--fs-md); letter-spacing: var(--ls-tight);
   font-variant-numeric: tabular-nums; color: var(--tx); }
 .cpi-tb-spacer { flex: 1; }
@@ -367,7 +367,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
   padding: var(--sp-2) var(--sp-3); border-radius: var(--r-sm); cursor: pointer;
 }
 .cpi-menu button:hover { background: var(--s3); color: var(--tx); }
-.cpi-menu button em { font-style: normal; font-family: var(--font-display);
+.cpi-menu button em { font-style: normal; font-family: var(--font-num);
   font-size: var(--fs-xs); color: var(--tx3); }
 .cpi-menu-sep { height: 1px; background: var(--line); margin: var(--sp-2) var(--sp-1); }
 
@@ -397,7 +397,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 .cpi-card-check:hover { background: var(--tx3); }
 .cpi-card-check.on { background: var(--acc); color: var(--tx-on-fill); }
 .cpi-card-check svg { width: 11px; height: 11px; stroke-width: 3; }
-.cpi-card-name { font-family: var(--font-display); font-weight: var(--fw-bold);
+.cpi-card-name { font-family: var(--font-display); font-weight: var(--display-weight);
   font-size: var(--fs-lg); letter-spacing: var(--ls-tight); color: var(--tx); line-height: var(--lh-snug); }
 .cpi-card-sub { font-size: var(--fs-sm); color: var(--tx2); line-height: 1.4; }
 .cpi-card-footer { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2);
@@ -415,7 +415,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   width: 38px; height: 38px; border-radius: var(--r); overflow: hidden;
   background: var(--s2); color: var(--tx2);
-  font-family: var(--font-display); font-size: var(--fs-xs); font-weight: var(--fw-bold);
+  font-family: var(--font-num); font-size: var(--fs-xs); font-weight: var(--fw-bold);
 }
 .cpi-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .cpi-row-logo, .cpi-td-logo { width: 26px; height: 26px; border-radius: var(--r-sm);
@@ -489,7 +489,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 .cpi-tbl th.cpi-th-ar, .cpi-tbl td.cpi-td-n { text-align: right; }
 .cpi-tbl tbody td { padding: var(--sp-3) var(--sp-4); color: var(--tx2); vertical-align: middle; }
 .cpi-tbl tbody tr { transition: background var(--dur-fast) var(--ease); }
-.cpi-tbl tbody tr:nth-child(even) { background: rgba(255,255,255,.022); }
+.cpi-tbl tbody tr:nth-child(even) { background: rgba(18,18,19,.025); }
 .cpi-tbl tbody tr:hover { background: var(--s2); }
 .cpi-td-person { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
 .cpi-td-person > div { min-width: 0; overflow: hidden; }
@@ -500,8 +500,8 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 .cpi-td-t { color: var(--tx2); font-size: var(--fs-xs); }
 .cpi-td-co { color: var(--tx); font-weight: var(--fw-medium); }
 .cpi-td-dim { color: var(--tx3); }
-.cpi-td-n { font-family: var(--font-display); font-variant-numeric: tabular-nums; color: var(--tx); }
-.cpi-td-mail { color: var(--sky); }
+.cpi-td-n { font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--tx); }
+.cpi-td-mail { color: var(--sky-tx); }
 .cpi-td-acts { display: flex; align-items: center; gap: var(--sp-2); justify-content: flex-end; }
 /* Column widths. The renderer tags each column with a w-* class; without
    these the table auto-sizes and Title/Location wrap to three lines each. */
@@ -597,7 +597,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
               visibility var(--dur) var(--ease);
 }
 .cpi-bulk.on { transform: translateX(-50%); opacity: 1; visibility: visible; }
-.cpi-bulk-n { font-family: var(--font-display); font-weight: var(--fw-bold);
+.cpi-bulk-n { font-family: var(--font-num); font-weight: var(--fw-bold);
   font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
 .cpi-bulk-cost { font-size: var(--fs-xs); color: rgba(19,19,21,.66); }
 .cpi-bulk button {
@@ -610,7 +610,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 
 /* ── DRAWERS (history / working list) ──────────────────────────────────── */
 .cpi-drawer-ovl {
-  position: fixed; inset: 0; z-index: 3000; background: rgba(10,10,12,.7);
+  position: fixed; inset: 0; z-index: 3000; background: rgba(18,18,19,.42);
   opacity: 0; visibility: hidden;
   transition: opacity var(--dur) var(--ease), visibility var(--dur) var(--ease);
 }
@@ -625,10 +625,10 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 .cpi-dw-hdr { display: flex; align-items: center; gap: var(--sp-3);
   padding: var(--sp-5); flex-shrink: 0; }
 .cpi-dw-hdr-ic { width: 32px; height: 32px; border-radius: var(--r); background: var(--s2);
-  display: flex; align-items: center; justify-content: center; color: var(--acc); flex-shrink: 0; }
+  display: flex; align-items: center; justify-content: center; color: var(--acc-tx); flex-shrink: 0; }
 .cpi-dw-hdr-ic svg { width: 16px; height: 16px; fill: none; stroke: currentColor;
   stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-.cpi-dw-title { font-family: var(--font-display); font-weight: var(--fw-bold);
+.cpi-dw-title { font-family: var(--font-display); font-weight: var(--display-weight);
   font-size: var(--fs-xl); letter-spacing: var(--ls-tight); }
 .cpi-dw-x, .cpi-dw-x-sm {
   margin-left: auto; border: 0; border-radius: var(--r-sm); background: var(--s2); color: var(--tx2);
@@ -647,10 +647,10 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 .cpi-dw-item:hover { background: var(--s3); }
 .cpi-dw-item-main { min-width: 0; flex: 1; }
 .cpi-dw-meta { font-size: var(--fs-xs); color: var(--tx3); }
-.cpi-dw-badge { font-family: var(--font-display); font-weight: var(--fw-bold);
+.cpi-dw-badge { font-family: var(--font-num); font-weight: var(--fw-bold);
   font-size: var(--fs-xs); background: var(--s3); color: var(--tx2);
   border-radius: var(--r-sm); padding: 2px var(--sp-2); flex-shrink: 0; }
-.cpi-dw-clear { border: 0; background: transparent; color: var(--clay);
+.cpi-dw-clear { border: 0; background: transparent; color: var(--clay-tx);
   font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-semi);
   cursor: pointer; padding: var(--sp-2); border-radius: var(--r-sm); }
 .cpi-dw-clear:hover { background: var(--clay-dim); }
@@ -695,10 +695,10 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
   padding: var(--sp-4); flex-shrink: 0; }
 .cpi-chat-hdr-ic { width: 28px; height: 28px; border-radius: var(--r-sm);
   background: var(--acc); display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; color: var(--tx-on-fill); font-family: var(--font-display);
+  flex-shrink: 0; color: var(--tx-on-fill); font-family: var(--font-num);
   font-weight: var(--fw-bold); font-size: var(--fs-xs); }
 .cpi-chat-hdr-ic img { width: 16px; height: 16px; }
-.cpi-chat-hdr-name { font-family: var(--font-display); font-weight: var(--fw-bold);
+.cpi-chat-hdr-name { font-family: var(--font-display); font-weight: var(--display-weight);
   font-size: var(--fs-md); letter-spacing: var(--ls-tight); min-width: 0; }
 .cpi-chat-hdr-name b { font-weight: var(--fw-bold); }
 .cpi-chat-live { display: inline-flex; align-items: center; gap: var(--sp-1);
@@ -739,7 +739,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 .cpi-msg.user { flex-direction: row-reverse; }
 .cpi-msg-av { width: 26px; height: 26px; border-radius: var(--r-sm); flex-shrink: 0;
   background: var(--acc); display: flex; align-items: center; justify-content: center;
-  color: var(--tx-on-fill); font-family: var(--font-display);
+  color: var(--tx-on-fill); font-family: var(--font-num);
   font-weight: var(--fw-bold); font-size: 10px; overflow: hidden; }
 .cpi-msg-av img { width: 15px; height: 15px; }
 .cpi-msg.user .cpi-msg-av { background: var(--sky); }
@@ -748,7 +748,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 .cpi-msg.user .cpi-bub { background: var(--sky); color: var(--tx-on-fill); }
 .cpi-bub p { margin: 0 0 var(--sp-2); }
 .cpi-bub p:last-child { margin-bottom: 0; }
-.cpi-bub a { color: var(--sky); text-decoration: underline; }
+.cpi-bub a { color: var(--sky-tx); text-decoration: underline; }
 .cpi-msg.user .cpi-bub a { color: var(--tx-on-fill); }
 .cpi-bub-ul { margin: var(--sp-2) 0 0; padding-left: var(--sp-5); }
 .cpi-bub-ul li { margin-bottom: var(--sp-1); }
@@ -797,7 +797,7 @@ s { text-decoration: none; color: var(--tx2); font-weight: var(--fw-regular); }
 .cpi-chat-send[disabled] { opacity: .45; cursor: default; }
 
 /* ── PERSON MODAL ──────────────────────────────────────────────────────── */
-.pm-ovl { position: fixed; inset: 0; z-index: 3500; background: rgba(10,10,12,.74);
+.pm-ovl { position: fixed; inset: 0; z-index: 3500; background: rgba(18,18,19,.42);
   opacity: 0; visibility: hidden;
   transition: opacity var(--dur) var(--ease), visibility var(--dur) var(--ease); }
 .pm-ovl.on { opacity: 1; visibility: visible; }
