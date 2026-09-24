@@ -1,0 +1,40 @@
+{
+  "url": "https://www.brushandfloss.com/locations/rock-hill-sc",
+  "statusCode": 500,
+  "scrapedAt": "2026-04-14T14:54:34.114Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "500 - Something unexpected happened",
+  "metaDescription": "The page you requested unexpectedly failed to load.",
+  "canonical": "",
+  "allMeta": {
+    "description": "The page you requested unexpectedly failed to load.",
+    "viewport": "width=device-width, initial-scale=1"
+  },
+  "ogTags": {},
+  "twitterTags": {},
+  "headings": {
+    "h1": [
+      "Something unexpected happened"
+    ],
+    "h2": [],
+    "h3": [],
+    "h4": [],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h1",
+      "text": "Something unexpected happened"
+    }
+  ],
+  "paragraphs": [
+    "The page you requested unexpectedly failed to load. Contact the site owner or support for more assistance."
+  ],
+  "schemaMarkup": [],
+  "images": [],
+  "links": [],
+  "bodyText": "500\nSomething unexpected happened\n\nThe page you requested unexpectedly failed to load. Contact the site owner or support for more assistance.",
+  "wordCount": 21
+}

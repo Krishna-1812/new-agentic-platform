@@ -54,10 +54,6 @@ import app as appmod  # noqa: E402
 
 @pytest.fixture
 def client(monkeypatch):
-    # The live manifest fetch always fails in this environment (no network),
-    # which is also true in production today per test_seo_competitor_analysis.py
-    # -- pin it explicitly so this file doesn't depend on that being unchanged.
-    monkeypatch.setattr(appmod, "_SEO_MANIFEST", {"ts": 0.0, "tools": None})
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
         sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
@@ -93,7 +89,7 @@ def test_a_real_tool_slug_is_routed_at_the_new_prefix():
 
 def test_the_tool_cards_link_to_the_new_prefix(client):
     body = client.get("/seo-aeo").get_data(as_text=True)
-    tool = appmod._SEO_TOOLS_FALLBACK[0]
+    tool = appmod._SEO_TOOLS[0]
     assert '/seo-aeo/%s"' % tool["slug"] in body
     assert '/seo/%s"' % tool["slug"] not in body
 
@@ -113,7 +109,7 @@ def test_the_bare_path_with_trailing_slash_redirects_too(client):
 
 
 def test_an_old_tool_sub_path_redirects(client):
-    tool = appmod._SEO_TOOLS_FALLBACK[0]
+    tool = appmod._SEO_TOOLS[0]
     r = client.get("/seo/%s" % tool["slug"])
     assert r.status_code == 308
     assert r.headers["Location"].endswith("/seo-aeo/%s" % tool["slug"])
@@ -146,7 +142,7 @@ def test_the_embedded_tool_page_pushes_state_to_the_new_prefix(client):
     it has to construct the NEW prefix, or every tool switch after this
     rename would silently rewrite the URL back to a path that only exists as
     a redirect."""
-    tool = appmod._SEO_TOOLS_FALLBACK[0]
+    tool = appmod._SEO_TOOLS[0]
     body = client.get("/seo-aeo/%s" % tool["slug"]).get_data(as_text=True)
     assert "'/seo-aeo/' + d.tool" in body
     assert "'/seo/' + d.tool" not in body
@@ -192,7 +188,7 @@ def test_the_public_agents_catalog_keeps_its_own_seo_category():
 
 def test_an_individual_tool_name_is_not_renamed():
     """Renaming the SECTION must not rename its TOOLS."""
-    tool = next(t for t in appmod._SEO_TOOLS_FALLBACK if t["slug"] == "seo-geo-audit")
+    tool = next(t for t in appmod._SEO_TOOLS if t["slug"] == "seo-geo-audit")
     assert tool["name"] == "SEO & GEO Audit"
 
 

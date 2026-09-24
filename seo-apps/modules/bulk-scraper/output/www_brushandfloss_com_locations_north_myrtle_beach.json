@@ -1,0 +1,1234 @@
+{
+  "url": "https://www.brushandfloss.com/locations/north-myrtle-beach",
+  "statusCode": 200,
+  "scrapedAt": "2026-04-14T14:40:45.924Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "Dentist in North Myrtle Beach, SC | Riccobene Associates Family Dentistry",
+  "metaDescription": "Looking for a dentist in North Myrtle Beach, SC? Riccobene Associates Family Dentistry offers trusted, comfortable dental care for all ages. Schedule today!",
+  "canonical": "https://www.brushandfloss.com/locations/north-myrtle-beach",
+  "allMeta": {
+    "description": "Looking for a dentist in North Myrtle Beach, SC? Riccobene Associates Family Dentistry offers trusted, comfortable dental care for all ages. Schedule today!",
+    "og:title": "Riccobene Associates Family Dentistry | North Myrtle Beach, SC",
+    "og:description": "Looking for a dentist in North Myrtle Beach, SC? Riccobene Associates Family Dentistry offers trusted, comfortable dental care for all ages. Schedule today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31742_IMG_0077.jpg",
+    "twitter:title": "Riccobene Associates Family Dentistry | North Myrtle Beach, SC",
+    "twitter:description": "Looking for a dentist in North Myrtle Beach, SC? Riccobene Associates Family Dentistry offers trusted, comfortable dental care for all ages. Schedule today!",
+    "twitter:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31742_IMG_0077.jpg",
+    "og:type": "website",
+    "twitter:card": "summary_large_image",
+    "viewport": "width=device-width, initial-scale=1",
+    "generator": "Webflow"
+  },
+  "ogTags": {
+    "og:title": "Riccobene Associates Family Dentistry | North Myrtle Beach, SC",
+    "og:description": "Looking for a dentist in North Myrtle Beach, SC? Riccobene Associates Family Dentistry offers trusted, comfortable dental care for all ages. Schedule today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31742_IMG_0077.jpg",
+    "og:type": "website"
+  },
+  "twitterTags": {
+    "twitter:card": "summary_large_image"
+  },
+  "headings": {
+    "h1": [
+      "TRUSTED DENTISTS IN NORTH MYRTLE BEACH, SC FOR COMPLETE FAMILY DENTAL CARE"
+    ],
+    "h2": [
+      "MEET OUR DOCTORS",
+      "OUR SERVICES",
+      "WHAT OUR PATIENTS SAY",
+      "OUR OFFICE",
+      "WHY CHOOSE RICCOBENE?",
+      "OUR COMMITMENT TO EXCELLENCE",
+      "OTHER NEARBY LOCATIONS",
+      "PAYMENT OPTIONS & MEMBERSHIP PLANS",
+      "AFFORDABLE MEMBERSHIP PLANS",
+      "FREQUENTLY ASKED QUESTIONS",
+      "READY TO SCHEDULE? CONTACT US"
+    ],
+    "h3": [
+      "Ryan Barrett, DDS",
+      "William H. Temple, DMD",
+      "Steven E. Lanham, DDS",
+      "Matt Miller, DDS",
+      "Office Amenities",
+      "500,000+",
+      "4.8",
+      "25",
+      "What dental services are offered at the North Myrtle Beach, SC, office?",
+      "How do I schedule an appointment with a dentist in North Myrtle Beach, SC?",
+      "Is same-day emergency dental care available at your North Myrtle Beach office?",
+      "Do you offer cosmetic treatments like teeth whitening, veneers, or Invisalign®?",
+      "Can I get dental implants or implant consultations in North Myrtle Beach, SC?",
+      "Do you provide pediatric or family dental care in North Myrtle Beach, SC?",
+      "What diagnosis technologies, like digital X-rays or imaging, are used in North Myrtle Beach?",
+      "Where is the North Myrtle Beach dental office located, and what are its hours?",
+      "What comfort or sedation options are available here (e.g., for anxious patients)?",
+      "Do you accept insurance or offer membership or financing plans in North Myrtle Beach, SC?",
+      "Send us a Message",
+      "Get in Touch",
+      "Request An Appointment"
+    ],
+    "h4": [],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h1",
+      "text": "TRUSTED DENTISTS IN NORTH MYRTLE BEACH, SC FOR COMPLETE FAMILY DENTAL CARE"
+    },
+    {
+      "tag": "h2",
+      "text": "MEET OUR DOCTORS"
+    },
+    {
+      "tag": "h3",
+      "text": "Ryan Barrett, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "William H. Temple, DMD"
+    },
+    {
+      "tag": "h3",
+      "text": "Steven E. Lanham, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Matt Miller, DDS"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR SERVICES"
+    },
+    {
+      "tag": "h2",
+      "text": "WHAT OUR PATIENTS SAY"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR OFFICE"
+    },
+    {
+      "tag": "h3",
+      "text": "Office Amenities"
+    },
+    {
+      "tag": "h2",
+      "text": "WHY CHOOSE RICCOBENE?"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR COMMITMENT TO EXCELLENCE"
+    },
+    {
+      "tag": "h3",
+      "text": "500,000+"
+    },
+    {
+      "tag": "h3",
+      "text": "4.8"
+    },
+    {
+      "tag": "h3",
+      "text": "25"
+    },
+    {
+      "tag": "h2",
+      "text": "OTHER NEARBY LOCATIONS"
+    },
+    {
+      "tag": "h2",
+      "text": "PAYMENT OPTIONS & MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "AFFORDABLE MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "FREQUENTLY ASKED QUESTIONS"
+    },
+    {
+      "tag": "h3",
+      "text": "What dental services are offered at the North Myrtle Beach, SC, office?"
+    },
+    {
+      "tag": "h3",
+      "text": "How do I schedule an appointment with a dentist in North Myrtle Beach, SC?"
+    },
+    {
+      "tag": "h3",
+      "text": "Is same-day emergency dental care available at your North Myrtle Beach office?"
+    },
+    {
+      "tag": "h3",
+      "text": "Do you offer cosmetic treatments like teeth whitening, veneers, or Invisalign®?"
+    },
+    {
+      "tag": "h3",
+      "text": "Can I get dental implants or implant consultations in North Myrtle Beach, SC?"
+    },
+    {
+      "tag": "h3",
+      "text": "Do you provide pediatric or family dental care in North Myrtle Beach, SC?"
+    },
+    {
+      "tag": "h3",
+      "text": "What diagnosis technologies, like digital X-rays or imaging, are used in North Myrtle Beach?"
+    },
+    {
+      "tag": "h3",
+      "text": "Where is the North Myrtle Beach dental office located, and what are its hours?"
+    },
+    {
+      "tag": "h3",
+      "text": "What comfort or sedation options are available here (e.g., for anxious patients)?"
+    },
+    {
+      "tag": "h3",
+      "text": "Do you accept insurance or offer membership or financing plans in North Myrtle Beach, SC?"
+    },
+    {
+      "tag": "h2",
+      "text": "READY TO SCHEDULE? CONTACT US"
+    },
+    {
+      "tag": "h3",
+      "text": "Send us a Message"
+    },
+    {
+      "tag": "h3",
+      "text": "Get in Touch"
+    },
+    {
+      "tag": "h3",
+      "text": "Request An Appointment"
+    }
+  ],
+  "paragraphs": [
+    "Exceptional Dental Care from a Leading Dentist in North Myrtle Beach, SC for the Local Community",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort. We're your trusted go-to dentist in North Myrtle Beach, SC, for compassionate care.",
+    "Comprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "As your trusted dentist in North Myrtle Beach, SC, our experienced team of dental professionals is dedicated to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Welcome to our North Myrtle Beach office! Right off Highway 17 S, our North Myrtle Beach location provides care for patients living in North Myrtle Beach or traveling from the nearby neighborhoods such as Little River, Brooksville, Atlantic Beach, and more. With our highly advanced technology and an experienced team, we provide the comfort and confidence you need for a healthy, pain-free smile!",
+    "Our modern, inviting space is filled with a professional, experienced team that strongly believes that dental care and treatment start with patient comfort. Therefore, we strive for our office and amenities to be designed with our patients’ health and well-being in mind. Situated in a vibrant community, right next to the North Atlantic Ocean, and a short drive from Grand Strand Airport, this location is accessible and easy to travel to. Our North Myrtle Beach office stands out with its peaceful atmosphere, where patients feel supported and leave motivated to take care of their oral health with ease and comfort.",
+    "We believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.",
+    "When you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.",
+    "Can't make it to our North Myrtle Beach office? We have other convenient locations in the area to serve you with the same exceptional dental care.",
+    "Quality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.",
+    "Save money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.",
+    "We provide all the necessary dental services such as routine cleanings and exams, fillings, pediatric dental procedures, gum contouring, fluoride treatment, and so much more!",
+    "To schedule a visit, feel free to call us or book an appointment online to get you in as soon as possible! We look forward to treating you and providing you with the comfort and care you deserve!",
+    "Yes. At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our North Myrtle Beach location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!",
+    "Yes, we understand the impact a confident smile has on our patients' lives, and therefore, we offer cosmetic services that include whitening, veneers, and Invisalign®.",
+    "Yes. Our team of experts is here to help you with all your dental issues, including implants. You can schedule an appointment or request a consultation to make sure you’re getting the best treatment suited available.",
+    "Absolutely. We recognize the importance of starting dental care as early as possible and make sure to provide kids and adults with pediatric or orthodontic care most comfortably and comprehensively as they deserve.",
+    "Digital X-rays use a small sensor and X-ray film tabs, and can provide two types of images: intraoral, for inside the mouth, and extraoral, for outside the mouth. Bitewing X-rays are the most commonly used intraoral X-rays; for extraoral X-rays, the panoramic X-ray is the most common. With this type, you stand still while a machine rotates around your head and takes a single image of your entire mouth.",
+    "Our North Myrtle Beach office is located at 900 Hwy 17 S, Suite E, North Myrtle Beach, SC 29582. Our office Hours are Monday-Thursday: 8:00 AM – 5:00 PM, Friday: 8:00 AM – 2:00 PM. We are closed on Saturday and Sunday. We look forward to seeing you!",
+    "At North Myrtle Beach, we offer a variety of sedation dentistry options. You can choose from Nitrous Oxide, IV Sedation, and Local Anesthesia",
+    "We accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.",
+    "Take the first step towards optimal oral health. Contact our North Myrtle Beach office to schedule your appointment or ask any questions about our dental services.",
+    "Fill out the form below and we'll get back to you within 24 hours.",
+    "Select a Location to schedule an appointment:",
+    "Call our North Myrtle Beach Office at 843-491-6021, or use the form below to request an appointment."
+  ],
+  "schemaMarkup": [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "https://www.brushandfloss.com/locations/north-myrtle-beach",
+      "url": "https://www.brushandfloss.com/locations/north-myrtle-beach",
+      "name": "Dentist in North Myrtle Beach, SC | Riccobene Associates Family Dentistry",
+      "description": "Looking for a dentist in North Myrtle Beach, SC? Riccobene Associates Family Dentistry offers trusted, comfortable dental care for all ages. Schedule today!",
+      "inLanguage": "en-US",
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "https://www.brushandfloss.com/",
+        "url": "https://www.brushandfloss.com/",
+        "name": "Riccobene Associates Family Dentistry"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://www.brushandfloss.com/#organization",
+      "url": "https://www.brushandfloss.com/",
+      "sameAs": [
+        "https://www.facebook.com/RiccobeneDentistry",
+        "https://www.instagram.com/brushandflossnc/"
+      ],
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg"
+      },
+      "brand": {
+        "@type": "Brand",
+        "name": "Riccobene Associates Family Dentistry",
+        "sameAs": [
+          "https://www.facebook.com/RiccobeneDentistry",
+          "https://www.instagram.com/brushandflossnc/"
+        ]
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Insurance Accepted",
+      "insuranceAccepted": [
+        "Delta Dental",
+        "Blue Cross Blue Shield",
+        "Aetna",
+        "Cigna",
+        "MetLife",
+        "UnitedHealthcare"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Dentist",
+      "@id": "https://www.brushandfloss.com/locations/north-myrtle-beach/dentist",
+      "name": "Riccobene Associates Family Dentistry",
+      "image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31742_IMG_0077.jpg",
+      "logo": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315cd_riccobene-associates-family-dentistry.png",
+      "url": "/locations/north-myrtle-beach",
+      "telephone": "843-491-6021",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "900 Hwy 17 S Suite E, North Myrtle Beach, SC 29582",
+        "addressLocality": "North Myrtle Beach",
+        "addressRegion": "SC",
+        "postalCode": "29582",
+        "addressCountry": "US"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Monday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Tuesday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Wednesday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Thursday",
+          "opens": "8:00",
+          "closes": "17:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Friday",
+          "opens": "8:00",
+          "closes": "14:00"
+        }
+      ],
+      "priceRange": "$$",
+      "hasMap": "",
+      "sameAs": ""
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Dental Services",
+      "serviceOutput": [
+        {
+          "@type": "Service",
+          "name": "Cosmetic Dentistry"
+        },
+        {
+          "@type": "Service",
+          "name": "Crowns"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Bridges"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Implants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Sealants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dentures"
+        }
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Shirley M."
+      },
+      "reviewBody": "Very happy with the performance of my hygienist. She found the problem with my gums and has taken care of it. Of course, I will have to continue treatment, but thankfully, she is taking care of me.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Teresa M."
+      },
+      "reviewBody": "Just became a patient here in Jan. I&#39;ve had the same dental hygienist both times, and she&#39;s wonderful. Very friendly, laid back, and communicates everything she does… Awesome!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Ray Jean B."
+      },
+      "reviewBody": "I had a dental emergency and was able to be seen right away. The entire staff was caring and efficient. I will highly recommend this office to all my neighbors.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Christa W."
+      },
+      "reviewBody": "The staff is absolutely wonderful. They are very nice and take their time with you. My daughter had a bad experience at her previous dentist, and when I explained that to them. They were very understanding and very gentle. I appreciate them and highly recommend this office.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What dental services are offered at the North Myrtle Beach, SC, office?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We provide all the necessary dental services such as routine cleanings and exams, fillings, pediatric dental procedures, gum contouring, fluoride treatment, and so much more!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I schedule an appointment with a dentist in North Myrtle Beach, SC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "To schedule a visit, feel free to call us or book an appointment online to get you in as soon as possible! We look forward to treating you and providing you with the comfort and care you deserve!‍"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is same-day emergency dental care available at your North Myrtle Beach office?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our North Myrtle Beach location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you offer cosmetic treatments like teeth whitening, veneers, or Invisalign®?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, we understand the impact a confident smile has on our patients' lives, and therefore, we offer cosmetic services that include whitening, veneers, and Invisalign®."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I get dental implants or implant consultations in North Myrtle Beach, SC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Our team of experts is here to help you with all your dental issues, including implants. You can schedule an appointment or request a consultation to make sure you’re getting the best treatment suited available."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you provide pediatric or family dental care in North Myrtle Beach, SC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Absolutely. We recognize the importance of starting dental care as early as possible and make sure to provide kids and adults with pediatric or orthodontic care most comfortably and comprehensively as they deserve."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What diagnosis technologies, like digital X-rays or imaging, are used in North Myrtle Beach?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Digital X-rays use a small sensor and X-ray film tabs, and can provide two types of images: intraoral, for inside the mouth, and extraoral, for outside the mouth. Bitewing X-rays are the most commonly used intraoral X-rays; for extraoral X-rays, the panoramic X-ray is the most common. With this type, you stand still while a machine rotates around your head and takes a single image of your entire mouth."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where is the North Myrtle Beach dental office located, and what are its hours?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Our North Myrtle Beach office is located at 900 Hwy 17 S, Suite E, North Myrtle Beach, SC 29582. Our office Hours are Monday-Thursday: 8:00 AM – 5:00 PM, Friday: 8:00 AM – 2:00 PM. We are closed on Saturday and Sunday. We look forward to seeing you!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What comfort or sedation options are available here (e.g., for anxious patients)?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "At North Myrtle Beach, we offer a variety of sedation dentistry options. You can choose from Nitrous Oxide, IV Sedation, and Local Anesthesia"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you accept insurance or offer membership or financing plans in North Myrtle Beach, SC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance."
+          }
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314df_search.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152e_riccobene-banner-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31508_location-map.webp",
+      "alt": "Map showing neighborhoods, parks, schools, and roads including Davis Drive Elementary School, Pleasant Street, and Sunset Plaza."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314e7_location-banner.jpg",
+      "alt": "Smiling woman reclined in dental chair during a dental checkup with dentist holding dental mirror and probe."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31552_call-now-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16f26bb8495d4c5caeb40_ryan-barrett-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16f26bb8495d4c5caeb40_ryan-barrett-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16f3e25efca18680f0724_william-h-temple-dmd.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16f3e25efca18680f0724_william-h-temple-dmd.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16f511011867b606c6e88_steven-e-lanham-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16f511011867b606c6e88_steven-e-lanham-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317fc_matt-miller-headshot.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317fc_matt-miller-headshot.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31649_Riccobene2-081.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3164b_Riccobene2-103.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317f5_dental-bridges.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69b29dacd38e9840c17ead1c_denture-implants.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ba_nc.dental-sealants-1024x768.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315af_brush-and-floss-dentures-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152b_riccobene-our-office-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152a_riccobene-our-office-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152d_riccobene-our-office-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152c_riccobene-our-office-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31529_riccobene-our-office-icon-five.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31548_riccobene-wcr-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31549_family-friendly.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31547_state-of-the-art.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31527_insurance-accepted-icon-1.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31558_pricing-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31559_pricing-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31522_pricing-1.webp",
+      "alt": "Smiling young woman with long brown hair pointing to her teeth with both index fingers."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31523_pricing-2.webp",
+      "alt": "Smiling young boy sitting in a dental chair during a dental checkup with a dentist holding a dental tool."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154b_email-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154c_alarm-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a location"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach",
+      "text": "NORTH MYRTLE BEACH"
+    },
+    {
+      "href": "tel:843-491-6021",
+      "text": "843-491-6021"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "CHANGE LOCATION"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers#jobs",
+      "text": "JOIN THE TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/north-myrtle-beach",
+      "text": "SCHEDULE AN APPOINTMENT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": "Home"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a Dentist Near You"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "New Patient Experience"
+    },
+    {
+      "href": "https://www.brushandfloss.com/the-riccobene-way",
+      "text": "The Riccobene Way"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans",
+      "text": "Membership Plans"
+    },
+    {
+      "href": "https://www.brushandfloss.com/reviews",
+      "text": "Patient Reviews"
+    },
+    {
+      "href": "https://patient.payments.health/#/?organizationID=dab6a2b7&locationID=LSXWSH421HHY4",
+      "text": "Make A Payment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/payment",
+      "text": "Online Payments"
+    },
+    {
+      "href": "https://www.brushandfloss.com/articles",
+      "text": "articles"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "Contact us"
+    },
+    {
+      "href": "https://www.paycomonline.net/v4/ats/web.php/jobs?clientkey=B32F01563C7743C293E0AAB35AE1ADEA",
+      "text": "careers"
+    },
+    {
+      "href": "https://www.brushandflossaffiliates.com/",
+      "text": "Become an Affiliate Practice"
+    },
+    {
+      "href": "https://www.brushandfloss-employees.com/",
+      "text": "Employees"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/north-myrtle-beach",
+      "text": "BOOK APPOINMENT"
+    },
+    {
+      "href": "tel:843-491-6021",
+      "text": "CALL NOW"
+    },
+    {
+      "href": "tel:843-491-6021",
+      "text": "Call Now"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/ryan-barrett-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/ryan-barrett-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/will-temple",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/will-temple",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/steven-e-lanham-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/steven-e-lanham-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/matt-miller-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/matt-miller-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/cosmetic-dentistry",
+      "text": "Cosmetic Dentistry"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/crowns",
+      "text": "Crowns"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-bridges",
+      "text": "Dental Bridges"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-implants",
+      "text": "Dental Implants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/sealants",
+      "text": "Dental Sealants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dentures",
+      "text": "Dentures"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach?f5ff0038_page=2",
+      "text": "Load More"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#ready-to-schedule",
+      "text": "SCHEDULE A VISIT TODAY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/calabash",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/calabash",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/shallotte",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/shallotte",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/southport",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/southport",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "View all Locations"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#adult-preventative-plan",
+      "text": "ADULT PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#child-preventative-plan",
+      "text": "CHILD PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/north-myrtle-beach",
+      "text": "BOOK APPOINTMENT ONLINE"
+    },
+    {
+      "href": "tel:843-491-6021",
+      "text": "CALL FOR EMERGENCY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "LOCATIONS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "SERVICES"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "WHAT TO EXPECT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers",
+      "text": "JOIN OUR TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/partnership",
+      "text": "PARTNER WITH US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "CONTACT US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/hipaa",
+      "text": "HIPAA"
+    },
+    {
+      "href": "https://www.brushandfloss.com/privacy-policy",
+      "text": "PRIVACY POLICY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/search",
+      "text": "SEARCH"
+    },
+    {
+      "href": "https://www.facebook.com/RiccobeneDentistry",
+      "text": ""
+    },
+    {
+      "href": "https://www.instagram.com/brushandflossnc/?hl=en",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach",
+      "text": "North Myrtle Beach"
+    },
+    {
+      "href": "tel:843-491-6021",
+      "text": "843-491-6021"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#",
+      "text": "Close"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/north-myrtle-beach#",
+      "text": "Open Appointment"
+    }
+  ],
+  "bodyText": "NORTH MYRTLE BEACH\n843-491-6021\nCHANGE LOCATION\nJOIN THE TEAM\nSCHEDULE AN APPOINTMENT\nTRUSTED DENTISTS IN NORTH MYRTLE BEACH, SC FOR COMPLETE FAMILY DENTAL CARE\n\nExceptional Dental Care from a Leading Dentist in North Myrtle Beach, SC for the Local Community\n\n900 Hwy 17 S Suite E, North Myrtle Beach, SC 29582\n843-491-6021\nMon-Thu: 8:00 AM - 5:00 PM | Fri: 8:00 AM - 2:00 PM\nBOOK APPOINMENT\nCALL NOW\nCall Now\nMEET OUR DOCTORS\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort. We're your trusted go-to dentist in North Myrtle Beach, SC, for compassionate care.\n\nRyan Barrett, DDS\nRestorative Dentistry & Root Canal Therapy\nMORE+\nRyan Barrett, DDS\nRestorative Dentistry & Root Canal Therapy\nDr. Barrett is passionate about relieving pain and restoring smiles through advanced restorative care and painless root canal treatments. He takes a patient-first approach, focusing on comfort, clarity, and compassionate dental solutions.\nVIEW PROFILE\nWilliam H. Temple, DMD\nOral & Maxillofacial Surgery\nMORE+\nWilliam H. Temple, DMD\nOral & Maxillofacial Surgery\nA Board-Certified Oral and Maxillofacial Surgeon, Dr. Temple combines military surgical training and advanced clinical expertise to deliver exceptional oral surgery care. He is dedicated to patient safety, surgical excellence, and compassionate treatment.\nVIEW PROFILE\nSteven E. Lanham, DDS\nGeneral & Family Dentistry\nMORE+\nSteven E. Lanham, DDS\nGeneral & Family Dentistry\nDr. Lanham is dedicated to providing high-quality, personalized dental care for patients of all ages. With a focus on preventive and restorative treatments, he strives to create a comfortable environment where families can achieve lasting oral health.\nVIEW PROFILE\nMatt Miller, DDS\nMORE+\nMatt Miller, DDS\nDR. MATT MILLER, originally from Fairmont, West Virginia, has been dedicated to helping people through dentistry since earning his degree from West Virginia University School of Dentistry in 2014. He completed a General Practice Residency at Mercy Medical Center in 2015, where he deepened his clinical expertise before entering private practice.\nVIEW PROFILE\nOUR SERVICES\n\nComprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.\n\nCosmetic Dentistry\nRiccobene Associates Family Dentistry offers a full suite of cosmetic dental services for smile makeovers! Schedule your cosmetic dentistry consultation.\nBOOK NOW\nCrowns\nProtect and restore damaged teeth with custom dental crowns. Learn about tooth crown types, benefits, and treatment. Schedule your visit today.\nBOOK NOW\nDental Bridges\nDental bridges restore your smile by replacing missing teeth. Get a custom, natural fit that enhances both appearance and function. Book your consultation today\nBOOK NOW\nDental Implants\nAt Riccobene Associates Family Dentistry, we offer dental implants to restore your beautiful smile. Contact one of our dental offices today!\nBOOK NOW\nDental Sealants\nDental sealants protect your teeth from cavities and decay. A quick, effective way to maintain oral health. Book your consultation today!\nBOOK NOW\nDentures\nDiscover affordable dentures and permanent solutions from a trusted dentures specialist. Get one-day dentures that fit your needs. Book a consultation today!\nBOOK NOW\nLoad More\nWHAT OUR PATIENTS SAY\n\nAs your trusted dentist in North Myrtle Beach, SC, our experienced team of dental professionals is dedicated to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\n★★★★★\nVery happy with the performance of my hygienist. She found the problem with my gums and has taken care of it. Of course, I will have to continue treatment, but thankfully, she is taking care of me.\nShirley M.\n★★★★★\nJust became a patient here in Jan. I've had the same dental hygienist both times, and she's wonderful. Very friendly, laid back, and communicates everything she does… Awesome!\nTeresa M.\n★★★★★\nI had a dental emergency and was able to be seen right away. The entire staff was caring and efficient. I will highly recommend this office to all my neighbors.\nRay Jean B.\n★★★★★\nThe staff is absolutely wonderful. They are very nice and take their time with you. My daughter had a bad experience at her previous dentist, and when I explained that to them. They were very understanding and very gentle. I appreciate them and highly recommend this office.\nChrista W.\nOUR OFFICE\n\nWelcome to our North Myrtle Beach office! Right off Highway 17 S, our North Myrtle Beach location provides care for patients living in North Myrtle Beach or traveling from the nearby neighborhoods such as Little River, Brooksville, Atlantic Beach, and more. With our highly advanced technology and an experienced team, we provide the comfort and confidence you need for a healthy, pain-free smile!\n\nOur modern, inviting space is filled with a professional, experienced team that strongly believes that dental care and treatment start with patient comfort. Therefore, we strive for our office and amenities to be designed with our patients’ health and well-being in mind. Situated in a vibrant community, right next to the North Atlantic Ocean, and a short drive from Grand Strand Airport, this location is accessible and easy to travel to. Our North Myrtle Beach office stands out with its peaceful atmosphere, where patients feel supported and leave motivated to take care of their oral health with ease and comfort.\n\nOffice Amenities\nFree WiFi\nComplimentary Beverages\nFamily-Friendly\nFree Parking\nFlexible Scheduling\nSCHEDULE A VISIT TODAY\nWHY CHOOSE RICCOBENE?\n\nWe believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.\n\nSame-Day Appointments\nUrgent dental needs? We offer same-day or next-day appointments in many locations for emergency care.\nFamily-Friendly\nWe provide gentle, expert dental care for children from their very first tooth through their teenage years.\nState-Of-The-Art\nCutting-edge technology and advanced treatment options bring the best that modern dental innovation has to offer to our offices.\nComprehensive Care\nOur expert provider offers a range of services from preventative, cosmetic, routine dental care and more.\nEmergency Dental Services\n24/7 emergency support when you need immediate dental care.\nOUR COMMITMENT TO EXCELLENCE\n\nWhen you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.\n\n500,000+\nHappy Smiles\nPatients served with exceptional care\n4.8\nAvg Google Rating\nfrom more than 28,000 reviews\n25\nYears In Business\nTrusted by the local community\nOTHER NEARBY LOCATIONS\n\nCan't make it to our North Myrtle Beach office? We have other convenient locations in the area to serve you with the same exceptional dental care.\n\nCarolina Shores/Calabash\n9869 Ocean Hwy W Suite 1 & 2, Carolina Shores, NC 28467\n910.292.8428\nGeneral\nHygiene\nCosmetic\nEmergency\nBOOK NOW\nVIEW DETAILS\nShallotte\n301 S Willis Dr #100, Shallotte, NC 28470\n910-754-7700\nEmergency\nGeneral\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nSouthport\n2831 Midway Rd SE Suite 116, Bolivia, NC 28422\n910-408-4436\nGeneral\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nView all Locations\nPAYMENT OPTIONS & MEMBERSHIP PLANS\n\nQuality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.\n\nInsurance Accepted\nWe accept most major dental insurance plans\nDelta Dental\nBlue Cross Blue Shield\nAetna\nCigna\nMetlife\nUnited Heathcare\nFlexible Financing\nMultiple payment options to fit your budget\nSunbit\n0% Interest Plans\nMonthly Payment Plans\nHSA/FSA Accepted\nMembership Plans\nAffordable care for uninsured patients\nAnnual Cleanings\nX-rays Included\n10% Off Treatments\nNo Insurance Required\nAFFORDABLE MEMBERSHIP PLANS\n\nSave money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.\n\nAdult Preventative Plan\n$39\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nADULT PREVENTATIVE PLAN\nChild Preventative Plan\n$36\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nCHILD PREVENTATIVE PLAN\nFREQUENTLY ASKED QUESTIONS\nWhat dental services are offered at the North Myrtle Beach, SC, office?\n\nWe provide all the necessary dental services such as routine cleanings and exams, fillings, pediatric dental procedures, gum contouring, fluoride treatment, and so much more!\n\nHow do I schedule an appointment with a dentist in North Myrtle Beach, SC?\n\nTo schedule a visit, feel free to call us or book an appointment online to get you in as soon as possible! We look forward to treating you and providing you with the comfort and care you deserve!\n\n‍\n\nIs same-day emergency dental care available at your North Myrtle Beach office?\n\nYes. At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our North Myrtle Beach location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!\n\nDo you offer cosmetic treatments like teeth whitening, veneers, or Invisalign®?\n\nYes, we understand the impact a confident smile has on our patients' lives, and therefore, we offer cosmetic services that include whitening, veneers, and Invisalign®.\n\nCan I get dental implants or implant consultations in North Myrtle Beach, SC?\n\nYes. Our team of experts is here to help you with all your dental issues, including implants. You can schedule an appointment or request a consultation to make sure you’re getting the best treatment suited available.\n\nDo you provide pediatric or family dental care in North Myrtle Beach, SC?\n\nAbsolutely. We recognize the importance of starting dental care as early as possible and make sure to provide kids and adults with pediatric or orthodontic care most comfortably and comprehensively as they deserve.\n\nWhat diagnosis technologies, like digital X-rays or imaging, are used in North Myrtle Beach?\n\nDigital X-rays use a small sensor and X-ray film tabs, and can provide two types of images: intraoral, for inside the mouth, and extraoral, for outside the mouth. Bitewing X-rays are the most commonly used intraoral X-rays; for extraoral X-rays, the panoramic X-ray is the most common. With this type, you stand still while a machine rotates around your head and takes a single image of your entire mouth.\n\nWhere is the North Myrtle Beach dental office located, and what are its hours?\n\nOur North Myrtle Beach office is located at 900 Hwy 17 S, Suite E, North Myrtle Beach, SC 29582. Our office Hours are Monday-Thursday: 8:00 AM – 5:00 PM, Friday: 8:00 AM – 2:00 PM. We are closed on Saturday and Sunday. We look forward to seeing you!\n\nWhat comfort or sedation options are available here (e.g., for anxious patients)?\n\nAt North Myrtle Beach, we offer a variety of sedation dentistry options. You can choose from Nitrous Oxide, IV Sedation, and Local Anesthesia\n\nDo you accept insurance or offer membership or financing plans in North Myrtle Beach, SC?\n\nWe accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.\n\nREADY TO SCHEDULE? CONTACT US\n\nTake the first step towards optimal oral health. Contact our North Myrtle Beach office to schedule your appointment or ask any questions about our dental services.\n\nSend us a Message\nFill out the form below and we'll get back to you within 24 hours.\nFirst Name*\nLast Name*\nEmail*\nPhone*\nHow Can We Help?\nI have dental insurance and would like to verify my benefits\nI prefer a phone call instead of email\nThis is a dental emergency\nGet in Touch\n\nFill out the form below and we'll get back to you within 24 hours.\n\nVisit Our Office\n900 Hwy 17 S Suite E, North Myrtle Beach, SC 29582\nCall Us\n843-491-6021\nEmergency line available 24/7\nEmail Us\nnorthmyrtlepc@brushandfloss.com\nOffice Hours\nMonday: 8:00 AM - 5:00 PM\nTuesday: 8:00 AM - 5:00 PM\nWednesday: 8:00 AM - 5:00 PM\nThursday: 8:00 AM - 5:00 PM\nFriday: 8:00 AM - 2:00 PM\nBOOK APPOINTMENT ONLINE\nCALL FOR EMERGENCY\nLOCATIONS\nSERVICES\nWHAT TO EXPECT\nJOIN OUR TEAM\nPARTNER WITH US\nCONTACT US\nHIPAA\nPRIVACY POLICY\nSEARCH",
+  "wordCount": 2098
+}

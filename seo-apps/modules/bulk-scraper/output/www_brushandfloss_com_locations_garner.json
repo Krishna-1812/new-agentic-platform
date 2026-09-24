@@ -1,0 +1,1246 @@
+{
+  "url": "https://www.brushandfloss.com/locations/garner",
+  "statusCode": 200,
+  "scrapedAt": "2026-04-14T14:40:34.451Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "Dentist in Garner, NC | Riccobene Associates Family Dentistry",
+  "metaDescription": "Dentist in Garner NC offering family, pediatric, cosmetic, emergency, and implant care in a modern, welcoming practice. Call today to schedule your visit!",
+  "canonical": "https://www.brushandfloss.com/locations/garner",
+  "allMeta": {
+    "description": "Dentist in Garner NC offering family, pediatric, cosmetic, emergency, and implant care in a modern, welcoming practice. Call today to schedule your visit!",
+    "og:title": "Riccobene Associates Family Dentistry | Garner, NC",
+    "og:description": "Dentist in Garner NC offering family, pediatric, cosmetic, emergency, and implant care in a modern, welcoming practice. Call today to schedule your visit!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315c3_Garner-NC-Dentist-Location-e1482426729888.jpg",
+    "twitter:title": "Riccobene Associates Family Dentistry | Garner, NC",
+    "twitter:description": "Dentist in Garner NC offering family, pediatric, cosmetic, emergency, and implant care in a modern, welcoming practice. Call today to schedule your visit!",
+    "twitter:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315c3_Garner-NC-Dentist-Location-e1482426729888.jpg",
+    "og:type": "website",
+    "twitter:card": "summary_large_image",
+    "viewport": "width=device-width, initial-scale=1",
+    "generator": "Webflow"
+  },
+  "ogTags": {
+    "og:title": "Riccobene Associates Family Dentistry | Garner, NC",
+    "og:description": "Dentist in Garner NC offering family, pediatric, cosmetic, emergency, and implant care in a modern, welcoming practice. Call today to schedule your visit!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315c3_Garner-NC-Dentist-Location-e1482426729888.jpg",
+    "og:type": "website"
+  },
+  "twitterTags": {
+    "twitter:card": "summary_large_image"
+  },
+  "headings": {
+    "h1": [
+      "TRUSTED DENTISTS IN GARNER, NC FOR COMPLETE FAMILY DENTAL CARE"
+    ],
+    "h2": [
+      "MEET YOUR DOCTORS",
+      "OUR SERVICES",
+      "WHAT OUR PATIENTS SAY",
+      "OUR OFFICE",
+      "WHY CHOOSE RICCOBENE?",
+      "OUR COMMITMENT TO EXCELLENCE",
+      "OTHER NEARBY LOCATIONS",
+      "PAYMENT OPTIONS & MEMBERSHIP PLANS",
+      "AFFORDABLE MEMBERSHIP PLANS",
+      "FREQUENTLY ASKED QUESTIONS",
+      "READY TO SCHEDULE? CONTACT US"
+    ],
+    "h3": [
+      "Nicholas Uhlir, DDS",
+      "Jason Pate, DDS",
+      "Chanel A. Prince, DDS",
+      "Haysam Tawfik, DMD",
+      "Hsin Chen DDS, MS",
+      "Radwa Behairy, DDS",
+      "Office Amenities",
+      "500,000+",
+      "4.8",
+      "25",
+      "What emergency dental care is available in Garner, NC?",
+      "Do you accept pediatric or family dentistry patients in Garner?",
+      "Can I get cosmetic services like teeth whitening or veneers in Garner?",
+      "Does the Garner office offer dental implants?",
+      "What sedation options are available for anxious patients in Garner?",
+      "How do I book an appointment with a Garner dentist?",
+      "Do you accept dental insurance or offer payment plans in Garner?",
+      "Send us a Message",
+      "Get in Touch",
+      "Request An Appointment"
+    ],
+    "h4": [],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h1",
+      "text": "TRUSTED DENTISTS IN GARNER, NC FOR COMPLETE FAMILY DENTAL CARE"
+    },
+    {
+      "tag": "h2",
+      "text": "MEET YOUR DOCTORS"
+    },
+    {
+      "tag": "h3",
+      "text": "Nicholas Uhlir, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Jason Pate, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Chanel A. Prince, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Haysam Tawfik, DMD"
+    },
+    {
+      "tag": "h3",
+      "text": "Hsin Chen DDS, MS"
+    },
+    {
+      "tag": "h3",
+      "text": "Radwa Behairy, DDS"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR SERVICES"
+    },
+    {
+      "tag": "h2",
+      "text": "WHAT OUR PATIENTS SAY"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR OFFICE"
+    },
+    {
+      "tag": "h3",
+      "text": "Office Amenities"
+    },
+    {
+      "tag": "h2",
+      "text": "WHY CHOOSE RICCOBENE?"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR COMMITMENT TO EXCELLENCE"
+    },
+    {
+      "tag": "h3",
+      "text": "500,000+"
+    },
+    {
+      "tag": "h3",
+      "text": "4.8"
+    },
+    {
+      "tag": "h3",
+      "text": "25"
+    },
+    {
+      "tag": "h2",
+      "text": "OTHER NEARBY LOCATIONS"
+    },
+    {
+      "tag": "h2",
+      "text": "PAYMENT OPTIONS & MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "AFFORDABLE MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "FREQUENTLY ASKED QUESTIONS"
+    },
+    {
+      "tag": "h3",
+      "text": "What emergency dental care is available in Garner, NC?"
+    },
+    {
+      "tag": "h3",
+      "text": "Do you accept pediatric or family dentistry patients in Garner?"
+    },
+    {
+      "tag": "h3",
+      "text": "Can I get cosmetic services like teeth whitening or veneers in Garner?"
+    },
+    {
+      "tag": "h3",
+      "text": "Does the Garner office offer dental implants?"
+    },
+    {
+      "tag": "h3",
+      "text": "What sedation options are available for anxious patients in Garner?"
+    },
+    {
+      "tag": "h3",
+      "text": "How do I book an appointment with a Garner dentist?"
+    },
+    {
+      "tag": "h3",
+      "text": "Do you accept dental insurance or offer payment plans in Garner?"
+    },
+    {
+      "tag": "h2",
+      "text": "READY TO SCHEDULE? CONTACT US"
+    },
+    {
+      "tag": "h3",
+      "text": "Send us a Message"
+    },
+    {
+      "tag": "h3",
+      "text": "Get in Touch"
+    },
+    {
+      "tag": "h3",
+      "text": "Request An Appointment"
+    }
+  ],
+  "paragraphs": [
+    "Serving the Garner community since 2004 and consistently voted as one of the best dental practices in the area, people love that we treat them like family.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Comprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Welcome to our Garner office! Reachable via Interstate 40, our Garner location provides care for Garner and patients traveling from the nearby neighborhoods such as Willow Springs, Holy Springs, Clayton, and more. With our highly advanced technology and an experienced team, we provide the comfort and confidence you need for a healthy, pain-free smile!",
+    "Our modern, inviting space is filled with a professional, experienced team that strongly believes that dental care and treatment start with patient comfort. Therefore, we strive for our office and amenities to be designed with our patients’ health and well-being in mind. Situated in a suburban community that blends small-town charm with convenient access to the Garner Towne Square, this location is accessible and easy to travel to. Our Garner office stands out with its peaceful atmosphere, where patients feel supported and leave motivated to take care of their oral health with ease and comfort.",
+    "We believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.",
+    "When you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.",
+    "Can't make it to our Garner office? We have other convenient locations in the area to serve you with the same exceptional dental care.",
+    "Quality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.",
+    "Save money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.",
+    "At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!",
+    "Absolutely. We recognize the importance of starting dental care as early as possible and make sure to provide kids and adults with pediatric or orthodontic care most comfortably and comprehensively as they deserve.",
+    "Yes, we understand the impact a confident smile has on our patients' lives, and therefore, we offer cosmetic services that include whitening, veneers, and Invisalign®.",
+    "Yes. Our team of experts is here to help you with all your dental issues, including implants. You can schedule an appointment or request a consultation to make sure you’re getting the best treatment suited available.",
+    "At Garner, we offer a variety of sedation dentistry options. You can choose from Nitrous Oxide, IV Sedation, and Local Anesthesia",
+    "To schedule a visit, feel free to call us or book an appointment online to get you in as soon as possible! We look forward to treating you and providing you with the comfort and care you deserve!",
+    "We accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.",
+    "Take the first step towards optimal oral health. Contact our Garner office to schedule your appointment or ask any questions about our dental services.",
+    "Fill out the form below and we'll get back to you within 24 hours.",
+    "Select a Location to schedule an appointment:",
+    "Call our Garner Office at 919-661-6161, or use the form below to request an appointment."
+  ],
+  "schemaMarkup": [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "https://www.brushandfloss.com/locations/garner",
+      "url": "https://www.brushandfloss.com/locations/garner",
+      "name": "Dentist in Garner, NC | Riccobene Associates Family Dentistry",
+      "description": "Dentist in Garner NC offering family, pediatric, cosmetic, emergency, and implant care in a modern, welcoming practice. Call today to schedule your visit!",
+      "inLanguage": "en-US",
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "https://www.brushandfloss.com/",
+        "url": "https://www.brushandfloss.com/",
+        "name": "Riccobene Associates Family Dentistry"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://www.brushandfloss.com/#organization",
+      "url": "https://www.brushandfloss.com/",
+      "sameAs": [
+        "https://www.facebook.com/RiccobeneDentistry",
+        "https://www.instagram.com/brushandflossnc/"
+      ],
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg"
+      },
+      "brand": {
+        "@type": "Brand",
+        "name": "Riccobene Associates Family Dentistry",
+        "sameAs": [
+          "https://www.facebook.com/RiccobeneDentistry",
+          "https://www.instagram.com/brushandflossnc/"
+        ]
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Insurance Accepted",
+      "insuranceAccepted": [
+        "Delta Dental",
+        "Blue Cross Blue Shield",
+        "Aetna",
+        "Cigna",
+        "MetLife",
+        "UnitedHealthcare"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Dentist",
+      "@id": "https://www.brushandfloss.com/locations/garner/dentist",
+      "name": "Riccobene Associates Family Dentistry",
+      "image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315c3_Garner-NC-Dentist-Location-e1482426729888.jpg",
+      "logo": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315cd_riccobene-associates-family-dentistry.png",
+      "url": "/locations/garner",
+      "telephone": "919-661-6161",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "5638 Veterans Pkwy #214, Garner, NC 27529",
+        "addressLocality": "Garner",
+        "addressRegion": "NC",
+        "postalCode": "27529",
+        "addressCountry": "US"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Monday",
+          "opens": "8:00",
+          "closes": "4:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Tuesday",
+          "opens": "8:00",
+          "closes": "4:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Wednesday",
+          "opens": "8:00",
+          "closes": "4:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Thursday",
+          "opens": "8:00",
+          "closes": "4:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Friday",
+          "opens": "8:00",
+          "closes": "2:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Saturday",
+          "opens": "8:00",
+          "closes": "2:00"
+        }
+      ],
+      "priceRange": "$$",
+      "hasMap": "https://g.page/garnerdds",
+      "sameAs": "https://g.page/garnerdds"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Dental Services",
+      "serviceOutput": [
+        {
+          "@type": "Service",
+          "name": "Crowns"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Anesthesia"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Bridges"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Implants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Sealants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dentures"
+        }
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Joy B"
+      },
+      "reviewBody": "I had a great experience getting ALL four of my wisdom teeth removed. Though I was nervous about the surgery, the dentists made me feel very comfortable and at peace. The procedure went by quickly and was painless.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Courtney B"
+      },
+      "reviewBody": "After some bad experiences led to a severe phobia of the dentist, I avoided going for years. When I finally came back, Riccobene did a great job of helping me get caught up on my dental care and offered sedation that made returning much easier. I was diagnosed with lung cancer and can no longer receive most types of dental sedation (especially nitrous), but Riccobene&#39;s hygienists are so gentle and patient that I&#39;ve been able to keep up with my regular cleanings without any undue fear or discomfort. I really appreciate how much they&#39;ve helped me get back on top of my dental health.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Ofelia V"
+      },
+      "reviewBody": "The front desk staff makes you feel right at home immediately when you walk in the door. The professionalism and friendliness of the whole team are outstanding! I went to them for a complicated process and could not be more satisfied with my dentists! I would recommend Riccobene Associates for anyone looking for a great dental clinic.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Michael R"
+      },
+      "reviewBody": "Every aspect of my experience with Riccobene Garner has exceeded my expectations. I was in really bad shape when I started with them, but they fixed all my problems with sedation dentistry. That was 09-2022. I go back every 6 months, and today was one of them. I was again good to go. Thank you to all the great folks who take care of me!!!!!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What emergency dental care is available in Garner, NC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you accept pediatric or family dentistry patients in Garner?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Absolutely. We recognize the importance of starting dental care as early as possible and make sure to provide kids and adults with pediatric or orthodontic care most comfortably and comprehensively as they deserve."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I get cosmetic services like teeth whitening or veneers in Garner?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, we understand the impact a confident smile has on our patients' lives, and therefore, we offer cosmetic services that include whitening, veneers, and Invisalign®."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the Garner office offer dental implants?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Our team of experts is here to help you with all your dental issues, including implants. You can schedule an appointment or request a consultation to make sure you’re getting the best treatment suited available."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What sedation options are available for anxious patients in Garner?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "At Garner, we offer a variety of sedation dentistry options. You can choose from Nitrous Oxide, IV Sedation, and Local Anesthesia"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I book an appointment with a Garner dentist?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "To schedule a visit, feel free to call us or book an appointment online to get you in as soon as possible! We look forward to treating you and providing you with the comfort and care you deserve!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you accept dental insurance or offer payment plans in Garner?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance."
+          }
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314df_search.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152e_riccobene-banner-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31508_location-map.webp",
+      "alt": "Map showing neighborhoods, parks, schools, and roads including Davis Drive Elementary School, Pleasant Street, and Sunset Plaza."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314e7_location-banner.jpg",
+      "alt": "Smiling woman reclined in dental chair during a dental checkup with dentist holding dental mirror and probe."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31552_call-now-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a1670f831c22166fda3324_nicholas-uhlir-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a1670f831c22166fda3324_nicholas-uhlir-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31677_Jason%20Pate%20DDS.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31677_Jason%20Pate%20DDS.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16729f0d7b53db84e8af6_chanel-a-prince-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a16729f0d7b53db84e8af6_chanel-a-prince-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a1673f42610040e0ae57ad_haysam-tawfik-dmd.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a1673f42610040e0ae57ad_haysam-tawfik-dmd.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3165b_hsin-chen-dds.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3165b_hsin-chen-dds.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317e8_Untitled%20design%20(2).jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317e8_Untitled%20design%20(2).jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3164b_Riccobene2-103.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315aa_Dental-Anesthesia-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317f5_dental-bridges.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69b29dacd38e9840c17ead1c_denture-implants.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ba_nc.dental-sealants-1024x768.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315af_brush-and-floss-dentures-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152b_riccobene-our-office-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152a_riccobene-our-office-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152d_riccobene-our-office-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152c_riccobene-our-office-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31529_riccobene-our-office-icon-five.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31548_riccobene-wcr-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31549_family-friendly.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31547_state-of-the-art.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31527_insurance-accepted-icon-1.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31558_pricing-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31559_pricing-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31522_pricing-1.webp",
+      "alt": "Smiling young woman with long brown hair pointing to her teeth with both index fingers."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31523_pricing-2.webp",
+      "alt": "Smiling young boy sitting in a dental chair during a dental checkup with a dentist holding a dental tool."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154b_email-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154c_alarm-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a location"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner",
+      "text": "GARNER"
+    },
+    {
+      "href": "tel:919-661-6161",
+      "text": "919-661-6161"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "CHANGE LOCATION"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers#jobs",
+      "text": "JOIN THE TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/garner",
+      "text": "SCHEDULE AN APPOINTMENT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": "Home"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a Dentist Near You"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "New Patient Experience"
+    },
+    {
+      "href": "https://www.brushandfloss.com/the-riccobene-way",
+      "text": "The Riccobene Way"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans",
+      "text": "Membership Plans"
+    },
+    {
+      "href": "https://www.brushandfloss.com/reviews",
+      "text": "Patient Reviews"
+    },
+    {
+      "href": "https://patient.payments.health/#/?organizationID=dab6a2b7&locationID=LSXWSH421HHY4",
+      "text": "Make A Payment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/payment",
+      "text": "Online Payments"
+    },
+    {
+      "href": "https://www.brushandfloss.com/articles",
+      "text": "articles"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "Contact us"
+    },
+    {
+      "href": "https://www.paycomonline.net/v4/ats/web.php/jobs?clientkey=B32F01563C7743C293E0AAB35AE1ADEA",
+      "text": "careers"
+    },
+    {
+      "href": "https://www.brushandflossaffiliates.com/",
+      "text": "Become an Affiliate Practice"
+    },
+    {
+      "href": "https://www.brushandfloss-employees.com/",
+      "text": "Employees"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/garner",
+      "text": "BOOK APPOINMENT"
+    },
+    {
+      "href": "tel:919-661-6161",
+      "text": "CALL NOW"
+    },
+    {
+      "href": "tel:919-661-6161",
+      "text": "Call Now"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/nicholas-uhlir-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/nicholas-uhlir-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/jason-pate-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/jason-pate-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/chanel-a-prince",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/chanel-a-prince",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/haysam-tawfik-dmd",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/haysam-tawfik-dmd",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/hsin-chen-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/hsin-chen-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/radwa-behairy-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/radwa-behairy-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/crowns",
+      "text": "Crowns"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-anesthesia",
+      "text": "Dental Anesthesia"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-bridges",
+      "text": "Dental Bridges"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-implants",
+      "text": "Dental Implants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/sealants",
+      "text": "Dental Sealants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dentures",
+      "text": "Dentures"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner?f5ff0038_page=2",
+      "text": "Load More"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#ready-to-schedule",
+      "text": "SCHEDULE A VISIT TODAY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/benson",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/benson",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/clayton",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/clayton",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/selma-adult",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/selma",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "View all Locations"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#adult-preventative-plan",
+      "text": "ADULT PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#child-preventative-plan",
+      "text": "CHILD PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/garner",
+      "text": "BOOK APPOINTMENT ONLINE"
+    },
+    {
+      "href": "tel:919-661-6161",
+      "text": "CALL FOR EMERGENCY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "LOCATIONS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "SERVICES"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "WHAT TO EXPECT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers",
+      "text": "JOIN OUR TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/partnership",
+      "text": "PARTNER WITH US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "CONTACT US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/hipaa",
+      "text": "HIPAA"
+    },
+    {
+      "href": "https://www.brushandfloss.com/privacy-policy",
+      "text": "PRIVACY POLICY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/search",
+      "text": "SEARCH"
+    },
+    {
+      "href": "https://www.facebook.com/RiccobeneDentistry",
+      "text": ""
+    },
+    {
+      "href": "https://www.instagram.com/brushandflossnc/?hl=en",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner",
+      "text": "Garner"
+    },
+    {
+      "href": "tel:919-661-6161",
+      "text": "919-661-6161"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#",
+      "text": "Close"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/garner#",
+      "text": "Open Appointment"
+    }
+  ],
+  "bodyText": "GARNER\n919-661-6161\nCHANGE LOCATION\nJOIN THE TEAM\nSCHEDULE AN APPOINTMENT\nTRUSTED DENTISTS IN GARNER, NC FOR COMPLETE FAMILY DENTAL CARE\n\nServing the Garner community since 2004 and consistently voted as one of the best dental practices in the area, people love that we treat them like family.\n\n5638 Veterans Pkwy #214, Garner, NC 27529\n919-661-6161\nMon-Thu: 8:00 AM - 4:00 PM | Fri & Sat: 8:00 AM - 2:00 PM\nBOOK APPOINMENT\nCALL NOW\nCall Now\nMEET YOUR DOCTORS\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\nNicholas Uhlir, DDS\nGeneral Dentistry\nMORE+\nNicholas Uhlir, DDS\nGeneral Dentistry\nDr. Uhlir grew up in Plano TX. At 17, his family moved to Raleigh and he has lived in the Triangle area every since. He attended UNC, Chapel Hill where he graduated with Honors in Biology. After working as a research technician for a year, he decided he wanted out of the lab and have more direct impact on people’s lives while serving his community.\nVIEW PROFILE\nJason Pate, DDS\nGeneral Dentistry\nMORE+\nJason Pate, DDS\nGeneral Dentistry\nDr. Pate, who grew up in Raleigh, was drawn to healthcare and hands-on work, leading him to dental school at UNC. With decades of experience across multiple practices, he is passionate about restoring smiles and improving patient quality of life—when he's not in the office, he enjoys cooking, golfing, and cheering for UNC sports\nVIEW PROFILE\nChanel A. Prince, DDS\nGeneral Dentistry, Emphasis On Patient Education\nMORE+\nChanel A. Prince, DDS\nGeneral Dentistry, Emphasis On Patient Education\nHailing from Holly Springs, Dr. Prince pursued her education at NC State and Mississippi College. Inspired by early shadowing experiences, she values dentistry’s blend of science and art and prioritizes building trusting patient relationships through education and involvement in treatment decisions. She enjoys family sing-alongs and trying new foods in her free time\nVIEW PROFILE\nHaysam Tawfik, DMD\nSedation & Surgical Dentistry\nMORE+\nHaysam Tawfik, DMD\nSedation & Surgical Dentistry\nDr. Tawfik, originally trained in Missouri and Florida, served as a US Air Force Captain after dental school, completing an advanced residency emphasizing surgical techniques such as IV sedation, bone grafting, and root canal therapy. A sedation-certified dentist, he creates painless, high-tech experiences for patients and enjoys car racing and photography in his free time\nVIEW PROFILE\nHsin Chen DDS, MS\nEndodontist (Root Canal Specialist)\nMORE+\nHsin Chen DDS, MS\nEndodontist (Root Canal Specialist)\nOriginally from Taipei, Dr. Chen earned her DDS from UNC Chapel Hill in 2011 and completed her Endodontic residency there in 2014. Known for her expertise in root canals, she also stays fit as a certified Les Mills instructor outside the clinic.\nVIEW PROFILE\nRadwa Behairy, DDS\nComprehensive Dental Care | Implant Dentistry & Full Mouth Rehabilitation\nMORE+\nRadwa Behairy, DDS\nComprehensive Dental Care | Implant Dentistry & Full Mouth Rehabilitation\nDr. Radwa Behairy was born in New Jersey and spent part of her childhood in Cairo, Egypt before moving to North Carolina at the age of twelve.\n\nCredentials:\n\nDoctor Of Dental Surgery — UNC Chapel Hill\nFellowship & Mastership — American Academy Of Implant Prosthodontics (AAIP)\nFellowship & Mastership — International Congress Of Oral Implantologists (ICOI)\nVIEW PROFILE\nOUR SERVICES\n\nComprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.\n\nCrowns\nProtect and restore damaged teeth with custom dental crowns. Learn about tooth crown types, benefits, and treatment. Schedule your visit today.\nBOOK NOW\nDental Anesthesia\nSedation dentistry with dental anesthesia ensures you remain comfortalbe during dental care. Our patients are our top priority! Call Riccobene Associates.\nBOOK NOW\nDental Bridges\nDental bridges restore your smile by replacing missing teeth. Get a custom, natural fit that enhances both appearance and function. Book your consultation today\nBOOK NOW\nDental Implants\nAt Riccobene Associates Family Dentistry, we offer dental implants to restore your beautiful smile. Contact one of our dental offices today!\nBOOK NOW\nDental Sealants\nDental sealants protect your teeth from cavities and decay. A quick, effective way to maintain oral health. Book your consultation today!\nBOOK NOW\nDentures\nDiscover affordable dentures and permanent solutions from a trusted dentures specialist. Get one-day dentures that fit your needs. Book a consultation today!\nBOOK NOW\nLoad More\nWHAT OUR PATIENTS SAY\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\n★★★★★\nI had a great experience getting ALL four of my wisdom teeth removed. Though I was nervous about the surgery, the dentists made me feel very comfortable and at peace. The procedure went by quickly and was painless.\nJoy B\n★★★★★\nAfter some bad experiences led to a severe phobia of the dentist, I avoided going for years. When I finally came back, Riccobene did a great job of helping me get caught up on my dental care and offered sedation that made returning much easier. I was diagnosed with lung cancer and can no longer receive most types of dental sedation (especially nitrous), but Riccobene's hygienists are so gentle and patient that I've been able to keep up with my regular cleanings without any undue fear or discomfort. I really appreciate how much they've helped me get back on top of my dental health.\nCourtney B\n★★★★★\nThe front desk staff makes you feel right at home immediately when you walk in the door. The professionalism and friendliness of the whole team are outstanding! I went to them for a complicated process and could not be more satisfied with my dentists! I would recommend Riccobene Associates for anyone looking for a great dental clinic.\nOfelia V\n★★★★★\nEvery aspect of my experience with Riccobene Garner has exceeded my expectations. I was in really bad shape when I started with them, but they fixed all my problems with sedation dentistry. That was 09-2022. I go back every 6 months, and today was one of them. I was again good to go. Thank you to all the great folks who take care of me!!!!!\nMichael R\nOUR OFFICE\n\nWelcome to our Garner office! Reachable via Interstate 40, our Garner location provides care for Garner and patients traveling from the nearby neighborhoods such as Willow Springs, Holy Springs, Clayton, and more. With our highly advanced technology and an experienced team, we provide the comfort and confidence you need for a healthy, pain-free smile!\n\nOur modern, inviting space is filled with a professional, experienced team that strongly believes that dental care and treatment start with patient comfort. Therefore, we strive for our office and amenities to be designed with our patients’ health and well-being in mind. Situated in a suburban community that blends small-town charm with convenient access to the Garner Towne Square, this location is accessible and easy to travel to. Our Garner office stands out with its peaceful atmosphere, where patients feel supported and leave motivated to take care of their oral health with ease and comfort.\n\nOffice Amenities\nFree WiFi\nComplimentary Beverages\nFamily-Friendly\nFree Parking\nFlexible Scheduling\nSCHEDULE A VISIT TODAY\nWHY CHOOSE RICCOBENE?\n\nWe believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.\n\nSame-Day Appointments\nUrgent dental needs? We offer same-day or next-day appointments in many locations for emergency care.\nFamily-Friendly\nWe provide gentle, expert dental care for children from their very first tooth through their teenage years.\nState-Of-The-Art\nCutting-edge technology and advanced treatment options bring the best that modern dental innovation has to offer to our offices.\nComprehensive Care\nOur expert provider offers a range of services from preventative, cosmetic, routine dental care and more.\nEmergency Dental Services\n24/7 emergency support when you need immediate dental care.\nOUR COMMITMENT TO EXCELLENCE\n\nWhen you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.\n\n500,000+\nHappy Smiles\nPatients served with exceptional care\n4.8\nAvg Google Rating\nfrom more than 28,000 reviews\n25\nYears In Business\nTrusted by the local community\nOTHER NEARBY LOCATIONS\n\nCan't make it to our Garner office? We have other convenient locations in the area to serve you with the same exceptional dental care.\n\nBenson\n12330 Highway 210, Suite 115, Benson, NC 27504\n919-207-2077\nGeneral\nEmergency\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nClayton\n31 Oleander Dr, Clayton, NC 27527\n919-550-5251\nCosmetic\nImplants\nPediatric\nPeriodontal\nOrthodontic\nBOOK NOW\nVIEW DETAILS\nSelma\n1111 S Pollock St, Selma, NC 27576\n919-965-2552\nEmergency\nCosmetic\nSedation\nPediatric\nOrthodontic\nBOOK NOW\nVIEW DETAILS\nView all Locations\nPAYMENT OPTIONS & MEMBERSHIP PLANS\n\nQuality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.\n\nInsurance Accepted\nWe accept most major dental insurance plans\nDelta Dental\nBlue Cross Blue Shield\nAetna\nCigna\nMetlife\nUnited Heathcare\nFlexible Financing\nMultiple payment options to fit your budget\nSunbit\n0% Interest Plans\nMonthly Payment Plans\nHSA/FSA Accepted\nMembership Plans\nAffordable care for uninsured patients\nAnnual Cleanings\nX-rays Included\n10% Off Treatments\nNo Insurance Required\nAFFORDABLE MEMBERSHIP PLANS\n\nSave money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.\n\nAdult Preventative Plan\n$39\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nADULT PREVENTATIVE PLAN\nChild Preventative Plan\n$36\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nCHILD PREVENTATIVE PLAN\nFREQUENTLY ASKED QUESTIONS\nWhat emergency dental care is available in Garner, NC?\n\nAt our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!\n\nDo you accept pediatric or family dentistry patients in Garner?\n\nAbsolutely. We recognize the importance of starting dental care as early as possible and make sure to provide kids and adults with pediatric or orthodontic care most comfortably and comprehensively as they deserve.\n\nCan I get cosmetic services like teeth whitening or veneers in Garner?\n\nYes, we understand the impact a confident smile has on our patients' lives, and therefore, we offer cosmetic services that include whitening, veneers, and Invisalign®.\n\nDoes the Garner office offer dental implants?\n\nYes. Our team of experts is here to help you with all your dental issues, including implants. You can schedule an appointment or request a consultation to make sure you’re getting the best treatment suited available.\n\nWhat sedation options are available for anxious patients in Garner?\n\nAt Garner, we offer a variety of sedation dentistry options. You can choose from Nitrous Oxide, IV Sedation, and Local Anesthesia\n\nHow do I book an appointment with a Garner dentist?\n\nTo schedule a visit, feel free to call us or book an appointment online to get you in as soon as possible! We look forward to treating you and providing you with the comfort and care you deserve!\n\nDo you accept dental insurance or offer payment plans in Garner?\n\nWe accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.\n\nREADY TO SCHEDULE? CONTACT US\n\nTake the first step towards optimal oral health. Contact our Garner office to schedule your appointment or ask any questions about our dental services.\n\nSend us a Message\nFill out the form below and we'll get back to you within 24 hours.\nFirst Name*\nLast Name*\nEmail*\nPhone*\nHow Can We Help?\nI have dental insurance and would like to verify my benefits\nI prefer a phone call instead of email\nThis is a dental emergency\nGet in Touch\n\nFill out the form below and we'll get back to you within 24 hours.\n\nVisit Our Office\n5638 Veterans Pkwy #214, Garner, NC 27529\nCall Us\n919-661-6161\nEmergency line available 24/7\nEmail Us\ngarnerpc@brushandfloss.com\nOffice Hours\nMonday: 8:00 AM - 4:00 PM\nTuesday: 8:00 AM - 4:00 PM\nWednesday: 8:00 AM - 4:00 PM\nThursday: 8:00 AM - 4:00 PM\nFriday: 8:00 AM - 2:00 PM\nSaturday: 8:00 AM - 2:00 PM\nBOOK APPOINTMENT ONLINE\nCALL FOR EMERGENCY\nLOCATIONS\nSERVICES\nWHAT TO EXPECT\nJOIN OUR TEAM\nPARTNER WITH US\nCONTACT US\nHIPAA\nPRIVACY POLICY\nSEARCH",
+  "wordCount": 2188
+}

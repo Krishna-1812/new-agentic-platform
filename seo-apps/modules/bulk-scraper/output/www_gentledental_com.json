@@ -1,0 +1,1661 @@
+{
+  "url": "https://www.gentledental.com/",
+  "statusCode": 200,
+  "scrapedAt": "2026-04-14T14:40:06.114Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "Find A Dentist | Dental Care Services | Gentle Dental of New England",
+  "metaDescription": "Find a local dentist near you at one of our 40+ MA & NH locations. Gentle Dental is committed to providing affordable multi-specialty dental care.",
+  "canonical": "https://www.gentledental.com/",
+  "allMeta": {
+    "description": "Find a local dentist near you at one of our 40+ MA & NH locations. Gentle Dental is committed to providing affordable multi-specialty dental care.",
+    "og:site_name": "Gentle Dental",
+    "og:type": "website",
+    "og:url": "https://www.gentledental.com/home-page",
+    "og:title": "Find A Dentist | Dental Care Services | Gentle Dental of New England",
+    "og:description": "Find a local dentist near you at one of our 40+ MA & NH locations. Gentle Dental is committed to providing affordable multi-specialty dental care.",
+    "og:image": "https://www.gentledental.com/sites/default/files/2020-04/homepage-hero-banner-image.jpg",
+    "og:image:url": "https://www.gentledental.com/sites/default/files/2020-04/homepage-hero-banner-image.jpg",
+    "og:image:alt": "Gentle Dental Home Page Banner",
+    "og:locale": "en_US",
+    "twitter:card": "summary_large_image",
+    "twitter:site": "@GentleDentalNE",
+    "twitter:title": "Find A Dentist | Dental Care Services | Gentle Dental of New England",
+    "twitter:description": "Find a local dentist near you at one of our 40+ MA & NH locations. Gentle Dental is committed to providing affordable multi-specialty dental care.",
+    "twitter:creator": "@GentleDentalNE",
+    "twitter:image:alt": "Gentle Dental Home Page Banner",
+    "twitter:image": "https://www.gentledental.com/sites/default/files/2020-04/homepage-hero-banner-image.jpg",
+    "Generator": "Drupal 10 (https://www.drupal.org)",
+    "MobileOptimized": "width",
+    "HandheldFriendly": "true",
+    "viewport": "width=device-width, initial-scale=1, maximum-scale=5",
+    "facebook-domain-verification": "szu200a9sfif4yyxgdv6v84hdplsnt"
+  },
+  "ogTags": {
+    "og:site_name": "Gentle Dental",
+    "og:type": "website",
+    "og:url": "https://www.gentledental.com/home-page",
+    "og:title": "Find A Dentist | Dental Care Services | Gentle Dental of New England",
+    "og:description": "Find a local dentist near you at one of our 40+ MA & NH locations. Gentle Dental is committed to providing affordable multi-specialty dental care.",
+    "og:image": "https://www.gentledental.com/sites/default/files/2020-04/homepage-hero-banner-image.jpg",
+    "og:image:url": "https://www.gentledental.com/sites/default/files/2020-04/homepage-hero-banner-image.jpg",
+    "og:image:alt": "Gentle Dental Home Page Banner",
+    "og:locale": "en_US"
+  },
+  "twitterTags": {
+    "twitter:card": "summary_large_image",
+    "twitter:site": "@GentleDentalNE",
+    "twitter:title": "Find A Dentist | Dental Care Services | Gentle Dental of New England",
+    "twitter:description": "Find a local dentist near you at one of our 40+ MA & NH locations. Gentle Dental is committed to providing affordable multi-specialty dental care.",
+    "twitter:creator": "@GentleDentalNE",
+    "twitter:image:alt": "Gentle Dental Home Page Banner",
+    "twitter:image": "https://www.gentledental.com/sites/default/files/2020-04/homepage-hero-banner-image.jpg"
+  },
+  "headings": {
+    "h1": [
+      "Quality Dental Care is\nRIGHT AROUND\nTHE CORNER"
+    ],
+    "h2": [
+      "Patients Come First",
+      "Our Services",
+      "WELCOMING\nNEW PATIENTS",
+      "Welcoming New Patients",
+      "Locations",
+      "Our Gentle Dental Dentists",
+      "Hear From Our Patients",
+      "Insurances Accepted"
+    ],
+    "h3": [
+      "Personalized Service",
+      "Award-Winning Care",
+      "On Your Schedule",
+      "49",
+      "49",
+      "200+",
+      "79",
+      "Gentle Dental\nWaltham",
+      "Gentle DentalWaltham",
+      "Gentle Dental\nFranklin",
+      "Gentle DentalFranklin",
+      "Gentle Dental\nWorcester at the Trolley Yard",
+      "Gentle DentalWorcester at the Trolley Yard",
+      "Gentle Dental\nMalden",
+      "Gentle DentalMalden",
+      "Gentle Dental\nNorwood",
+      "Gentle DentalNorwood",
+      "Gentle Dental\nDerry",
+      "Gentle DentalDerry",
+      "Gentle Dental\nHudson",
+      "Gentle DentalHudson",
+      "DOWNLOAD NOW",
+      "Download Now",
+      "Kelly",
+      "Laura",
+      "Michel",
+      "Robert",
+      "Denise",
+      "Tom",
+      "Carolyn",
+      "Michele",
+      "Kelly",
+      "Laura"
+    ],
+    "h4": [
+      "Preventive Care",
+      "Emergency Dental Care",
+      "Orthodontics",
+      "Oral Surgery",
+      "Pediatric Dentistry",
+      "Cosmetic Dentistry",
+      "Know the 8 Warning Signs of Gum Disease"
+    ],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h1",
+      "text": "Quality Dental Care is\nRIGHT AROUND\nTHE CORNER"
+    },
+    {
+      "tag": "h3",
+      "text": "Personalized Service"
+    },
+    {
+      "tag": "h3",
+      "text": "Award-Winning Care"
+    },
+    {
+      "tag": "h3",
+      "text": "On Your Schedule"
+    },
+    {
+      "tag": "h2",
+      "text": "Patients Come First"
+    },
+    {
+      "tag": "h3",
+      "text": "49"
+    },
+    {
+      "tag": "h3",
+      "text": "49"
+    },
+    {
+      "tag": "h3",
+      "text": "200+"
+    },
+    {
+      "tag": "h2",
+      "text": "Our Services"
+    },
+    {
+      "tag": "h4",
+      "text": "Preventive Care"
+    },
+    {
+      "tag": "h4",
+      "text": "Emergency Dental Care"
+    },
+    {
+      "tag": "h4",
+      "text": "Orthodontics"
+    },
+    {
+      "tag": "h4",
+      "text": "Oral Surgery"
+    },
+    {
+      "tag": "h4",
+      "text": "Pediatric Dentistry"
+    },
+    {
+      "tag": "h4",
+      "text": "Cosmetic Dentistry"
+    },
+    {
+      "tag": "h2",
+      "text": "WELCOMING\nNEW PATIENTS"
+    },
+    {
+      "tag": "h2",
+      "text": "Welcoming New Patients"
+    },
+    {
+      "tag": "h3",
+      "text": "79"
+    },
+    {
+      "tag": "h2",
+      "text": "Locations"
+    },
+    {
+      "tag": "h3",
+      "text": "Gentle Dental\nWaltham"
+    },
+    {
+      "tag": "h3",
+      "text": "Gentle DentalWaltham"
+    },
+    {
+      "tag": "h3",
+      "text": "Gentle Dental\nFranklin"
+    },
+    {
+      "tag": "h3",
+      "text": "Gentle DentalFranklin"
+    },
+    {
+      "tag": "h3",
+      "text": "Gentle Dental\nWorcester at the Trolley Yard"
+    },
+    {
+      "tag": "h3",
+      "text": "Gentle DentalWorcester at the Trolley Yard"
+    },
+    {
+      "tag": "h3",
+      "text": "Gentle Dental\nMalden"
+    },
+    {
+      "tag": "h3",
+      "text": "Gentle DentalMalden"
+    },
+    {
+      "tag": "h3",
+      "text": "Gentle Dental\nNorwood"
+    },
+    {
+      "tag": "h3",
+      "text": "Gentle DentalNorwood"
+    },
+    {
+      "tag": "h3",
+      "text": "Gentle Dental\nDerry"
+    },
+    {
+      "tag": "h3",
+      "text": "Gentle DentalDerry"
+    },
+    {
+      "tag": "h3",
+      "text": "Gentle Dental\nHudson"
+    },
+    {
+      "tag": "h3",
+      "text": "Gentle DentalHudson"
+    },
+    {
+      "tag": "h2",
+      "text": "Our Gentle Dental Dentists"
+    },
+    {
+      "tag": "h3",
+      "text": "DOWNLOAD NOW"
+    },
+    {
+      "tag": "h3",
+      "text": "Download Now"
+    },
+    {
+      "tag": "h4",
+      "text": "Know the 8 Warning Signs of Gum Disease"
+    },
+    {
+      "tag": "h2",
+      "text": "Hear From Our Patients"
+    },
+    {
+      "tag": "h3",
+      "text": "Kelly"
+    },
+    {
+      "tag": "h3",
+      "text": "Laura"
+    },
+    {
+      "tag": "h3",
+      "text": "Michel"
+    },
+    {
+      "tag": "h3",
+      "text": "Robert"
+    },
+    {
+      "tag": "h3",
+      "text": "Denise"
+    },
+    {
+      "tag": "h3",
+      "text": "Tom"
+    },
+    {
+      "tag": "h3",
+      "text": "Carolyn"
+    },
+    {
+      "tag": "h3",
+      "text": "Michele"
+    },
+    {
+      "tag": "h3",
+      "text": "Kelly"
+    },
+    {
+      "tag": "h3",
+      "text": "Laura"
+    },
+    {
+      "tag": "h2",
+      "text": "Insurances Accepted"
+    }
+  ],
+  "paragraphs": [
+    "Quality Dental Care is\nRIGHT AROUND\nTHE CORNER",
+    "Our trustworthy doctors partner with you to create a personalized treatment plan. We have been providing peace of mind for you and your family for over 45 years.",
+    "Gentle Dental has received more Boston Magazine “Top Dentist” distinctions than any other dental practice in New England. Our dentists and specialists provide the highest level of care at each newly renovated, all-digital office.",
+    "Taking care of your health should fit within your schedule. We are open late and on weekends so you can get the care you need. Some of our locations are even open 7 days a week!",
+    "Healthy, confident smiles for life is our mission at Gentle Dental. Since 1971, we have been leading the way in dental care. Our founding dentists believed that taking care of your health should fit your busy schedule. That’s why they built dental practices in convenient locations with convenient hours. We’re here when you need us.",
+    "Patients receive award-winning dental care from dentists who are graduates from top dental schools. Along with general dentistry, each location has specialty services which allows for high quality, coordinated care.",
+    "All Gentle Dentals are newly built or renovated and outfitted with the latest in dental technology including digital low radiation x-rays, 3D scanning, intraoral cameras, and even CERC same-day crowns at select locations.",
+    "Years of Trusted Dental Care",
+    "Dentists and Specialists",
+    "Gentle Dental dentists provide award-winning care. From cleanings and exams to more specialized services such as root canals and crowns, we provide all dental services under one roof saving you time and money. All Gentle Dental practices offer orthodontics for both adults and children including traditional braces and Invisalign® clear aligners.",
+    "Routine dental checkups are important for a healthy and confident smile.",
+    "Emergency Dental Care",
+    "Same day appointments available for emergencies at all locations.",
+    "Our in-house specialists have the right solution for you, from traditional braces to Invisalign.",
+    "Tooth extractions, dental implants, gum disease treatment, and more are completed on site.",
+    "Our specially trained pediatric dentists can meet the unique oral health needs of your children.",
+    "The smile of your dreams is possible with solutions from teeth whitening to veneers.",
+    "We're proud to always welcome patients into our practices. Whether you're new to town, need to restart your dental care, or are looking for a more convenient dentist, our New Patient Offer is a great introduction to our practice. New patients receive an exam, all necessary x-rays, a cleaning, and a personalized treatment plan for $79.",
+    "EXAM\nX-RAYS\nCLEANING\nTREATMENT PLAN",
+    "Dentists at Gentle Dental are graduates of top universities including Harvard, Tufts, Boston University, and UCONN.",
+    "Dentists at Gentle Dental have received more Boston Magazine “Top Dentist” distinctions than any other dental practice.",
+    "Year after year our offices are named “Choice Dental Office” in their towns and regions by Readers Choice Awards.",
+    "It’s never too early to protect your smile. Download to learn more!",
+    "Gentle Dental Waltham",
+    "Gentle Dental Waltham has every dental service you may need under one roof. Great staff and excellent office manager. My dental hygienist and dentist listen and answer my treatment questions. No matter what, they take great care of us!",
+    "Gentle Dental Cambridge",
+    "I would definitely recommend my experience at Gentle Dental Cambridge in Porter Square. A truly wonderful team of talented people! And they are paired with the most up-to-date technology. My experience was terrific! I needed a root canal and crowns in addition to a cavity filling. I was in safe hands! From start to finish, I was treated well and the procedures were completed in a timely manner.",
+    "Gentle Dental Jamaica Plain",
+    "Dr. Mancini and his staff got me in for an appointment within an hour of my call and took care of a loose, temporary cap. To my surprise they were able to “install” my permanent crown even though the appointment for that procedure was scheduled a week later. Perfect fit! Made my day. Thank you Gentle Dental Jamaica Plain!",
+    "Gentle Dental Brighton",
+    "I can't say enough good things about how I was treated at Gentle Dental Brighton over the last few years but more specifically recently when I had an infected root. Dr. Meyer was exceptional not just in her skills as a dentist, but how compassionate she was to the amount of pain I was in. She helped me from start to finish and even checked on me after the root canal. Not just a great dentist but a great person.",
+    "Best dental care around! Immaculate office. Staff is exceptional and truly caring. Dr. Anthony is the Best! He understands my anxiety. I am telling everyone to request an appointment at Gentle Dental Nashua!",
+    "Gentle Dental Wakefield",
+    "Just has my last implant visit and can now smile again! The whole process went smoothly. Hats off to Dr. Amin, Dr. Colon and Sheela. All three, along with the rest of the staff, were very professional and pleasant to work with. I have been a patient at this office for 10+ years and would recommend Gentle Dental Wakefield to anyone for their next dentist appointment!",
+    "Gentle Dental Belmont",
+    "This is an excellent dental practice with flexible scheduling and friendly staff. Hygienists and dentists are very knowledgeable and skilled. Would also recommend their periodontist. Prices are quite reasonable as well. The Saturday hours are a huge plus at this dentist in Belmont.",
+    "Gentle Dental Arlington",
+    "My dentist, Dr. Alikpala in Arlington, is caring and knowledgeable. She always makes sure I’m comfortable, explains the procedure, and makes sure I don’t have any questions about the treatment plan. She takes the time to show you pictures of your teeth and why she recommends a certain procedure. The dental office staff is friendly and even with a simple little filling, I will get a call later that day to make sure I’m okay. Dr. Alikpala and her team are fantastic.",
+    "Gentle Dental Waltham",
+    "Gentle Dental Waltham has every dental service you may need under one roof. Great staff and excellent office manager. My dental hygienist and dentist listen and answer my treatment questions. No matter what, they take great care of us!",
+    "Gentle Dental Cambridge",
+    "I would definitely recommend my experience at Gentle Dental Cambridge in Porter Square. A truly wonderful team of talented people! And they are paired with the most up-to-date technology. My experience was terrific! I needed a root canal and crowns in addition to a cavity filling. I was in safe hands! From start to finish, I was treated well and the procedures were completed in a timely manner.",
+    "We are in-network providers with most major dental insurance companies. Call us to confirm coverage.",
+    "©2026 Gentle Dental of New England – All Rights Reserved.",
+    "Gentle Dental is a 42 North Dental Care, PLLC practice and is owned and operated by licensed dentists."
+  ],
+  "schemaMarkup": [
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://www.gentledental.com/",
+          "url": "https://www.gentledental.com/",
+          "sameAs": "https://www.youtube.com/user/GentleDental1, https://twitter.com/gentledentalne, https://www.facebook.com/GentleDental",
+          "image": {
+            "@type": "ImageObject",
+            "url": "https://www.gentledental.com/themes/custom/gentledentaldptheme/logo.svg"
+          },
+          "brand": {
+            "@type": "Brand",
+            "name": "Gentle Dental",
+            "sameAs": "https://www.youtube.com/user/GentleDental1, https://twitter.com/gentledentalne, https://www.facebook.com/GentleDental"
+          }
+        },
+        {
+          "@type": "WebPage",
+          "breadcrumb": {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Gentle Dental",
+                "item": "https://www.gentledental.com/home-page"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "home page",
+                "item": "https://www.gentledental.com/home-page"
+              }
+            ]
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://www.gentledental.com/#Organization",
+          "url": "https://www.gentledental.com/",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "query-input": "required name=search_term_string",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://www.gentledental.com/search?q={search_term_string}"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "src": "https://www.gentledental.com/themes/custom/gentledentaldptheme/logo.svg",
+      "alt": "Home"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2024-11/gentle-dental-home-page-hero-banner-image.webp?itok=xKEwVgpI",
+      "alt": "Hero Banner Image"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/2019-11/personalized-service-icon.png",
+      "alt": "Personalized Service"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/2019-11/award-winning-care-icon.png",
+      "alt": "Award Winning Care"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/2019-11/dentistry-on-your-schedule.png",
+      "alt": "Dentistry on Your Schedule"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2020-03/preventive-dentistry-thumbnail.jpg.webp?itok=VR6YhiT3",
+      "alt": "Preventive Dentistry Thumbnail"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2020-03/emergency-dental-care-thumbnail.jpg.webp?itok=Ykvx9Bz6",
+      "alt": "Emergency Dental Care Thumbnail"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2020-03/orthodontics-thumbnail.jpg.webp?itok=qed8U9eY",
+      "alt": "Orthodontics Thumbnail"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2021-01/oral-surgery-home-thumbnail.jpg.webp?itok=k3Z5Ye0D",
+      "alt": "Oral Surgery"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2020-03/pediatric-dentistry-thumbnail.jpg.webp?itok=MZTi2xqX",
+      "alt": "Pediatric Dentistry Thumbnail"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2020-06/cosmetic-dentistry-thumbnail-image.jpg.webp?itok=7Oy8Ux-S",
+      "alt": "Cosmetic Dentistry Thumbnail"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2020-03/gentle-dental-waltham.jpg.webp?itok=ObdNFyS_",
+      "alt": "Gentle Dental Waltham"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2025-02/gentle-dental-franklin-office-img.webp?itok=39DrBHLu",
+      "alt": "Franklin Office"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2025-02/gentle-dental-worceter-offices.webp?itok=YRVfoA2z",
+      "alt": "Worceter Office"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2020-06/gentle-dental-malden-office.jpg.webp?itok=0Ery2Z5Q",
+      "alt": "Gentle Dental Malden"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2025-02/gentle-dental-norwood-office.webp?itok=2IOucgfY",
+      "alt": "Norwood Office"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2025-02/gentle-dental-derry-office.webp?itok=sE5oLiDJ",
+      "alt": "Derry Office"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2025-02/gentle-dentle-hudson-office-img.webp?itok=2UbC6mly",
+      "alt": "Hudson Office"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2019-11/boston-university-awards.jpg.webp?itok=jkTkv3IG",
+      "alt": "Boston University"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2025-02/top-dentist-home-page.webp?itok=vU2XyHtq",
+      "alt": "Top Dentists"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2021-04/readers-choice-2020.jpg.webp?itok=iTAWCL5H",
+      "alt": "Readers Choice 2020"
+    },
+    {
+      "src": "https://www.gentledental.com/themes/custom/gentledentaldptheme/images/know-the-eight-warning-signs.png",
+      "alt": "Newsletter"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2022-04/aetna-logo-img.png.webp?itok=1E7nD4A4",
+      "alt": "Aetna Logo Image"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2020-08/altus-dental-insurance-logo.png.webp?itok=i-7VuWRi",
+      "alt": "Altus"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2020-08/assurant-insurance-logo.png.webp?itok=OvxuWNZX",
+      "alt": "Assurant"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2020-02/image-bluecross-blueshield-logo.png.webp?itok=p8gJraPk",
+      "alt": "Blue Cross Blue Shield"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2020-08/cigna-logo.png.webp?itok=EuXtXAMH",
+      "alt": "Cigna"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2020-08/delta-dental-logo.png.webp?itok=ILiuTPqQ",
+      "alt": "Delta Dental"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2020-08/guardian-logo.png.webp?itok=y9OJlpP-",
+      "alt": "Guardian"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2020-08/metlife-logo.png.webp?itok=xbQO7eSW",
+      "alt": "MetLife"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2022-05/north-east-delta-dental-logo.png.webp?itok=oK7NQljQ",
+      "alt": "North East Delta Dental Logo Image"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2019-11/united-concordia-logo.png.webp?itok=FqkPQr0c",
+      "alt": "United Concordia Dental"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/styles/convert_image/public/2022-04/united-health-care.png.webp?itok=omOO0Jk3",
+      "alt": "United Healthcare Insurance Logo"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/inline-images/ada-footer-logo.png",
+      "alt": "ADA"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/inline-images/invisalign-logo.png",
+      "alt": "Invisalign"
+    },
+    {
+      "src": "https://www.gentledental.com/sites/default/files/inline-images/mds-footer-logos.png",
+      "alt": "MDS"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://www.gentledental.com/#main-content",
+      "text": "Skip to main content"
+    },
+    {
+      "href": "https://www.gentledental.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices",
+      "text": "Locations"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/arlington",
+      "text": "Arlington"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/attleboro",
+      "text": "Attleboro"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/belmont",
+      "text": "Belmont"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/beverly",
+      "text": "Beverly"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/boston",
+      "text": "Boston"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/boston/newbury-st",
+      "text": "Boston - Newbury St"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/boston/brighton",
+      "text": "Brighton"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/boston/jamaica-plain",
+      "text": "Jamaica Plain"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/boston/south-boston",
+      "text": "South Boston"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/boston/west-roxbury",
+      "text": "West Roxbury"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/braintree",
+      "text": "Braintree"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/brockton",
+      "text": "Brockton"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/brookline",
+      "text": "Brookline"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/burlington",
+      "text": "Burlington"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/cambridge",
+      "text": "Cambridge"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/chelmsford",
+      "text": "Chelmsford"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/concord/concord-south-main-st",
+      "text": "Concord, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/derry",
+      "text": "Derry, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/dover",
+      "text": "Dover, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/exeter",
+      "text": "Exeter, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/franklin",
+      "text": "Franklin"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/hanover",
+      "text": "Hanover"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/hudson",
+      "text": "Hudson"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/keene",
+      "text": "Keene, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/malden",
+      "text": "Malden"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/manchester",
+      "text": "Manchester, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/manchester/elm-st",
+      "text": "Manchester Elm St"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/manchester/south-willow",
+      "text": "Manchester South Willow"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/medford",
+      "text": "Medford"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/methuen",
+      "text": "Methuen"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/milford",
+      "text": "Milford"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/nashua",
+      "text": "Nashua, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/nashua/main-st",
+      "text": "Nashua - Main St"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/nashua/south-nashua",
+      "text": "South Nashua"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/natick",
+      "text": "Natick"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/new-bedford",
+      "text": "New Bedford"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/north-andover",
+      "text": "North Andover"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/norwood",
+      "text": "Norwood"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/peabody",
+      "text": "Peabody"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/quincy",
+      "text": "Quincy"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/rochester",
+      "text": "Rochester, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/saugus",
+      "text": "Saugus"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/seekonk",
+      "text": "Seekonk"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/somerville",
+      "text": "Somerville"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/stoughton",
+      "text": "Stoughton"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/wakefield",
+      "text": "Wakefield"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/waltham",
+      "text": "Waltham"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/worcester",
+      "text": "Worcester"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/worcester/worcester-at-the-trolley-yard",
+      "text": "Worcester at the Trolley Yard"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/worcester/worcester-shrewsbury-st",
+      "text": "Worcester - Shrewsbury St"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/cosmetic-dentistry",
+      "text": "Cosmetic Dentistry"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/cosmetic-dentistry/teeth-whitening",
+      "text": "Whitening"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/cosmetic-dentistry/veneers",
+      "text": "Veneers"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/crowns-bridges",
+      "text": "Crowns & Bridges"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/dental-fillings",
+      "text": "Dental Fillings"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/emergency-dental-care",
+      "text": "Emergency Dental Care"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/gum-treatments",
+      "text": "Gum Treatments"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/implants",
+      "text": "Implants"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/oral-surgery",
+      "text": "Oral Surgery"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/oral-surgery/extractions",
+      "text": "Extractions"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/oral-surgery/wisdom-teeth-extractions",
+      "text": "Wisdom Teeth"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/orthodontics",
+      "text": "Orthodontics"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/orthodontics/invisalign",
+      "text": "Braces"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/orthodontics/invisalign",
+      "text": "Invisalign"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/partial-and-full-dentures",
+      "text": "Partial & Full Dentures"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry",
+      "text": "Preventive Care"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry#sst-DentalExams",
+      "text": "Exams"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry#sst-DigitalXRays",
+      "text": "Digital X-rays"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry#sst-TeethCleaning",
+      "text": "Cleaning"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry#sst-Curodont",
+      "text": "Curodont"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry#sst-FluorideTreatments",
+      "text": "Fluoride"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry#sst-OralCancerScreening",
+      "text": "Oral Cancer Screening"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry#sst-Sealants",
+      "text": "Sealants"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry/diabetes-and-oral-health",
+      "text": "Diabetes and Oral Health"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/pediatric-dentistry",
+      "text": "Pediatric Dentistry"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/root-canals",
+      "text": "Root Canals"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/sedation-dentistry",
+      "text": "Sedation Dentistry"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/sleep-apnea-treatment",
+      "text": "Sleep Apnea Treatment"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/sleep-apnea-dentistry",
+      "text": "Sleep Dentistry"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/tmd-tmj-treatment",
+      "text": "TMD/TMJ Treatment"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-payment-plans",
+      "text": "Payment Options"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-payment-plans",
+      "text": "Payment & Insurance"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-payment-plans/pay-my-bill",
+      "text": "Pay My Bill"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-discounts",
+      "text": "Dental Offers"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-discounts/new-patient-offer",
+      "text": "New Patient Offer"
+    },
+    {
+      "href": "https://www.gentledental.com/insurance-benefits",
+      "text": "Insurance Benefits"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-discounts/get-smile-you-deserve",
+      "text": "Consultations"
+    },
+    {
+      "href": "https://www.gentledental.com/resources",
+      "text": "Patient Resources"
+    },
+    {
+      "href": "https://www.gentledental.com/resources/articles/what-expect-your-first-dental-appointment",
+      "text": "What to Expect at Your First Visit"
+    },
+    {
+      "href": "https://www.gentledental.com/resources/before-and-after",
+      "text": "Before & After"
+    },
+    {
+      "href": "https://www.gentledental.com/resources/articles/dental-care-definitions",
+      "text": "Dental Definitions"
+    },
+    {
+      "href": "https://www.gentledental.com/resources/faq",
+      "text": "FAQs"
+    },
+    {
+      "href": "https://www.gentledental.com/resources/articles",
+      "text": "Articles"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us",
+      "text": "About Us"
+    },
+    {
+      "href": "https://www.gentledental.com/your-health-and-safety",
+      "text": "Health & Safety"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us/awards",
+      "text": "Awards & Recognition"
+    },
+    {
+      "href": "https://www.gentledental.com/meet-our-dentists",
+      "text": "Meet Our Dentists"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us/press",
+      "text": "Press"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us/partners",
+      "text": "Partners"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us/contact-us",
+      "text": "Contact Us"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us/doctors-careers",
+      "text": "Doctors Careers"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us/careers",
+      "text": "Careers"
+    },
+    {
+      "href": "https://www.42northdental.com/the-power-of-partnership/",
+      "text": "Affiliate Your Practice"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices",
+      "text": "Book Now"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us",
+      "text": "Personalized Service\n\nOur trustworthy doctors partner with you to create a personalized treatment plan. We have been providing peace of mind for you and your family for over 45 years."
+    },
+    {
+      "href": "https://www.gentledental.com/meet-our-dentists",
+      "text": "Award-Winning Care\n\nGentle Dental has received more Boston Magazine “Top Dentist” distinctions than any other dental practice in New England. Our dentists and specialists provide the highest level of care at each newly renovated, all-digital office."
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices",
+      "text": "On Your Schedule\n\nTaking care of your health should fit within your schedule. We are open late and on weekends so you can get the care you need. Some of our locations are even open 7 days a week!"
+    },
+    {
+      "href": "https://www.gentledental.com/resources/articles/are-dental-x-rays-safe",
+      "text": "digital low radiation x-rays"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us",
+      "text": "LEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services",
+      "text": "VIEW ALL SERVICES"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry",
+      "text": "Preventive Care\n\nLEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/emergency-dental-care",
+      "text": "Emergency Dental Care\n\nLEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/orthodontics",
+      "text": "Orthodontics\n\nLEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/oral-surgery",
+      "text": "Oral Surgery\n\nLEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/pediatric-dentistry",
+      "text": "Pediatric Dentistry\n\nLEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/cosmetic-dentistry",
+      "text": "Cosmetic Dentistry\n\nLEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services",
+      "text": "View all Services"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-discounts/new-patient-offer",
+      "text": "LEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-discounts",
+      "text": "VIEW ALL OFFERS"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/waltham",
+      "text": "Gentle Dental\nWaltham\nLEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/franklin",
+      "text": "Gentle Dental\nFranklin\nLEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/worcester/worcester-at-the-trolley-yard",
+      "text": "Gentle Dental\nWorcester at the Trolley Yard\nLEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/malden",
+      "text": "Gentle Dental\nMalden\nLEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/norwood",
+      "text": "Gentle Dental\nNorwood\nLEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/derry",
+      "text": "Gentle Dental\nDerry\nLEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/hudson",
+      "text": "Gentle Dental\nHudson\nLEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices",
+      "text": "SEE ALL LOCATIONS"
+    },
+    {
+      "href": "https://www.gentledental.com/",
+      "text": "Prev"
+    },
+    {
+      "href": "https://www.gentledental.com/",
+      "text": "Next"
+    },
+    {
+      "href": "https://www.gentledental.com/",
+      "text": "1"
+    },
+    {
+      "href": "https://www.gentledental.com/",
+      "text": "2"
+    },
+    {
+      "href": "https://www.gentledental.com/",
+      "text": "3"
+    },
+    {
+      "href": "https://www.gentledental.com/",
+      "text": "4"
+    },
+    {
+      "href": "https://www.gentledental.com/",
+      "text": "5"
+    },
+    {
+      "href": "https://www.gentledental.com/",
+      "text": "6"
+    },
+    {
+      "href": "https://www.gentledental.com/",
+      "text": "7"
+    },
+    {
+      "href": "https://www.gentledental.com/",
+      "text": "8"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-payment-plans",
+      "text": "LEARN MORE"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices",
+      "text": "Locations"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-payment-plans",
+      "text": "Payment Options"
+    },
+    {
+      "href": "https://www.gentledental.com/patient-resources",
+      "text": "Patient Resources"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us",
+      "text": "About Us"
+    },
+    {
+      "href": "https://www.gentledental.com/your-health-and-safety",
+      "text": "Health & Safety"
+    },
+    {
+      "href": "https://www.facebook.com/GentleDental",
+      "text": ""
+    },
+    {
+      "href": "https://twitter.com/gentledentalne",
+      "text": ""
+    },
+    {
+      "href": "https://www.youtube.com/user/GentleDental1",
+      "text": ""
+    },
+    {
+      "href": "https://www.gentledental.com/disclaimer",
+      "text": "Gentle Dental is a 42 North Dental Care, PLLC practice and is owned and operated by licensed dentists."
+    },
+    {
+      "href": "https://www.gentledental.com/sitemap",
+      "text": "Sitemap"
+    },
+    {
+      "href": "https://www.gentledental.com/privacy-policy",
+      "text": "Privacy Policy"
+    },
+    {
+      "href": "https://www.gentledental.com/disclaimer",
+      "text": "Disclaimer"
+    },
+    {
+      "href": "https://www.gentledental.com/terms-of-use",
+      "text": "Terms of Use"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices",
+      "text": "Find a Location"
+    },
+    {
+      "href": "https://www.gentledental.com/request-an-appointment",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices",
+      "text": "Locations"
+    },
+    {
+      "href": "https://www.gentledental.com/#",
+      "text": "Back"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices",
+      "text": "Locations"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/arlington",
+      "text": "Arlington"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/attleboro",
+      "text": "Attleboro"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/belmont",
+      "text": "Belmont"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/beverly",
+      "text": "Beverly"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/boston",
+      "text": "Boston"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/boston/newbury-st",
+      "text": "Boston - Newbury St"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/boston/brighton",
+      "text": "Brighton"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/boston/jamaica-plain",
+      "text": "Jamaica Plain"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/boston/south-boston",
+      "text": "South Boston"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/boston/west-roxbury",
+      "text": "West Roxbury"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/braintree",
+      "text": "Braintree"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/brockton",
+      "text": "Brockton"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/brookline",
+      "text": "Brookline"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/burlington",
+      "text": "Burlington"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/cambridge",
+      "text": "Cambridge"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/chelmsford",
+      "text": "Chelmsford"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/concord/concord-south-main-st",
+      "text": "Concord, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/derry",
+      "text": "Derry, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/dover",
+      "text": "Dover, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/exeter",
+      "text": "Exeter, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/franklin",
+      "text": "Franklin"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/hanover",
+      "text": "Hanover"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/hudson",
+      "text": "Hudson"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/keene",
+      "text": "Keene, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/malden",
+      "text": "Malden"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/manchester",
+      "text": "Manchester, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/manchester/elm-st",
+      "text": "Manchester Elm St"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/manchester/south-willow",
+      "text": "Manchester South Willow"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/medford",
+      "text": "Medford"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/methuen",
+      "text": "Methuen"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/milford",
+      "text": "Milford"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/nashua",
+      "text": "Nashua, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/nashua/main-st",
+      "text": "Nashua - Main St"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/nashua/south-nashua",
+      "text": "South Nashua"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/natick",
+      "text": "Natick"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/new-bedford",
+      "text": "New Bedford"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/north-andover",
+      "text": "North Andover"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/norwood",
+      "text": "Norwood"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/peabody",
+      "text": "Peabody"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/quincy",
+      "text": "Quincy"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/nh/rochester",
+      "text": "Rochester, NH"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/saugus",
+      "text": "Saugus"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/seekonk",
+      "text": "Seekonk"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/somerville",
+      "text": "Somerville"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/stoughton",
+      "text": "Stoughton"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/wakefield",
+      "text": "Wakefield"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/waltham",
+      "text": "Waltham"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/worcester",
+      "text": "Worcester"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/worcester/worcester-at-the-trolley-yard",
+      "text": "Worcester at the Trolley Yard"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices/ma/worcester/worcester-shrewsbury-st",
+      "text": "Worcester - Shrewsbury St"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.gentledental.com/#",
+      "text": "Back"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/cosmetic-dentistry",
+      "text": "Cosmetic Dentistry"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/cosmetic-dentistry/teeth-whitening",
+      "text": "Whitening"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/cosmetic-dentistry/veneers",
+      "text": "Veneers"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/crowns-bridges",
+      "text": "Crowns & Bridges"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/dental-fillings",
+      "text": "Dental Fillings"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/emergency-dental-care",
+      "text": "Emergency Dental Care"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/gum-treatments",
+      "text": "Gum Treatments"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/implants",
+      "text": "Implants"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/oral-surgery",
+      "text": "Oral Surgery"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/oral-surgery/extractions",
+      "text": "Extractions"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/oral-surgery/wisdom-teeth-extractions",
+      "text": "Wisdom Teeth"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/orthodontics/",
+      "text": "Orthodontics"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/orthodontics/braces/",
+      "text": "Braces"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/orthodontics/invisalign",
+      "text": "Invisalign"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/partial-and-full-dentures",
+      "text": "Partial & Full Dentures"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry",
+      "text": "Preventive Care"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry#sst-DentalExams",
+      "text": "Exams"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry#sst-DigitalXRays",
+      "text": "Digital X-rays"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry#sst-TeethCleaning",
+      "text": "Cleaning"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry#sst-Curodont",
+      "text": "Curodont"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry#sst-FluorideTreatments",
+      "text": "Fluoride"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry#sst-OralCancerScreening",
+      "text": "Oral Cancer Screening"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry#sst-Sealants",
+      "text": "Sealants"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/preventive-dentistry/diabetes-and-oral-health",
+      "text": "Diabetes and Oral Health"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/pediatric-dentistry",
+      "text": "Pediatric Dentistry"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/root-canals",
+      "text": "Root Canals"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/sedation-dentistry",
+      "text": "Sedation Dentistry"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/sleep-apnea-treatment",
+      "text": "Sleep Apnea Treatment"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/sleep-apnea-dentistry",
+      "text": "Sleep Dentistry"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-services/tmd-tmj-treatment",
+      "text": "TMD/TMJ Treatment"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-payment-plans",
+      "text": "Payment Options"
+    },
+    {
+      "href": "https://www.gentledental.com/#",
+      "text": "Back"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-payment-plans",
+      "text": "Payment Options"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-payment-plans",
+      "text": "Payment & Insurance"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-payment-plans/pay-my-bill",
+      "text": "Pay My Bill"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-discounts",
+      "text": "Dental Offers"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-discounts/new-patient-offer",
+      "text": "New Patient Offer"
+    },
+    {
+      "href": "https://www.gentledental.com/insurance-benefits",
+      "text": "Insurance Benefits"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-discounts/get-smile-you-deserve",
+      "text": "Consultations"
+    },
+    {
+      "href": "https://www.gentledental.com/resources",
+      "text": "Patient Resources"
+    },
+    {
+      "href": "https://www.gentledental.com/#",
+      "text": "Back"
+    },
+    {
+      "href": "https://www.gentledental.com/resources",
+      "text": "Patient Resources"
+    },
+    {
+      "href": "https://www.gentledental.com/resources/articles/what-expect-your-first-dental-appointment",
+      "text": "What to Expect at Your First Visit"
+    },
+    {
+      "href": "https://www.gentledental.com/resources/before-and-after",
+      "text": "Before & After"
+    },
+    {
+      "href": "https://www.gentledental.com/resources/articles/dental-care-definitions",
+      "text": "Dental Definitions"
+    },
+    {
+      "href": "https://www.gentledental.com/resources/faq",
+      "text": "FAQs"
+    },
+    {
+      "href": "https://www.gentledental.com/resources/articles",
+      "text": "Articles"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us",
+      "text": "About Us"
+    },
+    {
+      "href": "https://www.gentledental.com/#",
+      "text": "Back"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us",
+      "text": "About Us"
+    },
+    {
+      "href": "https://www.gentledental.com/your-health-and-safety",
+      "text": "Health & Safety"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us/awards",
+      "text": "Awards & Recognition"
+    },
+    {
+      "href": "https://www.gentledental.com/meet-our-dentists",
+      "text": "Meet Our Dentists"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us/press",
+      "text": "Press"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us/partners",
+      "text": "Partners"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us/contact-us",
+      "text": "Contact Us"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us/doctors-careers",
+      "text": "Doctors Careers"
+    },
+    {
+      "href": "https://www.gentledental.com/about-us/careers",
+      "text": "Careers"
+    },
+    {
+      "href": "https://www.42northdental.com/the-power-of-partnership/",
+      "text": "Affiliate Your Practice"
+    },
+    {
+      "href": "https://www.gentledental.com/dental-offices",
+      "text": "Book Now"
+    }
+  ],
+  "bodyText": "Skip to main content\n\nQuality Dental Care is\nRIGHT AROUND\nTHE CORNER\n\n \nPersonalized Service\n\nOur trustworthy doctors partner with you to create a personalized treatment plan. We have been providing peace of mind for you and your family for over 45 years.\n\nAward-Winning Care\n\nGentle Dental has received more Boston Magazine “Top Dentist” distinctions than any other dental practice in New England. Our dentists and specialists provide the highest level of care at each newly renovated, all-digital office.\n\nOn Your Schedule\n\nTaking care of your health should fit within your schedule. We are open late and on weekends so you can get the care you need. Some of our locations are even open 7 days a week!\n\nPatients Come First\n\nHealthy, confident smiles for life is our mission at Gentle Dental. Since 1971, we have been leading the way in dental care. Our founding dentists believed that taking care of your health should fit your busy schedule. That’s why they built dental practices in convenient locations with convenient hours. We’re here when you need us.\n\nPatients receive award-winning dental care from dentists who are graduates from top dental schools. Along with general dentistry, each location has specialty services which allows for high quality, coordinated care.\n\nAll Gentle Dentals are newly built or renovated and outfitted with the latest in dental technology including digital low radiation x-rays, 3D scanning, intraoral cameras, and even CERC same-day crowns at select locations.\n\nLEARN MORE\nOur Services\n\nGentle Dental dentists provide award-winning care. From cleanings and exams to more specialized services such as root canals and crowns, we provide all dental services under one roof saving you time and money. All Gentle Dental practices offer orthodontics for both adults and children including traditional braces and Invisalign® clear aligners.\n\nVIEW ALL SERVICES\n\nPreventive Care\n\nLEARN MORE\n\nEmergency Dental Care\n\nLEARN MORE\n\nOrthodontics\n\nLEARN MORE\n\nOral Surgery\n\nLEARN MORE\n\nPediatric Dentistry\n\nLEARN MORE\n\nCosmetic Dentistry\n\nLEARN MORE\nWELCOMING\nNEW PATIENTS\n\nWe're proud to always welcome patients into our practices. Whether you're new to town, need to restart your dental care, or are looking for a more convenient dentist, our New Patient Offer is a great introduction to our practice. New patients receive an exam, all necessary x-rays, a cleaning, and a personalized treatment plan for $79.\n\n$79\n\nEXAM\nX-RAYS\nCLEANING\nTREATMENT PLAN\n\nA $400+ VALUE\n\nLEARN MORE\nVIEW ALL OFFERS\nLocations\nGentle Dental\nWaltham\nLEARN MORE\nGentle Dental\nFranklin\nLEARN MORE\nGentle Dental\nWorcester at the Trolley Yard\nLEARN MORE\nGentle Dental\nMalden\nLEARN MORE\nGentle Dental\nNorwood\nLEARN MORE\nGentle Dental\nDerry\nLEARN MORE\nGentle Dental\nHudson\nLEARN MORE\nSEE ALL LOCATIONS\nOur Gentle Dental Dentists\n\nDentists at Gentle Dental are graduates of top universities including Harvard, Tufts, Boston University, and UCONN.\n\nDentists at Gentle Dental have received more Boston Magazine “Top Dentist” distinctions than any other dental practice.\n\nYear after year our offices are named “Choice Dental Office” in their towns and regions by Readers Choice Awards.\n\nDOWNLOAD NOW\nKnow the 8 Warning Signs of Gum Disease\n\nIt’s never too early to protect your smile. Download to learn more!\n\nEmail\nHear From Our Patients\nKelly\n\nGentle Dental Waltham\n\n \n\nGentle Dental Waltham has every dental service you may need under one roof. Great staff and excellent office manager. My dental hygienist and dentist listen and answer my treatment questions. No matter what, they take great care of us!\n\nLaura\n\nGentle Dental Cambridge\n\n \n\nI would definitely recommend my experience at Gentle Dental Cambridge in Porter Square. A truly wonderful team of talented people! And they are paired with the most up-to-date technology. My experience was terrific! I needed a root canal and crowns in addition to a cavity filling. I was in safe hands! From start to finish, I was treated well and the procedures were completed in a timely manner.\n\nMichel\n\nGentle Dental Jamaica Plain\n\n \n\nDr. Mancini and his staff got me in for an appointment within an hour of my call and took care of a loose, temporary cap. To my surprise they were able to “install” my permanent crown even though the appointment for that procedure was scheduled a week later. Perfect fit! Made my day. Thank you Gentle Dental Jamaica Plain!\n\nRobert\n\nGentle Dental Brighton\n\n \n\nI can't say enough good things about how I was treated at Gentle Dental Brighton over the last few years but more specifically recently when I had an infected root. Dr. Meyer was exceptional not just in her skills as a dentist, but how compassionate she was to the amount of pain I was in. She helped me from start to finish and even checked on me after the root canal. Not just a great dentist but a great person.\n\nDenise\n\nGentle Dental Nashua\n\n \n\nBest dental care around! Immaculate office. Staff is exceptional and truly caring. Dr. Anthony is the Best! He understands my anxiety. I am telling everyone to request an appointment at Gentle Dental Nashua!\n\nTom\n\nGentle Dental Wakefield\n\n \n\nJust has my last implant visit and can now smile again! The whole process went smoothly. Hats off to Dr. Amin, Dr. Colon and Sheela. All three, along with the rest of the staff, were very professional and pleasant to work with. I have been a patient at this office for 10+ years and would recommend Gentle Dental Wakefield to anyone for their next dentist appointment!\n\nCarolyn\n\nGentle Dental Belmont\n\n \n\nThis is an excellent dental practice with flexible scheduling and friendly staff. Hygienists and dentists are very knowledgeable and skilled. Would also recommend their periodontist. Prices are quite reasonable as well. The Saturday hours are a huge plus at this dentist in Belmont.\n\nMichele\n\nGentle Dental Arlington\n\n \n\nMy dentist, Dr. Alikpala in Arlington, is caring and knowledgeable. She always makes sure I’m comfortable, explains the procedure, and makes sure I don’t have any questions about the treatment plan. She takes the time to show you pictures of your teeth and why she recommends a certain procedure. The dental office staff is friendly and even with a simple little filling, I will get a call later that day to make sure I’m okay. Dr. Alikpala and her team are fantastic.\n\nKelly\n\nGentle Dental Waltham\n\n \n\nGentle Dental Waltham has every dental service you may need under one roof. Great staff and excellent office manager. My dental hygienist and dentist listen and answer my treatment questions. No matter what, they take great care of us!\n\nLaura\n\nGentle Dental Cambridge\n\n \n\nI would definitely recommend my experience at Gentle Dental Cambridge in Porter Square. A truly wonderful team of talented people! And they are paired with the most up-to-date technology. My experience was terrific! I needed a root canal and crowns in addition to a cavity filling. I was in safe hands! From start to finish, I was treated well and the procedures were completed in a timely manner.\n\nPrev\nNext\n1\n2\n3\n4\n5\n6\n7\n8\nInsurances Accepted\n\nWe are in-network providers with most major dental insurance companies. Call us to confirm coverage.\n\nLEARN MORE\nLocations\nDental Services\nPayment Options\nPatient Resources\nAbout Us\nHealth & Safety\nPartners and Associations\nFollow Us\n\n©2026 Gentle Dental of New England – All Rights Reserved.\n\nGentle Dental is a 42 North Dental Care, PLLC practice and is owned and operated by licensed dentists.\n\nSitemapPrivacy PolicyDisclaimerTerms of Use",
+  "wordCount": 1215
+}

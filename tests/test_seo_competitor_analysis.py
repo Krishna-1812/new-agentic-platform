@@ -6,10 +6,8 @@ requests on the dormant "Competitor Analysis" placeholder in APP_AGENTS (slug
 competitor-seo-intelligence, on /app, the public member workspace) -- two
 different registries that happen to share a display name.
 
-_seo_tools() prefers a live /tools.json manifest from the SERP app and only falls
-back to _SEO_TOOLS_FALLBACK when that fetch fails (it currently always fails: the
-SERP app is a client-routed SPA with no such endpoint), so the fallback list is
-the actual, only source of truth for what /seo-aeo can show today.
+_SEO_TOOLS (app.py) is the list /seo-aeo shows; it mirrors SEO Studio's own
+menu in seo-apps/client/src/toolsMeta.js.
 
 The /app placeholder is deliberately requestable but NOT connected. The live
 tool's client picker shows every client's data (Tealium, Beta Bionics, ...) with
@@ -36,7 +34,6 @@ _SLUG = "competitor-analysis"
 
 @pytest.fixture
 def client(monkeypatch):
-    monkeypatch.setattr(appmod, "_SEO_MANIFEST", {"ts": 0.0, "tools": None})
     # /app reads both of these on every page; unpatched they'd fall through to
     # {} / set() anyway with no LOGIN_LOG_SHEET_ID set, but pinning them keeps
     # this file's /app assertions independent of that env detail.
@@ -49,7 +46,7 @@ def client(monkeypatch):
 
 
 def test_it_is_registered_in_the_fallback_list():
-    tool = next((t for t in appmod._SEO_TOOLS_FALLBACK if t["slug"] == _SLUG), None)
+    tool = next((t for t in appmod._SEO_TOOLS if t["slug"] == _SLUG), None)
     assert tool, "competitor-analysis is missing from the SEO tool roster"
     assert tool["path"] == "/competitor-analysis"
     assert tool["name"] == "Competitor Analysis"

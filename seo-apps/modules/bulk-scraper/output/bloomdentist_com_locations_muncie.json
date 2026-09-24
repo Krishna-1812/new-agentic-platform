@@ -1,0 +1,1411 @@
+{
+  "url": "http://bloomdentist.com/locations/muncie",
+  "statusCode": 200,
+  "scrapedAt": "2026-04-14T14:40:38.910Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "Muncie - Bloom Dental",
+  "metaDescription": "Dentist in Muncie, Indiana, offering comprehensive dental services and flexible financing. Schedule with Bloom Dental today!",
+  "canonical": "https://www.bloomdentist.com/locations/muncie/",
+  "allMeta": {
+    "viewport": "width=device-width, initial-scale=1",
+    "robots": "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
+    "description": "Dentist in Muncie, Indiana, offering comprehensive dental services and flexible financing. Schedule with Bloom Dental today!",
+    "og:locale": "en_US",
+    "og:type": "article",
+    "og:title": "Muncie - Bloom Dental",
+    "og:description": "Dentist in Muncie, Indiana, offering comprehensive dental services and flexible financing. Schedule with Bloom Dental today!",
+    "og:url": "https://www.bloomdentist.com/locations/muncie/",
+    "og:site_name": "Bloom Dental",
+    "article:modified_time": "2026-04-13T13:06:19+00:00",
+    "og:image": "https://www.bloomdentist.com/wp-content/uploads/2026/01/Muncie-location-BD.webp",
+    "og:image:width": "1200",
+    "og:image:height": "800",
+    "og:image:type": "image/webp",
+    "twitter:card": "summary_large_image",
+    "twitter:label1": "Est. reading time",
+    "twitter:data1": "10 minutes",
+    "generator": "Elementor 4.0.2; features: additional_custom_breakpoints; settings: css_print_method-external, google_font-enabled, font_display-swap",
+    "msapplication-TileImage": "https://www.bloomdentist.com/wp-content/uploads/2025/08/BloomDental-favicon-opt.png"
+  },
+  "ogTags": {
+    "og:locale": "en_US",
+    "og:type": "article",
+    "og:title": "Muncie - Bloom Dental",
+    "og:description": "Dentist in Muncie, Indiana, offering comprehensive dental services and flexible financing. Schedule with Bloom Dental today!",
+    "og:url": "https://www.bloomdentist.com/locations/muncie/",
+    "og:site_name": "Bloom Dental",
+    "og:image": "https://www.bloomdentist.com/wp-content/uploads/2026/01/Muncie-location-BD.webp",
+    "og:image:width": "1200",
+    "og:image:height": "800",
+    "og:image:type": "image/webp"
+  },
+  "twitterTags": {
+    "twitter:card": "summary_large_image",
+    "twitter:label1": "Est. reading time",
+    "twitter:data1": "10 minutes"
+  },
+  "headings": {
+    "h1": [
+      "Your Trusted Dentist in Muncie, IN"
+    ],
+    "h2": [
+      "Your Trusted Family Dentist in Muncie, Indiana",
+      "Comprehensive Care for Every Smile",
+      "Meet Dr. Madison Whybrew",
+      "Meet Dr. Katelyn Brown-Minor",
+      "Meet Dr. Jamie Childers",
+      "Meet Dr. Virgil Lungu",
+      "Patient Reviews",
+      "Bloom Dental Locations",
+      "Services",
+      "Quick Links",
+      "Resources"
+    ],
+    "h3": [
+      "Find the service\nthat is right for you",
+      "Single & Multiple\nDental Implants",
+      "Full Mouth\nDental Implants",
+      "Custom Dental Implants",
+      "Find the service\nthat is right for you",
+      "Single & Multiple\nDental Implants",
+      "Full Mouth\nDental Implants",
+      "Custom Dental Implants",
+      "Modern Dentistry in a Comfortable Environment",
+      "Convenient Location in Muncie",
+      "Book Your Appointment Today"
+    ],
+    "h4": [
+      "Preventative Care",
+      "Restorative Dentistry",
+      "Cosmetic Dentistry",
+      "Tooth Replacement Options",
+      "Preventative Care",
+      "Restorative Dentistry",
+      "Cosmetic Dentistry",
+      "Tooth Replacement Options",
+      "Emergency Dentistry",
+      "Pediatric Dentistry",
+      "Root Canal Treatment",
+      "Dental Implants",
+      "Dental Veneers",
+      "Teeth Whitening",
+      "Bloom Dental – Muncie",
+      "Select from our nearby locations to get started…",
+      "Bloom Dental – Plainfield",
+      "Bloom Dental – Downtown",
+      "Bloom Dental – Bedford",
+      "Bloom Dental – Bloomington",
+      "Bloom Dental – Geist",
+      "Bloom Dental – Greenwood",
+      "Bloom Dental – Muncie",
+      "Plainfield",
+      "Downtown",
+      "Bedford",
+      "Geist",
+      "Bloomington",
+      "Greenwood",
+      "Muncie"
+    ],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h4",
+      "text": "Preventative Care"
+    },
+    {
+      "tag": "h4",
+      "text": "Restorative Dentistry"
+    },
+    {
+      "tag": "h4",
+      "text": "Cosmetic Dentistry"
+    },
+    {
+      "tag": "h4",
+      "text": "Tooth Replacement Options"
+    },
+    {
+      "tag": "h3",
+      "text": "Find the service\nthat is right for you"
+    },
+    {
+      "tag": "h3",
+      "text": "Single & Multiple\nDental Implants"
+    },
+    {
+      "tag": "h3",
+      "text": "Full Mouth\nDental Implants"
+    },
+    {
+      "tag": "h3",
+      "text": "Custom Dental Implants"
+    },
+    {
+      "tag": "h4",
+      "text": "Preventative Care"
+    },
+    {
+      "tag": "h4",
+      "text": "Restorative Dentistry"
+    },
+    {
+      "tag": "h4",
+      "text": "Cosmetic Dentistry"
+    },
+    {
+      "tag": "h4",
+      "text": "Tooth Replacement Options"
+    },
+    {
+      "tag": "h3",
+      "text": "Find the service\nthat is right for you"
+    },
+    {
+      "tag": "h3",
+      "text": "Single & Multiple\nDental Implants"
+    },
+    {
+      "tag": "h3",
+      "text": "Full Mouth\nDental Implants"
+    },
+    {
+      "tag": "h3",
+      "text": "Custom Dental Implants"
+    },
+    {
+      "tag": "h1",
+      "text": "Your Trusted Dentist in Muncie, IN"
+    },
+    {
+      "tag": "h2",
+      "text": "Your Trusted Family Dentist in Muncie, Indiana"
+    },
+    {
+      "tag": "h3",
+      "text": "Modern Dentistry in a Comfortable Environment"
+    },
+    {
+      "tag": "h3",
+      "text": "Convenient Location in Muncie"
+    },
+    {
+      "tag": "h3",
+      "text": "Book Your Appointment Today"
+    },
+    {
+      "tag": "h2",
+      "text": "Comprehensive Care for Every Smile"
+    },
+    {
+      "tag": "h4",
+      "text": "Emergency Dentistry"
+    },
+    {
+      "tag": "h4",
+      "text": "Pediatric Dentistry"
+    },
+    {
+      "tag": "h4",
+      "text": "Root Canal Treatment"
+    },
+    {
+      "tag": "h4",
+      "text": "Dental Implants"
+    },
+    {
+      "tag": "h4",
+      "text": "Dental Veneers"
+    },
+    {
+      "tag": "h4",
+      "text": "Teeth Whitening"
+    },
+    {
+      "tag": "h2",
+      "text": "Meet Dr. Madison Whybrew"
+    },
+    {
+      "tag": "h2",
+      "text": "Meet Dr. Katelyn Brown-Minor"
+    },
+    {
+      "tag": "h2",
+      "text": "Meet Dr. Jamie Childers"
+    },
+    {
+      "tag": "h2",
+      "text": "Meet Dr. Virgil Lungu"
+    },
+    {
+      "tag": "h2",
+      "text": "Patient Reviews"
+    },
+    {
+      "tag": "h4",
+      "text": "Bloom Dental – Muncie"
+    },
+    {
+      "tag": "h2",
+      "text": "Bloom Dental Locations"
+    },
+    {
+      "tag": "h4",
+      "text": "Select from our nearby locations to get started…"
+    },
+    {
+      "tag": "h4",
+      "text": "Bloom Dental – Plainfield"
+    },
+    {
+      "tag": "h4",
+      "text": "Bloom Dental – Downtown"
+    },
+    {
+      "tag": "h4",
+      "text": "Bloom Dental – Bedford"
+    },
+    {
+      "tag": "h4",
+      "text": "Bloom Dental – Bloomington"
+    },
+    {
+      "tag": "h4",
+      "text": "Bloom Dental – Geist"
+    },
+    {
+      "tag": "h4",
+      "text": "Bloom Dental – Greenwood"
+    },
+    {
+      "tag": "h4",
+      "text": "Bloom Dental – Muncie"
+    },
+    {
+      "tag": "h2",
+      "text": "Services"
+    },
+    {
+      "tag": "h2",
+      "text": "Quick Links"
+    },
+    {
+      "tag": "h2",
+      "text": "Resources"
+    },
+    {
+      "tag": "h4",
+      "text": "Plainfield"
+    },
+    {
+      "tag": "h4",
+      "text": "Downtown"
+    },
+    {
+      "tag": "h4",
+      "text": "Bedford"
+    },
+    {
+      "tag": "h4",
+      "text": "Geist"
+    },
+    {
+      "tag": "h4",
+      "text": "Bloomington"
+    },
+    {
+      "tag": "h4",
+      "text": "Greenwood"
+    },
+    {
+      "tag": "h4",
+      "text": "Muncie"
+    }
+  ],
+  "paragraphs": [
+    "Ready to get started?",
+    "Ready to get started?",
+    "Ready to get started?",
+    "Ready to get started?",
+    "Ready to get started?",
+    "Ready to get started?",
+    "Ready to get started?",
+    "Ready to get started?",
+    "Ready to get started?",
+    "Ready to get started?",
+    "Welcome to Bloom Dental, your trusted dentist in Muncie, IN, providing high-quality, personalized dental care for individuals and families. Conveniently located on W McGalliard Rd, our practice offers comprehensive general dentistry, cosmetic dentistry, and emergency dental services designed to meet the needs of the Muncie community. Whether you’re visiting us for a routine dental cleaning or a complete smile makeover, our experienced team is here to help you achieve excellent oral health and a confident smile.",
+    "Whether you’re looking for a family dentist in Muncie, a cosmetic dentist, routine preventive care, or urgent dental treatment near W McGalliard Rd, we deliver compassionate, results-driven care you can rely on.",
+    "Our Muncie dental office is equipped with advanced dental technology to provide accurate, efficient, and comfortable care. From modern treatment rooms to patient-focused amenities, we’ve designed our office with your comfort in mind. We also follow strict sterilization and safety protocols to ensure a clean, safe environment for every visit.",
+    "Bloom Dental is conveniently located at 1003 W McGalliard Rd, Muncie, IN 47303, making it easy to access from Ball State University, nearby neighborhoods, shopping centers, and major roadways. With flexible scheduling options, extended hours, and easy online appointment booking, quality dental care fits seamlessly into your daily routine.",
+    "At Bloom Dental Muncie, we’re more than just a dental office — we’re your partners in lifelong oral health. Schedule your appointment online or call today to experience trusted, patient-centered care from a leading Muncie dentist dedicated to your comfort, convenience, and smile.",
+    "At Bloom Dental, we believe every smile deserves personalized care at every stage of life. From prevention to advanced treatments, our comprehensive services are designed to keep your teeth healthy, functional, and beautiful.",
+    "Dr. Whybrew is a general dentist dedicated to preventive care, personalized treatment, and building lasting trust with patients. She believes dentistry is about more than teeth—it’s about listening, education, and helping every patient feel confident in their smile.",
+    "Dr. Katelyn Brown-Minor earned degrees in Biochemistry and Spanish from IU East before completing her Doctor of Dental Surgery at the IU School of Dentistry. She is passionate about service and reducing barriers to care, and she strives to create a comfortable, supportive environment—especially for patients with dental anxiety.",
+    "Dr. Childers is a Muncie native and experienced dentist committed to high-quality, patient-centered care. He earned his dental degree from Midwestern University after completing undergraduate and graduate studies at Ball State University. Dr. Childers provides a wide range of treatments—from routine fillings to crowns, bridges, and advanced implant dentistry, including All-on-Four. He focuses on helping patients feel comfortable, informed, and confident at every visit.",
+    "Dr. Lungu is a dentist with a strong passion for oral surgery, with a particular focus on wisdom teeth removals and dental implants. He takes pride in guiding patients through procedures that often cause anxiety, making every effort to ensure they feel comfortable, informed, and at ease throughout their entire visit. For Dr. Lungu, there is nothing more rewarding than transforming a stressful dental experience into a positive one and helping patients leave feeling relieved and confident.",
+    "Went to get ready for a crown on upper tooth. Dr. Brown and her asst is the best. Took the time to explain things and got it done in a timely manner. The entire staff is great. Had my 6 month cleaning after having a crown from Dr Brown put on and Tina the hygienist dd a great job. Wouldn't go anywhere else.",
+    "Dr Childress is a great dentist he is patient He makes me feel very comfortable",
+    "Best 6 month cleaning ever today! Tina was my dental hygienist and she is amazing. Tina took her time, was gentle, and reassured me my teeth and gums were healthy. I have had my implants for 2 years now, thank you Dr. Jamie Childers, and they are serving me quite well! I now have the confidence to smile and talk to people knowing my teeth look great.",
+    "My 5 year old has been here a few times and absolutely loves it! He has even had some extractions but Dr. Childers makes it fun and much less scary for the little ones!",
+    "They are friendly. The hygienist was very gentle. Asked me if I was okay throughout the visit. They are nice over there. Will keep going.",
+    "I had a tooth emergency so I called based on their reviews and to my surprise I was able to get in immediately which was great for me. The entire team was awesome including the receptionist, the dental assistant Jennifer, and doctor Jamie Childress. A great dental team!",
+    "My daughter was traumatized by the dentist in new castle. She has absolutely loved this place. She loved all the ppl she met here also. Thank you girls!",
+    "At Bloom Dental, we make routine care simple and convenient. With our dual-care model, you can enjoy quick, local hygiene visits while receiving advanced treatments at our main office when needed.",
+    "167 Dan Jones Rd.,\nPlainfield, IN 46168",
+    "435 Virginia Ave, Unit 1800, Indianapolis, IN, 46203",
+    "1504 Dental Drive, Bedford, IN 47421",
+    "2909 E. Buick Cadillac Blvd, Bloomington, IN 47401",
+    "7962 Oaklandon Rd., Suite 105, Indianapolis, IN 46236",
+    "4800 W Smith Valley Rd, Suite K, Greenwood, IN 46142",
+    "1003 W McGalliard Rd, Muncie, IN 47303"
+  ],
+  "schemaMarkup": [
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": "https://www.bloomdentist.com/locations/muncie/",
+          "url": "https://www.bloomdentist.com/locations/muncie/",
+          "name": "Muncie - Bloom Dental",
+          "isPartOf": {
+            "@id": "https://www.bloomdentist.com/#website"
+          },
+          "primaryImageOfPage": {
+            "@id": "https://www.bloomdentist.com/locations/muncie/#primaryimage"
+          },
+          "image": {
+            "@id": "https://www.bloomdentist.com/locations/muncie/#primaryimage"
+          },
+          "thumbnailUrl": "https://www.bloomdentist.com/wp-content/uploads/2026/01/Muncie-location-BD.webp",
+          "datePublished": "2026-01-05T09:09:47+00:00",
+          "dateModified": "2026-04-13T13:06:19+00:00",
+          "description": "Dentist in Muncie, Indiana, offering comprehensive dental services and flexible financing. Schedule with Bloom Dental today!",
+          "breadcrumb": {
+            "@id": "https://www.bloomdentist.com/locations/muncie/#breadcrumb"
+          },
+          "inLanguage": "en-US",
+          "potentialAction": [
+            {
+              "@type": "ReadAction",
+              "target": [
+                "https://www.bloomdentist.com/locations/muncie/"
+              ]
+            }
+          ]
+        },
+        {
+          "@type": "ImageObject",
+          "inLanguage": "en-US",
+          "@id": "https://www.bloomdentist.com/locations/muncie/#primaryimage",
+          "url": "https://www.bloomdentist.com/wp-content/uploads/2026/01/Muncie-location-BD.webp",
+          "contentUrl": "https://www.bloomdentist.com/wp-content/uploads/2026/01/Muncie-location-BD.webp",
+          "width": 1200,
+          "height": 800,
+          "caption": "Muncie location BD"
+        },
+        {
+          "@type": "BreadcrumbList",
+          "@id": "https://www.bloomdentist.com/locations/muncie/#breadcrumb",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Locations",
+              "item": "https://www.bloomdentist.com/locations/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Muncie"
+            }
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://www.bloomdentist.com/#website",
+          "url": "https://www.bloomdentist.com/",
+          "name": "Bloom Dental",
+          "description": "",
+          "publisher": {
+            "@id": "https://www.bloomdentist.com/#organization"
+          },
+          "potentialAction": [
+            {
+              "@type": "SearchAction",
+              "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "https://www.bloomdentist.com/?s={search_term_string}"
+              },
+              "query-input": {
+                "@type": "PropertyValueSpecification",
+                "valueRequired": true,
+                "valueName": "search_term_string"
+              }
+            }
+          ],
+          "inLanguage": "en-US"
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://www.bloomdentist.com/#organization",
+          "name": "Bloom Dental",
+          "url": "https://www.bloomdentist.com/",
+          "logo": {
+            "@type": "ImageObject",
+            "inLanguage": "en-US",
+            "@id": "https://www.bloomdentist.com/#/schema/logo/image/",
+            "url": "https://www.bloomdentist.com/wp-content/uploads/2025/08/BloomDental-Logo-removebg.webp",
+            "contentUrl": "https://www.bloomdentist.com/wp-content/uploads/2025/08/BloomDental-Logo-removebg.webp",
+            "width": 600,
+            "height": 170,
+            "caption": "Bloom Dental"
+          },
+          "image": {
+            "@id": "https://www.bloomdentist.com/#/schema/logo/image/"
+          }
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "src": "https://sp-ao.shortpixel.ai/client/to_webp,q_glossy,ret_img,w_600,h_170/https://www.bloomdentist.com/wp-content/uploads/2025/08/BloomDental-Logo-removebg.webp",
+      "alt": "BloomDental"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20452%20302%22%3E%3C/svg%3E",
+      "alt": "Dentures & Implants 1"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20452%20308%22%3E%3C/svg%3E",
+      "alt": "Implants"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20400%20300%22%3E%3C/svg%3E",
+      "alt": "Dentures & Implants 4"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20500%20340%22%3E%3C/svg%3E",
+      "alt": "Custom Dental implants"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "BloomDental"
+    },
+    {
+      "src": "https://sp-ao.shortpixel.ai/client/to_webp,q_glossy,ret_img,w_600,h_170/https://www.bloomdentist.com/wp-content/uploads/2025/08/BloomDental-Logo-removebg.webp",
+      "alt": "BloomDental"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20452%20302%22%3E%3C/svg%3E",
+      "alt": "Dentures & Implants 1"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20452%20308%22%3E%3C/svg%3E",
+      "alt": "Implants"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20400%20300%22%3E%3C/svg%3E",
+      "alt": "Dentures & Implants 4"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20500%20340%22%3E%3C/svg%3E",
+      "alt": "Custom Dental implants"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "BloomDental"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%201200%20800%22%3E%3C/svg%3E",
+      "alt": "Muncie location BD"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20600%20600%22%3E%3C/svg%3E",
+      "alt": "Emergency Dentistry"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20600%20400%22%3E%3C/svg%3E",
+      "alt": "Pediatric Patients"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20600%20400%22%3E%3C/svg%3E",
+      "alt": "Root Canal Treatment"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20600%20327%22%3E%3C/svg%3E",
+      "alt": "Dental Implants"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20600%20400%22%3E%3C/svg%3E",
+      "alt": ""
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20600%20323%22%3E%3C/svg%3E",
+      "alt": "Teeth Whitening"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%202000%202000%22%3E%3C/svg%3E",
+      "alt": ""
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%201431%201685%22%3E%3C/svg%3E",
+      "alt": ""
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%201440%201440%22%3E%3C/svg%3E",
+      "alt": ""
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20526%20701%22%3E%3C/svg%3E",
+      "alt": ""
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "Google Logo"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "Philip Moorman (Philly) Avatar"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "Google Logo"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "Becky Ashbaugh Avatar"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "Google Logo"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "Nancy Davidson Avatar"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "Google Logo"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "Nicki Murrell Avatar"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "Google Logo"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "Kendra Barnard Avatar"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "Google Logo"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "Anitra Conrad Avatar"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "Google Logo"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20210%20140%22%3E%3C/svg%3E",
+      "alt": "Tasha Dunn Avatar"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20600%20600%22%3E%3C/svg%3E",
+      "alt": "Bloom Dental – Plainfield image"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20600%20600%22%3E%3C/svg%3E",
+      "alt": "downtown"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20500%20500%22%3E%3C/svg%3E",
+      "alt": "Bloom dental bedford"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20600%20573%22%3E%3C/svg%3E",
+      "alt": "Bloomington"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20600%20600%22%3E%3C/svg%3E",
+      "alt": "Geist"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20600%20600%22%3E%3C/svg%3E",
+      "alt": "Bloom Dental – Greenwood"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20600%20400%22%3E%3C/svg%3E",
+      "alt": "Muncie location BD"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20600%20170%22%3E%3C/svg%3E",
+      "alt": "BloomDental"
+    },
+    {
+      "src": "https://www.bloomdentist.com/wp-content/plugins/accessibility-onetap/assets/images/admin/Original_Logo_Icon.svg",
+      "alt": "toggle icon"
+    },
+    {
+      "src": "https://sp-ao.shortpixel.ai/client/to_webp,q_glossy,ret_img/https://www.bloomdentist.com/wp-content/plugins/accessibility-onetap/assets/images/english.png",
+      "alt": "en"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2010%2010%22%3E%3C/svg%3E",
+      "alt": "icon drop down menu"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://www.bloomdentist.com/opt-out-preferences/#cmplz-manage-consent-container",
+      "text": "Manage options"
+    },
+    {
+      "href": "https://www.bloomdentist.com/opt-out-preferences/#cmplz-cookies-overview",
+      "text": "Manage services"
+    },
+    {
+      "href": "https://www.bloomdentist.com/opt-out-preferences/#cmplz-tcf-wrapper",
+      "text": "Manage {vendor_count} vendors"
+    },
+    {
+      "href": "https://cookiedatabase.org/tcf/purposes/",
+      "text": "Read more about these purposes"
+    },
+    {
+      "href": "https://www.bloomdentist.com/opt-out-preferences/#cmplz-manage-consent-container",
+      "text": "View preferences"
+    },
+    {
+      "href": "https://www.bloomdentist.com/opt-out-preferences/",
+      "text": "Opt-out preferences"
+    },
+    {
+      "href": "https://www.bloomdentist.com/privacy-policy/",
+      "text": "Privacy Policy"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#",
+      "text": "{title}"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#content",
+      "text": "Skip to content"
+    },
+    {
+      "href": "https://www.bloomdentist.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/",
+      "text": "Locations"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/plainfield/",
+      "text": "Plainfield"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/downtown/",
+      "text": "Downtown"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/bedford/",
+      "text": "Bedford"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/bloomington/",
+      "text": "Bloomington"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/geist/",
+      "text": "Geist"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/greenwood/",
+      "text": "Greenwood"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/",
+      "text": "Muncie"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#elementor-action%3Aaction%3Dpopup%3Aopen%26settings%3DeyJpZCI6Ijc1MzUiLCJ0b2dnbGUiOmZhbHNlfQ%3D%3D",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/about-us/",
+      "text": "About Us"
+    },
+    {
+      "href": "https://www.bloomdentist.com/about-us/",
+      "text": "Our Story"
+    },
+    {
+      "href": "https://www.bloomdentist.com/doctors/",
+      "text": "Meet the Doctors"
+    },
+    {
+      "href": "https://www.bloomdentist.com/about-us/new-patient-resources-at-bloom-dental/",
+      "text": "New Patient Resources at Bloom Dental"
+    },
+    {
+      "href": "https://www.bloomdentist.com/about-us/patient-reviews/",
+      "text": "Patient Reviews"
+    },
+    {
+      "href": "https://www.bloomdentist.com/about-us/careers/",
+      "text": "Careers"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#elementor-action%3Aaction%3Dpopup%3Aopen%26settings%3DeyJpZCI6Ijc1MzUiLCJ0b2dnbGUiOmZhbHNlfQ%3D%3D",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/",
+      "text": "Services"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/regular-check-ups/",
+      "text": "Regular Dental Checkup"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/pediatric-dentistry/",
+      "text": "Pediatric Dentistry"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/fillings-and-sealants/",
+      "text": "Fillings and Sealants"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/sedation-dentistry/",
+      "text": "Sedation Dentistry"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/emergency-dentistry/",
+      "text": "Emergency Dentistry"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/periodontal-disease-treatment-gum-disease/",
+      "text": "Periodontal Disease Treatment (Gum Disease)"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-implants/",
+      "text": "Dental Implants"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-crowns/",
+      "text": "Dental Crowns"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/root-canal-treatment/",
+      "text": "Root Canal Treatment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/tooth-extractions/",
+      "text": "Tooth Extractions"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/wisdom-teeth-removal/",
+      "text": "Wisdom Teeth Removal"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/invisalign/",
+      "text": "Invisalign®"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-veneers/",
+      "text": "Dental Veneers"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-inlays-and-onlays/",
+      "text": "Dental Inlays and Onlays"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-bonding/",
+      "text": "Dental Bonding"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/teeth-whitening/",
+      "text": "Teeth Whitening"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-bridges/",
+      "text": "Dental Bridges"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-implants/",
+      "text": "Dental Implants"
+    },
+    {
+      "href": "https://www.bloomdentist.com/dental-implant-and-dentures-eligibility/",
+      "text": "Dental Implant and Dentures Eligibility"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#elementor-action%3Aaction%3Dpopup%3Aopen%26settings%3DeyJpZCI6Ijc1MzUiLCJ0b2dnbGUiOmZhbHNlfQ%3D%3D",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#",
+      "text": "Implants"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#elementor-action%3Aaction%3Dpopup%3Aopen%26settings%3DeyJpZCI6Ijc1MzUiLCJ0b2dnbGUiOmZhbHNlfQ%3D%3D",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/financial/",
+      "text": "Insurance & Financing"
+    },
+    {
+      "href": "https://www.bloomdentist.com/financing-options/",
+      "text": "Financing Options"
+    },
+    {
+      "href": "https://www.bloomdentist.com/dental-membership-program/",
+      "text": "Dental Membership Program"
+    },
+    {
+      "href": "https://www.bloomdentist.com/pay-online/",
+      "text": "Pay Online"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#elementor-action%3Aaction%3Dpopup%3Aopen%26settings%3DeyJpZCI6Ijc1MzUiLCJ0b2dnbGUiOmZhbHNlfQ%3D%3D",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/",
+      "text": ""
+    },
+    {
+      "href": "tel:+17652468363",
+      "text": "765-246-8363"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#elementor-action%3Aaction%3Dpopup%3Aopen%26settings%3DeyJpZCI6Ijc1MzUiLCJ0b2dnbGUiOmZhbHNlfQ%3D%3D",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/",
+      "text": ""
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/plainfield/",
+      "text": "Plainfield"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/downtown/",
+      "text": "Downtown"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/bedford/",
+      "text": "Bedford"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/bloomington/",
+      "text": "Bloomington"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/geist/",
+      "text": "Geist"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/greenwood/",
+      "text": "Greenwood"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/",
+      "text": "Muncie"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#elementor-action%3Aaction%3Dpopup%3Aopen%26settings%3DeyJpZCI6Ijc1MzUiLCJ0b2dnbGUiOmZhbHNlfQ%3D%3D",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/about-us/",
+      "text": ""
+    },
+    {
+      "href": "https://www.bloomdentist.com/about-us/",
+      "text": "Our Story"
+    },
+    {
+      "href": "https://www.bloomdentist.com/doctors/",
+      "text": "Meet the Doctors"
+    },
+    {
+      "href": "https://www.bloomdentist.com/about-us/new-patient-resources-at-bloom-dental/",
+      "text": "New Patient Resources at Bloom Dental"
+    },
+    {
+      "href": "https://www.bloomdentist.com/about-us/patient-reviews/",
+      "text": "Patient Reviews"
+    },
+    {
+      "href": "https://www.bloomdentist.com/about-us/careers/",
+      "text": "Careers"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#elementor-action%3Aaction%3Dpopup%3Aopen%26settings%3DeyJpZCI6Ijc1MzUiLCJ0b2dnbGUiOmZhbHNlfQ%3D%3D",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/",
+      "text": ""
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/regular-check-ups/",
+      "text": "Regular Dental Checkup"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/pediatric-dentistry/",
+      "text": "Pediatric Dentistry"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/fillings-and-sealants/",
+      "text": "Fillings and Sealants"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/sedation-dentistry/",
+      "text": "Sedation Dentistry"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/emergency-dentistry/",
+      "text": "Emergency Dentistry"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/periodontal-disease-treatment-gum-disease/",
+      "text": "Periodontal Disease Treatment (Gum Disease)"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-implants/",
+      "text": "Dental Implants"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-crowns/",
+      "text": "Dental Crowns"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/root-canal-treatment/",
+      "text": "Root Canal Treatment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/tooth-extractions/",
+      "text": "Tooth Extractions"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/wisdom-teeth-removal/",
+      "text": "Wisdom Teeth Removal"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/invisalign/",
+      "text": "Invisalign®"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-veneers/",
+      "text": "Dental Veneers"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-inlays-and-onlays/",
+      "text": "Dental Inlays and Onlays"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-bonding/",
+      "text": "Dental Bonding"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/teeth-whitening/",
+      "text": "Teeth Whitening"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-bridges/",
+      "text": "Dental Bridges"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-implants/",
+      "text": "Dental Implants"
+    },
+    {
+      "href": "https://www.bloomdentist.com/dental-implant-and-dentures-eligibility/",
+      "text": "Dental Implant and Dentures Eligibility"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#elementor-action%3Aaction%3Dpopup%3Aopen%26settings%3DeyJpZCI6Ijc1MzUiLCJ0b2dnbGUiOmZhbHNlfQ%3D%3D",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#",
+      "text": ""
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#elementor-action%3Aaction%3Dpopup%3Aopen%26settings%3DeyJpZCI6Ijc1MzUiLCJ0b2dnbGUiOmZhbHNlfQ%3D%3D",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/financial/",
+      "text": ""
+    },
+    {
+      "href": "https://www.bloomdentist.com/financing-options/",
+      "text": "Financing Options"
+    },
+    {
+      "href": "https://www.bloomdentist.com/dental-membership-program/",
+      "text": "Dental Membership Program"
+    },
+    {
+      "href": "https://www.bloomdentist.com/pay-online/",
+      "text": "Pay Online"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#elementor-action%3Aaction%3Dpopup%3Aopen%26settings%3DeyJpZCI6Ijc1MzUiLCJ0b2dnbGUiOmZhbHNlfQ%3D%3D",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/",
+      "text": ""
+    },
+    {
+      "href": "tel:+17652468363",
+      "text": ""
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#elementor-action%3Aaction%3Dpopup%3Aopen%26settings%3DeyJpZCI6Ijc1MzUiLCJ0b2dnbGUiOmZhbHNlfQ%3D%3D",
+      "text": ""
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=127041",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "tel:+17652468363",
+      "text": "or give us a call at 765-246-8363"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=127041",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/emergency-dentistry/",
+      "text": "Learn more"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/pediatric-dentistry/",
+      "text": "Learn more"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/root-canal-treatment/",
+      "text": "Learn more"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-implants/",
+      "text": "Learn more"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-veneers/",
+      "text": "Learn more"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/teeth-whitening/",
+      "text": "Learn more"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/",
+      "text": "Explore All Dental Services"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=127041",
+      "text": "Book an Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/#",
+      "text": "More Reviews"
+    },
+    {
+      "href": "https://maps.app.goo.gl/R9aQVftqkss69HpM7",
+      "text": "1003 W McGalliard Rd, Muncie, IN 47303"
+    },
+    {
+      "href": "tel:+17652468363",
+      "text": "765-246-8363"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=127041",
+      "text": "Schedule Appointment"
+    },
+    {
+      "href": "tel:317-204-3111",
+      "text": "317-204-3111"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=23036",
+      "text": "Schedule Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/plainfield/",
+      "text": "View Location"
+    },
+    {
+      "href": "tel:317-854-3772",
+      "text": "317-854-3772"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=1",
+      "text": "Schedule Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/downtown/",
+      "text": "View Location"
+    },
+    {
+      "href": "tel:812-275-7975",
+      "text": "812-275-7975"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=27040",
+      "text": "Schedule Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/bedford/",
+      "text": "View Location"
+    },
+    {
+      "href": "tel:812-339-3427",
+      "text": "812-339-3427"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=26039",
+      "text": "Schedule Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/bloomington/",
+      "text": "View Location"
+    },
+    {
+      "href": "tel:317-823-1780",
+      "text": "317-823-1780"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=25038#/home",
+      "text": "Schedule Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/geist/",
+      "text": "View Location"
+    },
+    {
+      "href": "tel:317-882-7800",
+      "text": "317-882-7800"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=24037",
+      "text": "Schedule Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/greenwood/",
+      "text": "View Location"
+    },
+    {
+      "href": "tel:+17652468363",
+      "text": "765-246-8363"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=127041",
+      "text": "Schedule Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/",
+      "text": "View Location"
+    },
+    {
+      "href": "https://www.bloomdentist.com/",
+      "text": ""
+    },
+    {
+      "href": "tel:317-526-1800",
+      "text": "Call us: (317) 526-1800"
+    },
+    {
+      "href": "https://www.facebook.com/BloomDentalBloomington",
+      "text": "Bloomington"
+    },
+    {
+      "href": "https://www.facebook.com/BloomDentalBedford",
+      "text": "Bedford"
+    },
+    {
+      "href": "https://www.facebook.com/profile.php?id=61571030738839",
+      "text": "Downtown"
+    },
+    {
+      "href": "https://www.facebook.com/BloomDentalGeist",
+      "text": "Geist"
+    },
+    {
+      "href": "https://www.facebook.com/BloomDentalGreenwood",
+      "text": "Greenwood"
+    },
+    {
+      "href": "https://www.facebook.com/profile.php?id=61577627735554",
+      "text": "Plainfield"
+    },
+    {
+      "href": "https://www.instagram.com/bloomdentist/",
+      "text": "Icon-instagram-1"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-bridges/",
+      "text": "Dental Bridges"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/emergency-dentistry/",
+      "text": "Emergency"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/dental-crowns/",
+      "text": "Dental Crowns"
+    },
+    {
+      "href": "https://www.bloomdentist.com/services/",
+      "text": "All Services"
+    },
+    {
+      "href": "https://www.bloomdentist.com/about-us/",
+      "text": "About Us"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/",
+      "text": "Locations"
+    },
+    {
+      "href": "https://www.bloomdentist.com/about-us/new-patient-resources-at-bloom-dental/",
+      "text": "New Dental Patient"
+    },
+    {
+      "href": "https://www.bloomdentist.com/financial/",
+      "text": "Financial"
+    },
+    {
+      "href": "https://www.bloomdentist.com/pay-online/",
+      "text": "Pay Online"
+    },
+    {
+      "href": "https://www.bloomdentist.com/accessibility/",
+      "text": "Accessibility"
+    },
+    {
+      "href": "https://www.bloomdentist.com/privacy-policy/",
+      "text": "Privacy Policy"
+    },
+    {
+      "href": "https://www.bloomdentist.com/terms-of-use/",
+      "text": "Terms of Use"
+    },
+    {
+      "href": "tel:+17652468363",
+      "text": "765-246-8363"
+    },
+    {
+      "href": "https://wponetap.com/?utm_source=frontend-link&utm_medium=link&utm_campaign=ref-link-toolbar",
+      "text": "OneTap"
+    },
+    {
+      "href": "tel:317-204-3111",
+      "text": "317-204-3111"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=23036",
+      "text": "Schedule Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/plainfield/",
+      "text": "View Location"
+    },
+    {
+      "href": "tel:317-854-3772",
+      "text": "317-854-3772"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=1",
+      "text": "Schedule Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/downtown/",
+      "text": "View Location"
+    },
+    {
+      "href": "tel:812-275-7975",
+      "text": "812-275-7975"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=27040",
+      "text": "Schedule Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/bedford/",
+      "text": "View Location"
+    },
+    {
+      "href": "tel:317-823-1780",
+      "text": "317-823-1780"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=25038#/home",
+      "text": "Schedule Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/geist/",
+      "text": "View Location"
+    },
+    {
+      "href": "tel:812-339-3427",
+      "text": "812-339-3427"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=26039",
+      "text": "Schedule Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/bloomington/",
+      "text": "View Location"
+    },
+    {
+      "href": "tel:317-882-7800",
+      "text": "317-882-7800"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=24037#/home",
+      "text": "Schedule Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/greenwood/",
+      "text": "View Location"
+    },
+    {
+      "href": "tel:+17652468363",
+      "text": "765-246-8363"
+    },
+    {
+      "href": "https://onlineappointment.carestack.com/?dn=bloomdental&ln=127041",
+      "text": "Schedule Appointment"
+    },
+    {
+      "href": "https://www.bloomdentist.com/locations/muncie/",
+      "text": "View Location"
+    }
+  ],
+  "bodyText": "Manage Consent\nTo provide the best experiences, we use technologies like cookies to store and/or access device information. Consenting to these technologies will allow us to process data such as browsing behavior or unique IDs on this site. Not consenting or withdrawing consent, may adversely affect certain features and functions.\nAccept\nOpt-out preferences\nPrivacy Policy\nSkip to content\nLocations\nAbout Us\nServices\nImplants\nInsurance & Financing\nX\n765-246-8363\nBook an Appointment\nYour Trusted Dentist in Muncie, IN\n\nBloom Dental\n\nBook an Appointment\nor give us a call at 765-246-8363\nYour Trusted Family Dentist in Muncie, Indiana\n\nWelcome to Bloom Dental, your trusted dentist in Muncie, IN, providing high-quality, personalized dental care for individuals and families. Conveniently located on W McGalliard Rd, our practice offers comprehensive general dentistry, cosmetic dentistry, and emergency dental services designed to meet the needs of the Muncie community. Whether you’re visiting us for a routine dental cleaning or a complete smile makeover, our experienced team is here to help you achieve excellent oral health and a confident smile.\n\nWhether you’re looking for a family dentist in Muncie, a cosmetic dentist, routine preventive care, or urgent dental treatment near W McGalliard Rd, we deliver compassionate, results-driven care you can rely on.\n\nModern Dentistry in a Comfortable Environment\n\nOur Muncie dental office is equipped with advanced dental technology to provide accurate, efficient, and comfortable care. From modern treatment rooms to patient-focused amenities, we’ve designed our office with your comfort in mind. We also follow strict sterilization and safety protocols to ensure a clean, safe environment for every visit.\n\nConvenient Location in Muncie\n\nBloom Dental is conveniently located at 1003 W McGalliard Rd, Muncie, IN 47303, making it easy to access from Ball State University, nearby neighborhoods, shopping centers, and major roadways. With flexible scheduling options, extended hours, and easy online appointment booking, quality dental care fits seamlessly into your daily routine.\n\nBook Your Appointment Today\n\nAt Bloom Dental Muncie, we’re more than just a dental office — we’re your partners in lifelong oral health. Schedule your appointment online or call today to experience trusted, patient-centered care from a leading Muncie dentist dedicated to your comfort, convenience, and smile.\n\nBook an Appointment\nComprehensive Care for Every Smile\n\nAt Bloom Dental, we believe every smile deserves personalized care at every stage of life. From prevention to advanced treatments, our comprehensive services are designed to keep your teeth healthy, functional, and beautiful.\n\nEmergency Dentistry\nDental emergencies can happen unexpectedly and cause pain and injury to your teeth. We are here to provide emergency dentistry services and restore your smile as quickly as possible.\nLearn more\nPediatric Dentistry\nReceiving high-quality dental treatment is just as important for children as it is for adults. We take great pride in helping our younger patients achieve excellent oral health and pediatric dental services in the community.\nLearn more\nRoot Canal Treatment\nRoot canal treatment can save an infected tooth from otherwise certain extraction—it’s a proven procedure that will leave your mouth healthy and strong while restoring its natural appearance.\nLearn more\nDental Implants\nDental implants are a reliable and permanent solution for tooth replacement, offering natural function and appearance.\nLearn more\nDental Veneers\nDental veneers provide an excellent solution if you are looking to enhance your smile. They are a popular cosmetic treatment because of their overall effectiveness and ease of use.\nLearn more\nTeeth Whitening\nYou deserve bright, white teeth in your smile. Our teeth whitening treatments will help you achieve just that—so you can feel confident in your tooth coloring.\nLearn more\nExplore All Dental Services\nMeet Dr. Madison Whybrew\n\nDr. Whybrew is a general dentist dedicated to preventive care, personalized treatment, and building lasting trust with patients. She believes dentistry is about more than teeth—it’s about listening, education, and helping every patient feel confident in their smile.\n\nMeet Dr. Katelyn Brown-Minor\n\nDr. Katelyn Brown-Minor earned degrees in Biochemistry and Spanish from IU East before completing her Doctor of Dental Surgery at the IU School of Dentistry. She is passionate about service and reducing barriers to care, and she strives to create a comfortable, supportive environment—especially for patients with dental anxiety.\n\nMeet Dr. Jamie Childers\n\nDr. Childers is a Muncie native and experienced dentist committed to high-quality, patient-centered care. He earned his dental degree from Midwestern University after completing undergraduate and graduate studies at Ball State University. Dr. Childers provides a wide range of treatments—from routine fillings to crowns, bridges, and advanced implant dentistry, including All-on-Four. He focuses on helping patients feel comfortable, informed, and confident at every visit.\n\nMeet Dr. Virgil Lungu\n\nDr. Lungu is a dentist with a strong passion for oral surgery, with a particular focus on wisdom teeth removals and dental implants. He takes pride in guiding patients through procedures that often cause anxiety, making every effort to ensure they feel comfortable, informed, and at ease throughout their entire visit. For Dr. Lungu, there is nothing more rewarding than transforming a stressful dental experience into a positive one and helping patients leave feeling relieved and confident.\n\nBook an Appointment\nPatient Reviews\n\nWent to get ready for a crown on upper tooth. Dr. Brown and her asst is the best. Took the time to explain things and got it done in a timely manner. The entire staff is great. Had my 6 month cleaning after having a crown from Dr Brown put on and Tina the hygienist dd a great job. Wouldn't go anywhere else.\n\nPhilip Moorman (Philly)\nNovember 19, 2025\n\nDr Childress is a great dentist he is patient He makes me feel very comfortable\n\nBecky Ashbaugh\nNovember 7, 2025\n\nBest 6 month cleaning ever today! Tina was my dental hygienist and she is amazing. Tina took her time, was gentle, and reassured me my teeth and gums were healthy. I have had my implants for 2 years now, thank you Dr. Jamie Childers, and they are serving me quite well! I now have the confidence to smile and talk to people knowing my teeth look great.\n\nNancy Davidson\nOctober 14, 2025\n\nMy 5 year old has been here a few times and absolutely loves it! He has even had some extractions but Dr. Childers makes it fun and much less scary for the little ones!\n\nNicki Murrell\nOctober 13, 2025\n\nThey are friendly. The hygienist was very gentle. Asked me if I was okay throughout the visit. They are nice over there. Will keep going.\n\nKendra Barnard\nOctober 13, 2025\n\nI had a tooth emergency so I called based on their reviews and to my surprise I was able to get in immediately which was great for me. The entire team was awesome including the receptionist, the dental assistant Jennifer, and doctor Jamie Childress. A great dental team!\n\nAnitra Conrad\nOctober 13, 2025\n\nMy daughter was traumatized by the dentist in new castle. She has absolutely loved this place. She loved all the ppl she met here also. Thank you girls!\n\nTasha Dunn\nSeptember 11, 2025\nNext\nPrev\n1234567\nMore Reviews\nBloom Dental – Muncie\n1003 W McGalliard Rd, Muncie, IN 47303\n765-246-8363\nMonday - Thursday: 8 AM - 5 PM\nFriday: 8 AM - 12 PM\nSchedule Appointment\nBloom Dental Locations\n\nAt Bloom Dental, we make routine care simple and convenient. With our dual-care model, you can enjoy quick, local hygiene visits while receiving advanced treatments at our main office when needed.\n\nSelect from our nearby locations to get started…\nPlainfield\nDowntown\nBedford\nBloomington\nGeist\nGreenwood\nMuncie\nBloom Dental – Plainfield\n\n167 Dan Jones Rd.,\nPlainfield, IN 46168\n\n317-204-3111\nSchedule Appointment\nView Location\nCall us: (317) 526-1800\nBloomington\nBedford\nDowntown\nGeist\nGreenwood\nPlainfield\nIcon-instagram-1\nServices\nDental Bridges\nEmergency\nDental Crowns\nAll Services\nQuick Links\nAbout Us\nLocations\nResources\nNew Dental Patient\nFinancial\nPay Online\nAccessibility\nPrivacy Policy\nTerms of Use\n© 2026 Bloom Dental. All rights reserved\n\nEnglish \n\nAccessibility Adjustments\n\nPowered by OneTap\n\nHide Toolbar\nContent Modules\nFont Size\n\nDefault\n\nReadable Font\nLine Height\n\nDefault\n\nBig Cursor\nLetter Spacing\nAlign Text\nFont Weight\nColor Modules\nLight Contrast\nHigh Contrast\nMonochrome\nOrientation Modules\nReading Line\nReading Mask\nHide Images\nHighlight Content\nStop Animations\nHighlight Links\nReset Settings",
+  "wordCount": 1349
+}

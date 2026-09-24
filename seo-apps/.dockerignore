@@ -1,0 +1,9 @@
+# Railway builds from a fresh checkout, but a local `docker build` would
+# otherwise copy installed dependencies and old builds into the image.
+node_modules
+server/node_modules
+client/node_modules
+client/dist
+.env
+**/data
+modules/bulk-scraper/output
