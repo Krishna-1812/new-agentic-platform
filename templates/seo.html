@@ -2,7 +2,7 @@
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
 <html lang="en">
 <head>
-{{ head("SEO + AEO", ["directory.css?v=2"]) }}
+{{ head("SEO + AEO", ["directory.css?v=3"]) }}
 </head>
 <body>
 
@@ -22,22 +22,41 @@
   {# Same list layout as the agent directory: this is the other half of the
      same choice made on the hub, so it reads the same way. The row markup is
      shared with b2b_agents.html through directory.css rather than through a
-     second stylesheet that would drift from it. #}
-  <div class="dir-list">
-    {% for t in seo_tools %}
-    <a href="/seo-aeo/{{ t.slug }}" class="dir-row bn-reveal" data-tool="{{ t.slug }}" data-state="active" data-badge="live">
-      <span class="dir-ic dir-ic--letter" aria-hidden="true">{{ (t.name or '?')[:1]|upper }}</span>
-      <span class="dir-txt">
-        <span class="dir-name" data-tool-name>{{ t.name }}</span>
-        <span class="dir-desc">{{ t.desc }}</span>
-        {% if t.tags %}
-        <span class="dir-tags">{% for tag in t.tags %}<span class="dir-tag">{{ tag }}</span>{% endfor %}</span>
-        {% endif %}
-      </span>
-      <span class="dir-state dir-state--live"><i></i>Live</span>
-    </a>
-    {% endfor %}
+     second stylesheet that would drift from it.
+
+     Grouped Research -> Optimize -> Build (seo_tool_groups, app.py's
+     _seo_tool_groups -- mirrors the studio's own sidebar), with a colour per
+     group on the icon chip and the very first tool given the one filled
+     "feature" block the design language reserves for the figure that
+     matters most. #}
+  {% set dir_ic_class = {"Research": "dir-ic--b", "Optimize": "dir-ic--a", "Build": "dir-ic--c"} %}
+  {% set dir_dot_color = {"Research": "var(--sky)", "Optimize": "var(--acc)", "Build": "var(--clay)"} %}
+  {% for group_name, tools in seo_tool_groups %}
+  {% set outer_first = loop.first %}
+  <div class="dir-group bn-reveal">
+    <div class="dir-group-head">
+      <span class="dir-group-dot" style="background:{{ dir_dot_color.get(group_name, 'var(--acc)') }}"></span>
+      <span class="dir-group-name">{{ group_name }}</span>
+      <span class="dir-group-count">{{ tools|length }}</span>
+    </div>
+    <div class="dir-list">
+      {% for t in tools %}
+      {% set is_feature = outer_first and loop.first %}
+      <a href="/seo-aeo/{{ t.slug }}" class="dir-row{{ ' dir-row--feature' if is_feature else '' }} bn-reveal" data-tool="{{ t.slug }}" data-state="active" data-badge="live">
+        <span class="dir-ic dir-ic--letter {{ dir_ic_class.get(group_name, 'dir-ic--a') }}" aria-hidden="true">{{ (t.name or '?')[:1]|upper }}</span>
+        <span class="dir-txt">
+          <span class="dir-name" data-tool-name>{{ t.name }}</span>
+          <span class="dir-desc">{{ t.desc }}</span>
+          {% if t.tags %}
+          <span class="dir-tags">{% for tag in t.tags %}<span class="dir-tag">{{ tag }}</span>{% endfor %}</span>
+          {% endif %}
+        </span>
+        <span class="dir-state dir-state--live"><i></i>Live</span>
+      </a>
+      {% endfor %}
+    </div>
   </div>
+  {% endfor %}
 
   <p class="dir-foot">{{ brand.name }} &middot; Internal use only</p>
 </div>
