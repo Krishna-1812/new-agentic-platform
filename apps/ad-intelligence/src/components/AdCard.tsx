@@ -18,7 +18,7 @@ interface AdCardProps {
 export function AdCard({ ad, onClick, onDomainClick }: AdCardProps) {
   const images   = getImageUrls(ad);
   const primary  = images[0];
-  const color    = COMPETITOR_COLORS[ad.Domain] || '#5AA9E6';
+  const color    = COMPETITOR_COLORS[ad.Domain] || '#8CCBFF';
   const fmt      = ad.Format?.toLowerCase() || 'text';
   const headline = getAdPreviewText(ad);
 
@@ -41,14 +41,14 @@ export function AdCard({ ad, onClick, onDomainClick }: AdCardProps) {
                 img.style.display = 'none';
                 // show fallback placeholder inside parent
                 const parent = img.parentElement!;
-                parent.style.background = "#26262A";
+                parent.style.background = "#EBE9E5";
                 parent.querySelector('.fallback-icon')?.removeAttribute('style');
               }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"/>
           </>
         ) : (
-          <div className="w-full h-full flex items-center justify-center" style={{ background: "#26262A" }}>
+          <div className="w-full h-full flex items-center justify-center" style={{ background: "#EBE9E5" }}>
             <div style={{ color: `${color}50` }}>
               {fmt === 'video' ? <Video size={32}/> : fmt === 'image' ? <ImageIcon size={32}/> : <FileText size={32}/>}
             </div>
@@ -64,7 +64,7 @@ export function AdCard({ ad, onClick, onDomainClick }: AdCardProps) {
         )}
 
         {/* Format badge — always top-right */}
-        <div className="absolute top-2.5 right-2.5 flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full text-[#131315] backdrop-blur-md transition-transform"
+        <div className="absolute top-2.5 right-2.5 flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full text-[#121213] backdrop-blur-md transition-transform"
              style={{ backgroundColor: `${color}cc` }}>
           {FORMAT_ICONS[fmt]} {fmt}
         </div>
@@ -104,7 +104,7 @@ export function AdCard({ ad, onClick, onDomainClick }: AdCardProps) {
         {/* Footer — always at bottom */}
         <div className="flex items-center gap-2 pt-2 border-t border-slate-100 mt-2 flex-shrink-0">
           {ad.CTA && ad.CTA.length < 40 ? (
-            <span className="text-[11px] font-semibold text-[#131315] px-2.5 py-1 rounded-lg truncate max-w-[70%] inline-block"
+            <span className="text-[11px] font-semibold text-[#121213] px-2.5 py-1 rounded-lg truncate max-w-[70%] inline-block"
                   style={{ backgroundColor: color }}>
               {ad.CTA}
             </span>

@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import type { Ad, NavFn } from '../lib/types';
 import type { Competitor } from '../lib/types';
-import { COMPETITORS } from '../lib/types';
+import { COMPETITORS, tx } from '../lib/types';
 import { getAdsByDomain, countByField, getKeywords, formatDate } from '../lib/utils';
 import { AdCard } from './AdCard';
 import { AdModal } from './AdModal';
@@ -78,12 +78,12 @@ function CompInsightStrip({ compAds, allAds, comp }: {
         <div className="flex items-center gap-1.5 mb-3">
           <div className="w-6 h-6 rounded-lg flex items-center justify-center"
                style={{ background: `${comp.color}18` }}>
-            <TrendingUp size={11} style={{ color: comp.color }}/>
+            <TrendingUp size={11} style={{ color: tx(comp.color) }}/>
           </div>
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ad Volume</span>
         </div>
         <div className="flex items-baseline gap-1 mb-2">
-          <span className="text-2xl font-black" style={{ color: comp.color }}>{total}</span>
+          <span className="text-2xl font-black" style={{ color: tx(comp.color) }}>{total}</span>
           <span className="text-xs text-slate-400">ads total</span>
         </div>
         <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1.5">
@@ -192,17 +192,17 @@ function CompetitiveLandscape({ allAds, activeComp, onSelect }: {
                     className="w-full text-left group">
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black text-[#131315] flex-shrink-0 transition-all"
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black text-[#121213] flex-shrink-0 transition-all"
                        style={{ background: isSelected ? comp.color : `${comp.color}55` }}>
                     {comp.name[0]}
                   </div>
                   <span className={`text-sm font-bold transition-colors ${
                     isSelected ? '' : 'text-slate-500 group-hover:text-slate-700'}`}
-                        style={isSelected ? { color: comp.color } : {}}>
+                        style={isSelected ? { color: tx(comp.color) } : {}}>
                     {comp.name}
                   </span>
                   {isSelected && (
-                    <span className="text-[9px] font-bold text-[#131315] px-1.5 py-0.5 rounded-full"
+                    <span className="text-[9px] font-bold text-[#121213] px-1.5 py-0.5 rounded-full"
                           style={{ background: comp.color }}>
                       selected
                     </span>
@@ -242,12 +242,12 @@ function CompPatternChips({ compAds, comp }: { compAds: Ad[]; comp: Competitor }
   const chips: { text: string; color: string }[] = [];
 
   const active = compAds.filter(a => a.Status === 'active').length;
-  if (active > 0) chips.push({ text: `${active} ads currently live`, color: '#C6F24E' });
+  if (active > 0) chips.push({ text: `${active} ads currently live`, color: '#B83C0C' });
 
   const imgPct = Math.round(
     (compAds.filter(a => a['Image URLs']).length / compAds.length) * 100,
   );
-  if (imgPct >= 40) chips.push({ text: `${imgPct}% image creative`, color: comp.color });
+  if (imgPct >= 40) chips.push({ text: `${imgPct}% image creative`, color: tx(comp.color) });
 
   const kwCounts: Record<string, number> = {};
   for (const ad of compAds)
@@ -257,12 +257,12 @@ function CompPatternChips({ compAds, comp }: { compAds: Ad[]; comp: Competitor }
     }
   const topKW = Object.entries(kwCounts).sort((a, b) => b[1] - a[1])[0];
   if (topKW && topKW[1] > 1)
-    chips.push({ text: `Top keyword: "${topKW[0]}"`, color: '#EFE9DC' });
+    chips.push({ text: `Top keyword: "${topKW[0]}"`, color: '#121213' });
 
   const ctaSet = new Set(
     compAds.map(a => a.CTA?.trim()).filter((c): c is string => !!c && c.length < 40),
   );
-  if (ctaSet.size > 1) chips.push({ text: `${ctaSet.size} distinct CTAs`, color: '#7ABDF0' });
+  if (ctaSet.size > 1) chips.push({ text: `${ctaSet.size} distinct CTAs`, color: '#1D65A6' });
 
   if (chips.length === 0) return null;
   return (
@@ -270,7 +270,7 @@ function CompPatternChips({ compAds, comp }: { compAds: Ad[]; comp: Competitor }
       {chips.map((c, i) => (
         <span key={i}
               className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full border"
-              style={{ color: c.color, background: `${c.color}10`, borderColor: `${c.color}28` }}>
+              style={{ color: tx(c.color), background: `${c.color}10`, borderColor: `${c.color}28` }}>
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.color }}/>
           {c.text}
         </span>
@@ -313,10 +313,10 @@ export function CompetitorsTab({
         <button onClick={() => setActiveCompetitor('all')}
                 className="flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all duration-200"
                 style={isAll
-                  ? { background: '#EFE9DC', borderColor: 'transparent', color: '#131315' }
-                  : { background: '#1C1C1F', borderColor: 'transparent', color: '#EFE9DC' }}>
+                  ? { background: '#121213', borderColor: 'transparent', color: '#121213' }
+                  : { background: '#FFFFFF', borderColor: 'transparent', color: '#121213' }}>
           <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black flex-shrink-0"
-               style={isAll ? { background: 'rgba(19,19,21,0.12)', color: '#131315' } : { background: '#26262A', color: '#EFE9DC' }}>
+               style={isAll ? { background: 'rgba(18,18,19,0.12)', color: '#121213' } : { background: '#EBE9E5', color: '#121213' }}>
             All
           </div>
           <div className="text-left">
@@ -325,7 +325,7 @@ export function CompetitorsTab({
           </div>
           <div className="ml-2 text-right flex-shrink-0">
             <span className="block text-xs font-black px-2 py-0.5 rounded-full"
-                  style={isAll ? { background: 'rgba(19,19,21,0.12)', color: '#131315' } : { background: '#26262A', color: '#EFE9DC' }}>
+                  style={isAll ? { background: 'rgba(18,18,19,0.12)', color: '#121213' } : { background: '#EBE9E5', color: '#121213' }}>
               {ads.length}
             </span>
             {totalActive > 0 && (
@@ -342,12 +342,12 @@ export function CompetitorsTab({
             <button key={c.domain} onClick={() => setActiveCompetitor(c.domain)}
                     className="flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all duration-200"
                     style={isSel
-                      ? { background: c.color, borderColor: 'transparent', color: '#131315' }
-                      : { background: '#1C1C1F', borderColor: 'transparent', color: '#EFE9DC' }}>
+                      ? { background: c.color, borderColor: 'transparent', color: '#121213' }
+                      : { background: '#FFFFFF', borderColor: 'transparent', color: '#121213' }}>
               <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0"
                    style={isSel
-                     ? { background: 'rgba(19,19,21,0.12)', color: '#131315' }
-                     : { background: c.color, color: '#131315' }}>
+                     ? { background: 'rgba(18,18,19,0.12)', color: '#121213' }
+                     : { background: c.color, color: '#121213' }}>
                 {c.name[0]}
               </div>
               <div className="text-left">
@@ -357,8 +357,8 @@ export function CompetitorsTab({
               <div className="ml-2 text-right flex-shrink-0">
                 <span className="block text-xs font-black px-2 py-0.5 rounded-full"
                       style={isSel
-                        ? { background: 'rgba(19,19,21,0.12)', color: '#131315' }
-                        : { background: '#26262A', color: '#EFE9DC' }}>
+                        ? { background: 'rgba(18,18,19,0.12)', color: '#121213' }
+                        : { background: '#EBE9E5', color: '#121213' }}>
                   {cnt}
                 </span>
                 {act > 0 && (
@@ -388,7 +388,7 @@ export function CompetitorsTab({
                      className={`anim-pop-in delay-${ci+1} bg-white rounded-2xl border border-slate-100 shadow-sm p-4 cursor-pointer group transition-all`}>
                   <div className="h-1 rounded-full mb-4" style={{ background: `${c.color}` }}/>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[#131315] font-black text-base shadow-md"
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[#121213] font-black text-base shadow-md"
                          style={{ background: `${c.color}` }}>
                       {c.name[0]}
                     </div>
@@ -399,7 +399,7 @@ export function CompetitorsTab({
                     <ArrowRight size={15} className="text-slate-200 group-hover:text-indigo-400 transition-colors flex-shrink-0"/>
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-center mb-3">
-                    {([['Total', cAds.length, '#EFE9DC'], ['Active', active, c.color], ['Formats', Object.keys(fmts).length, '#EFE9DC']] as [string, number, string][]).map(([l,v,col]) => (
+                    {([['Total', cAds.length, '#121213'], ['Active', active, c.color], ['Formats', Object.keys(fmts).length, '#121213']] as [string, number, string][]).map(([l,v,col]) => (
                       <div key={l} className="rounded-xl py-2.5" style={{ background: `${c.color}0a` }}>
                         <p className="text-xl font-black" style={{ color: col }}>{v}</p>
                         <p className="text-[10px] text-slate-400">{l}</p>
@@ -416,7 +416,7 @@ export function CompetitorsTab({
                       <button key={fmt}
                               onClick={e => { e.stopPropagation(); onNav({ tab: 'gallery', domain: c.domain, format: fmt }); }}
                               className="text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize hover:opacity-80 transition-opacity"
-                              style={{ background: `${c.color}18`, color: c.color }}>
+                              style={{ background: `${c.color}18`, color: tx(c.color) }}>
                         {fmt}
                       </button>
                     ))}
@@ -446,10 +446,10 @@ export function CompetitorsTab({
           {/* Profile card: a flat header band + overlapping avatar */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             <div className="h-14 relative"
-                 style={{ background: '#26262A' }}>
+                 style={{ background: '#EBE9E5' }}>
               <div className="absolute -bottom-6 left-5">
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ring-4 ring-white"
-                     style={{ background: comp.color, color: '#131315' }}>
+                     style={{ background: comp.color, color: '#121213' }}>
                   {comp.name[0]}
                 </div>
               </div>
@@ -458,15 +458,15 @@ export function CompetitorsTab({
               <h3 className="font-black text-slate-900 text-base leading-none mb-1">{comp.name}</h3>
               <a href={`https://${comp.domain}`} target="_blank" rel="noopener noreferrer"
                  className="flex items-center gap-1 text-xs mb-4 hover:underline"
-                 style={{ color: comp.color }}>
+                 style={{ color: tx(comp.color) }}>
                 <Globe size={10}/>{comp.domain}<ExternalLink size={9}/>
               </a>
 
               <div className="grid grid-cols-3 gap-2 text-center mb-4">
                 {([
-                  ['Total Ads', compAds.length,                  '#EFE9DC' ],
+                  ['Total Ads', compAds.length,                  '#121213' ],
                   ['Active',    statusAct,                        comp.color],
-                  ['Formats',   Object.keys(fmtCounts).length,   '#EFE9DC' ],
+                  ['Formats',   Object.keys(fmtCounts).length,   '#121213' ],
                 ] as [string, number, string][]).map(([l, v, col]) => (
                   <div key={l} className="rounded-xl py-3 px-1"
                        style={{ background: `${comp.color}0a` }}>
@@ -481,7 +481,7 @@ export function CompetitorsTab({
                   <button key={fmt}
                           onClick={() => onNav({ tab: 'gallery', domain: comp.domain, format: fmt, search: '' })}
                           className="text-xs font-semibold px-2.5 py-1 rounded-full capitalize hover:opacity-80 transition-opacity flex items-center gap-1"
-                          style={{ background: `${comp.color}15`, color: comp.color }}>
+                          style={{ background: `${comp.color}15`, color: tx(comp.color) }}>
                     {fmt} · {cnt} <ArrowRight size={9}/>
                   </button>
                 ))}
@@ -489,7 +489,7 @@ export function CompetitorsTab({
 
               <button onClick={() => onNav({ tab: 'gallery', domain: comp.domain, format: 'all', search: '' })}
                       className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all hover:opacity-90"
-                      style={{ background: `${comp.color}15`, color: comp.color }}>
+                      style={{ background: `${comp.color}15`, color: tx(comp.color) }}>
                 View all {compAds.length} ads <ArrowRight size={11}/>
               </button>
             </div>
@@ -499,7 +499,7 @@ export function CompetitorsTab({
           {enriched && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
               <h4 className="flex items-center gap-2 font-bold text-slate-800 text-sm mb-4">
-                <TrendingUp size={14} style={{ color: comp.color }}/> Competitor Intelligence
+                <TrendingUp size={14} style={{ color: tx(comp.color) }}/> Competitor Intelligence
               </h4>
               <InfoBlock label="About"             icon={<Globe       size={11}/>} content={(enriched['Website Summary']   || '').slice(0, 300)}/>
               <InfoBlock label="Value Proposition" icon={<Target      size={11}/>} content={(enriched['Value Proposition'] || '').slice(0, 240)}/>
@@ -513,7 +513,7 @@ export function CompetitorsTab({
           {msgAngles.length > 0 && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
               <h4 className="flex items-center gap-2 font-bold text-slate-800 text-sm mb-3">
-                <Lightbulb size={14} style={{ color: comp.color }}/> Messaging Angles
+                <Lightbulb size={14} style={{ color: tx(comp.color) }}/> Messaging Angles
               </h4>
               <ul className="space-y-2.5">
                 {msgAngles.map((angle, i) => (
@@ -523,7 +523,7 @@ export function CompetitorsTab({
                         search: angle.split(' ').slice(0, 3).join(' '),
                       })}
                       className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer hover:text-indigo-700 transition-colors group">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5 text-[#131315]"
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5 text-[#121213]"
                           style={{ background: comp.color }}>{i + 1}</span>
                     <span className="flex-1">{angle}</span>
                     <ArrowRight size={10} className="mt-1 flex-shrink-0 text-slate-200 group-hover:text-indigo-400 transition-colors"/>
@@ -545,7 +545,7 @@ export function CompetitorsTab({
                   <button key={i}
                           onClick={() => onNav({ tab: 'gallery', search: cta, domain: 'all', format: 'all' })}
                           className="flex items-center gap-1 text-sm font-semibold px-3 py-1.5 rounded-xl hover:opacity-80 transition-opacity group"
-                          style={{ background: `${comp.color}15`, color: comp.color }}>
+                          style={{ background: `${comp.color}15`, color: tx(comp.color) }}>
                     {cta}
                     <Search size={10} className="opacity-0 group-hover:opacity-60 transition-opacity"/>
                   </button>
@@ -569,10 +569,10 @@ export function CompetitorsTab({
                   <button key={i}
                           onClick={() => onNav({ tab: 'gallery', search: kw, domain: comp.domain, format: 'all' })}
                           className="text-xs px-2.5 py-1 rounded-full font-medium transition-all"
-                          style={{ background: `${comp.color}10`, color: comp.color }}
+                          style={{ background: `${comp.color}10`, color: tx(comp.color) }}
                           onMouseEnter={e => {
                             (e.target as HTMLElement).style.background = comp.color;
-                            (e.target as HTMLElement).style.color      = '#131315';
+                            (e.target as HTMLElement).style.color      = '#121213';
                           }}
                           onMouseLeave={e => {
                             (e.target as HTMLElement).style.background = `${comp.color}10`;
@@ -598,7 +598,7 @@ export function CompetitorsTab({
               </h4>
               <button onClick={() => onNav({ tab: 'gallery', domain: comp.domain, format: 'all', search: '' })}
                       className="flex items-center gap-1 text-xs font-semibold hover:opacity-70 transition-opacity"
-                      style={{ color: comp.color }}>
+                      style={{ color: tx(comp.color) }}>
                 View all <ArrowRight size={11}/>
               </button>
             </div>

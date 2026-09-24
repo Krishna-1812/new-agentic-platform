@@ -5,7 +5,7 @@ import {
   Lightbulb, Eye, BarChart2, Flame,
 } from 'lucide-react';
 import type { Ad, NavFn } from '../lib/types';
-import { COMPETITORS } from '../lib/types';
+import { COMPETITORS, tx } from '../lib/types';
 import { getTopKeywords, getCTACounts, countByField } from '../lib/utils';
 
 interface Props { ads: Ad[]; onNav: NavFn; }
@@ -56,7 +56,7 @@ function intensityScore(
 
 /* ── Activity heatmap (12 months) ─────────────────────── */
 const FORMAT_COLORS: Record<string, string> = {
-  image: '#C6F24E', text: '#5AA9E6', video: '#EFE9DC',
+  image: '#FF6022', text: '#8CCBFF', video: '#121213',
 };
 
 function ActivityHeatmap({ ads }: { ads: Ad[] }) {
@@ -92,7 +92,7 @@ function ActivityHeatmap({ ads }: { ads: Ad[] }) {
       {compMaxes.map(c => (
         <div key={c.domain} className="flex items-center gap-3">
           <div className="w-2 h-2 rounded-sm flex-shrink-0" style={{ backgroundColor: c.color }} />
-          <span className="text-white/40 text-[10px] w-20 flex-shrink-0 truncate">{c.name.split(' ')[0]}</span>
+          <span className="text-slate-600 text-[10px] w-20 flex-shrink-0 truncate">{c.name.split(' ')[0]}</span>
           <div className="flex gap-1 flex-1">
             {months.map(m => {
               const count = byMonth[m]?.[c.domain] ?? 0;
@@ -104,12 +104,12 @@ function ActivityHeatmap({ ads }: { ads: Ad[] }) {
               );
             })}
           </div>
-          <span className="text-white/30 text-[10px] w-6 text-right flex-shrink-0">{c.total}</span>
+          <span className="text-slate-500 text-[10px] w-6 text-right flex-shrink-0">{c.total}</span>
         </div>
       ))}
       <div className="flex gap-1 pl-[104px]">
         {months.map(m => (
-          <div key={m} className="flex-1 text-center text-[9px] text-white/18 truncate">
+          <div key={m} className="flex-1 text-center text-[9px] text-slate-500 truncate">
             {new Date(m + '-15').toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
           </div>
         ))}
@@ -120,13 +120,13 @@ function ActivityHeatmap({ ads }: { ads: Ad[] }) {
 
 /* ── Format bar ─────────────────────────────────────────── */
 function FormatBar({ formats, total }: { formats: Record<string, number>; total: number }) {
-  if (total === 0) return <div className="w-full h-1.5 rounded-full bg-white/6" />;
+  if (total === 0) return <div className="w-full h-1.5 rounded-full bg-slate-100" />;
   return (
     <div className="w-full h-1.5 rounded-full overflow-hidden flex gap-px">
       {Object.entries(formats).filter(([, v]) => v > 0).map(([fmt, count]) => (
         <div key={fmt} className="h-full bar-fill" style={{
           width: `${(count / total) * 100}%`,
-          backgroundColor: FORMAT_COLORS[fmt] ?? '#5E5E66',
+          backgroundColor: FORMAT_COLORS[fmt] ?? '#6F6B66',
           borderRadius: 4,
         }} />
       ))}
@@ -137,7 +137,7 @@ function FormatBar({ formats, total }: { formats: Record<string, number>; total:
 /* ── Intensity bar ──────────────────────────────────────── */
 function IntensityBar({ score, color }: { score: number; color: string }) {
   return (
-    <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+    <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
       <div className="h-full rounded-full bar-fill"
            style={{ width: `${score}%`, background: `${color}` }} />
     </div>
@@ -239,7 +239,7 @@ export function InsightsTab({ ads, onNav }: Props) {
       type: 'opportunity',
       title: `${textOnly.name} — zero visual ads`,
       detail: 'Runs exclusively text creatives. Image and video formats are completely unchallenged territory against them.',
-      color: '#C6F24E',
+      color: '#B83C0C',
     });
 
     // Video leader
@@ -250,7 +250,7 @@ export function InsightsTab({ ads, onNav }: Props) {
       type: 'trend',
       title: `${videoLeader.name} leads in video`,
       detail: `${videoLeader.formats['video']} video ads — the heaviest video investment in this market.`,
-      color: '#EFE9DC',
+      color: '#121213',
     });
 
     // Paused competitor
@@ -259,7 +259,7 @@ export function InsightsTab({ ads, onNav }: Props) {
       type: 'alert',
       title: `${paused.name} — all ads inactive`,
       detail: 'No active ads detected. Could be a budget pause, campaign reset, or creative refresh in progress.',
-      color: '#E8663D',
+      color: '#C8261B',
     });
 
     // Full-active competitors
@@ -267,7 +267,7 @@ export function InsightsTab({ ads, onNav }: Props) {
       type: 'watch',
       title: `${c.name} — running at full capacity`,
       detail: `All ${c.total} tracked ads are simultaneously active. Peak spend period.`,
-      color: '#5AA9E6',
+      color: '#1D65A6',
     }));
 
     // New entrant — first seen within last 2 months of data
@@ -278,7 +278,7 @@ export function InsightsTab({ ads, onNav }: Props) {
       type: 'hot',
       title: `${newEntrant.name} — recent market entry`,
       detail: `First ad detected ${new Date(newEntrant.firstDate!).toLocaleDateString('en-US',{month:'short',year:'numeric'})}. New or significantly ramped-up presence.`,
-      color: '#F07A54',
+      color: '#C8261B',
     });
 
     // Dominant vocabulary theme (most concentrated word)
@@ -293,7 +293,7 @@ export function InsightsTab({ ads, onNav }: Props) {
       type: 'info',
       title: `${mostFocused.name} — most focused messaging`,
       detail: `"${mostFocused.vocabulary[0].word}" appears in ${mostFocused.vocabulary[0].count} of their ads — tightly themed campaign.`,
-      color: '#7ABDF0',
+      color: '#1D65A6',
     });
 
     // Market vocabulary theme from headlines (excluding brand names)
@@ -304,7 +304,7 @@ export function InsightsTab({ ads, onNav }: Props) {
       type: 'trend',
       title: `"${topWord.word}" — market's hottest term`,
       detail: `Appears ${topWord.count}× across headlines and descriptions — the most competitive keyword in play.`,
-      color: '#EFE9DC',
+      color: '#121213',
     });
 
     // Recent-month surge: who posted the most in the latest month?
@@ -317,7 +317,7 @@ export function InsightsTab({ ads, onNav }: Props) {
         type: 'hot',
         title: `${comp.name} — ${topCount} ads in ${new Date(recentMonth+'-15').toLocaleDateString('en-US',{month:'long',year:'numeric'})}`,
         detail: 'Highest single-month ad volume in the dataset — strong push right now.',
-        color: '#F07A54',
+        color: '#C8261B',
       });
     }
 
@@ -336,13 +336,13 @@ export function InsightsTab({ ads, onNav }: Props) {
     <div className="space-y-5">
 
       {/* ── Hero Banner ──────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl p-6 anim-fade-up" style={{ background:'#1C1C1F' }}>
+      <div className="relative overflow-hidden rounded-3xl p-6 anim-fade-up" style={{ background:'#121213' }}>
 
         <div style={{ position:'relative',zIndex:1 }}>
           <div className="flex items-center gap-2 mb-3">
-            <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background:'#2A3313' }}>
-              <Brain size={12} style={{ color:'#C6F24E' }} />
-              <span className="text-[11px] font-bold tracking-widest uppercase" style={{ color:'#C6F24E' }}>Market Brief</span>
+            <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1" style={{ background:'#FFE4D8' }}>
+              <Brain size={12} style={{ color:'#B83C0C' }} />
+              <span className="text-[11px] font-bold tracking-widest uppercase" style={{ color:'#B83C0C' }}>Market Brief</span>
             </div>
             <span className="text-white/25 text-xs hidden sm:block">
               · {COMPETITORS.length} competitors · {ads.length} ads tracked
@@ -358,14 +358,14 @@ export function InsightsTab({ ads, onNav }: Props) {
 
           <div className="flex flex-wrap gap-2.5">
             {([
-              { label:'Total Ads',       val: ads.length,                                    color:'#7ABDF0' },
-              { label:'Active Now',      val: totalActive,                                   color:'#C6F24E' },
-              { label:'Brands Tracked',  val: COMPETITORS.length,                            color:'#EFE9DC' },
+              { label:'Total Ads',       val: ads.length,                                    color:'#8CCBFF' },
+              { label:'Active Now',      val: totalActive,                                   color:'#FF7A45' },
+              { label:'Brands Tracked',  val: COMPETITORS.length,                            color:'#F6F4F0' },
               { label:`${dominantFormat[0].toUpperCase()+dominantFormat.slice(1)}-led`,
-                val: formatCounts[dominantFormat]??0,                                         color:'#7ABDF0' },
-              { label:`Latest month`,    val: recentMonth,                                   color:'#7ABDF0' },
+                val: formatCounts[dominantFormat]??0,                                         color:'#8CCBFF' },
+              { label:`Latest month`,    val: recentMonth,                                   color:'#8CCBFF' },
             ] as { label: string; val: string|number; color: string }[]).map(s => (
-              <div key={s.label} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background:'#26262A' }}>
+              <div key={s.label} className="flex items-center gap-2 rounded-full px-3 py-2" style={{ background:'rgba(246,244,240,0.1)' }}>
                 <span className="text-base font-black" style={{ color:s.color }}>{s.val}</span>
                 <span className="text-white/40 text-xs">{s.label}</span>
               </div>
@@ -376,28 +376,28 @@ export function InsightsTab({ ads, onNav }: Props) {
 
       {/* ── Competitor Scorecards ─────────────────────────── */}
       <div>
-        <h3 className="text-[11px] font-bold text-white/25 uppercase tracking-widest mb-3 px-0.5">
+        <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3 px-0.5">
           Competitor Scorecards
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {compStats.map((c) => (
             <div key={c.domain}
                  className="relative overflow-hidden rounded-2xl anim-fade-up cursor-pointer group"
-                 style={{ background:'#1C1C1F' }}
+                 style={{ background:'#FFFFFF' }}
                  onClick={() => onNav({ tab:'competitors', competitor:c.domain })}>
 
               <div className="p-5 pb-3">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[#131315] text-[11px] font-black flex-shrink-0"
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[#121213] text-[11px] font-black flex-shrink-0"
                          style={{ backgroundColor:c.color }}>{c.name[0]}</div>
                     <div>
-                      <p className="text-white font-bold text-sm leading-none">{c.name}</p>
-                      <p className="text-white/30 text-[10px] mt-0.5">{c.domain}</p>
+                      <p className="text-slate-900 font-bold text-sm leading-none">{c.name}</p>
+                      <p className="text-slate-500 text-[10px] mt-0.5">{c.domain}</p>
                     </div>
                   </div>
-                  <ChevronRight size={13} className="text-white/15 group-hover:text-white/45 transition-colors mt-0.5 flex-shrink-0" />
+                  <ChevronRight size={13} className="text-slate-500 group-hover:text-slate-600 transition-colors mt-0.5 flex-shrink-0" />
                 </div>
 
                 {/* Metrics */}
@@ -407,12 +407,12 @@ export function InsightsTab({ ads, onNav }: Props) {
                     { label:'Active', val: String(c.activeCount),   active: true  },
                     { label:'Rate',   val: `${c.activeRate}%`,      active: false },
                   ] as { label: string; val: string; active: boolean }[]).map(m => (
-                    <div key={m.label} className="text-center bg-white/4 rounded-xl py-2 border border-white/5">
+                    <div key={m.label} className="text-center bg-slate-100 rounded-xl py-2 border border-slate-200">
                       <p className="font-black text-lg leading-none"
-                         style={{ color: m.active ? (c.activeCount > 0 ? '#C6F24E' : '#F07A54') : '#EFE9DC' }}>
+                         style={{ color: m.active ? (c.activeCount > 0 ? '#FF6022' : '#FF5A50') : '#121213' }}>
                         {m.val}
                       </p>
-                      <p className="text-white/30 text-[10px] mt-0.5">{m.label}</p>
+                      <p className="text-slate-500 text-[10px] mt-0.5">{m.label}</p>
                     </div>
                   ))}
                 </div>
@@ -420,14 +420,14 @@ export function InsightsTab({ ads, onNav }: Props) {
                 {/* Format mix */}
                 <div className="mb-3">
                   <div className="flex justify-between mb-1.5">
-                    <span className="text-white/30 text-[11px]">Format mix</span>
-                    <span className="text-white/45 text-[11px] capitalize">{c.dominantFmt}-led</span>
+                    <span className="text-slate-500 text-[11px]">Format mix</span>
+                    <span className="text-slate-600 text-[11px] capitalize">{c.dominantFmt}-led</span>
                   </div>
                   <FormatBar formats={c.formats} total={c.total} />
                   <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 mt-1.5">
                     {Object.entries(c.formats).map(([fmt, n]) => (
-                      <span key={fmt} className="text-[10px] text-white/35 capitalize">
-                        <span style={{ color: FORMAT_COLORS[fmt] ?? '#5E5E66' }}>●</span> {fmt} {n}
+                      <span key={fmt} className="text-[10px] text-slate-600 capitalize">
+                        <span style={{ color: FORMAT_COLORS[fmt] ?? '#6F6B66' }}>●</span> {fmt} {n}
                       </span>
                     ))}
                   </div>
@@ -436,8 +436,8 @@ export function InsightsTab({ ads, onNav }: Props) {
                 {/* Intensity score */}
                 <div className="mb-3">
                   <div className="flex justify-between mb-1.5">
-                    <span className="text-white/30 text-[11px]">Market intensity</span>
-                    <span className="text-[11px] font-bold" style={{ color: c.color }}>{c.score}/100</span>
+                    <span className="text-slate-500 text-[11px]">Market intensity</span>
+                    <span className="text-[11px] font-bold" style={{ color: tx(c.color) }}>{c.score}/100</span>
                   </div>
                   <IntensityBar score={c.score} color={c.color} />
                 </div>
@@ -445,12 +445,12 @@ export function InsightsTab({ ads, onNav }: Props) {
                 {/* Headline vocabulary */}
                 {c.vocabulary.length > 0 && (
                   <div>
-                    <p className="text-white/25 text-[10px] mb-1.5">Top headline words</p>
+                    <p className="text-slate-500 text-[10px] mb-1.5">Top headline words</p>
                     <div className="flex flex-wrap gap-1">
                       {c.vocabulary.slice(0, 6).map(v => (
                         <span key={v.word}
                               className="text-[10px] px-2 py-0.5 rounded-full border capitalize"
-                              style={{ background:`${c.color}12`, borderColor:`${c.color}25`, color:`${c.color}cc` }}>
+                              style={{ background:`${c.color}12`, borderColor:`${c.color}25`, color:tx(c.color) }}>
                           {v.word}
                         </span>
                       ))}
@@ -461,15 +461,15 @@ export function InsightsTab({ ads, onNav }: Props) {
 
               {/* Footer */}
               {c.latestDate && (
-                <div className="flex items-center gap-2 px-5 py-2.5 border-t border-white/5">
-                  <Activity size={10} className="text-white/25" />
-                  <span className="text-white/30 text-[11px]">
+                <div className="flex items-center gap-2 px-5 py-2.5 border-t border-slate-200">
+                  <Activity size={10} className="text-slate-500" />
+                  <span className="text-slate-500 text-[11px]">
                     Last seen {new Date(c.latestDate).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
                   </span>
                   <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full"
                         style={{
-                          color:       c.activeRate===100 ? '#C6F24E' : c.activeRate===0 ? '#F07A54' : '#EFE9DC',
-                          background:  c.activeRate===100 ? 'rgba(198,242,78,0.12)' : c.activeRate===0 ? 'rgba(232,102,61,0.12)' : 'rgba(239,233,220,0.12)',
+                          color:       c.activeRate===100 ? '#FF6022' : c.activeRate===0 ? '#FF5A50' : '#121213',
+                          background:  c.activeRate===100 ? 'rgba(255,96,34,0.12)' : c.activeRate===0 ? 'rgba(255,59,48,0.12)' : 'rgba(18,18,19,0.12)',
                         }}>
                     {c.activeRate===100 ? 'LIVE' : c.activeRate===0 ? 'PAUSED' : 'PARTIAL'}
                   </span>
@@ -481,21 +481,21 @@ export function InsightsTab({ ads, onNav }: Props) {
       </div>
 
       {/* ── Activity Timeline ─────────────────────────────── */}
-      <div className="rounded-2xl border border-white/7 p-5 anim-fade-up"
-           style={{ background:'rgba(28,28,31,0.75)' }}>
+      <div className="rounded-2xl border border-slate-200 p-5 anim-fade-up"
+           style={{ background:'#FFFFFF' }}>
         <div className="flex items-center gap-2.5 mb-5">
           <div className="w-8 h-8 rounded-xl bg-indigo-500/18 border border-indigo-500/22 flex items-center justify-center flex-shrink-0">
             <BarChart2 size={15} className="text-indigo-400" />
           </div>
           <div>
-            <h3 className="text-white font-bold text-sm leading-none">Ad Activity Pulse</h3>
-            <p className="text-white/30 text-[11px] mt-0.5">12-month activity heatmap — darker = more ads that month</p>
+            <h3 className="text-slate-900 font-bold text-sm leading-none">Ad Activity Pulse</h3>
+            <p className="text-slate-500 text-[11px] mt-0.5">12-month activity heatmap — darker = more ads that month</p>
           </div>
           <div className="ml-auto flex items-center gap-3 flex-shrink-0">
             {COMPETITORS.map(c => (
               <div key={c.domain} className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: c.color }} />
-                <span className="text-white/30 text-[10px]">{c.name.split(' ')[0]}</span>
+                <span className="text-slate-500 text-[10px]">{c.name.split(' ')[0]}</span>
               </div>
             ))}
           </div>
@@ -507,17 +507,17 @@ export function InsightsTab({ ads, onNav }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
         {/* Headline Vocabulary (always shown — derived from all headlines) */}
-        <div className="rounded-2xl border border-white/7 p-5 anim-fade-up"
-             style={{ background:'rgba(28,28,31,0.75)' }}>
+        <div className="rounded-2xl border border-slate-200 p-5 anim-fade-up"
+             style={{ background:'#FFFFFF' }}>
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-8 h-8 rounded-xl bg-sky-500/18 border border-sky-500/22 flex items-center justify-center flex-shrink-0">
               <Hash size={15} className="text-sky-400" />
             </div>
             <div>
-              <h3 className="text-white font-bold text-sm leading-none">
+              <h3 className="text-slate-900 font-bold text-sm leading-none">
                 {hasKeywords ? 'Keyword Battlefield' : 'Headline Intelligence'}
               </h3>
-              <p className="text-white/30 text-[11px] mt-0.5">
+              <p className="text-slate-500 text-[11px] mt-0.5">
                 {hasKeywords ? 'Top targeted search terms' : 'Most-used words across all ad headlines'}
               </p>
             </div>
@@ -530,9 +530,10 @@ export function InsightsTab({ ads, onNav }: Props) {
                 <span key={'word' in kw ? kw.word : (kw as {keyword:string}).keyword}
                       className="px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 cursor-default"
                       style={{
-                        background:`rgba(14,165,233,${0.05 + intensity * 0.18})`,
-                        borderColor:`rgba(14,165,233,${0.1 + intensity * 0.3})`,
-                        color:`rgba(186,230,253,${0.5 + intensity * 0.45})`,
+                        background:`rgba(140,203,255,${0.18 + intensity * 0.62})`,
+                        borderColor:'transparent',
+                        color:'#121213',
+                        fontWeight: intensity > 0.6 ? 600 : 500,
                       }}>
                   {'word' in kw ? kw.word : (kw as {keyword:string}).keyword}
                   <span className="ml-1.5 opacity-40 text-[10px]">{kw.count}</span>
@@ -543,15 +544,15 @@ export function InsightsTab({ ads, onNav }: Props) {
         </div>
 
         {/* CTA Arsenal — always shown with fallback */}
-        <div className="rounded-2xl border border-white/7 p-5 anim-fade-up"
-             style={{ background:'rgba(28,28,31,0.75)' }}>
+        <div className="rounded-2xl border border-slate-200 p-5 anim-fade-up"
+             style={{ background:'#FFFFFF' }}>
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-8 h-8 rounded-xl bg-violet-500/18 border border-violet-500/22 flex items-center justify-center flex-shrink-0">
               <Target size={15} className="text-violet-400" />
             </div>
             <div>
-              <h3 className="text-white font-bold text-sm leading-none">CTA Arsenal</h3>
-              <p className="text-white/30 text-[11px] mt-0.5">
+              <h3 className="text-slate-900 font-bold text-sm leading-none">CTA Arsenal</h3>
+              <p className="text-slate-500 text-[11px] mt-0.5">
                 {hasCtas ? 'Most-used calls-to-action' : 'Top ad action words from headlines'}
               </p>
             </div>
@@ -564,12 +565,12 @@ export function InsightsTab({ ads, onNav }: Props) {
                 return (
                   <div key={item.cta} className="group">
                     <div className="flex justify-between mb-1">
-                      <span className="text-white/70 text-xs font-medium truncate flex-1 mr-3 group-hover:text-white/90 transition-colors">{item.cta}</span>
-                      <span className="text-white/35 text-[11px] flex-shrink-0">{item.count}×</span>
+                      <span className="text-slate-700 text-xs font-medium truncate flex-1 mr-3 group-hover:text-slate-900 transition-colors">{item.cta}</span>
+                      <span className="text-slate-600 text-[11px] flex-shrink-0">{item.count}×</span>
                     </div>
-                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full rounded-full bar-fill"
-                           style={{ width:`${(item.count/max)*100}%`, background:'#7ABDF0' }} />
+                           style={{ width:`${(item.count/max)*100}%`, background:'#A8D8FF' }} />
                     </div>
                   </div>
                 );
@@ -592,12 +593,12 @@ export function InsightsTab({ ads, onNav }: Props) {
                   return (
                     <div key={v.word} className="group">
                       <div className="flex justify-between mb-1">
-                        <span className="text-white/70 text-xs font-medium capitalize group-hover:text-white/90 transition-colors">{v.word}</span>
-                        <span className="text-white/35 text-[11px]">{v.count} ads</span>
+                        <span className="text-slate-700 text-xs font-medium capitalize group-hover:text-slate-900 transition-colors">{v.word}</span>
+                        <span className="text-slate-600 text-[11px]">{v.count} ads</span>
                       </div>
-                      <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div className="h-full rounded-full bar-fill"
-                             style={{ width:`${Math.min((v.count/max)*100,100)}%`, background:'#7ABDF0' }} />
+                             style={{ width:`${Math.min((v.count/max)*100,100)}%`, background:'#A8D8FF' }} />
                       </div>
                     </div>
                   );
@@ -607,17 +608,17 @@ export function InsightsTab({ ads, onNav }: Props) {
         </div>
 
         {/* Messaging Themes — with fallback to per-competitor vocabulary */}
-        <div className="rounded-2xl border border-white/7 p-5 anim-fade-up"
-             style={{ background:'rgba(28,28,31,0.75)' }}>
+        <div className="rounded-2xl border border-slate-200 p-5 anim-fade-up"
+             style={{ background:'#FFFFFF' }}>
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-8 h-8 rounded-xl bg-emerald-500/18 border border-emerald-500/22 flex items-center justify-center flex-shrink-0">
               <MessageSquare size={15} className="text-emerald-400" />
             </div>
             <div>
-              <h3 className="text-white font-bold text-sm leading-none">
+              <h3 className="text-slate-900 font-bold text-sm leading-none">
                 {hasAngles ? 'Messaging Themes' : 'Per-Competitor Vocabulary'}
               </h3>
-              <p className="text-white/30 text-[11px] mt-0.5">
+              <p className="text-slate-500 text-[11px] mt-0.5">
                 {hasAngles ? 'Recurring ad angles across all competitors' : 'Top words from each competitor\'s headlines'}
               </p>
             </div>
@@ -629,13 +630,13 @@ export function InsightsTab({ ads, onNav }: Props) {
                 const max = topAngles[0].count;
                 return (
                   <div key={item.angle} className="flex items-center gap-3 group">
-                    <span className="text-white/20 text-[10px] font-mono w-4 flex-shrink-0 text-right">{i+1}</span>
-                    <span className="text-white/65 text-xs flex-1 truncate group-hover:text-white/85 transition-colors capitalize">{item.angle}</span>
-                    <div className="w-16 h-1 bg-white/5 rounded-full overflow-hidden flex-shrink-0">
+                    <span className="text-slate-500 text-[10px] font-mono w-4 flex-shrink-0 text-right">{i+1}</span>
+                    <span className="text-slate-700 text-xs flex-1 truncate group-hover:text-slate-900 transition-colors capitalize">{item.angle}</span>
+                    <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden flex-shrink-0">
                       <div className="h-full rounded-full bar-fill"
-                           style={{ width:`${(item.count/max)*100}%`, background:'#C6F24E' }} />
+                           style={{ width:`${(item.count/max)*100}%`, background:'#FF6022' }} />
                     </div>
-                    <span className="text-white/25 text-[10px] w-3 text-right flex-shrink-0">{item.count}</span>
+                    <span className="text-slate-500 text-[10px] w-3 text-right flex-shrink-0">{item.count}</span>
                   </div>
                 );
               })}
@@ -646,15 +647,15 @@ export function InsightsTab({ ads, onNav }: Props) {
               {compStats.map(c => (
                 <div key={c.domain}>
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-4 h-4 rounded flex items-center justify-center text-[#131315] text-[9px] font-black"
+                    <div className="w-4 h-4 rounded flex items-center justify-center text-[#121213] text-[9px] font-black"
                          style={{ backgroundColor: c.color }}>{c.name[0]}</div>
-                    <span className="text-white/50 text-xs font-semibold">{c.name}</span>
+                    <span className="text-slate-600 text-xs font-semibold">{c.name}</span>
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {c.vocabulary.slice(0, 6).map(v => (
                       <span key={v.word}
                             className="text-[10px] px-2 py-0.5 rounded-full border capitalize"
-                            style={{ background:`${c.color}10`, borderColor:`${c.color}22`, color:`${c.color}bb` }}>
+                            style={{ background:`${c.color}10`, borderColor:`${c.color}22`, color:tx(c.color) }}>
                         {v.word} <span className="opacity-50">{v.count}</span>
                       </span>
                     ))}
@@ -666,17 +667,17 @@ export function InsightsTab({ ads, onNav }: Props) {
         </div>
 
         {/* Strategic Signals */}
-        <div className="rounded-2xl border border-white/7 p-5 anim-fade-up"
-             style={{ background:'rgba(28,28,31,0.75)' }}>
+        <div className="rounded-2xl border border-slate-200 p-5 anim-fade-up"
+             style={{ background:'#FFFFFF' }}>
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-8 h-8 rounded-xl bg-amber-500/18 border border-amber-500/22 flex items-center justify-center flex-shrink-0">
               <Zap size={15} className="text-amber-400" />
             </div>
             <div>
-              <h3 className="text-white font-bold text-sm leading-none">Strategic Signals</h3>
-              <p className="text-white/30 text-[11px] mt-0.5">Auto-detected patterns from ad data</p>
+              <h3 className="text-slate-900 font-bold text-sm leading-none">Strategic Signals</h3>
+              <p className="text-slate-500 text-[11px] mt-0.5">Auto-detected patterns from ad data</p>
             </div>
-            <span className="ml-auto text-[10px] text-white/25 bg-white/5 border border-white/8 px-2 py-0.5 rounded-full flex-shrink-0">
+            <span className="ml-auto text-[10px] text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full flex-shrink-0">
               {signals.length} signals
             </span>
           </div>
@@ -684,14 +685,14 @@ export function InsightsTab({ ads, onNav }: Props) {
             {signals.map((sig, i) => {
               const cfg = SIG_CFG[sig.type] ?? SIG_CFG.info;
               return (
-                <div key={i} className="rounded-xl p-3.5 border border-white/5 anim-fade-up"
+                <div key={i} className="rounded-xl p-3.5 border border-slate-200 anim-fade-up"
                      style={{ background:`${sig.color}08`, borderLeftColor:sig.color, borderLeftWidth:'2px' }}>
                   <div className="flex items-center gap-1.5 mb-1.5">
-                    <span style={{ color:sig.color }}>{cfg.icon}</span>
-                    <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color:sig.color }}>{cfg.label}</span>
+                    <span style={{ color:tx(sig.color) }}>{cfg.icon}</span>
+                    <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color:tx(sig.color) }}>{cfg.label}</span>
                   </div>
-                  <p className="text-white/85 text-xs font-semibold leading-snug mb-1">{sig.title}</p>
-                  <p className="text-white/40 text-[11px] leading-relaxed">{sig.detail}</p>
+                  <p className="text-slate-900 text-xs font-semibold leading-snug mb-1">{sig.title}</p>
+                  <p className="text-slate-600 text-[11px] leading-relaxed">{sig.detail}</p>
                 </div>
               );
             })}

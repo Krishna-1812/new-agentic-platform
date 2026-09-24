@@ -3,12 +3,12 @@ import {
 } from 'recharts';
 import { ArrowRight, Search } from 'lucide-react';
 import type { Ad, NavFn } from '../lib/types';
-import { COMPETITORS } from '../lib/types';
+import { COMPETITORS, tx } from '../lib/types';
 import { getTopKeywords, getMessagingPoints } from '../lib/utils';
 
 interface CreativeTabProps { ads: Ad[]; onNav: NavFn; }
 
-const PALETTE = ['#5AA9E6','#C6F24E','#E8663D','#EFE9DC','#7ABDF0','#D4FA63','#F07A54','#8B8B93'];
+const PALETTE = ['#8CCBFF','#FF6022','#FF3B30','#121213','#A8D8FF','#FF7A45','#FF5A50','#444444'];
 
 const DarkTip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => {
   if (!active || !payload?.length) return null;
@@ -81,7 +81,7 @@ export function CreativeTab({ ads, onNav }: CreativeTabProps) {
                  style={{}}>
               <div className="relative w-20 h-20 mx-auto mb-3">
                 <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#EFE9DC" strokeWidth="3"/>
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#121213" strokeWidth="3"/>
                   <circle cx="18" cy="18" r="15.9" fill="none" stroke={col} strokeWidth="3"
                           strokeDasharray={`${pct} ${100-pct}`} strokeLinecap="round"/>
                 </svg>
@@ -112,10 +112,10 @@ export function CreativeTab({ ads, onNav }: CreativeTabProps) {
                 </linearGradient>
               ))}
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#EFE9DC" horizontal={false}/>
-            <XAxis type="number" tick={{ fontSize:10, fill:'#8B8B93' }} tickLine={false} axisLine={false}/>
-            <YAxis dataKey="keyword" type="category" tick={{ fontSize:10, fill:'#5E5E66' }} tickLine={false} axisLine={false} width={170}/>
-            <Tooltip content={<DarkTip/>} cursor={{ fill:'rgba(90,169,230,0.04)' }}/>
+            <CartesianGrid strokeDasharray="3 3" stroke="#121213" horizontal={false}/>
+            <XAxis type="number" tick={{ fontSize:10, fill:'#444444' }} tickLine={false} axisLine={false}/>
+            <YAxis dataKey="keyword" type="category" tick={{ fontSize:10, fill:'#6F6B66' }} tickLine={false} axisLine={false} width={170}/>
+            <Tooltip content={<DarkTip/>} cursor={{ fill:'rgba(29,101,166,0.04)' }}/>
             <Bar dataKey="count" radius={[0,6,6,0]} name="Count"
                  onClick={(data: unknown) => { const d = data as { keyword: string }; onNav({ tab: 'gallery', search: d.keyword, domain: 'all', format: 'all' }); }}>
               {topKW.map((_, i) => <Cell key={i} fill={`url(#kwg${i})`}/>)}
@@ -136,7 +136,7 @@ export function CreativeTab({ ads, onNav }: CreativeTabProps) {
                           onClick={() => onNav({ tab: 'gallery', search: keyword, domain: comp.domain, format: 'all' })}>
                     <div className="flex justify-between text-xs mb-1">
                       <span className="text-slate-600 truncate mr-2 font-medium capitalize group-hover:text-indigo-600 transition-colors">{keyword}</span>
-                      <span className="font-bold flex-shrink-0" style={{ color: comp.color }}>{count}</span>
+                      <span className="font-bold flex-shrink-0" style={{ color: tx(comp.color) }}>{count}</span>
                     </div>
                     <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width:`${pct}%`, background:`${comp.color}`, transition:'width 0.8s ease' }}/>
@@ -147,7 +147,7 @@ export function CreativeTab({ ads, onNav }: CreativeTabProps) {
               {/* View all for competitor */}
               <button onClick={() => onNav({ tab: 'gallery', domain: comp.domain, format: 'all', search: '' })}
                       className="w-full mt-1 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition-all hover:opacity-80"
-                      style={{ background: `${comp.color}12`, color: comp.color }}>
+                      style={{ background: `${comp.color}12`, color: tx(comp.color) }}>
                 View all {(byDomain[comp.domain]||[]).length} ads <ArrowRight size={10}/>
               </button>
             </div>
@@ -210,7 +210,7 @@ export function CreativeTab({ ads, onNav }: CreativeTabProps) {
               <div className="flex items-center justify-between mb-3">
                 <button onClick={() => onNav({ tab: 'competitors', competitor: comp.domain })}
                         className="flex items-center gap-1 text-xs font-semibold hover:opacity-80 transition-opacity"
-                        style={{ color: comp.color }}>
+                        style={{ color: tx(comp.color) }}>
                   View intel <ArrowRight size={10}/>
                 </button>
                 <button onClick={() => onNav({ tab: 'gallery', domain: comp.domain, format: 'all', search: '' })}
@@ -226,7 +226,7 @@ export function CreativeTab({ ads, onNav }: CreativeTabProps) {
                       <li key={i}
                           onClick={() => onNav({ tab: 'gallery', search: headline?.split(' ').slice(0,3).join(' ') ?? '', domain: comp.domain, format: 'all' })}
                           className="flex items-start gap-2 text-xs text-slate-600 leading-relaxed cursor-pointer hover:text-indigo-700 transition-colors group">
-                        <span className="font-black flex-shrink-0 mt-0.5 text-[11px]" style={{ color: comp.color }}>{i+1}.</span>
+                        <span className="font-black flex-shrink-0 mt-0.5 text-[11px]" style={{ color: tx(comp.color) }}>{i+1}.</span>
                         <span className="group-hover:underline">{headline}</span>
                       </li>
                     ))}

@@ -1,42 +1,49 @@
 /* ════════════════════════════════════════════════════════════════════════
-   ABM SIGNAL TRACKER — Bento skin for reports/dashboard.html
+   ABM SIGNAL TRACKER — Outcomes skin for reports/dashboard.html
 
    The dashboard is a large hand-customised file whose data line is replaced
    every week by scripts/refresh-dashboards.py, so it is restyled from the
    outside rather than rewritten: its palette literals were remapped to the
-   Bento hues once, and this sheet, linked last in <head>, carries the rest
-   of the system — flat opaque surfaces, no borders, one radius, two type
-   faces, and one 150ms fade.
+   Outcomes palette once (paper ground, white cards, orange / sky / amber /
+   red blocks, text-safe variants wherever a hue is used as text), and this
+   sheet, linked last in <head>, carries the rest of the language -- pill
+   controls, Fraunces headings kept exactly as the public site sets them,
+   Zalando Sans for everything else, and one 150ms fade.
 
    The dashboard's own variable names (--bg, --card, --blue …) are kept and
-   pointed at Bento values, because ~2,000 of its rules read them. Bento's
+   pointed at Outcomes values, because ~2,000 of its rules read them. The shared
    tokens file is deliberately NOT loaded here: it defines --bg too, plus a
    global reset, and whichever loaded second would win by accident.
    ════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --bg: #131315;
-  --card: #1C1C1F;
-  --border: #26262A;
-  --blue: #5AA9E6;
-  --purple: #5AA9E6;
-  --green: #C6F24E;
-  --high: #E8663D;
-  --medium: #EFE9DC;
-  --low: #5E5E66;
-  --text: #EFE9DC;
-  --text2: #8B8B93;
+  --bg: #F1EFED;
+  --card: #FFFFFF;
+  --border: #EBE9E5;
+  --blue: #FF6022;      --blue-tx: #B83C0C;
+  --purple: #8CCBFF;    --purple-tx: #1D65A6;
+  --green: #17753F;
+  --high: #FF3B30;      --high-tx: #C8261B;
+  --medium: #FFB500;    --medium-tx: #8A5A00;
+  --low: #6F6B66;
+  --text: #121213;
+  --text2: #444444;
 
-  --abm-s2: #26262A;
-  --abm-s3: #303036;
-  --abm-tx3: #5E5E66;
-  --abm-acc: #C6F24E;
-  --abm-acc-hi: #D4FA63;
-  --abm-acc-dim: #2A3313;
-  --abm-r: 12px;
+  --abm-s2: #EBE9E5;
+  --abm-s3: #DBD7D1;
+  --abm-tx3: #6F6B66;
+  --abm-acc: #FF6022;
+  --abm-acc-tx: #B83C0C;
+  --abm-acc-hi: #FF7A45;
+  --abm-acc-dim: #FFE4D8;
+  --abm-ink: #121213;
+  --abm-on-ink: #F6F4F0;
+  --abm-r: 16px;
+  --abm-r-lg: 24px;
   --abm-r-sm: 8px;
-  --abm-display: 'Familjen Grotesk', system-ui, -apple-system, sans-serif;
-  --abm-body: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+  --abm-pill: 999px;
+  --abm-display: 'Fraunces', 'Times New Roman', Georgia, serif;
+  --abm-body: 'Zalando Sans', system-ui, -apple-system, sans-serif;
 }
 
 /* ── Ground and type ─────────────────────────────────────────────────── */
@@ -111,7 +118,7 @@ body, #app, #app *, #bottom-tabs, #bottom-tabs *,
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--abm-acc);
+  color: var(--abm-acc-tx);
   -webkit-text-fill-color: currentColor;
 }
 .nav-item {
@@ -126,7 +133,7 @@ body, #app, #app *, #bottom-tabs, #bottom-tabs *,
   background: var(--card) !important;
   color: var(--text) !important;
 }
-.nav-item.active .icon { color: var(--abm-acc) !important; }
+.nav-item.active .icon { color: var(--abm-acc-tx) !important; }
 .nav-item .icon { display: inline-flex; align-items: center; justify-content: center; }
 .nav-item .icon svg { display: block; }
 .nav-item.active::before { display: none !important; }
@@ -139,7 +146,7 @@ body, #app, #app *, #bottom-tabs, #bottom-tabs *,
 }
 .sidebar-user-avatar {
   background: var(--abm-acc) !important;
-  color: #131315 !important;
+  color: #121213 !important;
   box-shadow: none !important;
   border-radius: var(--abm-r-sm) !important;
 }
@@ -161,7 +168,7 @@ body, #app, #app *, #bottom-tabs, #bottom-tabs *,
 .nav-updated-ts { color: var(--text2) !important; }
 .nav-age-badge {
   background: var(--abm-acc-dim) !important;
-  color: var(--abm-acc) !important;
+  color: var(--abm-acc-tx) !important;
   border: 0 !important;
   border-radius: var(--abm-r-sm) !important;
 }
@@ -169,7 +176,7 @@ body, #app, #app *, #bottom-tabs, #bottom-tabs *,
 /* Buttons: one lime primary, everything else a neutral surface. */
 .refresh-btn, #refresh-btn, .rfx-go, .fp-apply, .ir9-gen, .ir9-gen-lg, .ir9-fapply .ap {
   background: var(--abm-acc) !important;
-  color: #131315 !important;
+  color: #121213 !important;
   border: 0 !important;
   border-radius: var(--abm-r) !important;
   box-shadow: none !important;
@@ -186,7 +193,7 @@ body, #app, #app *, #bottom-tabs, #bottom-tabs *,
 }
 .filters-btn:hover, .export-btn:hover, .pag-btn:hover, .fp-reset:hover,
 .ir9-fbtn:hover { background: var(--abm-s2) !important; }
-.filter-badge { background: var(--abm-acc) !important; color: #131315 !important; }
+.filter-badge { background: var(--abm-acc) !important; color: #121213 !important; }
 
 /* Search fields: a flat fill that lightens a step on focus. No ring. */
 #nav-search, #tbl-search, #kpi-modal-search, .fp-select, .sig-filter-select, .ir9-sel {
@@ -232,7 +239,7 @@ body, #app, #app *, #bottom-tabs, #bottom-tabs *,
    is the only filled one. */
 .kpi-row .kpi-card:first-child { background: var(--abm-acc) !important; }
 .kpi-row .kpi-card:first-child .kpi-number,
-.kpi-row .kpi-card:first-child .kpi-label { color: #131315 !important; }
+.kpi-row .kpi-card:first-child .kpi-label { color: #121213 !important; }
 .kpi-row .kpi-card:first-child .kpi-sparkline { opacity: .35; filter: grayscale(1) brightness(.2); }
 .kpi-chip span {
   border: 0 !important;
@@ -240,7 +247,7 @@ body, #app, #app *, #bottom-tabs, #bottom-tabs *,
   background: var(--abm-s2) !important;
   box-shadow: none !important;
 }
-.kpi-tooltip { background: var(--abm-s2) !important; border: 0 !important; border-radius: var(--abm-r) !important; box-shadow: 0 24px 64px -16px rgba(0,0,0,.72) !important; }
+.kpi-tooltip { background: var(--abm-s2) !important; border: 0 !important; border-radius: var(--abm-r) !important; box-shadow: 0 24px 64px -16px rgba(18,18,19,.28) !important; }
 
 .panel-header { border-bottom: 0 !important; }
 .panel-header h3, .chart-card h3 { font-size: 15px !important; font-weight: 600 !important; color: var(--text) !important; }
@@ -276,7 +283,7 @@ body, #app, #app *, #bottom-tabs, #bottom-tabs *,
 .data-table th {
   background: var(--card) !important;
   color: var(--text2) !important;
-  border-bottom: 1px solid #2E2E34 !important;
+  border-bottom: 1px solid #E0DCD6 !important;
   font-size: 11px !important;
   letter-spacing: 0.08em !important;
 }
@@ -289,18 +296,18 @@ body, #app, #app *, #bottom-tabs, #bottom-tabs *,
   background: var(--card) !important;
   border: 0 !important;
   border-radius: var(--abm-r) !important;
-  box-shadow: 0 24px 64px -16px rgba(0,0,0,.72) !important;
+  box-shadow: 0 24px 64px -16px rgba(18,18,19,.28) !important;
 }
 #ir9-sig-hdr, #modal-header, .kpi-modal-header, .fp-header, .fp-footer {
   background: var(--card) !important;
   border-color: var(--abm-s2) !important;
 }
 #fp-overlay, #refresh-overlay, #modal-overlay, #kpi-overlay, #sig-detail-overlay, #ir9-sig-overlay {
-  background: rgba(19,19,21,.82) !important;
+  background: rgba(18,18,19,.42) !important;
 }
 .rfx-orbit {
   background: var(--abm-acc-dim) !important;
-  color: var(--abm-acc) !important;
+  color: var(--abm-acc-tx) !important;
   box-shadow: none !important;
   border: 0 !important;
   animation: none !important;
@@ -329,7 +336,7 @@ body, #app, #app *, #bottom-tabs, #bottom-tabs *,
 .ir9-spot.r1, .ir9-spot.r1 > * { background: var(--abm-s2) !important; }
 .ir9-kbadge {
   background: var(--abm-acc-dim) !important;
-  color: var(--abm-acc) !important;
+  color: var(--abm-acc-tx) !important;
   border: 0 !important;
   border-radius: 6px !important;
   box-shadow: none !important;
@@ -345,18 +352,18 @@ body, #app, #app *, #bottom-tabs, #bottom-tabs *,
 /* The assistant's floating button: a lime disc like every other page. */
 .vimi-fab {
   background: var(--abm-acc) !important;
-  color: #131315 !important;
+  color: #121213 !important;
   border: 0 !important;
-  box-shadow: 0 24px 64px -16px rgba(0,0,0,.72) !important;
+  box-shadow: 0 24px 64px -16px rgba(18,18,19,.28) !important;
   animation: none !important;
 }
-.vimi-fab * { color: #131315 !important; stroke: currentColor; animation: none !important; }
+.vimi-fab * { color: #121213 !important; stroke: currentColor; animation: none !important; }
 .vimi-fab::before, .vimi-fab::after { display: none !important; }
 
 /* ── Mobile tab bar ──────────────────────────────────────────────────── */
 #bottom-tabs { background: var(--bg) !important; border-top: 0 !important; box-shadow: none !important; }
 .bt-item { color: var(--text2) !important; background: none !important; }
-.bt-item.active { color: var(--abm-acc) !important; }
+.bt-item.active { color: var(--abm-acc-tx) !important; }
 .bt-icon { display: flex; justify-content: center; }
 
 /* ── Specificity backstops ─────────────────────────────────────────────
@@ -375,7 +382,7 @@ html body #sidebar .sidebar-logo small { -webkit-text-fill-color: var(--abm-acc)
 html body #sidebar .nav-item { background: transparent !important; border: 0 !important; box-shadow: none !important; }
 html body #sidebar .nav-item:hover { background: var(--card) !important; }
 html body #sidebar .nav-item.active { background: var(--card) !important; color: var(--text) !important; }
-html body #sidebar .sidebar-user-avatar { background: var(--abm-acc) !important; border: 0 !important; color: #131315 !important; }
+html body #sidebar .sidebar-user-avatar { background: var(--abm-acc) !important; border: 0 !important; color: #121213 !important; }
 
 /* Links and actions inside a signal row: neutral chips, not outlined. */
 html body .signal-item a, html body .signal-item button {
@@ -384,7 +391,7 @@ html body .signal-item a, html body .signal-item button {
   border: 0 !important;
   -webkit-text-fill-color: currentColor !important;
 }
-html body .signal-item a:hover, html body .signal-item button:hover { background: #3A3A40 !important; }
+html body .signal-item a:hover, html body .signal-item button:hover { background: var(--abm-s3) !important; }
 html body #sidebar .sidebar-logo::after { display: none !important; }
 html body #sidebar .badge-count, html body #sidebar .sidebar-footer,
 html body #sidebar .sidebar-user, html body #sidebar .sidebar-logout { border: 0 !important; }
@@ -440,3 +447,100 @@ html body .signal-link:hover { background: var(--abm-s3) !important; }
 html body .data-table tr.row-high td { background: transparent !important; }
 html body .data-table tr.row-high td:first-child { box-shadow: inset 2px 0 0 var(--high) !important; }
 html body .section-header h2::after { display: none !important; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   OUTCOMES
+   Restates the rules above in the Outcomes language; last in the file so it
+   wins by order. The `html body` prefix matches the specificity backstops
+   earlier in this sheet.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* Headings: Fraunces exactly as the public site sets it. Numbers: Zalando. */
+html body .nav-title, html body .sidebar-logo, html body .section-header h2,
+html body #modal-title, html body #kpi-modal-title, html body .rfx-title, html body .ir9-sh-t {
+  font-family: var(--abm-display) !important;
+  font-weight: 600 !important;
+  font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
+  letter-spacing: -0.02em !important;
+}
+html body .panel-header h3, html body .chart-card h3, html body .signal-company, html body .sgx-co {
+  font-family: var(--abm-display) !important; font-weight: 600 !important;
+  font-variation-settings: 'SOFT' 0, 'WONK' 1;
+}
+html body .kpi-number, html body .ir9-kpi-v {
+  font-family: var(--abm-body) !important; font-weight: 700 !important; letter-spacing: -0.03em !important;
+}
+html body *, html body *::before, html body *::after { font-variant-numeric: proportional-nums !important; }
+html body .nav-title { font-size: 28px !important; }
+html body .sidebar-logo { font-size: 22px !important; }
+html body .sidebar-logo small { color: var(--abm-acc-tx) !important; font-weight: 500; letter-spacing: 0.04em; font-size: 12px; }
+html body .kpi-label { font-size: 12px !important; font-weight: 500 !important; letter-spacing: 0.04em !important; }
+
+/* Controls are pills. Primary is ink; secondary is outlined. */
+html body .refresh-btn, html body #refresh-btn, html body .rfx-go, html body .fp-apply,
+html body .ir9-gen, html body .ir9-gen-lg, html body .ir9-fapply .ap {
+  background: var(--abm-ink) !important; color: var(--abm-on-ink) !important;
+  border-radius: var(--abm-pill) !important; font-weight: 500 !important;
+}
+html body .refresh-btn:hover, html body #refresh-btn:hover, html body .rfx-go:hover,
+html body .fp-apply:hover, html body .ir9-gen:hover, html body .ir9-gen-lg:hover { background: #2B2B2E !important; }
+html body .filters-btn, html body .export-btn, html body .pag-btn, html body .fp-reset,
+html body .ir9-fbtn, html body .ir9-chatlink, html body .ir9-fapply .rs {
+  background: transparent !important; box-shadow: inset 0 0 0 1px var(--abm-s3) !important;
+  border-radius: var(--abm-pill) !important;
+}
+html body .filters-btn:hover, html body .export-btn:hover, html body .pag-btn:hover,
+html body .fp-reset:hover, html body .ir9-fbtn:hover { background: var(--abm-s2) !important; box-shadow: none !important; }
+html body .filter-badge, html body .badge, html body #feed-count, html body .badge-count,
+html body .nav-age-badge, html body .kpi-chip span { border-radius: var(--abm-pill) !important; }
+
+/* Search fields: white pills with a hairline that goes ink on focus. */
+html body #nav-search, html body #tbl-search, html body #kpi-modal-search {
+  background: var(--card) !important; border-radius: var(--abm-pill) !important;
+  box-shadow: inset 0 0 0 1px var(--border) !important;
+}
+html body #nav-search:focus, html body #tbl-search:focus, html body #kpi-modal-search:focus {
+  background: var(--card) !important; box-shadow: inset 0 0 0 1px var(--abm-ink) !important;
+}
+html body .fp-select, html body .sig-filter-select, html body .ir9-sel {
+  box-shadow: inset 0 0 0 1px var(--border) !important; border-radius: var(--abm-r-sm) !important;
+}
+
+/* Sidebar: the page you are on is an ink pill. */
+html body #sidebar .nav-item { border-radius: var(--abm-pill) !important; }
+html body #sidebar .nav-item.active { background: var(--abm-ink) !important; color: var(--abm-on-ink) !important; }
+html body #sidebar .nav-item.active .icon { color: var(--abm-acc) !important; }
+html body #sidebar .sidebar-user-avatar { border-radius: var(--abm-pill) !important; color: var(--abm-ink) !important; }
+html body #sidebar .sidebar-logout { border-radius: var(--abm-pill) !important; }
+
+/* The first KPI is the orange block: 24px corners and the site's soft drop. */
+html body .kpi-row .kpi-card:first-child {
+  background: var(--abm-acc) !important; border-radius: var(--abm-r-lg) !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,.08) !important;
+}
+html body .kpi-row .kpi-card:first-child .kpi-number,
+html body .kpi-row .kpi-card:first-child .kpi-label { color: var(--abm-ink) !important; }
+html body .kpi-row .kpi-card:first-child .kpi-sparkline { opacity: .45; filter: grayscale(1) brightness(0); }
+
+/* Bottom tabs on a phone: paper bar, ink active item. */
+html body #bottom-tabs { background: var(--bg) !important; box-shadow: inset 0 1px 0 var(--border) !important; }
+
+/* The chat and signal drawers are parked off-canvas to the right; a shadow
+   on the parked panel bleeds onto the page edge, so it only appears once the
+   panel is open. */
+html body .ir9-chat, html body .ir9-drw { box-shadow: none !important; }
+html body .ir9-chat.on, html body .ir9-drw.on { box-shadow: 0 24px 64px -16px rgba(18,18,19,.28) !important; }
+
+/* #app * sets the body face with an id-level selector, so the heading rules
+   above need the same weight to land. */
+html body #app .nav-title, html body #app .sidebar-logo, html body #app .section-header h2,
+html body #app .rfx-title, html body #app .ir9-sh-t, html body #modal-overlay #modal-title,
+html body #kpi-overlay #kpi-modal-title, html body #app .panel-header h3, html body #app .chart-card h3,
+html body #app .signal-company, html body #app .sgx-co {
+  font-family: var(--abm-display) !important;
+  font-weight: 600 !important;
+  font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
+}
+html body #app .panel-header h3, html body #app .chart-card h3,
+html body #app .signal-company, html body #app .sgx-co { font-variation-settings: 'SOFT' 0, 'WONK' 1; }
+html body #app .sidebar-logo small { font-family: var(--abm-body) !important; font-variation-settings: normal; }

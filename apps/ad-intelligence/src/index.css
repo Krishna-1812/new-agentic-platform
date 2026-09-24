@@ -3,24 +3,28 @@
 @tailwind utilities;
 
 /* ════════════════════════════════════════════════════════════════════════
-   AD INTELLIGENCE — Bento
-   The same five rules as static/css/bento-tokens.css, which this bundle
-   cannot import (it is built separately and served from /ad_intelligence):
-     1. surfaces are opaque   2. no borders   3. one radius (12px)
-     4. colour is load-bearing   5. one motion, a 150ms opacity fade
+   AD INTELLIGENCE — the Outcomes language
+   The same rules as static/css/bento-tokens.css, which this bundle cannot
+   import (it is built separately and served from /ad_intelligence):
+     1. paper ground, white cards   2. colour comes in blocks
+     3. ink pills for action        4. Fraunces headings, Zalando Sans text
+     5. quiet motion: one 150ms opacity fade
    The tokens below are copies of those values, not new ones.
    ════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --bg: #131315;  --s1: #1C1C1F;  --s2: #26262A;  --s3: #303036;
-  --tx: #EFE9DC;  --tx2: #8B8B93; --tx3: #5E5E66; --on-fill: #131315;
-  --acc: #C6F24E; --acc-hi: #D4FA63; --acc-dim: #2A3313;
-  --clay: #E8663D; --sky: #5AA9E6; --cream: #EFE9DC;
-  --line: #2E2E34;
-  --r: 12px; --r-sm: 8px;
-  --font-display: 'Familjen Grotesk', system-ui, -apple-system, sans-serif;
-  --font-body: 'Instrument Sans', system-ui, -apple-system, sans-serif;
-  --shadow-overlay: 0 24px 64px -16px rgba(0,0,0,.72);
+  --bg: #F1EFED;  --s1: #FFFFFF;  --s2: #EBE9E5;  --s3: #DBD7D1;
+  --tx: #121213;  --tx2: #444444; --tx3: #6F6B66; --on-fill: #121213;
+  --ink: #121213; --on-ink: #F6F4F0;
+  --acc: #FF6022; --acc-hi: #FF7A45; --acc-dim: #FFE4D8; --acc-tx: #B83C0C;
+  --clay: #FF3B30; --sky: #8CCBFF; --cream: #FFB500;
+  --line: #E0DCD6;
+  --r: 16px; --r-lg: 24px; --r-sm: 8px; --pill: 999px;
+  --font-display: 'Fraunces', 'Times New Roman', Georgia, serif;
+  --display-axes: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
+  --font-body: 'Zalando Sans', system-ui, -apple-system, sans-serif;
+  --shadow-block: 0 20px 40px rgba(0,0,0,.08);
+  --shadow-overlay: 0 24px 64px -16px rgba(18,18,19,.28);
 }
 
 * { box-sizing: border-box; }
@@ -52,7 +56,7 @@ body {
 .skeleton { background: var(--s2); border-radius: var(--r-sm); }
 .bar-fill { transition: width 150ms ease; }
 .live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--acc); }
-.modal-backdrop { background: rgba(19,19,21,.82); }
+.modal-backdrop { background: rgba(18,18,19,.42); }
 .chart-tooltip {
   background: var(--s2);
   border-radius: var(--r-sm);
@@ -78,8 +82,8 @@ body {
 }
 .bn-bar-brand {
   display: flex; align-items: center; gap: 10px; text-decoration: none;
-  font-family: var(--font-display); font-weight: 600; font-size: 17px;
-  letter-spacing: -0.03em; color: var(--tx);
+  font-family: var(--font-display); font-weight: 600; font-size: 20px;
+  font-variation-settings: var(--display-axes); letter-spacing: -0.02em; color: var(--tx);
 }
 .bn-bar-crumbs { align-items: center; gap: 8px; font-size: 13px; color: var(--tx2); min-width: 0; }
 .bn-bar-crumbs a { color: var(--tx2); text-decoration: none; }
@@ -88,12 +92,12 @@ body {
 .bn-bar-cur { color: var(--tx); font-weight: 600; }
 .bn-bar-user {
   display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 14px 0 6px;
-  background: var(--s1); border-radius: var(--r); color: var(--tx);
-  font-size: 13px; font-weight: 600; cursor: pointer;
+  background: transparent; box-shadow: inset 0 0 0 1px var(--s3); border-radius: var(--pill); color: var(--tx);
+  font-size: 13px; font-weight: 500; cursor: pointer;
 }
 .bn-bar-user:hover { background: var(--s2); }
 .bn-bar-av {
-  width: 28px; height: 28px; border-radius: var(--r-sm); overflow: hidden;
+  width: 28px; height: 28px; border-radius: var(--pill); overflow: hidden;
   display: flex; align-items: center; justify-content: center;
   background: var(--s3); color: var(--tx2); font-size: 11px; font-weight: 700;
 }
@@ -105,15 +109,15 @@ body {
 
 .bn-side { background: var(--bg); }
 .bn-side-title {
-  font-family: var(--font-display); font-size: 19px; font-weight: 600;
-  letter-spacing: -0.02em; color: var(--tx); line-height: 1.2;
+  font-family: var(--font-display); font-size: 22px; font-weight: 600;
+  font-variation-settings: var(--display-axes); letter-spacing: -0.02em; color: var(--tx); line-height: 1.2;
 }
 .bn-side-sub {
-  margin-top: 6px; font-size: 11px; font-weight: 600; letter-spacing: .08em;
-  text-transform: uppercase; color: var(--acc);
+  margin-top: 6px; font-size: 12px; font-weight: 500; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--acc-tx);
 }
 .bn-side-label {
-  margin: 20px 12px 8px; font-size: 11px; font-weight: 600; letter-spacing: .08em;
+  margin: 20px 12px 8px; font-size: 12px; font-weight: 500; letter-spacing: .04em;
   text-transform: uppercase; color: var(--tx3);
 }
 .bn-nav {
@@ -122,28 +126,30 @@ body {
   transition: background-color 100ms ease, color 100ms ease;
 }
 .bn-nav:hover { background: var(--s1); color: var(--tx); }
-.bn-nav.is-active { background: var(--s1); color: var(--tx); }
+/* The tab you are on is the ink block. */
+.bn-nav.is-active { background: var(--ink); color: var(--on-ink); }
+.bn-nav.is-active .bn-nav-desc { color: rgba(246,244,240,.7); }
 .bn-nav-icon { flex-shrink: 0; display: flex; color: var(--tx3); }
 .bn-nav.is-active .bn-nav-icon { color: var(--acc); }
 .bn-nav-label { font-size: 14px; font-weight: 500; line-height: 1.2; }
 .bn-nav-desc { font-size: 11px; color: var(--tx3); margin-top: 2px; }
 .bn-comp-dot {
-  width: 26px; height: 26px; border-radius: var(--r-sm); flex-shrink: 0;
+  width: 26px; height: 26px; border-radius: var(--pill); flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 700; color: var(--on-fill);
 }
 
 .bn-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  height: 36px; padding: 0 14px; border-radius: var(--r);
-  background: var(--s1); color: var(--tx); font-size: 13px; font-weight: 600;
+  height: 36px; padding: 0 16px; border-radius: var(--pill);
+  background: transparent; box-shadow: inset 0 0 0 1px var(--s3); color: var(--tx); font-size: 13px; font-weight: 500;
   text-decoration: none; transition: background-color 100ms ease;
 }
-.bn-btn:hover { background: var(--s2); }
+.bn-btn:hover { background: var(--s2); box-shadow: none; }
 .bn-btn:disabled { opacity: .5; }
-.bn-btn--ghost { background: transparent; color: var(--tx2); font-weight: 500; }
+.bn-btn--ghost { background: transparent; box-shadow: none; color: var(--tx2); font-weight: 500; }
 .bn-btn--ghost:hover { background: var(--s1); color: var(--tx); }
-.bn-icon-btn { color: var(--tx2); display: inline-flex; padding: 6px; border-radius: var(--r-sm); }
+.bn-icon-btn { color: var(--tx2); display: inline-flex; padding: 6px; border-radius: var(--pill); }
 .bn-icon-btn:hover { background: var(--s1); color: var(--tx); }
 
 .bn-head {
@@ -151,16 +157,17 @@ body {
   padding: 28px 32px 20px; background: var(--bg);
 }
 .bn-eyebrow {
-  font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
-  color: var(--acc); margin-bottom: 8px;
+  font-size: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--acc-tx); margin-bottom: 8px;
 }
 .bn-h1 {
-  font-family: var(--font-display); font-size: 34px; font-weight: 600;
-  letter-spacing: -0.035em; line-height: 1.05; color: var(--tx);
+  font-family: var(--font-display); font-size: 40px; font-weight: 600;
+  font-variation-settings: var(--display-axes);
+  letter-spacing: -0.02em; line-height: 1.05; color: var(--tx);
 }
 .bn-live {
-  align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: var(--r-sm);
-  background: var(--acc-dim); color: var(--acc); font-size: 12px; font-weight: 600;
+  align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: var(--pill);
+  background: var(--acc-dim); color: var(--acc-tx); font-size: 12px; font-weight: 500;
 }
 .bn-main { background: var(--bg); }
 
@@ -172,73 +179,59 @@ body {
 .bn-tile:hover { background: var(--s2); }
 .bn-tile-icon { color: var(--tx3); display: flex; margin-bottom: 8px; }
 .bn-tile-label {
-  font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--tx2);
+  font-size: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--tx2);
 }
 .bn-tile-num {
-  font-family: var(--font-display); font-size: 42px; font-weight: 600; line-height: 1.05;
-  letter-spacing: -0.035em; font-variant-numeric: tabular-nums;
+  font-family: var(--font-body); font-size: 42px; font-weight: 700; line-height: 1.05;
+  letter-spacing: -0.035em;
 }
 .bn-tile-sub { font-size: 13px; color: var(--tx2); }
-.bn-tile--fill { background: var(--acc); color: var(--on-fill); }
+.bn-tile--fill { background: var(--acc); color: var(--on-fill); border-radius: var(--r-lg); box-shadow: var(--shadow-block); }
 .bn-tile--fill:hover { background: var(--acc-hi); }
 .bn-tile--fill .bn-tile-icon, .bn-tile--fill .bn-tile-label, .bn-tile--fill .bn-tile-sub { color: var(--on-fill); opacity: .75; }
 
-/* Numbers everywhere use the display face with tabular figures. */
-.font-black, .font-extrabold { font-family: var(--font-display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+/* Numbers are Zalando Sans with ordinary figures: its tabular zero is
+   slashed, the terminal look, and no feature turns the slash off. */
+*, *::before, *::after { font-variant-numeric: proportional-nums !important; }
+.font-black, .font-extrabold { font-family: var(--font-body); letter-spacing: -0.02em; }
+/* Anything the components mark as a heading takes the display face. */
+h1, h2, h3, .font-display { font-family: var(--font-display); font-variation-settings: 'SOFT' 0, 'WONK' 1; font-weight: 600; }
 
 /* ════════════════════════════════════════════════════════════════════════
-   Light-first components on a dark ground.
-   The tabs were written with light-theme utilities (bg-white cards,
-   slate-900 text). These map them onto the Bento surface steps and text
-   tiers. Scoped to body, not to the main column, so the ad modal -- which
-   is portalled outside it -- gets the same treatment instead of staying
-   white.
+   Light-first components on paper.
+   The tabs were written with light-theme utilities (bg-white cards, slate
+   text), which is the ground again, so this layer is small: cards lose their
+   borders and elevation (a white card on paper needs neither), inputs get
+   the hairline, and the charts take the palette's text tiers. Scoped to body
+   so the portalled ad modal gets it too.
    ════════════════════════════════════════════════════════════════════════ */
 
-/* Surfaces: opaque steps, no borders, no elevation. */
-body .bg-white     { background-color: var(--s1) !important; }
-body .bg-slate-50  { background-color: var(--s2) !important; }
-body .bg-slate-100 { background-color: var(--s2) !important; }
-body .bg-slate-200 { background-color: var(--s3) !important; }
-body .bg-slate-900 { background-color: var(--s3) !important; }
-body .hover\:bg-slate-50:hover,
-body .hover\:bg-slate-100:hover,
-body .hover\:bg-slate-200:hover { background-color: var(--s3) !important; }
-body .hover\:bg-indigo-50\/50:hover { background-color: var(--s2) !important; }
-body tbody tr:hover { background-color: var(--s2) !important; }
-
+body .bg-white { background-color: var(--s1) !important; }
 body .border, body .border-2, body .border-b, body .border-t, body .border-l, body .border-r { border-color: transparent !important; }
 body thead tr, body thead th { border-bottom: 1px solid var(--line) !important; }
 body .divide-slate-100 > * + *, body .divide-slate-200 > * + * { border-color: var(--line) !important; }
-body .ring-white { --tw-ring-color: var(--s1) !important; }
-
 body .shadow-sm, body .shadow, body .shadow-md, body .shadow-lg, body .shadow-xl { box-shadow: none !important; }
 body .shadow-2xl { box-shadow: var(--shadow-overlay) !important; }
 body .backdrop-blur, body .backdrop-blur-sm, body .backdrop-blur-md { backdrop-filter: none !important; }
 
-/* Text tiers */
-body .text-slate-900, body .text-slate-800, body .text-slate-700 { color: var(--tx) !important; }
-body .text-slate-600, body .text-slate-500 { color: var(--tx2) !important; }
-body .text-slate-400, body .text-slate-300 { color: var(--tx3) !important; }
-
-/* Inputs: a flat fill a step up from the tile, lightening on focus. */
+/* Inputs: white, a hairline that goes ink on focus. No ring. */
 body input, body select, body textarea {
-  background-color: var(--s2) !important;
+  background-color: var(--s1) !important;
   color: var(--tx) !important;
-  border-color: transparent !important;
+  border: 1px solid var(--line) !important;
   box-shadow: none !important;
 }
 body input:focus, body select:focus, body textarea:focus {
-  background-color: var(--s3) !important;
+  border-color: var(--ink) !important;
   outline: none !important;
   box-shadow: none !important;
 }
 body input::placeholder { color: var(--tx3) !important; }
-body select option { background-color: var(--s1); color: var(--tx); }
 
 /* Recharts */
 body .recharts-cartesian-axis-tick-value { fill: var(--tx2) !important; }
 body .recharts-cartesian-grid line { stroke: var(--line) !important; }
 body .recharts-tooltip-wrapper .recharts-default-tooltip {
-  background: var(--s2) !important; border: 0 !important; border-radius: var(--r-sm) !important;
+  background: var(--s1) !important; border: 0 !important; border-radius: var(--r-sm) !important;
+  box-shadow: var(--shadow-overlay) !important;
 }

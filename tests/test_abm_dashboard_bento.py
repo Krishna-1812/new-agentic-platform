@@ -1,8 +1,12 @@
-"""The Healthcare ABM dashboard (reports/dashboard.html) on the Bento system.
+"""The Healthcare ABM dashboard (reports/dashboard.html) in the Outcomes language.
+
+(File name kept from the earlier Bento redesign; the dashboard now carries the
+light Outcomes language taken from outcomes.digital -- paper ground, white
+cards, orange / sky / amber / red blocks, Fraunces headings, Zalando Sans.)
 
 The file is hand-customised and its `const DATA = ...;` line is replaced every
 week by scripts/refresh-dashboards.py, so the redesign was done in place: its
-palette literals were remapped once to the Bento hues, the old decoration and
+palette literals were remapped once to the Outcomes palette, the old decoration and
 motion were cut out of the source, and static/css/abm-dashboard.css — linked
 last in <head> — carries the rest.
 
@@ -52,15 +56,41 @@ def test_the_skin_is_linked_after_every_style_block():
     assert head.rfind("<style") < link, "a <style> block after the skin would override it"
 
 
-def test_the_bento_type_faces_are_loaded_and_the_old_ones_are_not():
+def test_the_outcomes_type_faces_are_loaded_and_the_old_ones_are_not():
     head = _code().split("</head>")[0]
-    assert "Familjen+Grotesk" in head and "Instrument+Sans" in head
-    assert "Space+Grotesk" not in head
+    assert "family=Fraunces" in head and "Zalando+Sans" in head
+    for old in ("Familjen+Grotesk", "Instrument+Sans", "Space+Grotesk"):
+        assert old not in head, old
 
 
 def test_the_favicon_is_the_current_version():
-    assert "/favicon.svg?v=6" in _code()
-    assert "/favicon.svg?v=4" not in _code()
+    assert "/favicon.svg?v=7" in _code()
+    assert "/favicon.svg?v=6" not in _code()
+
+
+def test_the_ground_is_light_and_the_first_kpi_is_the_orange_block():
+    skin = _skin()
+    root = skin[skin.index(":root"):skin.index("}", skin.index(":root"))]
+    assert "--bg: #F1EFED" in root and "--card: #FFFFFF" in root and "--text: #121213" in root
+    assert "--abm-acc: #FF6022" in root
+    assert re.search(r"\.kpi-card:first-child \{\s*background: var\(--abm-acc\)", skin)
+
+
+def test_no_script_staggers_the_feed_rows_or_sidebar():
+    """The feed, table rows and sidebar items were brought in one after another
+    from script (a delay per index), which the CSS could not fully undo."""
+    code = _code()
+    assert "i * 38" not in code and "i * 16" not in code and "i * 44" not in code
+    assert "transitionDelay = (i * 55)" not in code
+    assert "function staggerSignals() {}" in code
+
+
+def test_the_crossfade_wrapper_passes_the_clicked_tab_through():
+    """A wrapper around showSection dropped its second argument, so no sidebar
+    tab was ever marked active."""
+    code = _code()
+    assert "window.showSection = function(name, btn)" in code
+    assert "origShow(name);" not in code
 
 
 # ── The banned card entrance is removed, not just overridden ───────────────

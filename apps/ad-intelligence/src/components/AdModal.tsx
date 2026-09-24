@@ -70,7 +70,7 @@ export function AdModal({ ad, onClose }: AdModalProps) {
   const images   = getImageUrls(ad);
   const keywords = getKeywords(ad);
   const points   = getMessagingPoints(ad);
-  const color    = COMPETITOR_COLORS[ad.Domain] || '#5AA9E6';
+  const color    = COMPETITOR_COLORS[ad.Domain] || '#8CCBFF';
   const fmt      = ad.Format?.toLowerCase() || 'text';
   const comp     = COMPETITORS.find(c => c.domain === ad.Domain);
   const FORMAT_ICON: Record<string, React.ReactNode> = {
@@ -88,11 +88,11 @@ export function AdModal({ ad, onClose }: AdModalProps) {
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 anim-fade-in"
-         style={{ background: 'rgba(28,28,31,0.8)', backdropFilter: 'blur(10px)' }}
+         style={{ background: 'rgba(18,18,19,0.42)' }}
          onClick={onClose}>
       <div
         className="modal-anim bg-white rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden"
-        style={{ height: 'min(620px, 88vh)', boxShadow: `0 40px 80px -12px rgba(0,0,0,.5), 0 0 0 1px ${color}25` }}
+        style={{ height: 'min(620px, 88vh)', boxShadow: '0 24px 64px -16px rgba(18,18,19,.28)' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Accent stripe */}
@@ -103,7 +103,7 @@ export function AdModal({ ad, onClose }: AdModalProps) {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
                   style={{ background: `${color}15`, color }}>
-              <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-[#131315] flex-shrink-0"
+              <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-[#121213] flex-shrink-0"
                     style={{ background: color }}>{comp?.name[0]}</span>
               {comp?.name ?? ad.Domain}
             </span>
@@ -135,7 +135,7 @@ export function AdModal({ ad, onClose }: AdModalProps) {
             {ad.CTA && ad.CTA.length < 45 && (
               <div>
                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Call to Action</p>
-                <span className="inline-block text-[#131315] text-xs font-bold px-4 py-1.5 rounded-xl"
+                <span className="inline-block text-[#121213] text-xs font-bold px-4 py-1.5 rounded-xl"
                       style={{ background: color }}>{ad.CTA}</span>
               </div>
             )}
@@ -178,7 +178,7 @@ export function AdModal({ ad, onClose }: AdModalProps) {
                   <ul className="space-y-1.5">
                     {points.slice(0, 5).map((p, i) => (
                       <li key={i} className="flex items-start gap-2 text-[11px] text-slate-600 leading-relaxed">
-                        <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0 mt-0.5 text-[#131315]"
+                        <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0 mt-0.5 text-[#121213]"
                               style={{ background: color }}>{i+1}</span>
                         {p}
                       </li>

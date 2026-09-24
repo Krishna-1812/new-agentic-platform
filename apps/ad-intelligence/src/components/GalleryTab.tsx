@@ -5,7 +5,7 @@ import {
   Target, ExternalLink,
 } from 'lucide-react';
 import type { Ad, NavFn } from '../lib/types';
-import { COMPETITORS, COMPETITOR_COLORS } from '../lib/types';
+import { COMPETITORS, COMPETITOR_COLORS, tx } from '../lib/types';
 import { AdCard } from './AdCard';
 import { AdModal } from './AdModal';
 import { formatDate, getImageUrls, getAdPreviewText, getKeywords } from '../lib/utils';
@@ -28,7 +28,7 @@ const FORMAT_OPTS = [
   { id: 'video', label: 'Video' },
 ];
 const FMT_COLORS: Record<string, string> = {
-  image: '#C6F24E', text: '#5AA9E6', video: '#EFE9DC',
+  image: '#FF6022', text: '#8CCBFF', video: '#121213',
 };
 const SORT_LABELS: Record<SortKey, string> = {
   newest: 'Newest first',
@@ -111,7 +111,7 @@ function InsightStrip({ ads }: { ads: Ad[] }) {
         <div className="space-y-2">
           {fmtEntries.map(([fmt, cnt]) => {
             const pct = Math.round((cnt / total) * 100);
-            const col = FMT_COLORS[fmt] || '#8B8B93';
+            const col = FMT_COLORS[fmt] || '#444444';
             return (
               <div key={fmt}>
                 <div className="flex justify-between text-[10px] mb-0.5">
@@ -217,7 +217,7 @@ function CompetitorShareBar({ ads }: { ads: Ad[] }) {
           <div key={comp.domain} className="flex items-center gap-2 min-w-0">
             <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: comp.color }}/>
             <span className="text-xs font-semibold text-slate-700 truncate">{comp.name}</span>
-            <span className="text-xs font-black" style={{ color: comp.color }}>{count}</span>
+            <span className="text-xs font-black" style={{ color: tx(comp.color) }}>{count}</span>
             {active > 0 && (
               <span className="text-[10px] text-emerald-500 font-medium flex-shrink-0">
                 · {active} live
@@ -237,12 +237,12 @@ function PatternChips({ ads }: { ads: Ad[] }) {
   const chips: { text: string; color: string }[] = [];
 
   const active = ads.filter(a => a.Status === 'active').length;
-  if (active > 0) chips.push({ text: `${active} ads currently live`, color: '#C6F24E' });
+  if (active > 0) chips.push({ text: `${active} ads currently live`, color: '#B83C0C' });
 
   const imgPct = Math.round(
     (ads.filter(a => a['Image URLs']).length / ads.length) * 100,
   );
-  if (imgPct >= 40) chips.push({ text: `${imgPct}% image creative`, color: '#5AA9E6' });
+  if (imgPct >= 40) chips.push({ text: `${imgPct}% image creative`, color: '#1D65A6' });
 
   const kwCounts: Record<string, number> = {};
   for (const ad of ads) {
@@ -253,12 +253,12 @@ function PatternChips({ ads }: { ads: Ad[] }) {
   }
   const topKW = Object.entries(kwCounts).sort((a, b) => b[1] - a[1])[0];
   if (topKW && topKW[1] > 2)
-    chips.push({ text: `Top keyword: "${topKW[0]}"`, color: '#EFE9DC' });
+    chips.push({ text: `Top keyword: "${topKW[0]}"`, color: '#121213' });
 
   const ctaSet = new Set(
     ads.map(a => a.CTA?.trim()).filter((c): c is string => !!c && c.length < 40),
   );
-  if (ctaSet.size > 1) chips.push({ text: `${ctaSet.size} distinct CTAs`, color: '#7ABDF0' });
+  if (ctaSet.size > 1) chips.push({ text: `${ctaSet.size} distinct CTAs`, color: '#1D65A6' });
 
   if (chips.length === 0) return null;
 
@@ -267,7 +267,7 @@ function PatternChips({ ads }: { ads: Ad[] }) {
       {chips.map((c, i) => (
         <span key={i}
               className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-transform cursor-default"
-              style={{ color: c.color, background: `${c.color}10`, borderColor: `${c.color}28` }}>
+              style={{ color: tx(c.color), background: `${c.color}10`, borderColor: `${c.color}28` }}>
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.color }}/>
           {c.text}
         </span>
@@ -282,7 +282,7 @@ function ListRow({
 }: { ad: Ad; onClick: () => void; onDomainClick: (d: string) => void }) {
   const images   = getImageUrls(ad);
   const thumb    = images[0];
-  const color    = COMPETITOR_COLORS[ad.Domain] || '#5AA9E6';
+  const color    = COMPETITOR_COLORS[ad.Domain] || '#8CCBFF';
   const fmt      = (ad.Format || 'text').toLowerCase();
   const headline = getAdPreviewText(ad);
   const isActive = ad.Status === 'active';
@@ -295,7 +295,7 @@ function ListRow({
     >
       {/* Thumbnail */}
       <div className="w-20 h-14 flex-shrink-0 rounded-xl overflow-hidden relative"
-           style={{ background: "#26262A" }}>
+           style={{ background: "#EBE9E5" }}>
         {thumb ? (
           <img src={thumb} alt=""
                className="w-full h-full object-cover transition-transform duration-300"
@@ -343,7 +343,7 @@ function ListRow({
       {/* Right */}
       <div className="flex items-center gap-2.5 flex-shrink-0">
         {ad.CTA && ad.CTA.length < 40 && (
-          <span className="hidden md:inline-block text-[11px] font-bold text-[#131315] px-2.5 py-1 rounded-lg"
+          <span className="hidden md:inline-block text-[11px] font-bold text-[#121213] px-2.5 py-1 rounded-lg"
                 style={{ background: color }}>
             {ad.CTA}
           </span>
@@ -470,8 +470,8 @@ export function GalleryTab({
               <button key={c.domain} onClick={() => setDomain(c.domain)}
                       className="text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
                       style={domain === c.domain
-                        ? { background: c.color, color: '#131315' }
-                        : { background: `${c.color}12`, color: c.color }}>
+                        ? { background: c.color, color: '#121213' }
+                        : { background: `${c.color}12`, color: tx(c.color) }}>
                 {c.name}
               </button>
             ))}

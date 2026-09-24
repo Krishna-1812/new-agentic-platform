@@ -24,7 +24,7 @@ declare global { interface Window { __BRAND__?: { name?: string } } }
 const BRAND_NAME = (typeof window !== 'undefined' && window.__BRAND__?.name) || 'Workspace'
 // The product mark (.bn-mark in static/css/bento-components.css): a lime square.
 const Mark = ({ size }: { size: number }) => (
-  <span aria-hidden="true" style={{ width: size, height: size, borderRadius: Math.round(size / 3), background: '#C6F24E', display: 'block', flexShrink: 0 }} />
+  <span aria-hidden="true" style={{ width: size, height: size, borderRadius: Math.round(size / 3), background: '#FF6022', display: 'block', flexShrink: 0 }} />
 )
 
 /* ── Nav tabs ─────────────────────────────────────────── */
@@ -61,7 +61,7 @@ function StatTile({
 }
 
 /* ── Global Platform header (the product bar every page shares) ── */
-const kpDdItem: CSSProperties = { display: 'flex', alignItems: 'center', gap: 9, padding: '9px 12px', borderRadius: 8, color: '#8B8B93', textDecoration: 'none', fontSize: 13 };
+const kpDdItem: CSSProperties = { display: 'flex', alignItems: 'center', gap: 9, padding: '9px 12px', borderRadius: 8, color: '#444444', textDecoration: 'none', fontSize: 13 };
 function PlatformBar() {
   const [u, setU] = useState<{ name?: string; given_name?: string; email?: string; picture?: string; is_admin?: boolean } | null>(null);
   const [open, setOpen] = useState(false);
@@ -102,12 +102,12 @@ function PlatformBar() {
         {open && (
           <div className="bn-bar-menu">
             <div style={{ padding: '10px 12px', marginBottom: 4 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#EFE9DC' }}>{full}</div>
-              <div style={{ fontSize: 11, color: '#5E5E66', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u?.email || ''}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#121213' }}>{full}</div>
+              <div style={{ fontSize: 11, color: '#6F6B66', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u?.email || ''}</div>
             </div>
             <a href="/p2/hub" style={kpDdItem}>Workspace</a>
             {isAdmin && <a href="/p2/admin/usage" style={kpDdItem}>Usage dashboard</a>}
-            <a href="/logout" style={{ ...kpDdItem, color: '#E8663D' }}>Sign out</a>
+            <a href="/logout" style={{ ...kpDdItem, color: '#C8261B' }}>Sign out</a>
           </div>
         )}
       </div>

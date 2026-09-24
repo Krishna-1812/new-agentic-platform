@@ -1,10 +1,13 @@
-"""Ad Intelligence (apps/ad-intelligence, built into ad_intelligence/) on Bento.
+"""Ad Intelligence (apps/ad-intelligence, built into ad_intelligence/) in the
+Outcomes language.
 
-The app was rebuilt at the source: Tailwind's palette points at the four Bento
-hues, the stylesheet carries the five Bento rules, the shell (bar, sidebar,
-header, stat tiles) was rewritten, and the previous product's motion was cut
-out of the components rather than overridden. The injected chat widget
-(scripts/ad_intelligence_widget.html) got the same treatment.
+(File name kept from the earlier Bento redesign.) The app was rebuilt at the
+source: Tailwind's families are back in their natural light order and point at
+the Outcomes colours (orange primary, sky, amber, red, green), the stylesheet
+carries the light tokens and a small light-first layer, headings are Fraunces
+and text is Zalando Sans, and the previous product's motion stays cut out of the
+components. The injected chat widget (scripts/ad_intelligence_widget.html) got
+the same treatment: an orange disc opening a white card.
 
 Checked in a real browser at 1440px and 390px: all five tabs, the ad modal
 and the open widget, zero script errors, no horizontal overflow at 390px.
@@ -66,13 +69,21 @@ def test_the_old_effect_classes_are_gone_from_the_components():
 
 # ── Palette and type ────────────────────────────────────────────────────────
 
-def test_tailwind_hue_families_point_at_bento():
+def test_tailwind_families_point_at_the_outcomes_colours():
     cfg = _read("apps", "ad-intelligence", "tailwind.config.js")
-    for hex_ in ("#5AA9E6", "#C6F24E", "#E8663D", "#EFE9DC", "#131315", "#1C1C1F"):
-        assert hex_ in cfg
-    for fam in ("indigo: sky", "violet: sky", "emerald: lime", "amber: cream", "slate: ink"):
+    for hex_ in ("#FF6022", "#8CCBFF", "#FFB500", "#FF3B30", "#17753F", "#121213", "#F1EFED"):
+        assert hex_ in cfg, hex_
+    for fam in ("indigo: orange", "violet: orange", "blue: sky", "emerald: green", "amber: amber", "slate: ink"):
         assert fam in cfg, fam
-    assert '"Familjen Grotesk"' in cfg and '"Instrument Sans"' in cfg
+    assert "Fraunces" in cfg and '"Zalando Sans"' in cfg
+    assert "Familjen" not in cfg and "Instrument Sans" not in cfg
+
+
+def test_the_text_shades_are_text_safe():
+    """Light-first components set their links and labels in 600/700."""
+    cfg = _read("apps", "ad-intelligence", "tailwind.config.js")
+    assert "600:'#C4410F', 700:'#B83C0C'" in cfg      # orange
+    assert "600:'#1D65A6', 700:'#1D65A6'" in cfg      # sky
 
 
 def test_the_previous_accent_colours_are_gone_from_the_source():
@@ -83,17 +94,18 @@ def test_the_previous_accent_colours_are_gone_from_the_source():
             assert o not in low, (path, o)
 
 
-def test_competitors_have_three_distinct_bento_hues():
+def test_competitors_have_three_distinct_outcomes_colours():
     types = _read("apps", "ad-intelligence", "src", "lib", "types.ts")
     block = types[types.index("export const COMPETITOR_COLORS"):]
     colours = re.findall(r"'(#[0-9A-Fa-f]{6})'", block.split("};")[0])
-    assert sorted(colours) == sorted(["#5AA9E6", "#C6F24E", "#E8663D"])
+    assert sorted(colours) == sorted(["#8CCBFF", "#FFB500", "#FF6022"])
+    assert "export const tx = " in types, "colour-as-text needs the text-safe helper"
 
 
-def test_the_page_loads_the_bento_type_faces():
+def test_the_page_loads_the_outcomes_type_faces():
     html = _read("apps", "ad-intelligence", "index.html")
-    assert "Familjen+Grotesk" in html and "Instrument+Sans" in html
-    assert "family=Inter" not in html
+    assert "family=Fraunces" in html and "Zalando+Sans" in html
+    assert "family=Inter" not in html and "Familjen" not in html
 
 
 def test_no_admin_email_is_baked_into_the_bundle_source():
@@ -111,13 +123,14 @@ def test_the_widget_has_no_spinning_ring_or_orb_rings():
     assert "ppc-ring-spin" not in w
     assert 'class="ppc-orb-ring' not in w
     assert "Space Grotesk" not in w
+    assert "Familjen" not in w and "Instrument Sans" not in w
 
 
-def test_the_widget_button_is_the_lime_disc():
+def test_the_widget_button_is_the_orange_disc():
     w = _read("scripts", "ad_intelligence_widget.html")
     style = w[:w.index("</style>")]
     last_btn = style.rindex("#ppc-btn {")
-    assert "#C6F24E" in style[last_btn:last_btn + 200]
+    assert "#FF6022" in style[last_btn:last_btn + 200]
 
 
 # ── The served build matches the source ────────────────────────────────────

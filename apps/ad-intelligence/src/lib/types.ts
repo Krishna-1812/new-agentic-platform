@@ -57,22 +57,33 @@ export interface Competitor {
 }
 
 export const COMPETITORS: Competitor[] = [
-  // One Bento hue each, so a competitor reads the same colour on every chart:
-  // sky, lime, clay. (Tailwind's indigo/lime/orange scales are remapped to
-  // those hues in tailwind.config.js.)
-  { domain: 'inspireaesthetics.com', name: 'Inspire Aesthetics', color: '#5AA9E6', bgColor: 'bg-indigo-50', textColor: 'text-indigo-700', borderColor: 'border-indigo-200' },
-  { domain: 'drdanamd.com',          name: 'Dr. Dana MD',        color: '#C6F24E', bgColor: 'bg-lime-50',   textColor: 'text-lime-700',   borderColor: 'border-lime-200'   },
-  { domain: 'sonobello.com',         name: 'Sono Bello',         color: '#E8663D', bgColor: 'bg-orange-50', textColor: 'text-orange-700', borderColor: 'border-orange-200' },
+  // One Outcomes block colour each, so a competitor reads the same colour on
+  // every chart: sky, amber, orange. (The Tailwind families are laid out in
+  // tailwind.config.js.)
+  { domain: 'inspireaesthetics.com', name: 'Inspire Aesthetics', color: '#8CCBFF', bgColor: 'bg-sky-50',    textColor: 'text-sky-700',    borderColor: 'border-sky-200'    },
+  { domain: 'drdanamd.com',          name: 'Dr. Dana MD',        color: '#FFB500', bgColor: 'bg-amber-50',  textColor: 'text-amber-700',  borderColor: 'border-amber-200'  },
+  { domain: 'sonobello.com',         name: 'Sono Bello',         color: '#FF6022', bgColor: 'bg-orange-50', textColor: 'text-orange-700', borderColor: 'border-orange-200' },
 ];
 
 export const FORMAT_COLORS: Record<string, string> = {
-  image: '#C6F24E',
-  text:  '#5AA9E6',
-  video: '#EFE9DC',
+  image: '#FF6022',
+  text:  '#8CCBFF',
+  video: '#FFB500',
 };
 
 export const COMPETITOR_COLORS: Record<string, string> = {
-  'inspireaesthetics.com': '#5AA9E6',
-  'drdanamd.com':          '#C6F24E',
-  'sonobello.com':         '#E8663D',
+  'inspireaesthetics.com': '#8CCBFF',
+  'drdanamd.com':          '#FFB500',
+  'sonobello.com':         '#FF6022',
 };
+
+// Text-safe shades. The block colours above are fills; set as text on white
+// they fail (sky 1.7:1, amber 1.8:1, orange 3.0:1). Anything that paints a
+// competitor or signal colour AS TEXT goes through tx().
+const TEXT_SAFE: Record<string, string> = {
+  '#8CCBFF': '#1D65A6', '#A8D8FF': '#1D65A6',
+  '#FFB500': '#8A5A00',
+  '#FF6022': '#B83C0C', '#FF7A45': '#B83C0C',
+  '#FF3B30': '#C8261B', '#FF5A50': '#C8261B',
+};
+export const tx = (c: string): string => TEXT_SAFE[(c || '').toUpperCase()] ?? c;

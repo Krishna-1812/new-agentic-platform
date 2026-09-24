@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import { ArrowRight } from 'lucide-react';
 import type { Ad, NavFn } from '../lib/types';
-import { COMPETITORS, COMPETITOR_COLORS, FORMAT_COLORS } from '../lib/types';
+import { COMPETITORS, COMPETITOR_COLORS, FORMAT_COLORS, tx } from '../lib/types';
 import { countByField, getAdActivityByDate, getCTACounts, getAdsByDomain } from '../lib/utils';
 import { AdModal } from './AdModal';
 
@@ -92,7 +92,7 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
     name: n[0].toUpperCase() + n.slice(1),
     rawName: n.toLowerCase(),
     value: v,
-    fill: FORMAT_COLORS[n.toLowerCase()] || '#8B8B93',
+    fill: FORMAT_COLORS[n.toLowerCase()] || '#444444',
   }));
 
   const ctaData = ctaCounts.slice(0, 8).map(({ cta, count }) => ({ name: cta, count }));
@@ -122,10 +122,10 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
                   </linearGradient>
                 ))}
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" vertical={false}/>
-              <XAxis dataKey="shortName" tick={{ fontSize: 10, fill: '#8B8B93' }} tickLine={false} axisLine={false}/>
-              <YAxis tick={{ fontSize: 10, fill: '#8B8B93' }} tickLine={false} axisLine={false}/>
-              <Tooltip content={<DarkTip />} cursor={{ fill: 'rgba(90,169,230,0.06)' }}/>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(18,18,19,0.07)" vertical={false}/>
+              <XAxis dataKey="shortName" tick={{ fontSize: 10, fill: '#444444' }} tickLine={false} axisLine={false}/>
+              <YAxis tick={{ fontSize: 10, fill: '#444444' }} tickLine={false} axisLine={false}/>
+              <Tooltip content={<DarkTip />} cursor={{ fill: 'rgba(29,101,166,0.06)' }}/>
               <Bar dataKey="ads" radius={[8,8,0,0]} name="Ads"
                    onClick={(data: unknown) => { const d = data as { domain: string }; onNav({ tab: 'competitors', competitor: d.domain }); }}>
                 {compData.map((_, i) => <Cell key={i} fill={`url(#cg${i})`}/>)}
@@ -153,7 +153,7 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
                 {fmtData.map((_, i) => <Cell key={i} fill={`url(#fg${i})`}/>)}
               </Pie>
               <Legend iconType="circle" iconSize={8}
-                      formatter={v => <span style={{ fontSize: 11, color: '#8B8B93', cursor: 'pointer' }}>{v}</span>}/>
+                      formatter={v => <span style={{ fontSize: 11, color: '#444444', cursor: 'pointer' }}>{v}</span>}/>
               <Tooltip content={<DarkTip/>}/>
             </PieChart>
           </ResponsiveContainer>
@@ -165,7 +165,7 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
           <div className="space-y-2 w-full">
             {ctaData.slice(0, 6).map(({ name, count }, i) => {
               const pct = (count / (ctaData[0]?.count || 1)) * 100;
-              const cols = ['#5AA9E6','#C6F24E','#E8663D','#EFE9DC','#7ABDF0','#D4FA63','#F07A54','#8B8B93'];
+              const cols = ['#8CCBFF','#FF6022','#FF3B30','#121213','#A8D8FF','#FF7A45','#FF5A50','#444444'];
               const c = cols[i % cols.length];
               return (
                 <button key={i} className="w-full text-left group hover:opacity-80 transition-opacity"
@@ -199,15 +199,15 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
                   </linearGradient>
                 ))}
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)"/>
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#8B8B93' }} tickLine={false} axisLine={false} tickFormatter={d => d.slice(5)}/>
-              <YAxis tick={{ fontSize: 10, fill: '#8B8B93' }} tickLine={false} axisLine={false} allowDecimals={false}/>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(18,18,19,0.07)"/>
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#444444' }} tickLine={false} axisLine={false} tickFormatter={d => d.slice(5)}/>
+              <YAxis tick={{ fontSize: 10, fill: '#444444' }} tickLine={false} axisLine={false} allowDecimals={false}/>
               <Tooltip content={<DarkTip/>}/>
               <Legend iconType="circle" iconSize={8}
                       onClick={(e: unknown) => { const d = e as { value?: string }; if (d.value) onNav({ tab: 'competitors', competitor: d.value }); }}
                       formatter={(v: string) => {
                         const c = COMPETITORS.find(x => x.domain === v);
-                        return <span style={{ fontSize: 10, color: '#8B8B93', cursor: 'pointer' }}>{c?.name ?? v}</span>;
+                        return <span style={{ fontSize: 10, color: '#444444', cursor: 'pointer' }}>{c?.name ?? v}</span>;
                       }}/>
               {COMPETITORS.map(c => (
                 <Area key={c.domain} type="monotone" dataKey={c.domain} name={c.domain}
@@ -235,7 +235,7 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
             </thead>
             <tbody>
               {recentAds.map((ad, i) => {
-                const col = COMPETITOR_COLORS[ad.Domain] || '#5E5E66';
+                const col = COMPETITOR_COLORS[ad.Domain] || '#6F6B66';
                 return (
                   <tr key={i}
                       onClick={() => setSelectedAd(ad)}
@@ -278,7 +278,7 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
                  className={`anim-pop-in delay-${ci + 1} bg-white rounded-2xl border border-slate-100 shadow-sm p-4 cursor-pointer group transition-all`}>
               <div className="h-1 rounded-full mb-4 transition-all" style={{ background: `${comp.color}` }}/>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[#131315] font-black text-base shadow-md"
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[#121213] font-black text-base shadow-md"
                      style={{ background: `${comp.color}` }}>
                   {comp.name[0]}
                 </div>
@@ -286,10 +286,10 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
                   <p className="font-bold text-slate-800 text-sm leading-none group-hover:text-indigo-700 transition-colors">{comp.name}</p>
                   <p className="text-xs text-slate-400 mt-0.5 truncate">{comp.domain}</p>
                 </div>
-                <ArrowRight size={15} className="text-white/20 group-hover:text-indigo-400 transition-colors flex-shrink-0"/>
+                <ArrowRight size={15} className="text-slate-400 group-hover:text-indigo-700 transition-colors flex-shrink-0"/>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center mb-3">
-                {[['Total', compAds.length, '#EFE9DC'], ['Active', statusAct, comp.color], ['Formats', Object.keys(fmts).length, '#EFE9DC']].map(([l,v,col],i) => (
+                {[['Total', compAds.length, '#121213'], ['Active', statusAct, comp.color], ['Formats', Object.keys(fmts).length, '#121213']].map(([l,v,col],i) => (
                   <div key={i} className="rounded-xl py-2.5" style={{ background: `${comp.color}0a` }}>
                     <p className="text-xl font-black" style={{ color: col as string }}>{v}</p>
                     <p className="text-[10px] text-slate-400">{l}</p>
@@ -307,7 +307,7 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
                   <button key={fmt}
                           onClick={e => { e.stopPropagation(); onNav({ tab: 'gallery', domain: comp.domain, format: fmt }); }}
                           className="text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize hover:opacity-80 transition-opacity"
-                          style={{ background: `${comp.color}18`, color: comp.color }}>
+                          style={{ background: `${comp.color}18`, color: tx(comp.color) }}>
                     {fmt}
                   </button>
                 ))}

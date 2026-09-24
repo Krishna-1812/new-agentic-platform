@@ -5,26 +5,26 @@
     <!-- Uses the site-wide favicon (same one every other page on
          the platform serves), not this app's own bundled
          favicon.svg, so the browser tab matches everywhere. -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=6" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=7" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ad Intelligence — Competitor Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <script type="module" crossorigin src="/p2/strategic-agents/ad-intelligence/assets/index-BRkvLTV0.js"></script>
-    <link rel="stylesheet" crossorigin href="/p2/strategic-agents/ad-intelligence/assets/index-B6GEtEAm.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Zalando+Sans:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="/p2/strategic-agents/ad-intelligence/assets/index-DJuUhlr2.js"></script>
+    <link rel="stylesheet" crossorigin href="/p2/strategic-agents/ad-intelligence/assets/index-znPxqnGW.css">
   </head>
   <body>
     <div id="root"></div>
   
-<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Zalando+Sans:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet" />
 
 <!-- ── PPC AI Chat Widget v3 ───────────────────────────────────────────────── -->
 <style>
 /* ── Root vars ─────────────────────────────────────────────────────────────── */
 :root {
-  --ppc-indigo: #5AA9E6; --ppc-purple: #5AA9E6; --ppc-cyan: #5AA9E6;
-  --ppc-panel-bg: rgba(28,28,31,0.97);
+  --ppc-indigo: #FF6022; --ppc-purple: #FF6022; --ppc-cyan: #FF6022;
+  --ppc-panel-bg: rgba(255,255,255,0.97);
   --ppc-border-radius: 22px;
 }
 
@@ -34,17 +34,17 @@
 #ppc-btn {
   position:relative; width:60px; height:60px; border-radius:50%;
   border:none; cursor:pointer;
-  background:linear-gradient(135deg,#5AA9E6 0%,#5AA9E6 60%,#7ABDF0 100%);
+  background:linear-gradient(135deg,#FF6022 0%,#FF6022 60%,#FF7A45 100%);
   display:flex; align-items:center; justify-content:center;
   transition:transform .3s cubic-bezier(.34,1.56,.64,1), opacity .25s ease;
-  box-shadow:0 8px 32px rgba(90,169,230,.5);
+  box-shadow:0 8px 32px rgba(255,96,34,.5);
   animation:ppc-pulse 3s ease-in-out infinite;
 }
-#ppc-btn:hover { transform:scale(1.12); box-shadow:0 12px 40px rgba(90,169,230,.7); }
+#ppc-btn:hover { transform:scale(1.12); box-shadow:0 12px 40px rgba(255,96,34,.7); }
 #ppc-btn.open  { opacity:0; pointer-events:none; transform:scale(.8); }
 @keyframes ppc-pulse {
-  0%,100%{box-shadow:0 8px 32px rgba(90,169,230,.5),0 0 0 0 rgba(90,169,230,.35)}
-  50%     {box-shadow:0 8px 32px rgba(90,169,230,.5),0 0 0 12px rgba(90,169,230,0)}
+  0%,100%{box-shadow:0 8px 32px rgba(255,96,34,.5),0 0 0 0 rgba(255,96,34,.35)}
+  50%     {box-shadow:0 8px 32px rgba(255,96,34,.5),0 0 0 12px rgba(255,96,34,0)}
 }
 
 /* Icon swap */
@@ -57,13 +57,13 @@
 /* Tooltip */
 #ppc-tip {
   position:absolute; bottom:calc(100% + 12px); right:0; white-space:nowrap;
-  background:rgba(28,28,31,.97); border:1px solid rgba(90,169,230,.35);
-  color:#EFE9DC; font-size:11.5px; font-weight:600;
-  font-family:'Familjen Grotesk',sans-serif;
+  background:rgba(255,255,255,.97); border:1px solid rgba(255,96,34,.35);
+  color:#121213; font-size:11.5px; font-weight:600;
+  font-family:'Fraunces',sans-serif;
   padding:5px 12px; border-radius:9px;
   opacity:0; transform:translateY(6px) scale(.96);
   transition:all .2s; pointer-events:none;
-  box-shadow:0 4px 20px rgba(0,0,0,.5);
+  box-shadow:0 4px 20px rgba(18,18,19,.28);
 }
 #ppc-wrap:hover #ppc-tip{opacity:1;transform:translateY(0) scale(1)}
 
@@ -71,12 +71,12 @@
 #ppc-border {
   position:fixed; bottom:102px; right:28px; z-index:9999;
   width:400px; border-radius:var(--ppc-border-radius); padding:1.5px;
-  background:linear-gradient(135deg,rgba(90,169,230,.8),rgba(90,169,230,.65),rgba(90,169,230,.5),rgba(90,169,230,.8));
+  background:linear-gradient(135deg,rgba(255,96,34,.8),rgba(255,96,34,.65),rgba(255,96,34,.5),rgba(255,96,34,.8));
   background-size:300% 300%; animation:ppc-grad 5s ease infinite;
   opacity:0; transform:translateY(20px) scale(.94); pointer-events:none;
   transition:transform .4s cubic-bezier(.34,1.56,.64,1), opacity .3s,
              top .4s cubic-bezier(.34,1.56,.64,1), bottom .4s cubic-bezier(.34,1.56,.64,1);
-  box-shadow:0 32px 80px rgba(0,0,0,.75),0 0 80px rgba(90,169,230,.12),inset 0 1px 0 rgba(255,255,255,.06);
+  box-shadow:0 32px 80px rgba(18,18,19,.28),0 0 80px rgba(255,96,34,.12),inset 0 1px 0 rgba(18,18,19,.06);
 }
 #ppc-border.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all}
 /* Expanded: anchor top + bottom so panel fills full height */
@@ -94,7 +94,7 @@
   background:var(--ppc-panel-bg);
   backdrop-filter:blur(40px); -webkit-backdrop-filter:blur(40px);
   display:flex; flex-direction:column; overflow:hidden; position:relative;
-  font-family:'Familjen Grotesk',sans-serif;
+  font-family:'Fraunces',sans-serif;
   height:560px;
   transition:height .35s cubic-bezier(.34,1.56,.64,1);
 }
@@ -104,13 +104,13 @@
 #ppc-panel::before{
   content:'';position:absolute;top:-100px;left:-100px;
   width:320px;height:320px;border-radius:50%;pointer-events:none;z-index:0;
-  background:radial-gradient(circle,rgba(90,169,230,.13) 0%,transparent 70%);
+  background:radial-gradient(circle,rgba(255,96,34,.13) 0%,transparent 70%);
   animation:ppc-orb1 8s ease-in-out infinite;
 }
 #ppc-panel::after{
   content:'';position:absolute;bottom:-80px;right:-80px;
   width:260px;height:260px;border-radius:50%;pointer-events:none;z-index:0;
-  background:radial-gradient(circle,rgba(90,169,230,.10) 0%,transparent 70%);
+  background:radial-gradient(circle,rgba(255,96,34,.10) 0%,transparent 70%);
   animation:ppc-orb2 11s ease-in-out infinite;
 }
 @keyframes ppc-orb1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(20px,15px) scale(1.08)}}
@@ -120,8 +120,8 @@
 #ppc-hdr {
   flex-shrink:0; padding:16px 14px 0;
   position:relative; z-index:1;
-  background:linear-gradient(180deg,rgba(90,169,230,.07) 0%,transparent 100%);
-  border-bottom:1px solid rgba(255,255,255,.055);
+  background:linear-gradient(180deg,rgba(255,96,34,.07) 0%,transparent 100%);
+  border-bottom:1px solid rgba(18,18,19,.055);
   padding-bottom:12px;
 }
 .ppc-hdr-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
@@ -129,31 +129,31 @@
 /* Avatar */
 .ppc-av{
   width:42px;height:42px;border-radius:14px;flex-shrink:0;
-  background:linear-gradient(135deg,#5AA9E6,#5AA9E6);
+  background:linear-gradient(135deg,#FF6022,#FF6022);
   display:flex;align-items:center;justify-content:center;font-size:20px;
-  box-shadow:0 0 0 3px rgba(90,169,230,.2),0 6px 20px rgba(90,169,230,.4);
+  box-shadow:0 0 0 3px rgba(255,96,34,.2),0 6px 20px rgba(255,96,34,.4);
   animation:ppc-av-glow 3.5s ease-in-out infinite;
 }
 @keyframes ppc-av-glow{
-  0%,100%{box-shadow:0 0 0 3px rgba(90,169,230,.2),0 6px 20px rgba(90,169,230,.4)}
-  50%     {box-shadow:0 0 0 5px rgba(90,169,230,.3),0 6px 28px rgba(90,169,230,.6)}
+  0%,100%{box-shadow:0 0 0 3px rgba(255,96,34,.2),0 6px 20px rgba(255,96,34,.4)}
+  50%     {box-shadow:0 0 0 5px rgba(255,96,34,.3),0 6px 28px rgba(255,96,34,.6)}
 }
 
 .ppc-hdr-info{flex:1;min-width:0}
-.ppc-hdr-title{font-size:14.5px;font-weight:700;color:#EFE9DC;line-height:1;margin-bottom:4px;letter-spacing:-.01em}
-.ppc-hdr-status{display:flex;align-items:center;gap:5px;font-size:10.5px;color:#5E5E66}
-.ppc-live{width:6px;height:6px;border-radius:50%;background:#C6F24E;flex-shrink:0;animation:ppc-live-pulse 2s infinite}
+.ppc-hdr-title{font-size:14.5px;font-weight:700;color:#121213;line-height:1;margin-bottom:4px;letter-spacing:-.01em}
+.ppc-hdr-status{display:flex;align-items:center;gap:5px;font-size:10.5px;color:#6F6B66}
+.ppc-live{width:6px;height:6px;border-radius:50%;background:#FF6022;flex-shrink:0;animation:ppc-live-pulse 2s infinite}
 @keyframes ppc-live-pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(198,242,78,.5)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(198,242,78,0)}}
 
 /* Header buttons */
 .ppc-hdr-btns{display:flex;gap:5px;flex-shrink:0}
 .ppc-hbtn{
   width:30px;height:30px;border:none;border-radius:9px;cursor:pointer;
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);
-  color:#5E5E66;display:flex;align-items:center;justify-content:center;
+  background:rgba(18,18,19,.05);border:1px solid rgba(18,18,19,.07);
+  color:#6F6B66;display:flex;align-items:center;justify-content:center;
   transition:all .18s; flex-shrink:0;
 }
-.ppc-hbtn:hover{background:rgba(90,169,230,.15);border-color:rgba(90,169,230,.3);color:#7ABDF0}
+.ppc-hbtn:hover{background:rgba(255,96,34,.15);border-color:rgba(255,96,34,.3);color:#B83C0C}
 
 /* Data pills */
 #ppc-pills{display:flex;gap:5px;flex-wrap:wrap}
@@ -162,9 +162,9 @@
   font-size:10px;font-weight:600;padding:3.5px 9px;border-radius:999px;
   transition:all .2s cubic-bezier(.34,1.56,.64,1);cursor:default;
 }
-.ppc-pill-v{background:rgba(198,242,78,.1);border:1px solid rgba(198,242,78,.22);color:#C6F24E}
-.ppc-pill-s{background:rgba(239,233,220,.1);border:1px solid rgba(239,233,220,.22);color:#fcd34d}
-.ppc-pill-a{background:rgba(232,102,61,.1); border:1px solid rgba(232,102,61,.22); color:#fca5a5}
+.ppc-pill-v{background:rgba(198,242,78,.1);border:1px solid rgba(198,242,78,.22);color:#B83C0C}
+.ppc-pill-s{background:rgba(239,233,220,.1);border:1px solid rgba(239,233,220,.22);color:#8A5A00}
+.ppc-pill-a{background:rgba(232,102,61,.1); border:1px solid rgba(232,102,61,.22); color:#C8261B}
 .ppc-pill:hover{transform:scale(1.05);filter:brightness(1.2)}
 
 /* ── Messages ──────────────────────────────────────────────────────────────── */
@@ -174,18 +174,18 @@
   scroll-behavior:smooth;position:relative;z-index:1;
 }
 #ppc-msgs::-webkit-scrollbar{width:2px}
-#ppc-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
+#ppc-msgs::-webkit-scrollbar-thumb{background:rgba(18,18,19,.1);border-radius:4px}
 
 /* Scroll-to-bottom button */
 #ppc-scroll-btn{
   position:absolute;bottom:80px;right:18px;z-index:10;
-  width:30px;height:30px;border-radius:50%;border:1px solid rgba(90,169,230,.3);
-  background:rgba(28,28,31,.95);color:#7ABDF0;cursor:pointer;
+  width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,96,34,.3);
+  background:rgba(255,255,255,.95);color:#B83C0C;cursor:pointer;
   display:none;align-items:center;justify-content:center;
   box-shadow:0 4px 16px rgba(0,0,0,.4);transition:all .2s;
   animation:ppc-bounce-down 1.2s ease-in-out infinite;
 }
-#ppc-scroll-btn:hover{background:rgba(90,169,230,.2);transform:scale(1.1)}
+#ppc-scroll-btn:hover{background:rgba(255,96,34,.2);transform:scale(1.1)}
 #ppc-scroll-btn.show{display:flex}
 @keyframes ppc-bounce-down{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
 
@@ -197,40 +197,40 @@
 .ppc-orb-wrap{position:relative;margin-bottom:16px}
 .ppc-wlc-orb{
   width:62px;height:62px;border-radius:20px;
-  background:linear-gradient(135deg,#5AA9E6,#5AA9E6,#7ABDF0);
+  background:linear-gradient(135deg,#FF6022,#FF6022,#FF7A45);
   display:flex;align-items:center;justify-content:center;font-size:28px;
-  box-shadow:0 8px 32px rgba(90,169,230,.5),0 0 0 6px rgba(90,169,230,.1);
+  box-shadow:0 8px 32px rgba(255,96,34,.5),0 0 0 6px rgba(255,96,34,.1);
   animation:ppc-orb-float 4s ease-in-out infinite;
 }
 @keyframes ppc-orb-float{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-6px) rotate(3deg)}}
 .ppc-orb-ring{
   position:absolute;inset:-8px;border-radius:28px;
-  border:1.5px solid rgba(90,169,230,.25);
+  border:1.5px solid rgba(255,96,34,.25);
   animation:ppc-ring-expand 3s ease-in-out infinite;
 }
 .ppc-orb-ring2{
   position:absolute;inset:-16px;border-radius:36px;
-  border:1px solid rgba(90,169,230,.12);
+  border:1px solid rgba(255,96,34,.12);
   animation:ppc-ring-expand 3s ease-in-out infinite .5s;
 }
 @keyframes ppc-ring-expand{0%,100%{opacity:.8;transform:scale(1)}50%{opacity:.3;transform:scale(1.05)}}
 
-.ppc-wlc-title{font-size:16px;font-weight:700;color:#EFE9DC;margin-bottom:5px;letter-spacing:-.02em}
-.ppc-wlc-sub{font-size:12px;color:#5E5E66;line-height:1.65;margin-bottom:18px;max-width:280px}
+.ppc-wlc-title{font-size:16px;font-weight:700;color:#121213;margin-bottom:5px;letter-spacing:-.02em}
+.ppc-wlc-sub{font-size:12px;color:#6F6B66;line-height:1.65;margin-bottom:18px;max-width:280px}
 
 /* Suggestion chips */
 .ppc-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;width:100%}
 .ppc-chip{
   font-size:11.5px;font-weight:500;padding:10px 11px;border-radius:13px;
   cursor:pointer;text-align:left;line-height:1.4;
-  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
-  color:#8B8B93;
+  background:rgba(18,18,19,.03);border:1px solid rgba(18,18,19,.08);
+  color:#444444;
   transition:all .22s cubic-bezier(.34,1.56,.64,1);
 }
 .ppc-chip:hover{
-  background:rgba(90,169,230,.14);border-color:rgba(90,169,230,.4);
-  color:#EFE9DC;transform:translateY(-3px) scale(1.01);
-  box-shadow:0 8px 24px rgba(90,169,230,.2);
+  background:rgba(255,96,34,.14);border-color:rgba(255,96,34,.4);
+  color:#121213;transform:translateY(-3px) scale(1.01);
+  box-shadow:0 8px 24px rgba(255,96,34,.2);
 }
 .ppc-chip:active{transform:translateY(0) scale(.98)}
 .ppc-chip-ico{display:block;font-size:18px;margin-bottom:4px}
@@ -247,12 +247,12 @@
 }
 .ppc-row:hover .ppc-row-av{transform:scale(1.1)}
 .ppc-row.assistant .ppc-row-av{
-  background:linear-gradient(135deg,#5AA9E6,#5AA9E6);
-  box-shadow:0 2px 10px rgba(90,169,230,.4);
+  background:linear-gradient(135deg,#FF6022,#FF6022);
+  box-shadow:0 2px 10px rgba(255,96,34,.4);
 }
 .ppc-row.user .ppc-row-av{
-  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
-  font-size:10px;font-weight:700;color:#8B8B93;
+  background:rgba(18,18,19,.07);border:1px solid rgba(18,18,19,.1);
+  font-size:10px;font-weight:700;color:#444444;
 }
 
 .ppc-bwrap{display:flex;flex-direction:column;max-width:82%}
@@ -260,34 +260,34 @@
 
 .ppc-bubble{padding:10px 14px;border-radius:17px;font-size:13px;line-height:1.72;position:relative}
 .ppc-row.assistant .ppc-bubble{
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.08);
-  border-left:2.5px solid #5AA9E6;
-  color:#EFE9DC;border-bottom-left-radius:5px;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+  background:rgba(18,18,19,.04);
+  border:1px solid rgba(18,18,19,.08);
+  border-left:2.5px solid #FF6022;
+  color:#121213;border-bottom-left-radius:5px;
+  box-shadow:inset 0 1px 0 rgba(18,18,19,.04);
 }
 .ppc-row.user .ppc-bubble{
-  background:linear-gradient(135deg,rgba(90,169,230,.24),rgba(90,169,230,.18));
-  border:1px solid rgba(90,169,230,.32);
-  color:#EFE9DC;border-bottom-right-radius:5px;
-  box-shadow:0 2px 16px rgba(90,169,230,.15);
+  background:linear-gradient(135deg,rgba(255,96,34,.24),rgba(255,96,34,.18));
+  border:1px solid rgba(255,96,34,.32);
+  color:#121213;border-bottom-right-radius:5px;
+  box-shadow:0 2px 16px rgba(255,96,34,.15);
 }
-.ppc-bubble strong{color:#EFE9DC;font-weight:700}
+.ppc-bubble strong{color:#121213;font-weight:700}
 .ppc-bubble ul{margin:5px 0 2px 16px;padding:0}
-.ppc-bubble li{margin-bottom:3px;color:#8B8B93}
-.ppc-bubble li strong{color:#EFE9DC}
+.ppc-bubble li{margin-bottom:3px;color:#444444}
+.ppc-bubble li strong{color:#121213}
 .ppc-bubble p{margin:3px 0}
 .ppc-bubble p:first-child{margin-top:0}
 .ppc-bubble p:last-child{margin-bottom:0}
 
-.ppc-ts{font-size:9.5px;color:rgba(255,255,255,.15);margin-top:3px;padding:0 3px;letter-spacing:.01em}
+.ppc-ts{font-size:9.5px;color:rgba(18,18,19,.15);margin-top:3px;padding:0 3px;letter-spacing:.01em}
 
 /* ── Typing animation ──────────────────────────────────────────────────────── */
 .ppc-typing{display:flex;align-items:center;gap:10px;padding:10px 14px}
 .ppc-wave{display:flex;gap:3px;align-items:center}
 .ppc-wave span{
   display:block;width:4px;border-radius:4px;
-  background:linear-gradient(180deg,#7ABDF0,#5AA9E6);
+  background:linear-gradient(180deg,#FF7A45,#FF6022);
   animation:ppc-wave-anim 1s ease-in-out infinite;
 }
 .ppc-wave span:nth-child(1){height:6px;animation-delay:0s}
@@ -296,44 +296,44 @@
 .ppc-wave span:nth-child(4){height:15px;animation-delay:.15s}
 .ppc-wave span:nth-child(5){height:7px;animation-delay:.05s}
 @keyframes ppc-wave-anim{0%,100%{transform:scaleY(.5);opacity:.4}50%{transform:scaleY(1);opacity:1}}
-.ppc-typing-txt{font-size:11px;color:#5E5E66;font-style:italic;animation:ppc-fade-loop 2s ease-in-out infinite}
+.ppc-typing-txt{font-size:11px;color:#6F6B66;font-style:italic;animation:ppc-fade-loop 2s ease-in-out infinite}
 @keyframes ppc-fade-loop{0%,100%{opacity:.5}50%{opacity:1}}
 
 /* ── Input area ────────────────────────────────────────────────────────────── */
 #ppc-input-area{
   flex-shrink:0;padding:10px 13px 13px;
-  border-top:1px solid rgba(255,255,255,.055);
+  border-top:1px solid rgba(18,18,19,.055);
   position:relative;z-index:1;
   background:linear-gradient(0deg,rgba(19,19,21,.6) 0%,transparent 100%);
 }
 #ppc-input-row{
   display:flex;gap:8px;align-items:center;
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.08);
+  background:rgba(18,18,19,.04);
+  border:1px solid rgba(18,18,19,.08);
   border-radius:15px;padding:8px 9px 8px 12px;
   transition:border-color .2s,box-shadow .2s;
 }
 #ppc-input-row:focus-within{
-  border-color:rgba(90,169,230,.5);
-  box-shadow:0 0 0 3px rgba(90,169,230,.1),0 4px 20px rgba(0,0,0,.2);
+  border-color:rgba(255,96,34,.5);
+  box-shadow:0 0 0 3px rgba(255,96,34,.1),0 4px 20px rgba(0,0,0,.2);
 }
 #ppc-input{
   flex:1;background:transparent;border:none;outline:none;
-  font-size:13px;color:#EFE9DC;resize:none;padding:0;line-height:1.6;
-  font-family:'Familjen Grotesk',sans-serif;
+  font-size:13px;color:#121213;resize:none;padding:0;line-height:1.6;
+  font-family:'Fraunces',sans-serif;
   max-height:100px;min-height:22px;overflow-y:auto;
 }
-#ppc-input::placeholder{color:rgba(255,255,255,.2)}
+#ppc-input::placeholder{color:rgba(18,18,19,.2)}
 
 /* Send button */
 #ppc-send{
   width:36px;height:36px;border:none;border-radius:11px;cursor:pointer;flex-shrink:0;
-  background:linear-gradient(135deg,#5AA9E6,#5AA9E6);
+  background:linear-gradient(135deg,#FF6022,#FF6022);
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 2px 12px rgba(90,169,230,.5);
+  box-shadow:0 2px 12px rgba(255,96,34,.5);
   transition:all .22s cubic-bezier(.34,1.56,.64,1);
 }
-#ppc-send:hover:not(:disabled){transform:scale(1.12) rotate(-5deg);box-shadow:0 4px 20px rgba(90,169,230,.7)}
+#ppc-send:hover:not(:disabled){transform:scale(1.12) rotate(-5deg);box-shadow:0 4px 20px rgba(255,96,34,.7)}
 #ppc-send:active:not(:disabled){transform:scale(.95)}
 #ppc-send:disabled{opacity:.35;cursor:not-allowed;transform:none}
 
@@ -341,91 +341,91 @@
   display:flex;justify-content:space-between;align-items:center;
   margin-top:7px;padding:0 2px;
 }
-.ppc-hint-txt{font-size:10px;color:rgba(255,255,255,.13);letter-spacing:.02em}
-#ppc-char-count{font-size:10px;color:rgba(255,255,255,.13);transition:color .2s}
+.ppc-hint-txt{font-size:10px;color:rgba(18,18,19,.13);letter-spacing:.02em}
+#ppc-char-count{font-size:10px;color:rgba(18,18,19,.13);transition:color .2s}
 #ppc-char-count.warn{color:rgba(239,233,220,.5)}
 
 /* ── Attach button ──────────────────────────────────────────────────────── */
 #ppc-attach-btn{
   width:32px;height:32px;border:none;border-radius:9px;cursor:pointer;flex-shrink:0;
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
-  color:#5E5E66;display:flex;align-items:center;justify-content:center;
+  background:rgba(18,18,19,.05);border:1px solid rgba(18,18,19,.08);
+  color:#6F6B66;display:flex;align-items:center;justify-content:center;
   transition:all .2s cubic-bezier(.34,1.56,.64,1);
 }
 #ppc-attach-btn:hover{
-  background:rgba(90,169,230,.15);border-color:rgba(90,169,230,.35);
-  color:#7ABDF0;transform:scale(1.08) rotate(-8deg);
+  background:rgba(255,96,34,.15);border-color:rgba(255,96,34,.35);
+  color:#B83C0C;transform:scale(1.08) rotate(-8deg);
 }
 #ppc-attach-btn.has-file{
-  background:rgba(90,169,230,.18);border-color:rgba(90,169,230,.4);color:#7ABDF0;
+  background:rgba(255,96,34,.18);border-color:rgba(255,96,34,.4);color:#B83C0C;
 }
 
 /* ── File pill ──────────────────────────────────────────────────────────── */
 #ppc-file-pill{
   display:none;align-items:center;gap:7px;
   margin-top:7px;padding:6px 10px;border-radius:10px;
-  background:rgba(90,169,230,.1);border:1px solid rgba(90,169,230,.25);
+  background:rgba(255,96,34,.1);border:1px solid rgba(255,96,34,.25);
   animation:ppc-msg-in .25s both;
 }
 #ppc-file-pill.show{display:flex}
 .ppc-file-ico{font-size:14px;flex-shrink:0}
 #ppc-file-label{
   flex:1;min-width:0;font-size:11.5px;font-weight:600;
-  color:#7ABDF0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  font-family:'Familjen Grotesk',sans-serif;
+  color:#B83C0C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-family:'Fraunces',sans-serif;
 }
-.ppc-file-size{font-size:10px;color:#5E5E66;flex-shrink:0}
+.ppc-file-size{font-size:10px;color:#6F6B66;flex-shrink:0}
 #ppc-file-remove{
   width:18px;height:18px;border:none;border-radius:5px;cursor:pointer;
-  background:rgba(255,255,255,.07);color:#5E5E66;
+  background:rgba(18,18,19,.07);color:#6F6B66;
   display:flex;align-items:center;justify-content:center;font-size:12px;
   transition:all .15s;flex-shrink:0;padding:0;
 }
-#ppc-file-remove:hover{background:rgba(232,102,61,.2);color:#F07A54}
+#ppc-file-remove:hover{background:rgba(232,102,61,.2);color:#C8261B}
 
 /* Upload spinner */
 .ppc-file-uploading .ppc-file-ico{animation:ppc-spin .7s linear infinite;display:inline-block}
 
 /* Supported types label */
 #ppc-supported{
-  font-size:9.5px;color:rgba(255,255,255,.1);text-align:center;
+  font-size:9.5px;color:rgba(18,18,19,.1);text-align:center;
   margin-top:5px;letter-spacing:.01em;
 }
 
-/* ── Bento ──────────────────────────────────────────────────────────────────
-   The widget as the rest of the product draws it: a lime disc that opens a
-   flat, opaque panel. No pulse, no spinning ring, no animated border; the
-   panel and messages simply appear. Placed last so it wins over the rules
-   above without editing each one. */
+/* ── Outcomes ───────────────────────────────────────────────────────────────
+   The widget as the rest of the product draws it: an orange disc that opens
+   a white card on the page. No pulse, no spinning ring, no animated border;
+   the panel and messages simply appear. Placed last so it wins over the
+   rules above without editing each one. */
 #ppc-btn {
-  background:#C6F24E !important; box-shadow:0 24px 64px -16px rgba(0,0,0,.72) !important;
+  background:#FF6022 !important; box-shadow:0 8px 20px rgba(0,0,0,.2) !important;
   animation:none !important; transition:opacity 150ms ease !important;
 }
-#ppc-btn:hover { transform:none !important; background:#D4FA63 !important; }
+#ppc-btn:hover { transform:none !important; background:#FF7A45 !important; }
 #ppc-btn::before { display:none !important; }
-#ppc-btn svg, #ppc-btn svg * { stroke:#131315 !important; }
-#ppc-btn svg [fill]:not([fill="none"]) { fill:#131315 !important; }
+#ppc-btn svg, #ppc-btn svg * { stroke:#121213 !important; }
+#ppc-btn svg [fill]:not([fill="none"]) { fill:#121213 !important; }
 .ppc-ico { transition:opacity 150ms ease !important; }
 #ppc-ico-chat, #ppc-ico-close, #ppc-btn.open #ppc-ico-chat, #ppc-btn.open #ppc-ico-close { transform:none !important; }
-#ppc-tip { background:#26262A !important; border:0 !important; color:#EFE9DC !important; border-radius:8px !important; transform:none !important; }
+#ppc-tip { background:#121213 !important; border:0 !important; color:#F6F4F0 !important; border-radius:999px !important; transform:none !important; }
 #ppc-border {
-  background:#1C1C1F !important; animation:none !important; padding:0 !important;
-  border-radius:12px !important; box-shadow:0 24px 64px -16px rgba(0,0,0,.72) !important;
+  background:#FFFFFF !important; animation:none !important; padding:0 !important;
+  border-radius:24px !important; box-shadow:0 24px 64px -16px rgba(18,18,19,.28) !important;
   transform:none !important; transition:opacity 150ms ease !important;
 }
-#ppc-panel { background:#1C1C1F !important; border-radius:12px !important; }
-#ppc-panel, #ppc-panel * { font-family:'Instrument Sans', system-ui, sans-serif; }
-.ppc-hdr-title { font-family:'Familjen Grotesk', system-ui, sans-serif !important; }
-#ppc-hdr { background:#1C1C1F !important; border-bottom:0 !important; }
-.ppc-av, .ppc-wlc-orb { background:#2A3313 !important; box-shadow:none !important; animation:none !important; border:0 !important; }
-.ppc-av svg *, .ppc-wlc-orb svg * { stroke:#C6F24E !important; }
-.ppc-pill { background:#26262A !important; color:#8B8B93 !important; border:0 !important; }
-#ppc-input-area { background:#1C1C1F !important; border-top:0 !important; }
-#ppc-input-row { background:#26262A !important; border:0 !important; box-shadow:none !important; border-radius:12px !important; }
-#ppc-input-row:focus-within { background:#303036 !important; box-shadow:none !important; }
-#ppc-send { background:#C6F24E !important; box-shadow:none !important; }
-#ppc-send svg * { stroke:#131315 !important; }
-.ppc-hbtn { background:#26262A !important; border:0 !important; }
+#ppc-panel { background:#FFFFFF !important; border-radius:24px !important; color:#121213; }
+#ppc-panel, #ppc-panel * { font-family:'Zalando Sans', system-ui, sans-serif; }
+.ppc-hdr-title { font-family:'Fraunces', Georgia, serif !important; font-weight:600 !important; font-variation-settings:'SOFT' 0,'WONK' 1,'opsz' 144; }
+#ppc-hdr { background:#FFFFFF !important; border-bottom:1px solid #E0DCD6 !important; }
+.ppc-av, .ppc-wlc-orb { background:#FFE4D8 !important; box-shadow:none !important; animation:none !important; border:0 !important; border-radius:999px !important; }
+.ppc-av svg *, .ppc-wlc-orb svg * { stroke:#B83C0C !important; }
+.ppc-pill { background:#EBE9E5 !important; color:#444444 !important; border:0 !important; border-radius:999px !important; }
+#ppc-input-area { background:#FFFFFF !important; border-top:1px solid #E0DCD6 !important; }
+#ppc-input-row { background:#FFFFFF !important; border:1px solid #E0DCD6 !important; box-shadow:none !important; border-radius:999px !important; }
+#ppc-input-row:focus-within { border-color:#121213 !important; box-shadow:none !important; }
+#ppc-send { background:#121213 !important; box-shadow:none !important; border-radius:999px !important; }
+#ppc-send svg * { stroke:#F6F4F0 !important; }
+.ppc-hbtn { background:#EBE9E5 !important; border:0 !important; border-radius:999px !important; }
 </style>
 
 <!-- Trigger -->
@@ -434,22 +434,22 @@
     <svg class="ppc-ico" id="ppc-ico-chat" width="32" height="32" fill="none" viewBox="0 0 24 24">
       <!-- Vimi atom logo -->
       <ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5">
-        <animate attributeName="stroke" values="#ffffff;#7ABDF0;#ffffff" dur="5s" repeatCount="indefinite"/>
+        <animate attributeName="stroke" values="#FFFFFF;#FF7A45;#FFFFFF" dur="5s" repeatCount="indefinite"/>
         <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="14s" repeatCount="indefinite"/>
       </ellipse>
       <ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5">
-        <animate attributeName="stroke" values="#ffffff;#7ABDF0;#ffffff" dur="7s" begin="1.5s" repeatCount="indefinite"/>
+        <animate attributeName="stroke" values="#FFFFFF;#FF7A45;#FFFFFF" dur="7s" begin="1.5s" repeatCount="indefinite"/>
         <animateTransform attributeName="transform" type="rotate" from="60 12 12" to="-300 12 12" dur="22s" repeatCount="indefinite"/>
       </ellipse>
       <ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5">
-        <animate attributeName="stroke" values="#ffffff;#7ABDF0;#ffffff" dur="9s" begin="3s" repeatCount="indefinite"/>
+        <animate attributeName="stroke" values="#FFFFFF;#FF7A45;#FFFFFF" dur="9s" begin="3s" repeatCount="indefinite"/>
         <animateTransform attributeName="transform" type="rotate" from="-60 12 12" to="300 12 12" dur="30s" repeatCount="indefinite"/>
       </ellipse>
       <circle cx="12" cy="12" r="2.4" fill="#fff">
         <animate attributeName="r" values="2.4;2.9;2.4" dur="3s" repeatCount="indefinite"/>
         <animate attributeName="opacity" values="1;0.75;1" dur="3s" repeatCount="indefinite"/>
       </circle>
-      <circle cx="12" cy="12" r="1.1" fill="rgba(90,169,230,0.8)"/>
+      <circle cx="12" cy="12" r="1.1" fill="rgba(255,96,34,0.8)"/>
     </svg>
     <svg class="ppc-ico" id="ppc-ico-close" width="20" height="20" fill="none" viewBox="0 0 24 24">
       <path stroke="#fff" stroke-width="2.5" stroke-linecap="round" d="M18 6 6 18M6 6l12 12"/>
@@ -467,23 +467,23 @@
       <div class="ppc-hdr-top">
         <div class="ppc-av">
           <svg width="34" height="34" fill="none" viewBox="0 0 24 24">
-            <ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="rgba(255,255,255,0.93)" stroke-width="1.5">
-              <animate attributeName="stroke" values="rgba(255,255,255,0.93);rgba(196,181,253,0.9);rgba(255,255,255,0.93)" dur="5s" repeatCount="indefinite"/>
+            <ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="rgba(18,18,19,0.93)" stroke-width="1.5">
+              <animate attributeName="stroke" values="rgba(18,18,19,0.93);rgba(196,181,253,0.9);rgba(18,18,19,0.93)" dur="5s" repeatCount="indefinite"/>
               <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="14s" repeatCount="indefinite"/>
             </ellipse>
-            <ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="rgba(255,255,255,0.93)" stroke-width="1.5">
-              <animate attributeName="stroke" values="rgba(255,255,255,0.93);rgba(90,169,230,0.9);rgba(255,255,255,0.93)" dur="7s" begin="1.5s" repeatCount="indefinite"/>
+            <ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="rgba(18,18,19,0.93)" stroke-width="1.5">
+              <animate attributeName="stroke" values="rgba(18,18,19,0.93);rgba(255,96,34,0.9);rgba(18,18,19,0.93)" dur="7s" begin="1.5s" repeatCount="indefinite"/>
               <animateTransform attributeName="transform" type="rotate" from="60 12 12" to="-300 12 12" dur="22s" repeatCount="indefinite"/>
             </ellipse>
-            <ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="rgba(255,255,255,0.93)" stroke-width="1.5">
-              <animate attributeName="stroke" values="rgba(255,255,255,0.93);rgba(90,169,230,0.9);rgba(255,255,255,0.93)" dur="9s" begin="3s" repeatCount="indefinite"/>
+            <ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="rgba(18,18,19,0.93)" stroke-width="1.5">
+              <animate attributeName="stroke" values="rgba(18,18,19,0.93);rgba(255,96,34,0.9);rgba(18,18,19,0.93)" dur="9s" begin="3s" repeatCount="indefinite"/>
               <animateTransform attributeName="transform" type="rotate" from="-60 12 12" to="300 12 12" dur="30s" repeatCount="indefinite"/>
             </ellipse>
             <circle cx="12" cy="12" r="2.5" fill="white">
               <animate attributeName="r" values="2.5;3.0;2.5" dur="3s" repeatCount="indefinite"/>
               <animate attributeName="opacity" values="1;0.75;1" dur="3s" repeatCount="indefinite"/>
             </circle>
-            <circle cx="12" cy="12" r="1.1" fill="rgba(90,169,230,0.8)"/>
+            <circle cx="12" cy="12" r="1.1" fill="rgba(255,96,34,0.8)"/>
           </svg>
         </div>
         <div class="ppc-hdr-info">
@@ -497,9 +497,9 @@
                 d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/>
             </svg>
             <span id="ppc-mem-badge" style="display:none;position:absolute;top:-4px;right:-4px;
-              width:14px;height:14px;border-radius:50%;background:#5AA9E6;
+              width:14px;height:14px;border-radius:50%;background:#FF6022;
               font-size:8px;font-weight:700;color:#fff;align-items:center;justify-content:center;
-              border:1.5px solid #1C1C1F;"></span>
+              border:1.5px solid #FFFFFF;"></span>
           </button>
           <!-- Expand toggle -->
           <button class="ppc-hbtn" id="ppc-expand-btn" onclick="ppcToggleExpand()" aria-label="Expand">
@@ -705,7 +705,7 @@
     // Show last few exchanges from previous session
     var recent = _hist.slice(-8);
     var notice = document.createElement('div');
-    notice.style.cssText = 'text-align:center;padding:8px 12px;font-size:10.5px;color:#5E5E66;font-family:\'Familjen Grotesk\',sans-serif;';
+    notice.style.cssText = 'text-align:center;padding:8px 12px;font-size:10.5px;color:#6F6B66;font-family:\'Zalando Sans\',sans-serif;';
     notice.innerHTML = '— Resuming previous session —';
     msgs.appendChild(notice);
     recent.forEach(function(turn) {
@@ -733,7 +733,7 @@
     el.id    = 'ppc-welcome';
     el.innerHTML =
       '<div class="ppc-orb-wrap">' +
-        '<div class="ppc-wlc-orb"><svg width="36" height="36" fill="none" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#ffffff;#7ABDF0;#ffffff" dur="5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="14s" repeatCount="indefinite"/></ellipse><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#ffffff;#7ABDF0;#ffffff" dur="7s" begin="1.5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="60 12 12" to="-300 12 12" dur="22s" repeatCount="indefinite"/></ellipse><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#ffffff;#7ABDF0;#ffffff" dur="9s" begin="3s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="-60 12 12" to="300 12 12" dur="30s" repeatCount="indefinite"/></ellipse><circle cx="12" cy="12" r="2.5" fill="#fff"><animate attributeName="r" values="2.5;3.0;2.5" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0.75;1" dur="3s" repeatCount="indefinite"/></circle><circle cx="12" cy="12" r="1.1" fill="rgba(90,169,230,0.8)"/></svg></div>' +
+        '<div class="ppc-wlc-orb"><svg width="36" height="36" fill="none" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#FFFFFF;#FF7A45;#FFFFFF" dur="5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="14s" repeatCount="indefinite"/></ellipse><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#FFFFFF;#FF7A45;#FFFFFF" dur="7s" begin="1.5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="60 12 12" to="-300 12 12" dur="22s" repeatCount="indefinite"/></ellipse><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#FFFFFF;#FF7A45;#FFFFFF" dur="9s" begin="3s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="-60 12 12" to="300 12 12" dur="30s" repeatCount="indefinite"/></ellipse><circle cx="12" cy="12" r="2.5" fill="#fff"><animate attributeName="r" values="2.5;3.0;2.5" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0.75;1" dur="3s" repeatCount="indefinite"/></circle><circle cx="12" cy="12" r="1.1" fill="rgba(255,96,34,0.8)"/></svg></div>' +
       '</div>' +
       '<div class="ppc-wlc-title">What do you want to know?</div>' +
       '<div class="ppc-wlc-sub">Ask about visitors, competitor ads,<br>buying signals, or anything PPC.</div>' +
@@ -862,11 +862,11 @@
     var name = 'ppc_export_' + new Date().toISOString().slice(0,10) + '.' + ext;
     var btn  = document.createElement('button');
     btn.innerHTML = '⬇ Download .' + ext.toUpperCase();
-    btn.style.cssText = 'margin-top:8px;padding:5px 12px;border-radius:8px;border:1px solid rgba(90,169,230,.4);' +
-      'background:rgba(90,169,230,.12);color:#7ABDF0;font-size:11px;font-weight:600;cursor:pointer;' +
-      'font-family:\'Familjen Grotesk\',sans-serif;transition:all .15s;display:block;';
-    btn.onmouseover = function(){ this.style.background='rgba(90,169,230,.25)'; };
-    btn.onmouseout  = function(){ this.style.background='rgba(90,169,230,.12)'; };
+    btn.style.cssText = 'margin-top:8px;padding:5px 12px;border-radius:8px;border:1px solid rgba(255,96,34,.4);' +
+      'background:rgba(255,96,34,.12);color:#B83C0C;font-size:11px;font-weight:600;cursor:pointer;' +
+      'font-family:\'Zalando Sans\',sans-serif;transition:all .15s;display:block;';
+    btn.onmouseover = function(){ this.style.background='rgba(255,96,34,.25)'; };
+    btn.onmouseout  = function(){ this.style.background='rgba(255,96,34,.12)'; };
     btn.onclick = function(){ _downloadText(text, name, mime); };
     container.appendChild(btn);
   }
@@ -969,7 +969,7 @@
         var bubble = row.querySelector('.ppc-bubble');
         var pre = document.createElement('pre');
         pre.style.cssText = 'background:rgba(0,0,0,.3);border-radius:8px;padding:10px;' +
-          'font-size:11px;color:#8B8B93;overflow-x:auto;margin-top:8px;white-space:pre-wrap;' +
+          'font-size:11px;color:#444444;overflow-x:auto;margin-top:8px;white-space:pre-wrap;' +
           'max-height:200px;overflow-y:auto;font-family:monospace;line-height:1.5;';
         pre.textContent = ans.slice(0, 1200) + (ans.length > 1200 ? '\n...' : '');
         bubble.appendChild(pre);
@@ -998,7 +998,7 @@
     var btn = document.getElementById('ppc-send');
     btn.disabled = state;
     btn.innerHTML = state
-      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="animation:ppc-spin .75s linear infinite"><circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,.25)" stroke-width="2.5"/><path d="M12 3a9 9 0 0 1 9 9" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>'
+      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="animation:ppc-spin .75s linear infinite"><circle cx="12" cy="12" r="9" stroke="rgba(18,18,19,.25)" stroke-width="2.5"/><path d="M12 3a9 9 0 0 1 9 9" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>'
       : '<svg width="15" height="15" fill="none" viewBox="0 0 24 24"><path stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>';
   }
 
@@ -1011,7 +1011,7 @@
     var av = document.createElement('div');
     av.className = 'ppc-row-av';
     if (role === 'assistant') {
-      av.innerHTML = '<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#ffffff;#7ABDF0;#ffffff" dur="5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="14s" repeatCount="indefinite"/></ellipse><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#ffffff;#7ABDF0;#ffffff" dur="7s" begin="1.5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="60 12 12" to="-300 12 12" dur="22s" repeatCount="indefinite"/></ellipse><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#ffffff;#7ABDF0;#ffffff" dur="9s" begin="3s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="-60 12 12" to="300 12 12" dur="30s" repeatCount="indefinite"/></ellipse><circle cx="12" cy="12" r="2.4" fill="#fff"><animate attributeName="r" values="2.4;2.9;2.4" dur="3s" repeatCount="indefinite"/></circle><circle cx="12" cy="12" r="1" fill="rgba(90,169,230,0.8)"/></svg>';
+      av.innerHTML = '<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#FFFFFF;#FF7A45;#FFFFFF" dur="5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="14s" repeatCount="indefinite"/></ellipse><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#FFFFFF;#FF7A45;#FFFFFF" dur="7s" begin="1.5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="60 12 12" to="-300 12 12" dur="22s" repeatCount="indefinite"/></ellipse><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#FFFFFF;#FF7A45;#FFFFFF" dur="9s" begin="3s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="-60 12 12" to="300 12 12" dur="30s" repeatCount="indefinite"/></ellipse><circle cx="12" cy="12" r="2.4" fill="#fff"><animate attributeName="r" values="2.4;2.9;2.4" dur="3s" repeatCount="indefinite"/></circle><circle cx="12" cy="12" r="1" fill="rgba(255,96,34,0.8)"/></svg>';
     } else {
       av.textContent = 'You';
     }
@@ -1042,7 +1042,7 @@
     var row  = document.createElement('div');
     row.className = 'ppc-row assistant';
     var av   = document.createElement('div');
-    av.className = 'ppc-row-av'; av.innerHTML = '<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#ffffff;#7ABDF0;#ffffff" dur="5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="14s" repeatCount="indefinite"/></ellipse><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#ffffff;#7ABDF0;#ffffff" dur="7s" begin="1.5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="60 12 12" to="-300 12 12" dur="22s" repeatCount="indefinite"/></ellipse><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#ffffff;#7ABDF0;#ffffff" dur="9s" begin="3s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="-60 12 12" to="300 12 12" dur="30s" repeatCount="indefinite"/></ellipse><circle cx="12" cy="12" r="2.4" fill="#fff"><animate attributeName="r" values="2.4;2.9;2.4" dur="3s" repeatCount="indefinite"/></circle><circle cx="12" cy="12" r="1" fill="rgba(90,169,230,0.8)"/></svg>';
+    av.className = 'ppc-row-av'; av.innerHTML = '<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#FFFFFF;#FF7A45;#FFFFFF" dur="5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="14s" repeatCount="indefinite"/></ellipse><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#FFFFFF;#FF7A45;#FFFFFF" dur="7s" begin="1.5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="60 12 12" to="-300 12 12" dur="22s" repeatCount="indefinite"/></ellipse><ellipse cx="12" cy="12" rx="10" ry="3.6" stroke="#fff" stroke-width="1.5"><animate attributeName="stroke" values="#FFFFFF;#FF7A45;#FFFFFF" dur="9s" begin="3s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" from="-60 12 12" to="300 12 12" dur="30s" repeatCount="indefinite"/></ellipse><circle cx="12" cy="12" r="2.4" fill="#fff"><animate attributeName="r" values="2.4;2.9;2.4" dur="3s" repeatCount="indefinite"/></circle><circle cx="12" cy="12" r="1" fill="rgba(255,96,34,0.8)"/></svg>';
     var bwrap = document.createElement('div');
     bwrap.className = 'ppc-bwrap';
     var bubble = document.createElement('div');
