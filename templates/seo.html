@@ -25,7 +25,7 @@
      second stylesheet that would drift from it. #}
   <div class="dir-list">
     {% for t in seo_tools %}
-    <a href="/p2/seo-aeo/{{ t.slug }}" class="dir-row bn-reveal" data-tool="{{ t.slug }}" data-state="active" data-badge="live">
+    <a href="/seo-aeo/{{ t.slug }}" class="dir-row bn-reveal" data-tool="{{ t.slug }}" data-state="active" data-badge="live">
       <span class="dir-ic dir-ic--letter" aria-hidden="true">{{ (t.name or '?')[:1]|upper }}</span>
       <span class="dir-txt">
         <span class="dir-name" data-tool-name>{{ t.name }}</span>

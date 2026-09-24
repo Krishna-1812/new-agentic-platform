@@ -86,7 +86,7 @@ def test_the_public_marketing_pages_can_be_indexed():
 def test_signed_in_internal_and_client_areas_cannot():
     rules = _rules()
     client = sorted(appmod.CLIENTS)[0]
-    for path in ("/p2/hub", "/p2/admin/members", "/app", "/app/settings", "/api/whoami",
+    for path in ("/hub", "/admin/members", "/app", "/app/settings", "/api/whoami",
                  "/auth/google", "/login", "/logout", "/ppc", "/dashboard/healthcare",
                  "/" + client, "/" + client + "/agents/x"):
         assert not _allowed(path, rules), path

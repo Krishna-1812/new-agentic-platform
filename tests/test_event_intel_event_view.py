@@ -27,7 +27,7 @@ import pytest
 
 import app as appmod
 
-_PAGE = "/p2/strategic-agents/event-conference-intelligence"
+_PAGE = "/strategic-agents/event-conference-intelligence"
 _IIFE_CLOSE = "\n  })();"
 
 pytestmark = pytest.mark.skipif(shutil.which("node") is None,

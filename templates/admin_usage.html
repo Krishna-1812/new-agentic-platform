@@ -15,7 +15,7 @@
   </div>
 
   <!-- Topbar -->
-{{ topbar([("Admin", "/p2/admin/internal-usage"), ("Internal Usage", none)]) }}
+{{ topbar([("Admin", "/admin/internal-usage"), ("Internal Usage", none)]) }}
 
   <!-- Main -->
   <div class="main">
@@ -294,7 +294,7 @@
       icon.style.transform = 'rotate(360deg)';
       setTimeout(function(){ icon.style.transition='none'; icon.style.transform='rotate(0deg)'; btn.classList.remove('spinning'); }, 700);
 
-      fetch('/p2/admin/internal-usage/data')
+      fetch('/admin/internal-usage/data')
         .then(function(r){ return r.json(); })
         .then(function(d) {
           /* Stats */
@@ -634,7 +634,7 @@ window.__LUX_CFG={};
   if(window.__uxx)return;window.__uxx=1;
   var COLORS=['#FF6022','#17753F','#FF6022','#FFB500','#8CCBFF'];
   var D=null,pending=[];
-  function load(cb){pending.push(cb);if(D){flush();return;}if(load.__l)return;load.__l=1;fetch('/p2/admin/internal-usage/data').then(function(r){return r.json();}).then(function(j){D=j||{};flush();}).catch(function(){D={};flush();});}
+  function load(cb){pending.push(cb);if(D){flush();return;}if(load.__l)return;load.__l=1;fetch('/admin/internal-usage/data').then(function(r){return r.json();}).then(function(j){D=j||{};flush();}).catch(function(){D={};flush();});}
   function flush(){pending.splice(0).forEach(function(cb){try{cb(D);}catch(e){}});}
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function bars(items){if(!items||!items.length)return '<div style="color:var(--tx3);font-size:11.5px;padding:10px 0">No data yet</div>';var max=items[0][1]||1;return items.map(function(it,i){var pct=Math.round(it[1]/max*100);var c=COLORS[i%COLORS.length];return '<div class="ux-bar-row"><span class="ux-bar-name">'+esc(it[0]||'—')+'</span><span class="ux-bar-wrap"><span class="ux-bar" data-w="'+pct+'" style="background:'+c+'"></span></span><span class="ux-bar-val">'+it[1]+'</span></div>';}).join('');}

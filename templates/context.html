@@ -1,6 +1,6 @@
 {% from "_bento.html" import head, topbar, topbar_script with context %}
 {#- ═══════════════════════════════════════════════════════════════════════
-    FIELD GUIDE — /p2/playbook and /p2/playbook/<slug>
+    FIELD GUIDE — /playbook and /playbook/<slug>
 
     One template, two layouts: a contents page when `chapter` is None, and a
     single chapter when it is not.
@@ -103,20 +103,20 @@
 {{ head((chapter.title if chapter else brand.handbook), ["fieldguide.css?v=1"]) }}
 </head>
 <body>
-{{ topbar([(brand.handbook, "/p2/playbook" if chapter else none)] + ([(chapter.title, none)] if chapter else [])) }}
+{{ topbar([(brand.handbook, "/playbook" if chapter else none)] + ([(chapter.title, none)] if chapter else [])) }}
 
 {% if chapter %}
 {# ══════════════════════════════ ONE CHAPTER ══════════════════════════════ #}
 
 <div class="fg-wrap">
   <nav class="fg-chnav" aria-label="Chapters">
-    <a href="/p2/playbook" class="fg-back">
+    <a href="/playbook" class="fg-back">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
       All chapters
     </a>
     <div class="fg-stops">
       {%- for c in chapters %}
-      <a href="/p2/playbook/{{ c.slug }}" class="fg-stop"
+      <a href="/playbook/{{ c.slug }}" class="fg-stop"
          {% if c.slug == chapter.slug %}aria-current="page"{% endif %}
          title="{{ c.num }}. {{ c.title }}">{{ c.num }}</a>
       {%- endfor %}
@@ -213,7 +213,7 @@
           </div>
           <div class="fg-cfoot">
             <span>{{ n_gtm }} agents in the {{ brand.agents_plural }} bucket, custom setup per client</span>
-            <a href="/p2/playbook/every-agent#gtm">Explore &rarr;</a>
+            <a href="/playbook/every-agent#gtm">Explore &rarr;</a>
           </div>
         </div>
 
@@ -231,7 +231,7 @@
           </div>
           <div class="fg-cfoot">
             <span>{{ n_seo }} agents in the SEO + AEO Suite, no configuration needed</span>
-            <a href="/p2/playbook/agent-landscape">Explore &rarr;</a>
+            <a href="/playbook/agent-landscape">Explore &rarr;</a>
           </div>
         </div>
 
@@ -250,14 +250,14 @@
           </div>
           <div class="fg-cfoot">
             <span>{{ n_all }} agents, 2 domains, 1 login, one walkthrough</span>
-            <a href="/p2/playbook/demo">Explore &rarr;</a>
+            <a href="/playbook/demo">Explore &rarr;</a>
           </div>
         </div>
 
         <div class="fg-card">
           <span class="fg-tag">Never log in here</span>
           <h3>Clients &amp; prospects</h3>
-          <p>They never see this guide or sign into <code>/p2</code>. But every content brief, technical
+          <p>They never see this guide or sign into <code>/hub</code>. But every content brief, technical
           audit and ranking report that reaches them was produced or checked by an agent running on this
           same platform. Their door in is the public workspace: {{ n_live }} of these same agents wearing a
           client-facing coat.</p>
@@ -290,7 +290,7 @@
         </div>
 
         <div class="fg-card fg-here">
-          <span class="fg-tag fg-tag-acc fg-tag-path">/p2</span>
+          <span class="fg-tag fg-tag-acc fg-tag-path">/hub</span>
           <h3>Internal staff</h3>
           <div class="fg-track">
             <div class="fg-step"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg><span>Sign in with your @{{ brand.staff_domain }} email</span></div>
@@ -310,14 +310,14 @@
         <div class="fg-card">
           <h3><code>/app</code> &nbsp;Member workspace</h3>
           <p>The client-facing side. Prospects and clients sign in here to run the public SEO tools
-          themselves, no /p2 access required.</p>
+          themselves, no /hub access required.</p>
           <div class="fg-list">
             <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>{{ n_live }} live agents: {% for a in agents if a.bucket == 'live' %}{{ a.name }}{{ ", " if not loop.last }}{% endfor %}</span></div>
             <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>10 runs per agent, then it resets</span></div>
           </div>
         </div>
         <div class="fg-card fg-here">
-          <h3><code>/p2</code> &nbsp;Internal staff <span class="fg-badge-here">You are here</span></h3>
+          <h3><code>/hub</code> &nbsp;Internal staff <span class="fg-badge-here">You are here</span></h3>
           <p>{{ brand.name }}-only. The full agent suite, admin dashboards and this guide, gated to
           @{{ brand.staff_domain }} accounts.</p>
           <div class="fg-list">
@@ -351,7 +351,7 @@
             <div class="fg-chips" style="margin-top:0">
               {%- for a in agents if a.bucket == b[0] %}<span class="fg-chip">{{ a.name }}</span>{% endfor %}
             </div>
-            <a class="fg-bkt-explore" href="/p2/playbook/every-agent#{{ b[0] }}">Explore all in detail &rarr;</a>
+            <a class="fg-bkt-explore" href="/playbook/every-agent#{{ b[0] }}">Explore all in detail &rarr;</a>
           </div>
         </div>
         {%- endfor %}
@@ -395,7 +395,7 @@
           <div class="fg-techs">
             <span class="fg-tech">Python &middot; Flask &middot; gunicorn</span>
             <span class="fg-tech">Google Sign-In <small>no passwords</small></span>
-            <span class="fg-tech">Two-tier auth <small>/app vs /p2</small></span>
+            <span class="fg-tech">Two-tier auth <small>/app vs /hub</small></span>
             <span class="fg-tech">Run caps <small>10 per agent</small></span>
           </div>
         </div>
@@ -446,18 +446,18 @@
 
   <nav class="fg-pager" aria-label="Chapter navigation">
     {% if prev_chapter %}
-    <a class="fg-pg" href="/p2/playbook/{{ prev_chapter.slug }}">
+    <a class="fg-pg" href="/playbook/{{ prev_chapter.slug }}">
       <span class="fg-pg-label">&larr; Previous</span>
       <span class="fg-pg-title">{{ prev_chapter.title }}</span>
     </a>
     {% else %}<span class="fg-spacer"></span>{% endif %}
     {% if next_chapter %}
-    <a class="fg-pg fg-pg-next" href="/p2/playbook/{{ next_chapter.slug }}">
+    <a class="fg-pg fg-pg-next" href="/playbook/{{ next_chapter.slug }}">
       <span class="fg-pg-label">Next &rarr;</span>
       <span class="fg-pg-title">{{ next_chapter.title }}</span>
     </a>
     {% else %}
-    <a class="fg-pg fg-pg-next fg-pg-done" href="/p2/playbook">
+    <a class="fg-pg fg-pg-next fg-pg-done" href="/playbook">
       <span class="fg-pg-label">That&rsquo;s the whole guide</span>
       <span class="fg-pg-title">Back to all chapters</span>
     </a>
@@ -488,7 +488,7 @@
 
   <div class="fg-toc bn-reveal">
     {% for c in chapters %}
-    <a class="fg-ch" href="/p2/playbook/{{ c.slug }}">
+    <a class="fg-ch" href="/playbook/{{ c.slug }}">
       <span class="fg-ch-num">{{ '%02d'|format(c.num) }}</span>
       <span class="fg-ch-t">
         <h3>{{ c.title }}</h3>
@@ -506,7 +506,7 @@
 
 <footer class="fg-foot">
   <span>{{ brand.name }} &middot; Internal use only</span>
-  <a href="/p2/hub">&larr; Back to the {{ brand.hub }}</a>
+  <a href="/hub">&larr; Back to the {{ brand.hub }}</a>
 </footer>
 
 {# The agent detail dialog. Rendered on every chapter so the markup has one
@@ -654,7 +654,7 @@ FG_AGENTS.forEach(function (a, i) { a.i = i; });
     });
     var acc = overlay.querySelector('#fgmAccess');
     acc.innerHTML = '<span class="fg-mchip"></span>';
-    acc.firstChild.textContent = a.bucket === 'live' ? 'Everyone · /app' : 'Internal · /p2';
+    acc.firstChild.textContent = a.bucket === 'live' ? 'Everyone · /app' : 'Internal · /hub';
     var set = overlay.querySelector('#fgmSetup');
     set.innerHTML = a.needs ? '<span class="fg-mchip"></span>'
                             : '<span class="fg-mchip" data-ok></span>';

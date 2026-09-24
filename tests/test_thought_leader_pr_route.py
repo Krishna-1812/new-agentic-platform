@@ -1,4 +1,4 @@
-"""/p2/strategic-agents/thought-leader-pr (page + resolve/confirm/run).
+"""/strategic-agents/thought-leader-pr (page + resolve/confirm/run).
 
 Mirrors tests/test_social_media_intelligence_route.py: every route is
 @position2_required and gated by the server-verified session email; the
@@ -37,24 +37,24 @@ def _client(email=_OWNER):
 class TestAuthGate:
     def test_anonymous_request_is_redirected_not_served(self):
         c = appmod.app.test_client()
-        resp = c.get("/p2/strategic-agents/thought-leader-pr")
+        resp = c.get("/strategic-agents/thought-leader-pr")
         assert resp.status_code in (302, 401, 403)
 
     def test_a_non_position2_email_cannot_reach_the_page(self):
         c = _client(_NON_P2)
-        resp = c.get("/p2/strategic-agents/thought-leader-pr")
+        resp = c.get("/strategic-agents/thought-leader-pr")
         assert resp.status_code in (302, 401, 403)
 
     def test_resolve_requires_auth_too(self):
         c = appmod.app.test_client()
-        resp = c.post("/p2/strategic-agents/thought-leader-pr/resolve", json={"name": "Jane Doe"})
+        resp = c.post("/strategic-agents/thought-leader-pr/resolve", json={"name": "Jane Doe"})
         assert resp.status_code in (302, 401, 403)
 
 
 class TestPageRenders:
     def test_page_loads_for_a_position2_user(self, monkeypatch):
         monkeypatch.setattr(T, "list_runs", lambda email: [])
-        resp = _client().get("/p2/strategic-agents/thought-leader-pr")
+        resp = _client().get("/strategic-agents/thought-leader-pr")
         assert resp.status_code == 200
         assert b"Thought Leader Intelligence" in resp.data
 
@@ -64,7 +64,7 @@ class TestPageRenders:
         monkeypatch.setattr(T, "list_runs", lambda email: [])
         monkeypatch.setattr(T, "resolve_identity",
                             lambda *a, **kw: pytest.fail("GET must never resolve an identity"))
-        resp = _client().get("/p2/strategic-agents/thought-leader-pr")
+        resp = _client().get("/strategic-agents/thought-leader-pr")
         assert resp.status_code == 200
 
 
@@ -72,7 +72,7 @@ class TestSearchRoute:
     def test_a_blank_query_never_touches_apollo(self, monkeypatch):
         monkeypatch.setattr(T, "search_name_candidates",
                             lambda *a, **kw: pytest.fail("must not search for a blank query"))
-        resp = _client().get("/p2/strategic-agents/thought-leader-pr/search?q=")
+        resp = _client().get("/strategic-agents/thought-leader-pr/search?q=")
         assert resp.status_code == 200
         assert resp.get_json() == {"candidates": []}
 
@@ -81,7 +81,7 @@ class TestSearchRoute:
         monkeypatch.setattr(T, "search_name_candidates", lambda q, company_hint=None: (
             captured.update(q=q, company_hint=company_hint) or
             [{"full_name": "Jane Doe", "title": "CEO", "company": "Acme"}], None))
-        resp = _client().get("/p2/strategic-agents/thought-leader-pr/search?q=Jane+Doe&company=Acme")
+        resp = _client().get("/strategic-agents/thought-leader-pr/search?q=Jane+Doe&company=Acme")
         assert resp.status_code == 200
         body = resp.get_json()
         assert body["candidates"][0]["full_name"] == "Jane Doe"
@@ -91,13 +91,13 @@ class TestSearchRoute:
     def test_an_error_is_forwarded_alongside_any_fallback_candidates(self, monkeypatch):
         monkeypatch.setattr(T, "search_name_candidates", lambda *a, **kw: (
             [], {"code": "not_configured", "message": "Apollo is not configured on this deployment."}))
-        resp = _client().get("/p2/strategic-agents/thought-leader-pr/search?q=Jane+Doe")
+        resp = _client().get("/strategic-agents/thought-leader-pr/search?q=Jane+Doe")
         body = resp.get_json()
         assert body["candidates"] == []
         assert body["error"]["code"] == "not_configured"
 
     def test_search_requires_auth_too(self):
-        resp = appmod.app.test_client().get("/p2/strategic-agents/thought-leader-pr/search?q=Jane")
+        resp = appmod.app.test_client().get("/strategic-agents/thought-leader-pr/search?q=Jane")
         assert resp.status_code in (302, 401, 403)
 
 
@@ -105,7 +105,7 @@ class TestResolveRoute:
     def test_blank_name_is_rejected_before_touching_the_resolver(self, monkeypatch):
         monkeypatch.setattr(T, "resolve_identity",
                             lambda *a, **kw: pytest.fail("must not resolve a blank name"))
-        resp = _client().post("/p2/strategic-agents/thought-leader-pr/resolve", json={"name": "   "})
+        resp = _client().post("/strategic-agents/thought-leader-pr/resolve", json={"name": "   "})
         assert resp.status_code == 400
 
     def test_a_confident_result_is_persisted_and_returned(self, monkeypatch):
@@ -118,7 +118,7 @@ class TestResolveRoute:
         monkeypatch.setattr(T, "save_result", lambda run_id, email, res: saved.update(
             run_id=run_id, email=email, res=res) or True)
 
-        resp = _client().post("/p2/strategic-agents/thought-leader-pr/resolve",
+        resp = _client().post("/strategic-agents/thought-leader-pr/resolve",
                               json={"name": "Jane Doe", "company_hint": "Acme"})
         assert resp.status_code == 200
         body = resp.get_json()
@@ -132,7 +132,7 @@ class TestResolveRoute:
         monkeypatch.setattr(T, "resolve_identity", lambda *a, **kw: captured.update(call_kw=kw) or {
             "ok": False, "confidence": "none", "reasoning": "x", "identity": None, "spend": {}, "error": None})
         monkeypatch.setattr(T, "save_result", lambda *a, **kw: True)
-        _client().post("/p2/strategic-agents/thought-leader-pr/resolve",
+        _client().post("/strategic-agents/thought-leader-pr/resolve",
                        json={"name": "Jane Doe", "x_handle": "@janedoe"})
         assert captured["x_handle_hint"] == "janedoe"
         assert captured["call_kw"]["x_handle"] == "janedoe"
@@ -145,7 +145,7 @@ class TestResolveRoute:
         monkeypatch.setattr(T, "create_run", lambda **kw: None)
         monkeypatch.setattr(T, "resolve_identity", lambda *a, **kw: result)
         monkeypatch.setattr(T, "save_result", lambda *a, **kw: pytest.fail("must not be called with no run_id"))
-        resp = _client().post("/p2/strategic-agents/thought-leader-pr/resolve", json={"name": "Jane Doe"})
+        resp = _client().post("/strategic-agents/thought-leader-pr/resolve", json={"name": "Jane Doe"})
         assert resp.status_code == 200
         assert resp.get_json()["run_id"] is None
 
@@ -160,7 +160,7 @@ class TestResolveRoute:
             call_args=a, call_kw=kw) or {
             "ok": False, "confidence": "none", "reasoning": "x", "identity": None, "spend": {}, "error": None})
         monkeypatch.setattr(T, "save_result", lambda *a, **kw: True)
-        _client().post("/p2/strategic-agents/thought-leader-pr/resolve",
+        _client().post("/strategic-agents/thought-leader-pr/resolve",
                        json={"name": "A" * 5000, "company_hint": "B" * 5000})
         assert len(captured["input_name"]) == 200
         assert len(captured["company_hint"]) == 200
@@ -177,30 +177,30 @@ class TestResolveRoute:
         limit, _window = appmod._CPI_RATE_LIMITS["tli-resolve"]
         c = _client()
         for _ in range(limit):
-            resp = c.post("/p2/strategic-agents/thought-leader-pr/resolve", json={"name": "Jane Doe"})
+            resp = c.post("/strategic-agents/thought-leader-pr/resolve", json={"name": "Jane Doe"})
             assert resp.status_code == 200
-        resp = c.post("/p2/strategic-agents/thought-leader-pr/resolve", json={"name": "Jane Doe"})
+        resp = c.post("/strategic-agents/thought-leader-pr/resolve", json={"name": "Jane Doe"})
         assert resp.status_code == 429
 
 
 class TestConfirmAndRunRoutes:
     def test_confirm_is_scoped_and_reports_failure_as_404(self, monkeypatch):
         monkeypatch.setattr(T, "confirm_run", lambda run_id, email: False)
-        resp = _client().post("/p2/strategic-agents/thought-leader-pr/runs/1/confirm")
+        resp = _client().post("/strategic-agents/thought-leader-pr/runs/1/confirm")
         assert resp.status_code == 404
 
     def test_confirm_success(self, monkeypatch):
         captured = {}
         monkeypatch.setattr(T, "confirm_run", lambda run_id, email: captured.update(
             run_id=run_id, email=email) or True)
-        resp = _client().post("/p2/strategic-agents/thought-leader-pr/runs/7/confirm")
+        resp = _client().post("/strategic-agents/thought-leader-pr/runs/7/confirm")
         assert resp.status_code == 200
         assert resp.get_json() == {"ok": True}
         assert captured == {"run_id": 7, "email": _OWNER}
 
     def test_get_run_not_found_is_404(self, monkeypatch):
         monkeypatch.setattr(T, "get_run", lambda run_id, email: None)
-        resp = _client().get("/p2/strategic-agents/thought-leader-pr/runs/1")
+        resp = _client().get("/strategic-agents/thought-leader-pr/runs/1")
         assert resp.status_code == 404
 
     def test_get_run_is_scoped_to_the_session_email(self, monkeypatch):
@@ -208,7 +208,7 @@ class TestConfirmAndRunRoutes:
         monkeypatch.setattr(T, "get_run", lambda run_id, email: captured.update(
             run_id=run_id, email=email) or {"id": run_id, "status": "confirmed"})
         resp = _client("someone.else@markifydigital.com").get(
-            "/p2/strategic-agents/thought-leader-pr/runs/9")
+            "/strategic-agents/thought-leader-pr/runs/9")
         assert resp.status_code == 200
         assert captured == {"run_id": 9, "email": "someone.else@markifydigital.com"}
 
@@ -220,14 +220,14 @@ class TestCollectRoute:
 
     def test_collect_requires_auth(self):
         c = appmod.app.test_client()
-        resp = c.post("/p2/strategic-agents/thought-leader-pr/runs/1/collect")
+        resp = c.post("/strategic-agents/thought-leader-pr/runs/1/collect")
         assert resp.status_code in (302, 401, 403)
 
     def test_not_confirmed_or_missing_is_404_and_never_starts_a_job(self, monkeypatch):
         monkeypatch.setattr(T, "start_collecting", lambda run_id, email: False)
         monkeypatch.setattr(T, "collect_posts_job",
                             lambda *a, **kw: pytest.fail("must not start collecting an unconfirmed run"))
-        resp = _client().post("/p2/strategic-agents/thought-leader-pr/runs/1/collect")
+        resp = _client().post("/strategic-agents/thought-leader-pr/runs/1/collect")
         assert resp.status_code == 404
 
     def test_confirmed_run_starts_a_background_job(self, monkeypatch):
@@ -242,7 +242,7 @@ class TestCollectRoute:
         monkeypatch.setattr(T, "start_collecting", lambda run_id, email: True)
         monkeypatch.setattr(T, "collect_posts_job", fake_job)
 
-        resp = _client().post("/p2/strategic-agents/thought-leader-pr/runs/4/collect")
+        resp = _client().post("/strategic-agents/thought-leader-pr/runs/4/collect")
         assert resp.status_code == 200
         assert resp.get_json() == {"ok": True, "posts_status": "collecting"}
         assert started.wait(timeout=2), "background job never ran"
@@ -260,9 +260,9 @@ class TestCollectRoute:
         limit, _window = appmod._CPI_RATE_LIMITS["tli-collect"]
         c = _client()
         for _ in range(limit):
-            resp = c.post("/p2/strategic-agents/thought-leader-pr/runs/4/collect")
+            resp = c.post("/strategic-agents/thought-leader-pr/runs/4/collect")
             assert resp.status_code == 200
-        resp = c.post("/p2/strategic-agents/thought-leader-pr/runs/4/collect")
+        resp = c.post("/strategic-agents/thought-leader-pr/runs/4/collect")
         assert resp.status_code == 429
 
 
@@ -273,14 +273,14 @@ class TestCollectReactionRoute:
 
     def test_collect_reaction_requires_auth(self):
         c = appmod.app.test_client()
-        resp = c.post("/p2/strategic-agents/thought-leader-pr/runs/1/collect-reaction")
+        resp = c.post("/strategic-agents/thought-leader-pr/runs/1/collect-reaction")
         assert resp.status_code in (302, 401, 403)
 
     def test_not_confirmed_or_missing_is_404_and_never_starts_a_job(self, monkeypatch):
         monkeypatch.setattr(T, "start_reacting", lambda run_id, email: False)
         monkeypatch.setattr(T, "collect_reaction_job",
                             lambda *a, **kw: pytest.fail("must not start analyzing an unconfirmed run"))
-        resp = _client().post("/p2/strategic-agents/thought-leader-pr/runs/1/collect-reaction")
+        resp = _client().post("/strategic-agents/thought-leader-pr/runs/1/collect-reaction")
         assert resp.status_code == 404
 
     def test_confirmed_run_starts_a_background_job(self, monkeypatch):
@@ -295,7 +295,7 @@ class TestCollectReactionRoute:
         monkeypatch.setattr(T, "start_reacting", lambda run_id, email: True)
         monkeypatch.setattr(T, "collect_reaction_job", fake_job)
 
-        resp = _client().post("/p2/strategic-agents/thought-leader-pr/runs/6/collect-reaction")
+        resp = _client().post("/strategic-agents/thought-leader-pr/runs/6/collect-reaction")
         assert resp.status_code == 200
         assert resp.get_json() == {"ok": True, "reaction_status": "collecting"}
         assert started.wait(timeout=2), "background job never ran"
@@ -310,14 +310,14 @@ class TestCollectPressRoute:
 
     def test_collect_press_requires_auth(self):
         c = appmod.app.test_client()
-        resp = c.post("/p2/strategic-agents/thought-leader-pr/runs/1/collect-press")
+        resp = c.post("/strategic-agents/thought-leader-pr/runs/1/collect-press")
         assert resp.status_code in (302, 401, 403)
 
     def test_not_confirmed_or_missing_is_404_and_never_starts_a_job(self, monkeypatch):
         monkeypatch.setattr(T, "start_press", lambda run_id, email: False)
         monkeypatch.setattr(T, "collect_press_job",
                             lambda *a, **kw: pytest.fail("must not start searching press for an unconfirmed run"))
-        resp = _client().post("/p2/strategic-agents/thought-leader-pr/runs/1/collect-press")
+        resp = _client().post("/strategic-agents/thought-leader-pr/runs/1/collect-press")
         assert resp.status_code == 404
 
     def test_confirmed_run_starts_a_background_job(self, monkeypatch):
@@ -332,7 +332,7 @@ class TestCollectPressRoute:
         monkeypatch.setattr(T, "start_press", lambda run_id, email: True)
         monkeypatch.setattr(T, "collect_press_job", fake_job)
 
-        resp = _client().post("/p2/strategic-agents/thought-leader-pr/runs/8/collect-press")
+        resp = _client().post("/strategic-agents/thought-leader-pr/runs/8/collect-press")
         assert resp.status_code == 200
         assert resp.get_json() == {"ok": True, "press_status": "collecting"}
         assert started.wait(timeout=2), "background job never ran"
@@ -347,14 +347,14 @@ class TestCollectSynthesisRoute:
 
     def test_collect_synthesis_requires_auth(self):
         c = appmod.app.test_client()
-        resp = c.post("/p2/strategic-agents/thought-leader-pr/runs/1/collect-synthesis")
+        resp = c.post("/strategic-agents/thought-leader-pr/runs/1/collect-synthesis")
         assert resp.status_code in (302, 401, 403)
 
     def test_not_confirmed_or_missing_is_404_and_never_starts_a_job(self, monkeypatch):
         monkeypatch.setattr(T, "start_synthesizing", lambda run_id, email: False)
         monkeypatch.setattr(T, "collect_synthesis_job",
                             lambda *a, **kw: pytest.fail("must not start synthesizing an unconfirmed run"))
-        resp = _client().post("/p2/strategic-agents/thought-leader-pr/runs/1/collect-synthesis")
+        resp = _client().post("/strategic-agents/thought-leader-pr/runs/1/collect-synthesis")
         assert resp.status_code == 404
 
     def test_confirmed_run_starts_a_background_job(self, monkeypatch):
@@ -369,7 +369,7 @@ class TestCollectSynthesisRoute:
         monkeypatch.setattr(T, "start_synthesizing", lambda run_id, email: True)
         monkeypatch.setattr(T, "collect_synthesis_job", fake_job)
 
-        resp = _client().post("/p2/strategic-agents/thought-leader-pr/runs/10/collect-synthesis")
+        resp = _client().post("/strategic-agents/thought-leader-pr/runs/10/collect-synthesis")
         assert resp.status_code == 200
         assert resp.get_json() == {"ok": True, "synthesis_status": "collecting"}
         assert started.wait(timeout=2), "background job never ran"

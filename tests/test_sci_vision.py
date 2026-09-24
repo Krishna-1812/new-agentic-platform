@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from tracker import sci_vision  # noqa: E402
 import app as appmod  # noqa: E402
 
-_CLAUDE_VISION_ROUTE = "/p2/admin/external-usage/sci-vision-claude-check"
+_CLAUDE_VISION_ROUTE = "/admin/external-usage/sci-vision-claude-check"
 
 
 def _admin_client(email):
@@ -336,7 +336,7 @@ def test_every_admin_can_reach_the_new_check(monkeypatch):
 # post's still image actually takes -- a deployment can pass probe() (bytes)
 # while this fails, if the vendor's own fetch of a link is what is broken.
 
-_CLAUDE_VISION_URL_ROUTE = "/p2/admin/external-usage/sci-vision-claude-url-check"
+_CLAUDE_VISION_URL_ROUTE = "/admin/external-usage/sci-vision-claude-url-check"
 
 
 def test_probe_url_says_so_when_no_key_is_configured(monkeypatch):

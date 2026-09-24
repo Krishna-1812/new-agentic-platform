@@ -5,7 +5,7 @@
 {{ head("Agent Runs", ["admin_agent_runs.css?v=1", "admin.css?v=6"], compat=True) }}
 </head>
 <body>
-{{ topbar([("Admin", "/p2/admin/internal-usage"), ("Agent Runs", none)]) }}
+{{ topbar([("Admin", "/admin/internal-usage"), ("Agent Runs", none)]) }}
 
 <div class="wrap">
   <div class="hero">
@@ -120,7 +120,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer(
 
 function load(force){
   var btn=document.getElementById('refreshBtn');if(btn)btn.textContent='…';
-  fetch('/p2/admin/public-agent-usage/data',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
+  fetch('/admin/public-agent-usage/data',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
     if(btn)btn.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5\"/></svg> Refresh';
     LAST_DATA=d;
     var note=document.getElementById('emptyNote');

@@ -9,7 +9,7 @@
 </head>
 <body>
 
-  {{ topbar([(brand.agents_plural, "/p2/strategic-agents"), ("Thought Leader Intelligence", none)]) }}
+  {{ topbar([(brand.agents_plural, "/strategic-agents"), ("Thought Leader Intelligence", none)]) }}
 
   <div class="main">
     <div class="tlpr-hero">
@@ -129,7 +129,7 @@
       const panel = document.getElementById('tlprSuggestPanel');
       if (q.length < 2){ panel.style.display = 'none'; panel.innerHTML = ''; return; }
       const company = document.getElementById('tlprCompany').value.trim();
-      const url = '/p2/strategic-agents/thought-leader-pr/search?q=' + encodeURIComponent(q) +
+      const url = '/strategic-agents/thought-leader-pr/search?q=' + encodeURIComponent(q) +
         (company ? '&company=' + encodeURIComponent(company) : '');
       fetch(url)
         .then(res => res.json())
@@ -359,7 +359,7 @@
       clearTimeout(_pollTimer);
       _pollTimer = setTimeout(async () => {
         try {
-          const res = await fetch(`/p2/strategic-agents/thought-leader-pr/runs/${runId}`);
+          const res = await fetch(`/strategic-agents/thought-leader-pr/runs/${runId}`);
           const run = await res.json();
           if (run.posts_status === 'collecting') pollPosts(runId);
           else renderPostsSection(run);
@@ -373,7 +373,7 @@
       const _el = document.getElementById('tlprPostsSection');
       _el.innerHTML = postsLoadingHtml();
       try {
-        const res = await fetch(`/p2/strategic-agents/thought-leader-pr/runs/${runId}/collect`, {method: 'POST'});
+        const res = await fetch(`/strategic-agents/thought-leader-pr/runs/${runId}/collect`, {method: 'POST'});
         const out = await res.json();
         if (out.ok) pollPosts(runId);
         else renderPostsSection({id: runId, posts_status: 'failed', posts_errors: {_run: out.error}});
@@ -639,7 +639,7 @@
       clearTimeout(_reactionPollTimer);
       _reactionPollTimer = setTimeout(async () => {
         try {
-          const res = await fetch(`/p2/strategic-agents/thought-leader-pr/runs/${runId}`);
+          const res = await fetch(`/strategic-agents/thought-leader-pr/runs/${runId}`);
           const run = await res.json();
           if (run.reaction_status === 'collecting') pollReaction(runId);
           else renderReactionSection(run);
@@ -653,7 +653,7 @@
       const _el = document.getElementById('tlprReactionSection');
       _el.innerHTML = reactionLoadingHtml();
       try {
-        const res = await fetch(`/p2/strategic-agents/thought-leader-pr/runs/${runId}/collect-reaction`, {method: 'POST'});
+        const res = await fetch(`/strategic-agents/thought-leader-pr/runs/${runId}/collect-reaction`, {method: 'POST'});
         const out = await res.json();
         if (out.ok) pollReaction(runId);
         else renderReactionSection({id: runId, reaction_status: 'failed', reaction_errors: {_run: out.error}});
@@ -768,7 +768,7 @@
       clearTimeout(_pressPollTimer);
       _pressPollTimer = setTimeout(async () => {
         try {
-          const res = await fetch(`/p2/strategic-agents/thought-leader-pr/runs/${runId}`);
+          const res = await fetch(`/strategic-agents/thought-leader-pr/runs/${runId}`);
           const run = await res.json();
           if (run.press_status === 'collecting') pollPress(runId);
           else renderPressSection(run);
@@ -782,7 +782,7 @@
       const _el = document.getElementById('tlprPressSection');
       _el.innerHTML = pressLoadingHtml();
       try {
-        const res = await fetch(`/p2/strategic-agents/thought-leader-pr/runs/${runId}/collect-press`, {method: 'POST'});
+        const res = await fetch(`/strategic-agents/thought-leader-pr/runs/${runId}/collect-press`, {method: 'POST'});
         const out = await res.json();
         if (out.ok) pollPress(runId);
         else renderPressSection({id: runId, press_status: 'failed', press_errors: {_run: out.error}});
@@ -935,7 +935,7 @@
       clearTimeout(_synthesisPollTimer);
       _synthesisPollTimer = setTimeout(async () => {
         try {
-          const res = await fetch(`/p2/strategic-agents/thought-leader-pr/runs/${runId}`);
+          const res = await fetch(`/strategic-agents/thought-leader-pr/runs/${runId}`);
           const run = await res.json();
           if (run.synthesis_status === 'collecting') pollSynthesis(runId);
           else renderSynthesisSection(run);
@@ -949,7 +949,7 @@
       const _el = document.getElementById('tlprSynthesisSection');
       _el.innerHTML = synthesisLoadingHtml();
       try {
-        const res = await fetch(`/p2/strategic-agents/thought-leader-pr/runs/${runId}/collect-synthesis`, {method: 'POST'});
+        const res = await fetch(`/strategic-agents/thought-leader-pr/runs/${runId}/collect-synthesis`, {method: 'POST'});
         const out = await res.json();
         if (out.ok) pollSynthesis(runId);
         else renderSynthesisSection({id: runId, synthesis_status: 'failed', synthesis_errors: {_run: out.error}});
@@ -1009,7 +1009,7 @@
       setBusy(true, 'Searching Apollo, LinkedIn and the web…');
       document.getElementById('tlprResult').innerHTML = '';
       try {
-        const res = await fetch('/p2/strategic-agents/thought-leader-pr/resolve', {
+        const res = await fetch('/strategic-agents/thought-leader-pr/resolve', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
@@ -1068,7 +1068,7 @@
       setBusy(true, 'Loading…');
       document.getElementById('tlprResult').innerHTML = '';
       try {
-        const res = await fetch(`/p2/strategic-agents/thought-leader-pr/runs/${runId}`);
+        const res = await fetch(`/strategic-agents/thought-leader-pr/runs/${runId}`);
         const run = await res.json();
         if (run.identity){
           document.getElementById('tlprResult').innerHTML =
@@ -1099,7 +1099,7 @@
         if (!runId) return;
         confirmBtn.disabled = true;
         try {
-          const res = await fetch(`/p2/strategic-agents/thought-leader-pr/runs/${runId}/confirm`, {method:'POST'});
+          const res = await fetch(`/strategic-agents/thought-leader-pr/runs/${runId}/confirm`, {method:'POST'});
           const out = await res.json();
           if (out.ok){
             confirmBtn.classList.add('is-done');

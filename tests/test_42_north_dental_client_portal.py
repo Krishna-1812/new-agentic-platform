@@ -12,6 +12,7 @@ underlying sheet as the internal @position2_required ones, just through the
 client's own gate instead.
 """
 import os
+import re
 import sys
 
 import pytest
@@ -203,8 +204,10 @@ def test_dashboard_hides_internal_only_chrome(snapshot):
     # at all would pass this test for the wrong reason.
     assert resp.status_code == 200
     body = resp.data.decode()
-    assert "/p2/hub" not in body
-    assert "/p2/strategic-agents" not in body
+    # The internal hub link, not any string containing "/hub" (the page also
+    # posts to /api/vimi/hubspot).
+    assert not re.search(r"""["'(]/hub["'?#/)]""", body), "internal hub link leaked"
+    assert "/strategic-agents" not in body
     assert "kpal" not in body
 
 
@@ -215,8 +218,8 @@ def test_dashboard_points_its_fetches_at_the_client_scoped_routes(snapshot):
     body = resp.data.decode()
     assert DATA in body
     assert INSIGHTS in body
-    assert "/p2/strategic-agents/42-north-dental-slot-checker/data" not in body
-    assert "/p2/strategic-agents/42-north-dental-slot-checker/insights" not in body
+    assert "/strategic-agents/42-north-dental-slot-checker/data" not in body
+    assert "/strategic-agents/42-north-dental-slot-checker/insights" not in body
 
 
 def test_dashboard_404s_for_an_agent_this_client_has_no_live_dashboard_for():
@@ -388,6 +391,6 @@ def test_the_internal_route_still_matches_the_client_route_byte_for_byte(snapsho
     the other when the code was split out."""
     snapshot(_fake())
     internal = _client("someone@markifydigital.com").get(
-        "/p2/strategic-agents/42-north-dental-slot-checker/data").get_json()
+        "/strategic-agents/42-north-dental-slot-checker/data").get_json()
     client_side = _client("front.desk@42northdental.com").get(DATA).get_json()
     assert internal == client_side

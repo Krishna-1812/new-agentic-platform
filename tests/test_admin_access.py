@@ -1,7 +1,7 @@
 """Who is an admin, and does that one set really govern every admin surface.
 
 ADMIN_EMAILS is documented as the single source of truth: `admin_required`
-gates every /p2/admin/* route off it, the template context processor derives
+gates every /admin/* route off it, the template context processor derives
 `is_admin` from it, and /api/whoami serves the same flag so client-rendered
 surfaces stop keeping their own hardcoded lists. Documented is not the same as
 true, and this repo has been bitten before by a roster living in several
@@ -119,7 +119,7 @@ def _call_gate(email):
         calls.append(1)
         return "ok"
 
-    with appmod.app.test_request_context("/p2/admin/probe"):
+    with appmod.app.test_request_context("/admin/probe"):
         from flask import session
         if email:
             session["google_user"] = {"email": email, "name": "T"}
@@ -210,10 +210,10 @@ def test_no_route_under_p2_admin_escapes_the_gate():
     """The sweep above can only test the routes it finds. A route that loses
     its @admin_required decorator disappears from that list rather than
     failing in it, so the hole would be invisible -- this asserts the other
-    direction: everything under /p2/admin/ is either gated itself, or is a
+    direction: everything under /admin/ is either gated itself, or is a
     bare 301 onto something that is.
 
-    Nine of these are the pre-rename URLs (/p2/admin/members, /p2/admin/usage
+    Nine of these are the pre-rename URLs (/admin/members, /admin/usage
     and friends). They are correct as they stand -- a redirect to a gated page
     hands out nothing, and the gate answers on arrival -- but "it only
     redirects" is a claim worth checking rather than reading, so the redirect
@@ -222,8 +222,8 @@ def test_no_route_under_p2_admin_escapes_the_gate():
     """
     gated = {r.rule for r in _admin_routes()}
     under_admin = {r.rule for r in appmod.app.url_map.iter_rules()
-                   if r.rule.startswith("/p2/admin/")}
-    assert under_admin, "no /p2/admin/ routes found at all, so this proves nothing"
+                   if r.rule.startswith("/admin/")}
+    assert under_admin, "no /admin/ routes found at all, so this proves nothing"
 
     leaks = []
     for rule in sorted(under_admin - gated):
@@ -260,7 +260,7 @@ def test_the_template_wide_is_admin_flag_follows_the_same_set(email):
     one `{% if is_admin %}` around all seven links) on this one value. If it
     ever disagreed with admin_required, a link would be visible and then
     403 -- or, worse, invisible to someone who does have access."""
-    with appmod.app.test_request_context("/p2/hub"):
+    with appmod.app.test_request_context("/hub"):
         from flask import session
         session["google_user"] = {"email": email, "name": "T"}
         assert appmod._inject_app_agents()["is_admin"] is True
@@ -296,10 +296,10 @@ def test_each_admin_reaches_the_internal_hub(email):
     """position2_required (the /p2 staff gate) must admit both admins, the
     gmail.com one included; before, it checked the company domain alone and
     would have bounced that admin to /app."""
-    r = _client(email).get("/p2/hub")
+    r = _client(email).get("/hub")
     assert not (r.status_code == 302 and r.headers.get("Location", "").endswith("/app")), r.status_code
 
 
 def test_a_gmail_account_that_is_not_an_admin_is_kept_out_of_the_internal_hub():
-    r = _client("someone.else@gmail.com").get("/p2/hub")
+    r = _client("someone.else@gmail.com").get("/hub")
     assert r.status_code == 302 and r.headers["Location"].endswith("/app")

@@ -7,7 +7,7 @@ This broke in production: the page rendered a blank/broken app because the
 built index.html referenced /assets/index-*.js (site root) while Flask only
 served that file under a path-prefixed route (originally
 /gtm/ad-intelligence/assets/..., later needed at
-/p2/strategic-agents/ad-intelligence/assets/...). A prior fix hand-patched the
+/strategic-agents/ad-intelligence/assets/...). A prior fix hand-patched the
 committed index.html to the right prefix, but the CI "rebuild frontend"
 workflow (.github/workflows/build-frontend.yml) regenerates index.html from
 vite.config.ts on every push to apps/ad-intelligence/**, silently reverting
@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import app as appmod  # noqa: E402
 
-PAGE_PATH = "/p2/strategic-agents/ad-intelligence"
+PAGE_PATH = "/strategic-agents/ad-intelligence"
 
 
 @pytest.fixture
@@ -47,7 +47,7 @@ def _referenced_urls(html):
     urls = re.findall(r'(?:src|href)="(/[^"]+)"', html)
     # Only ones the page load itself depends on: same-origin JS/CSS/icon, not
     # the Google-fonts stylesheets or any anchor hrefs to other pages.
-    return [u for u in urls if u.startswith("/p2/strategic-agents/ad-intelligence/")]
+    return [u for u in urls if u.startswith("/strategic-agents/ad-intelligence/")]
 
 
 def test_the_page_itself_loads(client):
@@ -71,8 +71,8 @@ def test_the_script_and_stylesheet_are_specifically_covered():
     because the JS/CSS tags got dropped from the markup entirely."""
     html = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                               "ad_intelligence", "index.html"), encoding="utf-8").read()
-    assert re.search(r'<script[^>]+src="/p2/strategic-agents/ad-intelligence/assets/[^"]+\.js"', html)
-    assert re.search(r'<link[^>]+href="/p2/strategic-agents/ad-intelligence/assets/[^"]+\.css"', html)
+    assert re.search(r'<script[^>]+src="/strategic-agents/ad-intelligence/assets/[^"]+\.js"', html)
+    assert re.search(r'<link[^>]+href="/strategic-agents/ad-intelligence/assets/[^"]+\.css"', html)
 
 
 def test_vite_base_matches_the_flask_mount_path():
@@ -81,14 +81,14 @@ def test_vite_base_matches_the_flask_mount_path():
     index.html's asset URLs and Flask must have a route to match."""
     cfg = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                              "apps", "ad-intelligence", "vite.config.ts"), encoding="utf-8").read()
-    assert "base: '/p2/strategic-agents/ad-intelligence/'" in cfg
+    assert "base: '/strategic-agents/ad-intelligence/'" in cfg
 
 
 # ── Favicon must match every other page, not this app's own bundled icon ────
 #
 # This app used to ship its own favicon.svg (apps/ad-intelligence/public/) and
 # reference it as href="/favicon.svg", which vite's `base` then rewrote to
-# /p2/strategic-agents/ad-intelligence/favicon.svg at build time. That routed to a
+# /strategic-agents/ad-intelligence/favicon.svg at build time. That routed to a
 # different icon than every other page's plain /favicon.svg, so the browser
 # tab looked wrong specifically on this page. Fixed by dropping the app's own
 # public/favicon.svg entirely, so nothing in apps/ad-intelligence/public/
@@ -172,7 +172,7 @@ def test_source_draws_the_product_mark_and_reads_the_served_name():
 
 def test_source_breadcrumb_says_b2b_agents_not_ppc():
     src = _read("apps", "ad-intelligence", "src", "App.tsx")
-    assert 'href="/p2/strategic-agents"' in src
+    assert 'href="/strategic-agents"' in src
     # The label follows the product bar every Bento page shares
     # (Workspace / Agents / <page>, from brand.py), so it reads "Agents".
     assert '>Agents<' in src
@@ -190,7 +190,7 @@ def test_compiled_bundle_matches_the_source_fix():
     bundle = open(os.path.join(assets_dir, js_files[0]), encoding="utf-8").read()
     assert "__BRAND__" in bundle, "the served bundle predates the brand-slot change"
     assert "/static/logo-lockup.svg" not in bundle and "/static/logo-mark.svg" not in bundle
-    assert "/p2/strategic-agents" in bundle
+    assert "/strategic-agents" in bundle
     assert "bn-bar-crumbs" in bundle, "the served bundle predates the Bento rebuild"
     assert ">PPC<" not in bundle
 
@@ -206,7 +206,7 @@ def test_the_route_hands_the_page_its_brand_and_fills_the_widget():
     with client.session_transaction() as sess:
         sess["google_user"] = {"email": "x" + appmod.STAFF_EMAIL_SUFFIX, "name": "T",
                                "given_name": "T", "picture": None}
-    html = client.get("/p2/strategic-agents/ad-intelligence").get_data(as_text=True)
+    html = client.get("/strategic-agents/ad-intelligence").get_data(as_text=True)
     m = re.search(r"<script>window\.__BRAND__=(\{[^<]*\});</script>", html)
     assert m and BRAND["name"] in m.group(1), "the page was not handed its brand"
     assert not re.search(r"__BRAND_[A-Z]+__", html), "a brand token reached the browser unfilled"

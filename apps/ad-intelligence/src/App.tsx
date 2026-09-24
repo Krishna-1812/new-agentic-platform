@@ -81,14 +81,14 @@ function PlatformBar() {
   const isAdmin = !!u?.is_admin;
   return (
     <div className="bn-bar">
-      <a href="/p2/hub" className="bn-bar-brand">
+      <a href="/hub" className="bn-bar-brand">
         <Mark size={12} />
         <span>{BRAND_NAME}</span>
       </a>
       <nav className="bn-bar-crumbs hidden sm:flex" aria-label="Breadcrumb">
-        <a href="/p2/hub">Workspace</a>
+        <a href="/hub">Workspace</a>
         <span aria-hidden="true">/</span>
-        <a href="/p2/strategic-agents">Agents</a>
+        <a href="/strategic-agents">Agents</a>
         <span aria-hidden="true">/</span>
         <span className="bn-bar-cur">Ad Intelligence</span>
       </nav>
@@ -105,8 +105,8 @@ function PlatformBar() {
               <div style={{ fontSize: 13, fontWeight: 600, color: '#121213' }}>{full}</div>
               <div style={{ fontSize: 11, color: '#6F6B66', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u?.email || ''}</div>
             </div>
-            <a href="/p2/hub" style={kpDdItem}>Workspace</a>
-            {isAdmin && <a href="/p2/admin/usage" style={kpDdItem}>Usage dashboard</a>}
+            <a href="/hub" style={kpDdItem}>Workspace</a>
+            {isAdmin && <a href="/admin/usage" style={kpDdItem}>Usage dashboard</a>}
             <a href="/logout" style={{ ...kpDdItem, color: '#C8261B' }}>Sign out</a>
           </div>
         )}

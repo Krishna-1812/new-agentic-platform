@@ -19,7 +19,7 @@ os.environ.setdefault("FLASK_SECRET_KEY", "test")
 import app as appmod  # noqa: E402
 from tracker import event_intel_store as store  # noqa: E402
 
-BASE = "/p2/strategic-agents/event-conference-intelligence"
+BASE = "/strategic-agents/event-conference-intelligence"
 
 ROUTES = [
     (BASE, "GET"),
@@ -69,7 +69,7 @@ def test_no_route_is_reachable_by_a_non_position2_account(path, method):
 
 
 def test_the_admin_selftest_is_admin_only():
-    path = "/p2/admin/external-usage/evi-resolve-check"
+    path = "/admin/external-usage/evi-resolve-check"
     assert appmod.app.url_map.bind("localhost").test(path, "POST")
     # A Position2 staffer who is not in ADMIN_EMAILS must not reach it.
     r = _client("not.an.admin@markifydigital.com").post(path)

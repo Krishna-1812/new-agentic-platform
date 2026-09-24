@@ -4,17 +4,17 @@ That rename has since been superseded by a second one -- "B2B Agents" to
 "Strategic Agents", 2026-09-11 -- covered by test_strategic_agents_rename.py.
 This file keeps testing what it always tested (the GTM-era legacy behavior
 and its page-label folding), with its "current name" assertions updated to
-match reality: /p2/b2b-agents is no longer the canonical path, so tests that
+match reality: /b2b-agents is no longer the canonical path, so tests that
 described it as such now describe it as what it has become -- a second
-legacy alias that redirects straight through to /p2/strategic-agents,
-skipping the intermediate hop, exactly like /p2/gtm does.
+legacy alias that redirects straight through to /strategic-agents,
+skipping the intermediate hop, exactly like /gtm does.
 
 Two things have to survive a rename like this, and neither is the new name
 itself, which is easy. What breaks quietly:
 
   1. Links that already exist. Bookmarks, browser history, links pasted into
      Slack, and the previous JS bundle a browser is still holding in the minutes
-     after a deploy. Every old /p2/gtm/* path therefore still resolves, and it
+     after a deploy. Every old /gtm/* path therefore still resolves, and it
      does so with a 308 rather than a 301 because several of those paths are
      POST endpoints: a 301 lets the browser retry them as GET, silently dropping
      the body.
@@ -52,20 +52,20 @@ def client():
     return c
 
 
-# ── /p2/b2b-agents is itself legacy now (superseded 2026-09-11) ────────────
+# ── /b2b-agents is itself legacy now (superseded 2026-09-11) ────────────
 
 def test_the_old_b2b_agents_root_now_redirects_too(client):
     """It used to be the canonical path; a second rename made it a legacy
-    alias, same shape as /p2/gtm below."""
-    r = client.get("/p2/b2b-agents")
+    alias, same shape as /gtm below."""
+    r = client.get("/b2b-agents")
     assert r.status_code == 308
-    assert r.headers["Location"].endswith("/p2/strategic-agents")
+    assert r.headers["Location"].endswith("/strategic-agents")
 
 
 def test_old_links_eventually_reach_the_current_name(client):
     """Following an old bookmark all the way through must land on a page
     that says the CURRENT name, not either prior one."""
-    body = client.get("/p2/b2b-agents", follow_redirects=True).get_data(as_text=True)
+    body = client.get("/b2b-agents", follow_redirects=True).get_data(as_text=True)
     from brand import BRAND
     assert BRAND["agents_plural"] in body
     assert ">GTM<" not in body
@@ -73,24 +73,24 @@ def test_old_links_eventually_reach_the_current_name(client):
 
 
 def test_the_hub_card_carries_the_current_name(client):
-    body = client.get("/p2/hub").get_data(as_text=True)
+    body = client.get("/hub").get_data(as_text=True)
     from brand import BRAND
     # The hub tile is named from brand.py and identified by data attributes now.
     # The retired names are still checked, because THAT is what this test is
     # for: a rename that reaches the routes but not the page people click.
     assert re.search(r'data-ws-name>\s*%s\s*<' % re.escape(BRAND["agents_plural"]), body)
-    assert 'href="/p2/strategic-agents"' in body
+    assert 'href="/strategic-agents"' in body
     assert not re.search(r'data-ws-name>\s*(GTM|B2B Agents)\s*<', body)
 
 
 @pytest.mark.parametrize("path", [
-    "/p2/strategic-agents",
-    "/p2/strategic-agents/company-people-intelligence",
-    "/p2/strategic-agents/anonymous-visitors",
-    "/p2/strategic-agents/linkedin-intelligence",
-    "/p2/strategic-agents/ad-intelligence",
-    "/p2/strategic-agents/linkedin-strategy-researcher",
-    "/p2/strategic-agents/42-north-dental-slot-checker",
+    "/strategic-agents",
+    "/strategic-agents/company-people-intelligence",
+    "/strategic-agents/anonymous-visitors",
+    "/strategic-agents/linkedin-intelligence",
+    "/strategic-agents/ad-intelligence",
+    "/strategic-agents/linkedin-strategy-researcher",
+    "/strategic-agents/42-north-dental-slot-checker",
 ])
 def test_every_renamed_page_is_routed(path):
     """Registered, not necessarily 200 (some need live upstreams). A missing
@@ -102,11 +102,11 @@ def test_every_renamed_page_is_routed(path):
 # ── Old links keep working ──────────────────────────────────────────────────
 
 def test_the_old_gtm_root_redirects_straight_through(client):
-    """/p2/gtm now lands directly on the CURRENT name rather than chaining
-    through the intermediate /p2/b2b-agents hop."""
-    r = client.get("/p2/gtm")
+    """/gtm now lands directly on the CURRENT name rather than chaining
+    through the intermediate /b2b-agents hop."""
+    r = client.get("/gtm")
     assert r.status_code == 308
-    assert r.headers["Location"].endswith("/p2/strategic-agents")
+    assert r.headers["Location"].endswith("/strategic-agents")
 
 
 @pytest.mark.parametrize("rest", [
@@ -119,35 +119,35 @@ def test_the_old_gtm_root_redirects_straight_through(client):
 def test_any_old_sub_path_redirects(client, rest):
     """One catch-all covers the whole old tree, so a route added later inherits
     the alias instead of quietly 404ing for anyone with an old link."""
-    r = client.get("/p2/gtm/" + rest)
+    r = client.get("/gtm/" + rest)
     assert r.status_code == 308
-    assert r.headers["Location"].endswith("/p2/strategic-agents/" + rest)
+    assert r.headers["Location"].endswith("/strategic-agents/" + rest)
 
 
 def test_a_query_string_survives_the_redirect(client):
-    r = client.get("/p2/gtm/linkedin-intelligence/data?fresh=1")
-    assert r.headers["Location"].endswith("/p2/strategic-agents/linkedin-intelligence/data?fresh=1")
+    r = client.get("/gtm/linkedin-intelligence/data?fresh=1")
+    assert r.headers["Location"].endswith("/strategic-agents/linkedin-intelligence/data?fresh=1")
 
 
 def test_a_post_keeps_its_method_and_body(client):
     """The reason this is 308 and not 301. A browser still holding the previous
     JS bundle POSTs to the old URL; a 301 would retry it as a GET and lose the
     question the user just typed."""
-    r = client.post("/p2/gtm/company-people-intelligence/chat", json={"message": "x"})
+    r = client.post("/gtm/company-people-intelligence/chat", json={"message": "x"})
     assert r.status_code == 308, "301 would let the browser downgrade this to GET"
-    assert r.headers["Location"].endswith("/p2/strategic-agents/company-people-intelligence/chat")
+    assert r.headers["Location"].endswith("/strategic-agents/company-people-intelligence/chat")
 
 
 def test_a_delete_keeps_its_method(client):
-    r = client.delete("/p2/gtm/company-people-intelligence/history/1")
+    r = client.delete("/gtm/company-people-intelligence/history/1")
     assert r.status_code == 308
 
 
 def test_the_older_ppc_links_now_land_on_the_current_name(client):
-    """These were already redirecting to /p2/gtm, then /p2/b2b-agents; they
+    """These were already redirecting to /gtm, then /b2b-agents; they
     must not now land on a path that no longer exists."""
     r = client.get("/ppc")
-    assert r.headers["Location"].endswith("/p2/strategic-agents")
+    assert r.headers["Location"].endswith("/strategic-agents")
 
 
 def test_the_ad_intel_bundle_asset_paths_still_serve():
@@ -166,8 +166,10 @@ def test_the_old_page_title_folds_all_the_way_to_the_current_one():
 
 
 def test_an_old_recorded_path_folds_all_the_way_too():
+    # A path as it was RECORDED: every page view before 2026-09-24 carries the
+    # old /p2 prefix, so the historical input keeps it; the output does not.
     assert (appmod._page_label("/p2/gtm/company-people-intelligence")
-            == "/p2/strategic-agents/company-people-intelligence")
+            == "/strategic-agents/company-people-intelligence")
 
 
 def test_an_unrelated_label_is_untouched():

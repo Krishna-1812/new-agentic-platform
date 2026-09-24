@@ -11,7 +11,7 @@
   <div class="sci-aurora"><div class="b b1"></div><div class="b b2"></div><div class="b b3"></div></div>
   <div class="sci-grain"></div>
 
-  {{ topbar([(brand.agents_plural, "/p2/strategic-agents"), ("Social Media Intelligence", none)]) }}
+  {{ topbar([(brand.agents_plural, "/strategic-agents"), ("Social Media Intelligence", none)]) }}
 
   <div class="main">
     <div class="ph">
@@ -127,7 +127,7 @@
 
   <script>
     var POLL_TIMER = null;
-    var BASE = '/p2/strategic-agents/social-media-intelligence';
+    var BASE = '/strategic-agents/social-media-intelligence';
     var IS_ADMIN = {{ 'true' if is_admin else 'false' }};
 
     var PLATFORM_META = {
@@ -199,7 +199,7 @@
       var b = document.getElementById('sciProviderCheckBtn'), out = document.getElementById('sciProviderCheckOut');
       if(!b || !out) return;
       b.disabled = true; b.textContent = 'Checking…';
-      fetch('/p2/admin/external-usage/sci-company-search-check', {method: 'POST'})
+      fetch('/admin/external-usage/sci-company-search-check', {method: 'POST'})
         .then(function(r){ return r.json(); }).then(function(d){
           b.disabled = false; b.textContent = 'Run provider check';
           out.style.display = 'block';
@@ -231,7 +231,7 @@
       var b = document.getElementById('sciIdentifyCheckBtn'), out = document.getElementById('sciIdentifyCheckOut');
       if(!b || !out) return;
       b.disabled = true; b.textContent = 'Checking…';
-      fetch('/p2/admin/external-usage/sci-identify-check', {method: 'POST'})
+      fetch('/admin/external-usage/sci-identify-check', {method: 'POST'})
         .then(function(r){ return r.json(); }).then(function(d){
           b.disabled = false; b.textContent = 'Check identification step';
           out.style.display = 'block';
@@ -338,7 +338,7 @@
     function loadVisionClaudeCheck(){
       var body = document.getElementById('dsVisionClaudeBody');
       if(!body) return;
-      fetch('/p2/admin/external-usage/sci-vision-claude-check', {method: 'POST'})
+      fetch('/admin/external-usage/sci-vision-claude-check', {method: 'POST'})
         .then(function(r){ return r.json(); })
         .then(function(d){
           dsVisionCard(body, 'AI vision', 'Reads every collected creative and writes the subject, setting, ' +
@@ -357,7 +357,7 @@
     function loadVisionClaudeUrlCheck(){
       var body = document.getElementById('dsVisionClaudeUrlBody');
       if(!body) return;
-      fetch('/p2/admin/external-usage/sci-vision-claude-url-check', {method: 'POST'})
+      fetch('/admin/external-usage/sci-vision-claude-url-check', {method: 'POST'})
         .then(function(r){ return r.json(); })
         .then(function(d){
           dsVisionCard(body, 'AI vision', 'Proves the AI can fetch and read an image by URL, the way it reads ' +
@@ -401,7 +401,7 @@
       var body = document.getElementById('dsBody'), btn = document.getElementById('dsRefreshBtn');
       if(!body) return;
       if(btn) btn.disabled = true;
-      fetch('/p2/admin/external-usage/unipile-check', {method: 'POST'})
+      fetch('/admin/external-usage/unipile-check', {method: 'POST'})
         .then(function(r){ return r.json(); })
         .then(function(d){
           if(btn) btn.disabled = false;
@@ -451,7 +451,7 @@ function dsApifyRow(platform, entry){
     function loadApifyDataSources(){
       var body = document.getElementById('dsApifyBody');
       if(!body) return;
-      fetch('/p2/admin/external-usage/sci-apify-check', {method: 'POST'})
+      fetch('/admin/external-usage/sci-apify-check', {method: 'POST'})
         .then(function(r){ return r.json(); })
         .then(function(d){
           if(!d.configured){
@@ -474,7 +474,7 @@ function dsApifyRow(platform, entry){
     }
 
     function connectUnipile(providers){
-      fetch('/p2/admin/external-usage/unipile-connect', {
+      fetch('/admin/external-usage/unipile-connect', {
         method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({providers: providers}),
       }).then(function(r){ return r.json(); }).then(function(d){

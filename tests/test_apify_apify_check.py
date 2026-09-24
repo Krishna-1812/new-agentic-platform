@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import app as appmod  # noqa: E402
 from tracker import apify_transport  # noqa: E402
 
-ROUTE = "/p2/admin/external-usage/sci-apify-check"
+ROUTE = "/admin/external-usage/sci-apify-check"
 
 
 def _client(email):

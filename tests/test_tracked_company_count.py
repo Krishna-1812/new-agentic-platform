@@ -91,9 +91,9 @@ def test_the_client_only_dashboard_is_not_double_counted():
 # ── The accounts page still reads its own per-universe count ────────────────
 
 def test_each_account_card_still_shows_that_universes_own_count(client):
-    """/p2/abm-signal-tracker/accounts prints a count per card, and it shares the reading
+    """/abm-signal-tracker/accounts prints a count per card, and it shares the reading
     code with the new total. The refactor must not have turned those into dashes."""
-    body = client.get("/p2/abm-signal-tracker/accounts").get_data(as_text=True)
+    body = client.get("/abm-signal-tracker/accounts").get_data(as_text=True)
     for cfg in appmod.ACCOUNTS.values():
         n = appmod._company_count(cfg["dashboard"])
         assert "<span>%d</span> companies" % n in body
@@ -151,14 +151,14 @@ def test_the_band_drops_the_stat_when_nothing_can_be_counted(client, monkeypatch
     """Better to show three stats than to tell everyone the platform tracks 0
     companies because a deploy shipped without the reports directory."""
     monkeypatch.setattr(appmod, "_tracked_company_total", lambda: 0)
-    body = client.get("/p2/hub").get_data(as_text=True)
+    body = client.get("/hub").get_data(as_text=True)
     assert "companies tracked" not in body
     assert "dashboards" in body, "the rest of the band must still render"
 
 
 def test_the_abm_card_stays_a_sentence_when_nothing_can_be_counted(client, monkeypatch):
     monkeypatch.setattr(appmod, "_tracked_company_total", lambda: 0)
-    body = client.get("/p2/strategic-agents").get_data(as_text=True)
+    body = client.get("/strategic-agents").get_data(as_text=True)
     assert "across every tracked company:" in body
     assert "+ companies" not in body
 
@@ -181,12 +181,12 @@ def _expected_band(floor):
 
 
 def test_the_hub_band_quotes_the_derived_figure(client):
-    body = client.get("/p2/hub").get_data(as_text=True)
+    body = client.get("/hub").get_data(as_text=True)
     assert _band_companies(body) == _expected_band(appmod._tracked_company_floor())
 
 
 def test_the_abm_card_quotes_the_same_figure(client):
-    body = client.get("/p2/strategic-agents").get_data(as_text=True)
+    body = client.get("/strategic-agents").get_data(as_text=True)
     floor = appmod._tracked_company_floor()
     if not floor:
         assert "across every tracked company:" in body
@@ -197,13 +197,13 @@ def test_the_abm_card_quotes_the_same_figure(client):
 def test_neither_surface_still_carries_the_old_hardcoded_numbers(client):
     """The exact mismatch this fixed. Both figures came from a template literal;
     if either string reappears, someone has typed a count back in."""
-    hub = client.get("/p2/hub").get_data(as_text=True)
+    hub = client.get("/hub").get_data(as_text=True)
     # Asserted against the figure the page actually reports rather than against
     # a literal in one region of markup: the region moved, and pinning the check
     # to a container class is how it stopped checking anything at all.
     assert _band_companies(hub) == _expected_band(appmod._tracked_company_floor())
     assert _band_companies(hub) != 1200 or appmod._tracked_company_floor() == 1200
-    b2b = client.get("/p2/strategic-agents").get_data(as_text=True)
+    b2b = client.get("/strategic-agents").get_data(as_text=True)
     assert "1,500+ companies" not in b2b or appmod._tracked_company_floor() == 1500
 
 
@@ -211,8 +211,8 @@ def test_the_two_surfaces_cannot_disagree(client, monkeypatch):
     """Move the underlying total and both pages move together. This is the property
     that was missing before: two independent literals could not track each other."""
     monkeypatch.setattr(appmod, "_tracked_company_total", lambda: 2750)
-    hub = client.get("/p2/hub").get_data(as_text=True)
-    b2b = client.get("/p2/strategic-agents").get_data(as_text=True)
+    hub = client.get("/hub").get_data(as_text=True)
+    b2b = client.get("/strategic-agents").get_data(as_text=True)
     assert _band_companies(hub) == 2700
     assert "across 2,700+ companies" in b2b
 
