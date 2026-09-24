@@ -5,7 +5,7 @@
 {{ head("Agent Feedback", ["admin_agent_feedback.css?v=1", "admin.css?v=6"], compat=True) }}
 </head>
 <body>
-{{ topbar([("Admin", "/p2/admin/internal-usage"), ("Agent Feedback", none)]) }}
+{{ topbar([("Admin", "/admin/internal-usage"), ("Agent Feedback", none)]) }}
 
   <div class="main">
     <div class="ph">
@@ -191,7 +191,7 @@
       var qs=[];
       if(agent) qs.push('agent_slug='+encodeURIComponent(agent));
       if(currentRating) qs.push('rating='+encodeURIComponent(currentRating));
-      fetch('/p2/admin/agent-feedback/data'+(qs.length?'?'+qs.join('&'):''))
+      fetch('/admin/agent-feedback/data'+(qs.length?'?'+qs.join('&'):''))
         .then(function(r){return r.json();})
         .then(function(d){
           lastSummary=d.summary||[];
@@ -276,7 +276,7 @@
         '<div id="afSectionEntries" class="empty">Loading…</div>';
       openModal(titleHtml, html);
 
-      fetch('/p2/admin/agent-feedback/data?agent_slug='+encodeURIComponent(r.agent_slug))
+      fetch('/admin/agent-feedback/data?agent_slug='+encodeURIComponent(r.agent_slug))
         .then(function(x){return x.json();})
         .then(function(d){
           var el=document.getElementById('afSectionEntries');

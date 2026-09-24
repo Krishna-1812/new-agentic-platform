@@ -53,11 +53,11 @@ def _sign_in(client, email):
 
 def test_a_staff_account_still_reaches_p2(client):
     _sign_in(client, "someone" + appmod.STAFF_EMAIL_SUFFIX)
-    assert client.get("/p2/hub").status_code == 200
+    assert client.get("/hub").status_code == 200
 
 
 @pytest.mark.parametrize("email", ["someone@example.com", "someone@gmail.com"])
 def test_anyone_else_is_still_refused(client, email):
-    assert client.get("/p2/hub").status_code in (302, 303)  # signed out: to login
+    assert client.get("/hub").status_code in (302, 303)  # signed out: to login
     _sign_in(client, email)
-    assert client.get("/p2/hub").status_code in (302, 303, 403)
+    assert client.get("/hub").status_code in (302, 303, 403)

@@ -398,7 +398,7 @@ def _chat(monkeypatch, message, intent_extra=None, companies=None, people=None,
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
         sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
-    r = c.post("/p2/strategic-agents/company-people-intelligence/chat", json={"message": message})
+    r = c.post("/strategic-agents/company-people-intelligence/chat", json={"message": message})
     assert r.status_code == 200
     return seen.get("facts", {}), r.get_json()
 

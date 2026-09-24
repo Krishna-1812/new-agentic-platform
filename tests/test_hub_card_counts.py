@@ -66,7 +66,7 @@ def dashboard_cards():
     The hub's "N live" counts the FIRST. Two rows are on the roster while still
     being built, so counting data-badge instead would quietly report 9.
     """
-    body = _render("/p2/strategic-agents")
+    body = _render("/strategic-agents")
     rows = re.findall(
         r'data-agent="[^"]*"\s+data-state="(\w+)"(?:\s+data-badge="(\w+)")?(.*?)</a>',
         body, re.S)
@@ -83,7 +83,7 @@ def dashboard_cards():
 
 def _workspace(slug):
     """One workspace tile on the hub, parsed from the rendered page."""
-    body = _render("/p2/hub")
+    body = _render("/hub")
     block = body.split('data-ws="%s"' % slug, 1)[1].split("</a>", 1)[0]
     stats = dict((label, int(n)) for label, n in
                  re.findall(r'data-count="(\w+)">(\d+)<', block))
@@ -222,7 +222,7 @@ def _hub_band():
     """The figures are tiles of the hub grid now rather than a band beneath it,
     and each renders its value directly instead of being counted up from zero by
     a script. data-figure is what identifies them."""
-    body = _render("/p2/hub")
+    body = _render("/hub")
     return dict((label, int(n.replace(",", "").rstrip("+")))
                 for label, n in
                 re.findall(r'data-figure="(\w+)">([\d,]+\+?)<', body))

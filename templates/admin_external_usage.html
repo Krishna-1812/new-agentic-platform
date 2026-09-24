@@ -15,7 +15,7 @@
   </div>
 
   <!-- Topbar -->
-{{ topbar([("Admin", "/p2/admin/internal-usage"), ("External Usage", none)]) }}
+{{ topbar([("Admin", "/admin/internal-usage"), ("External Usage", none)]) }}
 
   <!-- Main -->
   <div class="main">
@@ -565,7 +565,7 @@
                 agent_runs:u.agent_runs, page_views:u.page_views, time_fmt:u.time_fmt,
                 first_seen:u.first_seen, last_active:u.last_active||u.last_seen, linked:!!u.linked};
       });
-      fetch('/p2/admin/external-usage/ai-sort', {
+      fetch('/admin/external-usage/ai-sort', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({people:people})
       }).then(function(r){return r.json();}).then(function(d){
@@ -915,7 +915,7 @@
     function pmSummarize(u){
       var em=(u.email||'').toLowerCase();
       if(!em)return Promise.resolve();
-      return fetch('/p2/admin/external-usage/summary',{
+      return fetch('/admin/external-usage/summary',{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({email:em,activity:u})
       }).then(function(r){return r.json();}).then(function(d){
@@ -971,7 +971,7 @@
       var i=PM_I,u=USERS[i]; if(!u)return;
       var b=document.getElementById('pmRetry'); if(b){b.disabled=true;b.textContent='Looking up...';}
       var em=(u.email||'').toLowerCase();
-      fetch('/p2/admin/external-usage/enrich',{method:'POST',
+      fetch('/admin/external-usage/enrich',{method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({emails:[em],force:true})})
         .then(function(r){return r.json();})
@@ -994,7 +994,7 @@
       var b=document.getElementById('pmCheck'), out=document.getElementById('pmDiag');
       if(!b||!out)return;
       b.disabled=true; b.textContent='Checking...';
-      fetch('/p2/admin/external-usage/apollo-check',{method:'POST'})
+      fetch('/admin/external-usage/apollo-check',{method:'POST'})
         .then(function(r){return r.json();})
         .then(function(d){
           b.textContent='Check Apollo connection'; b.disabled=false;
@@ -1025,7 +1025,7 @@
     function pmEnrich(emails){
       emails=(emails||[]).filter(Boolean);
       if(!emails.length)return Promise.resolve();
-      return fetch('/p2/admin/external-usage/enrich',{
+      return fetch('/admin/external-usage/enrich',{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({emails:emails})
       }).then(function(r){return r.json();}).then(function(d){
@@ -1072,7 +1072,7 @@
       btn.disabled=true; var was=lab.textContent; lab.textContent='Building...';
       var done=function(msg){ lab.textContent=msg||was; btn.disabled=false;
         if(msg)setTimeout(function(){lab.textContent=was;},2600); };
-      fetch('/p2/admin/external-usage/export')
+      fetch('/admin/external-usage/export')
         .then(function(r){ if(!r.ok)throw new Error('HTTP '+r.status); return r.blob(); })
         .then(function(blob){
           var cd=new Date(), stamp=cd.toISOString().slice(0,10);
@@ -1094,7 +1094,7 @@
       icon.style.transform = 'rotate(360deg)';
       setTimeout(function(){ icon.style.transition='none'; icon.style.transform='rotate(0deg)'; btn.classList.remove('spinning'); }, 700);
 
-      fetch('/p2/admin/external-usage/data')
+      fetch('/admin/external-usage/data')
         .then(function(r){ return r.json(); })
         .then(function(d) {
           /* Stats */
@@ -1452,7 +1452,7 @@ window.__LUX_CFG={};
   if(window.__uxx)return;window.__uxx=1;
   var COLORS=['#FF6022','#17753F','#FF6022','#FFB500','#8CCBFF'];
   var D=null,pending=[];
-  function load(cb){pending.push(cb);if(D){flush();return;}if(load.__l)return;load.__l=1;fetch('/p2/admin/external-usage/data').then(function(r){return r.json();}).then(function(j){D=j||{};flush();}).catch(function(){D={};flush();});}
+  function load(cb){pending.push(cb);if(D){flush();return;}if(load.__l)return;load.__l=1;fetch('/admin/external-usage/data').then(function(r){return r.json();}).then(function(j){D=j||{};flush();}).catch(function(){D={};flush();});}
   function flush(){pending.splice(0).forEach(function(cb){try{cb(D);}catch(e){}});}
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function bars(items){if(!items||!items.length)return '<div style="color:var(--tx3);font-size:11.5px;padding:10px 0">No data yet</div>';var max=items[0][1]||1;return items.map(function(it,i){var pct=Math.round(it[1]/max*100);var c=COLORS[i%COLORS.length];return '<div class="ux-bar-row"><span class="ux-bar-name">'+esc(it[0]||'—')+'</span><span class="ux-bar-wrap"><span class="ux-bar" data-w="'+pct+'" style="background:'+c+'"></span></span><span class="ux-bar-val">'+it[1]+'</span></div>';}).join('');}

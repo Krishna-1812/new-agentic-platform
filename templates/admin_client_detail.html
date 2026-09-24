@@ -5,7 +5,7 @@
 {{ head("Client Detail", ["admin_client_detail.css?v=1", "admin.css?v=6"], compat=True) }}
 </head>
 <body data-slug="{{ client_slug }}" data-ac="{{ client.accent }}" data-ac2="{{ client.accent2 }}">
-{{ topbar([("Admin", "/p2/admin/internal-usage"), ("Client Usage", "/p2/admin/client-usage"), (client.name if client else "Client", none)]) }}
+{{ topbar([("Admin", "/admin/internal-usage"), ("Client Usage", "/admin/client-usage"), (client.name if client else "Client", none)]) }}
 
   <div class="main">
     <div class="ph">
@@ -320,7 +320,7 @@
 
     function loadData(fresh){
       var ic=document.getElementById('refreshIcon');if(ic)ic.style.animation='spin 1s linear infinite';
-      fetch('/p2/admin/client-usage/'+SLUG+'/data'+(fresh?'?fresh=1':''))
+      fetch('/admin/client-usage/'+SLUG+'/data'+(fresh?'?fresh=1':''))
         .then(function(r){return r.json();}).then(function(j){render(j||{});})
         .catch(function(){})
         .then(function(){if(ic)ic.style.animation='';});

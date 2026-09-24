@@ -10,6 +10,6 @@ import react from '@vitejs/plugin-react'
 // here, rather than hand-editing the built index.html, survives future
 // rebuilds.
 export default defineConfig({
-  base: '/p2/strategic-agents/ad-intelligence/',
+  base: '/strategic-agents/ad-intelligence/',
   plugins: [react()],
 })

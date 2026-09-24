@@ -1,4 +1,4 @@
-"""Why /p2/strategic-agents no longer ships a substitute scrollbar.
+"""Why /strategic-agents no longer ships a substitute scrollbar.
 
 The rail existed for one reason: gtm.css zeroes the native scrollbar on every
 element it touches --

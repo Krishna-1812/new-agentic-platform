@@ -32,7 +32,7 @@ from tracker import sci_company_search, event_intel_store  # noqa: E402
 # per id and made half a file pass vacuously.
 from test_event_intel_form_init import _run, keys  # noqa: E402,F401
 
-_PAGE = "/p2/strategic-agents/event-conference-intelligence"
+_PAGE = "/strategic-agents/event-conference-intelligence"
 _SEARCH = _PAGE + "/search"
 
 

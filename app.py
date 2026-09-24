@@ -22,7 +22,7 @@ from flask import (
 )
 from brand import BRAND, brand_context  # user-facing product naming (single source of truth)
 
-# The /p2 staff gate. Every check that decides whether an account is staff
+# The internal-app staff gate. Every check that decides whether an account is staff
 # reads this, and so does every page that states the rule (brand.staff_domain),
 # so the gate and what the UI says about it cannot disagree. See brand.py.
 STAFF_EMAIL_SUFFIX = "@" + BRAND["staff_domain"]
@@ -198,7 +198,7 @@ def _log_login_to_sheet(user: dict) -> None:
             device,                                     # 14 Device Type
             ua_raw[:200],                               # 15 User Agent (truncated)
             request.referrer or "direct",               # 16 Referrer
-            "/p2/hub",                                     # 17 Landing Page
+            "/hub",                                     # 17 Landing Page
             "Google OAuth",                             # 18 Auth Method
             str(uuid.uuid4())[:8],                      # 19 Session ID (short)
             "intelligence.position2.com",               # 20 Platform
@@ -454,7 +454,7 @@ def _demo_notify_recipients() -> str:
 
     DEMO_NOTIFY_EMAIL overrides the fallback entirely when it is set on the
     deployment, so adding someone to the literal above does not reach them on
-    an environment that sets that variable; /p2/admin/email-test reports the
+    an environment that sets that variable; /admin/email-test reports the
     list actually in effect. Resolved here rather than at each call site so
     the real send and that diagnostic can never disagree about who is on the
     list, which is exactly what two independent copies of one string invite.
@@ -1261,6 +1261,23 @@ def _is_staff(email):
     email = (email or "").strip().lower()
     return email.endswith(STAFF_EMAIL_SUFFIX) or email in ADMIN_EMAILS
 
+
+# The internal staff app's top-level sections. It used to live under one /p2
+# prefix, so "is this an internal page" was a prefix test; since 2026-09-24 it
+# sits at the top level, so the sections are named. Old /p2 paths still count
+# (they only redirect, but they appear in recorded analytics and old next_urls).
+_INTERNAL_SECTIONS = frozenset({
+    "hub", "admin", "strategic-agents", "seo-aeo", "abm-signal-tracker",
+    "context", "playbook", "accounts", "signal-tracker",
+    "gtm", "b2b-agents", "seo", "p2",            # older names, redirect only
+})
+
+
+def _is_internal_path(path):
+    """True for a path in the internal staff app (see _INTERNAL_SECTIONS)."""
+    first = (path or "").split("?", 1)[0].lstrip("/").split("/", 1)[0]
+    return first in _INTERNAL_SECTIONS
+
 def _get_user():
     """Return current user dict or None."""
     return session.get("google_user")
@@ -1303,13 +1320,13 @@ def admin_required(f):
         if email in ADMIN_EMAILS:
             return f(*args, **kwargs)
         if not _is_staff(email):
-            return redirect("/app")          # external users never see internal /p2
+            return redirect("/app")          # external users never see the internal app
         abort(403)                            # staff who are not admins: forbidden
         return f(*args, **kwargs)
     return decorated
 
 def position2_required(f):
-    """Gate an internal /p2 route to staff (_is_staff: @markifydigital.com, plus
+    """Gate an internal-app route to staff (_is_staff: @markifydigital.com, plus
     the admins on any domain). Logged-out visitors are sent to sign in
     (remembering their target); other signed-in users are bounced to their
     blank signed-in home (/app)."""
@@ -1361,7 +1378,7 @@ def auth_google():
 
     email = idinfo.get("email", "")
     # v17: sign-in is open to ANY Google account. Area-level access control is enforced
-    # separately -- only @markifydigital.com may reach the internal /p2/* pages (see
+    # separately -- only @markifydigital.com may reach the internal /* pages (see
     # position2_required). General users land on the blank signed-in home (/app).
 
     session["google_user"] = {
@@ -1373,16 +1390,17 @@ def auth_google():
     session.permanent = True
     nxt = session.pop("next_url", None)
     if not (isinstance(nxt, str) and nxt.startswith("/") and not nxt.startswith("//")):
-        # No deep link: @markifydigital.com staff land on the internal hub (/p2/hub);
+        # No deep link: @markifydigital.com staff land on the internal hub (/hub);
         # everyone else lands on the public signed-in home (/app). An explicit
-        # next_url (e.g. a shared /p2/admin/... link) still takes precedence.
-        nxt = "/p2/hub" if _is_staff(email) else "/app"
+        # next_url (e.g. a shared /admin/... link) still takes precedence.
+        nxt = "/hub" if _is_staff(email) else "/app"
     # Route sign-in logging: @markifydigital.com -> always Internal Usage,
     # PLUS Public Page Analytics too when landing on the public /app surface (not
-    # deep-linking straight into /p2). Everyone else -> Public Page Analytics only.
+    # deep-linking straight into the internal app). Everyone else -> Public Page
+    # Analytics only.
     if _is_staff(email):
         _log_login_to_sheet(session["google_user"])   # fire-and-forget, fails silently
-        if not nxt.startswith("/p2"):
+        if not _is_internal_path(nxt):
             _log_member_signin(session["google_user"])
     else:
         _log_member_signin(session["google_user"])    # public member -> Public Page Analytics
@@ -1396,7 +1414,7 @@ def auth_google():
 # ── Core routes ─────────────────────────────────────────────────────────────────
 
 # Search engines may index the public marketing site and nothing else. An
-# allow-list rather than a block-list: signed-in areas, the internal /p2 app,
+# allow-list rather than a block-list: signed-in areas, the internal staff app,
 # the API and every client portal (each lives at its own /<slug>, see CLIENTS)
 # stay out without having to be named here. "$" anchors "/" to the home page
 # alone; each other entry covers its page and everything under it.
@@ -1426,12 +1444,12 @@ def index():
     u = _get_user()
     if u:
         # Staff go straight to the internal hub; everyone else to the public home.
-        return redirect("/p2/hub" if _is_staff(u.get("email", "")) else "/app")
+        return redirect("/hub" if _is_staff(u.get("email", "")) else "/app")
     return render_template("agents.html", page="home", agents=AGENTS, agent=None,
                            related=[], signals_list=SIGNALS)
 
 # ── Public agents on the signed-in home (/app) ───────────────────────────────────
-# These are the SAME SEO tools embedded internally at /p2/seo-aeo/<seo_slug> (served by
+# These are the SAME SEO tools embedded internally at /seo-aeo/<seo_slug> (served by
 # the SERP app), just re-presented for ALL signed-in Google users under public,
 # fancily-named slugs. "Use this agent" embeds the live tool (see /app/<slug>/use).
 _SVG_COMPASS = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '
@@ -1499,7 +1517,7 @@ APP_AGENTS = [
     },
     {
         # Connected via "external_url" instead of "seo_slug" -- it embeds the same
-        # Position2-hosted watchtower tool as the internal /p2/strategic-agents copy (its own
+        # Position2-hosted watchtower tool as the internal /strategic-agents copy (its own
         # host masked behind this path), not a SERP-app tool. "uncapped": True
         # means it's exempt from AGENT_RUN_CAP everywhere that cap is enforced
         # (app_use, app_use_log_run, app.html, app_detail.html, app_embed.html):
@@ -2333,7 +2351,7 @@ def agent_feedback_add_reason(feedback_id):
     return jsonify({"saved": ok})
 
 
-@app.route("/p2/admin/agent-feedback")
+@app.route("/admin/agent-feedback")
 @admin_required
 def admin_agent_feedback():
     from tracker import agent_feedback
@@ -2341,7 +2359,7 @@ def admin_agent_feedback():
                             agent_labels=agent_feedback.AGENT_LABELS)
 
 
-@app.route("/p2/admin/agent-feedback/data")
+@app.route("/admin/agent-feedback/data")
 @admin_required
 def admin_agent_feedback_data():
     from tracker import agent_feedback
@@ -3146,7 +3164,7 @@ def _fmt_run_ts(iso_str: str) -> str:
 def _app_embed_url(agent):
     """Build the live tool URL for an agent: either a hardcoded external tool
     (via "external_url", e.g. the watchtower-hosted LinkedIn Social Researcher)
-    or the SERP tool (via "seo_slug", same as the internal /p2/seo-aeo embed)."""
+    or the SERP tool (via "seo_slug", same as the internal /seo-aeo embed)."""
     if agent.get("external_url"):
         return agent["external_url"]
     seo_slug = agent.get("seo_slug")
@@ -3159,7 +3177,7 @@ def _app_embed_url(agent):
         return ext
     pt = os.environ.get("SERP_PLATFORM_TOKEN", "")
     # embed=1 tells the SERP app to render chrome-less (no sidebar / studio nav),
-    # so public users only see the single agent they opened. Internal /p2/seo-aeo does
+    # so public users only see the single agent they opened. Internal /seo-aeo does
     # NOT pass this, so staff keep the full SEO Studio.
     qs = ([("pt", pt)] if pt else []) + [("embed", "1")]
     sep = "&" if "?" in path else "?"
@@ -3423,7 +3441,7 @@ def logout():
 # deliberately NOT an APP_AGENTS entry. APP_AGENTS backs /app, the public
 # catalog shown to every signed-in Google user (see app_home's own
 # docstring), and Slot Checker is a bespoke Position2-staff dashboard
-# (already live at /p2/strategic-agents/42-north-dental-slot-checker) that
+# (already live at /strategic-agents/42-north-dental-slot-checker) that
 # should stay off that catalog -- 42 North Dental should see it only inside
 # their own gated portal. _client_agent_view resolves it from this standalone
 # dict instead, so the rest of the client-portal machinery (which only ever
@@ -3481,7 +3499,7 @@ CLIENTS = {
         "agents":   ["linkedin-intelligence", "linkedin-social-researcher",
                      "keyword-finder", "content-brief-generator",
                      "content-enhancer"],
-        # LinkedIn Intelligence is a *live* co-branded dashboard (same UI as /p2),
+        # LinkedIn Intelligence is a *live* co-branded dashboard (same UI as the internal app),
         # rendered from this client's own engagement sheet. Presence of this key
         # makes the linkedin-intelligence agent render its live dashboard in-portal.
         "linkedin_sheet": "13V-W-yG5O-OoLJHjxsPKLjrpRyRdk647GgkIGw823oE",
@@ -3581,7 +3599,7 @@ def _client_dashboard_path(client, agent_slug):
 def _client_live_dashboard(client, agent_slug):
     """True if this agent renders a *live* (Flask-rendered) co-branded dashboard for
     the client, rather than a pre-built static HTML file: LinkedIn Intelligence, when
-    the client has its own engagement sheet configured (same UI as the internal /p2
+    the client has its own engagement sheet configured (same UI as the internal app
     dashboard, just pointed at the client's sheet), or 42 North Dental's Slot Checker,
     when this client is flagged as reading the one shared portfolio-wide sheet (see
     "slot_checker_live" on CLIENTS["42northdental"])."""
@@ -3755,7 +3773,7 @@ def _client_agent_dashboard(client_slug, agent_slug):
     # the run-metered Use page); a direct hit here is a 404, not a metering bypass.
     if _client_external_tool(client, agent_slug):
         abort(404)
-    # Live LinkedIn Intelligence: render the exact /p2 dashboard template in client
+    # Live LinkedIn Intelligence: render the exact internal dashboard template in client
     # mode (internal chrome hidden), pointed at this client's gated data endpoint.
     if _client_live_dashboard(client, agent_slug) and agent_slug == "linkedin-intelligence":
         data_url = "/%s/agents/%s/dashboard/data" % (client_slug, agent_slug)
@@ -3771,7 +3789,7 @@ def _client_agent_dashboard(client_slug, agent_slug):
         resp.headers.update({"Cache-Control": "no-cache, no-store, must-revalidate",
                              "Pragma": "no-cache", "Expires": "0"})
         return resp
-    # Live Slot Checker: render the exact /p2 dashboard template in client mode
+    # Live Slot Checker: render the exact internal dashboard template in client mode
     # (internal-ops topbar, admin menu and cross-tool ⌘K nav all hidden -- see
     # 42_north_dental_slot_checker.html's own `client_mode` guards), pointed at
     # this client's gated data/insights endpoints instead of the
@@ -3830,7 +3848,7 @@ def _client_agent_log_run(client_slug, agent_slug):
     """Logs one real run of a client-portal agent, cap-enforced. Called client-side
     only after the embedded tool reports a genuine run start (same postMessage
     contract as /app). Feeds the shared 'Agent Runs' sheet, so these show up on the
-    internal /p2 'Public Agent Usage' admin dashboard alongside /app runs."""
+    internal 'Public Agent Usage' admin dashboard alongside /app runs."""
     client = CLIENTS.get(client_slug)
     if not client:
         return jsonify({"logged": False, "error": "unknown client"}), 404
@@ -3859,7 +3877,7 @@ def _client_agent_log_run(client_slug, agent_slug):
 
 def _client_agent_finish_run(client_slug, agent_slug):
     """Saves one finished run's full output to the shared Postgres history, so it
-    appears both in this client's History page and the internal /p2 'Agent Runs'
+    appears both in this client's History page and the internal 'Agent Runs'
     admin dashboard. Same contract as /app's finish-run."""
     client = CLIENTS.get(client_slug)
     if not client:
@@ -3938,61 +3956,29 @@ for _cslug in CLIENTS:
                      (lambda agent_slug, cs=_cslug: _client_agent_finish_run(cs, agent_slug)), methods=["POST"])
 
 
-# ── v16: internal app relocated to /p2/* ─────────────────────────────────────────
-# The entire logged-in surface now lives under /p2. These stubs 301-redirect the old
-# internal URLs to their /p2 equivalents (query strings preserved) so bookmarks and
-# external links keep resolving. Actual serving + @position2_required lives on the /p2
-# routes below. Static assets and /api/* endpoints intentionally stay at their old
-# paths (they are referenced by absolute path from page JS / the Ad Intel bundle).
-def _p2_relocate_redirect(**kwargs):
-    tgt = "/p2" + request.path
+# ── Old /p2 addresses ───────────────────────────────────────────────────────────
+# The internal staff app lived under /p2/* until 2026-09-24 and now sits at the
+# top level (/hub, /admin/..., /strategic-agents/..., /seo-aeo/...). Every old
+# /p2 link, bookmark and browser still holding an old page's JS lands here and
+# is sent to the same path without the prefix, query string preserved. 308,
+# not 301, so a POST/DELETE from an old page (chat, search, export, history)
+# keeps its method and body instead of being retried as a bodiless GET. The
+# target then runs its own gate (@position2_required / @admin_required), so the
+# redirect grants nothing. Older names under the old prefix (/p2/gtm/...,
+# /p2/b2b-agents/..., /p2/seo/...) take one more hop through the redirects
+# kept for those renames below.
+@app.route("/p2", methods=["GET", "POST", "DELETE"])
+@app.route("/p2/", methods=["GET", "POST", "DELETE"])
+@app.route("/p2/<path:rest>", methods=["GET", "POST", "DELETE"])
+def p2_legacy_redirect(rest=""):
+    target = "/" + rest if rest else "/hub"
     if request.query_string:
-        tgt += "?" + request.query_string.decode("utf-8", "ignore")
-    return redirect(tgt, code=301)
+        target += "?" + request.query_string.decode("utf-8", "ignore")
+    return redirect(target, code=308)
 
-_P2_LEGACY_RULES = [
-    ("/hub",                                          "p2legacy_hub"),
-    ("/gtm",                                          "p2legacy_gtm"),
-    ("/gtm/sentiment-pulse",                          "p2legacy_sentiment"),
-    ("/gtm/sentiment-pulse/",                         "p2legacy_sentiment_slash"),
-    ("/gtm/ad-intelligence",                          "p2legacy_adintel"),
-    ("/gtm/ad-intelligence/",                         "p2legacy_adintel_slash"),
-    ("/gtm/anonymous-visitors",                       "p2legacy_anon"),
-    ("/gtm/linkedin-scraper",                         "p2legacy_linkedin"),
-    ("/seo",                                          "p2legacy_seo"),
-    ("/seo/<tool_slug>",                              "p2legacy_seo_tool"),
-    ("/admin/usage",                                  "p2legacy_admin_usage"),
-    ("/admin/usage/data",                             "p2legacy_admin_usage_data"),
-    ("/admin/visitors",                               "p2legacy_admin_visitors"),
-    ("/admin/visitors/data",                          "p2legacy_admin_visitors_data"),
-    ("/admin/requests",                               "p2legacy_admin_requests"),
-    ("/admin/email-test",                             "p2legacy_admin_email_test"),
-]
-for _rule, _endpoint in _P2_LEGACY_RULES:
-    app.add_url_rule(_rule, _endpoint, _p2_relocate_redirect)
-
-# These two moved a second time (/p2/accounts -> /p2/abm-signal-tracker/accounts, same for
-# /p2/signal-tracker/*) after already being relocated once above, so a generic "/p2" + path
-# rewrite would bounce through the now-old /p2 path as an extra redirect hop. Point them
-# straight at the current canonical URL instead.
-@app.route("/accounts")
-def p2legacy_accounts():
-    return redirect("/p2/abm-signal-tracker/accounts", code=301)
-
-@app.route("/signal-tracker/<account_id>")
-@app.route("/signal-tracker/<account_id>/<section>")
-def p2legacy_st(account_id: str, section: str = None):
-    target = "/p2/abm-signal-tracker/" + account_id + (("/" + section) if section else "")
-    return redirect(target, code=301)
-
-@app.route("/p2")
-@app.route("/p2/")
-def p2_root():
-    """Bare /p2 entry -> the relocated hub."""
-    return redirect("/p2/hub", code=302)
 
 # ── Hub pages ───────────────────────────────────────────────────────────────────
-@app.route("/p2/hub")
+@app.route("/hub")
 @position2_required
 def hub():
     return render_template("hub.html", user=_get_user(),
@@ -4036,13 +4022,13 @@ CX_CHAPTERS = [
      "stat": "Demo video"},
 ]
 
-@app.route("/p2/playbook")
+@app.route("/playbook")
 @position2_required
 def p2_playbook():
     """Internal playbook hub — pick a chapter."""
     return render_template("context.html", user=_get_user(), chapters=CX_CHAPTERS, chapter=None)
 
-@app.route("/p2/playbook/<slug>")
+@app.route("/playbook/<slug>")
 @position2_required
 def p2_playbook_chapter(slug):
     """A single playbook chapter as its own page."""
@@ -4054,24 +4040,24 @@ def p2_playbook_chapter(slug):
     return render_template("context.html", user=_get_user(), chapters=CX_CHAPTERS,
                             chapter=CX_CHAPTERS[idx], prev_chapter=prev_chapter, next_chapter=next_chapter)
 
-@app.route("/p2/context")
+@app.route("/context")
 def p2_context():
     """Legacy URL, kept as a redirect so old bookmarks and links still work."""
     return redirect(url_for("p2_playbook"), code=301)
 
-@app.route("/p2/context/<slug>")
+@app.route("/context/<slug>")
 def p2_context_chapter(slug):
     """Legacy URL, kept as a redirect so old bookmarks and links still work."""
     return redirect(url_for("p2_playbook_chapter", slug=slug), code=301)
 
-@app.route("/p2/strategic-agents")
+@app.route("/strategic-agents")
 @position2_required
 def b2b_agents():
     return render_template("b2b_agents.html", user=_get_user(),
                            tracked_companies=_tracked_company_floor())
 
 
-# ── /p2/gtm/* -> /p2/strategic-agents/* ────────────────────────────────────────────
+# ── /gtm/* -> /strategic-agents/* ────────────────────────────────────────────
 # The section was renamed from "GTM" to "Strategic Agents". One catch-all covers the
 # whole old tree rather than a redirect per route, so nothing can be missed and
 # a route added later inherits the alias for free.
@@ -4081,34 +4067,34 @@ def b2b_agents():
 # as GET, which silently loses the body; 308 preserves both method and body.
 # That matters most in the minutes after this deploy, when a browser still
 # holding the previous JS bundle will POST to the old URLs.
-@app.route("/p2/gtm", methods=["GET", "POST", "DELETE"])
-@app.route("/p2/gtm/", methods=["GET", "POST", "DELETE"])
-@app.route("/p2/gtm/<path:rest>", methods=["GET", "POST", "DELETE"])
+@app.route("/gtm", methods=["GET", "POST", "DELETE"])
+@app.route("/gtm/", methods=["GET", "POST", "DELETE"])
+@app.route("/gtm/<path:rest>", methods=["GET", "POST", "DELETE"])
 def b2b_agents_gtm_legacy_redirect(rest=""):
-    target = "/p2/strategic-agents" + (("/" + rest) if rest else "")
+    target = "/strategic-agents" + (("/" + rest) if rest else "")
     if request.query_string:
         target += "?" + request.query_string.decode("utf-8", "ignore")
     return redirect(target, code=308)
 
 
-# ── /p2/b2b-agents/* -> /p2/strategic-agents/* ──────────────────────────────
+# ── /b2b-agents/* -> /strategic-agents/* ──────────────────────────────
 # The section was renamed again, from "B2B Agents" to "Strategic Agents",
-# 2026-09-11. Same shape and same reasoning as the /p2/gtm/* redirect above:
+# 2026-09-11. Same shape and same reasoning as the /gtm/* redirect above:
 # one catch-all for the whole old tree so nothing added later is missed, and
 # 308 (not 301) so a browser still holding the previous JS bundle can still
 # POST/DELETE (chat, search, enrich, export, history, ...) without the body
 # being silently dropped by a 301-triggered GET retry.
 #
 # This does NOT shadow the three ad_intelligence asset/favicon/icon routes
-# kept below at their literal /p2/b2b-agents/... paths: those are more
+# kept below at their literal /b2b-agents/... paths: those are more
 # specific (mostly static segments) than this single <path:rest> catch-all,
 # so Werkzeug matches them first and they keep SERVING rather than
 # redirecting, exactly as they did through the GTM rename.
-@app.route("/p2/b2b-agents", methods=["GET", "POST", "DELETE"])
-@app.route("/p2/b2b-agents/", methods=["GET", "POST", "DELETE"])
-@app.route("/p2/b2b-agents/<path:rest>", methods=["GET", "POST", "DELETE"])
+@app.route("/b2b-agents", methods=["GET", "POST", "DELETE"])
+@app.route("/b2b-agents/", methods=["GET", "POST", "DELETE"])
+@app.route("/b2b-agents/<path:rest>", methods=["GET", "POST", "DELETE"])
 def strategic_agents_b2b_legacy_redirect(rest=""):
-    target = "/p2/strategic-agents" + (("/" + rest) if rest else "")
+    target = "/strategic-agents" + (("/" + rest) if rest else "")
     if request.query_string:
         target += "?" + request.query_string.decode("utf-8", "ignore")
     return redirect(target, code=308)
@@ -4120,8 +4106,8 @@ def strategic_agents_b2b_legacy_redirect(rest=""):
 # co-branded client-portal copy of this agent, which is capped).
 LINKEDIN_RESEARCHER_URL = "https://watchtower-by-position2.vercel.app/linkedin.html"
 
-@app.route("/p2/strategic-agents/linkedin-social-researcher")
-@app.route("/p2/strategic-agents/linkedin-social-researcher/")
+@app.route("/strategic-agents/linkedin-social-researcher")
+@app.route("/strategic-agents/linkedin-social-researcher/")
 @position2_required
 def linkedin_social_researcher():
     """Competitive LinkedIn analysis tool, embedded from watchtower. Uncapped."""
@@ -4129,7 +4115,7 @@ def linkedin_social_researcher():
         user=_get_user(),
         title="LinkedIn Social Researcher",
         embed_url=LINKEDIN_RESEARCHER_URL,
-        breadcrumb=[("Hub", "/p2/hub"), ("Strategic Agents", "/p2/strategic-agents")],
+        breadcrumb=[("Hub", "/hub"), ("Strategic Agents", "/strategic-agents")],
         current="LinkedIn Social Researcher",
         accent="#a855f7",
     )
@@ -4140,8 +4126,8 @@ def linkedin_social_researcher():
 # design (see the route registered further down in this file).
 
 
-@app.route("/p2/strategic-agents/sentiment-pulse")
-@app.route("/p2/strategic-agents/sentiment-pulse/")
+@app.route("/strategic-agents/sentiment-pulse")
+@app.route("/strategic-agents/sentiment-pulse/")
 @position2_required
 def call_sentiment():
     # HIDDEN 2026-07-23: Sentiment Pulse was a demo/proxy dashboard (seeded
@@ -4165,40 +4151,40 @@ def call_sentiment_legacy():
 @app.route("/ppc")
 @app.route("/ppc/")
 def ppc_redirect():
-    return redirect("/p2/strategic-agents", code=301)
+    return redirect("/strategic-agents", code=301)
 
 @app.route("/ppc/ad-intelligence")
 @app.route("/ppc/ad-intelligence/")
 def ppc_ad_intelligence_redirect():
-    return redirect("/p2/strategic-agents/ad-intelligence", code=301)
+    return redirect("/strategic-agents/ad-intelligence", code=301)
 
 @app.route("/ppc/anonymous-visitors")
 def ppc_anonymous_visitors_redirect():
-    return redirect("/p2/strategic-agents/anonymous-visitors", code=301)
+    return redirect("/strategic-agents/anonymous-visitors", code=301)
 
 @app.route("/ppc/linkedin-scraper")
 def ppc_linkedin_scraper_redirect():
-    return redirect("/p2/strategic-agents/linkedin-intelligence", code=301)
+    return redirect("/strategic-agents/linkedin-intelligence", code=301)
 
-@app.route("/p2/seo-aeo")
+@app.route("/seo-aeo")
 @position2_required
 def seo():
     return render_template("seo.html", user=_get_user(), seo_tools=_seo_tools())
 
 
-# ── /p2/seo/* -> /p2/seo-aeo/* ───────────────────────────────────────────────
+# ── /seo/* -> /seo-aeo/* ───────────────────────────────────────────────
 # The section was renamed from "SEO" to "SEO + AEO", 2026-09-11. Same shape as
 # the B2B Agents -> Strategic Agents catch-all: one redirect for the whole old
 # tree, 308 (not 301) because the embedded-tool page's own JS pushState's
-# sub-paths like /p2/seo/<tool> as the visitor switches tools client-side (see
+# sub-paths like /seo/<tool> as the visitor switches tools client-side (see
 # templates/embed.html), so a bookmark or shared link to one of those still
 # has to resolve, and a 301 would let a browser retry any POST under this
 # prefix as a GET and silently drop the body.
-@app.route("/p2/seo", methods=["GET", "POST", "DELETE"])
-@app.route("/p2/seo/", methods=["GET", "POST", "DELETE"])
-@app.route("/p2/seo/<path:rest>", methods=["GET", "POST", "DELETE"])
+@app.route("/seo", methods=["GET", "POST", "DELETE"])
+@app.route("/seo/", methods=["GET", "POST", "DELETE"])
+@app.route("/seo/<path:rest>", methods=["GET", "POST", "DELETE"])
 def seo_aeo_legacy_redirect(rest=""):
-    target = "/p2/seo-aeo" + (("/" + rest) if rest else "")
+    target = "/seo-aeo" + (("/" + rest) if rest else "")
     if request.query_string:
         target += "?" + request.query_string.decode("utf-8", "ignore")
     return redirect(target, code=308)
@@ -4210,8 +4196,8 @@ _SERP_BASE = "https://seo-apps-production-37a6.up.railway.app"
 # ── Ad Intelligence (built React app served directly — no iframe) ────────────
 AD_INTEL_SHEET_ID = "16U5_QSxMmrAGKvK5dHScBu1Et4BJ1p8Q1ns5LycRA0s"
 
-@app.route("/p2/strategic-agents/ad-intelligence")
-@app.route("/p2/strategic-agents/ad-intelligence/")
+@app.route("/strategic-agents/ad-intelligence")
+@app.route("/strategic-agents/ad-intelligence/")
 @position2_required
 def ad_intelligence():
     """The built React app, with the brand handed to it at serve time.
@@ -4230,16 +4216,14 @@ def ad_intelligence():
     resp.mimetype = "text/html"
     return resp
 
-@app.route("/p2/strategic-agents/ad-intelligence/assets/<path:filename>")
-@app.route("/p2/b2b-agents/ad-intelligence/assets/<path:filename>")
+@app.route("/strategic-agents/ad-intelligence/assets/<path:filename>")
 @app.route("/b2b-agents/ad-intelligence/assets/<path:filename>")
 @app.route("/gtm/ad-intelligence/assets/<path:filename>")
 @app.route("/ppc/ad-intelligence/assets/<path:filename>")
 def ad_intelligence_assets(filename):
     return send_from_directory("ad_intelligence/assets", filename)
 
-@app.route("/p2/strategic-agents/ad-intelligence/favicon.svg")
-@app.route("/p2/b2b-agents/ad-intelligence/favicon.svg")
+@app.route("/strategic-agents/ad-intelligence/favicon.svg")
 @app.route("/b2b-agents/ad-intelligence/favicon.svg")
 @app.route("/gtm/ad-intelligence/favicon.svg")
 @app.route("/ppc/ad-intelligence/favicon.svg")
@@ -4249,8 +4233,7 @@ def ad_intelligence_favicon():
     # site, not the app's own bundled ad_intelligence/favicon.svg.
     return send_from_directory("static", "favicon.svg", mimetype="image/svg+xml")
 
-@app.route("/p2/strategic-agents/ad-intelligence/icons.svg")
-@app.route("/p2/b2b-agents/ad-intelligence/icons.svg")
+@app.route("/strategic-agents/ad-intelligence/icons.svg")
 @app.route("/b2b-agents/ad-intelligence/icons.svg")
 @app.route("/gtm/ad-intelligence/icons.svg")
 @app.route("/ppc/ad-intelligence/icons.svg")
@@ -4264,12 +4247,12 @@ def ad_intelligence_icons():
 # own the parsing/storage; this app only ever reads the resulting SQLite db.
 JOB_CHANGE_DB_PATH = Path(__file__).parent / "data" / "job_change_alerts.db"
 
-@app.route("/p2/strategic-agents/job-change-alert")
+@app.route("/strategic-agents/job-change-alert")
 @position2_required
 def job_change_alert():
     return render_template("job_change_alert.html", user=_get_user())
 
-@app.route("/p2/strategic-agents/job-change-alert/data")
+@app.route("/strategic-agents/job-change-alert/data")
 @position2_required
 def job_change_alert_data():
     from tracker.job_change_store import JobChangeStore
@@ -4278,7 +4261,7 @@ def job_change_alert_data():
     return jsonify({"events": events, "total": len(events),
                      "last_synced": store.get_latest_detected_at()})
 
-@app.route("/p2/strategic-agents/job-change-alert/sync", methods=["POST"])
+@app.route("/strategic-agents/job-change-alert/sync", methods=["POST"])
 @admin_required
 def job_change_alert_sync():
     """Runs the sync script as a subprocess (never imported into this process --
@@ -4442,7 +4425,7 @@ def _fetch_job_change_tracked_data(force: bool = False) -> dict:
     return result
 
 
-@app.route("/p2/strategic-agents/job-change-alert/tracked")
+@app.route("/strategic-agents/job-change-alert/tracked")
 @position2_required
 def job_change_alert_tracked():
     """JSON data endpoint for the "who's tracked" roster (gzipped, cached)."""
@@ -4483,22 +4466,22 @@ def job_change_alert_tracked():
 # and a dead link reads as "the tool was taken away".
 
 
-@app.route("/p2/strategic-agents/gentle-dental-slot-checker")
+@app.route("/strategic-agents/gentle-dental-slot-checker")
 def gentle_dental_slot_checker_legacy():
-    return redirect("/p2/strategic-agents/42-north-dental-slot-checker", code=301)
+    return redirect("/strategic-agents/42-north-dental-slot-checker", code=301)
 
 
-@app.route("/p2/strategic-agents/gentle-dental-slot-checker/data")
+@app.route("/strategic-agents/gentle-dental-slot-checker/data")
 def gentle_dental_slot_checker_data_legacy():
-    return redirect("/p2/strategic-agents/42-north-dental-slot-checker/data", code=301)
+    return redirect("/strategic-agents/42-north-dental-slot-checker/data", code=301)
 
 
-@app.route("/p2/strategic-agents/gentle-dental-slot-checker/insights")
+@app.route("/strategic-agents/gentle-dental-slot-checker/insights")
 def gentle_dental_slot_checker_insights_legacy():
-    return redirect("/p2/strategic-agents/42-north-dental-slot-checker/insights", code=301)
+    return redirect("/strategic-agents/42-north-dental-slot-checker/insights", code=301)
 
 
-@app.route("/p2/strategic-agents/42-north-dental-slot-checker")
+@app.route("/strategic-agents/42-north-dental-slot-checker")
 @position2_required
 def slot_checker_page():
     return render_template("42_north_dental_slot_checker.html", user=_get_user())
@@ -4523,7 +4506,7 @@ def _slot_checker_data_json(force):
     return resp
 
 
-@app.route("/p2/strategic-agents/42-north-dental-slot-checker/data")
+@app.route("/strategic-agents/42-north-dental-slot-checker/data")
 @position2_required
 def slot_checker_data():
     force = request.args.get("fresh") in ("1", "true", "yes")
@@ -4570,7 +4553,7 @@ def _slot_checker_insights_json(force):
     return resp
 
 
-@app.route("/p2/strategic-agents/42-north-dental-slot-checker/insights")
+@app.route("/strategic-agents/42-north-dental-slot-checker/insights")
 @position2_required
 def slot_checker_insights_route():
     force = request.args.get("fresh") in ("1", "true", "yes")
@@ -4622,7 +4605,7 @@ def _seo_tools():
     _SEO_MANIFEST.update(ts=now, tools=tools)
     return tools
 
-@app.route("/p2/seo-aeo/<tool_slug>")
+@app.route("/seo-aeo/<tool_slug>")
 @position2_required
 def seo_tool(tool_slug: str):
     tool = next((t for t in _seo_tools() if t.get("slug") == tool_slug), None)
@@ -4640,26 +4623,27 @@ def seo_tool(tool_slug: str):
         user=_get_user(),
         title=tool["name"],
         embed_url=embed_url,
-        breadcrumb=[("Hub", "/p2/hub"), ("SEO + AEO", "/p2/seo-aeo")],
+        breadcrumb=[("Hub", "/hub"), ("SEO + AEO", "/seo-aeo")],
         current=tool["name"],
         accent="#34d399",
     )
 
 # ── ABM Signal Tracker ────────────────────────────────────────────────────────
-@app.route("/p2/abm-signal-tracker/accounts")
+@app.route("/abm-signal-tracker/accounts")
 @position2_required
 def accounts():
     cards_html = "".join(_build_account_card(aid, cfg) for aid, cfg in ACCOUNTS.items())
     return render_template("accounts.html", user=_get_user(), account_cards=cards_html)
 
-@app.route("/p2/accounts")
-@position2_required
+@app.route("/accounts")
 def accounts_legacy():
-    """Back-compat: old /p2/accounts URL redirects to canonical /p2/abm-signal-tracker/accounts."""
-    return redirect("/p2/abm-signal-tracker/accounts", code=301)
+    """Back-compat: old /accounts URL redirects to canonical /abm-signal-tracker/accounts.
+    Ungated on purpose: it only redirects, the target runs @position2_required,
+    and a signed-out visitor with an old bookmark takes one hop, not two."""
+    return redirect("/abm-signal-tracker/accounts", code=301)
 
-@app.route("/p2/abm-signal-tracker/<account_id>")
-@app.route("/p2/abm-signal-tracker/<account_id>/<section>")
+@app.route("/abm-signal-tracker/<account_id>")
+@app.route("/abm-signal-tracker/<account_id>/<section>")
 @position2_required
 def dashboard(account_id: str, section: str = None):
     cfg = ACCOUNTS.get(account_id)
@@ -4670,12 +4654,12 @@ def dashboard(account_id: str, section: str = None):
         abort(404, f"Dashboard for '{cfg['name']}' not generated yet.")
     return _send_dashboard_file(path)
 
-@app.route("/p2/signal-tracker/<account_id>")
-@app.route("/p2/signal-tracker/<account_id>/<section>")
-@position2_required
+@app.route("/signal-tracker/<account_id>")
+@app.route("/signal-tracker/<account_id>/<section>")
 def dashboard_legacy_p2(account_id: str, section: str = None):
-    """Back-compat: old /p2/signal-tracker/* URLs redirect to canonical /p2/abm-signal-tracker/*."""
-    target = "/p2/abm-signal-tracker/" + account_id + (("/" + section) if section else "")
+    """Back-compat: old /signal-tracker/* URLs redirect to canonical /abm-signal-tracker/*.
+    Ungated for the same reason as accounts_legacy: the target is gated."""
+    target = "/abm-signal-tracker/" + account_id + (("/" + section) if section else "")
     return redirect(target, code=301)
 
 @app.after_request
@@ -4738,7 +4722,7 @@ def _compress_response(resp):
 @position2_required
 def dashboard_legacy(account_id: str, section: str = None):
     """Back-compat: old /dashboard/* URLs redirect to canonical /abm-signal-tracker/*."""
-    target = "/p2/abm-signal-tracker/" + account_id + (("/" + section) if section else "")
+    target = "/abm-signal-tracker/" + account_id + (("/" + section) if section else "")
     return redirect(target, code=301)
 
 @app.route("/api/whoami")
@@ -5381,6 +5365,11 @@ _PAGE_LABEL_ALIASES = (
     # here (see the two call sites below), so these two rules don't interact.
     ("SEO Dashboards", "SEO + AEO Dashboards"),
     ("/p2/seo", "/p2/seo-aeo"),
+    # The internal app left the /p2 prefix, 2026-09-24: every path recorded
+    # before then carries it, every path after does not. LAST on purpose, so a
+    # historical path is first brought to its current section name by the
+    # rules above and then loses the prefix, landing on today's path.
+    ("/p2/", "/"),
 )
 
 
@@ -5756,13 +5745,13 @@ def _fetch_visitor_analytics_uncached() -> dict:
         "all_visitors": all_visitors, "video_pages": video_pages,
     }
 
-@app.route("/p2/admin/anonymous-traffic")
+@app.route("/admin/anonymous-traffic")
 @admin_required
 def admin_visitors():
     """Admin-only anonymous visitor analytics dashboard."""
     return render_template("admin_visitors.html", user=_get_user())
 
-@app.route("/p2/admin/anonymous-traffic/data")
+@app.route("/admin/anonymous-traffic/data")
 @admin_required
 def admin_visitors_data():
     """JSON aggregates for the visitor analytics dashboard (TTL-cached; pass
@@ -5770,7 +5759,7 @@ def admin_visitors_data():
     force = request.args.get("fresh") in ("1", "true", "yes")
     return jsonify(_fetch_visitor_analytics(force=force))
 
-@app.route("/p2/admin/anonymous-traffic/deepen", methods=["POST"])
+@app.route("/admin/anonymous-traffic/deepen", methods=["POST"])
 @admin_required
 def admin_visitor_deepen():
     """Explicit, human-triggered 'Enrich further' action for one visitor's
@@ -5801,7 +5790,7 @@ def admin_visitor_deepen():
     }})
 
 
-@app.route("/p2/admin/anonymous-traffic/self-test", methods=["POST"])
+@app.route("/admin/anonymous-traffic/self-test", methods=["POST"])
 @admin_required
 def admin_visitors_selftest():
     """Diagnostic for the two env flags that silently gate this engine's
@@ -6177,7 +6166,7 @@ def _fetch_member_analytics_uncached() -> dict:
     }
 
 
-@app.route("/p2/admin/public-page-analytics")
+@app.route("/admin/public-page-analytics")
 @admin_required
 def admin_members():
     """Admin-only analytics for public Google sign-ins (members), synced with
@@ -6185,7 +6174,7 @@ def admin_members():
     return render_template("admin_members.html", user=_get_user())
 
 
-@app.route("/p2/admin/public-page-analytics/data")
+@app.route("/admin/public-page-analytics/data")
 @admin_required
 def admin_members_data():
     force = request.args.get("fresh") in ("1", "true", "yes")
@@ -6531,28 +6520,28 @@ def _read_access_requests(limit=300):
         return []
 
 
-@app.route("/p2/admin/internal-usage")
+@app.route("/admin/internal-usage")
 @admin_required
 def admin_usage():
     """Shell page — renders instantly, JS fetches /admin/internal-usage/data async."""
     return render_template("admin_usage.html", user=_get_user())
 
 
-@app.route("/p2/admin/internal-usage/data")
+@app.route("/admin/internal-usage/data")
 @admin_required
 def admin_usage_data():
     """JSON data endpoint called by the admin usage shell page."""
     data = _fetch_usage_data()
     return jsonify(data)
 
-@app.route("/p2/admin/external-usage")
+@app.route("/admin/external-usage")
 @admin_required
 def admin_external_usage():
     """Shell page — everyone signing in with a non-@markifydigital.com email. JS fetches
     /admin/external-usage/data async."""
     return render_template("admin_external_usage.html", user=_get_user())
 
-@app.route("/p2/admin/external-usage/data")
+@app.route("/admin/external-usage/data")
 @admin_required
 def admin_external_usage_data():
     """JSON data endpoint for the External Usage dashboard (non-P2 sign-ins,
@@ -7093,7 +7082,7 @@ def _export_external_usage_xlsx() -> bytes:
     return buf.getvalue()
 
 
-@app.route("/p2/admin/external-usage/enrich", methods=["POST"])
+@app.route("/admin/external-usage/enrich", methods=["POST"])
 @admin_required
 def admin_external_usage_enrich():
     """Resolve a batch of emails to full Apollo profiles for the person modal.
@@ -7150,7 +7139,7 @@ def _apollo_selftest() -> dict:
     return out
 
 
-@app.route("/p2/admin/external-usage/apollo-check", methods=["POST"])
+@app.route("/admin/external-usage/apollo-check", methods=["POST"])
 @admin_required
 def admin_external_usage_apollo_check():
     """Run the Apollo self-test (see _apollo_selftest). POST so it is never
@@ -7158,7 +7147,7 @@ def admin_external_usage_apollo_check():
     return jsonify(_apollo_selftest())
 
 
-@app.route("/p2/admin/external-usage/summary", methods=["POST"])
+@app.route("/admin/external-usage/summary", methods=["POST"])
 @admin_required
 def admin_external_usage_summary():
     """AI read for one person, for the profile modal.
@@ -7181,7 +7170,7 @@ def admin_external_usage_summary():
                     "openai": bool(os.environ.get("OPENAI_API_KEY", ""))})
 
 
-@app.route("/p2/admin/external-usage/ai-sort", methods=["POST"])
+@app.route("/admin/external-usage/ai-sort", methods=["POST"])
 @admin_required
 def admin_external_usage_ai_sort():
     """AI-ranked priority order for the People table's "Sort by AI" option.
@@ -7227,7 +7216,7 @@ def admin_external_usage_ai_sort():
                      "openai": bool(os.environ.get("OPENAI_API_KEY", ""))})
 
 
-@app.route("/p2/admin/external-usage/export")
+@app.route("/admin/external-usage/export")
 @admin_required
 def admin_external_usage_export():
     """Download the whole dashboard as an .xlsx (People / Activity timeline /
@@ -7437,7 +7426,7 @@ def _fetch_client_usage(slug, force=False):
 
     # Login events: who signed in and when. Sign-ins are a global auth event, not
     # scoped to a portal -- a Position² staffer signs in once and that same
-    # session covers /p2, /app and every client portal. Counting every one of
+    # session covers the internal app, /app and every client portal. Counting every one of
     # their sign-ins here would overstate THIS portal's usage with unrelated
     # internal-tool activity (both tabs carry timestamp @0, email @5). So a login
     # only counts here if it falls on a calendar day the same person also viewed
@@ -7618,7 +7607,7 @@ def _fetch_all_client_summaries(force=False):
     return out
 
 
-@app.route("/p2/admin/client-usage")
+@app.route("/admin/client-usage")
 @admin_required
 def admin_client_usage():
     """Landing page: one card per client portal we run."""
@@ -7627,7 +7616,7 @@ def admin_client_usage():
     return render_template("admin_client_usage.html", user=_get_user(), clients=clients)
 
 
-@app.route("/p2/admin/client-usage/<client_slug>")
+@app.route("/admin/client-usage/<client_slug>")
 @admin_required
 def admin_client_detail(client_slug):
     """Per-client portal analytics dashboard (Position² team vs client team)."""
@@ -7637,7 +7626,7 @@ def admin_client_detail(client_slug):
                            client=CLIENTS[client_slug], client_slug=client_slug)
 
 
-@app.route("/p2/admin/client-usage/<client_slug>/data")
+@app.route("/admin/client-usage/<client_slug>/data")
 @admin_required
 def admin_client_detail_data(client_slug):
     if client_slug not in CLIENTS:
@@ -7647,7 +7636,7 @@ def admin_client_detail_data(client_slug):
     return jsonify(data or {})
 
 
-@app.route("/p2/admin/access-requests")
+@app.route("/admin/access-requests")
 @admin_required
 def admin_requests():
     """Admin view of everyone who submitted the Request Access form, plus
@@ -7658,13 +7647,13 @@ def admin_requests():
                            requests=reqs, count=len(reqs),
                            agent_requests=agent_reqs, agent_count=len(agent_reqs))
 
-@app.route("/p2/admin/public-agent-usage")
+@app.route("/admin/public-agent-usage")
 @admin_required
 def admin_agent_runs():
     """Admin-only view of per-user, per-agent run counts against the cap."""
     return render_template("admin_agent_runs.html", user=_get_user())
 
-@app.route("/p2/admin/public-agent-usage/data")
+@app.route("/admin/public-agent-usage/data")
 @admin_required
 def admin_agent_runs_data():
     """JSON data endpoint called by the admin agent-usage shell page."""
@@ -7672,45 +7661,45 @@ def admin_agent_runs_data():
 
 # ── Legacy admin URLs (pre-rename) ───────────────────────────────────────────
 # These pages' URLs originally didn't match their display names (e.g. "Public
-# Page Analytics" lived at /p2/admin/members). Renamed the routes above to
+# Page Analytics" lived at /admin/members). Renamed the routes above to
 # match; these 301s keep any bookmarked/shared old links working.
-@app.route("/p2/admin/usage")
+@app.route("/admin/usage")
 def _legacy_admin_usage():
-    return redirect("/p2/admin/internal-usage", code=301)
+    return redirect("/admin/internal-usage", code=301)
 
-@app.route("/p2/admin/usage/data")
+@app.route("/admin/usage/data")
 def _legacy_admin_usage_data():
-    return redirect("/p2/admin/internal-usage/data", code=301)
+    return redirect("/admin/internal-usage/data", code=301)
 
-@app.route("/p2/admin/visitors")
+@app.route("/admin/visitors")
 def _legacy_admin_visitors():
-    return redirect("/p2/admin/anonymous-traffic", code=301)
+    return redirect("/admin/anonymous-traffic", code=301)
 
-@app.route("/p2/admin/visitors/data")
+@app.route("/admin/visitors/data")
 def _legacy_admin_visitors_data():
-    return redirect("/p2/admin/anonymous-traffic/data", code=301)
+    return redirect("/admin/anonymous-traffic/data", code=301)
 
-@app.route("/p2/admin/members")
+@app.route("/admin/members")
 def _legacy_admin_members():
-    return redirect("/p2/admin/public-page-analytics", code=301)
+    return redirect("/admin/public-page-analytics", code=301)
 
-@app.route("/p2/admin/members/data")
+@app.route("/admin/members/data")
 def _legacy_admin_members_data():
-    return redirect("/p2/admin/public-page-analytics/data", code=301)
+    return redirect("/admin/public-page-analytics/data", code=301)
 
-@app.route("/p2/admin/requests")
+@app.route("/admin/requests")
 def _legacy_admin_requests():
-    return redirect("/p2/admin/access-requests", code=301)
+    return redirect("/admin/access-requests", code=301)
 
-@app.route("/p2/admin/agent-runs")
+@app.route("/admin/agent-runs")
 def _legacy_admin_agent_runs():
-    return redirect("/p2/admin/public-agent-usage", code=301)
+    return redirect("/admin/public-agent-usage", code=301)
 
-@app.route("/p2/admin/agent-runs/data")
+@app.route("/admin/agent-runs/data")
 def _legacy_admin_agent_runs_data():
-    return redirect("/p2/admin/public-agent-usage/data", code=301)
+    return redirect("/admin/public-agent-usage/data", code=301)
 
-@app.route("/p2/admin/email-test")
+@app.route("/admin/email-test")
 @admin_required
 def admin_email_test():
     """Admin-only SMTP diagnostic. Attempts a real send with subject 'Test Mail'
@@ -7895,7 +7884,7 @@ def _fetch_anon_visitors_data(force: bool = False) -> dict:
     return _result
 
 
-@app.route("/p2/strategic-agents/anonymous-visitors")
+@app.route("/strategic-agents/anonymous-visitors")
 @position2_required
 def anonymous_visitors():
     """Anonymous Visitors dashboard shell — loads data async."""
@@ -8130,7 +8119,7 @@ def _transform_linkedin_rows(rows):
 
 
 # Per-sheet caches, keyed by spreadsheet ID, so multiple LinkedIn Intelligence
-# surfaces (the internal /p2 dashboard and each client portal) each read their own
+# surfaces (the internal dashboard and each client portal) each read their own
 # sheet with an independent TTL cache and gzip buffer.
 _LI_CACHES = {}   # sheet_id -> {"data": dict|None, "ts": float}
 _LI_GZS = {}      # sheet_id -> {"ts": float|None, "raw": bytes, "gz": bytes}
@@ -8208,13 +8197,13 @@ def _linkedin_data_response(sheet_id: str, force: bool):
     return resp
 
 
-@app.route("/p2/strategic-agents/linkedin-scraper")
+@app.route("/strategic-agents/linkedin-scraper")
 @position2_required
 def linkedin_scraper_old_redirect():
-    return redirect("/p2/strategic-agents/linkedin-intelligence", code=301)
+    return redirect("/strategic-agents/linkedin-intelligence", code=301)
 
 
-@app.route("/p2/strategic-agents/linkedin-intelligence")
+@app.route("/strategic-agents/linkedin-intelligence")
 @position2_required
 def linkedin_scraper():
     """LinkedIn Intelligence dashboard — Post & People Intelligence, live from Google Sheets."""
@@ -8224,13 +8213,13 @@ def linkedin_scraper():
                                    "employerTokens": ["position"]})
 
 
-@app.route("/p2/strategic-agents/linkedin-scraper/data")
+@app.route("/strategic-agents/linkedin-scraper/data")
 @position2_required
 def linkedin_scraper_data_old_redirect():
-    return redirect("/p2/strategic-agents/linkedin-intelligence/data", code=301)
+    return redirect("/strategic-agents/linkedin-intelligence/data", code=301)
 
 
-@app.route("/p2/strategic-agents/linkedin-intelligence/data")
+@app.route("/strategic-agents/linkedin-intelligence/data")
 @position2_required
 def linkedin_scraper_data():
     """JSON data endpoint for the LinkedIn Intelligence dashboard (gzipped, cached).
@@ -8396,7 +8385,7 @@ def _lps_run_playbook_job(run_id: int, email: str, mode: str) -> None:
         log.warning("LinkedIn Strategy Researcher: playbook job failed for run %s: %s", run_id, e)
 
 
-@app.route("/p2/strategic-agents/linkedin-strategy-researcher")
+@app.route("/strategic-agents/linkedin-strategy-researcher")
 @position2_required
 def linkedin_playbook_studio():
     user = _get_user() or {}
@@ -8404,7 +8393,7 @@ def linkedin_playbook_studio():
                            is_admin=(user.get("email") or "").lower() in ADMIN_EMAILS)
 
 
-@app.route("/p2/strategic-agents/linkedin-strategy-researcher/search")
+@app.route("/strategic-agents/linkedin-strategy-researcher/search")
 @position2_required
 def linkedin_playbook_studio_search():
     """Company search, which reports WHY it came back empty.
@@ -8455,7 +8444,7 @@ def _arena_selftest() -> dict:
         return {"configured": False, "error": "%s: %s" % (type(e).__name__, str(e)[:300])}
 
 
-@app.route("/p2/admin/external-usage/arena-check", methods=["POST"])
+@app.route("/admin/external-usage/arena-check", methods=["POST"])
 @admin_required
 def admin_external_usage_arena_check():
     """Run the Arena self-test. POST so no crawler or prefetch can trigger it,
@@ -8474,7 +8463,7 @@ def _sci_company_search_selftest() -> dict:
         return {"configured": False, "error": "%s: %s" % (type(e).__name__, str(e)[:300])}
 
 
-@app.route("/p2/admin/external-usage/sci-company-search-check", methods=["POST"])
+@app.route("/admin/external-usage/sci-company-search-check", methods=["POST"])
 @admin_required
 def admin_external_usage_sci_company_search_check():
     """Run SCI's company-search self-test. POST so no crawler or prefetch can
@@ -8636,7 +8625,7 @@ def _evi_guardrail_selftest() -> dict:
     }
 
 
-@app.route("/p2/admin/external-usage/evi-guardrail-check", methods=["POST"])
+@app.route("/admin/external-usage/evi-guardrail-check", methods=["POST"])
 @admin_required
 def admin_external_usage_evi_guardrail_check():
     """Run the guardrail self-test. Free and offline: it proves the refusals
@@ -8644,7 +8633,7 @@ def admin_external_usage_evi_guardrail_check():
     return jsonify(_evi_guardrail_selftest())
 
 
-@app.route("/p2/admin/external-usage/evi-resolve-check", methods=["POST"])
+@app.route("/admin/external-usage/evi-resolve-check", methods=["POST"])
 @admin_required
 def admin_external_usage_evi_resolve_check():
     """Run the event-resolution self-test. POST so no crawler or prefetch can
@@ -8652,7 +8641,7 @@ def admin_external_usage_evi_resolve_check():
     return jsonify(_evi_resolve_selftest())
 
 
-@app.route("/p2/admin/external-usage/sci-identify-check", methods=["POST"])
+@app.route("/admin/external-usage/sci-identify-check", methods=["POST"])
 @admin_required
 def admin_external_usage_sci_identify_check():
     """Run SCI's identify-handles self-test. POST so no crawler or prefetch
@@ -8674,7 +8663,7 @@ def _sci_reddit_selftest() -> dict:
         return {"configured": False, "error": "%s: %s" % (type(e).__name__, str(e)[:300])}
 
 
-@app.route("/p2/admin/external-usage/sci-reddit-check", methods=["POST"])
+@app.route("/admin/external-usage/sci-reddit-check", methods=["POST"])
 @admin_required
 def admin_external_usage_sci_reddit_check():
     """Run SCI's Reddit self-test. POST so no crawler or prefetch can
@@ -8693,7 +8682,7 @@ def _unipile_selftest() -> dict:
         return {"configured": False, "error": "%s: %s" % (type(e).__name__, str(e)[:300])}
 
 
-@app.route("/p2/admin/external-usage/unipile-check", methods=["POST"])
+@app.route("/admin/external-usage/unipile-check", methods=["POST"])
 @admin_required
 def admin_external_usage_unipile_check():
     """Run the Unipile self-test. POST so no crawler or prefetch can trigger
@@ -8701,7 +8690,7 @@ def admin_external_usage_unipile_check():
     return jsonify(_unipile_selftest())
 
 
-@app.route("/p2/admin/external-usage/unipile-connect", methods=["POST"])
+@app.route("/admin/external-usage/unipile-connect", methods=["POST"])
 @admin_required
 def admin_external_usage_unipile_connect():
     """Generate a Unipile hosted-auth link for connecting a LinkedIn or
@@ -8718,8 +8707,8 @@ def admin_external_usage_unipile_connect():
     base = request.url_root.rstrip("/")
     data, err = unipile_client.create_hosted_auth_link(
         providers,
-        success_redirect_url=base + "/p2/admin/external-usage",
-        failure_redirect_url=base + "/p2/admin/external-usage",
+        success_redirect_url=base + "/admin/external-usage",
+        failure_redirect_url=base + "/admin/external-usage",
         name="Social Media Intelligence")
     if err is not None:
         return jsonify({"error": unipile_client.describe_error(err)}), 502
@@ -8787,7 +8776,7 @@ def _sci_apify_selftest() -> dict:
     return out
 
 
-@app.route("/p2/admin/external-usage/sci-apify-check", methods=["POST"])
+@app.route("/admin/external-usage/sci-apify-check", methods=["POST"])
 @admin_required
 def admin_external_usage_sci_apify_check():
     """Run SCI's Apify self-test (see _sci_apify_selftest). POST so no
@@ -8806,7 +8795,7 @@ def _sci_vision_claude_selftest() -> dict:
         return {"configured": False, "error": "%s: %s" % (type(e).__name__, str(e)[:300])}
 
 
-@app.route("/p2/admin/external-usage/sci-vision-claude-check", methods=["POST"])
+@app.route("/admin/external-usage/sci-vision-claude-check", methods=["POST"])
 @admin_required
 def admin_external_usage_sci_vision_claude_check():
     """Run the vision self-test (see _sci_vision_claude_selftest).
@@ -8829,7 +8818,7 @@ def _sci_vision_claude_url_selftest() -> dict:
         return {"configured": False, "error": "%s: %s" % (type(e).__name__, str(e)[:300])}
 
 
-@app.route("/p2/admin/external-usage/sci-vision-claude-url-check", methods=["POST"])
+@app.route("/admin/external-usage/sci-vision-claude-url-check", methods=["POST"])
 @admin_required
 def admin_external_usage_sci_vision_claude_url_check():
     """Run the vision URL-fetch self-test (see
@@ -8849,7 +8838,7 @@ def _lps_insights_selftest() -> dict:
         return {"configured": False, "error": "%s: %s" % (type(e).__name__, str(e)[:300])}
 
 
-@app.route("/p2/admin/external-usage/lps-insights-check", methods=["POST"])
+@app.route("/admin/external-usage/lps-insights-check", methods=["POST"])
 @admin_required
 def admin_external_usage_lps_insights_check():
     """Run the AI Insights self-test. POST so no crawler or prefetch can
@@ -8857,7 +8846,7 @@ def admin_external_usage_lps_insights_check():
     return jsonify(_lps_insights_selftest())
 
 
-@app.route("/p2/strategic-agents/linkedin-strategy-researcher/analyze", methods=["POST"])
+@app.route("/strategic-agents/linkedin-strategy-researcher/analyze", methods=["POST"])
 @position2_required
 def linkedin_playbook_studio_analyze():
     from tracker import linkedin_playbook_store as lps_store
@@ -8896,7 +8885,7 @@ def linkedin_playbook_studio_analyze():
     return jsonify({"run_id": run_id, "status": "running"})
 
 
-@app.route("/p2/strategic-agents/linkedin-strategy-researcher/runs/<int:run_id>/status")
+@app.route("/strategic-agents/linkedin-strategy-researcher/runs/<int:run_id>/status")
 @position2_required
 def linkedin_playbook_studio_run_status(run_id):
     from tracker import linkedin_playbook_store as lps_store
@@ -8907,7 +8896,7 @@ def linkedin_playbook_studio_run_status(run_id):
     return jsonify({"id": run["id"], "status": run["status"], "error": run.get("error")})
 
 
-@app.route("/p2/strategic-agents/linkedin-strategy-researcher/history")
+@app.route("/strategic-agents/linkedin-strategy-researcher/history")
 @position2_required
 def linkedin_playbook_studio_history():
     from tracker import linkedin_playbook_store as lps_store
@@ -8915,7 +8904,7 @@ def linkedin_playbook_studio_history():
     return jsonify({"runs": lps_store.list_runs(email)})
 
 
-@app.route("/p2/strategic-agents/linkedin-strategy-researcher/runs/<int:run_id>")
+@app.route("/strategic-agents/linkedin-strategy-researcher/runs/<int:run_id>")
 @position2_required
 def linkedin_playbook_studio_run(run_id):
     from tracker import linkedin_playbook_store as lps_store
@@ -8945,7 +8934,7 @@ def linkedin_playbook_studio_run(run_id):
     return jsonify(run)
 
 
-@app.route("/p2/strategic-agents/linkedin-strategy-researcher/runs/<int:run_id>/insights", methods=["POST"])
+@app.route("/strategic-agents/linkedin-strategy-researcher/runs/<int:run_id>/insights", methods=["POST"])
 @position2_required
 def linkedin_playbook_studio_insights(run_id):
     """Backfill (or regenerate) the AI Insights synthesis for one saved run.
@@ -8969,7 +8958,7 @@ def linkedin_playbook_studio_insights(run_id):
     return jsonify({"status": "running"})
 
 
-@app.route("/p2/strategic-agents/linkedin-strategy-researcher/runs/<int:run_id>/playbook", methods=["GET", "POST"])
+@app.route("/strategic-agents/linkedin-strategy-researcher/runs/<int:run_id>/playbook", methods=["GET", "POST"])
 @position2_required
 def linkedin_playbook_studio_playbook(run_id):
     from tracker import linkedin_playbook_store as lps_store
@@ -8992,14 +8981,14 @@ def linkedin_playbook_studio_playbook(run_id):
 # Old slug, kept resolving: this agent shipped hours earlier the same day as
 # "LinkedIn Playbook Studio" before being renamed to "LinkedIn Strategy
 # Researcher". One catch-all covers the whole subtree (page, search, analyze,
-# status, history, runs, playbook) the same way the /p2/gtm legacy redirect
+# status, history, runs, playbook) the same way the /gtm legacy redirect
 # does; 308 preserves method/body for the POST-based /analyze and /playbook
 # endpoints a still-open tab might call.
-@app.route("/p2/strategic-agents/linkedin-playbook-studio", methods=["GET", "POST"])
-@app.route("/p2/strategic-agents/linkedin-playbook-studio/", methods=["GET", "POST"])
-@app.route("/p2/strategic-agents/linkedin-playbook-studio/<path:rest>", methods=["GET", "POST"])
+@app.route("/strategic-agents/linkedin-playbook-studio", methods=["GET", "POST"])
+@app.route("/strategic-agents/linkedin-playbook-studio/", methods=["GET", "POST"])
+@app.route("/strategic-agents/linkedin-playbook-studio/<path:rest>", methods=["GET", "POST"])
 def linkedin_playbook_studio_legacy_redirect(rest=""):
-    target = "/p2/strategic-agents/linkedin-strategy-researcher" + (("/" + rest) if rest else "")
+    target = "/strategic-agents/linkedin-strategy-researcher" + (("/" + rest) if rest else "")
     if request.query_string:
         target += "?" + request.query_string.decode("utf-8", "ignore")
     return redirect(target, code=308)
@@ -9041,7 +9030,7 @@ def _sci_run_status_payload(run_id: int, email: str):
 #
 # THE PAGE gets a 301 from the old path so a shared link or a bookmark still
 # lands, and so the address bar settles on the one canonical URL. Same
-# pattern as the nine legacy /p2/admin/* shims and _LEGACY_AGENT_SLUGS.
+# pattern as the nine legacy /admin/* shims and _LEGACY_AGENT_SLUGS.
 #
 # THE FOUR API ROUTES below instead answer on BOTH paths, with no redirect.
 # A 301 is the wrong tool there: it is not reliably replayed as a POST by
@@ -9050,14 +9039,14 @@ def _sci_run_status_payload(run_id: int, email: str):
 # OLD paths from the BASE constant baked into the JS it loaded. Redirecting
 # those would be a broken run for anyone mid-analysis at deploy time;
 # answering both is not.
-@app.route("/p2/strategic-agents/social-creative-intelligence")
+@app.route("/strategic-agents/social-creative-intelligence")
 def social_media_intelligence_legacy():
     """Old slug. No decorator on purpose: the gate answers at the
-    destination, exactly like the legacy /p2/admin/* redirects."""
-    return redirect("/p2/strategic-agents/social-media-intelligence", code=301)
+    destination, exactly like the legacy /admin/* redirects."""
+    return redirect("/strategic-agents/social-media-intelligence", code=301)
 
 
-@app.route("/p2/strategic-agents/social-media-intelligence")
+@app.route("/strategic-agents/social-media-intelligence")
 @position2_required
 def social_media_intelligence():
     from tracker import sci_store
@@ -9071,8 +9060,8 @@ def social_media_intelligence():
     return render_template("social_media_intelligence.html", user=user, runs=runs)
 
 
-@app.route("/p2/strategic-agents/social-media-intelligence/search")
-@app.route("/p2/strategic-agents/social-creative-intelligence/search")
+@app.route("/strategic-agents/social-media-intelligence/search")
+@app.route("/strategic-agents/social-creative-intelligence/search")
 @position2_required
 def social_media_intelligence_search():
     """Company search shown before a run starts, so an ambiguous free-text
@@ -9115,8 +9104,8 @@ def social_media_intelligence_search():
     return jsonify(payload)
 
 
-@app.route("/p2/strategic-agents/social-media-intelligence/analyze", methods=["POST"])
-@app.route("/p2/strategic-agents/social-creative-intelligence/analyze", methods=["POST"])
+@app.route("/strategic-agents/social-media-intelligence/analyze", methods=["POST"])
+@app.route("/strategic-agents/social-creative-intelligence/analyze", methods=["POST"])
 @position2_required
 def social_media_intelligence_analyze():
     from tracker import sci_pipeline, sci_store
@@ -9140,8 +9129,8 @@ def social_media_intelligence_analyze():
     return jsonify({"run_id": run_id, "status": "running"})
 
 
-@app.route("/p2/strategic-agents/social-media-intelligence/runs/<int:run_id>/status")
-@app.route("/p2/strategic-agents/social-creative-intelligence/runs/<int:run_id>/status")
+@app.route("/strategic-agents/social-media-intelligence/runs/<int:run_id>/status")
+@app.route("/strategic-agents/social-creative-intelligence/runs/<int:run_id>/status")
 @position2_required
 def social_media_intelligence_run_status(run_id):
     email = (_get_user() or {}).get("email", "").lower()
@@ -9151,8 +9140,8 @@ def social_media_intelligence_run_status(run_id):
     return jsonify(payload)
 
 
-@app.route("/p2/strategic-agents/social-media-intelligence/runs/<int:run_id>")
-@app.route("/p2/strategic-agents/social-creative-intelligence/runs/<int:run_id>")
+@app.route("/strategic-agents/social-media-intelligence/runs/<int:run_id>")
+@app.route("/strategic-agents/social-creative-intelligence/runs/<int:run_id>")
 @position2_required
 def social_media_intelligence_run(run_id):
     from tracker import sci_store
@@ -9192,7 +9181,7 @@ def social_media_intelligence_run(run_id):
 # per call). Same rule Contact Finder arrived at over thirteen audit rounds:
 # only an explicit user action reaches a billed endpoint.
 
-@app.route("/p2/strategic-agents/event-conference-intelligence")
+@app.route("/strategic-agents/event-conference-intelligence")
 @position2_required
 def event_conference_intelligence():
     from tracker import event_intel_rubric, event_intel_store, event_intel_workroom
@@ -9256,7 +9245,7 @@ def event_conference_intelligence():
                                    "total": event_intel_workroom.WINDOW_HOURS})
 
 
-@app.route("/p2/strategic-agents/event-conference-intelligence/profiles",
+@app.route("/strategic-agents/event-conference-intelligence/profiles",
            methods=["GET", "POST"])
 @position2_required
 def event_conference_intelligence_profiles():
@@ -9282,7 +9271,7 @@ def event_conference_intelligence_profiles():
     return jsonify({"profile": event_intel_store.get_profile(profile_id, email)})
 
 
-@app.route("/p2/strategic-agents/event-conference-intelligence/search")
+@app.route("/strategic-agents/event-conference-intelligence/search")
 @position2_required
 def event_conference_intelligence_search():
     """Company search shown while typing the client name, so a name someone
@@ -9328,7 +9317,7 @@ def event_conference_intelligence_search():
     return jsonify(payload)
 
 
-@app.route("/p2/strategic-agents/event-conference-intelligence/profiles/draft",
+@app.route("/strategic-agents/event-conference-intelligence/profiles/draft",
            methods=["POST"])
 @position2_required
 def event_conference_intelligence_profile_draft():
@@ -9367,7 +9356,7 @@ def event_conference_intelligence_profile_draft():
     return jsonify(out)
 
 
-@app.route("/p2/strategic-agents/event-conference-intelligence/profiles/<int:profile_id>",
+@app.route("/strategic-agents/event-conference-intelligence/profiles/<int:profile_id>",
            methods=["POST"])
 @position2_required
 def event_conference_intelligence_profile_update(profile_id):
@@ -9383,7 +9372,7 @@ def event_conference_intelligence_profile_update(profile_id):
     return jsonify({"profile": event_intel_store.get_profile(profile_id, email)})
 
 
-@app.route("/p2/strategic-agents/event-conference-intelligence/run", methods=["POST"])
+@app.route("/strategic-agents/event-conference-intelligence/run", methods=["POST"])
 @position2_required
 def event_conference_intelligence_run():
     from tracker import event_intel_pipeline, event_intel_store, event_intel_workroom
@@ -9481,7 +9470,7 @@ def event_conference_intelligence_run():
     return jsonify({"run_id": run_id, "status": "running"})
 
 
-@app.route("/p2/strategic-agents/event-conference-intelligence/runs/<int:run_id>/cancel", methods=['POST'])
+@app.route("/strategic-agents/event-conference-intelligence/runs/<int:run_id>/cancel", methods=['POST'])
 @position2_required
 def event_conference_intelligence_cancel(run_id):
     from tracker import event_intel_jobs, event_intel_store
@@ -9491,7 +9480,7 @@ def event_conference_intelligence_cancel(run_id):
     return jsonify(cancelled=event_intel_jobs.cancel(run_id,email))
 
 
-@app.route("/p2/strategic-agents/event-conference-intelligence/runs/<int:run_id>/status")
+@app.route("/strategic-agents/event-conference-intelligence/runs/<int:run_id>/status")
 @position2_required
 def event_conference_intelligence_status(run_id):
     from tracker import event_intel_store
@@ -9504,7 +9493,7 @@ def event_conference_intelligence_status(run_id):
                     "credits_spent": run.get("credits_spent", 0)})
 
 
-@app.route("/p2/strategic-agents/event-conference-intelligence/runs/<int:run_id>")
+@app.route("/strategic-agents/event-conference-intelligence/runs/<int:run_id>")
 @position2_required
 def event_conference_intelligence_run_detail(run_id):
     from tracker import event_intel_audit, event_intel_report, event_intel_store
@@ -9549,7 +9538,7 @@ def event_conference_intelligence_run_detail(run_id):
     return response
 
 
-@app.route("/p2/strategic-agents/event-conference-intelligence/runs/<int:run_id>/resolve",
+@app.route("/strategic-agents/event-conference-intelligence/runs/<int:run_id>/resolve",
            methods=["POST"])
 @position2_required
 def event_conference_intelligence_resolve(run_id):
@@ -9565,7 +9554,7 @@ def event_conference_intelligence_resolve(run_id):
     return jsonify(result)
 
 
-@app.route("/p2/strategic-agents/event-conference-intelligence/runs/<int:run_id>/candidates.csv")
+@app.route("/strategic-agents/event-conference-intelligence/runs/<int:run_id>/candidates.csv")
 @position2_required
 def event_conference_intelligence_candidates_csv(run_id):
     """The ranked table as a file, with every sub-score in its own column.
@@ -9656,7 +9645,7 @@ def event_conference_intelligence_candidates_csv(run_id):
     return resp
 
 
-@app.route("/p2/strategic-agents/event-conference-intelligence/runs/<int:run_id>/outreach.csv")
+@app.route("/strategic-agents/event-conference-intelligence/runs/<int:run_id>/outreach.csv")
 @position2_required
 def event_conference_intelligence_outreach_csv(run_id):
     """The drafts as a file.
@@ -9721,7 +9710,7 @@ def event_conference_intelligence_outreach_csv(run_id):
     return resp
 
 
-@app.route("/p2/strategic-agents/event-conference-intelligence/runs/<int:run_id>/plan")
+@app.route("/strategic-agents/event-conference-intelligence/runs/<int:run_id>/plan")
 @position2_required
 def event_conference_intelligence_plan(run_id):
     from tracker import event_intel_planning as planning
@@ -9736,7 +9725,7 @@ def event_conference_intelligence_plan(run_id):
                            currencies=planning.CURRENCIES)
 
 
-@app.route("/p2/strategic-agents/event-conference-intelligence/runs/<int:run_id>/plan", methods=['POST'])
+@app.route("/strategic-agents/event-conference-intelligence/runs/<int:run_id>/plan", methods=['POST'])
 @position2_required
 def event_conference_intelligence_plan_save(run_id):
     from tracker import event_intel_planning as planning
@@ -9757,7 +9746,7 @@ def event_conference_intelligence_plan_save(run_id):
     return jsonify(view)
 
 
-@app.route("/p2/strategic-agents/event-conference-intelligence/outcomes",
+@app.route("/strategic-agents/event-conference-intelligence/outcomes",
            methods=["GET", "POST"])
 @position2_required
 def event_conference_intelligence_outcomes():
@@ -9794,7 +9783,7 @@ def event_conference_intelligence_outcomes():
     return event_conference_intelligence_run_detail(run_id)
 
 
-@app.route("/p2/strategic-agents/event-conference-intelligence/runs/<int:run_id>/export.csv")
+@app.route("/strategic-agents/event-conference-intelligence/runs/<int:run_id>/export.csv")
 @position2_required
 def event_conference_intelligence_export(run_id):
     """CSV of the roster. Every row carries the role and the source URL, so
@@ -9867,7 +9856,7 @@ def event_conference_intelligence_export(run_id):
 # Intelligence both arrived at -- it only ever runs on an explicit user action,
 # never on page load.
 
-@app.route("/p2/strategic-agents/thought-leader-pr")
+@app.route("/strategic-agents/thought-leader-pr")
 @position2_required
 def thought_leader_pr():
     from tracker import thought_leader_pr as tlpr
@@ -9877,7 +9866,7 @@ def thought_leader_pr():
                           runs=tlpr.list_runs(email))
 
 
-@app.route("/p2/strategic-agents/thought-leader-pr/search")
+@app.route("/strategic-agents/thought-leader-pr/search")
 @position2_required
 def thought_leader_pr_search():
     """Candidate list shown as the user types a name, so a common one
@@ -9902,7 +9891,7 @@ def thought_leader_pr_search():
     return jsonify(payload)
 
 
-@app.route("/p2/strategic-agents/thought-leader-pr/resolve", methods=["POST"])
+@app.route("/strategic-agents/thought-leader-pr/resolve", methods=["POST"])
 @position2_required
 def thought_leader_pr_resolve():
     from tracker import thought_leader_pr as tlpr
@@ -9936,7 +9925,7 @@ def thought_leader_pr_resolve():
     return jsonify({"run_id": run_id, **result})
 
 
-@app.route("/p2/strategic-agents/thought-leader-pr/runs/<int:run_id>/confirm", methods=["POST"])
+@app.route("/strategic-agents/thought-leader-pr/runs/<int:run_id>/confirm", methods=["POST"])
 @position2_required
 def thought_leader_pr_confirm(run_id):
     from tracker import thought_leader_pr as tlpr
@@ -9948,7 +9937,7 @@ def thought_leader_pr_confirm(run_id):
     return jsonify({"ok": True})
 
 
-@app.route("/p2/strategic-agents/thought-leader-pr/runs/<int:run_id>")
+@app.route("/strategic-agents/thought-leader-pr/runs/<int:run_id>")
 @position2_required
 def thought_leader_pr_run(run_id):
     from tracker import thought_leader_pr as tlpr
@@ -9960,7 +9949,7 @@ def thought_leader_pr_run(run_id):
     return jsonify(run)
 
 
-@app.route("/p2/strategic-agents/thought-leader-pr/runs/<int:run_id>/collect", methods=["POST"])
+@app.route("/strategic-agents/thought-leader-pr/runs/<int:run_id>/collect", methods=["POST"])
 @position2_required
 def thought_leader_pr_collect(run_id):
     # Phase 1 (owned-platform posts). Its own explicit action, distinct from
@@ -9983,7 +9972,7 @@ def thought_leader_pr_collect(run_id):
     return jsonify({"ok": True, "posts_status": "collecting"})
 
 
-@app.route("/p2/strategic-agents/thought-leader-pr/runs/<int:run_id>/collect-reaction", methods=["POST"])
+@app.route("/strategic-agents/thought-leader-pr/runs/<int:run_id>/collect-reaction", methods=["POST"])
 @position2_required
 def thought_leader_pr_collect_reaction(run_id):
     # Phase 2 (audience reaction). Reads Phase 1's already-collected posts
@@ -10005,7 +9994,7 @@ def thought_leader_pr_collect_reaction(run_id):
     return jsonify({"ok": True, "reaction_status": "collecting"})
 
 
-@app.route("/p2/strategic-agents/thought-leader-pr/runs/<int:run_id>/collect-press", methods=["POST"])
+@app.route("/strategic-agents/thought-leader-pr/runs/<int:run_id>/collect-press", methods=["POST"])
 @position2_required
 def thought_leader_pr_collect_press(run_id):
     # Phase 3 (earned media / press): real news coverage via GDELT + SerpAPI
@@ -10027,7 +10016,7 @@ def thought_leader_pr_collect_press(run_id):
     return jsonify({"ok": True, "press_status": "collecting"})
 
 
-@app.route("/p2/strategic-agents/thought-leader-pr/runs/<int:run_id>/collect-synthesis", methods=["POST"])
+@app.route("/strategic-agents/thought-leader-pr/runs/<int:run_id>/collect-synthesis", methods=["POST"])
 @position2_required
 def thought_leader_pr_collect_synthesis(run_id):
     # Phase 4 (synthesis report): the "so what" -- one Claude call that
@@ -10057,7 +10046,7 @@ def thought_leader_pr_collect_synthesis(run_id):
 # CMO of Acme?") that resolves ambiguous company names by asking rather than
 # guessing. See tracker/apollo_client.py for the underlying search functions.
 
-@app.route("/p2/strategic-agents/company-people-intelligence")
+@app.route("/strategic-agents/company-people-intelligence")
 @position2_required
 def cpi_home():
     return render_template("company_people_intelligence.html", user=_get_user(),
@@ -10294,7 +10283,7 @@ def _cpi_search_no_match_note(filters: dict, resolved_names, api_key: str, spend
     return {"answer": answer, "researched": researched, "web_search": web}
 
 
-@app.route("/p2/strategic-agents/company-people-intelligence/search", methods=["POST"])
+@app.route("/strategic-agents/company-people-intelligence/search", methods=["POST"])
 @position2_required
 def cpi_search():
     """Live Apollo search for the results grid. People search is free; company
@@ -10760,7 +10749,7 @@ def _cpi_industries_seen() -> set:
             pass
 
 
-@app.route("/p2/strategic-agents/company-people-intelligence/industries")
+@app.route("/strategic-agents/company-people-intelligence/industries")
 @position2_required
 def cpi_industries():
     """Industry picker entries for what has been typed so far. Costs nothing and
@@ -10919,7 +10908,7 @@ def _cpi_record_vocab(orgs) -> None:
         _cpi_vocab_learn("location", places)
 
 
-@app.route("/p2/strategic-agents/company-people-intelligence/vocab")
+@app.route("/strategic-agents/company-people-intelligence/vocab")
 @position2_required
 def cpi_vocab():
     """Picker entries for the NAICS, SIC, technology and location filters.
@@ -11896,7 +11885,7 @@ def _cpi_enrich_company(domain: str, apollo_id: str, spend=None) -> dict:
         return {"matched": False, "lookup_failed": True}
 
 
-@app.route("/p2/strategic-agents/company-people-intelligence/enrich", methods=["POST"])
+@app.route("/strategic-agents/company-people-intelligence/enrich", methods=["POST"])
 @position2_required
 def cpi_enrich():
     body = request.get_json(silent=True) or {}
@@ -11985,7 +11974,7 @@ _CPI_ID_CACHE_SV_KEY = "_cpi_sv"
 _CPI_ID_CACHE_VERSION = 1
 
 
-@app.route("/p2/strategic-agents/company-people-intelligence/enrich-bulk", methods=["POST"])
+@app.route("/strategic-agents/company-people-intelligence/enrich-bulk", methods=["POST"])
 @position2_required
 def cpi_enrich_bulk():
     """Reveal a chosen set of people by Apollo id, in one batch.
@@ -12387,7 +12376,7 @@ def _cpi_history_label(entity: str, filters: dict) -> str:
                                        else "All people")
 
 
-@app.route("/p2/strategic-agents/company-people-intelligence/history", methods=["GET", "POST"])
+@app.route("/strategic-agents/company-people-intelligence/history", methods=["GET", "POST"])
 @position2_required
 def cpi_history():
     """POST saves a result set; GET lists this user's recent saved searches."""
@@ -12492,7 +12481,7 @@ def cpi_history():
             pass
 
 
-@app.route("/p2/strategic-agents/company-people-intelligence/history/<int:entry_id>",
+@app.route("/strategic-agents/company-people-intelligence/history/<int:entry_id>",
            methods=["GET", "DELETE"])
 @position2_required
 def cpi_history_entry(entry_id: int):
@@ -12834,7 +12823,7 @@ def _cpi_list_key(row: dict, entity: str) -> str:
     return key or "?"
 
 
-@app.route("/p2/strategic-agents/company-people-intelligence/list",
+@app.route("/strategic-agents/company-people-intelligence/list",
            methods=["GET", "POST", "DELETE"])
 @position2_required
 def cpi_list():
@@ -13061,7 +13050,7 @@ def _cpi_rate_limited(route_key: str, email: str) -> bool:
 
 
 # ── Typed sentence to filter panel ────────────────────────────────────────────
-@app.route("/p2/strategic-agents/company-people-intelligence/parse-query", methods=["POST"])
+@app.route("/strategic-agents/company-people-intelligence/parse-query", methods=["POST"])
 @position2_required
 def cpi_parse_query():
     """Turn "CMOs at healthcare companies over 200 people" into filter values.
@@ -13165,7 +13154,7 @@ _CPI_COUNT_VERIFIED_FILTERS = ("industries", "employee_min", "employee_max",
                                "company_domains")
 
 
-@app.route("/p2/strategic-agents/company-people-intelligence/count", methods=["POST"])
+@app.route("/strategic-agents/company-people-intelligence/count", methods=["POST"])
 @position2_required
 def cpi_count():
     """How many people Apollo says match, for 0 credits. See the note above."""
@@ -13308,7 +13297,7 @@ def _cpi_credit_record(action: str, credits) -> None:
             pass
 
 
-@app.route("/p2/strategic-agents/company-people-intelligence/credits")
+@app.route("/strategic-agents/company-people-intelligence/credits")
 @position2_required
 def cpi_credits():
     """What this tool has spent from the shared Apollo pool.
@@ -13347,7 +13336,7 @@ def cpi_credits():
             pass
 
 
-@app.route("/p2/strategic-agents/company-people-intelligence/export", methods=["POST"])
+@app.route("/strategic-agents/company-people-intelligence/export", methods=["POST"])
 @position2_required
 def cpi_export():
     """Download the selected rows as .csv or .xlsx.
@@ -15649,7 +15638,7 @@ def _cpi_chat_remember(fields: dict, credits: int) -> None:
         log.warning("cpi chat history hook failed: %s", e)
 
 
-@app.route("/p2/strategic-agents/company-people-intelligence/chat", methods=["POST"])
+@app.route("/strategic-agents/company-people-intelligence/chat", methods=["POST"])
 @position2_required
 def cpi_chat():
     """Grounded NL Q&A over live Apollo data. Stateless: the client resends the
@@ -16529,7 +16518,7 @@ _ACCOUNTS_HTML_UNUSED = """
       </a>
       <div class="bc">
         <a href="/hub">Hub</a><span class="bc-sep">›</span>
-        <a href="/p2/strategic-agents">Strategic Agents</a><span class="bc-sep">›</span>
+        <a href="/strategic-agents">Strategic Agents</a><span class="bc-sep">›</span>
         <span class="bc-cur">Signal Tracker</span>
       </div>
     </div>
@@ -16558,7 +16547,7 @@ def _build_account_card(account_id, cfg):
         count = _read_company_count(path)
         refreshed = _read_last_refreshed(path)
         return (
-            f'<a class="card" href="/p2/abm-signal-tracker/{account_id}" '
+            f'<a class="card" href="/abm-signal-tracker/{account_id}" '
             f'style="--accent:{accent};--glow:rgba(99,102,241,.25);'
             f'--thumb:{thumb};--accent-text:{accent}">'
             f'<div class="card-band"></div>'
@@ -16951,10 +16940,10 @@ content, brand & website, RevOps). The platform surfaces buying signals, de-anon
 tracks competitor ads and AI-answer-engine brand visibility, and runs a suite of SEO/GEO tools.
 
 THREE SURFACES: (1) public marketing site, logged out; (2) /app member workspace, any signed-in Google
-account, curated SEO/GEO agents + saved run history; (3) /p2/* internal staff app, {STAFF_EMAIL_SUFFIX} only
+account, curated SEO/GEO agents + saved run history; (3) /* internal staff app, {STAFF_EMAIL_SUFFIX} only
 (this chat lives here) — Hub, GTM tools, SEO Studio, Accounts/ABM Signal Tracker, Admin dashboards.
 
-ANONYMOUS VISITORS (de-anonymisation engine, /p2/admin/anonymous-traffic, /p2/strategic-agents/anonymous-visitors):
+ANONYMOUS VISITORS (de-anonymisation engine, /admin/anonymous-traffic, /strategic-agents/anonymous-visitors):
 Identifies which COMPANIES (not usually individual people) visit the {BRAND['name']} site, by fusing three
 signals per visitor IP: IPinfo (org/ASN/hostname/privacy), reverse DNS, and RDAP registrant/netblock.
 Each visitor gets a connection_type: "business" (a real company network — the only type that gets
@@ -16966,7 +16955,7 @@ co-op — anonymous browsing is never matched to a named person. Company firmogr
 sources (the company's own homepage schema.org/meta data, tech-stack fingerprinting, SEC EDGAR for public
 filers); a paid Apollo.io lookup only runs on explicit request (the "Enrich further" button) to control cost.
 
-ABM SIGNAL TRACKER (Accounts / ABM Signal Tracker dashboards, /p2/abm-signal-tracker/accounts, /p2/abm-signal-tracker/<account>):
+ABM SIGNAL TRACKER (Accounts / ABM Signal Tracker dashboards, /abm-signal-tracker/accounts, /abm-signal-tracker/<account>):
 Monitors one named company list (Healthcare: the 50 companies with the most signals) for buying signals: funding rounds,
 leadership changes, M&A, IPO activity, product launches, partnerships, hiring surges, and general news.
 Each signal has a severity (HIGH/MEDIUM/LOW) and an importance score = signal type weight x severity x
@@ -16974,18 +16963,18 @@ recency (signals decay after about 90 days). Sourced from Apollo.io + news feeds
 refreshed weekly via a GitHub Actions pipeline. Exact company/signal counts per account are in the LIVE
 DATA section below when available — use those numbers, never a memorised figure.
 
-AD INTELLIGENCE (/p2/strategic-agents/ad-intelligence): tracks competitors' running ads (headline, CTA, format,
+AD INTELLIGENCE (/strategic-agents/ad-intelligence): tracks competitors' running ads (headline, CTA, format,
 keywords, messaging angle, first/last seen) pulled from a shared Google Sheet.
 
-SEO STUDIO (/p2/seo-aeo/<tool>) and the /app agents: a suite of SEO/GEO tools (Keyword Finder, Content Brief
+SEO STUDIO (/seo-aeo/<tool>) and the /app agents: a suite of SEO/GEO tools (Keyword Finder, Content Brief
 Generator, Content Enhancer, SEO & GEO Audit, Agentic Readiness Audit, Competitor Analysis, and more).
 Some are fully live and connected; others are request-access only.
 
-ADMIN DASHBOARDS (/p2/admin/*, admin-only): Internal Usage, Anonymous Traffic (the visitor de-anon
+ADMIN DASHBOARDS (/admin/*, admin-only): Internal Usage, Anonymous Traffic (the visitor de-anon
 dashboard above), Public Page Analytics, Public Agent Usage, Agent Runs, Access Requests.
 
-Auth: Google Sign-In is open to any Google account; only {STAFF_EMAIL_SUFFIX} reaches /p2/* internal pages; a
-small admin allowlist reaches /p2/admin/*.
+Auth: Google Sign-In is open to any Google account; only {STAFF_EMAIL_SUFFIX} reaches /* internal pages; a
+small admin allowlist reaches /admin/*.
 
 Ground rule: answer questions about how a platform feature/number/term works from the facts above, precisely
 and without guessing. If something asked is genuinely outside both this and the LIVE DATA section, say so

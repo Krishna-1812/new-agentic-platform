@@ -158,19 +158,19 @@ def test_add_reason_route_also_degrades_cleanly(client):
 # ── Admin review page ────────────────────────────────────────────────────────
 
 def test_admin_page_is_refused_to_a_non_admin_position2_user(client):
-    r = client.get("/p2/admin/agent-feedback")
+    r = client.get("/admin/agent-feedback")
     assert r.status_code == 403
 
 
 def test_admin_page_loads_for_an_admin(admin_client):
-    r = admin_client.get("/p2/admin/agent-feedback")
+    r = admin_client.get("/admin/agent-feedback")
     assert r.status_code == 200
     assert b"Agent Feedback" in r.data
 
 
 def test_admin_data_endpoint_is_admin_only_and_shape_holds(admin_client, client):
-    assert client.get("/p2/admin/agent-feedback/data").status_code == 403
-    r = admin_client.get("/p2/admin/agent-feedback/data")
+    assert client.get("/admin/agent-feedback/data").status_code == 403
+    r = admin_client.get("/admin/agent-feedback/data")
     assert r.status_code == 200
     body = r.get_json()
     assert body["summary"] == []

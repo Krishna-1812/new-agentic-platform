@@ -19,7 +19,7 @@ const SCLS=s=>!s?'bic':s.includes('C-Level')||s.includes('Founder')?'bcs':s.incl
 const SLBL=s=>(s||'Unknown').replace('IC / Individual Contributor','IC').replace('C-Level / Founder','C-Level');
 const DLBL=d=>d?d.replace('SECOND_DEGREE','2nd').replace('THIRD_DEGREE','3rd').replace('FIRST_DEGREE','1st'):'';
 const fmtN=n=>{n=+n||0;return n>=1000?(n/1000).toFixed(n>=10000?0:1).replace(/\.0$/,'')+'k':String(n);};
-/* Target-company labels (per surface): /p2 = Position², a client portal = that
+/* Target-company labels (per surface): internal app = Position², a client portal = that
    client, e.g. NorthStar. Set by the template via window.__LI_CFG__. "Employee"
    in the sheet's Relationship-to-Target column means an employee of the *target*
    company, so the badge must name that company, not always Position². */

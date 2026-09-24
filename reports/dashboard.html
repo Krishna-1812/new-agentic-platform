@@ -1892,7 +1892,7 @@ body{padding-top:46px;box-sizing:border-box}
 <body>
 <div id="vimi-plat">
   <a class="kp-brand" href="/hub"><span class="kp-logo"><span style="width:12px;height:12px;border-radius:50%;background:#FF6022;display:block"></span></span><span class="kp-name">__BRAND_NAME__</span></a>
-  <div class="kp-bc"><a href="/hub">Hub</a><span class="kp-sep">&rsaquo;</span><a href="/p2/strategic-agents">Strategic Agents</a><span class="kp-sep">&rsaquo;</span><span class="kp-cur">ABM Signal Tracker</span></div>
+  <div class="kp-bc"><a href="/hub">Hub</a><span class="kp-sep">&rsaquo;</span><a href="/strategic-agents">Strategic Agents</a><span class="kp-sep">&rsaquo;</span><span class="kp-cur">ABM Signal Tracker</span></div>
   <div class="kp-right">
     <div class="kp-pill" id="kp-pill" onclick="kpToggle()"><span class="kp-av" id="kp-av">&middot;</span><span class="kp-uname" id="kp-uname">Account</span><span class="kp-cv">&#9660;</span></div>
     <div class="kp-dd" id="kp-dd">
@@ -6136,7 +6136,7 @@ window.irCopy=function(btn,text){
   if(typeof _origSS==='function'){
     window.showSection=function(name,btn){
       _origSS(name,btn);
-      if(VALID[name]){var base='/p2/abm-signal-tracker/'+curAcct();var url=(name==='overview')?base:base+'/'+name;try{history.replaceState(null,'',url);}catch(e){}}
+      if(VALID[name]){var base='/abm-signal-tracker/'+curAcct();var url=(name==='overview')?base:base+'/'+name;try{history.replaceState(null,'',url);}catch(e){}}
       if(name==='signals')renderSig();
     };
   }

@@ -4,7 +4,7 @@ site, and whether the admin email diagnostic reports the same list.
 This is a notification list, not access control: being on it grants nothing,
 and it deliberately does not track ADMIN_EMAILS. It lived as two independent
 copies of one hardcoded string -- the real send in _demo_request_to_email and
-/p2/admin/email-test's diagnostic -- which is the shape of bug this repo has
+/admin/email-test's diagnostic -- which is the shape of bug this repo has
 been bitten by more than once: someone adds a recipient, the diagnostic keeps
 reporting the old list, and the page that exists to tell you who gets the
 mail is the thing lying about it. Both now resolve through
@@ -69,7 +69,7 @@ def test_an_empty_env_var_falls_back_instead_of_emailing_nobody(monkeypatch):
 
 
 def test_the_real_send_and_the_admin_diagnostic_read_one_shared_source():
-    """The whole point of the shared resolver: /p2/admin/email-test exists to
+    """The whole point of the shared resolver: /admin/email-test exists to
     report who the notification actually goes to, so it must not carry its own
     copy of the list. Asserted against the source, since proving it by
     behaviour would mean really sending mail.

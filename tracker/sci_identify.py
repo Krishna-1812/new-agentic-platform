@@ -34,7 +34,7 @@ _WEB_SEARCH_TOOL = None
 
 # The last reply this module actually received, kept for the admin
 # self-test only (probe() below, reachable solely from the @admin_required
-# /p2/admin/external-usage/sci-identify-check route). When a parse fails,
+# /admin/external-usage/sci-identify-check route). When a parse fails,
 # the one thing worth knowing is what the model really sent -- guessing at
 # that from a one-line status string is what let a fragmented-response bug
 # survive two rounds of fixes. Never rendered into sci_platform_runs

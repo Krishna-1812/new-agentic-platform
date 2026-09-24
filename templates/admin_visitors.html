@@ -5,7 +5,7 @@
 {{ head("Anonymous Traffic", ["admin_visitors.css?v=1", "admin.css?v=6"], compat=True) }}
 </head>
 <body>
-{{ topbar([("Admin", "/p2/admin/internal-usage"), ("Anonymous Traffic", none)]) }}
+{{ topbar([("Admin", "/admin/internal-usage"), ("Anonymous Traffic", none)]) }}
 
 <div class="wrap">
   <div class="hero">
@@ -274,7 +274,7 @@ function deepenVisitor(){
   var v=CUR_VISITOR;if(!v||!v.ip)return;
   var btn=document.getElementById('deepenBtn'),st=document.getElementById('deepenStatus');
   if(btn){btn.disabled=true;btn.textContent='Enriching…';}
-  fetch('/p2/admin/anonymous-traffic/deepen',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ip:v.ip})})
+  fetch('/admin/anonymous-traffic/deepen',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ip:v.ip})})
     .then(function(r){return r.json();})
     .then(function(d){
       if(d.error){if(st)st.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3.5 22 20H2zM12 10v4M12 17.2v.1\"/></svg> '+d.error;if(btn){btn.disabled=false;btn.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6 3h12l3 6-9 12L3 9zM3 9h18M9 3 6 9l6 12 6-12-3-6\"/></svg> Enrich further (spends 1 Apollo credit)';}return;}
@@ -316,7 +316,7 @@ function closeDrawer(){document.getElementById('overlay').classList.remove('open
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer();});
 function load(force){
   var btn=document.getElementById('refreshBtn');if(btn)btn.textContent='…';
-  fetch('/p2/admin/anonymous-traffic/data'+(force?'?fresh=1':''),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
+  fetch('/admin/anonymous-traffic/data'+(force?'?fresh=1':''),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
     if(btn)btn.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5\"/></svg> Refresh';
     LAST_DATA=d;
     var k=d.kpis||{};

@@ -35,12 +35,12 @@ into four surfaces:
 |---|---|---|---|---|
 | 1 | Public marketing site | Logged-out visitors | none | `/`, `/agents`, `/platform`, ... |
 | 2 | Member workspace | Any signed-in Google user | `@login_required` | `/app/*` |
-| 3 | Internal staff app | `@markifydigital.com` accounts, plus the admins in `ADMIN_EMAILS` on any domain | `@position2_required` | `/p2/*` |
+| 3 | Internal staff app | `@markifydigital.com` accounts, plus the admins in `ADMIN_EMAILS` on any domain | `@position2_required` | `/hub`, `/strategic-agents/*`, `/seo-aeo/*`, `/abm-signal-tracker/*`, `/playbook/*`, `/admin/*` (under `/p2/*` until 2026-09-24; old `/p2` links redirect) |
 | 4 | Client portals | Any signed-in Google account, gated per client | `_client_gate()` | `/<client-slug>/*` |
 
 `ADMIN_EMAILS` (checked in `app.py`) is the single source of truth for admin rights; `admin_required`
-gates every `/p2/admin/*` route off it. Most of the agent catalog below lives on surface 3
-(`/p2/strategic-agents/...`) and is what this README documents in the most detail; a subset is also
+gates every `/admin/*` route off it. Most of the agent catalog below lives on surface 3
+(`/strategic-agents/...`) and is what this README documents in the most detail; a subset is also
 exposed, metered, on surface 2 (`/app/...`) for any signed-in Google account, and a smaller subset
 again is embedded per-client on surface 4.
 
@@ -48,13 +48,13 @@ again is embedded per-client on surface 4.
 
 ## Agents
 
-### Strategic Agents (`/p2/strategic-agents/*`, staff-only)
+### Strategic Agents (`/strategic-agents/*`, staff-only)
 
 The flagship product: eleven purpose-built agents, each with its own `tracker/*.py` domain logic,
 Postgres or SQLite-backed persistence, and a dedicated report UI.
 
 #### Contact Finder
-`/p2/strategic-agents/company-people-intelligence` · `tracker/apollo_client.py`
+`/strategic-agents/company-people-intelligence` · `tracker/apollo_client.py`
 
 Live Apollo.io company/people search and a grounded chat layer on top of it: point it at a role
 and a company and it finds the person, or ask for a list by title, seniority, or industry.
@@ -66,7 +66,7 @@ of browsing. Person profiles, company-name resolution, and employer firmographic
 depth in this codebase (thirteen recorded audit rounds); planned for external client launch.
 
 #### Job Change Alert
-`/p2/strategic-agents/job-change-alert` · `tracker/job_change_parser.py`, `tracker/job_change_store.py`
+`/strategic-agents/job-change-alert` · `tracker/job_change_parser.py`, `tracker/job_change_store.py`
 
 Tracks two things: newly detected job changes at people you watch, and the full tracked
 people/company roster. Sourced entirely from Apollo's native Slack notification workflow
@@ -74,7 +74,7 @@ people/company roster. Sourced entirely from Apollo's native Slack notification 
 notification only ever carries a person's *new* role, never their prior employer.
 
 #### LinkedIn Strategy Researcher
-`/p2/strategic-agents/linkedin-strategy-researcher` · `tracker/arena_client.py`, `tracker/linkedin_playbook_store.py`
+`/strategic-agents/linkedin-strategy-researcher` · `tracker/arena_client.py`, `tracker/linkedin_playbook_store.py`
 
 Search any company's LinkedIn page, then run a five-agent competitive-strategy analysis on your
 own brand or a named competitor: company profile, posts, strategy (personas/hooks/CTAs/audience),
@@ -85,7 +85,7 @@ Not to be confused with **LinkedIn Social Researcher** below, an unrelated, olde
 that briefly held the same name.
 
 #### 42 North Dental Slot Checker
-`/p2/strategic-agents/42-north-dental-slot-checker` · `tracker/slot_checker.py`
+`/strategic-agents/42-north-dental-slot-checker` · `tracker/slot_checker.py`
 
 A read/visualize layer over a separate weekly scrape of a multi-brand dental chain's real booking
 widgets (82 locations): what a new patient would actually be offered if they tried to book right
@@ -94,7 +94,7 @@ read fails for any reason. Includes an on-demand AI briefing. Not part of the st
 registries; it's a hand-added card.
 
 #### Social Media Intelligence
-`/p2/strategic-agents/social-media-intelligence` · `tracker/sci_*.py` (identify, pipeline, vision, video, audio, classify, synthesize)
+`/strategic-agents/social-media-intelligence` · `tracker/sci_*.py` (identify, pipeline, vision, video, audio, classify, synthesize)
 
 Given a company name or URL, resolves its handles across **Instagram, LinkedIn, X, TikTok,
 YouTube, Facebook** and separately reads **Reddit** brand conversation as a seventh surface, pulls
@@ -107,7 +107,7 @@ scraping) where configured. Genuinely uncommon in this space: it looks at the ac
 competitor's creative, not just engagement metadata.
 
 #### Event & Conference Intelligence
-`/p2/strategic-agents/event-conference-intelligence` · `tracker/event_intel_*.py` (store, rubric, harvest, discover, audit, scorer, report, workroom, pipeline, intake)
+`/strategic-agents/event-conference-intelligence` · `tracker/event_intel_*.py` (store, rubric, harvest, discover, audit, scorer, report, workroom, pipeline, intake)
 
 Three modes over one Postgres store: **recommend** (score a client's whole event calendar against
 its ICP, 0-110 on relevance/decision-maker access/engagement, and return a ranked shortlist plus a
@@ -121,7 +121,7 @@ re-ranking from a client's own accept/reject history, and k-anonymity-gated cros
 ("N other similar clients also kept this event," with no other client's identity in the raw data).
 
 #### Thought Leader Intelligence
-`/p2/strategic-agents/thought-leader-pr` · `tracker/thought_leader_pr.py`, `tracker/tlpr_press.py`,
+`/strategic-agents/thought-leader-pr` · `tracker/thought_leader_pr.py`, `tracker/tlpr_press.py`,
 `tracker/tlpr_reddit_pulse.py`, `tracker/apify_x_replies.py`
 
 Given a person's name, resolves to one confirmed public figure before any research starts,
@@ -134,7 +134,7 @@ articles, into one reputation verdict. Each phase is its own explicit, billed ac
 any combination.
 
 #### LinkedIn Intelligence
-`/p2/strategic-agents/linkedin-intelligence` · `static/js/linkedin.js`
+`/strategic-agents/linkedin-intelligence` · `static/js/linkedin.js`
 
 Your own LinkedIn engagement data (people × post engagement) read from a Google Sheet and rendered
 client-side, one sheet per surface (internal, and independently per client portal). Distinct from
@@ -142,7 +142,7 @@ every other LinkedIn-named agent in this repo (see the naming note in the sideba
 docs) - this one is *your own* engagement, not a competitive read.
 
 #### LinkedIn Social Researcher (currently hidden from listings)
-`/p2/strategic-agents/linkedin-social-researcher`
+`/strategic-agents/linkedin-social-researcher`
 
 An older, entirely external agent: an iframe embed of a third-party AI app-builder tool
 (`watchtower-by-position2.vercel.app`), not this repo's code. Reads a year of a company's LinkedIn
@@ -151,7 +151,7 @@ Pulled from listings at the owner's request; nothing underneath was deleted, so 
 still resolves and past runs still show in history.
 
 #### Competitor Ad Intelligence
-`/p2/strategic-agents/ad-intelligence` (also served as a built React/Vite app at `/ppc/ad-intelligence`)
+`/strategic-agents/ad-intelligence` (also served as a built React/Vite app at `/ppc/ad-intelligence`)
 
 Continuously collects competitor ad creative across platforms and surfaces messaging themes,
 formats, and changes over time. Source lives in `apps/ad-intelligence/` (Vite); the built output
@@ -159,7 +159,7 @@ is committed to `ad_intelligence/` so Railway needs no Node build step at deploy
 Action rebuilds and re-commits it automatically whenever the source changes.
 
 #### ABM Signal Tracker (in-app view)
-`/p2/abm-signal-tracker/*`
+`/abm-signal-tracker/*`
 
 The always-on view of the same account-intent-monitoring product described in the
 [standalone CLI section](#abm-signal-tracker-cli) below: 26 signal types (funding, leadership
@@ -191,7 +191,7 @@ leaving the page. Two backends so account data never crosses a boundary it shoul
 
 ---
 
-### SEO / GEO Suite (`/p2/seo/*`, staff-only)
+### SEO / GEO Suite (`/seo-aeo/*`, staff-only)
 
 16 SEO/GEO tools, most backed by a separate React/Vite frontend (`seo-apps`, its own Railway
 service) embedded here: **Keyword Research**, **Content Research**, **Competitor Analysis**,
@@ -215,9 +215,9 @@ agent connection types: SERP-connected, dashboard-backed, and external-tool (ifr
 
 ### Admin analytics (all `@admin_required`)
 
-`/p2/admin/internal-usage`, `/p2/admin/external-usage` (also hosts the live self-test buttons for
-Arena, Apollo, Unipile, and LPS AI Insights), `/p2/admin/client-usage`, `/p2/admin/anonymous-traffic`,
-`/p2/admin/public-page-analytics`, `/p2/admin/public-agent-usage`, `/p2/admin/access-requests`.
+`/admin/internal-usage`, `/admin/external-usage` (also hosts the live self-test buttons for
+Arena, Apollo, Unipile, and LPS AI Insights), `/admin/client-usage`, `/admin/anonymous-traffic`,
+`/admin/public-page-analytics`, `/admin/public-agent-usage`, `/admin/access-requests`.
 
 ---
 

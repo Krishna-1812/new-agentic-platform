@@ -35,7 +35,7 @@ import app as appmod  # noqa: E402
 pytestmark = pytest.mark.skipif(shutil.which("node") is None,
                                 reason="node is needed to execute the page script")
 
-_PAGE = "/p2/strategic-agents/social-media-intelligence"
+_PAGE = "/strategic-agents/social-media-intelligence"
 
 
 def _page_html():
@@ -172,7 +172,7 @@ def _run(fetch_reply):
 
 def test_hits_the_real_apify_check_route():
     out = _run({"configured": True, "ok": True, "account": "position2", "actors": {}})
-    assert out["fetched"] == ["/p2/admin/external-usage/sci-apify-check"]
+    assert out["fetched"] == ["/admin/external-usage/sci-apify-check"]
 
 
 def test_not_configured_state_names_the_env_var():

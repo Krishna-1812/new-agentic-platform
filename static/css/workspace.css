@@ -8,7 +8,7 @@
    structure and small drifts between them (268px vs 272px, a client chip on
    one side only). One sheet now, and the drifts are gone.
 
-   THIS IS DELIBERATELY NOT THE /p2 CHROME. The internal side is a breadcrumb
+   THIS IS DELIBERATELY NOT THE INTERNAL APP'S CHROME. The internal side is a breadcrumb
    bar over a full-width page, because you arrive there from a hub and leave
    for another tool. These two are workspaces you stay in, with a roster of
    agents you move between, so the roster is a persistent rail. That is an
@@ -16,7 +16,7 @@
    breadcrumb would make both products worse to use in order to make one
    screenshot match.
 
-   What the shell does share with /p2 is everything else: the same tokens,
+   What the shell does share with the internal app is everything else: the same tokens,
    the same surfaces, the same one radius, the same selected-is-a-fill rule.
    Somebody moving between the two sides should recognise the product
    immediately and never once be confused about which side they are on.

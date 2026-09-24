@@ -43,7 +43,7 @@ BRAND = {
     # company's internal system name in seven places there.
     "engine": "Foundry",
 
-    # The email domain the /p2 staff gate accepts. This is ACCESS CONTROL, not
+    # The email domain the internal-app staff gate accepts. This is ACCESS CONTROL, not
     # a label: app.py's gate reads this same value (STAFF_EMAIL_SUFFIX), and
     # so does every page that tells a user which address to sign in with.
     #

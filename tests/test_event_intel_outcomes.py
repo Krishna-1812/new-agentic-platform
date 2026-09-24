@@ -16,7 +16,7 @@ from tracker import event_intel_report as report
 from tracker import event_intel_store as store
 from tracker import event_intel_workroom as W
 
-BASE = "/p2/strategic-agents/event-conference-intelligence"
+BASE = "/strategic-agents/event-conference-intelligence"
 
 
 def _client():
@@ -432,6 +432,6 @@ def test_the_guardrail_route_is_admin_only():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
         sess["google_user"] = {"email": "harness@markifydigital.com", "name": "T"}
-    r = c.post("/p2/admin/external-usage/evi-guardrail-check")
+    r = c.post("/admin/external-usage/evi-guardrail-check")
     assert r.status_code in (302, 403), \
         "a non-admin reached the self-test (%s)" % r.status_code

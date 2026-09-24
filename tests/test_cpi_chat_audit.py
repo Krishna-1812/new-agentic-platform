@@ -330,7 +330,7 @@ def _ask(monkeypatch, message, intent, orgs=None, people=None, total=None,
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
         sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
-    r = c.post("/p2/strategic-agents/company-people-intelligence/chat",
+    r = c.post("/strategic-agents/company-people-intelligence/chat",
                json={"message": message})
     assert r.status_code == 200
     return r.get_json(), box.get("facts", {}), calls

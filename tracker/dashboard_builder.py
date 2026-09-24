@@ -1566,7 +1566,7 @@ h2::after,.section-title::after{
     </button>
   </div>
   <div class="sidebar-footer">
-    <a href="/p2/abm-signal-tracker/accounts" class="sidebar-switch-btn">
+    <a href="/abm-signal-tracker/accounts" class="sidebar-switch-btn">
       <span style="font-size:14px">⇄</span> Switch Account
     </a>
     <div class="sidebar-user">
