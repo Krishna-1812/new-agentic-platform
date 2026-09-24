@@ -147,3 +147,33 @@ def test_retired_tools_redirect_instead_of_404ing():
 def test_no_tool_points_at_another_organisations_service():
     for tool in appmod._seo_tools():
         assert not tool.get("url"), "%s still points at an external service" % tool["slug"]
+
+
+# ── The frame itself ─────────────────────────────────────────────────────────
+
+def _css_rules(text):
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+    return dict((sel.strip(), body) for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", text))
+
+
+def test_the_tool_frame_fills_the_page():
+    """embed.css once carried half-deleted fragments ("}, transparent 60%);")
+    that the browser skipped together with the .iframe-wrap rule after them,
+    so every /seo-aeo tool rendered in a 150px strip (the iframe default)."""
+    rules = _css_rules((ROOT / "static" / "css" / "embed.css").read_text(encoding="utf-8"))
+    assert "flex: 1" in rules[".iframe-wrap"].replace("flex:1", "flex: 1")
+    assert "height: 100%" in rules["iframe"]
+
+
+def test_every_stylesheet_is_well_formed():
+    """A stray brace makes the browser drop the rule that follows it, silently.
+    Jinja in a static file is never rendered, so it is the same kind of bug."""
+    for path in sorted((ROOT / "static" / "css").glob("*.css")):
+        text = re.sub(r"/\*.*?\*/", "", path.read_text(encoding="utf-8"), flags=re.S)
+        text = re.sub(r"\"[^\"\n]*\"|'[^'\n]*'", '""', text)
+        assert "{{" not in text and "{%" not in text, "%s contains Jinja" % path.name
+        depth = 0
+        for ch in text:
+            depth += (ch == "{") - (ch == "}")
+            assert depth >= 0, "%s closes a brace it never opened" % path.name
+        assert depth == 0, "%s leaves %d brace(s) open" % (path.name, depth)
