@@ -1,0 +1,1192 @@
+{
+  "url": "https://www.brushandfloss.com/locations/oxford",
+  "statusCode": 200,
+  "scrapedAt": "2026-04-14T14:40:48.500Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "Dentist in Oxford, NC | Riccobene Associates Family Dentistry",
+  "metaDescription": "Searching for a dentist in Oxford, NC? Visit Riccobene Associates Family Dentistry for trusted family, cosmetic, and emergency dental care. Schedule today!",
+  "canonical": "https://www.brushandfloss.com/locations/oxford",
+  "allMeta": {
+    "description": "Searching for a dentist in Oxford, NC? Visit Riccobene Associates Family Dentistry for trusted family, cosmetic, and emergency dental care. Schedule today!",
+    "og:title": "Riccobene Associates Family Dentistry | Oxford, NC",
+    "og:description": "Searching for a dentist in Oxford, NC? Visit Riccobene Associates Family Dentistry for trusted family, cosmetic, and emergency dental care. Schedule today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317f1_Oxford%20Exterior.png",
+    "twitter:title": "Riccobene Associates Family Dentistry | Oxford, NC",
+    "twitter:description": "Searching for a dentist in Oxford, NC? Visit Riccobene Associates Family Dentistry for trusted family, cosmetic, and emergency dental care. Schedule today!",
+    "twitter:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317f1_Oxford%20Exterior.png",
+    "og:type": "website",
+    "twitter:card": "summary_large_image",
+    "viewport": "width=device-width, initial-scale=1",
+    "generator": "Webflow"
+  },
+  "ogTags": {
+    "og:title": "Riccobene Associates Family Dentistry | Oxford, NC",
+    "og:description": "Searching for a dentist in Oxford, NC? Visit Riccobene Associates Family Dentistry for trusted family, cosmetic, and emergency dental care. Schedule today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317f1_Oxford%20Exterior.png",
+    "og:type": "website"
+  },
+  "twitterTags": {
+    "twitter:card": "summary_large_image"
+  },
+  "headings": {
+    "h1": [
+      "TRUSTED DENTISTS IN OXFORD, NC FOR COMPLETE FAMILY DENTAL CARE"
+    ],
+    "h2": [
+      "MEET OUR DOCTORS",
+      "OUR SERVICES",
+      "WHAT OUR PATIENTS SAY",
+      "OUR OFFICE",
+      "WHY CHOOSE RICCOBENE?",
+      "OUR COMMITMENT TO EXCELLENCE",
+      "OTHER NEARBY LOCATIONS",
+      "PAYMENT OPTIONS & MEMBERSHIP PLANS",
+      "AFFORDABLE MEMBERSHIP PLANS",
+      "FREQUENTLY ASKED QUESTIONS",
+      "READY TO SCHEDULE? CONTACT US"
+    ],
+    "h3": [
+      "Jason Ma, DDS",
+      "Ali Nassir, DDS",
+      "Office Amenities",
+      "500,000+",
+      "4.8",
+      "25",
+      "What services are offered at the Oxford, NC, dental office?",
+      "How do I book an appointment with your Oxford, NC dentists?",
+      "Does the Oxford, NC, office provide pediatric dental care?",
+      "Is emergency dental care available in Oxford, NC?",
+      "Can I get dental implants at the Oxford, NC, office?",
+      "What cosmetic options are available in Oxford, NC?",
+      "Where is your Oxford, NC, office located, and what are its hours?",
+      "Do you accept insurance or offer membership plans in Oxford, NC?",
+      "What sedation or comfort options are offered for anxious patients?",
+      "Send us a Message",
+      "Get in Touch",
+      "Request An Appointment"
+    ],
+    "h4": [],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h1",
+      "text": "TRUSTED DENTISTS IN OXFORD, NC FOR COMPLETE FAMILY DENTAL CARE"
+    },
+    {
+      "tag": "h2",
+      "text": "MEET OUR DOCTORS"
+    },
+    {
+      "tag": "h3",
+      "text": "Jason Ma, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Ali Nassir, DDS"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR SERVICES"
+    },
+    {
+      "tag": "h2",
+      "text": "WHAT OUR PATIENTS SAY"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR OFFICE"
+    },
+    {
+      "tag": "h3",
+      "text": "Office Amenities"
+    },
+    {
+      "tag": "h2",
+      "text": "WHY CHOOSE RICCOBENE?"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR COMMITMENT TO EXCELLENCE"
+    },
+    {
+      "tag": "h3",
+      "text": "500,000+"
+    },
+    {
+      "tag": "h3",
+      "text": "4.8"
+    },
+    {
+      "tag": "h3",
+      "text": "25"
+    },
+    {
+      "tag": "h2",
+      "text": "OTHER NEARBY LOCATIONS"
+    },
+    {
+      "tag": "h2",
+      "text": "PAYMENT OPTIONS & MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "AFFORDABLE MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "FREQUENTLY ASKED QUESTIONS"
+    },
+    {
+      "tag": "h3",
+      "text": "What services are offered at the Oxford, NC, dental office?"
+    },
+    {
+      "tag": "h3",
+      "text": "How do I book an appointment with your Oxford, NC dentists?"
+    },
+    {
+      "tag": "h3",
+      "text": "Does the Oxford, NC, office provide pediatric dental care?"
+    },
+    {
+      "tag": "h3",
+      "text": "Is emergency dental care available in Oxford, NC?"
+    },
+    {
+      "tag": "h3",
+      "text": "Can I get dental implants at the Oxford, NC, office?"
+    },
+    {
+      "tag": "h3",
+      "text": "What cosmetic options are available in Oxford, NC?"
+    },
+    {
+      "tag": "h3",
+      "text": "Where is your Oxford, NC, office located, and what are its hours?"
+    },
+    {
+      "tag": "h3",
+      "text": "Do you accept insurance or offer membership plans in Oxford, NC?"
+    },
+    {
+      "tag": "h3",
+      "text": "What sedation or comfort options are offered for anxious patients?"
+    },
+    {
+      "tag": "h2",
+      "text": "READY TO SCHEDULE? CONTACT US"
+    },
+    {
+      "tag": "h3",
+      "text": "Send us a Message"
+    },
+    {
+      "tag": "h3",
+      "text": "Get in Touch"
+    },
+    {
+      "tag": "h3",
+      "text": "Request An Appointment"
+    }
+  ],
+  "paragraphs": [
+    "Our leading dentists in Oxford, NC offer comprehensive dental care solutions for friends and neighbors throughout Oxford.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort. We're the trusted go-to dentist in Oxford, NC, for compassionate care.",
+    "Comprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "As your trusted dentist in Oxford, NC, our experienced team of dental professionals is dedicated to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Welcome to our Oxford office! Our office stands out with its modern atmosphere and advanced technology, making your dental experience stress-free. Our skillful and attentive team strongly believes that dental care and treatment start with patient comfort. Therefore, we designed our office and amenities with your health and well-being in mind. Our patients feel supported and at ease, leaving motivated and confident to care for their oral health.",
+    "Our Oxford location is conveniently situated in a suburban community, just off US-70. It offers small-town charm with easy access to Wayne Community College and Walmart Supercenter. We provide care for the Oxford community and patients traveling from the nearby neighborhoods such as Goldsboro, New Hope, Walnut Creek, and more. Our connection with clients goes beyond the dental chair. You are now part of the Riccobene family, where we are committed to providing the comfort and confidence you need for a healthy, painless smile!",
+    "We believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences, and better results with a comprehensive and compassionate approach. Our expert dentist in Oxford, NC, is dedicated to providing the highest standard of care to ensure a positive dental experience for every patient.",
+    "When you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.",
+    "Can't make it to our Oxford office? We have other convenient locations in the area to serve you with the same exceptional dental care.",
+    "Quality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.",
+    "Save money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.",
+    "We provide all the necessary dental services such as routine cleanings and exams, fillings, pediatric dental procedures, gum contouring, fluoride treatment, and so much more!",
+    "To schedule a visit, feel free to call us or book an appointment online to get you in as soon as possible! We look forward to treating you and providing you with the comfort and care you deserve!",
+    "Absolutely. We recognize the importance of starting dental care as early as possible and make sure to provide kids and families with pediatric dental care comfortably and comprehensively, as they deserve.",
+    "Yes. At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!",
+    "Yes. Our team of experts is here to help you with all your dental issues, including dental implants.",
+    "We understand the impact a confident smile has on our patients' lives, and therefore, we offer cosmetic services that include whitening, veneers, and Invisalign®.",
+    "Our office Hours are Monday-Thursday: 8:00 AM – 4:00 PM, Friday: 8:00 AM – 1:00 PM. We are closed on Saturday and Sunday. Our office is located at 2702 Medical Office Place, 111 East Industry Dr., Oxford, NC 27564. We look forward to seeing you!",
+    "We accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.",
+    "We offer a variety of sedation dentistry options. You can choose from Nitrous Oxide, IV Sedation, and Local Anesthesia for your comfort.",
+    "Take the first step towards optimal oral health. Contact our Oxford office to schedule your appointment or ask any questions about our dental services.",
+    "Fill out the form below and we'll get back to you within 24 hours.",
+    "Select a Location to schedule an appointment:",
+    "Call our Oxford Office at 919-693-8922, or use the form below to request an appointment."
+  ],
+  "schemaMarkup": [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "https://www.brushandfloss.com/locations/oxford",
+      "url": "https://www.brushandfloss.com/locations/oxford",
+      "name": "Dentist in Oxford, NC | Riccobene Associates Family Dentistry",
+      "description": "Searching for a dentist in Oxford, NC? Visit Riccobene Associates Family Dentistry for trusted family, cosmetic, and emergency dental care. Schedule today!",
+      "inLanguage": "en-US",
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "https://www.brushandfloss.com/",
+        "url": "https://www.brushandfloss.com/",
+        "name": "Riccobene Associates Family Dentistry"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://www.brushandfloss.com/#organization",
+      "url": "https://www.brushandfloss.com/",
+      "sameAs": [
+        "https://www.facebook.com/RiccobeneDentistry",
+        "https://www.instagram.com/brushandflossnc/"
+      ],
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg"
+      },
+      "brand": {
+        "@type": "Brand",
+        "name": "Riccobene Associates Family Dentistry",
+        "sameAs": [
+          "https://www.facebook.com/RiccobeneDentistry",
+          "https://www.instagram.com/brushandflossnc/"
+        ]
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Insurance Accepted",
+      "insuranceAccepted": [
+        "Delta Dental",
+        "Blue Cross Blue Shield",
+        "Aetna",
+        "Cigna",
+        "MetLife",
+        "UnitedHealthcare"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Dentist",
+      "@id": "https://www.brushandfloss.com/locations/oxford/dentist",
+      "name": "Riccobene Associates Family Dentistry",
+      "image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317f1_Oxford%20Exterior.png",
+      "logo": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315cd_riccobene-associates-family-dentistry.png",
+      "url": "/locations/oxford",
+      "telephone": "919-693-8922",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "111 E Industry Dr, Oxford, NC 27565",
+        "addressLocality": "Oxford",
+        "addressRegion": "NC",
+        "postalCode": "27565",
+        "addressCountry": "US"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Monday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Tuesday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Wednesday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Thursday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Friday",
+          "opens": "8:00",
+          "closes": "13:00"
+        }
+      ],
+      "priceRange": "$$",
+      "hasMap": "https://goo.gl/maps/7jcFUkC4PXt",
+      "sameAs": "https://goo.gl/maps/7jcFUkC4PXt"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Dental Services",
+      "serviceOutput": [
+        {
+          "@type": "Service",
+          "name": "Dental Bridges"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Implants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Sealants"
+        },
+        {
+          "@type": "Service",
+          "name": "Digital X-Rays"
+        },
+        {
+          "@type": "Service",
+          "name": "Fluoride Treatment"
+        },
+        {
+          "@type": "Service",
+          "name": "Implant-Supported Dentures"
+        }
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Salonia"
+      },
+      "reviewBody": "This was my first time going to Riccobene Associates Family Dentistry. It was super clean, and everyone was super friendly! I loved my dental hygienist; she is fantastic! The dentist was very kind and very professional! If you&#39;re looking for the best dentist, please don&#39;t look any further! You’re in the right place!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Emma W"
+      },
+      "reviewBody": "The practice is great… The workers in there are great, you know, everybody is so nice and so helpful. I love it there, and I love the way the DENTIST talks to you while he’s doing what he’s doing because it helps to let you know what’s going on.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Ella V"
+      },
+      "reviewBody": "This was my family&#39;s and my first visit to this office. We will definitely be making this office our home office. The entire staff was amazing. Very helpful, friendly, knowledgeable, and straight to the point about what services we needed and didn’t overwhelm us with a lot of unnecessary services that my prior dentist&#39;s office listed for us.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Kisha H"
+      },
+      "reviewBody": "My mother, my daughter, and I go here for all of our dental needs. My daughter has major anxiety, and going to the dentist is a challenge. She does well with cleaning and exams. But she recently had to get cavities filled. Her anxiety got the best of her, and she had to reschedule her visit. Today, we went, and the ENTIRE staff that we interacted with was amazing. They were patient with her, they were caring, and they answered all of her questions. She got in and out in under an hour. They took their time and made her feel so comfortable and at ease. This will forever be our dental home!",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Glinder"
+      },
+      "reviewBody": "Today was my first visit to this dentist. It was a wonderful experience. I get very anxious when I go to the dentist but the staff there made me feel comfortable. The dentist and dental hygienist were both very gentle. The office was very clean. Staff were very friendly and professional. They explained everything before doing it, which was very important to me, and it helped me to feel more relaxed.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What services are offered at the Oxford, NC, dental office?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We provide all the necessary dental services such as routine cleanings and exams, fillings, pediatric dental procedures, gum contouring, fluoride treatment, and so much more!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I book an appointment with your Oxford, NC dentists?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "To schedule a visit, feel free to call us or book an appointment online to get you in as soon as possible! We look forward to treating you and providing you with the comfort and care you deserve!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the Oxford, NC, office provide pediatric dental care?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Absolutely. We recognize the importance of starting dental care as early as possible and make sure to provide kids and families with pediatric dental care comfortably and comprehensively, as they deserve."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is emergency dental care available in Oxford, NC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I get dental implants at the Oxford, NC, office?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Our team of experts is here to help you with all your dental issues, including dental implants."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What cosmetic options are available in Oxford, NC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We understand the impact a confident smile has on our patients' lives, and therefore, we offer cosmetic services that include whitening, veneers, and Invisalign®."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where is your Oxford, NC, office located, and what are its hours?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Our office Hours are Monday-Thursday: 8:00 AM – 4:00 PM, Friday: 8:00 AM – 1:00 PM. We are closed on Saturday and Sunday. Our office is located at 2702 Medical Office Place, 111 East Industry Dr., Oxford, NC 27564. We look forward to seeing you!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you accept insurance or offer membership plans in Oxford, NC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What sedation or comfort options are offered for anxious patients?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We offer a variety of sedation dentistry options. You can choose from Nitrous Oxide, IV Sedation, and Local Anesthesia for your comfort."
+          }
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314df_search.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152e_riccobene-banner-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31508_location-map.webp",
+      "alt": "Map showing neighborhoods, parks, schools, and roads including Davis Drive Elementary School, Pleasant Street, and Sunset Plaza."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314e7_location-banner.jpg",
+      "alt": "Smiling woman reclined in dental chair during a dental checkup with dentist holding dental mirror and probe."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31552_call-now-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31720_2x2%20photo.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31720_2x2%20photo.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a178f7367ab578c6116d7c_ali-nassir-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a178f7367ab578c6116d7c_ali-nassir-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317f5_dental-bridges.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69b29dacd38e9840c17ead1c_denture-implants.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ba_nc.dental-sealants-1024x768.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ac_dental-x-rays-north-carolina-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ae_Fluoride-Treatment-nc-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ab_dental-implant-supported-dentures-1024x760.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152b_riccobene-our-office-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152a_riccobene-our-office-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152d_riccobene-our-office-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152c_riccobene-our-office-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31529_riccobene-our-office-icon-five.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31548_riccobene-wcr-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31549_family-friendly.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31547_state-of-the-art.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31527_insurance-accepted-icon-1.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31558_pricing-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31559_pricing-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31522_pricing-1.webp",
+      "alt": "Smiling young woman with long brown hair pointing to her teeth with both index fingers."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31523_pricing-2.webp",
+      "alt": "Smiling young boy sitting in a dental chair during a dental checkup with a dentist holding a dental tool."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154b_email-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154c_alarm-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a location"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford",
+      "text": "OXFORD"
+    },
+    {
+      "href": "tel:919-693-8922",
+      "text": "919-693-8922"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "CHANGE LOCATION"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers#jobs",
+      "text": "JOIN THE TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/oxford",
+      "text": "SCHEDULE AN APPOINTMENT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": "Home"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a Dentist Near You"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "New Patient Experience"
+    },
+    {
+      "href": "https://www.brushandfloss.com/the-riccobene-way",
+      "text": "The Riccobene Way"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans",
+      "text": "Membership Plans"
+    },
+    {
+      "href": "https://www.brushandfloss.com/reviews",
+      "text": "Patient Reviews"
+    },
+    {
+      "href": "https://patient.payments.health/#/?organizationID=dab6a2b7&locationID=LSXWSH421HHY4",
+      "text": "Make A Payment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/payment",
+      "text": "Online Payments"
+    },
+    {
+      "href": "https://www.brushandfloss.com/articles",
+      "text": "articles"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "Contact us"
+    },
+    {
+      "href": "https://www.paycomonline.net/v4/ats/web.php/jobs?clientkey=B32F01563C7743C293E0AAB35AE1ADEA",
+      "text": "careers"
+    },
+    {
+      "href": "https://www.brushandflossaffiliates.com/",
+      "text": "Become an Affiliate Practice"
+    },
+    {
+      "href": "https://www.brushandfloss-employees.com/",
+      "text": "Employees"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/oxford",
+      "text": "BOOK APPOINMENT"
+    },
+    {
+      "href": "tel:919-693-8922",
+      "text": "CALL NOW"
+    },
+    {
+      "href": "tel:919-693-8922",
+      "text": "Call Now"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/jason-ma-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/jason-ma-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/ali-nassir-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/ali-nassir-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-bridges",
+      "text": "Dental Bridges"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-implants",
+      "text": "Dental Implants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/sealants",
+      "text": "Dental Sealants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/digital-x-rays",
+      "text": "Digital X-Rays"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/fluoride-treatment",
+      "text": "Fluoride Treatment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/implant-supported-dentures",
+      "text": "Implant-Supported Dentures"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford?f5ff0038_page=2",
+      "text": "Load More"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#ready-to-schedule",
+      "text": "SCHEDULE A VISIT TODAY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/wakefield",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/wakefield",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/wake-forest",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/wake-forest",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/durham",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/durham",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "View all Locations"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#adult-preventative-plan",
+      "text": "ADULT PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#child-preventative-plan",
+      "text": "CHILD PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/oxford",
+      "text": "BOOK APPOINTMENT ONLINE"
+    },
+    {
+      "href": "tel:919-693-8922",
+      "text": "CALL FOR EMERGENCY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "LOCATIONS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "SERVICES"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "WHAT TO EXPECT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers",
+      "text": "JOIN OUR TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/partnership",
+      "text": "PARTNER WITH US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "CONTACT US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/hipaa",
+      "text": "HIPAA"
+    },
+    {
+      "href": "https://www.brushandfloss.com/privacy-policy",
+      "text": "PRIVACY POLICY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/search",
+      "text": "SEARCH"
+    },
+    {
+      "href": "https://www.facebook.com/RiccobeneDentistry",
+      "text": ""
+    },
+    {
+      "href": "https://www.instagram.com/brushandflossnc/?hl=en",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford",
+      "text": "Oxford"
+    },
+    {
+      "href": "tel:919-693-8922",
+      "text": "919-693-8922"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#",
+      "text": "Close"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/oxford#",
+      "text": "Open Appointment"
+    }
+  ],
+  "bodyText": "OXFORD\n919-693-8922\nCHANGE LOCATION\nJOIN THE TEAM\nSCHEDULE AN APPOINTMENT\nTRUSTED DENTISTS IN OXFORD, NC FOR COMPLETE FAMILY DENTAL CARE\n\nOur leading dentists in Oxford, NC offer comprehensive dental care solutions for friends and neighbors throughout Oxford.\n\n111 E Industry Dr, Oxford, NC 27565\n919-693-8922\nMon-Thu: 8:00 AM - 4:00 PM | Fri: 8:00 AM - 1:00 PM\nBOOK APPOINMENT\nCALL NOW\nCall Now\nMEET OUR DOCTORS\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort. We're the trusted go-to dentist in Oxford, NC, for compassionate care.\n\nJason Ma, DDS\nGeneral & Family Dentistry\nMORE+\nJason Ma, DDS\nGeneral & Family Dentistry\nDr. Ma provides compassionate, patient-centered dental care with a focus on education and prevention. He is dedicated to ensuring every patient achieves lasting oral health.\nVIEW PROFILE\nAli Nassir, DDS\nGeneral & Family Dentistry\nMORE+\nAli Nassir, DDS\nGeneral & Family Dentistry\nDr. Nassir is committed to delivering high-quality, personalized care that helps patients feel comfortable and confident in their dental health. He values strong patient relationships and preventive care.\nVIEW PROFILE\nOUR SERVICES\n\nComprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.\n\nDental Bridges\nDental bridges restore your smile by replacing missing teeth. Get a custom, natural fit that enhances both appearance and function. Book your consultation today\nBOOK NOW\nDental Implants\nAt Riccobene Associates Family Dentistry, we offer dental implants to restore your beautiful smile. Contact one of our dental offices today!\nBOOK NOW\nDental Sealants\nDental sealants protect your teeth from cavities and decay. A quick, effective way to maintain oral health. Book your consultation today!\nBOOK NOW\nDigital X-Rays\nGet safe, low-radiation dental X-rays for early detection of cavities, infections, and bone loss. Schedule your dental imaging appointment today.\nBOOK NOW\nFluoride Treatment\nRiccobene Associates Family Dentistry offers professional dental fluoride treatments in the Raleigh area. Contact us to schedule your appointment.\nBOOK NOW\nImplant-Supported Dentures\nRestore comfort & confidence with implant-supported dentures and snap-in dentures. Learn benefits, costs, and treatment options. Schedule a consultation today.\nBOOK NOW\nWHAT OUR PATIENTS SAY\n\nAs your trusted dentist in Oxford, NC, our experienced team of dental professionals is dedicated to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\n★★★★★\nThis was my first time going to Riccobene Associates Family Dentistry. It was super clean, and everyone was super friendly! I loved my dental hygienist; she is fantastic! The dentist was very kind and very professional! If you're looking for the best dentist, please don't look any further! You’re in the right place!\nSalonia\n★★★★★\nThe practice is great… The workers in there are great, you know, everybody is so nice and so helpful. I love it there, and I love the way the DENTIST talks to you while he’s doing what he’s doing because it helps to let you know what’s going on.\nEmma W\n★★★★★\nThis was my family's and my first visit to this office. We will definitely be making this office our home office. The entire staff was amazing. Very helpful, friendly, knowledgeable, and straight to the point about what services we needed and didn’t overwhelm us with a lot of unnecessary services that my prior dentist's office listed for us.\nElla V\n★★★★★\nMy mother, my daughter, and I go here for all of our dental needs. My daughter has major anxiety, and going to the dentist is a challenge. She does well with cleaning and exams. But she recently had to get cavities filled. Her anxiety got the best of her, and she had to reschedule her visit. Today, we went, and the ENTIRE staff that we interacted with was amazing. They were patient with her, they were caring, and they answered all of her questions. She got in and out in under an hour. They took their time and made her feel so comfortable and at ease. This will forever be our dental home!\nKisha H\n★★★★★\nToday was my first visit to this dentist. It was a wonderful experience. I get very anxious when I go to the dentist but the staff there made me feel comfortable. The dentist and dental hygienist were both very gentle. The office was very clean. Staff were very friendly and professional. They explained everything before doing it, which was very important to me, and it helped me to feel more relaxed.\nGlinder\nOUR OFFICE\n\nWelcome to our Oxford office! Our office stands out with its modern atmosphere and advanced technology, making your dental experience stress-free. Our skillful and attentive team strongly believes that dental care and treatment start with patient comfort. Therefore, we designed our office and amenities with your health and well-being in mind. Our patients feel supported and at ease, leaving motivated and confident to care for their oral health.\n\nOur Oxford location is conveniently situated in a suburban community, just off US-70. It offers small-town charm with easy access to Wayne Community College and Walmart Supercenter. We provide care for the Oxford community and patients traveling from the nearby neighborhoods such as Goldsboro, New Hope, Walnut Creek, and more. Our connection with clients goes beyond the dental chair. You are now part of the Riccobene family, where we are committed to providing the comfort and confidence you need for a healthy, painless smile!\n\nOffice Amenities\nFree WiFi\nComplimentary Beverages\nFamily-Friendly\nFree Parking\nFlexible Scheduling\nSCHEDULE A VISIT TODAY\nWHY CHOOSE RICCOBENE?\n\nWe believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences, and better results with a comprehensive and compassionate approach. Our expert dentist in Oxford, NC, is dedicated to providing the highest standard of care to ensure a positive dental experience for every patient.\n\nSame-Day Appointments\nUrgent dental needs? We offer same-day or next-day appointments in many locations for emergency care.\nFamily-Friendly\nWe provide gentle, expert dental care for children from their very first tooth through their teenage years.\nState-Of-The-Art\nCutting-edge technology and advanced treatment options bring the best that modern dental innovation has to offer to our offices.\nComprehensive Care\nOur expert provider offers a range of services from preventative, cosmetic, routine dental care and more.\nEmergency Dental Services\n24/7 emergency support when you need immediate dental care.\nOUR COMMITMENT TO EXCELLENCE\n\nWhen you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.\n\n500,000+\nHappy Smiles\nPatients served with exceptional care\n4.8\nAvg Google Rating\nfrom more than 28,000 reviews\n25\nYears In Business\nTrusted by the local community\nOTHER NEARBY LOCATIONS\n\nCan't make it to our Oxford office? We have other convenient locations in the area to serve you with the same exceptional dental care.\n\nWakefield\n13251 Falls Of Neuse Rd #141, Raleigh, NC 27614\n919-556-6666\nEmergency\nGeneral\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nWake Forest\n12244 Wake Union Church Rd, Wake Forest, NC 27587\n919-556-2997\nGeneral\nHygiene\nCosmetic\nBOOK NOW\nVIEW DETAILS\nDurham\n1125 NC-54 #807, Durham, NC 27707\n919-246-9057\nEmergency\nGeneral\nCosmetic\nHygiene\nBOOK NOW\nVIEW DETAILS\nView all Locations\nPAYMENT OPTIONS & MEMBERSHIP PLANS\n\nQuality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.\n\nInsurance Accepted\nWe accept most major dental insurance plans\nDelta Dental\nBlue Cross Blue Shield\nAetna\nCigna\nMetlife\nUnited Heathcare\nFlexible Financing\nMultiple payment options to fit your budget\nSunbit\n0% Interest Plans\nMonthly Payment Plans\nHSA/FSA Accepted\nMembership Plans\nAffordable care for uninsured patients\nAnnual Cleanings\nX-rays Included\n10% Off Treatments\nNo Insurance Required\nAFFORDABLE MEMBERSHIP PLANS\n\nSave money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.\n\nAdult Preventative Plan\n$39\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nADULT PREVENTATIVE PLAN\nChild Preventative Plan\n$36\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nCHILD PREVENTATIVE PLAN\nFREQUENTLY ASKED QUESTIONS\nWhat services are offered at the Oxford, NC, dental office?\n\nWe provide all the necessary dental services such as routine cleanings and exams, fillings, pediatric dental procedures, gum contouring, fluoride treatment, and so much more!\n\nHow do I book an appointment with your Oxford, NC dentists?\n\nTo schedule a visit, feel free to call us or book an appointment online to get you in as soon as possible! We look forward to treating you and providing you with the comfort and care you deserve!\n\nDoes the Oxford, NC, office provide pediatric dental care?\n\nAbsolutely. We recognize the importance of starting dental care as early as possible and make sure to provide kids and families with pediatric dental care comfortably and comprehensively, as they deserve.\n\nIs emergency dental care available in Oxford, NC?\n\nYes. At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!\n\nCan I get dental implants at the Oxford, NC, office?\n\nYes. Our team of experts is here to help you with all your dental issues, including dental implants.\n\nWhat cosmetic options are available in Oxford, NC?\n\nWe understand the impact a confident smile has on our patients' lives, and therefore, we offer cosmetic services that include whitening, veneers, and Invisalign®.\n\nWhere is your Oxford, NC, office located, and what are its hours?\n\nOur office Hours are Monday-Thursday: 8:00 AM – 4:00 PM, Friday: 8:00 AM – 1:00 PM. We are closed on Saturday and Sunday. Our office is located at 2702 Medical Office Place, 111 East Industry Dr., Oxford, NC 27564. We look forward to seeing you!\n\nDo you accept insurance or offer membership plans in Oxford, NC?\n\nWe accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.\n\nWhat sedation or comfort options are offered for anxious patients?\n\nWe offer a variety of sedation dentistry options. You can choose from Nitrous Oxide, IV Sedation, and Local Anesthesia for your comfort.\n\nREADY TO SCHEDULE? CONTACT US\n\nTake the first step towards optimal oral health. Contact our Oxford office to schedule your appointment or ask any questions about our dental services.\n\nSend us a Message\nFill out the form below and we'll get back to you within 24 hours.\nFirst Name*\nLast Name*\nEmail*\nPhone*\nHow Can We Help?\nI have dental insurance and would like to verify my benefits\nI prefer a phone call instead of email\nThis is a dental emergency\nGet in Touch\n\nFill out the form below and we'll get back to you within 24 hours.\n\nVisit Our Office\n111 E Industry Dr, Oxford, NC 27565\nCall Us\n919-693-8922\nEmergency line available 24/7\nEmail Us\noxfordom@brushandfloss.com\nOffice Hours\nMonday: 8:00 AM - 4:00 PM\nTuesday: 8:00 AM - 4:00 PM\nWednesday: 8:00 AM - 4:00 PM\nThursday: 8:00 AM - 4:00 PM\nFriday: 8:00 AM - 1:00 PM\nBOOK APPOINTMENT ONLINE\nCALL FOR EMERGENCY\nLOCATIONS\nSERVICES\nWHAT TO EXPECT\nJOIN OUR TEAM\nPARTNER WITH US\nCONTACT US\nHIPAA\nPRIVACY POLICY\nSEARCH",
+  "wordCount": 2011
+}

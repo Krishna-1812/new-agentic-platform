@@ -1,0 +1,60 @@
+{
+  "url": "https://www.brushandfloss.com/shipyard/",
+  "statusCode": 404,
+  "scrapedAt": "2026-04-14T14:40:48.129Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "Not Found",
+  "metaDescription": "",
+  "canonical": "https://www.brushandfloss.com/404",
+  "allMeta": {
+    "og:title": "Not Found",
+    "twitter:title": "Not Found",
+    "viewport": "width=device-width, initial-scale=1",
+    "generator": "Webflow"
+  },
+  "ogTags": {
+    "og:title": "Not Found"
+  },
+  "twitterTags": {},
+  "headings": {
+    "h1": [],
+    "h2": [
+      "PAGE NOT FOUND"
+    ],
+    "h3": [],
+    "h4": [],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h2",
+      "text": "PAGE NOT FOUND"
+    }
+  ],
+  "paragraphs": [],
+  "schemaMarkup": [],
+  "images": [
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/static/page-not-found.211a85e40c.svg",
+      "alt": ""
+    }
+  ],
+  "links": [
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": "VISIT OUR HOMEPAGE"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "FIND A LOCATION"
+    }
+  ],
+  "bodyText": "PAGE NOT FOUND\nTHE PAGE YOU ARE LOOKING FOR DOESN'T EXIST OR HAS BEEN MOVED\nVISIT OUR HOMEPAGE\nFIND A LOCATION",
+  "wordCount": 21
+}

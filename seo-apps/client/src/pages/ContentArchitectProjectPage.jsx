@@ -1,0 +1,482 @@
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { SectionHeader } from '../ui/SectionHeader';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { EmptyState } from '../ui/EmptyState';
+import { DataTable } from '../ui/DataTable';
+import { ProgressSteps } from '../ui/ProgressSteps';
+import { useToast } from '../ui/Toast';
+import HubSpokeReport, { healthVariant } from '../components/contentArchitect/HubSpokeReport';
+import { ca } from '../lib/contentArchitectApi';
+
+const DISCOVER_STEPS = [
+  { id: 'sitemap', label: 'Find sitemap' },
+  { id: 'crawl-fallback', label: 'Crawl fallback' },
+  { id: 'patterns', label: 'Group patterns' },
+  { id: 'classify', label: 'Classify page types' },
+];
+
+const ANALYZE_STEPS = [
+  { id: 'crawl', label: 'Read pages' },
+  { id: 'linkgraph', label: 'Map internal links' },
+  { id: 'cluster', label: 'Group into topics' },
+  { id: 'naming', label: 'Name clusters' },
+  { id: 'hubs', label: 'Select hub pages' },
+  { id: 'diagnostics', label: 'Run diagnostics' },
+  { id: 'relevance', label: 'Assess freshness' },
+];
+
+const CLASSIFICATION_META = {
+  article: { label: 'Article', variant: 'success' },
+  service: { label: 'Service', variant: 'info' },
+  location: { label: 'Location', variant: 'info' },
+  people: { label: 'People', variant: 'neutral' },
+  exclude: { label: 'Exclude', variant: 'danger' },
+  static: { label: 'Static', variant: 'neutral' },
+  unknown: { label: 'Unknown', variant: 'warning' },
+};
+
+const VERTICAL_OPTIONS = ['dental', 'healthcare', 'legal', 'saas', 'ecommerce', 'home-services', 'other'];
+
+export default function ContentArchitectProjectPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const toast = useToast();
+
+  const [project, setProject] = useState(null);
+  const [screen, setScreen] = useState('loading'); // loading | discovering | patterns | analyzing | results
+  const [steps, setSteps] = useState({});
+  const [error, setError] = useState(null);
+  const [patterns, setPatterns] = useState([]);
+  const [vertical, setVertical] = useState(null);
+  const [discoverMeta, setDiscoverMeta] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [analyzeSteps, setAnalyzeSteps] = useState({});
+  const [analysis, setAnalysis] = useState(null);
+  const [exportingFormat, setExportingFormat] = useState(null);
+  const [competitorsText, setCompetitorsText] = useState('');
+  const [savingCompetitors, setSavingCompetitors] = useState(false);
+  const esRef = useRef(null);
+  const startedRef = useRef(false);
+
+  useEffect(() => () => esRef.current?.close(), []);
+
+  // Set once here, reused automatically by every "Suggest spokes" click after
+  // this — not re-asked per suggestion request.
+  useEffect(() => { setCompetitorsText((project?.competitors || []).join(', ')); }, [project?.id]);
+
+  async function saveCompetitors() {
+    setSavingCompetitors(true);
+    try {
+      const competitors = competitorsText.split(',').map((s) => s.trim()).filter(Boolean);
+      const updated = await ca.setCompetitors(id, competitors);
+      setProject(updated);
+      toast.add({ title: 'Competitors saved', description: 'Used automatically by "Suggest new spokes".' });
+    } catch (e) {
+      toast.add({ title: 'Save failed', description: e.message, variant: 'danger' });
+    } finally {
+      setSavingCompetitors(false);
+    }
+  }
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const proj = await ca.getProject(id);
+        setProject(proj);
+        if (proj.workflowState === 'created') {
+          if (!startedRef.current) { startedRef.current = true; startDiscovery(); }
+        } else {
+          setVertical(proj.vertical);
+          const existing = await ca.getPatterns(id).catch(() => null);
+          setPatterns(existing || []);
+          const existingAnalysis = await ca.getFullAnalysis(id).catch(() => null);
+          if (existingAnalysis) {
+            setAnalysis(existingAnalysis);
+            setScreen('results');
+          } else {
+            // Discovery finished (or was interrupted) without ever reaching a
+            // saved analysis — most likely the tab closed mid auto-run. Land
+            // in the pattern editor so "Confirm Patterns" can kick the
+            // pipeline off again, rather than showing nothing.
+            setScreen('patterns');
+          }
+        }
+      } catch (e) {
+        setError(e.message);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  async function startDiscovery() {
+    setScreen('discovering');
+    setError(null);
+    setSteps({});
+    try {
+      const { token } = await ca.discoverInit(id);
+      const es = new EventSource(ca.discoverStreamUrl(id, token));
+      esRef.current = es;
+      es.addEventListener('step', (e) => {
+        const d = JSON.parse(e.data);
+        setSteps((prev) => ({ ...prev, [d.id]: { status: d.status, message: d.message } }));
+      });
+      es.addEventListener('ready', (e) => {
+        const d = JSON.parse(e.data);
+        setPatterns(d.patterns);
+        setVertical(d.vertical);
+        setDiscoverMeta(d);
+        // No manual confirmation gate — discovery flows straight into
+        // analysis using the classifier's own pattern selection. Anyone who
+        // wants to change what's included can still do so from the results
+        // screen's "Edit Pattern Selection".
+        runAnalysisFor(d.patterns, d.vertical);
+      });
+      es.addEventListener('fail', (e) => {
+        const d = JSON.parse(e.data);
+        setError(d.message);
+      });
+      es.addEventListener('done', () => es.close());
+      es.onerror = () => es.close();
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  function toggleIncluded(pattern) {
+    setPatterns((prev) => prev.map((p) => (p.pattern === pattern ? { ...p, included: !p.included } : p)));
+  }
+
+  // Saves the given pattern selection, then runs full analysis directly — no
+  // intermediate draft-clustering preview to click through. Used both right
+  // after discovery (automatically) and from the pattern editor's "Confirm
+  // Patterns" button (manually, after an edit).
+  async function runAnalysisFor(patternsArg, verticalArg) {
+    setSaving(true);
+    try {
+      await ca.savePatterns(id, patternsArg.map((p) => ({ pattern: p.pattern, included: p.included })), verticalArg);
+    } catch (e) {
+      toast.add({ title: 'Save failed', description: e.message, variant: 'danger' });
+      setSaving(false);
+      setScreen('patterns');
+      return;
+    }
+    setSaving(false);
+    await startAnalysis();
+  }
+
+  function confirmPatterns() {
+    return runAnalysisFor(patterns, vertical);
+  }
+
+  async function startAnalysis() {
+    setScreen('analyzing');
+    setError(null);
+    setAnalyzeSteps({});
+    try {
+      const { token } = await ca.analyzeInit(id);
+      const es = new EventSource(ca.analyzeStreamUrl(id, token));
+      esRef.current = es;
+      es.addEventListener('step', (e) => {
+        const d = JSON.parse(e.data);
+        setAnalyzeSteps((prev) => ({ ...prev, [d.id]: d.message }));
+      });
+      es.addEventListener('ready', async () => {
+        try {
+          const full = await ca.getFullAnalysis(id);
+          setAnalysis(full);
+          setScreen('results');
+        } catch (e) {
+          setError(e.message);
+          setScreen('patterns');
+        }
+      });
+      es.addEventListener('fail', (e) => {
+        const d = JSON.parse(e.data);
+        setError(d.message);
+        setScreen('patterns');
+      });
+      es.addEventListener('done', () => es.close());
+      es.onerror = () => es.close();
+    } catch (e) {
+      setError(e.message);
+      setScreen('patterns');
+    }
+  }
+
+  async function downloadExport(format) {
+    setExportingFormat(format);
+    try {
+      const { blob, filename } = await ca.exportFile(id, format);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.add({ title: 'Export failed', description: e.message, variant: 'danger' });
+    } finally {
+      setExportingFormat(null);
+    }
+  }
+
+  const totalUrls = patterns.reduce((sum, p) => sum + p.count, 0);
+  const selectedUrls = patterns.filter((p) => p.included).reduce((sum, p) => sum + p.count, 0);
+
+  const progressSteps = DISCOVER_STEPS
+    .filter((s) => steps[s.id])
+    .map((s) => ({ label: s.label, status: steps[s.id]?.status === 'done' ? 'done' : 'active' }));
+
+  const lastSeenAnalyzeIndex = ANALYZE_STEPS.reduce((last, s, i) => (analyzeSteps[s.id] !== undefined ? i : last), -1);
+  const currentAnalyzeStageId = lastSeenAnalyzeIndex >= 0 ? ANALYZE_STEPS[lastSeenAnalyzeIndex].id : null;
+  const analyzeProgressSteps = ANALYZE_STEPS.map((s, i) => ({
+    label: s.label,
+    status: i < lastSeenAnalyzeIndex ? 'done' : i === lastSeenAnalyzeIndex ? 'active' : 'pending',
+  }));
+
+  const pageById = useMemo(() => new Map((analysis?.pages || []).map((p) => [p.id, p])), [analysis]);
+  const estimatedCount = analysis?.pages.filter((p) => p.estimated).length || 0;
+  const meanHealth = analysis?.clusters.length
+    ? Math.round(analysis.clusters.reduce((s, c) => s + (c.health || 0), 0) / analysis.clusters.length)
+    : 0;
+  const orphanCount = analysis?.pages.filter((p) => (p.flags || []).includes('orphan')).length || 0;
+  const totalSpokes = analysis?.clusters.reduce((s, c) => s + c.spokeIds.length, 0) || 0;
+  const pctUnassigned = analysis
+    ? Math.round((100 * analysis.unassignedPages.length) / Math.max(1, analysis.pages.length))
+    : 0;
+
+  function handleSuggestions(clusterId, result) {
+    setAnalysis((prev) => ({
+      ...prev,
+      spokeSuggestionsByCluster: { ...(prev.spokeSuggestionsByCluster || {}), [clusterId]: result },
+    }));
+  }
+
+  return (
+    <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+      <SectionHeader
+        eyebrow="Build · Content Architect"
+        title={project?.name || 'Loading…'}
+        subtitle={project?.domain}
+        actions={<Button variant="secondary" onClick={() => navigate('/content-architect')}>All Projects</Button>}
+      />
+
+      {error && (
+        <Card style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ color: 'var(--danger)', flex: 1, fontSize: 13 }}>{error}</span>
+            <Button variant="secondary" size="sm" onClick={startDiscovery}>Retry</Button>
+          </div>
+        </Card>
+      )}
+
+      {screen === 'loading' && !error && <EmptyState title="Loading project…" />}
+
+      {screen === 'discovering' && (
+        <Card>
+          <div style={{ marginBottom: 16 }}>
+            <ProgressSteps steps={progressSteps.length ? progressSteps : [{ label: 'Starting…', status: 'active' }]} layout="vertical" />
+          </div>
+          {Object.entries(steps).map(([k, v]) => (
+            <div key={k} style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>{v.message}</div>
+          ))}
+        </Card>
+      )}
+
+      {screen === 'patterns' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {discoverMeta?.capped && (
+            <Card style={{ background: 'var(--warning-soft)' }}>
+              <div style={{ fontSize: 13 }}>
+                Hit the <strong>{discoverMeta.capReason}</strong> limit while reading the sitemap — results may be a partial sample.
+              </div>
+            </Card>
+          )}
+          {discoverMeta?.skippedSitemaps?.length > 0 && (
+            <Card>
+              <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                Skipped {discoverMeta.skippedSitemaps.length} sitemap file(s) that couldn't be read (media sitemaps, broken links, etc.) — this is normal.
+              </div>
+            </Card>
+          )}
+
+          <Card>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Detected vertical:</span>
+                <select
+                  value={vertical || 'other'}
+                  onChange={(e) => setVertical(e.target.value)}
+                  style={{ fontSize: 12, padding: '4px 8px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-strong)', background: 'var(--card)', color: 'var(--text)' }}
+                >
+                  {VERTICAL_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>
+                  Analyzing {selectedUrls.toLocaleString()} of {totalUrls.toLocaleString()} URLs
+                </span>
+                {analysis && (
+                  <Button variant="secondary" size="sm" onClick={() => setScreen('results')} disabled={saving}>
+                    Cancel
+                  </Button>
+                )}
+                <Button size="sm" onClick={confirmPatterns} loading={saving} disabled={saving}>
+                  {saving ? 'Saving…' : analysis ? 'Confirm & Re-run Analysis' : 'Confirm Patterns'}
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          <DataTable
+            columns={[
+              {
+                key: 'included', label: '', sortable: false, width: 40,
+                render: (v, row) => (
+                  <input type="checkbox" checked={!!v} onChange={() => toggleIncluded(row.pattern)} style={{ cursor: 'pointer' }} />
+                ),
+              },
+              { key: 'pattern', label: 'Pattern', mono: true },
+              { key: 'count', label: 'Count', align: 'right' },
+              {
+                key: 'classification', label: 'Classification',
+                render: (v) => {
+                  const meta = CLASSIFICATION_META[v] || { label: v, variant: 'neutral' };
+                  return <Badge variant={meta.variant}>{meta.label}</Badge>;
+                },
+              },
+              {
+                key: 'examples', label: 'Examples', sortable: false, maxWidth: 380, wrap: true,
+                render: (v) => (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {(v || []).map((u) => <span key={u} style={{ fontSize: 11, color: 'var(--text-3)' }}>{u}</span>)}
+                  </div>
+                ),
+              },
+            ]}
+            rows={patterns.map((p) => ({ id: p.pattern, ...p }))}
+            striped
+            emptyText="No patterns found."
+          />
+        </div>
+      )}
+
+      {screen === 'analyzing' && (
+        <Card>
+          <div style={{ marginBottom: 16 }}>
+            <ProgressSteps steps={analyzeProgressSteps} layout="vertical" />
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+            {analyzeSteps[currentAnalyzeStageId] || 'Starting…'}
+          </div>
+        </Card>
+      )}
+
+      {screen === 'results' && analysis && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Mean health and the run's own controls. HubSpokeReport below has
+              its own summary tiles and needs-attention banner; this is just
+              the one figure that's about the site as a whole, plus what you
+              can do to the analysis (re-run, edit selection, export). */}
+          <Card>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                <HealthDonut value={meanHealth} />
+                <div style={{ maxWidth: 520 }}>
+                  <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 12.5, color: 'var(--text-2)' }}>{analysis.pages.length} pages analysed</span>
+                    <span style={{ fontSize: 12.5, color: 'var(--text-2)' }}>{analysis.clusters.length} clusters</span>
+                    <span style={{ fontSize: 12.5, color: 'var(--text-2)' }}>{totalSpokes} spokes mapped</span>
+                    <span style={{ fontSize: 12.5, color: analysis.unassignedPages.length ? 'var(--text)' : 'var(--text-2)' }}>
+                      {analysis.unassignedPages.length} unassigned ({pctUnassigned}%)
+                    </span>
+                    <span style={{ fontSize: 12.5, color: orphanCount ? 'var(--danger)' : 'var(--text-2)' }}>
+                      {orphanCount} orphaned
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>
+                    {estimatedCount > 0
+                      ? `${estimatedCount} page(s) were estimated from their URL rather than crawled.`
+                      : 'Every page in this selection was fully crawled.'}
+                  </div>
+                  <div style={{ fontSize: 10.5, color: 'var(--text-3)', marginTop: 6, maxWidth: 460 }}>
+                    <strong>Health</strong> (0-100, averaged across clusters) scores whether a cluster has a hub page, how well that hub covers the topic, a healthy spoke count, internal link density, and how many clicks its pages sit from the homepage.
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <Button variant="secondary" size="sm" onClick={() => setScreen('patterns')}>Edit Pattern Selection</Button>
+                <Button variant="secondary" size="sm" onClick={startAnalysis} loading={screen === 'analyzing'}>Re-run Analysis</Button>
+                <Button size="sm" onClick={() => downloadExport('xlsx')} loading={exportingFormat === 'xlsx'} disabled={!!exportingFormat}>
+                  Download Excel
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => downloadExport('md')} loading={exportingFormat === 'md'} disabled={!!exportingFormat}>
+                  Download Markdown
+                </Button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Competitor domains:</span>
+              <input
+                type="text"
+                value={competitorsText}
+                onChange={(e) => setCompetitorsText(e.target.value)}
+                placeholder="competitor1.com, competitor2.com"
+                style={{ flex: '1 1 260px', minWidth: 200, fontSize: 12, padding: '5px 8px', borderRadius: 'var(--r-md)', border: '1px solid var(--border-strong)', background: 'var(--card)', color: 'var(--text)' }}
+              />
+              <Button variant="secondary" size="sm" onClick={saveCompetitors} loading={savingCompetitors}>Save</Button>
+              <span style={{ fontSize: 10.5, color: 'var(--text-3)' }}>Used automatically by "Suggest new spokes" below, no need to re-enter.</span>
+            </div>
+          </Card>
+
+          {analysis.crawlMeta?.sampled && (
+            <Card style={{ background: 'var(--warning-soft)' }}>
+              <div style={{ fontSize: 12 }}>
+                This site's confirmed selection was large enough to trigger sampling — only {analysis.crawlMeta.sampleSize} pages were fully crawled for real content;
+                the rest were grouped by URL alone. See the Summary tab in the download for the exact breakdown.
+              </div>
+            </Card>
+          )}
+
+          <HubSpokeReport
+            analysis={analysis}
+            pageById={pageById}
+            navigate={navigate}
+            projectId={id}
+            siteName={project?.name}
+            onSuggestions={handleSuggestions}
+          />
+
+          <div style={{ fontSize: 11, color: 'var(--text-3)', textAlign: 'center' }}>
+            For the full retire/refresh reasoning, excluded-page detail, and every column, download the Excel above.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HealthDonut({ value }) {
+  const color = `var(--${healthVariant(value)})`;
+  return (
+    <div style={{
+      position: 'relative', width: 88, height: 88, flexShrink: 0, borderRadius: '50%',
+      background: `conic-gradient(${color} ${value * 3.6}deg, var(--border) 0)`,
+    }}>
+      <div style={{
+        position: 'absolute', inset: 6, borderRadius: '50%', background: 'var(--card)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1,
+      }}>
+        <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>{value}</span>
+        <span style={{ fontSize: 9, letterSpacing: '.08em', color: 'var(--text-3)' }}>HEALTH</span>
+      </div>
+    </div>
+  );
+}
+

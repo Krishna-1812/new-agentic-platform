@@ -1,0 +1,1207 @@
+{
+  "url": "https://www.brushandfloss.com/locations/six-forks",
+  "statusCode": 200,
+  "scrapedAt": "2026-04-14T14:40:48.092Z",
+  "success": true,
+  "error": null,
+  "metaTitle": "Dentist in Raleigh, NC | Riccobene Associates Family Dentistry",
+  "metaDescription": "Looking for a dentist in Raleigh, NC, near Six Forks? Our expert team provides top care with a focus on comfort and patient satisfaction. Book today!",
+  "canonical": "https://www.brushandfloss.com/locations/six-forks",
+  "allMeta": {
+    "description": "Looking for a dentist in Raleigh, NC, near Six Forks? Our expert team provides top care with a focus on comfort and patient satisfaction. Book today!",
+    "og:title": "Riccobene Associates Family Dentistry | Raleigh, NC",
+    "og:description": "Looking for a dentist in Raleigh, NC, near Six Forks? Our expert team provides top care with a focus on comfort and patient satisfaction. Book today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69941b315da0f84ba38a2a07_six-forks.webp",
+    "twitter:title": "Riccobene Associates Family Dentistry | Raleigh, NC",
+    "twitter:description": "Looking for a dentist in Raleigh, NC, near Six Forks? Our expert team provides top care with a focus on comfort and patient satisfaction. Book today!",
+    "twitter:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69941b315da0f84ba38a2a07_six-forks.webp",
+    "og:type": "website",
+    "twitter:card": "summary_large_image",
+    "viewport": "width=device-width, initial-scale=1",
+    "generator": "Webflow"
+  },
+  "ogTags": {
+    "og:title": "Riccobene Associates Family Dentistry | Raleigh, NC",
+    "og:description": "Looking for a dentist in Raleigh, NC, near Six Forks? Our expert team provides top care with a focus on comfort and patient satisfaction. Book today!",
+    "og:image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69941b315da0f84ba38a2a07_six-forks.webp",
+    "og:type": "website"
+  },
+  "twitterTags": {
+    "twitter:card": "summary_large_image"
+  },
+  "headings": {
+    "h1": [
+      "TRUSTED DENTISTS IN RALEIGH, NC FOR COMPLETE FAMILY DENTAL CARE"
+    ],
+    "h2": [
+      "MEET OUR DOCTORS",
+      "OUR SERVICES",
+      "WHAT OUR PATIENTS SAY",
+      "OUR OFFICE",
+      "WHY CHOOSE RICCOBENE?",
+      "OUR COMMITMENT TO EXCELLENCE",
+      "OTHER NEARBY LOCATIONS",
+      "PAYMENT OPTIONS & MEMBERSHIP PLANS",
+      "AFFORDABLE MEMBERSHIP PLANS",
+      "FREQUENTLY ASKED QUESTIONS",
+      "READY TO SCHEDULE? CONTACT US"
+    ],
+    "h3": [
+      "Ali Nassir, DDS",
+      "Jason Ma, DDS",
+      "Office Amenities",
+      "500,000+",
+      "4.8",
+      "25",
+      "What services are offered at the Raleigh, NC, Raleigh dental office?",
+      "How do I schedule an appointment in Raleigh, NC?",
+      "Does the Raleigh location provide orthodontic treatment like Invisalign®?",
+      "Can I get same-day emergency dental treatment in Raleigh, NC?",
+      "What cosmetic dental services are offered in Raleigh?",
+      "Is wisdom teeth removal available at the Raleigh office?",
+      "Where is the Raleigh, NC, office located, and when is it open?",
+      "Do you accept insurance or offer membership plans in Raleigh, NC?",
+      "What technology or comfort options are available for patient care?",
+      "What sedation options are available for anxious patients in Raleigh, NC?",
+      "Send us a Message",
+      "Get in Touch",
+      "Request An Appointment"
+    ],
+    "h4": [],
+    "h5": [],
+    "h6": []
+  },
+  "headingOrder": [
+    {
+      "tag": "h1",
+      "text": "TRUSTED DENTISTS IN RALEIGH, NC FOR COMPLETE FAMILY DENTAL CARE"
+    },
+    {
+      "tag": "h2",
+      "text": "MEET OUR DOCTORS"
+    },
+    {
+      "tag": "h3",
+      "text": "Ali Nassir, DDS"
+    },
+    {
+      "tag": "h3",
+      "text": "Jason Ma, DDS"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR SERVICES"
+    },
+    {
+      "tag": "h2",
+      "text": "WHAT OUR PATIENTS SAY"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR OFFICE"
+    },
+    {
+      "tag": "h3",
+      "text": "Office Amenities"
+    },
+    {
+      "tag": "h2",
+      "text": "WHY CHOOSE RICCOBENE?"
+    },
+    {
+      "tag": "h2",
+      "text": "OUR COMMITMENT TO EXCELLENCE"
+    },
+    {
+      "tag": "h3",
+      "text": "500,000+"
+    },
+    {
+      "tag": "h3",
+      "text": "4.8"
+    },
+    {
+      "tag": "h3",
+      "text": "25"
+    },
+    {
+      "tag": "h2",
+      "text": "OTHER NEARBY LOCATIONS"
+    },
+    {
+      "tag": "h2",
+      "text": "PAYMENT OPTIONS & MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "AFFORDABLE MEMBERSHIP PLANS"
+    },
+    {
+      "tag": "h2",
+      "text": "FREQUENTLY ASKED QUESTIONS"
+    },
+    {
+      "tag": "h3",
+      "text": "What services are offered at the Raleigh, NC, Raleigh dental office?"
+    },
+    {
+      "tag": "h3",
+      "text": "How do I schedule an appointment in Raleigh, NC?"
+    },
+    {
+      "tag": "h3",
+      "text": "Does the Raleigh location provide orthodontic treatment like Invisalign®?"
+    },
+    {
+      "tag": "h3",
+      "text": "Can I get same-day emergency dental treatment in Raleigh, NC?"
+    },
+    {
+      "tag": "h3",
+      "text": "What cosmetic dental services are offered in Raleigh?"
+    },
+    {
+      "tag": "h3",
+      "text": "Is wisdom teeth removal available at the Raleigh office?"
+    },
+    {
+      "tag": "h3",
+      "text": "Where is the Raleigh, NC, office located, and when is it open?"
+    },
+    {
+      "tag": "h3",
+      "text": "Do you accept insurance or offer membership plans in Raleigh, NC?"
+    },
+    {
+      "tag": "h3",
+      "text": "What technology or comfort options are available for patient care?"
+    },
+    {
+      "tag": "h3",
+      "text": "What sedation options are available for anxious patients in Raleigh, NC?"
+    },
+    {
+      "tag": "h2",
+      "text": "READY TO SCHEDULE? CONTACT US"
+    },
+    {
+      "tag": "h3",
+      "text": "Send us a Message"
+    },
+    {
+      "tag": "h3",
+      "text": "Get in Touch"
+    },
+    {
+      "tag": "h3",
+      "text": "Request An Appointment"
+    }
+  ],
+  "paragraphs": [
+    "Located in the Six Forks neighborhood, just outside Raleigh, our dentists provide expert care with the highest standards of clinical excellence and patient comfort.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Our experienced team of dentists in Six Forks are dedicated to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Comprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort.",
+    "Our experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort. As a trusted dentist in Raleigh, NC, we prioritize your dental health.",
+    "Welcome to our Raleigh office! Right off the 440 Interstate, our Raleigh location provides care for patients traveling from the nearby neighborhoods such as Cary, Apex, New Hope, Garner, and more. With our highly advanced technology and an experienced team, we provide the comfort and confidence you need for a healthy, pain-free smile!",
+    "Our modern, inviting space is filled with a professional, experienced team that strongly believes that dental care and treatment start with patient comfort. Therefore, we strive for our office and amenities to be designed with our patients’ health and well-being in mind. Situated in a suburban community that blends small-town charm with convenient access to the North Hills Shopping Center, this location is accessible and easy to travel to. Our Raleigh office stands out with its peaceful atmosphere, where patients feel supported and leave motivated to take care of their oral health with ease and comfort.",
+    "We believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.",
+    "When you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.",
+    "Can't make it to our Raleigh office? We have other convenient locations in the area to serve you with the same exceptional dental care.",
+    "Quality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients.",
+    "Quality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients, ensuring you get the best dentist in Raleigh NC.",
+    "Save money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.",
+    "We provide all the necessary dental services such as routine cleanings and exams, fillings, pediatric dental procedures, gum contouring, fluoride treatment, and so much more!",
+    "To schedule a visit, feel free to call us or book an appointment online to get you in as soon as possible! We look forward to treating you and providing you with the comfort and care you deserve!",
+    "Yes! We have an amazing team of professionals ready to help you with your Invisalign needs to discreetly straighten your teeth for a brighter, natural smile.",
+    "Yes. At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our Six Forks location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!",
+    "We understand the impact a confident smile has on our patients' lives, and therefore, we offer cosmetic services that include whitening, veneers, and Invisalign®.",
+    "Yes. Our expert team can remove your wisdom teeth before or after they come in. We prioritize your comfort throughout the process and make sure the removal process is painless and relaxing.",
+    "Our office Hours are Monday-Thursday: 8:00 AM – 4:00 PM, Friday: 8:00 AM – 2:00 PM. We are closed on Saturday and Sunday. Our Raleigh office is located at 3614 Haworth Dr, Raleigh, NC 27609. We look forward to seeing you!",
+    "We accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.",
+    "We use Digital X-rays, which have small sensors and X-ray film tabs, and can provide two types of images: intraoral, for inside the mouth, and extraoral, for outside the mouth. Bitewing X-rays are the most commonly used intraoral X-rays; for extraoral X-rays, the panoramic X-ray is the most common.",
+    "We offer a variety of sedation dentistry options. You can choose from Nitrous Oxide, IV Sedation, and Local Anesthesia.",
+    "Take the first step towards optimal oral health. Contact our Raleigh office to schedule your appointment or ask any questions about our dental services.",
+    "Fill out the form below and we'll get back to you within 24 hours.",
+    "Select a Location to schedule an appointment:",
+    "Call our Raleigh Office at 919-834-4450, or use the form below to request an appointment."
+  ],
+  "schemaMarkup": [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "https://www.brushandfloss.com/locations/six-forks",
+      "url": "https://www.brushandfloss.com/locations/six-forks",
+      "name": "Dentist in Raleigh, NC | Riccobene Associates Family Dentistry",
+      "description": "Looking for a dentist in Raleigh, NC, near Six Forks? Our expert team provides top care with a focus on comfort and patient satisfaction. Book today!",
+      "inLanguage": "en-US",
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "https://www.brushandfloss.com/",
+        "url": "https://www.brushandfloss.com/",
+        "name": "Riccobene Associates Family Dentistry"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://www.brushandfloss.com/#organization",
+      "url": "https://www.brushandfloss.com/",
+      "sameAs": [
+        "https://www.facebook.com/RiccobeneDentistry",
+        "https://www.instagram.com/brushandflossnc/"
+      ],
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg"
+      },
+      "brand": {
+        "@type": "Brand",
+        "name": "Riccobene Associates Family Dentistry",
+        "sameAs": [
+          "https://www.facebook.com/RiccobeneDentistry",
+          "https://www.instagram.com/brushandflossnc/"
+        ]
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Insurance Accepted",
+      "insuranceAccepted": [
+        "Delta Dental",
+        "Blue Cross Blue Shield",
+        "Aetna",
+        "Cigna",
+        "MetLife",
+        "UnitedHealthcare"
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Dentist",
+      "@id": "https://www.brushandfloss.com/locations/six-forks/dentist",
+      "name": "Riccobene Associates Family Dentistry",
+      "image": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69941b315da0f84ba38a2a07_six-forks.webp",
+      "logo": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315cd_riccobene-associates-family-dentistry.png",
+      "url": "/locations/six-forks",
+      "telephone": "919-834-4450",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "3614 Haworth Dr, Raleigh, NC 27609",
+        "addressLocality": "Raleigh",
+        "addressRegion": "NC",
+        "postalCode": "27609",
+        "addressCountry": "US"
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Monday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Tuesday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Wednesday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Thursday",
+          "opens": "8:00",
+          "closes": "16:00"
+        },
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": "Friday",
+          "opens": "8:00",
+          "closes": "14:00"
+        }
+      ],
+      "priceRange": "$$",
+      "hasMap": "https://g.page/SixForksSmiles?share",
+      "sameAs": "https://g.page/SixForksSmiles?share"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "Dental Services",
+      "serviceOutput": [
+        {
+          "@type": "Service",
+          "name": "Crowns"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Bridges"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Implants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dental Sealants"
+        },
+        {
+          "@type": "Service",
+          "name": "Dentures"
+        },
+        {
+          "@type": "Service",
+          "name": "Digital X-Rays"
+        }
+      ]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Linda R."
+      },
+      "reviewBody": "My experience with Riccobene Associates for a basic routine first-time dental appointment (new patient) was the best I have ever experienced. Mindy was very polite and explained in detail everything about the procedures. X-rays were of the state-of-the-art technology, and the cleaning was absolutely pristine and checked by the Dentist himself…",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Richard M."
+      },
+      "reviewBody": "I&#39;ve not been real good at coming in as I should ,but the office welcomed me back with a smile. They were more than happy to explain everything I needed to know, asked if I had questions, and spent extra time with me to get a new crown in place.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Paul G."
+      },
+      "reviewBody": "A great dentist. I went in for a routine cleaning, but mentioned a small concern. The hygienist thoroughly investigated, and we ended up with a dentist consultation, discovering a slightly cracked tooth. Really happy with my treatment.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Deborah “The debster” Young"
+      },
+      "reviewBody": "Recently moved to Raleigh, needed a dentist, and Riccobene was recommended. My husband needs a lot of work, so we had to find a proficient practitioner. Well, we found it! From our first appointments, the staff made us feel welcome and totally at ease. Every step is gone over ,and the staff makes sure you understand. They are extremely conscientious regarding cost and insurance. I want to give an A+ to the entire staff, from the doctors to the front desk. I don’t want to do individual shoutouts because I don’t want to leave anyone out! It’s a fabulous team and we highly recommend it !",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Review",
+      "author": {
+        "@type": "Person",
+        "name": "Brittany M."
+      },
+      "reviewBody": "Today was my first visit here and I absolutely love them! Everyone from the front desk person, hygienist and Dentist are extremely friendly and kind. Jamie was my hygienist and she was amazing. She explained everything she was doing and talked me there every step. She made me feel so comfortable.  This will definitely be my new dental office.",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "5",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What services are offered at the Raleigh, NC, Raleigh dental office?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We provide all the necessary dental services such as routine cleanings and exams, fillings, pediatric dental procedures, gum contouring, fluoride treatment, and so much more!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I schedule an appointment in Raleigh, NC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "To schedule a visit, feel free to call us or book an appointment online to get you in as soon as possible! We look forward to treating you and providing you with the comfort and care you deserve!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does the Raleigh location provide orthodontic treatment like Invisalign®?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes! We have an amazing team of professionals ready to help you with your Invisalign needs to discreetly straighten your teeth for a brighter, natural smile."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I get same-day emergency dental treatment in Raleigh, NC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our Six Forks location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What cosmetic dental services are offered in Raleigh?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We understand the impact a confident smile has on our patients' lives, and therefore, we offer cosmetic services that include whitening, veneers, and Invisalign®."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is wisdom teeth removal available at the Raleigh office?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Our expert team can remove your wisdom teeth before or after they come in. We prioritize your comfort throughout the process and make sure the removal process is painless and relaxing."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Where is the Raleigh, NC, office located, and when is it open?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Our office Hours are Monday-Thursday: 8:00 AM – 4:00 PM, Friday: 8:00 AM – 2:00 PM. We are closed on Saturday and Sunday. Our Raleigh office is located at 3614 Haworth Dr, Raleigh, NC 27609. We look forward to seeing you!"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you accept insurance or offer membership plans in Raleigh, NC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What technology or comfort options are available for patient care?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We use Digital X-rays, which have small sensors and X-ray film tabs, and can provide two types of images: intraoral, for inside the mouth, and extraoral, for outside the mouth. Bitewing X-rays are the most commonly used intraoral X-rays; for extraoral X-rays, the panoramic X-ray is the most common."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What sedation options are available for anxious patients in Raleigh, NC?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We offer a variety of sedation dentistry options. You can choose from Nitrous Oxide, IV Sedation, and Local Anesthesia."
+          }
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314df_search.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152e_riccobene-banner-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31508_location-map.webp",
+      "alt": "Map showing neighborhoods, parks, schools, and roads including Davis Drive Elementary School, Pleasant Street, and Sunset Plaza."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314e7_location-banner.jpg",
+      "alt": "Smiling woman reclined in dental chair during a dental checkup with dentist holding dental mirror and probe."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31552_call-now-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a178f7367ab578c6116d7c_ali-nassir-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69a178f7367ab578c6116d7c_ali-nassir-dds.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31720_2x2%20photo.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d31720_2x2%20photo.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d3164b_Riccobene2-103.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d317f5_dental-bridges.webp",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/69b29dacd38e9840c17ead1c_denture-implants.jpg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ba_nc.dental-sealants-1024x768.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315af_brush-and-floss-dentures-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31354/6916222bad26f3b001d315ac_dental-x-rays-north-carolina-1024x683.jpeg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31516_quotes.png",
+      "alt": "Large dark blue opening quotation marks symbol on a transparent background."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154d_shield-trust.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152b_riccobene-our-office-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152a_riccobene-our-office-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152d_riccobene-our-office-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3152c_riccobene-our-office-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31529_riccobene-our-office-icon-five.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/plugins/Basic/assets/placeholder.60f9b1840c.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31548_riccobene-wcr-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31549_family-friendly.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31547_state-of-the-art.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31546_riccobene-wcr-icon-four.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31527_insurance-accepted-icon-1.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31558_pricing-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31559_pricing-icon-three.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31522_pricing-1.webp",
+      "alt": "Smiling young woman with long brown hair pointing to her teeth with both index fingers."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154a_riccobene-dark-check.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31523_pricing-2.webp",
+      "alt": "Smiling young boy sitting in a dental chair during a dental checkup with a dentist holding a dental tool."
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31544_riccobene-banner-icon-one.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d31528_riccobene-banner-icon-two.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154b_email-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d3154c_alarm-icon.svg",
+      "alt": ""
+    },
+    {
+      "src": "https://cdn.prod.website-files.com/6916222bad26f3b001d31303/6916222bad26f3b001d314db_Greyscale%20Logo%20Riccobene_ORIGINAL.svg",
+      "alt": "Riccobene Associates Family Dentistry"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a location"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks",
+      "text": "RALEIGH"
+    },
+    {
+      "href": "tel:919-834-4450",
+      "text": "919-834-4450"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "CHANGE LOCATION"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers#jobs",
+      "text": "JOIN THE TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/six-forks",
+      "text": "SCHEDULE AN APPOINTMENT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": "Home"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "Find a Dentist Near You"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "New Patient Experience"
+    },
+    {
+      "href": "https://www.brushandfloss.com/the-riccobene-way",
+      "text": "The Riccobene Way"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "Dental Services"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans",
+      "text": "Membership Plans"
+    },
+    {
+      "href": "https://www.brushandfloss.com/reviews",
+      "text": "Patient Reviews"
+    },
+    {
+      "href": "https://patient.payments.health/#/?organizationID=dab6a2b7&locationID=LSXWSH421HHY4",
+      "text": "Make A Payment"
+    },
+    {
+      "href": "https://www.brushandfloss.com/payment",
+      "text": "Online Payments"
+    },
+    {
+      "href": "https://www.brushandfloss.com/articles",
+      "text": "articles"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "Contact us"
+    },
+    {
+      "href": "https://www.paycomonline.net/v4/ats/web.php/jobs?clientkey=B32F01563C7743C293E0AAB35AE1ADEA",
+      "text": "careers"
+    },
+    {
+      "href": "https://www.brushandflossaffiliates.com/",
+      "text": "Become an Affiliate Practice"
+    },
+    {
+      "href": "https://www.brushandfloss-employees.com/",
+      "text": "Employees"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/six-forks",
+      "text": "BOOK APPOINMENT"
+    },
+    {
+      "href": "tel:919-834-4450",
+      "text": "CALL NOW"
+    },
+    {
+      "href": "tel:919-834-4450",
+      "text": "Call Now"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/ali-nassir-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/ali-nassir-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "javascript:void(0)",
+      "text": "MORE+"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/jason-ma-dds",
+      "text": "View Profile"
+    },
+    {
+      "href": "https://www.brushandfloss.com/our-dentists/jason-ma-dds",
+      "text": "VIEW PROFILE"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/crowns",
+      "text": "Crowns"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-bridges",
+      "text": "Dental Bridges"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dental-implants",
+      "text": "Dental Implants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/sealants",
+      "text": "Dental Sealants"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/dentures",
+      "text": "Dentures"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services/digital-x-rays",
+      "text": "Digital X-Rays"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#ready-to-schedule",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks?f5ff0038_page=2",
+      "text": "Load More"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#ready-to-schedule",
+      "text": "SCHEDULE A VISIT TODAY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/raleigh-falls",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/raleigh-falls",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://next-web.patientprism.com/schedule/locations/a12c2c9f-7edf-4fd9-98da-6d9e7875b13f/a0a18025-c8b3-44a5-a099-ef63e821a1d9",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/cary-family-specialty",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/wakefield",
+      "text": "BOOK NOW"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/wakefield",
+      "text": "VIEW DETAILS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "View all Locations"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#adult-preventative-plan",
+      "text": "ADULT PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/membership-plans#child-preventative-plan",
+      "text": "CHILD PREVENTATIVE PLAN"
+    },
+    {
+      "href": "https://www.brushandfloss.com/appointments/six-forks",
+      "text": "BOOK APPOINTMENT ONLINE"
+    },
+    {
+      "href": "tel:919-834-4450",
+      "text": "CALL FOR EMERGENCY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": "LOCATIONS"
+    },
+    {
+      "href": "https://www.brushandfloss.com/dental-services",
+      "text": "SERVICES"
+    },
+    {
+      "href": "https://www.brushandfloss.com/experience",
+      "text": "WHAT TO EXPECT"
+    },
+    {
+      "href": "https://www.brushandfloss.com/careers",
+      "text": "JOIN OUR TEAM"
+    },
+    {
+      "href": "https://www.brushandfloss.com/partnership",
+      "text": "PARTNER WITH US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/contact",
+      "text": "CONTACT US"
+    },
+    {
+      "href": "https://www.brushandfloss.com/hipaa",
+      "text": "HIPAA"
+    },
+    {
+      "href": "https://www.brushandfloss.com/privacy-policy",
+      "text": "PRIVACY POLICY"
+    },
+    {
+      "href": "https://www.brushandfloss.com/search",
+      "text": "SEARCH"
+    },
+    {
+      "href": "https://www.facebook.com/RiccobeneDentistry",
+      "text": ""
+    },
+    {
+      "href": "https://www.instagram.com/brushandflossnc/?hl=en",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#",
+      "text": ""
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks",
+      "text": "Raleigh"
+    },
+    {
+      "href": "tel:919-834-4450",
+      "text": "919-834-4450"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#",
+      "text": "Close"
+    },
+    {
+      "href": "https://www.brushandfloss.com/locations/six-forks#",
+      "text": "Open Appointment"
+    }
+  ],
+  "bodyText": "RALEIGH\n919-834-4450\nCHANGE LOCATION\nJOIN THE TEAM\nSCHEDULE AN APPOINTMENT\nTRUSTED DENTISTS IN RALEIGH, NC FOR COMPLETE FAMILY DENTAL CARE\n\nLocated in the Six Forks neighborhood, just outside Raleigh, our dentists provide expert care with the highest standards of clinical excellence and patient comfort.\n\n3614 Haworth Dr, Raleigh, NC 27609\n919-834-4450\nMon-Thu: 8:00 AM - 4:00 PM | Fri: 8:00 AM - 2:00 PM\nBOOK APPOINMENT\nCALL NOW\nCall Now\nMEET OUR DOCTORS\n\nOur experienced team of dentists in Six Forks are dedicated to providing exceptional care with the highest standards of clinical excellence and patient comfort.\n\nAli Nassir, DDS\nGeneral & Family Dentistry\nMORE+\nAli Nassir, DDS\nGeneral & Family Dentistry\nDr. Nassir is committed to delivering high-quality, personalized care that helps patients feel comfortable and confident in their dental health. He values strong patient relationships and preventive care.\nVIEW PROFILE\nJason Ma, DDS\nGeneral & Family Dentistry\nMORE+\nJason Ma, DDS\nGeneral & Family Dentistry\nDr. Ma provides compassionate, patient-centered dental care with a focus on education and prevention. He is dedicated to ensuring every patient achieves lasting oral health.\nVIEW PROFILE\nOUR SERVICES\n\nComprehensive dental care for every member of your family. From routine cleanings to advanced treatments, we provide exceptional care with the latest technology and techniques.\n\nCrowns\nProtect and restore damaged teeth with custom dental crowns. Learn about tooth crown types, benefits, and treatment. Schedule your visit today.\nBOOK NOW\nDental Bridges\nDental bridges restore your smile by replacing missing teeth. Get a custom, natural fit that enhances both appearance and function. Book your consultation today\nBOOK NOW\nDental Implants\nAt Riccobene Associates Family Dentistry, we offer dental implants to restore your beautiful smile. Contact one of our dental offices today!\nBOOK NOW\nDental Sealants\nDental sealants protect your teeth from cavities and decay. A quick, effective way to maintain oral health. Book your consultation today!\nBOOK NOW\nDentures\nDiscover affordable dentures and permanent solutions from a trusted dentures specialist. Get one-day dentures that fit your needs. Book a consultation today!\nBOOK NOW\nDigital X-Rays\nGet safe, low-radiation dental X-rays for early detection of cavities, infections, and bone loss. Schedule your dental imaging appointment today.\nBOOK NOW\nLoad More\nWHAT OUR PATIENTS SAY\n\nOur experienced team of dental professionals is committed to providing exceptional care with the highest standards of clinical excellence and patient comfort. As a trusted dentist in Raleigh, NC, we prioritize your dental health.\n\n★★★★★\nMy experience with Riccobene Associates for a basic routine first-time dental appointment (new patient) was the best I have ever experienced. Mindy was very polite and explained in detail everything about the procedures. X-rays were of the state-of-the-art technology, and the cleaning was absolutely pristine and checked by the Dentist himself…\nLinda R.\n★★★★★\nI've not been real good at coming in as I should ,but the office welcomed me back with a smile. They were more than happy to explain everything I needed to know, asked if I had questions, and spent extra time with me to get a new crown in place.\nRichard M.\n★★★★★\nA great dentist. I went in for a routine cleaning, but mentioned a small concern. The hygienist thoroughly investigated, and we ended up with a dentist consultation, discovering a slightly cracked tooth. Really happy with my treatment.\nPaul G.\n★★★★★\nRecently moved to Raleigh, needed a dentist, and Riccobene was recommended. My husband needs a lot of work, so we had to find a proficient practitioner. Well, we found it! From our first appointments, the staff made us feel welcome and totally at ease. Every step is gone over ,and the staff makes sure you understand. They are extremely conscientious regarding cost and insurance. I want to give an A+ to the entire staff, from the doctors to the front desk. I don’t want to do individual shoutouts because I don’t want to leave anyone out! It’s a fabulous team and we highly recommend it !\nDeborah “The debster” Young\n★★★★★\nToday was my first visit here and I absolutely love them! Everyone from the front desk person, hygienist and Dentist are extremely friendly and kind. Jamie was my hygienist and she was amazing. She explained everything she was doing and talked me there every step. She made me feel so comfortable. This will definitely be my new dental office.\nBrittany M.\nOUR OFFICE\n\nWelcome to our Raleigh office! Right off the 440 Interstate, our Raleigh location provides care for patients traveling from the nearby neighborhoods such as Cary, Apex, New Hope, Garner, and more. With our highly advanced technology and an experienced team, we provide the comfort and confidence you need for a healthy, pain-free smile!\n\nOur modern, inviting space is filled with a professional, experienced team that strongly believes that dental care and treatment start with patient comfort. Therefore, we strive for our office and amenities to be designed with our patients’ health and well-being in mind. Situated in a suburban community that blends small-town charm with convenient access to the North Hills Shopping Center, this location is accessible and easy to travel to. Our Raleigh office stands out with its peaceful atmosphere, where patients feel supported and leave motivated to take care of their oral health with ease and comfort.\n\n‍\n\nOffice Amenities\nFree WiFi\nComplimentary Beverages\nFamily-Friendly\nFree Parking\nFlexible Scheduling\nSCHEDULE A VISIT TODAY\nWHY CHOOSE RICCOBENE?\n\nWe believe in the Riccobene Way - a commitment to deliver better dentistry, better experiences and better results with a comprehensive and compassionate approach.\n\nSame-Day Appointments\nUrgent dental needs? We offer same-day or next-day appointments in many locations for emergency care.\nFamily-Friendly\nWe provide gentle, expert dental care for children from their very first tooth through their teenage years.\nState-Of-The-Art\nCutting-edge technology and advanced treatment options bring the best that modern dental innovation has to offer to our offices.\nComprehensive Care\nOur expert provider offers a range of services from preventative, cosmetic, routine dental care and more.\nEmergency Dental Services\n24/7 emergency support when you need immediate dental care.\nOUR COMMITMENT TO EXCELLENCE\n\nWhen you help a lot of people you get to some large numbers that we’re proud of - each satisfied patient is another happy smile.\n\n500,000+\nHappy Smiles\nPatients served with exceptional care\n4.8\nAvg Google Rating\nfrom more than 28,000 reviews\n25\nYears In Business\nTrusted by the local community\nOTHER NEARBY LOCATIONS\n\nCan't make it to our Raleigh office? We have other convenient locations in the area to serve you with the same exceptional dental care.\n\nRaleigh Falls\n4400 Falls Of Neuse Rd #202, Raleigh, NC 27609\n919-872-1000\nEmergency\nGeneral\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nCary West\n1203 NW Maynard Rd #1A, Cary, NC 27513\n919-858-0088\nCosmetic\nImplants\nSedation\nOrthodontic\nEndodontic\nBOOK NOW\nVIEW DETAILS\nWakefield\n13251 Falls Of Neuse Rd #141, Raleigh, NC 27614\n919-556-6666\nEmergency\nGeneral\nHygiene\nCosmetic\nImplants\nBOOK NOW\nVIEW DETAILS\nView all Locations\nPAYMENT OPTIONS & MEMBERSHIP PLANS\n\nQuality dental care should be accessible to everyone. We offer flexible payment options, accept most insurance plans, and provide affordable membership plans for uninsured patients, ensuring you get the best dentist in Raleigh NC.\n\nInsurance Accepted\nWe accept most major dental insurance plans\nDelta Dental\nBlue Cross Blue Shield\nAetna\nCigna\nMetlife\nUnited Heathcare\nFlexible Financing\nMultiple payment options to fit your budget\nSunbit\n0% Interest Plans\nMonthly Payment Plans\nHSA/FSA Accepted\nMembership Plans\nAffordable care for uninsured patients\nAnnual Cleanings\nX-rays Included\n10% Off Treatments\nNo Insurance Required\nAFFORDABLE MEMBERSHIP PLANS\n\nSave money on dental care with our affordable annual membership plans. No insurance? No problem! Get the care you need at a price you can afford.\n\nAdult Preventative Plan\n$39\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nADULT PREVENTATIVE PLAN\nChild Preventative Plan\n$36\n/month\n1 Preventative cleaning every 6 months\nFluoride treatment with cleaning\nRegular exam with cleaning\nOral cancer screening with exam\n1 Routine set of X-rays per year\n1 Emergency exam with X-ray per year\nUp to 10% off additional treatment\nCHILD PREVENTATIVE PLAN\nFREQUENTLY ASKED QUESTIONS\nWhat services are offered at the Raleigh, NC, Raleigh dental office?\n\nWe provide all the necessary dental services such as routine cleanings and exams, fillings, pediatric dental procedures, gum contouring, fluoride treatment, and so much more!\n\nHow do I schedule an appointment in Raleigh, NC?\n\nTo schedule a visit, feel free to call us or book an appointment online to get you in as soon as possible! We look forward to treating you and providing you with the comfort and care you deserve!\n\nDoes the Raleigh location provide orthodontic treatment like Invisalign®?\n\nYes! We have an amazing team of professionals ready to help you with your Invisalign needs to discreetly straighten your teeth for a brighter, natural smile.\n\nCan I get same-day emergency dental treatment in Raleigh, NC?\n\nYes. At our office, we recognize that emergencies happen and offer care in times of need. We will do our very best to get you in as soon as possible, ideally the same or next day if you contact us outside of operating hours. If we can’t see you at our Six Forks location, we will redirect you to our other nearby offices that may be able to accommodate short notice, after-hours, or weekend visits for emergencies. We won’t leave you in pain and will do what it takes to care for you!\n\nWhat cosmetic dental services are offered in Raleigh?\n\nWe understand the impact a confident smile has on our patients' lives, and therefore, we offer cosmetic services that include whitening, veneers, and Invisalign®.\n\nIs wisdom teeth removal available at the Raleigh office?\n\nYes. Our expert team can remove your wisdom teeth before or after they come in. We prioritize your comfort throughout the process and make sure the removal process is painless and relaxing.\n\nWhere is the Raleigh, NC, office located, and when is it open?\n\nOur office Hours are Monday-Thursday: 8:00 AM – 4:00 PM, Friday: 8:00 AM – 2:00 PM. We are closed on Saturday and Sunday. Our Raleigh office is located at 3614 Haworth Dr, Raleigh, NC 27609. We look forward to seeing you!\n\nDo you accept insurance or offer membership plans in Raleigh, NC?\n\nWe accept and participate with a large majority of insurance plans. Before any treatment, our team will perform a complimentary benefits evaluation to let you know what your insurance covers. We also offer flexible payment options and an affordable dental membership plan for patients without insurance.\n\nWhat technology or comfort options are available for patient care?\n\nWe use Digital X-rays, which have small sensors and X-ray film tabs, and can provide two types of images: intraoral, for inside the mouth, and extraoral, for outside the mouth. Bitewing X-rays are the most commonly used intraoral X-rays; for extraoral X-rays, the panoramic X-ray is the most common. \n\nWhat sedation options are available for anxious patients in Raleigh, NC?\n\nWe offer a variety of sedation dentistry options. You can choose from Nitrous Oxide, IV Sedation, and Local Anesthesia.\n\nREADY TO SCHEDULE? CONTACT US\n\nTake the first step towards optimal oral health. Contact our Raleigh office to schedule your appointment or ask any questions about our dental services.\n\nSend us a Message\nFill out the form below and we'll get back to you within 24 hours.\nFirst Name*\nLast Name*\nEmail*\nPhone*\nHow Can We Help?\nI have dental insurance and would like to verify my benefits\nI prefer a phone call instead of email\nThis is a dental emergency\nGet in Touch\n\nFill out the form below and we'll get back to you within 24 hours.\n\nVisit Our Office\n3614 Haworth Dr, Raleigh, NC 27609\nCall Us\n919-834-4450\nEmergency line available 24/7\nEmail Us\nnorthhillspc@brushandfloss.com\nOffice Hours\nMonday: 8:00 AM - 4:00 PM\nTuesday: 8:00 AM - 4:00 PM\nWednesday: 8:00 AM - 4:00 PM\nThursday: 8:00 AM - 4:00 PM\nFriday: 8:00 AM - 2:00 PM\nBOOK APPOINTMENT ONLINE\nCALL FOR EMERGENCY\nLOCATIONS\nSERVICES\nWHAT TO EXPECT\nJOIN OUR TEAM\nPARTNER WITH US\nCONTACT US\nHIPAA\nPRIVACY POLICY\nSEARCH",
+  "wordCount": 2032
+}

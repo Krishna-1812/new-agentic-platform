@@ -1,0 +1,12 @@
+{
+  "module_id": "article-enhancement",
+  "label": "Enhance Existing Article",
+  "description": "Crawls an existing article, runs multi-LLM analysis across 5 SEO/GEO/E-E-A-T dimensions, performs SERP competitor research, and returns an enhanced HTML article with new content highlighted.",
+  "required_kbs": [
+    "best-practices/seo-geo-article-enhancement-knowledge-base"
+  ],
+  "optional_kbs": [],
+  "output_format": "enhanced-html-article",
+  "client_scope": "none",
+  "active": true
+}

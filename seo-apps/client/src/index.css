@@ -1,0 +1,265 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Ledger × Signal Design Tokens ── */
+:root {
+  /* Surfaces */
+  --bg:           #FFFFFF;
+  --surface:      #F6F9FC;
+  --surface-2:    #FBFCFE;
+  --card:         #FFFFFF;
+
+  /* Navigation (premium navy) */
+  --nav-bg-top:   #0A2540;
+  --nav-bg-bot:   #0E2F52;
+  --nav-text:     #C7D2E0;
+  --nav-text-active: #FFFFFF;
+  --nav-active-bg: rgba(99,91,255,0.18);
+  --nav-active-bar: #635BFF;
+
+  /* Lines */
+  --border:       #E6EBF3;
+  --border-strong:#D4DEEA;
+
+  /* Text */
+  --text:         #0A2540;
+  --text-2:       #425466;
+  --text-3:       #8792A2;
+  --text-on-primary: #FFFFFF;
+
+  /* Brand */
+  --primary:        #635BFF;
+  --primary-hover:  #5249E0;
+  --primary-press:  #4A41C9;
+  --primary-soft:   #EEF0FF;
+  --primary-text:   #4A41C9;
+  --accent:         #00B3A4;
+  --focus-ring:     rgba(99,91,255,0.40);
+
+  /* Status */
+  --success:      #1FA871;  --success-soft: #E3F7EF;
+  --warning:      #B7791F;  --warning-soft: #FFF7E6;
+  --danger:       #DE350B;  --danger-soft:  #FDEBE7;
+  --info:         #0073E6;  --info-soft:    #E6F0FB;
+
+  /* Enhancement change types — the highlight legend in Enhance Existing Article.
+     Groups mirror CHANGE_GROUPS in server/routes/articleEnhancement.js. The soft
+     token is the highlight fill, the solid one the text/swatch border. */
+  --chg-evidence:  #0073E6;  --chg-evidence-soft:  #D6E8FA;
+  --chg-structure: #B7791F;  --chg-structure-soft: #FCEBCB;
+  --chg-clarity:   #7C3AED;  --chg-clarity-soft:   #EADDFD;
+  --chg-section:   #1FA871;  --chg-section-soft:   #D4F3E5;
+
+  /* Data-viz ramp */
+  --viz-1:#635BFF; --viz-2:#00B3A4; --viz-3:#0073E6;
+  --viz-4:#B7791F; --viz-5:#DE350B; --viz-6:#8792A2;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Radius */
+  --r-sm: 6px;  --r-md: 8px;  --r-lg: 12px;  --r-xl: 16px;  --r-pill: 999px;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(10,37,64,0.06), 0 1px 3px rgba(10,37,64,0.04);
+  --shadow-md: 0 4px 12px rgba(10,37,64,0.08), 0 2px 4px rgba(10,37,64,0.05);
+  --shadow-lg: 0 12px 32px rgba(10,37,64,0.12);
+  --shadow-focus: 0 0 0 3px var(--focus-ring);
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --dur-fast: 120ms;  --dur: 160ms;  --dur-slow: 240ms;
+
+  /* Legacy aliases – keeps old inline-style references working */
+  --wallpaper:    var(--bg);
+  --glass:        var(--card);
+  --glass-border: var(--border);
+  --titlebar:     var(--card);
+  --sidebar:      var(--nav-bg-top);
+  --card-hover:   var(--surface);
+  --tag-bg:       var(--primary-soft);
+  --input-bg:     var(--card);
+  --input-border: var(--border-strong);
+  --scrollbar-thumb: var(--border-strong);
+  /* Old accent → new primary */
+  --accent-soft:  var(--primary-soft);
+  --accent-text:  var(--primary-text);
+  --dk-surface:   var(--card);
+  --dk-surface-2: var(--surface);
+  --dk-surface-3: var(--surface-2);
+  --dk-border:    var(--border);
+}
+
+[data-theme='dark'] {
+  --bg:           #0A1628;
+  --surface:      #111E33;
+  --surface-2:    #0E1A2D;
+  --card:         #13203A;
+
+  --nav-bg-top:   #060F1E;
+  --nav-bg-bot:   #0A1628;
+  --nav-text:     #9BB0C9;
+  --nav-text-active: #FFFFFF;
+  --nav-active-bg: rgba(139,133,255,0.20);
+  --nav-active-bar: #8B85FF;
+
+  --border:       rgba(255,255,255,0.09);
+  --border-strong:rgba(255,255,255,0.16);
+
+  --text:         #EAF0F8;
+  --text-2:       #9BB0C9;
+  --text-3:       #62758F;
+  --text-on-primary: #FFFFFF;
+
+  --primary:        #8B85FF;
+  --primary-hover:  #9D98FF;
+  --primary-press:  #7A73FF;
+  --primary-soft:   rgba(139,133,255,0.14);
+  --primary-text:   #B3AEFF;
+  --accent:         #2DD4C4;
+  --focus-ring:     rgba(139,133,255,0.45);
+
+  --success:#34D399; --success-soft:rgba(52,211,153,0.15);
+  --warning:#FBBF55; --warning-soft:rgba(251,191,85,0.15);
+  --danger: #F87171; --danger-soft: rgba(248,113,113,0.15);
+  --info:   #5AA9FF; --info-soft:   rgba(90,169,255,0.15);
+
+  --chg-evidence:  #5AA9FF; --chg-evidence-soft:  rgba(90,169,255,0.20);
+  --chg-structure: #FBBF55; --chg-structure-soft: rgba(251,191,85,0.20);
+  --chg-clarity:   #C4A6FF; --chg-clarity-soft:   rgba(196,166,255,0.22);
+  --chg-section:   #34D399; --chg-section-soft:   rgba(52,211,153,0.20);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.40);
+  --shadow-md: 0 4px 14px rgba(0,0,0,0.45);
+  --shadow-lg: 0 16px 40px rgba(0,0,0,0.55);
+
+  /* Legacy aliases */
+  --wallpaper:    var(--bg);
+  --glass:        var(--card);
+  --glass-border: var(--border);
+  --titlebar:     var(--card);
+  --sidebar:      var(--nav-bg-top);
+  --card-hover:   var(--surface);
+  --tag-bg:       var(--primary-soft);
+  --input-bg:     var(--surface);
+  --input-border: var(--border-strong);
+  --scrollbar-thumb: var(--border-strong);
+  --accent-soft:  var(--primary-soft);
+  --accent-text:  var(--primary-text);
+  --dk-surface:   var(--card);
+  --dk-surface-2: var(--surface);
+  --dk-surface-3: var(--surface-2);
+  --dk-border:    var(--border);
+}
+
+/* ── Base ── */
+@layer base {
+  html { height: 100%; }
+  body {
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 3px solid var(--bg);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+/* ── Table utility ── */
+@layer utilities {
+  .results-table td { vertical-align: top; }
+}
+
+/* ── Embedded mode ── */
+html.embedded header { display: none !important; }
+html.embedded main  { padding-top: 0 !important; }
+
+/* ── Dark mode: surface/border/text overrides for old Tailwind classes ── */
+[data-theme='dark'] .bg-white,
+[data-theme='dark'] .bg-white\/80,
+[data-theme='dark'] .bg-white\/90,
+[data-theme='dark'] .bg-white\/66 {
+  background-color: var(--card) !important;
+}
+[data-theme='dark'] .bg-gray-50,
+[data-theme='dark'] .bg-\[\#F4F5F7\],
+[data-theme='dark'] .bg-\[\#F9FAFB\],
+[data-theme='dark'] .bg-\[\#F6F9FC\] {
+  background-color: var(--surface) !important;
+}
+[data-theme='dark'] .bg-gray-100,
+[data-theme='dark'] .bg-\[\#F3F4F6\] {
+  background-color: var(--surface-2) !important;
+}
+[data-theme='dark'] .border-\[\#E5E7EB\],
+[data-theme='dark'] .border-\[\#E6EBF3\],
+[data-theme='dark'] .border-gray-50,
+[data-theme='dark'] .border-gray-100,
+[data-theme='dark'] .border-gray-200 {
+  border-color: var(--border) !important;
+}
+[data-theme='dark'] .divide-gray-100 > * + *,
+[data-theme='dark'] .divide-gray-200 > * + * {
+  border-color: var(--border) !important;
+}
+[data-theme='dark'] .text-\[\#111827\],
+[data-theme='dark'] .text-\[\#0A2540\],
+[data-theme='dark'] .text-gray-900,
+[data-theme='dark'] .text-gray-800 {
+  color: var(--text) !important;
+}
+[data-theme='dark'] .text-gray-700,
+[data-theme='dark'] .text-\[\#374151\],
+[data-theme='dark'] .text-\[\#425466\] {
+  color: var(--text-2) !important;
+}
+[data-theme='dark'] .text-gray-600,
+[data-theme='dark'] .text-gray-500,
+[data-theme='dark'] .text-\[\#6B7280\] {
+  color: var(--text-2) !important;
+}
+[data-theme='dark'] .text-gray-400,
+[data-theme='dark'] .text-\[\#9CA3AF\],
+[data-theme='dark'] .text-\[\#8792A2\] {
+  color: var(--text-3) !important;
+}
+[data-theme='dark'] input:not([type='checkbox']):not([type='radio']):not([type='range']),
+[data-theme='dark'] textarea,
+[data-theme='dark'] select {
+  background-color: var(--surface) !important;
+  color: var(--text) !important;
+  border-color: var(--border-strong) !important;
+}
+[data-theme='dark'] input::placeholder,
+[data-theme='dark'] textarea::placeholder {
+  color: var(--text-3) !important;
+}
+[data-theme='dark'] select option {
+  background-color: var(--card);
+  color: var(--text);
+}
+[data-theme='dark'] .bg-red-50   { background-color: var(--danger-soft)  !important; }
+[data-theme='dark'] .bg-yellow-50,
+[data-theme='dark'] .bg-amber-50  { background-color: var(--warning-soft) !important; }
+[data-theme='dark'] .bg-blue-50   { background-color: var(--info-soft)    !important; }
+[data-theme='dark'] .bg-green-50  { background-color: var(--success-soft) !important; }
+[data-theme='dark'] .hover\:bg-gray-50:hover  { background-color: var(--surface)   !important; }
+[data-theme='dark'] .hover\:bg-gray-100:hover { background-color: var(--surface-2) !important; }
