@@ -317,9 +317,16 @@ stray `.pyc` files have previously let a reverted fix keep passing.
 
 ## Deploy
 
-Railway, auto-deploy on push to `main` (NIXPACKS builder, gunicorn, see `railway.toml` /
-`Procfile`). `nixpacks.toml` additionally installs `ffmpeg` for Social Media Intelligence's
-video-frame extraction.
+Railway, auto-deploy on push to `main` (Railpack builder, gunicorn, see `railway.toml` /
+`Procfile`). `railpack.json` additionally installs `ffmpeg` for Social Media Intelligence's
+video-frame extraction; `.python-version` pins Python 3.11.
+
+The `Procfile` lists only `web`: Railway creates one service per Procfile entry, and the Event &
+Conference Intelligence worker is not deployed by default. Without it, that tool's runs stay
+queued. To run it, add a second service from this repo with the start command
+`python -m tracker.event_intel_jobs`, the same variables as `web` (including `DATABASE_URL`), and
+no HTTP health check -- `railway.toml`'s gunicorn start command and `/health` check are for the
+web service and must not be inherited by the worker.
 
 **Frontend auto-build**: when `apps/ad-intelligence/**` changes on `main`,
 `.github/workflows/build-frontend.yml` builds the React app on a clean Node 22 runner, copies
