@@ -32,10 +32,10 @@ function StudioGate({ children }) {
   if (state === 'denied') {
     return (
       <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24,
-                    fontFamily: 'Inter, system-ui, sans-serif', color: '#e2e8f0', background: '#0A1628' }}>
+                    fontFamily: 'var(--font-sans)', color: 'var(--text)', background: 'var(--bg)' }}>
         <div style={{ maxWidth: 420, textAlign: 'center' }}>
           <h1 style={{ fontSize: 22, fontWeight: 600, margin: '0 0 12px' }}>Open SEO Studio from Northaxis</h1>
-          <p style={{ fontSize: 15, lineHeight: 1.6, color: '#94a3b8', margin: 0 }}>
+          <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--text-2)', margin: 0 }}>
             These tools run inside the Northaxis platform. Sign in there and open
             SEO + AEO. If you were already using it, your session expired: reload that page.
           </p>

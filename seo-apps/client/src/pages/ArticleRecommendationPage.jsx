@@ -120,14 +120,14 @@ function BriefRenderer({ markdown }) {
         <div key={i} style={{
           margin: '12px 0 12px 12px', display: 'flex', gap: 12,
           padding: '12px 16px', borderRadius: 8,
-          border: '1px solid #FDE68A', backgroundColor: '#FFFBEB',
+          border: '1px solid #FFE9BF', backgroundColor: '#FFE4D8',
         }}>
           <span style={{ fontSize: '1rem', flexShrink: 0, marginTop: 2 }}>💡</span>
           <div>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#D97706' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#8A5A00' }}>
               Visual Opportunity
             </span>
-            <p style={{ fontSize: '0.875rem', marginTop: 2, lineHeight: 1.6, color: '#92400E' }}>{desc}</p>
+            <p style={{ fontSize: '0.875rem', marginTop: 2, lineHeight: 1.6, color: '#8A5A00' }}>{desc}</p>
           </div>
         </div>
       );
@@ -418,12 +418,12 @@ export default function ArticleRecommendationPage() {
       {/* ── Error ────────────────────────────────────────────────────── */}
       {error && (
         <div style={{
-          padding: 16, background: '#FEF2F2', border: '1px solid #FECACA',
+          padding: 16, background: '#FFE1DE', border: '1px solid #FFC2BC',
           borderRadius: 'var(--r-lg)', display: 'flex', alignItems: 'flex-start', gap: 12,
         }}>
-          <span style={{ color: '#EF4444', marginTop: 2, flexShrink: 0 }}>✕</span>
+          <span style={{ color: '#C8261B', marginTop: 2, flexShrink: 0 }}>✕</span>
           <div style={{ flex: 1 }}>
-            <p style={{ color: '#991B1B', fontSize: '0.875rem', fontWeight: 500, margin: 0 }}>{error}</p>
+            <p style={{ color: '#8C1610', fontSize: '0.875rem', fontWeight: 500, margin: 0 }}>{error}</p>
           </div>
           <button
             onClick={startGeneration}
@@ -444,11 +444,11 @@ export default function ArticleRecommendationPage() {
       {/* ── Warning ──────────────────────────────────────────────────── */}
       {warning && (
         <div style={{
-          padding: 16, background: '#FFFBEB', border: '1px solid #FDE68A',
+          padding: 16, background: '#FFE4D8', border: '1px solid #FFE9BF',
           borderRadius: 'var(--r-lg)', display: 'flex', alignItems: 'flex-start', gap: 8,
         }}>
-          <span style={{ color: '#D97706', marginTop: 2, flexShrink: 0 }}>⚠</span>
-          <p style={{ fontSize: '0.875rem', color: '#92400E', margin: 0 }}>{warning}</p>
+          <span style={{ color: '#8A5A00', marginTop: 2, flexShrink: 0 }}>⚠</span>
+          <p style={{ fontSize: '0.875rem', color: '#8A5A00', margin: 0 }}>{warning}</p>
         </div>
       )}
 
@@ -540,7 +540,7 @@ export default function ArticleRecommendationPage() {
                         {p.status === 'done' ? (
                           <span style={{ color: 'var(--success)', fontWeight: 700, flexShrink: 0 }}>✓</span>
                         ) : p.status === 'error' ? (
-                          <span style={{ color: '#F87171', flexShrink: 0 }}>✕</span>
+                          <span style={{ color: '#FF3B30', flexShrink: 0 }}>✕</span>
                         ) : (
                           <svg style={{ width: 12, height: 12, flexShrink: 0, color: 'var(--primary)', animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none">
                             <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
@@ -549,7 +549,7 @@ export default function ArticleRecommendationPage() {
                         )}
                         <span style={{
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                          color: p.status === 'error' ? '#F87171' : 'var(--text-2)',
+                          color: p.status === 'error' ? '#FF3B30' : 'var(--text-2)',
                         }}>
                           {(() => { try { return new URL(p.url).hostname; } catch { return p.url; } })()}
                         </span>

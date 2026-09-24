@@ -72,7 +72,7 @@ function DonutChart({ segments, size = 80 }) {
 
 const WORK_TYPE_COLORS = {
   'Recurring': 'var(--primary)',
-  'Adhoc':     '#6366F1',
+  'Adhoc':     '#1D65A6',
   'Pitch':     'var(--warning)',
 };
 

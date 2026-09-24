@@ -268,12 +268,12 @@ export default function MacWindow() {
         {/* ── Body: sidebar + content ── */}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
 
-          {/* ── Sidebar (navy gradient) ── */}
+          {/* ── Sidebar (paper, matches the rest of the platform) ── */}
           <div style={{
             width: 248,
             flexShrink: 0,
-            background: 'linear-gradient(180deg, var(--nav-bg-top) 0%, var(--nav-bg-bot) 100%)',
-            borderRight: '1px solid rgba(255,255,255,0.06)',
+            background: 'var(--card)',
+            borderRight: '1px solid var(--border)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -289,12 +289,12 @@ export default function MacWindow() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 7,
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
                 borderRadius: 8,
                 padding: '6px 10px',
               }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(199,210,224,0.7)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="8" />
                   <path d="m21 21-4.35-4.35" />
                 </svg>
@@ -307,7 +307,7 @@ export default function MacWindow() {
                     border: 'none',
                     outline: 'none',
                     fontSize: 12,
-                    color: 'var(--nav-text-active)',
+                    color: 'var(--text)',
                     width: '100%',
                   }}
                 />
@@ -325,7 +325,7 @@ export default function MacWindow() {
                     fontWeight: 600,
                     textTransform: 'uppercase',
                     letterSpacing: '0.12em',
-                    color: 'rgba(255,255,255,0.40)',
+                    color: 'var(--text-3)',
                     padding: '4px 10px 6px',
                   }}>
                     {group.label}
@@ -382,11 +382,11 @@ function SidebarItem({ tool, icon, isActive, onClick }) {
         cursor: 'pointer',
         fontSize: 13,
         fontWeight: isActive ? 600 : 400,
-        color: isActive ? 'var(--nav-text-active)' : hovered ? '#e8edf5' : 'var(--nav-text)',
+        color: isActive ? 'var(--primary-text)' : hovered ? 'var(--text)' : 'var(--text-2)',
         background: isActive
-          ? 'var(--nav-active-bg)'
+          ? 'var(--primary-soft)'
           : hovered
-          ? 'rgba(255,255,255,0.06)'
+          ? 'var(--surface-2)'
           : 'transparent',
         transition: 'background 0.12s var(--ease), color 0.12s var(--ease)',
         marginBottom: 1,
@@ -404,7 +404,7 @@ function SidebarItem({ tool, icon, isActive, onClick }) {
           transform: 'translateY(-50%)',
           width: 2,
           height: 16,
-          background: 'var(--nav-active-bar)',
+          background: 'var(--primary)',
           borderRadius: '0 2px 2px 0',
         }} />
       )}

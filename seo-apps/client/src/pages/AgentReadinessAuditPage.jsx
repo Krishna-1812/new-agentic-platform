@@ -135,7 +135,7 @@ function CodeSnippet({ code }) {
     });
   };
   return (
-    <div style={{ position: 'relative', marginTop: 10, background: '#1E1E2E', borderRadius: 8, padding: '12px 14px' }}>
+    <div style={{ position: 'relative', marginTop: 10, background: '#121213', borderRadius: 8, padding: '12px 14px' }}>
       <button
         type="button"
         onClick={copy}

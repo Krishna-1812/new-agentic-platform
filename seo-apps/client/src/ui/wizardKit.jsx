@@ -121,7 +121,7 @@ export function CharCount({ value, min, max }) {
   return (
     <span style={{
       fontSize: '0.6875rem', fontWeight: 600,
-      color: n === 0 ? 'var(--text-3)' : ok ? 'var(--success,#16A34A)' : 'var(--warning,#B45309)',
+      color: n === 0 ? 'var(--text-3)' : ok ? 'var(--success,#17753F)' : 'var(--warning,#B83C0C)',
     }}>
       {n}/{min}-{max}
     </span>
@@ -132,10 +132,10 @@ export function CharCount({ value, min, max }) {
 // edited it. A heading the reviewer typed has no source and shows nothing,
 // rather than borrowing a neighbour's tag.
 const SOURCE_LABELS = {
-  competitor: { label: 'from competitors', bg: 'var(--info-soft,#EFF6FF)', fg: 'var(--info,#2563EB)' },
+  competitor: { label: 'from competitors', bg: 'var(--info-soft,#E2F1FF)', fg: 'var(--info,#1D65A6)' },
   blend: { label: 'blended', bg: 'var(--primary-soft)', fg: 'var(--primary)' },
   fallback: { label: 'standard', bg: 'var(--surface)', fg: 'var(--text-3)' },
-  brand: { label: 'closing block', bg: 'var(--success-soft,#F0FDF4)', fg: 'var(--success,#16A34A)' },
+  brand: { label: 'closing block', bg: 'var(--success-soft,#E9F5ED)', fg: 'var(--success,#17753F)' },
 };
 
 // `labels` lets a caller override the vocabulary. The same `fallback` key means

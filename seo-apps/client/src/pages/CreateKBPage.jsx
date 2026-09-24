@@ -131,7 +131,7 @@ export default function CreateKBPage() {
           {error && (
             <div style={{
               marginBottom: '1rem', padding: '0.75rem 1rem',
-              background: 'var(--danger-soft, #FEF2F2)', border: '1px solid var(--danger-border, #FECACA)',
+              background: 'var(--danger-soft, #FFE1DE)', border: '1px solid var(--danger-border, #FFC2BC)',
               borderRadius: 'var(--r-lg)', fontSize: '0.875rem', color: 'var(--danger)',
             }}>{error}</div>
           )}

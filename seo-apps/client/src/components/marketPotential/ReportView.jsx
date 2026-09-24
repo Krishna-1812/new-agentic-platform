@@ -15,7 +15,7 @@ function monthLabel(ym) {
   return `${names[(m || 1) - 1]} ${y}`;
 }
 
-const cell = { padding: '5px 8px', fontSize: 10.5, borderBottom: '1px solid #E6EBF3', textAlign: 'left', color: '#0A2540' };
+const cell = { padding: '5px 8px', fontSize: 10.5, borderBottom: '1px solid #E0DCD6', textAlign: 'left', color: '#121213' };
 const cellR = { ...cell, textAlign: 'right' };
 
 export default function ReportView({ result, scoredRows, weights, assumptions, summary, homeName }) {
@@ -31,25 +31,25 @@ export default function ReportView({ result, scoredRows, weights, assumptions, s
   }).join(' · ');
 
   return (
-    <div className="mp-report" style={{ background: '#fff', color: '#0A2540', fontFamily: 'var(--font-sans)', padding: 0 }}>
+    <div className="mp-report" style={{ background: '#fff', color: '#121213', fontFamily: 'var(--font-sans)', padding: 0 }}>
       {/* Title */}
-      <div style={{ borderBottom: '2px solid #635BFF', paddingBottom: 8, marginBottom: 12 }}>
+      <div style={{ borderBottom: '2px solid #FF6022', paddingBottom: 8, marginBottom: 12 }}>
         <div style={{ fontSize: 18, fontWeight: 800 }}>Market Potential — {result.service?.name}</div>
-        <div style={{ fontSize: 11, color: '#425466', marginTop: 2 }}>
+        <div style={{ fontSize: 11, color: '#444444', marginTop: 2 }}>
           Home market: {homeName} · Data month: {monthLabel(result.yearMonth)} · Source: {result.dataSource === 'semrush' ? 'SEMrush (templated method)' : result.dataSource}
         </div>
       </div>
 
       {/* Verdict + summary */}
       <div style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#635BFF' }}>Verdict</div>
+        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#FF6022' }}>Verdict</div>
         {pick ? (
           <div style={{ fontSize: 13, fontWeight: 700, marginTop: 2 }}>
             {pick.region} — Opportunity Score {pick.opportunityScore} ({TIER_META[pick.tier]?.label})
-            <span style={{ fontSize: 11, fontWeight: 400, color: '#425466' }}> · {reasonFor(pick, scoredRows)}.</span>
+            <span style={{ fontSize: 11, fontWeight: 400, color: '#444444' }}> · {reasonFor(pick, scoredRows)}.</span>
           </div>
-        ) : <div style={{ fontSize: 12, color: '#425466' }}>No standout expansion market in this set.</div>}
-        {summary && <p style={{ fontSize: 11, color: '#0A2540', lineHeight: 1.5, margin: '6px 0 0' }}>{summary}</p>}
+        ) : <div style={{ fontSize: 12, color: '#444444' }}>No standout expansion market in this set.</div>}
+        {summary && <p style={{ fontSize: 11, color: '#121213', lineHeight: 1.5, margin: '6px 0 0' }}>{summary}</p>}
       </div>
 
       {/* Quadrant */}
@@ -60,7 +60,7 @@ export default function ReportView({ result, scoredRows, weights, assumptions, s
       {/* Top-5 table */}
       <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 10 }}>
         <thead>
-          <tr style={{ background: '#F6F9FC' }}>
+          <tr style={{ background: '#EBE9E5' }}>
             <th style={cell}>#</th><th style={cell}>Market</th><th style={cellR}>Score</th>
             <th style={cell}>Tier</th><th style={cellR}>Demand Idx</th><th style={cellR}>Searches/mo</th>
             <th style={cellR}>Competitors</th><th style={cellR}>YoY</th>
@@ -83,10 +83,10 @@ export default function ReportView({ result, scoredRows, weights, assumptions, s
       </table>
 
       {/* Assumptions + method */}
-      <div style={{ fontSize: 9.5, color: '#425466', lineHeight: 1.5 }}>
+      <div style={{ fontSize: 9.5, color: '#444444', lineHeight: 1.5 }}>
         <div><b>Score weights:</b> demand {Math.round((w.demand ?? 0) * 100)}% · openness {Math.round((w.competition ?? 0) * 100)}% · growth {Math.round((w.trend ?? 0) * 100)}% · cost {Math.round((w.cost ?? 0) * 100)}%</div>
         <div style={{ marginTop: 2 }}><b>Revenue assumptions (for any $ figures):</b> {assumptionLine}</div>
-        <div style={{ marginTop: 4, color: '#8792A2' }}>
+        <div style={{ marginTop: 4, color: '#6F6B66' }}>
           Relative index of city-tagged searches, home = 100 · Source: SEMrush national database, templated method · Not a market-size estimate.
         </div>
       </div>

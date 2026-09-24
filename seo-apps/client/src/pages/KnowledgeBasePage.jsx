@@ -240,7 +240,7 @@ export default function KnowledgeBasePage() {
                             <td style={{ padding: '0.75rem 1rem' }}>
                               <span style={kb.active ? {
                                 fontSize: '0.75rem', fontWeight: 600, padding: '0.125rem 0.5rem',
-                                borderRadius: '0.25rem', background: 'var(--success-soft, #D1FAE5)', color: 'var(--success, #065F46)',
+                                borderRadius: '0.25rem', background: 'var(--success-soft, #DCEEE2)', color: 'var(--success, #0F4A29)',
                               } : {
                                 fontSize: '0.75rem', fontWeight: 600, padding: '0.125rem 0.5rem',
                                 borderRadius: '0.25rem', background: 'var(--surface)', color: 'var(--text-3)',

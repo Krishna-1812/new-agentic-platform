@@ -139,7 +139,7 @@ function NewPageWizard({ onClose, onCreated, onStartDentalWizard }) {
           </div>
         </div>
         {!data && !error && <p style={{ fontSize: '0.875rem', color: 'var(--text-2)' }}>Loading…</p>}
-        {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger,#EF4444)', marginBottom: '0.75rem' }}>{error}</p>}
+        {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger,#C8261B)', marginBottom: '0.75rem' }}>{error}</p>}
         {data && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div>
@@ -160,8 +160,8 @@ function NewPageWizard({ onClose, onCreated, onStartDentalWizard }) {
             {!isDental && result && (
               <div style={{
                 fontSize: '0.875rem', borderRadius: 'var(--r-md,6px)', padding: '0.75rem',
-                background: result.blocked ? 'var(--danger-soft,#FEF2F2)' : result.existing ? '#FFFBEB' : 'var(--success-soft,#ECFDF5)',
-                color: result.blocked ? 'var(--danger,#EF4444)' : result.existing ? '#B45309' : 'var(--success,#059669)',
+                background: result.blocked ? 'var(--danger-soft,#FFE1DE)' : result.existing ? '#FFE4D8' : 'var(--success-soft,#E9F5ED)',
+                color: result.blocked ? 'var(--danger,#C8261B)' : result.existing ? '#B83C0C' : 'var(--success,#17753F)',
               }}>
                 {result.blocked && <>⛔ Not eligible: {result.eligibility.reason}</>}
                 {result.existing && <>⚠ A page for this tuple already exists. <button style={{ textDecoration: 'underline', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }} onClick={() => onCreated(result.page.id)}>Open it →</button></>}
@@ -247,7 +247,7 @@ export default function LocationPageBuilderPage() {
           </div>
         </div>
 
-        {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger,#EF4444)', marginBottom: '0.75rem' }}>{error}</p>}
+        {error && <p style={{ fontSize: '0.875rem', color: 'var(--danger,#C8261B)', marginBottom: '0.75rem' }}>{error}</p>}
 
         <input
           value={filter}
@@ -293,11 +293,11 @@ export default function LocationPageBuilderPage() {
                   <td style={{ padding: '0.75rem 1rem', color: 'var(--text-2)', fontFamily: 'var(--font-mono)' }}>{(r.primary_keywords || []).join(', ') || '—'}</td>
                   <td style={{ padding: '0.75rem 1rem' }}>
                     {r.qa_blocking == null ? '—' : r.qa_blocking === 0
-                      ? <span style={{ color: 'var(--success,#10B981)' }}>✓ clean</span>
-                      : <span style={{ color: 'var(--danger,#EF4444)' }}>{r.qa_blocking} blocking</span>}
+                      ? <span style={{ color: 'var(--success,#17753F)' }}>✓ clean</span>
+                      : <span style={{ color: 'var(--danger,#C8261B)' }}>{r.qa_blocking} blocking</span>}
                   </td>
                   <td style={{ padding: '0.75rem 1rem', color: 'var(--text-3)', fontSize: '0.75rem' }}>
-                    {isStale(r) && <span style={{ color: '#D97706', marginRight: '0.25rem' }} title="Stalled 7+ days">⏳</span>}
+                    {isStale(r) && <span style={{ color: '#8A5A00', marginRight: '0.25rem' }} title="Stalled 7+ days">⏳</span>}
                     {new Date(r.updated_at).toLocaleDateString()}
                   </td>
                 </tr>

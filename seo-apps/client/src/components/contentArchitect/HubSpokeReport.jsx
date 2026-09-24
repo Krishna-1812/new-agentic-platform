@@ -224,7 +224,7 @@ function InlineKeywordResearch({ topic, client, navigate }) {
                 <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Approve up to {MAX_APPROVED} primary keywords for now</span>
                 <span style={{
                   fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 99,
-                  background: approved.size === MAX_APPROVED ? 'var(--success-soft)' : 'var(--danger-soft, #FEF2F2)',
+                  background: approved.size === MAX_APPROVED ? 'var(--success-soft)' : 'var(--danger-soft, #FFE1DE)',
                   color: approved.size === MAX_APPROVED ? 'var(--success)' : 'var(--danger)',
                 }}>
                   {approved.size} / {MAX_APPROVED} selected

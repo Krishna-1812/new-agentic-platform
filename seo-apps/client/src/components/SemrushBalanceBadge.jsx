@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { subscribeSemrushBalance, refreshSemrushBalance } from '../lib/semrushBalanceStore';
 
-// Styled for the navy sidebar (matches the search box treatment just below
-// it), not the light card-based `Badge` used in page content.
+// Styled for the light paper sidebar, matching the search box treatment
+// just below it.
 export default function SemrushBalanceBadge() {
   const [state, setState] = useState({ balance: null, loading: false, error: null });
 
@@ -22,19 +22,19 @@ export default function SemrushBalanceBadge() {
       alignItems: 'baseline',
       justifyContent: 'center',
       gap: 5,
-      background: 'rgba(255,255,255,0.08)',
-      border: '1px solid rgba(255,255,255,0.12)',
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
       borderRadius: 8,
       padding: '6px 10px',
       fontSize: 11,
       fontFamily: 'var(--font-mono)',
       whiteSpace: 'nowrap',
     }}>
-      <span style={{ color: '#ff642d', fontWeight: 600 }}>Semrush</span>
-      <span style={{ fontWeight: 600, color: 'var(--nav-text-active)' }}>
+      <span style={{ color: 'var(--primary)', fontWeight: 600 }}>Semrush</span>
+      <span style={{ fontWeight: 600, color: 'var(--text)' }}>
         {state.balance.toLocaleString()}
       </span>
-      <span style={{ color: 'rgba(199,210,224,0.60)' }}>units</span>
+      <span style={{ color: 'var(--text-3)' }}>units</span>
     </div>
   );
 }

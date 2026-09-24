@@ -4,10 +4,10 @@
 // `label` is the full text (cards, which have room); `short` is the compact
 // form used in the width-constrained sidebar so tool names aren't over-truncated.
 export const TAGS = {
-  beta:     { label: 'Beta',             short: 'Beta',     bg: 'rgba(59,130,246,0.20)',  fg: '#60a5fa' },
-  internal: { label: 'Internal Only',    short: 'Internal', bg: 'rgba(245,158,11,0.20)',  fg: '#fbbf24' },
-  testing:  { label: 'Internal Testing', short: 'Testing',  bg: 'rgba(168,85,247,0.22)',  fg: '#c084fc' },
-  soon:     { label: 'Coming Soon',      short: 'Soon',     bg: 'rgba(148,163,184,0.22)', fg: '#cbd5e1' },
+  beta:     { label: 'Beta',             short: 'Beta',     bg: '#E2F1FF', fg: '#1D65A6' },
+  internal: { label: 'Internal Only',    short: 'Internal', bg: '#FFE4D8', fg: '#B83C0C' },
+  testing:  { label: 'Internal Testing', short: 'Testing',  bg: '#EFE3F9', fg: '#6B3FA0' },
+  soon:     { label: 'Coming Soon',      short: 'Soon',     bg: '#EBE9E5', fg: '#6F6B66' },
 };
 
 export const TOOL_GROUPS = [

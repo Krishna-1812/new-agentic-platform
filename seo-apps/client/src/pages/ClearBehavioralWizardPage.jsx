@@ -27,8 +27,8 @@ const GROUP_LABELS = [
 // This contract's own vocabulary for where a section came from. `fallback` here
 // means "written from a named clinical authority", not "standard".
 const CBH_SOURCE_LABELS = {
-  competitor: { label: 'from competitors', bg: 'var(--info-soft,#EFF6FF)', fg: 'var(--info,#2563EB)' },
-  fallback: { label: 'from source', bg: 'var(--success-soft,#F0FDF4)', fg: 'var(--success,#16A34A)' },
+  competitor: { label: 'from competitors', bg: 'var(--info-soft,#E2F1FF)', fg: 'var(--info,#1D65A6)' },
+  fallback: { label: 'from source', bg: 'var(--success-soft,#E9F5ED)', fg: 'var(--success,#17753F)' },
 };
 
 const MAX_PRIMARY = 2;
@@ -47,7 +47,7 @@ function Count({ value, min, max }) {
   return (
     <span style={{
       fontSize: '0.6875rem', fontWeight: 600, whiteSpace: 'nowrap',
-      color: n === 0 ? 'var(--text-3)' : ok ? 'var(--success,#16A34A)' : 'var(--warning,#B45309)',
+      color: n === 0 ? 'var(--text-3)' : ok ? 'var(--success,#17753F)' : 'var(--warning,#B83C0C)',
     }}>{n}/{min ? `${min}-${max}` : max}</span>
   );
 }
@@ -635,7 +635,7 @@ export default function ClearBehavioralWizardPage() {
       <div style={{ marginBottom: '1.5rem' }}><ProgressSteps steps={progressSteps} /></div>
 
       {loadError && (
-        <div style={{ padding: '0.75rem 1rem', borderRadius: 'var(--r-lg)', background: 'var(--danger-soft,#FEF2F2)', color: 'var(--danger,#EF4444)', fontSize: '0.8125rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+        <div style={{ padding: '0.75rem 1rem', borderRadius: 'var(--r-lg)', background: 'var(--danger-soft,#FFE1DE)', color: 'var(--danger,#C8261B)', fontSize: '0.8125rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
           <span>{loadError}</span>
           <button style={btnStyle(true)} disabled={seeding} onClick={syncList}>{seeding ? 'Syncing…' : 'Sync list'}</button>
         </div>
@@ -706,8 +706,8 @@ export default function ClearBehavioralWizardPage() {
                   </span>
                   <span style={{
                     fontSize: '0.6875rem', fontWeight: 700, padding: '1px 6px', borderRadius: '9999px', whiteSpace: 'nowrap',
-                    background: pg.verdict === 'PASS' ? 'var(--success-soft,#F0FDF4)' : 'var(--warning-soft,#FFFBEB)',
-                    color: pg.verdict === 'PASS' ? 'var(--success,#16A34A)' : 'var(--warning,#B45309)',
+                    background: pg.verdict === 'PASS' ? 'var(--success-soft,#E9F5ED)' : 'var(--warning-soft,#FFE4D8)',
+                    color: pg.verdict === 'PASS' ? 'var(--success,#17753F)' : 'var(--warning,#B83C0C)',
                   }}>{pg.verdict || '—'}</span>
                 </button>
                 <button
@@ -718,7 +718,7 @@ export default function ClearBehavioralWizardPage() {
                   onClick={() => deleteSavedPage(pg)}
                   style={{
                     padding: '0.25rem 0.625rem', fontSize: '0.8125rem', fontWeight: 600, whiteSpace: 'nowrap',
-                    color: 'var(--danger,#EF4444)', background: 'var(--surface)',
+                    color: 'var(--danger,#C8261B)', background: 'var(--surface)',
                     border: '1px solid var(--border)', borderRadius: 'var(--r-md,6px)',
                     cursor: deletingId ? 'default' : 'pointer',
                   }}
@@ -738,7 +738,7 @@ export default function ClearBehavioralWizardPage() {
           note={service && location ? `${service.name} in ${location.city}` : ''}
           actions={<button style={btnStyle(false)} disabled={kwLoading} onClick={runKeywordResearch}>{kwLoading ? 'Researching…' : 'Re-run research'}</button>}
         >
-          {kwError && <p style={{ color: 'var(--danger,#EF4444)', fontSize: '0.8125rem' }}>{kwError}</p>}
+          {kwError && <p style={{ color: 'var(--danger,#C8261B)', fontSize: '0.8125rem' }}>{kwError}</p>}
           {kwLoading && <p style={{ color: 'var(--text-2)', fontSize: '0.8125rem' }}>Pulling competitor keyword data…</p>}
 
           {/* A synthesized Primary is a keyword nothing in the research
@@ -749,7 +749,7 @@ export default function ClearBehavioralWizardPage() {
             if (!synth.length && !kwReviewFailures.length) return null;
             const all = synth.length === primaryList.length;
             return (
-              <div style={{ background: 'var(--warning-soft,#FFFBEB)', color: 'var(--warning,#B45309)', padding: '0.875rem 1rem', borderRadius: 'var(--r-lg)', fontSize: '0.8125rem', marginBottom: '0.75rem' }}>
+              <div style={{ background: 'var(--warning-soft,#FFE4D8)', color: 'var(--warning,#B83C0C)', padding: '0.875rem 1rem', borderRadius: 'var(--r-lg)', fontSize: '0.8125rem', marginBottom: '0.75rem' }}>
                 {!!synth.length && (
                   <><strong>
                     {all ? 'These keywords have very low or no search volume.'
@@ -790,7 +790,7 @@ export default function ClearBehavioralWizardPage() {
                       <tr key={k} style={{ background: selectedKeys.has(k) ? 'var(--primary-soft)' : 'transparent' }}>
                         <td style={{ padding: '0.3125rem 0.625rem', color: 'var(--text)' }}>
                           {c.keyword}
-                          {c.source === 'synthesized' && <span style={{ marginLeft: '0.375rem', fontSize: '0.6875rem', color: 'var(--warning,#B45309)' }}>built, not found</span>}
+                          {c.source === 'synthesized' && <span style={{ marginLeft: '0.375rem', fontSize: '0.6875rem', color: 'var(--warning,#B83C0C)' }}>built, not found</span>}
                         </td>
                         <td style={{ textAlign: 'center', color: 'var(--text-2)' }}>{volumeLabel(c.volume)}</td>
                         <td style={{ textAlign: 'center', color: 'var(--text-3)' }}>{c.difficulty || '—'}</td>
@@ -847,7 +847,7 @@ export default function ClearBehavioralWizardPage() {
           )}
           {briefError && (
             <SectionCard title="Brief">
-              <p style={{ color: 'var(--danger,#EF4444)', fontSize: '0.8125rem', margin: 0 }}>{briefError}</p>
+              <p style={{ color: 'var(--danger,#C8261B)', fontSize: '0.8125rem', margin: 0 }}>{briefError}</p>
             </SectionCard>
           )}
 
@@ -901,7 +901,7 @@ export default function ClearBehavioralWizardPage() {
               >
                 {(brief.educational.h3s.length < limits.educational.h3Count.min
                   || brief.educational.h3s.length > limits.educational.h3Count.max) && (
-                  <p style={{ fontSize: '0.75rem', color: 'var(--warning,#B45309)', margin: '0 0 0.5rem' }}>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--warning,#B83C0C)', margin: '0 0 0.5rem' }}>
                     The guidelines require {limits.educational.h3Count.min}-{limits.educational.h3Count.max} H3s; generating will be refused with {brief.educational.h3s.length}.
                   </p>
                 )}
@@ -931,14 +931,14 @@ export default function ClearBehavioralWizardPage() {
                         ? <p style={{ fontSize: '0.6875rem', margin: '0 0 0.375rem' }}>
                             Source: <a href={h.sourceUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>{h.sourceUrl}</a>
                           </p>
-                        : <p style={{ fontSize: '0.6875rem', color: 'var(--warning,#B45309)', margin: '0 0 0.375rem' }}>
+                        : <p style={{ fontSize: '0.6875rem', color: 'var(--warning,#B83C0C)', margin: '0 0 0.375rem' }}>
                             No source found — this section will fail QC until one is added.
                           </p>
                     )}
                     <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
                       <button style={{ ...btnStyle(false), padding: '0.125rem 0.5rem' }} onClick={() => moveH3(i, -1)} disabled={i === 0}>↑</button>
                       <button style={{ ...btnStyle(false), padding: '0.125rem 0.5rem' }} onClick={() => moveH3(i, 1)} disabled={i === brief.educational.h3s.length - 1}>↓</button>
-                      <button style={{ ...btnStyle(false), padding: '0.125rem 0.5rem', color: 'var(--danger,#EF4444)' }}
+                      <button style={{ ...btnStyle(false), padding: '0.125rem 0.5rem', color: 'var(--danger,#C8261B)' }}
                         onClick={() => editBrief(b => b.educational.h3s.splice(i, 1))}>Remove</button>
                     </div>
                   </div>
@@ -952,7 +952,7 @@ export default function ClearBehavioralWizardPage() {
                   onClick={() => editBrief(b => b.faqs.push({ q: '', type: 'intent' }))}>+ Add question</button>}
               >
                 {(brief.faqs.length < limits.faqs.count.min || brief.faqs.length > limits.faqs.count.max) && (
-                  <p style={{ fontSize: '0.75rem', color: 'var(--warning,#B45309)', margin: '0 0 0.5rem' }}>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--warning,#B83C0C)', margin: '0 0 0.5rem' }}>
                     The guidelines require {limits.faqs.count.min}-{limits.faqs.count.max} FAQs; {brief.faqs.length} will fail QC.
                   </p>
                 )}
@@ -967,7 +967,7 @@ export default function ClearBehavioralWizardPage() {
                       onChange={e => editBrief(b => { b.faqs[i].type = e.target.value; })}>
                       {limits.faqs.types.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
-                    <button style={{ ...btnStyle(false), padding: '0.25rem 0.5rem', color: 'var(--danger,#EF4444)' }}
+                    <button style={{ ...btnStyle(false), padding: '0.25rem 0.5rem', color: 'var(--danger,#C8261B)' }}
                       onClick={() => editBrief(b => b.faqs.splice(i, 1))}>×</button>
                   </div>
                 ))}
@@ -992,7 +992,7 @@ export default function ClearBehavioralWizardPage() {
                   competitor and source lookups are still cold. Leave the tab open.
                 </p>
               )}
-              {genError && <p style={{ color: 'var(--danger,#EF4444)', fontSize: '0.8125rem' }}>{genError}</p>}
+              {genError && <p style={{ color: 'var(--danger,#C8261B)', fontSize: '0.8125rem' }}>{genError}</p>}
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <button style={btnStyle(false)} onClick={() => setStep(1)}>← Back to keywords</button>
                 <span style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -1026,7 +1026,7 @@ export default function ClearBehavioralWizardPage() {
               </button>
             </>}
           >
-            {pageError && <p style={{ color: 'var(--danger,#EF4444)', fontSize: '0.8125rem', marginTop: 0 }}>{pageError}</p>}
+            {pageError && <p style={{ color: 'var(--danger,#C8261B)', fontSize: '0.8125rem', marginTop: 0 }}>{pageError}</p>}
 
             {/* The page URL, with only the service slug editable. The location
                 half comes from the location record and is not this page's to
@@ -1062,8 +1062,8 @@ export default function ClearBehavioralWizardPage() {
             {page.qc && (
               <div style={{
                 padding: '0.625rem 0.875rem', borderRadius: 'var(--r-md,6px)', fontSize: '0.8125rem', marginBottom: '0.75rem',
-                background: pageDirty ? 'var(--surface)' : page.qc.verdict === 'PASS' ? 'var(--success-soft,#F0FDF4)' : 'var(--warning-soft,#FFFBEB)',
-                color: pageDirty ? 'var(--text-3)' : page.qc.verdict === 'PASS' ? 'var(--success,#16A34A)' : 'var(--warning,#B45309)',
+                background: pageDirty ? 'var(--surface)' : page.qc.verdict === 'PASS' ? 'var(--success-soft,#E9F5ED)' : 'var(--warning-soft,#FFE4D8)',
+                color: pageDirty ? 'var(--text-3)' : page.qc.verdict === 'PASS' ? 'var(--success,#17753F)' : 'var(--warning,#B83C0C)',
               }}>
                 <strong>QC: {page.qc.verdict}</strong>
                 {pageDirty && ' — from the last save; edit then Save to re-check.'}
@@ -1219,12 +1219,12 @@ export default function ClearBehavioralWizardPage() {
                       title="Regenerate this line"
                       onClick={() => regenField('educational.h3.line', i,
                         v => editPage(p => { p.sections.educational.h3s[i].lines[j] = v; }), j)} />
-                    <button style={{ ...btnStyle(false), padding: '0.125rem 0.5rem', color: 'var(--danger,#EF4444)' }}
+                    <button style={{ ...btnStyle(false), padding: '0.125rem 0.5rem', color: 'var(--danger,#C8261B)' }}
                       onClick={() => editPage(p => p.sections.educational.h3s[i].lines.splice(j, 1))}>×</button>
                   </div>
                 ))}
                 <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.6875rem', color: eduLinesIn(h) > eduLineCap ? 'var(--warning,#B45309)' : 'var(--text-3)' }}>
+                  <span style={{ fontSize: '0.6875rem', color: eduLinesIn(h) > eduLineCap ? 'var(--warning,#B83C0C)' : 'var(--text-3)' }}>
                     {eduLinesIn(h)}/{eduLineCap} lines
                   </span>
                   {eduLinesIn(h) < eduLineCap && (
@@ -1307,7 +1307,7 @@ export default function ClearBehavioralWizardPage() {
                     onChange={e => editPage(p => { p.sections.faq.items[i].type = e.target.value; })}>
                     {limits.faqs.types.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
-                  <button style={{ ...btnStyle(false), padding: '0.25rem 0.5rem', color: 'var(--danger,#EF4444)' }}
+                  <button style={{ ...btnStyle(false), padding: '0.25rem 0.5rem', color: 'var(--danger,#C8261B)' }}
                     onClick={() => editPage(p => p.sections.faq.items.splice(i, 1))}>×</button>
                 </div>
                 <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'flex-start' }}>
