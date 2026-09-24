@@ -1,7 +1,9 @@
 /* ════════════════════════════════════════════════════════════════════════
    PRESS · PLAY — the public site's playful motion.
 
-   No libraries. Every effect here follows three rules:
+   One small library, Anime.js, for the few effects listed at the end of
+   this header; the rest is plain DOM and CSS. Every effect follows three
+   rules:
 
      1. The page is complete without it. The markup carries every word and
         every final number; this script only animates between states that
@@ -36,6 +38,13 @@
      - The calls to action throw confetti.
      - The agent directory glides its cards into place when filtered.
      - The footer's shape tiles keep rearranging themselves.
+   And, with Anime.js (MIT, self-hosted in static/vendor/anime, loaded
+   just before this file; everything below still runs without it):
+     - A signal path draws itself down "How it works", with a signal
+       riding its head and a node springing open at each step.
+     - The footer toys and the kinetic band's shapes morph between the
+       eight shapes of the page's shape library.
+     - A grabbed card that is not thrown springs home with a wobble.
    ════════════════════════════════════════════════════════════════════════ */
 (function () {
   "use strict";
@@ -45,6 +54,7 @@
   if (RM) { root.classList.add("rm"); return; }
   root.classList.add("play");
 
+  var A = window.anime && window.anime.animate && window.anime.svg ? window.anime : null;
   var $$ = function (sel, ctx) { return Array.prototype.slice.call((ctx || doc).querySelectorAll(sel)); };
   var raf = window.requestAnimationFrame.bind(window);
 
@@ -137,7 +147,7 @@
     var cards = $$(".deck-card", deck), n = cards.length, timer = null, busy = false;
     function order() { cards.forEach(function (c, k) { c.setAttribute("data-pos", k); }); }
     function deal() {
-      if (busy || doc.hidden) return;
+      if (busy || doc.hidden || deck.querySelector(".springing")) return;
       busy = true;
       var top = cards[0];
       top.classList.add("fling");
@@ -196,6 +206,17 @@
           g.el.classList.remove("thrown"); g.el.style.transform = "";
           cards.push(cards.shift()); order(); busy = false;
         }, 560);
+      } else if (A) {
+        // Home on a spring: it overshoots, wobbles and settles.
+        var pos = { x: g.dx, y: g.dy };
+        g.el.classList.add("springing");
+        A.animate(pos, {
+          x: 0, y: 0, ease: A.createSpring({ stiffness: 260, damping: 9 }),
+          onUpdate: function () {
+            g.el.style.transform = "translate(" + pos.x.toFixed(1) + "px," + pos.y.toFixed(1) + "px) rotate(" + (-4 + pos.x / 9).toFixed(1) + "deg)";
+          },
+          onComplete: function () { g.el.classList.remove("springing"); g.el.style.transform = ""; }
+        });
       } else {
         g.el.style.transform = "";
       }
@@ -508,15 +529,130 @@
     });
   };
 
+  /* ── Shape morphing (Anime.js) ───────────────────────────────────────
+     A shape turns into another from the page's shape library (#shp-*):
+     Anime resamples both outlines to the same points and moves each point
+     across, on a spring. Without Anime the new outline is simply swapped
+     in. */
+  var SHAPES = $$(".shape-lib path").map(function (p) { return p.id.replace("shp-", ""); });
+  function morph(path, to, ms) {
+    var lib = doc.getElementById("shp-" + to);
+    if (!lib) return;
+    path.setAttribute("data-shape", to);
+    if (!A) { path.setAttribute("d", lib.getAttribute("d")); return; }
+    A.animate(path, { d: A.svg.morphTo(lib, 0.5), duration: ms, ease: "outElastic(1, .7)" });
+  }
+
+  /* The kinetic band's shapes each step through the library while the
+     band is on screen. */
+  var kin = doc.querySelector(".kin");
+  if (kin && SHAPES.length) {
+    var kinOn = false, kinShapes = $$(".kin-s path", kin);
+    if ("IntersectionObserver" in window)
+      new IntersectionObserver(function (es) { kinOn = es[0].isIntersecting; }).observe(kin);
+    setInterval(function () {
+      if (!kinOn || doc.hidden) return;
+      kinShapes.forEach(function (p) {
+        var k = SHAPES.indexOf(p.getAttribute("data-shape"));
+        morph(p, SHAPES[(k + 1) % SHAPES.length], 1100);
+      });
+    }, 1800);
+  }
+
+  /* ── The signal path (Anime.js) ───────────────────────────────────────
+     A line runs down the gap between the four steps and the account card,
+     swinging side to side and looping once on the way. Scroll position
+     drives it: the line is drawn up to the reading line (just past the
+     middle of the screen), a signal rides its head, and each step's node
+     springs open when the signal reaches it. The signal eases towards
+     its target rather than snapping, so a fast scroll leaves it a beat
+     behind, catching up. Wide screens only. */
+  var story = doc.getElementById("story");
+  if (A && story && story.querySelector(".story-fig")) (function () {
+    var NS = "http://www.w3.org/2000/svg", svgEl = null, draw = null, ride = null, nodes = [], stops = [];
+    var target = 0, shown = 0, chasing = false, y0 = 0, y1 = 1;
+    function mk(tag, attrs, parent) { var e = doc.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+    function build() {
+      if (svgEl) { svgEl.remove(); svgEl = null; draw = ride = null; nodes = []; }
+      if (window.innerWidth < 961) return;
+      var steps = $$(".story-step", story), fig = story.querySelector(".story-fig");
+      var sr = story.getBoundingClientRect(), lr = steps[0].parentNode.getBoundingClientRect(), fr = fig.getBoundingClientRect();
+      var x = ((lr.right + fr.left) / 2 - sr.left), sw = Math.max(14, Math.min(36, (fr.left - lr.right) / 2 - 10));
+      var ys = steps.map(function (st) { var r = st.getBoundingClientRect(); return r.top - sr.top + Math.min(64, r.height / 2); });
+      y0 = ys[0]; y1 = ys[ys.length - 1];
+      // Build the path one leg at a time, measuring where each node falls.
+      var d = "M" + x + " " + ys[0], lens = [0];
+      var probe = mk("path", {}, null);
+      var meas = mk("svg", { width: 0, height: 0, style: "position:absolute" }, doc.body); meas.appendChild(probe);
+      for (var k = 1; k < ys.length; k++) {
+        var a = ys[k - 1], b = ys[k], h = b - a, side = k % 2 ? 1 : -1;
+        if (k === 2) {
+          // The loop: swing out, turn a full circle, carry on down.
+          var m = a + h / 2, r = Math.min(sw, 26);
+          d += " C" + (x + side * sw) + " " + (a + h * 0.2) + " " + (x + side * sw) + " " + (m - h * 0.12) + " " + x + " " + m;
+          d += " a" + r + " " + r + " 0 1 1 0.01 0";
+          d += " C" + (x - side * sw) + " " + (m + h * 0.12) + " " + (x - side * sw) + " " + (b - h * 0.2) + " " + x + " " + b;
+        } else {
+          d += " C" + (x + side * sw) + " " + (a + h * 0.3) + " " + (x - side * sw) + " " + (b - h * 0.3) + " " + x + " " + b;
+        }
+        probe.setAttribute("d", d); lens.push(probe.getTotalLength());
+      }
+      meas.remove();
+      var total = lens[lens.length - 1];
+      stops = lens.map(function (l) { return l / total; });
+      svgEl = mk("svg", { "class": "sig", width: sr.width, height: sr.height, "aria-hidden": "true" }, null);
+      mk("path", { "class": "sig-track", d: d }, svgEl);
+      var line = mk("path", { "class": "sig-line", d: d }, svgEl);
+      ys.forEach(function (y) { nodes.push({ el: mk("circle", { "class": "sig-node", cx: x, cy: y, r: 7 }, svgEl), hit: false }); });
+      var dot = mk("g", {}, svgEl);
+      mk("circle", { "class": "sig-dot", r: 11 }, dot); mk("circle", { "class": "sig-dot-in", r: 5 }, dot);
+      story.insertBefore(svgEl, story.firstChild);
+      draw = A.animate(A.svg.createDrawable(line), { draw: ["0 0", "0 1"], duration: 1000, ease: "linear", autoplay: false });
+      ride = A.animate(dot, Object.assign({ duration: 1000, ease: "linear", autoplay: false }, A.svg.createMotionPath(line)));
+      shown = -1; paintSig();
+    }
+    function paintSig() {
+      if (!draw) return;
+      draw.seek(shown * 1000); ride.seek(shown * 1000);
+      nodes.forEach(function (n, k) {
+        var hit = shown >= stops[k] - 0.002;
+        if (hit === n.hit) return;
+        n.hit = hit; n.el.classList.toggle("hit", hit);
+        A.animate(n.el, { r: hit ? [4, 11] : 7, duration: hit ? undefined : 300,
+                           ease: hit ? A.createSpring({ stiffness: 300, damping: 8 }) : "outQuad" });
+      });
+    }
+    function chase() {
+      var diff = target - shown;
+      if (Math.abs(diff) < 0.0008) { shown = target; paintSig(); chasing = false; return; }
+      shown += diff * 0.14; paintSig(); raf(chase);
+    }
+    painters.push(function (vh) {
+      if (!draw) return;
+      var top = story.getBoundingClientRect().top;
+      target = clamp01((vh * 0.55 - (top + y0)) / (y1 - y0));
+      if (shown < 0) { shown = target; paintSig(); return; }
+      if (!chasing) { chasing = true; raf(chase); }
+    });
+    var rt = null;
+    window.addEventListener("resize", function () { clearTimeout(rt); rt = setTimeout(function () { build(); schedule(); }, 200); });
+    // Build once the fonts have set the steps' final heights.
+    (doc.fonts && doc.fonts.ready ? doc.fonts.ready : Promise.resolve()).then(function () { build(); schedule(); });
+  })();
+
   /* ── 17. Footer toys ──────────────────────────────────────────────────
      Every so often one tile changes its shape and turns a quarter; hover
      turns a tile's shape half a turn, a click changes its colour. */
   var toys = $$(".toy");
   if (toys.length) {
     var TONES = ["t-ink", "t-paper", "t-sky", "t-red", "t-acc"];
-    var shape = function (i, next) { i.className = "sh-" + next; };
+    var toyShape = function (t) {
+      var path = t.querySelector("path"), now = path.getAttribute("data-shape");
+      var pick = SHAPES.filter(function (k) { return k !== now; });
+      morph(path, pick[(Math.random() * pick.length) | 0], 900);
+    };
     toys.forEach(function (t) {
-      var i = t.querySelector("i"), turn = 0;
+      var i = t.querySelector("svg"), turn = 0;
       t.__turn = function (deg) { turn += deg; i.style.setProperty("--tr", turn + "deg"); };
       t.addEventListener("pointerenter", function () { t.__turn(180); });
       t.addEventListener("click", function () {
@@ -530,9 +666,8 @@
       new IntersectionObserver(function (es) { footOn = es[0].isIntersecting; }).observe(foot);
     setInterval(function () {
       if (!footOn || doc.hidden) return;
-      var t = toys[(Math.random() * toys.length) | 0], i = t.querySelector("i");
-      var cur = +(i.className.replace("sh-", "")) || 0;
-      shape(i, (cur + 1 + ((Math.random() * 3) | 0)) % 4);
+      var t = toys[(Math.random() * toys.length) | 0];
+      toyShape(t);
       t.__turn(90);
     }, 1100);
   }

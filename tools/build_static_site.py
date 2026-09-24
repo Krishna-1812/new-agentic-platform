@@ -45,6 +45,8 @@ DEFAULT_ORIGIN = "https://krishna-1812.github.io"
 ASSETS = [
     ("static/css/press.css", "static/css/press.css"),
     ("static/js/press-play.js", "static/js/press-play.js"),   # the site's motion
+    ("static/vendor/anime/anime.nx.min.js", "static/vendor/anime/anime.nx.min.js"),  # Anime.js, MIT
+    ("static/vendor/anime/LICENSE.md", "static/vendor/anime/LICENSE.md"),
     ("static/favicon.svg", "static/favicon.svg"),
     ("static/favicon.svg", "favicon.svg"),      # /favicon.svg is a route, not a file
     ("static/favicon.png", "static/favicon.png"),

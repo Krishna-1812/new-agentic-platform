@@ -161,3 +161,50 @@ def test_decorative_motion_is_hidden_from_assistive_tech():
     assert '<div class="kin" aria-hidden="true">' in html
     assert '<div class="toys" aria-hidden="true">' in html
     assert re.search(r'<div class="deck" id="deck" aria-hidden="true">[\s\S]*?<svg class="sticker"', html)
+
+
+# ── Anime.js ────────────────────────────────────────────────────────────────
+
+def test_anime_is_self_hosted_with_its_licence_and_loads_before_the_play_script():
+    """No CDN: the trimmed MIT build ships from /static with its licence
+    beside it, deferred, ahead of press-play.js (both deferred scripts run
+    in document order)."""
+    html = _read("templates", "agents.html")
+    tag = re.search(r'<script src="[^"]*vendor/anime/anime\.nx\.min\.js[^"]*" defer></script>', html)
+    assert tag, "anime must be loaded, deferred, from the site itself"
+    assert tag.start() < html.index("js/press-play.js")
+    assert "cdn" not in tag.group(0).lower()
+    lib = _read("static", "vendor", "anime", "anime.nx.min.js")
+    assert "Anime.js v4.5.0 | MIT License" in lib[:200]
+    assert "MIT License" in _read("static", "vendor", "anime", "LICENSE.md")
+    build = _read("tools", "build_static_site.py")
+    assert "static/vendor/anime/anime.nx.min.js" in build and "static/vendor/anime/LICENSE.md" in build
+
+
+def test_the_play_script_runs_without_anime():
+    """If the library fails to load, the page must not break: every use
+    goes through A, which is null when window.anime is missing."""
+    js = _read("static", "js", "press-play.js")
+    assert "var A = window.anime && window.anime.animate && window.anime.svg ? window.anime : null;" in js
+    code = re.sub(r"/\*.*?\*/|//[^\n]*", "", js, flags=re.S)
+    assert "window.anime." not in code.replace("window.anime.animate", "").replace("window.anime.svg", "")
+    for use in re.finditer(r"\bA\.(animate|svg|createSpring)", code):
+        before = code[:use.start()]
+        guard = max(before.rfind("if (A"), before.rfind("if (!A)"), before.rfind("} else if (A)"))
+        assert guard != -1, "unguarded Anime.js call at %d" % use.start()
+
+
+def test_the_morph_library_is_measurable_but_invisible():
+    html = _read("templates", "agents.html")
+    assert re.search(r'<svg class="shape-lib" aria-hidden="true" focusable="false" width="0" height="0">', html)
+    css = _play_css()
+    rule = re.search(r"\.shape-lib \{([^}]*)\}", css).group(1)
+    assert "display: none" not in rule, "a path that is not rendered cannot report its length"
+
+
+def test_the_signal_path_is_wide_screen_decoration_only():
+    js = _read("static", "js", "press-play.js")
+    sig = js[js.index("The signal path (Anime.js)"):js.index("── 17.")]
+    assert "window.innerWidth < 961" in sig
+    assert '"aria-hidden": "true"' in sig
+    assert "if (A && story" in sig

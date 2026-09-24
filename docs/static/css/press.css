@@ -1664,6 +1664,7 @@ a.stat:hover { border-top-color: transparent; }
   .play .deck { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; z-index: 2; }
   .play .deck.grabbing { cursor: grabbing; z-index: 5; }
   .play .deck.grabbing .deck-card[data-pos="0"] { transition: none; animation: none; }
+  .play .deck-card.springing { transition: none !important; animation: none !important; }
   .play .deck-card.thrown { z-index: 5; transition: transform 560ms cubic-bezier(.2, .7, .3, 1), opacity 560ms ease; opacity: 0; }
 }
 
@@ -1706,11 +1707,11 @@ a.stat:hover { border-top-color: transparent; }
 }
 .kin-row + .kin-row { margin-top: .06em; }
 .kin-w.o { color: transparent; -webkit-text-stroke: 2px var(--ink); font-style: italic; }
-.kin-s { display: inline-block; flex: 0 0 auto; width: .56em; height: .56em; transform: rotate(var(--kr, 0deg)); }
-.kin-s.s1 { background: var(--acc); border-radius: 50%; }
-.kin-s.s2 { background: var(--amber); border-radius: var(--r-sm); }
-.kin-s.s3 { background: var(--sky); border-radius: var(--r-pill); width: 1em; }
-.kin-s.s4 { background: var(--red); clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+.kin-s { display: inline-block; flex: 0 0 auto; width: .6em; height: .6em; overflow: visible; transform: rotate(var(--kr, 0deg)); }
+.kin-s.s1 { fill: var(--acc); }
+.kin-s.s2 { fill: var(--amber); }
+.kin-s.s3 { fill: var(--sky); }
+.kin-s.s4 { fill: var(--red); }
 .kin-w { transition: color 300ms ease; }
 .kin-w:not(.o):hover { color: var(--acc); }
 .kin-w.o:hover { -webkit-text-stroke-color: var(--acc); }
@@ -1743,13 +1744,11 @@ a.stat:hover { border-top-color: transparent; }
 .toy.t-sky   { background: var(--sky); }
 .toy.t-red   { background: var(--red); }
 .toy.t-acc   { background: var(--acc); }
-.toy i { width: 62%; height: 62%; background: var(--ink); transform: rotate(var(--tr, 0deg));
-         transition: border-radius 700ms var(--spring), transform 700ms var(--spring), background-color 400ms ease; }
-.toy.t-ink i { background: var(--sun); }
-.toy i.sh-0 { border-radius: 50%; }
-.toy i.sh-1 { border-radius: 100% 0 0 0; }
-.toy i.sh-2 { border-radius: 100% 0; }
-.toy i.sh-3 { border-radius: 14%; }
+.toy svg { width: 62%; height: 62%; overflow: visible; fill: var(--ink); transform: rotate(var(--tr, 0deg));
+           transition: transform 700ms var(--spring), fill 400ms ease; }
+.toy.t-ink svg { fill: var(--sun); }
+/* The library the shapes morph between: laid out, but sizeless. */
+.shape-lib { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
 .play .toy:hover { transform: scale(1.08) rotate(-4deg); }
 .play .toy:active { transform: scale(.9); }
 
@@ -1760,3 +1759,18 @@ a.stat:hover { border-top-color: transparent; }
 
 /* ── Page to page: the curtain is four colours now ── */
 .vt::view-transition { background: linear-gradient(90deg, #FF6022 0 25%, #FFB500 0 50%, #8CCBFF 0 75%, #FF3B30 0); }
+
+/* ── The signal path (Anime.js) ──
+   Drawn by press-play.js down the gap between the four steps and the
+   account card: it draws itself as the page scrolls, a signal rides its
+   head, and each step's node springs open as the signal reaches it. Built
+   only on wide screens with motion on; otherwise there is nothing here. */
+.story { position: relative; }
+.sig { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; z-index: 0; }
+.sig-track { fill: none; stroke: var(--rule); stroke-width: 2; stroke-dasharray: 2 8; stroke-linecap: round; }
+.sig-line { fill: none; stroke: var(--acc); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.sig-node { fill: var(--paper); stroke: var(--ink); stroke-width: 2; }
+.sig-node.hit { fill: var(--acc); stroke: var(--ink); }
+.sig-dot { fill: var(--ink); }
+.sig-dot-in { fill: var(--acc); }
+.story-steps, .story-fig { position: relative; z-index: 1; }
