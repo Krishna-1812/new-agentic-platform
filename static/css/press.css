@@ -1,53 +1,29 @@
 /* ════════════════════════════════════════════════════════════════════════
-   PRESS — THE PUBLIC SITE
-   The marketing site's own design system. It is NOT the product's.
+   PRESS — THE PUBLIC SITE, in the Outcomes language
+   The same language as the product (bento-tokens.css), set at marketing
+   scale. Taken from outcomes.digital, measured in a browser on 2026-09-24,
+   with one thing kept exactly as it was: the headings are Fraunces,
+   semi-bold, SOFT 0 / WONK 1 / opsz 144, with its italic for emphasis.
 
-   WHY THERE ARE TWO SYSTEMS.
-   bento-tokens.css dresses an instrument: a dark, dense, quiet surface you
-   sit in front of for an hour, where every rule exists to stop the interface
-   competing with the data. A public page has the opposite job. Nobody lives
-   here; a visitor gives it one scroll and decides whether the company is
-   any good. So this system is loud where the product is quiet, and it is
-   built out of the product's own materials turned inside out:
-
-       the product's ink      #131315   becomes this site's PAPER-side ink
-       the product's text     #EFE9DC   becomes this site's PAPER
-       the product's accent   #C6F24E   stays exactly itself
-
-   That inversion is the brand tie. Somebody who uses both will feel the
-   relation without being able to name it; somebody who sees only one will
-   never guess the other exists.
-
-   THE FIVE RULES OF THIS SYSTEM. They are deliberately the opposite of the
-   product's five, one for one:
-
-     1. THE GROUND IS PAPER.    Warm off-white, opaque, no gradients, no
-                                mesh, no glow, no blur. Two ink bands per
-                                page invert it; that inversion is the only
-                                "effect" the site owns.
-     2. RULES, NOT FILLS.       Bento separates with a gap and a fill edge.
-                                Print separates with a line. Every section,
-                                every cell, every list row is bounded by a
-                                hairline. A filled box is reserved for one
-                                thing per page.
-     3. NOTHING IS ROUNDED.     --r is 0 and there are no exceptions, save
-                                the marker highlight, whose lopsided radii
-                                exist to read as a hand, not a shape.
-     4. TWO VOICES.             Fraunces sets every statement the site makes
-                                -- a variable serif with a wonk axis, at
-                                sizes the product would never permit.
-                                Familjen Grotesk, the product's own text
-                                face, sets everything that is merely
-                                information. A page never mixes them inside
-                                one sentence except through .mk.
-     5. MOTION IS TYPOGRAPHIC.  Words arrive from behind a mask, rules draw
-                                themselves from the left, figures wipe. Cards
-                                do not fade, do not lift, and are never
-                                staggered per index -- that is another
-                                product's signature and it is banned here.
-                                600ms and a real expo curve, against the
-                                product's 150ms cross-fade.
-
+     1. PAPER GROUND.          Warm off-white #F1EFED, white cards on it.
+     2. COLOUR COMES IN BLOCKS. Orange, amber, sky, red and ink as whole-card
+                               fills with ink text, 24px corners and a soft
+                               drop -- never as tints, glows or gradients.
+                               The one exception is the marker behind a
+                               phrase, which is the site's orange-to-coral
+                               highlighter stroke.
+     3. PILLS FOR ACTION.      The primary action is an ink pill; the hero's
+                               is uppercase and heavy with an arrow. The
+                               secondary is an outlined pill.
+     4. TWO VOICES.            Fraunces for every statement; Zalando Sans for
+                               everything that is information, including
+                               figures.
+     5. MOTION IS TYPOGRAPHIC. Headline lines rise from behind a mask in
+                               reading order; nothing else moves on entry.
+                               Cards do not fade, do not lift, and are
+                               never staggered per index.
+   The page ends the way outcomes.digital's does: an orange block carrying
+   the wordmark at display size.
    ──────────────────────────────────────────────────────────────────────── */
 
 :root {
@@ -55,44 +31,50 @@
   /* ── GROUND ───────────────────────────────────────────────────────────
      Three paper tones and three ink tones. Opaque, all six. An alpha wash
      over paper goes grey-green; these were picked by eye against the lime. */
-  --paper:   #F1EDE3;
-  --paper2:  #E8E3D6;   /* inset / hover / alternating band              */
-  --paper3:  #DCD6C5;   /* pressed, and the bar track of a chart          */
-  --ink:     #14140F;   /* body text on paper, and the inverted band      */
-  --ink2:    #55534A;   /* secondary text — 6.2:1 on --paper              */
-  --ink3:    #6B6860;   /* metadata — 4.7:1 on --paper, the floor         */
+  --paper:   #F1EFED;
+  --paper2:  #EBE9E5;   /* inset / hover / alternating band              */
+  --paper3:  #DBD7D1;   /* pressed, and the bar track of a chart          */
+  --card:    #FFFFFF;   /* a card on paper                                */
+  --ink:     #121213;   /* body text on paper, and the ink block          */
+  --ink2:    #444444;   /* secondary text — 8.5:1 on --paper              */
+  --ink3:    #6F6B66;   /* metadata — 4.6:1 on --paper, the floor         */
 
   /* ── RULE ─────────────────────────────────────────────────────────────
      Rule 2's whole vocabulary. --rule is the hairline that bounds a cell;
      --rule-strong is the structural line that bounds a section and is drawn
      on scroll; --rule-ink is full ink, used once or twice per page. */
-  --rule:        #CFC9B7;
-  --rule-strong: #A9A395;
-  --rule-ink:    #14140F;
+  --rule:        #DBD7D1;
+  --rule-strong: #B9B4AC;
+  --rule-ink:    #121213;
 
   /* ── ACCENT ───────────────────────────────────────────────────────────
      The product's lime, unchanged. On paper it is a FILL ONLY -- lime text
      on paper is 1.6:1 and unreadable, so there is no --acc text token and
      no rule that sets colour:var(--acc) outside an ink band. */
-  --acc:     #C6F24E;
-  --acc-hi:  #D4FA63;
-  --acc-ink: #14140F;   /* text sitting on the lime                       */
+  --acc:     #FF6022;   /* orange — the marker, the active edge, a block  */
+  --acc-hi:  #FF7A45;
+  --acc-ink: #121213;   /* text sitting on the orange                     */
+  --acc-tx:  #B83C0C;   /* orange as TEXT on paper (5.0:1)                */
+  --amber:   #FFB500;
+  --sky:     #8CCBFF;
+  --red:     #FF3B30;
+  --sun:     #FF9100;   /* the closing block, outcomes.digital's footer   */
+  --marker:  linear-gradient(90deg, #FF6022 0%, #FF8B5D 100%);
 
   /* ── INK BAND ─────────────────────────────────────────────────────────
      A full-bleed inverted section. Inside .inkband these five are swapped
      onto the same names, so every component below works on both grounds
      without a single .inkband .foo override. */
-  --ink-paper:  #F1EDE3;
-  --ink-ink2:   #A8A499;
-  --ink-rule:   #302F26;
+  --ink-paper:  #F6F4F0;
+  --ink-ink2:   #B5B1AB;
+  --ink-rule:   #2E2E30;
 
   /* ── TYPE ─────────────────────────────────────────────────────────────
      Rule 4. Fraunces is variable on opsz/wght/SOFT/WONK; the site runs it
      soft-0 wonk-1 at display sizes, which is where its ear and its leaning
-     'y' show. Familjen Grotesk is the product's text face, carried over
-     deliberately: it is the one material both systems share. */
+     'y' show. Zalando Sans is outcomes.digital's text face. */
   --face-display: 'Fraunces', 'Times New Roman', Georgia, serif;
-  --face-text:    'Familjen Grotesk', system-ui, -apple-system, sans-serif;
+  --face-text:    'Zalando Sans', system-ui, -apple-system, sans-serif;
 
   /* Fluid, and much wider-ranging than the product's fixed eight steps: a
      marketing hero at 132px and a footnote at 12px belong to one page. */
@@ -105,7 +87,7 @@
   --fs-body:  16px;
   --fs-sm:    14px;
   --fs-xs:    12.5px;
-  --fs-label: 11px;     /* the tracked uppercase label, one size only     */
+  --fs-label: 12px;     /* the uppercase label, one size only             */
 
   --lh-display: 0.94;   /* display type is set tight enough to read as a
                            block; the mask reveal depends on it            */
@@ -116,7 +98,7 @@
   --ls-display: -0.028em;
   --ls-h:       -0.02em;
   --ls-body:    0;
-  --ls-label:   0.16em;  /* far wider than the product's 0.08em            */
+  --ls-label:   0.04em;  /* outcomes.digital's "SAY HELLO" tracking        */
 
   --fw-book:   400;
   --fw-med:    500;
@@ -139,10 +121,12 @@
   --sec-sm:  clamp(44px, 5vw,  80px);
 
   /* ── SHAPE ────────────────────────────────────────────────────────────*/
-  --r: 0;
-  /* Rule 3's one exception. Four unequal corners on two axes: the shape a
-     highlighter leaves, not the shape a component library leaves. */
-  --r-marker: 0.05em 0.17em 0.06em 0.2em / 0.17em 0.06em 0.2em 0.05em;
+  --r:      16px;       /* a card                                        */
+  --r-lg:   24px;       /* a colour block                                */
+  --r-pill: 999px;      /* every control                                 */
+  --r-marker: 0.06em;   /* the highlighter: a near-square stroke         */
+  --shadow-block: 0 20px 40px rgba(0,0,0,.08);
+  --shadow-pill:  0 8px 20px rgba(0,0,0,.2);
 
   /* ── LAYOUT ───────────────────────────────────────────────────────────*/
   --wrap: 1340px;
@@ -399,23 +383,23 @@ html:not(.js) .fade      { opacity: 1; }
    page's flow. The five ground tokens are reassigned here, which is why no
    component below needs an .inkband variant. */
 .inkband {
-  --paper: var(--ink); --paper2: #1D1C16; --paper3: #26251D;
+  --paper: var(--ink); --paper2: #1C1C1E; --paper3: #2A2A2C;
   /* --ink3 is lighter on the ink ground than on paper. The same value on
      both would be 4.3:1 here, and every eyebrow and every stat label on the
      site is set in it -- the floor for this token is 4.5:1 on whatever it
      sits on, not one hex that happens to pass on one of the two grounds. */
-  --ink: var(--ink-paper); --ink2: var(--ink-ink2); --ink3: #8B877A;
-  --rule: var(--ink-rule); --rule-strong: #3E3C31; --rule-ink: var(--ink-paper);
-  background: #14140F; color: var(--ink-paper);
+  --ink: var(--ink-paper); --ink2: var(--ink-ink2); --ink3: #9A968F;
+  --rule: var(--ink-rule); --rule-strong: #3A3A3D; --rule-ink: var(--ink-paper);
+  background: #121213; color: var(--ink-paper);
   width: 100vw; margin-inline: calc(50% - 50vw);
   padding-block: var(--sec);
 }
 .inkband > .wrap { max-width: var(--wrap); }
 /* A lime band. Used once on the site, on the final call to action. */
 .limeband {
-  --paper: var(--acc); --paper2: #BCE93F; --paper3: #B0DE2E;
-  --ink: var(--acc-ink); --ink2: #2F3A12; --ink3: #45521D;
-  --rule: #A9D633; --rule-strong: #93BE24; --rule-ink: var(--acc-ink);
+  --paper: var(--acc); --paper2: #FF7A45; --paper3: #FF8B5D;
+  --ink: var(--acc-ink); --ink2: #3A1A0A; --ink3: #4A2410;
+  --rule: #FF8B5D; --rule-strong: #E4531A; --rule-ink: var(--acc-ink);
   background: var(--acc); color: var(--acc-ink);
   width: 100vw; margin-inline: calc(50% - 50vw);
   padding-block: var(--sec);
@@ -550,7 +534,7 @@ body.menu-open .nv .bn-word { color: var(--ink-paper); }
    show a nav item at 40px, and this is not the product. */
 .nv-sheet {
   position: fixed; inset: 0; z-index: 790;
-  background: #14140F; color: var(--ink-paper);
+  background: #121213; color: var(--ink-paper);
   padding: calc(var(--nav-h) + var(--s7)) var(--mar) var(--s7);
   display: flex; flex-direction: column; justify-content: center; gap: var(--s4);
   clip-path: inset(0 0 100% 0);
@@ -567,8 +551,8 @@ body.menu-open .nv .bn-word { color: var(--ink-paper); }
   color: var(--ink-paper);
   display: flex; align-items: baseline; gap: var(--s4);
 }
-.nv-sheet > a .idx { color: #6E6A5D; }
-.nv-sheet > a:hover { color: var(--acc); }
+.nv-sheet > a .idx { color: #8A867F; }
+.nv-sheet > a:hover { color: var(--acc-tx); }
 .nv-sheet .nv-sheet-foot { margin-top: var(--s7); display: flex; gap: var(--s3); }
 body.menu-open { overflow: hidden; }
 
@@ -809,7 +793,7 @@ a.ledger-row:hover { background: var(--paper2); }
 
 .ov { position: fixed; inset: 0; z-index: 1000; display: none; }
 .ov.on { display: block; }
-.ov-bg { position: absolute; inset: 0; background: rgba(20,20,15,.62); animation: ovbg var(--dur-mid) var(--ease) both; }
+.ov-bg { position: absolute; inset: 0; background: rgba(18,18,19,.42); animation: ovbg var(--dur-mid) var(--ease) both; }
 @keyframes ovbg { from { opacity: 0 } }
 .ov-panel {
   position: absolute; top: 0; right: 0; bottom: 0; width: min(520px, 100%);
@@ -902,12 +886,12 @@ a.ledger-row:hover { background: var(--paper2); }
 
 /* The video frame. 16:9, square corners, ink ground so the player edge
    never shows against paper. */
-.vframe { position: relative; aspect-ratio: 16 / 9; background: #14140F; overflow: hidden; }
+.vframe { position: relative; aspect-ratio: 16 / 9; background: #121213; overflow: hidden; }
 .vframe iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .vph { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
        justify-content: center; gap: var(--s4); text-align: center; padding: var(--s7); color: var(--ink-paper); }
 .vph b { font-family: var(--face-display); font-size: var(--fs-h4); font-weight: var(--fw-semi); }
-.vph span { font-size: var(--fs-xs); color: #8B8779; max-width: 44ch; }
+.vph span { font-size: var(--fs-xs); color: #9A968F; max-width: 44ch; }
 .vph .play { width: 58px; height: 58px; background: var(--acc); display: grid; place-items: center; }
 .vph .play svg { width: 22px; height: 22px; fill: var(--acc-ink); }
 
@@ -964,7 +948,7 @@ a.ledger-row:hover { background: var(--paper2); }
 .side-cta p { color: var(--ink-ink2); font-size: var(--fs-sm); margin-block: var(--s3) var(--s5); }
 .side-cta .btn-1 { background: var(--acc); color: var(--acc-ink); width: 100%; justify-content: center; }
 .side-cta .btn-1:hover { background: var(--acc-hi); }
-.side-cta .btn-2 { box-shadow: inset 0 0 0 1px #3E3C31; color: var(--ink-paper); width: 100%; justify-content: center; margin-top: var(--s2); }
+.side-cta .btn-2 { box-shadow: inset 0 0 0 1px #3A3A3D; color: var(--ink-paper); width: 100%; justify-content: center; margin-top: var(--s2); }
 .side-cta .btn-2:hover { background: var(--ink-paper); color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink-paper); }
 
 /* The three-up "why / how / who" block: three columns under one rule. */
@@ -976,56 +960,54 @@ a.ledger-row:hover { background: var(--paper2); }
 
 /* ════════════════════════════════════════════════════════════════════════
    THE PRODUCT FIGURE
-   The one dark rectangle on the site, and the reason it is dark: it is the
-   product. This block is deliberately authored in the PRODUCT's tokens --
-   #131315, #1C1C1F, Familjen Grotesk, the lime as a fill -- so a visitor
-   sees exactly what they are signing up for, and so the paper around it
-   reads as the wrapper rather than the thing. It is the only place the two
-   systems appear on one screen, and the contrast is the point.
+   A picture of the product, drawn in the product's own light surfaces:
+   white tiles on a stone frame, one orange tile. (The rules below were
+   written for the earlier dark product; the OUTCOMES block at the end of
+   this file restates them.)
    ════════════════════════════════════════════════════════════════════════ */
 
-.shot { background: #131315; color: #EFE9DC; padding: clamp(14px, 1.6vw, 22px);
+.shot { background: #EBE9E5; color: #121213; padding: clamp(14px, 1.6vw, 22px);
         font-family: var(--face-text); font-size: 13px; line-height: 1.5; }
 .shot-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .shot-ttl { display: flex; align-items: center; gap: 8px; font-weight: var(--fw-semi); font-size: 13px; }
-.shot-ttl i { width: 7px; height: 7px; background: #C6F24E; border-radius: 50%; }
+.shot-ttl i { width: 7px; height: 7px; background: #FF6022; border-radius: 50%; }
 .shot-live { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 11px;
-             letter-spacing: .1em; text-transform: uppercase; color: #8B8B93; }
-.shot-live i { width: 6px; height: 6px; background: #C6F24E; border-radius: 50%; animation: shotpulse 2.2s ease-in-out infinite; }
+             letter-spacing: .1em; text-transform: uppercase; color: #6F6B66; }
+.shot-live i { width: 6px; height: 6px; background: #FF6022; border-radius: 50%; animation: shotpulse 2.2s ease-in-out infinite; }
 @keyframes shotpulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
 .shot-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
-.shot-kpi { background: #1C1C1F; border-radius: 12px; padding: 14px 16px; }
+.shot-kpi { background: #FFFFFF; border-radius: 12px; padding: 14px 16px; }
 /* Rule 4 of the PRODUCT's system, honoured here: exactly one tile is filled. */
-.shot-kpi.lead { background: #C6F24E; color: #131315; }
-.shot-kpi .kl { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #8B8B93; }
-.shot-kpi.lead .kl { color: #131315; opacity: .72; }
+.shot-kpi.lead { background: #FF6022; color: #121213; }
+.shot-kpi .kl { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6F6B66; }
+.shot-kpi.lead .kl { color: #121213; opacity: .72; }
 .shot-kpi .kv { display: block; font-family: var(--face-text); font-size: 26px; font-weight: var(--fw-semi);
                 letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-top: 4px; }
 .shot-grid { display: grid; grid-template-columns: 1fr 1.25fr; gap: 10px; }
 @media (max-width: 720px) { .shot-grid { grid-template-columns: 1fr; } .shot-kpis { grid-template-columns: 1fr; } }
-.shot-panel { background: #1C1C1F; border-radius: 12px; padding: 14px 16px; min-width: 0;
+.shot-panel { background: #FFFFFF; border-radius: 12px; padding: 14px 16px; min-width: 0;
                display: flex; flex-direction: column; }
-.shot-ph { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #8B8B93; margin-bottom: 12px; }
+.shot-ph { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6F6B66; margin-bottom: 12px; }
 .shot-bars { display: flex; align-items: flex-end; gap: 5px; flex: 1; min-height: 92px; }
-.shot-bars span { flex: 1; background: #303036; border-radius: 3px; height: var(--h); }
-.shot-bars span.hi { background: #C6F24E; }
+.shot-bars span { flex: 1; background: #DBD7D1; border-radius: 3px; height: var(--h); }
+.shot-bars span.hi { background: #FF6022; }
 .shot-wl { display: flex; flex-direction: column; gap: 8px; }
 .shot-wlr { display: grid; grid-template-columns: 16px 1fr 90px 34px; gap: 10px; align-items: center; font-size: 12.5px; }
-.shot-wlr .rk { color: #5E5E66; font-variant-numeric: tabular-nums; }
+.shot-wlr .rk { color: #6F6B66; font-variant-numeric: tabular-nums; }
 .shot-wlr .co { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.shot-wlr .bar { height: 6px; background: #303036; border-radius: 3px; overflow: hidden; }
-.shot-wlr .bar i { display: block; height: 100%; width: var(--w); background: #5AA9E6; }
-.shot-wlr:first-child .bar i { background: #C6F24E; }
+.shot-wlr .bar { height: 6px; background: #DBD7D1; border-radius: 3px; overflow: hidden; }
+.shot-wlr .bar i { display: block; height: 100%; width: var(--w); background: #8CCBFF; }
+.shot-wlr:first-child .bar i { background: #FF6022; }
 .shot-wlr .sc { text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--fw-semi); }
-.shot-feed { margin-top: 10px; background: #1C1C1F; border-radius: 12px; padding: 14px 16px; }
+.shot-feed { margin-top: 10px; background: #FFFFFF; border-radius: 12px; padding: 14px 16px; }
 .shot-frow { display: grid; grid-template-columns: 1fr auto 46px 34px; gap: 10px; align-items: center;
              padding-block: 7px; font-size: 12.5px; opacity: 0; transform: translateY(-6px);
              transition: opacity 260ms ease, transform 260ms ease; }
-.shot-frow + .shot-frow { border-top: 1px solid #26262A; }
+.shot-frow + .shot-frow { border-top: 1px solid #EBE9E5; }
 .shot-frow.in { opacity: 1; transform: none; }
 .shot-frow.out { opacity: 0; }
-.shot-frow .fchip { font-size: 11px; color: #8B8B93; white-space: nowrap; }
-.shot-frow .fwhen { font-size: 11px; color: #5E5E66; text-align: right; }
+.shot-frow .fchip { font-size: 11px; color: #6F6B66; white-space: nowrap; }
+.shot-frow .fwhen { font-size: 11px; color: #6F6B66; text-align: right; }
 .shot-frow .fsc { text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--fw-semi); }
 @media (max-width: 560px) { .shot-frow { grid-template-columns: 1fr 46px 34px; } .shot-frow .fchip { display: none; } }
 .shot-cap { font-size: var(--fs-xs); color: var(--ink3); margin-top: var(--s3); }
@@ -1140,22 +1122,22 @@ a.ledger-row:hover { background: var(--paper2); }
 /* The figure itself: a single account card in the product's own palette,
    reusing .shot's ground so the two product figures on the home page are
    demonstrably the same product. */
-.acct { background: #131315; color: #EFE9DC; padding: clamp(18px, 2vw, 26px); font-size: 13px; }
+.acct { background: #FFFFFF; color: #121213; padding: clamp(18px, 2vw, 26px); font-size: 13px; }
 .acct-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); margin-bottom: var(--s6); }
 .acct-co { display: flex; align-items: center; gap: 8px; font-weight: var(--fw-semi); font-size: 15px; }
-.acct-co i { width: 7px; height: 7px; background: #C6F24E; border-radius: 50%; }
-.acct-tag { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #8B8B93; }
-.acct-score { display: flex; align-items: baseline; gap: 12px; padding-block: var(--s5); border-block: 1px solid #26262A; }
+.acct-co i { width: 7px; height: 7px; background: #FF6022; border-radius: 50%; }
+.acct-tag { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6F6B66; }
+.acct-score { display: flex; align-items: baseline; gap: 12px; padding-block: var(--s5); border-block: 1px solid #EBE9E5; }
 .acct-score b { font-size: clamp(52px, 6vw, 82px); font-weight: var(--fw-semi); line-height: .9;
-                letter-spacing: -.045em; font-variant-numeric: tabular-nums; color: #C6F24E; }
-.acct-score span { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #8B8B93; }
+                letter-spacing: -.045em; font-variant-numeric: tabular-nums; color: #FF6022; }
+.acct-score span { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6F6B66; }
 .acct-why { margin-top: var(--s5); }
-.acct-why .kl { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #8B8B93; }
-.acct-why p { margin-top: 6px; color: #EFE9DC; font-size: 13.5px; }
-.acct-draft { margin-top: var(--s5); background: #C6F24E; color: #131315; width: 100%;
+.acct-why .kl { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6F6B66; }
+.acct-why p { margin-top: 6px; color: #444444; font-size: 13.5px; }
+.acct-draft { margin-top: var(--s5); background: #FF6022; color: #121213; width: 100%;
               justify-content: center; height: 44px; font-weight: var(--fw-semi); font-size: 13px;
               display: inline-flex; align-items: center; gap: 8px; }
-.acct-draft:hover { background: #D4FA63; }
+.acct-draft:hover { background: #FF7A45; }
 
 /* ════════════════════════════════════════════════════════════════════════
    INDUSTRIES
@@ -1211,8 +1193,8 @@ a.ledger-row:hover { background: var(--paper2); }
   mix-blend-mode: difference;
 }
 .narr-rail a { display: block; font-size: var(--fs-label); font-weight: var(--fw-semi);
-               letter-spacing: var(--ls-label); color: #6E6A5D; font-variant-numeric: tabular-nums; }
-.narr-rail a.on { color: #F1EDE3; }
+               letter-spacing: var(--ls-label); color: #8A867F; font-variant-numeric: tabular-nums; }
+.narr-rail a.on { color: #F6F4F0; }
 @media (max-width: 900px) { .narr-rail { display: none; } }
 
 .narr-panel {
@@ -1220,9 +1202,9 @@ a.ledger-row:hover { background: var(--paper2); }
   padding: var(--s9) var(--mar); scroll-snap-align: start;
 }
 .narr-panel .inner { width: 100%; max-width: 980px; }
-.narr-panel.ink { background: #14140F; color: var(--ink-paper);
-  --paper: #14140F; --paper2: #1D1C16; --ink: var(--ink-paper); --ink2: var(--ink-ink2);
-  --ink3: #8B877A; --rule: var(--ink-rule); --rule-strong: #3E3C31; }
+.narr-panel.ink { background: #121213; color: var(--ink-paper);
+  --paper: #121213; --paper2: #1C1C1E; --ink: var(--ink-paper); --ink2: var(--ink-ink2);
+  --ink3: #9A968F; --rule: var(--ink-rule); --rule-strong: #3A3A3D; }
 .narr-panel .d2 { margin-block: var(--s5) var(--s6); }
 .narr-panel .lead { max-width: var(--measure); }
 .narr-panel.center { text-align: center; }
@@ -1235,3 +1217,178 @@ a.ledger-row:hover { background: var(--paper2); }
 .narr-card { width: min(420px, 100%); margin-inline: auto; text-align: center; }
 .narr-card .d3 { margin-block: var(--s4) var(--s3); }
 .narr-card .gbtn { box-shadow: inset 0 0 0 1px var(--rule-strong); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   OUTCOMES
+   The components above were drawn for a print grammar: square corners,
+   hairline cells, a lime stroke. This block restates them in the Outcomes
+   language and sits last so it wins by order, not by !important.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── Type details ── */
+.lbl, .idx, .nv-link, .nv-signin, .chip, .f label, .foot-col h5, .crumb, .trip h4,
+.cell .more, .stat span, .ag-badge, .f-pill, .legal-body h4, .narr-rail a {
+  font-weight: var(--fw-med);
+}
+.num { font-family: var(--face-text); font-variation-settings: normal; letter-spacing: -0.03em; }
+*, *::before, *::after { font-variant-numeric: proportional-nums !important; }
+
+/* THE MARKER: outcomes.digital's highlighter -- an orange-to-coral stroke
+   behind the phrase, near-square, ink on top. */
+.mk {
+  background: var(--marker); color: var(--acc-ink);
+  border-radius: var(--r-marker); padding: 0 0.14em; margin: 0 -0.04em;
+}
+
+/* ── Controls: pills ── */
+.btn { border-radius: var(--r-pill); height: 48px; padding-inline: var(--s6);
+       font-weight: var(--fw-med); letter-spacing: 0; }
+.btn-1 { background: var(--ink); color: var(--ink-paper); }
+.btn-1:hover { background: #2B2B2E; color: var(--ink-paper); }
+.btn-2 { box-shadow: inset 0 0 0 1px var(--rule-strong); background: transparent; color: var(--ink); }
+.btn-2:hover { box-shadow: inset 0 0 0 1px var(--ink); background: transparent; color: var(--ink); }
+/* The hero's action: uppercase, heavy, arrowed, with the site's soft drop. */
+.hero .btn-1, .btn-hero {
+  height: 54px; padding-inline: var(--s7); text-transform: uppercase;
+  font-weight: 800; font-size: 16px; box-shadow: var(--shadow-pill);
+}
+.hero .btn-1::after, .btn-hero::after { content: '\2192'; font-weight: 800; }
+.prose a:hover { background: none; border-bottom-color: var(--acc); }
+
+/* ── Masthead ── */
+.nv.stuck { background: var(--paper); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+.bn-mark { border-radius: var(--r-pill); }
+.bn-word { font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144; font-size: 23px; }
+.nv-link { font-size: 15px; text-transform: none; letter-spacing: -0.01em; color: var(--ink); }
+.nv-link::after { background: var(--acc); height: 2px; }
+.nv-link.active::after { height: 2px; }
+.nv-signin { font-size: 15px; text-transform: none; letter-spacing: -0.01em; color: var(--ink); }
+.nv-cta .btn { height: 40px; }
+.nv-sheet { background: var(--ink); }
+.nv-sheet > a:hover { color: var(--acc); }
+.prog { background: var(--acc); }
+
+/* ── Ticker ── */
+.tick { border-block-color: var(--rule); }
+.tick-i::after { border-radius: var(--r-pill); background: var(--acc); }
+.tick-sm .tick-i { font-weight: var(--fw-med); }
+
+/* ── Cells and the directory become white cards on paper ── */
+.cells, .dir { gap: var(--s4); border: 0; overflow: visible; }
+.cell, .ag {
+  background: var(--card); border-radius: var(--r); box-shadow: none;
+  padding: var(--s6) var(--s6) var(--s6);
+}
+.cell::before, .ag::before { content: none; }
+a.cell:hover, button.cell:hover, .ag:hover { background: var(--card); box-shadow: inset 0 0 0 1px var(--rule-strong); }
+.ag-badge { background: var(--acc); color: var(--acc-ink); border-radius: var(--r-pill); padding: 3px var(--s3); }
+.ag-badge.building { background: var(--paper2); color: var(--ink2); }
+.cell-ic { color: var(--ink); }
+
+/* ── Stats: the site's figure is the text face, heavy, over a label ── */
+.stat { border-top: 0; padding-top: 0; }
+.stat b { font-family: var(--face-text); font-weight: 700; letter-spacing: -0.04em;
+          font-variation-settings: normal; line-height: 1; }
+.stat span { text-transform: uppercase; }
+a.stat:hover { border-top-color: transparent; }
+
+/* ── Tags and chips: pills ── */
+.tag { border-radius: var(--r-pill); box-shadow: none; background: var(--paper2); padding: 3px var(--s3); }
+.tag-fill { background: var(--acc); color: var(--acc-ink); }
+.chip { border-radius: var(--r-pill); text-transform: none; letter-spacing: 0; font-size: var(--fs-sm);
+        box-shadow: inset 0 0 0 1px var(--rule-strong); }
+.chip:hover { box-shadow: inset 0 0 0 1px var(--ink); }
+.chip.on { background: var(--ink); color: var(--ink-paper); }
+.srch { border: 0; background: var(--card); border-radius: var(--r-pill); padding: var(--s3) var(--s5); }
+.srch::after { content: none; }
+.srch:focus-within { box-shadow: inset 0 0 0 1px var(--ink); }
+
+/* ── Ledger rows and story steps: the site's top-line tab ── */
+.story-step.on .idx::before { background: var(--acc); height: 2px; }
+.story-step.on .idx { color: var(--acc-tx); }
+
+/* ── The product figure, in the product's light surfaces ── */
+.shot, .acct {
+  background: var(--paper2); color: var(--ink); border-radius: var(--r-lg);
+  font-family: var(--face-text);
+}
+.shot-ttl i, .shot-live i, .acct-co i { background: var(--acc); }
+.shot-live, .shot-kpi .kl, .shot-ph, .shot-frow .fchip, .acct-tag, .acct-score span, .acct-why .kl { color: var(--ink3); }
+.shot-kpi, .shot-panel, .shot-feed { background: var(--card); border-radius: var(--r); }
+.shot-kpi.lead { background: var(--acc); color: var(--acc-ink); }
+.shot-kpi.lead .kl { color: var(--acc-ink); opacity: .75; }
+.shot-bars span { background: var(--paper3); }
+.shot-bars span.hi { background: var(--acc); }
+.shot-wlr .rk, .shot-frow .fwhen { color: var(--ink3); }
+.shot-wlr .bar { background: var(--paper2); }
+.shot-wlr .bar i { background: var(--sky); }
+.shot-wlr:first-child .bar i { background: var(--acc); }
+.shot-frow + .shot-frow { border-top-color: var(--paper2); }
+.acct { background: var(--card); box-shadow: var(--shadow-block); }
+.acct-score { border-block-color: var(--rule); }
+.acct-score b { color: var(--ink); font-family: var(--face-text); font-weight: 700; }
+.acct-why p { color: var(--ink2); }
+.acct-draft { background: var(--ink); color: var(--ink-paper); border-radius: var(--r-pill); }
+.acct-draft:hover { background: #2B2B2E; }
+
+/* ── Bands become blocks ──
+   The ink band is the site's black card ("05 Optimise and Scale"): inset,
+   24px corners, a soft drop. The closing band is the orange block. */
+.inkband, .limeband {
+  width: auto; margin-inline: var(--mar); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-block);
+}
+/* Literal, not var(--ink): inside the band --ink is re-pointed at the light
+   text colour, so var(--ink) here would paint the band paper-white. */
+.inkband { background: #121213; }
+/* The closing call to action is the site's sky block ("03 Build the
+   Growth Engine"), so it does not run into the orange colophon below it. */
+.limeband {
+  --paper: var(--sky); --paper2: #A8D8FF; --paper3: #C4E4FF;
+  --ink: #121213; --ink2: #1E2A36; --ink3: #2A3A4A;
+  --rule: #6FB6F0; --rule-strong: #4C9BDA; --rule-ink: #121213;
+  background: var(--sky); color: #121213; margin-block: 0 var(--s7);
+}
+.limeband .btn-2 { box-shadow: inset 0 0 0 1px #121213; }
+@media (max-width: 640px) { .inkband, .limeband { margin-inline: 12px; } }
+
+/* ── The colophon: outcomes.digital's closing block. Orange ground, the
+   wordmark at display size, the tagline, contact columns. ── */
+.foot { border-top: 0; background: var(--sun); color: var(--ink);
+        --rule: rgba(18,18,19,.18); --ink2: #2A1A08; --ink3: #3A2A10; }
+.foot-word {
+  display: block; font-family: var(--face-display); font-weight: var(--fw-semi);
+  font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
+  font-size: clamp(72px, 16.5vw, 250px); line-height: .9; letter-spacing: -0.035em;
+  padding-top: var(--s8); color: var(--ink);
+}
+.foot .bn-mark { background: var(--ink); }
+.foot-tag { font-style: normal; font-family: var(--face-text); font-weight: var(--fw-book);
+            font-size: clamp(26px, 3vw, 44px); line-height: 1.12; letter-spacing: -0.03em;
+            font-variation-settings: normal; max-width: 16ch; }
+.foot-col h5 { color: var(--ink); }
+.foot-col a { color: var(--ink); font-size: 18px; }
+.foot-col a:hover { color: var(--ink); text-decoration: underline; }
+.foot .btn-1 { background: var(--ink); color: var(--ink-paper); }
+.foot-bottom { color: var(--ink); }
+
+/* ── Overlays ── */
+.ov-panel { border-left: 0; border-radius: var(--r-lg) 0 0 var(--r-lg); background: var(--paper); }
+.ov-mid { border-radius: var(--r-lg); }
+.ov-x { border-radius: var(--r-pill); }
+.f-pill { border-radius: var(--r-pill); text-transform: none; letter-spacing: 0; font-size: var(--fs-sm); }
+.f-done .mark { border-radius: var(--r-pill); }
+.gbtn { border-radius: var(--r); }
+.vframe { border-radius: var(--r-lg); }
+.vph .play { border-radius: var(--r-pill); }
+.side-cta { border-radius: var(--r-lg); }
+.side-cta .btn-1 { background: var(--acc); color: var(--acc-ink); }
+.side-cta .btn-2 { box-shadow: inset 0 0 0 1px #3A3A3D; }
+.ind-flag { border-top: 0; background: var(--card); border-radius: var(--r); padding: var(--s6); border-bottom: 0; }
+.ind-flag:hover { background: var(--card); box-shadow: inset 0 0 0 1px var(--rule-strong); }
+.ind-segs span::before { border-radius: var(--r-pill); }
+.ind-other { border-radius: var(--r-pill); }
+.ig-list span { border-radius: var(--r-pill); }
+.cmp .own { background: var(--card); }
+.cmp .own .mk-y { border-radius: var(--r-pill); }
+.narr-card .gbtn { border-radius: var(--r); }

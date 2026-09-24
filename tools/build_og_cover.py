@@ -25,28 +25,28 @@ from brand import BRAND  # noqa: E402
 
 CARD = """<!doctype html><html><head><meta charset="utf-8">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Familjen+Grotesk:wght@400..700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Zalando+Sans:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{width:1200px;height:630px;background:#F1EDE3;color:#14140F;
-       font-family:'Familjen Grotesk',system-ui,sans-serif;overflow:hidden}
+  body{width:1200px;height:630px;background:#F1EFED;color:#121213;
+       font-family:'Zalando Sans',system-ui,sans-serif;overflow:hidden}
   .card{height:100%;padding:72px 80px;display:flex;flex-direction:column}
   .top{display:flex;align-items:center;gap:14px}
-  .mark{width:18px;height:18px;background:#C6F24E}
+  .mark{width:18px;height:18px;border-radius:50%;background:#FF6022}
   .word{font-family:'Fraunces',serif;font-size:30px;font-weight:600;
-        letter-spacing:-.03em;font-variation-settings:'SOFT' 0,'WONK' 0,'opsz' 32}
-  .lbl{margin-left:auto;font-size:14px;font-weight:600;letter-spacing:.16em;
-       text-transform:uppercase;color:#6B6860}
+        letter-spacing:-.03em;font-variation-settings:'SOFT' 0,'WONK' 1,'opsz' 144}
+  .lbl{margin-left:auto;font-size:14px;font-weight:500;letter-spacing:.04em;
+       text-transform:uppercase;color:#6F6B66}
   /* 1.06, not the site's .94: the marker is a background box on an inline
      box, so on a tight leading it covers the descenders of the line above. */
   h1{margin-top:auto;font-family:'Fraunces',serif;font-size:88px;font-weight:600;
      line-height:1.06;letter-spacing:-.028em;
      font-variation-settings:'SOFT' 0,'WONK' 1,'opsz' 144}
   .it{font-style:italic}
-  .mk{background:#C6F24E;color:#14140F;padding:.02em .18em;margin:0 -.06em;
-      border-radius:.05em .17em .06em .2em / .17em .06em .2em .05em}
-  .rule{height:2px;background:#14140F;margin:44px 0 26px}
-  p{font-size:23px;line-height:1.45;color:#55534A;max-width:60ch}
+  .mk{background:linear-gradient(90deg,#FF6022 0%,#FF8B5D 100%);color:#121213;
+      padding:.02em .14em;margin:0 -.04em;border-radius:.06em}
+  .rule{height:2px;background:#121213;margin:44px 0 26px}
+  p{font-size:23px;line-height:1.45;color:#444444;max-width:60ch}
 </style></head><body><div class="card">
   <div class="top"><span class="mark"></span><span class="word">__NAME__</span>
     <span class="lbl">Agentic revenue intelligence</span></div>
@@ -70,9 +70,14 @@ async def main():
     try:
         async with async_playwright() as p:
             exe = os.environ.get("CHROMIUM_PATH", "/opt/pw-browsers/chromium")
+            # Behind an egress proxy the webfonts only arrive through it; a
+            # browser that ignores HTTPS_PROXY renders the fallback serif.
+            proxy = os.environ.get("HTTPS_PROXY")
             b = await p.chromium.launch(
                 executable_path=exe if os.path.exists(exe) else None,
-                args=["--no-sandbox", "--force-color-profile=srgb"])
+                proxy={"server": proxy} if proxy else None,
+                args=["--no-sandbox", "--force-color-profile=srgb",
+                      "--ignore-certificate-errors"])
             ctx = await b.new_context(viewport={"width": 1200, "height": 630},
                                       device_scale_factor=1, ignore_https_errors=True)
             pg = await ctx.new_page()

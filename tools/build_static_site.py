@@ -51,17 +51,17 @@ ASSETS = [
 ]
 
 BANNER_CSS = """
-.pv-note{background:#14140F;color:#A8A499;width:100%;padding:20px 0;
-  font-family:'Familjen Grotesk',system-ui,-apple-system,sans-serif;
+.pv-note{background:#121213;color:#B5B1AB;width:100%;padding:20px 0;
+  font-family:'Zalando Sans',system-ui,-apple-system,sans-serif;
   font-size:12.5px;line-height:1.55;-webkit-font-smoothing:antialiased}
 .pv-in{display:flex;gap:12px;align-items:flex-start;max-width:1340px;
   margin-inline:auto;padding-inline:clamp(20px,5.2vw,84px)}
-.pv-note i{width:7px;height:7px;background:#C6F24E;flex:0 0 auto;
+.pv-note i{width:7px;height:7px;border-radius:50%;background:#FF6022;flex:0 0 auto;
   margin-top:7px;display:block}
 .pv-note p{margin:0;max-width:86ch}
-.pv-note b{color:#F1EDE3;font-weight:600}
-.pv-gbtn{font-family:'Familjen Grotesk',system-ui,sans-serif;font-size:12.5px;
-  color:#6B6860;text-align:center;width:100%;display:block;padding:4px 0}
+.pv-note b{color:#F6F4F0;font-weight:600}
+.pv-gbtn{font-family:'Zalando Sans',system-ui,sans-serif;font-size:12.5px;
+  color:#6F6B66;text-align:center;width:100%;display:block;padding:4px 0}
 """
 
 BANNER_HTML = """
