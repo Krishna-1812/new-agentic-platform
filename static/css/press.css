@@ -1587,3 +1587,176 @@ a.stat:hover { border-top-color: transparent; }
 .play .prog { background: linear-gradient(90deg, var(--acc), var(--amber)); height: 3px; }
 /* The tab rail only means something while the track slides. */
 .track:not(.is-pinned) .track-tabs { display: none; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   PLAY, LOUDER — the second layer of the public site's motion.
+   Same three rules as above: the page is complete without it, reduced
+   motion turns it off, and nothing arrives card by card. What is new:
+   an opening sequence, a throwable deck, a sticker, a statement that
+   lights up as you read it, a band of display type driven by the scroll,
+   ink blocks that open like a portal, confetti on the calls to action,
+   a directory that glides when filtered, and a footer full of toys.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── The opening sequence (home, first visit in a session) ──
+   .intro-on is set in <head> so the orange cover exists before the first
+   paint; press-play.js replaces it with the real sequence. If the script
+   never arrives, the cover lifts itself after 3s. */
+.intro-on body::after {
+  content: ''; position: fixed; inset: 0; z-index: 2000; background: #FF6022;
+  animation: pr-intro-failsafe 1ms linear 3s forwards;
+}
+@keyframes pr-intro-failsafe { to { visibility: hidden; opacity: 0; } }
+.intro-hold .hero .ln > span { transform: translateY(105%) !important; }
+.intro-hold .hero .fade { opacity: 0 !important; }
+.intro { position: fixed; inset: 0; z-index: 2001; display: flex; pointer-events: auto; cursor: pointer; }
+.intro-bar { flex: 1; background: #FF6022; transition: background-color 380ms ease, transform 900ms var(--glide); }
+.intro.go .intro-bar.c-amber { background: var(--amber); }
+.intro.go .intro-bar.c-sky   { background: var(--sky); }
+.intro.go .intro-bar.c-red   { background: var(--red); }
+/* The four bars leave a beat apart, left to right: four stripes of one
+   curtain, not four cards. */
+.intro-bar { transition-delay: 0ms, 120ms; }
+.intro-bar:nth-child(2) { transition-delay: 0ms, 190ms; }
+.intro-bar:nth-child(3) { transition-delay: 0ms, 260ms; }
+.intro-bar:nth-child(4) { transition-delay: 0ms, 330ms; }
+.intro.out .intro-bar { transform: translateY(-101%); }
+.intro-word {
+  position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
+  text-align: center; color: var(--ink); overflow: hidden; padding: .06em 0 .12em;
+  font-family: var(--face-display); font-weight: var(--fw-semi);
+  font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
+  font-size: clamp(56px, 15vw, 240px); line-height: .9; letter-spacing: -0.035em;
+}
+.intro-word .ch { display: inline-block; transform: translateY(115%) rotate(14deg);
+  transition: transform 760ms var(--spring) calc(var(--i) * 38ms); }
+.intro.go .intro-word .ch { transform: none; }
+.intro.out .intro-word .ch { transform: translateY(-120%) rotate(-8deg); transition: transform 340ms cubic-bezier(.5, 0, .75, 0); }
+.intro-meta {
+  position: absolute; left: var(--mar); right: var(--mar); bottom: var(--s6);
+  display: flex; justify-content: space-between; color: var(--ink);
+  font-size: var(--fs-label); font-weight: 700; letter-spacing: var(--ls-label); text-transform: uppercase;
+  transition: opacity 240ms ease;
+}
+.intro.out .intro-meta { opacity: 0; }
+
+/* ── The hero sticker: a spinning roundel stuck to the deck ── */
+.sticker { display: none; }
+@media (min-width: 1120px) {
+  .play .sticker {
+    display: block; position: absolute; z-index: 6; width: 120px; height: 120px;
+    right: -34px; bottom: -52px; overflow: visible;
+    animation: pr-spin 16s linear infinite;
+    transition: scale 400ms var(--spring);
+  }
+  .play .sticker:hover { scale: 1.12; }
+  .sticker > circle:first-of-type { fill: var(--ink); }
+  .sticker text { fill: var(--ink-paper); font: 700 10.5px var(--face-text); letter-spacing: .18em; }
+  .sticker-dot { fill: var(--acc); transform-origin: 60px 60px; animation: pr-pulse 1.6s var(--glide) infinite; }
+}
+@keyframes pr-spin { to { transform: rotate(360deg); } }
+@keyframes pr-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(.72); } }
+
+/* ── The deck can be grabbed and thrown ── */
+@media (min-width: 1120px) {
+  /* Above the hero's text blocks, which run full width and would
+     otherwise take every press meant for the cards. */
+  .play .deck { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; z-index: 2; }
+  .play .deck.grabbing { cursor: grabbing; z-index: 5; }
+  .play .deck.grabbing .deck-card[data-pos="0"] { transition: none; animation: none; }
+  .play .deck-card.thrown { z-index: 5; transition: transform 560ms cubic-bezier(.2, .7, .3, 1), opacity 560ms ease; opacity: 0; }
+}
+
+/* ── The highlighter changes colour under the pointer ── */
+@keyframes pr-mk-cycle {
+  0%   { background-color: var(--acc); }
+  25%  { background-color: var(--amber); }
+  50%  { background-color: var(--sky); }
+  75%  { background-color: var(--red); }
+}
+.play .mk.drawn:hover { animation: pr-mk-cycle 1.2s steps(1) infinite; background-image: none; }
+
+/* ── The statement ── */
+.said { padding-block: clamp(72px, 11vw, 160px) clamp(24px, 4vw, 64px); }
+.said-t {
+  font-family: var(--face-display); font-weight: var(--fw-semi);
+  font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
+  font-size: clamp(34px, 5.4vw, 84px); line-height: 1.12; letter-spacing: -0.025em;
+  color: var(--ink); max-width: 20ch;
+}
+.said-b { padding: 0 .12em; margin: 0 -.04em; border-radius: var(--r-sm); box-decoration-break: clone; -webkit-box-decoration-break: clone;
+          background-repeat: no-repeat; background-size: 100% 100%; }
+.said-b.c-orange { background-image: linear-gradient(var(--acc), var(--acc)); }
+.said-b.c-amber  { background-image: linear-gradient(var(--amber), var(--amber)); }
+.said-b.c-sky    { background-image: linear-gradient(var(--sky), var(--sky)); }
+.play .said-t .sw { color: #C9C4BD; transition: color 280ms ease; }
+.play .said-t .sw.lit { color: var(--ink); }
+.play .said-b { background-size: 0% 100%; transition: background-size 700ms var(--glide); }
+.play .said-b.lit { background-size: 100% 100%; }
+
+/* ── The kinetic band ── */
+.kin { overflow: hidden; padding-block: clamp(40px, 6vw, 96px); user-select: none; }
+.kin-row {
+  display: flex; align-items: center; gap: .32em; width: max-content; white-space: nowrap;
+  font-family: var(--face-display); font-weight: var(--fw-semi);
+  font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
+  font-size: clamp(60px, 10.5vw, 180px); line-height: 1.02; letter-spacing: -0.035em; color: var(--ink);
+  transform: translate3d(var(--kx, 0px), 0, 0) skewX(var(--kskew, 0deg));
+  will-change: transform;
+}
+.kin-row + .kin-row { margin-top: .06em; }
+.kin-w.o { color: transparent; -webkit-text-stroke: 2px var(--ink); font-style: italic; }
+.kin-s { display: inline-block; flex: 0 0 auto; width: .56em; height: .56em; transform: rotate(var(--kr, 0deg)); }
+.kin-s.s1 { background: var(--acc); border-radius: 50%; }
+.kin-s.s2 { background: var(--amber); border-radius: var(--r-sm); }
+.kin-s.s3 { background: var(--sky); border-radius: var(--r-pill); width: 1em; }
+.kin-s.s4 { background: var(--red); clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+.kin-w { transition: color 300ms ease; }
+.kin-w:not(.o):hover { color: var(--acc); }
+.kin-w.o:hover { -webkit-text-stroke-color: var(--acc); }
+
+/* ── Ink blocks open like a portal ──
+   press-play.js writes the clip on each ink block as it scrolls in: a
+   small rounded window in the middle of the band that widens to the full
+   block. .portal is set by the script, so without it nothing is clipped. */
+.play .inkband.portal { transform: none; transition: none; will-change: clip-path; }
+.play .inkband.portal > .wrap { transform: scale(calc(.86 + .14 * var(--pp, 1))); opacity: calc(.15 + .85 * var(--pp, 1)); }
+
+/* ── Confetti ── */
+.cf-layer { position: fixed; inset: 0; z-index: 3000; pointer-events: none; overflow: hidden; }
+.cf { position: absolute; left: 0; top: 0; width: 12px; height: 12px; will-change: transform; }
+.cf.k0 { border-radius: 50%; }
+.cf.k2 { width: 18px; height: 7px; border-radius: var(--r-pill); }
+.cf.k3 { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+
+/* ── Footer toys ── */
+.foot-top { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s6); }
+.foot-top .foot-word { flex: 0 1 auto; }
+.toys { display: none; }
+@media (min-width: 1120px) {
+  .toys { display: grid; grid-template-columns: repeat(3, clamp(64px, 6vw, 96px)); gap: 10px; flex: 0 0 auto; margin-bottom: 18px; }
+}
+.toy { aspect-ratio: 1; border-radius: var(--r); display: grid; place-items: center; cursor: pointer;
+       transition: background-color 400ms ease, transform 500ms var(--spring); }
+.toy.t-ink   { background: var(--ink); }
+.toy.t-paper { background: var(--paper, #F1EFED); }
+.toy.t-sky   { background: var(--sky); }
+.toy.t-red   { background: var(--red); }
+.toy.t-acc   { background: var(--acc); }
+.toy i { width: 62%; height: 62%; background: var(--ink); transform: rotate(var(--tr, 0deg));
+         transition: border-radius 700ms var(--spring), transform 700ms var(--spring), background-color 400ms ease; }
+.toy.t-ink i { background: var(--sun); }
+.toy i.sh-0 { border-radius: 50%; }
+.toy i.sh-1 { border-radius: 100% 0 0 0; }
+.toy i.sh-2 { border-radius: 100% 0; }
+.toy i.sh-3 { border-radius: 14%; }
+.play .toy:hover { transform: scale(1.08) rotate(-4deg); }
+.play .toy:active { transform: scale(.9); }
+
+/* ── Footer letters: after they rise, they jump under the pointer like keys ── */
+.play .foot-word.risen .ch { transform: translateY(calc(var(--lift, 0) * -16%));
+  transition: transform 520ms var(--spring), font-variation-settings 420ms var(--glide); }
+.play .foot-word.risen.is-live .ch { transition-duration: 180ms, 160ms; }
+
+/* ── Page to page: the curtain is four colours now ── */
+.vt::view-transition { background: linear-gradient(90deg, #FF6022 0 25%, #FFB500 0 50%, #8CCBFF 0 75%, #FF3B30 0); }

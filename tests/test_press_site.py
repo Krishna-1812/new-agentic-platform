@@ -191,8 +191,10 @@ def test_rounding_comes_only_from_the_shape_tokens():
     assert re.search(r"--r:\s*16px", css) and re.search(r"--r-lg:\s*24px", css)
     assert re.search(r"--r-pill:\s*999px", css)
     # The product figures predate the tokens and are restated under OUTCOMES,
-    # so their literal radii are excluded by name.
-    body = re.sub(r"\.(shot|acct)[^{]*\{[^}]*\}", "", css)
+    # so their literal radii are excluded by name; so are the footer toys,
+    # whose radii draw geometric shapes (a quarter circle, a leaf), not the
+    # rounding of a card or a control.
+    body = re.sub(r"\.(shot|acct|toy)[^{]*\{[^}]*\}", "", css)
     strays = [d for d in re.findall(r"border-radius:\s*([^;}]+)", body)
               if "var(--r" not in d and d.strip() not in ("0", "50%")]
     assert not strays, "press.css rounds something outside the shape tokens: %r" % strays

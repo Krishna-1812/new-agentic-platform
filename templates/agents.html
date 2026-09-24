@@ -65,12 +65,17 @@
     is the site's single most recognisable mark. Zalando Sans is the text
     face outcomes.digital uses, and the product's too. -#}
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Zalando+Sans:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/press.css?v=1">
+<link rel="stylesheet" href="/static/css/press.css?v=2">
 {#- The no-JS contract, same as the product's: every hidden state in press.css
     is gated on html.js, so a page whose script never runs shows finished type
     instead of an empty column. Set here, before first paint, so the reveal
     states are already armed when the parser reaches the first headline. -#}
-<script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' vt');</script>
+{#- .js and .vt before first paint. On the home page, a first visit in the
+    session (not arriving from another page of the site) also gets .intro-on,
+    so the opening sequence covers the page before it is ever drawn;
+    press.css drops that cover on its own after 3s if press-play.js never
+    arrives. -#}
+<script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' vt');{% if page == 'home' %}try{if(/ vt/.test(document.documentElement.className)&&!sessionStorage.getItem('nx-intro')&&document.referrer.indexOf(location.origin)!==0)document.documentElement.className+=' intro-on'}catch(e){}{% endif %}</script>
 </head>
 <body data-page="{{ page }}">
 
@@ -136,6 +141,7 @@
       <div class="deck-card c-amber" data-pos="1"><span class="deck-k">C-suite join</span><b>Northwind</b><span class="deck-l">New VP Marketing</span><span class="deck-s">8.7</span></div>
       <div class="deck-card c-sky" data-pos="2"><span class="deck-k">Pricing-page visit</span><b>Vertex Labs</b><span class="deck-l">3 visits this week</span><span class="deck-s">8.1</span></div>
       <div class="deck-card c-ink" data-pos="3"><span class="deck-k">AI answer mention</span><b>Beacon AI</b><span class="deck-l">Cited in 4 answers</span><span class="deck-s">7.5</span></div>
+      <svg class="sticker" viewBox="0 0 120 120"><defs><path id="stk" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1 -88 0"/></defs><circle cx="60" cy="60" r="58"/><text><textPath href="#stk">LIVE BUYING SIGNALS &#8226; ALWAYS ON &#8226; </textPath></text><circle class="sticker-dot" cx="60" cy="60" r="13"/></svg>
     </div>
     <span class="lbl rv fade">Agentic revenue intelligence</span>
     <h1 class="d1 rv">
@@ -161,6 +167,14 @@
       {% for _ in range(2) %}{% for s in ['Funding round','C-suite join','Acquisition','IPO filing','Product launch','Partnership','Hiring surge','Pricing-page visit','AI answer mention','Tech-stack change'] %}<a class="tick-i" href="/signals">{{ s }}</a>{% endfor %}{% endfor %}
     </div>
   </div></div>
+
+  {#- THE STATEMENT. One sentence at display size; while it scrolls past,
+      its words light up in reading order and the three signals get their
+      colour blocks (press-play.js). Without the script it is simply set in
+      ink with the blocks on. -#}
+  <section class="wrap said">
+    <p class="said-t" id="said">Your next customer is already telling the internet. <span class="said-b c-orange">A funding round.</span> <span class="said-b c-amber">A new VP Marketing.</span> <span class="said-b c-sky">Three visits to your pricing&nbsp;page.</span> We read the signals, stack them, and hand you the account, with the reason&nbsp;why.</p>
+  </section>
 
   <section class="wrap sec" id="how">
     <span class="rule rv"></span>
@@ -190,6 +204,17 @@
       </div>
     </div>
   </section>
+
+  {#- THE KINETIC BAND. Two rows of display type that slide in opposite
+      directions as the page scrolls. Decorative: every word in it is said
+      elsewhere on the page. -#}
+  <div class="kin" aria-hidden="true">
+    {% for row in [['Signal','Score','Account','Conversation'], ['Funding round','New VP','Pricing page','AI answers']] %}
+    <div class="kin-row" data-dir="{{ '-1' if loop.first else '1' }}">
+      {% for _ in range(3) %}{% for w in row %}<span class="kin-w{{ ' o' if loop.index is even }}">{{ w }}</span><i class="kin-s s{{ loop.index }}"></i>{% endfor %}{% endfor %}
+    </div>
+    {% endfor %}
+  </div>
 
   <section class="wrap sec-sm">
     <span class="rule rv"></span>
@@ -1164,7 +1189,11 @@
   {#- outcomes.digital closes every page on an orange block carrying its
       wordmark at display size. This is that block, with the name set in the
       headings face. -#}
-  <div class="wrap"><a class="foot-word" href="/" aria-label="{{ brand.name }} home">{{ brand.name }}</a></div>
+  <div class="wrap foot-top"><a class="foot-word" href="/" aria-label="{{ brand.name }} home">{{ brand.name }}</a>
+    {#- Six shape tiles that keep rearranging themselves; hover or click one
+        to play with it. Wide screens only, decorative. -#}
+    <div class="toys" aria-hidden="true">{% for c in ['ink','paper','sky','red','acc','paper'] %}<span class="toy t-{{ c }}"><i class="sh-{{ loop.index0 % 4 }}"></i></span>{% endfor %}</div>
+  </div>
   <div class="wrap foot-in">
     <div>
       <p class="foot-tag">{{ brand.tagline }}</p>
@@ -1362,11 +1391,13 @@
       });
       if (none) none.style.display = shown ? 'none' : 'block';
     }
+    // press-play.js, when motion is on, glides the cards to their new places.
+    function refilter(){ if (window.pressFlip) window.pressFlip(cards, apply); else apply(); }
     chips.forEach(function(ch){ ch.addEventListener('click', function(){
       chips.forEach(function(x){ x.classList.remove('on'); }); ch.classList.add('on');
-      cat = ch.getAttribute('data-cat') || 'all'; apply();
+      cat = ch.getAttribute('data-cat') || 'all'; refilter();
     }); });
-    if (search) search.addEventListener('input', function(){ q = (search.value || '').toLowerCase().trim(); apply(); });
+    if (search) search.addEventListener('input', function(){ q = (search.value || '').toLowerCase().trim(); refilter(); });
   }
 
   /* ── signals search ─────────────────────────────────────────────── */
@@ -1688,7 +1719,7 @@
 
 {#- First-party visitor analytics: anonymous/public visitors only. -#}
 {% if not user %}
-<script src="{{ url_for('static', filename='js/press-play.js') }}?v=1" defer></script>
+<script src="{{ url_for('static', filename='js/press-play.js') }}?v=2" defer></script>
 <script src="{{ url_for('static', filename='js/visitor_track.js') }}?v=5"></script>
 {% endif %}
 </body>

@@ -18,7 +18,7 @@
 <link rel="apple-touch-icon" href="/new-agentic-platform/static/favicon.png?v=7">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Zalando+Sans:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/new-agentic-platform/static/css/press.css?v=1"><script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' vt');</script>
+<link rel="stylesheet" href="/new-agentic-platform/static/css/press.css?v=2"><script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' vt');</script>
 </head>
 <body data-page="industries">
 
@@ -155,7 +155,8 @@
 
 </main>
 
-<footer class="foot"><div class="wrap"><a class="foot-word" href="/new-agentic-platform/" aria-label="Northaxis home">Northaxis</a></div>
+<footer class="foot"><div class="wrap foot-top"><a class="foot-word" href="/new-agentic-platform/" aria-label="Northaxis home">Northaxis</a><div class="toys" aria-hidden="true"><span class="toy t-ink"><i class="sh-0"></i></span><span class="toy t-paper"><i class="sh-1"></i></span><span class="toy t-sky"><i class="sh-2"></i></span><span class="toy t-red"><i class="sh-3"></i></span><span class="toy t-acc"><i class="sh-0"></i></span><span class="toy t-paper"><i class="sh-1"></i></span></div>
+  </div>
   <div class="wrap foot-in">
     <div>
       <p class="foot-tag">Know which accounts are ready to buy.</p>
@@ -327,11 +328,13 @@
       });
       if (none) none.style.display = shown ? 'none' : 'block';
     }
+    // press-play.js, when motion is on, glides the cards to their new places.
+    function refilter(){ if (window.pressFlip) window.pressFlip(cards, apply); else apply(); }
     chips.forEach(function(ch){ ch.addEventListener('click', function(){
       chips.forEach(function(x){ x.classList.remove('on'); }); ch.classList.add('on');
-      cat = ch.getAttribute('data-cat') || 'all'; apply();
+      cat = ch.getAttribute('data-cat') || 'all'; refilter();
     }); });
-    if (search) search.addEventListener('input', function(){ q = (search.value || '').toLowerCase().trim(); apply(); });
+    if (search) search.addEventListener('input', function(){ q = (search.value || '').toLowerCase().trim(); refilter(); });
   }
 
   /* ── signals search ─────────────────────────────────────────────── */
@@ -650,7 +653,7 @@
   };
 })();
 </script>
-<script src="/new-agentic-platform/static/js/press-play.js?v=1" defer></script>
+<script src="/new-agentic-platform/static/js/press-play.js?v=2" defer></script>
 
 <style>
 .pv-note{background:#121213;color:#B5B1AB;width:100%;padding:20px 0;
