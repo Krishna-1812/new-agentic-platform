@@ -289,7 +289,7 @@ def _ask(monkeypatch, people_handler, role=_ROLE, message="CMO of tealium",
     monkeypatch.setattr(appmod, "_cpi_grounded_answer", _answer)
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
     r = c.post("/p2/strategic-agents/company-people-intelligence/chat", json={"message": message})
     assert r.status_code == 200
     return r.get_json(), facts_box.get("f", {}), billed, seen_people
@@ -439,7 +439,7 @@ def test_the_probe_runs_before_the_paid_search_not_after(monkeypatch):
     monkeypatch.setattr(appmod, "_cpi_grounded_answer", lambda *a, **k: "answer")
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
     c.post("/p2/strategic-agents/company-people-intelligence/chat",
            json={"message": "CMO of Tealium"})
     assert order and order[0] == "probe"
@@ -500,7 +500,7 @@ def _ask_reveal(monkeypatch, people_handler, titles=("CEO",),
                         facts_box.setdefault("f", facts) and "answer")
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
     r = c.post("/p2/strategic-agents/company-people-intelligence/chat", json={"message": message})
     assert r.status_code == 200
     return r.get_json(), facts_box.get("f", {}), matched

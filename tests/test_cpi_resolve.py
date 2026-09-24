@@ -278,7 +278,7 @@ def test_reveal_names_merges_real_name_without_leaking_contact_fields(no_postgre
         return {"p1": {"id": "p1", "first_name": "Sanjeev", "last_name": "Dhanaraj",
                        "title": "Vice President Marketing",
                        "linkedin_url": "https://linkedin.com/in/sanjeev",
-                       "email": "sanjeev@position2.com"}}
+                       "email": "sanjeev@markifydigital.com"}}
     monkeypatch.setattr(ac, "bulk_match_people", _fake_bulk)
 
     people = [{"id": "p1", "full_name": "Sanjeev", "title": "VP Marketing"}]

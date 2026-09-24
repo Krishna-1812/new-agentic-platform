@@ -32,11 +32,11 @@ pytestmark = pytest.mark.skipif(
     not os.environ.get("DATABASE_URL"),
     reason="needs a real Postgres; set DATABASE_URL to a throwaway database")
 
-EMAIL = "store-test@position2.com"
+EMAIL = "store-test@markifydigital.com"
 
 
 def test_phase1_profiles_keep_independent_decisions_for_the_same_event():
-    email='phase1-shared@position2.com'
+    email='phase1-shared@markifydigital.com'
     pa=_saved_profile(email,'Alpha');pb=_saved_profile(email,'Beta')
     ra=S.save_run(email,'recommend','Alpha',profile_id=pa)
     rb=S.save_run(email,'recommend','Beta',profile_id=pb)
@@ -50,7 +50,7 @@ def test_phase1_profiles_keep_independent_decisions_for_the_same_event():
 
 
 def test_phase1_reruns_do_not_multiply_one_decision():
-    email='phase1-repeat@position2.com';pid=_saved_profile(email,'Repeat')
+    email='phase1-repeat@markifydigital.com';pid=_saved_profile(email,'Repeat')
     runs=[]
     for i in range(3):
         rid=S.save_run(email,'recommend',str(i),profile_id=pid)
@@ -63,7 +63,7 @@ def test_phase1_reruns_do_not_multiply_one_decision():
 
 
 def test_phase1_confidentiality_survives_an_ordinary_edit():
-    email='phase1-private@position2.com';pid=_saved_profile(email,'Private',confidential=True)
+    email='phase1-private@markifydigital.com';pid=_saved_profile(email,'Private',confidential=True)
     p=S.get_profile(pid,email);p.pop('confidential')
     assert S.update_profile(pid,email,p)
     assert S.get_profile(pid,email)['confidential'] is True
@@ -73,7 +73,7 @@ def test_phase1_confidentiality_survives_an_ordinary_edit():
 def test_phase1_decision_survives_route_reload_and_csv():
     import app as appmod
     import csv,io
-    email='phase1-route@position2.com';pid=_saved_profile(email,'Route Client')
+    email='phase1-route@markifydigital.com';pid=_saved_profile(email,'Route Client')
     rid=S.save_run(email,'recommend','Route Client',profile_id=pid)
     S.save_candidates(rid,[_cand('Reload Forum')]);S.update_run(rid,status='complete')
     client=appmod.app.test_client()
@@ -87,7 +87,7 @@ def test_phase1_decision_survives_route_reload_and_csv():
     rows=list(csv.DictReader(io.StringIO(result.get_data(as_text=True))))
     assert rows[0]['Your decision']=='going' and rows[0]['Decision note']=='Booked'
     stranger=appmod.app.test_client()
-    with stranger.session_transaction() as session:session['google_user']={'email':'stranger@position2.com','name':'Other'}
+    with stranger.session_transaction() as session:session['google_user']={'email':'stranger@markifydigital.com','name':'Other'}
     assert stranger.post(base+'/outcomes',json=dict(run_id=rid,event_name='Reload Forum',decision='skipped')).status_code==400
 
 
@@ -122,7 +122,7 @@ def test_a_run_round_trips(run):
 
 
 def test_a_run_is_not_readable_by_another_signed_in_user(run):
-    assert S.get_run(run, "someone-else@position2.com") is None
+    assert S.get_run(run, "someone-else@markifydigital.com") is None
 
 
 # ── candidates: the path that was silently dead ───────────────────────────
@@ -280,7 +280,7 @@ def test_name_key_is_populated_on_save_and_round_trips():
 
 
 def test_outcome_pattern_counts_by_category_and_by_format():
-    email = "outcome-pattern@position2.com"
+    email = "outcome-pattern@markifydigital.com"
     pid = _saved_profile(email, "Pattern Co")
     run = S.save_run(email, "recommend", "pattern test", profile_id=pid)
     S.save_candidates(run, [
@@ -305,7 +305,7 @@ def test_outcome_pattern_scopes_to_one_profile_not_the_whole_email():
     """The concrete failure this scoping prevents: an agency login with two
     client profiles must not let one client's dislike of a category leak
     into the other client's scoring."""
-    email = "shared-login@position2.com"
+    email = "shared-login@markifydigital.com"
     pid_a = _saved_profile(email, "Client A")
     pid_b = _saved_profile(email, "Client B")
     run_a = S.save_run(email, "recommend", "for A", profile_id=pid_a)
@@ -321,7 +321,7 @@ def test_outcome_pattern_scopes_to_one_profile_not_the_whole_email():
 
 
 def test_legacy_outcomes_are_retained_but_not_reassigned():
-    email='legacy-rows@position2.com'
+    email='legacy-rows@markifydigital.com'
     pid=_saved_profile(email,'Legacy Co')
     conn=S._pg_conn()
     conn.cursor().execute("INSERT INTO evi_outcomes (email,event_key,event_name,decision,profile_id) VALUES (%s,%s,%s,%s,%s)",(email,'legacy event','Legacy Event','skipped',pid))
@@ -331,7 +331,7 @@ def test_legacy_outcomes_are_retained_but_not_reassigned():
 
 
 def test_a_later_omitted_profile_cannot_overwrite_a_scoped_decision():
-    email='profile-coalesce@position2.com'
+    email='profile-coalesce@markifydigital.com'
     pid=_saved_profile(email,'Scoped Co')
     rid=S.save_run(email,'recommend','Scope',profile_id=pid)
     S.save_candidates(rid,[_cand('Scoped Event')])
@@ -348,8 +348,8 @@ def test_cross_client_interest_counts_distinct_clients_not_rows():
     watched = "Convergence Con"
     from tracker.event_intel_discover import name_key
     key = name_key(watched)
-    querying_email = "querying-client@position2.com"
-    other_email = "other-client@position2.com"
+    querying_email = "querying-client@markifydigital.com"
+    other_email = "other-client@markifydigital.com"
     pid_other = _saved_profile(other_email, "Other Co")
     for i in range(2):
         run = S.save_run(other_email, "recommend", "other run %d" % i,
@@ -366,7 +366,7 @@ def test_cross_client_interest_excludes_the_querying_email():
     watched = "Self Exclusion Summit"
     from tracker.event_intel_discover import name_key
     key = name_key(watched)
-    email = "self-excluded@position2.com"
+    email = "self-excluded@markifydigital.com"
     pid = _saved_profile(email, "Self Co")
     run = S.save_run(email, "recommend", "self run", profile_id=pid)
     S.save_candidates(run, [_cand(watched)])
@@ -383,7 +383,7 @@ def test_cross_client_interest_only_counts_kept_events():
     watched = "Below The Bar Con"
     from tracker.event_intel_discover import name_key
     key = name_key(watched)
-    other_email = "cut-event-client@position2.com"
+    other_email = "cut-event-client@markifydigital.com"
     pid = _saved_profile(other_email, "Cut Co")
     run = S.save_run(other_email, "recommend", "cut run", profile_id=pid)
     S.save_candidates(run, [_cand(watched, relevance=5, dm_access=5, engagement=2)])
@@ -391,7 +391,7 @@ def test_cross_client_interest_only_counts_kept_events():
 
     counts = S.cross_client_interest([key], classification=None,
                                      window_days=365,
-                                     exclude_email="querying@position2.com")
+                                     exclude_email="querying@markifydigital.com")
     assert key not in counts, "a below-the-bar row counted as kept interest"
 
 
@@ -399,7 +399,7 @@ def test_cross_client_interest_respects_the_time_window():
     watched = "Old News Conference"
     from tracker.event_intel_discover import name_key
     key = name_key(watched)
-    email = "old-run-client@position2.com"
+    email = "old-run-client@markifydigital.com"
     pid = _saved_profile(email, "Old Co")
     run = S.save_run(email, "recommend", "old run", profile_id=pid)
     S.save_candidates(run, [_cand(watched)])
@@ -408,7 +408,7 @@ def test_cross_client_interest_respects_the_time_window():
 
     counts = S.cross_client_interest([key], classification=None,
                                      window_days=120,
-                                     exclude_email="querying@position2.com")
+                                     exclude_email="querying@markifydigital.com")
     assert key not in counts, "a run from 400 days ago was inside a 120-day window"
 
 
@@ -416,7 +416,7 @@ def test_cross_client_interest_groups_by_classification():
     watched = "Vertical Only Con"
     from tracker.event_intel_discover import name_key
     key = name_key(watched)
-    other_email = "other-vertical-client@position2.com"
+    other_email = "other-vertical-client@markifydigital.com"
     pid = _saved_profile(other_email, "Other Vertical Co",
                   classification=R.CLASS_B2B_OTHER_FUNCTION)
     run = S.save_run(other_email, "recommend", "vertical run", profile_id=pid)
@@ -425,7 +425,7 @@ def test_cross_client_interest_groups_by_classification():
 
     counts_wrong_classification = S.cross_client_interest(
         [key], classification="a_classification_nobody_has",
-        window_days=365, exclude_email="querying@position2.com")
+        window_days=365, exclude_email="querying@markifydigital.com")
     assert key not in counts_wrong_classification
 
 
@@ -433,7 +433,7 @@ def test_a_confidential_profile_never_contributes_a_count():
     watched = "Confidential Client Con"
     from tracker.event_intel_discover import name_key
     key = name_key(watched)
-    email = "confidential-client@position2.com"
+    email = "confidential-client@markifydigital.com"
     pid = _saved_profile(email, "Confidential Co", confidential=True)
     run = S.save_run(email, "recommend", "confidential run", profile_id=pid)
     S.save_candidates(run, [_cand(watched)])
@@ -441,7 +441,7 @@ def test_a_confidential_profile_never_contributes_a_count():
 
     counts = S.cross_client_interest([key], classification=None,
                                      window_days=365,
-                                     exclude_email="querying@position2.com")
+                                     exclude_email="querying@markifydigital.com")
     assert key not in counts, "a confidential profile's event still counted"
 
 
@@ -455,14 +455,14 @@ def test_a_confidential_profile_is_excluded_from_the_population_too():
     import uuid
     classification = R.CLASS_B2C_BOOTH_DENSITY
     before = S.classification_population(
-        classification, window_days=365, exclude_email="querying@position2.com")
-    email = "confidential-population-%s@position2.com" % uuid.uuid4().hex[:8]
+        classification, window_days=365, exclude_email="querying@markifydigital.com")
+    email = "confidential-population-%s@markifydigital.com" % uuid.uuid4().hex[:8]
     pid = _saved_profile(email, "Confidential Population Co",
                          classification=classification, confidential=True)
     run = S.save_run(email, "recommend", "confidential pop run", profile_id=pid)
     S.update_run(run, status="complete", stage="done")
     after = S.classification_population(
-        classification, window_days=365, exclude_email="querying@position2.com")
+        classification, window_days=365, exclude_email="querying@markifydigital.com")
     assert after == before, (
         "a confidential profile still counted toward the population gate")
 
@@ -484,15 +484,15 @@ def test_classification_population_counts_distinct_emails():
     import uuid
     classification = R.CLASS_B2C_BOOTH_DENSITY
     before = S.classification_population(
-        classification, window_days=365, exclude_email="querying@position2.com")
-    email_a = "population-a-%s@position2.com" % uuid.uuid4().hex[:8]
-    email_b = "population-b-%s@position2.com" % uuid.uuid4().hex[:8]
+        classification, window_days=365, exclude_email="querying@markifydigital.com")
+    email_a = "population-a-%s@markifydigital.com" % uuid.uuid4().hex[:8]
+    email_b = "population-b-%s@markifydigital.com" % uuid.uuid4().hex[:8]
     for email, name in ((email_a, "Pop A"), (email_b, "Pop B")):
         pid = _saved_profile(email, name, classification=classification)
         run = S.save_run(email, "recommend", "pop run", profile_id=pid)
         S.update_run(run, status="complete", stage="done")
     after = S.classification_population(
-        classification, window_days=365, exclude_email="querying@position2.com")
+        classification, window_days=365, exclude_email="querying@markifydigital.com")
     assert after - before == 2
 
 
@@ -507,7 +507,7 @@ def test_no_identity_leaks_at_any_count_above_or_below_the_floor():
     key = name_key(watched)
     secrets = []
     for i in range(4):
-        email = "secret-client-%d@position2.com" % i
+        email = "secret-client-%d@markifydigital.com" % i
         name = "Secret Competitor %d Inc" % i
         secrets.append(email)
         secrets.append(name)
@@ -518,9 +518,9 @@ def test_no_identity_leaks_at_any_count_above_or_below_the_floor():
 
     counts = S.cross_client_interest([key], classification=None,
                                      window_days=365,
-                                     exclude_email="querying@position2.com")
+                                     exclude_email="querying@markifydigital.com")
     population = S.classification_population(
-        None, window_days=365, exclude_email="querying@position2.com")
+        None, window_days=365, exclude_email="querying@markifydigital.com")
     blob = _json.dumps({"counts": counts, "population": population})
     for secret in secrets:
         assert secret not in blob, "an identity leaked into the raw data: %r" % secret
@@ -780,8 +780,8 @@ def test_a_finished_run_records_what_it_cost(monkeypatch):
 # ── the client-name autocomplete's provider-down fallback ──────────────────
 
 def test_search_known_profiles_matches_by_name_and_scopes_to_the_account():
-    email = "search-profiles@position2.com"
-    other = "someone-else@position2.com"
+    email = "search-profiles@markifydigital.com"
+    other = "someone-else@markifydigital.com"
     S.save_profile(email, {"client_name": "Northwind Analytics",
                            "website": "https://northwind.example",
                            "classification": R.CLASS_B2B_TO_MARKETING})
@@ -804,7 +804,7 @@ def test_search_known_profiles_matches_by_name_and_scopes_to_the_account():
 
 
 def test_search_known_profiles_collapses_repeat_saves_of_the_same_client():
-    email = "search-profiles-dupe@position2.com"
+    email = "search-profiles-dupe@markifydigital.com"
     for _ in range(3):
         S.save_profile(email, {"client_name": "Repeat Co",
                                "website": "https://repeat.example",
@@ -814,11 +814,11 @@ def test_search_known_profiles_collapses_repeat_saves_of_the_same_client():
 
 
 def test_search_known_profiles_is_empty_for_a_blank_query():
-    S.save_profile("search-profiles-blank@position2.com",
+    S.save_profile("search-profiles-blank@markifydigital.com",
                    {"client_name": "Anything", "website": "https://a.example",
                     "classification": R.CLASS_B2B_TO_MARKETING})
-    assert S.search_known_profiles("search-profiles-blank@position2.com", "") == []
-    assert S.search_known_profiles("search-profiles-blank@position2.com", "   ") == []
+    assert S.search_known_profiles("search-profiles-blank@markifydigital.com", "") == []
+    assert S.search_known_profiles("search-profiles-blank@markifydigital.com", "   ") == []
 
 
 def test_the_recorded_cost_counts_the_calls_that_were_refused(monkeypatch):

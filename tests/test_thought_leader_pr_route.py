@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import app as appmod  # noqa: E402
 from tracker import thought_leader_pr as T  # noqa: E402
 
-_OWNER = "owner@position2.com"
+_OWNER = "owner@markifydigital.com"
 _NON_P2 = "someone@gmail.com"
 
 
@@ -207,10 +207,10 @@ class TestConfirmAndRunRoutes:
         captured = {}
         monkeypatch.setattr(T, "get_run", lambda run_id, email: captured.update(
             run_id=run_id, email=email) or {"id": run_id, "status": "confirmed"})
-        resp = _client("someone.else@position2.com").get(
+        resp = _client("someone.else@markifydigital.com").get(
             "/p2/strategic-agents/thought-leader-pr/runs/9")
         assert resp.status_code == 200
-        assert captured == {"run_id": 9, "email": "someone.else@position2.com"}
+        assert captured == {"run_id": 9, "email": "someone.else@markifydigital.com"}
 
 
 class TestCollectRoute:

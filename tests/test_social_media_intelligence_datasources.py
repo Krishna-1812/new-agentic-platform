@@ -41,7 +41,7 @@ _PAGE = "/p2/strategic-agents/social-media-intelligence"
 def _page_html():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "harness@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "harness@markifydigital.com", "name": "T"}
     resp = c.get(_PAGE)
     assert resp.status_code == 200, "the page did not render (%s)" % resp.status_code
     return resp.get_data(as_text=True)

@@ -24,8 +24,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import app as appmod  # noqa: E402
 from tracker import sci_store, sci_pipeline, sci_company_search  # noqa: E402
 
-_OWNER = "owner@position2.com"
-_OTHER = "other@position2.com"
+_OWNER = "owner@markifydigital.com"
+_OTHER = "other@markifydigital.com"
 
 
 def _client(email=_OWNER):
@@ -57,7 +57,7 @@ def _owner_scoped_get_run(monkeypatch, run=None):
 
 def test_page_renders_for_any_position2_staff(monkeypatch):
     monkeypatch.setattr(sci_store, "list_runs", lambda email: [])
-    resp = _client("someone@position2.com").get("/p2/strategic-agents/social-media-intelligence")
+    resp = _client("someone@markifydigital.com").get("/p2/strategic-agents/social-media-intelligence")
     assert resp.status_code == 200
     assert b"Social Media Intelligence" in resp.data
 
@@ -155,7 +155,7 @@ def test_the_vendors_own_words_go_only_to_admins(monkeypatch):
     admin = sorted(appmod.ADMIN_EMAILS)[0]
     admin_body = _client(admin).get(
         "/p2/strategic-agents/social-media-intelligence/search?q=apple").get_json()
-    plain_body = _client("nobody@position2.com").get(
+    plain_body = _client("nobody@markifydigital.com").get(
         "/p2/strategic-agents/social-media-intelligence/search?q=apple").get_json()
     assert admin_body["error"]["detail"] == "HTTP 401. Body: bad key"
     assert admin_body["error"]["status"] == 401

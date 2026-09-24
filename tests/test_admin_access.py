@@ -30,11 +30,11 @@ import app as appmod  # noqa: E402
 
 # Accounts whose admin access was granted by name, pinned here so each grant
 # stays a fact this file checks rather than a line someone edited once and
-# nothing ever confirmed. sangeeta@ was the first; pushpendra.k@ and
-# nikhil.ashok@ were confirmed/granted together on 2026-09-07.
-_GRANTED_ADMINS = ("sangeeta@position2.com", "pushpendra.k@position2.com",
-                   "nikhil.ashok@position2.com")
-_STAFF = "not-an-admin@position2.com"          # real Position2 login, no admin rights
+# nothing ever confirmed. On moving the platform to Markify Digital
+# (2026-09-24) admin access was given to exactly these two, and no one else;
+# the second is a personal Google account, not a company one.
+_GRANTED_ADMINS = ("sudheer@markifydigital.com", "ladhakrishna2022@gmail.com")
+_STAFF = "not-an-admin@markifydigital.com"          # a staff login, no admin rights
 _EXTERNAL = "someone@example.com"              # a public /app member
 _APP_PY = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "app.py")
 
@@ -94,12 +94,13 @@ def test_each_granted_admin_is_on_the_roster(email):
         "%s was granted admin access but is not in ADMIN_EMAILS" % email)
 
 
-def test_the_roster_is_all_lowercase_position2_addresses():
+def test_the_roster_is_exactly_the_two_admins_in_lowercase():
     """Every gate lowercases the session email before the membership test, so
     an entry carrying a capital letter would be an admin who is never an
-    admin -- silently, and only for that one person."""
+    admin -- silently, and only for that one person. And the roster is these
+    two and nobody else: a leftover entry would be a live admin login."""
     assert all(e == e.lower() for e in appmod.ADMIN_EMAILS), sorted(appmod.ADMIN_EMAILS)
-    assert all(e.endswith("@position2.com") for e in appmod.ADMIN_EMAILS)
+    assert appmod.ADMIN_EMAILS == set(_GRANTED_ADMINS)
 
 
 # ── The gate itself ────────────────────────────────────────────────────────
@@ -157,7 +158,7 @@ def test_admin_required_stops_everyone_else():
 @pytest.mark.parametrize("email", _GRANTED_ADMINS)
 def test_the_gate_is_case_insensitive_about_the_address_google_sends(email):
     """Google decides the casing of the email in the token, not us. An admin
-    signing in as Sangeeta@position2.com is the same person."""
+    signing in as Sangeeta@markifydigital.com is the same person."""
     assert _call_gate(email.upper())[0] == 200
     assert _call_gate(email.capitalize())[0] == 200
 
@@ -196,7 +197,9 @@ def test_admin_emails_is_the_only_thing_granting_each_admin_every_route(email, m
     rules = _admin_routes()
     monkeypatch.setattr(appmod, "ADMIN_EMAILS", set(appmod.ADMIN_EMAILS) - {email})
 
-    admitted_off_roster = [r.rule for r in rules if _get(r, email).status_code != 403]
+    # Off the roster, a staff-domain admin is refused (403) and one on any
+    # other domain is sent to the public home (302): refused either way.
+    admitted_off_roster = [r.rule for r in rules if _get(r, email).status_code not in (302, 403)]
     assert admitted_off_roster == [], (
         "these routes admit %s through some gate other than ADMIN_EMAILS, so "
         "removing them from it would not remove their access: %s"
@@ -267,3 +270,36 @@ def test_the_template_wide_is_admin_flag_follows_the_same_set(email):
         # Sangeeta@... is the same person and must get the same flag.
         session["google_user"] = {"email": email.capitalize(), "name": "T"}
         assert appmod._inject_app_agents()["is_admin"] is True
+
+
+# ── Admins on any domain are staff ──────────────────────────────────────────
+
+def test_the_staff_domain_is_markify_digital():
+    assert appmod.STAFF_EMAIL_SUFFIX == "@markifydigital.com"
+
+
+def test_an_admin_on_a_personal_domain_counts_as_staff_and_no_one_else_does():
+    """ladhakrishna2022@gmail.com is an admin, so it is staff everywhere a
+    staff check applies. Being on gmail.com grants nothing by itself."""
+    assert appmod._is_staff("ladhakrishna2022@gmail.com")
+    assert appmod._is_staff("LadhaKrishna2022@Gmail.com")
+    assert appmod._is_staff("sudheer@markifydigital.com")
+    assert appmod._is_staff(_STAFF)
+    assert not appmod._is_staff("someone.else@gmail.com")
+    assert not appmod._is_staff(_EXTERNAL)
+    assert not appmod._is_staff("")
+    assert not appmod._is_staff(None)
+
+
+@pytest.mark.parametrize("email", _GRANTED_ADMINS)
+def test_each_admin_reaches_the_internal_hub(email):
+    """position2_required (the /p2 staff gate) must admit both admins, the
+    gmail.com one included; before, it checked the company domain alone and
+    would have bounced that admin to /app."""
+    r = _client(email).get("/p2/hub")
+    assert not (r.status_code == 302 and r.headers.get("Location", "").endswith("/app")), r.status_code
+
+
+def test_a_gmail_account_that_is_not_an_admin_is_kept_out_of_the_internal_hub():
+    r = _client("someone.else@gmail.com").get("/p2/hub")
+    assert r.status_code == 302 and r.headers["Location"].endswith("/app")

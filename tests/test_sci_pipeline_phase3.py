@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from tracker import sci_pipeline  # noqa: E402
 
-_OWNER = "owner@position2.com"
+_OWNER = "owner@markifydigital.com"
 
 
 # ── run_synthesis ────────────────────────────────────────────────────────────

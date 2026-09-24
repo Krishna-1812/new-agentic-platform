@@ -47,14 +47,14 @@ BRAND = {
     # a label: app.py's gate reads this same value (STAFF_EMAIL_SUFFIX), and
     # so does every page that tells a user which address to sign in with.
     #
-    # It used to be two values. This key said "northaxis.com" while the gate
-    # checked a hard-coded "@position2.com" in twelve places, so the 403 page
-    # told northaxis.com users they would get in and then refused them. The
-    # default below is the domain the gate has always enforced, so nothing
-    # changes for anyone signed in today. Set STAFF_EMAIL_DOMAIN in Railway to
-    # move staff access to your own domain -- and change ADMIN_EMAILS in
-    # app.py in the same deploy, or every admin is locked out of /p2.
-    "staff_domain": (os.environ.get("STAFF_EMAIL_DOMAIN") or "position2.com")
+    # It used to be two values: this key said one domain while the gate
+    # checked another, hard-coded, so the 403 page promised access and then
+    # refused it. Staff are Markify Digital: markifydigital.com is the
+    # default, and STAFF_EMAIL_DOMAIN in Railway overrides it. The admins in
+    # app.py's ADMIN_EMAILS are also let in whatever their domain (one of them
+    # signs in with a gmail.com address), so change that list together with
+    # this value.
+    "staff_domain": (os.environ.get("STAFF_EMAIL_DOMAIN") or "markifydigital.com")
                     .strip().lower().lstrip("@"),
 
     # The registered entity the privacy policy and the terms of use bind.

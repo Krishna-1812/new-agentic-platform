@@ -98,7 +98,7 @@ Plus this context-file refresh itself (v27 -> v28), on explicit user request.
 - **GitHub (embedded SEO tools, React/Vite, SEPARATE Railway service):** `https://github.com/ai-positon2/seo-apps` -> `https://seo-apps-production-37a6.up.railway.app`
 - **Third-party agent frontend (NOT our code, NOT our repo):** `https://watchtower-by-position2.vercel.app`. The user builds these on an unrelated AI app-builder platform; we only receive and iframe the public URL, plus a `postMessage` run-signal snippet the user deployed into it. This backs **LinkedIn Social Researcher** (the old, external, currently-hidden agent - see its own section below), not the new native LinkedIn Strategy Researcher.
 - **Hosting:** Railway, auto-deploys on every push to `main` (~60-100s for the Flask app via NIXPACKS/`gunicorn app:app`; a few minutes for `seo-apps`). HTML/CSS/JS goes live on push.
-- **Admins (`ADMIN_EMAILS`):** `krishna.ladha@`, `sudheer.d@`, `reporting@`, `sparikh@`, `abhilash.dg@`, `pushpendra.k@`, `sangeeta@` (all `position2.com`); `sangeeta@` added in the v27 cycle, unchanged since. `tests/test_admin_access.py` proves the claim below rather than restating it: it AST-parses every `@admin_required` view, sweeps all 32 routes, and checks that the nine pre-rename `/p2/admin/*` URLs are bare 301s onto gated pages. **This set is the ONLY place admin access is defined.** `admin_required` gates every `/p2/admin/*` route off it, the template context processor derives `is_admin` from it, and `/api/whoami` returns `is_admin` from it so client-rendered surfaces read the same flag. Add a person here and nowhere else.
+- **Admins (`ADMIN_EMAILS`):** `sudheer@markifydigital.com` and `ladhakrishna2022@gmail.com`, and no one else. Admins are staff on any domain (`_is_staff` in `app.py`). `tests/test_admin_access.py` proves the claim below rather than restating it: it AST-parses every `@admin_required` view, sweeps all 32 routes, and checks that the nine pre-rename `/p2/admin/*` URLs are bare 301s onto gated pages. **This set is the ONLY place admin access is defined.** `admin_required` gates every `/p2/admin/*` route off it, the template context processor derives `is_admin` from it, and `/api/whoami` returns `is_admin` from it so client-rendered surfaces read the same flag. Add a person here and nowhere else.
 
 ### FOUR SURFACES + TWO-TIER AUTH (the biggest structural fact)
 
@@ -108,10 +108,10 @@ Google SSO is open to **any** Google account. That forces surface separation wit
 |---|---|---|---|---|
 | **1. Public marketing site** | Logged-out prospects | none | top-level (`/`, `/agents`, `/platform`, `/why-intelligence`, ...) | always dark |
 | **2. Member workspace `/app`** | ANY signed-in Google user | `@login_required` | `/app/*` | dark |
-| **3. Internal staff app `/p2/*`** | `@position2.com` only | `@position2_required` | `/p2/*` (hub, b2b-agents, seo, abm-signal-tracker, admin, playbook, ...) | light/dark toggle |
+| **3. Internal staff app `/p2/*`** | `@markifydigital.com`, plus the admins on any domain | `@position2_required` | `/p2/*` (hub, b2b-agents, seo, abm-signal-tracker, admin, playbook, ...) | light/dark toggle |
 | **4. Client portals `/<slug>`** | any signed-in Google account | `_client_gate()` | `/<client-slug>/*` (e.g. `/northstaranesthesia`) | dark, co-branded |
 
-- After login: `@position2.com` -> `/p2/hub`; any other signed-in user -> `/app`.
+- After login: `@markifydigital.com` and the admins -> `/p2/hub`; any other signed-in user -> `/app`.
 - Old top-level internal paths (`/hub`, `/gtm/...`, `/admin/...`) 301-redirect to `/p2/...`, `/p2/gtm/*` 301-redirects to `/p2/b2b-agents/*`, and `/p2/accounts` + `/p2/signal-tracker/<account>` 301-redirect to `/p2/abm-signal-tracker/*` in exactly one hop.
 - **Standing rename rule:** when a persisted URL/slug is renamed, the old one keeps 301-redirecting AND every read path keyed off the old slug is aliased to the new one. A past bug dropped historical runs because only routing was fixed, not the read side. See `[[feedback-persisted-identifier-renames]]`.
 - Auth decorators in `app.py`: `login_required`, `admin_required` (= position2 + admin email), `position2_required`. Client gating is `_client_gate(client)` (not a decorator).

@@ -44,8 +44,8 @@ log = logging.getLogger(__name__)
 _UA = "Mozilla/5.0 (compatible; visitor-intel-research/1.0; +free-tier enrichment)"
 # SEC EDGAR's fair-access policy rejects generic User-Agents with a 403 and
 # requires an identifiable requester (https://www.sec.gov/os/webmaster-faq#developers).
-_SEC_UA = "Position2 Intelligence Platform %s" % \
-    __import__("os").environ.get("SEC_EDGAR_CONTACT", "reporting@position2.com")
+_SEC_UA = "Markify Digital Intelligence Platform %s" % \
+    __import__("os").environ.get("SEC_EDGAR_CONTACT", "sudheer@markifydigital.com")
 _TTL = 7 * 86400
 _NEG_TTL = 3600  # a fetch failure (dead site, transient network blip, DNS hiccup)
                  # retries within the hour, not the week

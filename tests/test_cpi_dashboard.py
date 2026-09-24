@@ -28,7 +28,7 @@ import app as appmod  # noqa: E402
 def client():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com",
+        sess["google_user"] = {"email": "reporting@markifydigital.com",
                                "name": "Test User", "given_name": "Test"}
     return c
 
@@ -704,7 +704,7 @@ def test_history_save_scopes_every_write_to_the_signed_in_user(fake_pg, client):
     for sql, params in conn.log:
         verb = sql.split()[0].upper()
         if verb in ("UPDATE", "DELETE"):
-            assert "reporting@position2.com" in (params or ()), sql
+            assert "reporting@markifydigital.com" in (params or ()), sql
 
 
 def test_expired_history_is_pruned_by_age_not_only_by_count(fake_pg, client):

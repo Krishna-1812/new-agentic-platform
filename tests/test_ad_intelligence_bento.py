@@ -111,7 +111,7 @@ def test_the_page_loads_the_outcomes_type_faces():
 def test_no_admin_email_is_baked_into_the_bundle_source():
     """Admin links follow /api/whoami's is_admin (ADMIN_EMAILS), not a list."""
     app = _read("apps", "ad-intelligence", "src", "App.tsx")
-    assert "@position2.com" not in app
+    assert "@markifydigital.com" not in app
     assert "is_admin" in app
 
 

@@ -348,7 +348,7 @@ nodeonly = pytest.mark.skipif(shutil.which("node") is None, reason="needs node")
 def _script():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "harness@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "harness@markifydigital.com", "name": "T"}
     resp = c.get(_PAGE)
     assert resp.status_code == 200
     blocks = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>",

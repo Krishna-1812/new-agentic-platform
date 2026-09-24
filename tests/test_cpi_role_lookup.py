@@ -41,7 +41,7 @@ _GOOD = ('{"found": true, "name": "Julie Woods-Moss", "title": "Chief Marketing 
 def client():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com",
+        sess["google_user"] = {"email": "reporting@markifydigital.com",
                                "name": "Test User", "given_name": "Test"}
     return c
 
@@ -403,7 +403,7 @@ def _chat(monkeypatch, people_by_call, role_result, message="CMO of thoughtworks
     monkeypatch.setattr(appmod, "_cpi_grounded_answer", _answer)
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
     r = c.post("/p2/strategic-agents/company-people-intelligence/chat", json={"message": message})
     assert r.status_code == 200
     return seen.get("facts", {}), calls
@@ -543,7 +543,7 @@ def test_a_failing_domain_retry_falls_through_to_the_records_gap(monkeypatch):
                         lambda oai, facts, q, research="": seen.setdefault("f", facts) and "a")
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
     r = c.post("/p2/strategic-agents/company-people-intelligence/chat",
                json={"message": "CMO of thoughtworks"})
     assert r.status_code == 200

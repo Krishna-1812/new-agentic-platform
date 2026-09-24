@@ -45,7 +45,7 @@ def client(monkeypatch):
     monkeypatch.setattr(appmod, "_agent_access_requested_slugs", lambda email: set())
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T",
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T",
                                "given_name": "T"}
     return c
 

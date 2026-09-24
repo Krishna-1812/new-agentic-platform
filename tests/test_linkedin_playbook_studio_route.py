@@ -26,8 +26,8 @@ import app as appmod  # noqa: E402
 from tracker import linkedin_playbook_store as lps_store  # noqa: E402
 from tracker import arena_client  # noqa: E402
 
-_OWNER = "owner@position2.com"
-_OTHER = "other@position2.com"
+_OWNER = "owner@markifydigital.com"
+_OTHER = "other@markifydigital.com"
 
 
 def _client(email=_OWNER):
@@ -65,7 +65,7 @@ def _owner_scoped_get_run(monkeypatch, run=None):
 # ── Page ──────────────────────────────────────────────────────────────────
 
 def test_page_renders_for_any_position2_staff():
-    resp = _client("someone@position2.com").get("/p2/strategic-agents/linkedin-strategy-researcher")
+    resp = _client("someone@markifydigital.com").get("/p2/strategic-agents/linkedin-strategy-researcher")
     assert resp.status_code == 200
     assert b"LinkedIn Strategy Researcher" in resp.data
 
@@ -762,7 +762,7 @@ def test_the_vendors_own_words_go_only_to_admins(monkeypatch):
     admin = sorted(appmod.ADMIN_EMAILS)[0]
     admin_body = _client(admin).get(
         "/p2/strategic-agents/linkedin-strategy-researcher/search?q=apple").get_json()
-    plain_body = _client("nobody@position2.com").get(
+    plain_body = _client("nobody@markifydigital.com").get(
         "/p2/strategic-agents/linkedin-strategy-researcher/search?q=apple").get_json()
     assert admin_body["error"]["detail"] == "HTTP 401. Body: bad key"
     assert admin_body["error"]["status"] == 401
@@ -811,7 +811,7 @@ def test_a_genuine_zero_result_carries_no_error_at_all(monkeypatch):
 def test_the_page_tells_admins_they_can_run_the_provider_check():
     admin = sorted(appmod.ADMIN_EMAILS)[0]
     admin_page = _client(admin).get("/p2/strategic-agents/linkedin-strategy-researcher").data
-    plain_page = _client("nobody@position2.com").get(
+    plain_page = _client("nobody@markifydigital.com").get(
         "/p2/strategic-agents/linkedin-strategy-researcher").data
     assert b"IS_ADMIN = true" in admin_page
     assert b"IS_ADMIN = false" in plain_page
@@ -820,7 +820,7 @@ def test_the_page_tells_admins_they_can_run_the_provider_check():
 # ── The Arena self-test route ────────────────────────────────────────────
 
 def test_arena_check_requires_an_admin():
-    resp = _client("nobody@position2.com").post("/p2/admin/external-usage/arena-check")
+    resp = _client("nobody@markifydigital.com").post("/p2/admin/external-usage/arena-check")
     assert resp.status_code in (302, 401, 403, 404)
 
 
@@ -844,7 +844,7 @@ def test_arena_check_never_500s_when_the_probe_explodes(monkeypatch):
 # ── The AI Insights self-test route ──────────────────────────────────────
 
 def test_lps_insights_check_requires_an_admin():
-    resp = _client("nobody@position2.com").post("/p2/admin/external-usage/lps-insights-check")
+    resp = _client("nobody@markifydigital.com").post("/p2/admin/external-usage/lps-insights-check")
     assert resp.status_code in (302, 401, 403, 404)
 
 

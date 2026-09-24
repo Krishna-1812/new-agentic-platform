@@ -29,7 +29,7 @@ import app as appmod  # noqa: E402
 def client():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
     return c
 
 
@@ -38,7 +38,7 @@ def client():
 def test_new_accounts_url_serves_the_picker_directly():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
     resp = c.get("/p2/abm-signal-tracker/accounts")
     assert resp.status_code == 200
 

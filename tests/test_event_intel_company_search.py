@@ -50,7 +50,7 @@ def test_an_empty_query_returns_no_companies_without_calling_apollo(monkeypatch)
     def unexpected(*a, **k):
         pytest.fail("Apollo was called for an empty query")
     monkeypatch.setattr(sci_company_search, "search_companies_result", unexpected)
-    out = _client("evi-search@position2.com").get(_SEARCH + "?q=").get_json()
+    out = _client("evi-search@markifydigital.com").get(_SEARCH + "?q=").get_json()
     assert out == {"companies": []}
 
 
@@ -62,7 +62,7 @@ def test_a_successful_search_is_passed_through_as_is(monkeypatch):
     monkeypatch.setattr(sci_company_search, "search_companies_result",
                        lambda q: {"companies": companies, "error": None,
                                  "elapsed_ms": 40, "source": "mixed_companies/search"})
-    out = _client("evi-search@position2.com").get(_SEARCH + "?q=Northwind").get_json()
+    out = _client("evi-search@markifydigital.com").get(_SEARCH + "?q=Northwind").get_json()
     assert out == {"companies": companies}
 
 
@@ -84,10 +84,10 @@ def test_a_provider_failure_falls_back_to_this_users_own_profiles(monkeypatch):
         sci_company_search, "search_companies_result",
         lambda q: {"companies": [], "error": {"kind": "timeout", "detail": "..."},
                   "elapsed_ms": 5000, "source": ""})
-    out = _client("evi-search-fallback@position2.com").get(_SEARCH + "?q=North").get_json()
+    out = _client("evi-search-fallback@markifydigital.com").get(_SEARCH + "?q=North").get_json()
     assert out["error"]["code"] == "timeout"
     assert out["companies"] == known
-    assert seen == {"email": "evi-search-fallback@position2.com", "q": "North"}
+    assert seen == {"email": "evi-search-fallback@markifydigital.com", "q": "North"}
 
 
 def test_a_provider_failure_detail_is_withheld_from_a_non_admin(monkeypatch):
@@ -95,7 +95,7 @@ def test_a_provider_failure_detail_is_withheld_from_a_non_admin(monkeypatch):
         sci_company_search, "search_companies_result",
         lambda q: {"companies": [], "error": {"kind": "timeout", "detail": "secret backend detail"},
                   "elapsed_ms": 5000, "source": ""})
-    out = _client("not-an-admin@position2.com").get(_SEARCH + "?q=North").get_json()
+    out = _client("not-an-admin@markifydigital.com").get(_SEARCH + "?q=North").get_json()
     assert "detail" not in out["error"]
 
 

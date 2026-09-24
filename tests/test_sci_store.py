@@ -273,46 +273,46 @@ def fake_db(monkeypatch):
 # ── Ownership scoping ────────────────────────────────────────────────────────
 
 def test_a_run_is_invisible_to_a_different_email(fake_db):
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
-    assert store.get_run(run_id, "bob@position2.com") is None
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
+    assert store.get_run(run_id, "bob@markifydigital.com") is None
 
 
 def test_a_run_is_visible_to_its_own_owner(fake_db):
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
-    run = store.get_run(run_id, "alice@position2.com")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
+    run = store.get_run(run_id, "alice@markifydigital.com")
     assert run is not None
     assert run["company_name"] == "Acme Inc"
 
 
 def test_list_runs_only_returns_that_emails_runs(fake_db):
-    store.save_run("alice@position2.com", "Acme Inc")
-    store.save_run("bob@position2.com", "Globex")
-    runs = store.list_runs("alice@position2.com")
+    store.save_run("alice@markifydigital.com", "Acme Inc")
+    store.save_run("bob@markifydigital.com", "Globex")
+    runs = store.list_runs("alice@markifydigital.com")
     assert len(runs) == 1
     assert runs[0]["company_name"] == "Acme Inc"
 
 
 def test_company_logo_round_trips_through_get_and_list(fake_db):
-    run_id = store.save_run("alice@position2.com", "Acme Inc", "acme.com", "https://cdn/acme.png")
-    assert store.get_run(run_id, "alice@position2.com")["company_logo"] == "https://cdn/acme.png"
-    assert store.list_runs("alice@position2.com")[0]["company_logo"] == "https://cdn/acme.png"
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc", "acme.com", "https://cdn/acme.png")
+    assert store.get_run(run_id, "alice@markifydigital.com")["company_logo"] == "https://cdn/acme.png"
+    assert store.list_runs("alice@markifydigital.com")[0]["company_logo"] == "https://cdn/acme.png"
 
 
 def test_company_logo_defaults_to_none_when_not_picked_from_a_suggestion(fake_db):
-    run_id = store.save_run("alice@position2.com", "Acme Inc", "acme.com")
-    assert store.get_run(run_id, "alice@position2.com")["company_logo"] is None
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc", "acme.com")
+    assert store.get_run(run_id, "alice@markifydigital.com")["company_logo"] is None
 
 
 def test_known_companies_surfaces_the_stored_logo(fake_db):
-    store.save_run("alice@position2.com", "Google", "google.com", "https://cdn/google.png")
-    found = store.search_known_companies("alice@position2.com", "goo")
+    store.save_run("alice@markifydigital.com", "Google", "google.com", "https://cdn/google.png")
+    found = store.search_known_companies("alice@markifydigital.com", "goo")
     assert found[0]["logo"] == "https://cdn/google.png"
 
 
 def test_known_companies_match_by_partial_name(fake_db):
-    store.save_run("alice@position2.com", "Google", "google.com")
-    store.save_run("alice@position2.com", "Myntra", "myntra.com")
-    found = store.search_known_companies("alice@position2.com", "goo")
+    store.save_run("alice@markifydigital.com", "Google", "google.com")
+    store.save_run("alice@markifydigital.com", "Myntra", "myntra.com")
+    found = store.search_known_companies("alice@markifydigital.com", "goo")
     assert [c["name"] for c in found] == ["Google"]
     assert found[0]["website"] == "google.com"
     assert found[0]["from_history"] is True
@@ -321,51 +321,51 @@ def test_known_companies_match_by_partial_name(fake_db):
 def test_known_companies_are_scoped_to_the_asking_user(fake_db):
     """One user's analyzed-company list must never leak into another's
     search, the same ownership property every read in this module guarantees."""
-    store.save_run("alice@position2.com", "Google", "google.com")
-    assert store.search_known_companies("bob@position2.com", "goo") == []
+    store.save_run("alice@markifydigital.com", "Google", "google.com")
+    assert store.search_known_companies("bob@markifydigital.com", "goo") == []
 
 
 def test_known_companies_collapse_repeat_analyses_of_one_company(fake_db):
     for _ in range(3):
-        store.save_run("alice@position2.com", "Google", "google.com")
-    found = store.search_known_companies("alice@position2.com", "google")
+        store.save_run("alice@markifydigital.com", "Google", "google.com")
+    found = store.search_known_companies("alice@markifydigital.com", "google")
     assert len(found) == 1
 
 
 def test_known_companies_is_case_insensitive(fake_db):
-    store.save_run("alice@position2.com", "Google", "google.com")
-    assert len(store.search_known_companies("alice@position2.com", "GOOGLE")) == 1
+    store.save_run("alice@markifydigital.com", "Google", "google.com")
+    assert len(store.search_known_companies("alice@markifydigital.com", "GOOGLE")) == 1
 
 
 def test_known_companies_needs_a_query(fake_db):
-    store.save_run("alice@position2.com", "Google", "google.com")
-    assert store.search_known_companies("alice@position2.com", "  ") == []
+    store.save_run("alice@markifydigital.com", "Google", "google.com")
+    assert store.search_known_companies("alice@markifydigital.com", "  ") == []
 
 
 def test_known_companies_honours_the_limit(fake_db):
     for i in range(5):
-        store.save_run("alice@position2.com", "Acme %d" % i, None)
-    assert len(store.search_known_companies("alice@position2.com", "acme", limit=2)) == 2
+        store.save_run("alice@markifydigital.com", "Acme %d" % i, None)
+    assert len(store.search_known_companies("alice@markifydigital.com", "acme", limit=2)) == 2
 
 
 def test_known_companies_returns_empty_without_postgres(monkeypatch):
     monkeypatch.setattr(store, "_pg_conn", lambda: None)
-    assert store.search_known_companies("alice@position2.com", "goo") == []
+    assert store.search_known_companies("alice@markifydigital.com", "goo") == []
 
 
 def test_update_run_status_is_not_ownership_scoped(fake_db):
     # By design -- the background worker knows its own run_id and never
     # accepts a caller-supplied one, so this call has no email to check.
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     assert store.update_run_status(run_id, "done") is True
-    run = store.get_run(run_id, "alice@position2.com")
+    run = store.get_run(run_id, "alice@markifydigital.com")
     assert run["status"] == "done"
 
 
 # ── Platform runs ────────────────────────────────────────────────────────────
 
 def test_upsert_platform_run_creates_then_updates_the_same_row(fake_db):
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     store.upsert_platform_run(run_id, "instagram", status="identifying", handle="acme")
     store.upsert_platform_run(run_id, "instagram", status="ok", post_count=12)
     rows = store.get_platform_runs(run_id)
@@ -379,7 +379,7 @@ def test_source_vendor_round_trips_through_upsert_platform_run(fake_db):
     """Added alongside Unipile as a second collection vendor -- which vendor
     actually served a platform (unipile / apify / youtube_api) must persist
     and read back exactly like any other field."""
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     store.upsert_platform_run(run_id, "linkedin", status="ok", post_count=8, source_vendor="unipile")
     rows = store.get_platform_runs(run_id)
     assert rows[0]["source_vendor"] == "unipile"
@@ -390,7 +390,7 @@ def test_profile_url_round_trips_through_upsert_platform_run(fake_db):
     platform, but the column/allowlist to actually persist it did not exist
     -- the account directory could never link to a platform no matter how
     successfully it was identified."""
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     store.upsert_platform_run(run_id, "instagram", status="identifying", handle="acme",
                               profile_url="https://instagram.com/acme")
     rows = store.get_platform_runs(run_id)
@@ -478,14 +478,14 @@ def test_get_platform_runs_backfills_a_missing_link_for_a_pre_fix_row(fake_db):
     run_platform_collection started storing profile_url itself, with real
     posts and a real handle, but no link -- must not keep reading as LINK NOT
     CAPTURED forever."""
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     store.upsert_platform_run(run_id, "instagram", status="ok", post_count=20, handle="acmeco")
     rows = store.get_platform_runs(run_id)
     assert rows[0]["profile_url"] == "https://www.instagram.com/acmeco/"
 
 
 def test_get_platform_runs_never_overwrites_an_already_stored_link(fake_db):
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     store.upsert_platform_run(run_id, "instagram", status="ok", post_count=20, handle="acmeco",
                               profile_url="https://www.instagram.com/the.real.page/")
     rows = store.get_platform_runs(run_id)
@@ -498,7 +498,7 @@ def test_get_platform_runs_does_not_backfill_a_status_that_never_confirmed_the_p
     (identifying), or after collection outright failed (scrape_failed) -- in
     neither case has this run actually verified the handle points anywhere,
     so guessing a link would be worse than leaving it blank."""
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     store.upsert_platform_run(run_id, "instagram", status=status, handle="acmeco")
     rows = store.get_platform_runs(run_id)
     assert rows[0]["profile_url"] is None
@@ -507,7 +507,7 @@ def test_get_platform_runs_does_not_backfill_a_status_that_never_confirmed_the_p
 def test_get_platform_runs_backfills_no_presence_too(fake_db):
     """no_presence means the page answered with nothing in it, not that
     nothing was ever confirmed -- the link is still worth showing."""
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     store.upsert_platform_run(run_id, "facebook", status="no_presence", post_count=0, handle="acmeco")
     rows = store.get_platform_runs(run_id)
     assert rows[0]["profile_url"] == "https://www.facebook.com/acmeco/"
@@ -516,20 +516,20 @@ def test_get_platform_runs_backfills_no_presence_too(fake_db):
 def test_youtube_channel_id_from_posts_ignores_a_different_runs_video(fake_db):
     """Scoped to run_id, not just platform -- a channel id belonging to some
     OTHER company's run must never leak into this one's backfill."""
-    other_run = store.save_run("alice@position2.com", "Some Other Co")
+    other_run = store.save_run("alice@markifydigital.com", "Some Other Co")
     store.upsert_posts(other_run, "youtube", [
         {"platform_post_id": "v1", "post_url": None, "post_type": "video", "caption": "",
          "posted_at": None, "media_urls": [], "metrics": {},
          "raw": {"snippet": {"channelId": "UC-WRONG"}}},
     ])
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     assert store.youtube_channel_id_from_posts(run_id) is None
 
 
 def test_youtube_channel_id_from_posts_ignores_a_post_missing_the_field(fake_db):
     """Defensive against the field simply not being where it's expected --
     read as "nothing to recover" rather than raising."""
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     store.upsert_posts(run_id, "youtube", [
         {"platform_post_id": "v1", "post_url": None, "post_type": "video", "caption": "",
          "posted_at": None, "media_urls": [], "metrics": {}, "raw": {"snippet": {}}},
@@ -543,7 +543,7 @@ def test_youtube_channel_id_from_posts_skips_past_one_with_no_channel_id(fake_db
     Python re-checking the result afterward) must be what skips it, or a run
     whose FIRST stored video happens to be missing the field would stay
     unbackfilled even though a later one has it."""
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     store.upsert_posts(run_id, "youtube", [
         {"platform_post_id": "v1", "post_url": None, "post_type": "video", "caption": "",
          "posted_at": None, "media_urls": [], "metrics": {}, "raw": {"snippet": {}}},
@@ -558,7 +558,7 @@ def test_youtube_channel_id_from_posts_ignores_a_different_platforms_post(fake_d
     """Scoped to platform, not just run_id -- a post recorded for some other
     platform in the SAME run must never be read as a YouTube channel id,
     however its raw JSON happens to be shaped."""
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     store.upsert_posts(run_id, "instagram", [
         {"platform_post_id": "p1", "post_url": None, "post_type": "image", "caption": "",
          "posted_at": None, "media_urls": [], "metrics": {},
@@ -580,7 +580,7 @@ def test_get_platform_runs_backfills_youtube_from_its_own_stored_videos(fake_db)
     channel the handle resolved to. Reading that back off an already-stored
     post is what closes the one gap canonical_profile_url can't close from
     the bare handle alone, with no live API call and no re-analysis needed."""
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     store.upsert_platform_run(run_id, "youtube", status="ok", post_count=22, handle="@acmeco")
     store.upsert_posts(run_id, "youtube", [
         {"platform_post_id": "v1", "post_url": "https://www.youtube.com/watch?v=v1",
@@ -597,14 +597,14 @@ def test_get_platform_runs_leaves_youtube_unbackfilled_without_a_channel_id(fake
     offline to recover a channel id from, and the raw handle alone isn't
     enough to build a trustworthy link (see canonical_profile_url). Re-
     analyzing is what fixes a row like this; this fallback can't."""
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     store.upsert_platform_run(run_id, "youtube", status="ok", post_count=22, handle="@acmeco")
     rows = store.get_platform_runs(run_id)
     assert rows[0]["profile_url"] is None
 
 
 def test_one_platform_failing_does_not_touch_another_platforms_row(fake_db):
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     store.upsert_platform_run(run_id, "instagram", status="ok", post_count=5)
     store.upsert_platform_run(run_id, "youtube", status="scrape_failed", error="blocked")
     rows = {r["platform"]: r for r in store.get_platform_runs(run_id)}
@@ -615,7 +615,7 @@ def test_one_platform_failing_does_not_touch_another_platforms_row(fake_db):
 # ── Posts ─────────────────────────────────────────────────────────────────
 
 def test_upsert_posts_then_update_creative_analysis_round_trips(fake_db):
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     written = store.upsert_posts(run_id, "instagram", [
         {"platform_post_id": "p1", "post_url": "https://instagram.com/p/p1",
          "post_type": "image", "caption": "hello", "posted_at": None,
@@ -642,12 +642,12 @@ def _touch(row, when):
 
 
 def test_run_last_activity_reads_the_run_row_when_nothing_else_exists(fake_db):
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     assert store.run_last_activity(run_id) == _FIXED_TS
 
 
 def test_run_last_activity_prefers_the_freshest_platform_touch(fake_db):
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     store.upsert_platform_run(run_id, "instagram", status="collecting")
     later = _FIXED_TS + timedelta(minutes=5)
     _touch(fake_db.platform_runs[0], later)
@@ -655,7 +655,7 @@ def test_run_last_activity_prefers_the_freshest_platform_touch(fake_db):
 
 
 def test_run_last_activity_prefers_the_freshest_post_touch(fake_db):
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     store.upsert_posts(run_id, "instagram", [
         {"platform_post_id": "p1", "post_url": None, "post_type": "image", "caption": "",
          "posted_at": None, "media_urls": ["https://cdn/p1.jpg"], "metrics": {}, "raw": {}},
@@ -695,36 +695,36 @@ def test_resolve_stale_run_ignores_a_done_run_even_with_a_stale_activity_signal(
 
 
 def test_resolve_stale_run_leaves_a_recently_active_run_alone(fake_db, monkeypatch):
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     monkeypatch.setattr(store, "run_last_activity", lambda rid: datetime.now(timezone.utc))
-    run = store.get_run(run_id, "alice@position2.com")
+    run = store.get_run(run_id, "alice@markifydigital.com")
     resolved = store.resolve_stale_run(run)
     assert resolved["status"] == "running"
     # Not just the returned dict -- the stored row itself must be untouched.
-    assert store.get_run(run_id, "alice@position2.com")["status"] == "running"
+    assert store.get_run(run_id, "alice@markifydigital.com")["status"] == "running"
 
 
 def test_resolve_stale_run_leaves_a_running_run_alone_with_no_activity_signal(fake_db, monkeypatch):
     """Defensive: an unreadable signal must never be treated as proof of
     abandonment -- that would flip every run to 'error' the instant Postgres
     itself has a bad moment."""
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     monkeypatch.setattr(store, "run_last_activity", lambda rid: None)
-    run = store.get_run(run_id, "alice@position2.com")
+    run = store.get_run(run_id, "alice@markifydigital.com")
     assert store.resolve_stale_run(run)["status"] == "running"
 
 
 def test_resolve_stale_run_flips_a_long_silent_run_to_error(fake_db, monkeypatch):
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     long_ago = datetime.now(timezone.utc) - timedelta(minutes=store.STALE_RUN_MINUTES + 1)
     monkeypatch.setattr(store, "run_last_activity", lambda rid: long_ago)
-    run = store.get_run(run_id, "alice@position2.com")
+    run = store.get_run(run_id, "alice@markifydigital.com")
     resolved = store.resolve_stale_run(run)
     assert resolved["status"] == "error"
     assert "interrupted" in resolved["error"]
     # And persisted, not just returned -- the whole point is that the NEXT
     # reader (History, a reopened tab) sees it fixed too, not just this one.
-    assert store.get_run(run_id, "alice@position2.com")["status"] == "error"
+    assert store.get_run(run_id, "alice@markifydigital.com")["status"] == "error"
 
 
 def _freeze_now(monkeypatch, when):
@@ -745,10 +745,10 @@ def test_resolve_stale_run_treats_exactly_the_threshold_as_still_fresh(fake_db, 
     real still-working run over a fast false positive."""
     frozen_now = datetime(2026, 9, 9, 12, 0, 0, tzinfo=timezone.utc)
     _freeze_now(monkeypatch, frozen_now)
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     exactly_at = frozen_now - timedelta(minutes=store.STALE_RUN_MINUTES)
     monkeypatch.setattr(store, "run_last_activity", lambda rid: exactly_at)
-    run = store.get_run(run_id, "alice@position2.com")
+    run = store.get_run(run_id, "alice@markifydigital.com")
     assert store.resolve_stale_run(run)["status"] == "running"
 
 
@@ -756,18 +756,18 @@ def test_resolve_stale_run_treats_one_second_past_the_threshold_as_stale(fake_db
     """The other side of the same boundary, at the same zero drift."""
     frozen_now = datetime(2026, 9, 9, 12, 0, 0, tzinfo=timezone.utc)
     _freeze_now(monkeypatch, frozen_now)
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     one_second_past = frozen_now - timedelta(minutes=store.STALE_RUN_MINUTES) - timedelta(seconds=1)
     monkeypatch.setattr(store, "run_last_activity", lambda rid: one_second_past)
-    run = store.get_run(run_id, "alice@position2.com")
+    run = store.get_run(run_id, "alice@markifydigital.com")
     assert store.resolve_stale_run(run)["status"] == "error"
 
 
 def test_resolve_stale_run_uses_a_generous_margin_not_a_hair_trigger(fake_db, monkeypatch):
     """One minute short of the threshold must still read as active -- this
     is the boundary a real run's own worst-case legitimate gap sits inside."""
-    run_id = store.save_run("alice@position2.com", "Acme Inc")
+    run_id = store.save_run("alice@markifydigital.com", "Acme Inc")
     just_inside = datetime.now(timezone.utc) - timedelta(minutes=store.STALE_RUN_MINUTES - 1)
     monkeypatch.setattr(store, "run_last_activity", lambda rid: just_inside)
-    run = store.get_run(run_id, "alice@position2.com")
+    run = store.get_run(run_id, "alice@markifydigital.com")
     assert store.resolve_stale_run(run)["status"] == "running"

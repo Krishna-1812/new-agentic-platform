@@ -1,5 +1,10 @@
+# Railway builds with Railpack (its current default; Nixpacks is no longer
+# offered). Railpack reads .python-version for the Python version (3.11, what
+# the test suite runs on) and railpack.json for extra system packages: ffmpeg,
+# which Social Media Intelligence's video-frame extraction (tracker/sci_video.py)
+# shells out to. The "..." there keeps the packages Railpack adds on its own.
 [build]
-builder = "NIXPACKS"
+builder = "RAILPACK"
 
 [deploy]
 startCommand = "gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --workers 2 --threads 4 --graceful-timeout 120"

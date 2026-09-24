@@ -33,7 +33,7 @@ def client(email=None):
 
 @pytest.fixture
 def owner():
-    email = 'http-' + uuid.uuid4().hex + '@position2.com'
+    email = 'http-' + uuid.uuid4().hex + '@markifydigital.com'
     yield client(email), email
     with J.db() as conn, conn.cursor() as cur:
         cur.execute('SELECT run_id FROM evi_jobs WHERE email=%s', (email,))
@@ -97,7 +97,7 @@ def test_request_worker_report_and_csv_preserve_evidence_and_ownership(owner, mo
     assert row['Run status'] == run['status']
     assert 'not an attendee list' in row['Roster caveat']
     assert row['Coverage'] == 'Not independently verified'
-    stranger = client('other-'+uuid.uuid4().hex+'@position2.com')
+    stranger = client('other-'+uuid.uuid4().hex+'@markifydigital.com')
     for suffix in ('', '/status', '/export.csv'):
         assert stranger.get(path+suffix).status_code == 404
     assert stranger.post(path+'/cancel').status_code == 404

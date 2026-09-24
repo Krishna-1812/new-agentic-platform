@@ -72,13 +72,13 @@ def test_the_admin_selftest_is_admin_only():
     path = "/p2/admin/external-usage/evi-resolve-check"
     assert appmod.app.url_map.bind("localhost").test(path, "POST")
     # A Position2 staffer who is not in ADMIN_EMAILS must not reach it.
-    r = _client("not.an.admin@position2.com").post(path)
+    r = _client("not.an.admin@markifydigital.com").post(path)
     assert r.status_code in (301, 302, 401, 403), r.status_code
 
 
 def test_run_rejects_an_unknown_mode_and_an_empty_query(monkeypatch):
     monkeypatch.setattr(store, "save_run", lambda *a, **k: 1)
-    c = _client("reporting@position2.com")
+    c = _client("reporting@markifydigital.com")
     assert c.post(BASE + "/run", json={"mode": "sideways", "query": "x"}).status_code == 400
     assert c.post(BASE + "/run", json={"mode": "lookup", "query": "  "}).status_code == 400
 
@@ -88,7 +88,7 @@ def test_run_reports_storage_being_unavailable_rather_than_pretending(monkeypatc
     null run_id would leave the page polling forever for a run that was never
     created."""
     monkeypatch.setattr(store, "save_run", lambda *a, **k: None)
-    r = _client("reporting@position2.com").post(
+    r = _client("reporting@markifydigital.com").post(
         BASE + "/run", json={"mode": "lookup", "query": "Web Summit"})
     assert r.status_code == 500
     assert "storage" in r.get_json()["error"].lower()
@@ -99,7 +99,7 @@ def test_a_run_belonging_to_someone_else_is_a_404(monkeypatch):
     This asserts the route actually honours that instead of 500ing on None,
     which is the shape an IDOR takes when it is fixed carelessly."""
     monkeypatch.setattr(store, "get_run", lambda run_id, email: None)
-    c = _client("reporting@position2.com")
+    c = _client("reporting@markifydigital.com")
     assert c.get(BASE + "/runs/99").status_code == 404
     assert c.get(BASE + "/runs/99/status").status_code == 404
     assert c.get(BASE + "/runs/99/export.csv").status_code == 404
@@ -120,7 +120,7 @@ def test_run_detail_always_carries_the_source_ledger(monkeypatch):
         return []
     monkeypatch.setattr(store, "get_sources", _sources)
 
-    body = _client("reporting@position2.com").get(BASE + "/runs/5").get_json()
+    body = _client("reporting@markifydigital.com").get(BASE + "/runs/5").get_json()
     assert called.get("yes"), "the run detail route never read the source ledger"
     assert "sources" in body
     assert body["role_labels"]["exhibitor"] == "Exhibitor"
@@ -145,7 +145,7 @@ def test_the_csv_says_what_the_screen_says(monkeypatch):
          "person_name": None, "person_title": None, "tier": None, "booth": None,
          "apollo": None, "source_url": "https://widgetexpo.test/community"},
     ])
-    r = _client("reporting@position2.com").get(BASE + "/runs/5/export.csv")
+    r = _client("reporting@markifydigital.com").get(BASE + "/runs/5/export.csv")
     assert r.status_code == 200
     assert "text/csv" in r.headers["Content-Type"]
     assert "widget-expo-participants.csv" in r.headers["Content-Disposition"]
@@ -177,7 +177,7 @@ def test_the_csv_is_crlf_terminated():
 # ── the locked profile, and the hard stop in front of recommend mode ──────
 
 def _p2(monkeypatch=None):
-    return _client("someone@position2.com")
+    return _client("someone@markifydigital.com")
 
 
 def test_recommend_without_a_profile_is_refused_with_the_real_reason():
@@ -260,7 +260,7 @@ def test_the_page_offers_exactly_the_four_classifications_the_rubric_knows():
 
 
 def test_no_new_run_can_be_started_on_the_retired_play():
-    c = _client("harness@position2.com")
+    c = _client("harness@markifydigital.com")
     r = c.post(BASE + "/run", json={"mode": "discover",
                                     "query": "VPs of marketing at fintechs"})
     assert r.status_code == 400, (
@@ -268,7 +268,7 @@ def test_no_new_run_can_be_started_on_the_retired_play():
 
 
 def test_the_retired_play_is_gone_from_the_page_that_starts_runs():
-    c = _client("harness@position2.com")
+    c = _client("harness@markifydigital.com")
     html = c.get(BASE).get_data(as_text=True)
     assert 'data-play="discover"' not in html, "the retired play still has a card"
     assert 'id="discoverFields"' not in html, "the retired play still has its form"
@@ -289,7 +289,7 @@ def test_a_run_already_stored_under_the_retired_play_still_opens(monkeypatch):
     monkeypatch.setattr(store, "get_sources", lambda run_id: [])
     monkeypatch.setattr(store, "get_candidates", lambda run_id: [])
     monkeypatch.setattr(store, "get_outreach", lambda run_id: [])
-    c = _client("harness@position2.com")
+    c = _client("harness@markifydigital.com")
     r = c.get(BASE + "/runs/7")
     assert r.status_code == 200, "a stored run of the retired play no longer opens"
     assert r.get_json()["mode"] == "discover"
@@ -304,7 +304,7 @@ def test_a_stored_run_of_the_retired_play_is_still_a_usable_roster(monkeypatch):
              "event_name": "Fintech Summit"}]
     monkeypatch.setattr(store, "list_runs", lambda email, limit=60: runs)
     monkeypatch.setattr(store, "list_profiles", lambda email: [])
-    c = _client("harness@position2.com")
+    c = _client("harness@markifydigital.com")
     html = c.get(BASE).get_data(as_text=True)
     assert 'value="7"' in html and "Fintech Summit" in html, (
         "a harvested roster from the retired play is no longer offered to "
@@ -323,7 +323,7 @@ _DRAFT = BASE + "/profiles/draft"
 
 
 def _as_staff():
-    return _client("staffer@position2.com")
+    return _client("staffer@markifydigital.com")
 
 
 def test_drafting_a_profile_saves_nothing(monkeypatch):
@@ -412,7 +412,7 @@ def test_drafting_is_rate_limited(monkeypatch):
         "classification_confidence": None,
         "sources": ["https://a.example"], "note": "", "error": None})
     appmod._CPI_RATE_STATE.pop("evi-draft-profile", None)
-    c = _client("ratelimited@position2.com")
+    c = _client("ratelimited@markifydigital.com")
     limit = appmod._CPI_RATE_LIMITS["evi-draft-profile"][0]
     codes = [c.post(_DRAFT, json={"client_name": "N", "website": "https://a.example"}).status_code
              for _ in range(limit + 2)]

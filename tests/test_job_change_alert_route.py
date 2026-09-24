@@ -48,7 +48,7 @@ def seeded_db(monkeypatch):
         yield store
 
 
-def _client(email="reporting@position2.com"):
+def _client(email="sudheer@markifydigital.com"):   # an admin
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
         sess["google_user"] = {"email": email, "name": "T"}
@@ -56,7 +56,7 @@ def _client(email="reporting@position2.com"):
 
 
 def test_page_renders_for_any_position2_staff(seeded_db):
-    resp = _client("someone@position2.com").get("/p2/strategic-agents/job-change-alert")
+    resp = _client("someone@markifydigital.com").get("/p2/strategic-agents/job-change-alert")
     assert resp.status_code == 200
     assert b"Job Change Alert" in resp.data
 
@@ -78,7 +78,7 @@ def test_data_endpoint_never_leaks_the_literal_unavailable_string(seeded_db, mon
 
 
 def test_sync_route_is_forbidden_for_non_admin_position2_staff(seeded_db):
-    resp = _client("someone@position2.com").post("/p2/strategic-agents/job-change-alert/sync")
+    resp = _client("someone@markifydigital.com").post("/p2/strategic-agents/job-change-alert/sync")
     assert resp.status_code == 403
 
 

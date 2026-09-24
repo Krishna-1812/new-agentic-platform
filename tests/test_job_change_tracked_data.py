@@ -94,7 +94,7 @@ def _reset_cache():
     _reset_all_job_change_tracked_state()
 
 
-def _client(email="reporting@position2.com"):
+def _client(email="reporting@markifydigital.com"):
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
         sess["google_user"] = {"email": email, "name": "T"}

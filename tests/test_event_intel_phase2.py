@@ -109,7 +109,7 @@ sql = pytest.mark.skipif(not os.getenv('DATABASE_URL'),reason='requires disposab
 
 
 def new_job(label):
-    email='phase2-'+label+'@position2.com'
+    email='phase2-'+label+'@markifydigital.com'
     rid=J.start(email,'lookup','Forum',{'email':email},label)
     return rid,email
 
@@ -130,7 +130,7 @@ def test_expired_worker_is_fenced_and_cancellation_is_owned():
     rid,email=new_job('fenced')
     job=J.claim()
     assert job['run_id']==rid
-    assert J.cancel(rid,'other@position2.com') is False
+    assert J.cancel(rid,'other@markifydigital.com') is False
     token=J.CURRENT.set(job)
     try:
         with J.db() as conn,conn.cursor() as cur:
@@ -166,7 +166,7 @@ def test_stage_result_and_provider_response_survive_resume(monkeypatch):
     finally:
         J.CURRENT.reset(token)
     assert J.ledger(rid,email)['unknown_provider_outcomes']==1
-    assert J.ledger(rid,'other@position2.com') is None
+    assert J.ledger(rid,'other@markifydigital.com') is None
     J.cancel(rid,email)
 
 
@@ -194,7 +194,7 @@ def test_catalog_observations_remain_run_owned_and_unverified():
     observations=E.get_observations(rid,email)
     assert len(observations)==5
     assert all(row['support']=='model_reported' for row in observations)
-    assert E.get_observations(rid,'other@position2.com')==[]
+    assert E.get_observations(rid,'other@markifydigital.com')==[]
     J.cancel(rid,email)
 
 
@@ -243,8 +243,8 @@ def test_profile_product_and_company_characteristics_reach_prompts():
     from tracker.event_intel_workroom import profile_brief as qualification_brief
     profile=dict(client_name='Position2',classification='b2b_to_marketing',selected_product='B2B demand generation',
         what_they_sell='Growth marketing services',firmographics='B2B SaaS with a marketing team')
-    pid=S.save_profile('phase2-profile@position2.com',profile)
-    saved=S.get_profile(pid,'phase2-profile@position2.com')
+    pid=S.save_profile('phase2-profile@markifydigital.com',profile)
+    saved=S.get_profile(pid,'phase2-profile@markifydigital.com')
     for render in (profile_brief,qualification_brief):
         assert profile['selected_product'] in render(saved)
         assert profile['firmographics'] in render(saved)

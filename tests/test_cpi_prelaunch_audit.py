@@ -138,12 +138,12 @@ _COUNT = "/p2/strategic-agents/company-people-intelligence/count"
 def client():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
     return c
 
 
 # Deliberately NOT autouse: a real, present APOLLO_API_KEY also arms
-# _warm_person_enrichment (fired on every non-@position2.com sign-in), which
+# _warm_person_enrichment (fired on every non-@markifydigital.com sign-in), which
 # starts a genuine background thread hitting the real Apollo API. Autouse
 # here once made the /auth/google test below spawn a real, retrying outbound
 # network call under a fake key -- scoped instead to only the handful of
@@ -406,7 +406,7 @@ def test_list_post_prunes_to_the_cap_after_inserting(client, monkeypatch):
              if sql.startswith("DELETE FROM cpi_list_rows") and "NOT IN" in sql]
     assert len(prunes) == 1, "expected exactly one self-healing prune after the insert"
     _, params = prunes[0]
-    assert params == ("reporting@position2.com", "reporting@position2.com", appmod._CPI_LIST_MAX)
+    assert params == ("reporting@markifydigital.com", "reporting@markifydigital.com", appmod._CPI_LIST_MAX)
     insert_idx = max(i for i, (sql, _) in enumerate(conn.log) if sql.startswith("INSERT"))
     prune_idx = next(i for i, (sql, _) in enumerate(conn.log)
                      if sql.startswith("DELETE FROM cpi_list_rows") and "NOT IN" in sql)

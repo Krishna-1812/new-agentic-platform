@@ -1,7 +1,7 @@
 """The /p2 staff gate and what the UI says about it are one value.
 
 They were two. brand.staff_domain said one domain and fed the 403 page, the
-Field Guide and the admin copy; app.py checked a hard-coded "@position2.com"
+Field Guide and the admin copy; app.py checked a hard-coded "@markifydigital.com"
 in twelve places. So the 403 page told users of the stated domain they would
 get in, and the gate refused them. Nothing errored, because the two never met.
 

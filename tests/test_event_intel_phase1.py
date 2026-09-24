@@ -193,7 +193,7 @@ def test_failed_discovery_keeps_spend_and_failed_status(monkeypatch):
     updates=[]
     monkeypatch.setattr(P.store,'update_run',lambda rid,**fields:updates.append(fields))
     monkeypatch.setattr(P.event_intel_discover,'discover',lambda p:dict(candidates=[],shortfall=[],statuses={},categories_failed=6,spend={'calls':6,'input_tokens':10000}))
-    P._run_recommend(1,'audit@position2.com',PROFILE)
+    P._run_recommend(1,'audit@markifydigital.com',PROFILE)
     assert updates[-1]['status']=='failed'
     assert updates[-1]['summary']['spend']['calls']==6
 
@@ -219,7 +219,7 @@ def test_incomplete_or_wrong_persistence_cannot_finish_successfully(monkeypatch,
     monkeypatch.setattr(P.event_intel_scorer, 'score_all', lambda *a: dict(scored=[row], unscored=[], spend={'calls': 1}))
     monkeypatch.setattr(P.store, 'save_candidates', lambda *a: saved)
     monkeypatch.setattr(P.store, 'get_candidates', lambda *a: readback)
-    P._run_recommend(1, 'audit@position2.com', PROFILE)
+    P._run_recommend(1, 'audit@markifydigital.com', PROFILE)
     assert updates[-1]['status'] == 'failed'
     assert updates[-1]['summary']['spend']['calls'] == 4
     assert updates[-1]['summary']['expected_saved'] == 1

@@ -72,7 +72,7 @@ def _chat(monkeypatch, message="CMO of tealium", people=None, role=None,
                         lambda oai, facts, q, research="": "Binal Shah is the CMO.")
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "Reporting@Position2.com", "name": "T"}
+        sess["google_user"] = {"email": "Reporting@MarkifyDigital.com", "name": "T"}
     r = c.post("/p2/strategic-agents/company-people-intelligence/chat", json={"message": message})
     assert r.status_code == 200
     return r.get_json()
@@ -127,7 +127,7 @@ def test_the_entry_is_owned_by_the_signed_in_user(saved, monkeypatch):
     """History is per-user, so the owner is taken from the session rather than
     from anything the request body could claim."""
     _chat(monkeypatch, people=[_BINAL])
-    assert saved[0]["email"] == "Reporting@Position2.com"
+    assert saved[0]["email"] == "Reporting@MarkifyDigital.com"
 
 
 def test_a_records_gap_answer_is_saved_too(saved, monkeypatch):
@@ -166,7 +166,7 @@ def test_a_disambiguation_prompt_is_not_saved(saved, monkeypatch):
     monkeypatch.setattr(ac, "search_people", lambda f, k, **kw: [])
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
     r = c.post("/p2/strategic-agents/company-people-intelligence/chat",
                json={"message": "CMO of Delta"})
     assert r.status_code == 200
@@ -177,7 +177,7 @@ def test_a_disambiguation_prompt_is_not_saved(saved, monkeypatch):
 def test_an_empty_question_saves_nothing(saved, monkeypatch):
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
     c.post("/p2/strategic-agents/company-people-intelligence/chat", json={"message": "   "})
     assert saved == []
 
@@ -208,7 +208,7 @@ def _enrich(monkeypatch, profile, kind="person"):
     monkeypatch.setattr(appmod, "_cpi_enrich_company", lambda *a, **k: profile)
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
     r = c.post("/p2/strategic-agents/company-people-intelligence/enrich",
                json={"type": kind, "name": "Binal Shah", "domain": "tealium.com",
                      "apollo_id": "p-binal"})
@@ -346,8 +346,8 @@ def _inserts(conn):
 def test_the_owner_email_is_stored_lower_cased(fake_pg):
     """Per-user scoping keys on this, so it has to be stable however the session
     happened to case it."""
-    appmod._cpi_history_save("Reporting@Position2.COM", "chat", "q", [], "a")
-    assert _inserts(fake_pg)[0][1][0] == "reporting@position2.com"
+    appmod._cpi_history_save("Reporting@MARKIFYDIGITAL.COM", "chat", "q", [], "a")
+    assert _inserts(fake_pg)[0][1][0] == "reporting@markifydigital.com"
 
 
 def test_the_new_id_is_returned(fake_pg):

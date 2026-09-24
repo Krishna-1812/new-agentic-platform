@@ -302,7 +302,7 @@ def test_probe_fails_when_the_vendor_describes_nothing(monkeypatch):
 # ── The self-test route, gated exactly like the ChatGPT one beside it ──────
 
 def test_route_requires_admin():
-    r = _admin_client("nobody@position2.com").post(_CLAUDE_VISION_ROUTE)
+    r = _admin_client("nobody@markifydigital.com").post(_CLAUDE_VISION_ROUTE)
     assert r.status_code == 403
 
 
@@ -375,7 +375,7 @@ def test_probe_url_calls_analyze_image_not_analyze_image_bytes(monkeypatch):
 
 
 def test_url_route_requires_admin():
-    r = _admin_client("nobody@position2.com").post(_CLAUDE_VISION_URL_ROUTE)
+    r = _admin_client("nobody@markifydigital.com").post(_CLAUDE_VISION_URL_ROUTE)
     assert r.status_code == 403
 
 

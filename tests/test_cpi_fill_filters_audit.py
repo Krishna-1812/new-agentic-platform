@@ -128,7 +128,7 @@ _PARSE = "/p2/strategic-agents/company-people-intelligence/parse-query"
 def client():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
     return c
 
 

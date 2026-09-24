@@ -35,7 +35,7 @@ into four surfaces:
 |---|---|---|---|---|
 | 1 | Public marketing site | Logged-out visitors | none | `/`, `/agents`, `/platform`, ... |
 | 2 | Member workspace | Any signed-in Google user | `@login_required` | `/app/*` |
-| 3 | Internal staff app | `@position2.com` accounts only | `@position2_required` | `/p2/*` |
+| 3 | Internal staff app | `@markifydigital.com` accounts, plus the admins in `ADMIN_EMAILS` on any domain | `@position2_required` | `/p2/*` |
 | 4 | Client portals | Any signed-in Google account, gated per client | `_client_gate()` | `/<client-slug>/*` |
 
 `ADMIN_EMAILS` (checked in `app.py`) is the single source of truth for admin rights; `admin_required`

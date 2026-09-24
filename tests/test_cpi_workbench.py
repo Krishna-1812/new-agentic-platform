@@ -43,7 +43,7 @@ _PARSE = "/p2/strategic-agents/company-people-intelligence/parse-query"
 def client():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
     return c
 
 
@@ -224,7 +224,7 @@ def _record(action, credits):
     the email it stamps on the row is the one the session holds."""
     with appmod.app.test_request_context("/"):
         from flask import session
-        session["google_user"] = {"email": "reporting@position2.com"}
+        session["google_user"] = {"email": "reporting@markifydigital.com"}
         appmod._cpi_credit_record(action, credits)
 
 
@@ -233,7 +233,7 @@ def test_a_spend_is_recorded(pg):
     _record("enrich", 3)
     got = _inserts(conn)
     assert len(got) == 1
-    assert got[0][1] == ("reporting@position2.com", "enrich", 3)
+    assert got[0][1] == ("reporting@markifydigital.com", "enrich", 3)
 
 
 def test_a_zero_is_not_recorded(pg):
@@ -358,7 +358,7 @@ def test_the_list_is_scoped_to_the_signed_in_user(pg, client):
     conn = pg([[0]])
     client.get(_LIST)
     sel = [(s, p) for s, p in conn.log if s.startswith("SELECT entity")]
-    assert sel and sel[0][1][0] == "reporting@position2.com"
+    assert sel and sel[0][1][0] == "reporting@markifydigital.com"
 
 
 def test_deleting_by_key_is_scoped_to_the_user_too(pg, client):
@@ -368,7 +368,7 @@ def test_deleting_by_key_is_scoped_to_the_user_too(pg, client):
     client.delete(_LIST, json={"keys": ["p1"]})
     dels = [(s, p) for s, p in conn.log
             if s.startswith("DELETE FROM cpi_list_rows WHERE email = %s AND dedupe_key")]
-    assert dels and dels[0][1][0] == "reporting@position2.com"
+    assert dels and dels[0][1][0] == "reporting@markifydigital.com"
 
 
 def test_the_list_expires_like_the_history_does(pg, client):

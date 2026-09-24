@@ -76,7 +76,7 @@ def test_overlay_checks_every_domain_a_participant_row_carries_not_just_the_firs
 
 @pytest.fixture
 def fixture():
-    email = 'plan-'+uuid.uuid4().hex+'@position2.com'
+    email = 'plan-'+uuid.uuid4().hex+'@markifydigital.com'
     profile = S.save_profile(email, {'client_name': 'Position2', 'classification': 'b2b_to_marketing'})
     other = S.save_profile(email, {'client_name': 'Other', 'classification': 'b2b_to_marketing'})
     assert profile and other
@@ -105,7 +105,7 @@ def test_plan_persistence_is_client_and_edition_specific(fixture):
     assert P.save(rid, email, dict(data, version=1))['plan']['version'] == 2
     assert S.get_outcomes(email, profile) == {}
     with pytest.raises(LookupError):
-        P.context(rid, 'stranger@position2.com', profile)
+        P.context(rid, 'stranger@markifydigital.com', profile)
     with pytest.raises(ValueError):
         P.save(rid, email, dict(data, event_identity='invented'))
 
@@ -128,7 +128,7 @@ def test_http_auth_validation_conflict_and_escaping(fixture):
     assert '&lt;script&gt;alert(1)&lt;/script&gt;' in page
     assert '<script>alert(1)</script>' not in page
     with http.session_transaction() as session:
-        session['google_user'] = {'email': 'stranger@position2.com'}
+        session['google_user'] = {'email': 'stranger@markifydigital.com'}
     assert http.get(path).status_code == 404
     assert http.post(path, json=data).status_code == 404
 
@@ -158,13 +158,13 @@ def test_invalid_choice_shapes_are_validation_errors(key):
 @pytest.mark.parametrize('value', [True, 1.5, '1.5', [], None])
 def test_invalid_plan_identifiers_rejected_before_access(value):
     with pytest.raises(ValueError):
-        P.save(1, 'fixture@position2.com', {'profile_id': value, 'version': 0})
+        P.save(1, 'fixture@markifydigital.com', {'profile_id': value, 'version': 0})
 
 
 @SQL
 def test_foreign_profile_cannot_receive_a_plan(fixture):
     email, profile, other, rid, identity, run = fixture
-    foreign = S.save_profile('foreign-'+uuid.uuid4().hex+'@position2.com',
+    foreign = S.save_profile('foreign-'+uuid.uuid4().hex+'@markifydigital.com',
                              {'client_name': 'Foreign', 'classification': 'b2b_to_marketing'})
     with pytest.raises(LookupError):
         P.save(rid, email, payload(profile_id=foreign, event_identity=identity))

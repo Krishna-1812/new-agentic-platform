@@ -22,7 +22,7 @@ BASE = "/p2/strategic-agents/event-conference-intelligence"
 def _client():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "harness@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "harness@markifydigital.com", "name": "T"}
     return c
 
 
@@ -431,7 +431,7 @@ def test_the_guardrail_self_test_actually_fails_when_a_guard_is_removed(monkeypa
 def test_the_guardrail_route_is_admin_only():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "harness@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "harness@markifydigital.com", "name": "T"}
     r = c.post("/p2/admin/external-usage/evi-guardrail-check")
     assert r.status_code in (302, 403), \
         "a non-admin reached the self-test (%s)" % r.status_code

@@ -110,7 +110,7 @@ def test_run_analysis_attaches_sse_debug_to_the_stored_output(monkeypatch):
             pass
 
     monkeypatch.setattr(ac.requests, "post", lambda *a, **kw: _Resp())
-    output = ac.run_analysis("Acme", "1", "a@position2.com", "OWN")
+    output = ac.run_analysis("Acme", "1", "a@markifydigital.com", "OWN")
     assert output["strategyagent.strategy"] == "x"
     assert output["_sseDebug"]["eventTypeCounts"] == {"final": 1}
 
@@ -289,12 +289,12 @@ def test_search_companies_returns_empty_list_without_a_key(monkeypatch):
 
 def test_run_analysis_returns_none_without_a_key(monkeypatch):
     monkeypatch.delenv("ARENA_API_KEY", raising=False)
-    assert ac.run_analysis("Acme", "1", "a@position2.com", "OWN") is None
+    assert ac.run_analysis("Acme", "1", "a@markifydigital.com", "OWN") is None
 
 
 def test_run_playbook_returns_none_without_a_key(monkeypatch):
     monkeypatch.delenv("ARENA_API_KEY", raising=False)
-    assert ac.run_playbook("a@position2.com", "1", "OWN") is None
+    assert ac.run_playbook("a@markifydigital.com", "1", "OWN") is None
 
 
 def test_execute_never_raises_on_a_network_failure(monkeypatch):
@@ -475,7 +475,7 @@ def test_search_companies_still_returns_a_bare_list(monkeypatch):
 def test_run_analysis_result_carries_the_failure_reason(monkeypatch):
     monkeypatch.setenv("ARENA_API_KEY", "test-key")
     monkeypatch.setattr(ac.requests, "post", _post_returning(_FakeResp(402, "no credit")))
-    attempt = ac.run_analysis_result("Acme", "1", "a@position2.com", "OWN")
+    attempt = ac.run_analysis_result("Acme", "1", "a@markifydigital.com", "OWN")
     assert attempt["output"] is None
     assert attempt["error"]["status"] == 402
     assert "out of credit" in ac.describe_error(attempt["error"])
@@ -487,7 +487,7 @@ def test_a_billed_analysis_run_is_never_retried(monkeypatch):
     monkeypatch.setenv("ARENA_API_KEY", "test-key")
     post = _post_returning(_FakeResp(503, "unavailable"))
     monkeypatch.setattr(ac.requests, "post", post)
-    ac.run_analysis_result("Acme", "1", "a@position2.com", "OWN")
+    ac.run_analysis_result("Acme", "1", "a@markifydigital.com", "OWN")
     assert len(post.calls) == 1
 
 

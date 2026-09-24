@@ -131,7 +131,7 @@ class _Page:
 def page_script():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "harness@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "harness@markifydigital.com", "name": "T"}
     resp = c.get(_PAGE)
     assert resp.status_code == 200, "the page did not render (%s)" % resp.status_code
     html = resp.get_data(as_text=True)
@@ -697,7 +697,7 @@ def test_the_calendar_does_not_reuse_a_class_the_page_already_owns():
     """
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "harness@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "harness@markifydigital.com", "name": "T"}
     html = c.get(_PAGE).get_data(as_text=True)
     blocks = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", html, re.S)
     script = [b for b in blocks if "function eventsHtml" in b][0]

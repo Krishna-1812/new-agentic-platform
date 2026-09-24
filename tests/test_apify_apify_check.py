@@ -206,7 +206,7 @@ def test_selftest_never_raises_when_the_transport_blows_up(monkeypatch):
 # ── the route ────────────────────────────────────────────────────────────
 
 def test_route_is_admin_only():
-    c = _client("nobody@position2.com")
+    c = _client("nobody@markifydigital.com")
     r = c.post(ROUTE)
     assert r.status_code == 403
 

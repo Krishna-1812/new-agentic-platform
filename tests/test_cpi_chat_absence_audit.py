@@ -81,7 +81,7 @@ def chat(monkeypatch):
     def _ask():
         c = appmod.app.test_client()
         with c.session_transaction() as sess:
-            sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+            sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
         r = c.post(_CHAT, json={"message": "CMO of thoughtworks"})
         assert r.status_code == 200, "a failed lookup must never 500 the question"
         return seen.get("f") or {}

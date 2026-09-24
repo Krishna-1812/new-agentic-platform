@@ -12,7 +12,7 @@ BASE='/p2/strategic-agents/event-conference-intelligence/runs/8'
 def client():
     c=appmod.app.test_client()
     with c.session_transaction() as session:
-        session['google_user']={'email':'export@position2.com','name':'Export test'}
+        session['google_user']={'email':'export@markifydigital.com','name':'Export test'}
     return c
 
 
@@ -34,7 +34,7 @@ def test_export_preserves_report_and_ledgers(monkeypatch,status):
     assert saved.json['execution_ledger']['unknown_provider_outcomes'] == 1
     assert saved.headers['Content-Disposition'] == 'attachment; filename="event-research-8.json"'
     assert saved.headers['Cache-Control'] == 'private, no-store'
-    get.assert_called_with(8,'export@position2.com')
+    get.assert_called_with(8,'export@markifydigital.com')
 
 
 def test_export_of_another_accounts_run_remains_not_found(monkeypatch):

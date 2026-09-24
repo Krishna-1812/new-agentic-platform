@@ -65,7 +65,7 @@ _EXPORT = "/p2/strategic-agents/company-people-intelligence/export"
 def client():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com",
+        sess["google_user"] = {"email": "reporting@markifydigital.com",
                                "name": "Test User", "given_name": "Test"}
     return c
 

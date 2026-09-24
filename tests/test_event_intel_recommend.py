@@ -614,7 +614,7 @@ def test_cross_client_interest_is_suppressed_pending_verified_client_identity(mo
     # dict was already shaped like the real one, and this confirms nothing
     # downstream added one.
     import json as _json
-    assert "@position2.com" not in _json.dumps(s), (
+    assert "@markifydigital.com" not in _json.dumps(s), (
         "an email address reached the client-facing summary")
 
 

@@ -42,7 +42,7 @@ def read(extractor, **changes):
 
 
 def test_reuse_requires_completed_origin_and_does_not_copy_spend():
-    email = uuid.uuid4().hex+'@position2.com'
+    email = uuid.uuid4().hex+'@markifydigital.com'
     calls = []
     def extract(*args):
         calls.append(args)
@@ -71,7 +71,7 @@ def test_reuse_requires_completed_origin_and_does_not_copy_spend():
     {'host':'other.example'}, {'name':'Different Forum'},
 ])
 def test_changed_inputs_require_extraction(change):
-    email = uuid.uuid4().hex+'@position2.com'
+    email = uuid.uuid4().hex+'@markifydigital.com'
     with worker(email) as first:
         read(lambda *a: result())
         complete(first)
@@ -84,7 +84,7 @@ def test_changed_inputs_require_extraction(change):
 @pytest.mark.parametrize('field,value', [('rows', []), ('error', {'detail':'failed'}),
     ('coverage', {'chunks_total':2,'chunks_read':1,'errors':[{}]})])
 def test_incomplete_results_are_not_cached(field, value):
-    email = uuid.uuid4().hex+'@position2.com'
+    email = uuid.uuid4().hex+'@markifydigital.com'
     with worker(email) as first:
         read(lambda *a: dict(result(), **{field:value}))
         complete(first)
@@ -95,7 +95,7 @@ def test_incomplete_results_are_not_cached(field, value):
 
 
 def test_expiry_and_version_invalidate_cache(monkeypatch):
-    email = uuid.uuid4().hex+'@position2.com'
+    email = uuid.uuid4().hex+'@markifydigital.com'
     with worker(email) as first:
         read(lambda *a: result())
         complete(first)
@@ -114,7 +114,7 @@ def test_expiry_and_version_invalidate_cache(monkeypatch):
 
 def test_repeated_pipeline_fetches_sources_but_reuses_extraction(monkeypatch):
     from tracker import event_intel_harvest as H, event_intel_resolve as R
-    email = uuid.uuid4().hex+'@position2.com'
+    email = uuid.uuid4().hex+'@markifydigital.com'
     fetches, calls = [], []
     url = 'https://fixture.example/exhibitors'
     monkeypatch.setattr(R, 'resolve_event', lambda *a: {'ok': True,

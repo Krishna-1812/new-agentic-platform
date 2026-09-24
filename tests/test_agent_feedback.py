@@ -37,13 +37,13 @@ _JS = os.path.join(_ROOT, "static", "js", "agent_feedback.js")
 
 @pytest.fixture
 def client():
-    """A real @position2.com session that is NOT in ADMIN_EMAILS -- every
+    """A real @markifydigital.com session that is NOT in ADMIN_EMAILS -- every
     Strategic Agent route (and the feedback submit route) only requires
     position2_required, and this must stay true for a non-admin teammate."""
-    assert "notanadmin@position2.com" not in appmod.ADMIN_EMAILS
+    assert "notanadmin@markifydigital.com" not in appmod.ADMIN_EMAILS
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "notanadmin@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "notanadmin@markifydigital.com", "name": "T"}
     return c
 
 
@@ -51,7 +51,7 @@ def client():
 def admin_client():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "sudheer.d@position2.com", "name": "Admin"}
+        sess["google_user"] = {"email": "sudheer@markifydigital.com", "name": "Admin"}
     return c
 
 
@@ -84,7 +84,7 @@ def test_only_the_six_agents_with_a_real_generated_report_are_allowed():
 
 
 def test_save_fails_soft_with_no_database_url():
-    assert agent_feedback.save(email="a@position2.com", agent_slug="company-people-intelligence",
+    assert agent_feedback.save(email="a@markifydigital.com", agent_slug="company-people-intelligence",
                                 run_id=None, section_key="chat:1", section_label=None,
                                 rating="down", reason="wrong company") is None
 
@@ -93,7 +93,7 @@ def test_save_rejects_a_bad_rating_before_ever_touching_postgres():
     """Guards against a future caller (or a compromised client) writing a
     rating the CHECK constraint would reject anyway, but doing it in Python
     means a bad value never reaches _pg_conn() at all."""
-    assert agent_feedback.save(email="a@position2.com", agent_slug="company-people-intelligence",
+    assert agent_feedback.save(email="a@markifydigital.com", agent_slug="company-people-intelligence",
                                 run_id=None, section_key="chat:1", section_label=None,
                                 rating="sideways", reason=None) is None
 
@@ -104,7 +104,7 @@ def test_list_recent_and_summary_return_empty_not_none_or_a_crash():
 
 
 def test_update_reason_returns_false_rather_than_raising():
-    assert agent_feedback.update_reason(1, "a@position2.com", "still wrong") is False
+    assert agent_feedback.update_reason(1, "a@markifydigital.com", "still wrong") is False
 
 
 # ── POST /api/agent-feedback ─────────────────────────────────────────────────

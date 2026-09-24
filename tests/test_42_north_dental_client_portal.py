@@ -82,7 +82,7 @@ def _client(email=None):
     return c
 
 
-# ── gating: only @42northdental.com and @position2.com ──────────────────────
+# ── gating: only @42northdental.com and @markifydigital.com ──────────────────────
 
 def test_signed_out_is_bounced_to_login():
     resp = _client().get(HOME, follow_redirects=False)
@@ -102,7 +102,7 @@ def test_a_42northdental_account_is_let_in():
 
 
 def test_a_position2_staff_account_is_also_let_in():
-    resp = _client("reporting@position2.com").get(HOME)
+    resp = _client("reporting@markifydigital.com").get(HOME)
     assert resp.status_code == 200
 
 
@@ -229,7 +229,7 @@ def test_northstar_cannot_reach_this_dashboard_route_for_slot_checker():
     """slot_checker_live is only set on the 42 North Dental entry -- another
     client's portal hitting the same relative path must 404, not silently
     serve 42 North Dental's data under someone else's brand."""
-    resp = _client("someone@position2.com").get(
+    resp = _client("someone@markifydigital.com").get(
         "/northstaranesthesia/agents/slot-checker/dashboard")
     assert resp.status_code == 404
 
@@ -245,7 +245,7 @@ def test_northstar_cannot_reach_the_data_or_insights_routes_either(snapshot):
     is open_to_all, so any signed-in Google account could otherwise reach 42
     North Dental's practice data through this path."""
     snapshot(_fake())
-    c = _client("someone@position2.com")
+    c = _client("someone@markifydigital.com")
     assert c.get("/northstaranesthesia/agents/slot-checker/dashboard/data").status_code == 404
     assert c.get("/northstaranesthesia/agents/slot-checker/dashboard/insights").status_code == 404
 
@@ -313,7 +313,7 @@ def test_insights_requires_the_client_gate():
 def test_insights_404s_for_any_other_agent_slug():
     """Only Slot Checker has an insights companion route; a client with, say, a
     live LinkedIn Intelligence dashboard has no equivalent endpoint."""
-    resp = _client("someone@position2.com").get(
+    resp = _client("someone@markifydigital.com").get(
         "/northstaranesthesia/agents/linkedin-intelligence/dashboard/insights")
     assert resp.status_code == 404
 
@@ -339,7 +339,7 @@ def test_northstar_still_shows_history_unaffected():
     quietly took NorthStar's History tab away too."""
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "someone@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "someone@markifydigital.com", "name": "T"}
     body = c.get("/northstaranesthesia").data.decode()
     assert 'href="/northstaranesthesia/history"' in body
     assert not appmod.CLIENTS["northstaranesthesia"].get("hide_history")
@@ -387,7 +387,7 @@ def test_the_internal_route_still_matches_the_client_route_byte_for_byte(snapsho
     callers -- the property worth pinning is that neither payload drifted from
     the other when the code was split out."""
     snapshot(_fake())
-    internal = _client("someone@position2.com").get(
+    internal = _client("someone@markifydigital.com").get(
         "/p2/strategic-agents/42-north-dental-slot-checker/data").get_json()
     client_side = _client("front.desk@42northdental.com").get(DATA).get_json()
     assert internal == client_side

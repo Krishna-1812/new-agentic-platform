@@ -54,7 +54,7 @@ def _read(path):
 def html():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "harness@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "harness@markifydigital.com", "name": "T"}
     resp = c.get(_PAGE)
     assert resp.status_code == 200, resp.status_code
     return resp.get_data(as_text=True)
@@ -117,7 +117,7 @@ def test_a_saved_client_is_never_chosen_for_the_user(monkeypatch):
     ])
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "harness@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "harness@markifydigital.com", "name": "T"}
     page = c.get(_PAGE).get_data(as_text=True)
     opts = _options(_select(page, "profilePick"))
     assert [o[0] for o in opts] == ["new", "7", "8"], opts

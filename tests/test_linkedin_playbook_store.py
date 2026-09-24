@@ -196,80 +196,80 @@ def fake_db(monkeypatch):
 # ── Ownership scoping -- the property this module exists to guarantee ───────
 
 def test_a_run_is_invisible_to_a_different_email(fake_db):
-    run_id = store.save_run("alice@position2.com", "OWN", "c1", "Acme")
-    assert store.get_run(run_id, "bob@position2.com") is None
+    run_id = store.save_run("alice@markifydigital.com", "OWN", "c1", "Acme")
+    assert store.get_run(run_id, "bob@markifydigital.com") is None
 
 
 def test_a_run_is_visible_to_its_own_owner(fake_db):
-    run_id = store.save_run("alice@position2.com", "OWN", "c1", "Acme")
-    run = store.get_run(run_id, "alice@position2.com")
+    run_id = store.save_run("alice@markifydigital.com", "OWN", "c1", "Acme")
+    run = store.get_run(run_id, "alice@markifydigital.com")
     assert run is not None
     assert run["company_name"] == "Acme"
 
 
 def test_email_matching_is_case_insensitive_but_still_scoped(fake_db):
-    run_id = store.save_run("Alice@Position2.com", "OWN", "c1", "Acme")
-    assert store.get_run(run_id, "ALICE@POSITION2.COM") is not None
-    assert store.get_run(run_id, "bob@position2.com") is None
+    run_id = store.save_run("Alice@MarkifyDigital.com", "OWN", "c1", "Acme")
+    assert store.get_run(run_id, "ALICE@MARKIFYDIGITAL.COM") is not None
+    assert store.get_run(run_id, "bob@markifydigital.com") is None
 
 
 def test_list_runs_only_returns_the_calling_users_own_runs(fake_db):
-    store.save_run("alice@position2.com", "OWN", "c1", "Acme")
-    store.save_run("bob@position2.com", "OWN", "c2", "Globex")
-    alice_runs = store.list_runs("alice@position2.com")
+    store.save_run("alice@markifydigital.com", "OWN", "c1", "Acme")
+    store.save_run("bob@markifydigital.com", "OWN", "c2", "Globex")
+    alice_runs = store.list_runs("alice@markifydigital.com")
     assert len(alice_runs) == 1
     assert alice_runs[0]["company_name"] == "Acme"
 
 
 def test_get_children_is_scoped_to_the_caller_not_just_the_parent_id(fake_db):
-    parent_id = store.save_run("alice@position2.com", "OWN", "c1", "Acme")
-    store.save_run("alice@position2.com", "COMPETITOR", "c2", "Globex", parent_run_id=parent_id)
-    assert len(store.get_children(parent_id, "alice@position2.com")) == 1
-    assert store.get_children(parent_id, "bob@position2.com") == []
+    parent_id = store.save_run("alice@markifydigital.com", "OWN", "c1", "Acme")
+    store.save_run("alice@markifydigital.com", "COMPETITOR", "c2", "Globex", parent_run_id=parent_id)
+    assert len(store.get_children(parent_id, "alice@markifydigital.com")) == 1
+    assert store.get_children(parent_id, "bob@markifydigital.com") == []
 
 
 def test_a_nonexistent_run_id_returns_none_not_an_error(fake_db):
-    assert store.get_run(999, "alice@position2.com") is None
+    assert store.get_run(999, "alice@markifydigital.com") is None
 
 
 # ── Playbooks: ownership re-verified, not just inherited from the caller ────
 
 def test_save_playbook_refuses_to_write_against_someone_elses_run(fake_db):
-    run_id = store.save_run("alice@position2.com", "OWN", "c1", "Acme")
-    result = store.save_playbook(run_id, "bob@position2.com", "OWN", {"headline": "steal this"})
+    run_id = store.save_run("alice@markifydigital.com", "OWN", "c1", "Acme")
+    result = store.save_playbook(run_id, "bob@markifydigital.com", "OWN", {"headline": "steal this"})
     assert result is None
-    assert store.get_playbook(run_id, "alice@position2.com", "OWN") is None
+    assert store.get_playbook(run_id, "alice@markifydigital.com", "OWN") is None
 
 
 def test_save_playbook_succeeds_for_the_runs_actual_owner(fake_db):
-    run_id = store.save_run("alice@position2.com", "OWN", "c1", "Acme")
-    result = store.save_playbook(run_id, "alice@position2.com", "OWN", {"headline": "real"})
+    run_id = store.save_run("alice@markifydigital.com", "OWN", "c1", "Acme")
+    result = store.save_playbook(run_id, "alice@markifydigital.com", "OWN", {"headline": "real"})
     assert result is not None
-    playbook = store.get_playbook(run_id, "alice@position2.com", "OWN")
+    playbook = store.get_playbook(run_id, "alice@markifydigital.com", "OWN")
     assert playbook["content"] == {"headline": "real"}
 
 
 def test_regenerating_a_playbook_upserts_rather_than_accumulates(fake_db):
-    run_id = store.save_run("alice@position2.com", "OWN", "c1", "Acme")
-    store.save_playbook(run_id, "alice@position2.com", "OWN", {"headline": "v1"})
-    store.save_playbook(run_id, "alice@position2.com", "OWN", {"headline": "v2"})
+    run_id = store.save_run("alice@markifydigital.com", "OWN", "c1", "Acme")
+    store.save_playbook(run_id, "alice@markifydigital.com", "OWN", {"headline": "v1"})
+    store.save_playbook(run_id, "alice@markifydigital.com", "OWN", {"headline": "v2"})
     assert len(fake_db.playbooks) == 1
-    assert store.get_playbook(run_id, "alice@position2.com", "OWN")["content"] == {"headline": "v2"}
+    assert store.get_playbook(run_id, "alice@markifydigital.com", "OWN")["content"] == {"headline": "v2"}
 
 
 def test_get_playbook_is_scoped_by_email_even_though_run_id_and_mode_match(fake_db):
-    run_id = store.save_run("alice@position2.com", "OWN", "c1", "Acme")
-    store.save_playbook(run_id, "alice@position2.com", "OWN", {"headline": "real"})
-    assert store.get_playbook(run_id, "bob@position2.com", "OWN") is None
+    run_id = store.save_run("alice@markifydigital.com", "OWN", "c1", "Acme")
+    store.save_playbook(run_id, "alice@markifydigital.com", "OWN", {"headline": "real"})
+    assert store.get_playbook(run_id, "bob@markifydigital.com", "OWN") is None
 
 
 # ── Status updates and no-DB degradation ─────────────────────────────────────
 
 def test_update_run_status_sets_status_and_output(fake_db):
-    run_id = store.save_run("alice@position2.com", "OWN", "c1", "Acme")
+    run_id = store.save_run("alice@markifydigital.com", "OWN", "c1", "Acme")
     store.update_run_status(run_id, "complete", output={"strategyagent.strategy": "text"},
                             summary="A short summary", scorecard_score=7.5)
-    run = store.get_run(run_id, "alice@position2.com")
+    run = store.get_run(run_id, "alice@markifydigital.com")
     assert run["status"] == "complete"
     assert run["output"] == {"strategyagent.strategy": "text"}
     assert run["summary"] == "A short summary"
@@ -278,21 +278,21 @@ def test_update_run_status_sets_status_and_output(fake_db):
 
 def test_everything_degrades_to_none_or_empty_without_a_database(monkeypatch):
     monkeypatch.setattr(store, "_pg_conn", lambda: None)
-    assert store.save_run("alice@position2.com", "OWN", "c1", "Acme") is None
-    assert store.get_run(1, "alice@position2.com") is None
-    assert store.list_runs("alice@position2.com") == []
-    assert store.get_children(1, "alice@position2.com") == []
-    assert store.save_playbook(1, "alice@position2.com", "OWN", {}) is None
-    assert store.get_playbook(1, "alice@position2.com", "OWN") is None
+    assert store.save_run("alice@markifydigital.com", "OWN", "c1", "Acme") is None
+    assert store.get_run(1, "alice@markifydigital.com") is None
+    assert store.list_runs("alice@markifydigital.com") == []
+    assert store.get_children(1, "alice@markifydigital.com") == []
+    assert store.save_playbook(1, "alice@markifydigital.com", "OWN", {}) is None
+    assert store.get_playbook(1, "alice@markifydigital.com", "OWN") is None
     assert store.update_run_status(1, "error") is False
 
 
 # ── search_known_companies: the fallback when the vendor's search is down ──
 
 def test_known_companies_match_by_partial_name(fake_db):
-    store.save_run("alice@position2.com", "OWN", "1441", "Google")
-    store.save_run("alice@position2.com", "OWN", "361348", "Myntra")
-    found = store.search_known_companies("alice@position2.com", "goo")
+    store.save_run("alice@markifydigital.com", "OWN", "1441", "Google")
+    store.save_run("alice@markifydigital.com", "OWN", "361348", "Myntra")
+    found = store.search_known_companies("alice@markifydigital.com", "goo")
     assert [c["name"] for c in found] == ["Google"]
     # Everything needed to start a fresh run comes back with it.
     assert found[0]["id"] == "1441"
@@ -302,33 +302,33 @@ def test_known_companies_match_by_partial_name(fake_db):
 def test_known_companies_are_scoped_to_the_asking_user(fake_db):
     """One user's analyzed-company list must never leak into another's search,
     the same ownership property every single-row read here guarantees."""
-    store.save_run("alice@position2.com", "OWN", "1441", "Google")
-    assert store.search_known_companies("bob@position2.com", "goo") == []
+    store.save_run("alice@markifydigital.com", "OWN", "1441", "Google")
+    assert store.search_known_companies("bob@markifydigital.com", "goo") == []
 
 
 def test_known_companies_collapse_repeat_analyses_of_one_company(fake_db):
     for _ in range(3):
-        store.save_run("alice@position2.com", "OWN", "1441", "Google")
-    found = store.search_known_companies("alice@position2.com", "google")
+        store.save_run("alice@markifydigital.com", "OWN", "1441", "Google")
+    found = store.search_known_companies("alice@markifydigital.com", "google")
     assert len(found) == 1
 
 
 def test_known_companies_is_case_insensitive(fake_db):
-    store.save_run("alice@position2.com", "OWN", "1441", "Google")
-    assert len(store.search_known_companies("alice@position2.com", "GOOGLE")) == 1
+    store.save_run("alice@markifydigital.com", "OWN", "1441", "Google")
+    assert len(store.search_known_companies("alice@markifydigital.com", "GOOGLE")) == 1
 
 
 def test_known_companies_needs_a_query(fake_db):
-    store.save_run("alice@position2.com", "OWN", "1441", "Google")
-    assert store.search_known_companies("alice@position2.com", "  ") == []
+    store.save_run("alice@markifydigital.com", "OWN", "1441", "Google")
+    assert store.search_known_companies("alice@markifydigital.com", "  ") == []
 
 
 def test_known_companies_honours_the_limit(fake_db):
     for i in range(5):
-        store.save_run("alice@position2.com", "OWN", str(i), "Acme %d" % i)
-    assert len(store.search_known_companies("alice@position2.com", "acme", limit=2)) == 2
+        store.save_run("alice@markifydigital.com", "OWN", str(i), "Acme %d" % i)
+    assert len(store.search_known_companies("alice@markifydigital.com", "acme", limit=2)) == 2
 
 
 def test_known_companies_returns_empty_without_postgres(monkeypatch):
     monkeypatch.setattr(store, "_pg_conn", lambda: None)
-    assert store.search_known_companies("alice@position2.com", "goo") == []
+    assert store.search_known_companies("alice@markifydigital.com", "goo") == []

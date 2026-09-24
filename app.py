@@ -88,7 +88,7 @@ def server_error(e):
 # Set GOOGLE_CLIENT_ID in Railway → Variables.
 # Setup: console.cloud.google.com → APIs & Services → Credentials
 #        → Create OAuth 2.0 Client ID → Web application
-#        → Authorised JavaScript origins: https://intelligence.position2.com
+#        → Authorised JavaScript origins: https://<your Railway or custom domain>
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 
 # Anonymous Visitors Google Sheet
@@ -443,9 +443,7 @@ def _gmail_api_send(subject: str, body: str, to_csv: str, reply_to: str, sender:
     svc.users().messages().send(userId="me", body={"raw": raw}).execute()
 
 
-_DEMO_NOTIFY_FALLBACK = ("krishna.ladha@position2.com, abhilash.dg@position2.com, "
-                         "sudheer.d@position2.com, sparikh@position2.com, "
-                         "pushpendra.k@position2.com, nikhil.ashok@position2.com")
+_DEMO_NOTIFY_FALLBACK = "sudheer@markifydigital.com"
 
 
 def _demo_notify_recipients() -> str:
@@ -1249,7 +1247,19 @@ ACCOUNTS = {
 }
 
 # ── Auth helpers ────────────────────────────────────────────────────────────────
-ADMIN_EMAILS = {"krishna.ladha@position2.com", "sudheer.d@position2.com", "reporting@position2.com", "sparikh@position2.com", "abhilash.dg@position2.com", "pushpendra.k@position2.com", "sangeeta@position2.com", "nikhil.ashok@position2.com"}
+# The only two admins. Anyone on this list is also treated as staff, whatever
+# their email domain (see _is_staff): ladhakrishna2022@gmail.com is a personal
+# Google account, not a @markifydigital.com one.
+ADMIN_EMAILS = {"sudheer@markifydigital.com", "ladhakrishna2022@gmail.com"}
+
+
+def _is_staff(email):
+    """Staff: a @<staff domain> address (brand.py, STAFF_EMAIL_DOMAIN), or an
+    admin on any domain. Every staff check in this file goes through here, so
+    an admin signing in with a non-company address is never shown the public
+    side, refused the internal area, or counted as a public member."""
+    email = (email or "").strip().lower()
+    return email.endswith(STAFF_EMAIL_SUFFIX) or email in ADMIN_EMAILS
 
 def _get_user():
     """Return current user dict or None."""
@@ -1290,23 +1300,25 @@ def admin_required(f):
         if not user:
             return _login_redirect()
         email = user.get("email", "").lower()
-        if not email.endswith(STAFF_EMAIL_SUFFIX):
+        if email in ADMIN_EMAILS:
+            return f(*args, **kwargs)
+        if not _is_staff(email):
             return redirect("/app")          # external users never see internal /p2
-        if email not in ADMIN_EMAILS:
-            abort(403)                        # Position2 non-admins: forbidden
+        abort(403)                            # staff who are not admins: forbidden
         return f(*args, **kwargs)
     return decorated
 
 def position2_required(f):
-    """Gate an internal /p2 route to @position2.com Google accounts.
-    Logged-out visitors are sent to sign in (remembering their target); signed-in
-    non-Position2 users are bounced to their blank signed-in home (/app)."""
+    """Gate an internal /p2 route to staff (_is_staff: @markifydigital.com, plus
+    the admins on any domain). Logged-out visitors are sent to sign in
+    (remembering their target); other signed-in users are bounced to their
+    blank signed-in home (/app)."""
     @wraps(f)
     def decorated(*args, **kwargs):
         user = _get_user()
         if not user:
             return _login_redirect()
-        if not user.get("email", "").lower().endswith(STAFF_EMAIL_SUFFIX):
+        if not _is_staff(user.get("email", "")):
             return redirect("/app")
         return f(*args, **kwargs)
     return decorated
@@ -1323,7 +1335,7 @@ def auth_google():
         # safe because it requires GOOGLE_CLIENT_ID to be unset, which it must
         # never be once this is reachable by anyone outside local development --
         # unverified means the "credential" is trusted as-is, so any caller can
-        # log in as any email (including a real @position2.com address) just by
+        # log in as any email (including a real staff address) just by
         # POSTing a self-made, unsigned JWT-shaped payload. Loud rather than
         # silent: a redeploy or a dropped environment variable that lands here
         # in production would otherwise degrade authentication with nothing in
@@ -1349,7 +1361,7 @@ def auth_google():
 
     email = idinfo.get("email", "")
     # v17: sign-in is open to ANY Google account. Area-level access control is enforced
-    # separately -- only @position2.com may reach the internal /p2/* pages (see
+    # separately -- only @markifydigital.com may reach the internal /p2/* pages (see
     # position2_required). General users land on the blank signed-in home (/app).
 
     session["google_user"] = {
@@ -1361,14 +1373,14 @@ def auth_google():
     session.permanent = True
     nxt = session.pop("next_url", None)
     if not (isinstance(nxt, str) and nxt.startswith("/") and not nxt.startswith("//")):
-        # No deep link: @position2.com staff land on the internal hub (/p2/hub);
+        # No deep link: @markifydigital.com staff land on the internal hub (/p2/hub);
         # everyone else lands on the public signed-in home (/app). An explicit
         # next_url (e.g. a shared /p2/admin/... link) still takes precedence.
-        nxt = "/p2/hub" if email.lower().endswith(STAFF_EMAIL_SUFFIX) else "/app"
-    # Route sign-in logging: @position2.com -> always Internal Usage,
+        nxt = "/p2/hub" if _is_staff(email) else "/app"
+    # Route sign-in logging: @markifydigital.com -> always Internal Usage,
     # PLUS Public Page Analytics too when landing on the public /app surface (not
     # deep-linking straight into /p2). Everyone else -> Public Page Analytics only.
-    if email.lower().endswith(STAFF_EMAIL_SUFFIX):
+    if _is_staff(email):
         _log_login_to_sheet(session["google_user"])   # fire-and-forget, fails silently
         if not nxt.startswith("/p2"):
             _log_member_signin(session["google_user"])
@@ -1383,10 +1395,21 @@ def auth_google():
 
 # ── Core routes ─────────────────────────────────────────────────────────────────
 
+# Search engines may index the public marketing site and nothing else. An
+# allow-list rather than a block-list: signed-in areas, the internal /p2 app,
+# the API and every client portal (each lives at its own /<slug>, see CLIENTS)
+# stay out without having to be named here. "$" anchors "/" to the home page
+# alone; each other entry covers its page and everything under it.
+ROBOTS_PUBLIC_PATHS = ["/$", "/agents", "/industries", "/platform", "/signals",
+                       "/solutions", "/why-intelligence", "/integrations",
+                       "/resources", "/privacy", "/terms", "/static/", "/favicon"]
+
+
 @app.route("/robots.txt")
 def robots_txt():
     from flask import Response
-    return Response("User-agent: *\nDisallow: /\n", mimetype="text/plain")
+    lines = ["User-agent: *"] + ["Allow: " + p for p in ROBOTS_PUBLIC_PATHS] + ["Disallow: /"]
+    return Response("\n".join(lines) + "\n", mimetype="text/plain")
 
 @app.route("/favicon.ico")
 def favicon_ico():
@@ -1403,7 +1426,7 @@ def index():
     u = _get_user()
     if u:
         # Staff go straight to the internal hub; everyone else to the public home.
-        return redirect("/p2/hub" if u.get("email", "").lower().endswith(STAFF_EMAIL_SUFFIX) else "/app")
+        return redirect("/p2/hub" if _is_staff(u.get("email", "")) else "/app")
     return render_template("agents.html", page="home", agents=AGENTS, agent=None,
                            related=[], signals_list=SIGNALS)
 
@@ -1762,14 +1785,14 @@ _LEGACY_AGENT_SLUGS = {
 # visible to admins and enforceable across devices/browsers (unlike the
 # localStorage-based "recently opened" list, which is just a UX nicety).
 AGENT_RUN_CAP = 10
-AGENT_RUN_CAP_INTERNAL = 100  # @position2.com staff get a higher ceiling than
+AGENT_RUN_CAP_INTERNAL = 100  # @markifydigital.com staff get a higher ceiling than
                               # external users on the same public /app and
                               # client-portal surfaces (same shared "Agent Runs"
                               # sheet/cap mechanism, just a per-user multiplier).
 
 def _agent_run_cap(email: str) -> int:
     """Per-agent run cap for one user, by email domain."""
-    return AGENT_RUN_CAP_INTERNAL if (email or "").lower().endswith(STAFF_EMAIL_SUFFIX) else AGENT_RUN_CAP
+    return AGENT_RUN_CAP_INTERNAL if _is_staff(email) else AGENT_RUN_CAP
 
 _AR_TAB = "Agent Runs"
 _AR_HEADER = ["Timestamp (IST)", "Date", "Email", "Name", "Agent Slug", "Agent Name"]
@@ -3392,7 +3415,7 @@ def logout():
 # ── Client workspaces (private, co-branded portals) ──────────────────────────────
 # A per-client front door at /<client-slug> (e.g. /northstaranesthesia). Each client
 # gets a curated subset of agents, gated so only that client's own email domain(s)
-# plus @position2.com staff can sign in. Agents reuse the APP_AGENTS registry: the
+# plus @markifydigital.com staff can sign in. Agents reuse the APP_AGENTS registry: the
 # three with a "seo_slug" are live (their "Use Agent" embeds the real SERP tool, same
 # as /app/<slug>/use); the rest render an "in setup" dashboard shell until wired.
 #
@@ -3445,7 +3468,7 @@ CLIENTS = {
         # locally from /static rather than hotlinked, and rendered via <img> so the
         # SVG can't execute script. Sourced from northstaranesthesia.com.
         "logo":     "/static/clients/northstaranesthesia/logo-white.svg",
-        # Email domains allowed in addition to @position2.com (always allowed).
+        # Email domains allowed in addition to @markifydigital.com (always allowed).
         "domains":  ["northstaranesthesia.com"],
         # Any signed-in Google account can enter this portal -- the domain
         # gate above is bypassed entirely for this client (see _client_allowed).
@@ -3482,7 +3505,7 @@ CLIENTS = {
         # unreadable on this dark background; the footer one is already the
         # white-on-dark variant).
         "logo":     "/static/clients/42northdental/logo-white.png",
-        # Email domains allowed in addition to @position2.com (always allowed).
+        # Email domains allowed in addition to @markifydigital.com (always allowed).
         "domains":  ["42northdental.com"],
         "accent":   "#4ade80",
         "accent2":  "#14b8a6",
@@ -3609,11 +3632,11 @@ def _client_allowed(client, email):
     # Opt-in per client: "open_to_all" drops the domain gate entirely, so any
     # signed-in Google account can enter this client's portal. Set explicitly
     # on a client's CLIENTS entry, not a global default -- every other client
-    # portal stays restricted to its own domain(s) plus @position2.com.
+    # portal stays restricted to its own domain(s) plus @markifydigital.com.
     if client.get("open_to_all"):
         return True
     email = (email or "").lower()
-    if email.endswith(STAFF_EMAIL_SUFFIX):
+    if _is_staff(email):
         return True
     return any(email.endswith("@" + d.lower()) for d in client.get("domains", []))
 
@@ -3688,7 +3711,7 @@ def _client_agent_use(client_slug, agent_slug):
                                runs_used=0, run_cap=cap, limit_reached=False)
     # External-tool agent: iframes the hosted tool (its host masked behind this portal
     # path). Run-metered like a SERP tool and capped at _agent_run_cap(email) per user
-    # (higher for @position2.com staff than external users). The tool now emits the
+    # (higher for @markifydigital.com staff than external users). The tool now emits the
     # same postMessage run contract as a SERP tool (source 'p2-agent' instead of
     # 'p2-seo-tool', no per-tool slug since one external tool = one embed), so a run
     # counts only when client_embed.html's listener sees a real 'agent-run-started'
@@ -5117,7 +5140,7 @@ def _va_identity_map(vi_rows=None, access_requests=None) -> dict:
 def _login_events_by_vid(ms_rows=None, login_rows=None) -> dict:
     """p2_vid -> {type, email, name, picture, events:[...]} across every Google
     sign-in this platform has ever recorded -- 'Member Signins' (public /app
-    sign-ups) plus the internal login log (default tab, @position2.com staff).
+    sign-ups) plus the internal login log (default tab, @markifydigital.com staff).
     This is the join that lets Anonymous Traffic show what an anonymous
     visitor went on to do AFTER they signed in, not just before.
 
@@ -5161,7 +5184,7 @@ def _login_events_by_vid(ms_rows=None, login_rows=None) -> dict:
 
     for entry in out.values():
         entry["events"].sort(key=lambda e: e["ts"] or "")
-        entry["type"] = "staff" if (entry["email"] or "").lower().endswith(STAFF_EMAIL_SUFFIX) else "member"
+        entry["type"] = "staff" if _is_staff(entry["email"]) else "member"
         entry["first_ts"] = entry["events"][0]["ts"] if entry["events"] else ""
         entry["last_ts"] = entry["events"][-1]["ts"] if entry["events"] else ""
         entry["count"] = len(entry["events"])
@@ -5878,7 +5901,7 @@ def _fetch_member_analytics_uncached() -> dict:
             return []
 
     _RANGES = ["%s!A:T" % _MEMBER_TAB, "Visitor Analytics!A:AM", "Page Views!A:M",
-               "A1:U5000",             # internal login log -- real names + p2_vid for @position2.com
+               "A1:U5000",             # internal login log -- real names + p2_vid for @markifydigital.com
                "Visitor Identities!A1:G5000"]
     if svc:
         with ThreadPoolExecutor(max_workers=len(_RANGES)) as _ex:
@@ -5915,7 +5938,7 @@ def _fetch_member_analytics_uncached() -> dict:
     # Page Views has no name/picture/vid columns, so for members we only see via
     # page-view activity (no Member Signins row yet), backfill name/picture/p2_vid
     # from the internal login log, which Google always populates on every
-    # @position2.com sign-in. Scan chronologically so the most recent known value
+    # @markifydigital.com sign-in. Scan chronologically so the most recent known value
     # for each field wins (older rows predate the Visitor ID column).
     profile_by_email = {}
     for r in login_data:
@@ -5931,7 +5954,7 @@ def _fetch_member_analytics_uncached() -> dict:
     for r in pv:
         e = (pc(r, 4) or "").lower()
         path = pc(r, 6) or ""
-        if e and (not e.endswith(STAFF_EMAIL_SUFFIX) or path.startswith("/app")):
+        if e and (not _is_staff(e) or path.startswith("/app")):
             pv_by_email[e].append(r)
 
     members = {}
@@ -6074,11 +6097,11 @@ def _fetch_member_analytics_uncached() -> dict:
     returning_members = total_members - new_members
     unique_visitors = len(va_by_vid)
 
-    # Visitor->member conversion is about the public marketing funnel: @position2.com
+    # Visitor->member conversion is about the public marketing funnel: @markifydigital.com
     # staff never arrive as anonymous visitors, so they're excluded from this ratio
     # (they still count toward the "Members" KPI above, which intentionally covers
     # all /app usage per the two-tier design).
-    external_out = [x for x in out_members if not x["email"].lower().endswith(STAFF_EMAIL_SUFFIX)]
+    external_out = [x for x in out_members if not _is_staff(x["email"])]
     external_members = len(external_out)
     external_returning = sum(1 for x in external_out if x["status"] == "returning")
 
@@ -6114,7 +6137,7 @@ def _fetch_member_analytics_uncached() -> dict:
 
     # Post-login page views: what members do on /app after signing in (mirrors
     # Internal Usage's "Top pages" + page-views table, but for the member
-    # population instead of @position2.com staff). pv_by_email already applies
+    # population instead of @markifydigital.com staff). pv_by_email already applies
     # the right population filter (see above): every non-P2 view, plus P2 views
     # specifically on /app.
     post_page_counter = Counter()
@@ -6172,8 +6195,8 @@ def admin_members_data():
 def _fetch_usage_data(internal: bool = True) -> dict:
     """Fetch login + page view data from Sheets. Shared by shell and data endpoints.
 
-    internal=True  -> Internal Usage: @position2.com staff only.
-    internal=False -> External Usage: everyone signing in with a non-@position2.com
+    internal=True  -> Internal Usage: @markifydigital.com staff only.
+    internal=False -> External Usage: everyone signing in with a non-@markifydigital.com
                       email (leads, prospects, client users). Same rich per-user
                       journey PLUS agent-run activity and email-domain (company)
                       breakdowns, so we see who these people are, when they first
@@ -6205,7 +6228,7 @@ def _fetch_usage_data(internal: bool = True) -> dict:
     # past the cap, i.e. all the most-recent activity once the sheet grew.
     # A:U (not A:T) so column U -- the p2_vid visitor ID -- is actually read;
     # it's been written on every login since v17 but was silently dropped here.
-    # Login source depends on mode. @position2.com staff sign-ins land in the main
+    # Login source depends on mode. @markifydigital.com staff sign-ins land in the main
     # Login Log; PUBLIC (non-P2) sign-ins are recorded ONLY in the 'Member Signins'
     # tab (see _log_member_signin) — _log_login_to_sheet is never called for them.
     # So External Usage must read Member Signins or it would show almost nobody.
@@ -6228,9 +6251,9 @@ def _fetch_usage_data(internal: bool = True) -> dict:
     page_data  = page_rows[1:]  if len(page_rows)  > 1 else []
     va_data    = va_rows[1:]    if len(va_rows)    > 1 else []
 
-    # Internal Usage keeps @position2.com only; External Usage keeps everyone
+    # Internal Usage keeps @markifydigital.com only; External Usage keeps everyone
     # else (any real non-P2 email). One predicate, inverted by mode.
-    def _is_p2(e): return (e or "").lower().endswith(STAFF_EMAIL_SUFFIX)
+    def _is_p2(e): return _is_staff(e)
     def keep(e):
         e = (e or "").strip()
         if not e:
@@ -6525,7 +6548,7 @@ def admin_usage_data():
 @app.route("/p2/admin/external-usage")
 @admin_required
 def admin_external_usage():
-    """Shell page — everyone signing in with a non-@position2.com email. JS fetches
+    """Shell page — everyone signing in with a non-@markifydigital.com email. JS fetches
     /admin/external-usage/data async."""
     return render_template("admin_external_usage.html", user=_get_user())
 
@@ -7226,7 +7249,7 @@ def admin_external_usage_export():
 # ── Client Usage (per-client-portal analytics) ───────────────────────────────
 # For each client we run a co-branded portal at /<slug>. This aggregates every
 # tracked page view on that portal (Page Views tab, filtered by URL path) and
-# splits it into TWO audiences by email domain: Position² staff (@position2.com)
+# splits it into TWO audiences by email domain: Position² staff (@markifydigital.com)
 # vs the client's own people (the client's configured domains). Everything else
 # (rare) is bucketed as "Other". Names/pictures are enriched from the two sign-in
 # tabs (internal Login Log + Member Signins), both of which carry email @5, name @6.
@@ -7345,12 +7368,11 @@ def _fetch_client_usage(slug, force=False):
     def col(r, i, d=""):
         return r[i] if len(r) > i else d
 
-    p2_dom = STAFF_EMAIL_SUFFIX
     cli_doms = ["@" + d.lower() for d in client.get("domains", [])]
 
     def seg_of(email):
         e = (email or "").lower()
-        if e.endswith(p2_dom):
+        if _is_staff(e):
             return "p2"
         if any(e.endswith(d) for d in cli_doms):
             return "client"

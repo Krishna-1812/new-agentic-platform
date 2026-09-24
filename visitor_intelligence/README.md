@@ -117,7 +117,7 @@ rec = deepen_with_apollo(rec, apollo_key=APOLLO_API_KEY, with_committee=True)
 |---|---|
 | `IPINFO_TOKEN` | IPinfo lookups (org/ASN/hostname; privacy+company on paid plans) |
 | `APOLLO_API_KEY` | only read by `deepen_with_apollo()` / the explicit deepen path |
-| `SEC_EDGAR_CONTACT` | contact email sent in the User-Agent to SEC EDGAR (required by their fair-access policy); defaults to `reporting@position2.com` |
+| `SEC_EDGAR_CONTACT` | contact email sent in the User-Agent to SEC EDGAR (required by their fair-access policy); defaults to `sudheer@markifydigital.com` |
 
 ## Data sources & providers
 

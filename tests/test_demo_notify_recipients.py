@@ -22,13 +22,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import app as appmod  # noqa: E402
 
+# Markify Digital's list: the one known company address. More people are
+# added through DEMO_NOTIFY_EMAIL in Railway, not by editing the literal.
 _EXPECTED = (
-    "krishna.ladha@position2.com",
-    "abhilash.dg@position2.com",
-    "sudheer.d@position2.com",
-    "sparikh@position2.com",
-    "pushpendra.k@position2.com",
-    "nikhil.ashok@position2.com",
+    "sudheer@markifydigital.com",
 )
 
 
@@ -41,11 +38,11 @@ def test_the_default_recipient_list_is_exactly_the_intended_team(monkeypatch):
     assert _parsed(appmod._demo_notify_recipients()) == list(_EXPECTED)
 
 
-def test_every_default_recipient_is_a_lowercase_position2_address(monkeypatch):
+def test_every_default_recipient_is_a_lowercase_company_address(monkeypatch):
     monkeypatch.delenv("DEMO_NOTIFY_EMAIL", raising=False)
     for addr in _parsed(appmod._demo_notify_recipients()):
         assert addr == addr.lower(), addr
-        assert addr.endswith("@position2.com"), addr
+        assert addr.endswith("@markifydigital.com"), addr
 
 
 def test_no_duplicate_recipients_so_nobody_gets_the_same_mail_twice(monkeypatch):
@@ -58,8 +55,8 @@ def test_the_env_var_overrides_the_hardcoded_list_entirely(monkeypatch):
     """The override is total, not additive. It is the reason adding a name to
     the literal does not necessarily reach that person in production, so the
     behaviour is pinned rather than assumed."""
-    monkeypatch.setenv("DEMO_NOTIFY_EMAIL", "someone.else@position2.com")
-    assert appmod._demo_notify_recipients() == "someone.else@position2.com"
+    monkeypatch.setenv("DEMO_NOTIFY_EMAIL", "someone.else@markifydigital.com")
+    assert appmod._demo_notify_recipients() == "someone.else@markifydigital.com"
     for addr in _EXPECTED:
         assert addr not in appmod._demo_notify_recipients()
 
@@ -79,7 +76,8 @@ def test_the_real_send_and_the_admin_diagnostic_read_one_shared_source():
     """
     src = open(appmod.__file__.replace(".pyc", ".py"), encoding="utf-8").read()
     # The literal itself appears exactly once: in the fallback constant.
-    assert src.count("krishna.ladha@position2.com, abhilash.dg@position2.com") == 1
+    assert src.count('_DEMO_NOTIFY_FALLBACK = "sudheer@markifydigital.com"') == 1
+    assert src.count("_DEMO_NOTIFY_FALLBACK") == 2       # the constant and its one reader
     # And both readers go through the resolver rather than os.environ directly.
     assert src.count("_demo_notify_recipients()") >= 3   # 1 def + 2 call sites
     assert 'os.environ.get("DEMO_NOTIFY_EMAIL"' in src

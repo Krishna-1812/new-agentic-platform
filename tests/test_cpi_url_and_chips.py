@@ -207,7 +207,7 @@ def _ask_list(monkeypatch, people, message="CMOs of macmerise",
                         facts_box.setdefault("f", facts) and "answer")
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
     r = c.post("/p2/strategic-agents/company-people-intelligence/chat", json={"message": message})
     assert r.status_code == 200
     return r.get_json(), facts_box.get("f", {})

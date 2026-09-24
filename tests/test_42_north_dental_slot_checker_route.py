@@ -34,7 +34,7 @@ DATA = URL + "/data"
 INSIGHTS = URL + "/insights"
 
 
-def _client(email="reporting@position2.com"):
+def _client(email="reporting@markifydigital.com"):
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
         sess["google_user"] = {"email": email, "name": "T"}
@@ -103,7 +103,7 @@ def test_a_signed_in_non_position2_user_is_bounced(snapshot):
 
 def test_page_renders_for_any_position2_staff(snapshot):
     snapshot(_fake())
-    resp = _client("someone@position2.com").get(URL)
+    resp = _client("someone@markifydigital.com").get(URL)
     assert resp.status_code == 200
     assert b"42 North Dental Slot Checker" in resp.data
 

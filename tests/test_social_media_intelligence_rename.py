@@ -46,7 +46,7 @@ def _rendered_page():
     check now come from the shared shell rather than from this template."""
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
-        sess["google_user"] = {"email": "reporting@position2.com", "name": "T"}
+        sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
     r = c.get("/p2/strategic-agents/%s" % _SLUG)
     assert r.status_code == 200, r.status_code
     return r.get_data(as_text=True)
