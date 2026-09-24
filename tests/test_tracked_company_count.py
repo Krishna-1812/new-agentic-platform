@@ -80,9 +80,9 @@ def test_the_total_is_the_sum_across_every_account_universe():
 
 
 def test_the_client_only_dashboard_is_not_double_counted():
-    """reports/dashboard_northstar_client.html is the same 35 companies again, served
-    to the client portal. Deriving from ACCOUNTS is what keeps it out of the total;
-    globbing reports/*.html would have counted NorthStar twice."""
+    """reports/dashboard_northstar_client.html was the same 35 companies again, served
+    to the client portal. It was deleted with the NorthStar account on 2026-09-24;
+    the check stays so that no account is ever registered twice."""
     paths = [str(cfg["dashboard"]) for cfg in appmod.ACCOUNTS.values()]
     assert len(paths) == len(set(paths))
     assert not any("northstar_client" in p for p in paths)
@@ -174,15 +174,24 @@ def _band_companies(body):
     return int(m.group(1).replace(",", "")) if m else None
 
 
+def _expected_band(floor):
+    """Since 2026-09-24 the tracker holds exactly 50 companies, under the
+    100-company step, so the floor is 0 and the pages make no claim at all."""
+    return floor or None
+
+
 def test_the_hub_band_quotes_the_derived_figure(client):
     body = client.get("/p2/hub").get_data(as_text=True)
-    assert _band_companies(body) == appmod._tracked_company_floor()
+    assert _band_companies(body) == _expected_band(appmod._tracked_company_floor())
 
 
 def test_the_abm_card_quotes_the_same_figure(client):
     body = client.get("/p2/strategic-agents").get_data(as_text=True)
-    shown = "{:,}".format(appmod._tracked_company_floor())
-    assert "across %s+ companies" % shown in body
+    floor = appmod._tracked_company_floor()
+    if not floor:
+        assert "across every tracked company:" in body
+        return
+    assert "across %s+ companies" % "{:,}".format(floor) in body
 
 
 def test_neither_surface_still_carries_the_old_hardcoded_numbers(client):
@@ -192,7 +201,7 @@ def test_neither_surface_still_carries_the_old_hardcoded_numbers(client):
     # Asserted against the figure the page actually reports rather than against
     # a literal in one region of markup: the region moved, and pinning the check
     # to a container class is how it stopped checking anything at all.
-    assert _band_companies(hub) == appmod._tracked_company_floor()
+    assert _band_companies(hub) == _expected_band(appmod._tracked_company_floor())
     assert _band_companies(hub) != 1200 or appmod._tracked_company_floor() == 1200
     b2b = client.get("/p2/strategic-agents").get_data(as_text=True)
     assert "1,500+ companies" not in b2b or appmod._tracked_company_floor() == 1500

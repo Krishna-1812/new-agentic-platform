@@ -101,7 +101,9 @@ def test_dashboard_legacy_alias_redirects_to_canonical(client):
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-@pytest.mark.parametrize("report_file", ["dashboard.html", "dashboard_csg.html"])
+# dashboard_csg.html was the second case until the CSG account was removed
+# on 2026-09-24; Healthcare is the only dashboard left.
+@pytest.mark.parametrize("report_file", ["dashboard.html"])
 def test_dashboard_curacct_regex_recognizes_the_new_canonical_path(report_file):
     """curAcct() reads the account id back out of location.pathname so switching
     sections (Overview/Pipeline/etc) can rewrite the URL bar via history.replaceState

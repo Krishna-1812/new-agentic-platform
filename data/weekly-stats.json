@@ -1,13 +1,11 @@
 {
   "counts": {
-    "C-Suite Join": 595,
-    "C-Suite Exit": 73,
-    "News Mention": 7,
-    "Funding Round": 4,
-    "Acquisition / M&A": 2
+    "C-Suite Join": 67,
+    "C-Suite Exit": 11,
+    "Product Launch": 1
   },
-  "total": 681,
-  "companies": 1251,
+  "total": 79,
+  "companies": 50,
   "generated_at": "2026-09-21T15:18:22.811495+00:00",
   "cutoff": "2026-09-14T15:18:22.809589+00:00"
 }

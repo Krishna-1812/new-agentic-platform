@@ -164,9 +164,10 @@ Action rebuilds and re-commits it automatically whenever the source changes.
 The always-on view of the same account-intent-monitoring product described in the
 [standalone CLI section](#abm-signal-tracker-cli) below: 26 signal types (funding, leadership
 change, M&A, IPO, product launches, hiring surges, and more), each scored as
-`type_weight × severity × recency` with a bonus when signals stack, refreshed weekly. A separate,
-NorthStar-specific instance (coincidentally sharing the same display name) backs that client's
-portal.
+`type_weight × severity × recency` with a bonus when signals stack, refreshed weekly. It has one
+account, Healthcare, holding the 50 companies with the most distinct signals (cut down from 1,251
+on 2026-09-24 by `tools/prune_abm_to_top50.py`, which records the rule). The CSG and NorthStar
+accounts, and NorthStar's client-portal copy of the tracker, were removed at the same time.
 
 ---
 
@@ -235,9 +236,8 @@ static/                 Per-agent CSS/JS, shared design-system tokens, shared JS
 tests/                  pytest suite, 172 files / 4,350+ tests, see Testing below.
 scripts/                Operational scripts run manually or from GitHub Actions (frontend
                         build, dashboard refresh, snapshot import/sync).
-scripts/legacy/         CSG/NorthStar's original single-client onboarding scripts (superseded
-                        by the general per-client portal system in app.py), kept because their
-                        *output* (reports/dashboard_csg.html etc.) is still served live today.
+scripts/legacy/         weekly_digest.py, the ABM Signal Tracker's weekly opportunity brief
+                        (run by the refresh-dashboards workflow).
 docs/                   Design/planning docs for individual features, plus
                         CONTEXT_FOR_NEW_CHAT_*.md (a standing architecture/context brief kept
                         up to date for onboarding, human or AI, into a new session; read

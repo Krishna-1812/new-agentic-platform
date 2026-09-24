@@ -121,14 +121,16 @@ def test_the_client_portal_does_not_list_it(client):
 
 def test_the_client_portal_still_lists_the_others(client):
     body = _body(client, "/" + _CLIENT)
-    for name in ("ABM Signal Tracker", "LinkedIn Intelligence"):
+    # ABM Signal Tracker left this portal on 2026-09-24 with the NorthStar
+    # account it read from; Keyword Finder stands in as the second sibling.
+    for name in ("LinkedIn Intelligence", "Keyword Finder"):
         assert name in body, "%s went missing too" % name
 
 
 def test_the_client_portal_sidebar_and_related_strip_skip_it(client):
     """Both are built from _client_agents, and the related strip on a sibling
     agent's page is the one that survives a fix applied only to the home page."""
-    body = _body(client, "/%s/agents/%s" % (_CLIENT, "signal-tracker"))
+    body = _body(client, "/%s/agents/%s" % (_CLIENT, "linkedin-intelligence"))
     assert _NAME not in body
     assert "Content Enhancer" in body, "the related strip emptied out"
 

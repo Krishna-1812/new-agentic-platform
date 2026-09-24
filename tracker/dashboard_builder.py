@@ -63,7 +63,7 @@ def build_dashboard(
     healthcare account tracking anesthesiologist/CRNA hiring instead of 3D/creative
     hiring). Keys: icon, label, tooltip, badge, empty_msg. The underlying stored
     signal_type ("Creative Hiring") and its scoring weight are UNCHANGED — this only
-    swaps the text and icon a human sees, so Healthcare/CSG output is untouched when
+    swaps the text and icon a human sees, so Healthcare output is untouched when
     hiring_opts is omitted, and the fetch/scoring pipeline keeps working per-account
     without a second signal-type constant to keep in sync everywhere.
     """
@@ -296,7 +296,7 @@ def build_dashboard(
                 "id": "opt-news",
                 "icon": "📰",
                 "title": "Refresh Google News",
-                "desc": "Fetches the latest Google News RSS for all companies and updates LOW signals.<br>Takes ~20 minutes for 1,251 companies.",
+                "desc": "Fetches the latest Google News RSS for all companies and updates LOW signals.<br>Takes about a minute for 50 companies.",
                 "cmd": "python main.py --news-only",
             },
         ]

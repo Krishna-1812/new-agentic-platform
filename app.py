@@ -742,7 +742,7 @@ INDUSTRIES = [
         "headline_ital": "before the market moves.",
         "lead": f"Selling into healthcare is slow, committee-driven and built on trust. {BRAND['name']} watches every provider, payer, digital-health and medtech org for the signals that precede a budget, funding, mergers, new facilities, service-line launches and leadership moves, then hands your team the account, the committee and the next move.",
         "stats": [
-            {"v": "1,251", "l": "health-tech orgs tracked"},
+            {"v": "50", "l": "most-active health orgs tracked"},
             {"v": "26",    "l": "buying-signal types"},
             {"v": "24/7",  "l": "real-time detection"},
             {"v": "5",     "l": "agents tuned for health tech"},
@@ -767,15 +767,15 @@ INDUSTRIES = [
         ],
         "agents": [
             {"slug":"health-tech-account-tracker","name":"Health-Tech Account Tracker","base":"ABM Signal Tracker","badge":"LIVE","accent":"#22d3ee","accent2":"#38bdf8",
-             "role":"Live Health-Tech Universe","metric":"1,251 organizations · scored weekly",
+             "role":"Live Health-Tech Universe","metric":"50 most-active organizations · scored weekly",
              "icon": _isvg('<path d="M3 21h18"/><path d="M6 21V6a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v15"/><path d="M12 8v4M10 10h4"/><path d="M10 21v-4h4v4"/>'),
-             "use":"Your health-tech universe, already live. 1,251 provider, payer, digital-health and medtech companies tracked for funding, C-suite moves, M&A and news, scored weekly.",
-             "summary":"Your health-tech market, already mapped. Health-Tech Account Tracker comes preloaded with 1,251 provider, payer, digital-health and medtech organizations, watched for the signals that come before a budget.",
+             "use":"Your health-tech shortlist, already live. The 50 most-active provider, payer, digital-health and medtech companies tracked for funding, C-suite moves, M&A and news, scored weekly.",
+             "summary":"Your health-tech market, already mapped. Health-Tech Account Tracker comes preloaded with the 50 most-active provider, payer, digital-health and medtech organizations, watched for the signals that come before a budget.",
              "benefit":"There is nothing to set up. On day one you get a live, scored view of the healthcare organizations most likely to be entering a buying cycle.",
              "how":"It monitors funding, mergers and acquisitions, leadership moves, facility openings and news across the tracked universe, scores each event, and refreshes the ranked list every week.",
              "who":"Sales and demand-gen teams selling into health systems, payers and healthcare vendors.",
              "connects":["Curated sources","News","Slack","Sheets"],
-             "out":[{"t":"1,251 organizations, ready to work","s":"Preloaded and refreshed every week.","w":95},{"t":"Entering-a-cycle accounts on top","s":"Ranked by a live intent score.","w":88},{"t":"A weekly digest to your team","s":"Delivered straight to Slack and Sheets.","w":80}]},
+             "out":[{"t":"50 organizations, ready to work","s":"Preloaded and refreshed every week.","w":95},{"t":"Entering-a-cycle accounts on top","s":"Ranked by a live intent score.","w":88},{"t":"A weekly digest to your team","s":"Delivered straight to Slack and Sheets.","w":80}]},
             {"slug":"provider-payer-signal-tracker","name":"Provider & Payer Signal Tracker","base":"ABM Signal Tracker","badge":"CORE","accent":"#8b5cf6","accent2":"#a78bfa",
              "role":"Account Intent Monitoring","metric":"26 signal types · scored weekly",
              "icon": _isvg('<path d="M3 3v18h18"/><path d="M7 14l3.5-3.5 3 3 5-6"/>'),
@@ -1241,24 +1241,10 @@ def industry_agent_detail(islug, aslug):
 ACCOUNTS = {
     "healthcare": {
         "name":        "Healthcare",
-        "description": "1,251 healthcare companies tracked for funding, C-suite moves, M&A, and news signals.",
+        "description": "The 50 healthcare companies with the most signals, tracked for funding, C-suite moves, M&A, and news.",
         "icon":        "🏥",
         "accent":      "#3b82f6",
         "dashboard":   Path(__file__).parent / "reports" / "dashboard.html",
-    },
-    "csg": {
-        "name":        "CSG",
-        "description": "CSG company intelligence — funding rounds, leadership changes, and market signals.",
-        "icon":        "📡",
-        "accent":      "#8b5cf6",
-        "dashboard":   Path(__file__).parent / "reports" / "dashboard_csg.html",
-    },
-    "northstar": {
-        "name":        "NorthStar Anesthesia",
-        "description": "NorthStar Anesthesia ABM universe — health systems, hospitals, and anesthesia/ASC groups tracked for funding, M&A, C-suite moves, and news signals.",
-        "icon":        "🩺",
-        "accent":      "#5b9dff",
-        "dashboard":   Path(__file__).parent / "reports" / "dashboard_northstar.html",
     },
 }
 
@@ -3469,15 +3455,9 @@ CLIENTS = {
         "tagline":  "Your agents, all in one place.",
         "blurb":    "",
         # Ordered exactly as the portal should list them (slugs index APP_AGENTS_BY_SLUG).
-        "agents":   ["signal-tracker", "linkedin-intelligence", "linkedin-social-researcher",
+        "agents":   ["linkedin-intelligence", "linkedin-social-researcher",
                      "keyword-finder", "content-brief-generator",
                      "content-enhancer"],
-        # Per-agent live dashboards wired to this client's data. An agent listed
-        # here renders its co-branded dashboard (internal-ops chrome hidden) inside
-        # the portal instead of the generic "in setup" shell, and shows as Live.
-        "dashboards": {
-            "signal-tracker": Path(__file__).parent / "reports" / "dashboard_northstar_client.html",
-        },
         # LinkedIn Intelligence is a *live* co-branded dashboard (same UI as /p2),
         # rendered from this client's own engagement sheet. Presence of this key
         # makes the linkedin-intelligence agent render its live dashboard in-portal.
@@ -16776,7 +16756,6 @@ def _chatbot_get_signal_tracker(account="healthcare", signal_type=None,
     """Query Signal Tracker SQLite for buying signals."""
     db_map = {
         "healthcare": Path(__file__).parent / "data" / "tracker.db",
-        "csg":        Path(__file__).parent / "data" / "tracker_csg_v2.db",
     }
     db_path = db_map.get(account, db_map["healthcare"])
     if not db_path.exists():
@@ -16869,8 +16848,8 @@ CHATBOT_FUNCTIONS = [
             "properties": {
                 "account": {
                     "type": "string",
-                    "enum": ["healthcare", "csg"],
-                    "description": "Which tracker — 'healthcare' (1,251 companies) or 'csg' (294 companies). Default: healthcare",
+                    "enum": ["healthcare"],
+                    "description": "Which tracker. Only 'healthcare' exists (the 50 companies with the most signals).",
                 },
                 "signal_type": {
                     "type": "string",
@@ -16966,7 +16945,7 @@ sources (the company's own homepage schema.org/meta data, tech-stack fingerprint
 filers); a paid Apollo.io lookup only runs on explicit request (the "Enrich further" button) to control cost.
 
 ABM SIGNAL TRACKER (Accounts / ABM Signal Tracker dashboards, /p2/abm-signal-tracker/accounts, /p2/abm-signal-tracker/<account>):
-Monitors named company lists per client account (Healthcare and CSG) for buying signals: funding rounds,
+Monitors one named company list (Healthcare: the 50 companies with the most signals) for buying signals: funding rounds,
 leadership changes, M&A, IPO activity, product launches, partnerships, hiring surges, and general news.
 Each signal has a severity (HIGH/MEDIUM/LOW) and an importance score = signal type weight x severity x
 recency (signals decay after about 90 days). Sourced from Apollo.io + news feeds (GDELT/SerpAPI/RSS),
@@ -17121,9 +17100,9 @@ def _build_ppc_context() -> str:
     except Exception as e:
         parts.append(f"=== ANONYMOUS VISITORS ===\n⚠ Could not fetch: {e}")
 
-    # ── 2. ABM Signal Tracker — ALL signals, no limit, BOTH accounts ──────
+    # ── 2. ABM Signal Tracker — ALL signals, no limit ──────
     import sqlite3 as _sql
-    for _acct_label, _db_name in (("Healthcare", "tracker.db"), ("CSG", "tracker_csg_v2.db")):
+    for _acct_label, _db_name in (("Healthcare", "tracker.db"),):
         try:
             db_path = Path(__file__).parent / "data" / _db_name
             if not db_path.exists():
@@ -17337,7 +17316,7 @@ DATA SECTION RULES — NEVER MIX THESE:
 - Asked about COMPANIES → use SECTION A only. Columns: Company Name, Website, Industry, Location, Employees, Revenue. Never include individual people names.
 - Asked about VISITORS/PEOPLE → use SECTION B only. Columns: Name, Title, Company Website, Industry, Location, Date Visited.
 - "last 10 companies" = first 10 rows of SECTION A. "last 10 visitors" = first 10 rows of SECTION B.
-- ABM Signal Tracker data is per client account (Healthcare, CSG) — never mix companies from one account into the other.
+- ABM Signal Tracker has a single account, Healthcare (50 companies).
 
 CSV/EXCEL EXPORT RULES:
 - Output ONLY the CSV rows. No intro text, no explanation, no markdown fences, no code blocks.
@@ -17784,8 +17763,7 @@ def _strip_revenue_fields(obj):
 def insights_meta(account_id):
     import sqlite3
     from pathlib import Path
-    db_map = {"healthcare": Path(__file__).parent/"data"/"tracker.db",
-              "csg":        Path(__file__).parent/"data"/"tracker_csg_v2.db"}
+    db_map = {"healthcare": Path(__file__).parent/"data"/"tracker.db"}
     db_path = db_map.get(account_id)
     if not db_path or not db_path.exists():
         return jsonify({"error": "Unknown account"}), 404
@@ -17822,8 +17800,7 @@ INSIGHTS_MAX_SIGNALS = 120
 def insights_generate(account_id):
     import sqlite3, re as _re
     from pathlib import Path
-    db_map = {"healthcare": Path(__file__).parent/"data"/"tracker.db",
-              "csg":        Path(__file__).parent/"data"/"tracker_csg_v2.db"}
+    db_map = {"healthcare": Path(__file__).parent/"data"/"tracker.db"}
     db_path = db_map.get(account_id)
     if not db_path or not db_path.exists():
         return jsonify({"error": "Unknown account"}), 404
@@ -17875,7 +17852,7 @@ def insights_generate(account_id):
         if not signals:
             return jsonify({"error": "No sufficiently important signals for those filters."}), 200
         n_sig = len(signals); n_co = len(set(s["name"] for s in signals))
-        acct  = "Healthcare" if account_id == "healthcare" else "CSG"
+        acct  = "Healthcare"
 
         by_co = {}
         for s in signals:
@@ -18142,8 +18119,7 @@ def company_analysis(account_id):
     """Deep AI analysis of a single company for the insights drawer."""
     import sqlite3, re as _re
     from pathlib import Path
-    db_map = {"healthcare": Path(__file__).parent/"data"/"tracker.db",
-              "csg":        Path(__file__).parent/"data"/"tracker_csg_v2.db"}
+    db_map = {"healthcare": Path(__file__).parent/"data"/"tracker.db"}
     db_path = db_map.get(account_id)
     if not db_path or not db_path.exists():
         return jsonify({"error": "Unknown account"}), 404
@@ -18222,8 +18198,7 @@ def generate_email(account_id):
     """GPT-powered personalised email using company signals."""
     import sqlite3, re as _re
     from pathlib import Path
-    db_map = {"healthcare": Path(__file__).parent/"data"/"tracker.db",
-              "csg":        Path(__file__).parent/"data"/"tracker_csg_v2.db"}
+    db_map = {"healthcare": Path(__file__).parent/"data"/"tracker.db"}
     db_path = db_map.get(account_id)
     if not db_path or not db_path.exists():
         return jsonify({"error": "Unknown account"})
@@ -18324,8 +18299,7 @@ def research_company(account_id):
     """AI research on a company: GPT + web search -> key facts, insights, Position2 angle."""
     import sqlite3, re as _re
     from pathlib import Path
-    db_map = {"healthcare": Path(__file__).parent/"data"/"tracker.db",
-              "csg":        Path(__file__).parent/"data"/"tracker_csg_v2.db"}
+    db_map = {"healthcare": Path(__file__).parent/"data"/"tracker.db"}
     db_path = db_map.get(account_id)
     if not db_path or not db_path.exists():
         return jsonify({"error": "Unknown account"})
@@ -18469,8 +18443,7 @@ def vimi_chat(account_id):
     """Conversational Vimi: grounded on the account signal DB, web-search for the rest."""
     import sqlite3, re as _re
     from pathlib import Path
-    db_map = {"healthcare": Path(__file__).parent/"data"/"tracker.db",
-              "csg":        Path(__file__).parent/"data"/"tracker_csg_v2.db"}
+    db_map = {"healthcare": Path(__file__).parent/"data"/"tracker.db"}
     db_path = db_map.get(account_id)
     if not db_path or not db_path.exists():
         return jsonify({"error": "Unknown account"})
@@ -18516,7 +18489,7 @@ def vimi_chat(account_id):
             "SELECT signal_type, COUNT(*) FROM alerts_sent WHERE dry_run=0 GROUP BY signal_type")}
         total_sig = sum(counts.values())
         total_co = conn.execute("SELECT COUNT(DISTINCT apollo_id) FROM alerts_sent WHERE dry_run=0").fetchone()[0]
-        acct_label = "Healthcare" if account_id == "healthcare" else "CSG"
+        acct_label = "Healthcare"
         ql = question.lower()
         names = [r[0] for r in conn.execute("SELECT DISTINCT name FROM companies WHERE name IS NOT NULL")]
         matched = [n for n in names if n and len(n) > 2 and n.lower() in ql][:6]
@@ -18808,8 +18781,8 @@ def vimi_export():
 @position2_required
 def refresh_dashboard():
     """Trigger the GitHub Action that fetches the latest signals (HIGH from
-    Sheets, LOW from Google News with filters) for both accounts, rebuilds the
-    dashboards (preserving Vimi), prunes news, and publishes."""
+    Sheets, LOW from Google News with filters) for the Healthcare account, rebuilds the
+    dashboard (preserving Vimi), prunes news, and publishes."""
     token    = os.environ.get("GH_DISPATCH_TOKEN", "")
     repo     = os.environ.get("GH_REPO", "ai-positon2/intelligence-platform")
     workflow = os.environ.get("GH_WORKFLOW", "refresh-dashboards.yml")
@@ -18827,7 +18800,7 @@ def refresh_dashboard():
         if r.status_code in (201, 204):
             return jsonify({"ok": True,
                 "message": f"Refresh started. {BRAND['assistant']} is fetching the latest HIGH signals (Sheets) and "
-                           "LOW signals (Google News, filtered) for both accounts, rebuilding, and "
+                           "LOW signals (Google News, filtered) for the Healthcare account, rebuilding, and "
                            "publishing. Your dashboard updates automatically in a few minutes — reload then.",
                 "actions_url": "https://github.com/%s/actions/workflows/%s" % (repo, workflow)})
         return jsonify({"error": "GitHub returned %d. Check the GH_DISPATCH_TOKEN scope/repo. %s"
@@ -18841,9 +18814,7 @@ def _refresh_stage(name):
     n = (name or "").lower()
     if "fetch healthcare" in n: return "Fetching Healthcare signals (Sheets + News)…"
     if "hiring" in n or "creative" in n or "3d" in n: return "Scanning creative / 3D hiring…"
-    if "sheet" in n or "high signals" in n: return "Fetching CSG C-Suite / IPO / M&A / Funding (Sheets)…"
-    if "fetch csg" in n:        return "Fetching CSG news…"
-    if "rebuild" in n:          return "Rebuilding & scoring both accounts…"
+    if "rebuild" in n:          return "Rebuilding & scoring the dashboard…"
     if "commit" in n or "publish" in n: return "Publishing…"
     if "restore" in n:          return "Rebuilding…"
     return "Preparing…"

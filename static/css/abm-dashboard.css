@@ -1,0 +1,442 @@
+/* ════════════════════════════════════════════════════════════════════════
+   ABM SIGNAL TRACKER — Bento skin for reports/dashboard.html
+
+   The dashboard is a large hand-customised file whose data line is replaced
+   every week by scripts/refresh-dashboards.py, so it is restyled from the
+   outside rather than rewritten: its palette literals were remapped to the
+   Bento hues once, and this sheet, linked last in <head>, carries the rest
+   of the system — flat opaque surfaces, no borders, one radius, two type
+   faces, and one 150ms fade.
+
+   The dashboard's own variable names (--bg, --card, --blue …) are kept and
+   pointed at Bento values, because ~2,000 of its rules read them. Bento's
+   tokens file is deliberately NOT loaded here: it defines --bg too, plus a
+   global reset, and whichever loaded second would win by accident.
+   ════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --bg: #131315;
+  --card: #1C1C1F;
+  --border: #26262A;
+  --blue: #5AA9E6;
+  --purple: #5AA9E6;
+  --green: #C6F24E;
+  --high: #E8663D;
+  --medium: #EFE9DC;
+  --low: #5E5E66;
+  --text: #EFE9DC;
+  --text2: #8B8B93;
+
+  --abm-s2: #26262A;
+  --abm-s3: #303036;
+  --abm-tx3: #5E5E66;
+  --abm-acc: #C6F24E;
+  --abm-acc-hi: #D4FA63;
+  --abm-acc-dim: #2A3313;
+  --abm-r: 12px;
+  --abm-r-sm: 8px;
+  --abm-display: 'Familjen Grotesk', system-ui, -apple-system, sans-serif;
+  --abm-body: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* ── Ground and type ─────────────────────────────────────────────────── */
+html, body { background: var(--bg) !important; }
+body, #app, #app *, #bottom-tabs, #bottom-tabs *,
+#modal-overlay *, #kpi-overlay *, #sig-detail-overlay *, #ir9-sig-overlay *,
+#filter-panel *, #refresh-modal * {
+  font-family: var(--abm-body) !important;
+}
+.kpi-number, .nav-title, .sidebar-logo, .section-header h2, .panel-header h3,
+.chart-card h3, #modal-title, #kpi-modal-title, .ir9-vimi, .ir9-etitle,
+.rfx-title, .signal-company, .sgx-co, .ir9-sh-t {
+  font-family: var(--abm-display) !important;
+  letter-spacing: -0.02em;
+}
+.kpi-number, .badge, .badge-count, #feed-count, .ir9-kpi-v, .pag-info {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── One flat ground: no glows, meshes, blobs or spotlights ─────────── */
+#content { background: none !important; }
+#sidebar::before, #sidebar::after, .nav-item::after,
+.kpi-card::before, .panel::before, .cm-hero::before, .dv3-hero::before,
+.refresh-btn::before, #refresh-btn::before, button.refresh::before,
+#ev3-mesh-bg, #ev3-noise, .ir9-blob {
+  display: none !important;
+}
+#app *, #bottom-tabs *, #vimi-plat, #vimi-plat * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  text-shadow: none !important;
+}
+
+/* ── One motion: a 150ms opacity fade when a section appears ────────── */
+@keyframes abm-fade { from { opacity: 0; } to { opacity: 1; } }
+.section.active { animation: abm-fade 150ms cubic-bezier(.4,0,.2,1) both !important; }
+.kpi-card, .signal-item, .signal-item.sev-high, .expand-inner, .nav-item,
+.ir9-kpi, .ir9-spot, .ir9-card, .ir9-kcard, .bt-item.active .bt-icon {
+  animation: none !important;
+}
+/* No lift, tilt or magnetic pull on hover. */
+.kpi-card, .kpi-card:hover, .panel, .panel:hover, .signal-item:hover,
+.ir9-spot:hover, .ir9-card:hover, .ir9-kcard:hover, .ir9-kpi:hover,
+.refresh-btn, .filters-btn, .export-btn, .mini-alert:hover, .nav-item:hover {
+  transform: none !important;
+}
+
+/* ── Top bar (the shared product bar) ───────────────────────────────── */
+#vimi-plat { background: var(--bg) !important; border-bottom: 0 !important; box-shadow: none !important; }
+
+/* ── Sidebar ─────────────────────────────────────────────────────────── */
+#sidebar {
+  background: var(--bg) !important;
+  border-right: 0 !important;
+  box-shadow: none !important;
+}
+.sidebar-logo {
+  font-size: 19px !important;
+  font-weight: 600 !important;
+  color: var(--text) !important;
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.2 !important;
+  border-bottom: 0 !important;
+}
+.sidebar-logo small {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--abm-body) !important;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--abm-acc);
+  -webkit-text-fill-color: currentColor;
+}
+.nav-item {
+  border: 0 !important;
+  border-radius: var(--abm-r) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--text2) !important;
+}
+.nav-item:hover { background: var(--card) !important; color: var(--text) !important; }
+.nav-item.active {
+  background: var(--card) !important;
+  color: var(--text) !important;
+}
+.nav-item.active .icon { color: var(--abm-acc) !important; }
+.nav-item .icon { display: inline-flex; align-items: center; justify-content: center; }
+.nav-item .icon svg { display: block; }
+.nav-item.active::before { display: none !important; }
+.sidebar-footer { border-top: 0 !important; background: none !important; }
+.sidebar-user {
+  background: var(--card) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: var(--abm-r) !important;
+}
+.sidebar-user-avatar {
+  background: var(--abm-acc) !important;
+  color: #131315 !important;
+  box-shadow: none !important;
+  border-radius: var(--abm-r-sm) !important;
+}
+.sidebar-user-role { color: var(--text2) !important; }
+.sidebar-logout { border: 0 !important; background: var(--abm-s2) !important; border-radius: var(--abm-r-sm) !important; }
+
+/* ── Page header row ─────────────────────────────────────────────────── */
+#topnav {
+  background: var(--bg) !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+}
+.nav-title { font-size: 21px !important; font-weight: 600 !important; color: var(--text) !important; }
+.pulse-dot {
+  background: var(--abm-acc) !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+.nav-updated-ts { color: var(--text2) !important; }
+.nav-age-badge {
+  background: var(--abm-acc-dim) !important;
+  color: var(--abm-acc) !important;
+  border: 0 !important;
+  border-radius: var(--abm-r-sm) !important;
+}
+
+/* Buttons: one lime primary, everything else a neutral surface. */
+.refresh-btn, #refresh-btn, .rfx-go, .fp-apply, .ir9-gen, .ir9-gen-lg, .ir9-fapply .ap {
+  background: var(--abm-acc) !important;
+  color: #131315 !important;
+  border: 0 !important;
+  border-radius: var(--abm-r) !important;
+  box-shadow: none !important;
+  font-weight: 600 !important;
+}
+.refresh-btn:hover, #refresh-btn:hover, .rfx-go:hover, .fp-apply:hover,
+.ir9-gen:hover, .ir9-gen-lg:hover { background: var(--abm-acc-hi) !important; }
+.filters-btn, .export-btn, .pag-btn, .fp-reset, .ir9-fbtn, .ir9-chatlink, .ir9-fapply .rs {
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border: 0 !important;
+  border-radius: var(--abm-r) !important;
+  box-shadow: none !important;
+}
+.filters-btn:hover, .export-btn:hover, .pag-btn:hover, .fp-reset:hover,
+.ir9-fbtn:hover { background: var(--abm-s2) !important; }
+.filter-badge { background: var(--abm-acc) !important; color: #131315 !important; }
+
+/* Search fields: a flat fill that lightens a step on focus. No ring. */
+#nav-search, #tbl-search, #kpi-modal-search, .fp-select, .sig-filter-select, .ir9-sel {
+  background: var(--card) !important;
+  border: 0 !important;
+  border-radius: var(--abm-r) !important;
+  box-shadow: none !important;
+  color: var(--text) !important;
+  outline: none;
+}
+#nav-search:focus, #tbl-search:focus, #kpi-modal-search:focus {
+  background: var(--abm-s2) !important;
+  box-shadow: none !important;
+}
+
+/* ── Tiles ───────────────────────────────────────────────────────────── */
+.kpi-row { gap: 10px !important; }
+.kpi-card, .panel, .chart-card, .table-wrap, .charts-panel > .chart-card {
+  background: var(--card) !important;
+  border: 0 !important;
+  border-left: 0 !important;
+  border-radius: var(--abm-r) !important;
+  box-shadow: none !important;
+}
+.kpi-card { padding: 18px 20px 14px !important; min-height: 0 !important; }
+.kpi-card.high-card { background: var(--card) !important; }
+.kpi-number {
+  font-size: 34px !important;
+  font-weight: 600 !important;
+  color: var(--text) !important;
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+  margin-bottom: 6px !important;
+}
+.kpi-label {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  color: var(--text2) !important;
+}
+.kpi-sparkline { height: 40px !important; margin-top: 12px !important; }
+/* Colour is load-bearing: the first tile, the one you opened the page for,
+   is the only filled one. */
+.kpi-row .kpi-card:first-child { background: var(--abm-acc) !important; }
+.kpi-row .kpi-card:first-child .kpi-number,
+.kpi-row .kpi-card:first-child .kpi-label { color: #131315 !important; }
+.kpi-row .kpi-card:first-child .kpi-sparkline { opacity: .35; filter: grayscale(1) brightness(.2); }
+.kpi-chip span {
+  border: 0 !important;
+  border-radius: 6px !important;
+  background: var(--abm-s2) !important;
+  box-shadow: none !important;
+}
+.kpi-tooltip { background: var(--abm-s2) !important; border: 0 !important; border-radius: var(--abm-r) !important; box-shadow: 0 24px 64px -16px rgba(0,0,0,.72) !important; }
+
+.panel-header { border-bottom: 0 !important; }
+.panel-header h3, .chart-card h3 { font-size: 15px !important; font-weight: 600 !important; color: var(--text) !important; }
+.badge, #feed-count, .badge-count {
+  background: var(--abm-s2) !important;
+  color: var(--text) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+#section-overview .panel > div[style*="background"] {
+  background: var(--abm-s2) !important;
+  color: var(--text2) !important;
+  border-radius: var(--abm-r-sm) !important;
+}
+
+/* Signal rows: a tile inside a tile. */
+.signal-item, .mini-alert, .sgx-row {
+  background: var(--abm-s2) !important;
+  border: 0 !important;
+  border-left: 0 !important;
+  border-radius: var(--abm-r) !important;
+  box-shadow: none !important;
+  margin-bottom: 8px;
+}
+.signal-item:hover, .mini-alert:hover { background: var(--abm-s3) !important; }
+.signal-item a, .signal-item button, .signal-item .sig-link,
+.signal-item [class*="btn"] {
+  border-radius: var(--abm-r-sm) !important;
+  box-shadow: none !important;
+}
+
+/* Tables */
+.data-table th {
+  background: var(--card) !important;
+  color: var(--text2) !important;
+  border-bottom: 1px solid #2E2E34 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.08em !important;
+}
+.data-table td { border-bottom: 0 !important; }
+.data-table tr:hover td { background: var(--abm-s2) !important; }
+
+/* ── Overlays: the one place a shadow is allowed ────────────────────── */
+#modal-box, #kpi-modal-box, #sig-detail-box, #refresh-modal, #filter-panel,
+#ir9-sig-box, .ir9-fpanel, .ir9-drw, .export-menu {
+  background: var(--card) !important;
+  border: 0 !important;
+  border-radius: var(--abm-r) !important;
+  box-shadow: 0 24px 64px -16px rgba(0,0,0,.72) !important;
+}
+#ir9-sig-hdr, #modal-header, .kpi-modal-header, .fp-header, .fp-footer {
+  background: var(--card) !important;
+  border-color: var(--abm-s2) !important;
+}
+#fp-overlay, #refresh-overlay, #modal-overlay, #kpi-overlay, #sig-detail-overlay, #ir9-sig-overlay {
+  background: rgba(19,19,21,.82) !important;
+}
+.rfx-orbit {
+  background: var(--abm-acc-dim) !important;
+  color: var(--abm-acc) !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  animation: none !important;
+}
+.rfx-orbit svg * { animation: none !important; }
+.rfx-ic {
+  background: var(--abm-s2) !important;
+  color: var(--text) !important;
+  font-family: var(--abm-display) !important;
+  font-weight: 600 !important;
+}
+.rfx-step { background: var(--abm-s2) !important; border: 0 !important; border-radius: var(--abm-r) !important; }
+.rfx-bar-track { background: var(--abm-s2) !important; }
+.rfx-bar-fill { background: var(--abm-acc) !important; box-shadow: none !important; }
+
+/* ── Insights (the assistant) ───────────────────────────────────────── */
+.ir9-body { background: none !important; }
+.ir9-kpi, .ir9-card, .ir9-kcard, .ir9-rcard, .ir9-hero, #ir9-hero > div {
+  background: var(--card) !important;
+  border: 0 !important;
+  border-radius: var(--abm-r) !important;
+  box-shadow: none !important;
+}
+.ir9-spot { background: var(--card) !important; padding: 0 !important; border-radius: var(--abm-r) !important; box-shadow: none !important; }
+.ir9-spot > * { background: var(--card) !important; border: 0 !important; border-radius: var(--abm-r) !important; box-shadow: none !important; }
+.ir9-spot.r1, .ir9-spot.r1 > * { background: var(--abm-s2) !important; }
+.ir9-kbadge {
+  background: var(--abm-acc-dim) !important;
+  color: var(--abm-acc) !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  letter-spacing: 0.06em;
+}
+.ir9-tabs { border-bottom: 0 !important; background: none !important; }
+.ir9-tab { border: 0 !important; border-radius: var(--abm-r) !important; background: transparent !important; box-shadow: none !important; color: var(--text2) !important; }
+.ir9-tab.active { background: var(--card) !important; color: var(--text) !important; }
+.ir9-etitle { font-size: 26px !important; color: var(--text) !important; background: none !important; -webkit-text-fill-color: currentColor !important; }
+.ir9-ltrack { background: var(--abm-s2) !important; border-radius: 1px !important; height: 2px !important; }
+.ir9-lfill { background: var(--abm-acc) !important; box-shadow: none !important; }
+
+/* The assistant's floating button: a lime disc like every other page. */
+.vimi-fab {
+  background: var(--abm-acc) !important;
+  color: #131315 !important;
+  border: 0 !important;
+  box-shadow: 0 24px 64px -16px rgba(0,0,0,.72) !important;
+  animation: none !important;
+}
+.vimi-fab * { color: #131315 !important; stroke: currentColor; animation: none !important; }
+.vimi-fab::before, .vimi-fab::after { display: none !important; }
+
+/* ── Mobile tab bar ──────────────────────────────────────────────────── */
+#bottom-tabs { background: var(--bg) !important; border-top: 0 !important; box-shadow: none !important; }
+.bt-item { color: var(--text2) !important; background: none !important; }
+.bt-item.active { color: var(--abm-acc) !important; }
+.bt-icon { display: flex; justify-content: center; }
+
+/* ── Specificity backstops ─────────────────────────────────────────────
+   Earlier blocks in the dashboard style these with #id-qualified,
+   !important rules; `html body` lifts the Bento rule above them without
+   another !important arms race inside the file itself. */
+html body #sidebar { background: var(--bg) !important; }
+html body #sidebar .sidebar-logo {
+  background: none !important;
+  -webkit-background-clip: border-box !important;
+  background-clip: border-box !important;
+  -webkit-text-fill-color: var(--text) !important;
+  color: var(--text) !important;
+}
+html body #sidebar .sidebar-logo small { -webkit-text-fill-color: var(--abm-acc) !important; }
+html body #sidebar .nav-item { background: transparent !important; border: 0 !important; box-shadow: none !important; }
+html body #sidebar .nav-item:hover { background: var(--card) !important; }
+html body #sidebar .nav-item.active { background: var(--card) !important; color: var(--text) !important; }
+html body #sidebar .sidebar-user-avatar { background: var(--abm-acc) !important; border: 0 !important; color: #131315 !important; }
+
+/* Links and actions inside a signal row: neutral chips, not outlined. */
+html body .signal-item a, html body .signal-item button {
+  background: var(--abm-s3) !important;
+  color: var(--text) !important;
+  border: 0 !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+html body .signal-item a:hover, html body .signal-item button:hover { background: #3A3A40 !important; }
+html body #sidebar .sidebar-logo::after { display: none !important; }
+html body #sidebar .badge-count, html body #sidebar .sidebar-footer,
+html body #sidebar .sidebar-user, html body #sidebar .sidebar-logout { border: 0 !important; }
+html body #sidebar .badge-count { background: var(--abm-s2) !important; color: var(--text2) !important; }
+html body #main { border-left: 0 !important; }
+html body #sidebar { border: 0 !important; box-shadow: none !important; }
+
+/* ── Phone and small tablet ────────────────────────────────────────────
+   The file's own mobile rules (hide the sidebar, show the bottom tab bar)
+   were overridden by a later `#main{margin-left:var(--sb-w)!important}`,
+   so below 820px the page kept its desktop sidebar and ran ~1,190px wide
+   at a 390px viewport. These restore the intended phone layout. */
+@media (max-width: 820px) {
+  html body #sidebar { display: none !important; }
+  html body #main { margin-left: 0 !important; width: 100% !important; min-width: 0 !important; }
+  html body #bottom-tabs { display: flex !important; }
+  html body #content { padding-bottom: 80px !important; }
+  html body #topnav {
+    flex-wrap: wrap !important;
+    height: auto !important;
+    gap: 8px !important;
+    padding: 12px 16px !important;
+  }
+  html body #topnav .nav-spacer { display: none !important; }
+  html body #topnav .nav-updated { order: 2; width: 100%; flex-wrap: wrap; }
+  html body #topnav #search-wrap { order: 3; flex: 1 1 100% !important; width: 100% !important; }
+  html body #topnav #nav-search { width: 100% !important; }
+  html body #topnav .refresh-btn, html body #topnav .filters-btn { order: 4; }
+  html body .kpi-row { grid-template-columns: 1fr 1fr !important; }
+  html body .two-col, html body .trends-grid { grid-template-columns: 1fr !important; }
+  html body .panel, html body .chart-card { min-width: 0 !important; }
+  html body .kpi-chip { flex-wrap: wrap; }
+  html body .kpi-number { font-size: 26px !important; }
+}
+@media (max-width: 820px) {
+  html body .vimi-fab { bottom: 72px !important; }
+}
+
+/* Link chips (table rows, modals): neutral fills, one per line of text. */
+html body .signal-link {
+  display: inline-block;
+  background: var(--abm-s2) !important;
+  color: var(--text) !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  padding: 2px 8px !important;
+  margin: 2px 2px 2px 0 !important;
+  white-space: nowrap;
+  -webkit-text-fill-color: currentColor !important;
+}
+html body .signal-link:hover { background: var(--abm-s3) !important; }
+html body .data-table tr.row-high td { background: transparent !important; }
+html body .data-table tr.row-high td:first-child { box-shadow: inset 2px 0 0 var(--high) !important; }
+html body .section-header h2::after { display: none !important; }

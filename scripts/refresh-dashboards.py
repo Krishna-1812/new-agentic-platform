@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""One-command dashboard refresh for BOTH accounts, preserving all Vimi work.
+"""One-command refresh of the Healthcare dashboard, preserving all Vimi work.
 
-For each account it:
+It:
   1. prunes irrelevant News Mention rows from the SQLite DB (relevance filter),
   2. rebuilds a *plain* dashboard from the DB into a temp file,
   3. splices that fresh `const DATA = {...}` blob into the committed Vimi
@@ -19,7 +19,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 os.chdir(ROOT)
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "scripts" / "legacy"))  # build_csg_dashboard.py lives here
 
 from tracker.dashboard_builder import build_dashboard
 from tracker.snapshot_store import SnapshotStore
@@ -72,7 +71,7 @@ def reclassify(db):
     """Normalise news-derived signal types with the Position2 classifier:
     promote News Mentions into Product Launch / Partnership when they qualify,
     and downgrade non-relevant Product Launch / Partnership back to News Mention.
-    Applies the same criteria to BOTH accounts."""
+    """
     con = sqlite3.connect(db)
     rows = con.execute(
         "SELECT id, signal_type, signal_detail FROM alerts_sent "
@@ -130,14 +129,8 @@ def build_healthcare(tmp):
     companies = load_companies(ROOT / "apollo-accounts-export.csv")
     build_dashboard(companies_from_csv=companies, store=store, output_path=tmp, max_signal_age_days=90)
 
-def build_csg(tmp):
-    import build_csg_dashboard as bcsg
-    bcsg.OUT_PATH = Path(tmp)
-    bcsg.build_csg()
-
 ACCOUNTS = [
     ("healthcare", "data/tracker.db",        "reports/dashboard.html",     build_healthcare),
-    ("csg",        "data/tracker_csg_v2.db",  "reports/dashboard_csg.html", build_csg),
 ]
 
 def main():

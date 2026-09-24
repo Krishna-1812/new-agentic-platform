@@ -35,6 +35,10 @@ causes, both fixed the same session:
    which is also why its card looked visually duller than its siblings in the
    reported screenshot.
 
+CSG and NorthStar were removed on 2026-09-24 and Healthcare is the only
+account left, so the NorthStar-specific gradient test went with them. The
+grid tests stay: they guard the layout for whatever number of cards ships.
+
 These are source/logic-level regression tests: no headless browser here, so
 the two CSS-side facts are pinned by inspecting the template's own text for
 the specific properties that fix them, rather than actually rendering and
@@ -75,7 +79,7 @@ def _css_text():
 def test_every_account_gets_a_non_placeholder_thumb_gradient():
     """The flat grey fallback (`#0d0f17`/`#1a1d27`) is meant for an account
     whose accent color was never given a matching gradient -- it should never
-    fire for one of the three accounts this page actually ships today."""
+    fire for an account this page actually ships."""
     placeholder_stops = ("#0d0f17", "#1a1d27")
     for account_id, cfg in appmod.ACCOUNTS.items():
         html = appmod._build_account_card(account_id, cfg)
@@ -85,16 +89,6 @@ def test_every_account_gets_a_non_placeholder_thumb_gradient():
         assert not all(stop in thumb for stop in placeholder_stops), (
             f"{account_id} (accent {cfg['accent']}) fell through to the generic "
             f"placeholder gradient -- add its accent to thumb_map")
-
-
-def test_northstar_gets_a_blue_gradient_distinct_from_healthcare():
-    """Locks in the specific fix: NorthStar's #5b9dff accent now has its own
-    entry, and it isn't just a copy of Healthcare's #3b82f6 gradient."""
-    healthcare_html = appmod._build_account_card("healthcare", appmod.ACCOUNTS["healthcare"])
-    northstar_html = appmod._build_account_card("northstar", appmod.ACCOUNTS["northstar"])
-    healthcare_thumb = re.search(r"--thumb:([^;]+);", healthcare_html).group(1)
-    northstar_thumb = re.search(r"--thumb:([^;]+);", northstar_html).group(1)
-    assert northstar_thumb != healthcare_thumb
 
 
 # ── Grid: no fixed-column trap that strands a last-row card ─────────────────

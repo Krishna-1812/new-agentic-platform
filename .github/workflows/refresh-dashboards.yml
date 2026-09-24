@@ -1,8 +1,9 @@
-name: Refresh ABM Signal Tracker dashboards
+name: Refresh ABM Signal Tracker dashboard
 
-# One-click refresh of BOTH accounts: fetch latest signals, rebuild the
-# dashboards while preserving every Vimi customization, prune irrelevant news,
-# and publish. Run manually (Actions tab -> Run workflow) or weekly.
+# One-click refresh of the Healthcare account (the only one): fetch latest
+# signals, rebuild the dashboard while preserving every Vimi customization,
+# prune irrelevant news, and publish. Run manually (Actions tab -> Run workflow)
+# or weekly.
 
 on:
   workflow_dispatch:
@@ -36,29 +37,19 @@ jobs:
           CONFIGEOF
           echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > service_account.json
 
-      - name: Snapshot Vimi dashboards (fetch step rewrites them; we restore after)
+      - name: Snapshot Vimi dashboard (fetch step rewrites it; we restore after)
         run: |
           cp reports/dashboard.html /tmp/vimi_health.html
-          cp reports/dashboard_csg.html /tmp/vimi_csg.html
 
       - name: Fetch Healthcare signals (Sheets HIGH + News LOW)
         run: python main.py
         continue-on-error: true
 
-      - name: Fetch CSG news
-        run: python scripts/legacy/fetch_csg_news.py
-        continue-on-error: true
-
-      - name: Fetch CSG HIGH signals (Sheets - C-Suite / IPO / M&A / Funding)
-        run: python scripts/legacy/fetch_csg_sheets.py
-        continue-on-error: true
-
-      - name: Restore Vimi dashboards
+      - name: Restore Vimi dashboard
         run: |
           cp /tmp/vimi_health.html reports/dashboard.html
-          cp /tmp/vimi_csg.html reports/dashboard_csg.html
 
-      - name: Rebuild dashboards from fresh data (preserve Vimi) + prune news
+      - name: Rebuild dashboard from fresh data (preserve Vimi) + prune news
         run: python scripts/refresh-dashboards.py
 
       - name: Generate weekly opportunity brief (CSV + AI brief + Slack)
@@ -73,6 +64,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to publish."
           else
-            git commit -m "data: refresh ABM Signal Tracker dashboards [skip ci]"
+            git commit -m "data: refresh ABM Signal Tracker dashboard [skip ci]"
             git push
           fi

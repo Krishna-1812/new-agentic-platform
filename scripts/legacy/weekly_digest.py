@@ -1,7 +1,7 @@
 """
 weekly_digest.py
 ================
-Builds a ranked "Top Opportunities" brief per account from the scored signals
+Builds a ranked "Top Opportunities" brief for the Healthcare account from the scored signals
 (last 90 days) and emits:
   - reports/opportunities_<account>.csv   (always — sales-ready ranked list)
   - reports/weekly_brief_<account>.md     (if OPENAI_API_KEY — short AI brief)
@@ -10,8 +10,7 @@ Builds a ranked "Top Opportunities" brief per account from the scored signals
 Safe & free: CSV always; AI + Slack only when their env vars are set. No outreach
 is ever sent automatically. Runs in the weekly Action after the dashboard refresh.
 
-Usage: python weekly_digest.py            # both accounts
-       python weekly_digest.py --account csg
+Usage: python weekly_digest.py
 """
 from __future__ import annotations
 import argparse, csv, json, os, sqlite3, urllib.request
@@ -20,7 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent.parent  # repo root -- this script
 import sys; sys.path.insert(0, str(ROOT))
 from tracker.signal_score import score_company_signals
 
-ACCOUNTS = {"healthcare": "data/tracker.db", "csg": "data/tracker_csg_v2.db"}
+ACCOUNTS = {"healthcare": "data/tracker.db"}
 TOP_N = 25
 
 def _load_scored(db):

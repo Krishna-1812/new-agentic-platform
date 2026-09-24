@@ -421,8 +421,9 @@ def _process_company_sheets(
     # ── Dedup, send, record ───────────────────────────────────────────────────
     for event in events:
         ev_source = getattr(event, 'source_url', '')
-        if store.was_alert_sent_recently(apollo_id, event.signal_type, dedup_days,
-                                          signal_detail=event.headline):
+        if (store.was_alert_sent_recently(apollo_id, event.signal_type, dedup_days,
+                                           signal_detail=event.headline)
+                or store.has_alert(apollo_id, event.signal_type, event.headline)):
             # Already stored — backfill source_url if we now have a better value
             if ev_source:
                 store.update_source_url_if_better(

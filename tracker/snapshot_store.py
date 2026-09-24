@@ -274,6 +274,22 @@ class SnapshotStore:
                 ).fetchone()
         return row is not None
 
+    def has_alert(self, apollo_id: str, signal_type: str, signal_detail: str) -> bool:
+        """Return True if this exact signal was ever stored for the company.
+
+        The Sheets source re-reports the same event every week, so a check
+        bounded by dedup_days let one C-suite appointment be stored once per
+        weekly run (2,585 rows held 671 real signals when this was added).
+        An identical headline is the same event whenever it was first seen.
+        """
+        with _connect(self.db_path) as conn:
+            row = conn.execute(
+                "SELECT 1 FROM alerts_sent WHERE apollo_id=? AND signal_type=? "
+                "AND signal_detail=? AND dry_run=0 LIMIT 1",
+                (apollo_id, signal_type, signal_detail),
+            ).fetchone()
+        return row is not None
+
     def get_recent_alerts(self, limit: int = 200, max_age_days: int = 90) -> list[dict]:
         with _connect(self.db_path) as conn:
             rows = conn.execute(
