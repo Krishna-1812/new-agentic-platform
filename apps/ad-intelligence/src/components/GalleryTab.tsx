@@ -28,7 +28,7 @@ const FORMAT_OPTS = [
   { id: 'video', label: 'Video' },
 ];
 const FMT_COLORS: Record<string, string> = {
-  image: '#10b981', text: '#6366f1', video: '#f59e0b',
+  image: '#C6F24E', text: '#5AA9E6', video: '#EFE9DC',
 };
 const SORT_LABELS: Record<SortKey, string> = {
   newest: 'Newest first',
@@ -74,13 +74,13 @@ function InsightStrip({ ads }: { ads: Ad[] }) {
                : `${Math.round(days / 30)}mo ago`;
   }
 
-  const tile = 'card-glow bg-white border border-slate-100 rounded-2xl p-4 shadow-sm anim-pop-in';
+  const tile = 'bg-white border border-slate-100 rounded-2xl p-4 shadow-sm anim-pop-in';
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
 
       {/* 1 · Activity */}
-      <div className={`${tile} delay-1`}>
+      <div className={`${tile}`}>
         <div className="flex items-center gap-1.5 mb-3">
           <div className="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center">
             <Zap size={11} className="text-emerald-600"/>
@@ -92,7 +92,7 @@ function InsightStrip({ ads }: { ads: Ad[] }) {
           <span className="text-xs text-slate-400 font-medium">/ {total} live</span>
         </div>
         <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1.5">
-          <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500"
+          <div className="h-full rounded-full bg-emerald-500"
                style={{ width: `${Math.max(activePct, 2)}%` }}/>
         </div>
         <p className="text-[10px] text-slate-400">
@@ -101,7 +101,7 @@ function InsightStrip({ ads }: { ads: Ad[] }) {
       </div>
 
       {/* 2 · Creative Mix */}
-      <div className={`${tile} delay-2`}>
+      <div className={`${tile}`}>
         <div className="flex items-center gap-1.5 mb-3">
           <div className="w-6 h-6 rounded-lg bg-indigo-50 flex items-center justify-center">
             <ImageIcon size={11} className="text-indigo-600"/>
@@ -111,7 +111,7 @@ function InsightStrip({ ads }: { ads: Ad[] }) {
         <div className="space-y-2">
           {fmtEntries.map(([fmt, cnt]) => {
             const pct = Math.round((cnt / total) * 100);
-            const col = FMT_COLORS[fmt] || '#94a3b8';
+            const col = FMT_COLORS[fmt] || '#8B8B93';
             return (
               <div key={fmt}>
                 <div className="flex justify-between text-[10px] mb-0.5">
@@ -129,7 +129,7 @@ function InsightStrip({ ads }: { ads: Ad[] }) {
       </div>
 
       {/* 3 · Top CTA */}
-      <div className={`${tile} delay-3`}>
+      <div className={`${tile}`}>
         <div className="flex items-center gap-1.5 mb-3">
           <div className="w-6 h-6 rounded-lg bg-violet-50 flex items-center justify-center">
             <Target size={11} className="text-violet-600"/>
@@ -155,7 +155,7 @@ function InsightStrip({ ads }: { ads: Ad[] }) {
       </div>
 
       {/* 4 · Timeline */}
-      <div className={`${tile} delay-4`}>
+      <div className={`${tile}`}>
         <div className="flex items-center gap-1.5 mb-3">
           <div className="w-6 h-6 rounded-lg bg-sky-50 flex items-center justify-center">
             <Clock size={11} className="text-sky-600"/>
@@ -168,7 +168,7 @@ function InsightStrip({ ads }: { ads: Ad[] }) {
             <p className="text-[10px] text-slate-400 mb-3">{formatDate(newestDate)}</p>
             <div className="flex items-center gap-2 text-[9px] text-slate-400">
               <span className="flex-shrink-0 font-medium">Oldest</span>
-              <div className="relative flex-1 h-0.5 bg-gradient-to-r from-slate-200 to-sky-400 rounded-full">
+              <div className="relative flex-1 h-0.5 bg-slate-700 rounded-full">
                 <span className="absolute left-0 -top-[3px] w-1.5 h-1.5 rounded-full bg-slate-300 border border-white"/>
                 <span className="absolute right-0 -top-[3px] w-1.5 h-1.5 rounded-full bg-sky-500 border border-white"/>
               </div>
@@ -237,12 +237,12 @@ function PatternChips({ ads }: { ads: Ad[] }) {
   const chips: { text: string; color: string }[] = [];
 
   const active = ads.filter(a => a.Status === 'active').length;
-  if (active > 0) chips.push({ text: `${active} ads currently live`, color: '#10b981' });
+  if (active > 0) chips.push({ text: `${active} ads currently live`, color: '#C6F24E' });
 
   const imgPct = Math.round(
     (ads.filter(a => a['Image URLs']).length / ads.length) * 100,
   );
-  if (imgPct >= 40) chips.push({ text: `${imgPct}% image creative`, color: '#6366f1' });
+  if (imgPct >= 40) chips.push({ text: `${imgPct}% image creative`, color: '#5AA9E6' });
 
   const kwCounts: Record<string, number> = {};
   for (const ad of ads) {
@@ -253,12 +253,12 @@ function PatternChips({ ads }: { ads: Ad[] }) {
   }
   const topKW = Object.entries(kwCounts).sort((a, b) => b[1] - a[1])[0];
   if (topKW && topKW[1] > 2)
-    chips.push({ text: `Top keyword: "${topKW[0]}"`, color: '#f59e0b' });
+    chips.push({ text: `Top keyword: "${topKW[0]}"`, color: '#EFE9DC' });
 
   const ctaSet = new Set(
     ads.map(a => a.CTA?.trim()).filter((c): c is string => !!c && c.length < 40),
   );
-  if (ctaSet.size > 1) chips.push({ text: `${ctaSet.size} distinct CTAs`, color: '#0ea5e9' });
+  if (ctaSet.size > 1) chips.push({ text: `${ctaSet.size} distinct CTAs`, color: '#7ABDF0' });
 
   if (chips.length === 0) return null;
 
@@ -266,8 +266,8 @@ function PatternChips({ ads }: { ads: Ad[] }) {
     <div className="flex flex-wrap gap-2 mb-5">
       {chips.map((c, i) => (
         <span key={i}
-              className="chip-pop inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full border hover:scale-105 transition-transform cursor-default"
-              style={{ color: c.color, background: `${c.color}10`, borderColor: `${c.color}28`, animationDelay: `${i * 0.07}s` }}>
+              className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-transform cursor-default"
+              style={{ color: c.color, background: `${c.color}10`, borderColor: `${c.color}28` }}>
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.color }}/>
           {c.text}
         </span>
@@ -282,7 +282,7 @@ function ListRow({
 }: { ad: Ad; onClick: () => void; onDomainClick: (d: string) => void }) {
   const images   = getImageUrls(ad);
   const thumb    = images[0];
-  const color    = COMPETITOR_COLORS[ad.Domain] || '#6366f1';
+  const color    = COMPETITOR_COLORS[ad.Domain] || '#5AA9E6';
   const fmt      = (ad.Format || 'text').toLowerCase();
   const headline = getAdPreviewText(ad);
   const isActive = ad.Status === 'active';
@@ -291,14 +291,14 @@ function ListRow({
   return (
     <div
       onClick={onClick}
-      className="group flex items-center gap-4 bg-white border border-slate-100 rounded-2xl px-4 py-3 cursor-pointer hover:shadow-md hover:border-indigo-100 transition-all"
+      className="group flex items-center gap-4 bg-white border border-slate-100 rounded-2xl px-4 py-3 cursor-pointer hover:border-indigo-100 transition-all"
     >
       {/* Thumbnail */}
       <div className="w-20 h-14 flex-shrink-0 rounded-xl overflow-hidden relative"
-           style={{ background: `${color}10` }}>
+           style={{ background: "#26262A" }}>
         {thumb ? (
           <img src={thumb} alt=""
-               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+               className="w-full h-full object-cover transition-transform duration-300"
                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -327,7 +327,7 @@ function ListRow({
           )}
           {isActive && (
             <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-600 flex-shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block"/>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"/>
               Live
             </span>
           )}
@@ -343,7 +343,7 @@ function ListRow({
       {/* Right */}
       <div className="flex items-center gap-2.5 flex-shrink-0">
         {ad.CTA && ad.CTA.length < 40 && (
-          <span className="hidden md:inline-block text-[11px] font-bold text-white px-2.5 py-1 rounded-lg"
+          <span className="hidden md:inline-block text-[11px] font-bold text-[#131315] px-2.5 py-1 rounded-lg"
                 style={{ background: color }}>
             {ad.CTA}
           </span>
@@ -361,7 +361,7 @@ function ListRow({
           </a>
         )}
         <ArrowRight size={14}
-                    className="text-slate-200 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all"/>
+                    className="text-slate-200 group-hover:text-indigo-400 transition-all"/>
       </div>
     </div>
   );
@@ -425,25 +425,25 @@ export function GalleryTab({
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           <span className="text-xs text-slate-400 font-medium">Filtered:</span>
           {domain !== 'all' && (
-            <span className="chip-pop flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+            <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
               {COMPETITORS.find(c => c.domain === domain)?.name ?? domain}
-              <button onClick={() => setDomain('all')} className="hover:text-indigo-900 ml-0.5 hover:rotate-90 transition-transform">
+              <button onClick={() => setDomain('all')} className="hover:text-indigo-900 ml-0.5 transition-transform">
                 <X size={10}/>
               </button>
             </span>
           )}
           {format !== 'all' && (
-            <span className="chip-pop flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 capitalize">
+            <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 capitalize">
               {format} ads
-              <button onClick={() => setFormat('all')} className="hover:text-emerald-900 ml-0.5 hover:rotate-90 transition-transform">
+              <button onClick={() => setFormat('all')} className="hover:text-emerald-900 ml-0.5 transition-transform">
                 <X size={10}/>
               </button>
             </span>
           )}
           {search && (
-            <span className="chip-pop flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100">
+            <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-100">
               "{search}"
-              <button onClick={() => setSearch('')} className="hover:text-amber-900 ml-0.5 hover:rotate-90 transition-transform">
+              <button onClick={() => setSearch('')} className="hover:text-amber-900 ml-0.5 transition-transform">
                 <X size={10}/>
               </button>
             </span>
@@ -470,8 +470,7 @@ export function GalleryTab({
               <button key={c.domain} onClick={() => setDomain(c.domain)}
                       className="text-xs font-semibold px-3 py-1.5 rounded-full transition-all"
                       style={domain === c.domain
-                        ? { background: c.color, color: 'white',
-                            boxShadow: `0 4px 12px -2px ${c.color}55` }
+                        ? { background: c.color, color: '#131315' }
                         : { background: `${c.color}12`, color: c.color }}>
                 {c.name}
               </button>
@@ -492,7 +491,7 @@ export function GalleryTab({
             ))}
           </div>
 
-          <div className="flex-1 min-w-48 relative ml-auto search-expand rounded-xl">
+          <div className="flex-1 min-w-48 relative ml-auto rounded-xl">
             <Search size={14}
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-transform group-focus-within:scale-110"/>
             <input
@@ -585,7 +584,7 @@ export function GalleryTab({
       {/* Content */}
       {sorted.length === 0 ? (
         <div className="anim-pop-in text-center py-24 bg-white rounded-2xl border border-dashed border-slate-200">
-          <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4 anim-float">
+          <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
             <Search size={28} className="text-slate-300"/>
           </div>
           <p className="font-bold text-slate-600 text-lg">No ads match your filters</p>
@@ -603,7 +602,7 @@ export function GalleryTab({
           {sorted.map((ad, i) => (
             <div key={`${ad['Creative ID']}-${i}`}
                  className="anim-fade-up"
-                 style={{ animationDelay: `${Math.min(i * 0.02, 0.25)}s` }}>
+                 style={{}}>
               <ListRow
                 ad={ad}
                 onClick={() => setSelectedAd(ad)}
@@ -618,7 +617,7 @@ export function GalleryTab({
           {sorted.map((ad, i) => (
             <div key={`${ad['Creative ID']}-${i}`}
                  className="anim-fade-up"
-                 style={{ animationDelay: `${Math.min(i * 0.025, 0.3)}s` }}>
+                 style={{}}>
               <AdCard
                 ad={ad}
                 onClick={() => setSelectedAd(ad)}

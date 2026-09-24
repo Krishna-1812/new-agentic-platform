@@ -173,7 +173,9 @@ def test_source_draws_the_product_mark_and_reads_the_served_name():
 def test_source_breadcrumb_says_b2b_agents_not_ppc():
     src = _read("apps", "ad-intelligence", "src", "App.tsx")
     assert 'href="/p2/strategic-agents"' in src
-    assert '>Strategic Agents<' in src
+    # The label follows the product bar every Bento page shares
+    # (Workspace / Agents / <page>, from brand.py), so it reads "Agents".
+    assert '>Agents<' in src
     assert '>PPC<' not in src, "breadcrumb still shows the pre-rename section label"
     assert 'href="/ppc"' not in src, "breadcrumb link should point straight at the canonical path, not the legacy alias"
 
@@ -188,7 +190,8 @@ def test_compiled_bundle_matches_the_source_fix():
     bundle = open(os.path.join(assets_dir, js_files[0]), encoding="utf-8").read()
     assert "__BRAND__" in bundle, "the served bundle predates the brand-slot change"
     assert "/static/logo-lockup.svg" not in bundle and "/static/logo-mark.svg" not in bundle
-    assert "Strategic Agents" in bundle
+    assert "/p2/strategic-agents" in bundle
+    assert "bn-bar-crumbs" in bundle, "the served bundle predates the Bento rebuild"
     assert ">PPC<" not in bundle
 
 

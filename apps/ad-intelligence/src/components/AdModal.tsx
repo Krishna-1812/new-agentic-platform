@@ -70,7 +70,7 @@ export function AdModal({ ad, onClose }: AdModalProps) {
   const images   = getImageUrls(ad);
   const keywords = getKeywords(ad);
   const points   = getMessagingPoints(ad);
-  const color    = COMPETITOR_COLORS[ad.Domain] || '#6366f1';
+  const color    = COMPETITOR_COLORS[ad.Domain] || '#5AA9E6';
   const fmt      = ad.Format?.toLowerCase() || 'text';
   const comp     = COMPETITORS.find(c => c.domain === ad.Domain);
   const FORMAT_ICON: Record<string, React.ReactNode> = {
@@ -88,7 +88,7 @@ export function AdModal({ ad, onClose }: AdModalProps) {
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 anim-fade-in"
-         style={{ background: 'rgba(10,14,35,0.8)', backdropFilter: 'blur(10px)' }}
+         style={{ background: 'rgba(28,28,31,0.8)', backdropFilter: 'blur(10px)' }}
          onClick={onClose}>
       <div
         className="modal-anim bg-white rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden"
@@ -96,14 +96,14 @@ export function AdModal({ ad, onClose }: AdModalProps) {
         onClick={e => e.stopPropagation()}
       >
         {/* Accent stripe */}
-        <div className="h-1 flex-shrink-0" style={{ background: `linear-gradient(90deg,${color},${color}60)` }}/>
+        <div className="h-1 flex-shrink-0" style={{ background: `${color}` }}/>
 
         {/* Header — fixed, never scrolls */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 flex-shrink-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
                   style={{ background: `${color}15`, color }}>
-              <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0"
+              <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black text-[#131315] flex-shrink-0"
                     style={{ background: color }}>{comp?.name[0]}</span>
               {comp?.name ?? ad.Domain}
             </span>
@@ -112,7 +112,7 @@ export function AdModal({ ad, onClose }: AdModalProps) {
             </span>
             {ad.Status === 'active' && (
               <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block"/> Active
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"/> Active
               </span>
             )}
           </div>
@@ -135,7 +135,7 @@ export function AdModal({ ad, onClose }: AdModalProps) {
             {ad.CTA && ad.CTA.length < 45 && (
               <div>
                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Call to Action</p>
-                <span className="inline-block text-white text-xs font-bold px-4 py-1.5 rounded-xl"
+                <span className="inline-block text-[#131315] text-xs font-bold px-4 py-1.5 rounded-xl"
                       style={{ background: color }}>{ad.CTA}</span>
               </div>
             )}
@@ -159,7 +159,7 @@ export function AdModal({ ad, onClose }: AdModalProps) {
             {ad['Destination URL'] && (
               <a href={ad['Destination URL'].startsWith('http') ? ad['Destination URL'] : `https://${ad['Destination URL']}`}
                  target="_blank" rel="noopener noreferrer"
-                 className="cta-shine flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl"
+                 className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl"
                  style={{ background: `${color}12`, color }}>
                 <Globe size={11}/>
                 <span className="truncate">{truncate(ad['Destination URL'].replace(/https?:\/\//, ''), 38)}</span>
@@ -178,7 +178,7 @@ export function AdModal({ ad, onClose }: AdModalProps) {
                   <ul className="space-y-1.5">
                     {points.slice(0, 5).map((p, i) => (
                       <li key={i} className="flex items-start gap-2 text-[11px] text-slate-600 leading-relaxed">
-                        <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0 mt-0.5 text-white"
+                        <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0 mt-0.5 text-[#131315]"
                               style={{ background: color }}>{i+1}</span>
                         {p}
                       </li>

@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import {
-  LayoutDashboard, Image, Users, Sparkles, Brain,
+  LayoutDashboard, Image, Users, Palette, Brain,
   RefreshCw, ExternalLink, CheckCircle2,
-  Menu, X, TrendingUp, ArrowRight
+  Menu, X, TrendingUp
 } from 'lucide-react';
 import type { Ad, TabId, NavParams } from './lib/types';
 import { COMPETITORS } from './lib/types';
@@ -27,127 +27,43 @@ const Mark = ({ size }: { size: number }) => (
   <span aria-hidden="true" style={{ width: size, height: size, borderRadius: Math.round(size / 3), background: '#C6F24E', display: 'block', flexShrink: 0 }} />
 )
 
-/* ── Count-up ─────────────────────────────────────────── */
-function useCountUp(target: number, duration = 1200) {
-  const [val, setVal] = useState(0);
-  const raf = useRef<number>(0);
-  useEffect(() => {
-    let start: number | null = null;
-    const tick = (ts: number) => {
-      if (!start) start = ts;
-      const p = Math.min((ts - start) / duration, 1);
-      setVal(Math.round((1 - Math.pow(1 - p, 4)) * target));
-      if (p < 1) raf.current = requestAnimationFrame(tick);
-    };
-    raf.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf.current);
-  }, [target, duration]);
-  return val;
-}
-
 /* ── Nav tabs ─────────────────────────────────────────── */
 const NAV: { id: TabId; label: string; icon: React.ReactNode; desc: string }[] = [
   { id: 'insights',    label: 'Insights',          icon: <Brain           size={18}/>, desc: 'Market intelligence'   },
   { id: 'overview',    label: 'Overview',          icon: <LayoutDashboard size={18}/>, desc: 'Charts & summary'      },
   { id: 'gallery',     label: 'Ad Gallery',        icon: <Image           size={18}/>, desc: 'Browse all creatives'  },
   { id: 'competitors', label: 'Competitors',       icon: <Users           size={18}/>, desc: 'Deep competitor intel' },
-  { id: 'creative',    label: 'Creative Analysis', icon: <Sparkles        size={18}/>, desc: 'Keywords & messaging'  },
+  { id: 'creative',    label: 'Creative Analysis', icon: <Palette         size={18}/>, desc: 'Keywords & messaging'  },
 ];
 
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/16U5_QSxMmrAGKvK5dHScBu1Et4BJ1p8Q1ns5LycRA0s/edit';
 type DataStatus = 'embedded' | 'loading' | 'live' | 'error';
 
-/* ── Gradient stat card ───────────────────────────────── */
-function GradientCard({
-  value, label, sub, gradient, icon, delay = '', hint, onClick,
+/* ── Stat tile ────────────────────────────────────────── */
+// Bento: a flat opaque tile, number in the display face. The first tile is
+// the one filled tile on the page ("colour is load-bearing"); no count-up,
+// tilt, shine or click sparkles -- the number is simply there.
+function StatTile({
+  value, label, sub, icon, hint, filled = false, onClick,
 }: {
-  value: number; label: string; sub: string;
-  gradient: string; icon: React.ReactNode;
-  delay?: string; hint: string; onClick: () => void;
+  value: number; label: string; sub: string; icon: React.ReactNode;
+  hint: string; filled?: boolean; onClick: () => void;
 }) {
-  const count = useCountUp(value);
-  const [sparkles, setSparkles] = useState<Array<{ id: number; x: number; y: number; color: string }>>([]);
-  const sparkleId = useRef(0);
-
-  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    e.currentTarget.style.setProperty('--mx', `${e.clientX - r.left}px`);
-    e.currentTarget.style.setProperty('--my', `${e.clientY - r.top}px`);
-    const rx = ((e.clientY - r.top) / r.height - 0.5) * -4;
-    const ry = ((e.clientX - r.left) / r.width  - 0.5) *  4;
-    e.currentTarget.style.setProperty('--rx', `${rx}deg`);
-    e.currentTarget.style.setProperty('--ry', `${ry}deg`);
-  };
-  const handleLeave = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.currentTarget.style.setProperty('--rx', '0deg');
-    e.currentTarget.style.setProperty('--ry', '0deg');
-  };
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    const cx = e.clientX - r.left;
-    const cy = e.clientY - r.top;
-    const colors = ['#fff', '#fef08a', '#bef264', '#fda4af'];
-    const newSparkles = Array.from({ length: 10 }, (_, i) => {
-      const angle = (i / 10) * Math.PI * 2;
-      const dist = 30 + Math.random() * 40;
-      return {
-        id: sparkleId.current++,
-        x: cx + Math.cos(angle) * dist,
-        y: cy + Math.sin(angle) * dist,
-        color: colors[i % colors.length],
-      };
-    });
-    setSparkles(s => [...s, ...newSparkles]);
-    setTimeout(() => setSparkles(s => s.filter(sp => !newSparkles.find(n => n.id === sp.id))), 700);
-    onClick();
-  };
-
   return (
-    <div
-      onClick={handleClick}
-      onMouseMove={handleMove}
-      onMouseLeave={handleLeave}
-      className={`spotlight shine-on-hover relative overflow-hidden rounded-2xl p-5 text-white cursor-pointer anim-fade-up ${delay}
-                  group transition-all duration-300 hover:shadow-2xl active:scale-[0.97]`}
-      style={{
-        background: gradient,
-        transform: 'perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) scale(1)',
-        minHeight: '190px',
-      }}
-    >
-      {/* Decorative absolutes — inline style keeps position:absolute even inside .spotlight */}
-      <div className="stat-shimmer pointer-events-none" style={{ position: 'absolute', inset: 0 }} />
-      <div className="w-28 h-28 rounded-full bg-white/10 pointer-events-none anim-float"
-           style={{ position: 'absolute', right: '-1.5rem', top: '-1.5rem' }} />
-      <div className="w-20 h-20 rounded-full bg-white/5 pointer-events-none anim-breathe"
-           style={{ position: 'absolute', right: '-0.5rem', bottom: '-2rem' }} />
-
-      {/* Sparkles on click */}
-      {sparkles.map(s => (
-        <span key={s.id} className="particle"
-              style={{ position: 'absolute', left: s.x, top: s.y, background: s.color, boxShadow: `0 0 8px ${s.color}` }}/>
-      ))}
-
-      {/* spotlight-content raises this above the ::after spotlight overlay */}
-      <div className="spotlight-content">
-        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">{icon}</div>
-        <p className="text-3xl font-black tracking-tight leading-none num-pop">{count}</p>
-        <p className="text-sm font-semibold mt-1 text-white/90">{label}</p>
-        <p className="text-xs mt-0.5 text-white/60">{sub}</p>
-      </div>
-      {/* hover hint — absolutely positioned so it doesn't affect card height */}
-      <div className="flex items-center gap-1 text-[11px] font-semibold text-white/0 group-hover:text-white/90 transition-all translate-y-1 group-hover:translate-y-0 duration-200 pointer-events-none"
-           style={{ position: 'absolute', bottom: '1rem', left: '1.25rem', right: '1.25rem', zIndex: 2 }}>
-        {hint} <ArrowRight size={11} className="group-hover:translate-x-1 transition-transform"/>
-      </div>
-    </div>
+    <button type="button" onClick={onClick} title={hint}
+      className={`bn-tile text-left ${filled ? 'bn-tile--fill' : ''}`}>
+      <span className="bn-tile-icon" aria-hidden="true">{icon}</span>
+      <span className="bn-tile-label">{label}</span>
+      <span className="bn-tile-num">{value}</span>
+      <span className="bn-tile-sub">{sub}</span>
+    </button>
   );
 }
 
-/* ── Global Platform header (consistent across the platform) ── */
-const kpDdItem: CSSProperties = { display: 'flex', alignItems: 'center', gap: 9, padding: '9px 12px', borderRadius: 8, color: '#9fabbe', textDecoration: 'none', fontSize: 12.5 };
+/* ── Global Platform header (the product bar every page shares) ── */
+const kpDdItem: CSSProperties = { display: 'flex', alignItems: 'center', gap: 9, padding: '9px 12px', borderRadius: 8, color: '#8B8B93', textDecoration: 'none', fontSize: 13 };
 function PlatformBar() {
-  const [u, setU] = useState<{ name?: string; given_name?: string; email?: string; picture?: string } | null>(null);
+  const [u, setU] = useState<{ name?: string; given_name?: string; email?: string; picture?: string; is_admin?: boolean } | null>(null);
   const [open, setOpen] = useState(false);
   useEffect(() => { fetch('/api/whoami').then(r => r.json()).then(setU).catch(() => {}); }, []);
   useEffect(() => {
@@ -160,39 +76,38 @@ function PlatformBar() {
   }, []);
   const nm = u?.given_name || u?.name || 'Account';
   const full = u?.name || nm;
-  const isAdmin = u?.email === 'krishna.ladha@position2.com' || u?.email === 'sudheer.d@position2.com';
+  // Admin links follow the server's ADMIN_EMAILS via /api/whoami, not a list
+  // of addresses baked into this bundle.
+  const isAdmin = !!u?.is_admin;
   return (
-    <div style={{ height: 46, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 14, padding: '0 18px', background: 'rgba(6,9,20,.96)', borderBottom: '1px solid rgba(129,140,248,.16)', position: 'relative', zIndex: 60 }}>
-      <a href="/p2/hub" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 10px', borderRadius: 8, background: '#151b2e' }}>
-          <Mark size={12} />
-          <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-0.02em', color: '#EFE9DC', lineHeight: 1 }}>{BRAND_NAME}</span>
-        </span>
+    <div className="bn-bar">
+      <a href="/p2/hub" className="bn-bar-brand">
+        <Mark size={12} />
+        <span>{BRAND_NAME}</span>
       </a>
-      <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 8, fontSize: 12.5, minWidth: 0, marginLeft: 2, paddingLeft: 14, borderLeft: '1px solid rgba(255,255,255,.1)' }}>
-        <a href="/p2/hub" style={{ color: '#64748b', textDecoration: 'none' }}>Hub</a>
-        <span style={{ color: '#334155' }}>›</span>
-        <a href="/p2/strategic-agents" style={{ color: '#64748b', textDecoration: 'none' }}>Strategic Agents</a>
-        <span style={{ color: '#334155' }}>›</span>
-        <span style={{ color: '#818cf8', fontWeight: 600 }}>Ad Intelligence</span>
-      </div>
+      <nav className="bn-bar-crumbs hidden sm:flex" aria-label="Breadcrumb">
+        <a href="/p2/hub">Workspace</a>
+        <span aria-hidden="true">/</span>
+        <a href="/p2/strategic-agents">Agents</a>
+        <span aria-hidden="true">/</span>
+        <span className="bn-bar-cur">Ad Intelligence</span>
+      </nav>
       <div id="kp-right" style={{ marginLeft: 'auto', position: 'relative', flexShrink: 0 }}>
-        <div onClick={() => setOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 9, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 999, padding: '4px 13px 4px 4px', cursor: 'pointer' }}>
-          <span style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#f97316,#ea580c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: '#fff', overflow: 'hidden' }}>
-            {u?.picture ? <img src={u.picture} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (nm || 'U').slice(0, 1).toUpperCase()}
+        <button type="button" onClick={() => setOpen(o => !o)} className="bn-bar-user">
+          <span className="bn-bar-av">
+            {u?.picture ? <img src={u.picture} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (nm || 'U').slice(0, 2).toUpperCase()}
           </span>
-          <span className="hidden sm:inline" style={{ fontSize: 13, color: '#cbd5e1', fontWeight: 500 }}>{nm}</span>
-          <span style={{ fontSize: 9, color: '#64748b' }}>▼</span>
-        </div>
+          <span className="hidden sm:inline">{nm}</span>
+        </button>
         {open && (
-          <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, minWidth: 224, background: '#0b1326', border: '1px solid rgba(129,140,248,.25)', borderRadius: 12, boxShadow: '0 20px 60px rgba(0,0,0,.7)', padding: 6, zIndex: 80 }}>
-            <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,.06)', marginBottom: 6 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#e6edf6' }}>{full}</div>
-              <div style={{ fontSize: 11, color: '#55617a', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u?.email || ''}</div>
+          <div className="bn-bar-menu">
+            <div style={{ padding: '10px 12px', marginBottom: 4 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#EFE9DC' }}>{full}</div>
+              <div style={{ fontSize: 11, color: '#5E5E66', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u?.email || ''}</div>
             </div>
-            <a href="/p2/hub" style={kpDdItem}>⌂&nbsp; Hub</a>
-            {isAdmin && <a href="/p2/admin/usage" style={kpDdItem}>⚙&nbsp; Usage Dashboard</a>}
-            <a href="/logout" style={{ ...kpDdItem, color: '#fb7185' }}>→&nbsp; Sign out</a>
+            <a href="/p2/hub" style={kpDdItem}>Workspace</a>
+            {isAdmin && <a href="/p2/admin/usage" style={kpDdItem}>Usage dashboard</a>}
+            <a href="/logout" style={{ ...kpDdItem, color: '#E8663D' }}>Sign out</a>
           </div>
         )}
       </div>
@@ -258,164 +173,104 @@ export default function App() {
   const tabLabel    = NAV.find(n => n.id === tab)?.label ?? '';
 
   return (
-    <div className="flex flex-col h-screen w-full overflow-hidden">
+    <div className="flex flex-col h-screen w-full overflow-hidden bn-app">
       <PlatformBar />
-      <div className="flex flex-1 min-w-0 overflow-hidden bg-[#0c1120]">
+      <div className="flex flex-1 min-w-0 overflow-hidden">
 
       {/* Mobile overlay */}
       {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setSidebar(false)} />}
 
       {/* ── SIDEBAR ───────────────────────────────────── */}
-      <aside className={`sidebar fixed lg:static inset-y-0 left-0 z-50 w-64 flex flex-col
-        transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside className={`sidebar bn-side fixed lg:static inset-y-0 left-0 z-50 w-64 flex flex-col
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
 
-        {/* Logo */}
-        <div className="flex items-center justify-between px-5 py-5 border-b border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#151b2e' }}>
-              <Mark size={16} />
-            </div>
-            <div>
-              <p className="gradient-text-anim font-bold text-sm leading-none">Ad Intelligence</p>
-              <p className="text-white/40 text-xs mt-0.5">Competitor Tracker</p>
-            </div>
+        <div className="flex items-center justify-between px-5 pt-6 pb-4">
+          <div>
+            <p className="bn-side-title">Ad Intelligence</p>
+            <p className="bn-side-sub">Competitor tracker</p>
           </div>
-          <button onClick={() => setSidebar(false)} className="lg:hidden text-white/40 hover:text-white"><X size={18}/></button>
+          <button onClick={() => setSidebar(false)} className="lg:hidden bn-icon-btn" aria-label="Close menu"><X size={18}/></button>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          <p className="text-white/25 text-[10px] font-semibold uppercase tracking-widest px-3 mb-3">Navigation</p>
+        <nav className="flex-1 px-3 pb-4 space-y-1 overflow-y-auto">
           {NAV.map(item => {
             const isActive = tab === item.id;
             return (
               <button key={item.id} onClick={() => { setTab(item.id); setSidebar(false); }}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 group relative
-                        ${isActive ? 'bg-indigo-500/20 text-white nav-active-bg' : 'text-white/45 hover:text-white/80 hover:bg-white/5'}`}>
-                <span className={`flex-shrink-0 transition-all duration-300 ${isActive ? 'text-indigo-400 scale-110' : 'text-white/30 group-hover:text-white/60 group-hover:scale-110 group-hover:-rotate-6'}`}>{item.icon}</span>
-                <span>
-                  <span className="block text-sm font-medium leading-none">{item.label}</span>
-                  <span className={`block text-[10px] mt-0.5 ${isActive ? 'text-indigo-300/70' : 'text-white/25'}`}>{item.desc}</span>
+                      className={`bn-nav ${isActive ? 'is-active' : ''}`}
+                      aria-current={isActive ? 'page' : undefined}>
+                <span className="bn-nav-icon">{item.icon}</span>
+                <span className="min-w-0">
+                  <span className="block bn-nav-label">{item.label}</span>
+                  <span className="block bn-nav-desc">{item.desc}</span>
                 </span>
-                {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0 nav-dot" />}
               </button>
             );
           })}
 
-          <p className="text-white/25 text-[10px] font-semibold uppercase tracking-widest px-3 mt-5 mb-3">Competitors</p>
+          <p className="bn-side-label">Competitors</p>
           {COMPETITORS.map(c => (
             <button key={c.domain}
                     onClick={() => navigateTo({ tab: 'competitors', competitor: c.domain })}
-                    className="comp-item w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                   style={{ backgroundColor: c.color }}>{c.name[0]}</div>
-              <div className="min-w-0 text-left">
-                <p className="text-white/60 text-xs font-medium truncate group-hover:text-white/80 transition-colors">{c.name}</p>
-                <p className="text-white/25 text-[10px] truncate">{c.domain}</p>
-              </div>
-              <ArrowRight size={11} className="ml-auto text-white/0 group-hover:text-white/30 transition-colors flex-shrink-0" />
+                    className="bn-nav">
+              <span className="bn-comp-dot" style={{ backgroundColor: c.color }}>{c.name[0]}</span>
+              <span className="min-w-0 text-left">
+                <span className="block bn-nav-label truncate">{c.name}</span>
+                <span className="block bn-nav-desc truncate">{c.domain}</span>
+              </span>
             </button>
           ))}
         </nav>
 
-        {/* Footer */}
-        <div className="px-4 py-4 border-t border-white/5 space-y-2">
-
-          {/* Action buttons */}
-          <div className="flex gap-2">
-            <button onClick={loadLive} disabled={status === 'loading'}
-                    className="ripple-btn flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white/6 hover:bg-white/10 text-white/50 hover:text-white/80 text-xs font-semibold transition-all disabled:opacity-40 border border-white/8 active:scale-95">
-              <RefreshCw size={11} className={status === 'loading' ? 'animate-spin' : 'transition-transform group-hover:rotate-180'}/> Sync
-            </button>
-            <a href={SHEET_URL} target="_blank" rel="noopener noreferrer"
-               className="ripple-btn flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white/6 hover:bg-white/10 text-white/50 hover:text-white/80 text-xs font-semibold transition-all border border-white/8 active:scale-95">
-              <ExternalLink size={11}/> Sheet
-            </a>
-          </div>
+        <div className="px-4 py-4 flex gap-2">
+          <button onClick={loadLive} disabled={status === 'loading'} className="bn-btn flex-1">
+            <RefreshCw size={12} className={status === 'loading' ? 'animate-spin' : ''}/> Sync
+          </button>
+          <a href={SHEET_URL} target="_blank" rel="noopener noreferrer" className="bn-btn flex-1">
+            <ExternalLink size={12}/> Sheet
+          </a>
         </div>
       </aside>
 
       {/* ── MAIN ──────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#0c1120]">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-        {/* Top bar */}
-        <header className="header-glow flex-shrink-0 bg-[#0d1324]/95 backdrop-blur-md border-b border-white/6 px-5 py-0 flex items-center gap-4 sticky top-0 z-30" style={{ minHeight: '52px' }}>
-          <button onClick={() => setSidebar(true)} className="lg:hidden text-white/50 hover:text-white flex-shrink-0"><Menu size={20}/></button>
-
-          {/* Left: breadcrumb-style title */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: '#151b2e' }}>
-              <Mark size={12} />
-            </div>
-            <div className="hidden sm:flex items-center gap-1.5 font-medium">
-              <span className="text-[13px] text-white/70">Ad Intelligence</span>
-              <span className="text-xs text-white/30">/</span>
-            </div>
-            <h1 key={tab} className="title-reveal text-sm font-bold text-white leading-none truncate">
-              {tabLabel.split(' ').map((w, i) => (
-                <span key={i} style={{ animationDelay: `${i * 0.06}s`, marginRight: '0.25rem' }}>{w}</span>
-              ))}
-            </h1>
+        <header className="bn-head">
+          <button onClick={() => setSidebar(true)} className="lg:hidden bn-icon-btn" aria-label="Open menu"><Menu size={20}/></button>
+          <div className="min-w-0">
+            <p className="bn-eyebrow hidden sm:block">Strategic agents &middot; Competitor ads</p>
+            <h1 className="bn-h1 truncate">{tabLabel}</h1>
           </div>
-
-          {/* Right: pills */}
           <div className="ml-auto flex items-center gap-2 flex-shrink-0">
-            {/* Updated pill */}
-            <button
-              onClick={loadLive}
-              disabled={status === 'loading'}
-              className="hidden sm:flex items-center gap-1.5 text-[11px] font-medium text-white/35 hover:text-white/65 px-2.5 py-1.5 rounded-lg hover:bg-white/6 transition-all disabled:opacity-40"
-            >
-              <RefreshCw size={10} className={status === 'loading' ? 'animate-spin text-indigo-400' : ''}/>
+            <button onClick={loadLive} disabled={status === 'loading'} className="bn-btn bn-btn--ghost hidden sm:inline-flex">
+              <RefreshCw size={12} className={status === 'loading' ? 'animate-spin' : ''}/>
               {status === 'loading' ? 'Syncing…' : `Updated ${timeAgo}`}
             </button>
-
-            {/* Live badge */}
             {status === 'live' && (
-              <div className="hidden sm:flex items-center gap-1.5 bg-emerald-500/12 text-emerald-400 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border border-emerald-500/18">
-                <span className="live-dot" style={{ width: 6, height: 6 }}/> Live
-              </div>
+              <span className="bn-live hidden sm:inline-flex"><span className="live-dot" aria-hidden="true"/> Live</span>
             )}
-
-            <a href={SHEET_URL} target="_blank" rel="noopener noreferrer"
-               className="hidden sm:flex items-center gap-1.5 text-[11px] font-medium text-white/35 hover:text-white/65 px-2.5 py-1.5 rounded-lg hover:bg-white/6 transition-all border border-white/8">
-              <ExternalLink size={11}/> Sheet
-            </a>
           </div>
         </header>
 
-        {/* Scrollable body */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden dot-bg bg-orbs">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bn-main">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 pb-10">
 
-            {/* Clickable stat cards */}
-            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-7">
-              <GradientCard value={total} label="Total Ads Tracked" sub={`${competitors} competitors`}
-                gradient="linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)" delay="delay-1"
-                icon={<TrendingUp size={20} className="text-white"/>}
-                hint="Browse all ads"
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-[10px] mb-6">
+              <StatTile value={total} label="Total ads tracked" sub={`${competitors} competitors`} filled
+                icon={<TrendingUp size={16}/>} hint="Browse all ads"
                 onClick={() => navigateTo({ tab: 'gallery', domain: 'all', format: 'all', search: '' })} />
-
-              <GradientCard value={active} label="Active Ads" sub={`${Math.round((active/total)*100)}% of total`}
-                gradient="linear-gradient(135deg,#10b981 0%,#0891b2 100%)" delay="delay-2"
-                icon={<CheckCircle2 size={20} className="text-white"/>}
-                hint="View competitor breakdown"
+              <StatTile value={active} label="Active ads" sub={`${total ? Math.round((active/total)*100) : 0}% of total`}
+                icon={<CheckCircle2 size={16}/>} hint="View competitor breakdown"
                 onClick={() => navigateTo({ tab: 'competitors' })} />
-
-              <GradientCard value={withImg} label="Image Creatives" sub={`${ads.filter(a=>a.Format==='video').length} video ads`}
-                gradient="linear-gradient(135deg,#0ea5e9 0%,#3b82f6 100%)" delay="delay-3"
-                icon={<Image size={20} className="text-white"/>}
-                hint="Filter image ads"
+              <StatTile value={withImg} label="Image creatives" sub={`${ads.filter(a=>a.Format==='video').length} video ads`}
+                icon={<Image size={16}/>} hint="Filter image ads"
                 onClick={() => navigateTo({ tab: 'gallery', format: 'image', domain: 'all', search: '' })} />
-
-              <GradientCard value={competitors} label="Competitors" sub="Google Ads data"
-                gradient="linear-gradient(135deg,#f59e0b 0%,#ef4444 100%)" delay="delay-4"
-                icon={<Users size={20} className="text-white"/>}
-                hint="Explore all competitors"
+              <StatTile value={competitors} label="Competitors" sub="Google Ads data"
+                icon={<Users size={16}/>} hint="Explore all competitors"
                 onClick={() => navigateTo({ tab: 'competitors' })} />
             </div>
 
-            {/* Active tab */}
+            {/* Active tab: the one Bento motion, a 150ms opacity fade */}
             <div key={tab} className="tab-enter">
               {tab === 'insights' && (
                 <InsightsTab ads={ads} onNav={navigateTo} />

@@ -8,7 +8,7 @@ import { getTopKeywords, getMessagingPoints } from '../lib/utils';
 
 interface CreativeTabProps { ads: Ad[]; onNav: NavFn; }
 
-const PALETTE = ['#6366f1','#8b5cf6','#0ea5e9','#10b981','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316','#84cc16'];
+const PALETTE = ['#5AA9E6','#C6F24E','#E8663D','#EFE9DC','#7ABDF0','#D4FA63','#F07A54','#8B8B93'];
 
 const DarkTip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => {
   if (!active || !payload?.length) return null;
@@ -77,11 +77,11 @@ export function CreativeTab({ ads, onNav }: CreativeTabProps) {
           return (
             <div key={label}
                  onClick={() => onNav({ tab: 'gallery', format, domain: 'all', search: '' })}
-                 className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 text-center card-lift cursor-pointer group hover:border-indigo-200 transition-colors anim-fade-up"
-                 style={{ animationDelay: `${i*0.06}s` }}>
+                 className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 text-center cursor-pointer group hover:border-indigo-200 transition-colors anim-fade-up"
+                 style={{}}>
               <div className="relative w-20 h-20 mx-auto mb-3">
                 <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f1f5f9" strokeWidth="3"/>
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#EFE9DC" strokeWidth="3"/>
                   <circle cx="18" cy="18" r="15.9" fill="none" stroke={col} strokeWidth="3"
                           strokeDasharray={`${pct} ${100-pct}`} strokeLinecap="round"/>
                 </svg>
@@ -112,10 +112,10 @@ export function CreativeTab({ ads, onNav }: CreativeTabProps) {
                 </linearGradient>
               ))}
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f8fafc" horizontal={false}/>
-            <XAxis type="number" tick={{ fontSize:10, fill:'#94a3b8' }} tickLine={false} axisLine={false}/>
-            <YAxis dataKey="keyword" type="category" tick={{ fontSize:10, fill:'#475569' }} tickLine={false} axisLine={false} width={170}/>
-            <Tooltip content={<DarkTip/>} cursor={{ fill:'rgba(99,102,241,0.04)' }}/>
+            <CartesianGrid strokeDasharray="3 3" stroke="#EFE9DC" horizontal={false}/>
+            <XAxis type="number" tick={{ fontSize:10, fill:'#8B8B93' }} tickLine={false} axisLine={false}/>
+            <YAxis dataKey="keyword" type="category" tick={{ fontSize:10, fill:'#5E5E66' }} tickLine={false} axisLine={false} width={170}/>
+            <Tooltip content={<DarkTip/>} cursor={{ fill:'rgba(90,169,230,0.04)' }}/>
             <Bar dataKey="count" radius={[0,6,6,0]} name="Count"
                  onClick={(data: unknown) => { const d = data as { keyword: string }; onNav({ tab: 'gallery', search: d.keyword, domain: 'all', format: 'all' }); }}>
               {topKW.map((_, i) => <Cell key={i} fill={`url(#kwg${i})`}/>)}
@@ -139,7 +139,7 @@ export function CreativeTab({ ads, onNav }: CreativeTabProps) {
                       <span className="font-bold flex-shrink-0" style={{ color: comp.color }}>{count}</span>
                     </div>
                     <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width:`${pct}%`, background:`linear-gradient(90deg,${comp.color},${comp.color}80)`, transition:'width 0.8s ease' }}/>
+                      <div className="h-full rounded-full" style={{ width:`${pct}%`, background:`${comp.color}`, transition:'width 0.8s ease' }}/>
                     </div>
                   </button>
                 );
@@ -165,7 +165,7 @@ export function CreativeTab({ ads, onNav }: CreativeTabProps) {
               return (
                 <button key={i}
                         onClick={() => onNav({ tab: 'gallery', search: w, domain: 'all', format: 'all' })}
-                        className="px-3 py-1.5 rounded-full font-semibold text-white transition-all hover:scale-110 hover:shadow-lg flex items-center gap-1 group"
+                        className="px-3 py-1.5 rounded-full font-semibold text-white transition-all flex items-center gap-1 group"
                         style={{ fontSize:`${size}px`, background: col }}>
                   {w}
                   <Search size={Math.max(9,size-6)} className="opacity-0 group-hover:opacity-70 transition-opacity"/>
@@ -185,7 +185,7 @@ export function CreativeTab({ ads, onNav }: CreativeTabProps) {
               return (
                 <button key={i}
                         onClick={() => onNav({ tab: 'gallery', search: phrase, domain: 'all', format: 'all' })}
-                        className="rounded-xl p-3 card-lift text-left group hover:shadow-md transition-all"
+                        className="rounded-xl p-3 text-left group transition-all"
                         style={{ background: `${col}0f` }}>
                   <p className="text-xs font-bold capitalize leading-snug mb-1 group-hover:underline" style={{ color: col }}>"{phrase}"</p>
                   <p className="text-[10px] text-slate-400">{count} ad{count > 1 ? 's' : ''}</p>

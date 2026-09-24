@@ -36,7 +36,7 @@ function Card({ title, subtitle, action, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col card-glow h-full">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col h-full">
       <div className="flex items-start justify-between mb-3 flex-shrink-0">
         <div>
           <h3 className="text-sm font-bold text-slate-800">{title}</h3>
@@ -92,7 +92,7 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
     name: n[0].toUpperCase() + n.slice(1),
     rawName: n.toLowerCase(),
     value: v,
-    fill: FORMAT_COLORS[n.toLowerCase()] || '#94a3b8',
+    fill: FORMAT_COLORS[n.toLowerCase()] || '#8B8B93',
   }));
 
   const ctaData = ctaCounts.slice(0, 8).map(({ cta, count }) => ({ name: cta, count }));
@@ -109,7 +109,7 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
 
         {/* Competitor bar — click bar → Competitors tab */}
-        <div className="anim-pop-in delay-1"><Card title="Ads by Competitor" subtitle="Click a bar to deep-dive"
+        <div className="anim-pop-in"><Card title="Ads by Competitor" subtitle="Click a bar to deep-dive"
               action={{ label: 'View all', onClick: () => onNav({ tab: 'competitors' }) }}>
           <ResponsiveContainer width="100%" height="100%" minHeight={180}>
             <BarChart data={compData} barSize={36} maxBarSize={44} barCategoryGap="30%" margin={{ top: 4, bottom: 0 }}
@@ -123,9 +123,9 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
                 ))}
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" vertical={false}/>
-              <XAxis dataKey="shortName" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false}/>
-              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false}/>
-              <Tooltip content={<DarkTip />} cursor={{ fill: 'rgba(99,102,241,0.06)' }}/>
+              <XAxis dataKey="shortName" tick={{ fontSize: 10, fill: '#8B8B93' }} tickLine={false} axisLine={false}/>
+              <YAxis tick={{ fontSize: 10, fill: '#8B8B93' }} tickLine={false} axisLine={false}/>
+              <Tooltip content={<DarkTip />} cursor={{ fill: 'rgba(90,169,230,0.06)' }}/>
               <Bar dataKey="ads" radius={[8,8,0,0]} name="Ads"
                    onClick={(data: unknown) => { const d = data as { domain: string }; onNav({ tab: 'competitors', competitor: d.domain }); }}>
                 {compData.map((_, i) => <Cell key={i} fill={`url(#cg${i})`}/>)}
@@ -135,7 +135,7 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
         </Card></div>
 
         {/* Format pie — click slice → Gallery filtered */}
-        <div className="anim-pop-in delay-2"><Card title="Format Distribution" subtitle="Click a slice to filter gallery"
+        <div className="anim-pop-in"><Card title="Format Distribution" subtitle="Click a slice to filter gallery"
               action={{ label: 'Gallery', onClick: () => onNav({ tab: 'gallery', format: 'all' }) }}>
           <ResponsiveContainer width="100%" height="100%" minHeight={180}>
             <PieChart style={{ cursor: 'pointer' }}>
@@ -153,19 +153,19 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
                 {fmtData.map((_, i) => <Cell key={i} fill={`url(#fg${i})`}/>)}
               </Pie>
               <Legend iconType="circle" iconSize={8}
-                      formatter={v => <span style={{ fontSize: 11, color: '#94a3b8', cursor: 'pointer' }}>{v}</span>}/>
+                      formatter={v => <span style={{ fontSize: 11, color: '#8B8B93', cursor: 'pointer' }}>{v}</span>}/>
               <Tooltip content={<DarkTip/>}/>
             </PieChart>
           </ResponsiveContainer>
         </Card></div>
 
         {/* CTA bars — click → Gallery with search */}
-        <div className="anim-pop-in delay-3"><Card title="Top CTAs" subtitle="Click a CTA to search gallery"
+        <div className="anim-pop-in"><Card title="Top CTAs" subtitle="Click a CTA to search gallery"
               action={{ label: 'Browse', onClick: () => onNav({ tab: 'gallery' }) }}>
           <div className="space-y-2 w-full">
             {ctaData.slice(0, 6).map(({ name, count }, i) => {
               const pct = (count / (ctaData[0]?.count || 1)) * 100;
-              const cols = ['#6366f1','#8b5cf6','#0ea5e9','#10b981','#f59e0b','#ef4444','#ec4899','#14b8a6'];
+              const cols = ['#5AA9E6','#C6F24E','#E8663D','#EFE9DC','#7ABDF0','#D4FA63','#F07A54','#8B8B93'];
               const c = cols[i % cols.length];
               return (
                 <button key={i} className="w-full text-left group hover:opacity-80 transition-opacity"
@@ -200,14 +200,14 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
                 ))}
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)"/>
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} tickFormatter={d => d.slice(5)}/>
-              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} allowDecimals={false}/>
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#8B8B93' }} tickLine={false} axisLine={false} tickFormatter={d => d.slice(5)}/>
+              <YAxis tick={{ fontSize: 10, fill: '#8B8B93' }} tickLine={false} axisLine={false} allowDecimals={false}/>
               <Tooltip content={<DarkTip/>}/>
               <Legend iconType="circle" iconSize={8}
                       onClick={(e: unknown) => { const d = e as { value?: string }; if (d.value) onNav({ tab: 'competitors', competitor: d.value }); }}
                       formatter={(v: string) => {
                         const c = COMPETITORS.find(x => x.domain === v);
-                        return <span style={{ fontSize: 10, color: '#94a3b8', cursor: 'pointer' }}>{c?.name ?? v}</span>;
+                        return <span style={{ fontSize: 10, color: '#8B8B93', cursor: 'pointer' }}>{c?.name ?? v}</span>;
                       }}/>
               {COMPETITORS.map(c => (
                 <Area key={c.domain} type="monotone" dataKey={c.domain} name={c.domain}
@@ -235,7 +235,7 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
             </thead>
             <tbody>
               {recentAds.map((ad, i) => {
-                const col = COMPETITOR_COLORS[ad.Domain] || '#64748b';
+                const col = COMPETITOR_COLORS[ad.Domain] || '#5E5E66';
                 return (
                   <tr key={i}
                       onClick={() => setSelectedAd(ad)}
@@ -275,11 +275,11 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
           return (
             <div key={comp.domain}
                  onClick={() => onNav({ tab: 'competitors', competitor: comp.domain })}
-                 className={`anim-pop-in delay-${ci + 1} bg-white rounded-2xl border border-slate-100 shadow-sm p-4 card-lift cursor-pointer group active:scale-[0.98] transition-all`}>
-              <div className="h-1 rounded-full mb-4 transition-all" style={{ background: `linear-gradient(90deg, ${comp.color}, ${comp.color}50)` }}/>
+                 className={`anim-pop-in delay-${ci + 1} bg-white rounded-2xl border border-slate-100 shadow-sm p-4 cursor-pointer group transition-all`}>
+              <div className="h-1 rounded-full mb-4 transition-all" style={{ background: `${comp.color}` }}/>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-base shadow-md"
-                     style={{ background: `linear-gradient(135deg, ${comp.color}, ${comp.color}aa)` }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[#131315] font-black text-base shadow-md"
+                     style={{ background: `${comp.color}` }}>
                   {comp.name[0]}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -289,7 +289,7 @@ export function OverviewTab({ ads, onNav }: OverviewTabProps) {
                 <ArrowRight size={15} className="text-white/20 group-hover:text-indigo-400 transition-colors flex-shrink-0"/>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center mb-3">
-                {[['Total', compAds.length, '#f1f5f9'], ['Active', statusAct, comp.color], ['Formats', Object.keys(fmts).length, '#f1f5f9']].map(([l,v,col],i) => (
+                {[['Total', compAds.length, '#EFE9DC'], ['Active', statusAct, comp.color], ['Formats', Object.keys(fmts).length, '#EFE9DC']].map(([l,v,col],i) => (
                   <div key={i} className="rounded-xl py-2.5" style={{ background: `${comp.color}0a` }}>
                     <p className="text-xl font-black" style={{ color: col as string }}>{v}</p>
                     <p className="text-[10px] text-slate-400">{l}</p>
