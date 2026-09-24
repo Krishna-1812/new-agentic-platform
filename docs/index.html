@@ -18,7 +18,7 @@
 <link rel="apple-touch-icon" href="/new-agentic-platform/static/favicon.png?v=7">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Zalando+Sans:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/new-agentic-platform/static/css/press.css?v=1"><script>document.documentElement.className+=' js';</script>
+<link rel="stylesheet" href="/new-agentic-platform/static/css/press.css?v=1"><script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' vt');</script>
 </head>
 <body data-page="home">
 
@@ -62,7 +62,12 @@
 
 
 
-  <header class="wrap hero">
+  <header class="wrap hero hero-play"><div class="deck" id="deck" aria-hidden="true">
+      <div class="deck-card c-orange" data-pos="0"><span class="deck-k">Funding round</span><b>Acme Cloud</b><span class="deck-l">Series B &middot; $40M</span><span class="deck-s">9.4</span></div>
+      <div class="deck-card c-amber" data-pos="1"><span class="deck-k">C-suite join</span><b>Northwind</b><span class="deck-l">New VP Marketing</span><span class="deck-s">8.7</span></div>
+      <div class="deck-card c-sky" data-pos="2"><span class="deck-k">Pricing-page visit</span><b>Vertex Labs</b><span class="deck-l">3 visits this week</span><span class="deck-s">8.1</span></div>
+      <div class="deck-card c-ink" data-pos="3"><span class="deck-k">AI answer mention</span><b>Beacon AI</b><span class="deck-l">Cited in 4 answers</span><span class="deck-s">7.5</span></div>
+    </div>
     <span class="lbl rv fade">Agentic revenue intelligence</span>
     <h1 class="d1 rv">
       <span class="ln"><span>Know who&rsquo;s ready</span></span>
@@ -158,12 +163,21 @@
   </div>
 </div>
     </div></div>
-    <p class="shot-cap">Representative product view &middot; animated preview</p>
-    <div class="ledger" style="margin-top:var(--s8)">
-      <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>A prioritised worklist</h4><p>Every in-market account ranked by one intent score, newest signals on top.</p></div></div>
-      <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>The reason, in plain language</h4><p>Each row shows the signal that fired and why it matters. Nothing to decode.</p></div></div>
-      <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>Atlas drafts the next step</h4><p>An embedded analyst researches the account and writes the outreach for you to review and send.</p></div></div>
-      <div class="ledger-row rv fade"><span class="idx">04</span><div><h4>It acts inside your stack</h4><p>Routes to HubSpot, Salesforce, Slack and Gmail, where your team already is.</p></div></div>
+    <p class="shot-cap">Representative product view &middot; animated preview</p><div class="track" id="track" style="--n:4;margin-top:var(--s8)">
+      <div class="track-pin">
+        <div class="track-tabs" role="tablist" aria-label="What lands on your desk">
+          <button type="button" class="on" data-i="0"><b>01</b>Worklist</button>
+          <button type="button" data-i="1"><b>02</b>The reason</button>
+          <button type="button" data-i="2"><b>03</b>The draft</button>
+          <button type="button" data-i="3"><b>04</b>Your stack</button>
+        </div>
+        <div class="track-view"><div class="track-rail">
+          <article class="track-card c-orange"><span class="track-n">01</span><h4>A prioritised worklist</h4><p>Every in-market account ranked by one intent score, newest signals on top.</p></article>
+          <article class="track-card c-amber"><span class="track-n">02</span><h4>The reason, in plain language</h4><p>Each row shows the signal that fired and why it matters. Nothing to decode.</p></article>
+          <article class="track-card c-sky"><span class="track-n">03</span><h4>Atlas drafts the next step</h4><p>An embedded analyst researches the account and writes the outreach for you to review and send.</p></article>
+          <article class="track-card c-ink"><span class="track-n">04</span><h4>It acts inside your stack</h4><p>Routes to HubSpot, Salesforce, Slack and Gmail, where your team already is.</p></article>
+        </div></div>
+      </div>
     </div>
   </section><section class="inkband">
     <div class="wrap">
@@ -378,27 +392,9 @@
     document.querySelectorAll('.rv').forEach(function(el){ el.classList.add('in'); });
   }
 
-  /* ── count-up ───────────────────────────────────────────────────────
-     The markup carries the final number, so a reader with JS off or an
-     observer that never fires sees 26, not 0. */
-  document.querySelectorAll('[data-count]').forEach(function(el){
-    var target = parseInt(el.getAttribute('data-count'), 10);
-    if (!target || RM || !('IntersectionObserver' in window)) return;
-    var started = false;
-    var ob = new IntersectionObserver(function(es){
-      es.forEach(function(e){
-        if (!e.isIntersecting || started) return;
-        started = true; ob.disconnect();
-        var s = performance.now(), dur = 900;
-        (function step(t){
-          var p = Math.min(1, (t - s) / dur), k = 1 - Math.pow(1 - p, 3);
-          el.textContent = Math.round(target * k);
-          if (p < 1) requestAnimationFrame(step); else el.textContent = target;
-        })(s);
-      });
-    }, {threshold: 0.4});
-    ob.observe(el);
-  });
+  /* ── count-up ──────────────────────────────────────────────────────
+     Moved to press-play.js, which rolls each digit like an odometer. The
+     markup still carries the final number, so JS-off readers see it. */
 
   /* ── the story ──────────────────────────────────────────────────────
      The figure is held by position:sticky; this only decides which step is
@@ -760,6 +756,7 @@
   };
 })();
 </script>
+<script src="/new-agentic-platform/static/js/press-play.js?v=1" defer></script>
 
 <style>
 .pv-note{background:#121213;color:#B5B1AB;width:100%;padding:20px 0;

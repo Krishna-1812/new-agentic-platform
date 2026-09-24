@@ -81,12 +81,49 @@
     el.classList.add("bn-wipe");
   }
 
+  /* ── A little play ─────────────────────────────────────────────────────
+     Three small touches, all off under reduced motion:
+       - a stat number that arrives with the page counts up to itself once;
+       - a primary button floods orange from where the pointer came in;
+       - a chip that turns on gives a small pop (CSS, bento-motion.css).
+     Dashboards keep their data still: the count-up only touches a number
+     the server rendered, and stops the moment the page's own script writes
+     a different value into it. */
+  function countUp(el) {
+    var raw = el.textContent.trim(), m = raw.match(/^(\d{1,3}(?:,\d{3})*|\d+)(\+|%)?$/);
+    if (!m) return;
+    var target = parseInt(m[1].replace(/,/g, ""), 10), suffix = m[2] || "";
+    if (!(target > 1)) return;
+    var start = performance.now(), dur = 900, last = null;
+    function fmt(v) { return (m[1].indexOf(",") > -1 ? v.toLocaleString("en-US") : String(v)) + suffix; }
+    (function step(t) {
+      if (last !== null && el.textContent !== last) return;   /* the page took over */
+      var p = Math.min(1, (t - start) / dur), k = 1 - Math.pow(1 - p, 3);
+      last = fmt(p < 1 ? Math.round(target * k) : target);
+      el.textContent = last;
+      if (p < 1) requestAnimationFrame(step);
+    })(start);
+  }
+  function play() {
+    if (REDUCED) return;
+    document.documentElement.classList.add("bn-play");
+    var nums = document.querySelectorAll(".bn-stat-v, .hb-n b, .hb-c b");
+    for (var i = 0; i < nums.length; i++) countUp(nums[i]);
+    document.addEventListener("pointerover", function (e) {
+      var b = e.target.closest && e.target.closest(".bn-btn--primary, .hb-go, .bn-nav a");
+      if (!b || b.contains(e.relatedTarget)) return;
+      var r = b.getBoundingClientRect();
+      b.style.setProperty("--x", (e.clientX - r.left) + "px");
+      b.style.setProperty("--y", (e.clientY - r.top) + "px");
+    });
+  }
+
   window.bentoReveal = reveal;
   window.bentoRevealNow = revealNow;
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", function () { reveal(document); });
+    document.addEventListener("DOMContentLoaded", function () { reveal(document); play(); });
   } else {
-    reveal(document);
+    reveal(document); play();
   }
 })();

@@ -150,11 +150,11 @@ button.bn-pressable:active {
   animation: bn-vt-out 90ms var(--ease) both;
 }
 ::view-transition-new(root) {
-  animation: bn-vt-in 200ms var(--ease-wipe) both;
+  animation: bn-vt-in 260ms var(--ease-wipe) both;
 }
 
 @keyframes bn-vt-out { to   { opacity: 0 } }
-@keyframes bn-vt-in  { from { opacity: 0 } }
+@keyframes bn-vt-in  { from { opacity: 0; transform: translateY(8px) } }
 
 /* ── REDUCED MOTION ──────────────────────────────────────────────────────
    Everything above resolves to its finished state. Note the wipe must be
@@ -171,4 +171,39 @@ button.bn-pressable:active {
   button.bn-pressable:active { transform: none; }
   ::view-transition-old(root),
   ::view-transition-new(root) { animation: none; }
+}
+
+/* ── PLAY ────────────────────────────────────────────────────────────────
+   Small, quick delights for the working app, scoped to html.bn-play, which
+   bento-motion.js sets only when motion is allowed. Nothing here moves
+   data, and nothing arrives card by card.
+
+   The primary pill floods orange from the point the pointer came in
+   (--x/--y), the way the public site's buttons do; the nav pill and the
+   hub's "Open" do the same in ink. A chip that turns on pops once. */
+.bn-play .bn-btn--primary, .bn-play .hb-go, .bn-play .bn-nav a {
+  position: relative; overflow: hidden; isolation: isolate;
+}
+.bn-play .bn-btn--primary::before, .bn-play .hb-go::before, .bn-play .bn-nav a:not(.is-on)::before {
+  content: ''; position: absolute; z-index: -1; pointer-events: none;
+  left: var(--x, 50%); top: var(--y, 50%); width: 10px; height: 10px; margin: -5px 0 0 -5px;
+  border-radius: 50%; background: var(--acc); transform: scale(0);
+  transition: transform 460ms cubic-bezier(.22, 1, .36, 1);
+}
+.bn-play .bn-nav a:not(.is-on)::before { background: var(--s2); }
+.bn-play .bn-btn--primary:hover::before, .bn-play .hb-go:hover::before,
+.bn-play .hb-ws:hover .hb-go::before, .bn-play .bn-nav a:hover::before { transform: scale(40); }
+.bn-play .bn-btn--primary:hover { background: var(--ink); color: var(--tx-on-fill); }
+.bn-play .bn-nav a:hover { background: transparent; }
+
+@keyframes bn-pop { 0% { transform: scale(1) } 40% { transform: scale(1.08) } 100% { transform: scale(1) } }
+.bn-play .bn-chip.is-on { animation: bn-pop 320ms cubic-bezier(.34, 1.56, .64, 1); }
+
+/* The hub's workspace cards: the arrow slides and the icon tips. */
+.bn-play .hb-ws-ic { transition: transform 420ms cubic-bezier(.34, 1.56, .64, 1); }
+.bn-play .hb-ws:hover .hb-ws-ic { transform: rotate(-10deg) scale(1.1); }
+.bn-play .hb-ws:hover .hb-go { color: var(--tx-on-fill); }
+
+@media (prefers-reduced-motion: reduce) {
+  .bn-play .bn-chip.is-on { animation: none; }
 }

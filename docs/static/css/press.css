@@ -1392,3 +1392,198 @@ a.stat:hover { border-top-color: transparent; }
 .cmp .own { background: var(--card); }
 .cmp .own .mk-y { border-radius: var(--r-pill); }
 .narr-card .gbtn { border-radius: var(--r); }
+
+/* ════════════════════════════════════════════════════════════════════════
+   PLAY
+   The playful layer, driven by static/js/press-play.js. Every rule below is
+   scoped to html.play, a class that script adds only when motion is allowed,
+   so with JS off or under prefers-reduced-motion none of it applies and the
+   page is the finished, static page above. No rule here delays a card by its
+   index; the only per-index timing is per letter of the footer wordmark.
+   ════════════════════════════════════════════════════════════════════════ */
+
+:root { --spring: cubic-bezier(.34, 1.56, .64, 1); --glide: cubic-bezier(.22, 1, .36, 1);
+        --r-arrive: 64px;   /* a block's corners while it is still arriving */ }
+
+/* ── Springy letters (headlines, footer wordmark) ── */
+.play .d1 .wd, .play .foot-word .wd { display: inline-block; white-space: nowrap; }
+.play .d1 .ch, .play .foot-word .ch {
+  font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144, 'wght' var(--w, 600);
+  transition: font-variation-settings 420ms var(--glide);
+}
+.play .d1.is-live .ch, .play .foot-word.is-live .ch { transition-duration: 160ms; }
+.play .d1 .it .ch { font-style: italic; }
+
+/* ── The highlighter draws itself once its phrase is on screen ── */
+.play .mk { background-size: 0% 100%; background-repeat: no-repeat; transition: background-size 900ms var(--glide); }
+.play .mk.drawn { background-size: 100% 100%; }
+
+/* ── The hero deck ── */
+.hero-play { position: relative; }
+.deck { display: none; }
+@media (min-width: 1120px) {
+  .deck {
+    display: block; position: absolute; z-index: 0;
+    right: var(--mar); top: clamp(80px, 9vw, 140px);
+    width: clamp(260px, 22vw, 330px); aspect-ratio: 4 / 3.4;
+    transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0);
+    transition: transform 700ms var(--glide);
+    cursor: pointer;
+  }
+  .hero-play > :not(.deck) { position: relative; z-index: 1; }
+}
+.deck-card {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; gap: var(--s2);
+  padding: var(--s5); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-block); color: var(--ink);
+  transition: transform 720ms var(--spring), opacity 400ms ease;
+  will-change: transform;
+}
+.deck-card.c-orange { background: var(--acc); }
+.deck-card.c-amber  { background: var(--amber); }
+.deck-card.c-sky    { background: var(--sky); }
+.deck-card.c-ink    { background: var(--ink); color: var(--ink-paper); }
+.deck-card .deck-k { font-size: var(--fs-label); font-weight: var(--fw-med); letter-spacing: var(--ls-label); text-transform: uppercase; opacity: .8; }
+.deck-card b { font-family: var(--face-display); font-weight: var(--fw-semi); font-size: 32px; line-height: 1.05;
+               letter-spacing: -0.02em; font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144; }
+.deck-card .deck-l { font-size: var(--fs-sm); opacity: .85; }
+.deck-card .deck-s { margin-top: auto; font-size: 54px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
+/* Stack positions. 0 is the top card. */
+.deck-card[data-pos="0"] { z-index: 4; transform: rotate(-4deg); }
+.deck-card[data-pos="1"] { z-index: 3; transform: translate(26px, -22px) rotate(5deg) scale(.95); }
+.deck-card[data-pos="2"] { z-index: 2; transform: translate(-24px, -38px) rotate(-10deg) scale(.9); }
+.deck-card[data-pos="3"] { z-index: 1; transform: translate(4px, -50px) rotate(2deg) scale(.85); opacity: .0; }
+/* The deal: the top card is flicked off to the right, then tucked behind. */
+.deck-card.fling { z-index: 5; transform: translate(70%, 18%) rotate(22deg) !important; opacity: 0; transition-duration: 520ms; }
+/* The deck arrives once, as one object: a single swing into place. */
+.play .deck { opacity: 0; transform: translate3d(0, 24px, 0) rotate(-8deg) scale(.92); }
+.play .deck.dealt { opacity: 1; transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0);
+                    transition: opacity 500ms ease 250ms, transform 900ms var(--spring) 250ms; }
+.play .deck.dealt:hover .deck-card[data-pos="0"] { transform: rotate(-1deg) translateY(-6px); }
+/* Idle float, on the deck as a whole so the cards never move independently. */
+@keyframes deck-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+.play .deck.dealt .deck-card[data-pos="0"] { animation: deck-bob 4.2s ease-in-out infinite; }
+
+/* ── Pill buttons flood from the pointer ── */
+.play .btn { position: relative; overflow: hidden; isolation: isolate;
+             transition: color 260ms var(--glide), box-shadow 260ms var(--glide), transform 160ms var(--spring); }
+.play .btn::before {
+  content: ''; position: absolute; z-index: -1; pointer-events: none;
+  left: var(--x, 50%); top: var(--y, 50%); width: 10px; height: 10px; margin: -5px 0 0 -5px;
+  border-radius: 50%; background: var(--acc); transform: scale(0);
+  transition: transform 520ms var(--glide);
+}
+.play .btn:hover::before { transform: scale(60); }
+.play .btn-1:hover { background: var(--ink); color: var(--acc-ink); }
+.play .btn-2::before { background: var(--ink); }
+.play .btn-2:hover { color: var(--ink-paper); box-shadow: inset 0 0 0 1px var(--ink); }
+.play .limeband .btn-1::before, .play .foot .btn-1::before { background: var(--card); }
+.play .btn:active { transform: scale(.96); }
+.play .hero .btn-1::after { display: inline-block; transition: transform 320ms var(--spring); }
+.play .hero .btn-1:hover::after { transform: translateX(5px); }
+
+/* ── Cards flood with a block colour from the corner ── */
+.play .ag, .play a.cell { position: relative; overflow: hidden; isolation: isolate; }
+.play .ag::after, .play a.cell::after {
+  content: ''; position: absolute; z-index: -1; pointer-events: none;
+  left: var(--x, 0px); top: var(--y, 100%); width: 12px; height: 12px; margin: -6px 0 0 -6px;
+  border-radius: 50%; background: var(--acc); transform: scale(0);
+  transition: transform 620ms var(--glide);
+}
+.play .ag:nth-child(4n+2)::after, .play a.cell:nth-child(4n+2)::after { background: var(--amber); }
+.play .ag:nth-child(4n+3)::after, .play a.cell:nth-child(4n+3)::after { background: var(--sky); }
+.play .ag:nth-child(4n+4)::after, .play a.cell:nth-child(4n+4)::after { background: var(--red); }
+.play .ag:hover::after, .play a.cell:hover::after { transform: scale(90); }
+.play .ag:hover, .play a.cell:hover { box-shadow: none; }
+.play .ag:hover p, .play .ag:hover .ag-role, .play .ag:hover .lbl, .play a.cell:hover p { color: var(--ink); }
+.play .ag:hover .ag-badge { background: var(--ink); color: var(--ink-paper); }
+.play .ag .cell-ic, .play a.cell .cell-ic { transition: transform 420ms var(--spring); }
+.play .ag:hover .cell-ic, .play a.cell:hover .cell-ic { transform: rotate(-12deg) scale(1.15); }
+
+/* ── Odometer ── */
+/* Qualified with .odo because the columns are spans, and .stat span is
+   the small uppercase label rule. */
+.odo { display: inline-flex; line-height: 1; }
+.odo .odo-col, .odo .odo-strip, .odo .odo-strip > span {
+  margin: 0; font: inherit; letter-spacing: inherit; color: inherit; text-transform: none;
+}
+.odo .odo-col { display: inline-block; height: 1em; overflow: hidden; }
+.odo .odo-strip { display: flex; flex-direction: column; transform: translateY(0); }
+.odo .odo-strip > span { display: block; height: 1em; line-height: 1; }
+.odo.roll .odo-col .odo-strip { transform: translateY(calc(var(--d) * -1em)); transition: transform var(--t, 1200ms) var(--glide); }
+
+/* ── The ticker leans into the scroll ── */
+.play .tick-i { transform: skewX(var(--skew, 0deg)); transition: transform 200ms linear; }
+.play .tick-i::after { transition: transform 300ms var(--spring); }
+.play .tick-i:hover::after { transform: scale(1.8); }
+
+/* ── The track ── */
+.track-tabs { display: flex; gap: var(--s4); margin-bottom: var(--s6); }
+.track-tabs button {
+  flex: 1; text-align: left; padding-top: var(--s3); border-top: 2px solid var(--rule);
+  font-size: var(--fs-sm); color: var(--ink3); font-weight: var(--fw-med);
+  transition: color 240ms ease, border-color 240ms ease;
+}
+.track-tabs button b { display: block; font-size: var(--fs-xs); font-weight: 700; margin-bottom: 2px; }
+.track-tabs button.on { color: var(--acc-tx); border-top-color: var(--acc); }
+.track-rail { display: flex; flex-direction: column; gap: var(--s4); }
+.track-card {
+  border-radius: var(--r-lg); padding: clamp(28px, 4vw, 64px); box-shadow: var(--shadow-block);
+  color: var(--ink); min-height: 300px; display: flex; flex-direction: column; justify-content: flex-end;
+}
+.track-card.c-orange { background: var(--acc); }
+.track-card.c-amber  { background: var(--amber); }
+.track-card.c-sky    { background: var(--sky); }
+.track-card.c-ink    { background: var(--ink); color: var(--ink-paper); }
+.track-n { font-size: clamp(56px, 7vw, 104px); font-weight: 300; line-height: 1; letter-spacing: -0.04em; margin-bottom: auto; }
+.track-card h4 { font-family: var(--face-display); font-weight: var(--fw-semi); font-size: clamp(30px, 3.6vw, 56px);
+                 line-height: 1.02; letter-spacing: -0.02em; font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
+                 margin: var(--s6) 0 var(--s3); max-width: 16ch; }
+.track-card p { font-size: var(--fs-lead); max-width: 40ch; opacity: .9; }
+/* Pinned: wide screens with motion allowed. */
+.play .track.is-pinned { height: calc(var(--n) * 80vh + 30vh); }
+.play .track.is-pinned .track-pin { position: sticky; top: calc(var(--nav-h) + var(--s5)); }
+.play .track.is-pinned .track-view { overflow: hidden; margin-inline: calc(-1 * var(--s2)); padding: var(--s2) var(--s2) var(--s7); }
+.play .track.is-pinned .track-rail { flex-direction: row; gap: var(--s5); will-change: transform; }
+.play .track.is-pinned .track-card { flex: 0 0 min(78%, 920px); min-height: clamp(360px, 52vh, 520px); }
+/* Each block breathes as it crosses the middle: a scale tied to scroll
+   position, not an entrance. */
+.play .track.is-pinned .track-n { transition: transform 500ms var(--spring); }
+.play .track.is-pinned .track-card:hover .track-n { transform: translateX(8px) rotate(-3deg); }
+
+/* ── Blocks settle ── */
+.play .inkband, .play .limeband {
+  transform: scale(.94); border-radius: var(--r-arrive);
+  transition: transform 1000ms var(--spring), border-radius 1000ms var(--glide);
+}
+.play .inkband.settled, .play .limeband.settled { transform: none; border-radius: var(--r-lg); }
+
+/* ── The footer wordmark rises letter by letter ── */
+.play .foot-word { overflow: hidden; }
+.play .foot-word .ch { display: inline-block; transform: translateY(105%);
+  transition: transform 800ms var(--spring) calc(var(--i) * 45ms), font-variation-settings 420ms var(--glide); }
+.play .foot-word.up .ch { transform: none; }
+
+/* ── Page to page: an orange curtain ──
+   The new page is uncovered from the bottom while the old one fades; the
+   gap between them is the ::view-transition backdrop, painted orange.
+   (.vt is set by the inline script in <head>, before first paint, and only
+   when motion is allowed: the new page's first frame is captured before any
+   deferred script runs.) */
+.vt::view-transition { background: #FF6022; }
+.vt::view-transition-old(root) { animation: pr-curtain-out 360ms var(--ease-io) both; }
+.vt::view-transition-new(root) { animation: pr-curtain-in 620ms var(--glide) 140ms both; }
+@keyframes pr-curtain-out { to { opacity: 0; transform: scale(.97); } }
+@keyframes pr-curtain-in  { from { clip-path: inset(100% 0 0 0 round 48px 48px 0 0); } to { clip-path: inset(0 0 0 0 round 0); } }
+
+/* ── Small delights ── */
+.play .nv-brand .bn-mark { transition: transform 500ms var(--spring); }
+.play .nv-brand:hover .bn-mark { transform: scale(1.6); }
+.play .chip { transition: background 200ms ease, color 200ms ease, transform 260ms var(--spring); }
+.play .chip:active { transform: scale(.92); }
+.play .story-step.on .idx::before { animation: pr-grow 600ms var(--glide) both; }
+@keyframes pr-grow { from { transform: scaleX(0); transform-origin: 0 50%; } }
+.play .prog { background: linear-gradient(90deg, var(--acc), var(--amber)); height: 3px; }
+/* The tab rail only means something while the track slides. */
+.track:not(.is-pinned) .track-tabs { display: none; }

@@ -18,7 +18,7 @@
 <link rel="apple-touch-icon" href="/new-agentic-platform/static/favicon.png?v=7">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Zalando+Sans:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/new-agentic-platform/static/css/press.css?v=1"><script>document.documentElement.className+=' js';</script>
+<link rel="stylesheet" href="/new-agentic-platform/static/css/press.css?v=1"><script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' vt');</script>
 </head>
 <body data-page="resources">
 
@@ -239,27 +239,9 @@
     document.querySelectorAll('.rv').forEach(function(el){ el.classList.add('in'); });
   }
 
-  /* ── count-up ───────────────────────────────────────────────────────
-     The markup carries the final number, so a reader with JS off or an
-     observer that never fires sees 26, not 0. */
-  document.querySelectorAll('[data-count]').forEach(function(el){
-    var target = parseInt(el.getAttribute('data-count'), 10);
-    if (!target || RM || !('IntersectionObserver' in window)) return;
-    var started = false;
-    var ob = new IntersectionObserver(function(es){
-      es.forEach(function(e){
-        if (!e.isIntersecting || started) return;
-        started = true; ob.disconnect();
-        var s = performance.now(), dur = 900;
-        (function step(t){
-          var p = Math.min(1, (t - s) / dur), k = 1 - Math.pow(1 - p, 3);
-          el.textContent = Math.round(target * k);
-          if (p < 1) requestAnimationFrame(step); else el.textContent = target;
-        })(s);
-      });
-    }, {threshold: 0.4});
-    ob.observe(el);
-  });
+  /* ── count-up ──────────────────────────────────────────────────────
+     Moved to press-play.js, which rolls each digit like an odometer. The
+     markup still carries the final number, so JS-off readers see it. */
 
   /* ── the story ──────────────────────────────────────────────────────
      The figure is held by position:sticky; this only decides which step is
@@ -621,6 +603,7 @@
   };
 })();
 </script>
+<script src="/new-agentic-platform/static/js/press-play.js?v=1" defer></script>
 
 <style>
 .pv-note{background:#121213;color:#B5B1AB;width:100%;padding:20px 0;

@@ -44,6 +44,7 @@ DEFAULT_ORIGIN = "https://krishna-1812.github.io"
 # to the signed-in product and is not copied.
 ASSETS = [
     ("static/css/press.css", "static/css/press.css"),
+    ("static/js/press-play.js", "static/js/press-play.js"),   # the site's motion
     ("static/favicon.svg", "static/favicon.svg"),
     ("static/favicon.svg", "favicon.svg"),      # /favicon.svg is a route, not a file
     ("static/favicon.png", "static/favicon.png"),

@@ -110,7 +110,7 @@ a.hb-t:hover { background: var(--s2); }
 .hb-go {
   display: inline-flex; align-items: center; gap: var(--sp-2);
   font-size: var(--fs-sm); font-weight: var(--fw-semi); color: var(--tx);
-  background: var(--s2); border-radius: var(--r-sm); padding: var(--sp-2) var(--sp-4);
+  background: var(--s2); border-radius: var(--r-pill); padding: var(--sp-2) var(--sp-4);
   transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
 a.hb-t:hover .hb-go { background: var(--acc); color: var(--tx-on-fill); }
