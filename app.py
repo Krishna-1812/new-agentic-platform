@@ -3980,9 +3980,16 @@ def p2_legacy_redirect(rest=""):
 @app.route("/hub")
 @position2_required
 def hub():
+    # Same "count it, don't type it" rule as the other two hero cards: the
+    # Dashboards card's own numbers come from ACCOUNTS and its generated
+    # files rather than a hand-typed "1 dashboard" that goes stale the next
+    # time an account list is added.
+    account_live = sum(1 for cfg in ACCOUNTS.values() if cfg["dashboard"].exists())
     return render_template("hub.html", user=_get_user(),
                            tracked_companies=_tracked_company_floor(),
-                           seo_tool_count=len(_seo_tools()))
+                           seo_tool_count=len(_seo_tools()),
+                           account_dashboard_count=len(ACCOUNTS),
+                           account_live_count=account_live)
 
 CX_CHAPTERS = [
     # Presentation-only keys were dropped when this page was rebuilt: each

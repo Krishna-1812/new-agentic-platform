@@ -229,14 +229,45 @@ def _hub_band():
 
 
 def test_the_hub_band_dashboard_total_matches_the_live_cards(hub_card, dashboard_cards):
-    """The band counts LIVE dashboards across both workspaces (today 6 + 15), so
-    it drifts on exactly the same trigger as the card stats above. If someone
-    later decides it should count every card including "Coming soon" ones, this
-    is the test to change deliberately rather than discover by accident."""
-    expected = len(dashboard_cards["live"]) + len(appmod._seo_tools())
+    """The band counts LIVE dashboards across all three workspaces (Strategic
+    Agents + SEO Studio + Company Signal Tracker), so it drifts on exactly the
+    same trigger as the card stats above. If someone later decides it should
+    count every card including "Coming soon" ones, this is the test to change
+    deliberately rather than discover by accident."""
+    expected = (len(dashboard_cards["live"]) + len(appmod._seo_tools())
+                + sum(1 for cfg in appmod.ACCOUNTS.values() if cfg["dashboard"].exists()))
     assert _hub_band()["dashboards"] == expected, (
         "band says %d dashboards, live cards total %d"
         % (_hub_band()["dashboards"], expected))
+
+
+# ── The third workspace, Dashboards ──────────────────────────────────────────
+
+def test_the_dashboards_card_count_matches_accounts():
+    """Same class of drift as the other two cards: this count is generated
+    from ACCOUNTS (app.py), so it is checked against that source directly
+    rather than typed in twice."""
+    ws = _workspace("dashboards")
+    assert ws["stats"]["dashboards"] == len(appmod.ACCOUNTS)
+    assert ws["stats"]["live"] == sum(
+        1 for cfg in appmod.ACCOUNTS.values() if cfg["dashboard"].exists())
+
+
+def test_the_dashboards_card_is_named_dashboards():
+    assert _workspace("dashboards")["title"] == "Dashboards"
+
+
+def test_the_dashboards_card_links_to_the_accounts_page():
+    body = _render("/hub")
+    assert re.search(
+        r'<a href="/abm-signal-tracker/accounts"[^>]*data-ws="dashboards"', body), (
+        "the Dashboards hero card should open /abm-signal-tracker/accounts")
+
+
+def test_the_operational_agents_card_replaced_seo_aeo(hub_card):
+    """The SEO + AEO workspace card reads "Operational agents" now; its own
+    page (/seo-aeo) keeps its original title untouched."""
+    assert _workspace("seo-aeo")["title"] == "Operational agents"
 
 
 def test_the_card_copy_makes_no_unverifiable_headcount_claim(hub_card):

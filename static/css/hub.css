@@ -7,15 +7,12 @@
    both below the fold -- so the first screen of the busiest page in the app
    carried no information at all.
 
-   This is one asymmetric grid instead. Everything is on the first screen:
-   the two workspaces as the large tiles, the figures as tiles of the same
-   grid rather than a band underneath, and the command palette promoted from
-   a hidden keystroke to a tile you can see. Nothing is centred and there is
-   no hero.
-
-   The grid is 4 columns at desktop. A workspace tile spans 2x2; the figures
-   are 1x1. That ratio is the whole layout: what you came to open is four
-   times the area of what you came to read.
+   This is two grids instead. The three workspaces (Dashboards, Go-to-market
+   agents, Operational agents) lead as one row of equal peers -- three hues,
+   one each, so the choice reads as a set rather than a ranking. Underneath,
+   the figures sit in their own 4-column grid: the same "everything on the
+   first screen, nothing centred" idea, just no longer sharing a track with
+   cards of a different shape.
    ──────────────────────────────────────────────────────────────────────── */
 
 html:root { background-color: var(--bg); }
@@ -42,6 +39,17 @@ html:root { background-color: var(--bg); }
 }
 .hb-sub { margin: 0; font-size: var(--fs-md); color: var(--tx2); line-height: var(--lh-body); }
 
+/* ── The three workspaces ─────────────────────────────────────────────────
+   Their own row, equal width, so the choice reads as three peers rather than
+   sharing a track with the figures below (which are a different shape and
+   a different kind of tile entirely). */
+.hb-ws-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+
 /* ── The grid ────────────────────────────────────────────────────────────*/
 .hb-grid {
   display: grid;
@@ -58,21 +66,18 @@ html:root { background-color: var(--bg); }
 }
 a.hb-t:hover { background: var(--s2); }
 
-/* ── The two workspaces ──────────────────────────────────────────────────
-   2x2 each, side by side, so the pair fills the grid's top half and the
-   choice is made without scrolling. */
-.hb-ws { grid-column: span 2; grid-row: span 2; padding: var(--sp-6); gap: var(--sp-4); }
-
-/* Cream is the system's "featured" fill and there are exactly two workspaces,
-   so making one cream would rank them. They are peers: both stay on --s1 and
-   the accent appears only on the mark. */
+/* Cream is the system's "featured" fill and there are exactly three
+   workspaces, so making one cream would rank them. They are peers: all three
+   stay on --s1 and each gets one hue on its mark only. */
+.hb-ws { padding: var(--sp-6); gap: var(--sp-4); }
 .hb-ws-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); }
 .hb-ws-ic {
   width: 44px; height: 44px; border-radius: var(--r-sm); flex: none;
   display: flex; align-items: center; justify-content: center;
   background: var(--acc-dim); color: var(--acc-tx);
 }
-.hb-ws--sky .hb-ws-ic { background: var(--sky-dim); color: var(--sky-tx); }
+.hb-ws--sky .hb-ws-ic  { background: var(--sky-dim);  color: var(--sky-tx); }
+.hb-ws--clay .hb-ws-ic { background: var(--clay-dim); color: var(--clay-tx); }
 .hb-ws-ic svg { width: 21px; height: 21px; fill: none; stroke: currentColor;
   stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -114,7 +119,8 @@ a.hb-t:hover { background: var(--s2); }
   transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
 a.hb-t:hover .hb-go { background: var(--acc); color: var(--tx-on-fill); }
-.hb-ws--sky:hover .hb-go { background: var(--sky); color: var(--tx-on-fill); }
+.hb-ws--sky:hover .hb-go  { background: var(--sky);  color: var(--tx-on-fill); }
+.hb-ws--clay:hover .hb-go { background: var(--clay); color: var(--tx-on-fill); }
 
 /* ── Figures ─────────────────────────────────────────────────────────────
    1x1. The number is the content, so it is the largest thing in the tile
@@ -170,16 +176,19 @@ a.hb-t:hover .hb-kbd kbd { background: var(--s3); color: var(--tx); }
 }
 
 /* ── RESPONSIVE ──────────────────────────────────────────────────────────
-   At 2 columns a workspace tile still spans both, so it stays the widest
-   thing on the page and the figures pair up underneath it. */
+   The workspace row drops to 2-up then 1-up on its own; the figures grid
+   drops to 2 columns independently, same as before. */
 @media (max-width: 1100px) {
+  .hb-ws-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .hb-ws { grid-column: span 2; grid-row: auto; }
   .hb-wide { grid-column: span 2; }
+}
+@media (max-width: 720px) {
+  .hb-ws-row { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 560px) {
   .hb-grid { grid-template-columns: minmax(0, 1fr); }
-  .hb-ws, .hb-wide, .hb-pal { grid-column: span 1; }
+  .hb-wide, .hb-pal { grid-column: span 1; }
   .hb-h1 { font-size: var(--fs-2xl); }
   .hb-ws-name { font-size: var(--fs-xl); }
   .hb-n { min-height: 0; }
