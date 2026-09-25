@@ -29,32 +29,13 @@
      reads as three peers, not a ranking. #}
   <div class="hb-ws-row">
 
-    {# The counts here are generated from ACCOUNTS and the dashboard files it
-       points at (see hub() in app.py), the same "derive it, don't type it"
-       rule the other two cards already follow. #}
-    <a href="/abm-signal-tracker/accounts" class="hb-t hb-ws hb-ws--clay bn-reveal" data-ws="dashboards">
-      <div class="hb-ws-top">
-        <div class="hb-ws-ic">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="10" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="6" rx="1.6"/><rect x="13.5" y="11" width="7.5" height="10" rx="1.6"/><rect x="3" y="15" width="7.5" height="6" rx="1.6"/></svg>
-        </div>
-        <span class="hb-live"><i></i>Live</span>
-      </div>
-      <div>
-        <div class="hb-ws-cat">Company intelligence</div>
-        <div class="hb-ws-name" data-ws-name>Dashboards</div>
-        <p class="hb-ws-desc" data-ws-desc>
-          Company Signal Tracker dashboards: funding, C-suite moves, M&amp;A, and news
-          for every account list this platform tracks.
-        </p>
-      </div>
-      <div class="hb-ws-foot">
-        <div class="hb-ws-counts">
-          <span class="hb-c"><b data-count="dashboards">{{ account_dashboard_count }}</b><span>dashboards</span></span>
-          <span class="hb-c"><b data-count="live">{{ account_live_count }}</b><span>live</span></span>
-        </div>
-        <span class="hb-go">Open &rarr;</span>
-      </div>
-    </a>
+    {# Placeholder: the client-facing daily performance report this card will
+       open isn't built yet, so it carries nothing but that fact -- no icon,
+       no live badge, no counts, no link to click -- rather than dressing up
+       an empty feature as a finished one. #}
+    <div class="hb-t hb-ws hb-ws--clay hb-ws--empty bn-reveal" data-ws="dashboards">
+      <p class="hb-ws-placeholder">All clients daily performance reports would be visible here</p>
+    </div>
 
     {# ── Go-to-market agents ─────────────────────────────────────────────
        The counts are hand-written here while the cards they describe live
