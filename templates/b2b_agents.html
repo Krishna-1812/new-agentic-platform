@@ -21,8 +21,10 @@
 
   {# Three groups instead of one flat list: Signals (things that fire on
      their own), People & Research (finding and reading people/companies),
-     Vertical Tools (built for one client's own stack). ABM Signal Tracker
-     leads as the one filled "feature" block, rule 2's figure that matters.
+     Vertical Tools (built for one client's own stack). Every row is a plain
+     white card tinted by its group's hue -- no row is singled out with the
+     dark "feature" fill, so ABM Signal Tracker reads as a peer of the other
+     ten rather than a headline above them.
 
      A list of rows, two columns wide, rather than eleven thumbnail cards.
      The count and the live/building split are derived from these rows by
@@ -37,8 +39,8 @@
       <span class="dir-group-count">3</span>
     </div>
     <div class="dir-list">
-      <a href="/abm-signal-tracker/healthcare" class="dir-row dir-row--feature bn-reveal" data-agent="c-signals" data-state="active" data-badge="live">
-        <span class="dir-ic"><svg class="au-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M12 12 19 5"/><path d="M4.9 19.1a10 10 0 0 1 0-14.2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4"/></svg></span>
+      <a href="/abm-signal-tracker/healthcare" class="dir-row bn-reveal" data-agent="c-signals" data-state="active" data-badge="live">
+        <span class="dir-ic dir-ic--c"><svg class="au-ic" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M12 12 19 5"/><path d="M4.9 19.1a10 10 0 0 1 0-14.2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4"/></svg></span>
         <span class="dir-txt">
           <span class="dir-name" data-agent-name>ABM Signal Tracker</span>
           <span class="dir-desc">Real-time signals across {% if tracked_companies %}{{ "{:,}".format(tracked_companies) }}+ companies{% else %}every tracked company{% endif %}: funding rounds, C-suite changes, M&A, IPO alerts, and news mentions.</span>
