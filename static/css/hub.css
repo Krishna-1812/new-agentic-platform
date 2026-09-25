@@ -126,15 +126,17 @@ a.hb-t:hover .hb-go { background: var(--acc); color: var(--tx-on-fill); }
 .hb-ws--clay:hover .hb-go { background: var(--clay); color: var(--tx-on-fill); }
 
 /* ── The Dashboards card, ahead of build ───────────────────────────────────
-   No icon, no live badge, no counts, nothing to click through to -- the
-   feature it names isn't built yet, so the card says only that, centred in
-   the same footprint its two live siblings fill with real content. */
-.hb-ws--empty { align-items: center; justify-content: center; text-align: center; cursor: default; }
-.hb-ws-placeholder {
-  font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--display-weight);
-  letter-spacing: var(--ls-tight); line-height: var(--lh-snug); color: var(--tx2);
-  max-width: 30ch; margin: 0;
+   Same shape as its two live siblings (icon, kicker, name, description) so
+   it reads as a peer rather than a broken tile. "Coming soon" swaps in for
+   "Live" -- same dot-plus-label shape, clay instead of the accent -- and
+   there is no counts row or Open link, since neither has anything to point
+   at yet. */
+.hb-soon {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--fs-sm); font-weight: var(--fw-semi); color: var(--clay-tx);
+  letter-spacing: var(--ls-label); text-transform: uppercase;
 }
+.hb-soon i { width: 7px; height: 7px; border-radius: 50%; background: var(--clay); }
 
 /* ── Figures ─────────────────────────────────────────────────────────────
    1x1. The number is the content, so it is the largest thing in the tile
