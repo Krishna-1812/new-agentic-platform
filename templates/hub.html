@@ -18,12 +18,45 @@
   <div class="hb-lead bn-reveal">
     <div class="hb-kicker">{{ brand.product }}</div>
     <h1 class="hb-h1">{{ brand.tagline }}</h1>
-    <p class="hb-sub">Two workspaces, one signal layer. Pick where you are working.</p>
+    <p class="hb-sub">Three workspaces, one signal layer. Pick where you are working.</p>
   </div>
 
-  <div class="hb-grid">
+  {# ── The three hero workspaces ───────────────────────────────────────────
+     Dashboards leads: it is the one figure everyone opens first -- the state
+     of the accounts already being tracked -- before choosing which engine to
+     run next. Go-to-market and Operational agents follow in the order people
+     reach for them. Same row, same card shape, one hue apiece so the choice
+     reads as three peers, not a ranking. #}
+  <div class="hb-ws-row">
 
-    {# ── Workspace 1 ──────────────────────────────────────────────────
+    {# The counts here are generated from ACCOUNTS and the dashboard files it
+       points at (see hub() in app.py), the same "derive it, don't type it"
+       rule the other two cards already follow. #}
+    <a href="/abm-signal-tracker/accounts" class="hb-t hb-ws hb-ws--clay bn-reveal" data-ws="dashboards">
+      <div class="hb-ws-top">
+        <div class="hb-ws-ic">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="10" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="6" rx="1.6"/><rect x="13.5" y="11" width="7.5" height="10" rx="1.6"/><rect x="3" y="15" width="7.5" height="6" rx="1.6"/></svg>
+        </div>
+        <span class="hb-live"><i></i>Live</span>
+      </div>
+      <div>
+        <div class="hb-ws-cat">Company intelligence</div>
+        <div class="hb-ws-name" data-ws-name>Dashboards</div>
+        <p class="hb-ws-desc" data-ws-desc>
+          Company Signal Tracker dashboards: funding, C-suite moves, M&amp;A, and news
+          for every account list this platform tracks.
+        </p>
+      </div>
+      <div class="hb-ws-foot">
+        <div class="hb-ws-counts">
+          <span class="hb-c"><b data-count="dashboards">{{ account_dashboard_count }}</b><span>dashboards</span></span>
+          <span class="hb-c"><b data-count="live">{{ account_live_count }}</b><span>live</span></span>
+        </div>
+        <span class="hb-go">Open &rarr;</span>
+      </div>
+    </a>
+
+    {# ── Go-to-market agents ─────────────────────────────────────────────
        The counts are hand-written here while the cards they describe live
        in b2b_agents.html, so they drift the moment a dashboard is added.
        test_hub_card_counts.py derives them from that page and fails when
@@ -54,7 +87,7 @@
       </div>
     </a>
 
-    {# ── Workspace 2 ──────────────────────────────────────────────────
+    {# ── Operational agents (was "SEO + AEO") ────────────────────────────
        This count is generated from _seo_tools(), so the test checks it
        against that list directly rather than against a page. #}
     <a href="/seo-aeo" class="hb-t hb-ws hb-ws--sky bn-reveal" data-ws="seo-aeo">
@@ -66,7 +99,7 @@
       </div>
       <div>
         <div class="hb-ws-cat">Organic growth</div>
-        <div class="hb-ws-name" data-ws-name>SEO + AEO</div>
+        <div class="hb-ws-name" data-ws-name>Operational agents</div>
         <p class="hb-ws-desc" data-ws-desc>
           SEO &amp; GEO audits, content research, article briefs, keyword research,
           location pages, agent readiness, image alt audits, GBP checks and a knowledge base.
@@ -80,6 +113,10 @@
         <span class="hb-go">Open &rarr;</span>
       </div>
     </a>
+
+  </div>
+
+  <div class="hb-grid">
 
     {# ── The figures ──────────────────────────────────────────────────
        Tiles of this grid rather than a band underneath it, so they are on
@@ -105,9 +142,10 @@
        is running rather than merely installed. #}
     <div class="hb-t hb-n hb-n--fill bn-reveal">
       {# 11 live strategic dashboards (counted by hand, checked by
-         tests/test_hub_card_counts.py) plus every SEO Studio tool. #}
-      <b data-figure="dashboards">{{ 11 + seo_tool_count }}</b>
-      <span>dashboards across both</span>
+         tests/test_hub_card_counts.py) plus every SEO Studio tool plus every
+         live Company Signal Tracker dashboard. #}
+      <b data-figure="dashboards">{{ 11 + seo_tool_count + account_live_count }}</b>
+      <span>dashboards across all three</span>
     </div>
 
     {# ── The assistant ─────────────────────────────────────────────── #}

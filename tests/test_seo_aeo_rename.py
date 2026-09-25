@@ -76,7 +76,10 @@ def test_the_hub_card_is_renamed_and_points_at_the_new_path(client):
     body = client.get("/hub").get_data(as_text=True)
     # Same re-skin, same reason as test_strategic_agents_rename: the tile is
     # identified by its data attributes rather than by a presentational class.
-    assert re.search(r'data-ws-name>\s*SEO \+ AEO\s*<', body)
+    # The card's own headline later became "Operational agents" (see
+    # tests/test_hub_card_counts.py); what this test still pins is that it
+    # is the /seo-aeo workspace under the hood, not the retired "SEO" name.
+    assert re.search(r'data-ws-name>\s*Operational agents\s*<', body)
     assert 'href="/seo-aeo"' in body
     assert '<div class="card-title">SEO</div>' not in body
 
