@@ -46,8 +46,8 @@ html:root { background-color: var(--bg); }
 .hb-ws-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--gap);
-  margin-bottom: var(--gap);
+  gap: var(--sp-5);
+  margin-bottom: var(--sp-6);
 }
 
 /* ── The grid ────────────────────────────────────────────────────────────*/
@@ -69,58 +69,72 @@ a.hb-t:hover { background: var(--s2); }
 /* Cream is the system's "featured" fill and there are exactly three
    workspaces, so making one cream would rank them. They are peers: all three
    stay on --s1 and each gets one hue on its mark only. */
-.hb-ws { padding: var(--sp-6); gap: var(--sp-4); }
+/* Bigger than a plain --s1 tile on purpose: these three are the first
+   decision on the page, so they carry more padding, a taller floor and a
+   larger type scale than everything below them rather than matching it. */
+.hb-ws { padding: var(--sp-7); gap: var(--sp-5); min-height: 320px; }
 .hb-ws-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-4); }
 .hb-ws-ic {
-  width: 44px; height: 44px; border-radius: var(--r-sm); flex: none;
+  width: 56px; height: 56px; border-radius: var(--r); flex: none;
   display: flex; align-items: center; justify-content: center;
   background: var(--acc-dim); color: var(--acc-tx);
 }
 .hb-ws--sky .hb-ws-ic  { background: var(--sky-dim);  color: var(--sky-tx); }
 .hb-ws--clay .hb-ws-ic { background: var(--clay-dim); color: var(--clay-tx); }
-.hb-ws-ic svg { width: 21px; height: 21px; fill: none; stroke: currentColor;
+.hb-ws-ic svg { width: 26px; height: 26px; fill: none; stroke: currentColor;
   stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 
 .hb-live {
   display: inline-flex; align-items: center; gap: var(--sp-2);
-  font-size: var(--fs-xs); font-weight: var(--fw-semi); color: var(--tx2);
+  font-size: var(--fs-sm); font-weight: var(--fw-semi); color: var(--tx2);
   letter-spacing: var(--ls-label); text-transform: uppercase;
 }
 /* A dot, not a pulsing one. A pulse is motion that reports nothing: the
    status is the same whether the page has been open a second or an hour. */
-.hb-live i { width: 6px; height: 6px; border-radius: 50%; background: var(--acc); }
+.hb-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--acc); }
 
 .hb-ws-cat {
-  font-size: var(--fs-xs); font-weight: var(--fw-semi); letter-spacing: var(--ls-label);
+  font-size: var(--fs-sm); font-weight: var(--fw-semi); letter-spacing: var(--ls-label);
   text-transform: uppercase; color: var(--tx3); margin-bottom: var(--sp-2);
 }
 .hb-ws-name {
-  font-family: var(--font-display); font-size: var(--fs-2xl); font-weight: var(--display-weight);
-  letter-spacing: var(--ls-display); line-height: var(--lh-tight); margin: 0 0 var(--sp-3);
+  font-family: var(--font-display); font-size: var(--fs-3xl); font-weight: var(--display-weight);
+  letter-spacing: var(--ls-display); line-height: var(--lh-tight); margin: 0 0 var(--sp-4);
 }
-.hb-ws-desc { font-size: var(--fs-sm); color: var(--tx2); line-height: var(--lh-body); margin: 0; }
+.hb-ws-desc { font-size: var(--fs-md); color: var(--tx2); line-height: var(--lh-body); margin: 0; }
 
 .hb-ws-foot {
-  margin-top: auto; padding-top: var(--sp-5);
+  margin-top: auto; padding-top: var(--sp-6);
   display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4);
 }
-.hb-ws-counts { display: flex; gap: var(--sp-5); }
+.hb-ws-counts { display: flex; gap: var(--sp-6); }
 .hb-c { display: flex; align-items: baseline; gap: var(--sp-2); }
 .hb-c b {
-  font-family: var(--font-num); font-size: var(--fs-xl); font-weight: var(--fw-bold);
+  font-family: var(--font-num); font-size: var(--fs-2xl); font-weight: var(--fw-bold);
   letter-spacing: var(--ls-tight); font-variant-numeric: tabular-nums; color: var(--tx);
 }
-.hb-c span { font-size: var(--fs-xs); color: var(--tx3); }
+.hb-c span { font-size: var(--fs-sm); color: var(--tx3); }
 
 .hb-go {
   display: inline-flex; align-items: center; gap: var(--sp-2);
-  font-size: var(--fs-sm); font-weight: var(--fw-semi); color: var(--tx);
-  background: var(--s2); border-radius: var(--r-pill); padding: var(--sp-2) var(--sp-4);
+  font-size: var(--fs-md); font-weight: var(--fw-semi); color: var(--tx);
+  background: var(--s2); border-radius: var(--r-pill); padding: var(--sp-3) var(--sp-5);
   transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
 a.hb-t:hover .hb-go { background: var(--acc); color: var(--tx-on-fill); }
 .hb-ws--sky:hover .hb-go  { background: var(--sky);  color: var(--tx-on-fill); }
 .hb-ws--clay:hover .hb-go { background: var(--clay); color: var(--tx-on-fill); }
+
+/* ── The Dashboards card, ahead of build ───────────────────────────────────
+   No icon, no live badge, no counts, nothing to click through to -- the
+   feature it names isn't built yet, so the card says only that, centred in
+   the same footprint its two live siblings fill with real content. */
+.hb-ws--empty { align-items: center; justify-content: center; text-align: center; cursor: default; }
+.hb-ws-placeholder {
+  font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--display-weight);
+  letter-spacing: var(--ls-tight); line-height: var(--lh-snug); color: var(--tx2);
+  max-width: 30ch; margin: 0;
+}
 
 /* ── Figures ─────────────────────────────────────────────────────────────
    1x1. The number is the content, so it is the largest thing in the tile
@@ -190,7 +204,8 @@ a.hb-t:hover .hb-kbd kbd { background: var(--s3); color: var(--tx); }
   .hb-grid { grid-template-columns: minmax(0, 1fr); }
   .hb-wide, .hb-pal { grid-column: span 1; }
   .hb-h1 { font-size: var(--fs-2xl); }
-  .hb-ws-name { font-size: var(--fs-xl); }
+  .hb-ws { padding: var(--sp-6); min-height: 0; }
+  .hb-ws-name { font-size: var(--fs-2xl); }
   .hb-n { min-height: 0; }
   .hb-ws-foot { flex-direction: column; align-items: flex-start; gap: var(--sp-4); }
 }

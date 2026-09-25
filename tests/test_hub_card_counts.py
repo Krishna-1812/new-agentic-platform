@@ -242,26 +242,31 @@ def test_the_hub_band_dashboard_total_matches_the_live_cards(hub_card, dashboard
 
 
 # ── The third workspace, Dashboards ──────────────────────────────────────────
+# A placeholder ahead of build: no icon, no counts, no link, just the one
+# sentence saying what will be there. _workspace() can't parse it -- it has
+# none of data-ws-name/data-count/data-ws-desc -- so these read the raw block
+# instead.
 
-def test_the_dashboards_card_count_matches_accounts():
-    """Same class of drift as the other two cards: this count is generated
-    from ACCOUNTS (app.py), so it is checked against that source directly
-    rather than typed in twice."""
-    ws = _workspace("dashboards")
-    assert ws["stats"]["dashboards"] == len(appmod.ACCOUNTS)
-    assert ws["stats"]["live"] == sum(
-        1 for cfg in appmod.ACCOUNTS.values() if cfg["dashboard"].exists())
-
-
-def test_the_dashboards_card_is_named_dashboards():
-    assert _workspace("dashboards")["title"] == "Dashboards"
-
-
-def test_the_dashboards_card_links_to_the_accounts_page():
+def _dashboards_block():
     body = _render("/hub")
-    assert re.search(
-        r'<a href="/abm-signal-tracker/accounts"[^>]*data-ws="dashboards"', body), (
-        "the Dashboards hero card should open /abm-signal-tracker/accounts")
+    return body.split('data-ws="dashboards"', 1)[1].split("</div>", 1)[0]
+
+
+def test_the_dashboards_card_names_the_placeholder_feature():
+    block = _dashboards_block()
+    assert "All clients daily performance reports would be visible here" in block
+
+
+def test_the_dashboards_card_has_no_counts_icon_or_link():
+    """Pins the "remove all contents but the one sentence" state deliberately,
+    so a future edit that quietly reintroduces an icon, a Live badge or a
+    count has to change this test rather than drift past it unnoticed."""
+    block = _dashboards_block()
+    assert "data-count=" not in block
+    assert "hb-live" not in block
+    assert "hb-go" not in block
+    assert not re.search(r'<a\s[^>]*data-ws="dashboards"', _render("/hub")), (
+        "the Dashboards card isn't a link yet -- it has nothing built to open")
 
 
 def test_the_operational_agents_card_replaced_seo_aeo(hub_card):
