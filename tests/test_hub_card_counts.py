@@ -242,29 +242,32 @@ def test_the_hub_band_dashboard_total_matches_the_live_cards(hub_card, dashboard
 
 
 # ── The third workspace, Dashboards ──────────────────────────────────────────
-# A placeholder ahead of build: no icon, no counts, no link, just the one
-# sentence saying what will be there. _workspace() can't parse it -- it has
-# none of data-ws-name/data-count/data-ws-desc -- so these read the raw block
-# instead.
+# Same card shape as its two live siblings (icon, kicker, name, description),
+# but honestly unbuilt: "Coming soon" instead of "Live", no counts row, no
+# link. _workspace() can't parse it -- there's no data-count to read -- so
+# this reads the raw block between its own data-ws and the next card's.
 
 def _dashboards_block():
     body = _render("/hub")
-    return body.split('data-ws="dashboards"', 1)[1].split("</div>", 1)[0]
+    after = body.split('data-ws="dashboards"', 1)[1]
+    return after.split('data-ws="strategic-agents"', 1)[0]
 
 
-def test_the_dashboards_card_names_the_placeholder_feature():
+def test_the_dashboards_card_is_named_dashboards_and_keeps_the_placeholder_text():
     block = _dashboards_block()
+    assert re.search(r'data-ws-name>\s*Dashboards\s*<', block)
     assert "All clients daily performance reports would be visible here" in block
 
 
-def test_the_dashboards_card_has_no_counts_icon_or_link():
-    """Pins the "remove all contents but the one sentence" state deliberately,
-    so a future edit that quietly reintroduces an icon, a Live badge or a
-    count has to change this test rather than drift past it unnoticed."""
+def test_the_dashboards_card_has_no_counts_or_link_yet():
+    """Pins the "shape yes, substance no" state deliberately, so a future edit
+    that quietly adds a count or a link has to change this test rather than
+    drift past it unnoticed -- there is nothing real to count or open yet."""
     block = _dashboards_block()
     assert "data-count=" not in block
     assert "hb-live" not in block
     assert "hb-go" not in block
+    assert "Coming soon" in block
     assert not re.search(r'<a\s[^>]*data-ws="dashboards"', _render("/hub")), (
         "the Dashboards card isn't a link yet -- it has nothing built to open")
 
