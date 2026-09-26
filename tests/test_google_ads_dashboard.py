@@ -150,6 +150,31 @@ def test_fetch_rows_prefers_the_converted_currency_cost_column(fake_sheet):
     assert rows[0]["currency"] == "INR"
 
 
+def test_fetch_rows_reads_ad_position_and_view_through(fake_sheet):
+    rows = appmod._fetch_google_ads_rows(force=True)
+    assert rows[1]["top_pct"] == pytest.approx(70.42)
+    assert rows[1]["abs_top_pct"] == pytest.approx(18.31)
+    assert rows[1]["view_through"] == 0.0
+
+
+def test_fetch_rows_tolerates_an_export_without_the_optional_columns(monkeypatch):
+    """Ad position and view-through are extra columns someone could drop from
+    the scheduled report; the core figures must still parse without them."""
+    keep = [i for i, h in enumerate(_HEADER)
+            if h not in ("Impr. (Abs. Top) %", "Impr. (Top) %", "View-through conv.")]
+    trimmed = [[r[i] for i in keep if i < len(r)] if len(r) > 3 else r for r in _RAW_ROWS]
+    monkeypatch.setattr(appmod, "GOOGLE_ADS_SHEET_ID", "fake-sheet-id")
+    monkeypatch.setattr(appmod, "_ads_sheet_service",
+                         lambda: _FakeSheetsService(
+                             {"sheets": [{"properties": {"title": "T"}}]}, {"values": trimmed}))
+    rows = appmod._fetch_google_ads_rows(force=True)
+    appmod._google_ads_cache.update(rows=None, at=0.0)
+    assert len(rows) == 3
+    assert rows[1]["cost"] == pytest.approx(1206.38)
+    assert rows[1]["conversions"] == 1.0
+    assert rows[1]["top_pct"] == 0.0 and rows[1]["view_through"] == 0.0
+
+
 def test_fetch_rows_is_cached_between_calls(fake_sheet, monkeypatch):
     appmod._fetch_google_ads_rows(force=True)
     calls = []
@@ -200,7 +225,8 @@ def test_route_embeds_the_full_row_set_as_json(fake_sheet):
     r = _staff_client().get("/dashboards/google-ads")
     assert r.status_code == 200
     body = r.get_data(as_text=True)
-    assert "Total spend" in body  # the static shell, always present when ok
+    assert 'data-kpi="cost"' in body  # the static shell, always present when ok
+    assert 'id="gad-account-select"' in body  # the account switcher is the headline
     match = re.search(
         r'<script id="gad-data" type="application/json">(.*?)</script>', body, re.S)
     assert match, "expected an embedded #gad-data JSON payload"

@@ -16822,7 +16822,7 @@ def _fetch_google_ads_rows(force: bool = False):
     meta = svc.spreadsheets().get(spreadsheetId=GOOGLE_ADS_SHEET_ID).execute()
     tab = meta["sheets"][0]["properties"]["title"]
     res = svc.spreadsheets().values().get(
-        spreadsheetId=GOOGLE_ADS_SHEET_ID, range="'%s'!A:V" % tab).execute()
+        spreadsheetId=GOOGLE_ADS_SHEET_ID, range="'%s'!A:Z" % tab).execute()
     raw_rows = res.get("values", [])
 
     # The export's first two rows are a title and a date-range caption, not
@@ -16863,6 +16863,11 @@ def _fetch_google_ads_rows(force: bool = False):
             "cost":        _parse_ads_number(_col(row, "cost (converted currency)") or _col(row, "cost")),
             "currency":    _col(row, "converted currency code") or _col(row, "currency code"),
             "conversions": _parse_ads_number(_col(row, "conversions")),
+            # Ad position and view-through: optional in the export, so a sheet
+            # without them still parses (every value just reads 0).
+            "view_through": _parse_ads_number(_col(row, "view-through conv.")),
+            "top_pct":      _parse_ads_number(_col(row, "impr. (top) %")),
+            "abs_top_pct":  _parse_ads_number(_col(row, "impr. (abs. top) %")),
         })
 
     _google_ads_cache.update(rows=rows, at=now)

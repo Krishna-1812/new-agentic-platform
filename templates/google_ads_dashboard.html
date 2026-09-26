@@ -1,24 +1,37 @@
 <!DOCTYPE html>
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    GOOGLE ADS PERFORMANCE — the product's one page in the PUBLIC site's voice.
+
+    Every other app page is a quiet instrument. This one was asked for as a
+    showpiece, "the way the public pages are", so it borrows the public
+    site's materials (press.css) rather than the product's restraint: an ink
+    block for the hero with the account name set at display size in
+    Fraunces behind the orange marker, whole-colour KPI blocks, a ticker,
+    pills that flood from the pointer, blocks that settle as they arrive,
+    odometer figures and labels that decode.
+
+    The markup is only the frame. Every number, chart and row is drawn by
+    static/js/google-ads-dashboard.js from the row set embedded at the
+    bottom, so every filter is instant and nothing waits on a round trip.
+-#}
 <html lang="en">
 <head>
-{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=2"]) }}
+{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=3"]) }}
 </head>
-<body data-currency-symbol="{{ currency_symbol }}">
+<body class="gad" data-currency-symbol="{{ currency_symbol }}">
 
 {{ topbar([("Google Ads", none)]) }}
 
-<div class="gad-shell">
+<main class="gad-shell">
 
   {% if not ok %}
-  <div class="gad-lead bn-reveal">
-    <div>
-      <div class="gad-kicker">Client reporting</div>
-      <h1 class="gad-h1">Google Ads performance</h1>
-      <p class="gad-sub">Fed by a daily Google Ads &rarr; Sheets export.</p>
-    </div>
-  </div>
-  <div class="gad-empty bn-reveal">
+  <section class="gad-hero gad-hero--empty">
+    <div class="gad-hero-top"><span class="gad-lbl">Client reporting &middot; Google Ads</span></div>
+    <h1 class="gad-h1">Google Ads <span class="gad-mk">performance</span></h1>
+    <p class="gad-hero-sub">Fed by a daily Google Ads &rarr; Sheets export.</p>
+  </section>
+  <div class="gad-empty">
     <p>No data yet. Set <code>GOOGLE_ADS_SHEET_ID</code> (and a read credential,
        <code>GOOGLE_ADS_SHEET_SA_JSON</code> or <code>GOOGLE_SA_JSON</code>) in this
        service's environment, and make sure the sheet is shared with that
@@ -26,132 +39,274 @@
   </div>
   {% else %}
 
-  {# ── Hero: the account switcher doubles as the page's headline. A native
-     <select>, heavily styled -- full keyboard/screen-reader support for
-     free, no custom dropdown widget to maintain. #}
-  <div class="gad-hero bn-reveal">
+  {# ── Hero ─────────────────────────────────────────────────────────────
+     The account name IS the headline. The visible heading is ordinary text
+     (so it can carry the marker and the mask reveal); a native <select> is
+     laid over it, transparent, so clicking the name opens a real dropdown
+     with keyboard and screen-reader support for free. #}
+  <section class="gad-hero" data-gad-settle>
     <div class="gad-hero-top">
-      <div class="gad-kicker">Client reporting</div>
-      <button class="gad-refresh" data-gad-refresh type="button">Refresh</button>
-    </div>
-    <div class="gad-hero-select-row">
-      <select id="gad-account-select" class="gad-account-select" aria-label="Account"></select>
-    </div>
-    <p class="gad-sub" id="gad-hero-sub">&nbsp;</p>
-  </div>
-
-  {# ── Filters ──────────────────────────────────────────────────────────── #}
-  <div class="gad-filters bn-reveal">
-    <div class="gad-pillgroup" role="group" aria-label="Date range">
-      <button type="button" class="gad-pill" data-range="7">7d</button>
-      <button type="button" class="gad-pill" data-range="30">30d</button>
-      <button type="button" class="gad-pill" data-range="90">90d</button>
-      <button type="button" class="gad-pill is-active" data-range="all">All time</button>
-    </div>
-    <select id="gad-type-select" class="gad-select" aria-label="Campaign type"></select>
-    <select id="gad-state-select" class="gad-select" aria-label="Campaign state"></select>
-    <input id="gad-search" class="gad-search" type="search" placeholder="Search campaigns or accounts&hellip;" aria-label="Search campaigns or accounts">
-  </div>
-
-  {# ── Stat tiles ───────────────────────────────────────────────────────── #}
-  <div class="gad-stats bn-reveal">
-    <div class="gad-stat gad-stat--fill" data-stat="cost">
-      <span class="gad-stat-v" data-raw="0">{{ currency_symbol }}0</span>
-      <span class="gad-stat-l">Total spend</span>
-    </div>
-    <div class="gad-stat" data-stat="clicks">
-      <span class="gad-stat-v" data-raw="0">0</span>
-      <span class="gad-stat-l">Clicks</span>
-    </div>
-    <div class="gad-stat" data-stat="impressions">
-      <span class="gad-stat-v" data-raw="0">0</span>
-      <span class="gad-stat-l">Impressions</span>
-    </div>
-    <div class="gad-stat" data-stat="conversions">
-      <span class="gad-stat-v" data-raw="0">0</span>
-      <span class="gad-stat-l">Conversions</span>
-    </div>
-    <div class="gad-stat" data-stat="ctr">
-      <span class="gad-stat-v" data-raw="0">0%</span>
-      <span class="gad-stat-l">CTR</span>
-    </div>
-    <div class="gad-stat" data-stat="cpc">
-      <span class="gad-stat-v" data-raw="0">{{ currency_symbol }}0</span>
-      <span class="gad-stat-l">Avg. CPC</span>
-    </div>
-    <div class="gad-stat" data-stat="cost-per-conv">
-      <span class="gad-stat-v" data-raw="0">&mdash;</span>
-      <span class="gad-stat-l">Cost / conversion</span>
-    </div>
-  </div>
-
-  {# ── Trend chart, one metric at a time ───────────────────────────────── #}
-  <div class="gad-panel bn-reveal">
-    <div class="gad-panel-head">
-      <span class="gad-panel-t">Performance trend</span>
-      <span class="gad-panel-d" id="gad-trend-range"></span>
-    </div>
-    <div class="gad-pillgroup gad-pillgroup--metric" role="group" aria-label="Trend metric">
-      <button type="button" class="gad-pill is-active" data-metric="cost">Spend</button>
-      <button type="button" class="gad-pill" data-metric="clicks">Clicks</button>
-      <button type="button" class="gad-pill" data-metric="conversions">Conversions</button>
-      <button type="button" class="gad-pill" data-metric="ctr">CTR</button>
-    </div>
-    <svg id="gad-trend-svg" class="gad-chart" viewBox="0 0 720 220" preserveAspectRatio="none" aria-hidden="true"></svg>
-    <div class="gad-chart-range" id="gad-trend-minmax"></div>
-  </div>
-
-  {# ── Spend by campaign type + spend by account ───────────────────────── #}
-  <div class="gad-panel-grid">
-    <div class="gad-panel bn-reveal">
-      <div class="gad-panel-head">
-        <span class="gad-panel-t">Spend by campaign type</span>
+      <span class="gad-lbl" data-gad-decode>Client reporting &middot; Google Ads</span>
+      <span class="gad-live"><i></i><span id="gad-live-t">Synced daily</span></span>
+      <div class="gad-shapes" aria-hidden="true">
+        <span class="gad-shape gad-shape--circle"></span>
+        <span class="gad-shape gad-shape--half"></span>
+        <span class="gad-shape gad-shape--leaf"></span>
+        <span class="gad-shape gad-shape--square"></span>
       </div>
+    </div>
+
+    <div class="gad-hero-title">
+      <label class="gad-hero-pre" for="gad-account-select">Performance for</label>
+      <div class="gad-switch">
+        <h1 class="gad-h1" id="gad-account-title"><span class="gad-ln"><span><span class="gad-mk">All accounts</span></span></span></h1>
+        <span class="gad-switch-chev" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        </span>
+        <select id="gad-account-select" class="gad-switch-select" aria-label="Account"></select>
+      </div>
+    </div>
+
+    <div class="gad-hero-foot">
+      <p class="gad-hero-sub" id="gad-hero-sub">&nbsp;</p>
+      <div class="gad-hero-actions">
+        <button type="button" class="gad-btn gad-btn--ghost" data-gad-export>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
+          Export CSV
+        </button>
+        <button type="button" class="gad-btn gad-btn--acc" data-gad-refresh>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+          <span>Refresh</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  {# ── Ticker: every account at a glance, click one to open it ─────────── #}
+  <div class="gad-tick" aria-label="Accounts at a glance">
+    <div class="gad-tick-track" id="gad-tick-track"></div>
+  </div>
+
+  {# ── Filters: one row, above everything they scope ─────────────────── #}
+  <div class="gad-filters" id="gad-filters">
+    <div class="gad-filters-in">
+      <div class="gad-seg" role="group" aria-label="Date range">
+        <button type="button" class="gad-pill" data-range="1">Last day</button>
+        <button type="button" class="gad-pill" data-range="7">7D</button>
+        <button type="button" class="gad-pill" data-range="14">14D</button>
+        <button type="button" class="gad-pill" data-range="30">30D</button>
+        <button type="button" class="gad-pill is-on" data-range="all">All</button>
+      </div>
+      <div class="gad-dates">
+        <input type="date" id="gad-from" class="gad-date" aria-label="From date">
+        <span aria-hidden="true">&rarr;</span>
+        <input type="date" id="gad-to" class="gad-date" aria-label="To date">
+      </div>
+      <button type="button" class="gad-toggle" id="gad-compare" aria-pressed="true">
+        <i aria-hidden="true"></i><span>vs previous period</span>
+      </button>
+      <select id="gad-type-select" class="gad-select" aria-label="Campaign type"></select>
+      <select id="gad-state-select" class="gad-select" aria-label="Campaign status"></select>
+      <label class="gad-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-3.4-3.4"/></svg>
+        <input id="gad-search" type="search" placeholder="Search campaigns&hellip;" aria-label="Search campaigns or accounts">
+      </label>
+      <span class="gad-focus" id="gad-focus" hidden></span>
+      <button type="button" class="gad-reset" id="gad-reset" hidden>Reset</button>
+    </div>
+  </div>
+
+  {# ── Headline figures: four colour blocks, then five white tiles ────── #}
+  <section class="gad-kpis" data-gad-settle aria-label="Headline figures">
+    <div class="gad-kpi gad-kpi--acc" data-kpi="cost">
+      <div class="gad-kpi-top"><span class="gad-kpi-l">Spend</span><span class="gad-kpi-ic gad-kpi-ic--circle" aria-hidden="true"></span></div>
+      <b class="gad-kpi-v" data-v></b>
+      <span class="gad-delta" data-d></span>
+      <svg class="gad-spark" data-spark aria-hidden="true"></svg>
+    </div>
+    <div class="gad-kpi gad-kpi--ink" data-kpi="conversions">
+      <div class="gad-kpi-top"><span class="gad-kpi-l">Conversions</span><span class="gad-kpi-ic gad-kpi-ic--half" aria-hidden="true"></span></div>
+      <b class="gad-kpi-v" data-v></b>
+      <span class="gad-delta" data-d></span>
+      <svg class="gad-spark" data-spark aria-hidden="true"></svg>
+    </div>
+    <div class="gad-kpi gad-kpi--sky" data-kpi="clicks">
+      <div class="gad-kpi-top"><span class="gad-kpi-l">Clicks</span><span class="gad-kpi-ic gad-kpi-ic--leaf" aria-hidden="true"></span></div>
+      <b class="gad-kpi-v" data-v></b>
+      <span class="gad-delta" data-d></span>
+      <svg class="gad-spark" data-spark aria-hidden="true"></svg>
+    </div>
+    <div class="gad-kpi gad-kpi--amber" data-kpi="impressions">
+      <div class="gad-kpi-top"><span class="gad-kpi-l">Impressions</span><span class="gad-kpi-ic gad-kpi-ic--square" aria-hidden="true"></span></div>
+      <b class="gad-kpi-v" data-v></b>
+      <span class="gad-delta" data-d></span>
+      <svg class="gad-spark" data-spark aria-hidden="true"></svg>
+    </div>
+  </section>
+
+  <section class="gad-tiles" aria-label="Rates">
+    <div class="gad-tile" data-kpi="ctr"><span class="gad-tile-l">CTR</span><b class="gad-tile-v" data-v></b><span class="gad-delta" data-d></span></div>
+    <div class="gad-tile" data-kpi="cpc"><span class="gad-tile-l">Avg. CPC</span><b class="gad-tile-v" data-v></b><span class="gad-delta" data-d></span></div>
+    <div class="gad-tile" data-kpi="cpa"><span class="gad-tile-l">Cost / conversion</span><b class="gad-tile-v" data-v></b><span class="gad-delta" data-d></span></div>
+    <div class="gad-tile" data-kpi="cvr"><span class="gad-tile-l">Conversion rate</span><b class="gad-tile-v" data-v></b><span class="gad-delta" data-d></span></div>
+    <div class="gad-tile" data-kpi="view_through"><span class="gad-tile-l">View-through conv.</span><b class="gad-tile-v" data-v></b><span class="gad-delta" data-d></span></div>
+  </section>
+
+  {# ── Trend ────────────────────────────────────────────────────────────
+     One metric at a time, on one axis. The previous period rides along as
+     a quiet grey line on the same scale, never as a second y-axis. #}
+  <section class="gad-panel gad-panel--trend bn-reveal" data-panel="trend">
+    <div class="gad-panel-head">
+      <div>
+        <span class="gad-lbl" data-gad-decode>Over time</span>
+        <h2 class="gad-h2">Performance trend</h2>
+      </div>
+      <div class="gad-panel-ctl">
+        <div class="gad-seg gad-seg--sm" role="group" aria-label="Granularity">
+          <button type="button" class="gad-pill is-on" data-grain="day">Daily</button>
+          <button type="button" class="gad-pill" data-grain="week">Weekly</button>
+        </div>
+      </div>
+    </div>
+    <div class="gad-metrics" role="group" aria-label="Trend metric">
+      <button type="button" class="gad-metric is-on" data-metric="cost">Spend</button>
+      <button type="button" class="gad-metric" data-metric="clicks">Clicks</button>
+      <button type="button" class="gad-metric" data-metric="impressions">Impressions</button>
+      <button type="button" class="gad-metric" data-metric="conversions">Conversions</button>
+      <button type="button" class="gad-metric" data-metric="ctr">CTR</button>
+      <button type="button" class="gad-metric" data-metric="cpc">Avg. CPC</button>
+      <button type="button" class="gad-metric" data-metric="cpa">Cost / conv.</button>
+      <button type="button" class="gad-metric" data-metric="cvr">Conv. rate</button>
+    </div>
+    <div class="gad-legend-row" id="gad-trend-legend"></div>
+    <div class="gad-chart" id="gad-trend"></div>
+  </section>
+
+  {# ── Funnel · type mix · ad position ──────────────────────────────── #}
+  <div class="gad-grid gad-grid--3">
+    <section class="gad-panel bn-reveal" data-panel="funnel">
+      <div class="gad-panel-head"><div>
+        <span class="gad-lbl" data-gad-decode>Journey</span>
+        <h2 class="gad-h2">Conversion funnel</h2>
+      </div></div>
+      <div class="gad-funnel" id="gad-funnel"></div>
+    </section>
+
+    <section class="gad-panel bn-reveal" data-panel="donut">
+      <div class="gad-panel-head"><div>
+        <span class="gad-lbl" data-gad-decode>Mix</span>
+        <h2 class="gad-h2">Spend by campaign type</h2>
+      </div></div>
       <div class="gad-donut-row">
-        <svg id="gad-donut-svg" viewBox="0 0 180 180" class="gad-donut" aria-hidden="true"></svg>
-        <div id="gad-donut-legend" class="gad-legend"></div>
+        <div class="gad-donut" id="gad-donut"></div>
+        <ul class="gad-legend" id="gad-donut-legend"></ul>
       </div>
-    </div>
+      <p class="gad-note">Click a type to filter the whole page.</p>
+    </section>
 
-    <div class="gad-panel bn-reveal" id="gad-accbars-panel">
-      <div class="gad-panel-head">
-        <span class="gad-panel-t">Spend by account</span>
-      </div>
-      <div id="gad-accbars-body" class="gad-abars"></div>
-    </div>
+    <section class="gad-panel bn-reveal" data-panel="position">
+      <div class="gad-panel-head"><div>
+        <span class="gad-lbl" data-gad-decode>Visibility</span>
+        <h2 class="gad-h2">Ad position</h2>
+      </div></div>
+      <div class="gad-gauges" id="gad-gauges"></div>
+      <p class="gad-note">Share of impressions shown above the organic results, weighted by impressions.</p>
+    </section>
   </div>
 
-  {# ── Campaign table, sortable ─────────────────────────────────────────── #}
-  <div class="gad-panel bn-reveal">
-    <div class="gad-panel-head">
-      <span class="gad-panel-t">Campaigns</span>
-      <span class="gad-panel-d">click a column to sort</span>
-    </div>
-    <div class="gad-table">
-      <div class="gad-row gad-row--head">
-        <span data-sort-key="account">Account <i class="gad-sort-arrow"></i></span>
-        <span data-sort-key="campaign">Campaign <i class="gad-sort-arrow"></i></span>
-        <span data-sort-key="clicks">Clicks <i class="gad-sort-arrow"></i></span>
-        <span data-sort-key="impressions">Impr. <i class="gad-sort-arrow"></i></span>
-        <span data-sort-key="cost">Cost <i class="gad-sort-arrow"></i></span>
-        <span data-sort-key="conversions">Conv. <i class="gad-sort-arrow"></i></span>
+  {# ── Leaderboard · efficiency ─────────────────────────────────────── #}
+  <div class="gad-grid gad-grid--2">
+    <section class="gad-panel bn-reveal" data-panel="board">
+      <div class="gad-panel-head"><div>
+        <span class="gad-lbl" data-gad-decode>Leaderboard</span>
+        <h2 class="gad-h2" id="gad-board-title">Spend by account</h2>
       </div>
-      <div id="gad-table-body"></div>
-      <p id="gad-table-empty" style="display:none; padding: var(--sp-4) 0; color: var(--tx2);">No campaigns match these filters.</p>
-    </div>
+      <span class="gad-panel-d" id="gad-board-d"></span></div>
+      <div class="gad-board" id="gad-board"></div>
+    </section>
+
+    <section class="gad-panel bn-reveal" data-panel="scatter">
+      <div class="gad-panel-head"><div>
+        <span class="gad-lbl" data-gad-decode>Efficiency</span>
+        <h2 class="gad-h2">Spend vs conversions</h2>
+      </div>
+      <span class="gad-panel-d">bubble size = clicks</span></div>
+      <div class="gad-chart gad-chart--scatter" id="gad-scatter"></div>
+    </section>
   </div>
+
+  {# ── Rhythm: weekday and calendar, both following the trend metric ─── #}
+  <div class="gad-grid gad-grid--2">
+    <section class="gad-panel bn-reveal" data-panel="weekday">
+      <div class="gad-panel-head"><div>
+        <span class="gad-lbl" data-gad-decode>Rhythm</span>
+        <h2 class="gad-h2">By day of week</h2>
+      </div>
+      <span class="gad-panel-d" id="gad-weekday-d"></span></div>
+      <div class="gad-chart gad-chart--weekday" id="gad-weekday"></div>
+    </section>
+
+    <section class="gad-panel bn-reveal" data-panel="calendar">
+      <div class="gad-panel-head"><div>
+        <span class="gad-lbl" data-gad-decode>Calendar</span>
+        <h2 class="gad-h2">Daily heatmap</h2>
+      </div>
+      <span class="gad-panel-d" id="gad-cal-d"></span></div>
+      <div class="gad-cal" id="gad-cal"></div>
+    </section>
+  </div>
+
+  {# ── Movers ────────────────────────────────────────────────────────── #}
+  <section class="gad-panel bn-reveal" data-panel="movers">
+    <div class="gad-panel-head"><div>
+      <span class="gad-lbl" data-gad-decode>Change</span>
+      <h2 class="gad-h2">Biggest movers</h2>
+    </div>
+    <span class="gad-panel-d" id="gad-movers-d"></span></div>
+    <div class="gad-movers" id="gad-movers"></div>
+  </section>
+
+  {# ── Campaigns: the table view every chart above has as its twin ───── #}
+  <section class="gad-panel bn-reveal" data-panel="table">
+    <div class="gad-panel-head"><div>
+      <span class="gad-lbl" data-gad-decode>Detail</span>
+      <h2 class="gad-h2">Campaigns</h2>
+    </div>
+    <span class="gad-panel-d" id="gad-table-d"></span></div>
+    <div class="gad-table-wrap">
+      <table class="gad-table">
+        <thead>
+          <tr>
+            <th scope="col" data-sort-key="campaign">Campaign</th>
+            <th scope="col" data-sort-key="cost" class="is-num">Spend</th>
+            <th scope="col" data-sort-key="clicks" class="is-num">Clicks</th>
+            <th scope="col" data-sort-key="impressions" class="is-num">Impr.</th>
+            <th scope="col" data-sort-key="ctr" class="is-num">CTR</th>
+            <th scope="col" data-sort-key="cpc" class="is-num">Avg. CPC</th>
+            <th scope="col" data-sort-key="conversions" class="is-num">Conv.</th>
+            <th scope="col" data-sort-key="cvr" class="is-num">Conv. rate</th>
+            <th scope="col" data-sort-key="cpa" class="is-num">Cost / conv.</th>
+            <th scope="col" class="is-spark">Daily spend</th>
+          </tr>
+        </thead>
+        <tbody id="gad-table-body"></tbody>
+      </table>
+    </div>
+    <p class="gad-table-empty" id="gad-table-empty" hidden>No campaigns match these filters.</p>
+    <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gad-more" hidden>Show more</button></div>
+  </section>
 
   {% endif %}
 
   <p class="gad-foot">{{ brand.name }} &middot; Internal use only</p>
-</div>
+</main>
 
 {% if ok %}
 <script id="gad-data" type="application/json">{{ rows|tojson }}</script>
 {% endif %}
 
 {{ topbar_script() }}
-<script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=3"></script>
 <script>
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */
 (function(){
