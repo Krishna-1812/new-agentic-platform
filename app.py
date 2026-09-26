@@ -1270,6 +1270,25 @@ def _is_staff(email):
     return email.endswith(STAFF_EMAIL_SUFFIX) or email in ADMIN_EMAILS
 
 
+# Staff domains from before the move to Markify Digital on 2026-09-24. Every
+# login, page view and agent run the team recorded before then is under one of
+# these addresses, and the analytics sheets keep the address a row was written
+# with. Classified by today's domain alone, that whole history reads as public
+# members: Internal Usage loses it and External Usage, Public Page Analytics,
+# Client Usage and the visitor journeys fill up with the team.
+#
+# ANALYTICS ONLY. Access goes through _is_staff(), and a former-domain address
+# gets no staff access from this.
+_FORMER_STAFF_DOMAINS = ("position2.com",)
+
+
+def _was_staff(email):
+    """True when a RECORDED analytics row belongs to the team: today's staff
+    (_is_staff), or an address on a former staff domain."""
+    email = (email or "").strip().lower()
+    return _is_staff(email) or any(email.endswith("@" + d) for d in _FORMER_STAFF_DOMAINS)
+
+
 # The internal staff app's top-level sections. It used to live under one /p2
 # prefix, so "is this an internal page" was a prefix test; since 2026-09-24 it
 # sits at the top level, so the sections are named. Old /p2 paths still count
@@ -5023,6 +5042,74 @@ _BOT_RE = re.compile(r"bot|crawl|spider|slurp|bingpreview|facebookexternalhit|em
                      r"monitor|headless|lighthouse|gtmetrix|preview|curl|wget|"
                      r"python-requests|axios|http-client", re.I)
 
+# ── Is the analytics sheet actually readable? ─────────────────────────────
+# Every analytics page reads the login-log spreadsheet (LOGIN_LOG_SHEET_ID)
+# with the GOOGLE_SA_JSON service account, and each reader swallows its own
+# failure so one bad tab cannot take a page down. The cost was that a server
+# with the variables missing, or a service account the sheet is not shared
+# with, showed every dashboard as a row of zeros with no reason given. This
+# asks the one question those readers cannot: can the sheet be opened at all?
+# The answer is shown at the top of every analytics page
+# (templates/_admin_sheet_health.html).
+_SHEET_HEALTH = {"ts": 0.0, "val": None}
+_SHEET_HEALTH_TTL = 60
+
+
+def _sheet_error_text(e, client_email=""):
+    """A sentence an admin can act on, for one failed Sheets call."""
+    status = getattr(getattr(e, "resp", None), "status", None)
+    who = client_email or "the service account in GOOGLE_SA_JSON"
+    if status == 403:
+        return ("%s cannot open the analytics sheet. Share the sheet (LOGIN_LOG_SHEET_ID) "
+                "with that address as an Editor." % who)
+    if status == 404:
+        return "No spreadsheet has the ID in LOGIN_LOG_SHEET_ID. Check the ID against the sheet's URL."
+    if status in (400, 401) or "invalid_grant" in str(e) or "Invalid JWT" in str(e):
+        return ("Google refused the key in GOOGLE_SA_JSON (%s). The key may have been deleted "
+                "or rotated; paste a current key for %s." % (status or "invalid grant", who))
+    return "Could not read the analytics sheet: %s%s." % (
+        type(e).__name__, (" (HTTP %s)" % status) if status else "")
+
+
+def _analytics_sheet_health(force=False):
+    """{"ok", "configured", "title", "detail"} for the analytics sheet, cached a minute."""
+    now = time.time()
+    if not force and _SHEET_HEALTH["val"] and now - _SHEET_HEALTH["ts"] < _SHEET_HEALTH_TTL:
+        return _SHEET_HEALTH["val"]
+    sa_str = os.environ.get("GOOGLE_SA_JSON", "")
+    missing = [n for n, v in (("GOOGLE_SA_JSON", sa_str), ("LOGIN_LOG_SHEET_ID", LOGIN_LOG_SHEET_ID)) if not v]
+    if missing:
+        val = {"ok": False, "configured": False, "title": "Analytics are not connected on this server",
+               "detail": ("%s %s not set in this deployment's environment variables, so nothing is "
+                          "recorded and every figure below reads zero. Set %s and restart."
+                          % (" and ".join(missing), "is" if len(missing) == 1 else "are",
+                             "it" if len(missing) == 1 else "them"))}
+    else:
+        client_email = ""
+        try:
+            info = json.loads(sa_str)
+            client_email = info.get("client_email", "")
+            from google.oauth2 import service_account
+            from googleapiclient.discovery import build
+            creds = service_account.Credentials.from_service_account_info(
+                info, scopes=["https://www.googleapis.com/auth/spreadsheets"])
+            svc = build("sheets", "v4", credentials=creds, cache_discovery=False, static_discovery=True)
+            svc.spreadsheets().get(spreadsheetId=LOGIN_LOG_SHEET_ID,
+                                   fields="properties.title").execute()
+            val = {"ok": True, "configured": True, "title": "", "detail": ""}
+        except ValueError as e:
+            val = {"ok": False, "configured": True, "title": "The analytics key cannot be read",
+                   "detail": ("GOOGLE_SA_JSON is not valid JSON. Paste the whole service-account key file as the value."
+                              if isinstance(e, json.JSONDecodeError) else
+                              "GOOGLE_SA_JSON is not a complete service-account key (%s)." % str(e)[:120])}
+        except Exception as e:
+            log.warning("analytics sheet health check failed: %s", e)
+            val = {"ok": False, "configured": True, "title": "The analytics sheet cannot be read",
+                   "detail": _sheet_error_text(e, client_email)}
+    _SHEET_HEALTH.update(ts=now, val=val)
+    return val
+
+
 def _va_sheets_service():
     import json as _j
     from google.oauth2 import service_account
@@ -5291,7 +5378,7 @@ def _va_identity_map(vi_rows=None, access_requests=None) -> dict:
         if svc:
             try:
                 vi_rows = svc.spreadsheets().values().get(
-                    spreadsheetId=LOGIN_LOG_SHEET_ID, range="Visitor Identities!A1:G5000").execute().get("values", [])
+                    spreadsheetId=LOGIN_LOG_SHEET_ID, range="Visitor Identities!A:G").execute().get("values", [])
             except Exception:
                 vi_rows = []
     for x in ((vi_rows or [])[1:] or []):
@@ -5343,14 +5430,14 @@ def _login_events_by_vid(ms_rows=None, login_rows=None) -> dict:
         add(mc(9), mc(5), mc(6), mc(8), mc(0), "member")
 
     if login_rows is None:
-        login_rows = read("A1:U5000")
+        login_rows = read("A:U")
     for r in (login_rows[1:] if len(login_rows) > 1 else []):
         def lc(i, d=""): return r[i] if i < len(r) else d
         add(lc(20), lc(5), lc(6), lc(8), lc(0), "staff")
 
     for entry in out.values():
         entry["events"].sort(key=lambda e: e["ts"] or "")
-        entry["type"] = "staff" if _is_staff(entry["email"]) else "member"
+        entry["type"] = "staff" if _was_staff(entry["email"]) else "member"
         entry["first_ts"] = entry["events"][0]["ts"] if entry["events"] else ""
         entry["last_ts"] = entry["events"][-1]["ts"] if entry["events"] else ""
         entry["count"] = len(entry["events"])
@@ -5555,13 +5642,25 @@ _PAGE_LABEL_ALIASES = (
 )
 
 
+# A path rule matches whole path segments only. A bare substring match folded
+# every "/p2/seo-aeo/..." view (recorded 2026-09-11 to 09-24) through the
+# "/p2/seo" rule a second time, into "/seo-aeo-aeo/...", which split that
+# section's history in every top-pages list. Title rules stay substring
+# matches: they are whole phrases, and "SEO Dashboards" is not inside
+# "SEO + AEO Dashboards".
+_PAGE_LABEL_RULES = tuple(
+    (re.compile(re.escape(old) + ("" if old.endswith("/") else r"(?![\w-])")) if old.startswith("/") else None,
+     old, new)
+    for old, new in _PAGE_LABEL_ALIASES)
+
+
 def _page_label(s) -> str:
     """One page's analytics label, with pre-rename names folded into current
     ones so a rename does not fork its own history."""
     out = str(s or "")
-    for old, new in _PAGE_LABEL_ALIASES:
+    for rx, old, new in _PAGE_LABEL_RULES:
         if old in out:
-            out = out.replace(old, new)
+            out = rx.sub(new, out) if rx else out.replace(old, new)
     return out
 
 
@@ -5607,8 +5706,8 @@ def _fetch_visitor_analytics_uncached() -> dict:
             log.warning("visitor analytics read failed (%s): %s", rng, e)
             return []
 
-    _RANGES = ["Visitor Analytics!A:AM", "%s!A:T" % _MEMBER_TAB, "A1:U5000",
-               "Visitor Identities!A1:G5000", "Page Views!A:N"]
+    _RANGES = ["Visitor Analytics!A:AM", "%s!A:T" % _MEMBER_TAB, "A:U",
+               "Visitor Identities!A:G", "Page Views!A:N"]
     if svc:
         with ThreadPoolExecutor(max_workers=len(_RANGES) + 1) as _ex:
             _access_future = _ex.submit(_read_access_requests, 2000)
@@ -6072,8 +6171,8 @@ def _fetch_member_analytics_uncached() -> dict:
             return []
 
     _RANGES = ["%s!A:T" % _MEMBER_TAB, "Visitor Analytics!A:AM", "Page Views!A:M",
-               "A1:U5000",             # internal login log -- real names + p2_vid for @markifydigital.com
-               "Visitor Identities!A1:G5000"]
+               "A:U",             # internal login log -- real names + p2_vid for @markifydigital.com
+               "Visitor Identities!A:G"]
     if svc:
         with ThreadPoolExecutor(max_workers=len(_RANGES)) as _ex:
             ms_rows, va_rows, pv_rows, login_rows, vi_rows = list(_ex.map(_read, _RANGES))
@@ -6125,7 +6224,7 @@ def _fetch_member_analytics_uncached() -> dict:
     for r in pv:
         e = (pc(r, 4) or "").lower()
         path = pc(r, 6) or ""
-        if e and (not _is_staff(e) or path.startswith("/app")):
+        if e and (not _was_staff(e) or path.startswith("/app")):
             pv_by_email[e].append(r)
 
     members = {}
@@ -6272,7 +6371,7 @@ def _fetch_member_analytics_uncached() -> dict:
     # staff never arrive as anonymous visitors, so they're excluded from this ratio
     # (they still count toward the "Members" KPI above, which intentionally covers
     # all /app usage per the two-tier design).
-    external_out = [x for x in out_members if not _is_staff(x["email"])]
+    external_out = [x for x in out_members if not _was_staff(x["email"])]
     external_members = len(external_out)
     external_returning = sum(1 for x in external_out if x["status"] == "returning")
 
@@ -6424,7 +6523,7 @@ def _fetch_usage_data(internal: bool = True) -> dict:
 
     # Internal Usage keeps @markifydigital.com only; External Usage keeps everyone
     # else (any real non-P2 email). One predicate, inverted by mode.
-    def _is_p2(e): return _is_staff(e)
+    def _is_p2(e): return _was_staff(e)
     def keep(e):
         e = (e or "").strip()
         if not e:
@@ -6688,7 +6787,7 @@ def _read_access_requests(limit=300):
             _j.loads(sa_str), scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"])
         svc = build("sheets", "v4", credentials=creds, cache_discovery=False, static_discovery=True)
         r = svc.spreadsheets().values().get(
-            spreadsheetId=DEMO_REQUEST_SHEET_ID, range="Demo Requests!A1:J2000").execute()
+            spreadsheetId=DEMO_REQUEST_SHEET_ID, range="Demo Requests!A:J").execute()
         rows = r.get("values", [])
         data = rows[1:] if len(rows) > 1 else []
         def c(row, i): return (row[i] if len(row) > i else "")
@@ -6700,6 +6799,13 @@ def _read_access_requests(limit=300):
     except Exception as e:
         log.warning("access requests read failed: %s", e)
         return []
+
+
+@app.route("/admin/analytics-health")
+@admin_required
+def admin_analytics_health():
+    """Whether the analytics sheet can be read; every analytics page asks."""
+    return jsonify(_analytics_sheet_health(force=request.args.get("fresh") == "1"))
 
 
 @app.route("/admin/internal-usage")
@@ -7543,7 +7649,7 @@ def _fetch_client_usage(slug, force=False):
 
     def seg_of(email):
         e = (email or "").lower()
-        if _is_staff(e):
+        if _was_staff(e):
             return "p2"
         if any(e.endswith(d) for d in cli_doms):
             return "client"

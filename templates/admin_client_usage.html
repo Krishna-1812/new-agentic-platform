@@ -2,12 +2,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-{{ head("Client Usage", ["admin_client_usage.css?v=1", "admin.css?v=6"], compat=True) }}
+{{ head("Client Usage", ["admin_client_usage.css?v=1", "admin.css?v=7"], compat=True) }}
 </head>
 <body>
 {{ topbar([("Admin", "/admin/internal-usage"), ("Client Usage", none)]) }}
 
   <div class="main">
+    {% include "_admin_sheet_health.html" %}
     <div class="ph">
       <div class="ph-left">
         <div class="eyebrow">Admin · Platform Intelligence</div>

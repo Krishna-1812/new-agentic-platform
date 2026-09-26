@@ -1,0 +1,19 @@
+{# Shown at the top of every analytics page that reads the login-log sheet.
+   Asks /admin/analytics-health whether that sheet can be opened at all; when
+   it cannot (variables missing, sheet not shared with the service account,
+   a revoked key), says so here instead of leaving a page of zeros with no
+   reason. Hidden when all is well, and when the check itself fails. #}
+<div class="adm-health" id="admHealth" role="status" hidden>
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 22 20H2zM12 10v4M12 17.2v.1"/></svg>
+  <div><b id="admHealthTitle"></b><span id="admHealthDetail"></span></div>
+</div>
+<script>
+(function(){
+  fetch('/admin/analytics-health', {cache: 'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+    if (!d || d.ok) return;
+    document.getElementById('admHealthTitle').textContent = d.title || '';
+    document.getElementById('admHealthDetail').textContent = d.detail || '';
+    document.getElementById('admHealth').hidden = false;
+  }).catch(function(){});
+})();
+</script>

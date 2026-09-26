@@ -443,3 +443,16 @@ td.dim { color: var(--tx3); }
    icons that replaced them need a box. */
 .refresh-btn svg, .refresh-icon svg, .drawer-close svg, .close svg,
 .pm-close svg, .tl-close svg, .modal-close svg { width: 14px; height: 14px; }
+
+/* ── Analytics sheet health (templates/_admin_sheet_health.html) ────────
+   One warning at the top of an analytics page when its data cannot be read. */
+.adm-health {
+  display: flex; gap: var(--sp-3); align-items: flex-start;
+  margin: 0 0 var(--sp-5); padding: var(--sp-4) var(--sp-5);
+  background: color-mix(in srgb, var(--clay) 9%, var(--s1)); border-radius: var(--r); box-shadow: inset 4px 0 0 var(--clay);
+  color: var(--tx); font-size: var(--fs-sm); line-height: 1.5;
+}
+.adm-health[hidden] { display: none; }
+.adm-health svg { width: 20px; height: 20px; flex: none; margin-top: 1px; fill: none; stroke: var(--clay-tx); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.adm-health b { display: block; font-weight: var(--fw-semi); }
+.adm-health span { color: var(--tx2); }

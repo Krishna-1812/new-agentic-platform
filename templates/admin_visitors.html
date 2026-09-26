@@ -2,12 +2,13 @@
 <!doctype html>
 <html lang="en">
 <head>
-{{ head("Anonymous Traffic", ["admin_visitors.css?v=1", "admin.css?v=6"], compat=True) }}
+{{ head("Anonymous Traffic", ["admin_visitors.css?v=1", "admin.css?v=7"], compat=True) }}
 </head>
 <body>
 {{ topbar([("Admin", "/admin/internal-usage"), ("Anonymous Traffic", none)]) }}
 
 <div class="wrap">
+  {% include "_admin_sheet_health.html" %}
   <div class="hero">
     <h1>Anonymous <em>traffic</em></h1>
     <p>Behaviour of people on the public marketing &amp; login pages <b>before they sign in</b> — sources, engagement, intent signals and conversions. Bots are excluded from headline metrics.</p>
@@ -277,11 +278,11 @@ function deepenVisitor(){
   fetch('/admin/anonymous-traffic/deepen',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ip:v.ip})})
     .then(function(r){return r.json();})
     .then(function(d){
-      if(d.error){if(st)st.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3.5 22 20H2zM12 10v4M12 17.2v.1\"/></svg> '+d.error;if(btn){btn.disabled=false;btn.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6 3h12l3 6-9 12L3 9zM3 9h18M9 3 6 9l6 12 6-12-3-6\"/></svg> Enrich further (spends 1 Apollo credit)';}return;}
+      if(d.error){if(st)st.innerHTML='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3.5 22 20H2zM12 10v4M12 17.2v.1\"/></svg> '+esc(d.error);if(btn){btn.disabled=false;btn.innerHTML='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6 3h12l3 6-9 12L3 9zM3 9h18M9 3 6 9l6 12 6-12-3-6\"/></svg> Enrich further (spends 1 Apollo credit)';}return;}
       Object.assign(v,d.record||{});
       renderVisitorInto(v);
     })
-    .catch(function(){if(st)st.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3.5 22 20H2zM12 10v4M12 17.2v.1\"/></svg> Request failed.';if(btn){btn.disabled=false;btn.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6 3h12l3 6-9 12L3 9zM3 9h18M9 3 6 9l6 12 6-12-3-6\"/></svg> Enrich further (spends 1 Apollo credit)';}});
+    .catch(function(){if(st)st.innerHTML='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3.5 22 20H2zM12 10v4M12 17.2v.1\"/></svg> Request failed.';if(btn){btn.disabled=false;btn.innerHTML='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6 3h12l3 6-9 12L3 9zM3 9h18M9 3 6 9l6 12 6-12-3-6\"/></svg> Enrich further (spends 1 Apollo credit)';}});
 }
 function renderVisitorInto(v,backKey){
   if(!v)return;
@@ -317,11 +318,11 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer(
 function load(force){
   var btn=document.getElementById('refreshBtn');if(btn)btn.textContent='…';
   fetch('/admin/anonymous-traffic/data'+(force?'?fresh=1':''),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
-    if(btn)btn.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5\"/></svg> Refresh';
+    if(btn)btn.innerHTML='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5\"/></svg> Refresh';
     LAST_DATA=d;
     var k=d.kpis||{};
     var note=document.getElementById('emptyNote');
-    if(!d.configured){note.style.display='block';note.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3.5 22 20H2zM12 10v4M12 17.2v.1\"/></svg> Sheets not configured (GOOGLE_SA_JSON / LOGIN_LOG_SHEET_ID missing) — analytics cannot be stored or read yet.';}
+    if(!d.configured){note.style.display='none';}
     else if(!k.pageviews){note.style.display='block';note.textContent='No visitor data yet. Once the public site is live with the tracker and visitors browse, this dashboard fills automatically (data lands in the “Visitor Analytics” sheet tab).';}
     else{note.style.display='none';}
     document.getElementById('kpis').innerHTML=
@@ -394,7 +395,7 @@ function load(force){
         '<td>'+esc(x.ref)+'</td><td>'+esc(x.device)+'</td><td>'+esc(x.engaged)+'</td>'+
         '<td>'+esc(x.scroll)+'%</td><td>'+esc(x.pages)+'</td><td>'+flags.join(' ')+'</td></tr>';
     }).join(''):'<tr><td colspan="11" class="empty">No activity yet</td></tr>';
-  }).catch(function(){if(btn)btn.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5\"/></svg> Refresh';
+  }).catch(function(){if(btn)btn.innerHTML='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5\"/></svg> Refresh';
     document.getElementById('emptyNote').style.display='block';
     document.getElementById('emptyNote').textContent='Failed to load analytics data.';});
 }

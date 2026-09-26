@@ -2,12 +2,13 @@
 <!doctype html>
 <html lang="en">
 <head>
-{{ head("Agent Runs", ["admin_agent_runs.css?v=1", "admin.css?v=6"], compat=True) }}
+{{ head("Public Agent Usage", ["admin_agent_runs.css?v=1", "admin.css?v=7"], compat=True) }}
 </head>
 <body>
-{{ topbar([("Admin", "/admin/internal-usage"), ("Agent Runs", none)]) }}
+{{ topbar([("Admin", "/admin/internal-usage"), ("Public Agent Usage", none)]) }}
 
 <div class="wrap">
+  {% include "_admin_sheet_health.html" %}
   <div class="hero">
     <h1>Public Agent <em>usage</em></h1>
     <p>Every run of a public <b>/app</b> agent, per user, against the per-agent, per-account run cap we enforce (<b>10</b> for external users, <b>100</b> for @{{ brand.staff_domain }} staff). A "run" is one open of the live tool (we can't see what happens inside the embedded tool itself, since it's a separate app).</p>
@@ -121,10 +122,10 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer(
 function load(force){
   var btn=document.getElementById('refreshBtn');if(btn)btn.textContent='…';
   fetch('/admin/public-agent-usage/data',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
-    if(btn)btn.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5\"/></svg> Refresh';
+    if(btn)btn.innerHTML='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5\"/></svg> Refresh';
     LAST_DATA=d;
     var note=document.getElementById('emptyNote');
-    if(!d.configured){note.style.display='block';note.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3.5 22 20H2zM12 10v4M12 17.2v.1\"/></svg> Sheets not configured (GOOGLE_SA_JSON / LOGIN_LOG_SHEET_ID missing).';}
+    if(!d.configured){note.style.display='none';}
     else if(!d.total_runs){note.style.display='block';note.textContent='No agent runs yet. When someone opens the live tool for an agent under /app, it appears here (data lands in the “Agent Runs” sheet tab).';}
     else{note.style.display='none';}
     document.getElementById('kpis').innerHTML=
@@ -145,7 +146,7 @@ function load(force){
         '<td>'+u.total+'</td>'+
         '<td class="muted">'+esc(u.last_run||'—')+'</td></tr>';
     }).join(''):'<tr><td colspan="4" class="empty">No agent runs yet</td></tr>';
-  }).catch(function(){if(btn)btn.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5\"/></svg> Refresh';
+  }).catch(function(){if(btn)btn.innerHTML='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5\"/></svg> Refresh';
     var n=document.getElementById('emptyNote');n.style.display='block';n.textContent='Failed to load agent usage data.';});
 }
 load();
