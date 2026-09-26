@@ -115,6 +115,19 @@ def test_the_advertised_live_count_matches_the_page(hub_card, dashboard_cards):
            ", ".join(dashboard_cards["live"])))
 
 
+def test_the_directory_hero_figures_match_its_own_rows(dashboard_cards):
+    """The agents page opens with three figures (agents, live, in build) set in
+    its hero. They are typed into the markup so the page reads correctly with
+    JS off, which means they can drift from the rows below them exactly the
+    way the hub card could, so they are held to the same rows."""
+    body = _render("/strategic-agents")
+    figs = dict(re.findall(r'data-figure="(\w+)">([\d,]+)<', body))
+    assert int(figs["agents"]) == dashboard_cards["total"]
+    assert int(figs["live"]) == len(dashboard_cards["live"]) - len(dashboard_cards["building"])
+    assert int(figs["building"]) == len(dashboard_cards["building"])
+    assert ">%d live now<" % int(figs["live"]) in body.replace("<i></i>", "")
+
+
 def test_live_is_never_more_than_total(hub_card):
     assert hub_card["stats"]["live"] <= hub_card["stats"]["dashboards"]
 
