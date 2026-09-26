@@ -4185,7 +4185,8 @@ def ppc_linkedin_scraper_redirect():
 @position2_required
 def seo():
     return render_template("seo.html", user=_get_user(), seo_tools=_seo_tools(),
-                           seo_tool_groups=_seo_tool_groups())
+                           seo_tool_groups=_seo_tool_groups(),
+                           seo_tool_briefs=_SEO_TOOL_BRIEFS)
 
 
 # ── /seo/* -> /seo-aeo/* ───────────────────────────────────────────────
@@ -4651,6 +4652,87 @@ _SEO_TOOL_ALIASES = {"hub-spoke": "content-architect", "team-insights": None,
 
 def _seo_tools():
     return _SEO_TOOLS
+
+
+# What each tool asks for and what it hands back, for the cards on /seo-aeo
+# (templates/seo.html). Paraphrased from the studio's own home page
+# (seo-apps/client/src/pages/HomePage.jsx) and each tool's own form, so a card
+# never promises more than the tool shows. Every slug in _SEO_TOOLS needs one;
+# tests/test_seo_aeo_rename.py holds the two lists together.
+_SEO_TOOL_BRIEFS = {
+    "keyword-research": {
+        "lead": "Finds who ranks for a seed keyword, pulls their real rankings from SEMrush, and lets AI shortlist the keywords worth a campaign.",
+        "gives": "A seed keyword",
+        "gets": "2 primary and 10 secondary keywords, from real rankings"},
+    "content-research": {
+        "lead": "Reads the top 10 ranking pages for a keyword, pulls out how they are structured, and turns that into a brief you can write from.",
+        "gives": "A keyword",
+        "gets": "A content brief with H2s and competitor insights"},
+    "competitor-analysis": {
+        "lead": "Sets a client's domain against the competitors you name: organic traffic, keywords, backlinks, page speed and content, side by side.",
+        "gives": "A client domain and its competitors",
+        "gets": "Traffic, keyword and backlink gaps, with a summary"},
+    "market-potential": {
+        "lead": "Compares commercial search demand across nearby metros, indexed to the market you are in, with per-capita demand, CPC, competition and a 12-month trend.",
+        "gives": "Your home market and a service",
+        "gets": "Adjacent metros ranked by demand"},
+    "article-recommendation": {
+        "lead": "Analyses the top 10 ranking pages for a keyword and writes a complete article brief: structure, instructions, keywords per section and FAQs.",
+        "gives": "A keyword",
+        "gets": "An H1, H2 and H3 brief with FAQs"},
+    "content-enhancement": {
+        "lead": "Reads a live page, researches the top 10 ranking blogs on the topic, and writes upgrades for structure, authority, citations, FAQs, schema and AI search.",
+        "gives": "A live URL or pasted HTML",
+        "gets": "Copy-ready upgrades, section by section"},
+    "article-enhancement": {
+        "lead": "Crawls a live article and runs five specialist LLM analyses in parallel against SERP competitors, then rebuilds the article with every addition highlighted.",
+        "gives": "A live article URL",
+        "gets": "An enhanced HTML article, changes highlighted"},
+    "article-enhancement-lite": {
+        "lead": "Improves an article using only its own content and SEO and AEO practice. No SERP data, and it never adds statistics, quotes or citations.",
+        "gives": "An existing article",
+        "gets": "The same article, improved, every change traceable"},
+    "on-page-audit": {
+        "lead": "Runs 23 sections of checks on a page with live data and PageSpeed Insights: URL, meta, headings, content, schema, Core Web Vitals, crawlability and more.",
+        "gives": "A URL and its primary keywords",
+        "gets": "A pass or fail for each of 23 sections"},
+    "seo-geo-audit": {
+        "lead": "200+ checks across title, meta, headings, content, schema, E-E-A-T, technical and GEO signals, scored, with AI recommendations.",
+        "gives": "Any URL or pasted HTML",
+        "gets": "A scored audit and what to fix first"},
+    "seo-geo-snapshot": {
+        "lead": "The same 200+ check engine as the audit, shown as one score dashboard: the band, points lost, nine category bars, quick wins and keyword coverage.",
+        "gives": "Any URL or pasted HTML",
+        "gets": "One screen of scores"},
+    "agent-readiness-audit": {
+        "lead": "13 automated checks across discoverability, content negotiation, bot access rules and protocol support such as MCP, OAuth and Agent Skills.",
+        "gives": "A website",
+        "gets": "A 0 to 100 score and a CMO brief"},
+    "image-alt-audit": {
+        "lead": "Scrapes a site's location pages, classifies every image by type, and writes SEO alt tags and clean filenames for each one.",
+        "gives": "A site's location pages",
+        "gets": "A colour-coded Excel workbook of alt tags"},
+    "location-page-builder": {
+        "lead": "For one client, service and location, produces an approved page package: keywords, competitor analysis, composed content, FAQs, internal links and schema.",
+        "gives": "A client, a service and a location",
+        "gets": "A dev-ready page package"},
+    "content-architect": {
+        "lead": "Maps a site's structure into topic clusters and shows where the hub and spoke links are missing.",
+        "gives": "A domain",
+        "gets": "Clusters, hubs and the gaps between them"},
+    "gbp-qc": {
+        "lead": "Checks Google Business Profile posts against a client's brand guidelines and writes location-specific versions from one approved base post.",
+        "gives": "An approved base post and its locations",
+        "gets": "Checked posts, ready for every location"},
+    "knowledge-base": {
+        "lead": "Keeps what the team knows about each client, industry and best practice, and feeds it into the AI tools when a client is selected.",
+        "gives": "Client, industry and best-practice notes",
+        "gets": "Context every tool reads"},
+    "robots-monitor": {
+        "lead": "Crawls sitemaps every day, samples pages by type, and checks noindex signals on production and staging, with a Slack alert when a live page goes dark.",
+        "gives": "Production and staging domains",
+        "gets": "Daily index checks and alerts"},
+}
 
 
 # Same 18 tools, bucketed for the directory page (templates/seo.html), in the

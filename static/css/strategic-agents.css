@@ -1,5 +1,6 @@
 /* ════════════════════════════════════════════════════════════════════════
-   GO-TO-MARKET AGENTS (/strategic-agents) — in the public site's voice
+   GO-TO-MARKET AGENTS (/strategic-agents) and OPERATIONAL AGENTS (/seo-aeo)
+   — both directories in the public site's voice
 
    The same materials as press.css, set inside the product shell:
      - PAPER GROUND, white cards, and colour in WHOLE BLOCKS (orange, amber,
@@ -9,7 +10,8 @@
      - PILLS for every control, flooding with colour from the pointer.
 
    Each group owns one hue for its tile, dots and hover flood:
-     Signals = red, People & Research = sky, Vertical Tools = orange.
+     Signals = red, People & Research = sky, Vertical Tools = orange;
+     Research = sky, Optimize = orange, Build = red.
 
    Motion is driven by static/js/strategic-agents.js. Every hidden or moving
    state below is scoped under html.sa-play, which the script adds only when
@@ -210,6 +212,46 @@ html:root { background-color: var(--bg); }
 .sa-step a:hover { background: rgba(18,18,19,.1); }
 .sa-step a:hover::after { transform: translateX(4px); }
 
+/* ── Common jobs (Operational agents) ────────────────────────────────
+   White blocks, each a numbered chain of tools joined by one ink rule. */
+.sa-jobs-sec { margin-top: clamp(64px, 8vw, 128px); }
+.sa-jobs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }
+.sa-job {
+  background: var(--s1); border-radius: var(--r-lg); padding: var(--sp-7) var(--sp-6) var(--sp-6);
+  display: flex; flex-direction: column; gap: var(--sp-3);
+  transition: transform 420ms var(--spring), box-shadow 300ms ease;
+}
+.sa-job:hover { transform: translateY(-4px); box-shadow: var(--shadow-block); }
+.sa-job-n { font-size: 12px; font-weight: var(--fw-semi); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--tx3); }
+.sa-job h3 {
+  margin: 0; font-family: var(--font-display); font-weight: 600; font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
+  font-size: clamp(28px, 2.6vw, 38px); line-height: 1.02; letter-spacing: -0.028em;
+}
+.sa-job p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--tx2); }
+.sa-chain { position: relative; list-style: none; margin: var(--sp-4) 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.sa-chain::before {
+  content: ''; position: absolute; left: 17px; top: 24px; bottom: 24px; width: 2px; margin-left: -1px;
+  background: #121213; transform-origin: 50% 0; transition: transform 1100ms var(--glide);
+}
+.sa-chain-i a {
+  position: relative; display: grid; grid-template-columns: 34px 1fr auto; gap: var(--sp-3); align-items: center;
+  padding: 8px 10px 8px 0; border-radius: 14px; color: var(--tx); text-decoration: none;
+  transition: background 200ms ease;
+}
+.sa-chain-i a::after { content: '\2192'; color: var(--tx3); transition: transform 300ms var(--spring), color 200ms ease; }
+.sa-chain-i a:hover { background: var(--s2); }
+.sa-chain-i a:hover::after { transform: translateX(4px); color: #121213; }
+.sa-chain-i a:focus-visible { outline: 2px solid #121213; outline-offset: 2px; }
+.sa-chain-i b {
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; z-index: 1;
+  font-size: 14px; font-weight: var(--fw-semi); color: #121213; box-shadow: 0 0 0 4px var(--s1);
+  transition: transform 520ms var(--spring);
+}
+.sa-chain-i a:hover b { transform: scale(1.14) rotate(-10deg); }
+.sa-chain-i--a b { background: var(--acc); } .sa-chain-i--b b { background: var(--sky); } .sa-chain-i--c b { background: var(--clay); }
+.sa-chain-i span { display: flex; flex-direction: column; gap: 2px; font-weight: var(--fw-semi); font-size: 15px; line-height: 1.25; }
+.sa-chain-i em { font-style: normal; font-weight: var(--fw-regular); font-size: 13px; color: var(--tx2); }
+
 /* ── Directory ───────────────────────────────────────────────────────── */
 .sa-dir { margin-top: clamp(64px, 8vw, 128px); scroll-margin-top: 70px; }
 .sa-mk--sm { padding: 0 .1em; }
@@ -301,6 +343,10 @@ html:root { background-color: var(--bg); }
   background: var(--hue); color: #121213; transition: transform 460ms var(--spring), background 200ms ease, color 200ms ease;
 }
 .sa-ic svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.sa-ic--letter {
+  font-family: var(--font-display); font-weight: 600; font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
+  font-size: 25px; line-height: 1; letter-spacing: -0.02em;
+}
 .sa-num { font-size: 12px; font-weight: var(--fw-semi); letter-spacing: var(--ls-label); color: var(--tx3); font-variant-numeric: tabular-nums; }
 .sa-state {
   margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: var(--fw-semi);
@@ -413,6 +459,14 @@ html:root { background-color: var(--bg); }
 .sa-play .sa-group .sa-grid { transition: clip-path 900ms var(--expo); }
 .sa-play .sa-group.is-armed:not(.is-in) .sa-group-tile { transform: scale(0) rotate(-120deg); }
 
+/* Common jobs: the blocks settle together, then each chain's rule draws
+   down and its numbers pop, all at once (one object, not step by step). */
+.sa-play .sa-jobs .sa-job { transition: transform 1000ms var(--spring), border-radius 1000ms var(--glide), box-shadow 300ms ease; }
+.sa-play .sa-jobs.is-armed:not(.is-in) .sa-job { transform: translateY(40px) scale(.94); border-radius: 64px; }
+.sa-play .sa-jobs.is-armed:not(.is-in) .sa-chain::before { transform: scaleY(0); }
+.sa-play .sa-jobs.is-armed:not(.is-in) .sa-chain-i b { transform: scale(0); }
+.sa-play .sa-jobs .sa-chain::before { transition-delay: 300ms; }
+
 /* Filtering glides cards to their new places (FLIP, driven by the script). */
 .sa-card.is-leaving { opacity: 0; transform: scale(.9); transition: opacity 220ms ease, transform 260ms var(--io); }
 
@@ -441,6 +495,7 @@ html:root { background-color: var(--bg); }
   .sa-hero-foot { grid-template-columns: 1fr; }
   .sa-hero-actions { justify-content: flex-start; }
   .sa-flow-grid { grid-template-columns: 1fr; }
+  .sa-jobs { grid-template-columns: 1fr; }
   .sa-flow-path, .sa-flow-dot { display: none; }
   .sa-flow .sa-sec-head { margin-bottom: var(--sp-6); }
   .sa-cta { grid-template-columns: 1fr; }
