@@ -4729,28 +4729,38 @@ def dashboard_legacy_p2(account_id: str, section: str = None):
     return redirect(target, code=301)
 
 # ── Google Ads campaign dashboard ─────────────────────────────────────────────
+# All filtering, aggregation, and charting for this page happen in the
+# browser (static/js/google-ads-dashboard.js) against the full row set, so
+# every filter -- account, date range, campaign type, search -- is instant
+# with no round trip. The route's only job is the one thing that must
+# happen server-side: read the Sheet (cached) and decide whether there is
+# anything to show at all.
 @app.route("/dashboards/google-ads")
 @position2_required
 def google_ads_dashboard():
     try:
-        summary = _google_ads_summary()
+        rows = _fetch_google_ads_rows()
     except Exception:
         import traceback
         log.warning("google_ads_dashboard: %s", traceback.format_exc())
-        summary = {"ok": False, "rows": 0}
-    chart = _ads_spend_chart(summary["daily"]) if summary.get("ok") else None
-    return render_template("google_ads_dashboard.html", user=_get_user(), summary=summary, chart=chart)
+        rows = []
+    return render_template("google_ads_dashboard.html", user=_get_user(),
+                           rows=rows, ok=bool(rows),
+                           currency_symbol=_google_ads_currency_symbol(rows))
 
 @app.route("/api/dashboards/google-ads/refresh", methods=["POST"])
 @position2_required
 def google_ads_dashboard_refresh():
-    """Force-refetch past the cache, for the dashboard's own Refresh button."""
+    """Force-refetch past the cache, for the dashboard's own Refresh button
+    (which then re-renders client-side -- no page reload)."""
     try:
-        return jsonify(_google_ads_summary(force=True))
+        rows = _fetch_google_ads_rows(force=True)
+        return jsonify({"ok": bool(rows), "rows": rows,
+                         "currency_symbol": _google_ads_currency_symbol(rows)})
     except Exception:
         import traceback
         log.warning("google_ads_dashboard_refresh: %s", traceback.format_exc())
-        return jsonify({"ok": False, "rows": 0}), 502
+        return jsonify({"ok": False, "rows": []}), 502
 
 @app.after_request
 def _no_html_cache(resp):
@@ -16862,85 +16872,20 @@ def _fetch_google_ads_rows(force: bool = False):
 _CURRENCY_SYMBOLS = {"INR": "₹", "USD": "$", "GBP": "£", "EUR": "€"}
 
 
-def _google_ads_summary(force: bool = False) -> dict:
-    """Everything the dashboard template renders, aggregated fresh from the
-    cached rows on every call (cheap: a few thousand rows at most) rather
-    than cached itself, so the "as of" figures always match whatever rows
-    _fetch_google_ads_rows() is currently holding."""
-    rows = _fetch_google_ads_rows(force=force)
-    if not rows:
-        return {"ok": False, "rows": 0}
-
-    total_clicks = sum(r["clicks"] for r in rows)
-    total_impr = sum(r["impressions"] for r in rows)
-    total_cost = sum(r["cost"] for r in rows)
-    total_conv = sum(r["conversions"] for r in rows)
-
-    by_day: dict = {}
-    for r in rows:
-        d = by_day.setdefault(r["day"], {"cost": 0.0, "clicks": 0.0})
-        d["cost"] += r["cost"]
-        d["clicks"] += r["clicks"]
-    daily = [{"day": d, "cost": v["cost"], "clicks": v["clicks"]}
-             for d, v in sorted(by_day.items()) if d]
-
-    by_campaign: dict = {}
-    for r in rows:
-        key = (r["account"], r["campaign"])
-        c = by_campaign.setdefault(key, {
-            "account": r["account"], "campaign": r["campaign"], "state": r["state"],
-            "cost": 0.0, "clicks": 0.0, "impressions": 0.0, "conversions": 0.0})
-        c["cost"] += r["cost"]
-        c["clicks"] += r["clicks"]
-        c["impressions"] += r["impressions"]
-        c["conversions"] += r["conversions"]
-    campaigns = sorted(by_campaign.values(), key=lambda c: c["cost"], reverse=True)
-
-    currency_counts: dict = {}
+def _dominant_ads_currency(rows) -> str:
+    """The converted-currency code most rows agree on (typically all of
+    them) -- majority vote rather than "the first row's" so one stray
+    unconverted row can't flip the whole page's currency symbol."""
+    counts: dict = {}
     for r in rows:
         if r["currency"]:
-            currency_counts[r["currency"]] = currency_counts.get(r["currency"], 0) + 1
-    currency = max(currency_counts, key=currency_counts.get) if currency_counts else "INR"
-
-    return {
-        "ok": True,
-        "rows": len(rows),
-        "accounts_count": len({r["account"] for r in rows if r["account"]}),
-        "campaigns_count": len(by_campaign),
-        "currency": currency,
-        "currency_symbol": _CURRENCY_SYMBOLS.get(currency, currency + " "),
-        "total_clicks": total_clicks,
-        "total_impressions": total_impr,
-        "total_cost": total_cost,
-        "total_conversions": total_conv,
-        "ctr": (total_clicks / total_impr * 100) if total_impr else 0.0,
-        "avg_cpc": (total_cost / total_clicks) if total_clicks else 0.0,
-        "cost_per_conv": (total_cost / total_conv) if total_conv else 0.0,
-        "daily": daily[-60:],
-        "campaigns": campaigns[:15],
-        "as_of": daily[-1]["day"] if daily else "",
-    }
+            counts[r["currency"]] = counts.get(r["currency"], 0) + 1
+    return max(counts, key=counts.get) if counts else "INR"
 
 
-def _ads_spend_chart(daily, width: int = 720, height: int = 200, pad: int = 12) -> dict:
-    """Line-chart geometry for the daily spend trend, computed here rather
-    than in JS so the page has a complete chart on first paint with no
-    client-side computation and nothing to fail silently if a script errors.
-    Returns None when there's nothing to plot (0 or 1 day of data can't draw
-    a line)."""
-    if len(daily) < 2:
-        return None
-    costs = [d["cost"] for d in daily]
-    lo, hi = min(costs), max(costs)
-    span = (hi - lo) or 1.0
-    n = len(daily)
-    xs = [pad + (width - 2 * pad) * i / (n - 1) for i in range(n)]
-    ys = [height - pad - (height - 2 * pad) * (c - lo) / span for c in costs]
-    points = " ".join("%.1f,%.1f" % (x, y) for x, y in zip(xs, ys))
-    area = "%s %.1f,%.1f %.1f,%.1f" % (points, xs[-1], height - pad, xs[0], height - pad)
-    return {"width": width, "height": height, "points": points, "area": area,
-            "min": lo, "max": hi,
-            "first_day": daily[0]["day"], "last_day": daily[-1]["day"]}
+def _google_ads_currency_symbol(rows) -> str:
+    currency = _dominant_ads_currency(rows)
+    return _CURRENCY_SYMBOLS.get(currency, currency + " ")
 
 
 # ── Chatbot data functions ────────────────────────────────────────────────────

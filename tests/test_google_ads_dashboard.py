@@ -4,12 +4,21 @@ Fed by a Google Ads "schedule export to Sheets" report -- there is no Ads API
 call anywhere in this feature, only a read of whatever rows that export has
 already written. These tests fake the Sheets read (a small stand-in for the
 googleapiclient chain: spreadsheets().get()/.values().get()) so the parsing
-and aggregation logic is checked without any network call or real credential,
-using a header row and a few data rows shaped exactly like the real export
-(see the docstring on _fetch_google_ads_rows in app.py).
+logic is checked without any network call or real credential, using a header
+row and a few data rows shaped exactly like the real export (see the
+docstring on _fetch_google_ads_rows in app.py).
+
+Filtering, aggregation, and charting all moved client-side (static/js/
+google-ads-dashboard.js), so this file only covers what still runs in
+Python: row parsing, the currency-symbol pick, and the route's job of
+deciding ok/not-ok and embedding the row set. The JS itself is verified in
+a real browser (Playwright), the same way the rest of this codebase's
+client-side behaviour is checked -- there is no JS test runner here.
 """
 
+import json
 import os
+import re
 import sys
 
 import pytest
@@ -151,80 +160,35 @@ def test_fetch_rows_is_cached_between_calls(fake_sheet, monkeypatch):
     assert not calls
 
 
-# ── _google_ads_summary ──────────────────────────────────────────────────────
+# ── _dominant_ads_currency / _google_ads_currency_symbol ─────────────────────
 
-def test_summary_totals_add_up_across_every_row(fake_sheet):
-    s = appmod._google_ads_summary(force=True)
-    assert s["ok"] is True
-    assert s["total_clicks"] == pytest.approx(8 + 9 + 20)
-    assert s["total_impressions"] == pytest.approx(91 + 106 + 200)
-    assert s["total_cost"] == pytest.approx(1034.72 + 1206.38 + 500.00)
-    assert s["total_conversions"] == pytest.approx(0 + 1 + 2)
+def test_dominant_currency_is_majority_vote():
+    rows = [{"currency": "INR"}, {"currency": "INR"}, {"currency": "USD"}]
+    assert appmod._dominant_ads_currency(rows) == "INR"
 
 
-def test_summary_counts_distinct_accounts_and_campaigns(fake_sheet):
-    s = appmod._google_ads_summary(force=True)
-    assert s["accounts_count"] == 2
-    # NonBrand-MD appears on two different days but is one campaign.
-    assert s["campaigns_count"] == 2
+def test_dominant_currency_falls_back_to_inr_with_nothing_to_vote_on():
+    assert appmod._dominant_ads_currency([]) == "INR"
+    assert appmod._dominant_ads_currency([{"currency": ""}]) == "INR"
 
 
-def test_summary_groups_daily_spend_across_accounts(fake_sheet):
-    s = appmod._google_ads_summary(force=True)
-    by_day = {d["day"]: d["cost"] for d in s["daily"]}
-    assert by_day["2026-09-17"] == pytest.approx(1034.72)
-    assert by_day["2026-09-18"] == pytest.approx(1206.38 + 500.00)
-    assert s["as_of"] == "2026-09-18"
+def test_currency_symbol_maps_known_codes_and_passes_through_unknown_ones():
+    assert appmod._google_ads_currency_symbol([{"currency": "INR"}]) == "₹"
+    assert appmod._google_ads_currency_symbol([{"currency": "USD"}]) == "$"
+    assert appmod._google_ads_currency_symbol([{"currency": "AUD"}]) == "AUD "
 
 
-def test_summary_campaign_leaderboard_is_sorted_by_cost(fake_sheet):
-    s = appmod._google_ads_summary(force=True)
-    costs = [c["cost"] for c in s["campaigns"]]
-    assert costs == sorted(costs, reverse=True)
-    assert s["campaigns"][0]["campaign"] == "NonBrand-MD"
-
-
-def test_summary_cost_per_conversion_is_zero_not_a_crash_with_no_conversions(monkeypatch):
-    monkeypatch.setattr(appmod, "_fetch_google_ads_rows",
-                         lambda force=False: [{"account": "A", "campaign": "C", "state": "Enabled",
-                                                "day": "2026-09-17", "clicks": 5.0, "impressions": 50.0,
-                                                "cost": 20.0, "currency": "INR", "conversions": 0.0}])
-    s = appmod._google_ads_summary(force=True)
-    assert s["cost_per_conv"] == 0.0
-
-
-def test_summary_is_not_ok_with_no_rows(monkeypatch):
-    monkeypatch.setattr(appmod, "_fetch_google_ads_rows", lambda force=False: [])
-    s = appmod._google_ads_summary(force=True)
-    assert s == {"ok": False, "rows": 0}
-
-
-def test_summary_raises_past_the_route_when_sheet_id_is_unset(monkeypatch):
+def test_fetch_rows_raises_past_the_route_when_sheet_id_is_unset(monkeypatch):
     monkeypatch.setattr(appmod, "GOOGLE_ADS_SHEET_ID", "")
     appmod._google_ads_cache.update(rows=None, at=0.0)
     with pytest.raises(RuntimeError):
         appmod._fetch_google_ads_rows(force=True)
 
 
-# ── _ads_spend_chart ─────────────────────────────────────────────────────────
-
-def test_chart_geometry_needs_at_least_two_days():
-    assert appmod._ads_spend_chart([]) is None
-    assert appmod._ads_spend_chart([{"day": "2026-09-17", "cost": 10.0}]) is None
-
-
-def test_chart_geometry_spans_the_full_data_range(fake_sheet):
-    s = appmod._google_ads_summary(force=True)
-    chart = appmod._ads_spend_chart(s["daily"])
-    assert chart is not None
-    assert chart["first_day"] == "2026-09-17"
-    assert chart["last_day"] == "2026-09-18"
-    assert chart["min"] == pytest.approx(1034.72)
-    assert chart["max"] == pytest.approx(1706.38)
-    assert len(chart["points"].split()) == len(s["daily"])
-
-
 # ── The route ────────────────────────────────────────────────────────────────
+# Filtering, aggregation, and every chart are client-side now, so the route's
+# only contract is: gate on sign-in, embed the exact row set as JSON, and
+# fall back to a safe empty state when there is nothing to embed.
 
 def test_route_requires_sign_in():
     c = appmod.app.test_client()
@@ -232,13 +196,25 @@ def test_route_requires_sign_in():
     assert r.status_code in (302, 303)
 
 
-def test_route_renders_the_summary_when_configured(fake_sheet):
+def test_route_embeds_the_full_row_set_as_json(fake_sheet):
     r = _staff_client().get("/dashboards/google-ads")
     assert r.status_code == 200
     body = r.get_data(as_text=True)
-    assert "NonBrand-MD" in body
-    assert "Turquoise Institute" in body
-    assert "Total spend" in body
+    assert "Total spend" in body  # the static shell, always present when ok
+    match = re.search(
+        r'<script id="gad-data" type="application/json">(.*?)</script>', body, re.S)
+    assert match, "expected an embedded #gad-data JSON payload"
+    embedded = json.loads(match.group(1))
+    assert len(embedded) == 3
+    accounts = {r["account"] for r in embedded}
+    assert accounts == {"Turquoise Institute", "Other Co"}
+    campaigns = {r["campaign"] for r in embedded}
+    assert campaigns == {"NonBrand-MD", "Brand"}
+
+
+def test_route_sets_the_currency_symbol_for_js_to_read(fake_sheet):
+    r = _staff_client().get("/dashboards/google-ads")
+    assert 'data-currency-symbol="₹"' in r.get_data(as_text=True)
 
 
 def test_route_shows_a_safe_empty_state_when_not_configured(monkeypatch):
@@ -246,10 +222,15 @@ def test_route_shows_a_safe_empty_state_when_not_configured(monkeypatch):
     appmod._google_ads_cache.update(rows=None, at=0.0)
     r = _staff_client().get("/dashboards/google-ads")
     assert r.status_code == 200
-    assert "GOOGLE_ADS_SHEET_ID" in r.get_data(as_text=True)
+    body = r.get_data(as_text=True)
+    assert "GOOGLE_ADS_SHEET_ID" in body
+    assert 'id="gad-data"' not in body  # nothing to embed, so nothing embedded
 
 
-def test_refresh_endpoint_returns_json(fake_sheet):
+def test_refresh_endpoint_returns_the_fresh_row_set(fake_sheet):
     r = _staff_client().post("/api/dashboards/google-ads/refresh")
     assert r.status_code == 200
-    assert r.get_json()["ok"] is True
+    data = r.get_json()
+    assert data["ok"] is True
+    assert len(data["rows"]) == 3
+    assert data["currency_symbol"] == "₹"
