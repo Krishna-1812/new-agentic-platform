@@ -1,0 +1,118 @@
+/* ════════════════════════════════════════════════════════════════════════
+   GOOGLE ADS PERFORMANCE (/dashboards/google-ads) — BENTO
+
+   Fed by a Google Ads "Schedule export to Sheets" report (Ads' own daily
+   scheduler) and read live off that Sheet on each page load, cached a few
+   minutes server-side. No Postgres table, no Ads API developer token: the
+   Sheet already carries the history, so this page's whole job is to read it
+   and lay it out -- stat tiles first, one filled per rule 4 (Total spend,
+   the figure that says money is actually moving), then the daily trend,
+   then the campaign breakdown.
+   ──────────────────────────────────────────────────────────────────────── */
+
+html:root { background-color: var(--bg); }
+
+.gad-shell { max-width: var(--maxw); margin: 0 auto; padding: var(--sp-7) var(--page-pad) var(--sp-9); }
+
+.gad-lead {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-5);
+  margin: 0 0 var(--sp-7);
+}
+.gad-kicker {
+  font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--acc-tx);
+  margin-bottom: var(--sp-3);
+}
+.gad-h1 {
+  font-family: var(--font-display); font-size: var(--fs-4xl); font-weight: var(--display-weight);
+  letter-spacing: var(--ls-display); line-height: var(--lh-tight); margin: 0 0 var(--sp-3); color: var(--tx);
+}
+.gad-sub { margin: 0; font-size: var(--fs-md); color: var(--tx2); }
+
+.gad-refresh {
+  flex: none; font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-semi);
+  color: var(--tx); background: var(--s2); border: none; border-radius: var(--r-pill);
+  padding: var(--sp-3) var(--sp-5); cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.gad-refresh:hover { background: var(--acc); color: var(--tx-on-fill); }
+.gad-refresh:disabled { opacity: .6; cursor: default; }
+
+/* ── Empty state ─────────────────────────────────────────────────────────*/
+.gad-empty {
+  background: var(--s1); border-radius: var(--r); padding: var(--sp-7);
+  color: var(--tx2); font-size: var(--fs-md); line-height: var(--lh-body); max-width: 64ch;
+}
+.gad-empty code {
+  font-family: var(--font-num); font-size: .92em; background: var(--s2);
+  border-radius: var(--r-sm); padding: 2px var(--sp-2);
+}
+
+/* ── Stat tiles ──────────────────────────────────────────────────────────*/
+.gad-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--gap); margin-bottom: var(--sp-6);
+}
+.gad-stat {
+  background: var(--s1); border-radius: var(--r); padding: var(--sp-5);
+  display: flex; flex-direction: column; justify-content: flex-end; gap: var(--sp-1);
+  min-height: 108px;
+}
+.gad-stat-v {
+  font-family: var(--font-num); font-size: var(--fs-2xl); font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight); line-height: 1; font-variant-numeric: tabular-nums; color: var(--tx);
+}
+.gad-stat-l { font-size: var(--fs-xs); color: var(--tx2); }
+
+/* Exactly one filled tile -- rule 4: the figure that says the account is
+   actually spending, not merely configured. */
+.gad-stat--fill { background: var(--acc); }
+.gad-stat--fill .gad-stat-v { color: var(--tx-on-fill); }
+.gad-stat--fill .gad-stat-l { color: rgba(19,19,21,.66); }
+
+/* ── Panels (chart, table) ───────────────────────────────────────────────*/
+.gad-panel { background: var(--s1); border-radius: var(--r); padding: var(--sp-6); margin-bottom: var(--sp-5); }
+.gad-panel-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: var(--sp-4); }
+.gad-panel-t {
+  font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--display-weight);
+  letter-spacing: var(--ls-tight); color: var(--tx);
+}
+.gad-panel-d { font-size: var(--fs-xs); color: var(--tx3); }
+
+.gad-chart { width: 100%; height: 200px; display: block; }
+.gad-chart-area { fill: var(--acc-dim); stroke: none; }
+.gad-chart-line { fill: none; stroke: var(--acc); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.gad-chart-range {
+  display: flex; justify-content: space-between; margin-top: var(--sp-2);
+  font-size: var(--fs-xs); color: var(--tx3); font-variant-numeric: tabular-nums;
+}
+
+/* ── Campaign table ──────────────────────────────────────────────────────*/
+.gad-table { display: flex; flex-direction: column; }
+.gad-row {
+  display: grid; grid-template-columns: 1.3fr 1.7fr .7fr .8fr .8fr .7fr;
+  gap: var(--sp-4); align-items: center; padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-sm); color: var(--tx);
+}
+.gad-row:last-child { border-bottom: none; }
+.gad-row > span:not(.gad-cell-acc):not(.gad-cell-camp) {
+  text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-num);
+}
+.gad-row--head {
+  font-size: var(--fs-xs); font-weight: var(--fw-semi); letter-spacing: var(--ls-label);
+  text-transform: uppercase; color: var(--tx3);
+}
+.gad-row--head > span:not(:first-child):not(:nth-child(2)) { text-align: right; font-family: var(--font-body); }
+.gad-cell-acc { color: var(--tx2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gad-cell-camp { font-weight: var(--fw-semi); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.gad-foot { margin-top: var(--sp-6); font-size: var(--fs-xs); color: var(--tx3); }
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────────────*/
+@media (max-width: 720px) {
+  .gad-lead { flex-direction: column; align-items: stretch; }
+  .gad-h1 { font-size: var(--fs-2xl); }
+  .gad-row { grid-template-columns: 1.2fr 1.6fr .7fr .7fr; }
+  .gad-row > span:nth-child(4), .gad-row > span:nth-child(6) { display: none; }
+}
