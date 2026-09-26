@@ -238,6 +238,17 @@ def test_route_embeds_the_full_row_set_as_json(fake_sheet):
     assert campaigns == {"NonBrand-MD", "Brand"}
 
 
+def test_every_headline_figure_opens_its_detail_panel(fake_sheet):
+    """Each KPI block and rate tile is a data-go link the script turns into a
+    detail panel, and the panel's frame ships with the page (hidden until
+    something is clicked)."""
+    body = _staff_client().get("/dashboards/google-ads").get_data(as_text=True)
+    for key in ("cost", "conversions", "clicks", "impressions", "ctr", "cpc", "cpa", "cvr", "view_through"):
+        assert re.search(r'data-kpi="%s" data-go="metric" data-id="%s" role="button" tabindex="0"' % (key, key), body), key
+    assert 'id="gad-drawer" hidden' in body
+    assert 'role="dialog" aria-modal="true"' in body
+
+
 def test_route_sets_the_currency_symbol_for_js_to_read(fake_sheet):
     r = _staff_client().get("/dashboards/google-ads")
     assert 'data-currency-symbol="₹"' in r.get_data(as_text=True)
@@ -251,6 +262,7 @@ def test_route_shows_a_safe_empty_state_when_not_configured(monkeypatch):
     body = r.get_data(as_text=True)
     assert "GOOGLE_ADS_SHEET_ID" in body
     assert 'id="gad-data"' not in body  # nothing to embed, so nothing embedded
+    assert 'id="gad-drawer"' not in body  # and nothing to open
 
 
 def test_refresh_endpoint_returns_the_fresh_row_set(fake_sheet):
