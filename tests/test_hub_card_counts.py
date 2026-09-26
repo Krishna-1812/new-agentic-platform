@@ -230,46 +230,26 @@ def _hub_band():
 
 def test_the_hub_band_dashboard_total_matches_the_live_cards(hub_card, dashboard_cards):
     """The band counts LIVE dashboards across all three workspaces (Strategic
-    Agents + SEO Studio + Company Signal Tracker), so it drifts on exactly the
-    same trigger as the card stats above. If someone later decides it should
-    count every card including "Coming soon" ones, this is the test to change
+    Agents + SEO Studio + Company Signal Tracker) plus the Google Ads
+    dashboard behind the Dashboards card, so it drifts on exactly the same
+    trigger as the card stats above. If someone later decides it should count
+    every card including "Coming soon" ones, this is the test to change
     deliberately rather than discover by accident."""
     expected = (len(dashboard_cards["live"]) + len(appmod._seo_tools())
-                + sum(1 for cfg in appmod.ACCOUNTS.values() if cfg["dashboard"].exists()))
+                + sum(1 for cfg in appmod.ACCOUNTS.values() if cfg["dashboard"].exists())
+                + 1)  # the Google Ads dashboard
     assert _hub_band()["dashboards"] == expected, (
         "band says %d dashboards, live cards total %d"
         % (_hub_band()["dashboards"], expected))
 
 
 # ── The third workspace, Dashboards ──────────────────────────────────────────
-# Same card shape as its two live siblings (icon, kicker, name, description),
-# but honestly unbuilt: "Coming soon" instead of "Live", no counts row, no
-# link. _workspace() can't parse it -- there's no data-count to read -- so
-# this reads the raw block between its own data-ws and the next card's.
 
-def _dashboards_block():
-    body = _render("/hub")
-    after = body.split('data-ws="dashboards"', 1)[1]
-    return after.split('data-ws="strategic-agents"', 1)[0]
-
-
-def test_the_dashboards_card_is_named_dashboards_and_keeps_the_placeholder_text():
-    block = _dashboards_block()
-    assert re.search(r'data-ws-name>\s*Dashboards\s*<', block)
-    assert "All clients daily performance reports would be visible here" in block
-
-
-def test_the_dashboards_card_has_no_counts_or_link_yet():
-    """Pins the "shape yes, substance no" state deliberately, so a future edit
-    that quietly adds a count or a link has to change this test rather than
-    drift past it unnoticed -- there is nothing real to count or open yet."""
-    block = _dashboards_block()
-    assert "data-count=" not in block
-    assert "hb-live" not in block
-    assert "hb-go" not in block
-    assert "Coming soon" in block
-    assert not re.search(r'<a\s[^>]*data-ws="dashboards"', _render("/hub")), (
-        "the Dashboards card isn't a link yet -- it has nothing built to open")
+def test_the_dashboards_card_opens_the_google_ads_dashboard():
+    ws = _workspace("dashboards")
+    assert ws["title"] == "Dashboards"
+    assert ws["stats"] == {"dashboards": 1, "live": 1}
+    assert re.search(r'<a href="/dashboards/google-ads"[^>]*data-ws="dashboards"', _render("/hub"))
 
 
 def test_the_operational_agents_card_replaced_seo_aeo(hub_card):

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+<html lang="en">
+<head>
+{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=1"]) }}
+</head>
+<body>
+
+{{ topbar([("Google Ads", none)]) }}
+
+<div class="gad-shell">
+
+  <div class="gad-lead bn-reveal">
+    <div>
+      <div class="gad-kicker">Client reporting</div>
+      <h1 class="gad-h1">Google Ads performance</h1>
+      {% if summary.ok %}
+      <p class="gad-sub">
+        As of {{ summary.as_of }} &middot; {{ summary.accounts_count }} account{{ "" if summary.accounts_count == 1 else "s" }}
+        &middot; {{ summary.campaigns_count }} campaign{{ "" if summary.campaigns_count == 1 else "s" }}
+      </p>
+      {% else %}
+      <p class="gad-sub">Fed by a daily Google Ads &rarr; Sheets export.</p>
+      {% endif %}
+    </div>
+    <button class="gad-refresh" data-gad-refresh type="button">Refresh</button>
+  </div>
+
+  {% if not summary.ok %}
+  <div class="gad-empty bn-reveal">
+    <p>No data yet. Set <code>GOOGLE_ADS_SHEET_ID</code> (and a read credential,
+       <code>GOOGLE_ADS_SHEET_SA_JSON</code> or <code>GOOGLE_SA_JSON</code>) in this
+       service's environment, and make sure the sheet is shared with that
+       credential's email.</p>
+  </div>
+  {% else %}
+
+  <div class="gad-stats bn-reveal">
+    <div class="gad-stat gad-stat--fill">
+      <span class="gad-stat-v">{{ summary.currency_symbol }}{{ "{:,.0f}".format(summary.total_cost) }}</span>
+      <span class="gad-stat-l">Total spend</span>
+    </div>
+    <div class="gad-stat">
+      <span class="gad-stat-v">{{ "{:,.0f}".format(summary.total_clicks) }}</span>
+      <span class="gad-stat-l">Clicks</span>
+    </div>
+    <div class="gad-stat">
+      <span class="gad-stat-v">{{ "{:,.0f}".format(summary.total_impressions) }}</span>
+      <span class="gad-stat-l">Impressions</span>
+    </div>
+    <div class="gad-stat">
+      <span class="gad-stat-v">{{ "{:,.0f}".format(summary.total_conversions) }}</span>
+      <span class="gad-stat-l">Conversions</span>
+    </div>
+    <div class="gad-stat">
+      <span class="gad-stat-v">{{ "%.2f"|format(summary.ctr) }}%</span>
+      <span class="gad-stat-l">CTR</span>
+    </div>
+    <div class="gad-stat">
+      <span class="gad-stat-v">{{ summary.currency_symbol }}{{ "%.2f"|format(summary.avg_cpc) }}</span>
+      <span class="gad-stat-l">Avg. CPC</span>
+    </div>
+    <div class="gad-stat">
+      <span class="gad-stat-v">
+        {% if summary.total_conversions %}{{ summary.currency_symbol }}{{ "%.2f"|format(summary.cost_per_conv) }}{% else %}&mdash;{% endif %}
+      </span>
+      <span class="gad-stat-l">Cost / conversion</span>
+    </div>
+  </div>
+
+  {% if chart %}
+  <div class="gad-panel bn-reveal">
+    <div class="gad-panel-head">
+      <span class="gad-panel-t">Daily spend</span>
+      <span class="gad-panel-d">{{ chart.first_day }} &ndash; {{ chart.last_day }}</span>
+    </div>
+    <svg class="gad-chart" viewBox="0 0 {{ chart.width }} {{ chart.height }}" preserveAspectRatio="none" aria-hidden="true">
+      <polygon class="gad-chart-area" points="{{ chart.area }}"></polygon>
+      <polyline class="gad-chart-line" points="{{ chart.points }}"></polyline>
+    </svg>
+    <div class="gad-chart-range">
+      <span>{{ summary.currency_symbol }}{{ "{:,.0f}".format(chart.min) }}</span>
+      <span>{{ summary.currency_symbol }}{{ "{:,.0f}".format(chart.max) }}</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="gad-panel bn-reveal">
+    <div class="gad-panel-head">
+      <span class="gad-panel-t">Top campaigns</span>
+      <span class="gad-panel-d">by spend</span>
+    </div>
+    <div class="gad-table">
+      <div class="gad-row gad-row--head">
+        <span>Account</span><span>Campaign</span><span>Clicks</span>
+        <span>Impr.</span><span>Cost</span><span>Conv.</span>
+      </div>
+      {% for c in summary.campaigns %}
+      <div class="gad-row">
+        <span class="gad-cell-acc">{{ c.account }}</span>
+        <span class="gad-cell-camp">{{ c.campaign }}</span>
+        <span>{{ "{:,.0f}".format(c.clicks) }}</span>
+        <span>{{ "{:,.0f}".format(c.impressions) }}</span>
+        <span>{{ summary.currency_symbol }}{{ "{:,.0f}".format(c.cost) }}</span>
+        <span>{{ "{:,.0f}".format(c.conversions) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% endif %}
+
+  <p class="gad-foot">{{ brand.name }} &middot; Internal use only</p>
+</div>
+
+{{ topbar_script() }}
+<script>
+(function(){
+  var btn = document.querySelector('[data-gad-refresh]');
+  if (!btn) return;
+  btn.addEventListener('click', function(){
+    btn.disabled = true;
+    btn.textContent = 'Refreshing…';
+    fetch('/api/dashboards/google-ads/refresh', {method: 'POST'})
+      .then(function(){ window.location.reload(); })
+      .catch(function(){ btn.disabled = false; btn.textContent = 'Refresh'; });
+  });
+})();
+/* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */
+(function(){
+  var _start = Date.now(), _sent = false;
+  function _send(){
+    if(_sent) return; _sent = true;
+    fetch('/api/track', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({page: window.location.pathname, title: 'Google Ads Performance',
+      seconds: Math.round((Date.now()-_start)/1000),
+      email: '{{ user.email if user else "" }}'}), keepalive: true}).catch(function(){});
+  }
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') _send(); });
+  window.addEventListener('beforeunload', _send);
+})();
+</script>
+</body>
+</html>

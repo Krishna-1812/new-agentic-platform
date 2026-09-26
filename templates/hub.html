@@ -29,23 +29,35 @@
      reads as three peers, not a ranking. #}
   <div class="hb-ws-row">
 
-    {# Placeholder: same card shape as its two live siblings (icon, kicker,
-       name, description) so it reads as a peer rather than a broken tile,
-       but honest about being unbuilt -- "Coming soon" instead of "Live",
-       and no counts or Open link since there is nothing yet to open. #}
-    <div class="hb-t hb-ws hb-ws--clay bn-reveal" data-ws="dashboards">
+    {# First live dashboard behind this card: Google Ads performance, fed by
+       a daily Ads-to-Sheets export (see app.py's _google_ads_summary). The
+       count is "1" hardcoded rather than derived, unlike its two siblings --
+       there genuinely is exactly one dashboard here today, not a list this
+       page would need to stay in sync with; the day a second one lands,
+       this becomes a real count like the others. #}
+    <a href="/dashboards/google-ads" class="hb-t hb-ws hb-ws--clay bn-reveal" data-ws="dashboards">
       <div class="hb-ws-top">
         <div class="hb-ws-ic">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="10" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="6" rx="1.6"/><rect x="13.5" y="11" width="7.5" height="10" rx="1.6"/><rect x="3" y="15" width="7.5" height="6" rx="1.6"/></svg>
         </div>
-        <span class="hb-soon"><i></i>Coming soon</span>
+        <span class="hb-live"><i></i>Live</span>
       </div>
       <div>
         <div class="hb-ws-cat">Client reporting</div>
         <div class="hb-ws-name" data-ws-name>Dashboards</div>
-        <p class="hb-ws-desc" data-ws-desc>All clients daily performance reports would be visible here</p>
+        <p class="hb-ws-desc" data-ws-desc>
+          Google Ads campaign performance, refreshed daily: spend, clicks, conversions
+          and cost per conversion across every tracked account.
+        </p>
       </div>
-    </div>
+      <div class="hb-ws-foot">
+        <div class="hb-ws-counts">
+          <span class="hb-c"><b data-count="dashboards">1</b><span>dashboards</span></span>
+          <span class="hb-c"><b data-count="live">1</b><span>live</span></span>
+        </div>
+        <span class="hb-go">Open &rarr;</span>
+      </div>
+    </a>
 
     {# ── Go-to-market agents ─────────────────────────────────────────────
        The counts are hand-written here while the cards they describe live
@@ -134,8 +146,9 @@
     <div class="hb-t hb-n hb-n--fill bn-reveal">
       {# 11 live strategic dashboards (counted by hand, checked by
          tests/test_hub_card_counts.py) plus every SEO Studio tool plus every
-         live Company Signal Tracker dashboard. #}
-      <b data-figure="dashboards">{{ 11 + seo_tool_count + account_live_count }}</b>
+         live Company Signal Tracker dashboard plus the Google Ads dashboard
+         behind the Dashboards card (always 1 today -- see that card). #}
+      <b data-figure="dashboards">{{ 11 + seo_tool_count + account_live_count + 1 }}</b>
       <span>dashboards across all three</span>
     </div>
 
