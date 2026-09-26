@@ -17,7 +17,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=3"]) }}
+{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=4"]) }}
 </head>
 <body class="gad" data-currency-symbol="{{ currency_symbol }}">
 
@@ -118,25 +118,25 @@
 
   {# ── Headline figures: four colour blocks, then five white tiles ────── #}
   <section class="gad-kpis" data-gad-settle aria-label="Headline figures">
-    <div class="gad-kpi gad-kpi--acc" data-kpi="cost">
+    <div class="gad-kpi gad-kpi--acc" data-kpi="cost" data-go="metric" data-id="cost" role="button" tabindex="0">
       <div class="gad-kpi-top"><span class="gad-kpi-l">Spend</span><span class="gad-kpi-ic gad-kpi-ic--circle" aria-hidden="true"></span></div>
       <b class="gad-kpi-v" data-v></b>
       <span class="gad-delta" data-d></span>
       <svg class="gad-spark" data-spark aria-hidden="true"></svg>
     </div>
-    <div class="gad-kpi gad-kpi--ink" data-kpi="conversions">
+    <div class="gad-kpi gad-kpi--ink" data-kpi="conversions" data-go="metric" data-id="conversions" role="button" tabindex="0">
       <div class="gad-kpi-top"><span class="gad-kpi-l">Conversions</span><span class="gad-kpi-ic gad-kpi-ic--half" aria-hidden="true"></span></div>
       <b class="gad-kpi-v" data-v></b>
       <span class="gad-delta" data-d></span>
       <svg class="gad-spark" data-spark aria-hidden="true"></svg>
     </div>
-    <div class="gad-kpi gad-kpi--sky" data-kpi="clicks">
+    <div class="gad-kpi gad-kpi--sky" data-kpi="clicks" data-go="metric" data-id="clicks" role="button" tabindex="0">
       <div class="gad-kpi-top"><span class="gad-kpi-l">Clicks</span><span class="gad-kpi-ic gad-kpi-ic--leaf" aria-hidden="true"></span></div>
       <b class="gad-kpi-v" data-v></b>
       <span class="gad-delta" data-d></span>
       <svg class="gad-spark" data-spark aria-hidden="true"></svg>
     </div>
-    <div class="gad-kpi gad-kpi--amber" data-kpi="impressions">
+    <div class="gad-kpi gad-kpi--amber" data-kpi="impressions" data-go="metric" data-id="impressions" role="button" tabindex="0">
       <div class="gad-kpi-top"><span class="gad-kpi-l">Impressions</span><span class="gad-kpi-ic gad-kpi-ic--square" aria-hidden="true"></span></div>
       <b class="gad-kpi-v" data-v></b>
       <span class="gad-delta" data-d></span>
@@ -145,11 +145,11 @@
   </section>
 
   <section class="gad-tiles" aria-label="Rates">
-    <div class="gad-tile" data-kpi="ctr"><span class="gad-tile-l">CTR</span><b class="gad-tile-v" data-v></b><span class="gad-delta" data-d></span></div>
-    <div class="gad-tile" data-kpi="cpc"><span class="gad-tile-l">Avg. CPC</span><b class="gad-tile-v" data-v></b><span class="gad-delta" data-d></span></div>
-    <div class="gad-tile" data-kpi="cpa"><span class="gad-tile-l">Cost / conversion</span><b class="gad-tile-v" data-v></b><span class="gad-delta" data-d></span></div>
-    <div class="gad-tile" data-kpi="cvr"><span class="gad-tile-l">Conversion rate</span><b class="gad-tile-v" data-v></b><span class="gad-delta" data-d></span></div>
-    <div class="gad-tile" data-kpi="view_through"><span class="gad-tile-l">View-through conv.</span><b class="gad-tile-v" data-v></b><span class="gad-delta" data-d></span></div>
+    <div class="gad-tile" data-kpi="ctr" data-go="metric" data-id="ctr" role="button" tabindex="0"><span class="gad-tile-l">CTR</span><b class="gad-tile-v" data-v></b><span class="gad-delta" data-d></span></div>
+    <div class="gad-tile" data-kpi="cpc" data-go="metric" data-id="cpc" role="button" tabindex="0"><span class="gad-tile-l">Avg. CPC</span><b class="gad-tile-v" data-v></b><span class="gad-delta" data-d></span></div>
+    <div class="gad-tile" data-kpi="cpa" data-go="metric" data-id="cpa" role="button" tabindex="0"><span class="gad-tile-l">Cost / conversion</span><b class="gad-tile-v" data-v></b><span class="gad-delta" data-d></span></div>
+    <div class="gad-tile" data-kpi="cvr" data-go="metric" data-id="cvr" role="button" tabindex="0"><span class="gad-tile-l">Conversion rate</span><b class="gad-tile-v" data-v></b><span class="gad-delta" data-d></span></div>
+    <div class="gad-tile" data-kpi="view_through" data-go="metric" data-id="view_through" role="button" tabindex="0"><span class="gad-tile-l">View-through conv.</span><b class="gad-tile-v" data-v></b><span class="gad-delta" data-d></span></div>
   </section>
 
   {# ── Trend ────────────────────────────────────────────────────────────
@@ -201,7 +201,7 @@
         <div class="gad-donut" id="gad-donut"></div>
         <ul class="gad-legend" id="gad-donut-legend"></ul>
       </div>
-      <p class="gad-note">Click a type to filter the whole page.</p>
+      <p class="gad-note">Click a type for its accounts, campaigns and trend.</p>
     </section>
 
     <section class="gad-panel bn-reveal" data-panel="position">
@@ -302,11 +302,33 @@
 </main>
 
 {% if ok %}
+{# ── Detail panel ─────────────────────────────────────────────────────
+   Everything on the page with data-go opens here: a metric, a campaign,
+   an account, a day or week, a campaign type, a weekday. Panels link to
+   each other, so the bar keeps a breadcrumb trail and a Back button. #}
+<div class="gad-drawer" id="gad-drawer" hidden aria-hidden="true">
+  <div class="gad-drawer-bg" data-close></div>
+  <aside class="gad-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="gad-dr-title">
+    <div class="gad-drawer-bar">
+      <button type="button" class="gad-dr-back" hidden aria-label="Back">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <nav class="gad-dr-crumbs" aria-label="Detail trail"></nav>
+      <button type="button" class="gad-dr-close" data-close aria-label="Close details">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <div class="gad-drawer-body" id="gad-drawer-body"></div>
+  </aside>
+</div>
+{% endif %}
+
+{% if ok %}
 <script id="gad-data" type="application/json">{{ rows|tojson }}</script>
 {% endif %}
 
 {{ topbar_script() }}
-<script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=3"></script>
+<script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=4"></script>
 <script>
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */
 (function(){
