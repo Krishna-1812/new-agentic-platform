@@ -1,67 +1,290 @@
 <!DOCTYPE html>
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    OPERATIONAL AGENTS (/seo-aeo) — in the public site's voice.
+
+    The directory of every SEO Studio tool, on the same system as the
+    Go-to-market directory (b2b_agents.html): static/css/strategic-agents.css
+    and static/js/strategic-agents.js. An ink hero with the statement behind
+    the orange marker, a ticker, the Research -> Optimize -> Build path that
+    draws itself down the page, three common jobs set out in order, colour-
+    block groups of white cards that flood with their group's colour, an ink
+    figures band that opens like a portal, and the orange colophon.
+
+    Everything is generated from _seo_tools() / _seo_tool_groups() and
+    _SEO_TOOL_BRIEFS (app.py), so a tool added to the studio's menu lands
+    here, in the ticker, the path, the filters and every count, at once.
+
+    The hub card for this page is headed "Operational agents"; the page keeps
+    its "SEO + AEO" title (tests/test_seo_aeo_rename.py).
+
+    Motion is off under prefers-reduced-motion; with JS off this is a
+    finished, static page.
+-#}
+{%- set G = {
+  "Research": {"key": "research", "hue": "b", "step": "Find the demand",
+               "sub": "Where the searches are, who already ranks for them, and what a page has to cover to compete."},
+  "Optimize": {"key": "optimize", "hue": "a", "step": "Fix what is live",
+               "sub": "Audits and upgrades for pages that already exist, scored for search engines and for AI answers."},
+  "Build":    {"key": "build", "hue": "c", "step": "Make what is missing",
+               "sub": "New pages, site structure, local posts, the context every tool reads, and the monitor that keeps pages indexed."},
+} %}
+{%- set by_slug = {} %}{% for t in seo_tools %}{% set _ = by_slug.update({t.slug: t}) %}{% endfor %}
 <html lang="en">
 <head>
-{{ head("SEO + AEO", ["directory.css?v=3"]) }}
+{{ head("SEO + AEO", ["strategic-agents.css?v=2"]) }}
 </head>
-<body>
+<body class="sa">
 
 {{ topbar([("SEO + AEO", none)]) }}
+<div class="sa-prog" aria-hidden="true"><i></i></div>
 
-<div class="dir-shell">
+<main class="sa-shell">
 
-  <div class="dir-lead bn-reveal">
-    <div class="dir-kicker">Organic growth</div>
-    <h1 class="dir-h1">Own the answer.</h1>
-    <p class="dir-sub">
-      {{ seo_tools|length }} tools for search and answer-engine visibility.
-      Open any of them, or press &#8984;K to jump straight to one by name.
-    </p>
-  </div>
-
-  {# Same list layout as the agent directory: this is the other half of the
-     same choice made on the hub, so it reads the same way. The row markup is
-     shared with b2b_agents.html through directory.css rather than through a
-     second stylesheet that would drift from it.
-
-     Grouped Research -> Optimize -> Build (seo_tool_groups, app.py's
-     _seo_tool_groups -- mirrors the studio's own sidebar), with a colour per
-     group on the icon chip and the very first tool given the one filled
-     "feature" block the design language reserves for the figure that
-     matters most. #}
-  {% set dir_ic_class = {"Research": "dir-ic--b", "Optimize": "dir-ic--a", "Build": "dir-ic--c"} %}
-  {% set dir_dot_color = {"Research": "var(--sky)", "Optimize": "var(--acc)", "Build": "var(--clay)"} %}
-  {% for group_name, tools in seo_tool_groups %}
-  {% set outer_first = loop.first %}
-  <div class="dir-group bn-reveal">
-    <div class="dir-group-head">
-      <span class="dir-group-dot" style="background:{{ dir_dot_color.get(group_name, 'var(--acc)') }}"></span>
-      <span class="dir-group-name">{{ group_name }}</span>
-      <span class="dir-group-count">{{ tools|length }}</span>
+  {# ── Hero ────────────────────────────────────────────────────────────── #}
+  <section class="sa-hero" data-sa-settle>
+    <div class="sa-hero-top">
+      <span class="sa-lbl" data-sa-decode>Operational agents &middot; SEO + AEO</span>
+      <span class="sa-live"><i></i>{{ seo_tools|length }} live now</span>
+      <div class="sa-shapes" aria-hidden="true">
+        <span class="sa-shape sa-shape--circle"></span>
+        <span class="sa-shape sa-shape--half"></span>
+        <span class="sa-shape sa-shape--leaf"></span>
+        <span class="sa-shape sa-shape--square"></span>
+      </div>
     </div>
-    <div class="dir-list">
-      {% for t in tools %}
-      {% set is_feature = outer_first and loop.first %}
-      <a href="/seo-aeo/{{ t.slug }}" class="dir-row{{ ' dir-row--feature' if is_feature else '' }} bn-reveal" data-tool="{{ t.slug }}" data-state="active" data-badge="live">
-        <span class="dir-ic dir-ic--letter {{ dir_ic_class.get(group_name, 'dir-ic--a') }}" aria-hidden="true">{{ (t.name or '?')[:1]|upper }}</span>
-        <span class="dir-txt">
-          <span class="dir-name" data-tool-name>{{ t.name }}</span>
-          <span class="dir-desc">{{ t.desc }}</span>
-          {% if t.tags %}
-          <span class="dir-tags">{% for tag in t.tags %}<span class="dir-tag">{{ tag }}</span>{% endfor %}</span>
-          {% endif %}
-        </span>
-        <span class="dir-state dir-state--live"><i></i>Live</span>
-      </a>
+
+    <h1 class="sa-h1" data-sa-springy>
+      <span class="sa-ln"><span>Own the answer,</span></span>
+      <span class="sa-ln"><span>in <span class="sa-mk">search</span> <em class="sa-it">and in AI.</em></span></span>
+    </h1>
+
+    <div class="sa-hero-foot">
+      <p class="sa-lead">
+        {{ seo_tools|length }} tools for search and answer-engine visibility, in the order the work
+        happens: research where the demand is, optimize the pages already live, and build the
+        ones that are missing.
+      </p>
+      <div class="sa-hero-actions">
+        <a href="#agents" class="sa-btn sa-btn--hero">Browse the tools</a>
+        <button type="button" class="sa-btn sa-btn--ghost" data-bn-palette>
+          Jump to one <span class="sa-kbd"><kbd>&#8984;</kbd><kbd>K</kbd></span>
+        </button>
+      </div>
+    </div>
+
+    {# Counted from the same list as the cards below. #}
+    <div class="sa-figs">
+      <div class="sa-fig"><b data-sa-odo data-figure="tools">{{ seo_tools|length }}</b><span>tools</span></div>
+      {% for group_name, tools in seo_tool_groups %}
+      <div class="sa-fig"><b data-sa-odo data-figure="{{ G[group_name].key if group_name in G else group_name|lower }}">{{ tools|length }}</b><span>{{ group_name|lower }}</span></div>
       {% endfor %}
     </div>
-  </div>
-  {% endfor %}
+  </section>
 
-  <p class="dir-foot">{{ brand.name }} &middot; Internal use only</p>
-</div>
+  {# ── Ticker ──────────────────────────────────────────────────────────── #}
+  <div class="sa-tick" aria-label="Every tool">
+    <div class="sa-tick-track">
+      {%- for t in seo_tools %}
+      <a class="sa-tick-i sa-tick-i--{{ G[t.group].hue if t.group in G else 'a' }}" href="/seo-aeo/{{ t.slug }}">{{ t.name }}</a>
+      {%- endfor %}
+    </div>
+  </div>
+
+  {# ── The order the work happens in ──────────────────────────────────────
+     One step per group, on a path that draws itself as the section scrolls
+     through. Each step's tools are links to their cards below. #}
+  <section class="sa-flow" aria-labelledby="sa-flow-t">
+    <div class="sa-sec-head">
+      <span class="sa-idx">01</span>
+      <div>
+        <span class="sa-lbl" data-sa-decode>The order the work happens in</span>
+        <h2 class="sa-h2" id="sa-flow-t">Find the demand. Fix the page. <em class="sa-it">Build</em> what is missing.</h2>
+      </div>
+    </div>
+
+    <div class="sa-flow-grid">
+      <svg class="sa-flow-path" viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M20 20 C 180 -6, 320 46, 500 20 S 820 -6, 980 20"/>
+      </svg>
+      <span class="sa-flow-dot" aria-hidden="true"></span>
+
+      {% for group_name, tools in seo_tool_groups %}
+      {% set g = G.get(group_name, {"hue": "a", "step": group_name, "sub": ""}) %}
+      <div class="sa-step sa-step--{{ g.hue }}" data-sa-settle>
+        <span class="sa-step-n">Step {{ loop.index }} &middot; {{ tools|length }} tools</span>
+        <h3>{{ group_name }}</h3>
+        <p>{{ g.sub }}</p>
+        <ul>
+          {% for t in tools %}<li><a href="#t-{{ t.slug }}">{{ t.name }}</a></li>{% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ── Common jobs ─────────────────────────────────────────────────────────
+     Three everyday pieces of work, each as the tools you would reach for in
+     turn. Suggestions, not pipelines: every tool still runs on its own. A
+     chain drops any tool that is no longer on the list. #}
+  {% set jobs = [
+    ("Launch a new location", "Pick the market, pick the words, then build the page and tidy its images.",
+     ["market-potential", "keyword-research", "location-page-builder", "image-alt-audit"]),
+    ("Refresh a post that slipped", "Check the words, see what now ranks above it, upgrade the article, then score it again.",
+     ["keyword-research", "content-research", "article-enhancement", "seo-geo-snapshot"]),
+    ("Get cited by AI answers", "Score the page for search and for AI, check agents can reach it, fix the gaps, and keep it indexed.",
+     ["seo-geo-audit", "agent-readiness-audit", "content-enhancement", "robots-monitor"]),
+  ] %}
+  <section class="sa-jobs-sec" aria-labelledby="sa-jobs-t">
+    <div class="sa-sec-head">
+      <span class="sa-idx">02</span>
+      <div>
+        <span class="sa-lbl" data-sa-decode>Common jobs</span>
+        <h2 class="sa-h2" id="sa-jobs-t">Three jobs, <span class="sa-mk sa-mk--sm">tool by tool.</span></h2>
+      </div>
+    </div>
+    <div class="sa-jobs">
+      {% for title, sub, slugs in jobs %}
+      <div class="sa-job">
+        <span class="sa-job-n">Job {{ loop.index }}</span>
+        <h3>{{ title }}</h3>
+        <p>{{ sub }}</p>
+        <ol class="sa-chain">
+          {% for s in slugs if s in by_slug %}
+          {% set t = by_slug[s] %}
+          <li class="sa-chain-i sa-chain-i--{{ G[t.group].hue if t.group in G else 'a' }}">
+            <a href="#t-{{ t.slug }}" data-sa-jump><b>{{ loop.index }}</b><span>{{ t.name }}<em>{{ seo_tool_briefs.get(t.slug, {}).get('gets', t.desc) }}</em></span></a>
+          </li>
+          {% endfor %}
+        </ol>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ── The directory ───────────────────────────────────────────────────── #}
+  <section class="sa-dir" id="agents" aria-labelledby="sa-dir-t">
+    <div class="sa-sec-head">
+      <span class="sa-idx">03</span>
+      <div>
+        <span class="sa-lbl" data-sa-decode>The directory</span>
+        <h2 class="sa-h2" id="sa-dir-t">Every tool, <span class="sa-mk sa-mk--sm">in one place.</span></h2>
+      </div>
+    </div>
+
+    <div class="sa-filters" id="sa-filters">
+      <div class="sa-filters-in">
+        <div class="sa-chips" role="group" aria-label="Group">
+          <button type="button" class="sa-chip is-on" data-sa-group="all">All <b>{{ seo_tools|length }}</b></button>
+          {% for group_name, tools in seo_tool_groups %}
+          {% set g = G.get(group_name, {"key": group_name|lower, "hue": "a"}) %}
+          <button type="button" class="sa-chip" data-sa-group="{{ g.key }}"><i class="sa-dot sa-dot--{{ g.hue }}"></i>{{ group_name }} <b>{{ tools|length }}</b></button>
+          {% endfor %}
+        </div>
+        <label class="sa-search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-3.4-3.4"/></svg>
+          <input type="search" id="sa-q" placeholder="Search tools, inputs, outputs&hellip;" aria-label="Search tools">
+          <kbd class="sa-slash" aria-hidden="true">/</kbd>
+        </label>
+        <span class="sa-count" id="sa-count" aria-live="polite">Showing {{ seo_tools|length }} of {{ seo_tools|length }}</span>
+      </div>
+    </div>
+
+    {% set n = namespace(i=0) %}
+    {% for group_name, tools in seo_tool_groups %}
+    {% set g = G.get(group_name, {"key": group_name|lower, "hue": "a", "sub": ""}) %}
+    <div class="sa-group sa-group--{{ g.hue }}" data-sa-groupbox="{{ g.key }}">
+      <div class="sa-group-head">
+        <span class="sa-group-tile" aria-hidden="true"></span>
+        <div>
+          <h3 class="sa-group-name">{{ group_name }}</h3>
+          <p class="sa-group-sub">{{ g.sub }}</p>
+        </div>
+        <span class="sa-group-count">{{ tools|length }} tools</span>
+      </div>
+      <div class="sa-grid">
+        {% for t in tools %}
+        {% set n.i = n.i + 1 %}
+        {% set b = seo_tool_briefs.get(t.slug, {}) %}
+        <a href="/seo-aeo/{{ t.slug }}" id="t-{{ t.slug }}" class="sa-card" data-tool="{{ t.slug }}" data-state="active" data-badge="live" data-group="{{ g.key }}">
+          <span class="sa-card-top">
+            <span class="sa-ic sa-ic--letter" aria-hidden="true">{{ (t.name or '?')[:1]|upper }}</span>
+            <span class="sa-num">{{ "%02d"|format(n.i) }}</span>
+            <span class="sa-state sa-state--live"><i></i>Live</span>
+          </span>
+          <span class="sa-name" data-tool-name>{{ t.name }}</span>
+          <span class="sa-desc">{{ b.lead or t.desc }}</span>
+          {% if b.gives %}
+          <span class="sa-dl">
+            <span><em>You give</em>{{ b.gives }}</span>
+            <span><em>You get</em>{{ b.gets }}</span>
+          </span>
+          {% endif %}
+          {% if t.tags %}
+          <span class="sa-tags">{% for tag in t.tags %}<span class="sa-tag">{{ tag }}</span>{% endfor %}</span>
+          {% endif %}
+          <span class="sa-go">Open tool <span aria-hidden="true">&rarr;</span></span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <p class="sa-none" id="sa-none" hidden>No tool matches that. Try an input like &ldquo;URL&rdquo; or an output like &ldquo;brief&rdquo;.</p>
+  </section>
+
+  {# ── The figures: an ink block that opens like a portal ──────────────────
+     Each figure is the tool's own, as its page describes itself. #}
+  <section class="sa-ink" data-sa-portal aria-label="By the numbers">
+    <div class="sa-ink-in">
+      <div class="sa-sec-head sa-sec-head--ink">
+        <span class="sa-idx">04</span>
+        <div>
+          <span class="sa-lbl" data-sa-decode>By the numbers</span>
+          <h2 class="sa-h2">How deep the tools <em class="sa-it">look</em>.</h2>
+        </div>
+      </div>
+      <div class="sa-stats">
+        <div class="sa-stat"><b data-sa-odo>200+</b><span>checks in every SEO &amp; GEO audit</span></div>
+        <div class="sa-stat"><b data-sa-odo>23</b><span>sections in the on-page audit, on live data</span></div>
+        <div class="sa-stat"><b data-sa-odo>13</b><span>checks behind the agent readiness score</span></div>
+        <div class="sa-stat"><b data-sa-odo>10</b><span>top-ranking pages read for every brief</span></div>
+        <div class="sa-stat"><b data-sa-odo>5</b><span>LLM analyses in one article enhancement</span></div>
+      </div>
+    </div>
+  </section>
+
+  {# ── Close: the sky block ────────────────────────────────────────────── #}
+  <section class="sa-cta" data-sa-settle>
+    <div>
+      <span class="sa-lbl">Not sure which one?</span>
+      <h2 class="sa-h2">Ask by name, or ask {{ brand.assistant }}.</h2>
+      <p>Press &#8984;K anywhere to jump to a tool by name. {{ brand.assistant }} is on every page and can point you at the right one.</p>
+    </div>
+    <div class="sa-cta-actions">
+      <button type="button" class="sa-btn sa-btn--dark" data-bn-palette>Jump to anything <span class="sa-kbd"><kbd>&#8984;</kbd><kbd>K</kbd></span></button>
+      <a href="/hub" class="sa-btn sa-btn--line">Back to the workspace</a>
+    </div>
+  </section>
+</main>
+
+{# ── Colophon: the public site's closing orange block ─────────────────── #}
+<footer class="sa-foot">
+  <div class="sa-foot-top">
+    <span class="sa-foot-word" aria-label="{{ brand.name }}">{{ brand.name }}</span>
+    <div class="sa-toys" aria-hidden="true">
+      <span class="sa-toy sa-toy--ink"></span><span class="sa-toy sa-toy--paper"></span><span class="sa-toy sa-toy--sky"></span>
+      <span class="sa-toy sa-toy--red"></span><span class="sa-toy sa-toy--acc"></span><span class="sa-toy sa-toy--paper2"></span>
+    </div>
+  </div>
+  <div class="sa-foot-bottom">
+    <span>{{ brand.name }} &middot; Internal use only</span>
+    <a href="/hub">Workspace</a>
+  </div>
+</footer>
 
 {{ topbar_script() }}
+<script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
 <script>
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */
 (function(){

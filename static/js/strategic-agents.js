@@ -1,5 +1,6 @@
 /* ════════════════════════════════════════════════════════════════════════
-   GO-TO-MARKET AGENTS — the page's motion and filtering.
+   GO-TO-MARKET and OPERATIONAL AGENTS — the directories' motion and
+   filtering (templates/b2b_agents.html and templates/seo.html).
 
    The page is complete without this file. What it adds follows the public
    site's playbook (press-play.js):
@@ -7,8 +8,8 @@
        draws; the headline's letters swell under the pointer;
      - labels decode from scrambled glyphs; figures roll like an odometer;
      - the ticker loops and leans with the scroll;
-     - the "notice / understand / act" path draws itself with the scroll,
-       a dot riding its head;
+     - the three-step path draws itself with the scroll, a dot riding
+       its head; each common job's chain draws down in one stroke;
      - each group of cards wipes open as one object (never card by card);
      - pills and cards flood with colour from where the pointer came in;
      - filtering glides the survivors into their new places (FLIP);
@@ -254,9 +255,9 @@
     filters.classList.toggle("is-stuck", filters.getBoundingClientRect().top <= 70 && window.scrollY > 400);
   }, { passive: true });
 
-  // Links from the flow steps: clear any filter hiding the card, glide to
-  // it, and ring it once so the eye lands on the right one.
-  $$(".sa-step a").forEach(function (a) {
+  // Links from the flow steps and the job chains: clear any filter hiding
+  // the card, glide to it, and ring it once so the eye lands on the right one.
+  $$(".sa-step a, [data-sa-jump]").forEach(function (a) {
     a.addEventListener("click", function (e) {
       var t = doc.getElementById(a.getAttribute("href").slice(1));
       if (!t) return;
@@ -283,6 +284,7 @@
   });
   springy($("[data-sa-springy]"), 180, 880);
   arm([flowGrid]);
+  arm($$(".sa-jobs"), 0.15);
   arm(groups, 0.05);
   arm($$(".sa-cta"));
   arm([$(".sa-toys")]);

@@ -56,7 +56,7 @@ MARGIN_TOKENS = ("var(--margin)", "var(--margin-app)")
 BENTO_PAGES = [
     ("company_people_intelligence.css", "Contact Finder"),
     ("hub.css", "Workspace"),
-    ("directory.css", "the agent and SEO listings"),
+    ("strategic-agents.css", "the Go-to-market and Operational agent directories"),
     ("accounts.css", "ABM Signal Tracker"),
     ("anonymous_visitors.css", "Anonymous Visitors"),
     ("fieldguide.css", "the Field Guide"),
