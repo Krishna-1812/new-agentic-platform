@@ -1,18 +1,23 @@
 /* ════════════════════════════════════════════════════════════════════════
-   GOOGLE ADS PERFORMANCE (/dashboards/google-ads) — BENTO
+   GOOGLE ADS PERFORMANCE (/dashboards/google-ads) — BENTO, rich mode
 
-   Fed by a Google Ads "Schedule export to Sheets" report (Ads' own daily
-   scheduler) and read live off that Sheet on each page load, cached a few
-   minutes server-side. No Postgres table, no Ads API developer token: the
-   Sheet already carries the history, so this page's whole job is to read it
-   and lay it out -- stat tiles first, one filled per rule 4 (Total spend,
-   the figure that says money is actually moving), then the daily trend,
-   then the campaign breakdown.
+   Fed by a Google Ads "Schedule export to Sheets" report and read live off
+   that Sheet (cached a few minutes server-side); every filter below --
+   account, date range, campaign type/state, search -- runs client-side
+   against the full row set (static/js/google-ads-dashboard.js), so nothing
+   here waits on a round trip.
+
+   This page intentionally carries more colour and motion than the rest of
+   the platform: it was asked for explicitly, as a premium, detail-dense
+   reporting surface rather than the quiet directory pages elsewhere. It
+   still draws only from the four brand hues (plus derived tints for a
+   fifth+ campaign-type legend slot) rather than an arbitrary palette, and
+   respects prefers-reduced-motion throughout.
    ──────────────────────────────────────────────────────────────────────── */
 
 html:root { background-color: var(--bg); }
 
-.gad-shell { max-width: var(--maxw); margin: 0 auto; padding: var(--sp-7) var(--page-pad) var(--sp-9); }
+.gad-shell { max-width: var(--maxw); margin: 0 auto; padding: var(--sp-6) var(--page-pad) var(--sp-9); }
 
 .gad-lead {
   display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-5);
@@ -33,10 +38,11 @@ html:root { background-color: var(--bg); }
   flex: none; font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-semi);
   color: var(--tx); background: var(--s2); border: none; border-radius: var(--r-pill);
   padding: var(--sp-3) var(--sp-5); cursor: pointer;
-  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), transform 150ms var(--ease);
 }
-.gad-refresh:hover { background: var(--acc); color: var(--tx-on-fill); }
-.gad-refresh:disabled { opacity: .6; cursor: default; }
+.gad-refresh:hover { background: var(--acc); color: var(--tx-on-fill); transform: translateY(-1px); }
+.gad-refresh:active { transform: translateY(0); }
+.gad-refresh:disabled { opacity: .6; cursor: default; transform: none; }
 
 /* ── Empty state ─────────────────────────────────────────────────────────*/
 .gad-empty {
@@ -48,6 +54,60 @@ html:root { background-color: var(--bg); }
   border-radius: var(--r-sm); padding: 2px var(--sp-2);
 }
 
+/* ── Hero: the account switcher IS the headline ─────────────────────────
+   A native <select>, styled to the same scale as a page h1, so "All
+   accounts" or one real account name is the biggest thing on the page and
+   changing it needs nothing but a normal, accessible dropdown. */
+.gad-hero {
+  background: linear-gradient(135deg, var(--acc-dim) 0%, var(--s1) 60%);
+  border-radius: var(--r-lg); padding: var(--sp-7); margin-bottom: var(--sp-6);
+  position: relative; overflow: hidden;
+}
+.gad-hero::after {
+  content: ""; position: absolute; top: -60px; right: -60px; width: 240px; height: 240px;
+  border-radius: 50%; background: radial-gradient(circle, var(--sky-dim) 0%, transparent 70%);
+  opacity: .7; pointer-events: none;
+}
+.gad-hero-top { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
+.gad-hero-select-row { position: relative; z-index: 1; margin: var(--sp-2) 0 var(--sp-3); }
+
+.gad-account-select {
+  appearance: none; -webkit-appearance: none; border: none; background: transparent;
+  font-family: var(--font-display); font-size: clamp(2rem, 5vw, var(--fs-4xl));
+  font-weight: var(--display-weight); letter-spacing: var(--ls-display); line-height: var(--lh-tight);
+  color: var(--tx); cursor: pointer; padding-right: 2.2rem; max-width: 100%;
+  background-image: linear-gradient(45deg, transparent 50%, var(--acc) 50%),
+                     linear-gradient(135deg, var(--acc) 50%, transparent 50%);
+  background-position: calc(100% - 24px) 58%, calc(100% - 12px) 58%;
+  background-size: 12px 12px, 12px 12px; background-repeat: no-repeat;
+  transition: color var(--dur-fast) var(--ease);
+}
+.gad-account-select:hover, .gad-account-select:focus { color: var(--acc-tx); }
+.gad-account-select:focus { outline: none; }
+
+/* ── Filters ─────────────────────────────────────────────────────────────*/
+.gad-filters {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3);
+  margin-bottom: var(--sp-6);
+}
+.gad-pillgroup { display: inline-flex; background: var(--s2); border-radius: var(--r-pill); padding: 3px; gap: 2px; }
+.gad-pill {
+  font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-semi); color: var(--tx2);
+  background: transparent; border: none; border-radius: var(--r-pill); padding: var(--sp-2) var(--sp-4);
+  cursor: pointer; transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.gad-pill:hover { color: var(--tx); }
+.gad-pill.is-active { background: var(--acc); color: var(--tx-on-fill); box-shadow: 0 2px 8px rgba(255,96,34,.35); }
+.gad-pillgroup--metric { margin-bottom: var(--sp-5); }
+
+.gad-select, .gad-search {
+  font-family: var(--font-body); font-size: var(--fs-sm); color: var(--tx);
+  background: var(--s1); border: 1px solid var(--line); border-radius: var(--r-pill);
+  padding: var(--sp-2) var(--sp-4); transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.gad-select:focus, .gad-search:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-dim); }
+.gad-search { min-width: 220px; flex: 1 1 220px; }
+
 /* ── Stat tiles ──────────────────────────────────────────────────────────*/
 .gad-stats {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -56,8 +116,9 @@ html:root { background-color: var(--bg); }
 .gad-stat {
   background: var(--s1); border-radius: var(--r); padding: var(--sp-5);
   display: flex; flex-direction: column; justify-content: flex-end; gap: var(--sp-1);
-  min-height: 108px;
+  min-height: 108px; transition: transform 220ms var(--ease), box-shadow 220ms var(--ease);
 }
+.gad-stat:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -12px rgba(18,18,19,.18); }
 .gad-stat-v {
   font-family: var(--font-num); font-size: var(--fs-2xl); font-weight: var(--fw-bold);
   letter-spacing: var(--ls-tight); line-height: 1; font-variant-numeric: tabular-nums; color: var(--tx);
@@ -66,7 +127,7 @@ html:root { background-color: var(--bg); }
 
 /* Exactly one filled tile -- rule 4: the figure that says the account is
    actually spending, not merely configured. */
-.gad-stat--fill { background: var(--acc); }
+.gad-stat--fill { background: linear-gradient(135deg, var(--acc) 0%, #ff8657 100%); }
 .gad-stat--fill .gad-stat-v { color: var(--tx-on-fill); }
 .gad-stat--fill .gad-stat-l { color: rgba(19,19,21,.66); }
 
@@ -79,13 +140,40 @@ html:root { background-color: var(--bg); }
 }
 .gad-panel-d { font-size: var(--fs-xs); color: var(--tx3); }
 
-.gad-chart { width: 100%; height: 200px; display: block; }
-.gad-chart-area { fill: var(--acc-dim); stroke: none; }
-.gad-chart-line { fill: none; stroke: var(--acc); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.gad-panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
+.gad-panel-grid .gad-panel { margin-bottom: 0; }
+
+.gad-chart { width: 100%; height: 220px; display: block; overflow: visible; }
+.gad-chart-area { stroke: none; transition: opacity 400ms var(--ease); }
+.gad-chart-line {
+  fill: none; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round;
+  transition: stroke-dashoffset 900ms cubic-bezier(.22,1,.36,1), stroke 300ms var(--ease);
+}
+.gad-chart-empty { font-size: var(--fs-sm); fill: var(--tx3); }
 .gad-chart-range {
   display: flex; justify-content: space-between; margin-top: var(--sp-2);
   font-size: var(--fs-xs); color: var(--tx3); font-variant-numeric: tabular-nums;
 }
+
+/* ── Donut (spend by campaign type) ───────────────────────────────────────*/
+.gad-donut-row { display: flex; align-items: center; gap: var(--sp-6); flex-wrap: wrap; }
+.gad-donut { width: 160px; height: 160px; flex: none; }
+.gad-legend { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 180px; flex: 1; }
+.gad-legend-item {
+  display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); color: var(--tx);
+  padding: var(--sp-1) 0;
+}
+.gad-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.gad-legend-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gad-legend-val { font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--tx2); }
+
+/* ── Horizontal bars (spend by account) ───────────────────────────────────*/
+.gad-abars { display: flex; flex-direction: column; gap: var(--sp-3); }
+.gad-abar-row { display: grid; grid-template-columns: 1fr 2fr auto; gap: var(--sp-3); align-items: center; font-size: var(--fs-sm); }
+.gad-abar-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--tx2); }
+.gad-abar-track { background: var(--s2); border-radius: var(--r-pill); height: 10px; overflow: hidden; }
+.gad-abar-fill { display: block; height: 100%; border-radius: var(--r-pill); transition: width 700ms cubic-bezier(.22,1,.36,1); }
+.gad-abar-val { font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--tx); text-align: right; }
 
 /* ── Campaign table ──────────────────────────────────────────────────────*/
 .gad-table { display: flex; flex-direction: column; }
@@ -94,6 +182,7 @@ html:root { background-color: var(--bg); }
   gap: var(--sp-4); align-items: center; padding: var(--sp-3) 0;
   border-bottom: 1px solid var(--line);
   font-size: var(--fs-sm); color: var(--tx);
+  animation: gadRowIn 260ms var(--ease) both;
 }
 .gad-row:last-child { border-bottom: none; }
 .gad-row > span:not(.gad-cell-acc):not(.gad-cell-camp) {
@@ -101,18 +190,46 @@ html:root { background-color: var(--bg); }
 }
 .gad-row--head {
   font-size: var(--fs-xs); font-weight: var(--fw-semi); letter-spacing: var(--ls-label);
-  text-transform: uppercase; color: var(--tx3);
+  text-transform: uppercase; color: var(--tx3); animation: none;
 }
 .gad-row--head > span:not(:first-child):not(:nth-child(2)) { text-align: right; font-family: var(--font-body); }
+.gad-row--head > span { cursor: pointer; user-select: none; display: inline-flex; align-items: center; gap: 4px; }
+.gad-row--head > span:hover { color: var(--tx); }
+.gad-row--head > span:not(:first-child):not(:nth-child(2)) { justify-content: flex-end; }
+.gad-sort-arrow { color: var(--acc-tx); font-style: normal; }
 .gad-cell-acc { color: var(--tx2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gad-cell-camp { font-weight: var(--fw-semi); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .gad-foot { margin-top: var(--sp-6); font-size: var(--fs-xs); color: var(--tx3); }
 
+/* ── Tooltip ──────────────────────────────────────────────────────────────
+   A transient floating overlay, not a static tile -- a real drop shadow is
+   appropriate here in a way it isn't for the flat cards elsewhere. */
+.gad-tooltip {
+  position: fixed; z-index: 200; pointer-events: none;
+  background: var(--ink); color: var(--tx-on-ink); font-size: var(--fs-xs); line-height: var(--lh-snug);
+  padding: var(--sp-2) var(--sp-3); border-radius: var(--r-sm);
+  box-shadow: 0 12px 28px -8px rgba(18,18,19,.45);
+  transform: translate(-0%, -100%); white-space: nowrap;
+}
+
+/* ── Motion ───────────────────────────────────────────────────────────────*/
+@keyframes gadRowIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .gad-stat, .gad-refresh, .gad-abar-fill, .gad-chart-line, .gad-chart-area { transition: none !important; }
+  .gad-row { animation: none !important; }
+}
+
 /* ── RESPONSIVE ──────────────────────────────────────────────────────────*/
+@media (max-width: 900px) {
+  .gad-panel-grid { grid-template-columns: 1fr; }
+}
 @media (max-width: 720px) {
   .gad-lead { flex-direction: column; align-items: stretch; }
+  .gad-hero-top { flex-wrap: wrap; gap: var(--sp-3); }
   .gad-h1 { font-size: var(--fs-2xl); }
   .gad-row { grid-template-columns: 1.2fr 1.6fr .7fr .7fr; }
   .gad-row > span:nth-child(4), .gad-row > span:nth-child(6) { display: none; }
+  .gad-search { min-width: 0; flex-basis: 100%; }
 }

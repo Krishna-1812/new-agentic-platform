@@ -2,31 +2,22 @@
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
 <html lang="en">
 <head>
-{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=1"]) }}
+{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=2"]) }}
 </head>
-<body>
+<body data-currency-symbol="{{ currency_symbol }}">
 
 {{ topbar([("Google Ads", none)]) }}
 
 <div class="gad-shell">
 
+  {% if not ok %}
   <div class="gad-lead bn-reveal">
     <div>
       <div class="gad-kicker">Client reporting</div>
       <h1 class="gad-h1">Google Ads performance</h1>
-      {% if summary.ok %}
-      <p class="gad-sub">
-        As of {{ summary.as_of }} &middot; {{ summary.accounts_count }} account{{ "" if summary.accounts_count == 1 else "s" }}
-        &middot; {{ summary.campaigns_count }} campaign{{ "" if summary.campaigns_count == 1 else "s" }}
-      </p>
-      {% else %}
       <p class="gad-sub">Fed by a daily Google Ads &rarr; Sheets export.</p>
-      {% endif %}
     </div>
-    <button class="gad-refresh" data-gad-refresh type="button">Refresh</button>
   </div>
-
-  {% if not summary.ok %}
   <div class="gad-empty bn-reveal">
     <p>No data yet. Set <code>GOOGLE_ADS_SHEET_ID</code> (and a read credential,
        <code>GOOGLE_ADS_SHEET_SA_JSON</code> or <code>GOOGLE_SA_JSON</code>) in this
@@ -35,76 +26,118 @@
   </div>
   {% else %}
 
+  {# ── Hero: the account switcher doubles as the page's headline. A native
+     <select>, heavily styled -- full keyboard/screen-reader support for
+     free, no custom dropdown widget to maintain. #}
+  <div class="gad-hero bn-reveal">
+    <div class="gad-hero-top">
+      <div class="gad-kicker">Client reporting</div>
+      <button class="gad-refresh" data-gad-refresh type="button">Refresh</button>
+    </div>
+    <div class="gad-hero-select-row">
+      <select id="gad-account-select" class="gad-account-select" aria-label="Account"></select>
+    </div>
+    <p class="gad-sub" id="gad-hero-sub">&nbsp;</p>
+  </div>
+
+  {# ── Filters ──────────────────────────────────────────────────────────── #}
+  <div class="gad-filters bn-reveal">
+    <div class="gad-pillgroup" role="group" aria-label="Date range">
+      <button type="button" class="gad-pill" data-range="7">7d</button>
+      <button type="button" class="gad-pill" data-range="30">30d</button>
+      <button type="button" class="gad-pill" data-range="90">90d</button>
+      <button type="button" class="gad-pill is-active" data-range="all">All time</button>
+    </div>
+    <select id="gad-type-select" class="gad-select" aria-label="Campaign type"></select>
+    <select id="gad-state-select" class="gad-select" aria-label="Campaign state"></select>
+    <input id="gad-search" class="gad-search" type="search" placeholder="Search campaigns or accounts&hellip;" aria-label="Search campaigns or accounts">
+  </div>
+
+  {# ── Stat tiles ───────────────────────────────────────────────────────── #}
   <div class="gad-stats bn-reveal">
-    <div class="gad-stat gad-stat--fill">
-      <span class="gad-stat-v">{{ summary.currency_symbol }}{{ "{:,.0f}".format(summary.total_cost) }}</span>
+    <div class="gad-stat gad-stat--fill" data-stat="cost">
+      <span class="gad-stat-v" data-raw="0">{{ currency_symbol }}0</span>
       <span class="gad-stat-l">Total spend</span>
     </div>
-    <div class="gad-stat">
-      <span class="gad-stat-v">{{ "{:,.0f}".format(summary.total_clicks) }}</span>
+    <div class="gad-stat" data-stat="clicks">
+      <span class="gad-stat-v" data-raw="0">0</span>
       <span class="gad-stat-l">Clicks</span>
     </div>
-    <div class="gad-stat">
-      <span class="gad-stat-v">{{ "{:,.0f}".format(summary.total_impressions) }}</span>
+    <div class="gad-stat" data-stat="impressions">
+      <span class="gad-stat-v" data-raw="0">0</span>
       <span class="gad-stat-l">Impressions</span>
     </div>
-    <div class="gad-stat">
-      <span class="gad-stat-v">{{ "{:,.0f}".format(summary.total_conversions) }}</span>
+    <div class="gad-stat" data-stat="conversions">
+      <span class="gad-stat-v" data-raw="0">0</span>
       <span class="gad-stat-l">Conversions</span>
     </div>
-    <div class="gad-stat">
-      <span class="gad-stat-v">{{ "%.2f"|format(summary.ctr) }}%</span>
+    <div class="gad-stat" data-stat="ctr">
+      <span class="gad-stat-v" data-raw="0">0%</span>
       <span class="gad-stat-l">CTR</span>
     </div>
-    <div class="gad-stat">
-      <span class="gad-stat-v">{{ summary.currency_symbol }}{{ "%.2f"|format(summary.avg_cpc) }}</span>
+    <div class="gad-stat" data-stat="cpc">
+      <span class="gad-stat-v" data-raw="0">{{ currency_symbol }}0</span>
       <span class="gad-stat-l">Avg. CPC</span>
     </div>
-    <div class="gad-stat">
-      <span class="gad-stat-v">
-        {% if summary.total_conversions %}{{ summary.currency_symbol }}{{ "%.2f"|format(summary.cost_per_conv) }}{% else %}&mdash;{% endif %}
-      </span>
+    <div class="gad-stat" data-stat="cost-per-conv">
+      <span class="gad-stat-v" data-raw="0">&mdash;</span>
       <span class="gad-stat-l">Cost / conversion</span>
     </div>
   </div>
 
-  {% if chart %}
+  {# ── Trend chart, one metric at a time ───────────────────────────────── #}
   <div class="gad-panel bn-reveal">
     <div class="gad-panel-head">
-      <span class="gad-panel-t">Daily spend</span>
-      <span class="gad-panel-d">{{ chart.first_day }} &ndash; {{ chart.last_day }}</span>
+      <span class="gad-panel-t">Performance trend</span>
+      <span class="gad-panel-d" id="gad-trend-range"></span>
     </div>
-    <svg class="gad-chart" viewBox="0 0 {{ chart.width }} {{ chart.height }}" preserveAspectRatio="none" aria-hidden="true">
-      <polygon class="gad-chart-area" points="{{ chart.area }}"></polygon>
-      <polyline class="gad-chart-line" points="{{ chart.points }}"></polyline>
-    </svg>
-    <div class="gad-chart-range">
-      <span>{{ summary.currency_symbol }}{{ "{:,.0f}".format(chart.min) }}</span>
-      <span>{{ summary.currency_symbol }}{{ "{:,.0f}".format(chart.max) }}</span>
+    <div class="gad-pillgroup gad-pillgroup--metric" role="group" aria-label="Trend metric">
+      <button type="button" class="gad-pill is-active" data-metric="cost">Spend</button>
+      <button type="button" class="gad-pill" data-metric="clicks">Clicks</button>
+      <button type="button" class="gad-pill" data-metric="conversions">Conversions</button>
+      <button type="button" class="gad-pill" data-metric="ctr">CTR</button>
+    </div>
+    <svg id="gad-trend-svg" class="gad-chart" viewBox="0 0 720 220" preserveAspectRatio="none" aria-hidden="true"></svg>
+    <div class="gad-chart-range" id="gad-trend-minmax"></div>
+  </div>
+
+  {# ── Spend by campaign type + spend by account ───────────────────────── #}
+  <div class="gad-panel-grid">
+    <div class="gad-panel bn-reveal">
+      <div class="gad-panel-head">
+        <span class="gad-panel-t">Spend by campaign type</span>
+      </div>
+      <div class="gad-donut-row">
+        <svg id="gad-donut-svg" viewBox="0 0 180 180" class="gad-donut" aria-hidden="true"></svg>
+        <div id="gad-donut-legend" class="gad-legend"></div>
+      </div>
+    </div>
+
+    <div class="gad-panel bn-reveal" id="gad-accbars-panel">
+      <div class="gad-panel-head">
+        <span class="gad-panel-t">Spend by account</span>
+      </div>
+      <div id="gad-accbars-body" class="gad-abars"></div>
     </div>
   </div>
-  {% endif %}
 
+  {# ── Campaign table, sortable ─────────────────────────────────────────── #}
   <div class="gad-panel bn-reveal">
     <div class="gad-panel-head">
-      <span class="gad-panel-t">Top campaigns</span>
-      <span class="gad-panel-d">by spend</span>
+      <span class="gad-panel-t">Campaigns</span>
+      <span class="gad-panel-d">click a column to sort</span>
     </div>
     <div class="gad-table">
       <div class="gad-row gad-row--head">
-        <span>Account</span><span>Campaign</span><span>Clicks</span>
-        <span>Impr.</span><span>Cost</span><span>Conv.</span>
+        <span data-sort-key="account">Account <i class="gad-sort-arrow"></i></span>
+        <span data-sort-key="campaign">Campaign <i class="gad-sort-arrow"></i></span>
+        <span data-sort-key="clicks">Clicks <i class="gad-sort-arrow"></i></span>
+        <span data-sort-key="impressions">Impr. <i class="gad-sort-arrow"></i></span>
+        <span data-sort-key="cost">Cost <i class="gad-sort-arrow"></i></span>
+        <span data-sort-key="conversions">Conv. <i class="gad-sort-arrow"></i></span>
       </div>
-      {% for c in summary.campaigns %}
-      <div class="gad-row">
-        <span class="gad-cell-acc">{{ c.account }}</span>
-        <span class="gad-cell-camp">{{ c.campaign }}</span>
-        <span>{{ "{:,.0f}".format(c.clicks) }}</span>
-        <span>{{ "{:,.0f}".format(c.impressions) }}</span>
-        <span>{{ summary.currency_symbol }}{{ "{:,.0f}".format(c.cost) }}</span>
-        <span>{{ "{:,.0f}".format(c.conversions) }}</span>
-      </div>
-      {% endfor %}
+      <div id="gad-table-body"></div>
+      <p id="gad-table-empty" style="display:none; padding: var(--sp-4) 0; color: var(--tx2);">No campaigns match these filters.</p>
     </div>
   </div>
 
@@ -113,19 +146,13 @@
   <p class="gad-foot">{{ brand.name }} &middot; Internal use only</p>
 </div>
 
+{% if ok %}
+<script id="gad-data" type="application/json">{{ rows|tojson }}</script>
+{% endif %}
+
 {{ topbar_script() }}
+<script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}"></script>
 <script>
-(function(){
-  var btn = document.querySelector('[data-gad-refresh]');
-  if (!btn) return;
-  btn.addEventListener('click', function(){
-    btn.disabled = true;
-    btn.textContent = 'Refreshing…';
-    fetch('/api/dashboards/google-ads/refresh', {method: 'POST'})
-      .then(function(){ window.location.reload(); })
-      .catch(function(){ btn.disabled = false; btn.textContent = 'Refresh'; });
-  });
-})();
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */
 (function(){
   var _start = Date.now(), _sent = false;
