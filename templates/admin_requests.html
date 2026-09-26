@@ -2,12 +2,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-{{ head("Access Requests", ["admin_requests.css?v=1", "admin.css?v=6"], compat=True) }}
+{{ head("Access Requests", ["admin_requests.css?v=1", "admin.css?v=7"], compat=True) }}
 </head>
 <body>
 {{ topbar([("Admin", "/admin/internal-usage"), ("Access Requests", none)]) }}
 
   <div class="wrap">
+    {% include "_admin_sheet_health.html" %}
     <div class="eyebrow"><span class="dt"></span> Admin &middot; Demand</div>
     <h1>Access <span class="ital">Requests.</span> <span class="hnote">(pre-login)</span></h1>
     <div class="sub">Everyone who submitted the &ldquo;Request access&rdquo; form before signing in &mdash; newest first.</div>

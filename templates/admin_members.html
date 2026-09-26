@@ -2,12 +2,13 @@
 <!doctype html>
 <html lang="en">
 <head>
-{{ head("Members", ["admin_members.css?v=1", "admin.css?v=6"], compat=True) }}
+{{ head("Public Page Analytics", ["admin_members.css?v=1", "admin.css?v=7"], compat=True) }}
 </head>
 <body>
-{{ topbar([("Admin", "/admin/internal-usage"), ("Members", none)]) }}
+{{ topbar([("Admin", "/admin/internal-usage"), ("Public Page Analytics", none)]) }}
 
 <div class="wrap">
+  {% include "_admin_sheet_health.html" %}
   <div class="hero">
     <h1>Public Page <em>analytics</em></h1>
     <p>Everyone who signs in with a <b>public Google account</b> ({{ brand.name }} sign-ins stay in Internal Usage). Each member is synced to their pre-login <b>Anonymous Traffic</b> journey by visitor id, so you see the full story: what they browsed before joining, when they signed in, and what they did after.</p>
@@ -320,11 +321,11 @@ function load(force){
   var btn=document.getElementById('refreshBtn');if(btn)btn.textContent='…';
   var url='/admin/public-page-analytics/data'+(force?'?fresh=1':'');
   fetch(url,{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
-    if(btn)btn.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5\"/></svg> Refresh';
+    if(btn)btn.innerHTML='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5\"/></svg> Refresh';
     LAST_DATA=d;
     var k=d.kpis||{};
     var note=document.getElementById('emptyNote');
-    if(!d.configured){note.style.display='block';note.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3.5 22 20H2zM12 10v4M12 17.2v.1\"/></svg> Sheets not configured (GOOGLE_SA_JSON / LOGIN_LOG_SHEET_ID missing).';}
+    if(!d.configured){note.style.display='none';}
     else if(!k.members){note.style.display='block';note.textContent='No public member sign-ins yet. When someone signs in with a non-{{ brand.name }} Google account, they appear here (data lands in the “Member Signins” sheet tab) and are matched to their pre-login Anonymous Traffic.';}
     else{note.style.display='none';}
     document.getElementById('kpis').innerHTML=
@@ -374,13 +375,13 @@ function load(force){
     }).join(''):'<tr><td colspan="6" class="empty">No page views yet</td></tr>';
     document.getElementById('btn-logins').textContent='Logins ('+rows.length+')';
     document.getElementById('btn-views').textContent='Page Views ('+pvRows.length+')';
-  }).catch(function(){if(btn)btn.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5\"/></svg> Refresh';
+  }).catch(function(){if(btn)btn.innerHTML='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5\"/></svg> Refresh';
     var n=document.getElementById('emptyNote');n.style.display='block';n.textContent='Failed to load member analytics.';});
 }
 function loadAgentUsage(){
   fetch('/admin/public-agent-usage/data',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
     var empty=document.getElementById('auEmpty');
-    if(!d.configured){empty.style.display='block';empty.textContent='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3.5 22 20H2zM12 10v4M12 17.2v.1\"/></svg> Sheets not configured for agent usage tracking.';}
+    if(!d.configured){empty.style.display='block';empty.innerHTML='<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3.5 22 20H2zM12 10v4M12 17.2v.1\"/></svg> Sheets not configured for agent usage tracking.';}
     else if(!d.total_runs){empty.style.display='block';empty.textContent='No agent runs yet. When a member opens a live agent under /app, it appears here.';}
     else{empty.style.display='none';}
     document.getElementById('auKpis').innerHTML=

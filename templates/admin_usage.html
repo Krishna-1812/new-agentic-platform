@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-{{ head("Internal Usage", ["admin_usage.css?v=1", "admin.css?v=6"], compat=True) }}
+{{ head("Internal Usage", ["admin_usage.css?v=1", "admin.css?v=7"], compat=True) }}
 </head>
 <body>
   <div class="bg-blob bg-blob-1"></div>
@@ -19,6 +19,7 @@
 
   <!-- Main -->
   <div class="main">
+    {% include "_admin_sheet_health.html" %}
 
     <!-- Header -->
     <div class="ph">
