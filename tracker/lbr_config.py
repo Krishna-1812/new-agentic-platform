@@ -141,6 +141,13 @@ PRICES = {
         "source": "https://developers.google.com/maps/billing-and-pricing/pricing",
         "note": "Text Search Pro, $32.00 per 1,000 requests (first tier). Up to 20 places per request.",
         "checked": "2026-09-27"},
+    "places.text_search_enterprise": {
+        "usd": 0.035, "unit": "request",
+        "source": "https://developers.google.com/maps/billing-and-pricing/pricing",
+        "note": "Text Search Enterprise, $35.00 per 1,000 requests (first tier). Discovery asks for "
+                "website, phone, hours, rating and review count in the search itself, so each "
+                "request covers up to 20 businesses and no per-business Place Details call is needed.",
+        "checked": "2026-09-27"},
     "places.details_enterprise": {
         "usd": 0.020, "unit": "request",
         "source": "https://developers.google.com/maps/billing-and-pricing/pricing",
