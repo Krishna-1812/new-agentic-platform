@@ -9486,6 +9486,24 @@ def local_business_radar_readiness():
                     "tools": lbr_config.readiness(), "storage": lbr_store.backend()})
 
 
+@app.route(LBR_BASE + "/plan", methods=["POST"])
+@position2_required
+def local_business_radar_plan():
+    """Resolve the inputs into a search plan and its cost ceiling, without starting a run."""
+    from tracker import lbr_http, lbr_intake
+    p = request.get_json(silent=True) or {}
+    email = (_get_user() or {}).get("email", "").lower()
+    try:
+        out = lbr_intake.cached_plan(email, str(p.get("business_type") or ""),
+                                     str(p.get("location") or ""), str(p.get("focus") or "all"),
+                                     p.get("cap"))
+    except lbr_intake.IntakeError as e:
+        return jsonify(error=str(e)), 400
+    except lbr_http.ToolError as e:
+        return jsonify(error=str(e), provider=e.provider), 502
+    return jsonify(out)
+
+
 @app.route("/strategic-agents/event-conference-intelligence")
 @position2_required
 def event_conference_intelligence():
