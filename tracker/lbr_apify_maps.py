@@ -157,7 +157,7 @@ def _review(r, idx):
 def search_input(plan):
     business, area = plan["business"], plan["area"]
     phrases = [q for q in (business.get("queries") or [business.get("input") or ""]) if q][:2]
-    cap = lbr_config.APIFY_DISCOVERY_PLACES.get(area["kind"], 800)
+    cap = lbr_config.apify_discovery_places(area["kind"], plan.get("cap"))
     return {
         "searchStringsArray": phrases,
         "customGeolocation": area["shape"],

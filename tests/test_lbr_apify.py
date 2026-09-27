@@ -218,7 +218,9 @@ def test_the_estimate_prices_apify_per_place_and_per_review(world, monkeypatch):
     est = _plan(cap=100)["estimate"]
     assert est["source"] == "apify" and est["discovery_requests"] == 0
     search = next(l for l in est["lines"] if l["what"].startswith("Google Maps search"))
-    assert search["units"] == 800 and search["usd"] == pytest.approx(3.2), "800 places x $0.004 for a city"
+    assert search["units"] == 800 and search["usd"] == pytest.approx(3.2), "100 researched: the city's 800 ceiling"
+    small = next(l for l in _plan(cap=10)["estimate"]["lines"] if l["what"].startswith("Google Maps search"))
+    assert small["units"] == 100 and small["usd"] == pytest.approx(0.40), "10 researched: 100 places, $0.40"
     opened = next(l for l in est["lines"] if l["what"].startswith("Each business opened"))
     assert opened["usd"] == pytest.approx(100 * (0.004 + 0.002 + 30 * 0.0005))
     rank = next(l for l in est["lines"] if l["what"].startswith("Map rank"))
@@ -237,7 +239,13 @@ def test_the_search_asks_for_the_area_and_no_personal_data(world):
     ri = lbr_apify_maps.search_input(plan)
     assert ri["customGeolocation"] == plan["area"]["shape"] and ri["searchStringsArray"] == ["dentist"]
     assert ri["scrapeReviewsPersonalData"] is False and ri["maxReviews"] == 0 and ri["scrapeContacts"] is False
-    assert ri["maxCrawledPlacesPerSearch"] == lbr_config.APIFY_DISCOVERY_PLACES["city"]
+    assert ri["maxCrawledPlacesPerSearch"] == 100, "10 researched: at least 100 candidates, not the city's 800"
+
+
+def test_the_search_grows_with_the_research_but_never_past_the_area_ceiling():
+    f = lbr_config.apify_discovery_places
+    assert f("city", 10) == 100 and f("city", 50) == 500 and f("city", 200) == 800
+    assert f("postcode", 100) == 200 and f("state", 500) == 2500
 
 
 def test_an_item_reads_as_the_same_profile_shape_as_the_places_api():

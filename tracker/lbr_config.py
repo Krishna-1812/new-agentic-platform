@@ -145,9 +145,19 @@ MAX_REVIEW_PAGES = 3
 # just below it. Each result is a paid place, so deeper costs more.
 APIFY_MAX_REVIEWS = 30
 APIFY_RANK_DEPTH = 5
-# Apify discovery pays per place found, so each kind of area has a ceiling
-# on places per search phrase (at most two phrases a run).
+# Apify discovery pays per place found ($0.004 each on the Free plan), so the
+# search is sized to the research: ten candidates for every business researched
+# (the best are picked from those), never fewer than APIFY_DISCOVERY_MIN, and
+# never more than the area's own ceiling. Per search phrase; at most two.
 APIFY_DISCOVERY_PLACES = {"postcode": 200, "district": 300, "city": 800, "county": 1200, "state": 2500}
+APIFY_CANDIDATES_PER_BUSINESS = 10
+APIFY_DISCOVERY_MIN = 100
+
+
+def apify_discovery_places(kind, cap):
+    """Places the Apify search may find (and be charged for) per phrase."""
+    ceiling = APIFY_DISCOVERY_PLACES.get(kind, 800)
+    return min(ceiling, max(APIFY_DISCOVERY_MIN, int(cap or DEFAULT_CAP) * APIFY_CANDIDATES_PER_BUSINESS))
 
 
 def retention_days():

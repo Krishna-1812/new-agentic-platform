@@ -299,9 +299,10 @@ def estimate(kind, cap, business_type):
     apify_mode = lbr_config.source() == "apify"
     if apify_mode:
         phrases = min(2, len(business_type.get("queries") or []) or 1)
-        places = lbr_config.APIFY_DISCOVERY_PLACES.get(kind, 800) * phrases
+        places = lbr_config.apify_discovery_places(kind, cap) * phrases
         discovery = 0
-        line("apify", "Google Maps search of the whole area (up to %d places)" % places, places, "apify.place")
+        line("apify", "Google Maps search of the area (up to %d places to choose from)" % places, places,
+             "apify.place")
         per = (price("apify.place") or 0) + (price("apify.details") or 0) \
             + lbr_config.APIFY_MAX_REVIEWS * (price("apify.review") or 0)
         line("apify", "Each business opened: profile and newest %d reviews" % lbr_config.APIFY_MAX_REVIEWS,
