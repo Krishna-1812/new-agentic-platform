@@ -816,6 +816,107 @@ html.gad-locked { overflow: hidden; }
 }
 
 /* ── Reduced motion: all of it off, not down ──────────────────────────── */
+/* ── Insights: impression share, budget pacing, search terms ─────────────
+   Drawn by static/js/google-ads-insights.js from the insights tabs. One hue
+   per meaning across all three panels: shown = orange, lost to budget =
+   amber, lost to ad rank = blue. Chips carry words, never colour alone. */
+.gai-chapter { margin-top: var(--sp-8); padding: var(--sp-6) 0 var(--sp-2); }
+.gai-title { font-size: clamp(34px, 4.6vw, 68px); margin-top: var(--sp-2); }
+.gai-sub { margin: var(--sp-3) 0 0; color: var(--tx2); font-size: 15px; max-width: 70ch; }
+.gai-h3 { margin: 0 0 var(--sp-2); font-size: 15px; font-weight: var(--fw-semi); color: var(--tx); }
+.gai-inner { margin-top: var(--sp-6); }
+.gai-block { min-width: 0; }
+.gai-panel-gap { margin-top: var(--sp-5); }
+
+.gai-share-head { display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-3); }
+.gai-big { font-family: var(--font-body); font-weight: 700; font-size: clamp(40px, 4.4vw, 64px); letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.gai-big-l { color: var(--tx2); font-size: 15px; max-width: 32ch; }
+.gai-stack { display: flex; height: 22px; border-radius: 11px; overflow: hidden; background: var(--s2); gap: 2px; }
+.gai-seg { display: block; height: 100%; min-width: 2px; cursor: default; transition: opacity 160ms ease; }
+.gai-stack:hover .gai-seg { opacity: .55; }
+.gai-stack .gai-seg:hover { opacity: 1; }
+.gai-stack-keys { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); margin-top: var(--sp-3); font-size: 13px; color: var(--tx2); }
+.gai-stack-k { display: inline-flex; align-items: center; gap: 6px; }
+.gai-stack-k i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.gai-stack-k b { color: var(--tx); font-weight: var(--fw-semi); font-variant-numeric: tabular-nums; }
+
+.gai-stats, .gai-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-3); margin-top: var(--sp-5); }
+.gai-kpis { margin: 0 0 var(--sp-5); }
+.gai-kpi { background: var(--s2); border-radius: 16px; padding: var(--sp-4); min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.gai-kpi-l { font-size: 11.5px; font-weight: var(--fw-medium); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--tx3); }
+.gai-kpi-v { font-size: clamp(20px, 1.7vw, 26px); font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--tx); overflow-wrap: anywhere; }
+.gai-kpi-s { font-size: 12.5px; color: var(--tx2); }
+.gai-kpi.is-good { box-shadow: inset 3px 0 0 var(--ok); }
+.gai-kpi.is-warn { box-shadow: inset 3px 0 0 #E0A100; }
+.gai-kpi.is-bad  { box-shadow: inset 3px 0 0 var(--clay-tx); }
+
+.gai-missed { display: flex; flex-direction: column; gap: var(--sp-3); }
+.gai-mrow { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr) auto; align-items: center; gap: var(--sp-3); }
+.gai-mname { min-width: 0; display: flex; flex-direction: column; }
+.gai-mname b { font-size: 13.5px; font-weight: var(--fw-semi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gai-mname span { font-size: 12px; color: var(--tx3); }
+.gai-mtrack { display: flex; height: 12px; border-radius: 6px; background: var(--s2); overflow: hidden; gap: 1px; }
+.gai-mseg { display: block; height: 100%; }
+.gai-mval { font-size: 13px; font-variant-numeric: tabular-nums; min-width: 64px; text-align: right; }
+
+.gai-table-wrap { margin-top: var(--sp-6); }
+.gai-table { min-width: 900px; }
+.gai-table tbody tr { cursor: default; }
+.gai-table th[data-gai-sort] { cursor: pointer; }
+.gai-table th[data-gai-sort]:hover { color: var(--tx); }
+.gai-table th.is-sorted { color: var(--tx); }
+.gai-table th.is-sorted::after { content: ' \2193'; color: var(--acc-tx); }
+.gai-table th.is-sorted.is-asc::after { content: ' \2191'; }
+.gai-table tr.is-waste td:first-child { box-shadow: inset 3px 0 0 var(--clay-tx); }
+.gai-cell-t { display: block; font-weight: var(--fw-semi); max-width: 44ch; overflow-wrap: anywhere; }
+.gai-cell-s { display: block; font-size: 12px; color: var(--tx3); max-width: 52ch; overflow-wrap: anywhere; }
+.gai-chip { display: inline-block; padding: 3px 10px; border-radius: var(--r-pill); font-size: 12px; font-weight: var(--fw-semi); background: var(--s2); color: var(--tx2); white-space: nowrap; }
+.gai-chip.is-good { background: #E3F3E9; color: var(--ok); }
+.gai-chip.is-warn, .gai-chip.is-bud { background: #FFF1CC; color: #7A5600; }
+.gai-chip.is-bad { background: var(--clay-dim); color: var(--clay-tx); }
+.gai-chip.is-rank { background: var(--sky-dim); color: var(--sky-tx); }
+
+.gai-filter { margin-bottom: var(--sp-4); }
+.gai-pace { display: flex; flex-direction: column; gap: var(--sp-4); }
+.gai-prow { border: 1px solid var(--line); border-radius: 18px; padding: var(--sp-4) var(--sp-5); }
+.gai-phead { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--sp-3); }
+.gai-pname { min-width: 0; display: flex; flex-direction: column; }
+.gai-pname b { font-size: 15px; font-weight: var(--fw-semi); overflow-wrap: anywhere; }
+.gai-pname span { font-size: 12.5px; color: var(--tx3); }
+.gai-ptrack { position: relative; height: 14px; margin: var(--sp-3) 0; border-radius: 7px; background: var(--s2); }
+.gai-pproj, .gai-pspent { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 7px; }
+.gai-pproj { background: #FFC2A8; }
+.gai-pspent { background: #FF6022; }
+.gai-pexp, .gai-pend { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; border-radius: 1px; }
+.gai-pexp { background: #121213; }
+.gai-pend { background: #121213; opacity: .35; }
+.gai-pfacts { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-3); }
+.gai-pfacts div { display: flex; flex-direction: column; min-width: 0; }
+.gai-pfacts span { font-size: 11.5px; color: var(--tx3); }
+.gai-pfacts b { font-size: 14px; font-weight: var(--fw-semi); font-variant-numeric: tabular-nums; }
+.gai-pnote { margin: var(--sp-3) 0 0; font-size: 13px; color: var(--tx2); }
+
+.gai-mix { margin-bottom: var(--sp-5); }
+.gai-toolbar { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; }
+.gai-csv { margin-left: auto; height: 36px; padding: 0 16px; font-size: 13px; }
+.gai-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.gai-view-note { margin: var(--sp-3) 0 0; font-size: 13px; color: var(--tx2); }
+.gai-setup code { font-size: 13px; background: var(--s2); padding: 1px 6px; border-radius: 6px; }
+.gai-setup-p { margin: var(--sp-3) 0 0; color: var(--tx2); max-width: 80ch; line-height: 1.55; }
+
+@media (max-width: 1200px) {
+  .gai-stats, .gai-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .gai-pfacts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .gai-stats, .gai-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gai-pfacts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gai-mrow { grid-template-columns: 1fr auto; }
+  .gai-mtrack { grid-column: 1 / -1; grid-row: 2; }
+  .gai-csv { margin-left: 0; }
+  .gai-prow { padding: var(--sp-4); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gad *, .gad *::before, .gad *::after {
     animation-duration: .01ms !important; animation-iteration-count: 1 !important;

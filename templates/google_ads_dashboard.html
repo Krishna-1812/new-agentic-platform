@@ -17,7 +17,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=4"]) }}
+{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=5"]) }}
 </head>
 <body class="gad" data-currency-symbol="{{ currency_symbol }}">
 
@@ -266,6 +266,120 @@
     <div class="gad-movers" id="gad-movers"></div>
   </section>
 
+  {# ── Beyond the report: impression share, budget pacing, search terms.
+     Read from the insights tabs scripts/google_ads/export_insights.js
+     writes; drawn by static/js/google-ads-insights.js, following the
+     account filter and the search box. Hidden until that script has run. #}
+  {% if insights and insights.ok %}
+  <section class="gai-chapter bn-reveal" aria-labelledby="gai-title">
+    <span class="gad-lbl">Google Ads insights export &middot; last 30 days</span>
+    <h2 class="gad-h1 gai-title" id="gai-title">Why spend lands <span class="gad-mk">where it does</span></h2>
+    <p class="gai-sub" id="gai-asof"></p>
+  </section>
+
+  <section class="gad-panel bn-reveal" data-panel="share" id="gai-share-panel">
+    <div class="gad-panel-head"><div>
+      <span class="gad-lbl">Reach</span>
+      <h2 class="gad-h2">Search impression share</h2>
+    </div>
+    <span class="gad-panel-d" id="gai-share-d"></span></div>
+    <div class="gai-share" id="gai-share"></div>
+    <div class="gai-stats" id="gai-share-stats"></div>
+    <div class="gad-grid gad-grid--2 gai-inner">
+      <div class="gai-block">
+        <h3 class="gai-h3">Week by week</h3>
+        <div class="gad-legend-row" id="gai-weekly-legend"></div>
+        <div class="gad-chart" id="gai-weekly"></div>
+      </div>
+      <div class="gai-block">
+        <h3 class="gai-h3">Searches missed, by campaign</h3>
+        <div class="gad-legend-row" id="gai-missed-legend"></div>
+        <div class="gai-missed" id="gai-missed"></div>
+      </div>
+    </div>
+    <div class="gad-table-wrap gai-table-wrap">
+      <table class="gad-table gai-table">
+        <thead><tr>
+          <th scope="col" data-gai-sort="share:campaign">Campaign</th>
+          <th scope="col" class="is-num" data-gai-sort="share:cost">Spend</th>
+          <th scope="col" class="is-num" data-gai-sort="share:is">Impr. share</th>
+          <th scope="col" class="is-num" data-gai-sort="share:lb">Lost: budget</th>
+          <th scope="col" class="is-num" data-gai-sort="share:lr">Lost: rank</th>
+          <th scope="col" class="is-num" data-gai-sort="share:top">Top</th>
+          <th scope="col" class="is-num" data-gai-sort="share:abs">Abs. top</th>
+          <th scope="col" class="is-num" data-gai-sort="share:click">Click share</th>
+          <th scope="col" class="is-num" data-gai-sort="share:missed">Missed impr.</th>
+          <th scope="col">Held back by</th>
+        </tr></thead>
+        <tbody id="gai-share-body"></tbody>
+      </table>
+    </div>
+    <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-share-more" hidden>Show more</button></div>
+    <p class="gad-note">Impression share is the impressions a campaign got divided by the impressions it was eligible for. Totals weight each campaign by its eligible impressions (impressions &divide; share). Google reports shares below 10% as &ldquo;&lt;10%&rdquo; and lost shares above 90% as &ldquo;&gt;90%&rdquo;, so figures built on those are marked &asymp;. Missed clicks are an estimate: missed impressions &times; the campaign&rsquo;s own click-through rate.</p>
+  </section>
+
+  <section class="gad-panel bn-reveal" data-panel="pacing" id="gai-pace-panel">
+    <div class="gad-panel-head"><div>
+      <span class="gad-lbl">Money</span>
+      <h2 class="gad-h2">Budget pacing this month</h2>
+    </div>
+    <span class="gad-panel-d" id="gai-pace-d"></span></div>
+    <div class="gai-kpis" id="gai-pace-kpis"></div>
+    <div class="gad-seg gad-seg--sm gai-filter" role="group" aria-label="Pacing filter" id="gai-pace-filter">
+      <button type="button" class="gad-pill is-on" data-pace="all">All</button>
+      <button type="button" class="gad-pill" data-pace="attention">Needs attention</button>
+      <button type="button" class="gad-pill" data-pace="limited">Losing searches to budget</button>
+    </div>
+    <div class="gai-pace" id="gai-pace"></div>
+    <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-pace-more" hidden>Show more</button></div>
+    <p class="gad-note">Expected by now = daily budget &times; days elapsed this month. Projected = spend so far + the last 7 days&rsquo; average daily spend for the rest of the month. Google can spend up to twice the daily budget on a single day but charges no more than the average daily budget &times; 30.4 in a month (Google Ads Help, &ldquo;About average daily budgets&rdquo;); &ldquo;Will hit the monthly limit&rdquo; means the projection reaches that cap.</p>
+  </section>
+
+  <section class="gad-panel bn-reveal" data-panel="terms" id="gai-terms-panel">
+    <div class="gad-panel-head"><div>
+      <span class="gad-lbl">Intent</span>
+      <h2 class="gad-h2">Search terms</h2>
+    </div>
+    <span class="gad-panel-d" id="gai-terms-d"></span></div>
+    <div class="gai-kpis" id="gai-terms-kpis"></div>
+    <div class="gai-block">
+      <h3 class="gai-h3">Spend by how the search matched</h3>
+      <div class="gai-mix" id="gai-match"></div>
+    </div>
+    <div class="gai-toolbar">
+      <div class="gad-seg gad-seg--sm" role="group" aria-label="Search term view" id="gai-terms-view">
+        <button type="button" class="gad-pill is-on" data-view="spend">Top spend</button>
+        <button type="button" class="gad-pill" data-view="converting">Converting</button>
+        <button type="button" class="gad-pill" data-view="wasted">No conversions</button>
+        <button type="button" class="gad-pill" data-view="words">Words</button>
+      </div>
+      <div class="gad-seg gad-seg--sm" role="group" aria-label="Word length" id="gai-ngram" hidden>
+        <button type="button" class="gad-pill is-on" data-n="1">1 word</button>
+        <button type="button" class="gad-pill" data-n="2">2 words</button>
+        <button type="button" class="gad-pill" data-n="3">3 words</button>
+      </div>
+      <button type="button" class="gad-btn gad-btn--line gai-csv" id="gai-terms-csv">Download CSV</button>
+    </div>
+    <p class="gai-view-note" id="gai-terms-note"></p>
+    <div class="gad-table-wrap gai-table-wrap">
+      <table class="gad-table gai-table" id="gai-terms-table">
+        <thead id="gai-terms-head"></thead>
+        <tbody id="gai-terms-body"></tbody>
+      </table>
+    </div>
+    <p class="gad-table-empty" id="gai-terms-empty" hidden>No search terms match these filters.</p>
+    <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-terms-more" hidden>Show more</button></div>
+    <p class="gad-note">From Google Ads&rsquo; search terms report (last 30 days): the searches that triggered your ads in campaigns that show on Google Search. Performance Max search terms are reported separately and are not included. Google leaves out terms searched by very few people, so these add up to less than the campaigns&rsquo; total spend. A term appears once per ad group and matched keyword.</p>
+  </section>
+  {% elif insights %}
+  <section class="gad-panel gai-setup bn-reveal" data-panel="insights-setup">
+    <span class="gad-lbl">More data, ready to switch on</span>
+    <h2 class="gad-h2">Impression share, budget pacing and search terms</h2>
+    <p class="gai-setup-p">These appear here once the Google Ads insights script runs. Someone with access to the manager account installs <code>scripts/google_ads/export_insights.js</code> under Tools &rsaquo; Bulk actions &rsaquo; Scripts, points it at this dashboard&rsquo;s Google Sheet and schedules it daily. It writes its own tabs at the end of the sheet and never changes the campaign report.</p>
+    {% if insights.error %}<p class="gad-note">The insights tabs could not be read just now ({{ insights.error }}).</p>{% endif %}
+  </section>
+  {% endif %}
+
   {# ── Campaigns: the table view every chart above has as its twin ───── #}
   <section class="gad-panel bn-reveal" data-panel="table">
     <div class="gad-panel-head"><div>
@@ -325,10 +439,12 @@
 
 {% if ok %}
 <script id="gad-data" type="application/json">{{ rows|tojson }}</script>
+{% if insights and insights.ok %}<script id="gad-insights" type="application/json">{{ insights|tojson }}</script>{% endif %}
 {% endif %}
 
 {{ topbar_script() }}
-<script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=4"></script>
+{% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=1"></script>{% endif %}
+<script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=5"></script>
 <script>
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */
 (function(){

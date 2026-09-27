@@ -4836,6 +4836,18 @@ def dashboard_legacy_p2(account_id: str, section: str = None):
 # with no round trip. The route's only job is the one thing that must
 # happen server-side: read the Sheet (cached) and decide whether there is
 # anything to show at all.
+def _google_ads_insights(force: bool = False):
+    """Impression share, budgets and search terms from the insights tabs, or
+    an empty set (panels stay hidden) until the Google Ads Script has run."""
+    from tracker import google_ads_insights
+    if not GOOGLE_ADS_SHEET_ID:
+        return google_ads_insights.empty()
+    ins = google_ads_insights.fetch(_ads_sheet_service, GOOGLE_ADS_SHEET_ID,
+                                    titles=_google_ads_cache.get("titles"), force=force)
+    ins["symbols"] = {c: _CURRENCY_SYMBOLS.get(c, c + " ") for c in ins.get("currencies", [])}
+    return ins
+
+
 @app.route("/dashboards/google-ads")
 @position2_required
 def google_ads_dashboard():
@@ -4845,8 +4857,9 @@ def google_ads_dashboard():
         import traceback
         log.warning("google_ads_dashboard: %s", traceback.format_exc())
         rows = []
+    insights = _google_ads_insights()
     return render_template("google_ads_dashboard.html", user=_get_user(),
-                           rows=rows, ok=bool(rows),
+                           rows=rows, ok=bool(rows), insights=insights,
                            currency_symbol=_google_ads_currency_symbol(rows))
 
 @app.route("/api/dashboards/google-ads/refresh", methods=["POST"])
@@ -4856,7 +4869,7 @@ def google_ads_dashboard_refresh():
     (which then re-renders client-side -- no page reload)."""
     try:
         rows = _fetch_google_ads_rows(force=True)
-        return jsonify({"ok": bool(rows), "rows": rows,
+        return jsonify({"ok": bool(rows), "rows": rows, "insights": _google_ads_insights(force=True),
                          "currency_symbol": _google_ads_currency_symbol(rows)})
     except Exception:
         import traceback
@@ -17245,7 +17258,12 @@ def _fetch_google_ads_rows(force: bool = False):
 
     svc = _ads_sheet_service()
     meta = svc.spreadsheets().get(spreadsheetId=GOOGLE_ADS_SHEET_ID).execute()
-    tab = meta["sheets"][0]["properties"]["title"]
+    # The campaign report is the first tab that is not one of the insights
+    # tabs scripts/google_ads/export_insights.js writes (it appends them last).
+    from tracker import google_ads_insights as _gai
+    titles = [sh["properties"]["title"] for sh in meta["sheets"]]
+    _google_ads_cache["titles"] = titles
+    tab = next((t for t in titles if not _gai.is_insights_tab(t)), titles[0])
     res = svc.spreadsheets().values().get(
         spreadsheetId=GOOGLE_ADS_SHEET_ID, range="'%s'!A:Z" % tab).execute()
     raw_rows = res.get("values", [])

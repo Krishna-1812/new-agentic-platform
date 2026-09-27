@@ -1314,6 +1314,8 @@
     renderMovers(cur, prevAgg, prev);
     renderTable(cur);
     syncControls();
+    // The insights panels (google-ads-insights.js) follow the account and search filters.
+    doc.dispatchEvent(new CustomEvent("gad:render", { detail: { account: state.account, search: state.search } }));
   }
 
   /* ── Controls ───────────────────────────────────────────────────────── */
@@ -1457,6 +1459,7 @@
         .then(function (d) {
           if (d && d.ok && d.rows && d.rows.length) {
             ALL_ROWS = d.rows; CURRENCY = d.currency_symbol || CURRENCY;
+            if (d.insights && d.insights.ok) doc.dispatchEvent(new CustomEvent("gad:insights", { detail: d.insights }));
             derive(); populate(accSel, ACCOUNTS, "All accounts"); populate(typeSel, uniq("type"), "All campaign types"); populate(stSel, uniq("state"), "Any status");
             if (ACCOUNTS.indexOf(state.account) < 0) state.account = "__all__";
             if (state.preset !== "custom") applyPreset(state.preset);
