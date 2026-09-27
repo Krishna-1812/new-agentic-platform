@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    LOCAL BUSINESS RADAR (/strategic-agents/local-business-radar)
+
+    Three inputs (what kind of business, where, what to sell) become a
+    researched, ranked list of local businesses to pitch. This page asks,
+    previews the plan and its cost ceiling, runs the search live, and keeps
+    the history; each finished run opens its report at
+    /strategic-agents/local-business-radar/runs/<id>/report.
+
+    Set in the public site's voice on the directory pages' system
+    (strategic-agents.css / .js: hero, pills, odometer figures, decode
+    labels, colophon) plus this agent's own sheet and script. Motion is off
+    under prefers-reduced-motion; with JS off the page still explains the
+    agent and lists the tools it needs.
+-#}
+<html lang="en">
+<head>
+{{ head("Local Business Radar", ["strategic-agents.css?v=2", "local-business-radar.css?v=1"]) }}
+</head>
+<body class="sa lbr">
+
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Local Business Radar", none)]) }}
+<div class="sa-prog" aria-hidden="true"><i></i></div>
+
+<main class="sa-shell" id="lbr" data-ready="{{ 'true' if ready else 'false' }}">
+
+  {# ── Hero: the ask ────────────────────────────────────────────────────── #}
+  <section class="sa-hero lbr-hero" data-sa-settle>
+    <div class="sa-hero-top">
+      <span class="sa-lbl" data-sa-decode>Go-to-market &middot; Local Business Radar</span>
+      {% if ready %}
+      <span class="sa-live"><i></i>Ready to search</span>
+      {% else %}
+      <span class="sa-live lbr-live--warn"><i></i>Needs {{ missing|length }} key{{ '' if missing|length == 1 else 's' }}</span>
+      {% endif %}
+      <div class="lbr-radar" aria-hidden="true"><i></i><i class="lbr-r2"></i><i class="lbr-r3"></i><b></b></div>
+    </div>
+
+    <h1 class="sa-h1" data-sa-springy>
+      <span class="sa-ln"><span>Every local business,</span></span>
+      <span class="sa-ln"><span><span class="sa-mk">scored</span> <em class="sa-it">for the pitch.</em></span></span>
+    </h1>
+
+    <p class="sa-lead lbr-lead">
+      Name a kind of business and a place. The radar finds every one of them on Google, audits the
+      profile, the website, the reviews and the map rank, and hands you the ones to pitch first, with
+      the evidence and a pitch for each.
+    </p>
+
+    <form class="lbr-ask" id="lbr-ask" autocomplete="off" novalidate>
+      <label class="lbr-field">
+        <span>What kind of business</span>
+        <input id="lbr-type" name="business_type" list="lbr-verticals" placeholder="Dentists" maxlength="80" required>
+        <datalist id="lbr-verticals">{% for v in verticals %}<option value="{{ v }}">{% endfor %}</datalist>
+      </label>
+      <label class="lbr-field">
+        <span>Where</span>
+        <input id="lbr-where" name="location" placeholder="Austin, TX  or  Texas" maxlength="120" required>
+      </label>
+      <button type="submit" class="sa-btn sa-btn--hero lbr-go" id="lbr-preview">Preview the plan</button>
+    </form>
+
+    <div class="lbr-options">
+      <div class="sa-chips lbr-focus" role="radiogroup" aria-label="What to sell">
+        {% for f in focus %}
+        <button type="button" class="sa-chip{{ ' is-on' if loop.first else '' }}" role="radio"
+                aria-checked="{{ 'true' if loop.first else 'false' }}" data-lbr-focus="{{ f.key }}">{{ f.label }}</button>
+        {% endfor %}
+      </div>
+      <label class="lbr-cap">
+        <span>Research in depth</span>
+        <input type="range" id="lbr-cap" min="{{ cap.min }}" max="{{ cap.max }}" step="10" value="{{ cap.default }}">
+        <b id="lbr-cap-out">{{ cap.default }}</b><span>businesses</span>
+      </label>
+    </div>
+    <p class="lbr-error" id="lbr-error" role="alert" hidden></p>
+  </section>
+
+  {# ── The plan and its ceiling ───────────────────────────────────────────── #}
+  <section class="lbr-plan" id="lbr-plan" hidden aria-live="polite">
+    <div class="lbr-plan-main">
+      <span class="sa-lbl">The plan</span>
+      <h2 class="lbr-plan-h"><span id="lbr-plan-what"></span> <em class="sa-it">in</em> <span id="lbr-plan-where"></span></h2>
+      <div class="lbr-plan-tags" id="lbr-plan-tags"></div>
+      <p class="lbr-plan-note" id="lbr-plan-note"></p>
+    </div>
+    <div class="lbr-plan-cost">
+      <span class="sa-lbl">Most it can cost</span>
+      <b class="lbr-ceiling" id="lbr-ceiling">$0</b>
+      <div class="lbr-bar" id="lbr-bar" aria-hidden="true"></div>
+      <ul class="lbr-lines" id="lbr-lines"></ul>
+      <p class="lbr-basis">List prices before free monthly usage. The run stops before it can spend more.</p>
+      <button type="button" class="sa-btn sa-btn--dark lbr-start" id="lbr-start" {{ '' if ready else 'disabled' }}>
+        Start the search <span aria-hidden="true">&rarr;</span>
+      </button>
+    </div>
+  </section>
+
+  {# ── A run, live ────────────────────────────────────────────────────────── #}
+  <section class="lbr-run" id="lbr-run" hidden aria-live="polite">
+    <div class="lbr-run-head">
+      <div>
+        <span class="sa-lbl" id="lbr-run-state">Searching</span>
+        <h2 class="sa-h2 lbr-run-title" id="lbr-run-title"></h2>
+      </div>
+      <button type="button" class="sa-btn sa-btn--line lbr-cancel" id="lbr-cancel">Stop</button>
+    </div>
+    <ol class="lbr-track" id="lbr-track"></ol>
+    <div class="lbr-meters">
+      <div class="lbr-meter"><b id="lbr-m-found">0</b><span>businesses found</span></div>
+      <div class="lbr-meter"><b id="lbr-m-researched">0</b><span>researched in depth</span></div>
+      <div class="lbr-meter lbr-meter--spend">
+        <b id="lbr-m-spend">$0.00</b><span>spent of <em id="lbr-m-ceiling">$0</em></span>
+        <i class="lbr-spend-bar"><i id="lbr-m-spendbar"></i></i>
+      </div>
+    </div>
+    <p class="lbr-run-detail" id="lbr-run-detail"></p>
+    <div class="lbr-done" id="lbr-done" hidden>
+      <div>
+        <span class="sa-lbl">Report ready</span>
+        <h3 id="lbr-done-h"></h3>
+      </div>
+      <a class="sa-btn sa-btn--hero" id="lbr-done-link" href="#">Open the report <span aria-hidden="true">&rarr;</span></a>
+    </div>
+  </section>
+
+  {# ── History ────────────────────────────────────────────────────────────── #}
+  <section class="lbr-history" aria-labelledby="lbr-hist-t">
+    <div class="sa-sec-head">
+      <span class="sa-idx">01</span>
+      <div>
+        <span class="sa-lbl" data-sa-decode>Your searches</span>
+        <h2 class="sa-h2" id="lbr-hist-t">Every radar sweep, <span class="sa-mk sa-mk--sm">kept.</span></h2>
+      </div>
+    </div>
+    <div class="lbr-runs" id="lbr-runs">
+      {% for r in runs %}
+      <a class="lbr-runcard lbr-runcard--{{ r.status }}" href="{{ '/strategic-agents/local-business-radar/runs/%d/report' % r.id }}"
+         data-run="{{ r.id }}" data-status="{{ r.status }}">
+        <span class="lbr-rc-top"><span class="lbr-pill lbr-pill--{{ r.status }}">{{ r.status|capitalize }}</span>
+          <span class="lbr-rc-date">{{ (r.created_at or '')[:10] }}</span></span>
+        <span class="lbr-rc-name">{{ r.label }}</span>
+        <span class="lbr-rc-where">{{ r.area }}</span>
+        {% if r.summary and r.summary.tiers %}
+        <span class="lbr-rc-tiers">
+          <span class="lbr-t lbr-t--a"><b>{{ r.summary.tiers.A }}</b> A</span>
+          <span class="lbr-t lbr-t--b"><b>{{ r.summary.tiers.B }}</b> B</span>
+          <span class="lbr-t lbr-t--c"><b>{{ r.summary.tiers.C }}</b> C</span>
+        </span>
+        {% endif %}
+        <span class="lbr-rc-foot">{{ r.summary.found or 0 }} found &middot; ${{ '%.2f' % ((r.cost or {}).usd or 0) }}
+          {% if r.purged %}&middot; details expired{% endif %}</span>
+      </a>
+      {% else %}
+      <p class="lbr-empty" id="lbr-empty">No searches yet. Your first one will appear here.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ── The tools ──────────────────────────────────────────────────────────── #}
+  <section class="sa-ink lbr-tools" data-sa-portal aria-labelledby="lbr-tools-t">
+    <div class="sa-ink-in">
+      <div class="sa-sec-head sa-sec-head--ink">
+        <span class="sa-idx">02</span>
+        <div>
+          <span class="sa-lbl" data-sa-decode>What it runs on</span>
+          <h2 class="sa-h2" id="lbr-tools-t">Six tools, <em class="sa-it">three</em> of them essential.</h2>
+        </div>
+      </div>
+      <div class="lbr-toolgrid">
+        {% for t in tools %}
+        <div class="lbr-tool lbr-tool--{{ 'on' if t.configured else 'off' }}" data-tool="{{ t.key }}">
+          <span class="lbr-tool-top">
+            <i class="lbr-dot" aria-hidden="true"></i>
+            <span class="lbr-tool-state">{{ 'Connected' if t.configured else ('Required' if t.required else 'Optional') }}</span>
+          </span>
+          <b class="lbr-tool-name">{{ t.name }}</b>
+          <span class="lbr-tool-for">{{ t.for }}</span>
+          <code class="lbr-tool-env">{{ t.env_used or t.env[0] }}</code>
+          {% if not t.configured %}<span class="lbr-tool-get">{{ t.get }}</span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {# ── How it decides ─────────────────────────────────────────────────────── #}
+  <section class="lbr-how" aria-labelledby="lbr-how-t">
+    <div class="sa-sec-head">
+      <span class="sa-idx">03</span>
+      <div>
+        <span class="sa-lbl" data-sa-decode>How it decides</span>
+        <h2 class="sa-h2" id="lbr-how-t">Six passes, <span class="sa-mk sa-mk--sm">every claim checked.</span></h2>
+      </div>
+    </div>
+    <div class="lbr-how-grid">
+      <div class="lbr-how-i lbr-how-i--c"><b>01</b><h3>Find</h3><p>Google allows 60 results per search, so the area is split into tiles until every business is found, not just the first 60.</p></div>
+      <div class="lbr-how-i lbr-how-i--b"><b>02</b><h3>Profile</h3><p>Claimed or not, hours, photos, reviews, rating, description and owner posts, scored against what a customer sees.</p></div>
+      <div class="lbr-how-i lbr-how-i--a"><b>03</b><h3>Website</h3><p>None, a Facebook page, a dead business.site link, or a real site checked for speed, mobile, contact and tracking.</p></div>
+      <div class="lbr-how-i lbr-how-i--c"><b>04</b><h3>Reviews</h3><p>The numbers from the stars, the themes from the words, every quote the real text of a real review.</p></div>
+      <div class="lbr-how-i lbr-how-i--b"><b>05</b><h3>Visibility</h3><p>Rank in the map results from the business's own street, and whether it has ever run Google Ads.</p></div>
+      <div class="lbr-how-i lbr-how-i--a"><b>06</b><h3>Pitch</h3><p>Need times ability to pay, tiered A to C, with a pitch whose every number is checked against the evidence.</p></div>
+    </div>
+  </section>
+</main>
+
+<footer class="sa-foot">
+  <div class="sa-foot-top">
+    <span class="sa-foot-word" aria-label="{{ brand.name }}">{{ brand.name }}</span>
+    <div class="sa-toys" aria-hidden="true">
+      <span class="sa-toy sa-toy--ink"></span><span class="sa-toy sa-toy--paper"></span><span class="sa-toy sa-toy--sky"></span>
+      <span class="sa-toy sa-toy--red"></span><span class="sa-toy sa-toy--acc"></span><span class="sa-toy sa-toy--paper2"></span>
+    </div>
+  </div>
+  <div class="sa-foot-bottom">
+    <span>{{ brand.name }} &middot; Internal use only</span>
+    <a href="/strategic-agents">{{ brand.agents_plural }}</a>
+  </div>
+</footer>
+
+{{ topbar_script() }}
+<script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
+<script defer src="{{ url_for('static', filename='js/local-business-radar.js') }}?v=1"></script>
+</body>
+</html>
