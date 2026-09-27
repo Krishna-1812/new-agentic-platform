@@ -44,20 +44,38 @@ def _client():
     return Anthropic(api_key=key, timeout=90.0, max_retries=2)
 
 
+# Models that take `output_config.effort` (the 4.6+ and 5 families). On Claude
+# Sonnet 5 and Opus 5 thinking runs by default when `thinking` is omitted, and
+# its tokens come out of max_tokens, so every request leaves room for it and
+# asks for low effort: these are short extraction and writing tasks.
+EFFORT_MODELS = ("claude-sonnet-5", "claude-opus-5", "claude-fable-5", "claude-mythos-5",
+                 "claude-opus-4-8", "claude-opus-4-7", "claude-opus-4-6", "claude-sonnet-4-6")
+THINKING_ROOM = 8000
+
+
+def request_options(model, max_tokens):
+    """max_tokens (answer plus room for thinking) and effort, for one model."""
+    opts = {"max_tokens": max(max_tokens * 4, THINKING_ROOM)}
+    if str(model).startswith(EFFORT_MODELS):
+        opts["output_config"] = {"effort": "low"}
+    return opts
+
+
 def ask_json(system, user, ledger, *, max_tokens=2000, purpose="", require=()):
     """Ask once, retrying once if the reply is cut off or unreadable.
 
-    `require` names keys the object must have; a reply without them counts
-    as unreadable. Returns the parsed object.
+    `max_tokens` is the size of the answer wanted; the request adds room for
+    thinking (request_options). `require` names keys the object must have; a
+    reply without them counts as unreadable. Returns the parsed object.
     """
     client = _client()
     model = lbr_config.model()
-    budget = max_tokens
+    opts = request_options(model, max_tokens)
     last = None
     for attempt in range(2):
         try:
-            resp = client.messages.create(model=model, max_tokens=budget, system=system,
-                                          messages=[{"role": "user", "content": user}])
+            resp = client.messages.create(model=model, system=system,
+                                          messages=[{"role": "user", "content": user}], **opts)
         except Exception as exc:  # the SDK's error classes, without importing them
             status = getattr(exc, "status_code", None)
             ledger.add_claude(model, {}, ok=False, detail="%s %s" % (purpose, type(exc).__name__))
@@ -69,10 +87,15 @@ def ask_json(system, user, ledger, *, max_tokens=2000, purpose="", require=()):
                  ("input_tokens", "output_tokens", "cache_read_input_tokens",
                   "cache_creation_input_tokens")} if usage else {}
         ledger.add_claude(model, usage, ok=True, detail=purpose)
-        text = "".join(getattr(b, "text", "") for b in (resp.content or []))
-        if getattr(resp, "stop_reason", "") == "max_tokens":
+        # Only text blocks carry the answer; thinking blocks come first and are skipped.
+        text = "".join(getattr(b, "text", "") or "" for b in (resp.content or [])
+                       if getattr(b, "type", "text") == "text")
+        stop = getattr(resp, "stop_reason", "")
+        if stop == "refusal":
+            raise ClaudeError("Claude declined this request.", kind="refusal")
+        if stop == "max_tokens":
             last = ClaudeError("Claude's reply was cut off.", kind="truncated")
-            budget = min(budget * 2, 16000)
+            opts["max_tokens"] = min(opts["max_tokens"] * 2, 16000)
             continue
         try:
             obj = _extract(text)

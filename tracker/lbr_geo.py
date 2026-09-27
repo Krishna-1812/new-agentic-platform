@@ -78,12 +78,62 @@ def _query(text, ledger):
             _LAST[0] = time.time()
 
 
+PHOTON_URL = "https://photon.komoot.io/api/"
+PHOTON_KIND = {"state": "state", "county": "county", "city": "city", "locality": "city",
+               "district": "district", "postcode": "postcode", "country": "country"}
+
+
+def _box(w, s, e, n):
+    return {"type": "Polygon", "coordinates": [[[w, s], [e, s], [e, n], [w, n], [w, s]]]}
+
+
+def _from_photon(text, ledger, why):
+    """Fallback when Nominatim is unreachable: Photon (OpenStreetMap data, komoot).
+
+    Photon returns a bounding box, not the outline, so the area is the box.
+    """
+    try:
+        data = lbr_http.call(ledger, "openstreetmap", "resolve_location_photon", "GET", PHOTON_URL,
+                             params={"q": text, "limit": 5, "lang": "en"}, price_op="osm.nominatim", timeout=20)
+    except lbr_http.ToolError as exc:
+        raise GeoError("OpenStreetMap could not be reached to find \"%s\" (%s; then %s)." % (text, why, exc))
+    feats = [f for f in (data.get("features") or []) if PHOTON_KIND.get((f.get("properties") or {}).get("type"))]
+    if not feats:
+        raise GeoError("OpenStreetMap could not find a city, county, ZIP or state called \"%s\"." % text)
+    f = feats[0]
+    p = f["properties"]
+    kind = PHOTON_KIND[p["type"]]
+    if kind == "country":
+        raise GeoError("A whole country is too large for one run. Pick a state, county or city.")
+    lng, lat = f["geometry"]["coordinates"][:2]
+    ext = p.get("extent")
+    if ext and len(ext) == 4:
+        w, n, e, s = (float(v) for v in ext)
+        shape = _box(w, s, e, n)
+    else:
+        radius = POINT_RADIUS_KM[kind]
+        shape = {"type": "Point", "coordinates": [lng, lat], "radiusKm": radius}
+        dlat, dlng = radius / 111.0, radius / (111.0 * max(0.2, abs(math.cos(math.radians(lat)))))
+        w, s, e, n = lng - dlng, lat - dlat, lng + dlng, lat + dlat
+    label = ", ".join(x for x in (p.get("name"), p.get("county"), p.get("state"), p.get("country")) if x)
+    return {
+        "input": text, "place_id": "osm:%s/%s" % (p.get("osm_type") or "", p.get("osm_id") or ""),
+        "name": p.get("name") or text, "formatted": label or text, "kind": kind,
+        "viewport": {"low": {"lat": s, "lng": w}, "high": {"lat": n, "lng": e}},
+        "center": {"lat": lat, "lng": lng}, "country": (p.get("countrycode") or "").upper(),
+        "admin1": "", "admin1_name": p.get("state") or "", "admin2": p.get("county") or "",
+        "filter": "shape", "shape": shape, "source": "openstreetmap", "approximate": True,
+        "attribution": ATTRIBUTION,
+    }
+
+
 def resolve(text, ledger):
     """The area for what the user typed, shaped like lbr_intake.resolve_location's."""
     try:
         results = _query(text, ledger)
     except lbr_http.ToolError as exc:
-        raise GeoError("OpenStreetMap could not be reached to find \"%s\" (%s)." % (text, exc))
+        # Nominatim rate-limits or blocks some shared cloud addresses; Photon serves the same data.
+        return _from_photon(text, ledger, str(exc))
     if not isinstance(results, list):
         results = []
     hits = [r for r in results if KIND_BY_ADDRESSTYPE.get(r.get("addresstype"))]

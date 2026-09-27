@@ -9530,7 +9530,7 @@ def _lbr_status(run):
         disc = lbr_store.get_stage(run["id"], "discover") or {}
         st = disc.get("stats") or {}
         counts = {"found": st.get("found", 0), "researched": st.get("selected", 0),
-                  "coverage": st.get("coverage")}
+                  "coverage": st.get("coverage"), "places_limit": st.get("places_limit")}
     except Exception:
         pass
     detail = (run.get("progress") or {}).get("detail") or {}
@@ -9571,6 +9571,17 @@ def local_business_radar():
                            cap={"default": lbr_config.DEFAULT_CAP, "min": lbr_config.MIN_CAP,
                                 "max": lbr_config.MAX_CAP},
                            verticals=[v[0] for v in lbr_intake.VERTICALS])
+
+
+@app.route(LBR_BASE + "/selftest")
+@position2_required
+def local_business_radar_selftest():
+    """Every connected service checked with free calls only; ?format=json for the raw rows."""
+    from tracker import lbr_selftest
+    result = lbr_selftest.run()
+    if request.args.get("format") == "json":
+        return jsonify(result)
+    return render_template("lbr_selftest.html", user=_get_user(), result=result)
 
 
 @app.route(LBR_BASE + "/run", methods=["POST"])

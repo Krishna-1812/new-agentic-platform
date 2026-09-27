@@ -218,6 +218,25 @@ def _execute(run_id, ledger):
 
 
 # ── The stages ───────────────────────────────────────────────────────────────
+class ApifyRuns:
+    """Which Apify runs this search started, kept with the run.
+
+    A redeploy stops the worker mid-stage; when the run resumes, a stage that
+    had started an Apify run re-attaches to it instead of starting (and paying
+    for) the same search again. Flat keys, because the store merges one level.
+    """
+
+    def __init__(self, run_id):
+        self.run_id = run_id
+
+    def get(self, key):
+        run = lbr_store.get_run(self.run_id) or {}
+        return (run.get("progress") or {}).get("apify_run:" + key)
+
+    def put(self, key, apify_run_id):
+        lbr_store.merge_run(self.run_id, "progress", {"apify_run:" + key: apify_run_id})
+
+
 def _profiles(run_id):
     return {b["place_id"]: b["data"]["profile"] for b in lbr_store.get_businesses(run_id)
             if "profile" in b["data"]}
@@ -228,7 +247,8 @@ def _selected(run_id):
 
 
 def _stage_discover(run_id, plan, ledger, progress, should_stop):
-    out = lbr_discover.discover(plan, ledger, on_progress=progress, should_stop=should_stop)
+    out = lbr_discover.discover(plan, ledger, on_progress=progress, should_stop=should_stop,
+                                memo=ApifyRuns(run_id))
     selected = set(out["selected"])
     rows = []
     for pid, prof in out["profiles"].items():
@@ -258,7 +278,8 @@ def _stage_profile(run_id, plan, ledger, progress, should_stop):
     # Apify: open each business once, for its profile details and its newest reviews.
     from tracker import lbr_apify_maps
     progress({"stage": "profile", "done": 0, "of": len(selected), "note": "Apify is opening each business"})
-    opened = lbr_apify_maps.details(selected, ledger, should_stop=should_stop)
+    opened = lbr_apify_maps.details(selected, ledger, should_stop=should_stop, on_progress=progress,
+                                    memo=ApifyRuns(run_id))
     rows = []
     for pid, o in opened.items():
         prof = dict(profiles.get(pid) or {})
@@ -299,7 +320,7 @@ def _stage_visibility(run_id, plan, ledger, progress, should_stop):
     businesses = {b["place_id"]: b["data"] for b in lbr_store.get_businesses(run_id)}
     websites = {pid: d.get("website") for pid, d in businesses.items() if d.get("website")}
     out = lbr_visibility.run(_selected(run_id), _profiles(run_id), plan, ledger, websites=websites,
-                             on_progress=progress, should_stop=should_stop)
+                             on_progress=progress, should_stop=should_stop, memo=ApifyRuns(run_id))
     _merge_stage(run_id, "visibility", out["businesses"])
     return {"market": out["market"], "searches": out["searches"], "ad_checks": out["ad_checks"]}
 
