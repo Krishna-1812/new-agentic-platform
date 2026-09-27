@@ -113,6 +113,110 @@ def run_actor_and_wait(actor_id: str, run_input: dict, token: str, timeout: int 
         return []
 
 
+TERMINAL = ("SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT")
+DATASET_PAGE = 1000
+
+
+def _get_run(run_id: str, token: str) -> dict:
+    resp = requests.get(f"{_BASE_URL}/actor-runs/{run_id}", headers=_headers(token), timeout=30)
+    resp.raise_for_status()
+    return resp.json()["data"]
+
+
+def abort_run(run_id: str, token: str) -> None:
+    """Ask Apify to stop a run (it keeps what it has already produced and charged)."""
+    try:
+        requests.post(f"{_BASE_URL}/actor-runs/{run_id}/abort", headers=_headers(token), timeout=30)
+    except Exception as e:  # best effort: the run's own timeout still ends it
+        logger.warning("apify_transport: abort of run %s failed: %s", run_id, e)
+
+
+def dataset_items(dataset_id: str, token: str) -> list[dict]:
+    """Every item in a dataset, a page at a time (a big search returns thousands)."""
+    out, offset = [], 0
+    while True:
+        resp = requests.get(f"{_BASE_URL}/datasets/{dataset_id}/items", headers=_headers(token),
+                            params={"format": "json", "clean": "true", "offset": offset, "limit": DATASET_PAGE},
+                            timeout=120)
+        resp.raise_for_status()
+        page = resp.json()
+        page = page if isinstance(page, list) else []
+        out.extend(page)
+        if len(page) < DATASET_PAGE:
+            return out
+        offset += DATASET_PAGE
+
+
+def run_actor(actor_id: str, run_input: dict, token: str, *, timeout: int, max_charge_usd: float | None = None,
+              poll_interval: int = 5, on_poll=None, should_abort=None, resume_run_id: str | None = None,
+              on_start=None) -> tuple[list[dict], dict]:
+    """Run an Actor to the end and return (items, run).
+
+    Unlike run_actor_and_wait this never throws away what a run produced: a run
+    that timed out, was aborted, or hit maxTotalChargeUsd still returns its
+    items (Apify has charged for them), with run["status"] saying how it ended.
+    Apify is told the same `timeout`, so a run cannot outlive its caller.
+    `on_poll(run)` is called on every poll (progress, heartbeats);
+    `should_abort()` returning True aborts the run and keeps what it has.
+    `resume_run_id` re-attaches to a run this caller started before it was
+    interrupted (a redeploy), so the same work is never started and paid for
+    twice; `on_start(run_id)` is told the id of a newly started run.
+    Raises ApifyTransportError when the run cannot be started or read, or when
+    it failed having produced nothing.
+    """
+    run = None
+    if resume_run_id:
+        try:
+            run = _get_run(resume_run_id, token)
+        except Exception as e:  # gone or unreadable: start afresh
+            logger.warning("apify_transport: could not re-attach to run %s: %s", resume_run_id, e)
+            run = None
+    if run is None:
+        try:
+            url = f"{_BASE_URL}/acts/{_normalize_actor_id(actor_id)}/runs"
+            params = {"timeout": int(timeout)}
+            if max_charge_usd:
+                params["maxTotalChargeUsd"] = "%.2f" % max_charge_usd
+            resp = requests.post(url, json=run_input, headers=_headers(token), params=params, timeout=30)
+            resp.raise_for_status()
+            run = resp.json()["data"]
+        except Exception as e:
+            raise ApifyTransportError("could not start %s: %s" % (actor_id, e)) from e
+        if on_start:
+            on_start(run["id"])
+    run_id = run["id"]
+    deadline = time.monotonic() + timeout + 120
+    misses = 0
+    aborted = False
+    while run.get("status") not in TERMINAL:
+        time.sleep(poll_interval)
+        if not aborted and ((should_abort and should_abort()) or time.monotonic() > deadline):
+            abort_run(run_id, token)
+            aborted = True
+            deadline = time.monotonic() + 120          # give the abort time to land
+        elif aborted and time.monotonic() > deadline:
+            break
+        try:
+            run = _get_run(run_id, token)
+            misses = 0
+        except Exception as e:
+            misses += 1
+            if misses >= 6:
+                raise ApifyTransportError("lost track of run %s: %s" % (run_id, e)) from e
+            continue
+        if on_poll:
+            on_poll(run)
+    items = []
+    if run.get("defaultDatasetId"):
+        try:
+            items = dataset_items(run["defaultDatasetId"], token)
+        except Exception as e:
+            raise ApifyTransportError("could not read the results of run %s: %s" % (run_id, e)) from e
+    if run.get("status") == "FAILED" and not items:
+        raise ApifyTransportError("Apify run %s failed" % run_id)
+    return items, run
+
+
 def probe_token(token: str) -> tuple[dict | None, str | None]:
     """GET /v2/users/me: confirms `token` is valid without starting or
     paying for anything. Returns (account_info, None) on success, or
@@ -131,6 +235,16 @@ def probe_token(token: str) -> tuple[dict | None, str | None]:
     except requests.HTTPError as e:
         return None, "Apify returned HTTP %s: %s" % (resp.status_code, str(e)[:200])
     return (resp.json().get("data") or {}), None
+
+
+def account_limits(token: str) -> tuple[dict | None, str | None]:
+    """GET /v2/users/me/limits: this month's usage and the plan's limit. Free."""
+    try:
+        resp = requests.get(f"{_BASE_URL}/users/me/limits", headers=_headers(token), timeout=15)
+        resp.raise_for_status()
+        return (resp.json().get("data") or {}), None
+    except Exception as e:
+        return None, "Could not read Apify usage: %s" % str(e)[:200]
 
 
 def check_actor(actor_id: str, token: str) -> tuple[dict | None, str | None]:

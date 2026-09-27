@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- Local Business Radar: is everything connected? Free checks only (tracker/lbr_selftest). -#}
+<html lang="en">
+<head>
+{{ head("Local Business Radar check", ["strategic-agents.css?v=2", "local-business-radar.css?v=2"]) }}
+<style>
+  .lbrt { max-width: 880px; margin: 0 auto; padding: 0 16px 80px; }
+  .lbrt-verdict { display: inline-flex; align-items: center; gap: 10px; margin: 8px 0 28px; padding: 8px 16px;
+                  border-radius: 999px; font-weight: 700; font-size: 15px; }
+  .lbrt-verdict--ok { background: #DDF3E8; color: #0B6B4A; }
+  .lbrt-verdict--bad { background: #FDE2E2; color: #9B1C1C; }
+  .lbrt-list { list-style: none; margin: 0; padding: 0; border-radius: 20px; background: var(--s1); overflow: hidden; }
+  .lbrt-list li { display: grid; grid-template-columns: 28px 220px 1fr; gap: 12px; align-items: start;
+                  padding: 16px 20px; border-top: 1px solid var(--line); font-size: 15px; line-height: 1.5; }
+  .lbrt-list li:first-child { border-top: 0; }
+  .lbrt-list b { font-weight: 700; }
+  .lbrt-mark { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
+               font-size: 13px; font-weight: 700; }
+  .lbrt-mark--ok { background: #DDF3E8; color: #0B6B4A; }
+  .lbrt-mark--bad { background: #FDE2E2; color: #9B1C1C; }
+  .lbrt-mark--off { background: var(--s2); color: var(--tx3); }
+  .lbrt-note { margin-top: 20px; font-size: 14px; color: var(--tx2); }
+  @media (max-width: 640px) { .lbrt-list li { grid-template-columns: 28px 1fr; } .lbrt-list li span:last-child { grid-column: 2; } }
+</style>
+</head>
+<body class="sa lbr">
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Local Business Radar", "/strategic-agents/local-business-radar"), ("Check", none)]) }}
+<main class="sa-shell lbrt">
+  <section class="sa-hero lbrr-hero" style="margin-bottom:28px">
+    <span class="sa-lbl">Local Business Radar &middot; Connection check</span>
+    <h1 class="sa-h1" style="margin-top:12px">{% if result.ok %}Ready to <span class="sa-mk">search.</span>{% else %}Something needs <span class="sa-mk">fixing.</span>{% endif %}</h1>
+  </section>
+  <span class="lbrt-verdict lbrt-verdict--{{ 'ok' if result.ok else 'bad' }}">{{ 'Every required service answered.' if result.ok else 'A required service did not answer; see the red rows.' }}</span>
+  <ul class="lbrt-list">
+    {% for c in result.checks %}
+    <li>
+      {% if c.ok is sameas true %}<span class="lbrt-mark lbrt-mark--ok" aria-label="OK">&#10003;</span>
+      {% elif c.ok is sameas false %}<span class="lbrt-mark lbrt-mark--bad" aria-label="Problem">&times;</span>
+      {% else %}<span class="lbrt-mark lbrt-mark--off" aria-label="Not connected">&ndash;</span>{% endif %}
+      <b>{{ c.name }}</b>
+      <span>{{ c.detail }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="lbrt-note">Nothing here costs anything: it reads your Apify account and the scraper's details, looks up Claude's model,
+    and finds one place on OpenStreetMap. No key is ever shown. <a href="/strategic-agents/local-business-radar">Back to the agent</a>.</p>
+</main>
+{{ topbar_script() }}
+</body>
+</html>

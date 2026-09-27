@@ -219,6 +219,10 @@ PRICES = {
         "source": "https://apify.com/compass/crawler-google-places",
         "note": "'Add-on: Review scraped', $0.0005 per review on Free and Bronze.",
         "checked": "2026-09-27"},
+    "apify.start": {
+        "usd": 0.00005, "unit": "run",
+        "source": "https://apify.com/compass/crawler-google-places",
+        "note": "'Actor Start', $0.00005 once per run.", "checked": "2026-09-27"},
     "osm.nominatim": {
         "usd": 0.0, "unit": "request",
         "source": "https://operations.osmfoundation.org/policies/nominatim/",

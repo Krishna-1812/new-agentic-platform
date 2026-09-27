@@ -37,7 +37,7 @@ from tracker import apify_transport, lbr_config, lbr_http
 
 ACTOR = "compass/crawler-google-places"
 SEARCH_TIMEOUT = 3600
-DETAILS_TIMEOUT = 2400
+DETAILS_TIMEOUT = 3600
 RANK_TIMEOUT = 1800
 DETAILS_BATCH = 100
 RANK_BATCH = 50
@@ -54,16 +54,49 @@ def _price(op):
     return lbr_config.price(op) or 0.0
 
 
-def _run(run_input, ledger, op, max_usd, timeout, units_fn):
-    """One Actor run: its items, and one ledger line priced from what came back."""
+# Apify's pay-per-event names -> the prices in lbr_config.PRICES.
+EVENT_PRICES = {"place-scraped": "apify.place", "place-details-scraped": "apify.details",
+                "review-scraped": "apify.review", "apify-actor-start": "apify.start"}
+ENDED_EARLY = {"TIMED-OUT": "timed out", "ABORTED": "was stopped", "FAILED": "failed part way"}
+
+
+def _charged(run):
+    """(units, usd) from the run's own chargedEventCounts, or None if Apify gave none."""
+    counts = run.get("chargedEventCounts") if isinstance(run, dict) else None
+    if not isinstance(counts, dict) or not counts:
+        return None
+    usd = sum((n or 0) * _price(EVENT_PRICES.get(ev, "")) for ev, n in counts.items())
+    return int(counts.get("place-scraped") or 0), usd
+
+
+def _run(run_input, ledger, op, max_usd, timeout, units_fn, *, on_progress=None, should_stop=None, label="",
+         memo=None, memo_key=None):
+    """One Actor run: its items, and one ledger line for what it cost.
+
+    Progress (and so the run's heartbeat) is reported on every poll, a
+    cancelled run aborts the Actor, and whatever a run produced before it
+    timed out or was stopped is kept: Apify has charged for it.
+    """
+    def polled(run):
+        if on_progress:
+            counts = run.get("chargedEventCounts") or {}
+            on_progress({"apify": label or op, "apify_status": run.get("status"),
+                         "places": counts.get("place-scraped"), "reviews": counts.get("review-scraped")})
     try:
-        items = apify_transport.run_actor_and_wait(ACTOR, run_input, _token(), timeout=timeout,
-                                                   strict=True, max_charge_usd=max_usd)
+        key = memo_key or op
+        items, run = apify_transport.run_actor(
+            ACTOR, run_input, _token(), timeout=timeout, max_charge_usd=max_usd, on_poll=polled,
+            should_abort=should_stop, resume_run_id=memo.get(key) if memo else None,
+            on_start=(lambda rid: memo.put(key, rid)) if memo else None)
     except apify_transport.ApifyTransportError as exc:
         ledger.add("apify", op, 0, 0.0, ok=False, detail=str(exc)[:200])
         raise lbr_http.ToolError("apify", "Apify's Google Maps Scraper failed: %s" % str(exc)[:200])
-    units, usd = units_fn(items)
-    ledger.add("apify", op, units, round(usd, 4), ok=True)
+    charged = _charged(run)
+    units, usd = charged if charged else units_fn(items)
+    status = run.get("status")
+    ledger.add("apify", op, units, round(usd, 6), ok=True,
+               detail="" if status == "SUCCEEDED" else "run %s; kept %d results" % (
+                   ENDED_EARLY.get(status, status), len(items)))
     return items
 
 
@@ -139,13 +172,15 @@ def search_input(plan):
     }
 
 
-def search_area(plan, ledger):
+def search_area(plan, ledger, *, on_progress=None, should_stop=None, memo=None):
     """{place_id: raw item} for everything the Actor found (all phrases merged)."""
     run_input = search_input(plan)
     most = len(run_input["searchStringsArray"]) * run_input["maxCrawledPlacesPerSearch"]
     max_usd = most * _price("apify.place")
     items = _run(run_input, ledger, "maps_search", max_usd, SEARCH_TIMEOUT,
-                 lambda xs: (len(xs), len(xs) * _price("apify.place")))
+                 lambda xs: (len(xs), len(xs) * _price("apify.place")),
+                 on_progress=on_progress, should_stop=should_stop, label="searching Google Maps",
+                 memo=memo, memo_key="maps_search")
     out = {}
     for it in items:
         pid = it.get("placeId")
@@ -160,7 +195,7 @@ def _latest_post_days(updates):
     return lbr_profile._latest_post_days(updates)
 
 
-def details(place_ids, ledger, *, should_stop=None, max_reviews=None):
+def details(place_ids, ledger, *, should_stop=None, max_reviews=None, on_progress=None, memo=None):
     """{place_id: {"extra", "profile", "reviews", "topics"}} for each place opened."""
     max_reviews = lbr_config.APIFY_MAX_REVIEWS if max_reviews is None else max_reviews
     out = {}
@@ -179,7 +214,10 @@ def details(place_ids, ledger, *, should_stop=None, max_reviews=None):
                      "scrapeReviewsPersonalData": False, "maxImages": 0, "maxQuestions": 0,
                      "scrapeContacts": False, "maximumLeadsEnrichmentRecords": 0}
         try:
-            items = _run(run_input, ledger, "place_details", len(batch) * per_place, DETAILS_TIMEOUT, units)
+            items = _run(run_input, ledger, "place_details", len(batch) * per_place, DETAILS_TIMEOUT, units,
+                         on_progress=on_progress, should_stop=should_stop,
+                         label="opening businesses %d-%d of %d" % (i + 1, i + len(batch), len(place_ids)),
+                         memo=memo, memo_key="place_details:%d" % i)
         except lbr_http.ToolError:
             continue            # recorded; these businesses keep "not checked" findings
         for it in items:
@@ -229,7 +267,7 @@ def search_url(query, lat, lng):
     return "https://www.google.com/maps/search/%s/@%.6f,%.6f,14z?hl=en" % (quote(query), lat, lng)
 
 
-def map_ranks(query, points, ledger, *, should_stop=None):
+def map_ranks(query, points, ledger, *, should_stop=None, on_progress=None, memo=None):
     """{cell: [{"position", "place_id", "title", "rating", "reviews"}]} for each (cell, lat, lng)."""
     depth = lbr_config.APIFY_RANK_DEPTH
     out = {}
@@ -244,7 +282,9 @@ def map_ranks(query, points, ledger, *, should_stop=None):
                      "maximumLeadsEnrichmentRecords": 0}
         try:
             items = _run(run_input, ledger, "maps_rank", len(urls) * depth * _price("apify.place"),
-                         RANK_TIMEOUT, lambda xs: (len(xs), len(xs) * _price("apify.place")))
+                         RANK_TIMEOUT, lambda xs: (len(xs), len(xs) * _price("apify.place")),
+                         on_progress=on_progress, should_stop=should_stop, label="checking map rank",
+                         memo=memo, memo_key="maps_rank:%d" % i)
         except lbr_http.ToolError as exc:
             for cell in urls.values():
                 out[cell] = {"error": str(exc)}

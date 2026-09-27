@@ -99,7 +99,7 @@ def standing(prof, mkt):
     return out
 
 
-def run(selected, profiles, plan, ledger, *, websites=None, on_progress=None, should_stop=None):
+def run(selected, profiles, plan, ledger, *, websites=None, on_progress=None, should_stop=None, memo=None):
     """Map rank, ads and market standing for every selected business. {place_id: finding}"""
     websites = websites or {}
     ids = [pid for pid in selected if pid in profiles]
@@ -139,7 +139,8 @@ def run(selected, profiles, plan, ledger, *, websites=None, on_progress=None, sh
                   for cell, ms in cells.items()]
         if on_progress:
             on_progress({"stage": "visibility", "done": 0, "of": len(points), "note": "Apify is searching Google Maps"})
-        seen.update(lbr_apify_maps.map_ranks(query, points, ledger, should_stop=should_stop))
+        seen.update(lbr_apify_maps.map_ranks(query, points, ledger, should_stop=should_stop,
+                                             on_progress=on_progress, memo=memo))
 
     # Ads, for businesses with a working site of their own.
     domains = {}

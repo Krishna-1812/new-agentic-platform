@@ -79,7 +79,8 @@
     none: "A city keeps its metro: suburbs across the line are the same market, and each result is tagged.",
     admin1: "A state's boundary box overlaps its neighbours, so every result is checked to be inside it.",
     admin2: "Every result is checked to be inside the county.",
-    shape: "Google Maps is searched inside the area's real boundary, and every result is checked to be within it."
+    shape: "Google Maps is searched inside the area's real boundary, and every result is checked to be within it.",
+    box: "Google Maps is searched inside the area's bounding box (its exact outline was not available), so a few results just outside the boundary may be included."
   };
 
   function renderPlan(p) {
@@ -98,7 +99,7 @@
     (p.business.queries || []).forEach(function (q) { tags.appendChild(el("span", "lbr-tag", "Searching “" + q + "”")); });
     if (p.business.service_area) tags.appendChild(el("span", "lbr-tag", "Includes businesses with no storefront"));
     tags.appendChild(el("span", "lbr-tag", "Selling: " + p.focus_label));
-    $("lbr-plan-note").textContent = (NOTE[p.area.filter] || "") + " Up to " + p.cap +
+    $("lbr-plan-note").textContent = (NOTE[p.area.approximate ? "box" : p.area.filter] || "") + " Up to " + p.cap +
       " businesses are researched in depth; chains are set aside." +
       (p.area.attribution ? " " + p.area.attribution + "." : "");
     var est = p.estimate;
@@ -193,10 +194,15 @@
     var d = s.detail || {};
     var detail = "";
     if (s.status === "failed") detail = s.error || "The run stopped with an error.";
-    else if (d.stage === "discover") detail = d.tiles_searched + " areas searched, " + d.found + " businesses so far.";
+    else if (d.apify) detail = "Apify is " + d.apify + (d.places ? ": " + d.places + " places" : "") +
+      (d.reviews ? ", " + d.reviews + " reviews" : "") + (d.places || d.reviews ? " so far." : "…");
+    else if (d.stage === "discover" && d.tiles_searched != null) detail = d.tiles_searched + " areas searched, " + (d.found || 0) + " businesses so far.";
+    else if (d.stage === "discover") detail = (d.found || 0) + " businesses found so far.";
     else if (d.of) detail = s.stage_label + ": " + d.done + " of " + d.of + ".";
     else if (s.status === "running") detail = s.stage_label + "…";
-    if (c.coverage === "partial") detail += (detail ? " " : "") + "Coverage is partial: the densest areas hold more than the search budget reached.";
+    if (c.coverage === "partial") detail += (detail ? " " : "") + (c.places_limit
+      ? "Coverage is partial: the search reached its limit of " + c.places_limit + " places."
+      : "Coverage is partial: the densest areas hold more than the search budget reached.");
     $("lbr-run-detail").textContent = detail;
     $("lbr-cancel").hidden = !(s.status === "running" || s.status === "queued");
     if (s.status === "complete") {

@@ -17,7 +17,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Local Business Radar", ["strategic-agents.css?v=2", "local-business-radar.css?v=2"]) }}
+{{ head("Local Business Radar", ["strategic-agents.css?v=2", "local-business-radar.css?v=3"]) }}
 </head>
 <body class="sa lbr">
 
@@ -170,6 +170,7 @@
           {%- set words = {1: 'one', 2: 'two', 3: 'three', 4: 'four'} -%}
           <h2 class="sa-h2" id="lbr-tools-t">Six tools, <em class="sa-it">{{ words.get(n_req, n_req) }}</em> of them essential.</h2>
           {% if source == 'apify' %}<p class="lbr-tools-src">Businesses come from Google Maps itself, read by Apify's Google Maps Scraper; the area's boundary comes from OpenStreetMap.</p>{% endif %}
+          <p class="lbr-tools-src"><a class="lbr-tools-check" href="/strategic-agents/local-business-radar/selftest">Check every connection &rarr;</a> Free: nothing is searched or charged.</p>
         </div>
       </div>
       <div class="lbr-toolgrid">
@@ -229,6 +230,6 @@
 
 {{ topbar_script() }}
 <script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
-<script defer src="{{ url_for('static', filename='js/local-business-radar.js') }}?v=2"></script>
+<script defer src="{{ url_for('static', filename='js/local-business-radar.js') }}?v=3"></script>
 </body>
 </html>

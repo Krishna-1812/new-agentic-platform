@@ -61,15 +61,29 @@ REVIEWS = [
 
 
 class FakeApify:
-    """Stands in for apify_transport.run_actor_and_wait; answers by the kind of input."""
+    """Stands in for apify_transport.run_actor; answers by the kind of input.
+
+    Returns (items, run) like the real one, and reports one poll first, so
+    progress and heartbeats are exercised.
+    """
 
     def __init__(self):
         self.calls = []
         self.fail_details = False
+        self.run = {"status": "SUCCEEDED"}
 
-    def __call__(self, actor, run_input, token, timeout=300, poll_interval=5, strict=False, max_charge_usd=None):
-        self.calls.append({"actor": actor, "input": run_input, "max": max_charge_usd, "strict": strict})
+    def __call__(self, actor, run_input, token, *, timeout, max_charge_usd=None, poll_interval=5,
+                 on_poll=None, should_abort=None, resume_run_id=None, on_start=None):
+        self.calls.append({"actor": actor, "input": run_input, "max": max_charge_usd, "timeout": timeout,
+                           "resume": resume_run_id})
+        if on_start and not resume_run_id:
+            on_start("apify-run-%d" % len(self.calls))
         assert actor == "compass/crawler-google-places" and token == "apify-token"
+        if on_poll:
+            on_poll({"status": "RUNNING", "chargedEventCounts": {"place-scraped": 3}})
+        return self._items(run_input), dict(self.run)
+
+    def _items(self, run_input):
         if "customGeolocation" in run_input:
             return [dict(p) for p in PLACES]
         if "placeIds" in run_input:
@@ -122,7 +136,7 @@ def world(monkeypatch):
     monkeypatch.setattr(lbr_geo.time, "sleep", lambda x: None)
     monkeypatch.setattr(lbr_website, "_resolve", lambda h: {"93.184.216.34"})
     fake = FakeApify()
-    monkeypatch.setattr(apify_transport, "run_actor_and_wait", fake)
+    monkeypatch.setattr(apify_transport, "run_actor", fake)
     from tracker import lbr_claude
 
     def no_claude(*a, **k):
@@ -242,15 +256,15 @@ def test_rank_results_are_matched_to_their_search_even_when_the_url_drifts(world
         u = run_input["startUrls"][0]["url"]
         loaded = u.replace("@30.270000,-97.740000", "@30.2712,-97.7405")
         return [{"searchPageUrl": loaded, "placeId": "ChIJ0005", "rank": 1},
-                {"searchPageUrl": loaded, "placeId": "ChIJ0001", "rank": 2}]
+                {"searchPageUrl": loaded, "placeId": "ChIJ0001", "rank": 2}], {"status": "SUCCEEDED"}
     import tracker.apify_transport as at
-    at_orig = at.run_actor_and_wait
-    at.run_actor_and_wait = drift
+    at_orig = at.run_actor
+    at.run_actor = drift
     try:
         out = lbr_apify_maps.map_ranks("dentist", [((30.27, -97.74), 30.27, -97.74), ((30.1, -97.1), 30.1, -97.1)],
                                        ledger)
     finally:
-        at.run_actor_and_wait = at_orig
+        at.run_actor = at_orig
     assert [r["place_id"] for r in out[(30.27, -97.74)]] == ["ChIJ0005", "ChIJ0001"]
     assert "error" in out[(30.1, -97.1)], "no results is 'could not read', never 'not in the top 0'"
 
@@ -281,7 +295,7 @@ def test_a_whole_run_on_apify_alone(world):
     assert "customGeolocation" in kinds[0] and "placeIds" in kinds[1] and "startUrls" in kinds[2]
     assert len(kinds) == 3, "each business is opened once, for profile and reviews together"
     assert kinds[1]["scrapeReviewsPersonalData"] is False and kinds[1]["reviewsSort"] == "newest"
-    assert all(c["max"] and c["max"] > 0 and c["strict"] for c in world["apify"].calls)
+    assert all(c["max"] and c["max"] > 0 and c["timeout"] >= 1800 for c in world["apify"].calls)
 
     calls = lbr_store.get_calls(rid)
     assert {c["provider"] for c in calls} <= {"apify", "openstreetmap", "claude", "pagespeed"}
@@ -322,3 +336,79 @@ def test_the_page_says_apify_is_what_it_runs_on(world):
     assert "two</em> of them essential" in body
     # How to get an unconnected tool's key, not Python's dict.get method.
     assert "Google Cloud Console: enable" in body and "built-in method" not in body
+
+
+# ── Real-world runs: charges, partial runs, progress ─────────────────────────
+
+def test_the_ledger_uses_what_apify_actually_charged(world):
+    world["apify"].run = {"status": "SUCCEEDED", "chargedEventCounts": {
+        "place-scraped": 7, "apify-actor-start": 1}}
+    ledger = lbr_http.Ledger()
+    lbr_apify_maps.search_area(_plan(), ledger)
+    line = next(e for e in ledger.entries if e["op"] == "maps_search")
+    assert line["units"] == 7 and line["usd"] == pytest.approx(7 * 0.004 + 0.00005)
+
+
+def test_a_search_that_timed_out_keeps_its_places_and_says_so(world):
+    world["apify"].run = {"status": "TIMED-OUT"}
+    ledger = lbr_http.Ledger()
+    raw = lbr_apify_maps.search_area(_plan(), ledger)
+    assert len(raw) == 7
+    line = next(e for e in ledger.entries if e["op"] == "maps_search")
+    assert line["ok"] and "timed out" in line["detail"] and "kept 7" in line["detail"]
+
+
+def test_a_live_run_reports_apify_progress_and_stays_alive(world, monkeypatch):
+    seen = []
+    real = lbr_store.merge_run
+
+    def spy(run_id, key, value):
+        if key == "progress" and "detail" in value:
+            seen.append(value["detail"])
+        return real(run_id, key, value)
+    monkeypatch.setattr(lbr_store, "merge_run", spy)
+    rid = lbr_pipeline.start(ME, _plan())
+    assert lbr_store.get_run(rid)["status"] == "complete"
+    apify = [d for d in seen if d.get("apify")]
+    assert {d["apify"] for d in apify} >= {"searching Google Maps", "checking map rank"}
+    assert any(d["apify"].startswith("opening businesses 1-") for d in apify)
+    assert any(d.get("stage") == "discover" and d.get("found") == 3 for d in apify)
+
+
+def test_when_nominatim_refuses_photon_finds_the_area(world):
+    world["session"].handlers.insert(0, ("nominatim.openstreetmap.org", lambda *a: FakeResponse(403, {"error": "blocked"})))
+    world["session"].on("photon.komoot.io", FakeResponse(200, {"features": [
+        {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-97.74, 30.27]},
+         "properties": {"name": "Austin", "type": "city", "osm_type": "R", "osm_id": 113314,
+                        "extent": [-97.80, 30.35, -97.65, 30.20], "countrycode": "US", "state": "Texas",
+                        "county": "Travis"}}]}))
+    area = lbr_intake.plan("dentist", "Austin, TX")["area"]
+    assert area["kind"] == "city" and area["approximate"] and area["shape"]["type"] == "Polygon"
+    assert lbr_geo.contains(area["shape"], 30.27, -97.74) and not lbr_geo.contains(area["shape"], 30.50, -97.68)
+
+
+def test_a_run_resumed_after_a_redeploy_reattaches_to_its_apify_search(world, monkeypatch):
+    real = lbr_pipeline.STAGE_FUNCS["profile"]
+    monkeypatch.setitem(lbr_pipeline.STAGE_FUNCS, "profile", lambda *a: (_ for _ in ()).throw(RuntimeError("deploy")))
+    rid = lbr_pipeline.start(ME, _plan())
+    assert lbr_store.get_run(rid)["status"] == "failed"
+    assert lbr_store.get_run(rid)["progress"]["apify_run:maps_search"] == "apify-run-1"
+    # The discovery stage finished, so resuming does not search again at all.
+    monkeypatch.setitem(lbr_pipeline.STAGE_FUNCS, "profile", real)
+    lbr_store.update_run(rid, status="running", error=None)
+    lbr_pipeline._work(rid)
+    assert lbr_store.get_run(rid)["status"] == "complete"
+    assert sum(1 for c in world["apify"].calls if "customGeolocation" in c["input"]) == 1
+
+
+def test_an_interrupted_apify_search_is_reattached_not_restarted(world):
+    memo = {"maps_search": "apify-run-earlier"}
+
+    class Memo:
+        def get(self, k):
+            return memo.get(k)
+
+        def put(self, k, v):
+            memo[k] = v
+    lbr_apify_maps.search_area(_plan(), lbr_http.Ledger(), memo=Memo())
+    assert world["apify"].calls[-1]["resume"] == "apify-run-earlier"

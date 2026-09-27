@@ -343,7 +343,7 @@ def _in_area(prof, area):
     return True
 
 
-def discover(plan, ledger, *, on_progress=None, should_stop=None):
+def discover(plan, ledger, *, on_progress=None, should_stop=None, memo=None):
     """Run stage 1. Returns every business found, and which to research.
 
     `on_progress(dict)` is told how far it has got; `should_stop()` returning
@@ -351,7 +351,7 @@ def discover(plan, ledger, *, on_progress=None, should_stop=None):
     """
     # The plan fixes the source, so a run resumed after a config change keeps its own.
     if (plan.get("estimate") or {}).get("source") == "apify" or plan["area"].get("filter") == "shape":
-        return _discover_apify(plan, ledger, on_progress=on_progress, should_stop=should_stop)
+        return _discover_apify(plan, ledger, on_progress=on_progress, should_stop=should_stop, memo=memo)
     key = lbr_config.key_for("places")
     if not key:
         raise lbr_http.ToolError("places", "Google Places is not configured (GOOGLE_MAPS_API_KEY).")
@@ -398,12 +398,16 @@ def discover(plan, ledger, *, on_progress=None, should_stop=None):
     return _finish(plan, {pid: normalise(p) for pid, p in raw.items()}, stats)
 
 
-def _discover_apify(plan, ledger, *, on_progress=None, should_stop=None):
+def _discover_apify(plan, ledger, *, on_progress=None, should_stop=None, memo=None):
     """Stage 1 through Apify's Google Maps Scraper, inside the area's boundary."""
     from tracker import lbr_apify_maps
     if on_progress:
         on_progress({"stage": "discover", "found": 0, "note": "Apify is searching Google Maps"})
-    raw = lbr_apify_maps.search_area(plan, ledger)
+    def polled(p):
+        if on_progress:
+            on_progress(dict(p, stage="discover", found=p.get("places") or 0))
+    raw = lbr_apify_maps.search_area(plan, ledger, on_progress=polled, should_stop=should_stop, memo=memo)
+    stopped = bool(should_stop and should_stop())
     most = lbr_config.APIFY_DISCOVERY_PLACES.get(plan["area"]["kind"], 800)
     # The Actor stops at maxCrawledPlacesPerSearch; a phrase that reached it may have had more.
     by_phrase = {}
@@ -411,7 +415,7 @@ def _discover_apify(plan, ledger, *, on_progress=None, should_stop=None):
         by_phrase[it.get("searchString") or ""] = by_phrase.get(it.get("searchString") or "", 0) + 1
     capped = any(n >= most for n in by_phrase.values())
     stats = {"tiles_searched": 0, "tiles_still_full": 0, "requests_used": 0,
-             "coverage": "partial" if capped else "complete", "places_limit": most,
+             "coverage": "stopped" if stopped else ("partial" if capped else "complete"), "places_limit": most,
              "source": "apify"}
     if on_progress:
         on_progress({"stage": "discover", "found": len(raw)})
