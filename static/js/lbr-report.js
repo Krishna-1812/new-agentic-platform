@@ -641,7 +641,8 @@
         vc.appendChild(comp);
       }
       var ads = b.vis.ads;
-      vc.appendChild(el("p", "", ads == null ? "Google Ads not checked (no working website of its own)." :
+      vc.appendChild(el("p", "", ads == null ? (webKind(b) === "ok" ? "Google Ads not checked (SerpAPI is not connected)."
+                                                                    : "Google Ads not checked (no working website of its own).") :
         ads.error ? "Google Ads could not be checked." :
         ads.active ? "Running Google Ads now (" + ads.creatives + " ads on record)." :
         ads.creatives ? "Has advertised on Google before (" + ads.creatives + " ads), not in the last 30 days." :
@@ -718,17 +719,22 @@
     var b = el("div", "lbrr-rf");
     b.appendChild(el("h4", "", "Coverage"));
     var st = sum.stats || {};
-    var cov = { complete: "Complete: every part of the area was searched until no search came back full.",
-                partial: "Partial: " + plural(st.tiles_still_full || 0, "dense area") + " still had more businesses than the search budget reached.",
+    var viaApify = sum.source === "apify" || st.source === "apify";
+    var cov = { complete: viaApify ? "Complete: Apify searched Google Maps across the whole area and stopped short of its limit."
+                                   : "Complete: every part of the area was searched until no search came back full.",
+                partial: viaApify ? "Partial: the search reached its limit of " + (st.places_limit || "the") + " places per phrase; there may be more."
+                                  : "Partial: " + plural(st.tiles_still_full || 0, "dense area") + " still had more businesses than the search budget reached.",
                 stopped: "Stopped early, when the run was cancelled." }[st.coverage] || "Not recorded.";
     b.appendChild(el("p", "", cov));
     var ul = el("ul");
-    [[st.found, "found on Google"], [st.chains, "chain locations set aside"], [st.closed, "closed businesses dropped"],
+    [[st.found, viaApify ? "found on Google Maps" : "found on Google"], [st.chains, "chain locations set aside"], [st.closed, "closed businesses dropped"],
      [st.outside_area, "outside the area dropped"], [st.selected, "researched in depth"]].forEach(function (x) {
       if (x[0] != null) ul.appendChild(el("li", "", x[0] + " " + x[1]));
     });
     b.appendChild(ul);
     if ((sum.unchecked_tools || []).length) b.appendChild(el("p", "", "Not connected for this run, so not checked: " + sum.unchecked_tools.join(", ") + "."));
+    if (viaApify) b.appendChild(el("p", "", "Businesses, profiles and reviews read from Google Maps by Apify's Google Maps Scraper."));
+    if (sum.attribution) b.appendChild(el("p", "lbrr-attr", sum.attribution + "."));
     box.appendChild(b);
 
     var c = el("div", "lbrr-rf");

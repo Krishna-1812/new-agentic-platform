@@ -84,7 +84,8 @@ def enrich_with_apify(place_ids, ledger, *, should_stop=None):
     if not token or not place_ids:
         return {}
     out = {}
-    rate = lbr_config.price("apify.place")
+    # Each place is scraped and opened for its details: two charges per place.
+    rate = (lbr_config.price("apify.place") or 0) + (lbr_config.price("apify.details") or 0)
     for i in range(0, len(place_ids), APIFY_BATCH):
         if should_stop and should_stop():
             break
@@ -97,8 +98,7 @@ def enrich_with_apify(place_ids, ledger, *, should_stop=None):
         except apify_transport.ApifyTransportError as exc:
             ledger.add("apify", "google_maps_places", len(batch), 0.0, ok=False, detail=str(exc)[:200])
             continue
-        ledger.add("apify", "google_maps_places", len(items),
-                   None if rate is None else rate * len(items), ok=True)
+        ledger.add("apify", "google_maps_places", len(items), rate * len(items), ok=True)
         for it in items:
             pid = it.get("placeId")
             if not pid:
@@ -195,7 +195,14 @@ def audit(prof, extra=None):
     }
 
 
-def run(selected, profiles, ledger, *, should_stop=None):
-    """Audit every selected business. Returns {place_id: audit}."""
-    extra = enrich_with_apify(list(selected), ledger, should_stop=should_stop)
+def run(selected, profiles, ledger, *, should_stop=None, opened=None):
+    """Audit every selected business. Returns {place_id: audit}.
+
+    `opened` is lbr_apify_maps.details() output when Apify is the source: the
+    detail pages were already read (with the reviews), so nothing is fetched.
+    """
+    if opened is not None:
+        extra = {pid: o.get("extra") or {} for pid, o in opened.items()}
+    else:
+        extra = enrich_with_apify(list(selected), ledger, should_stop=should_stop)
     return {pid: audit(profiles[pid], extra.get(pid)) for pid in selected if pid in profiles}

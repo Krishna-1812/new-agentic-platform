@@ -31,7 +31,7 @@ import re
 import threading
 import time
 
-from tracker import lbr_claude, lbr_config, lbr_http
+from tracker import lbr_claude, lbr_config, lbr_geo, lbr_http
 
 PLACES_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
 
@@ -223,10 +223,19 @@ def _component(place, type_name):
 
 
 def resolve_location(text, ledger):
-    """The area to search, from what the user typed."""
+    """The area to search, from what the user typed.
+
+    With Apify as the source the area comes from OpenStreetMap (lbr_geo):
+    its real boundary is both the Actor's search area and the filter.
+    """
     raw = (text or "").strip()
     if not (2 <= len(raw) <= 120):
         raise IntakeError("Give a city, county, ZIP or state in 2 to 120 characters, e.g. \"Austin, TX\".")
+    if lbr_config.source() == "apify":
+        try:
+            return lbr_geo.resolve(raw, ledger)
+        except lbr_geo.GeoError as exc:
+            raise IntakeError(str(exc))
     key = lbr_config.key_for("places")
     if not key:
         raise IntakeError("Google Places is not configured (GOOGLE_MAPS_API_KEY), so the area cannot be found.")
@@ -280,24 +289,43 @@ def estimate(kind, cap, business_type):
     discovery = DISCOVERY_REQUESTS.get(kind, 90) * min(queries, 2)
     serp = lbr_config.MAX_REVIEW_PAGES + 2
     lines = []
+    price = lbr_config.price
 
     def line(provider, what, units, op=None, usd_each=None):
-        each = lbr_config.price(op) if op else usd_each
+        each = price(op) if op else usd_each
         lines.append({"provider": provider, "what": what, "units": units,
                       "usd": None if each is None else round(units * each, 2)})
 
-    line("places", "Discovery searches (up to %d)" % discovery, discovery, "places.text_search_enterprise")
-    line("serpapi", "Reviews, map rank and ads (up to %d per business)" % serp, cap * serp, "serpapi.search")
+    apify_mode = lbr_config.source() == "apify"
+    if apify_mode:
+        phrases = min(2, len(business_type.get("queries") or []) or 1)
+        places = lbr_config.APIFY_DISCOVERY_PLACES.get(kind, 800) * phrases
+        discovery = 0
+        line("apify", "Google Maps search of the whole area (up to %d places)" % places, places, "apify.place")
+        per = (price("apify.place") or 0) + (price("apify.details") or 0) \
+            + lbr_config.APIFY_MAX_REVIEWS * (price("apify.review") or 0)
+        line("apify", "Each business opened: profile and newest %d reviews" % lbr_config.APIFY_MAX_REVIEWS,
+             cap, usd_each=per)
+        if lbr_config.key_for("serpapi"):
+            line("serpapi", "Map rank and Google Ads (up to 2 per business)", cap * 2, "serpapi.search")
+        else:
+            line("apify", "Map rank (top %d, up to one search per business)" % lbr_config.APIFY_RANK_DEPTH,
+                 cap, usd_each=lbr_config.APIFY_RANK_DEPTH * (price("apify.place") or 0))
+    else:
+        line("places", "Discovery searches (up to %d)" % discovery, discovery, "places.text_search_enterprise")
+        line("serpapi", "Reviews, map rank and ads (up to %d per business)" % serp, cap * serp, "serpapi.search")
     tin, tout = CLAUDE_TOKENS_PER_BUSINESS
     line("claude", "Review themes and pitches", cap,
          usd_each=lbr_config.claude_usd(lbr_config.model(), tin, tout))
-    if lbr_config.key_for("apify"):
-        line("apify", "Claimed status, photos, owner posts", cap, "apify.place")
+    if not apify_mode and lbr_config.key_for("apify"):
+        line("apify", "Claimed status, photos, owner posts", cap,
+             usd_each=(price("apify.place") or 0) + (price("apify.details") or 0))
     line("pagespeed", "Website speed checks", cap, "pagespeed.run")
     total = round(sum(l["usd"] or 0 for l in lines), 2)
     return {"usd_max": total, "discovery_requests": discovery, "businesses": cap, "lines": lines,
-            "basis": "List prices in lbr_config.PRICES, before any free monthly usage. The run "
-                     "stops before it can spend more than this."}
+            "source": "apify" if apify_mode else "places",
+            "basis": "List prices in lbr_config.PRICES, before any free monthly usage or credit. The "
+                     "run stops before it can spend more than this."}
 
 
 def clamp_cap(value):
@@ -335,7 +363,7 @@ PLAN_TTL = 3600
 
 def cached_plan(email, business_type, location, focus="all", cap=None):
     """plan(), reusing a resolved business type and area for up to PLAN_TTL."""
-    key = ((email or "").lower(), _norm(business_type), _norm(location))
+    key = ((email or "").lower(), _norm(business_type), _norm(location), lbr_config.source())
     now = time.time()
     with _PLAN_LOCK:
         hit = _PLAN_CACHE.get(key)

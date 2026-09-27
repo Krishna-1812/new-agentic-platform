@@ -3,7 +3,9 @@
 Map rank
     Where the business appears when someone near it searches Google Maps for
     the category ("dentist"), read from SerpAPI's Google Maps engine with the
-    map centred on the business at zoom 14 (a few kilometres across). The
+    map centred on the business at zoom 14 (a few kilometres across), or,
+    without SerpAPI and with Apify as the source, from the same Google Maps
+    search run by Apify's Google Maps Scraper (lbr_apify_maps.map_ranks). The
     top three is the "map pack" customers actually see. Businesses within
     about a kilometre of each other share one search: the same street sees
     the same results, and it halves the cost in a dense downtown.
@@ -105,6 +107,7 @@ def run(selected, profiles, plan, ledger, *, websites=None, on_progress=None, sh
     gl = (plan.get("area") or {}).get("country") or None
     mkt = market(profiles)
     have_serp = bool(lbr_config.key_for("serpapi"))
+    apify_rank = not have_serp and (plan.get("estimate") or {}).get("source") == "apify"
 
     # One map search per ~1 km cell.
     cells = {}
@@ -130,6 +133,13 @@ def run(selected, profiles, plan, ledger, *, websites=None, on_progress=None, sh
                 seen[cell] = res
                 if on_progress and i % 10 == 0:
                     on_progress({"stage": "visibility", "done": i, "of": len(cells)})
+    elif apify_rank and cells:
+        from tracker import lbr_apify_maps
+        points = [(cell, sum(profiles[m]["lat"] for m in ms) / len(ms), sum(profiles[m]["lng"] for m in ms) / len(ms))
+                  for cell, ms in cells.items()]
+        if on_progress:
+            on_progress({"stage": "visibility", "done": 0, "of": len(points), "note": "Apify is searching Google Maps"})
+        seen.update(lbr_apify_maps.map_ranks(query, points, ledger, should_stop=should_stop))
 
     # Ads, for businesses with a working site of their own.
     domains = {}

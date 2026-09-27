@@ -44,9 +44,12 @@ def _normalize_actor_id(actor_id: str) -> str:
     return actor_id.replace("/", "~", 1) if actor_id and "/" in actor_id else actor_id
 
 
-def _start_run(actor_id: str, run_input: dict, token: str) -> str:
+def _start_run(actor_id: str, run_input: dict, token: str, max_charge_usd: float | None = None) -> str:
     url = f"{_BASE_URL}/acts/{_normalize_actor_id(actor_id)}/runs"
-    resp = requests.post(url, json=run_input, headers=_headers(token), timeout=30)
+    # maxTotalChargeUsd: for pay-per-event Actors, Apify stops charging (and
+    # the run stops producing) once this much has been charged.
+    params = {"maxTotalChargeUsd": "%.2f" % max_charge_usd} if max_charge_usd else None
+    resp = requests.post(url, json=run_input, headers=_headers(token), params=params, timeout=30)
     resp.raise_for_status()
     return resp.json()["data"]["id"]
 
@@ -76,7 +79,8 @@ def _fetch_dataset_items(dataset_id: str, token: str) -> list[dict]:
 
 
 def run_actor_and_wait(actor_id: str, run_input: dict, token: str, timeout: int = 300,
-                       poll_interval: int = 5, strict: bool = False) -> list[dict]:
+                       poll_interval: int = 5, strict: bool = False,
+                       max_charge_usd: float | None = None) -> list[dict]:
     """Start `actor_id` with `run_input`, poll until it finishes (or `timeout`
     seconds elapse), and return its dataset items as a list of raw dicts.
 
@@ -88,7 +92,7 @@ def run_actor_and_wait(actor_id: str, run_input: dict, token: str, timeout: int 
     can mark that platform scrape_failed and move on to the next platform.
     """
     try:
-        run_id = _start_run(actor_id, run_input, token)
+        run_id = _start_run(actor_id, run_input, token, max_charge_usd)
         run = _poll_run(run_id, token, timeout, poll_interval)
         if run.get("status") != "SUCCEEDED":
             raise ApifyTransportError(

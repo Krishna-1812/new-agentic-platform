@@ -9563,8 +9563,9 @@ def local_business_radar():
     except Exception:
         app.logger.exception("lbr: could not list runs")
         runs = []
+    tools = sorted(lbr_config.readiness(), key=lambda t: not t["required"])   # stable: required first
     return render_template("local_business_radar.html", user=_get_user(),
-                           tools=lbr_config.readiness(), ready=lbr_config.ready(),
+                           tools=tools, ready=lbr_config.ready(), source=lbr_config.source(),
                            missing=lbr_config.missing_required(), runs=runs,
                            focus=[{"key": k, "label": lbr_intake.FOCUS_LABELS[k]} for k in lbr_intake.FOCUS],
                            cap={"default": lbr_config.DEFAULT_CAP, "min": lbr_config.MIN_CAP,

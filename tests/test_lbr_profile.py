@@ -83,7 +83,8 @@ def test_apify_output_is_read_with_the_actors_own_meaning(monkeypatch):
     assert sent["input"]["placeIds"] == ["p1", "p2"] and sent["input"]["scrapePlaceDetailPage"] is True
     assert extra["p1"]["claimed"] is False and extra["p1"]["posts"] == 0 and extra["p1"]["description"] == ""
     assert extra["p2"]["claimed"] is True and extra["p2"]["post_days"] == 5
-    assert ledger.totals()["by_provider"]["apify"]["usd"] == pytest.approx(0.008)
+    # Two places, each a "Scraped place" ($0.004) plus the detail-page add-on ($0.002).
+    assert ledger.totals()["by_provider"]["apify"]["usd"] == pytest.approx(0.012)
 
 
 def test_without_apify_nothing_is_called(monkeypatch):

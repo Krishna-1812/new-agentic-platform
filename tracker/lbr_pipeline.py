@@ -8,6 +8,11 @@ skips every finished stage and pays only for what is left.
 
     discover -> profile -> website -> reviews -> visibility -> score
 
+Where the businesses come from is fixed in the plan (estimate["source"]):
+Google's Places API with SerpAPI, or Apify's Google Maps Scraper, which
+searches Google Maps itself and opens each researched business once in the
+profile stage for its details and reviews (see lbr_apify_maps).
+
 Who runs it. One worker thread per run, started by start(). A run whose
 worker died (a deploy restarts the web process) is picked up again the next
 time anyone asks for its status: ensure_running() restarts it when its
@@ -240,10 +245,36 @@ def _merge_stage(run_id, key, results):
     lbr_store.upsert_businesses(run_id, [{"place_id": pid, "data": {key: res}} for pid, res in results.items()])
 
 
+def _apify_mode(plan):
+    return (plan.get("estimate") or {}).get("source") == "apify"
+
+
 def _stage_profile(run_id, plan, ledger, progress, should_stop):
-    res = lbr_profile.run(_selected(run_id), _profiles(run_id), ledger, should_stop=should_stop)
+    selected, profiles = _selected(run_id), _profiles(run_id)
+    if not _apify_mode(plan):
+        res = lbr_profile.run(selected, profiles, ledger, should_stop=should_stop)
+        _merge_stage(run_id, "gbp", res)
+        return {"audited": len(res)}
+    # Apify: open each business once, for its profile details and its newest reviews.
+    from tracker import lbr_apify_maps
+    progress({"stage": "profile", "done": 0, "of": len(selected), "note": "Apify is opening each business"})
+    opened = lbr_apify_maps.details(selected, ledger, should_stop=should_stop)
+    rows = []
+    for pid, o in opened.items():
+        prof = dict(profiles.get(pid) or {})
+        fresh = o.get("profile") or {}
+        # The detail page adds hours and a firm review count; keep discovery's values otherwise.
+        for k, v in fresh.items():
+            if v not in (None, "", []) or k == "hours":
+                prof[k] = v
+        prof["locations"] = (profiles.get(pid) or {}).get("locations", 1)
+        profiles[pid] = prof
+        rows.append({"place_id": pid, "data": {"profile": prof,
+                                               "reviews_raw": {"reviews": o["reviews"], "topics": o["topics"]}}})
+    lbr_store.upsert_businesses(run_id, rows)
+    res = lbr_profile.run(selected, profiles, ledger, should_stop=should_stop, opened=opened)
     _merge_stage(run_id, "gbp", res)
-    return {"audited": len(res)}
+    return {"audited": len(res), "opened": len(opened)}
 
 
 def _stage_website(run_id, plan, ledger, progress, should_stop):
@@ -254,8 +285,12 @@ def _stage_website(run_id, plan, ledger, progress, should_stop):
 
 
 def _stage_reviews(run_id, plan, ledger, progress, should_stop):
+    prefetched = None
+    if _apify_mode(plan):
+        prefetched = {b["place_id"]: b["data"]["reviews_raw"] for b in lbr_store.get_businesses(run_id)
+                      if b["data"].get("reviews_raw") is not None}
     res = lbr_reviews.run(_selected(run_id), _profiles(run_id), ledger, on_progress=progress,
-                          should_stop=should_stop)
+                          should_stop=should_stop, prefetched=prefetched)
     _merge_stage(run_id, "reviews", res)
     return {"read": len(res)}
 
@@ -319,4 +354,7 @@ def summarise(run_id, plan):
             "needs_site": needs_site, "unclaimed": unclaimed, "no_ads": no_ads,
             "unanswered_negative": unanswered, "not_in_pack": not_in_pack,
             "market": disc.get("market", {}), "compliance": lbr_reviews.COMPLIANCE,
-            "unchecked_tools": [t["name"] for t in lbr_config.readiness() if not t["configured"]]}
+            "unchecked_tools": [t["name"] for t in lbr_config.readiness() if not t["configured"]
+                                and not (_apify_mode(plan) and t["key"] == "places")],
+            "source": "apify" if _apify_mode(plan) else "places",
+            "attribution": (plan.get("area") or {}).get("attribution") or ""}

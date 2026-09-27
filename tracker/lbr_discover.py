@@ -307,7 +307,7 @@ def triage(prof, focus):
     s = {"website": 100 if no_site else 80 if weak_site else 10,
          "reputation": (60 if rating is None else max(0, min(100, (4.7 - rating) * 60 + 20)))
                        + (20 if reviews < 25 else 0),
-         "seo": 40 + (25 if reviews < 50 else 0) + (20 if not prof.get("hours") else 0)
+         "seo": 40 + (25 if reviews < 50 else 0) + (20 if prof.get("hours") == [] else 0)
                 + (15 if prof.get("photos_seen", 0) < 5 else 0),
          "paid": 50 + (25 if site and not weak_site else 0),
          "creatives": 40 + (40 if prof.get("photos_seen", 0) < 5 else 0)}
@@ -333,6 +333,9 @@ def specs_for(business):
 
 def _in_area(prof, area):
     f = area.get("filter")
+    if f == "shape":
+        from tracker import lbr_geo
+        return lbr_geo.contains(area.get("shape"), prof.get("lat"), prof.get("lng"))
     if f == "admin1":
         return bool(area.get("admin1")) and prof["admin1"] == area["admin1"]
     if f == "admin2":
@@ -346,6 +349,9 @@ def discover(plan, ledger, *, on_progress=None, should_stop=None):
     `on_progress(dict)` is told how far it has got; `should_stop()` returning
     True ends the search early (a cancelled run) with coverage "stopped".
     """
+    # The plan fixes the source, so a run resumed after a config change keeps its own.
+    if (plan.get("estimate") or {}).get("source") == "apify" or plan["area"].get("filter") == "shape":
+        return _discover_apify(plan, ledger, on_progress=on_progress, should_stop=should_stop)
     key = lbr_config.key_for("places")
     if not key:
         raise lbr_http.ToolError("places", "Google Places is not configured (GOOGLE_MAPS_API_KEY).")
@@ -386,9 +392,37 @@ def discover(plan, ledger, *, on_progress=None, should_stop=None):
         if stopped:
             break
 
+    coverage = "stopped" if stopped else ("partial" if full_left else "complete")
+    stats = {"tiles_searched": searched, "tiles_still_full": full_left, "coverage": coverage,
+             "requests_used": plan["estimate"]["discovery_requests"] - budget.left}
+    return _finish(plan, {pid: normalise(p) for pid, p in raw.items()}, stats)
+
+
+def _discover_apify(plan, ledger, *, on_progress=None, should_stop=None):
+    """Stage 1 through Apify's Google Maps Scraper, inside the area's boundary."""
+    from tracker import lbr_apify_maps
+    if on_progress:
+        on_progress({"stage": "discover", "found": 0, "note": "Apify is searching Google Maps"})
+    raw = lbr_apify_maps.search_area(plan, ledger)
+    most = lbr_config.APIFY_DISCOVERY_PLACES.get(plan["area"]["kind"], 800)
+    # The Actor stops at maxCrawledPlacesPerSearch; a phrase that reached it may have had more.
+    by_phrase = {}
+    for it in raw.values():
+        by_phrase[it.get("searchString") or ""] = by_phrase.get(it.get("searchString") or "", 0) + 1
+    capped = any(n >= most for n in by_phrase.values())
+    stats = {"tiles_searched": 0, "tiles_still_full": 0, "requests_used": 0,
+             "coverage": "partial" if capped else "complete", "places_limit": most,
+             "source": "apify"}
+    if on_progress:
+        on_progress({"stage": "discover", "found": len(raw)})
+    return _finish(plan, {pid: lbr_apify_maps.normalise(it) for pid, it in raw.items()}, stats)
+
+
+def _finish(plan, normalised, stats):
+    """Shared by both sources: drop closed and out-of-area places, set chains aside, pick the research list."""
+    area = plan["area"]
     profiles, closed, outside = {}, 0, 0
-    for pid, p in raw.items():
-        prof = normalise(p)
+    for pid, prof in normalised.items():
         if prof["status"] in ("CLOSED_PERMANENTLY", "CLOSED_TEMPORARILY"):
             closed += 1
             continue
@@ -402,12 +436,9 @@ def discover(plan, ledger, *, on_progress=None, should_stop=None):
         profiles[pid]["triage"] = triage(profiles[pid], plan.get("focus", "all"))
     candidates.sort(key=lambda pid: (-profiles[pid]["triage"], -profiles[pid]["reviews"], pid))
     selected = candidates[:plan["cap"]]
-    coverage = "stopped" if stopped else ("partial" if full_left else "complete")
     return {
         "profiles": profiles, "selected": selected,
-        "stats": {"found": len(raw), "kept": len(profiles), "closed": closed, "outside_area": outside,
-                  "chains": sum(1 for p in profiles.values() if p["chain"]),
-                  "candidates": len(candidates), "selected": len(selected), "tiles_searched": searched,
-                  "tiles_still_full": full_left, "coverage": coverage,
-                  "requests_used": plan["estimate"]["discovery_requests"] - budget.left},
+        "stats": dict(stats, found=len(normalised), kept=len(profiles), closed=closed, outside_area=outside,
+                      chains=sum(1 for p in profiles.values() if p["chain"]),
+                      candidates=len(candidates), selected=len(selected)),
     }
