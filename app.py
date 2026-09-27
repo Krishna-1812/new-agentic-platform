@@ -9504,6 +9504,196 @@ def local_business_radar_plan():
     return jsonify(out)
 
 
+def _lbr_email():
+    return (_get_user() or {}).get("email", "").lower()
+
+
+def _lbr_status(run):
+    """What the page needs to draw a run's progress."""
+    from tracker import lbr_pipeline
+    stage = run.get("stage")
+    done_at = lbr_pipeline.STAGES.index(stage) if stage in lbr_pipeline.STAGES else (
+        len(lbr_pipeline.STAGES) if run["status"] == "complete" else 0)
+    stages = []
+    for i, key in enumerate(lbr_pipeline.STAGES):
+        if i < done_at or run["status"] == "complete":
+            state = "done"
+        elif i == done_at:
+            state = {"running": "active", "queued": "active"}.get(run["status"], run["status"])
+        else:
+            state = "todo"
+        stages.append({"key": key, "label": lbr_pipeline.STAGE_LABELS[key], "state": state})
+    plan = run.get("plan") or {}
+    counts = {"found": 0, "researched": 0}
+    try:
+        from tracker import lbr_store
+        disc = lbr_store.get_stage(run["id"], "discover") or {}
+        st = disc.get("stats") or {}
+        counts = {"found": st.get("found", 0), "researched": st.get("selected", 0),
+                  "coverage": st.get("coverage")}
+    except Exception:
+        pass
+    detail = (run.get("progress") or {}).get("detail") or {}
+    if not counts["found"] and detail.get("found"):
+        counts["found"] = detail["found"]
+    return {"id": run["id"], "status": run["status"], "stage": stage, "counts": counts,
+            "stage_label": lbr_pipeline.STAGE_LABELS.get(stage, ""), "stages": stages,
+            "detail": (run.get("progress") or {}).get("detail") or {},
+            "cancelling": bool((run.get("progress") or {}).get("cancel")),
+            "cost": run.get("cost") or {}, "ceiling": (plan.get("estimate") or {}).get("usd_max"),
+            "error": run.get("error"), "summary": run.get("summary") or {},
+            "business_type": run["business_type"], "location": run["location"],
+            "area": (plan.get("area") or {}).get("formatted") or run["location"],
+            "label": (plan.get("business") or {}).get("label") or run["business_type"],
+            "focus": run.get("focus"), "cap": run.get("cap"), "created_at": run.get("created_at"),
+            "finished_at": run.get("finished_at"), "purged": bool(run.get("purged_at"))}
+
+
+@app.route(LBR_BASE)
+@position2_required
+def local_business_radar():
+    from tracker import lbr_config, lbr_intake, lbr_store
+    email = _lbr_email()
+    try:
+        lbr_store.purge_expired(lbr_config.retention_days())
+    except Exception:
+        app.logger.exception("lbr: retention purge failed")
+    try:
+        runs = [_lbr_status(r) for r in lbr_store.list_runs(email, limit=12)]
+    except Exception:
+        app.logger.exception("lbr: could not list runs")
+        runs = []
+    return render_template("local_business_radar.html", user=_get_user(),
+                           tools=lbr_config.readiness(), ready=lbr_config.ready(),
+                           missing=lbr_config.missing_required(), runs=runs,
+                           focus=[{"key": k, "label": lbr_intake.FOCUS_LABELS[k]} for k in lbr_intake.FOCUS],
+                           cap={"default": lbr_config.DEFAULT_CAP, "min": lbr_config.MIN_CAP,
+                                "max": lbr_config.MAX_CAP},
+                           verticals=[v[0] for v in lbr_intake.VERTICALS])
+
+
+@app.route(LBR_BASE + "/run", methods=["POST"])
+@position2_required
+def local_business_radar_run():
+    """Resolve the inputs (reusing a preview) and start a run."""
+    from tracker import lbr_config, lbr_http, lbr_intake, lbr_pipeline
+    if not lbr_config.ready():
+        return jsonify(error="Set these first: %s." % ", ".join(lbr_config.missing_required()),
+                       missing=lbr_config.missing_required()), 400
+    p = request.get_json(silent=True) or {}
+    email = _lbr_email()
+    try:
+        plan = lbr_intake.cached_plan(email, str(p.get("business_type") or ""), str(p.get("location") or ""),
+                                      str(p.get("focus") or "all"), p.get("cap"))
+        run_id = lbr_pipeline.start(email, plan)
+    except lbr_intake.IntakeError as e:
+        return jsonify(error=str(e)), 400
+    except lbr_http.ToolError as e:
+        return jsonify(error=str(e), provider=e.provider), 502
+    except Exception:
+        app.logger.exception("lbr: could not start a run")
+        return jsonify(error="Could not start the run. Storage is unavailable."), 500
+    return jsonify(run_id=run_id, status="running")
+
+
+@app.route(LBR_BASE + "/runs")
+@position2_required
+def local_business_radar_runs():
+    from tracker import lbr_store
+    return jsonify(runs=[_lbr_status(r) for r in lbr_store.list_runs(_lbr_email(), limit=30)])
+
+
+@app.route(LBR_BASE + "/runs/<int:run_id>/status")
+@position2_required
+def local_business_radar_status(run_id):
+    from tracker import lbr_pipeline, lbr_store
+    run = lbr_store.get_run(run_id, _lbr_email())
+    if not run:
+        abort(404)
+    lbr_pipeline.ensure_running(run)
+    resp = jsonify(_lbr_status(run))
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
+@app.route(LBR_BASE + "/runs/<int:run_id>/cancel", methods=["POST"])
+@position2_required
+def local_business_radar_cancel(run_id):
+    from tracker import lbr_pipeline
+    return jsonify(cancelled=lbr_pipeline.cancel(run_id, _lbr_email()))
+
+
+@app.route(LBR_BASE + "/runs/<int:run_id>/data")
+@position2_required
+def local_business_radar_data(run_id):
+    """Everything the report draws: the run, and every business it found."""
+    from tracker import lbr_store
+    email = _lbr_email()
+    run = lbr_store.get_run(run_id, email)
+    if not run:
+        abort(404)
+    out = _lbr_status(run)
+    out["plan"] = run.get("plan") or {}
+    out["businesses"] = [dict(b["data"], place_id=b["place_id"], rank=b["rank"])
+                         for b in lbr_store.get_businesses(run_id, email)]
+    resp = jsonify(out)
+    resp.headers["Cache-Control"] = "private, no-store"
+    return resp
+
+
+def _lbr_payload(run_id):
+    """The report payload for one of the signed-in user's runs, or None."""
+    from tracker import lbr_report, lbr_store
+    email = _lbr_email()
+    run = lbr_store.get_run(run_id, email)
+    if not run:
+        return None
+    status = _lbr_status(run)
+    status["plan"] = run.get("plan") or {}
+    return lbr_report.build(status, lbr_store.get_businesses(run_id, email))
+
+
+@app.route(LBR_BASE + "/runs/<int:run_id>/report")
+@position2_required
+def local_business_radar_report(run_id):
+    payload = _lbr_payload(run_id)
+    if payload is None:
+        abort(404)
+    return render_template("lbr_report.html", user=_get_user(), payload=payload, run=payload["run"])
+
+
+def _lbr_filename(payload, ext):
+    base = "%s-%s" % (payload["run"].get("label") or "leads", payload["run"].get("area") or "")
+    base = re.sub(r"[^A-Za-z0-9]+", "-", base).strip("-").lower()[:80] or "leads"
+    return "local-business-radar-%s.%s" % (base, ext)
+
+
+@app.route(LBR_BASE + "/runs/<int:run_id>/export.csv")
+@position2_required
+def local_business_radar_csv(run_id):
+    from tracker import lbr_report
+    payload = _lbr_payload(run_id)
+    if payload is None:
+        abort(404)
+    resp = make_response(lbr_report.csv_text(payload))
+    resp.headers["Content-Type"] = "text/csv; charset=utf-8"
+    resp.headers["Content-Disposition"] = 'attachment; filename="%s"' % _lbr_filename(payload, "csv")
+    return resp
+
+
+@app.route(LBR_BASE + "/runs/<int:run_id>/export.xlsx")
+@position2_required
+def local_business_radar_xlsx(run_id):
+    from tracker import lbr_report
+    payload = _lbr_payload(run_id)
+    if payload is None:
+        abort(404)
+    resp = make_response(lbr_report.xlsx_bytes(payload))
+    resp.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    resp.headers["Content-Disposition"] = 'attachment; filename="%s"' % _lbr_filename(payload, "xlsx")
+    return resp
+
+
 @app.route("/strategic-agents/event-conference-intelligence")
 @position2_required
 def event_conference_intelligence():

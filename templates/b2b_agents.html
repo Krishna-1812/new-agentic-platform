@@ -37,7 +37,7 @@
   <section class="sa-hero" data-sa-settle>
     <div class="sa-hero-top">
       <span class="sa-lbl" data-sa-decode>Go-to-market &middot; {{ brand.agents_plural }}</span>
-      <span class="sa-live"><i></i>9 live now</span>
+      <span class="sa-live"><i></i>10 live now</span>
       <div class="sa-shapes" aria-hidden="true">
         <span class="sa-shape sa-shape--circle"></span>
         <span class="sa-shape sa-shape--half"></span>
@@ -53,9 +53,10 @@
 
     <div class="sa-hero-foot">
       <p class="sa-lead">
-        Eleven agents, each watching a different signal: funding and leadership news,
+        Twelve agents, each watching a different signal: funding and leadership news,
         website visitors, job moves, LinkedIn engagement, competitor ads and social,
-        calendars and events. Each one hands you something you can act on today.
+        local businesses worth pitching, calendars and events. Each one hands you
+        something you can act on today.
       </p>
       <div class="sa-hero-actions">
         <a href="#agents" class="sa-btn sa-btn--hero">Browse the agents</a>
@@ -67,8 +68,8 @@
 
     {# Counted from the rows below; tests/test_hub_card_counts.py checks they agree. #}
     <div class="sa-figs">
-      <div class="sa-fig"><b data-sa-odo data-figure="agents">11</b><span>agents</span></div>
-      <div class="sa-fig"><b data-sa-odo data-figure="live">9</b><span>live</span></div>
+      <div class="sa-fig"><b data-sa-odo data-figure="agents">12</b><span>agents</span></div>
+      <div class="sa-fig"><b data-sa-odo data-figure="live">10</b><span>live</span></div>
       <div class="sa-fig"><b data-sa-odo data-figure="building">2</b><span>in build</span></div>
       {% if tracked_companies %}
       <div class="sa-fig"><b data-sa-odo>{{ "{:,}".format(tracked_companies) }}+</b><span>companies tracked</span></div>
@@ -88,6 +89,7 @@
         ("b", "LinkedIn Strategy Researcher", "/strategic-agents/linkedin-strategy-researcher"),
         ("b", "Social Media Intelligence", "/strategic-agents/social-media-intelligence"),
         ("b", "Thought Leader Intelligence", "/strategic-agents/thought-leader-pr"),
+        ("b", "Local Business Radar", "/strategic-agents/local-business-radar"),
         ("a", "Ad Intelligence", "/strategic-agents/ad-intelligence"),
         ("a", "42 North Dental Slot Checker", "/strategic-agents/42-north-dental-slot-checker"),
         ("a", "Event & Conference Intelligence", "/strategic-agents/event-conference-intelligence"),
@@ -135,6 +137,7 @@
           <li><a href="#a-c-lps">LinkedIn Strategy Researcher</a></li>
           <li><a href="#a-c-sci">Social Media Intelligence</a></li>
           <li><a href="#a-c-tlpr">Thought Leader Intelligence</a></li>
+          <li><a href="#a-c-lbr">Local Business Radar</a></li>
         </ul>
       </div>
       <div class="sa-step sa-step--a" data-sa-settle>
@@ -163,9 +166,9 @@
     <div class="sa-filters" id="sa-filters">
       <div class="sa-filters-in">
         <div class="sa-chips" role="group" aria-label="Group">
-          <button type="button" class="sa-chip is-on" data-sa-group="all">All <b>11</b></button>
+          <button type="button" class="sa-chip is-on" data-sa-group="all">All <b>12</b></button>
           <button type="button" class="sa-chip" data-sa-group="signals"><i class="sa-dot sa-dot--c"></i>Signals <b>3</b></button>
-          <button type="button" class="sa-chip" data-sa-group="people"><i class="sa-dot sa-dot--b"></i>People &amp; Research <b>5</b></button>
+          <button type="button" class="sa-chip" data-sa-group="people"><i class="sa-dot sa-dot--b"></i>People &amp; Research <b>6</b></button>
           <button type="button" class="sa-chip" data-sa-group="vertical"><i class="sa-dot sa-dot--a"></i>Vertical Tools <b>3</b></button>
         </div>
         <div class="sa-chips sa-chips--state" role="group" aria-label="Status">
@@ -178,7 +181,7 @@
           <input type="search" id="sa-q" placeholder="Search agents, signals, sources&hellip;" aria-label="Search agents">
           <kbd class="sa-slash" aria-hidden="true">/</kbd>
         </label>
-        <span class="sa-count" id="sa-count" aria-live="polite">Showing 11 of 11</span>
+        <span class="sa-count" id="sa-count" aria-live="polite">Showing 12 of 12</span>
       </div>
     </div>
 
@@ -250,9 +253,9 @@
         <span class="sa-group-tile" aria-hidden="true"></span>
         <div>
           <h3 class="sa-group-name">People &amp; Research</h3>
-          <p class="sa-group-sub">Finding the right people and reading how companies and leaders show up in public.</p>
+          <p class="sa-group-sub">Finding the right people and businesses, and reading how they show up in public.</p>
         </div>
-        <span class="sa-group-count">5 agents</span>
+        <span class="sa-group-count">6 agents</span>
       </div>
       <div class="sa-grid">
 
@@ -336,6 +339,22 @@
           <span class="sa-go">Open agent <span aria-hidden="true">&rarr;</span></span>
         </a>
 
+        <a href="/strategic-agents/local-business-radar" id="a-c-lbr" class="sa-card" data-agent="c-lbr" data-state="active" data-badge="live" data-group="people">
+          <span class="sa-card-top">
+            <span class="sa-ic"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12 18.5 5.5"/><circle cx="15.5" cy="9" r="1.2"/></svg></span>
+            <span class="sa-num">12</span>
+            <span class="sa-state sa-state--live"><i></i>Live</span>
+          </span>
+          <span class="sa-name" data-agent-name>Local Business Radar</span>
+          <span class="sa-desc">Name a kind of business and a city or state. It finds every one on Google, audits the profile, website, reviews and map rank, and ranks the ones to pitch with the evidence and a pitch for each.</span>
+          <span class="sa-dl">
+            <span><em>Watches</em>Every local business of one kind in one place</span>
+            <span><em>Hands you</em>Ranked leads with their gaps and a pitch each</span>
+          </span>
+          <span class="sa-tags dir-tags"><span class="sa-tag">Google Maps</span><span class="sa-tag">Reviews</span><span class="sa-tag">Prospecting</span></span>
+          <span class="sa-go">Open agent <span aria-hidden="true">&rarr;</span></span>
+        </a>
+
       {# LinkedIn Social Researcher: HIDDEN 2026-08-14 at the owner's request,
          expected back in a few days. Nothing is retired -- the route, the
          embedded watchtower tool and the APP_AGENTS entry all still work; this
@@ -345,8 +364,8 @@
          HIDDEN_AGENT_SLUGS in app.py (that one set covers /app, the /app
          sidebar, the client portals AND the command palette, which filters
          itself on it now rather than needing its entry un-commented by hand in
-         every template), put the counts on the hub card in hub.html back to 12
-         dashboards / 12 live, update the hero figures and the People &
+         every template), put the counts on the hub card in hub.html up to 13
+         dashboards / 13 live, update the hero figures and the People &
          Research counts on this page, and restore the four LinkedIn Social
          Researcher mentions in context.html.
 

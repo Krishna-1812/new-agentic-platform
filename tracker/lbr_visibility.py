@@ -69,7 +69,7 @@ def ads(domain, ledger):
     now = datetime.now(timezone.utc).timestamp()
     last = [c.get("last_shown") for c in creatives if isinstance(c.get("last_shown"), (int, float))]
     total = (data.get("search_information") or {}).get("total_results")
-    return {"creatives": total if isinstance(total, int) else len(creatives),
+    return {"creatives": max(total, len(creatives)) if isinstance(total, int) else len(creatives),
             "active": any(now - t <= ACTIVE_DAYS * 86400 for t in last),
             "last_seen_days": int((now - max(last)) / 86400) if last else None,
             "formats": sorted({c.get("format") for c in creatives if c.get("format")})}

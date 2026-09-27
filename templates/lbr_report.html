@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    LOCAL BUSINESS RADAR: one run's report.
+
+    Everything is drawn from `payload` (tracker/lbr_report.build), embedded
+    once as JSON; static/js/lbr-report.js draws the shortlist, the radar
+    map, the charts, the lead table and the per-business drawer from it.
+    The headline figures are rendered here too, so the page opens with its
+    numbers even before the script runs.
+-#}
+{%- set s = run.summary or {} -%}
+{%- set tiers = s.tiers or {} -%}
+{%- set hot = (tiers.A or 0) + (tiers.B or 0) -%}
+{%- set area = payload.area or {} -%}
+<html lang="en">
+<head>
+{{ head("Local Business Radar report", ["strategic-agents.css?v=2", "local-business-radar.css?v=1", "lbr-report.css?v=1"]) }}
+</head>
+<body class="sa lbr lbrr">
+
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Local Business Radar", "/strategic-agents/local-business-radar"), ("Report", none)]) }}
+<div class="sa-prog" aria-hidden="true"><i></i></div>
+<script id="lbr-data" type="application/json">{{ payload|tojson }}</script>
+
+<main class="sa-shell" id="lbrr" data-status="{{ run.status }}">
+
+  {# ── Hero ────────────────────────────────────────────────────────────── #}
+  <section class="sa-hero lbrr-hero" data-sa-settle>
+    <div class="sa-hero-top">
+      <span class="sa-lbl" data-sa-decode>Local Business Radar &middot; Report</span>
+      <span class="lbr-pill lbr-pill--{{ run.status }}">{{ run.status|capitalize }}</span>
+      <span class="lbrr-when">{{ (run.finished_at or run.created_at or '')[:10] }}</span>
+      <div class="lbr-radar" aria-hidden="true"><i></i><i class="lbr-r2"></i><i class="lbr-r3"></i><b></b></div>
+    </div>
+
+    <h1 class="sa-h1 lbrr-h1" data-sa-springy>
+      <span class="sa-ln"><span><span class="sa-mk">{{ hot }}</span> {{ (run.label or 'businesses')|lower }}</span></span>
+      <span class="sa-ln"><span>worth a call <em class="sa-it">in {{ area.name or run.area }}.</em></span></span>
+    </h1>
+
+    <div class="sa-hero-foot">
+      <p class="sa-lead">
+        {% if run.status == 'complete' %}
+        Out of {{ s.found or 0 }} found, {{ s.researched or 0 }} were researched in depth. {{ tiers.A or 0 }} are tier A:
+        a clear gap and the means to pay for fixing it. {{ s.needs_site or 0 }} have no working website of their own.
+        {% elif run.status in ('running', 'queued') %}
+        Still searching. This report fills in as the run finishes; the agent's page shows it live.
+        {% else %}
+        This run stopped{% if run.error %}: {{ run.error }}{% endif %}. Whatever it had gathered is below.
+        {% endif %}
+      </p>
+      <div class="sa-hero-actions">
+        <a class="sa-btn sa-btn--ghost" href="/strategic-agents/local-business-radar/runs/{{ run.id }}/export.xlsx">Excel</a>
+        <a class="sa-btn sa-btn--ghost" href="/strategic-agents/local-business-radar/runs/{{ run.id }}/export.csv">CSV</a>
+        <a class="sa-btn sa-btn--hero lbrr-new" href="/strategic-agents/local-business-radar">New search</a>
+      </div>
+    </div>
+
+    <div class="sa-figs lbrr-figs">
+      <div class="sa-fig"><b data-sa-odo>{{ s.found or 0 }}</b><span>found</span></div>
+      <div class="sa-fig"><b data-sa-odo>{{ s.researched or 0 }}</b><span>researched</span></div>
+      <div class="sa-fig"><b data-sa-odo>{{ tiers.A or 0 }}</b><span>tier A leads</span></div>
+      <div class="sa-fig"><b data-sa-odo>{{ s.needs_site or 0 }}</b><span>need a website</span></div>
+      <div class="sa-fig"><b data-sa-odo>{{ s.unclaimed or 0 }}</b><span>unclaimed profiles</span></div>
+      <div class="sa-fig"><b data-sa-odo>{{ s.unanswered_negative or 0 }}</b><span>bad reviews unanswered</span></div>
+    </div>
+  </section>
+
+  <div class="sa-tick lbrr-tick" aria-label="The leads, best first"><div class="sa-tick-track" id="lbrr-tick"></div></div>
+
+  {% if run.purged %}
+  <p class="lbrr-notice">This run is older than the retention window, so the businesses' Google details have been
+    cleared (Google's terms limit how long they may be kept). Scores and rankings remain; run the search again to
+    refresh the rest.</p>
+  {% endif %}
+
+  {# ── The shortlist ────────────────────────────────────────────────────── #}
+  <section class="lbrr-sec" aria-labelledby="lbrr-short-t">
+    <div class="sa-sec-head">
+      <span class="sa-idx">01</span>
+      <div>
+        <span class="sa-lbl" data-sa-decode>Call these first</span>
+        <h2 class="sa-h2" id="lbrr-short-t">The <span class="sa-mk sa-mk--sm">shortlist.</span></h2>
+      </div>
+    </div>
+    <div class="lbrr-short" id="lbrr-short"></div>
+  </section>
+
+  {# ── The market ───────────────────────────────────────────────────────── #}
+  <section class="lbrr-sec" aria-labelledby="lbrr-market-t">
+    <div class="sa-sec-head">
+      <span class="sa-idx">02</span>
+      <div>
+        <span class="sa-lbl" data-sa-decode>The market</span>
+        <h2 class="sa-h2" id="lbrr-market-t">Where the gaps are, <em class="sa-it">on one screen.</em></h2>
+      </div>
+    </div>
+    <div class="lbrr-bento">
+      <div class="lbrr-panel lbrr-panel--map" data-panel>
+        <div class="lbrr-ph"><h3>The radar</h3><span id="lbrr-map-sub">Every business found, by tier</span></div>
+        <div class="lbrr-map" id="lbrr-map"></div>
+        <div class="lbrr-legend" id="lbrr-map-legend"></div>
+      </div>
+      <div class="lbrr-panel" data-panel>
+        <div class="lbrr-ph"><h3>What they need</h3><span>Businesses scoring 60+ on each need</span></div>
+        <div class="lbrr-bars" id="lbrr-gaps"></div>
+      </div>
+      <div class="lbrr-panel" data-panel>
+        <div class="lbrr-ph"><h3>Website reality</h3><span>Each square is one business researched</span></div>
+        <div class="lbrr-waffle-wrap"><div class="lbrr-waffle" id="lbrr-waffle"></div><div class="lbrr-legend lbrr-legend--col" id="lbrr-waffle-legend"></div></div>
+      </div>
+      <div class="lbrr-panel lbrr-panel--wide" data-panel>
+        <div class="lbrr-ph"><h3>Reputation map</h3><span>Rating against review count; lines at the local median</span></div>
+        <div class="lbrr-scatter" id="lbrr-scatter"></div>
+      </div>
+      <div class="lbrr-panel lbrr-panel--full" data-panel>
+        <div class="lbrr-ph"><h3>Opportunity scores</h3><span>How the researched businesses spread</span></div>
+        <div class="lbrr-hist" id="lbrr-hist"></div>
+      </div>
+    </div>
+  </section>
+
+  {# ── Every lead ───────────────────────────────────────────────────────── #}
+  <section class="lbrr-sec" id="leads" aria-labelledby="lbrr-leads-t">
+    <div class="sa-sec-head">
+      <span class="sa-idx">03</span>
+      <div>
+        <span class="sa-lbl" data-sa-decode>Every lead</span>
+        <h2 class="sa-h2" id="lbrr-leads-t">Ranked, filtered, <span class="sa-mk sa-mk--sm">yours.</span></h2>
+      </div>
+    </div>
+    <div class="sa-filters lbrr-filters" id="lbrr-filters">
+      <div class="sa-filters-in">
+        <div class="sa-chips" role="group" aria-label="Tier" id="lbrr-f-tier"></div>
+        <div class="sa-chips sa-chips--state" role="group" aria-label="Need" id="lbrr-f-need"></div>
+        <div class="sa-chips sa-chips--state" role="group" aria-label="Signals" id="lbrr-f-flags"></div>
+        <label class="sa-search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-3.4-3.4"/></svg>
+          <input type="search" id="lbrr-q" placeholder="Search names, streets, findings&hellip;" aria-label="Search leads">
+          <kbd class="sa-slash" aria-hidden="true">/</kbd>
+        </label>
+        <span class="sa-count" id="lbrr-count" aria-live="polite"></span>
+      </div>
+    </div>
+    <div class="lbrr-table-wrap">
+      <table class="lbrr-table" id="lbrr-table">
+        <thead><tr>
+          <th data-sort="rank">#</th><th data-sort="name">Business</th><th data-sort="score">Opportunity</th>
+          <th data-sort="web">Website</th><th data-sort="rating">Rating</th><th data-sort="maprank">Map rank</th>
+          <th data-sort="gbp">Profile</th><th>Lead with</th>
+        </tr></thead>
+        <tbody id="lbrr-tbody"></tbody>
+      </table>
+    </div>
+    <div class="lbrr-more">
+      <button type="button" class="sa-btn sa-btn--line" id="lbrr-more" hidden>Show more</button>
+      <label class="lbrr-found-toggle"><input type="checkbox" id="lbrr-found"> Also list the <b id="lbrr-found-n">0</b> found but not researched</label>
+    </div>
+  </section>
+
+  {# ── The run ──────────────────────────────────────────────────────────── #}
+  <section class="sa-ink lbrr-ink" data-sa-portal aria-labelledby="lbrr-run-t">
+    <div class="sa-ink-in">
+      <div class="sa-sec-head sa-sec-head--ink">
+        <span class="sa-idx">04</span>
+        <div>
+          <span class="sa-lbl" data-sa-decode>How this was made</span>
+          <h2 class="sa-h2" id="lbrr-run-t">What it cost, <em class="sa-it">and what it could not see.</em></h2>
+        </div>
+      </div>
+      <div class="lbrr-runfacts" id="lbrr-runfacts"></div>
+    </div>
+  </section>
+</main>
+
+{# ── The drawer ─────────────────────────────────────────────────────────── #}
+<div class="lbrr-drawer" id="lbrr-drawer" hidden aria-hidden="true">
+  <div class="lbrr-drawer-bg" data-close></div>
+  <aside class="lbrr-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="lbrr-dr-title">
+    <div class="lbrr-drawer-bar">
+      <span class="sa-lbl" id="lbrr-dr-kicker"></span>
+      <button type="button" class="lbrr-dr-nav" data-nav="-1" aria-label="Previous lead">&larr;</button>
+      <button type="button" class="lbrr-dr-nav" data-nav="1" aria-label="Next lead">&rarr;</button>
+      <button type="button" class="lbrr-dr-close" data-close aria-label="Close">&times;</button>
+    </div>
+    <div class="lbrr-drawer-body" id="lbrr-drawer-body"></div>
+  </aside>
+</div>
+<div class="lbrr-tip" id="lbrr-tip" role="tooltip" hidden></div>
+
+<footer class="sa-foot">
+  <div class="sa-foot-top">
+    <span class="sa-foot-word" aria-label="{{ brand.name }}">{{ brand.name }}</span>
+    <div class="sa-toys" aria-hidden="true">
+      <span class="sa-toy sa-toy--ink"></span><span class="sa-toy sa-toy--paper"></span><span class="sa-toy sa-toy--sky"></span>
+      <span class="sa-toy sa-toy--red"></span><span class="sa-toy sa-toy--acc"></span><span class="sa-toy sa-toy--paper2"></span>
+    </div>
+  </div>
+  <div class="sa-foot-bottom">
+    <span>{{ brand.name }} &middot; Internal use only</span>
+    <a href="/strategic-agents/local-business-radar">Local Business Radar</a>
+  </div>
+</footer>
+
+{{ topbar_script() }}
+<script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
+<script defer src="{{ url_for('static', filename='js/lbr-report.js') }}?v=1"></script>
+</body>
+</html>
