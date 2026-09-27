@@ -27,6 +27,7 @@ def _slim_business(pid, rank, d):
            "maps_url": prof.get("maps_url") or "", "rating": prof.get("rating"), "reviews": prof.get("reviews") or 0,
            "locality": prof.get("locality") or "", "researched": bool(disc.get("selected")),
            "chain": bool(disc.get("chain")), "chain_reason": disc.get("chain_reason") or "",
+           "set_aside": disc.get("set_aside") or "",
            "locations": prof.get("locations") or 1, "service_area_only": bool(prof.get("service_area_only"))}
     if not out["researched"]:
         return out
@@ -50,6 +51,7 @@ def _slim_business(pid, rank, d):
                   "topics": r.get("topics") or [], "error": r.get("error")}
     v = d.get("visibility") or {}
     out["vis"] = {"rank": v.get("rank"), "in_pack": v.get("in_pack"), "note": v.get("rank_note") or "",
+                  "depth": v.get("depth"), "error": v.get("rank_error"),
                   "competitors": v.get("competitors") or [], "ads": v.get("ads"), "market": v.get("market") or {}}
     out["facts"] = d.get("facts") or []
     out["pitch"] = d.get("pitch") or {}
@@ -84,7 +86,7 @@ COLUMNS = [
     ("Google rating", lambda b: b.get("rating")),
     ("Reviews", lambda b: b.get("reviews")),
     ("Unanswered 1-2 star reviews", lambda b: ((b.get("rev") or {}).get("stats") or {}).get("unanswered_negative")),
-    ("Map rank", lambda b: (b.get("vis") or {}).get("rank") or ""),
+    ("Map rank", lambda b: map_rank_cell(b.get("vis") or {})),
     ("Profile score", lambda b: (b.get("gbp") or {}).get("score")),
     ("Profile claimed", lambda b: {True: "Yes", False: "No"}.get((b.get("gbp") or {}).get("claimed"), "Unknown")),
     ("Lead with", lambda b: SERVICE_LABELS.get((b.get("score") or {}).get("top"), "")),
@@ -95,6 +97,17 @@ COLUMNS = [
     ("Evidence", lambda b: " | ".join(f["text"] for f in b.get("facts") or [])),
     ("Google Maps", lambda b: b["maps_url"]),
 ]
+
+
+def map_rank_cell(vis):
+    """#n when found; otherwise say whether it was looked for, so a blank never hides a failure."""
+    if vis.get("rank"):
+        return vis["rank"]
+    if vis.get("in_pack") is False:
+        return "Not in top %s" % vis["depth"] if vis.get("depth") else "Not in top results"
+    if vis.get("error"):
+        return "Not checked"
+    return "Not checked (no storefront)" if "Service-area" in (vis.get("note") or "") else "Not checked"
 
 
 def _safe(v):
@@ -143,11 +156,12 @@ def xlsx_bytes(payload):
     ws.freeze_panes = "E2"
     found = wb.create_sheet("Everything found")
     found.append(["Business", "Category", "Address", "Phone", "Website", "Rating", "Reviews", "Researched",
-                  "Chain", "Google Maps"])
+                  "Set aside because", "Google Maps"])
     for b in payload["businesses"]:
         found.append([_safe(v) for v in (b["name"], b["category"], b["address"], b["phone"], b["website"],
                                          b.get("rating"), b.get("reviews"), "Yes" if b["researched"] else "No",
-                                         b["chain_reason"] or ("" if not b["chain"] else "Yes"), b["maps_url"])])
+                                         b["chain_reason"] or ("Chain" if b["chain"] else "") or b.get("set_aside", ""),
+                                         b["maps_url"])])
     out = io.BytesIO()
     wb.save(out)
     return out.getvalue()

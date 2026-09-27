@@ -509,7 +509,8 @@
 
   function renderDrawer(b) {
     dbody.textContent = "";
-    $("lbrr-dr-kicker").textContent = b.rank != null ? "Lead #" + b.rank + " of " + LEADS.length : (b.chain ? "Chain, set aside" : "Found, not researched");
+    $("lbrr-dr-kicker").textContent = b.rank != null ? "Lead #" + b.rank + " of " + LEADS.length :
+      (b.chain ? "Chain, set aside" : b.set_aside ? "Set aside: " + b.set_aside : "Found, not researched");
     var hero = el("div", "lbrr-d-hero");
     var left = el("div");
     var h = el("h2", "", b.name); h.id = "lbrr-dr-title"; left.appendChild(h);
@@ -727,7 +728,8 @@
                 stopped: "Stopped early, when the run was cancelled." }[st.coverage] || "Not recorded.";
     b.appendChild(el("p", "", cov));
     var ul = el("ul");
-    [[st.found, viaApify ? "found on Google Maps" : "found on Google"], [st.chains, "chain locations set aside"], [st.closed, "closed businesses dropped"],
+    [[st.found, viaApify ? "found on Google Maps" : "found on Google"], [st.chains, "chain locations set aside"], [st.listings, "likely call-routing listings set aside"],
+     [st.off_category, "not this kind of business, dropped"], [st.closed, "closed businesses dropped"],
      [st.outside_area, "outside the area dropped"], [st.selected, "researched in depth"]].forEach(function (x) {
       if (x[0] != null) ul.appendChild(el("li", "", x[0] + " " + x[1]));
     });
