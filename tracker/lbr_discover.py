@@ -408,7 +408,7 @@ def _discover_apify(plan, ledger, *, on_progress=None, should_stop=None, memo=No
             on_progress(dict(p, stage="discover", found=p.get("places") or 0))
     raw = lbr_apify_maps.search_area(plan, ledger, on_progress=polled, should_stop=should_stop, memo=memo)
     stopped = bool(should_stop and should_stop())
-    most = lbr_config.APIFY_DISCOVERY_PLACES.get(plan["area"]["kind"], 800)
+    most = lbr_config.apify_discovery_places(plan["area"]["kind"], plan.get("cap"))
     # The Actor stops at maxCrawledPlacesPerSearch; a phrase that reached it may have had more.
     by_phrase = {}
     for it in raw.values():
