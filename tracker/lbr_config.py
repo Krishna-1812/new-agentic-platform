@@ -21,6 +21,8 @@ import os
 TOOLS = [
     {
         "key": "places", "name": "Google Places API (New)", "required": True,
+        "required_apify": False,
+        "for_apify": "Optional while Apify searches Google Maps. Not used by a run.",
         "env": ["GOOGLE_MAPS_API_KEY"],
         "for": "Finding every business in the area and reading its Google Business Profile: "
                "website, phone, hours, rating and review count.",
@@ -29,6 +31,9 @@ TOOLS = [
     },
     {
         "key": "serpapi", "name": "SerpAPI", "required": True,
+        "required_apify": False,
+        "for_apify": "Optional: whether each business runs Google Ads (Ads Transparency Center). When it is "
+                     "set, map rank is read here too, at $0.015 a search instead of Apify's per-place price.",
         "env": ["SERPAPI_KEY"],
         "for": "Every review with the owner's replies (Google's own API returns five), the business's "
                "rank in the map results, and whether it runs Google Ads.",
@@ -50,9 +55,13 @@ TOOLS = [
     },
     {
         "key": "apify", "name": "Apify Google Maps Scraper", "required": False,
+        "required_apify": True,
         "env": ["APIFY_API_TOKEN"],
         "for": "Whether the owner has claimed the profile, the photo count and the owner's posts, "
                "none of which Google's own API returns.",
+        "for_apify": "Searches Google Maps across the whole area for every business, then opens each one "
+                     "researched: claimed or not, hours, photos, owner posts and its newest reviews with "
+                     "the owner's replies. Also reads map rank when SerpAPI is not set.",
         "get": "console.apify.com, Settings, API & Integrations, Personal API token.",
     },
     {
@@ -83,20 +92,41 @@ def env_used(tool_key):
     return ""
 
 
+# ── Where businesses come from ───────────────────────────────────────────────
+# "apify": Apify's Google Maps Scraper searches Google Maps itself (the area
+#          comes from OpenStreetMap; Google Places is not needed).
+# "places": Google's Places API (New), with SerpAPI for reviews and rank.
+# LBR_SOURCE picks one; unset, Apify is used whenever its token is set.
+SOURCES = ("apify", "places")
+
+
+def source():
+    forced = (os.environ.get("LBR_SOURCE") or "").strip().lower()
+    if forced in SOURCES:
+        return forced
+    return "apify" if key_for("apify") else "places"
+
+
+def is_required(tool):
+    return tool.get("required_apify", tool["required"]) if source() == "apify" else tool["required"]
+
+
 def readiness():
     """One row per tool: what it does, whether it is set, and how to get it."""
+    apify_mode = source() == "apify"
     rows = []
     for t in TOOLS:
         rows.append({
-            "key": t["key"], "name": t["name"], "required": t["required"],
+            "key": t["key"], "name": t["name"], "required": is_required(t),
             "configured": bool(key_for(t["key"])), "env": t["env"],
-            "env_used": env_used(t["key"]), "for": t["for"], "get": t["get"],
+            "env_used": env_used(t["key"]),
+            "for": t.get("for_apify", t["for"]) if apify_mode else t["for"], "get": t["get"],
         })
     return rows
 
 
 def missing_required():
-    return [t["name"] for t in TOOLS if t["required"] and not key_for(t["key"])]
+    return [t["name"] for t in TOOLS if is_required(t) and not key_for(t["key"])]
 
 
 def ready():
@@ -110,6 +140,14 @@ MAX_CAP = 500
 # SerpAPI pages of reviews per business, newest first. The first page's size
 # is fixed by SerpAPI (`num` is refused on it); later pages ask for 20.
 MAX_REVIEW_PAGES = 3
+# Apify: newest reviews read per researched business, and how many map
+# results a rank search reads: the map pack (the first three) and the two
+# just below it. Each result is a paid place, so deeper costs more.
+APIFY_MAX_REVIEWS = 30
+APIFY_RANK_DEPTH = 5
+# Apify discovery pays per place found, so each kind of area has a ceiling
+# on places per search phrase (at most two phrases a run).
+APIFY_DISCOVERY_PLACES = {"postcode": 200, "district": 300, "city": 800, "county": 1200, "state": 2500}
 
 
 def retention_days():
@@ -166,8 +204,26 @@ PRICES = {
     "apify.place": {
         "usd": 0.004, "unit": "place",
         "source": "https://apify.com/compass/crawler-google-places",
-        "note": "Listed from $1.50 per 1,000 places; the place-details add-on used here is billed on "
-                "top, so the estimate uses $4 per 1,000 until you set your own rate.",
+        "note": "Pay per event, 'Scraped place': $0.004 on Apify's Free plan, $0.003 Bronze, $0.002 "
+                "Silver, $0.0015 Gold (the listed 'from $1.50 per 1,000'). Set your plan's rate in "
+                "LBR_PRICES_JSON.",
+        "checked": "2026-09-27"},
+    "apify.details": {
+        "usd": 0.002, "unit": "place",
+        "source": "https://apify.com/compass/crawler-google-places",
+        "note": "'Add-on: Additional place details scraped', $0.002 per place on Free and Bronze. "
+                "Charged for every place opened for its details or reviews.",
+        "checked": "2026-09-27"},
+    "apify.review": {
+        "usd": 0.0005, "unit": "review",
+        "source": "https://apify.com/compass/crawler-google-places",
+        "note": "'Add-on: Review scraped', $0.0005 per review on Free and Bronze.",
+        "checked": "2026-09-27"},
+    "osm.nominatim": {
+        "usd": 0.0, "unit": "request",
+        "source": "https://operations.osmfoundation.org/policies/nominatim/",
+        "note": "Free: one lookup per plan, at most one a second, with attribution. Data (c) "
+                "OpenStreetMap contributors, ODbL.",
         "checked": "2026-09-27"},
     "hunter.domain_search": {
         "usd": None, "unit": "request",

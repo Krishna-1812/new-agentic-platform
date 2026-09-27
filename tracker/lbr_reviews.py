@@ -2,7 +2,9 @@
 
 Reviews come from SerpAPI's Google Maps Reviews API, newest first, up to
 lbr_config.MAX_REVIEW_PAGES pages per business (Google's own Places API
-returns five). Each review keeps its stars, its text, its dates and the
+returns five); or, when Apify is the source, from the newest
+lbr_config.APIFY_MAX_REVIEWS that Apify's Google Maps Scraper read with each
+business's detail page in stage 2. Each review keeps its stars, its text, its dates and the
 owner's reply, never the reviewer's name: nothing the pitch needs.
 
 Two kinds of finding, kept apart on purpose:
@@ -228,8 +230,12 @@ def themes(name, reviews, st, ledger):
 
 
 # ── The stage ────────────────────────────────────────────────────────────────
-def run(selected, profiles, ledger, *, on_progress=None, should_stop=None):
-    """Reviews, numbers and themes for every selected business. {place_id: finding}"""
+def run(selected, profiles, ledger, *, on_progress=None, should_stop=None, prefetched=None):
+    """Reviews, numbers and themes for every selected business. {place_id: finding}
+
+    `prefetched` ({place_id: {"reviews", "topics"}}) holds reviews already read
+    by Apify with each business's detail page; those are not fetched again.
+    """
     ids = [pid for pid in selected if pid in profiles]
     fetched = {}
 
@@ -238,6 +244,11 @@ def run(selected, profiles, ledger, *, on_progress=None, should_stop=None):
             return pid, None
         if not profiles[pid].get("reviews"):
             return pid, {"reviews": [], "topics": [], "pages": 0}
+        if prefetched is not None:
+            got = prefetched.get(pid)
+            if got is None:
+                return pid, {"error": "Apify could not open this business's reviews."}
+            return pid, {"reviews": got.get("reviews") or [], "topics": got.get("topics") or [], "pages": 1}
         try:
             return pid, fetch(pid, ledger)
         except lbr_http.ToolError as exc:

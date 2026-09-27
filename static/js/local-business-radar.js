@@ -78,7 +78,8 @@
   var NOTE = {
     none: "A city keeps its metro: suburbs across the line are the same market, and each result is tagged.",
     admin1: "A state's boundary box overlaps its neighbours, so every result is checked to be inside it.",
-    admin2: "Every result is checked to be inside the county."
+    admin2: "Every result is checked to be inside the county.",
+    shape: "Google Maps is searched inside the area's real boundary, and every result is checked to be within it."
   };
 
   function renderPlan(p) {
@@ -88,13 +89,18 @@
     $("lbr-plan-where").textContent = p.area.formatted;
     var tags = $("lbr-plan-tags");
     tags.textContent = "";
-    tags.appendChild(el("span", "lbr-tag lbr-tag--kind", KIND[p.area.kind] || p.area.kind));
-    (p.business.types || []).forEach(function (t) { tags.appendChild(el("span", "lbr-tag", "Google category: " + t.replace(/_/g, " "))); });
+    var kind = p.area.filter === "shape" && p.area.kind === "city" ? "City, within its limits" : (KIND[p.area.kind] || p.area.kind);
+    tags.appendChild(el("span", "lbr-tag lbr-tag--kind", kind));
+    if (p.estimate && p.estimate.source === "apify") tags.appendChild(el("span", "lbr-tag", "Source: Google Maps via Apify"));
+    // Apify searches Google Maps by phrase, so categories only apply to the Places API.
+    if (!(p.estimate && p.estimate.source === "apify"))
+      (p.business.types || []).forEach(function (t) { tags.appendChild(el("span", "lbr-tag", "Google category: " + t.replace(/_/g, " "))); });
     (p.business.queries || []).forEach(function (q) { tags.appendChild(el("span", "lbr-tag", "Searching “" + q + "”")); });
     if (p.business.service_area) tags.appendChild(el("span", "lbr-tag", "Includes businesses with no storefront"));
     tags.appendChild(el("span", "lbr-tag", "Selling: " + p.focus_label));
     $("lbr-plan-note").textContent = (NOTE[p.area.filter] || "") + " Up to " + p.cap +
-      " businesses are researched in depth; chains are set aside.";
+      " businesses are researched in depth; chains are set aside." +
+      (p.area.attribution ? " " + p.area.attribution + "." : "");
     var est = p.estimate;
     $("lbr-ceiling").textContent = money(est.usd_max);
     var bar = $("lbr-bar"), lines = $("lbr-lines");

@@ -17,7 +17,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Local Business Radar", ["strategic-agents.css?v=2", "local-business-radar.css?v=1"]) }}
+{{ head("Local Business Radar", ["strategic-agents.css?v=2", "local-business-radar.css?v=2"]) }}
 </head>
 <body class="sa lbr">
 
@@ -166,7 +166,10 @@
         <span class="sa-idx">02</span>
         <div>
           <span class="sa-lbl" data-sa-decode>What it runs on</span>
-          <h2 class="sa-h2" id="lbr-tools-t">Six tools, <em class="sa-it">three</em> of them essential.</h2>
+          {%- set n_req = tools|selectattr('required')|list|length -%}
+          {%- set words = {1: 'one', 2: 'two', 3: 'three', 4: 'four'} -%}
+          <h2 class="sa-h2" id="lbr-tools-t">Six tools, <em class="sa-it">{{ words.get(n_req, n_req) }}</em> of them essential.</h2>
+          {% if source == 'apify' %}<p class="lbr-tools-src">Businesses come from Google Maps itself, read by Apify's Google Maps Scraper; the area's boundary comes from OpenStreetMap.</p>{% endif %}
         </div>
       </div>
       <div class="lbr-toolgrid">
@@ -179,7 +182,7 @@
           <b class="lbr-tool-name">{{ t.name }}</b>
           <span class="lbr-tool-for">{{ t.for }}</span>
           <code class="lbr-tool-env">{{ t.env_used or t.env[0] }}</code>
-          {% if not t.configured %}<span class="lbr-tool-get">{{ t.get }}</span>{% endif %}
+          {% if not t.configured %}<span class="lbr-tool-get">{{ t['get'] }}</span>{% endif %}
         </div>
         {% endfor %}
       </div>
@@ -196,7 +199,11 @@
       </div>
     </div>
     <div class="lbr-how-grid">
+      {% if source == 'apify' %}
+      <div class="lbr-how-i lbr-how-i--c"><b>01</b><h3>Find</h3><p>Google Maps is searched inside the area's real boundary, split as finely as it needs past the 120 results a map screen shows, and anything outside the line is dropped.</p></div>
+      {% else %}
       <div class="lbr-how-i lbr-how-i--c"><b>01</b><h3>Find</h3><p>Google allows 60 results per search, so the area is split into tiles until every business is found, not just the first 60.</p></div>
+      {% endif %}
       <div class="lbr-how-i lbr-how-i--b"><b>02</b><h3>Profile</h3><p>Claimed or not, hours, photos, reviews, rating, description and owner posts, scored against what a customer sees.</p></div>
       <div class="lbr-how-i lbr-how-i--a"><b>03</b><h3>Website</h3><p>None, a Facebook page, a dead business.site link, or a real site checked for speed, mobile, contact and tracking.</p></div>
       <div class="lbr-how-i lbr-how-i--c"><b>04</b><h3>Reviews</h3><p>The numbers from the stars, the themes from the words, every quote the real text of a real review.</p></div>
@@ -222,6 +229,6 @@
 
 {{ topbar_script() }}
 <script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
-<script defer src="{{ url_for('static', filename='js/local-business-radar.js') }}?v=1"></script>
+<script defer src="{{ url_for('static', filename='js/local-business-radar.js') }}?v=2"></script>
 </body>
 </html>

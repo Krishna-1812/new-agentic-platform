@@ -15,7 +15,7 @@
 {%- set area = payload.area or {} -%}
 <html lang="en">
 <head>
-{{ head("Local Business Radar report", ["strategic-agents.css?v=2", "local-business-radar.css?v=1", "lbr-report.css?v=1"]) }}
+{{ head("Local Business Radar report", ["strategic-agents.css?v=2", "local-business-radar.css?v=2", "lbr-report.css?v=2"]) }}
 </head>
 <body class="sa lbr lbrr">
 
@@ -205,6 +205,6 @@
 
 {{ topbar_script() }}
 <script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
-<script defer src="{{ url_for('static', filename='js/lbr-report.js') }}?v=1"></script>
+<script defer src="{{ url_for('static', filename='js/lbr-report.js') }}?v=3"></script>
 </body>
 </html>
