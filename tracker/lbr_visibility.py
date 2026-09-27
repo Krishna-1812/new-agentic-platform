@@ -179,8 +179,10 @@ def run(selected, profiles, plan, ledger, *, websites=None, on_progress=None, sh
             entry["rank_note"] = ("#%d in Google Maps for \"%s\" nearby." % (pos, query) if pos else
                                   "Not in the first %d Google Maps results for \"%s\" nearby." % (len(res), query))
             entry["competitors"] = [r for r in res if r.get("place_id") != pid][:3]
+            entry["depth"] = len(res)
         elif isinstance(res, dict):
             entry["rank_error"] = res["error"]
+            entry["rank_note"] = "Map rank could not be checked: %s" % res["error"]
         w = websites.get(pid) or {}
         d = lbr_discover.site_domain(w.get("final_url") or w.get("link") or "") if w.get("kind") == "ok" else ""
         if d in ad_by_domain:

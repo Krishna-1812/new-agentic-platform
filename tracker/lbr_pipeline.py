@@ -252,7 +252,8 @@ def _stage_discover(run_id, plan, ledger, progress, should_stop):
     selected = set(out["selected"])
     rows = []
     for pid, prof in out["profiles"].items():
-        disc = {k: prof.pop(k) for k in ("chain", "chain_reason", "locations", "triage") if k in prof}
+        disc = {k: prof.pop(k) for k in ("chain", "chain_reason", "locations", "triage", "set_aside") if k in prof}
+        prof.pop("triage_by", None)
         prof["locations"] = disc.get("locations", 1)
         disc["selected"] = pid in selected
         rows.append({"place_id": pid, "data": {"profile": prof, "discovery": disc}})

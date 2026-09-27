@@ -240,7 +240,9 @@ def evidence(prof, gbp, web, rev, vis, mkt, query):
         checks = {c["key"]: c for c in gbp.get("checks") or []}
         ph = checks.get("photos")
         if ph and ph["status"] == "missing":
-            add("creatives", "Only %s photos on their Google profile." % ph["value"])
+            n = ph["value"]
+            add("creatives", "No photos on their Google profile." if n == 0 else
+                "Only %s photo%s on their Google profile." % (n, "" if n == 1 else "s"))
         if checks.get("posts", {}).get("status") == "missing":
             add("creatives", "No recent posts on their Google profile.")
     return facts

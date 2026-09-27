@@ -307,11 +307,13 @@ def triage(prof, focus):
     s = {"website": 100 if no_site else 80 if weak_site else 10,
          "reputation": (60 if rating is None else max(0, min(100, (4.7 - rating) * 60 + 20)))
                        + (20 if reviews < 25 else 0),
-         "seo": 40 + (25 if reviews < 50 else 0) + (20 if prof.get("hours") == [] else 0)
-                + (15 if prof.get("photos_seen", 0) < 5 else 0),
+         # Local SEO sells to a business that already has a site to rank.
+         "seo": 30 + (25 if reviews < 50 else 0) + (20 if prof.get("hours") == [] else 0)
+                + (15 if prof.get("photos_seen", 0) < 5 else 0) + (15 if site and not weak_site else 0),
          "paid": 50 + (25 if site and not weak_site else 0),
          "creatives": 40 + (40 if prof.get("photos_seen", 0) < 5 else 0)}
     s = {k: min(100, v) for k, v in s.items()}
+    prof["triage_by"] = s
     if focus in s:
         base = s[focus]
     else:
@@ -319,6 +321,117 @@ def triage(prof, focus):
     # A business with some traction can pay; one with none may not exist next year.
     traction = 10 if reviews >= 15 else 0
     return round(min(100, base * 0.9 + traction))
+
+
+# ── Which businesses get researched ──────────────────────────────────────────
+ROTATION = ("website", "reputation", "seo", "creatives", "paid")
+
+
+def select(candidates, profiles, focus, cap):
+    """The research list. One service: the best for it. Everything: a balanced mix.
+
+    Selling everything used to mean one blended score, and "no website" outweighs
+    every other gap in it, so a city with a hundred site-less businesses filled
+    the whole list with them and a bad website or bad reviews never got a look.
+    The slots now go round the services in turn, each taking its most promising
+    remaining business.
+    """
+    if focus in ROTATION or len(candidates) <= cap:
+        return candidates[:cap]
+    # Ties go to the more established business (more reviews), never back to the
+    # blended score, which would let "no website" decide every slot again.
+    order = {svc: sorted(candidates, key=lambda pid: (-profiles[pid]["triage_by"][svc],
+                                                    -(profiles[pid].get("reviews") or 0), pid))
+             for svc in ROTATION}
+    picked, seen, pos = [], set(), {svc: 0 for svc in ROTATION}
+    while len(picked) < cap:
+        progressed = False
+        for svc in ROTATION:
+            lst = order[svc]
+            while pos[svc] < len(lst) and lst[pos[svc]] in seen:
+                pos[svc] += 1
+            if pos[svc] < len(lst) and len(picked) < cap:
+                pid = lst[pos[svc]]
+                seen.add(pid)
+                picked.append(pid)
+                progressed = True
+        if not progressed:
+            break
+    return sorted(picked, key=lambda pid: (-profiles[pid]["triage"], -profiles[pid]["reviews"], pid))
+
+
+# ── Is it the right kind of business, and a real one? ─────────────────────────
+_GENERIC = {"clinic", "clinics", "office", "offices", "service", "services", "care", "center", "centre",
+            "shop", "store", "company", "firm", "firms", "business", "local", "best", "professional",
+            "solutions", "group", "associates", "emergency", "emergencies", "hour", "hours", "near",
+            "the", "and", "for", "of", "in", "at", "me", "my", "your", "top", "affordable", "cheap",
+            "dr", "doctor", "doctors", "family", "llc", "inc", "pllc", "pc", "dds", "dmd", "nyc"}
+_SUFFIXES = ("istry", "ists", "ist", "ical", "ics", "ic", "als", "al", "ing", "ers", "er", "ies", "es", "s")
+# Specialities a curated type's own words do not reach ("orthodontist" has no "dent").
+EXTRA_TERMS = {"Dentists": ("odont", "oral surg", "dentur"),
+               "Doctors": ("physician", "medical", "pediatric", "family practice"),
+               "Veterinarians": ("animal hospital", "veterin", "pet clinic")}
+
+
+def _stem(word):
+    for suf in _SUFFIXES:
+        if word.endswith(suf) and len(word) - len(suf) >= 4:
+            return word[:-len(suf)]
+    return word
+
+
+def relevance_terms(business):
+    """Word stems (and a few phrases) that a relevant business's category or name contains."""
+    phrases = [business.get("label") or "", business.get("input") or ""] + list(business.get("queries") or []) \
+        + [t.replace("_", " ") for t in business.get("types") or []]
+    terms = set(EXTRA_TERMS.get(business.get("label") or "", ()))
+    for ph in phrases:
+        for w in re.findall(r"[a-z]+", ph.lower()):
+            if w not in _GENERIC and len(w) >= 3:
+                terms.add(_stem(w))
+    return sorted(terms)
+
+
+def _matches(text, terms):
+    text = (text or "").lower()
+    for t in terms:
+        if len(t) >= 4 and t in text:
+            return True
+        if len(t) < 4 and re.search(r"\b%s\b" % re.escape(t), text):
+            return True
+    return False
+
+
+def relevant(prof, terms):
+    if not terms:
+        return True
+    cats = " | ".join([prof.get("category") or ""] + list(prof.get("categories") or []))
+    return _matches(cats, terms) or _matches(prof.get("name"), terms)
+
+
+def _listing_words(plan):
+    area = plan.get("area") or {}
+    words = set(_GENERIC)
+    for ph in (area.get("name"), area.get("formatted"), area.get("input"), area.get("admin1_name"),
+               area.get("admin2")):
+        words.update(re.findall(r"[a-z]+", (ph or "").lower()))
+    for ph in [plan["business"].get("label") or ""] + list(plan["business"].get("queries") or []):
+        words.update(re.findall(r"[a-z]+", ph.lower()))
+    words.update(_stem(w) for w in list(words))
+    return words
+
+
+def lead_listing(prof, words):
+    """Why a business looks like a call-routing listing rather than a practice, or ""."""
+    if (prof.get("reviews") or 0) > 0:
+        return ""
+    if not prof.get("address") or prof.get("service_area_only"):
+        return "No reviews and no street address: likely a call-routing listing, not a practice."
+    left = [w for w in re.findall(r"[a-z]+", (prof.get("name") or "").lower())
+            if w not in words and _stem(w) not in words and len(w) > 1]
+    if not left:
+        return "No reviews and only a generic name: likely a call-routing listing, not a practice."
+    return ""
 
 
 # ── The whole stage ──────────────────────────────────────────────────────────
@@ -434,15 +547,29 @@ def _finish(plan, normalised, stats):
             outside += 1
             continue
         profiles[pid] = prof
+    off_category = 0
+    if (plan.get("estimate") or {}).get("source") == "apify" or any(
+            p.get("source") == "apify" for p in profiles.values()):
+        # Google Maps returns whatever it thinks answers the phrase; the Places API
+        # path filters by Google category at the source instead.
+        terms = relevance_terms(plan["business"])
+        keep = {pid for pid, p in profiles.items() if relevant(p, terms)}
+        if terms and len(keep) >= 0.4 * len(profiles):     # a filter that drops most is the wrong filter
+            off_category = len(profiles) - len(keep)
+            profiles = {pid: p for pid, p in profiles.items() if pid in keep}
     mark_chains(profiles)
-    candidates = [pid for pid, prof in profiles.items() if not prof["chain"]]
+    listing_words = _listing_words(plan)
+    for prof in profiles.values():
+        prof["set_aside"] = "" if prof["chain"] else lead_listing(prof, listing_words)
+    candidates = [pid for pid, prof in profiles.items() if not prof["chain"] and not prof["set_aside"]]
     for pid in profiles:
         profiles[pid]["triage"] = triage(profiles[pid], plan.get("focus", "all"))
     candidates.sort(key=lambda pid: (-profiles[pid]["triage"], -profiles[pid]["reviews"], pid))
-    selected = candidates[:plan["cap"]]
+    selected = select(candidates, profiles, plan.get("focus", "all"), plan["cap"])
     return {
         "profiles": profiles, "selected": selected,
         "stats": dict(stats, found=len(normalised), kept=len(profiles), closed=closed, outside_area=outside,
-                      chains=sum(1 for p in profiles.values() if p["chain"]),
+                      chains=sum(1 for p in profiles.values() if p["chain"]), off_category=off_category,
+                      listings=sum(1 for p in profiles.values() if p.get("set_aside")),
                       candidates=len(candidates), selected=len(selected)),
     }

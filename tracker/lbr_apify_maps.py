@@ -30,10 +30,13 @@ ledger at the list prices in lbr_config.PRICES (apify.place, apify.details,
 apify.review), counted from what came back.
 """
 
+import logging
 import re
 from urllib.parse import quote
 
 from tracker import apify_transport, lbr_config, lbr_http
+
+log = logging.getLogger(__name__)
 
 ACTOR = "compass/crawler-google-places"
 SEARCH_TIMEOUT = 3600
@@ -294,10 +297,16 @@ def map_ranks(query, points, ledger, *, should_stop=None, on_progress=None, memo
             cell = _cell_of(it, urls, batch)
             if cell is not None:
                 grouped.setdefault(cell, []).append(it)
+        unmatched = len(items) - sum(len(v) for v in grouped.values())
+        if items and not grouped:
+            log.warning("lbr map rank: %d results matched no search; first item's search fields: %s",
+                        len(items), {k: items[0].get(k) for k in ("searchPageUrl", "searchPageLoadedUrl",
+                                                                  "searchString", "rank")})
         for cell in urls.values():
             rows = [r for r in grouped.get(cell, []) if not r.get("isAdvertisement")]
             if not rows:
-                out[cell] = {"error": "No map results came back for this search."}
+                out[cell] = {"error": ("Apify's results (%d) could not be matched to their searches." % unmatched
+                                       if items and not grouped else "No map results came back for this search.")}
                 continue
             rows.sort(key=lambda r: r.get("rank") if isinstance(r.get("rank"), int) else 10 ** 6)
             out[cell] = [{"position": n, "place_id": r.get("placeId"), "title": r.get("title"),
