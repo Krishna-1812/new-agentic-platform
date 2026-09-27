@@ -9469,6 +9469,23 @@ def social_media_intelligence_run(run_id):
 # per call). Same rule Contact Finder arrived at over thirteen audit rounds:
 # only an explicit user action reaches a billed endpoint.
 
+# ── Local Business Radar ─────────────────────────────────────────────────────
+# Finds every small business of one kind in one place, audits its Google
+# Business Profile, website, reviews and visibility, and ranks the ones worth
+# pitching. The pipeline lives in tracker/lbr_*.py; these routes only gate,
+# validate and hand over.
+LBR_BASE = "/strategic-agents/local-business-radar"
+
+
+@app.route(LBR_BASE + "/readiness")
+@position2_required
+def local_business_radar_readiness():
+    """Which of the agent's tools are configured here, and how to get the rest."""
+    from tracker import lbr_config, lbr_store
+    return jsonify({"ready": lbr_config.ready(), "missing": lbr_config.missing_required(),
+                    "tools": lbr_config.readiness(), "storage": lbr_store.backend()})
+
+
 @app.route("/strategic-agents/event-conference-intelligence")
 @position2_required
 def event_conference_intelligence():
