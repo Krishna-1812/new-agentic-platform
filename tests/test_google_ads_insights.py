@@ -39,7 +39,8 @@ def _harness(*args):
 def test_the_script_writes_its_tabs_after_the_campaign_report():
     res = _harness()
     assert res["order"][0] == "Campaign report", "the report the dashboard already reads stays first"
-    assert res["order"][1:] == [gai.TABS[k] for k in ("is", "weekly", "budgets", "terms", "about")]
+    assert res["order"][1:] == [gai.TABS[k] for k in ("is", "weekly", "budgets", "terms", "keywords", "devices", "hours",
+                                                      "locations", "conversions", "actions", "about")]
 
 
 @pytest.mark.skipif(not NODE, reason="node is not installed")
@@ -62,6 +63,25 @@ def test_the_script_keeps_googles_share_limits_and_reads_money_from_micros():
     term = next(r for r in ins["terms"]["rows"] if r[3] == "free crm software")
     assert term[5] == "crm software" and term[4] == "BROAD" and term[10] == 5400.0
     assert ins["as_of"].startswith("2026-09-27")
+
+
+@pytest.mark.skipif(not NODE, reason="node is not installed")
+def test_the_script_exports_keywords_devices_hours_locations_and_conversions():
+    tabs = _harness()["tabs"]
+    ins = gai.build({k: tabs[t] for k, t in gai.TABS.items() if t in tabs})
+    kw = {k["kw"]: k for k in ins["keywords"]["rows"]}
+    crm = kw["crm software"]
+    assert crm["qs"] == 4 and crm["ctr"] == "BELOW_AVERAGE" and crm["landing"] == "BELOW_AVERAGE"
+    assert crm["bid"] == 40.0 and crm["first_page"] == 55.0 and crm["cost"] == 11000.0
+    assert kw["acme"]["qs"] is None and kw["acme"]["bid"] is None, "no Quality Score is unknown, not zero"
+    assert {d["device"] for d in ins["devices"]} == {"MOBILE", "DESKTOP"}
+    assert {(h["day"], h["hour"]) for h in ins["hours"]} == {(0, 10), (6, 2)}, "Monday is 0, Sunday 6"
+    locs = ins["locations"]["rows"]
+    assert (locs[0]["country"], locs[0]["region"], locs[0]["city"]) == ("India", "Maharashtra", "Mumbai")
+    assert locs[1]["region"] == "Location 99999", "an unnamed place keeps its id rather than vanishing"
+    acts = {a["name"]: a for a in ins["actions"]}
+    assert acts["Lead form"]["primary"] and acts["Lead form"]["counting"] == "MANY_PER_CLICK"
+    assert acts["Lead form"]["all"] == 64.0 and acts["Pricing page view"]["conv"] == 30.0
 
 
 @pytest.mark.skipif(not NODE, reason="node is not installed")
@@ -152,6 +172,65 @@ def test_search_terms_totals_cover_every_term_and_the_page_gets_the_costliest():
     assert max(per.values()) <= 5, "no account crowds out the others"
 
 
+KW_HEAD = ["Account", "Currency", "Campaign", "Ad group", "Keyword", "Match type", "Serving", "Quality Score",
+           "Expected CTR", "Ad relevance", "Landing page experience", "Max CPC", "First page bid", "Impressions",
+           "Clicks", "Cost", "Conversions"]
+
+
+def test_quality_score_totals_are_impression_weighted_and_count_what_to_fix():
+    k = gai.parse_keywords([KW_HEAD,
+                            ["A", "INR", "C", "G", "cheap", "BROAD", "ELIGIBLE", 3, "BELOW_AVERAGE", "AVERAGE",
+                             "BELOW_AVERAGE", 20, 35, 1000, 50, 3000, 0],
+                            ["A", "INR", "C", "G", "brand", "EXACT", "RARELY_SERVED", 9, "ABOVE_AVERAGE",
+                             "ABOVE_AVERAGE", "AVERAGE", "", 10, 3000, 300, 1000, 30],
+                            ["B", "INR", "C", "G", "new", "PHRASE", "ELIGIBLE", "", "", "", "", 50, 40, 10, 1, 5, 0]])
+    t = k["totals"]["__all__"]
+    assert t["keywords"] == 3 and t["with_qs"] == 2
+    assert t["avg_qs"] == round((3 * 1000 + 9 * 3000) / 4000, 2), "weighted by impressions, unrated left out"
+    assert t["low_qs"] == 1 and t["low_qs_cost"] == 3000
+    assert t["below_first_page"] == 1, "a blank max CPC (automated bidding) is not counted as below"
+    assert t["rarely_served"] == 1
+    assert t["parts"]["ctr"] == {"ABOVE_AVERAGE": 1000.0, "AVERAGE": 0.0, "BELOW_AVERAGE": 3000.0}
+    assert t["dist"]["3"]["cost"] == 3000 and t["dist"]["9"]["keywords"] == 1
+    assert k["totals"]["B"]["avg_qs"] is None
+
+
+def test_hours_locations_and_devices_are_read_by_header():
+    h = gai.parse_hours([["Account", "Day of week", "Hour", "Clicks", "Cost"], ["A", "SUNDAY", 23, 4, 10],
+                         ["A", "FUNDAY", 1, 1, 1]])
+    assert h == [{"account": "A", "cur": "", "tz": "", "day": 6, "hour": 23, "impr": 0.0, "clicks": 4.0,
+                  "cost": 10.0, "conv": 0.0, "value": 0.0}]
+    loc = gai.parse_locations([["Account", "Location type", "Country", "Region", "City", "Cost", "Conversions"],
+                               ["A", "LOCATION_OF_PRESENCE", "India", "Delhi", "New Delhi", 900, 3],
+                               ["A", "AREA_OF_INTEREST", "India", "Goa", "", 100, 0]])
+    assert loc["totals"]["A"]["cost"] == 1000 and loc["totals"]["A"]["interest_cost"] == 100
+    assert loc["rows"][0]["city"] == "New Delhi"
+    dev = gai.parse_devices([["Account", "Campaign", "Device", "Cost"], ["A", "C", "MOBILE", 5], ["A", "C", "", 1]])
+    assert [d["device"] for d in dev] == ["MOBILE"]
+
+
+ACT_HEAD = ["Account", "Conversion action", "Category", "Status", "Primary for goal", "Counting"]
+
+
+def test_conversion_setup_is_checked_against_googles_guidance():
+    conv = gai.parse_conversions([["Account", "Campaign", "Conversion action", "Conversions", "All conversions"],
+                                  ["A", "C", "Lead form", 10, 12], ["A", "C", "Contact page view", 0, 40],
+                                  ["A", "C", "Purchase", 5, 5]])
+    acts = {a["name"]: a for a in gai.parse_actions([
+        ACT_HEAD,
+        ["A", "Lead form", "SUBMIT_LEAD_FORM", "ENABLED", True, "MANY_PER_CLICK"],
+        ["A", "Purchase", "PURCHASE", "ENABLED", True, "MANY_PER_CLICK"],
+        ["A", "Contact page view", "PAGE_VIEW", "ENABLED", False, "ONE_PER_CLICK"],
+        ["A", "Homepage view", "PAGE_VIEW", "ENABLED", True, "ONE_PER_CLICK"],
+    ], conv)}
+    assert acts["Lead form"]["flags"][0][0] == "warn" and "one per click for leads" in acts["Lead form"]["flags"][0][1]
+    assert acts["Purchase"]["flags"] == [], "counting every purchase is what Google recommends for sales"
+    assert acts["Contact page view"]["flags"] == [], "a secondary page view does not drive bidding"
+    kinds = [f[0] for f in acts["Homepage view"]["flags"]]
+    assert kinds == ["warn", "info"], "a primary page view, and one that recorded nothing"
+    assert acts["Lead form"]["conv"] == 10 and acts["Lead form"]["all"] == 12
+
+
 class _Exec:
     def __init__(self, v):
         self.v = v
@@ -230,7 +309,8 @@ def test_the_page_shows_the_insights_panels_when_the_tabs_exist(monkeypatch):
     monkeypatch.setattr(appmod, "_fetch_google_ads_rows", lambda force=False: ROWS)
     monkeypatch.setattr(appmod, "_google_ads_insights", lambda force=False: dict(ins, symbols={"INR": "₹"}))
     body = _client().get("/dashboards/google-ads").get_data(as_text=True)
-    for pid in ("gai-share-panel", "gai-pace-panel", "gai-terms-panel", "gad-insights"):
+    for pid in ("gai-share-panel", "gai-pace-panel", "gai-terms-panel", "gai-kw-panel", "gai-dev-panel",
+                "gai-hour-panel", "gai-loc-panel", "gai-conv-panel", "gad-insights"):
         assert 'id="%s"' % pid in body
     assert "google-ads-insights.js" in body
     assert body.index("google-ads-insights.js") < body.index("google-ads-dashboard.js"), \

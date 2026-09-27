@@ -1,6 +1,6 @@
 # Google Ads insights export
 
-`export_insights.js` is a Google Ads Script. It feeds the Impression share, Budget pacing and Search terms panels on `/dashboards/google-ads`. It runs inside Google Ads, not on the server, so the platform needs no Google Ads API developer token.
+`export_insights.js` is a Google Ads Script. It feeds the Impression share, Budget pacing, Search terms, Keywords and Quality Score, Devices, Day and hour, Locations and Conversion actions panels on `/dashboards/google-ads`. It runs inside Google Ads, not on the server, so the platform needs no Google Ads API developer token.
 
 ## Install (once, about 5 minutes)
 
@@ -23,6 +23,12 @@ It adds these tabs at the **end** of the sheet. It never changes the first tab, 
 | Insights - IS weekly | Search impression share and lost share per campaign per week | Last 13 weeks |
 | Insights - Budgets | Per enabled campaign: budget, whether it is shared, delivery, Google's recommended budget, target CPA or ROAS, and spend today, yesterday, in the last 7 days, this month and last month | This month |
 | Insights - Search terms | Search term, match type, the keyword it matched, whether it was added or excluded, and clicks, spend, conversions and value | Last 30 days, the 3,000 costliest per account |
+| Insights - Keywords | Keyword, match type, serving status, Quality Score and its three parts (expected CTR, ad relevance, landing page experience), max CPC, Google's first-page and top-of-page bid estimates, performance, impression share | Last 30 days, the 4,000 costliest per account |
+| Insights - Devices | Per campaign and device: impressions, clicks, spend, conversions and value | Last 30 days |
+| Insights - Hours | Per account, day of week and hour (in the account's time zone): the same metrics | Last 30 days |
+| Insights - Locations | Region and city, split into people who were in the place and people interested in it, with the same metrics | Last 30 days, the 3,000 costliest rows per account |
+| Insights - Conversions | Per campaign and conversion action: conversions, all conversions and value | Last 30 days |
+| Insights - Conversion actions | Every active conversion action: category, status, primary or secondary, counting (one or every), lookback windows, default value, attribution model | Current settings |
 | Insights - About | When it ran, the row counts, and any query that failed | – |
 
 ## Limits and safety
@@ -30,6 +36,7 @@ It adds these tabs at the **end** of the sheet. It never changes the first tab, 
 - **Accounts:** Google runs a manager script in parallel on at most 50 accounts ([Google Ads Scripts limits](https://developers.google.com/google-ads/scripts/docs/limits)). With more than 50, the 50 with the highest spend in the last 30 days are exported. Set `ACCOUNT_IDS` to choose them yourself.
 - **A failed run keeps the last good data:** a tab is never cleared when its new result is empty. Failed queries are listed in "Insights - About".
 - **Impression share is written exactly as Google reports it:** 0.0999 means below 10%, and 0.9001 means a lost share above 90% ([field reference](https://developers.google.com/google-ads/api/fields/v25/campaign)). The dashboard shows these as "<10%" and ">90%".
+- **Conversion setup checks follow Google's guidance:** count every conversion for sales and one per click for leads ([About conversion counting options](https://support.google.com/google-ads/answer/3438531)). The dashboard flags lead actions set to count every conversion, page views used as primary actions, and primary actions that recorded nothing in 30 days.
 - **Pacing uses Google's own rules:** Google can spend up to twice the average daily budget on one day, but charges no more than the average daily budget × 30.4 in a month ([About average daily budgets](https://support.google.com/google-ads/answer/6385083)).
 
 ## Testing without Google Ads
