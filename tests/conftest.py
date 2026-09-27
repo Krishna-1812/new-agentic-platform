@@ -18,6 +18,9 @@ import sys
 os.environ.setdefault("GOOGLE_CLIENT_ID", "test")
 os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test")
 os.environ.setdefault("FLASK_SECRET_KEY", "test")
+# Local Business Radar never starts a real browser in tests unless a test
+# switches it on (tests/test_lbr_render.py).
+os.environ.setdefault("LBR_RENDER", "off")
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

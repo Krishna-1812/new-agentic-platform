@@ -45,7 +45,7 @@ def _slim_business(pid, rank, d):
                   "tags": w.get("tags") or [], "emails": w.get("emails") or [], "socials": w.get("socials") or {},
                   "builder": w.get("builder") or "", "speed": w.get("speed"), "runs_ads": w.get("runs_ads"),
                   "url": w.get("final_url") or w.get("link") or "", "needs_site": bool(w.get("needs_site")),
-                  "copyright_year": w.get("copyright_year")}
+                  "copyright_year": w.get("copyright_year"), "rendered": w.get("rendered") or ""}
     r = d.get("reviews") or {}
     out["rev"] = {"stats": r.get("stats") or {}, "themes": r.get("themes"), "recent": r.get("recent") or [],
                   "topics": r.get("topics") or [], "error": r.get("error")}
