@@ -16,6 +16,11 @@ class FakeResponse:
         self.text = text if text is not None else (_json.dumps(body) if body is not None else "")
         self.content = self.text.encode("utf-8")
         self.url = ""
+        self.encoding = "utf-8"
+
+    def iter_content(self, size=65536):
+        for i in range(0, len(self.content), size):
+            yield self.content[i:i + size]
 
     def json(self):
         if self._body is None:
