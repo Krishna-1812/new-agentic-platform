@@ -586,6 +586,7 @@
       }
       var tags = el("div", "lbrr-tags");
       if (b.web.builder) tags.appendChild(el("span", "", "Built with " + b.web.builder));
+      if (b.web.rendered) tags.appendChild(el("span", "", "Read in a browser"));
       (b.web.tags || []).forEach(function (t) { tags.appendChild(el("span", "", t.replace(/_/g, " "))); });
       Object.keys(b.web.socials || {}).forEach(function (s) { tags.appendChild(el("span", "", s)); });
       if (tags.children.length) wc.appendChild(tags);

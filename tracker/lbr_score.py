@@ -204,7 +204,7 @@ def evidence(prof, gbp, web, rev, vis, mkt, query):
     def add(service, text):
         facts.append({"id": "f%d" % (len(facts) + 1), "service": service, "text": text})
     kind = (web or {}).get("kind")
-    if kind and kind != "ok":
+    if kind and kind not in ("ok", "blocked"):     # "could not be checked" is not a fact to pitch
         add("website", VERDICT_TEXT.get(kind, "No working website."))
     elif kind == "ok":
         for i in (web.get("issues") or [])[:3]:

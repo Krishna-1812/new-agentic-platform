@@ -1,18 +1,22 @@
 """Local Business Radar: check every connected service without spending anything.
 
 One row per check, each {"name", "ok", "detail"} with ok True, False or None
-(None: not connected, and not needed for this source). Every call here is
+(None: not connected, and not needed for this source). A row marked
+"optional" can be red without failing the check: the agent runs without it. Every call here is
 free: Apify's account and Actor metadata, Claude's model lookup, and one
 OpenStreetMap search. No key or token value is ever put in a row.
 """
 
-from tracker import apify_transport, lbr_config, lbr_geo, lbr_http, lbr_store
+from tracker import apify_transport, lbr_config, lbr_geo, lbr_http, lbr_render, lbr_store
 
 ACTOR = "compass/crawler-google-places"
 
 
-def _row(name, ok, detail):
-    return {"name": name, "ok": ok, "detail": detail}
+def _row(name, ok, detail, optional=False):
+    row = {"name": name, "ok": ok, "detail": detail}
+    if optional:
+        row["optional"] = True
+    return row
 
 
 def _apify():
@@ -93,4 +97,6 @@ def run():
                              ("hunter", "Hunter.io", "extra contact emails")):
         on = bool(lbr_config.key_for(key))
         rows.append(_row(label, True if on else None, "Connected." if on else "Optional, not connected: no %s." % what))
-    return {"source": source, "ok": all(r["ok"] is not False for r in rows), "checks": rows}
+    ok, detail = lbr_render.selftest()
+    rows.append(_row("Browser for JavaScript sites (crawl4ai)", ok, detail, optional=True))
+    return {"source": source, "ok": all(r["ok"] is not False or r.get("optional") for r in rows), "checks": rows}

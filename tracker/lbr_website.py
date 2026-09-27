@@ -13,7 +13,11 @@ First, what the profile links to, before anything is fetched:
 Then the site itself is fetched (the home page, and a contact page when the
 home page shows no email) and classified:
 
-  dead | broken | parked | ssl_error | ok
+  dead | broken | parked | ssl_error | ok | blocked (could not be checked)
+
+A page that needs a browser to be read (a JavaScript app, marketing tags
+loaded by Google Tag Manager, or a site that refuses scripts) is read again
+in headless Chromium by lbr_render, when it is available.
 
 For a working site: HTTPS, mobile viewport, title and description, the
 builder it is made with, click-to-call, a contact form, an email address,
@@ -44,7 +48,7 @@ from urllib.parse import urljoin, urlparse
 
 import requests
 
-from tracker import lbr_config, lbr_http
+from tracker import lbr_config, lbr_http, lbr_render
 
 FETCH_TIMEOUT = 12
 MAX_BYTES = 1_500_000
@@ -229,10 +233,12 @@ BAD_EMAIL = re.compile(r"(\.(png|jpe?g|gif|webp|svg)$|sentry|wixpress|example\.|
                        r"yourdomain|email\.com$|@2x)", re.I)
 TAGS = {
     "google_analytics": [r"gtag/js\?id=G-", r"['\"]G-[A-Z0-9]{6,}['\"]", r"google-analytics\.com/analytics\.js",
-                         r"['\"]UA-\d{4,}-\d+['\"]"],
+                         r"['\"]UA-\d{4,}-\d+['\"]", r"google-analytics\.com/g/collect",
+                         r"analytics\.google\.com/g/collect"],
     "google_tag_manager": [r"googletagmanager\.com/gtm\.js", r"GTM-[A-Z0-9]{4,}"],
-    "google_ads": [r"['\"]AW-\d{6,}", r"googleadservices\.com/pagead/conversion"],
-    "meta_pixel": [r"connect\.facebook\.net/[^\"']*/fbevents\.js", r"fbq\(\s*['\"]init"],
+    "google_ads": [r"['\"]AW-\d{6,}", r"googleadservices\.com/pagead/conversion", r"gtag/js\?id=AW-",
+                   r"googleads\.g\.doubleclick\.net/pagead"],
+    "meta_pixel": [r"connect\.facebook\.net/[^\"'\s]*/fbevents\.js", r"fbq\(\s*['\"]init", r"facebook\.com/tr[/?]"],
     "tiktok_pixel": [r"analytics\.tiktok\.com"],
     "linkedin_insight": [r"snap\.licdn\.com"],
     "call_tracking": [r"cdn\.callrail\.com", r"calltrackingmetrics", r"\.whatconverts\.com"],
@@ -262,8 +268,12 @@ LOCAL_SCHEMA = re.compile(r'"@type"\s*:\s*"(LocalBusiness|Dentist|Physician|Medi
                           r'ProfessionalService|HomeGoodsStore|LodgingBusiness|Hotel)"', re.I)
 
 
-def read_page(html, base_url):
-    """Everything the audit needs from one HTML page."""
+def read_page(html, base_url, requests=()):
+    """Everything the audit needs from one HTML page.
+
+    `requests` are the addresses a browser requested while showing it
+    (lbr_render); the marketing tags are read from those too.
+    """
     p = _Page()
     try:
         p.feed(html)
@@ -271,7 +281,8 @@ def read_page(html, base_url):
         pass
     lower = html.lower()
     host = _host(base_url)
-    tags = sorted(k for k, pats in TAGS.items() if any(re.search(pt, html, re.I) for pt in pats))
+    seen = html + "\n" + "\n".join(requests or ())
+    tags = sorted(k for k, pats in TAGS.items() if any(re.search(pt, seen, re.I) for pt in pats))
     builder = next((name for name, rx in BUILDERS if re.search(rx, lower)), "")
     gen = p.meta.get("generator", "")
     if not builder and gen:
@@ -360,6 +371,19 @@ VERDICT_TEXT = {
     "ssl_error": "The website's security certificate is broken; browsers warn visitors away.",
     "blocked": "The link could not be checked.",
 }
+REFUSED = (401, 403, 429)
+
+
+def _in_browser(page, info, only=None):
+    """Read the page again in a browser when it needs one. (page, info, why) or None."""
+    why = lbr_render.reason(page, info)
+    if not why or (only and why not in only):
+        return None
+    shown = lbr_render.render(page["url"])
+    if not shown or shown.get("error") or not shown.get("html"):
+        return None
+    page = dict(page, status=shown.get("status") or 200, html=shown["html"])
+    return page, read_page(shown["html"], page["url"], shown.get("requests")), why
 
 
 def audit(prof, ledger):
@@ -373,16 +397,24 @@ def audit(prof, ledger):
         return out
     url = link if "//" in link else "https://" + link
     page = fetch(url)
+    info = None
+    if not page["error"] and page["status"] is not None and page["status"] < 400:
+        info = read_page(page["html"], page["url"])
+    again = _in_browser(page, info)
+    if again:
+        page, info, out["rendered"] = again
     if page["error"] or page["status"] is None:
         err = page["error"] or "connect"
         kind = "ssl_error" if err == "ssl" else "blocked" if err.startswith("blocked") else "dead"
+    elif page["status"] in REFUSED:
+        kind = "blocked"      # it refused this request; that says nothing about the site
     elif page["status"] >= 400:
         kind = "broken"
     else:
-        info = read_page(page["html"], page["url"])
         final_kind = classify_link(page["url"])
         kind = final_kind if final_kind != "site" else ("parked" if info["parked"] else "ok")
-    out.update(kind=kind, final_url=page["url"], status=page["status"], needs_site=kind != "ok")
+    out.update(kind=kind, final_url=page["url"], status=page["status"],
+               needs_site=kind not in ("ok", "blocked"))
     if kind != "ok":
         out["issues"].append(_issue(kind, "high", VERDICT_TEXT.get(kind, "The website could not be read.")))
         return out
@@ -391,6 +423,9 @@ def audit(prof, ledger):
         contact = fetch(info["contact_url"])
         if not contact["error"] and (contact["status"] or 500) < 400:
             more = read_page(contact["html"], contact["url"])
+            again = _in_browser(contact, more, only=("script_app",))
+            if again:
+                more = again[1]
             info["emails"] = more["emails"]
             info["form"] = info["form"] or more["form"]
             info["tel_link"] = info["tel_link"] or more["tel_link"]

@@ -30,3 +30,10 @@ psycopg2-binary>=2.9.9
 # scraper output for other platforms is already a direct CDN URL and needs
 # no resolution step).
 yt-dlp>=2024.8.6
+# Local Business Radar: reads JavaScript-built business websites in headless
+# Chromium (tracker/lbr_render.py). Pinned: lbr_render adjusts crawl4ai's
+# browser launch flags, so an upgrade is checked first. Railpack installs the
+# browser when the service sets RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1; without
+# it the agent reads sites without a browser, as before.
+crawl4ai==0.9.4
+playwright>=1.49.0
