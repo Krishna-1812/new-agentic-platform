@@ -7,7 +7,7 @@ free: Apify's account and Actor metadata, Claude's model lookup, and one
 OpenStreetMap search. No key or token value is ever put in a row.
 """
 
-from tracker import apify_transport, lbr_config, lbr_geo, lbr_http, lbr_render, lbr_store
+from tracker import apify_transport, lbr_apify_pricing, lbr_config, lbr_geo, lbr_http, lbr_render, lbr_store
 
 ACTOR = "compass/crawler-google-places"
 
@@ -41,7 +41,29 @@ def _apify():
     actor, err = apify_transport.check_actor(ACTOR, token)
     rows.append(_row("Google Maps Scraper", not err,
                      err or "%s is available to this account." % (actor.get("title") or ACTOR)))
+    rows.append(_prices(token))
     return rows
+
+
+def _usd(v):
+    return "$" + ("%.5f" % v).rstrip("0").rstrip(".") if v is not None else "?"
+
+
+def _prices(token):
+    found = lbr_apify_pricing.lookup(token, refresh=True)
+    if found is None:
+        return _row("Apify prices", None, "Live pricing is switched off; runs are priced at Apify's "
+                                          "Free-plan list prices.", optional=True)
+    if found.get("error"):
+        return _row("Apify prices", False, "%s Runs are priced at Apify's Free-plan list prices, the "
+                                           "higher figure, until this works." % found["error"].rstrip(".") + ".",
+                    optional=True)
+    p = found["prices"]
+    return _row("Apify prices", True,
+                "%s tier%s: %s a place, %s for its details, %s a review. Estimates and spending caps "
+                "use these." % (found["tier"], " (%s plan)" % found["plan"] if found.get("plan") else "",
+                                _usd(p.get("apify.place")), _usd(p.get("apify.details")),
+                                _usd(p.get("apify.review"))))
 
 
 def _claude():

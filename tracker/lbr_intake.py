@@ -323,10 +323,25 @@ def estimate(kind, cap, business_type):
              usd_each=(price("apify.place") or 0) + (price("apify.details") or 0))
     line("pagespeed", "Website speed checks", cap, "pagespeed.run")
     total = round(sum(l["usd"] or 0 for l in lines), 2)
-    return {"usd_max": total, "discovery_requests": discovery, "businesses": cap, "lines": lines,
-            "source": "apify" if apify_mode else "places",
-            "basis": "List prices in lbr_config.PRICES, before any free monthly usage or credit. The "
-                     "run stops before it can spend more than this."}
+    basis = "List prices in lbr_config.PRICES, before any free monthly usage or credit. The run stops " \
+            "before it can spend more than this."
+    out = {"usd_max": total, "discovery_requests": discovery, "businesses": cap, "lines": lines,
+           "source": "apify" if apify_mode else "places", "basis": basis}
+    if apify_mode or lbr_config.key_for("apify"):
+        ap = lbr_config.apify_pricing()
+        out["apify_tier"] = ap.get("tier") if ap["live"] else None
+        if ap["live"]:
+            out["basis"] = ("Apify at your account's %s-tier prices ($%s a place), read from Apify. Other "
+                            "services at list prices, before free monthly usage. The run stops before it can "
+                            "spend more." % (ap["tier"], _money(ap["prices"].get("apify.place"))))
+        elif apify_mode:
+            out["basis"] = ("Apify at its Free-plan list prices (your tier could not be read: %s). Before free "
+                            "monthly usage. The run stops before it can spend more." % ap["why"].rstrip("."))
+    return out
+
+
+def _money(usd):
+    return ("%.5f" % usd).rstrip("0").rstrip(".") if usd is not None else "?"
 
 
 def clamp_cap(value):

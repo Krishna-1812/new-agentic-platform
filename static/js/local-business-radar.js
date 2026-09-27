@@ -104,6 +104,7 @@
       (p.area.attribution ? " " + p.area.attribution + "." : "");
     var est = p.estimate;
     $("lbr-ceiling").textContent = money(est.usd_max);
+    if (est.basis) $("lbr-basis").textContent = est.basis;
     var bar = $("lbr-bar"), lines = $("lbr-lines");
     bar.textContent = ""; lines.textContent = "";
     var total = est.usd_max || 1;
