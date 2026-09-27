@@ -183,6 +183,8 @@ def model():
 # was read. Estimates only: they ignore Google's free monthly usage and any
 # volume tier, so a real bill is at most this. Any entry can be overridden
 # with LBR_PRICES_JSON, e.g. {"serpapi.search": 0.01} for the Production plan.
+# The apify.* prices are read from Apify for the account's own pricing tier
+# (tracker/lbr_apify_pricing.py); the figures here stand in when that fails.
 PRICES = {
     "places.text_search_pro": {
         "usd": 0.032, "unit": "request",
@@ -215,8 +217,8 @@ PRICES = {
         "usd": 0.004, "unit": "place",
         "source": "https://apify.com/compass/crawler-google-places",
         "note": "Pay per event, 'Scraped place': $0.004 on Apify's Free plan, $0.003 Bronze, $0.002 "
-                "Silver, $0.0015 Gold (the listed 'from $1.50 per 1,000'). Set your plan's rate in "
-                "LBR_PRICES_JSON.",
+                "Silver, $0.0015 Gold (the listed 'from $1.50 per 1,000'). Your tier's price is read "
+                "from Apify; this Free-plan figure is the fallback.",
         "checked": "2026-09-27"},
     "apify.details": {
         "usd": 0.002, "unit": "place",
@@ -264,8 +266,24 @@ def price(op):
             return float(override[op])
         except (TypeError, ValueError):
             return None
+    if op.startswith("apify."):
+        from tracker import lbr_apify_pricing
+        live = lbr_apify_pricing.rate(op, key_for("apify"))
+        if live is not None:
+            return live
     entry = PRICES.get(op)
     return entry["usd"] if entry else None
+
+
+def apify_pricing():
+    """How Apify runs are priced: {"tier", "plan", "prices", "live"} or, on list prices, {"live": False, "why"}."""
+    from tracker import lbr_apify_pricing
+    token = key_for("apify")
+    found = lbr_apify_pricing.lookup(token)
+    if found and not found.get("error"):
+        return {"live": True, "tier": found["tier"], "plan": found["plan"], "prices": dict(found["prices"])}
+    why = (found or {}).get("error") or ("No Apify token." if not token else "Live pricing is switched off.")
+    return {"live": False, "why": why}
 
 
 def claude_usd(model_name, input_tokens, output_tokens):

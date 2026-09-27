@@ -21,6 +21,9 @@ os.environ.setdefault("FLASK_SECRET_KEY", "test")
 # Local Business Radar never starts a real browser in tests unless a test
 # switches it on (tests/test_lbr_render.py).
 os.environ.setdefault("LBR_RENDER", "off")
+# ...and prices Apify at the list prices unless a test asks Apify for them
+# (tests/test_lbr_apify_pricing.py).
+os.environ.setdefault("LBR_APIFY_PRICING", "list")
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

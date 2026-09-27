@@ -91,7 +91,7 @@
       <b class="lbr-ceiling" id="lbr-ceiling">$0</b>
       <div class="lbr-bar" id="lbr-bar" aria-hidden="true"></div>
       <ul class="lbr-lines" id="lbr-lines"></ul>
-      <p class="lbr-basis">List prices before free monthly usage. The run stops before it can spend more.</p>
+      <p class="lbr-basis" id="lbr-basis">List prices before free monthly usage. The run stops before it can spend more.</p>
       <button type="button" class="sa-btn sa-btn--dark lbr-start" id="lbr-start" {{ '' if ready else 'disabled' }}>
         Start the search <span aria-hidden="true">&rarr;</span>
       </button>
@@ -230,6 +230,6 @@
 
 {{ topbar_script() }}
 <script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
-<script defer src="{{ url_for('static', filename='js/local-business-radar.js') }}?v=3"></script>
+<script defer src="{{ url_for('static', filename='js/local-business-radar.js') }}?v=4"></script>
 </body>
 </html>
