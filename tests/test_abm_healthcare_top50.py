@@ -106,16 +106,25 @@ def test_the_dashboard_matches_the_database():
     assert {c["apollo_id"] for c in data["companies"]} == _db_ids()
 
 
-def test_every_kept_company_has_signals_and_nothing_else_does():
+def test_only_kept_companies_have_signals_and_every_one_is_still_tracked():
+    """Signals belong only to the 50 kept companies, and each of them is still tracked.
+
+    Not every kept company always has a signal: the weekly refresh keeps only the last
+    90 days of signals (scripts/refresh-dashboards.py, prune_old), so a company whose
+    signals are all older than that has none until a new one arrives -- on 2026-09-28
+    Amphibious Medics' five signals, all dated 2026-06-24, aged out that way."""
     con = sqlite3.connect(_DB)
     try:
         with_signals = {r[0] for r in con.execute("SELECT DISTINCT apollo_id FROM alerts_sent")}
+        tracked = {r[0] for r in con.execute("SELECT DISTINCT apollo_id FROM snapshots")}
         orphan_snaps = con.execute(
             "SELECT COUNT(*) FROM snapshots WHERE apollo_id NOT IN "
             "(SELECT apollo_id FROM companies)").fetchone()[0]
     finally:
         con.close()
-    assert with_signals == _db_ids()
+    assert with_signals <= _db_ids(), "a company outside the 50 has signals"
+    assert with_signals, "no company has any signal"
+    assert _db_ids() <= tracked, "a kept company is no longer tracked"
     assert orphan_snaps == 0
 
 

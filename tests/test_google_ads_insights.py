@@ -210,6 +210,15 @@ def test_in_a_manager_account_the_busiest_accounts_are_exported():
 
 
 @pytest.mark.skipif(not NODE, reason="node is not installed")
+def test_an_unusable_sheet_time_zone_does_not_stop_the_about_tab():
+    for args in (("badzone",), ("manager", "badzone"), ("manager", "badzone", "part=2")):
+        res = _harness(*args)
+        about = res["tabs"].get(gai.TABS["about"]) or res["tabs"][gai.TABS["about2"]]
+        exported = dict((r[0], r[1]) for r in about[1:])["Exported at"]
+        assert exported.endswith("(Asia/Kolkata)"), "falls back to the account's own time zone"
+
+
+@pytest.mark.skipif(not NODE, reason="node is not installed")
 def test_the_script_can_be_split_into_two_parts_that_together_write_every_tab():
     one, two = _harness("manager", "part=1"), _harness("manager", "part=2")
     t1, t2 = set(one["order"][1:]), set(two["order"][1:])
