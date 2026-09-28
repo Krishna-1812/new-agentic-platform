@@ -27,6 +27,75 @@ function account(cid, name) {
   return {
     search: function (q) {
       queries.push(q);
+      if (/FROM ad_group_ad_asset_combination_view/.test(q)) {
+        return iter([
+          { campaign: { name: "Generic - Search" }, adGroup: { id: "31", name: "CRM" }, adGroupAd: { ad: { id: "801" } },
+            adGroupAdAssetCombinationView: { servedAssets: [
+              { asset: "customers/1/assets/1", servedAssetFieldType: "HEADLINE_1" },
+              { asset: "customers/1/assets/2", servedAssetFieldType: "HEADLINE_2" },
+              { asset: "customers/1/assets/5", servedAssetFieldType: "DESCRIPTION_1" }] },
+            metrics: { impressions: "700" } },
+          { campaign: { name: "Generic - Search" }, adGroup: { id: "31", name: "CRM" }, adGroupAd: { ad: { id: "801" } },
+            adGroupAdAssetCombinationView: { servedAssets: [
+              { asset: "customers/1/assets/2", servedAssetFieldType: "HEADLINE_1" },
+              { asset: "customers/1/assets/3", servedAssetFieldType: "HEADLINE_2" }] },
+            metrics: { impressions: "1200" } }
+        ]);
+      }
+      if (/FROM asset_group_top_combination_view/.test(q)) {
+        return iter([
+          { campaign: { name: "PMax - All" }, assetGroup: { id: "91", name: "All products" },
+            assetGroupTopCombinationView: { resourceName: "customers/1/assetGroupTopCombinationViews/91~IMAGE",
+              assetGroupTopCombinations: [{ assetCombinationServedAssets: [
+                { asset: "customers/1/assets/9", servedAssetFieldType: "MARKETING_IMAGE" },
+                { asset: "customers/1/assets/1", servedAssetFieldType: "HEADLINE" }] }] } }
+        ]);
+      }
+      if (/FROM asset WHERE/.test(q)) {
+        var known = { "customers/1/assets/1": { textAsset: { text: "Free CRM Trial" } },
+                      "customers/1/assets/2": { textAsset: { text: "Rated #1 by Users" } },
+                      "customers/1/assets/3": { textAsset: { text: "Start in 5 Minutes" } },
+                      "customers/1/assets/5": { textAsset: { text: "No credit card needed." } },
+                      "customers/1/assets/9": { imageAsset: { fullSize: { url: "https://tpc.googlesyndication.com/simgad/123" } } } };
+        return iter(Object.keys(known).filter(function (k) { return q.indexOf("'" + k + "'") > -1; })
+          .map(function (k) { return { asset: Object.assign({ resourceName: k }, known[k]) }; }));
+      }
+      if (/FROM ad_group_ad_asset_view/.test(q)) {
+        return iter([
+          { campaign: { name: "Generic - Search" }, adGroup: { id: "31", name: "CRM" }, adGroupAd: { ad: { id: "801" } },
+            adGroupAdAssetView: { fieldType: "HEADLINE", pinnedField: "HEADLINE_1", performanceLabel: "BEST", enabled: true },
+            asset: { textAsset: { text: "Free CRM Trial" } },
+            metrics: { impressions: "700", clicks: "60", costMicros: "3000000000", conversions: 4 } },
+          { campaign: { name: "Generic - Search" }, adGroup: { id: "31", name: "CRM" }, adGroupAd: { ad: { id: "801" } },
+            adGroupAdAssetView: { fieldType: "DESCRIPTION", performanceLabel: "LOW", enabled: true },
+            asset: { textAsset: { text: "No credit card needed." } },
+            metrics: { impressions: "650", clicks: "20", costMicros: "900000000", conversions: 0 } }
+        ]);
+      }
+      if (/FROM asset_group WHERE/.test(q)) {
+        if (/metrics\./.test(q)) return iter([{ assetGroup: { id: "91" }, metrics: { impressions: "9000", clicks: "300", costMicros: "30000000000", conversions: 20, conversionsValue: 0 } }]);
+        return iter([{ campaign: CAMPAIGNS[2], assetGroup: { id: "91", name: "All products", status: "ENABLED", primaryStatus: "ELIGIBLE",
+          adStrength: "GOOD", finalUrls: ["https://example.com/"] } }]);
+      }
+      if (/FROM ad_group_ad WHERE/.test(q)) {
+        if (/metrics\./.test(q)) return iter([{ adGroup: { id: "31" }, adGroupAd: { ad: { id: "801" } },
+          metrics: { impressions: "1900", clicks: "150", costMicros: "9000000000", conversions: 6, conversionsValue: 0 } }]);
+        return iter([
+          { campaign: CAMPAIGNS[1], adGroup: { id: "31", name: "CRM" },
+            adGroupAd: { status: "ENABLED", primaryStatus: "ELIGIBLE", adStrength: "AVERAGE",
+              policySummary: { approvalStatus: "APPROVED", reviewStatus: "REVIEWED" },
+              ad: { id: "801", type: "RESPONSIVE_SEARCH_AD", finalUrls: ["https://example.com/crm"],
+                responsiveSearchAd: { path1: "crm", path2: "trial",
+                  headlines: [{ text: "Free CRM Trial", pinnedField: "HEADLINE_1" }, { text: "Rated #1 by Users" }, { text: "Start in 5 Minutes" }],
+                  descriptions: [{ text: "No credit card needed." }, { text: "Set up in minutes." }] } } } },
+          { campaign: CAMPAIGNS[0], adGroup: { id: "32", name: "Brand" },
+            adGroupAd: { status: "ENABLED", primaryStatus: "NOT_ELIGIBLE", adStrength: "POOR",
+              policySummary: { approvalStatus: "DISAPPROVED", reviewStatus: "REVIEWED",
+                policyTopicEntries: [{ topic: "TRADEMARKS_IN_AD_TEXT", type: "PROHIBITED" }] },
+              ad: { id: "802", type: "RESPONSIVE_SEARCH_AD", finalUrls: ["https://example.com/"],
+                responsiveSearchAd: { headlines: [{ text: name }], descriptions: [{ text: "Official site." }] } } } }
+        ]);
+      }
       if (/FROM keyword_view/.test(q)) {
         return iter([
           { campaign: { id: "12", name: "Generic - Search" }, adGroup: { name: "CRM" },

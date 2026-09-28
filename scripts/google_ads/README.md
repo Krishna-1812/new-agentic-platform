@@ -1,6 +1,6 @@
 # Google Ads insights export
 
-`export_insights.js` is a Google Ads Script. It feeds the Impression share, Budget pacing, Search terms, Keywords and Quality Score, Devices, Day and hour, Locations and Conversion actions panels on `/dashboards/google-ads`. It runs inside Google Ads, not on the server, so the platform needs no Google Ads API developer token.
+`export_insights.js` is a Google Ads Script. It feeds the Impression share, Budget pacing, Search terms, Keywords and Quality Score, Devices, Day and hour, Locations, Conversion actions and Ads panels on `/dashboards/google-ads`. It runs inside Google Ads, not on the server, so the platform needs no Google Ads API developer token.
 
 ## Install (once, about 5 minutes)
 
@@ -29,6 +29,9 @@ It adds these tabs at the **end** of the sheet. It never changes the first tab, 
 | Insights - Locations | Region and city, split into people who were in the place and people interested in it, with the same metrics | Last 30 days, the 3,000 costliest rows per account |
 | Insights - Conversions | Per campaign and conversion action: conversions, all conversions and value | Last 30 days |
 | Insights - Conversion actions | Every active conversion action: category, status, primary or secondary, counting (one or every), lookback windows, default value, attribution model | Current settings |
+| Insights - Ads | Every live ad and Performance Max asset group: ad strength, approval and policy reasons, final URL, headlines and descriptions (with pinning), performance | Live now; performance last 30 days |
+| Insights - Ad combinations | The headline and description combinations Google served: top 5 per search ad by impressions, and Google's top combinations per asset group (text, image, video) | Last 30 days |
+| Insights - Ad assets | Each headline and description: pinned position, Google's label (Best, Good, Low, Learning), impressions, clicks, spend, conversions | Last 30 days |
 | Insights - About | When it ran, the row counts, and any query that failed | – |
 
 ## Limits and safety
@@ -37,6 +40,7 @@ It adds these tabs at the **end** of the sheet. It never changes the first tab, 
 - **A failed run keeps the last good data:** a tab is never cleared when its new result is empty. Failed queries are listed in "Insights - About".
 - **Impression share is written exactly as Google reports it:** 0.0999 means below 10%, and 0.9001 means a lost share above 90% ([field reference](https://developers.google.com/google-ads/api/fields/v25/campaign)). The dashboard shows these as "<10%" and ">90%".
 - **Conversion setup checks follow Google's guidance:** count every conversion for sales and one per click for leads ([About conversion counting options](https://support.google.com/google-ads/answer/3438531)). The dashboard flags lead actions set to count every conversion, page views used as primary actions, and primary actions that recorded nothing in 30 days.
+- **Ad checks follow Google's guidance:** up to 15 headlines and 4 descriptions per responsive search ad, and pinning "isn't recommended for most advertisers and can affect ad strength" ([About responsive search ads](https://support.google.com/google-ads/answer/7684791)).
 - **Pacing uses Google's own rules:** Google can spend up to twice the average daily budget on one day, but charges no more than the average daily budget × 30.4 in a month ([About average daily budgets](https://support.google.com/google-ads/answer/6385083)).
 
 ## Testing without Google Ads

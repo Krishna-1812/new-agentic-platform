@@ -40,7 +40,8 @@ def test_the_script_writes_its_tabs_after_the_campaign_report():
     res = _harness()
     assert res["order"][0] == "Campaign report", "the report the dashboard already reads stays first"
     assert res["order"][1:] == [gai.TABS[k] for k in ("is", "weekly", "budgets", "terms", "keywords", "devices", "hours",
-                                                      "locations", "conversions", "actions", "about")]
+                                                      "locations", "conversions", "actions", "ads", "combos",
+                                                      "ad_assets", "about")]
 
 
 @pytest.mark.skipif(not NODE, reason="node is not installed")
@@ -82,6 +83,26 @@ def test_the_script_exports_keywords_devices_hours_locations_and_conversions():
     acts = {a["name"]: a for a in ins["actions"]}
     assert acts["Lead form"]["primary"] and acts["Lead form"]["counting"] == "MANY_PER_CLICK"
     assert acts["Lead form"]["all"] == 64.0 and acts["Pricing page view"]["conv"] == 30.0
+
+
+@pytest.mark.skipif(not NODE, reason="node is not installed")
+def test_the_script_exports_ads_what_google_served_and_each_headline():
+    tabs = _harness()["tabs"]
+    ins = gai.build({k: tabs[t] for k, t in gai.TABS.items() if t in tabs})
+    ads = {a["id"]: a for a in ins["ads"]["rows"]}
+    crm, brand, pmax = ads["801"], ads["802"], ads["91"]
+    assert crm["kind"] == "RSA" and crm["strength"] == "AVERAGE" and crm["pinned"] == 1
+    assert [h["t"] for h in crm["heads"]][:2] == ["Free CRM Trial", "Rated #1 by Users"]
+    assert crm["cost"] == 9000.0 and crm["impr"] == 1900, "metrics joined from the second query"
+    assert [c["heads"] for c in crm["combos"]] == [["Rated #1 by Users", "Start in 5 Minutes"],
+                                                  ["Free CRM Trial", "Rated #1 by Users"]], "most served first"
+    assert crm["combos"][1]["descs"] == ["No credit card needed."]
+    labels = {x["t"]: x["label"] for x in crm["assets"]}
+    assert labels == {"Free CRM Trial": "BEST", "No credit card needed.": "LOW"}
+    assert brand["approval"] == "DISAPPROVED" and "TRADEMARKS_IN_AD_TEXT" in brand["topics"]
+    assert pmax["kind"] == "ASSET_GROUP" and pmax["strength"] == "GOOD" and pmax["cost"] == 30000.0
+    assert pmax["combos"][0]["category"] == "IMAGE"
+    assert pmax["combos"][0]["parts"][0]["img"] == "https://tpc.googlesyndication.com/simgad/123"
 
 
 @pytest.mark.skipif(not NODE, reason="node is not installed")
@@ -231,6 +252,59 @@ def test_conversion_setup_is_checked_against_googles_guidance():
     assert acts["Lead form"]["conv"] == 10 and acts["Lead form"]["all"] == 12
 
 
+AD_HEAD = ["Account", "Currency", "Campaign", "Ad group ID", "Ad group", "Ad ID", "Kind", "Approval", "Policy topics",
+           "Ad strength", "Headlines", "Descriptions", "Pinned", "Impressions", "Cost"]
+
+
+def _ad(**kw):
+    base = {"Account": "A", "Currency": "INR", "Campaign": "C", "Ad group ID": "1", "Ad group": "G", "Ad ID": "9",
+            "Kind": "RSA", "Approval": "APPROVED", "Policy topics": "", "Ad strength": "EXCELLENT",
+            "Headlines": json.dumps([{"t": "h%d" % i, "pin": ""} for i in range(15)]),
+            "Descriptions": json.dumps([{"t": "d%d" % i, "pin": ""} for i in range(4)]), "Pinned": 0,
+            "Impressions": 100, "Cost": 50}
+    base.update(kw)
+    return [base[h] for h in AD_HEAD]
+
+
+def test_a_complete_approved_excellent_ad_has_nothing_to_fix():
+    a = gai.parse_ads([AD_HEAD, _ad()])["rows"][0]
+    assert a["flags"] == []
+
+
+def test_ad_flags_follow_googles_own_rules():
+    rows = gai.parse_ads([AD_HEAD,
+                          _ad(**{"Ad ID": "1", "Approval": "DISAPPROVED", "Policy topics": "TRADEMARKS_IN_AD_TEXT (PROHIBITED)",
+                                 "Impressions": 0}),
+                          _ad(**{"Ad ID": "2", "Approval": "APPROVED_LIMITED", "Ad strength": "POOR", "Pinned": 2,
+                                 "Headlines": json.dumps([{"t": "only", "pin": "HEADLINE_1"}])}),
+                          _ad(**{"Ad ID": "3", "Impressions": 0})])["rows"]
+    by = {a["id"]: [f[0] for f in a["flags"]] for a in rows}
+    assert by["1"] == ["bad"], "disapproved: no 'no impressions' note on top, the reason is already clear"
+    assert by["2"] == ["warn", "warn", "info", "info"], "limited, poor strength, 1 of 15 headlines, pinned"
+    assert by["3"] == ["info"]
+    two = next(a for a in rows if a["id"] == "2")
+    assert "1 of 15 headlines" in two["flags"][2][1] and "pinning" in two["flags"][3][1]
+    assert rows[0]["id"] == "1", "disapproved ads come first"
+
+
+def test_served_assets_only_keep_https_images_and_real_video_ids():
+    assert gai._part({"f": "MARKETING_IMAGE", "img": "javascript:alert(1)"}) is None
+    assert gai._part({"f": "MARKETING_IMAGE", "img": "http://example.com/x.png"}) is None
+    assert gai._part({"f": "YOUTUBE_VIDEO", "vid": "abc\"><script>"}) is None
+    assert gai._part({"f": "YOUTUBE_VIDEO", "vid": "dQw4w9WgXcQ"}) == {"f": "YOUTUBE_VIDEO", "vid": "dQw4w9WgXcQ"}
+    assert gai._part({"f": "HEADLINE_1", "x": "Hello"}) == {"f": "HEADLINE_1", "x": "Hello"}
+
+
+def test_ad_totals_count_strength_by_spend_and_problems():
+    t = gai.parse_ads([AD_HEAD, _ad(**{"Ad ID": "1", "Ad strength": "POOR", "Cost": 300}),
+                       _ad(**{"Ad ID": "2", "Approval": "DISAPPROVED", "Cost": 0}),
+                       _ad(**{"Ad ID": "3", "Kind": "ASSET_GROUP", "Ad strength": "GOOD", "Cost": 700,
+                              "Headlines": "[]", "Descriptions": "[]"})])["totals"]["__all__"]
+    assert t["ads"] == 3 and t["rsa"] == 2 and t["asset_groups"] == 1
+    assert t["strength"]["POOR"] == {"n": 1, "cost": 300.0} and t["strength"]["GOOD"]["cost"] == 700.0
+    assert t["disapproved"] == 1 and t["cost"] == 1000.0
+
+
 class _Exec:
     def __init__(self, v):
         self.v = v
@@ -310,7 +384,7 @@ def test_the_page_shows_the_insights_panels_when_the_tabs_exist(monkeypatch):
     monkeypatch.setattr(appmod, "_google_ads_insights", lambda force=False: dict(ins, symbols={"INR": "₹"}))
     body = _client().get("/dashboards/google-ads").get_data(as_text=True)
     for pid in ("gai-share-panel", "gai-pace-panel", "gai-terms-panel", "gai-kw-panel", "gai-dev-panel",
-                "gai-hour-panel", "gai-loc-panel", "gai-conv-panel", "gad-insights"):
+                "gai-hour-panel", "gai-loc-panel", "gai-conv-panel", "gai-ads-panel", "gad-insights"):
         assert 'id="%s"' % pid in body
     assert "google-ads-insights.js" in body
     assert body.index("google-ads-insights.js") < body.index("google-ads-dashboard.js"), \
