@@ -19,6 +19,9 @@ column added later does not break it) and shapes them for the page:
   locations region and city, by where people were or what they searched for
   conversions / actions  conversions per action, and how each action is set
            up, with setup problems flagged against Google's own guidance
+  ads      every live ad and Performance Max asset group with its ad strength,
+           approval, headlines and descriptions, the combinations Google
+           served, and how each headline and description performed
 
 Impression-share values stay as Google reports them: 0.0999 means "below
 10%" and 0.9001 "above 90%" (Google Ads API field reference, v25). The page
@@ -28,6 +31,8 @@ Nothing here calls Google Ads. When the tabs are missing (the script has not
 run yet) every section is empty and the page leaves its panels hidden.
 """
 
+import json
+import re
 import threading
 import time
 
@@ -42,6 +47,9 @@ TABS = {
     "locations": "Insights - Locations",
     "conversions": "Insights - Conversions",
     "actions": "Insights - Conversion actions",
+    "ads": "Insights - Ads",
+    "combos": "Insights - Ad combinations",
+    "ad_assets": "Insights - Ad assets",
     "about": "Insights - About",
 }
 PREFIX = "Insights - "
@@ -52,6 +60,9 @@ KEYWORDS_PER_ACCOUNT = 1500
 KEYWORDS_ON_PAGE = 6000
 LOCATIONS_PER_ACCOUNT = 600
 LOCATIONS_ON_PAGE = 5000
+ADS_PER_ACCOUNT = 300
+ADS_ON_PAGE = 1500
+COMBOS_PER_AD = 3
 
 _LOCK = threading.Lock()
 _CACHE = {"at": 0.0, "value": None, "key": None}
@@ -458,6 +469,126 @@ def parse_actions(values, conversions=()):
     return out
 
 
+STRENGTHS = ("EXCELLENT", "GOOD", "AVERAGE", "POOR", "PENDING")
+RSA_MAX_HEADLINES, RSA_MAX_DESCRIPTIONS = 15, 4      # Google Ads Help, "About responsive search ads"
+_YT_ID = re.compile(r"^[A-Za-z0-9_-]{6,20}$")
+
+
+def _json_list(v):
+    try:
+        out = json.loads(v) if isinstance(v, str) and v.strip() else []
+    except ValueError:
+        return []
+    return out if isinstance(out, list) else []
+
+
+def _part(p):
+    """One served asset for the page: text, an https image, or a YouTube id; anything else dropped."""
+    if not isinstance(p, dict):
+        return None
+    out = {"f": str(p.get("f") or "")}
+    if p.get("x"):
+        out["x"] = str(p["x"])[:300]
+    img = str(p.get("img") or "")
+    if img.startswith("https://"):
+        out["img"] = img
+    vid = str(p.get("vid") or "")
+    if _YT_ID.match(vid):
+        out["vid"] = vid
+    return out if len(out) > 1 else None
+
+
+def parse_ads(values, combos=None, assets=None, per_account=ADS_PER_ACCOUNT, on_page=ADS_ON_PAGE):
+    """Live ads and asset groups with their served combinations, asset performance and flags."""
+    by_key = {}
+    for r in _table(combos):
+        key = _s(r, "account") + "\u0001" + _s(r, "ad group id") + "~" + _s(r, "ad id")
+        parts = [x for x in (_part(p) for p in _json_list(r.get("assets json"))) if x]
+        by_key.setdefault(key, []).append({
+            "rank": int(_z(r.get("rank"))), "impr": _num(r.get("impressions")), "category": _s(r, "category"),
+            "heads": [p["x"] for p in parts if p["f"].startswith("HEADLINE") and p.get("x")],
+            "descs": [p["x"] for p in parts if p["f"].startswith("DESCRIPTION") and p.get("x")],
+            "parts": parts})
+    perf = {}
+    for r in _table(assets):
+        key = _s(r, "account") + "\u0001" + _s(r, "ad group id") + "~" + _s(r, "ad id")
+        perf.setdefault(key, []).append({
+            "f": _s(r, "field"), "t": _s(r, "text"), "pin": _s(r, "pinned to"), "label": _s(r, "performance label"),
+            "impr": _z(r.get("impressions")), "clicks": _z(r.get("clicks")), "cost": _z(r.get("cost")),
+            "conv": _z(r.get("conversions"))})
+    rows = []
+    for r in _table(values):
+        if not _s(r, "ad id"):
+            continue
+        a = {"account": _s(r, "account"), "cur": _s(r, "currency"), "campaign": _s(r, "campaign"),
+             "channel": _s(r, "channel"), "ad_group": _s(r, "ad group"), "id": _s(r, "ad id"),
+             "kind": _s(r, "kind"), "type": _s(r, "ad type"), "status": _s(r, "status"),
+             "primary_status": _s(r, "primary status"), "approval": _s(r, "approval"), "review": _s(r, "review"),
+             "topics": _s(r, "policy topics"), "strength": _s(r, "ad strength"), "url": _s(r, "final url"),
+             "path1": _s(r, "path 1"), "path2": _s(r, "path 2"),
+             "heads": [h for h in _json_list(r.get("headlines")) if isinstance(h, dict)],
+             "descs": [d for d in _json_list(r.get("descriptions")) if isinstance(d, dict)],
+             "pinned": int(_z(r.get("pinned")))}
+        a.update(_perf(r))
+        key = a["account"] + "\u0001" + _s(r, "ad group id") + "~" + a["id"]
+        a["combos"] = sorted(by_key.get(key, []), key=lambda c: (c["category"], c["rank"]))
+        a["assets"] = sorted(perf.get(key, []), key=lambda x: (x["f"], -x["impr"]))
+        a["flags"] = _ad_flags(a)
+        rows.append(a)
+    totals = {}
+    for a in rows:
+        for key in (a["account"], "__all__"):
+            t = totals.setdefault(key, {"ads": 0, "rsa": 0, "asset_groups": 0, "other": 0, "cost": 0.0,
+                                        "strength": {s: {"n": 0, "cost": 0.0} for s in STRENGTHS},
+                                        "disapproved": 0, "limited": 0, "pinned_ads": 0, "low_assets": 0,
+                                        "no_impressions": 0, "cur": a["cur"]})
+            if t["cur"] != a["cur"]:
+                t["cur"] = "mixed"
+            t["ads"] += 1
+            t["rsa" if a["kind"] == "RSA" else "asset_groups" if a["kind"] == "ASSET_GROUP" else "other"] += 1
+            t["cost"] += a["cost"]
+            if a["strength"] in t["strength"]:
+                t["strength"][a["strength"]]["n"] += 1
+                t["strength"][a["strength"]]["cost"] += a["cost"]
+            t["disapproved"] += a["approval"] == "DISAPPROVED"
+            t["limited"] += a["approval"] == "APPROVED_LIMITED"
+            t["pinned_ads"] += a["pinned"] > 0
+            t["low_assets"] += sum(1 for x in a["assets"] if x["label"] == "LOW")
+            t["no_impressions"] += not a["impr"]
+    rows.sort(key=lambda a: (a["approval"] != "DISAPPROVED", -a["cost"]))
+    kept = _trim(rows, per_account, on_page)
+    for a in kept:
+        a["combos"] = [c for c in a["combos"] if c["category"] or c["rank"] <= COMBOS_PER_AD][:12]
+    return {"rows": kept, "totals": totals, "read": len(rows)}
+
+
+def _ad_flags(a):
+    """What to fix on one ad, each from Google's own rules or reports."""
+    flags = []
+    if a["approval"] == "DISAPPROVED":
+        flags.append(["bad", "Disapproved" + (": " + a["topics"].replace("_", " ").lower() if a["topics"] else "") +
+                      ". It cannot run until fixed or appealed."])
+    elif a["approval"] == "APPROVED_LIMITED":
+        flags.append(["warn", "Approved (limited)" + (": " + a["topics"].replace("_", " ").lower() if a["topics"] else "") +
+                      ". It shows in fewer places."])
+    if a["strength"] in ("POOR", "AVERAGE"):
+        flags.append(["warn", "Ad strength is %s." % a["strength"].lower()])
+    if a["kind"] == "RSA":
+        nh, nd = len(a["heads"]), len(a["descs"])
+        if nh < RSA_MAX_HEADLINES or nd < RSA_MAX_DESCRIPTIONS:
+            flags.append(["info", "%d of %d headlines and %d of %d descriptions. Google recommends as many unique "
+                                  "headlines as you can." % (nh, RSA_MAX_HEADLINES, nd, RSA_MAX_DESCRIPTIONS)])
+        if a["pinned"]:
+            flags.append(["info", "%d pinned. Google: pinning \u201cisn\u2019t recommended for most advertisers and "
+                                  "can affect ad strength\u201d." % a["pinned"]])
+    low = [x for x in a["assets"] if x["label"] == "LOW"]
+    if low:
+        flags.append(["info", "Google rates %d of its headlines and descriptions Low: replace them." % len(low)])
+    if not a["impr"] and a["approval"] != "DISAPPROVED":
+        flags.append(["info", "No impressions in the last 30 days."])
+    return flags
+
+
 def parse_about(values):
     out = []
     for row in values[1:] if values else []:
@@ -470,7 +601,8 @@ def empty():
     return {"ok": False, "is": [], "weekly": [], "budgets": [], "budget_campaigns": [],
             "terms": {"cols": [], "rows": [], "totals": {}, "read": 0}, "about": [], "as_of": "",
             "currencies": [], "keywords": {"rows": [], "totals": {}, "read": 0}, "devices": [], "hours": [],
-            "locations": {"rows": [], "totals": {}, "read": 0}, "conversions": [], "actions": []}
+            "locations": {"rows": [], "totals": {}, "read": 0}, "conversions": [], "actions": [],
+            "ads": {"rows": [], "totals": {}, "read": 0}}
 
 
 def build(raw):
@@ -486,6 +618,7 @@ def build(raw):
     out["locations"] = parse_locations(raw.get("locations"))
     out["conversions"] = parse_conversions(raw.get("conversions"))
     out["actions"] = parse_actions(raw.get("actions"), out["conversions"])
+    out["ads"] = parse_ads(raw.get("ads"), raw.get("combos"), raw.get("ad_assets"))
     out["about"] = parse_about(raw.get("about"))
     out["as_of"] = next((v for k, v in out["about"] if k == "Exported at"), "")
     curs = {}
@@ -494,7 +627,8 @@ def build(raw):
             curs[r["cur"]] = curs.get(r["cur"], 0) + (r.get("cost") or r.get("mtd") or 0)
     out["currencies"] = sorted(curs, key=lambda c: -curs[c])
     out["ok"] = bool(out["is"] or out["budgets"] or out["terms"]["rows"] or out["keywords"]["rows"]
-                     or out["devices"] or out["hours"] or out["locations"]["rows"] or out["actions"])
+                     or out["devices"] or out["hours"] or out["locations"]["rows"] or out["actions"]
+                     or out["ads"]["rows"])
     return out
 
 

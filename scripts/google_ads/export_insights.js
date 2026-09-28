@@ -1,6 +1,6 @@
 /**
  * Google Ads dashboard: insights export (impression share, budget pacing, search terms,
- * keywords and Quality Score, devices, hours, locations, conversion actions).
+ * keywords and Quality Score, devices, hours, locations, conversion actions, ads and creatives).
  *
  * Install once in the MANAGER (MCC) account: Tools > Bulk actions > Scripts > +.
  * Paste this file, set SPREADSHEET_URL below to the Google Ads sheet the dashboard
@@ -21,6 +21,9 @@
  *   Insights - Locations          performance by region and city, last 30 days
  *   Insights - Conversions        conversions per campaign per conversion action, last 30 days
  *   Insights - Conversion actions every conversion action and how it is set up
+ *   Insights - Ads               every live ad and PMax asset group: ad strength, approval, headlines
+ *   Insights - Ad combinations   the headline and description combinations Google actually served
+ *   Insights - Ad assets         each headline and description: pinning, Google's label, performance
  *   Insights - About              when it ran, the date ranges, and anything that failed
  *
  * Query language reference (Google Ads API, v25):
@@ -32,6 +35,11 @@
  *   https://developers.google.com/google-ads/api/fields/v25/geographic_view
  *   https://developers.google.com/google-ads/api/fields/v25/geo_target_constant
  *   https://developers.google.com/google-ads/api/fields/v25/conversion_action
+ *   https://developers.google.com/google-ads/api/fields/v25/ad_group_ad
+ *   https://developers.google.com/google-ads/api/fields/v25/asset_group
+ *   https://developers.google.com/google-ads/api/fields/v25/ad_group_ad_asset_combination_view
+ *   https://developers.google.com/google-ads/api/fields/v25/asset_group_top_combination_view
+ *   https://developers.google.com/google-ads/api/fields/v25/ad_group_ad_asset_view
  * Impression-share values are fractions, written exactly as Google returns them:
  * "reported in the range of 0.1 to 1. Any value below 0.1 is reported as 0.0999", and the
  * lost shares "in the range of 0 to 0.9. Any value above 0.9 is reported as 0.9001".
@@ -53,6 +61,12 @@ var KEYWORDS_TOTAL = 40000;
 var LOCATIONS_PER_ACCOUNT = 3000;     // region x city rows, by spend
 var LOCATIONS_TOTAL = 30000;
 var GEO_BATCH = 300;                  // location names looked up per query
+var ADS_PER_ACCOUNT = 2000;           // live ads and asset groups
+var COMBOS_PER_AD = 5;                // served combinations kept per RSA, by impressions
+var PMAX_COMBOS = 10;                 // Google's top combinations kept per asset group and category
+var COMBO_ROWS_PER_ACCOUNT = 4000;
+var AD_ASSETS_PER_ACCOUNT = 8000;     // headline and description rows, by impressions
+var ASSET_BATCH = 300;                // assets looked up per query
 
 var TABS = {
   is: 'Insights - Impression share',
@@ -65,6 +79,9 @@ var TABS = {
   locations: 'Insights - Locations',
   conversions: 'Insights - Conversions',
   actions: 'Insights - Conversion actions',
+  ads: 'Insights - Ads',
+  combos: 'Insights - Ad combinations',
+  adAssets: 'Insights - Ad assets',
   about: 'Insights - About'
 };
 
@@ -117,6 +134,19 @@ var ACTIONS_HEADER = ['Account', 'Customer ID', 'Action ID', 'Conversion action'
   'Origin', 'Primary for goal', 'In "Conversions"', 'Counting', 'Click-through window (days)',
   'View-through window (days)', 'Default value', 'Always use default value', 'Attribution model', 'Exported at'];
 
+var ADS_HEADER = ['Account', 'Customer ID', 'Currency', 'Campaign ID', 'Campaign', 'Channel', 'Ad group ID',
+  'Ad group', 'Ad ID', 'Kind', 'Ad type', 'Status', 'Primary status', 'Approval', 'Review', 'Policy topics',
+  'Ad strength', 'Final URL', 'Path 1', 'Path 2', 'Headlines', 'Descriptions', 'Headline count',
+  'Description count', 'Pinned', 'Impressions', 'Clicks', 'Cost', 'Conversions', 'Conv. value',
+  'Date range', 'Exported at'];
+
+var COMBOS_HEADER = ['Account', 'Customer ID', 'Kind', 'Campaign', 'Ad group', 'Ad group ID', 'Ad ID', 'Category',
+  'Rank', 'Impressions', 'Headlines', 'Descriptions', 'Assets JSON', 'Date range', 'Exported at'];
+
+var AD_ASSETS_HEADER = ['Account', 'Customer ID', 'Currency', 'Campaign', 'Ad group', 'Ad group ID', 'Ad ID',
+  'Field', 'Text', 'Pinned to', 'Performance label', 'Enabled', 'Impressions', 'Clicks', 'Cost', 'Conversions',
+  'Date range', 'Exported at'];
+
 var ABOUT_HEADER = ['Item', 'Value'];
 
 // What each tab holds, in the order they are written, and how the combined rows are capped.
@@ -130,7 +160,10 @@ var SECTIONS = [
   { key: 'hours', header: HOURS_HEADER },
   { key: 'locations', header: LOCATIONS_HEADER, cap: LOCATIONS_TOTAL, label: 'Locations' },
   { key: 'conversions', header: CONVERSIONS_HEADER },
-  { key: 'actions', header: ACTIONS_HEADER }
+  { key: 'actions', header: ACTIONS_HEADER },
+  { key: 'ads', header: ADS_HEADER },
+  { key: 'combos', header: COMBOS_HEADER },
+  { key: 'adAssets', header: AD_ASSETS_HEADER }
 ];
 
 
@@ -195,6 +228,9 @@ function processAccount() {
     locations: guarded(ctx, 'locations', function () { return locations(ctx); }) || [],
     conversions: guarded(ctx, 'conversions', function () { return conversions(ctx); }) || [],
     actions: guarded(ctx, 'conversion actions', function () { return conversionActions(ctx); }) || [],
+    ads: guarded(ctx, 'ads', function () { return ads(ctx); }) || [],
+    combos: guarded(ctx, 'ad combinations', function () { return combinations(ctx); }) || [],
+    adAssets: guarded(ctx, 'ad assets', function () { return adAssets(ctx); }) || [],
     account: ctx.name, errors: ctx.errors
   };
   Logger.log('[' + ctx.name + '] ' + SECTIONS.map(function (x) { return x.key + ' ' + out[x.key].length; }).join(', ') +
@@ -513,6 +549,174 @@ function conversionActions(ctx) {
 }
 
 
+// ── Ads and asset groups ─────────────────────────────────────────────────────
+var LIVE = "campaign.status = 'ENABLED' AND ad_group.status = 'ENABLED' AND ad_group_ad.status = 'ENABLED'";
+
+function textAssets(list) {
+  return (list || []).map(function (a) { return { t: a.text || '', pin: a.pinnedField || '' }; });
+}
+
+function ads(ctx) {
+  var out = [], byKey = {};
+  var rows = AdsApp.search('SELECT campaign.id, campaign.name, campaign.advertising_channel_type, ad_group.id, ' +
+    'ad_group.name, ad_group_ad.ad.id, ad_group_ad.ad.type, ad_group_ad.status, ad_group_ad.primary_status, ' +
+    'ad_group_ad.ad_strength, ad_group_ad.policy_summary.approval_status, ' +
+    'ad_group_ad.policy_summary.review_status, ad_group_ad.policy_summary.policy_topic_entries, ' +
+    'ad_group_ad.ad.final_urls, ad_group_ad.ad.responsive_search_ad.headlines, ' +
+    'ad_group_ad.ad.responsive_search_ad.descriptions, ad_group_ad.ad.responsive_search_ad.path1, ' +
+    'ad_group_ad.ad.responsive_search_ad.path2 FROM ad_group_ad WHERE ' + LIVE + ' LIMIT ' + ADS_PER_ACCOUNT);
+  while (rows.hasNext()) {
+    var r = rows.next(), aga = r.adGroupAd, ad = aga.ad || {}, rsa = ad.responsiveSearchAd || {}, pol = aga.policySummary || {};
+    var heads = textAssets(rsa.headlines), descs = textAssets(rsa.descriptions);
+    var pinned = heads.concat(descs).filter(function (x) { return x.pin; }).length;
+    var topics = (pol.policyTopicEntries || []).map(function (e) { return e.topic + (e.type ? ' (' + e.type + ')' : ''); });
+    var row = [ctx.name, ctx.cid, ctx.currency, r.campaign.id, r.campaign.name, r.campaign.advertisingChannelType,
+      r.adGroup.id, r.adGroup.name, ad.id, ad.type === 'RESPONSIVE_SEARCH_AD' ? 'RSA' : 'AD', ad.type || '',
+      aga.status || '', aga.primaryStatus || '', pol.approvalStatus || '', pol.reviewStatus || '', topics.join('; '),
+      aga.adStrength || '', (ad.finalUrls || [])[0] || '', rsa.path1 || '', rsa.path2 || '',
+      JSON.stringify(heads), JSON.stringify(descs), heads.length, descs.length, pinned, 0, 0, 0, 0, 0,
+      'LAST_30_DAYS', ctx.now];
+    byKey[r.adGroup.id + '~' + ad.id] = row;
+    out.push(row);
+  }
+  guarded(ctx, 'ad metrics', function () {
+    var m = AdsApp.search('SELECT ad_group.id, ad_group_ad.ad.id, metrics.impressions, metrics.clicks, ' +
+      'metrics.cost_micros, metrics.conversions, metrics.conversions_value FROM ad_group_ad WHERE ' + LIVE +
+      ' AND segments.date DURING LAST_30_DAYS');
+    var at = ADS_HEADER.indexOf('Impressions');
+    while (m.hasNext()) {
+      var r = m.next(), row = byKey[r.adGroup.id + '~' + r.adGroupAd.ad.id], x = r.metrics;
+      if (!row) continue;
+      row[at] = num(x.impressions); row[at + 1] = num(x.clicks); row[at + 2] = money(x.costMicros);
+      row[at + 3] = num(x.conversions); row[at + 4] = num(x.conversionsValue);
+    }
+  });
+  guarded(ctx, 'asset groups', function () {
+    var groups = {}, g = AdsApp.search('SELECT campaign.id, campaign.name, campaign.advertising_channel_type, ' +
+      'asset_group.id, asset_group.name, asset_group.status, asset_group.primary_status, asset_group.ad_strength, ' +
+      "asset_group.final_urls FROM asset_group WHERE campaign.status = 'ENABLED' AND asset_group.status = 'ENABLED'");
+    while (g.hasNext()) {
+      var r = g.next(), a = r.assetGroup;
+      var row = [ctx.name, ctx.cid, ctx.currency, r.campaign.id, r.campaign.name, r.campaign.advertisingChannelType,
+        a.id, a.name, a.id, 'ASSET_GROUP', 'PERFORMANCE_MAX_ASSET_GROUP', a.status || '', a.primaryStatus || '', '', '', '',
+        a.adStrength || '', (a.finalUrls || [])[0] || '', '', '', '[]', '[]', 0, 0, 0, 0, 0, 0, 0, 0,
+        'LAST_30_DAYS', ctx.now];
+      groups[a.id] = row;
+      out.push(row);
+    }
+    var m = AdsApp.search('SELECT asset_group.id, metrics.impressions, metrics.clicks, metrics.cost_micros, ' +
+      "metrics.conversions, metrics.conversions_value FROM asset_group WHERE campaign.status = 'ENABLED' " +
+      "AND asset_group.status = 'ENABLED' AND segments.date DURING LAST_30_DAYS");
+    var at = ADS_HEADER.indexOf('Impressions');
+    while (m.hasNext()) {
+      var r = m.next(), row = groups[r.assetGroup.id], x = r.metrics;
+      if (!row) continue;
+      row[at] = num(x.impressions); row[at + 1] = num(x.clicks); row[at + 2] = money(x.costMicros);
+      row[at + 3] = num(x.conversions); row[at + 4] = num(x.conversionsValue);
+    }
+  });
+  return out;
+}
+
+
+// ── The combinations Google served ───────────────────────────────────────────
+function combinations(ctx) {
+  var combos = [];
+  guarded(ctx, 'RSA combinations', function () {
+    var byAd = {}, rows = AdsApp.search('SELECT campaign.name, ad_group.id, ad_group.name, ad_group_ad.ad.id, ' +
+      'ad_group_ad_asset_combination_view.served_assets, metrics.impressions ' +
+      'FROM ad_group_ad_asset_combination_view WHERE segments.date DURING LAST_30_DAYS AND metrics.impressions > 0 ' +
+      'AND ' + LIVE);
+    while (rows.hasNext()) {
+      var r = rows.next(), k = r.adGroup.id + '~' + r.adGroupAd.ad.id;
+      (byAd[k] = byAd[k] || []).push({ kind: 'RSA', campaign: r.campaign.name, adGroup: r.adGroup.name,
+        adGroupId: r.adGroup.id, adId: r.adGroupAd.ad.id, category: '', impressions: num(r.metrics.impressions),
+        usages: r.adGroupAdAssetCombinationView.servedAssets || [] });
+    }
+    Object.keys(byAd).forEach(function (k) {
+      byAd[k].sort(function (a, b) { return b.impressions - a.impressions; }).slice(0, COMBOS_PER_AD)
+        .forEach(function (c, i) { c.rank = i + 1; combos.push(c); });
+    });
+  });
+  guarded(ctx, 'Performance Max top combinations', function () {
+    var rows = AdsApp.search('SELECT campaign.name, asset_group.id, asset_group.name, ' +
+      'asset_group_top_combination_view.resource_name, asset_group_top_combination_view.asset_group_top_combinations ' +
+      'FROM asset_group_top_combination_view WHERE segments.date DURING LAST_30_DAYS ' +
+      "AND campaign.status = 'ENABLED' AND asset_group.status = 'ENABLED'");
+    while (rows.hasNext()) {
+      var r = rows.next(), tv = r.assetGroupTopCombinationView || {};
+      var category = String(tv.resourceName || '').split('~').pop();
+      (tv.assetGroupTopCombinations || []).slice(0, PMAX_COMBOS).forEach(function (c, i) {
+        combos.push({ kind: 'PMAX', campaign: r.campaign.name, adGroup: r.assetGroup.name, adGroupId: r.assetGroup.id,
+          adId: r.assetGroup.id, category: category, rank: i + 1, impressions: '',
+          usages: c.assetCombinationServedAssets || [] });
+      });
+    }
+  });
+  combos = combos.slice(0, COMBO_ROWS_PER_ACCOUNT);
+  var needed = {};
+  combos.forEach(function (c) { c.usages.forEach(function (u) { if (u.asset) needed[u.asset] = 1; }); });
+  var assets = lookupAssets(ctx, Object.keys(needed));
+  return combos.map(function (c) {
+    var parts = c.usages.map(function (u) {
+      var a = assets[u.asset] || {}, p = { f: u.servedAssetFieldType || '' };
+      if (a.text) p.x = a.text;
+      if (a.url) p.img = a.url;
+      if (a.video) p.vid = a.video;
+      return p;
+    });
+    var pick = function (re) {
+      return parts.filter(function (p) { return re.test(p.f) && p.x; }).map(function (p) { return p.x; }).join(' | ');
+    };
+    return [ctx.name, ctx.cid, c.kind, c.campaign, c.adGroup, c.adGroupId, c.adId, c.category, c.rank, c.impressions,
+      pick(/^HEADLINE/), pick(/^DESCRIPTION/), JSON.stringify(parts), 'LAST_30_DAYS', ctx.now];
+  });
+}
+
+/** {resourceName: {text, url, video}} for the given assets, in batches. */
+function lookupAssets(ctx, names) {
+  var map = {};
+  for (var i = 0; i < names.length; i += ASSET_BATCH) {
+    var batch = names.slice(i, i + ASSET_BATCH);
+    guarded(ctx, 'asset lookup', function () {
+      var rows = AdsApp.search('SELECT asset.resource_name, asset.type, asset.text_asset.text, ' +
+        'asset.image_asset.full_size.url, asset.youtube_video_asset.youtube_video_id, ' +
+        'asset.call_to_action_asset.call_to_action FROM asset WHERE asset.resource_name IN (' +
+        batch.map(function (n) { return "'" + n + "'"; }).join(', ') + ')');
+      while (rows.hasNext()) {
+        var a = rows.next().asset;
+        map[a.resourceName] = {
+          text: (a.textAsset && a.textAsset.text) || (a.callToActionAsset && a.callToActionAsset.callToAction) || '',
+          url: (a.imageAsset && a.imageAsset.fullSize && a.imageAsset.fullSize.url) || '',
+          video: (a.youtubeVideoAsset && a.youtubeVideoAsset.youtubeVideoId) || ''
+        };
+      }
+    });
+  }
+  return map;
+}
+
+
+// ── Each headline and description ────────────────────────────────────────────
+function adAssets(ctx) {
+  var q = 'SELECT campaign.name, ad_group.id, ad_group.name, ad_group_ad.ad.id, ad_group_ad_asset_view.field_type, ' +
+    'ad_group_ad_asset_view.pinned_field, ad_group_ad_asset_view.performance_label, ad_group_ad_asset_view.enabled, ' +
+    'asset.text_asset.text, metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions ' +
+    "FROM ad_group_ad_asset_view WHERE ad_group_ad_asset_view.field_type IN ('HEADLINE', 'DESCRIPTION') " +
+    'AND segments.date DURING LAST_30_DAYS AND ' + LIVE +
+    ' ORDER BY metrics.impressions DESC LIMIT ' + AD_ASSETS_PER_ACCOUNT;
+  var rows = AdsApp.search(q), out = [];
+  while (rows.hasNext()) {
+    var r = rows.next(), v = r.adGroupAdAssetView, m = r.metrics;
+    out.push([ctx.name, ctx.cid, ctx.currency, r.campaign.name, r.adGroup.name, r.adGroup.id, r.adGroupAd.ad.id,
+      v.fieldType || '', (r.asset && r.asset.textAsset && r.asset.textAsset.text) || '', v.pinnedField || '',
+      v.performanceLabel || '', v.enabled !== false, num(m.impressions), num(m.clicks), money(m.costMicros),
+      num(m.conversions), 'LAST_30_DAYS', ctx.now]);
+  }
+  return out;
+}
+
+
 // ── Writing the sheet ────────────────────────────────────────────────────────
 function writeAll(results) {
   var all = {}, notes = [], accounts = 0;
@@ -550,6 +754,8 @@ function writeAll(results) {
     ['Search terms range', 'LAST_30_DAYS, top ' + SEARCH_TERMS_PER_ACCOUNT + ' per account by spend'],
     ['Keywords range', 'LAST_30_DAYS, top ' + KEYWORDS_PER_ACCOUNT + ' per account by spend'],
     ['Devices, hours, locations, conversions range', 'LAST_30_DAYS'],
+    ['Ads', 'live ads and asset groups now; performance LAST_30_DAYS; top ' + COMBOS_PER_AD +
+      ' served combinations per ad'],
     ['Rows written', written.join(', ')]
   ].concat(notes);
   writeTab(ss, TABS.about, ABOUT_HEADER, about, true);

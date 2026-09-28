@@ -17,7 +17,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=6"]) }}
+{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=7"]) }}
 </head>
 <body class="gad" data-currency-symbol="{{ currency_symbol }}">
 
@@ -500,10 +500,36 @@
     <div class="gai-actions" id="gai-actions"></div>
     <p class="gad-note">&ldquo;Conversions&rdquo; counts only primary actions, the ones bidding optimises for; &ldquo;all conversions&rdquo; adds the secondary ones. Last 30 days. Setup checks follow Google Ads Help (&ldquo;About conversion counting options&rdquo;: count every conversion for sales, one per click for leads).</p>
   </section>
+
+  <section class="gad-panel bn-reveal" data-panel="ads" id="gai-ads-panel">
+    <div class="gad-panel-head"><div>
+      <span class="gad-lbl">Creative</span>
+      <h2 class="gad-h2">Ads and ad strength</h2>
+    </div>
+    <span class="gad-panel-d" id="gai-ads-d"></span></div>
+    <div class="gai-kpis" id="gai-ads-kpis"></div>
+    <div class="gai-block">
+      <h3 class="gai-h3">Spend by ad strength</h3>
+      <div class="gai-mix" id="gai-ads-strength"></div>
+    </div>
+    <div class="gai-toolbar">
+      <div class="gad-seg gad-seg--sm" role="group" aria-label="Ad filter" id="gai-ads-filter">
+        <button type="button" class="gad-pill is-on" data-adview="all">All</button>
+        <button type="button" class="gad-pill" data-adview="attention">Needs attention</button>
+        <button type="button" class="gad-pill" data-adview="disapproved">Disapproved or limited</button>
+        <button type="button" class="gad-pill" data-adview="rsa">Search ads</button>
+        <button type="button" class="gad-pill" data-adview="pmax">Performance Max</button>
+      </div>
+    </div>
+    <div class="gai-ads" id="gai-ads"></div>
+    <p class="gad-table-empty" id="gai-ads-empty" hidden>No ads match these filters.</p>
+    <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-ads-more" hidden>Show more</button></div>
+    <p class="gad-note">Live ads in live ad groups and campaigns, and Performance Max asset groups; performance is the last 30 days. Each search ad is previewed with the combination Google served most; &ldquo;served&rdquo; lists come from Google&rsquo;s combinations report (impressions for search ads, Google&rsquo;s own top combinations for Performance Max). Headline and description labels (Best, Good, Low, Learning) are Google&rsquo;s. Google allows up to 15 headlines and 4 descriptions per responsive search ad and says pinning &ldquo;isn&rsquo;t recommended for most advertisers and can affect ad strength&rdquo; (Google Ads Help, &ldquo;About responsive search ads&rdquo;).</p>
+  </section>
   {% elif insights %}
   <section class="gad-panel gai-setup bn-reveal" data-panel="insights-setup">
     <span class="gad-lbl">More data, ready to switch on</span>
-    <h2 class="gad-h2">Impression share, budgets, search terms, Quality Score, devices, hours, locations and conversion actions</h2>
+    <h2 class="gad-h2">Impression share, budgets, search terms, Quality Score, devices, hours, locations, conversions and ads</h2>
     <p class="gai-setup-p">These appear here once the Google Ads insights script runs. Someone with access to the manager account installs <code>scripts/google_ads/export_insights.js</code> under Tools &rsaquo; Bulk actions &rsaquo; Scripts, points it at this dashboard&rsquo;s Google Sheet and schedules it daily. It writes its own tabs at the end of the sheet and never changes the campaign report.</p>
     {% if insights.error %}<p class="gad-note">The insights tabs could not be read just now ({{ insights.error }}).</p>{% endif %}
   </section>
@@ -572,7 +598,7 @@
 {% endif %}
 
 {{ topbar_script() }}
-{% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=2"></script>{% endif %}
+{% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=3"></script>{% endif %}
 <script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=5"></script>
 <script>
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */

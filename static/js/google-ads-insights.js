@@ -41,10 +41,11 @@
   };
   var VERDICT_ORDER = { capped: 0, over: 1, under: 2, on_track: 3, unknown: 4 };
   var filters = { account: "__all__", search: "" };
+  var ADS_STEP = window.innerWidth < 700 ? 6 : 12;       // ad cards are tall on a phone
   var ui = { shareShown: 12, shareSort: "cost", shareDir: -1, paceShown: 10, pace: "all",
              view: "spend", n: 1, termsShown: 25, termsSort: null, termsDir: -1,
              kwView: "spend", kwShown: 25, kwSort: null, kwDir: -1, devShown: 12, hMetric: "cost",
-             locLevel: "region", locType: "all", locShown: 15 };
+             locLevel: "region", locType: "all", locShown: 15, adView: "all", adsShown: ADS_STEP };
 
   /* ── Small helpers ──────────────────────────────────────────────────── */
   function $(id) { return doc.getElementById(id); }
@@ -1079,6 +1080,217 @@
     });
   }
 
+  /* ══ Ads and ad strength ════════════════════════════════════════════ */
+  var STRENGTH = { EXCELLENT: ["Excellent", "#0E9F6E", "is-good"], GOOD: ["Good", "#7CC9A5", "is-good"],
+                   AVERAGE: ["Average", "#E0A100", "is-warn"], POOR: ["Poor", "#E0533D", "is-bad"],
+                   PENDING: ["Pending", "#CFCAC2", ""] };
+  var APPROVAL = { APPROVED: ["Approved", "is-good"], APPROVED_LIMITED: ["Approved (limited)", "is-warn"],
+                   DISAPPROVED: ["Disapproved", "is-bad"], AREA_OF_INTEREST_ONLY: ["Area of interest only", "is-warn"] };
+  var LABEL = { BEST: ["Best", "is-good"], GOOD: ["Good", "is-good"], LOW: ["Low", "is-bad"], LEARNING: ["Learning", ""],
+                PENDING: ["Pending", ""] };
+  function adRows() {
+    return ((INS.ads || {}).rows || []).filter(function (a) {
+      if (!inAccount(a.account)) return false;
+      var texts = [a.campaign, a.ad_group].concat((a.heads || []).map(function (h) { return h.t; }));
+      return matchesText(texts);
+    });
+  }
+  function hostOf(url) {
+    var m = /^https?:\/\/([^\/?#]+)/i.exec(url || "");
+    return m ? m[1].replace(/^www\./i, "") : "";
+  }
+  function renderAds() {
+    var panel = $("gai-ads-panel");
+    panel.hidden = !((INS.ads || {}).rows || []).length;
+    if (panel.hidden) return;
+    var rows = adRows();
+    var tot = (INS.ads.totals || {})[filters.account === "__all__" ? "__all__" : filters.account];
+    if (!tot || filters.search) tot = adTotals(rows);
+    var cur = tot.cur === "mixed" ? "" : tot.cur, kpis = $("gai-ads-kpis");
+    clear(kpis);
+    $("gai-ads-d").textContent = int(INS.ads.read) + " live ads and asset groups · last 30 days";
+    var weak = (tot.strength.POOR.cost || 0) + (tot.strength.AVERAGE.cost || 0);
+    kpi(kpis, "Live ads", int(tot.ads), int(tot.rsa) + " search ads · " + int(tot.asset_groups) + " asset groups" +
+      (tot.other ? " · " + int(tot.other) + " other" : ""));
+    kpi(kpis, "Spend on Poor or Average ads", money(weak, cur), (tot.cost ? Math.round(100 * weak / tot.cost) : 0) + "% of ad spend",
+      tot.cost && weak / tot.cost > 0.25 ? "is-bad" : "is-warn");
+    kpi(kpis, "Disapproved", int(tot.disapproved), int(tot.limited) + " approved with limits", tot.disapproved ? "is-bad" : "is-good");
+    kpi(kpis, "Ads with pinning", int(tot.pinned_ads), "pinning narrows what Google can test");
+    kpi(kpis, "Assets rated Low", int(tot.low_assets), "headlines and descriptions to replace", tot.low_assets ? "is-warn" : "is-good");
+    renderStrengthMix(tot, cur);
+    var list = rows.filter(function (a) {
+      if (ui.adView === "attention") return a.flags.some(function (f) { return f[0] !== "info"; });
+      if (ui.adView === "disapproved") return a.approval === "DISAPPROVED" || a.approval === "APPROVED_LIMITED";
+      if (ui.adView === "rsa") return a.kind === "RSA";
+      if (ui.adView === "pmax") return a.kind === "ASSET_GROUP";
+      return true;
+    });
+    var box = $("gai-ads");
+    clear(box);
+    $("gai-ads-empty").hidden = list.length > 0;
+    list.slice(0, ui.adsShown).forEach(function (a) { box.appendChild(adCard(a)); });
+    $("gai-ads-more").hidden = list.length <= ui.adsShown;
+  }
+  function adTotals(rows) {
+    var t = { ads: 0, rsa: 0, asset_groups: 0, other: 0, cost: 0, disapproved: 0, limited: 0, pinned_ads: 0, low_assets: 0, strength: {}, cur: "" };
+    Object.keys(STRENGTH).forEach(function (k) { t.strength[k] = { n: 0, cost: 0 }; });
+    rows.forEach(function (a) {
+      t.cur = t.cur && t.cur !== a.cur ? "mixed" : a.cur;
+      t.ads++; t.cost += a.cost;
+      if (a.kind === "RSA") t.rsa++; else if (a.kind === "ASSET_GROUP") t.asset_groups++; else t.other++;
+      if (t.strength[a.strength]) { t.strength[a.strength].n++; t.strength[a.strength].cost += a.cost; }
+      if (a.approval === "DISAPPROVED") t.disapproved++;
+      if (a.approval === "APPROVED_LIMITED") t.limited++;
+      if (a.pinned) t.pinned_ads++;
+      t.low_assets += (a.assets || []).filter(function (x) { return x.label === "LOW"; }).length;
+    });
+    return t;
+  }
+  function renderStrengthMix(tot, cur) {
+    var box = $("gai-ads-strength");
+    clear(box);
+    var keys = Object.keys(STRENGTH), total = keys.reduce(function (s, k) { return s + (tot.strength[k] ? tot.strength[k].cost : 0); }, 0);
+    if (!total) { box.appendChild(el("p", "gad-empty-chart", "No spend on rated ads yet.")); return; }
+    var bar = el("div", "gai-stack"), legendBox = el("div", "gai-stack-keys");
+    keys.forEach(function (k) {
+      var x = tot.strength[k];
+      if (!x || !x.cost) return;
+      var seg = el("span", "gai-seg");
+      seg.style.width = (100 * x.cost / total) + "%"; seg.style.background = STRENGTH[k][1];
+      seg.addEventListener("mousemove", function (e) {
+        showTip([STRENGTH[k][0], ["Spend", money(x.cost, cur), STRENGTH[k][1]], ["Ads", int(x.n)], ["Share", Math.round(100 * x.cost / total) + "%"]], e.clientX, e.clientY);
+      });
+      seg.addEventListener("mouseleave", hideTip);
+      bar.appendChild(seg);
+      var kk = el("span", "gai-stack-k"), i = el("i"); i.style.background = STRENGTH[k][1];
+      kk.appendChild(i); kk.appendChild(el("span", "", STRENGTH[k][0] + " ")); kk.appendChild(el("b", "", Math.round(100 * x.cost / total) + "%"));
+      legendBox.appendChild(kk);
+    });
+    box.appendChild(bar); box.appendChild(legendBox);
+  }
+  function chip(map, v) {
+    var m = map[v];
+    return m ? el("span", "gai-chip " + m[m.length - 1], m[0]) : null;
+  }
+  function searchPreview(a) {
+    var top = (a.combos || [])[0];
+    var heads = top && top.heads.length ? top.heads : (a.heads || []).slice(0, 3).map(function (h) { return h.t; });
+    var descs = top && top.descs.length ? top.descs : (a.descs || []).slice(0, 2).map(function (d) { return d.t; });
+    var box = el("div", "gai-serp");
+    var meta = el("div", "gai-serp-meta");
+    meta.appendChild(el("b", "", "Sponsored"));
+    meta.appendChild(el("span", "", [hostOf(a.url), a.path1, a.path2].filter(Boolean).join(" › ")));
+    box.appendChild(meta);
+    box.appendChild(el("div", "gai-serp-h", heads.join(" | ") || "–"));
+    box.appendChild(el("p", "gai-serp-d", descs.join(" ") || ""));
+    box.appendChild(el("span", "gai-serp-src", top ? "The combination Google served most" + (top.impr ? " (" + int(top.impr) + " impressions)" : "") : "Assembled from the first headlines: no served combinations yet"));
+    return box;
+  }
+  function pmaxPreview(a) {
+    var box = el("div", "gai-pmax");
+    var cats = {};
+    (a.combos || []).forEach(function (c) { (cats[c.category || "TEXT"] = cats[c.category || "TEXT"] || []).push(c); });
+    var imgs = [], vids = [], texts = [];
+    Object.keys(cats).forEach(function (k) {
+      cats[k].forEach(function (c) {
+        c.parts.forEach(function (p) {
+          if (p.img && imgs.indexOf(p.img) < 0) imgs.push(p.img);
+          if (p.vid && vids.indexOf(p.vid) < 0) vids.push(p.vid);
+          if (p.x && /HEADLINE/.test(p.f) && texts.indexOf(p.x) < 0) texts.push(p.x);
+        });
+      });
+    });
+    if (!imgs.length && !vids.length && !texts.length) {
+      box.appendChild(el("p", "gai-serp-src", "Google has not reported top combinations for this asset group yet."));
+      return box;
+    }
+    if (imgs.length || vids.length) {
+      var strip = el("div", "gai-thumbs");
+      imgs.slice(0, 6).forEach(function (u) {
+        var im = el("img"); im.loading = "lazy"; im.referrerPolicy = "no-referrer"; im.alt = "Image Google served";
+        im.onerror = function () { im.remove(); }; im.src = u; strip.appendChild(im);
+      });
+      vids.slice(0, 3).forEach(function (v) {
+        var im = el("img"); im.loading = "lazy"; im.referrerPolicy = "no-referrer"; im.alt = "YouTube video " + v;
+        im.onerror = function () { im.remove(); };
+        im.src = "https://i.ytimg.com/vi/" + encodeURIComponent(v) + "/mqdefault.jpg"; strip.appendChild(im);
+      });
+      box.appendChild(strip);
+    }
+    if (texts.length) {
+      var ul = el("ul", "gai-pmax-t");
+      texts.slice(0, 5).forEach(function (t) { ul.appendChild(el("li", "", t)); });
+      box.appendChild(ul);
+    }
+    box.appendChild(el("span", "gai-serp-src", "From Google’s top combinations for this asset group"));
+    return box;
+  }
+  function adCard(a) {
+    var card = el("article", "gai-ad");
+    var head = el("div", "gai-phead"), name = el("div", "gai-pname");
+    name.appendChild(el("b", "", a.kind === "ASSET_GROUP" ? a.ad_group : a.ad_group + (a.kind === "RSA" ? "" : " · " + a.type.replace(/_/g, " ").toLowerCase())));
+    name.appendChild(el("span", "", (filters.account === "__all__" ? a.account + " · " : "") + a.campaign +
+      (a.kind === "ASSET_GROUP" ? " · asset group" : "")));
+    head.appendChild(name);
+    var chips = el("div", "gai-chips");
+    var s = STRENGTH[a.strength];
+    if (s) chips.appendChild(el("span", "gai-chip " + s[2], "Ad strength: " + s[0]));
+    var ap = chip(APPROVAL, a.approval);
+    if (ap) chips.appendChild(ap);
+    head.appendChild(chips);
+    card.appendChild(head);
+    card.appendChild(a.kind === "ASSET_GROUP" ? pmaxPreview(a) : searchPreview(a));
+    var facts = el("div", "gai-pfacts gai-pfacts--6");
+    [["Impressions", int(a.impr)], ["Clicks", int(a.clicks)], ["CTR", a.impr ? (100 * a.clicks / a.impr).toFixed(1) + "%" : "–"],
+     ["Spend", money(a.cost, a.cur)], ["Conv.", num1(a.conv)], ["Cost / conv.", a.conv ? money2(a.cost / a.conv, a.cur) : "–"]]
+      .forEach(function (f) { var d = el("div"); d.appendChild(el("span", "", f[0])); d.appendChild(el("b", "", f[1])); facts.appendChild(d); });
+    card.appendChild(facts);
+    a.flags.forEach(function (f) { card.appendChild(el("p", "gai-flag gai-flag--" + (f[0] === "bad" ? "warn" : f[0] === "warn" ? "amber" : "info"), f[1])); });
+    if (a.kind === "RSA") {
+      var more = el("details", "gai-more-d");
+      more.appendChild(el("summary", "", "Headlines, descriptions and what Google served"));
+      more.appendChild(assetList(a));
+      if ((a.combos || []).length > 1) {
+        more.appendChild(el("h4", "gai-h4", "Served most"));
+        var ol = el("ol", "gai-combos");
+        var totalImpr = a.combos.reduce(function (s, c) { return s + (c.impr || 0); }, 0);
+        a.combos.forEach(function (c) {
+          var li = el("li");
+          li.appendChild(el("b", "", c.heads.join(" | ")));
+          if (c.descs.length) li.appendChild(el("span", "", c.descs.join(" ")));
+          if (c.impr) li.appendChild(el("i", "", int(c.impr) + " impressions" + (totalImpr ? " · " + Math.round(100 * c.impr / totalImpr) + "% of the top " + a.combos.length : "")));
+          ol.appendChild(li);
+        });
+        more.appendChild(ol);
+      }
+      card.appendChild(more);
+    }
+    return card;
+  }
+  function assetList(a) {
+    var wrap = el("div", "gai-assets");
+    var perf = {};
+    (a.assets || []).forEach(function (x) { perf[x.f + "\u0001" + x.t] = x; });
+    [["HEADLINE", "Headlines", a.heads || [], 15], ["DESCRIPTION", "Descriptions", a.descs || [], 4]].forEach(function (g) {
+      wrap.appendChild(el("h4", "gai-h4", g[1] + " · " + g[2].length + " of " + g[3]));
+      var ul = el("ul", "gai-asset-l");
+      g[2].forEach(function (h) {
+        var x = perf[g[0] + "\u0001" + h.t] || {};
+        var li = el("li");
+        li.appendChild(el("span", "gai-asset-t", h.t));
+        var meta = el("span", "gai-asset-m");
+        if (h.pin) meta.appendChild(el("span", "gai-chip", "Pinned: " + h.pin.replace(/_/g, " ").toLowerCase()));
+        var lb = chip(LABEL, x.label);
+        if (lb) meta.appendChild(lb);
+        if (x.impr) meta.appendChild(el("span", "gai-asset-n", int(x.impr) + " impr. · " + (100 * x.clicks / x.impr).toFixed(1) + "% CTR"));
+        li.appendChild(meta);
+        ul.appendChild(li);
+      });
+      wrap.appendChild(ul);
+    });
+    return wrap;
+  }
+
   /* ── Sorting, controls ──────────────────────────────────────────────── */
   function markSort(table) {
     doc.querySelectorAll('[data-gai-sort^="' + table + ':"]').forEach(function (th) {
@@ -1106,7 +1318,7 @@
       }
       return;
     }
-    var b = e.target.closest && e.target.closest("[data-pace],[data-view],[data-n],[data-kwview],[data-hmetric],[data-loclevel],[data-loctype]");
+    var b = e.target.closest && e.target.closest("[data-pace],[data-view],[data-n],[data-kwview],[data-hmetric],[data-loclevel],[data-loctype],[data-adview]");
     if (!b) return;
     var group = b.parentNode;
     Array.prototype.forEach.call(group.children, function (x) { x.classList.toggle("is-on", x === b); });
@@ -1117,6 +1329,7 @@
     if (b.hasAttribute("data-hmetric")) { ui.hMetric = b.getAttribute("data-hmetric"); renderHours(); }
     if (b.hasAttribute("data-loclevel")) { ui.locLevel = b.getAttribute("data-loclevel"); ui.locShown = 15; renderLocations(); }
     if (b.hasAttribute("data-loctype")) { ui.locType = b.getAttribute("data-loctype"); ui.locShown = 15; renderLocations(); }
+    if (b.hasAttribute("data-adview")) { ui.adView = b.getAttribute("data-adview"); ui.adsShown = ADS_STEP; renderAds(); }
   });
   $("gai-share-more").addEventListener("click", function () { ui.shareShown += 12; renderShareTable(shareRows().filter(function (r) { return r.is != null; })); });
   $("gai-pace-more").addEventListener("click", function () { ui.paceShown += 10; renderPacing(); });
@@ -1126,11 +1339,12 @@
   $("gai-kw-csv").addEventListener("click", kwCsv);
   $("gai-dev-more").addEventListener("click", function () { ui.devShown += 12; renderDevices(); });
   $("gai-loc-more").addEventListener("click", function () { ui.locShown += 15; renderLocations(); });
+  $("gai-ads-more").addEventListener("click", function () { ui.adsShown += ADS_STEP; renderAds(); });
 
   function renderAll() {
     $("gai-asof").textContent = INS.as_of ? "Exported " + INS.as_of + ". Follows the account filter and the search box; the date range above does not apply." : "";
     // Each panel draws alone, so one bad section never blanks the rest.
-    [renderShare, renderPacing, renderTerms, renderKeywords, renderDevices, renderHours, renderLocations, renderConversions]
+    [renderShare, renderPacing, renderTerms, renderKeywords, renderDevices, renderHours, renderLocations, renderConversions, renderAds]
       .forEach(function (fn) {
         try { fn(); } catch (err) { if (window.console) console.error("google-ads-insights:", fn.name, err); }
       });
@@ -1139,7 +1353,7 @@
     var d = e.detail || {};
     filters.account = d.account || "__all__";
     filters.search = (d.search || "").toLowerCase();
-    ui.shareShown = 12; ui.paceShown = 10; ui.termsShown = 25; ui.kwShown = 25; ui.devShown = 12; ui.locShown = 15;
+    ui.shareShown = 12; ui.paceShown = 10; ui.termsShown = 25; ui.kwShown = 25; ui.devShown = 12; ui.locShown = 15; ui.adsShown = ADS_STEP;
     renderAll();
   });
   doc.addEventListener("gad:insights", function (e) { if (e.detail && e.detail.ok) INS = e.detail; });
