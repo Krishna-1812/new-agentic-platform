@@ -27,6 +27,71 @@ function account(cid, name) {
   return {
     search: function (q) {
       queries.push(q);
+      if (/FROM keyword_view/.test(q)) {
+        return iter([
+          { campaign: { id: "12", name: "Generic - Search" }, adGroup: { name: "CRM" },
+            adGroupCriterion: { criterionId: "7001", status: "ENABLED", systemServingStatus: "ELIGIBLE",
+              keyword: { text: "crm software", matchType: "BROAD" },
+              qualityInfo: { qualityScore: 4, searchPredictedCtr: "BELOW_AVERAGE", creativeQualityScore: "AVERAGE",
+                             postClickQualityScore: "BELOW_AVERAGE" },
+              effectiveCpcBidMicros: "40000000", positionEstimates: { firstPageCpcMicros: "55000000", topOfPageCpcMicros: "90000000" } },
+            metrics: { impressions: "5000", clicks: "250", costMicros: "11000000000", conversions: 3, conversionsValue: 0,
+                       searchImpressionShare: 0.35, searchRankLostImpressionShare: 0.5 } },
+          { campaign: { id: "11", name: "Brand - Search" }, adGroup: { name: "Brand" },
+            adGroupCriterion: { criterionId: "7002", status: "ENABLED", systemServingStatus: "ELIGIBLE",
+              keyword: { text: name.toLowerCase(), matchType: "EXACT" }, qualityInfo: {} },
+            metrics: { impressions: "900", clicks: "300", costMicros: "900000000", conversions: 40, conversionsValue: 0 } }
+        ]);
+      }
+      if (/FROM geo_target_constant/.test(q)) {
+        var known = { "geoTargetConstants/2356": "India", "geoTargetConstants/20465": "Maharashtra",
+                      "geoTargetConstants/1007785": "Mumbai" };
+        return iter(Object.keys(known).filter(function (k) { return q.indexOf(k) > -1; })
+          .map(function (k) { return { geoTargetConstant: { resourceName: k, name: known[k] } }; }));
+      }
+      if (/FROM geographic_view/.test(q)) {
+        return iter([
+          { geographicView: { locationType: "LOCATION_OF_PRESENCE", countryCriterionId: "2356" },
+            segments: { geoTargetRegion: "geoTargetConstants/20465", geoTargetCity: "geoTargetConstants/1007785" },
+            metrics: { impressions: "3000", clicks: "120", costMicros: "6000000000", conversions: 5, conversionsValue: 0 } },
+          { geographicView: { locationType: "AREA_OF_INTEREST", countryCriterionId: "2356" },
+            segments: { geoTargetRegion: "geoTargetConstants/99999" },
+            metrics: { impressions: "800", clicks: "20", costMicros: "700000000", conversions: 0, conversionsValue: 0 } }
+        ]);
+      }
+      if (/FROM conversion_action/.test(q)) {
+        return iter([
+          { conversionAction: { id: "501", name: "Lead form", category: "SUBMIT_LEAD_FORM", status: "ENABLED", type: "WEBPAGE",
+            origin: "WEBSITE", primaryForGoal: true, includeInConversionsMetric: true, countingType: "MANY_PER_CLICK",
+            clickThroughLookbackWindowDays: "30", viewThroughLookbackWindowDays: "1",
+            valueSettings: { defaultValue: 1, alwaysUseDefaultValue: false }, attributionModelSettings: { attributionModel: "GOOGLE_SEARCH_ATTRIBUTION_DATA_DRIVEN" } } },
+          { conversionAction: { id: "502", name: "Pricing page view", category: "PAGE_VIEW", status: "ENABLED", type: "WEBPAGE",
+            origin: "WEBSITE", primaryForGoal: true, includeInConversionsMetric: true, countingType: "ONE_PER_CLICK",
+            clickThroughLookbackWindowDays: "30", viewThroughLookbackWindowDays: "1", valueSettings: {} } }
+        ]);
+      }
+      if (/segments\.conversion_action_name/.test(q)) {
+        return iter([
+          { campaign: { id: "12", name: "Generic - Search" },
+            segments: { conversionActionName: "Lead form", conversionActionCategory: "SUBMIT_LEAD_FORM" },
+            metrics: { conversions: 60, conversionsValue: 60, allConversions: 64, allConversionsValue: 64 } },
+          { campaign: { id: "12", name: "Generic - Search" },
+            segments: { conversionActionName: "Pricing page view", conversionActionCategory: "PAGE_VIEW" },
+            metrics: { conversions: 30, conversionsValue: 0, allConversions: 30, allConversionsValue: 0 } }
+        ]);
+      }
+      if (/segments\.day_of_week/.test(q)) {
+        return iter([
+          { segments: { dayOfWeek: "MONDAY", hour: 10 }, metrics: { impressions: "900", clicks: "40", costMicros: "2000000000", conversions: 4, conversionsValue: 0 } },
+          { segments: { dayOfWeek: "SUNDAY", hour: 2 }, metrics: { impressions: "90", clicks: "3", costMicros: "150000000", conversions: 0, conversionsValue: 0 } }
+        ]);
+      }
+      if (/segments\.device/.test(q)) {
+        return iter([
+          { campaign: CAMPAIGNS[1], segments: { device: "MOBILE" }, metrics: { impressions: "15000", clicks: "600", costMicros: "80000000000", conversions: 40, conversionsValue: 0 } },
+          { campaign: CAMPAIGNS[1], segments: { device: "DESKTOP" }, metrics: { impressions: "5000", clicks: "300", costMicros: "40000000000", conversions: 50, conversionsValue: 0 } }
+        ]);
+      }
       if (/FROM search_term_view/.test(q)) {
         return iter([
           { campaign: { id: "12", name: "Generic - Search" }, adGroup: { name: "CRM" },

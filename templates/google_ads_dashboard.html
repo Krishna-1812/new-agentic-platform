@@ -17,7 +17,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=5"]) }}
+{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=6"]) }}
 </head>
 <body class="gad" data-currency-symbol="{{ currency_symbol }}">
 
@@ -371,10 +371,139 @@
     <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-terms-more" hidden>Show more</button></div>
     <p class="gad-note">From Google Ads&rsquo; search terms report (last 30 days): the searches that triggered your ads in campaigns that show on Google Search. Performance Max search terms are reported separately and are not included. Google leaves out terms searched by very few people, so these add up to less than the campaigns&rsquo; total spend. A term appears once per ad group and matched keyword.</p>
   </section>
+
+  <section class="gad-panel bn-reveal" data-panel="keywords" id="gai-kw-panel">
+    <div class="gad-panel-head"><div>
+      <span class="gad-lbl">Relevance</span>
+      <h2 class="gad-h2">Keywords and Quality Score</h2>
+    </div>
+    <span class="gad-panel-d" id="gai-kw-d"></span></div>
+    <div class="gai-kpis" id="gai-kw-kpis"></div>
+    <div class="gad-grid gad-grid--2 gai-inner gai-inner--flush">
+      <div class="gai-block">
+        <h3 class="gai-h3">Spend by Quality Score</h3>
+        <div class="gad-chart" id="gai-qs-dist"></div>
+      </div>
+      <div class="gai-block">
+        <h3 class="gai-h3">What holds Quality Score back</h3>
+        <p class="gai-view-note gai-view-note--top">Each part of Quality Score, compared with other advertisers on the same keyword, weighted by spend.</p>
+        <div id="gai-qs-parts"></div>
+      </div>
+    </div>
+    <div class="gai-toolbar gai-toolbar--gap">
+      <div class="gad-seg gad-seg--sm" role="group" aria-label="Keyword view" id="gai-kw-view">
+        <button type="button" class="gad-pill is-on" data-kwview="spend">Top spend</button>
+        <button type="button" class="gad-pill" data-kwview="lowqs">Quality Score 1&ndash;4</button>
+        <button type="button" class="gad-pill" data-kwview="converting">Converting</button>
+        <button type="button" class="gad-pill" data-kwview="wasted">No conversions</button>
+        <button type="button" class="gad-pill" data-kwview="bid">Bid below first page</button>
+      </div>
+      <button type="button" class="gad-btn gad-btn--line gai-csv" id="gai-kw-csv">Download CSV</button>
+    </div>
+    <div class="gad-table-wrap gai-table-wrap">
+      <table class="gad-table gai-table">
+        <thead><tr>
+          <th scope="col" data-gai-sort="kw:kw">Keyword</th>
+          <th scope="col" class="is-num" data-gai-sort="kw:qs">QS</th>
+          <th scope="col">Expected CTR</th>
+          <th scope="col">Ad relevance</th>
+          <th scope="col">Landing page</th>
+          <th scope="col" class="is-num" data-gai-sort="kw:clicks">Clicks</th>
+          <th scope="col" class="is-num" data-gai-sort="kw:cost">Spend</th>
+          <th scope="col" class="is-num" data-gai-sort="kw:conv">Conv.</th>
+          <th scope="col" class="is-num" data-gai-sort="kw:cpa">Cost / conv.</th>
+          <th scope="col" class="is-num" data-gai-sort="kw:bid">Max CPC</th>
+          <th scope="col" class="is-num" data-gai-sort="kw:first_page">First-page bid</th>
+          <th scope="col" class="is-num" data-gai-sort="kw:is">Impr. share</th>
+        </tr></thead>
+        <tbody id="gai-kw-body"></tbody>
+      </table>
+    </div>
+    <p class="gad-table-empty" id="gai-kw-empty" hidden>No keywords match these filters.</p>
+    <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-kw-more" hidden>Show more</button></div>
+    <p class="gad-note">Quality Score is Google&rsquo;s 1&ndash;10 rating of a keyword&rsquo;s expected click-through rate, ad relevance and landing page experience against other advertisers; it is current, not for the period, and blank when Google has too little data. Average Quality Score is weighted by impressions. Max CPC is the keyword&rsquo;s effective bid (blank under automated bidding); the first-page bid is Google&rsquo;s estimate of the bid needed to show on the first page of results. Keywords with impressions in the last 30 days, the costliest per account.</p>
+  </section>
+
+  <section class="gad-panel bn-reveal" data-panel="devices" id="gai-dev-panel">
+    <div class="gad-panel-head"><div>
+      <span class="gad-lbl">Screens</span>
+      <h2 class="gad-h2">Devices</h2>
+    </div>
+    <span class="gad-panel-d" id="gai-dev-d"></span></div>
+    <div class="gai-devices" id="gai-dev"></div>
+    <h3 class="gai-h3 gai-h3--gap">Cost per conversion by device, per campaign</h3>
+    <div class="gad-table-wrap gai-table-wrap gai-table-wrap--tight">
+      <table class="gad-table gai-table">
+        <thead id="gai-dev-head"></thead>
+        <tbody id="gai-dev-body"></tbody>
+      </table>
+    </div>
+    <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-dev-more" hidden>Show more</button></div>
+    <p class="gad-note">Last 30 days. Share of spend against share of conversions shows where each device over- or under-delivers; &ldquo;Other&rdquo; is mostly connected TVs and devices Google could not identify.</p>
+  </section>
+
+  <section class="gad-panel bn-reveal" data-panel="hours" id="gai-hour-panel">
+    <div class="gad-panel-head"><div>
+      <span class="gad-lbl">Timing</span>
+      <h2 class="gad-h2">Day and hour</h2>
+    </div>
+    <span class="gad-panel-d" id="gai-hour-d"></span></div>
+    <div class="gad-metrics" role="group" aria-label="Heatmap metric" id="gai-hour-metric">
+      <button type="button" class="gad-metric is-on" data-hmetric="cost">Spend</button>
+      <button type="button" class="gad-metric" data-hmetric="clicks">Clicks</button>
+      <button type="button" class="gad-metric" data-hmetric="conv">Conversions</button>
+      <button type="button" class="gad-metric" data-hmetric="cvr">Conv. rate</button>
+      <button type="button" class="gad-metric" data-hmetric="cpa">Cost / conv.</button>
+    </div>
+    <div class="gai-heat-wrap"><div class="gai-heat" id="gai-heat"></div></div>
+    <div class="gad-grid gad-grid--2 gai-inner">
+      <div class="gai-block"><h3 class="gai-h3">Hours that convert best</h3><ol class="gai-rank" id="gai-hour-best"></ol></div>
+      <div class="gai-block"><h3 class="gai-h3">Hours that spend without converting</h3><ol class="gai-rank" id="gai-hour-worst"></ol></div>
+    </div>
+    <p class="gad-note">Last 30 days, each account in its own time zone. A cell adds up the same hour on every such weekday in the period (about four of each). Rates need at least 20 clicks in an hour before it is ranked.</p>
+  </section>
+
+  <section class="gad-panel bn-reveal" data-panel="locations" id="gai-loc-panel">
+    <div class="gad-panel-head"><div>
+      <span class="gad-lbl">Geography</span>
+      <h2 class="gad-h2">Locations</h2>
+    </div>
+    <span class="gad-panel-d" id="gai-loc-d"></span></div>
+    <div class="gai-kpis" id="gai-loc-kpis"></div>
+    <div class="gai-toolbar">
+      <div class="gad-seg gad-seg--sm" role="group" aria-label="Location level" id="gai-loc-level">
+        <button type="button" class="gad-pill is-on" data-loclevel="region">Regions</button>
+        <button type="button" class="gad-pill" data-loclevel="city">Cities</button>
+      </div>
+      <div class="gad-seg gad-seg--sm" role="group" aria-label="Location type" id="gai-loc-type">
+        <button type="button" class="gad-pill is-on" data-loctype="all">Everyone</button>
+        <button type="button" class="gad-pill" data-loctype="LOCATION_OF_PRESENCE">People in the place</button>
+        <button type="button" class="gad-pill" data-loctype="AREA_OF_INTEREST">People interested in it</button>
+      </div>
+    </div>
+    <div class="gai-bars" id="gai-loc-bars"></div>
+    <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-loc-more" hidden>Show more</button></div>
+    <p class="gad-note">Last 30 days, from Google Ads&rsquo; geographic report. &ldquo;People in the place&rdquo; were physically there; &ldquo;people interested in it&rdquo; searched for or showed interest in it from elsewhere. Google groups locations it cannot name precisely at a higher level.</p>
+  </section>
+
+  <section class="gad-panel bn-reveal" data-panel="conversions" id="gai-conv-panel">
+    <div class="gad-panel-head"><div>
+      <span class="gad-lbl">Measurement</span>
+      <h2 class="gad-h2">Conversion actions</h2>
+    </div>
+    <span class="gad-panel-d" id="gai-conv-d"></span></div>
+    <div class="gai-kpis" id="gai-conv-kpis"></div>
+    <div class="gai-block">
+      <h3 class="gai-h3" id="gai-conv-mix-h">What the conversions are</h3>
+      <div class="gai-mix" id="gai-conv-mix"></div>
+    </div>
+    <div class="gai-actions" id="gai-actions"></div>
+    <p class="gad-note">&ldquo;Conversions&rdquo; counts only primary actions, the ones bidding optimises for; &ldquo;all conversions&rdquo; adds the secondary ones. Last 30 days. Setup checks follow Google Ads Help (&ldquo;About conversion counting options&rdquo;: count every conversion for sales, one per click for leads).</p>
+  </section>
   {% elif insights %}
   <section class="gad-panel gai-setup bn-reveal" data-panel="insights-setup">
     <span class="gad-lbl">More data, ready to switch on</span>
-    <h2 class="gad-h2">Impression share, budget pacing and search terms</h2>
+    <h2 class="gad-h2">Impression share, budgets, search terms, Quality Score, devices, hours, locations and conversion actions</h2>
     <p class="gai-setup-p">These appear here once the Google Ads insights script runs. Someone with access to the manager account installs <code>scripts/google_ads/export_insights.js</code> under Tools &rsaquo; Bulk actions &rsaquo; Scripts, points it at this dashboard&rsquo;s Google Sheet and schedules it daily. It writes its own tabs at the end of the sheet and never changes the campaign report.</p>
     {% if insights.error %}<p class="gad-note">The insights tabs could not be read just now ({{ insights.error }}).</p>{% endif %}
   </section>
@@ -443,7 +572,7 @@
 {% endif %}
 
 {{ topbar_script() }}
-{% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=1"></script>{% endif %}
+{% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=2"></script>{% endif %}
 <script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=5"></script>
 <script>
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */

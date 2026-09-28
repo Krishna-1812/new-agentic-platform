@@ -42,7 +42,9 @@
   var VERDICT_ORDER = { capped: 0, over: 1, under: 2, on_track: 3, unknown: 4 };
   var filters = { account: "__all__", search: "" };
   var ui = { shareShown: 12, shareSort: "cost", shareDir: -1, paceShown: 10, pace: "all",
-             view: "spend", n: 1, termsShown: 25, termsSort: null, termsDir: -1 };
+             view: "spend", n: 1, termsShown: 25, termsSort: null, termsDir: -1,
+             kwView: "spend", kwShown: 25, kwSort: null, kwDir: -1, devShown: 12, hMetric: "cost",
+             locLevel: "region", locType: "all", locShown: 15 };
 
   /* ── Small helpers ──────────────────────────────────────────────────── */
   function $(id) { return doc.getElementById(id); }
@@ -92,7 +94,7 @@
   function kpi(box, label, value, sub, tone) {
     var d = el("div", "gai-kpi" + (tone ? " " + tone : ""));
     d.appendChild(el("span", "gai-kpi-l", label));
-    d.appendChild(el("b", "gai-kpi-v", value));
+    d.appendChild(el("b", "gai-kpi-v" + (/^[A-Za-z]/.test(value) && value.length > 7 ? " is-text" : ""), value));
     if (sub) d.appendChild(el("span", "gai-kpi-s", sub));
     box.appendChild(d);
   }
@@ -615,12 +617,476 @@
     return cols;
   }
 
+  /* ══ Keywords and Quality Score ══════════════════════════════════════ */
+  var BUCKET = { ABOVE_AVERAGE: ["Above average", "is-good"], AVERAGE: ["Average", ""], BELOW_AVERAGE: ["Below average", "is-bad"] };
+  var C_ABOVE = "#0E9F6E", C_AVG = "#CFCAC2", C_BELOW = "#E0533D";
+  function kwRows() {
+    return ((INS.keywords || {}).rows || []).filter(function (k) {
+      return inAccount(k.account) && matchesText([k.kw, k.campaign, k.ad_group]);
+    });
+  }
+  function kwTotals(rows) {
+    // Without search text: totals over every keyword read. With it: over the keywords on the page.
+    var tot = ((INS.keywords || {}).totals || {})[filters.account === "__all__" ? "__all__" : filters.account];
+    if (tot && !filters.search) return tot;
+    var t = { keywords: 0, cost: 0, clicks: 0, conv: 0, qs_impr: 0, qs_w: 0, with_qs: 0, low_qs: 0, low_qs_cost: 0,
+              below_first_page: 0, rarely_served: 0, dist: {}, parts: {}, cur: "" };
+    for (var i = 1; i <= 10; i++) t.dist[i] = { keywords: 0, cost: 0, conv: 0 };
+    ["ctr", "relevance", "landing"].forEach(function (p) { t.parts[p] = { ABOVE_AVERAGE: 0, AVERAGE: 0, BELOW_AVERAGE: 0 }; });
+    rows.forEach(function (k) {
+      t.cur = t.cur && t.cur !== k.cur ? "mixed" : k.cur;
+      t.keywords++; t.cost += k.cost; t.clicks += k.clicks; t.conv += k.conv;
+      if (k.qs) {
+        t.with_qs++; t.qs_impr += k.impr; t.qs_w += k.qs * k.impr;
+        t.dist[k.qs].keywords++; t.dist[k.qs].cost += k.cost; t.dist[k.qs].conv += k.conv;
+        if (k.qs <= 4) { t.low_qs++; t.low_qs_cost += k.cost; }
+      }
+      ["ctr", "relevance", "landing"].forEach(function (p) { if (t.parts[p][k[p]] != null) t.parts[p][k[p]] += k.cost; });
+      if (k.bid && k.first_page && k.bid < k.first_page) t.below_first_page++;
+      if (k.serving === "RARELY_SERVED") t.rarely_served++;
+    });
+    t.avg_qs = t.qs_impr ? t.qs_w / t.qs_impr : null;
+    return t;
+  }
+  function renderKeywords() {
+    var panel = $("gai-kw-panel");
+    panel.hidden = !((INS.keywords || {}).rows || []).length;
+    if (panel.hidden) return;
+    var rows = kwRows(), t = kwTotals(rows), cur = t.cur === "mixed" ? "" : t.cur, kpis = $("gai-kw-kpis");
+    clear(kpis);
+    $("gai-kw-d").textContent = int(INS.keywords.read) + " keywords read · last 30 days";
+    kpi(kpis, "Average Quality Score", t.avg_qs == null ? "–" : t.avg_qs.toFixed(1), "weighted by impressions · " + int(t.with_qs) + " rated",
+      t.avg_qs == null ? "" : t.avg_qs < 5 ? "is-bad" : t.avg_qs < 7 ? "is-warn" : "is-good");
+    kpi(kpis, "Keywords with impressions", int(t.keywords), money(t.cost, cur) + " spend");
+    kpi(kpis, "Spend on Quality Score 1–4", money(t.low_qs_cost, cur),
+      (t.cost ? Math.round(100 * t.low_qs_cost / t.cost) : 0) + "% of spend · " + int(t.low_qs) + " keywords",
+      t.cost && t.low_qs_cost / t.cost > 0.2 ? "is-bad" : "is-warn");
+    kpi(kpis, "Bid below first page", int(t.below_first_page), "max CPC under Google’s first-page estimate",
+      t.below_first_page ? "is-warn" : "is-good");
+    kpi(kpis, "Rarely served", int(t.rarely_served), "keywords Google seldom shows (low search volume)");
+    renderQsDist(t, cur);
+    renderQsParts(t);
+    renderKwTable(rows);
+  }
+  function qsColor(i) { return i <= 4 ? C_BELOW : i <= 6 ? "#E0A100" : C_ABOVE; }
+  function renderQsDist(t, cur) {
+    var box = $("gai-qs-dist");
+    clear(box);
+    var vals = [], max = 0;
+    for (var i = 1; i <= 10; i++) { var d = t.dist[i] || { cost: 0, keywords: 0, conv: 0 }; vals.push(d); if (d.cost > max) max = d.cost; }
+    if (!max) { box.appendChild(el("p", "gad-empty-chart", "No Quality Scores for this selection.")); return; }
+    var W = box.clientWidth || 520, H = 210, pl = 8, pr = 8, pt = 20, pb = 26, iw = W - pl - pr, ih = H - pt - pb;
+    var s = svg("svg", { viewBox: "0 0 " + W + " " + H, height: H, role: "img", "aria-label": "Spend by Quality Score" }, box);
+    var bw = iw / 10 * 0.7;
+    vals.forEach(function (d, i) {
+      var x = pl + (i + 0.5) * iw / 10 - bw / 2, h = ih * d.cost / max;
+      svg("rect", { x: x, y: pt + ih - h, width: bw, height: Math.max(0, h), rx: 3, fill: qsColor(i + 1) }, s);
+      svg("text", { x: x + bw / 2, y: H - 8, "text-anchor": "middle", "class": "gad-ax" }, s).textContent = String(i + 1);
+      if (d.keywords) svg("text", { x: x + bw / 2, y: pt + ih - h - 5, "text-anchor": "middle", "class": "gad-ax" }, s).textContent = int(d.keywords);
+      var hit = svg("rect", { x: x - 4, y: pt, width: bw + 8, height: ih, fill: "transparent" }, s);
+      hit.addEventListener("mousemove", function (e) {
+        showTip(["Quality Score " + (i + 1), ["Spend", money(d.cost, cur), qsColor(i + 1)], ["Keywords", int(d.keywords)],
+                 ["Conversions", num1(d.conv)], ["Cost / conv.", d.conv ? money2(d.cost / d.conv, cur) : "–"]], e.clientX, e.clientY);
+      });
+      hit.addEventListener("mouseleave", hideTip);
+    });
+  }
+  function renderQsParts(t) {
+    var box = $("gai-qs-parts");
+    clear(box);
+    [["ctr", "Expected click-through rate"], ["relevance", "Ad relevance"], ["landing", "Landing page experience"]].forEach(function (p) {
+      var part = (t.parts || {})[p[0]] || {}, tot = (part.ABOVE_AVERAGE || 0) + (part.AVERAGE || 0) + (part.BELOW_AVERAGE || 0);
+      var row = el("div", "gai-part");
+      var head = el("div", "gai-part-h");
+      head.appendChild(el("b", "", p[1]));
+      head.appendChild(el("span", "", tot ? Math.round(100 * (part.BELOW_AVERAGE || 0) / tot) + "% of spend below average" : "not rated"));
+      row.appendChild(head);
+      var bar = el("div", "gai-stack gai-stack--thin");
+      [["ABOVE_AVERAGE", C_ABOVE], ["AVERAGE", C_AVG], ["BELOW_AVERAGE", C_BELOW]].forEach(function (b) {
+        if (!tot || !part[b[0]]) return;
+        var seg = el("span", "gai-seg");
+        seg.style.width = (100 * part[b[0]] / tot) + "%"; seg.style.background = b[1];
+        seg.addEventListener("mousemove", function (e) {
+          showTip([p[1], [BUCKET[b[0]][0], Math.round(100 * part[b[0]] / tot) + "% of spend", b[1]]], e.clientX, e.clientY);
+        });
+        seg.addEventListener("mouseleave", hideTip);
+        bar.appendChild(seg);
+      });
+      row.appendChild(bar);
+      box.appendChild(row);
+    });
+    var keys = el("div", "gai-stack-keys");
+    [["Above average", C_ABOVE], ["Average", C_AVG], ["Below average", C_BELOW]].forEach(function (k) {
+      var kk = el("span", "gai-stack-k"), i = el("i"); i.style.background = k[1];
+      kk.appendChild(i); kk.appendChild(el("span", "", k[0])); keys.appendChild(kk);
+    });
+    box.appendChild(keys);
+  }
+  function kwList(rows) {
+    var list = rows.map(function (k) {
+      return Object.assign({}, k, { cpa: k.conv ? k.cost / k.conv : null });
+    });
+    if (ui.kwView === "lowqs") list = list.filter(function (k) { return k.qs && k.qs <= 4; });
+    if (ui.kwView === "converting") list = list.filter(function (k) { return k.conv > 0; });
+    if (ui.kwView === "wasted") list = list.filter(function (k) { return !k.conv && k.cost > 0; });
+    if (ui.kwView === "bid") list = list.filter(function (k) { return k.bid && k.first_page && k.bid < k.first_page; });
+    var key = ui.kwSort || (ui.kwView === "converting" ? "conv" : "cost"), dir = ui.kwDir;
+    list.sort(function (a, b) {
+      var x = a[key], y = b[key];
+      if (x == null) return 1; if (y == null) return -1;
+      if (typeof x === "string") { x = x.toLowerCase(); y = String(y).toLowerCase(); }
+      return (x < y ? -1 : x > y ? 1 : 0) * dir;
+    });
+    return list;
+  }
+  function bucketCell(v) {
+    var td = el("td"), b = BUCKET[v];
+    if (b) td.appendChild(el("span", "gai-chip " + b[1], b[0])); else td.textContent = "–";
+    return td;
+  }
+  function renderKwTable(rows) {
+    var body = $("gai-kw-body");
+    clear(body);
+    var list = kwList(rows);
+    ui._kw = list;
+    $("gai-kw-empty").hidden = list.length > 0;
+    list.slice(0, ui.kwShown).forEach(function (k) {
+      var tr = el("tr");
+      var td = el("td");
+      td.appendChild(el("b", "gai-cell-t", k.kw + " · " + (k.match || "").toLowerCase()));
+      td.appendChild(el("span", "gai-cell-s", (filters.account === "__all__" ? k.account + " · " : "") + k.campaign + " › " + k.ad_group +
+        (k.serving === "RARELY_SERVED" ? " · rarely served" : "")));
+      tr.appendChild(td);
+      var q = el("td", "is-num");
+      if (k.qs) { var c = el("span", "gai-qs"); c.textContent = String(k.qs); c.style.background = qsColor(k.qs); q.appendChild(c); } else q.textContent = "–";
+      tr.appendChild(q);
+      tr.appendChild(bucketCell(k.ctr)); tr.appendChild(bucketCell(k.relevance)); tr.appendChild(bucketCell(k.landing));
+      [int(k.clicks), money(k.cost, k.cur), num1(k.conv), k.cpa == null ? "–" : money2(k.cpa, k.cur),
+       k.bid == null ? "–" : money2(k.bid, k.cur)].forEach(function (v) { tr.appendChild(el("td", "is-num", v)); });
+      var fp = el("td", "is-num" + (k.bid && k.first_page && k.bid < k.first_page ? " gai-under" : ""), k.first_page == null ? "–" : money2(k.first_page, k.cur));
+      tr.appendChild(fp);
+      tr.appendChild(el("td", "is-num", share(k.is)));
+      if (!k.conv && k.cost > 0) tr.className = "is-waste";
+      body.appendChild(tr);
+    });
+    $("gai-kw-more").hidden = list.length <= ui.kwShown;
+    markSort("kw");
+  }
+  function kwCsv() {
+    var rows = [["Account", "Campaign", "Ad group", "Keyword", "Match type", "Status", "Serving", "Quality Score", "Expected CTR",
+                 "Ad relevance", "Landing page experience", "Max CPC", "First page bid", "Top of page bid", "Impressions",
+                 "Clicks", "Cost", "Conversions", "Conv. value", "Search impression share", "Currency"]];
+    (ui._kw || []).forEach(function (k) {
+      rows.push([k.account, k.campaign, k.ad_group, k.kw, k.match, k.status, k.serving, k.qs, k.ctr, k.relevance, k.landing,
+                 k.bid, k.first_page, k.top_page, k.impr, k.clicks, k.cost, k.conv, k.value, k.is, k.cur]);
+    });
+    download("google-ads-keywords-" + ui.kwView + ".csv", rows);
+  }
+
+  /* ══ Devices ════════════════════════════════════════════════════════ */
+  var DEVICE = { MOBILE: "Mobile", DESKTOP: "Computers", TABLET: "Tablets", CONNECTED_TV: "TV screens", OTHER: "Other" };
+  var DEVICE_ORDER = ["MOBILE", "DESKTOP", "TABLET", "CONNECTED_TV", "OTHER"];
+  function renderDevices() {
+    var panel = $("gai-dev-panel");
+    panel.hidden = !(INS.devices || []).length;
+    if (panel.hidden) return;
+    var rows = (INS.devices || []).filter(function (d) { return inAccount(d.account) && matchesText([d.campaign, d.account]); });
+    var mc = mainCurrency(rows, function (d) { return d.cost; }, function (d) { return d.cur; });
+    rows = rows.filter(function (d) { return d.cur === mc.cur; });
+    var by = {}, tot = { cost: 0, conv: 0, clicks: 0, impr: 0 };
+    rows.forEach(function (d) {
+      var x = by[d.device] = by[d.device] || { cost: 0, conv: 0, clicks: 0, impr: 0, value: 0 };
+      ["cost", "conv", "clicks", "impr", "value"].forEach(function (k) { x[k] += d[k]; if (tot[k] != null) tot[k] += d[k]; });
+    });
+    $("gai-dev-d").textContent = "Last 30 days" + (mc.mixed ? " · " + mc.cur + " accounts only" : "");
+    var box = $("gai-dev");
+    clear(box);
+    var avgCpa = tot.conv ? tot.cost / tot.conv : null;
+    DEVICE_ORDER.filter(function (k) { return by[k] && (by[k].cost || by[k].impr); }).forEach(function (k) {
+      var x = by[k], card = el("div", "gai-dev");
+      card.appendChild(el("b", "gai-dev-n", DEVICE[k] || k));
+      var cpa = x.conv ? x.cost / x.conv : null;
+      [["Share of spend", tot.cost ? x.cost / tot.cost : 0, C_CAP], ["Share of conversions", tot.conv ? x.conv / tot.conv : 0, C_GOOD]].forEach(function (b) {
+        var line = el("div", "gai-dev-bar");
+        line.appendChild(el("span", "gai-dev-l", b[0]));
+        var tr = el("span", "gai-dev-t"), f = el("i"); f.style.width = (100 * b[1]) + "%"; f.style.background = b[2];
+        tr.appendChild(f); line.appendChild(tr);
+        line.appendChild(el("b", "", Math.round(100 * b[1]) + "%"));
+        card.appendChild(line);
+      });
+      var facts = el("div", "gai-pfacts gai-pfacts--4");
+      [["Spend", money(x.cost, mc.cur)], ["Cost / conv.", cpa == null ? "–" : money2(cpa, mc.cur)],
+       ["Conv. rate", x.clicks ? (100 * x.conv / x.clicks).toFixed(1) + "%" : "–"],
+       ["CTR", x.impr ? (100 * x.clicks / x.impr).toFixed(1) + "%" : "–"]].forEach(function (f) {
+        var d = el("div"); d.appendChild(el("span", "", f[0])); d.appendChild(el("b", "", f[1])); facts.appendChild(d);
+      });
+      card.appendChild(facts);
+      if (cpa != null && avgCpa && x.cost > tot.cost * 0.05) {
+        var diff = cpa / avgCpa - 1;
+        if (Math.abs(diff) >= 0.2) card.appendChild(el("p", "gai-pnote", (diff > 0 ? "Costs " : "Costs ") + Math.round(Math.abs(diff) * 100) +
+          "% " + (diff > 0 ? "more" : "less") + " per conversion than the average."));
+      } else if (!x.conv && x.cost > tot.cost * 0.05) {
+        card.appendChild(el("p", "gai-pnote", "Spent " + money(x.cost, mc.cur) + " with no conversions."));
+      }
+      box.appendChild(card);
+    });
+    renderDeviceTable(rows);
+  }
+  function renderDeviceTable(rows) {
+    var camps = {}, devs = {};
+    rows.forEach(function (d) {
+      var k = d.account + "\u0001" + d.campaign;
+      var c = camps[k] = camps[k] || { account: d.account, campaign: d.campaign, cur: d.cur, cost: 0, by: {} };
+      c.cost += d.cost;
+      var x = c.by[d.device] = c.by[d.device] || { cost: 0, conv: 0 };
+      x.cost += d.cost; x.conv += d.conv; devs[d.device] = 1;
+    });
+    var cols = DEVICE_ORDER.filter(function (k) { return devs[k]; });
+    var head = $("gai-dev-head"); clear(head);
+    var tr = el("tr");
+    [["Campaign", ""], ["Spend", "is-num"]].concat(cols.map(function (k) { return [DEVICE[k] + " share", "is-num"]; }))
+      .concat(cols.map(function (k) { return [DEVICE[k] + " cost / conv.", "is-num"]; }))
+      .forEach(function (h) { var th = el("th", h[1], h[0]); th.setAttribute("scope", "col"); tr.appendChild(th); });
+    head.appendChild(tr);
+    var list = Object.keys(camps).map(function (k) { return camps[k]; }).sort(function (a, b) { return b.cost - a.cost; });
+    var body = $("gai-dev-body"); clear(body);
+    list.slice(0, ui.devShown).forEach(function (c) {
+      var row = el("tr"), td = el("td");
+      td.appendChild(el("b", "gai-cell-t", c.campaign));
+      if (filters.account === "__all__") td.appendChild(el("span", "gai-cell-s", c.account));
+      row.appendChild(td);
+      row.appendChild(el("td", "is-num", money(c.cost, c.cur)));
+      cols.forEach(function (k) { var x = c.by[k]; row.appendChild(el("td", "is-num", x && c.cost ? Math.round(100 * x.cost / c.cost) + "%" : "–")); });
+      var cpas = cols.map(function (k) { var x = c.by[k]; return x && x.conv ? x.cost / x.conv : null; });
+      var known = cpas.filter(function (v) { return v != null; }), lo = Math.min.apply(null, known), hi = Math.max.apply(null, known);
+      cpas.forEach(function (v) {
+        var cell = el("td", "is-num", v == null ? "–" : money2(v, c.cur));
+        if (v != null && known.length > 1 && v === hi && hi >= lo * 1.5) cell.className += " gai-under";
+        row.appendChild(cell);
+      });
+      body.appendChild(row);
+    });
+    $("gai-dev-more").hidden = list.length <= ui.devShown;
+  }
+
+  /* ══ Day and hour ═══════════════════════════════════════════════════ */
+  var WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  function hourCells() {
+    var rows = (INS.hours || []).filter(function (h) { return inAccount(h.account) && matchesText([h.account]); });
+    var mc = mainCurrency(rows, function (h) { return h.cost; }, function (h) { return h.cur; });
+    var grid = [], tzs = {};
+    for (var d = 0; d < 7; d++) { grid.push([]); for (var h = 0; h < 24; h++) grid[d].push({ day: d, hour: h, cost: 0, clicks: 0, conv: 0, impr: 0 }); }
+    rows.forEach(function (r) {
+      if (r.cur !== mc.cur) return;
+      tzs[r.tz] = 1;
+      var c = grid[r.day][r.hour];
+      c.cost += r.cost; c.clicks += r.clicks; c.conv += r.conv; c.impr += r.impr;
+    });
+    return { grid: grid, cur: mc.cur, mixed: mc.mixed, tzs: Object.keys(tzs) };
+  }
+  function cellValue(c, m) {
+    if (m === "cvr") return c.clicks >= 20 ? c.conv / c.clicks : null;
+    if (m === "cpa") return c.conv ? c.cost / c.conv : null;
+    return c[m];
+  }
+  function fmtCell(v, m, cur) {
+    if (v == null) return "–";
+    if (m === "cost") return money(v, cur);
+    if (m === "cpa") return money2(v, cur);
+    if (m === "cvr") return (100 * v).toFixed(1) + "%";
+    return num1(v);
+  }
+  function renderHours() {
+    var panel = $("gai-hour-panel");
+    panel.hidden = !(INS.hours || []).length;
+    if (panel.hidden) return;
+    var H = hourCells(), m = ui.hMetric, box = $("gai-heat");
+    clear(box);
+    $("gai-hour-d").textContent = "Last 30 days · " + (H.tzs.length === 1 ? H.tzs[0] : H.tzs.length + " time zones");
+    var vals = [];
+    H.grid.forEach(function (row) { row.forEach(function (c) { var v = cellValue(c, m); if (v != null) vals.push(v); }); });
+    var max = Math.max.apply(null, vals.concat([0])), min = Math.min.apply(null, vals.concat([max]));
+    var head = el("div", "gai-heat-row gai-heat-row--h");
+    head.appendChild(el("span", "gai-heat-d", ""));
+    for (var h = 0; h < 24; h++) head.appendChild(el("span", "gai-heat-hh", h % 3 === 0 ? String(h) : ""));
+    box.appendChild(head);
+    H.grid.forEach(function (row, d) {
+      var line = el("div", "gai-heat-row");
+      line.appendChild(el("span", "gai-heat-d", WEEK[d]));
+      row.forEach(function (c) {
+        var v = cellValue(c, m), cell = el("span", "gai-heat-c");
+        if (v != null && max > min) {
+          var t = (v - min) / (max - min);
+          if (m === "cpa") t = 1 - t;              // cheaper conversions read darker, like more of anything else
+          cell.style.background = "rgba(255, 96, 34, " + (0.08 + 0.92 * t).toFixed(3) + ")";
+        } else if (v != null) {
+          cell.style.background = "rgba(255, 96, 34, .5)";
+        }
+        cell.addEventListener("mousemove", function (e) {
+          showTip([WEEK[c.day] + " " + String(c.hour).padStart(2, "0") + ":00–" + String(c.hour).padStart(2, "0") + ":59",
+                   ["Spend", money(c.cost, H.cur)], ["Clicks", int(c.clicks)], ["Conversions", num1(c.conv)],
+                   ["Conv. rate", c.clicks ? (100 * c.conv / c.clicks).toFixed(1) + "%" : "–"],
+                   ["Cost / conv.", c.conv ? money2(c.cost / c.conv, H.cur) : "–"]], e.clientX, e.clientY);
+        });
+        cell.addEventListener("mouseleave", hideTip);
+        line.appendChild(cell);
+      });
+      box.appendChild(line);
+    });
+    var cells = [];
+    H.grid.forEach(function (row) { row.forEach(function (c) { cells.push(c); }); });
+    var best = cells.filter(function (c) { return c.clicks >= 20 && c.conv > 0; })
+      .sort(function (a, b) { return b.conv / b.clicks - a.conv / a.clicks; }).slice(0, 5);
+    var worst = cells.filter(function (c) { return !c.conv && c.cost > 0; }).sort(function (a, b) { return b.cost - a.cost; }).slice(0, 5);
+    [[$("gai-hour-best"), best, function (c) { return (100 * c.conv / c.clicks).toFixed(1) + "% conv. rate · " + num1(c.conv) + " conv."; }, "Not enough clicks in any hour yet."],
+     [$("gai-hour-worst"), worst, function (c) { return money(c.cost, H.cur) + " · " + int(c.clicks) + " clicks, no conversions"; }, "Every hour with spend converted."]]
+      .forEach(function (x) {
+        var ol = x[0]; clear(ol);
+        if (!x[1].length) { ol.appendChild(el("li", "gai-rank-empty", x[3])); return; }
+        x[1].forEach(function (c) {
+          var li = el("li");
+          li.appendChild(el("b", "", WEEK[c.day] + " " + String(c.hour).padStart(2, "0") + ":00"));
+          li.appendChild(el("span", "", x[2](c)));
+          ol.appendChild(li);
+        });
+      });
+  }
+
+  /* ══ Locations ══════════════════════════════════════════════════════ */
+  function renderLocations() {
+    var panel = $("gai-loc-panel");
+    panel.hidden = !((INS.locations || {}).rows || []).length;
+    if (panel.hidden) return;
+    var rows = INS.locations.rows.filter(function (x) {
+      return inAccount(x.account) && (ui.locType === "all" || x.type === ui.locType) && matchesText([x.region, x.city, x.country, x.account]);
+    });
+    var mc = mainCurrency(rows, function (x) { return x.cost; }, function (x) { return x.cur; });
+    var by = {}, total = 0, conv = 0;
+    rows.forEach(function (x) {
+      if (x.cur !== mc.cur) return;
+      var name = ui.locLevel === "city" ? (x.city || "(" + (x.region || x.country) + ", city not known)") : (x.region || x.country || "Unknown");
+      var sub = ui.locLevel === "city" ? [x.region, x.country].filter(Boolean).join(", ") : x.country;
+      var k = name + "\u0001" + sub;
+      var g = by[k] = by[k] || { name: name, sub: sub, cost: 0, conv: 0, clicks: 0, impr: 0 };
+      g.cost += x.cost; g.conv += x.conv; g.clicks += x.clicks; g.impr += x.impr;
+      total += x.cost; conv += x.conv;
+    });
+    var list = Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) { return b.cost - a.cost; });
+    var tot = (INS.locations.totals || {})[filters.account === "__all__" ? "__all__" : filters.account] || {};
+    $("gai-loc-d").textContent = "Last 30 days · " + list.length + (ui.locLevel === "city" ? " cities" : " regions");
+    var kpis = $("gai-loc-kpis"); clear(kpis);
+    kpi(kpis, ui.locLevel === "city" ? "Cities with spend" : "Regions with spend", int(list.length), money(total, mc.cur) + " spend");
+    kpi(kpis, "Top " + (ui.locLevel === "city" ? "city" : "region"), list[0] ? list[0].name : "–",
+      list[0] && total ? Math.round(100 * list[0].cost / total) + "% of spend" : "");
+    kpi(kpis, "Cost / conv.", conv ? money2(total / conv, mc.cur) : "–", num1(conv) + " conversions");
+    var waste = list.filter(function (g) { return !g.conv && g.cost > 0; });
+    kpi(kpis, "Spend with no conversion", money(waste.reduce(function (s, g) { return s + g.cost; }, 0), mc.cur),
+      int(waste.length) + (ui.locLevel === "city" ? " cities" : " regions"), waste.length ? "is-warn" : "is-good");
+    kpi(kpis, "From people elsewhere", tot.cost ? Math.round(100 * (tot.interest_cost || 0) / tot.cost) + "%" : "–",
+      "of spend: interested in a place, not in it");
+    var box = $("gai-loc-bars"); clear(box);
+    var max = list[0] ? list[0].cost : 0, avg = conv ? total / conv : null;
+    list.slice(0, ui.locShown).forEach(function (g) {
+      var row = el("div", "gai-brow" + (!g.conv && g.cost > 0 ? " is-waste" : ""));
+      var name = el("div", "gai-mname");
+      name.appendChild(el("b", "", g.name));
+      name.appendChild(el("span", "", g.sub || ""));
+      row.appendChild(name);
+      var track = el("div", "gai-mtrack"), f = el("span", "gai-mseg");
+      f.style.width = (max ? 100 * g.cost / max : 0) + "%"; f.style.background = C_CAP; track.appendChild(f);
+      row.appendChild(track);
+      var cpa = g.conv ? g.cost / g.conv : null;
+      var facts = el("div", "gai-bfacts");
+      facts.appendChild(el("b", "", money(g.cost, mc.cur)));
+      facts.appendChild(el("span", "", num1(g.conv) + " conv."));
+      facts.appendChild(el("span", cpa != null && avg && cpa > avg * 1.5 ? "gai-under" : "", cpa == null ? "no conversions" : money2(cpa, mc.cur) + " / conv."));
+      row.appendChild(facts);
+      box.appendChild(row);
+    });
+    $("gai-loc-more").hidden = list.length <= ui.locShown;
+  }
+
+  /* ══ Conversion actions ═════════════════════════════════════════════ */
+  var CONV_COLORS = ["#FF6022", "#1D65A6", "#E0A100", "#0E9F6E", "#8C4FD9", "#E34970"];
+  function days(n) { return n ? n + (n === 1 ? " day" : " days") : "–"; }
+  function renderConversions() {
+    var panel = $("gai-conv-panel");
+    panel.hidden = !(INS.actions || []).length && !(INS.conversions || []).length;
+    if (panel.hidden) return;
+    var acts = (INS.actions || []).filter(function (a) { return inAccount(a.account) && matchesText([a.name, a.category, a.account]); });
+    var conv = (INS.conversions || []).filter(function (c) { return inAccount(c.account) && matchesText([c.action, c.campaign, c.account]); });
+    var byAction = {}, primary = 0, all = 0;
+    conv.forEach(function (c) {
+      var x = byAction[c.action] = byAction[c.action] || { name: c.action, category: c.category, conv: 0, all: 0, value: 0 };
+      x.conv += c.conv; x.all += c.all; x.value += c.value; primary += c.conv; all += c.all;
+    });
+    var flags = acts.reduce(function (n, a) { return n + a.flags.filter(function (f) { return f[0] === "warn"; }).length; }, 0);
+    $("gai-conv-d").textContent = "Last 30 days · " + acts.length + " actions";
+    var kpis = $("gai-conv-kpis"); clear(kpis);
+    kpi(kpis, "Conversions", num1(primary), "primary actions: what bidding uses");
+    kpi(kpis, "All conversions", num1(all), "adds secondary actions");
+    kpi(kpis, "Primary actions", int(acts.filter(function (a) { return a.primary && a.status === "ENABLED"; }).length),
+      "of " + acts.length + " set up");
+    kpi(kpis, "Setup warnings", int(flags), flags ? "see the actions below" : "none found", flags ? "is-bad" : "is-good");
+    var mix = $("gai-conv-mix"); clear(mix);
+    // The mix of primary conversions (what bidding counts); all conversions only when there are none.
+    var usePrimary = primary > 0, key = usePrimary ? "conv" : "all", total = usePrimary ? primary : all;
+    $("gai-conv-mix-h").textContent = usePrimary ? "What the conversions are" : "What the conversions are (all, none are primary)";
+    var list = Object.keys(byAction).map(function (k) { return byAction[k]; })
+      .filter(function (x) { return x[key] > 0; }).sort(function (a, b) { return b[key] - a[key]; });
+    if (!total) mix.appendChild(el("p", "gad-empty-chart", "No conversions recorded in the last 30 days."));
+    else {
+      var bar = el("div", "gai-stack"), keys = el("div", "gai-stack-keys");
+      list.forEach(function (x, i) {
+        var c = i < CONV_COLORS.length ? CONV_COLORS[i] : C_GREY;
+        var seg = el("span", "gai-seg"); seg.style.width = (100 * x[key] / total) + "%"; seg.style.background = c;
+        seg.addEventListener("mousemove", function (e) {
+          showTip([x.name, ["Conversions", num1(x.conv), c], ["All conversions", num1(x.all)], ["Share", Math.round(100 * x[key] / total) + "%"]], e.clientX, e.clientY);
+        });
+        seg.addEventListener("mouseleave", hideTip);
+        bar.appendChild(seg);
+        var k = el("span", "gai-stack-k"), sw = el("i"); sw.style.background = c;
+        k.appendChild(sw); k.appendChild(el("span", "", x.name + " ")); k.appendChild(el("b", "", Math.round(100 * x[key] / total) + "%"));
+        keys.appendChild(k);
+      });
+      mix.appendChild(bar); mix.appendChild(keys);
+    }
+    var box = $("gai-actions"); clear(box);
+    acts.forEach(function (a) {
+      var card = el("div", "gai-act");
+      var head = el("div", "gai-phead"), name = el("div", "gai-pname");
+      name.appendChild(el("b", "", a.name));
+      name.appendChild(el("span", "", (filters.account === "__all__" ? a.account + " · " : "") +
+        (a.category || "").replace(/_/g, " ").toLowerCase() + " · " + (a.origin || a.type || "").replace(/_/g, " ").toLowerCase()));
+      head.appendChild(name);
+      var chips = el("div", "gai-chips");
+      chips.appendChild(el("span", "gai-chip " + (a.primary ? "is-good" : ""), a.primary ? "Primary" : "Secondary"));
+      chips.appendChild(el("span", "gai-chip", a.counting === "ONE_PER_CLICK" ? "Counts one" : a.counting === "MANY_PER_CLICK" ? "Counts every" : "–"));
+      if (a.status !== "ENABLED") chips.appendChild(el("span", "gai-chip is-warn", a.status.toLowerCase()));
+      head.appendChild(chips);
+      card.appendChild(head);
+      var facts = el("div", "gai-pfacts");
+      [["Conversions", num1(a.conv)], ["All conversions", num1(a.all)], ["Value", a.all_value ? int(a.all_value) : "–"],
+       ["Default value", a.default_value == null ? "–" : String(a.default_value) + (a.always_default ? " (always)" : "")],
+       ["Click window", days(a.click_window)], ["View window", days(a.view_window)],
+       ["Attribution", (a.model || "–").replace(/^GOOGLE_(SEARCH_)?ATTRIBUTION_/, "").replace(/_/g, " ").toLowerCase()],
+       ["In “Conversions”", a.in_conversions ? "Yes" : "No"]].forEach(function (f) {
+        var d = el("div"); d.appendChild(el("span", "", f[0])); d.appendChild(el("b", "", f[1])); facts.appendChild(d);
+      });
+      card.appendChild(facts);
+      a.flags.forEach(function (f) { card.appendChild(el("p", "gai-flag gai-flag--" + f[0], f[1])); });
+      box.appendChild(card);
+    });
+  }
+
   /* ── Sorting, controls ──────────────────────────────────────────────── */
   function markSort(table) {
     doc.querySelectorAll('[data-gai-sort^="' + table + ':"]').forEach(function (th) {
       var k = th.getAttribute("data-gai-sort").split(":")[1];
-      var on = table === "share" ? k === ui.shareSort : k === (ui.termsSort || (ui.view === "converting" ? "conv" : "cost"));
-      var asc = table === "share" ? ui.shareDir === 1 : ui.termsDir === 1;
+      var on = table === "share" ? k === ui.shareSort
+        : table === "kw" ? k === (ui.kwSort || (ui.kwView === "converting" ? "conv" : "cost"))
+        : k === (ui.termsSort || (ui.view === "converting" ? "conv" : "cost"));
+      var asc = table === "share" ? ui.shareDir === 1 : table === "kw" ? ui.kwDir === 1 : ui.termsDir === 1;
       th.classList.toggle("is-sorted", on);
       th.classList.toggle("is-asc", on && asc);
     });
@@ -629,7 +1095,10 @@
     var th = e.target.closest && e.target.closest("[data-gai-sort]");
     if (th) {
       var p = th.getAttribute("data-gai-sort").split(":"), text = p[1] === "campaign" || p[1] === "term" || p[1] === "gram" || p[1] === "keyword";
-      if (p[0] === "share") {
+      if (p[0] === "kw") {
+        var kc = ui.kwSort || (ui.kwView === "converting" ? "conv" : "cost");
+        ui.kwDir = kc === p[1] ? -ui.kwDir : (p[1] === "kw" ? 1 : -1); ui.kwSort = p[1]; renderKwTable(kwRows());
+      } else if (p[0] === "share") {
         ui.shareDir = ui.shareSort === p[1] ? -ui.shareDir : (text ? 1 : -1); ui.shareSort = p[1]; renderShareTable(shareRows().filter(function (r) { return r.is != null; }));
       } else {
         var cur = ui.termsSort || (ui.view === "converting" ? "conv" : "cost");
@@ -637,36 +1106,47 @@
       }
       return;
     }
-    var b = e.target.closest && e.target.closest("[data-pace],[data-view],[data-n]");
+    var b = e.target.closest && e.target.closest("[data-pace],[data-view],[data-n],[data-kwview],[data-hmetric],[data-loclevel],[data-loctype]");
     if (!b) return;
     var group = b.parentNode;
     Array.prototype.forEach.call(group.children, function (x) { x.classList.toggle("is-on", x === b); });
     if (b.hasAttribute("data-pace")) { ui.pace = b.getAttribute("data-pace"); ui.paceShown = 10; renderPacing(); }
     if (b.hasAttribute("data-view")) { ui.view = b.getAttribute("data-view"); ui.termsShown = 25; ui.termsSort = null; ui.termsDir = -1; renderTermTable(termRows()); }
     if (b.hasAttribute("data-n")) { ui.n = +b.getAttribute("data-n"); ui.termsShown = 25; renderTermTable(termRows()); }
+    if (b.hasAttribute("data-kwview")) { ui.kwView = b.getAttribute("data-kwview"); ui.kwShown = 25; ui.kwSort = null; ui.kwDir = -1; renderKwTable(kwRows()); }
+    if (b.hasAttribute("data-hmetric")) { ui.hMetric = b.getAttribute("data-hmetric"); renderHours(); }
+    if (b.hasAttribute("data-loclevel")) { ui.locLevel = b.getAttribute("data-loclevel"); ui.locShown = 15; renderLocations(); }
+    if (b.hasAttribute("data-loctype")) { ui.locType = b.getAttribute("data-loctype"); ui.locShown = 15; renderLocations(); }
   });
   $("gai-share-more").addEventListener("click", function () { ui.shareShown += 12; renderShareTable(shareRows().filter(function (r) { return r.is != null; })); });
   $("gai-pace-more").addEventListener("click", function () { ui.paceShown += 10; renderPacing(); });
   $("gai-terms-more").addEventListener("click", function () { ui.termsShown += 25; renderTermTable(termRows()); });
   $("gai-terms-csv").addEventListener("click", termsCsv);
+  $("gai-kw-more").addEventListener("click", function () { ui.kwShown += 25; renderKwTable(kwRows()); });
+  $("gai-kw-csv").addEventListener("click", kwCsv);
+  $("gai-dev-more").addEventListener("click", function () { ui.devShown += 12; renderDevices(); });
+  $("gai-loc-more").addEventListener("click", function () { ui.locShown += 15; renderLocations(); });
 
   function renderAll() {
     $("gai-asof").textContent = INS.as_of ? "Exported " + INS.as_of + ". Follows the account filter and the search box; the date range above does not apply." : "";
-    renderShare();
-    renderPacing();
-    renderTerms();
+    // Each panel draws alone, so one bad section never blanks the rest.
+    [renderShare, renderPacing, renderTerms, renderKeywords, renderDevices, renderHours, renderLocations, renderConversions]
+      .forEach(function (fn) {
+        try { fn(); } catch (err) { if (window.console) console.error("google-ads-insights:", fn.name, err); }
+      });
   }
   doc.addEventListener("gad:render", function (e) {
     var d = e.detail || {};
     filters.account = d.account || "__all__";
     filters.search = (d.search || "").toLowerCase();
-    ui.shareShown = 12; ui.paceShown = 10; ui.termsShown = 25;
+    ui.shareShown = 12; ui.paceShown = 10; ui.termsShown = 25; ui.kwShown = 25; ui.devShown = 12; ui.locShown = 15;
     renderAll();
   });
   doc.addEventListener("gad:insights", function (e) { if (e.detail && e.detail.ok) INS = e.detail; });
   var rt = null, lastW = window.innerWidth;
   window.addEventListener("resize", function () {
     if (window.innerWidth === lastW) return;
-    lastW = window.innerWidth; clearTimeout(rt); rt = setTimeout(renderWeekly, 160);
+    lastW = window.innerWidth; clearTimeout(rt);
+    rt = setTimeout(function () { renderWeekly(); renderKeywords(); }, 160);
   });
 })();

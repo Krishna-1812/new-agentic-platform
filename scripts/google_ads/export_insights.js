@@ -1,5 +1,6 @@
 /**
- * Google Ads dashboard: insights export (impression share, budget pacing, search terms).
+ * Google Ads dashboard: insights export (impression share, budget pacing, search terms,
+ * keywords and Quality Score, devices, hours, locations, conversion actions).
  *
  * Install once in the MANAGER (MCC) account: Tools > Bulk actions > Scripts > +.
  * Paste this file, set SPREADSHEET_URL below to the Google Ads sheet the dashboard
@@ -7,19 +8,30 @@
  * then schedule it Daily (early morning, after Google has finished yesterday's data).
  * The person who authorises it needs EDIT access to that sheet.
  *
- * It writes five tabs at the END of the sheet and never touches the first tab (the
+ * It writes its tabs at the END of the sheet and never touches the first tab (the
  * existing campaign report the dashboard already reads):
  *
  *   Insights - Impression share   one row per enabled campaign, last 30 days
  *   Insights - IS weekly          impression share per campaign per week, last 13 weeks
  *   Insights - Budgets            budget, bidding and spend so far this month, per campaign
  *   Insights - Search terms       the search terms that spent, with the keyword that matched
+ *   Insights - Keywords           keywords with Quality Score, its three parts and bid estimates
+ *   Insights - Devices            campaign performance by device, last 30 days
+ *   Insights - Hours              account performance by day of week and hour, last 30 days
+ *   Insights - Locations          performance by region and city, last 30 days
+ *   Insights - Conversions        conversions per campaign per conversion action, last 30 days
+ *   Insights - Conversion actions every conversion action and how it is set up
  *   Insights - About              when it ran, the date ranges, and anything that failed
  *
  * Query language reference (Google Ads API, v25):
  *   https://developers.google.com/google-ads/api/fields/v25/campaign
  *   https://developers.google.com/google-ads/api/fields/v25/campaign_budget
  *   https://developers.google.com/google-ads/api/fields/v25/search_term_view
+ *   https://developers.google.com/google-ads/api/fields/v25/keyword_view
+ *   https://developers.google.com/google-ads/api/fields/v25/ad_group_criterion
+ *   https://developers.google.com/google-ads/api/fields/v25/geographic_view
+ *   https://developers.google.com/google-ads/api/fields/v25/geo_target_constant
+ *   https://developers.google.com/google-ads/api/fields/v25/conversion_action
  * Impression-share values are fractions, written exactly as Google returns them:
  * "reported in the range of 0.1 to 1. Any value below 0.1 is reported as 0.0999", and the
  * lost shares "in the range of 0 to 0.9. Any value above 0.9 is reported as 0.9001".
@@ -36,12 +48,23 @@ var MAX_ACCOUNTS = 50;                // executeInParallel's own ceiling
 var SEARCH_TERMS_PER_ACCOUNT = 3000;  // by spend, per account
 var SEARCH_TERMS_TOTAL = 30000;       // by spend, across accounts (keeps the sheet quick to read)
 var WEEKS = 13;
+var KEYWORDS_PER_ACCOUNT = 4000;      // by spend, per account
+var KEYWORDS_TOTAL = 40000;
+var LOCATIONS_PER_ACCOUNT = 3000;     // region x city rows, by spend
+var LOCATIONS_TOTAL = 30000;
+var GEO_BATCH = 300;                  // location names looked up per query
 
 var TABS = {
   is: 'Insights - Impression share',
   weekly: 'Insights - IS weekly',
   budgets: 'Insights - Budgets',
   terms: 'Insights - Search terms',
+  keywords: 'Insights - Keywords',
+  devices: 'Insights - Devices',
+  hours: 'Insights - Hours',
+  locations: 'Insights - Locations',
+  conversions: 'Insights - Conversions',
+  actions: 'Insights - Conversion actions',
   about: 'Insights - About'
 };
 
@@ -72,7 +95,43 @@ var TERMS_HEADER = ['Account', 'Customer ID', 'Currency', 'Campaign ID', 'Campai
   'Search term', 'Search term match', 'Keyword', 'Keyword match', 'Status',
   'Impressions', 'Clicks', 'Cost', 'Conversions', 'Conv. value', 'Date range', 'Exported at'];
 
+var KEYWORDS_HEADER = ['Account', 'Customer ID', 'Currency', 'Campaign ID', 'Campaign', 'Ad group', 'Keyword ID',
+  'Keyword', 'Match type', 'Status', 'Serving', 'Quality Score', 'Expected CTR', 'Ad relevance',
+  'Landing page experience', 'Max CPC', 'First page bid', 'Top of page bid',
+  'Impressions', 'Clicks', 'Cost', 'Conversions', 'Conv. value', 'Search IS', 'Search lost IS (rank)',
+  'Date range', 'Exported at'];
+
+var DEVICES_HEADER = ['Account', 'Customer ID', 'Currency', 'Campaign ID', 'Campaign', 'Channel', 'Device',
+  'Impressions', 'Clicks', 'Cost', 'Conversions', 'Conv. value', 'Date range', 'Exported at'];
+
+var HOURS_HEADER = ['Account', 'Customer ID', 'Currency', 'Time zone', 'Day of week', 'Hour',
+  'Impressions', 'Clicks', 'Cost', 'Conversions', 'Conv. value', 'Date range', 'Exported at'];
+
+var LOCATIONS_HEADER = ['Account', 'Customer ID', 'Currency', 'Location type', 'Country', 'Region', 'City',
+  'Impressions', 'Clicks', 'Cost', 'Conversions', 'Conv. value', 'Date range', 'Exported at'];
+
+var CONVERSIONS_HEADER = ['Account', 'Customer ID', 'Campaign ID', 'Campaign', 'Conversion action',
+  'Category', 'Conversions', 'Conv. value', 'All conversions', 'All conv. value', 'Date range', 'Exported at'];
+
+var ACTIONS_HEADER = ['Account', 'Customer ID', 'Action ID', 'Conversion action', 'Category', 'Status', 'Type',
+  'Origin', 'Primary for goal', 'In "Conversions"', 'Counting', 'Click-through window (days)',
+  'View-through window (days)', 'Default value', 'Always use default value', 'Attribution model', 'Exported at'];
+
 var ABOUT_HEADER = ['Item', 'Value'];
+
+// What each tab holds, in the order they are written, and how the combined rows are capped.
+var SECTIONS = [
+  { key: 'is', header: IS_HEADER },
+  { key: 'weekly', header: WEEKLY_HEADER },
+  { key: 'budgets', header: BUDGET_HEADER },
+  { key: 'terms', header: TERMS_HEADER, cap: SEARCH_TERMS_TOTAL, label: 'Search terms' },
+  { key: 'keywords', header: KEYWORDS_HEADER, cap: KEYWORDS_TOTAL, label: 'Keywords' },
+  { key: 'devices', header: DEVICES_HEADER },
+  { key: 'hours', header: HOURS_HEADER },
+  { key: 'locations', header: LOCATIONS_HEADER, cap: LOCATIONS_TOTAL, label: 'Locations' },
+  { key: 'conversions', header: CONVERSIONS_HEADER },
+  { key: 'actions', header: ACTIONS_HEADER }
+];
 
 
 function main() {
@@ -130,10 +189,15 @@ function processAccount() {
     weekly: guarded(ctx, 'weekly impression share', function () { return weeklyShare(ctx); }) || [],
     budgets: guarded(ctx, 'budgets', function () { return budgets(ctx); }) || [],
     terms: guarded(ctx, 'search terms', function () { return searchTerms(ctx); }) || [],
+    keywords: guarded(ctx, 'keywords', function () { return keywords(ctx); }) || [],
+    devices: guarded(ctx, 'devices', function () { return devices(ctx); }) || [],
+    hours: guarded(ctx, 'hours', function () { return hours(ctx); }) || [],
+    locations: guarded(ctx, 'locations', function () { return locations(ctx); }) || [],
+    conversions: guarded(ctx, 'conversions', function () { return conversions(ctx); }) || [],
+    actions: guarded(ctx, 'conversion actions', function () { return conversionActions(ctx); }) || [],
     account: ctx.name, errors: ctx.errors
   };
-  Logger.log('[' + ctx.name + '] ' + out.is.length + ' campaigns, ' + out.weekly.length + ' campaign-weeks, ' +
-    out.budgets.length + ' budgets, ' + out.terms.length + ' search terms' +
+  Logger.log('[' + ctx.name + '] ' + SECTIONS.map(function (x) { return x.key + ' ' + out[x.key].length; }).join(', ') +
     (ctx.errors.length ? ', ' + ctx.errors.length + ' failed queries' : ''));
   return JSON.stringify(out);
 }
@@ -291,9 +355,168 @@ function searchTerms(ctx) {
 }
 
 
+// ── Keywords and Quality Score, last 30 days ─────────────────────────────────
+function keywords(ctx) {
+  var q = 'SELECT campaign.id, campaign.name, ad_group.name, ad_group_criterion.criterion_id, ' +
+    'ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type, ad_group_criterion.status, ' +
+    'ad_group_criterion.system_serving_status, ad_group_criterion.quality_info.quality_score, ' +
+    'ad_group_criterion.quality_info.search_predicted_ctr, ad_group_criterion.quality_info.creative_quality_score, ' +
+    'ad_group_criterion.quality_info.post_click_quality_score, ad_group_criterion.effective_cpc_bid_micros, ' +
+    'ad_group_criterion.position_estimates.first_page_cpc_micros, ' +
+    'ad_group_criterion.position_estimates.top_of_page_cpc_micros, ' +
+    'metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions, metrics.conversions_value, ' +
+    'metrics.search_impression_share, metrics.search_rank_lost_impression_share ' +
+    'FROM keyword_view WHERE segments.date DURING LAST_30_DAYS AND metrics.impressions > 0 ' +
+    'ORDER BY metrics.cost_micros DESC LIMIT ' + KEYWORDS_PER_ACCOUNT;
+  var rows = AdsApp.search(q), out = [];
+  while (rows.hasNext()) {
+    var r = rows.next(), k = r.adGroupCriterion, kw = k.keyword || {}, qi = k.qualityInfo || {},
+        pe = k.positionEstimates || {}, m = r.metrics;
+    out.push([ctx.name, ctx.cid, ctx.currency, r.campaign.id, r.campaign.name, r.adGroup.name, k.criterionId,
+      kw.text || '', kw.matchType || '', k.status || '', k.systemServingStatus || '',
+      qi.qualityScore == null ? '' : Number(qi.qualityScore), qi.searchPredictedCtr || '',
+      qi.creativeQualityScore || '', qi.postClickQualityScore || '',
+      k.effectiveCpcBidMicros ? money(k.effectiveCpcBidMicros) : '',
+      pe.firstPageCpcMicros ? money(pe.firstPageCpcMicros) : '', pe.topOfPageCpcMicros ? money(pe.topOfPageCpcMicros) : '',
+      num(m.impressions), num(m.clicks), money(m.costMicros), num(m.conversions), num(m.conversionsValue),
+      share(m.searchImpressionShare), share(m.searchRankLostImpressionShare), 'LAST_30_DAYS', ctx.now]);
+  }
+  return out;
+}
+
+
+// ── Devices, last 30 days ────────────────────────────────────────────────────
+function devices(ctx) {
+  var q = 'SELECT campaign.id, campaign.name, campaign.advertising_channel_type, segments.device, ' +
+    'metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions, metrics.conversions_value ' +
+    'FROM campaign WHERE segments.date DURING LAST_30_DAYS AND metrics.impressions > 0';
+  var rows = AdsApp.search(q), out = [];
+  while (rows.hasNext()) {
+    var r = rows.next(), m = r.metrics;
+    out.push([ctx.name, ctx.cid, ctx.currency, r.campaign.id, r.campaign.name, r.campaign.advertisingChannelType,
+      r.segments.device || '', num(m.impressions), num(m.clicks), money(m.costMicros), num(m.conversions),
+      num(m.conversionsValue), 'LAST_30_DAYS', ctx.now]);
+  }
+  return out;
+}
+
+
+// ── Day of week x hour (account time zone), last 30 days ─────────────────────
+function hours(ctx) {
+  var q = 'SELECT segments.day_of_week, segments.hour, metrics.impressions, metrics.clicks, ' +
+    'metrics.cost_micros, metrics.conversions, metrics.conversions_value ' +
+    'FROM customer WHERE segments.date DURING LAST_30_DAYS';
+  var rows = AdsApp.search(q), out = [];
+  while (rows.hasNext()) {
+    var r = rows.next(), m = r.metrics;
+    out.push([ctx.name, ctx.cid, ctx.currency, ctx.tz, r.segments.dayOfWeek || '', num(r.segments.hour),
+      num(m.impressions), num(m.clicks), money(m.costMicros), num(m.conversions), num(m.conversionsValue),
+      'LAST_30_DAYS', ctx.now]);
+  }
+  return out;
+}
+
+
+// ── Locations: region and city, last 30 days ─────────────────────────────────
+function locations(ctx) {
+  var base = 'geographic_view.location_type, geographic_view.country_criterion_id, ' +
+    'metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions, metrics.conversions_value ' +
+    'FROM geographic_view WHERE segments.date DURING LAST_30_DAYS AND metrics.impressions > 0 ' +
+    'ORDER BY metrics.cost_micros DESC LIMIT ' + LOCATIONS_PER_ACCOUNT;
+  var rows, withCity = true;
+  try {
+    rows = AdsApp.search('SELECT segments.geo_target_region, segments.geo_target_city, ' + base);
+  } catch (e) {
+    ctx.errors.push('locations by city (fell back to regions): ' + String(e).slice(0, 200));
+    rows = AdsApp.search('SELECT segments.geo_target_region, ' + base);
+    withCity = false;
+  }
+  var raw = [], names = {};
+  while (rows.hasNext()) {
+    var r = rows.next(), g = r.geographicView, s = r.segments || {}, m = r.metrics;
+    var country = g.countryCriterionId ? 'geoTargetConstants/' + g.countryCriterionId : '';
+    var region = s.geoTargetRegion || '', city = withCity ? (s.geoTargetCity || '') : '';
+    [country, region, city].forEach(function (n) { if (n) names[n] = ''; });
+    raw.push([g.locationType || '', country, region, city, m]);
+  }
+  lookupGeoNames(ctx, names);
+  return raw.map(function (x) {
+    var m = x[4];
+    return [ctx.name, ctx.cid, ctx.currency, x[0], geoName(names, x[1]), geoName(names, x[2]), geoName(names, x[3]),
+      num(m.impressions), num(m.clicks), money(m.costMicros), num(m.conversions), num(m.conversionsValue),
+      'LAST_30_DAYS', ctx.now];
+  });
+}
+
+/** A location's name, or "Location <id>" when its name could not be looked up. */
+function geoName(names, resource) {
+  if (!resource) return '';
+  return names[resource] || 'Location ' + resource.split('/').pop();
+}
+
+/** Fills {resourceName: ''} with each location's English name. */
+function lookupGeoNames(ctx, names) {
+  var keys = Object.keys(names);
+  for (var i = 0; i < keys.length; i += GEO_BATCH) {
+    var batch = keys.slice(i, i + GEO_BATCH);
+    guarded(ctx, 'location names', function () {
+      var q = 'SELECT geo_target_constant.resource_name, geo_target_constant.name ' +
+        'FROM geo_target_constant WHERE geo_target_constant.resource_name IN (' +
+        batch.map(function (n) { return "'" + n + "'"; }).join(', ') + ')';
+      var rows = AdsApp.search(q);
+      while (rows.hasNext()) {
+        var g = rows.next().geoTargetConstant;
+        names[g.resourceName] = g.name;
+      }
+    });
+  }
+}
+
+
+// ── Conversions by action, last 30 days ──────────────────────────────────────
+function conversions(ctx) {
+  var q = 'SELECT campaign.id, campaign.name, segments.conversion_action_name, ' +
+    'segments.conversion_action_category, metrics.conversions, metrics.conversions_value, ' +
+    'metrics.all_conversions, metrics.all_conversions_value ' +
+    'FROM campaign WHERE segments.date DURING LAST_30_DAYS AND metrics.all_conversions > 0';
+  var rows = AdsApp.search(q), out = [];
+  while (rows.hasNext()) {
+    var r = rows.next(), m = r.metrics, s = r.segments;
+    out.push([ctx.name, ctx.cid, r.campaign.id, r.campaign.name, s.conversionActionName || '',
+      s.conversionActionCategory || '', num(m.conversions), num(m.conversionsValue), num(m.allConversions),
+      num(m.allConversionsValue), 'LAST_30_DAYS', ctx.now]);
+  }
+  return out;
+}
+
+
+// ── How each conversion action is set up ─────────────────────────────────────
+function conversionActions(ctx) {
+  var q = 'SELECT conversion_action.id, conversion_action.name, conversion_action.category, ' +
+    'conversion_action.status, conversion_action.type, conversion_action.origin, ' +
+    'conversion_action.primary_for_goal, conversion_action.include_in_conversions_metric, ' +
+    'conversion_action.counting_type, conversion_action.click_through_lookback_window_days, ' +
+    'conversion_action.view_through_lookback_window_days, conversion_action.value_settings.default_value, ' +
+    'conversion_action.value_settings.always_use_default_value, ' +
+    'conversion_action.attribution_model_settings.attribution_model ' +
+    "FROM conversion_action WHERE conversion_action.status != 'REMOVED'";
+  var rows = AdsApp.search(q), out = [];
+  while (rows.hasNext()) {
+    var a = rows.next().conversionAction, v = a.valueSettings || {}, am = a.attributionModelSettings || {};
+    out.push([ctx.name, ctx.cid, a.id, a.name, a.category || '', a.status || '', a.type || '', a.origin || '',
+      a.primaryForGoal === true, a.includeInConversionsMetric === true, a.countingType || '',
+      num(a.clickThroughLookbackWindowDays), num(a.viewThroughLookbackWindowDays),
+      v.defaultValue == null ? '' : Number(v.defaultValue), v.alwaysUseDefaultValue === true,
+      am.attributionModel || '', ctx.now]);
+  }
+  return out;
+}
+
+
 // ── Writing the sheet ────────────────────────────────────────────────────────
 function writeAll(results) {
-  var all = { is: [], weekly: [], budgets: [], terms: [] }, notes = [], accounts = 0;
+  var all = {}, notes = [], accounts = 0;
+  SECTIONS.forEach(function (x) { all[x.key] = []; });
   results.forEach(function (res) {
     var id = res.getCustomerId ? res.getCustomerId() : '';
     if (res.getStatus() !== 'OK') {
@@ -302,21 +525,22 @@ function writeAll(results) {
     }
     var d = JSON.parse(res.getReturnValue());
     accounts++;
-    Object.keys(all).forEach(function (k) { all[k] = all[k].concat(d[k] || []); });
+    SECTIONS.forEach(function (x) { all[x.key] = all[x.key].concat(d[x.key] || []); });
     (d.errors || []).forEach(function (e) { notes.push(['Query failed', d.account + ': ' + e]); });
   });
-  var costCol = TERMS_HEADER.indexOf('Cost');
-  all.terms.sort(function (a, b) { return b[costCol] - a[costCol]; });
-  if (all.terms.length > SEARCH_TERMS_TOTAL) {
-    notes.push(['Search terms trimmed', 'Kept the ' + SEARCH_TERMS_TOTAL + ' that spent most of ' + all.terms.length]);
-    all.terms = all.terms.slice(0, SEARCH_TERMS_TOTAL);
-  }
+  SECTIONS.forEach(function (x) {
+    if (!x.cap) return;
+    var costCol = x.header.indexOf('Cost');
+    all[x.key].sort(function (a, b) { return b[costCol] - a[costCol]; });
+    if (all[x.key].length > x.cap) {
+      notes.push([x.label + ' trimmed', 'Kept the ' + x.cap + ' that spent most of ' + all[x.key].length]);
+      all[x.key] = all[x.key].slice(0, x.cap);
+    }
+  });
   var ss = SpreadsheetApp.openByUrl(SPREADSHEET_URL);
-  var written = {};
-  written.is = writeTab(ss, TABS.is, IS_HEADER, all.is);
-  written.weekly = writeTab(ss, TABS.weekly, WEEKLY_HEADER, all.weekly);
-  written.budgets = writeTab(ss, TABS.budgets, BUDGET_HEADER, all.budgets);
-  written.terms = writeTab(ss, TABS.terms, TERMS_HEADER, all.terms);
+  var written = SECTIONS.map(function (x) {
+    return x.key + ' ' + writeTab(ss, TABS[x.key], x.header, all[x.key]);
+  });
   var tz = ss.getSpreadsheetTimeZone();
   var about = [
     ['Exported at', Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm') + ' (' + tz + ')'],
@@ -324,8 +548,9 @@ function writeAll(results) {
     ['Impression share range', 'LAST_30_DAYS'],
     ['Weekly range', 'last ' + WEEKS + ' weeks'],
     ['Search terms range', 'LAST_30_DAYS, top ' + SEARCH_TERMS_PER_ACCOUNT + ' per account by spend'],
-    ['Rows written', 'impression share ' + written.is + ', weekly ' + written.weekly + ', budgets ' +
-      written.budgets + ', search terms ' + written.terms]
+    ['Keywords range', 'LAST_30_DAYS, top ' + KEYWORDS_PER_ACCOUNT + ' per account by spend'],
+    ['Devices, hours, locations, conversions range', 'LAST_30_DAYS'],
+    ['Rows written', written.join(', ')]
   ].concat(notes);
   writeTab(ss, TABS.about, ABOUT_HEADER, about, true);
   Logger.log(about.map(function (r) { return r.join(': '); }).join('\n'));

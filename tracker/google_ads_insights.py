@@ -12,6 +12,13 @@ column added later does not break it) and shapes them for the page:
            this month, grouped into budgets (a shared budget has several)
   terms    search terms, last 30 days: the most expensive per account are
            sent to the page, and totals are kept over every term read
+  keywords keywords with Quality Score and its three parts, bids against
+           Google's first-page estimate; totals over every keyword read
+  devices  campaign x device, last 30 days
+  hours    account x day of week x hour (the account's time zone)
+  locations region and city, by where people were or what they searched for
+  conversions / actions  conversions per action, and how each action is set
+           up, with setup problems flagged against Google's own guidance
 
 Impression-share values stay as Google reports them: 0.0999 means "below
 10%" and 0.9001 "above 90%" (Google Ads API field reference, v25). The page
@@ -29,12 +36,22 @@ TABS = {
     "weekly": "Insights - IS weekly",
     "budgets": "Insights - Budgets",
     "terms": "Insights - Search terms",
+    "keywords": "Insights - Keywords",
+    "devices": "Insights - Devices",
+    "hours": "Insights - Hours",
+    "locations": "Insights - Locations",
+    "conversions": "Insights - Conversions",
+    "actions": "Insights - Conversion actions",
     "about": "Insights - About",
 }
 PREFIX = "Insights - "
 CACHE_TTL = 900
 TERMS_PER_ACCOUNT = 1500      # sent to the page, by spend
 TERMS_ON_PAGE = 8000
+KEYWORDS_PER_ACCOUNT = 1500
+KEYWORDS_ON_PAGE = 6000
+LOCATIONS_PER_ACCOUNT = 600
+LOCATIONS_ON_PAGE = 5000
 
 _LOCK = threading.Lock()
 _CACHE = {"at": 0.0, "value": None, "key": None}
@@ -253,6 +270,194 @@ def parse_terms(values, per_account=TERMS_PER_ACCOUNT, on_page=TERMS_ON_PAGE):
             "rows": kept, "totals": totals, "read": len(rows)}
 
 
+QS_PARTS = (("ctr", "expected ctr"), ("relevance", "ad relevance"), ("landing", "landing page experience"))
+BUCKETS = ("ABOVE_AVERAGE", "AVERAGE", "BELOW_AVERAGE")
+
+
+def parse_keywords(values, per_account=KEYWORDS_PER_ACCOUNT, on_page=KEYWORDS_ON_PAGE):
+    """Keywords for the page (costliest per account) and Quality Score totals over all read."""
+    rows = []
+    for r in _table(values):
+        text = _s(r, "keyword")
+        if not text:
+            continue
+        qs = _num(r.get("quality score"))
+        rows.append({
+            "account": _s(r, "account"), "cur": _s(r, "currency"), "campaign": _s(r, "campaign"),
+            "ad_group": _s(r, "ad group"), "id": _s(r, "keyword id"), "kw": text, "match": _s(r, "match type"),
+            "status": _s(r, "status"), "serving": _s(r, "serving"), "qs": int(qs) if qs else None,
+            "ctr": _s(r, "expected ctr"), "relevance": _s(r, "ad relevance"), "landing": _s(r, "landing page experience"),
+            "bid": _num(r.get("max cpc")), "first_page": _num(r.get("first page bid")),
+            "top_page": _num(r.get("top of page bid")),
+            "impr": _z(r.get("impressions")), "clicks": _z(r.get("clicks")), "cost": _z(r.get("cost")),
+            "conv": _z(r.get("conversions")), "value": _z(r.get("conv. value")),
+            "is": _num(r.get("search is")), "lr": _num(r.get("search lost is (rank)")),
+        })
+    totals = {}
+    for k in rows:
+        for key in (k["account"], "__all__"):
+            t = totals.setdefault(key, {"keywords": 0, "cost": 0.0, "clicks": 0.0, "conv": 0.0, "cur": k["cur"],
+                                        "qs_impr": 0.0, "qs_w": 0.0, "with_qs": 0, "low_qs_cost": 0.0,
+                                        "low_qs": 0, "below_first_page": 0, "rarely_served": 0,
+                                        "dist": {str(i): {"keywords": 0, "cost": 0.0, "conv": 0.0} for i in range(1, 11)},
+                                        "parts": {p: {b: 0.0 for b in BUCKETS} for p, _ in QS_PARTS}})
+            if t["cur"] != k["cur"]:
+                t["cur"] = "mixed"
+            t["keywords"] += 1
+            t["cost"] += k["cost"]
+            t["clicks"] += k["clicks"]
+            t["conv"] += k["conv"]
+            if k["qs"]:
+                t["with_qs"] += 1
+                t["qs_impr"] += k["impr"]
+                t["qs_w"] += k["qs"] * k["impr"]
+                d = t["dist"][str(k["qs"])]
+                d["keywords"] += 1
+                d["cost"] += k["cost"]
+                d["conv"] += k["conv"]
+                if k["qs"] <= 4:
+                    t["low_qs"] += 1
+                    t["low_qs_cost"] += k["cost"]
+            for part, _ in QS_PARTS:
+                if k[part] in BUCKETS:
+                    t["parts"][part][k[part]] += k["cost"]
+            if k["bid"] and k["first_page"] and k["bid"] < k["first_page"]:
+                t["below_first_page"] += 1
+            if k["serving"] == "RARELY_SERVED":
+                t["rarely_served"] += 1
+    for t in totals.values():
+        t["avg_qs"] = round(t["qs_w"] / t["qs_impr"], 2) if t["qs_impr"] else None
+    rows.sort(key=lambda k: -k["cost"])
+    return {"rows": _trim(rows, per_account, on_page), "totals": totals, "read": len(rows)}
+
+
+def _trim(rows, per_account, on_page):
+    kept, per = [], {}
+    for row in rows:
+        a = row["account"] if isinstance(row, dict) else row[0]
+        if per.get(a, 0) >= per_account:
+            continue
+        per[a] = per.get(a, 0) + 1
+        kept.append(row)
+        if len(kept) >= on_page:
+            break
+    return kept
+
+
+def _perf(r):
+    return {"impr": _z(r.get("impressions")), "clicks": _z(r.get("clicks")), "cost": _z(r.get("cost")),
+            "conv": _z(r.get("conversions")), "value": _z(r.get("conv. value"))}
+
+
+def parse_devices(values):
+    out = []
+    for r in _table(values):
+        if not _s(r, "device"):
+            continue
+        d = {"account": _s(r, "account"), "cur": _s(r, "currency"), "campaign": _s(r, "campaign"),
+             "channel": _s(r, "channel"), "device": _s(r, "device")}
+        d.update(_perf(r))
+        out.append(d)
+    return out
+
+
+DAYS = ("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY")
+
+
+def parse_hours(values):
+    out = []
+    for r in _table(values):
+        day = _s(r, "day of week").upper()
+        hour = _num(r.get("hour"))
+        if day not in DAYS or hour is None:
+            continue
+        h = {"account": _s(r, "account"), "cur": _s(r, "currency"), "tz": _s(r, "time zone"),
+             "day": DAYS.index(day), "hour": int(hour)}
+        h.update(_perf(r))
+        out.append(h)
+    return out
+
+
+def parse_locations(values, per_account=LOCATIONS_PER_ACCOUNT, on_page=LOCATIONS_ON_PAGE):
+    rows = []
+    for r in _table(values):
+        region, city, country = _s(r, "region"), _s(r, "city"), _s(r, "country")
+        if not (region or city or country):
+            continue
+        x = {"account": _s(r, "account"), "cur": _s(r, "currency"), "type": _s(r, "location type"),
+             "country": country, "region": region, "city": city}
+        x.update(_perf(r))
+        rows.append(x)
+    totals = {}
+    for x in rows:
+        for key in (x["account"], "__all__"):
+            t = totals.setdefault(key, {"cost": 0.0, "conv": 0.0, "interest_cost": 0.0, "rows": 0})
+            t["rows"] += 1
+            t["cost"] += x["cost"]
+            t["conv"] += x["conv"]
+            if x["type"] == "AREA_OF_INTEREST":
+                t["interest_cost"] += x["cost"]
+    rows.sort(key=lambda x: -x["cost"])
+    return {"rows": _trim(rows, per_account, on_page), "totals": totals, "read": len(rows)}
+
+
+def parse_conversions(values):
+    out = []
+    for r in _table(values):
+        if not _s(r, "conversion action"):
+            continue
+        out.append({"account": _s(r, "account"), "campaign": _s(r, "campaign"), "action": _s(r, "conversion action"),
+                    "category": _s(r, "category"), "conv": _z(r.get("conversions")),
+                    "value": _z(r.get("conv. value")), "all": _z(r.get("all conversions")),
+                    "all_value": _z(r.get("all conv. value"))})
+    return out
+
+
+# Categories that are leads rather than sales. Google recommends counting "One"
+# conversion per click for leads and "Every" for sales (Google Ads Help,
+# "About conversion counting options").
+LEAD_CATEGORIES = {"SUBMIT_LEAD_FORM", "CONTACT", "SIGNUP", "BOOK_APPOINTMENT", "REQUEST_QUOTE",
+                   "PHONE_CALL_LEAD", "IMPORTED_LEAD", "QUALIFIED_LEAD", "CONVERTED_LEAD", "GET_DIRECTIONS"}
+SOFT_CATEGORIES = {"PAGE_VIEW", "ENGAGEMENT", "OUTBOUND_CLICK", "DEFAULT"}
+
+
+def parse_actions(values, conversions=()):
+    """Every conversion action with its 30-day totals and setup flags."""
+    got = {}
+    for c in conversions:
+        k = (c["account"], c["action"])
+        g = got.setdefault(k, {"conv": 0.0, "value": 0.0, "all": 0.0, "all_value": 0.0})
+        for f in ("conv", "value", "all", "all_value"):
+            g[f] += c[f]
+    out = []
+    for r in _table(values):
+        name = _s(r, "conversion action")
+        if not name:
+            continue
+        a = {"account": _s(r, "account"), "id": _s(r, "action id"), "name": name, "category": _s(r, "category"),
+             "status": _s(r, "status"), "type": _s(r, "type"), "origin": _s(r, "origin"),
+             "primary": _bool(r.get("primary for goal")), "in_conversions": _bool(r.get('in "conversions"')),
+             "counting": _s(r, "counting"), "click_window": _num(r.get("click-through window (days)")),
+             "view_window": _num(r.get("view-through window (days)")), "default_value": _num(r.get("default value")),
+             "always_default": _bool(r.get("always use default value")), "model": _s(r, "attribution model")}
+        a.update(got.get((a["account"], name), {"conv": 0.0, "value": 0.0, "all": 0.0, "all_value": 0.0}))
+        flags = []
+        if a["category"] in LEAD_CATEGORIES and a["counting"] == "MANY_PER_CLICK":
+            flags.append(["warn", "Counts every conversion. Google recommends counting one per click for leads, "
+                                  "so repeat form fills do not inflate the total."])
+        if a["primary"] and a["category"] in SOFT_CATEGORIES and a["status"] == "ENABLED":
+            flags.append(["warn", "A %s action is primary, so bidding optimises for it as if it were a lead or sale."
+                          % a["category"].replace("_", " ").lower()])
+        if a["primary"] and a["status"] == "ENABLED" and not a["all"]:
+            flags.append(["info", "Primary, but recorded no conversions in the last 30 days. Check the tag still fires."])
+        if a["status"] == "HIDDEN":
+            flags.append(["info", "Hidden: still counted if primary, but not shown in the conversion list."])
+        a["flags"] = flags
+        out.append(a)
+    out.sort(key=lambda a: (-a["all"], a["name"]))
+    return out
+
+
 def parse_about(values):
     out = []
     for row in values[1:] if values else []:
@@ -264,7 +469,8 @@ def parse_about(values):
 def empty():
     return {"ok": False, "is": [], "weekly": [], "budgets": [], "budget_campaigns": [],
             "terms": {"cols": [], "rows": [], "totals": {}, "read": 0}, "about": [], "as_of": "",
-            "currencies": []}
+            "currencies": [], "keywords": {"rows": [], "totals": {}, "read": 0}, "devices": [], "hours": [],
+            "locations": {"rows": [], "totals": {}, "read": 0}, "conversions": [], "actions": []}
 
 
 def build(raw):
@@ -274,6 +480,12 @@ def build(raw):
     out["weekly"] = parse_weekly(raw.get("weekly"))
     out["budget_campaigns"], out["budgets"] = parse_budgets(raw.get("budgets"))
     out["terms"] = parse_terms(raw.get("terms"))
+    out["keywords"] = parse_keywords(raw.get("keywords"))
+    out["devices"] = parse_devices(raw.get("devices"))
+    out["hours"] = parse_hours(raw.get("hours"))
+    out["locations"] = parse_locations(raw.get("locations"))
+    out["conversions"] = parse_conversions(raw.get("conversions"))
+    out["actions"] = parse_actions(raw.get("actions"), out["conversions"])
     out["about"] = parse_about(raw.get("about"))
     out["as_of"] = next((v for k, v in out["about"] if k == "Exported at"), "")
     curs = {}
@@ -281,7 +493,8 @@ def build(raw):
         if r.get("cur"):
             curs[r["cur"]] = curs.get(r["cur"], 0) + (r.get("cost") or r.get("mtd") or 0)
     out["currencies"] = sorted(curs, key=lambda c: -curs[c])
-    out["ok"] = bool(out["is"] or out["budgets"] or out["terms"]["rows"])
+    out["ok"] = bool(out["is"] or out["budgets"] or out["terms"]["rows"] or out["keywords"]["rows"]
+                     or out["devices"] or out["hours"] or out["locations"]["rows"] or out["actions"])
     return out
 
 
