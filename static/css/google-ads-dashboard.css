@@ -987,6 +987,57 @@ html.gad-locked { overflow: hidden; }
   .gai-ads { grid-template-columns: 1fr; }
 }
 
+/* Group 4: optimization score, recommendations, change history, age and
+   gender, landing pages. Change kinds keep the hues used above: budget amber,
+   bidding blue, keywords orange. */
+.gai-bars--tight { margin-top: var(--sp-2); }
+.gai-stack-keys--top { margin: 0 0 var(--sp-2); }
+.gai-cell-t--n { font-weight: var(--fw-regular, 400); }
+.gai-days { display: grid; grid-template-columns: repeat(28, minmax(0, 1fr)); gap: 3px; align-items: end; height: 150px; margin-top: var(--sp-2); }
+.gai-day { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; min-width: 0; cursor: default; }
+.gai-day-s { flex: 1; display: flex; flex-direction: column-reverse; justify-content: flex-start; border-radius: 4px 4px 0 0; overflow: hidden; border-bottom: 2px solid var(--s2); }
+.gai-day-s span { display: block; width: 100%; }
+.gai-day:hover .gai-day-s { background: var(--s2); }
+.gai-day-l { height: 18px; margin-top: 4px; font-size: 11px; color: var(--tx3); white-space: nowrap; overflow: visible; font-variant-numeric: tabular-nums; }
+.gai-day:last-child .gai-day-l { display: flex; justify-content: flex-end; }
+.gai-changes { display: flex; flex-direction: column; gap: var(--sp-3); margin-top: var(--sp-5); }
+.gai-chg { border: 1px solid var(--line); border-radius: 18px; padding: var(--sp-4) var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; }
+.gai-diffs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; }
+.gai-diffs li { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; min-width: 0; overflow-wrap: anywhere; }
+.gai-diff-f { color: var(--tx3); min-width: 150px; }
+.gai-diffs s { color: var(--tx3); }
+.gai-diffs b { font-weight: var(--fw-semi); font-variant-numeric: tabular-nums; }
+.gai-diff-a { color: var(--tx3); }
+.gai-ba { margin: 0; display: flex; flex-wrap: wrap; gap: 4px var(--sp-4); font-size: 13px; color: var(--tx2); background: var(--s2); border-radius: 10px; padding: 8px 12px; font-variant-numeric: tabular-nums; }
+.gai-ba-l { font-weight: var(--fw-semi); color: var(--tx); }
+.gai-chg-by { font-size: 12px; color: var(--tx3); overflow-wrap: anywhere; }
+.gai-demo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-6); }
+.gai-demo-l { display: flex; flex-direction: column; gap: var(--sp-3); }
+.gai-demo-r { display: grid; grid-template-columns: 110px minmax(0, 1fr) 190px; align-items: center; gap: var(--sp-3); cursor: default; }
+.gai-demo-n { font-size: 13.5px; font-weight: var(--fw-semi); }
+.gai-demo-b { display: flex; flex-direction: column; gap: 4px; }
+.gai-speed { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: var(--sp-2); align-items: end; height: 170px; margin: var(--sp-2) 0 var(--sp-2); }
+.gai-speed-c { display: flex; flex-direction: column; align-items: stretch; height: 100%; min-width: 0; text-align: center; }
+.gai-speed-v { font-size: 11px; color: var(--tx2); height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.gai-speed-b { flex: 1; display: flex; align-items: flex-end; background: var(--s2); border-radius: 6px; overflow: hidden; }
+.gai-speed-b span { display: block; width: 100%; border-radius: 6px 6px 0 0; }
+.gai-speed-l { margin-top: 4px; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+@media (max-width: 960px) {
+  .gai-demo { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .gai-days { gap: 1px; height: 120px; }
+  .gai-day-l { font-size: 10px; }
+  .gai-chg { padding: var(--sp-4); }
+  .gai-chg .gai-phead { flex-direction: column; }
+  .gai-chg .gai-chips { justify-content: flex-start; }
+  .gai-diff-f { min-width: 0; flex-basis: 100%; }
+  .gai-demo-r { grid-template-columns: 84px minmax(0, 1fr); }
+  .gai-demo-r .gai-bfacts { grid-column: 1 / -1; }
+  .gai-speed { gap: 3px; height: 140px; }
+  .gai-speed-v { display: none; }
+}
+
 @media (max-width: 1200px) {
   .gai-stats, .gai-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .gai-pfacts { grid-template-columns: repeat(4, minmax(0, 1fr)); }

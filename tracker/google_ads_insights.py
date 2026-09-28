@@ -1,4 +1,4 @@
-"""Google Ads dashboard: the insights tabs (impression share, budgets, search terms).
+"""Google Ads dashboard: the insights tabs written by the Google Ads Script.
 
 scripts/google_ads/export_insights.js, a Google Ads Script installed in the
 manager account, writes these tabs at the end of the same sheet the dashboard
@@ -22,6 +22,13 @@ column added later does not break it) and shapes them for the page:
   ads      every live ad and Performance Max asset group with its ad strength,
            approval, headlines and descriptions, the combinations Google
            served, and how each headline and description performed
+  changes  every change made in the last 28 days: what, who, through what
+           (web, API, Google's auto-applied recommendations), old and new values
+  health   Google's optimization score per account and campaign
+  recs     Google's open recommendations with their weekly impact estimate
+  demographics  campaign performance by age range and gender
+  landing  each final URL: Google's mobile speed score (1-10), share of
+           mobile clicks to mobile-friendly pages, and performance
 
 Impression-share values stay as Google reports them: 0.0999 means "below
 10%" and 0.9001 "above 90%" (Google Ads API field reference, v25). The page
@@ -50,6 +57,11 @@ TABS = {
     "ads": "Insights - Ads",
     "combos": "Insights - Ad combinations",
     "ad_assets": "Insights - Ad assets",
+    "changes": "Insights - Changes",
+    "health": "Insights - Optimization",
+    "recs": "Insights - Recommendations",
+    "demographics": "Insights - Demographics",
+    "landing": "Insights - Landing pages",
     "about": "Insights - About",
 }
 PREFIX = "Insights - "
@@ -63,6 +75,11 @@ LOCATIONS_ON_PAGE = 5000
 ADS_PER_ACCOUNT = 300
 ADS_ON_PAGE = 1500
 COMBOS_PER_AD = 3
+CHANGES_PER_ACCOUNT = 800     # newest first
+CHANGES_ON_PAGE = 4000
+RECS_PER_ACCOUNT = 300
+LANDING_PER_ACCOUNT = 300     # by spend
+LANDING_ON_PAGE = 2000
 
 _LOCK = threading.Lock()
 _CACHE = {"at": 0.0, "value": None, "key": None}
@@ -589,6 +606,260 @@ def _ad_flags(a):
     return flags
 
 
+# ── Change history ───────────────────────────────────────────────────────────
+# "Made through" values, from Google's ChangeClientType enum (API v25).
+# GOOGLE_ADS_RECOMMENDATIONS_SUBSCRIPTION is "Changes made by subscribing to
+# Google Ads recommendations", i.e. auto-applied recommendations.
+AUTO_APPLIED = "GOOGLE_ADS_RECOMMENDATIONS_SUBSCRIPTION"
+CHANGE_KINDS = ("budget", "bidding", "status", "keywords", "ads", "targeting", "other")
+_BIDDING = re.compile(r"bidding|target_cpa|target_roas|maximize_|manual_c|target_impression_share|"
+                      r"target_spend|percent_cpc|cpc_bid|cpm_bid|cpv_bid|bid_modifier")
+_ADS = ("AD", "AD_GROUP_AD", "ASSET", "AD_GROUP_ASSET", "CAMPAIGN_ASSET", "CUSTOMER_ASSET", "ASSET_SET",
+        "ASSET_SET_ASSET", "CAMPAIGN_ASSET_SET", "FEED", "FEED_ITEM", "AD_GROUP_FEED", "CAMPAIGN_FEED")
+
+
+def _json_obj(v):
+    try:
+        out = json.loads(v) if isinstance(v, str) and v.strip() else {}
+    except ValueError:
+        return {}
+    return out if isinstance(out, dict) else {}
+
+
+def _cell(v):
+    """An old or new value for the page: short text or a number."""
+    if isinstance(v, bool) or v is None:
+        return v
+    if isinstance(v, (int, float)):
+        return v
+    return str(v)[:200]
+
+
+def change_kind(rtype, op, fields):
+    joined = " ".join(fields)
+    if rtype == "CAMPAIGN_BUDGET":
+        return "budget"
+    if rtype == "AD_GROUP_BID_MODIFIER" or (rtype in ("CAMPAIGN", "AD_GROUP", "AD_GROUP_CRITERION")
+                                           and _BIDDING.search(joined)):
+        return "bidding"
+    if op == "UPDATE" and any(f == "status" or f.endswith(".status") for f in fields):
+        return "status"
+    if rtype == "AD_GROUP_CRITERION" and ("keyword" in joined or not fields):
+        return "keywords"
+    if rtype in _ADS:
+        return "ads"
+    if rtype in ("AD_GROUP_CRITERION", "CAMPAIGN_CRITERION"):
+        return "targeting"
+    return "other"
+
+
+def parse_changes(values, per_account=CHANGES_PER_ACCOUNT, on_page=CHANGES_ON_PAGE):
+    rows = []
+    for r in _table(values):
+        at = _s(r, "changed at")
+        if not at:
+            continue
+        fields = [f.strip() for f in _s(r, "fields changed").split(",") if f.strip()]
+        old, new = _json_obj(r.get("old values")), _json_obj(r.get("new values"))
+        diffs = []
+        for f in fields:
+            if f in old or f in new:
+                diffs.append([f, _cell(old.get(f)), _cell(new.get(f))])
+        rtype, op = _s(r, "resource type"), _s(r, "operation")
+        rows.append({"account": _s(r, "account"), "cur": _s(r, "currency"), "at": at[:16], "day": at[:10],
+                     "type": rtype, "op": op, "campaign_id": _s(r, "campaign id"), "campaign": _s(r, "campaign"),
+                     "ad_group": _s(r, "ad group"), "item": _s(r, "item"), "by": _s(r, "changed by"),
+                     "via": _s(r, "made through"), "fields": fields, "diffs": diffs[:12],
+                     "kind": change_kind(rtype, op, fields)})
+    rows.sort(key=lambda x: x["at"], reverse=True)
+    totals = {}
+    for x in rows:
+        for key in (x["account"], "__all__"):
+            t = totals.setdefault(key, {"n": 0, "kinds": {k: 0 for k in CHANGE_KINDS}, "via": {}, "auto": 0,
+                                        "days": {}, "people": 0, "_people": set(), "first": x["day"],
+                                        "last": x["day"]})
+            t["n"] += 1
+            t["kinds"][x["kind"]] += 1
+            t["via"][x["via"] or "UNKNOWN"] = t["via"].get(x["via"] or "UNKNOWN", 0) + 1
+            t["auto"] += x["via"] == AUTO_APPLIED
+            t["days"][x["day"]] = t["days"].get(x["day"], 0) + 1
+            if x["by"]:
+                t["_people"].add(x["by"])
+            t["first"], t["last"] = min(t["first"], x["day"]), max(t["last"], x["day"])
+    for t in totals.values():
+        t["people"] = len(t.pop("_people"))
+    return {"rows": _trim(rows, per_account, on_page), "totals": totals, "read": len(rows)}
+
+
+# ── Optimization score and recommendations ───────────────────────────────────
+def parse_health(values):
+    """Optimization score per account and campaign. Google: 0.0 to 1.0, null when unscored."""
+    accounts, campaigns = [], []
+    for r in _table(values):
+        level = _s(r, "level").upper()
+        x = {"account": _s(r, "account"), "cur": _s(r, "currency"), "score": _num(r.get("optimization score")),
+             "cost": _z(r.get("cost")), "conv": _z(r.get("conversions"))}
+        if level == "ACCOUNT":
+            x["weight"] = _z(r.get("score weight"))
+            accounts.append(x)
+        elif level == "CAMPAIGN" and _s(r, "campaign"):
+            x.update(id=_s(r, "campaign id"), campaign=_s(r, "campaign"), channel=_s(r, "channel"),
+                     status=_s(r, "status"))
+            campaigns.append(x)
+    campaigns.sort(key=lambda c: -c["cost"])
+    return {"accounts": accounts, "campaigns": campaigns, "overall": weighted_score(accounts)}
+
+
+def weighted_score(accounts):
+    """Scores averaged with Google's optimization score weight, the field Google provides for
+    aggregating scores across accounts; None when no account is scored."""
+    w = sum(a["weight"] for a in accounts if a["score"] is not None and a["weight"] > 0)
+    if not w:
+        return None
+    return sum(a["score"] * a["weight"] for a in accounts if a["score"] is not None and a["weight"] > 0) / w
+
+
+REC_LABELS = {
+    "CAMPAIGN_BUDGET": "Raise a budget", "FORECASTING_CAMPAIGN_BUDGET": "Raise a budget (forecast)",
+    "MARGINAL_ROI_CAMPAIGN_BUDGET": "Raise a budget (return)", "MOVE_UNUSED_BUDGET": "Move unused budget",
+    "KEYWORD": "Add a keyword", "USE_BROAD_MATCH_KEYWORD": "Use broad match", "KEYWORD_MATCH_TYPE": "Change match type",
+    "RESPONSIVE_SEARCH_AD": "Add a responsive search ad", "RESPONSIVE_SEARCH_AD_ASSET": "Add headlines or descriptions",
+    "RESPONSIVE_SEARCH_AD_IMPROVE_AD_STRENGTH": "Improve ad strength",
+    "IMPROVE_PERFORMANCE_MAX_AD_STRENGTH": "Improve Performance Max ad strength",
+    "IMPROVE_DEMAND_GEN_AD_STRENGTH": "Improve Demand Gen ad strength",
+    "SITELINK_ASSET": "Add sitelinks", "CALLOUT_ASSET": "Add callouts", "CALL_ASSET": "Add a call asset",
+    "LEAD_FORM_ASSET": "Add a lead form", "TARGET_CPA_OPT_IN": "Bid to a target CPA",
+    "SET_TARGET_CPA": "Set a target CPA", "RAISE_TARGET_CPA": "Raise the target CPA",
+    "TARGET_ROAS_OPT_IN": "Bid to a target ROAS", "SET_TARGET_ROAS": "Set a target ROAS",
+    "LOWER_TARGET_ROAS": "Lower the target ROAS", "MAXIMIZE_CONVERSIONS_OPT_IN": "Maximize conversions",
+    "MAXIMIZE_CONVERSION_VALUE_OPT_IN": "Maximize conversion value", "MAXIMIZE_CLICKS_OPT_IN": "Maximize clicks",
+    "ENHANCED_CPC_OPT_IN": "Turn on enhanced CPC", "SEARCH_PARTNERS_OPT_IN": "Add search partners",
+    "DISPLAY_EXPANSION_OPT_IN": "Add Display expansion", "PERFORMANCE_MAX_OPT_IN": "Try Performance Max",
+    "IMPROVE_GOOGLE_TAG_COVERAGE": "Put the Google tag on more pages", "OPTIMIZE_AD_ROTATION": "Optimize ad rotation",
+    "CUSTOM_AUDIENCE_OPT_IN": "Add a custom audience", "DYNAMIC_IMAGE_EXTENSION_OPT_IN": "Turn on dynamic images",
+    "PERFORMANCE_MAX_FINAL_URL_OPT_IN": "Turn on final URL expansion",
+    "REFRESH_CUSTOMER_MATCH_LIST": "Refresh a customer list",
+}
+# Google's impact estimate is weekly ("Weekly account performance metrics", RecommendationMetrics).
+REC_METRICS = ("impr", "clicks", "cost", "conv", "value")
+
+
+def rec_label(t):
+    return REC_LABELS.get(t) or (t.replace("_", " ").capitalize() if t else "Recommendation")
+
+
+def parse_recs(values, per_account=RECS_PER_ACCOUNT):
+    rows = []
+    for r in _table(values):
+        t = _s(r, "type")
+        if not t:
+            continue
+        base = {"impr": _z(r.get("base impressions")), "clicks": _z(r.get("base clicks")),
+                "cost": _z(r.get("base cost")), "conv": _z(r.get("base conversions")),
+                "value": _z(r.get("base conv. value"))}
+        pot = {"impr": _z(r.get("potential impressions")), "clicks": _z(r.get("potential clicks")),
+               "cost": _z(r.get("potential cost")), "conv": _z(r.get("potential conversions")),
+               "value": _z(r.get("potential conv. value"))}
+        has = any(base.values()) or any(pot.values())
+        rows.append({"account": _s(r, "account"), "cur": _s(r, "currency"), "type": t, "label": rec_label(t),
+                     "campaign": _s(r, "campaign"), "detail": _s(r, "detail"),
+                     "budget_now": _num(r.get("current budget")), "budget_rec": _num(r.get("recommended budget")),
+                     "base": base if has else None, "pot": pot if has else None,
+                     "gain": {k: pot[k] - base[k] for k in REC_METRICS} if has else None})
+    rows.sort(key=lambda x: -((x["gain"] or {}).get("conv") or 0) * 1e6 - ((x["gain"] or {}).get("clicks") or 0))
+    totals = {}
+    for x in rows:
+        for key in (x["account"], "__all__"):
+            t = totals.setdefault(key, {"n": 0, "types": {}, "gain": {k: 0.0 for k in REC_METRICS}, "cur": x["cur"]})
+            if t["cur"] != x["cur"]:
+                t["cur"] = "mixed"
+            t["n"] += 1
+            t["types"][x["label"]] = t["types"].get(x["label"], 0) + 1
+            for k in REC_METRICS:
+                t["gain"][k] += (x["gain"] or {}).get(k) or 0
+    return {"rows": _trim(rows, per_account, per_account * 60), "totals": totals, "read": len(rows)}
+
+
+# ── Age and gender ───────────────────────────────────────────────────────────
+AGE_ORDER = ("AGE_RANGE_18_24", "AGE_RANGE_25_34", "AGE_RANGE_35_44", "AGE_RANGE_45_54", "AGE_RANGE_55_64",
+             "AGE_RANGE_65_UP", "AGE_RANGE_UNDETERMINED")
+GENDER_ORDER = ("FEMALE", "MALE", "UNDETERMINED")
+
+
+def segment_label(seg):
+    if seg.startswith("AGE_RANGE_"):
+        rest = seg[len("AGE_RANGE_"):]
+        if rest == "65_UP":
+            return "65+"
+        if rest == "UNDETERMINED":
+            return "Unknown age"
+        return rest.replace("_", "–")
+    return {"FEMALE": "Female", "MALE": "Male", "UNDETERMINED": "Unknown gender"}.get(seg, seg.title())
+
+
+def parse_demographics(values):
+    out = []
+    for r in _table(values):
+        dim, seg = _s(r, "dimension"), _s(r, "segment")
+        if dim not in ("Age", "Gender") or not seg:
+            continue
+        order = AGE_ORDER if dim == "Age" else GENDER_ORDER
+        x = {"account": _s(r, "account"), "cur": _s(r, "currency"), "campaign": _s(r, "campaign"),
+             "channel": _s(r, "channel"), "dim": dim, "seg": seg, "label": segment_label(seg),
+             "order": order.index(seg) if seg in order else len(order)}
+        x.update(_perf(r))
+        out.append(x)
+    return out
+
+
+def _frac(v):
+    """A share as 0-1, whether the cell holds 0.62 or 62."""
+    x = _num(v)
+    if x is None:
+        return None
+    return x / 100 if x > 1 else x
+
+
+# ── Landing pages ────────────────────────────────────────────────────────────
+def parse_landing(values, per_account=LANDING_PER_ACCOUNT, on_page=LANDING_ON_PAGE):
+    """Final URLs with Google's mobile speed score: "a 10-point scale, 1 being very slow and 10
+    being extremely fast" (Google, "Speed matters when providing assistive experiences", 2018)."""
+    rows = []
+    for r in _table(values):
+        url = _s(r, "landing page")
+        if not url:
+            continue
+        speed = _num(r.get("speed score"))
+        x = {"account": _s(r, "account"), "cur": _s(r, "currency"), "url": url[:500],
+             "speed": int(speed) if speed is not None and 1 <= speed <= 10 else None,
+             "mobile": _frac(r.get("mobile-friendly clicks")), "amp": _frac(r.get("valid amp clicks"))}
+        x.update(_perf(r))
+        rows.append(x)
+    rows.sort(key=lambda x: -x["cost"])
+    totals = {}
+    for x in rows:
+        for key in (x["account"], "__all__"):
+            t = totals.setdefault(key, {"pages": 0, "cost": 0.0, "conv": 0.0, "clicks": 0.0, "scored_cost": 0.0,
+                                        "speed_w": 0.0, "speeds": [0] * 10, "speed_cost": [0.0] * 10,
+                                        "mobile_w": 0.0, "mobile_clicks": 0.0})
+            t["pages"] += 1
+            t["cost"] += x["cost"]
+            t["conv"] += x["conv"]
+            t["clicks"] += x["clicks"]
+            if x["speed"] is not None:
+                t["speeds"][x["speed"] - 1] += 1
+                t["speed_cost"][x["speed"] - 1] += x["cost"]
+                t["scored_cost"] += x["cost"]
+                t["speed_w"] += x["speed"] * x["cost"]
+            if x["mobile"] is not None and x["clicks"]:
+                t["mobile_w"] += x["mobile"] * x["clicks"]
+                t["mobile_clicks"] += x["clicks"]
+    for t in totals.values():
+        t["avg_speed"] = t["speed_w"] / t["scored_cost"] if t["scored_cost"] else None
+        t["mobile_share"] = t["mobile_w"] / t["mobile_clicks"] if t["mobile_clicks"] else None
+    return {"rows": _trim(rows, per_account, on_page), "totals": totals, "read": len(rows)}
+
+
 def parse_about(values):
     out = []
     for row in values[1:] if values else []:
@@ -602,7 +873,11 @@ def empty():
             "terms": {"cols": [], "rows": [], "totals": {}, "read": 0}, "about": [], "as_of": "",
             "currencies": [], "keywords": {"rows": [], "totals": {}, "read": 0}, "devices": [], "hours": [],
             "locations": {"rows": [], "totals": {}, "read": 0}, "conversions": [], "actions": [],
-            "ads": {"rows": [], "totals": {}, "read": 0}}
+            "ads": {"rows": [], "totals": {}, "read": 0},
+            "changes": {"rows": [], "totals": {}, "read": 0},
+            "health": {"accounts": [], "campaigns": [], "overall": None},
+            "recs": {"rows": [], "totals": {}, "read": 0}, "demographics": [],
+            "landing": {"rows": [], "totals": {}, "read": 0}}
 
 
 def build(raw):
@@ -619,6 +894,11 @@ def build(raw):
     out["conversions"] = parse_conversions(raw.get("conversions"))
     out["actions"] = parse_actions(raw.get("actions"), out["conversions"])
     out["ads"] = parse_ads(raw.get("ads"), raw.get("combos"), raw.get("ad_assets"))
+    out["changes"] = parse_changes(raw.get("changes"))
+    out["health"] = parse_health(raw.get("health"))
+    out["recs"] = parse_recs(raw.get("recs"))
+    out["demographics"] = parse_demographics(raw.get("demographics"))
+    out["landing"] = parse_landing(raw.get("landing"))
     out["about"] = parse_about(raw.get("about"))
     out["as_of"] = next((v for k, v in out["about"] if k == "Exported at"), "")
     curs = {}
@@ -628,7 +908,8 @@ def build(raw):
     out["currencies"] = sorted(curs, key=lambda c: -curs[c])
     out["ok"] = bool(out["is"] or out["budgets"] or out["terms"]["rows"] or out["keywords"]["rows"]
                      or out["devices"] or out["hours"] or out["locations"]["rows"] or out["actions"]
-                     or out["ads"]["rows"])
+                     or out["ads"]["rows"] or out["changes"]["rows"] or out["health"]["accounts"]
+                     or out["recs"]["rows"] or out["demographics"] or out["landing"]["rows"])
     return out
 
 

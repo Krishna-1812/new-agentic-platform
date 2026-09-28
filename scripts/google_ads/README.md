@@ -1,6 +1,6 @@
 # Google Ads insights export
 
-`export_insights.js` is a Google Ads Script. It feeds the Impression share, Budget pacing, Search terms, Keywords and Quality Score, Devices, Day and hour, Locations, Conversion actions and Ads panels on `/dashboards/google-ads`. It runs inside Google Ads, not on the server, so the platform needs no Google Ads API developer token.
+`export_insights.js` is a Google Ads Script. It feeds the Impression share, Budget pacing, Search terms, Keywords and Quality Score, Devices, Day and hour, Locations, Conversion actions, Ads, Optimization score and recommendations, Change history, Age and gender, and Landing pages panels on `/dashboards/google-ads`. It runs inside Google Ads, not on the server, so the platform needs no Google Ads API developer token.
 
 ## Install (once, about 5 minutes)
 
@@ -32,6 +32,11 @@ It adds these tabs at the **end** of the sheet. It never changes the first tab, 
 | Insights - Ads | Every live ad and Performance Max asset group: ad strength, approval and policy reasons, final URL, headlines and descriptions (with pinning), performance | Live now; performance last 30 days |
 | Insights - Ad combinations | The headline and description combinations Google served: top 5 per search ad by impressions, and Google's top combinations per asset group (text, image, video) | Last 30 days |
 | Insights - Ad assets | Each headline and description: pinned position, Google's label (Best, Good, Low, Learning), impressions, clicks, spend, conversions | Last 30 days |
+| Insights - Changes | Every change Google Ads recorded: when, what (campaign, budget, ad group, keyword, ad, targeting), who, through what (website, API, script, or Google's auto-applied recommendations), and the old and new value of each changed field | Last 28 days, the newest 2,000 per account |
+| Insights - Optimization | Google's optimization score for each account (with Google's score weight) and each campaign, with spend and conversions | Now; spend last 30 days |
+| Insights - Recommendations | Google's open (not dismissed) recommendations: type, campaign, keyword or budget detail, and Google's estimated weekly impact (impressions, clicks, cost, conversions) before and after | Now |
+| Insights - Demographics | Per campaign: performance by age range and by gender | Last 30 days |
+| Insights - Landing pages | Each final URL: Google's mobile speed score (1 to 10), share of mobile clicks to mobile-friendly pages, and performance | Last 30 days, the 500 costliest per account |
 | Insights - About | When it ran, the row counts, and any query that failed | – |
 
 ## Limits and safety
@@ -41,6 +46,8 @@ It adds these tabs at the **end** of the sheet. It never changes the first tab, 
 - **Impression share is written exactly as Google reports it:** 0.0999 means below 10%, and 0.9001 means a lost share above 90% ([field reference](https://developers.google.com/google-ads/api/fields/v25/campaign)). The dashboard shows these as "<10%" and ">90%".
 - **Conversion setup checks follow Google's guidance:** count every conversion for sales and one per click for leads ([About conversion counting options](https://support.google.com/google-ads/answer/3438531)). The dashboard flags lead actions set to count every conversion, page views used as primary actions, and primary actions that recorded nothing in 30 days.
 - **Ad checks follow Google's guidance:** up to 15 headlines and 4 descriptions per responsive search ad, and pinning "isn't recommended for most advertisers and can affect ad strength" ([About responsive search ads](https://support.google.com/google-ads/answer/7684791)).
+- **Change history stays inside Google's limits:** the query's date range "must be within the past 30 days" and it needs "a LIMIT clause restricting results to at most 10,000 rows" ([Change event](https://developers.google.com/google-ads/api/docs/change-event)). The script reads 28 days and 2,000 changes per account. Changes carry the email of the person who made them, as in Google Ads' own change history, so keep the sheet restricted to people who may see that.
+- **Recommendations and optimization score are Google's estimates:** impact figures are Google's weekly forecasts if a recommendation is applied ([RecommendationMetrics](https://developers.google.com/google-ads/api/reference/rpc/v25/Recommendation.RecommendationMetrics)); the dashboard shows them as forecasts, never as results.
 - **Pacing uses Google's own rules:** Google can spend up to twice the average daily budget on one day, but charges no more than the average daily budget × 30.4 in a month ([About average daily budgets](https://support.google.com/google-ads/answer/6385083)).
 
 ## Testing without Google Ads

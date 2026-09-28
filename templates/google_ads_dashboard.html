@@ -17,7 +17,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=7"]) }}
+{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=8"]) }}
 </head>
 <body class="gad" data-currency-symbol="{{ currency_symbol }}">
 
@@ -526,10 +526,114 @@
     <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-ads-more" hidden>Show more</button></div>
     <p class="gad-note">Live ads in live ad groups and campaigns, and Performance Max asset groups; performance is the last 30 days. Each search ad is previewed with the combination Google served most; &ldquo;served&rdquo; lists come from Google&rsquo;s combinations report (impressions for search ads, Google&rsquo;s own top combinations for Performance Max). Headline and description labels (Best, Good, Low, Learning) are Google&rsquo;s. Google allows up to 15 headlines and 4 descriptions per responsive search ad and says pinning &ldquo;isn&rsquo;t recommended for most advertisers and can affect ad strength&rdquo; (Google Ads Help, &ldquo;About responsive search ads&rdquo;).</p>
   </section>
+
+  <section class="gad-panel bn-reveal" data-panel="health" id="gai-health-panel">
+    <div class="gad-panel-head"><div>
+      <span class="gad-lbl">Google&rsquo;s view</span>
+      <h2 class="gad-h2">Optimization score and recommendations</h2>
+    </div>
+    <span class="gad-panel-d" id="gai-health-d"></span></div>
+    <div class="gai-kpis" id="gai-health-kpis"></div>
+    <div class="gai-block" id="gai-score-block">
+      <h3 class="gai-h3">Optimization score by campaign, by spend</h3>
+      <div class="gai-bars gai-bars--tight" id="gai-scores"></div>
+      <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-scores-more" hidden>Show more</button></div>
+    </div>
+    <div class="gai-block" id="gai-recs-block">
+      <h3 class="gai-h3 gai-h3--gap">Open recommendations</h3>
+      <div class="gai-stack-keys gai-stack-keys--top" id="gai-rec-types"></div>
+      <div class="gad-table-wrap gai-table-wrap gai-table-wrap--tight">
+        <table class="gad-table gai-table">
+          <thead><tr>
+            <th scope="col">Recommendation</th>
+            <th scope="col">What it changes</th>
+            <th scope="col" class="is-num">Extra clicks / week</th>
+            <th scope="col" class="is-num">Extra conv. / week</th>
+            <th scope="col" class="is-num">Extra cost / week</th>
+          </tr></thead>
+          <tbody id="gai-recs-body"></tbody>
+        </table>
+      </div>
+      <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-recs-more" hidden>Show more</button></div>
+    </div>
+    <p class="gad-note">Both come from Google. Optimization score &ldquo;is an estimate of how well a customer&rsquo;s campaigns are set to perform&rdquo;, from 0% to 100% (Google Ads API reference; Google Ads Help, &ldquo;About optimization score&rdquo;). Across accounts it is averaged with Google&rsquo;s optimization score weight. The colour bands (below 60%, 60&ndash;79%, 80% and up) are this dashboard&rsquo;s. Impact figures are Google&rsquo;s weekly estimates if a recommendation is applied; some are averaged over 90 days. They are forecasts, not results: review each one against your goals before applying it.</p>
+  </section>
+
+  <section class="gad-panel bn-reveal" data-panel="changes" id="gai-chg-panel">
+    <div class="gad-panel-head"><div>
+      <span class="gad-lbl">Activity</span>
+      <h2 class="gad-h2">Change history</h2>
+    </div>
+    <span class="gad-panel-d" id="gai-chg-d"></span></div>
+    <div class="gai-kpis" id="gai-chg-kpis"></div>
+    <div class="gai-block">
+      <h3 class="gai-h3">Changes per day</h3>
+      <div class="gai-days" id="gai-chg-days"></div>
+      <div class="gad-legend-row" id="gai-chg-legend"></div>
+    </div>
+    <div class="gai-toolbar gai-toolbar--gap">
+      <div class="gad-seg gad-seg--sm" role="group" aria-label="Change filter" id="gai-chg-filter">
+        <button type="button" class="gad-pill is-on" data-chgview="all">All</button>
+        <button type="button" class="gad-pill" data-chgview="money">Budget and bidding</button>
+        <button type="button" class="gad-pill" data-chgview="status">Paused or enabled</button>
+        <button type="button" class="gad-pill" data-chgview="keywords">Keywords</button>
+        <button type="button" class="gad-pill" data-chgview="ads">Ads and assets</button>
+        <button type="button" class="gad-pill" data-chgview="auto">Auto-applied by Google</button>
+      </div>
+    </div>
+    <div class="gai-changes" id="gai-changes"></div>
+    <p class="gad-table-empty" id="gai-chg-empty" hidden>No changes match these filters.</p>
+    <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-chg-more" hidden>Show more</button></div>
+    <p class="gad-note">Every change Google Ads recorded in the last 28 days (Google keeps change history for 30), newest first, with the old and new value of each field that changed. &ldquo;Auto-applied by Google&rdquo; are changes made by subscribing to Google&rsquo;s recommendations. &ldquo;Before and after&rdquo; compares the campaign&rsquo;s average day in the 7 days before a change with the days after it, from the campaign report above; other things change too, so read it as a prompt, not proof.</p>
+  </section>
+
+  <section class="gad-panel bn-reveal" data-panel="demographics" id="gai-demo-panel">
+    <div class="gad-panel-head"><div>
+      <span class="gad-lbl">Audience</span>
+      <h2 class="gad-h2">Age and gender</h2>
+    </div>
+    <span class="gad-panel-d" id="gai-demo-d"></span></div>
+    <div class="gai-demo">
+      <div class="gai-block"><h3 class="gai-h3">Age</h3><div class="gai-demo-l" id="gai-demo-age"></div></div>
+      <div class="gai-block"><h3 class="gai-h3">Gender</h3><div class="gai-demo-l" id="gai-demo-gender"></div></div>
+    </div>
+    <div class="gad-legend-row" id="gai-demo-legend"></div>
+    <p class="gad-note">Last 30 days, from Google Ads&rsquo; age and gender reports, summed over each campaign&rsquo;s ad groups. &ldquo;Unknown&rdquo; is people Google could not place. Campaign types that do not report age and gender are not included.</p>
+  </section>
+
+  <section class="gad-panel bn-reveal" data-panel="landing" id="gai-lp-panel">
+    <div class="gad-panel-head"><div>
+      <span class="gad-lbl">After the click</span>
+      <h2 class="gad-h2">Landing pages</h2>
+    </div>
+    <span class="gad-panel-d" id="gai-lp-d"></span></div>
+    <div class="gai-kpis" id="gai-lp-kpis"></div>
+    <div class="gai-block">
+      <h3 class="gai-h3">Spend by mobile speed score</h3>
+      <div class="gai-speed" id="gai-lp-speed"></div>
+    </div>
+    <div class="gad-table-wrap gai-table-wrap gai-table-wrap--tight">
+      <table class="gad-table gai-table">
+        <thead><tr>
+          <th scope="col">Landing page</th>
+          <th scope="col" class="is-num">Speed score</th>
+          <th scope="col" class="is-num">Mobile-friendly clicks</th>
+          <th scope="col" class="is-num">Clicks</th>
+          <th scope="col" class="is-num">Spend</th>
+          <th scope="col" class="is-num">Conv.</th>
+          <th scope="col" class="is-num">Conv. rate</th>
+          <th scope="col" class="is-num">Cost / conv.</th>
+        </tr></thead>
+        <tbody id="gai-lp-body"></tbody>
+      </table>
+    </div>
+    <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-lp-more" hidden>Show more</button></div>
+    <p class="gad-note">Last 30 days, from Google Ads&rsquo; landing page report. The mobile speed score is Google&rsquo;s: &ldquo;a 10-point scale, 1 being very slow and 10 being extremely fast&rdquo;, based partly on how speed relates to conversion rate (Google, &ldquo;Speed matters when providing assistive experiences&rdquo;, 2018). The bands 1&ndash;3, 4&ndash;6 and 7&ndash;10 are this dashboard&rsquo;s. Mobile-friendly clicks is the share of mobile clicks that reached a mobile-friendly page; across pages it is weighted by clicks, so it is approximate.</p>
+  </section>
   {% elif insights %}
   <section class="gad-panel gai-setup bn-reveal" data-panel="insights-setup">
     <span class="gad-lbl">More data, ready to switch on</span>
-    <h2 class="gad-h2">Impression share, budgets, search terms, Quality Score, devices, hours, locations, conversions and ads</h2>
+    <h2 class="gad-h2">Impression share, budgets, search terms, Quality Score, devices, hours, locations, conversions, ads, change history, recommendations, audiences and landing pages</h2>
     <p class="gai-setup-p">These appear here once the Google Ads insights script runs. Someone with access to the manager account installs <code>scripts/google_ads/export_insights.js</code> under Tools &rsaquo; Bulk actions &rsaquo; Scripts, points it at this dashboard&rsquo;s Google Sheet and schedules it daily. It writes its own tabs at the end of the sheet and never changes the campaign report.</p>
     {% if insights.error %}<p class="gad-note">The insights tabs could not be read just now ({{ insights.error }}).</p>{% endif %}
   </section>
@@ -598,7 +702,7 @@
 {% endif %}
 
 {{ topbar_script() }}
-{% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=3"></script>{% endif %}
+{% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=4"></script>{% endif %}
 <script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=5"></script>
 <script>
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */

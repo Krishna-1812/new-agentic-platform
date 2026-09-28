@@ -41,7 +41,8 @@ def test_the_script_writes_its_tabs_after_the_campaign_report():
     assert res["order"][0] == "Campaign report", "the report the dashboard already reads stays first"
     assert res["order"][1:] == [gai.TABS[k] for k in ("is", "weekly", "budgets", "terms", "keywords", "devices", "hours",
                                                       "locations", "conversions", "actions", "ads", "combos",
-                                                      "ad_assets", "about")]
+                                                      "ad_assets", "changes", "health", "recs", "demographics",
+                                                      "landing", "about")]
 
 
 @pytest.mark.skipif(not NODE, reason="node is not installed")
@@ -103,6 +104,100 @@ def test_the_script_exports_ads_what_google_served_and_each_headline():
     assert pmax["kind"] == "ASSET_GROUP" and pmax["strength"] == "GOOD" and pmax["cost"] == 30000.0
     assert pmax["combos"][0]["category"] == "IMAGE"
     assert pmax["combos"][0]["parts"][0]["img"] == "https://tpc.googlesyndication.com/simgad/123"
+
+
+@pytest.mark.skipif(not NODE, reason="node is not installed")
+def test_the_script_exports_changes_scores_recommendations_audiences_and_landing_pages():
+    tabs = _harness()["tabs"]
+    ins = gai.build({k: tabs[t] for k, t in gai.TABS.items() if t in tabs})
+    ch = ins["changes"]["rows"]
+    assert [c["kind"] for c in ch] == ["budget", "bidding", "keywords"], "newest first, each classified"
+    assert ch[0]["diffs"] == [["amount_micros", 5000, 8000]], "budget micros become money, old and new"
+    assert ch[1]["diffs"][1] == ["target_impression_share.location_fraction_micros", 0.5, 0.9]
+    assert ch[2]["item"] == "crm for startups" and ch[2]["diffs"][0] == ["keyword.text", None, "crm for startups"]
+    t = ins["changes"]["totals"]["__all__"]
+    assert t["auto"] == 1 and t["people"] == 1 and t["kinds"]["budget"] == 1
+    h = ins["health"]
+    assert h["accounts"][0]["score"] == 0.72 and h["overall"] == 0.72
+    assert {c["campaign"]: c["score"] for c in h["campaigns"]} == {"Brand - Search": 0.95, "Generic - Search": 0.61,
+                                                                   "PMax - All": None}
+    recs = ins["recs"]["rows"]
+    budget = next(r for r in recs if r["type"] == "CAMPAIGN_BUDGET")
+    assert budget["campaign"] == "Generic - Search", "campaign named from the optimization query"
+    assert (budget["budget_now"], budget["budget_rec"]) == (5000.0, 8000.0)
+    assert budget["gain"]["conv"] == 8.0 and budget["gain"]["cost"] == 21000.0
+    assert next(r for r in recs if r["type"] == "KEYWORD")["detail"] == "crm pricing (PHRASE)"
+    assert next(r for r in recs if r["type"] == "RESPONSIVE_SEARCH_AD_ASSET")["gain"] is None, "no impact: unknown, not zero"
+    age = {d["label"]: d for d in ins["demographics"] if d["dim"] == "Age"}
+    assert age["25–34"]["cost"] == 45000.0 and age["25–34"]["impr"] == 7000, "ad groups summed per campaign"
+    assert age["65+"]["conv"] == 0
+    lp = ins["landing"]
+    assert [x["speed"] for x in lp["rows"]] == [3, 8] and lp["rows"][0]["mobile"] == 0.62
+    assert round(lp["totals"]["__all__"]["avg_speed"], 2) == round((3 * 120000 + 8 * 27000) / 147000, 2)
+
+
+def test_change_history_stays_inside_googles_limits():
+    with open(os.path.join(ROOT, "scripts", "google_ads", "export_insights.js"), encoding="utf-8") as fh:
+        src = fh.read()
+    import re
+    days = int(re.search(r"var CHANGE_DAYS = (\d+);", src).group(1))
+    per = int(re.search(r"var CHANGES_PER_ACCOUNT = (\d+);", src).group(1))
+    assert days < 30, "change_event: the date range must be within the past 30 days"
+    assert per <= 10000, "change_event: LIMIT of at most 10,000 rows"
+    assert "ORDER BY change_event.change_date_time DESC LIMIT" in src
+
+
+def test_changes_are_classified_by_what_they_touch():
+    k = gai.change_kind
+    assert k("CAMPAIGN_BUDGET", "UPDATE", ["amount_micros"]) == "budget"
+    assert k("CAMPAIGN", "UPDATE", ["maximize_conversions.target_cpa_micros"]) == "bidding"
+    assert k("AD_GROUP_CRITERION", "UPDATE", ["cpc_bid_micros"]) == "bidding"
+    assert k("AD_GROUP", "UPDATE", ["status"]) == "status"
+    assert k("AD_GROUP_CRITERION", "CREATE", ["keyword.text", "status"]) == "keywords"
+    assert k("AD_GROUP_AD", "CREATE", ["ad.responsive_search_ad.headlines"]) == "ads"
+    assert k("CAMPAIGN_CRITERION", "CREATE", ["location.geo_target_constant"]) == "targeting"
+    assert k("CAMPAIGN", "UPDATE", ["name"]) == "other"
+
+
+def test_a_change_with_unreadable_values_still_lists_its_fields():
+    head = ["Account", "Currency", "Changed at", "Resource type", "Operation", "Campaign", "Changed by",
+            "Made through", "Fields changed", "Old values", "New values"]
+    out = gai.parse_changes([head, ["A", "INR", "2026-09-20 10:00:00", "AD", "UPDATE", "S", "", "GOOGLE_ADS_API",
+                                    "responsive_search_ad.headlines", "not json", ""]])
+    row = out["rows"][0]
+    assert row["fields"] == ["responsive_search_ad.headlines"] and row["diffs"] == [] and row["kind"] == "ads"
+    assert out["totals"]["A"]["via"] == {"GOOGLE_ADS_API": 1} and out["totals"]["A"]["people"] == 0
+
+
+def test_optimization_scores_are_averaged_with_googles_weight():
+    accts = [{"score": 0.9, "weight": 1.0}, {"score": 0.5, "weight": 3.0}, {"score": None, "weight": 0.0}]
+    assert gai.weighted_score(accts) == pytest.approx((0.9 + 1.5) / 4)
+    assert gai.weighted_score([{"score": None, "weight": 0.0}]) is None, "unscored accounts: unknown"
+
+
+def test_landing_speed_scores_outside_one_to_ten_are_unknown_and_percent_cells_read():
+    head = ["Account", "Currency", "Landing page", "Speed score", "Mobile-friendly clicks", "Clicks", "Cost"]
+    out = gai.parse_landing([head, ["A", "INR", "https://x.example/a", 0, "62%", 10, 5],
+                             ["A", "INR", "https://x.example/b", 7, 0.8, 10, 4]])
+    a, b = out["rows"]
+    assert a["speed"] is None and a["mobile"] == 0.62
+    assert b["speed"] == 7 and b["mobile"] == 0.8
+    assert out["totals"]["A"]["avg_speed"] == 7.0, "only scored pages count toward the average"
+
+
+def test_demographic_segments_are_labelled_and_ordered():
+    assert gai.segment_label("AGE_RANGE_25_34") == "25–34"
+    assert gai.segment_label("AGE_RANGE_65_UP") == "65+"
+    assert gai.segment_label("UNDETERMINED") == "Unknown gender"
+    head = ["Account", "Currency", "Campaign", "Dimension", "Segment", "Cost"]
+    rows = gai.parse_demographics([head, ["A", "INR", "S", "Age", "AGE_RANGE_65_UP", 5],
+                                   ["A", "INR", "S", "Age", "AGE_RANGE_18_24", 5], ["A", "INR", "S", "Region", "X", 5]])
+    assert [r["order"] for r in rows] == [5, 0], "unknown dimensions are dropped"
+
+
+def test_recommendation_types_get_plain_labels():
+    assert gai.rec_label("CAMPAIGN_BUDGET") == "Raise a budget"
+    assert gai.rec_label("SOME_NEW_TYPE") == "Some new type", "types added later still read"
 
 
 @pytest.mark.skipif(not NODE, reason="node is not installed")
@@ -384,7 +479,8 @@ def test_the_page_shows_the_insights_panels_when_the_tabs_exist(monkeypatch):
     monkeypatch.setattr(appmod, "_google_ads_insights", lambda force=False: dict(ins, symbols={"INR": "₹"}))
     body = _client().get("/dashboards/google-ads").get_data(as_text=True)
     for pid in ("gai-share-panel", "gai-pace-panel", "gai-terms-panel", "gai-kw-panel", "gai-dev-panel",
-                "gai-hour-panel", "gai-loc-panel", "gai-conv-panel", "gai-ads-panel", "gad-insights"):
+                "gai-hour-panel", "gai-loc-panel", "gai-conv-panel", "gai-ads-panel", "gai-health-panel",
+                "gai-chg-panel", "gai-demo-panel", "gai-lp-panel", "gad-insights"):
         assert 'id="%s"' % pid in body
     assert "google-ads-insights.js" in body
     assert body.index("google-ads-insights.js") < body.index("google-ads-dashboard.js"), \
