@@ -3,11 +3,12 @@
  * keywords and Quality Score, devices, hours, locations, conversion actions, ads and creatives,
  * change history, optimization score, Google's recommendations, age and gender, landing pages).
  *
- * Install once in the MANAGER (MCC) account: Tools > Bulk actions > Scripts > +.
+ * Install in the MANAGER (MCC) account: Tools > Bulk actions > Scripts > +.
  * Paste this file, set SPREADSHEET_URL below to the Google Ads sheet the dashboard
  * already reads (Railway variable GOOGLE_ADS_SHEET_ID), authorise, Preview once,
  * then schedule it Daily (early morning, after Google has finished yesterday's data).
- * The person who authorises it needs EDIT access to that sheet.
+ * The person who authorises it needs EDIT access to that sheet. To give each half its
+ * own time allowance, install it twice with PART = 1 and PART = 2 (see PART below).
  *
  * It writes its tabs at the END of the sheet and never touches the first tab (the
  * existing campaign report the dashboard already reads):
@@ -31,6 +32,7 @@
  *   Insights - Demographics      campaign performance by age range and gender, last 30 days
  *   Insights - Landing pages     each final URL: mobile speed score, mobile-friendly clicks, performance
  *   Insights - About              when it ran, the date ranges, and anything that failed
+ *                                 (PART = 2 writes "Insights - About (part 2)" instead)
  *
  * Query language reference (Google Ads API, v25):
  *   https://developers.google.com/google-ads/api/fields/v25/campaign
@@ -66,8 +68,14 @@
  */
 
 var SPREADSHEET_URL = 'PASTE_THE_GOOGLE_ADS_SHEET_URL_HERE';
+var PART = 0;                         // 0 = everything in one script. To split the work in two, install this
+                                      // file twice: PART = 1 (impression share, budgets, search terms,
+                                      // keywords, devices, hours, locations, conversions) in one script and
+                                      // PART = 2 (ads, changes, optimization score, recommendations, age and
+                                      // gender, landing pages) in the other. Each gets its own 60 minutes.
 var ACCOUNT_IDS = [];                 // optional: limit to e.g. ['123-456-7890']; empty = all (busiest 50 if more)
 var MAX_ACCOUNTS = 50;                // executeInParallel's own ceiling
+var RANK_MINUTES = 6;                 // time allowed for ranking accounts by spend when there are more than 50
 var SEARCH_TERMS_PER_ACCOUNT = 3000;  // by spend, per account
 var SEARCH_TERMS_TOTAL = 30000;       // by spend, across accounts (keeps the sheet quick to read)
 var WEEKS = 13;
@@ -108,7 +116,8 @@ var TABS = {
   recs: 'Insights - Recommendations',
   demographics: 'Insights - Demographics',
   landing: 'Insights - Landing pages',
-  about: 'Insights - About'
+  about: 'Insights - About',
+  about2: 'Insights - About (part 2)'
 };
 
 var IS_HEADER = ['Account', 'Customer ID', 'Currency', 'Campaign ID', 'Campaign', 'Channel', 'Sub-channel',
@@ -193,35 +202,42 @@ var LANDING_HEADER = ['Account', 'Customer ID', 'Currency', 'Landing page', 'Spe
 
 var ABOUT_HEADER = ['Item', 'Value'];
 
-// What each tab holds, in the order they are written, and how the combined rows are capped.
+// What each tab holds, in the order they are written, which PART exports it, and how the
+// combined rows are capped. Recommendations follow optimization score: they reuse its campaign names.
 var SECTIONS = [
-  { key: 'is', header: IS_HEADER },
-  { key: 'weekly', header: WEEKLY_HEADER },
-  { key: 'budgets', header: BUDGET_HEADER },
-  { key: 'terms', header: TERMS_HEADER, cap: SEARCH_TERMS_TOTAL, label: 'Search terms' },
-  { key: 'keywords', header: KEYWORDS_HEADER, cap: KEYWORDS_TOTAL, label: 'Keywords' },
-  { key: 'devices', header: DEVICES_HEADER },
-  { key: 'hours', header: HOURS_HEADER },
-  { key: 'locations', header: LOCATIONS_HEADER, cap: LOCATIONS_TOTAL, label: 'Locations' },
-  { key: 'conversions', header: CONVERSIONS_HEADER },
-  { key: 'actions', header: ACTIONS_HEADER },
-  { key: 'ads', header: ADS_HEADER },
-  { key: 'combos', header: COMBOS_HEADER },
-  { key: 'adAssets', header: AD_ASSETS_HEADER },
-  { key: 'changes', header: CHANGES_HEADER, cap: CHANGES_TOTAL, label: 'Changes', sortBy: 'Changed at' },
-  { key: 'health', header: HEALTH_HEADER },
-  { key: 'recs', header: RECS_HEADER },
-  { key: 'demographics', header: DEMOGRAPHICS_HEADER },
-  { key: 'landing', header: LANDING_HEADER, cap: LANDING_TOTAL, label: 'Landing pages' }
+  { key: 'is', header: IS_HEADER, part: 1, name: 'impression share', run: impressionShare },
+  { key: 'weekly', header: WEEKLY_HEADER, part: 1, name: 'weekly impression share', run: weeklyShare },
+  { key: 'budgets', header: BUDGET_HEADER, part: 1, name: 'budgets', run: budgets },
+  { key: 'terms', header: TERMS_HEADER, part: 1, name: 'search terms', run: searchTerms, cap: SEARCH_TERMS_TOTAL, label: 'Search terms' },
+  { key: 'keywords', header: KEYWORDS_HEADER, part: 1, name: 'keywords', run: keywords, cap: KEYWORDS_TOTAL, label: 'Keywords' },
+  { key: 'devices', header: DEVICES_HEADER, part: 1, name: 'devices', run: devices },
+  { key: 'hours', header: HOURS_HEADER, part: 1, name: 'hours', run: hours },
+  { key: 'locations', header: LOCATIONS_HEADER, part: 1, name: 'locations', run: locations, cap: LOCATIONS_TOTAL, label: 'Locations' },
+  { key: 'conversions', header: CONVERSIONS_HEADER, part: 1, name: 'conversions', run: conversions },
+  { key: 'actions', header: ACTIONS_HEADER, part: 1, name: 'conversion actions', run: conversionActions },
+  { key: 'ads', header: ADS_HEADER, part: 2, name: 'ads', run: ads },
+  { key: 'combos', header: COMBOS_HEADER, part: 2, name: 'ad combinations', run: combinations },
+  { key: 'adAssets', header: AD_ASSETS_HEADER, part: 2, name: 'ad assets', run: adAssets },
+  { key: 'changes', header: CHANGES_HEADER, part: 2, name: 'change history', run: changes, cap: CHANGES_TOTAL, label: 'Changes', sortBy: 'Changed at' },
+  { key: 'health', header: HEALTH_HEADER, part: 2, name: 'optimization score', run: optimization },
+  { key: 'recs', header: RECS_HEADER, part: 2, name: 'recommendations', run: recommendations },
+  { key: 'demographics', header: DEMOGRAPHICS_HEADER, part: 2, name: 'demographics', run: demographics },
+  { key: 'landing', header: LANDING_HEADER, part: 2, name: 'landing pages', run: landingPages, cap: LANDING_TOTAL, label: 'Landing pages' }
 ];
+
+function inPart(x) { return !PART || x.part === PART; }
 
 
 function main() {
   if (SPREADSHEET_URL.indexOf('docs.google.com') < 0) {
     throw new Error('Set SPREADSHEET_URL at the top of the script to the Google Ads sheet first.');
   }
+  if ([0, 1, 2].indexOf(PART) < 0) throw new Error('PART must be 0, 1 or 2.');
+  Logger.log('Exporting ' + (PART ? 'part ' + PART + ': ' : 'everything: ') +
+    SECTIONS.filter(inPart).map(function (x) { return x.name; }).join(', '));
   if (typeof AdsManagerApp !== 'undefined') {
     var ids = ACCOUNT_IDS.length ? ACCOUNT_IDS : busiestAccounts();
+    Logger.log('Exporting ' + ids.length + ' accounts: ' + ids.join(', '));
     AdsManagerApp.accounts().withIds(ids).executeInParallel('processAccount', 'writeAll');
   } else {
     writeAll([{ getStatus: function () { return 'OK'; }, getReturnValue: processAccount,
@@ -231,17 +247,25 @@ function main() {
 
 
 /**
- * Every client account, or the MAX_ACCOUNTS that spent most in the last 30 days when there
- * are more. Account selectors can no longer be filtered or ordered by performance (their
- * forDateRange is deprecated), so spend is read account by account, only when needed.
+ * The live client accounts, or the MAX_ACCOUNTS that spent most in the last 30 days when there
+ * are more. One query to the manager account lists every client with its status, so closed,
+ * cancelled, suspended, hidden, test and sub-manager accounts are never opened
+ * (https://developers.google.com/google-ads/api/fields/v25/customer_client). Account selectors
+ * can no longer be ordered by performance (their forDateRange is deprecated), so spend is then
+ * read account by account, for at most RANK_MINUTES.
  */
 function busiestAccounts() {
-  var it = AdsManagerApp.accounts().get(), ids = [];
-  while (it.hasNext()) ids.push(it.next().getCustomerId());
+  var ids = liveAccounts();
   if (ids.length <= MAX_ACCOUNTS) return ids;
-  var spend = {};
+  Logger.log(ids.length + ' live accounts; ranking them by spend in the last 30 days to pick ' + MAX_ACCOUNTS + '.');
+  var spend = {}, started = Date.now(), done = 0;
   var accounts = AdsManagerApp.accounts().withIds(ids).get();
   while (accounts.hasNext()) {
+    if (Date.now() - started > RANK_MINUTES * 60000) {
+      Logger.log('Ranking stopped after ' + RANK_MINUTES + ' minutes (' + done + ' of ' + ids.length +
+        ' read); the rest are ranked last. Set ACCOUNT_IDS to choose accounts yourself.');
+      break;
+    }
     var a = accounts.next();
     AdsManagerApp.select(a);
     spend[a.getCustomerId()] = 0;
@@ -251,10 +275,32 @@ function busiestAccounts() {
     } catch (e) {
       Logger.log('Could not read spend for ' + a.getCustomerId() + ': ' + e);
     }
+    if (++done % 25 === 0) Logger.log('Ranked ' + done + ' of ' + ids.length + ' accounts.');
   }
-  ids.sort(function (x, y) { return spend[y] - spend[x]; });
-  Logger.log(ids.length + ' accounts; exporting the ' + MAX_ACCOUNTS + ' that spent most in the last 30 days.');
+  ids.sort(function (x, y) { return (spend[y] || 0) - (spend[x] || 0); });
   return ids.slice(0, MAX_ACCOUNTS);
+}
+
+/** Enabled, non-manager, non-test, visible client accounts, as 123-456-7890. */
+function liveAccounts() {
+  var ids = [];
+  try {
+    var rows = AdsApp.search('SELECT customer_client.id, customer_client.status, customer_client.manager, ' +
+      'customer_client.test_account, customer_client.hidden FROM customer_client ' +
+      "WHERE customer_client.status = 'ENABLED' AND customer_client.manager = FALSE");
+    while (rows.hasNext()) {
+      var c = rows.next().customerClient;
+      if (c.testAccount || c.hidden) continue;
+      var d = String(c.id);
+      ids.push(d.slice(0, 3) + '-' + d.slice(3, 6) + '-' + d.slice(6));
+    }
+  } catch (e) {
+    Logger.log('Could not list client accounts in one query (' + e + '); listing them one by one.');
+    var it = AdsManagerApp.accounts().get();
+    while (it.hasNext()) ids.push(it.next().getCustomerId());
+  }
+  Logger.log(ids.length + ' live client accounts under this manager account.');
+  return ids;
 }
 
 
@@ -266,28 +312,12 @@ function processAccount() {
     name: acct.getName(), cid: acct.getCustomerId(), currency: acct.getCurrencyCode(), tz: tz,
     now: Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm'), errors: []
   };
-  var out = {
-    is: guarded(ctx, 'impression share', function () { return impressionShare(ctx); }) || [],
-    weekly: guarded(ctx, 'weekly impression share', function () { return weeklyShare(ctx); }) || [],
-    budgets: guarded(ctx, 'budgets', function () { return budgets(ctx); }) || [],
-    terms: guarded(ctx, 'search terms', function () { return searchTerms(ctx); }) || [],
-    keywords: guarded(ctx, 'keywords', function () { return keywords(ctx); }) || [],
-    devices: guarded(ctx, 'devices', function () { return devices(ctx); }) || [],
-    hours: guarded(ctx, 'hours', function () { return hours(ctx); }) || [],
-    locations: guarded(ctx, 'locations', function () { return locations(ctx); }) || [],
-    conversions: guarded(ctx, 'conversions', function () { return conversions(ctx); }) || [],
-    actions: guarded(ctx, 'conversion actions', function () { return conversionActions(ctx); }) || [],
-    ads: guarded(ctx, 'ads', function () { return ads(ctx); }) || [],
-    combos: guarded(ctx, 'ad combinations', function () { return combinations(ctx); }) || [],
-    adAssets: guarded(ctx, 'ad assets', function () { return adAssets(ctx); }) || [],
-    changes: guarded(ctx, 'change history', function () { return changes(ctx); }) || [],
-    health: guarded(ctx, 'optimization score', function () { return optimization(ctx); }) || [],
-    recs: guarded(ctx, 'recommendations', function () { return recommendations(ctx); }) || [],
-    demographics: guarded(ctx, 'demographics', function () { return demographics(ctx); }) || [],
-    landing: guarded(ctx, 'landing pages', function () { return landingPages(ctx); }) || [],
-    account: ctx.name, errors: ctx.errors
-  };
-  Logger.log('[' + ctx.name + '] ' + SECTIONS.map(function (x) { return x.key + ' ' + out[x.key].length; }).join(', ') +
+  Logger.log('[' + ctx.name + '] started.');
+  var out = { account: ctx.name, errors: ctx.errors };
+  SECTIONS.filter(inPart).forEach(function (x) {
+    out[x.key] = guarded(ctx, x.name, function () { return x.run(ctx); }) || [];
+  });
+  Logger.log('[' + ctx.name + '] ' + SECTIONS.filter(inPart).map(function (x) { return x.key + ' ' + out[x.key].length; }).join(', ') +
     (ctx.errors.length ? ', ' + ctx.errors.length + ' failed queries' : ''));
   return JSON.stringify(out);
 }
@@ -962,8 +992,8 @@ function landingPages(ctx) {
 
 // ── Writing the sheet ────────────────────────────────────────────────────────
 function writeAll(results) {
-  var all = {}, notes = [], accounts = 0;
-  SECTIONS.forEach(function (x) { all[x.key] = []; });
+  var parts = SECTIONS.filter(inPart), all = {}, notes = [], accounts = 0;
+  parts.forEach(function (x) { all[x.key] = []; });
   results.forEach(function (res) {
     var id = res.getCustomerId ? res.getCustomerId() : '';
     if (res.getStatus() !== 'OK') {
@@ -972,10 +1002,10 @@ function writeAll(results) {
     }
     var d = JSON.parse(res.getReturnValue());
     accounts++;
-    SECTIONS.forEach(function (x) { all[x.key] = all[x.key].concat(d[x.key] || []); });
+    parts.forEach(function (x) { all[x.key] = all[x.key].concat(d[x.key] || []); });
     (d.errors || []).forEach(function (e) { notes.push(['Query failed', d.account + ': ' + e]); });
   });
-  SECTIONS.forEach(function (x) {
+  parts.forEach(function (x) {
     if (!x.cap) return;
     var col = x.header.indexOf(x.sortBy || 'Cost');
     all[x.key].sort(function (a, b) { return a[col] < b[col] ? 1 : a[col] > b[col] ? -1 : 0; });
@@ -986,12 +1016,13 @@ function writeAll(results) {
     }
   });
   var ss = SpreadsheetApp.openByUrl(SPREADSHEET_URL);
-  var written = SECTIONS.map(function (x) {
+  var written = parts.map(function (x) {
     return x.key + ' ' + writeTab(ss, TABS[x.key], x.header, all[x.key]);
   });
   var tz = ss.getSpreadsheetTimeZone();
   var about = [
     ['Exported at', Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm') + ' (' + tz + ')'],
+    ['Part', PART ? String(PART) + ' of 2' : 'everything'],
     ['Accounts', String(accounts)],
     ['Impression share range', 'LAST_30_DAYS'],
     ['Weekly range', 'last ' + WEEKS + ' weeks'],
@@ -1005,7 +1036,7 @@ function writeAll(results) {
     ['Demographics, landing pages range', 'LAST_30_DAYS'],
     ['Rows written', written.join(', ')]
   ].concat(notes);
-  writeTab(ss, TABS.about, ABOUT_HEADER, about, true);
+  writeTab(ss, PART === 2 ? TABS.about2 : TABS.about, ABOUT_HEADER, about, true);
   Logger.log(about.map(function (r) { return r.join(': '); }).join('\n'));
 }
 
