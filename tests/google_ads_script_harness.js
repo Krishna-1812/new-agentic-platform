@@ -11,6 +11,7 @@ var fs = require("fs"), path = require("path"), vm = require("vm");
 var src = fs.readFileSync(path.join(__dirname, "..", "scripts", "google_ads", "export_insights.js"), "utf8")
   .replace("PASTE_THE_GOOGLE_ADS_SHEET_URL_HERE", "https://docs.google.com/spreadsheets/d/TEST/edit");
 var manager = process.argv.indexOf("manager") > -1;
+var badZone = process.argv.indexOf("badzone") > -1;   // the sheet's time zone comes back unusable
 var partArg = process.argv.filter(function (a) { return /^part=\d$/.test(a); })[0];
 if (partArg) src = src.replace("var PART = 0;", "var PART = " + partArg.slice(5) + ";");
 var queries = [], logs = [];
@@ -327,7 +328,7 @@ var ss = {
   getSheetByName: function (n) { return tabs[n] ? sheet(n) : null; },
   insertSheet: function (n, idx) { tabs[n] = []; order.splice(idx, 0, n); return sheet(n); },
   getNumSheets: function () { return order.length; },
-  getSpreadsheetTimeZone: function () { return "Asia/Kolkata"; }
+  getSpreadsheetTimeZone: function () { return badZone ? null : "Asia/Kolkata"; }
 };
 function sheet(n) {
   return {
@@ -347,6 +348,7 @@ var sandbox = {
   SpreadsheetApp: { openByUrl: function () { return ss; } },
   Utilities: {
     formatDate: function (d, tz, fmt) {
+      if (typeof tz !== "string" || !tz) throw new Error("Invalid argument: timeZone. Should be of type: String");
       var fixed = new Date(Date.UTC(2026, 8, 27, 10, 30));   // 27 Sep 2026, 10:30 in the account's zone
       var p = { yyyy: "2026", MM: "09", dd: "27", HH: "10", mm: "30" };
       if (fmt === "d") return "27";

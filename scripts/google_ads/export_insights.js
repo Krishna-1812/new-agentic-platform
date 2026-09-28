@@ -1019,7 +1019,7 @@ function writeAll(results) {
   var written = parts.map(function (x) {
     return x.key + ' ' + writeTab(ss, TABS[x.key], x.header, all[x.key]);
   });
-  var tz = ss.getSpreadsheetTimeZone();
+  var tz = timeZoneOf(ss);
   var about = [
     ['Exported at', Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm') + ' (' + tz + ')'],
     ['Part', PART ? String(PART) + ' of 2' : 'everything'],
@@ -1038,6 +1038,29 @@ function writeAll(results) {
   ].concat(notes);
   writeTab(ss, PART === 2 ? TABS.about2 : TABS.about, ABOUT_HEADER, about, true);
   Logger.log(about.map(function (r) { return r.join(': '); }).join('\n'));
+}
+
+/**
+ * A time zone ID for the About tab: the sheet's, else the manager account's, else UTC. In a manager
+ * script the sheet's zone has come back as something other than a string, which Utilities.formatDate
+ * rejects ("Invalid argument: timeZone"), so each candidate is tried before it is used.
+ */
+function timeZoneOf(ss) {
+  var tries = [function () { return ss.getSpreadsheetTimeZone(); },
+               function () { return AdsApp.currentAccount().getTimeZone(); }];
+  for (var i = 0; i < tries.length; i++) {
+    try {
+      var tz = tries[i]();
+      tz = tz == null ? '' : String(tz);
+      if (tz && tz !== '[object Object]') {
+        Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');   // throws if Google does not accept it
+        return tz;
+      }
+    } catch (e) {
+      Logger.log('Time zone candidate ' + (i + 1) + ' not usable: ' + e);
+    }
+  }
+  return 'Etc/UTC';
 }
 
 /** Replaces a tab's contents; an empty result leaves the tab as it was. Returns rows written. */
