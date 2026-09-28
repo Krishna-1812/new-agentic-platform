@@ -27,6 +27,86 @@ function account(cid, name) {
   return {
     search: function (q) {
       queries.push(q);
+      if (/FROM change_event/.test(q)) {
+        if (!/change_date_time <= '\d{4}-\d{2}-\d{2}' AND change_event\.change_date_time >= '\d{4}-\d{2}-\d{2}'/.test(q) || !/LIMIT \d+$/.test(q)) {
+          throw new Error("change_event needs a date window and a LIMIT: " + q);
+        }
+        return iter([
+          { changeEvent: { changeDateTime: "2026-09-25 14:03:11.123456", changeResourceType: "CAMPAIGN_BUDGET",
+              changeResourceName: "customers/1/campaignBudgets/902", resourceChangeOperation: "UPDATE",
+              changedFields: "amount_micros", userEmail: "ops@example.com", clientType: "GOOGLE_ADS_WEB_CLIENT",
+              oldResource: { campaignBudget: { amountMicros: "5000000000" } },
+              newResource: { campaignBudget: { amountMicros: "8000000000" } } },
+            campaign: { id: "12", name: "Generic - Search" } },
+          { changeEvent: { changeDateTime: "2026-09-20 09:00:00", changeResourceType: "CAMPAIGN",
+              changeResourceName: "customers/1/campaigns/11", resourceChangeOperation: "UPDATE",
+              changedFields: { paths: ["status", "target_impression_share.location_fraction_micros"] },
+              userEmail: "", clientType: "GOOGLE_ADS_RECOMMENDATIONS",
+              oldResource: { campaign: { status: "PAUSED", targetImpressionShare: { locationFractionMicros: "500000" } } },
+              newResource: { campaign: { status: "ENABLED", targetImpressionShare: { locationFractionMicros: "900000" } } } },
+            campaign: { id: "11", name: "Brand - Search" } },
+          { changeEvent: { changeDateTime: "2026-09-18 11:30:00", changeResourceType: "AD_GROUP_CRITERION",
+              changeResourceName: "customers/1/adGroupCriteria/31~7009", resourceChangeOperation: "CREATE",
+              changedFields: "keyword.text,keyword.match_type,status", userEmail: "ops@example.com", clientType: "GOOGLE_ADS_RECOMMENDATIONS_SUBSCRIPTION",
+              newResource: { adGroupCriterion: { keyword: { text: "crm for startups", matchType: "PHRASE" }, status: "ENABLED" } } },
+            campaign: { id: "12", name: "Generic - Search" }, adGroup: { name: "CRM" } }
+        ]);
+      }
+      if (/FROM recommendation/.test(q)) {
+        return iter([
+          { recommendation: { type: "CAMPAIGN_BUDGET", campaign: "customers/1/campaigns/12",
+              campaignBudgetRecommendation: { currentBudgetAmountMicros: "5000000000", recommendedBudgetAmountMicros: "8000000000" },
+              impact: { baseMetrics: { impressions: 4000, clicks: 180, costMicros: "35000000000", conversions: 18, conversionsValue: 0 },
+                        potentialMetrics: { impressions: 6200, clicks: 260, costMicros: "56000000000", conversions: 26, conversionsValue: 0 } } } },
+          { recommendation: { type: "KEYWORD", campaign: "customers/1/campaigns/12",
+              keywordRecommendation: { keyword: { text: "crm pricing", matchType: "PHRASE" } },
+              impact: { baseMetrics: { impressions: 4000, clicks: 180 }, potentialMetrics: { impressions: 4300, clicks: 195 } } } },
+          { recommendation: { type: "RESPONSIVE_SEARCH_AD_ASSET" } }
+        ]);
+      }
+      if (/customer\.optimization_score/.test(q)) {
+        return iter([{ customer: { optimizationScore: 0.72, optimizationScoreWeight: 3.5 } }]);
+      }
+      if (/campaign\.optimization_score/.test(q)) {
+        return iter(CAMPAIGNS.map(function (c, i) {
+          return { campaign: Object.assign({}, c, { optimizationScore: [0.95, 0.61, undefined][i] }) };
+        }));
+      }
+      if (/FROM campaign WHERE campaign\.status != 'REMOVED' AND segments\.date DURING LAST_30_DAYS/.test(q)) {
+        return iter([
+          { campaign: { id: "11" }, metrics: { costMicros: "27000000000", conversions: 160 } },
+          { campaign: { id: "12" }, metrics: { costMicros: "120000000000", conversions: 90 } },
+          { campaign: { id: "13" }, metrics: { costMicros: "30000000000", conversions: 40 } }
+        ]);
+      }
+      if (/FROM age_range_view/.test(q)) {
+        return iter([
+          { campaign: CAMPAIGNS[1], adGroupCriterion: { ageRange: { type: "AGE_RANGE_25_34" } },
+            metrics: { impressions: "6000", clicks: "300", costMicros: "40000000000", conversions: 30, conversionsValue: 0 } },
+          { campaign: CAMPAIGNS[1], adGroupCriterion: { ageRange: { type: "AGE_RANGE_25_34" } },
+            metrics: { impressions: "1000", clicks: "50", costMicros: "5000000000", conversions: 5, conversionsValue: 0 } },
+          { campaign: CAMPAIGNS[1], adGroupCriterion: { ageRange: { type: "AGE_RANGE_65_UP" } },
+            metrics: { impressions: "2000", clicks: "40", costMicros: "20000000000", conversions: 0, conversionsValue: 0 } }
+        ]);
+      }
+      if (/FROM gender_view/.test(q)) {
+        return iter([
+          { campaign: CAMPAIGNS[1], adGroupCriterion: { gender: { type: "FEMALE" } },
+            metrics: { impressions: "7000", clicks: "350", costMicros: "50000000000", conversions: 40, conversionsValue: 0 } },
+          { campaign: CAMPAIGNS[1], adGroupCriterion: { gender: { type: "MALE" } },
+            metrics: { impressions: "6000", clicks: "250", costMicros: "45000000000", conversions: 20, conversionsValue: 0 } }
+        ]);
+      }
+      if (/FROM landing_page_view/.test(q)) {
+        return iter([
+          { landingPageView: { unexpandedFinalUrl: "https://example.com/crm" },
+            metrics: { speedScore: "3", mobileFriendlyClicksPercentage: 0.62, validAcceleratedMobilePagesClicksPercentage: 0,
+                       impressions: "20000", clicks: "900", costMicros: "120000000000", conversions: 90, conversionsValue: 0 } },
+          { landingPageView: { unexpandedFinalUrl: "https://example.com/" },
+            metrics: { speedScore: "8", mobileFriendlyClicksPercentage: 1,
+                       impressions: "4000", clicks: "800", costMicros: "27000000000", conversions: 160, conversionsValue: 0 } }
+        ]);
+      }
       if (/FROM ad_group_ad_asset_combination_view/.test(q)) {
         return iter([
           { campaign: { name: "Generic - Search" }, adGroup: { id: "31", name: "CRM" }, adGroupAd: { ad: { id: "801" } },

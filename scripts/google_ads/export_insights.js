@@ -1,6 +1,7 @@
 /**
  * Google Ads dashboard: insights export (impression share, budget pacing, search terms,
- * keywords and Quality Score, devices, hours, locations, conversion actions, ads and creatives).
+ * keywords and Quality Score, devices, hours, locations, conversion actions, ads and creatives,
+ * change history, optimization score, Google's recommendations, age and gender, landing pages).
  *
  * Install once in the MANAGER (MCC) account: Tools > Bulk actions > Scripts > +.
  * Paste this file, set SPREADSHEET_URL below to the Google Ads sheet the dashboard
@@ -24,6 +25,11 @@
  *   Insights - Ads               every live ad and PMax asset group: ad strength, approval, headlines
  *   Insights - Ad combinations   the headline and description combinations Google actually served
  *   Insights - Ad assets         each headline and description: pinning, Google's label, performance
+ *   Insights - Changes           every change made to the account in the last 28 days: what, who, old and new
+ *   Insights - Optimization      Google's optimization score for each account and campaign
+ *   Insights - Recommendations   Google's open recommendations with their estimated weekly impact
+ *   Insights - Demographics      campaign performance by age range and gender, last 30 days
+ *   Insights - Landing pages     each final URL: mobile speed score, mobile-friendly clicks, performance
  *   Insights - About              when it ran, the date ranges, and anything that failed
  *
  * Query language reference (Google Ads API, v25):
@@ -40,6 +46,15 @@
  *   https://developers.google.com/google-ads/api/fields/v25/ad_group_ad_asset_combination_view
  *   https://developers.google.com/google-ads/api/fields/v25/asset_group_top_combination_view
  *   https://developers.google.com/google-ads/api/fields/v25/ad_group_ad_asset_view
+ *   https://developers.google.com/google-ads/api/fields/v25/change_event
+ *   https://developers.google.com/google-ads/api/fields/v25/customer
+ *   https://developers.google.com/google-ads/api/fields/v25/recommendation
+ *   https://developers.google.com/google-ads/api/fields/v25/age_range_view
+ *   https://developers.google.com/google-ads/api/fields/v25/gender_view
+ *   https://developers.google.com/google-ads/api/fields/v25/landing_page_view
+ * Change history: "The date range must be within the past 30 days" and "The query must also
+ * include a LIMIT clause restricting results to at most 10,000 rows"
+ * (https://developers.google.com/google-ads/api/docs/change-event).
  * Impression-share values are fractions, written exactly as Google returns them:
  * "reported in the range of 0.1 to 1. Any value below 0.1 is reported as 0.0999", and the
  * lost shares "in the range of 0 to 0.9. Any value above 0.9 is reported as 0.9001".
@@ -67,6 +82,12 @@ var PMAX_COMBOS = 10;                 // Google's top combinations kept per asse
 var COMBO_ROWS_PER_ACCOUNT = 4000;
 var AD_ASSETS_PER_ACCOUNT = 8000;     // headline and description rows, by impressions
 var ASSET_BATCH = 300;                // assets looked up per query
+var CHANGE_DAYS = 28;                 // change history window (Google allows up to 30 days back)
+var CHANGES_PER_ACCOUNT = 2000;       // newest first; Google's ceiling per query is 10,000
+var CHANGES_TOTAL = 20000;
+var RECS_PER_ACCOUNT = 1000;          // open (not dismissed) recommendations
+var LANDING_PER_ACCOUNT = 500;        // final URLs, by spend
+var LANDING_TOTAL = 10000;
 
 var TABS = {
   is: 'Insights - Impression share',
@@ -82,6 +103,11 @@ var TABS = {
   ads: 'Insights - Ads',
   combos: 'Insights - Ad combinations',
   adAssets: 'Insights - Ad assets',
+  changes: 'Insights - Changes',
+  health: 'Insights - Optimization',
+  recs: 'Insights - Recommendations',
+  demographics: 'Insights - Demographics',
+  landing: 'Insights - Landing pages',
   about: 'Insights - About'
 };
 
@@ -147,6 +173,24 @@ var AD_ASSETS_HEADER = ['Account', 'Customer ID', 'Currency', 'Campaign', 'Ad gr
   'Field', 'Text', 'Pinned to', 'Performance label', 'Enabled', 'Impressions', 'Clicks', 'Cost', 'Conversions',
   'Date range', 'Exported at'];
 
+var CHANGES_HEADER = ['Account', 'Customer ID', 'Currency', 'Changed at', 'Resource type', 'Operation',
+  'Campaign ID', 'Campaign', 'Ad group', 'Item', 'Changed by', 'Made through', 'Fields changed',
+  'Old values', 'New values', 'Exported at'];
+
+var HEALTH_HEADER = ['Account', 'Customer ID', 'Currency', 'Level', 'Campaign ID', 'Campaign', 'Channel', 'Status',
+  'Optimization score', 'Score weight', 'Cost', 'Conversions', 'Date range', 'Exported at'];
+
+var RECS_HEADER = ['Account', 'Customer ID', 'Currency', 'Type', 'Campaign ID', 'Campaign', 'Detail',
+  'Current budget', 'Recommended budget', 'Base impressions', 'Base clicks', 'Base cost', 'Base conversions',
+  'Base conv. value', 'Potential impressions', 'Potential clicks', 'Potential cost', 'Potential conversions',
+  'Potential conv. value', 'Impact period', 'Exported at'];
+
+var DEMOGRAPHICS_HEADER = ['Account', 'Customer ID', 'Currency', 'Campaign ID', 'Campaign', 'Channel', 'Dimension',
+  'Segment', 'Impressions', 'Clicks', 'Cost', 'Conversions', 'Conv. value', 'Date range', 'Exported at'];
+
+var LANDING_HEADER = ['Account', 'Customer ID', 'Currency', 'Landing page', 'Speed score', 'Mobile-friendly clicks',
+  'Valid AMP clicks', 'Impressions', 'Clicks', 'Cost', 'Conversions', 'Conv. value', 'Date range', 'Exported at'];
+
 var ABOUT_HEADER = ['Item', 'Value'];
 
 // What each tab holds, in the order they are written, and how the combined rows are capped.
@@ -163,7 +207,12 @@ var SECTIONS = [
   { key: 'actions', header: ACTIONS_HEADER },
   { key: 'ads', header: ADS_HEADER },
   { key: 'combos', header: COMBOS_HEADER },
-  { key: 'adAssets', header: AD_ASSETS_HEADER }
+  { key: 'adAssets', header: AD_ASSETS_HEADER },
+  { key: 'changes', header: CHANGES_HEADER, cap: CHANGES_TOTAL, label: 'Changes', sortBy: 'Changed at' },
+  { key: 'health', header: HEALTH_HEADER },
+  { key: 'recs', header: RECS_HEADER },
+  { key: 'demographics', header: DEMOGRAPHICS_HEADER },
+  { key: 'landing', header: LANDING_HEADER, cap: LANDING_TOTAL, label: 'Landing pages' }
 ];
 
 
@@ -231,6 +280,11 @@ function processAccount() {
     ads: guarded(ctx, 'ads', function () { return ads(ctx); }) || [],
     combos: guarded(ctx, 'ad combinations', function () { return combinations(ctx); }) || [],
     adAssets: guarded(ctx, 'ad assets', function () { return adAssets(ctx); }) || [],
+    changes: guarded(ctx, 'change history', function () { return changes(ctx); }) || [],
+    health: guarded(ctx, 'optimization score', function () { return optimization(ctx); }) || [],
+    recs: guarded(ctx, 'recommendations', function () { return recommendations(ctx); }) || [],
+    demographics: guarded(ctx, 'demographics', function () { return demographics(ctx); }) || [],
+    landing: guarded(ctx, 'landing pages', function () { return landingPages(ctx); }) || [],
     account: ctx.name, errors: ctx.errors
   };
   Logger.log('[' + ctx.name + '] ' + SECTIONS.map(function (x) { return x.key + ' ' + out[x.key].length; }).join(', ') +
@@ -717,6 +771,195 @@ function adAssets(ctx) {
 }
 
 
+// ── Change history, last CHANGE_DAYS days ────────────────────────────────────
+function changes(ctx) {
+  var now = new Date();
+  var from = Utilities.formatDate(new Date(now.getTime() - CHANGE_DAYS * 86400000), ctx.tz, 'yyyy-MM-dd');
+  var to = Utilities.formatDate(new Date(now.getTime() + 86400000), ctx.tz, 'yyyy-MM-dd');   // tomorrow, as Google's own example does
+  var q = 'SELECT change_event.change_date_time, change_event.change_resource_type, ' +
+    'change_event.change_resource_name, change_event.resource_change_operation, change_event.changed_fields, ' +
+    'change_event.old_resource, change_event.new_resource, change_event.user_email, change_event.client_type, ' +
+    'campaign.id, campaign.name, ad_group.name FROM change_event ' +
+    "WHERE change_event.change_date_time <= '" + to + "' AND change_event.change_date_time >= '" + from + "' " +
+    'ORDER BY change_event.change_date_time DESC LIMIT ' + CHANGES_PER_ACCOUNT;
+  var rows = AdsApp.search(q), out = [];
+  while (rows.hasNext()) {
+    var r = rows.next(), e = r.changeEvent || {}, type = e.changeResourceType || '';
+    var oldRes = changedResource(e.oldResource, type), newRes = changedResource(e.newResource, type);
+    var paths = changedPaths(e.changedFields);
+    out.push([ctx.name, ctx.cid, ctx.currency, String(e.changeDateTime || '').slice(0, 19), type,
+      e.resourceChangeOperation || '', (r.campaign && r.campaign.id) || '', (r.campaign && r.campaign.name) || '',
+      (r.adGroup && r.adGroup.name) || '', itemName(newRes, oldRes, e.changeResourceName),
+      e.userEmail || '', e.clientType || '', paths.join(', '),
+      changeValues(oldRes, paths), changeValues(newRes, paths), ctx.now]);
+  }
+  return out;
+}
+
+/** The one resource set inside a ChangedResource (campaign, campaignBudget, adGroupAd, ...). */
+function changedResource(changed, type) {
+  if (!changed) return {};
+  var key = camel(String(type).toLowerCase());
+  if (changed[key]) return changed[key];
+  var keys = Object.keys(changed);
+  return keys.length ? changed[keys[0]] || {} : {};
+}
+
+/** changed_fields is a FieldMask: "a,b.c" in JSON, or {paths: [...]}. */
+function changedPaths(mask) {
+  if (!mask) return [];
+  var list = typeof mask === 'string' ? mask.split(',') : (mask.paths || []);
+  return list.map(function (p) { return String(p).trim(); }).filter(String);
+}
+
+function camel(s) { return s.replace(/_([a-z])/g, function (m, c) { return c.toUpperCase(); }); }
+
+function fieldAt(obj, path) {
+  var parts = path.split('.'), v = obj;
+  for (var i = 0; i < parts.length && v != null; i++) v = v[camel(parts[i])];
+  return v;
+}
+
+/** {field: value} for the changed fields, as JSON: micros become money, long values are cut. */
+function changeValues(res, paths) {
+  var out = {}, n = 0;
+  paths.forEach(function (p) {
+    if (n >= 12) return;
+    var v = fieldAt(res, p);
+    if (v == null) return;
+    if (/micros$/i.test(p)) v = money(v);
+    else if (typeof v === 'object') v = JSON.stringify(v).slice(0, 200);
+    else if (typeof v === 'string') v = v.slice(0, 200);
+    out[p] = v;
+    n++;
+  });
+  return n ? JSON.stringify(out) : '';
+}
+
+function itemName(newRes, oldRes, resourceName) {
+  var r = newRes && Object.keys(newRes).length ? newRes : oldRes || {};
+  var name = r.name || (r.keyword && r.keyword.text) || (r.ad && r.ad.name) || (r.textAsset && r.textAsset.text) || '';
+  return String(name || String(resourceName || '').split('/').pop()).slice(0, 200);
+}
+
+
+// ── Optimization score ───────────────────────────────────────────────────────
+function optimization(ctx) {
+  var out = [], camps = {}, order = [];
+  var rows = AdsApp.search('SELECT campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type, ' +
+    "campaign.optimization_score FROM campaign WHERE campaign.status != 'REMOVED'");
+  while (rows.hasNext()) {
+    var c = rows.next().campaign;
+    camps[c.id] = { c: c, cost: 0, conv: 0 };
+    order.push(c.id);
+  }
+  guarded(ctx, 'campaign spend', function () {
+    var m = AdsApp.search('SELECT campaign.id, metrics.cost_micros, metrics.conversions FROM campaign ' +
+      "WHERE campaign.status != 'REMOVED' AND segments.date DURING LAST_30_DAYS");
+    while (m.hasNext()) {
+      var r = m.next(), x = camps[r.campaign.id];
+      if (x) { x.cost = money(r.metrics.costMicros); x.conv = num(r.metrics.conversions); }
+    }
+  });
+  var total = 0, conv = 0;
+  order.forEach(function (id) { total += camps[id].cost; conv += camps[id].conv; });
+  var acct = {};
+  guarded(ctx, 'account optimization score', function () {
+    var a = AdsApp.search('SELECT customer.optimization_score, customer.optimization_score_weight FROM customer');
+    if (a.hasNext()) acct = a.next().customer || {};
+  });
+  out.push([ctx.name, ctx.cid, ctx.currency, 'ACCOUNT', '', '', '', '',
+    share(acct.optimizationScore), share(acct.optimizationScoreWeight), Math.round(total * 100) / 100,
+    Math.round(conv * 100) / 100, 'LAST_30_DAYS', ctx.now]);
+  order.forEach(function (id) {
+    var x = camps[id], c = x.c;
+    if (c.optimizationScore == null && !x.cost) return;   // nothing to show
+    out.push([ctx.name, ctx.cid, ctx.currency, 'CAMPAIGN', c.id, c.name, c.advertisingChannelType || '',
+      c.status || '', share(c.optimizationScore), '', x.cost, x.conv, 'LAST_30_DAYS', ctx.now]);
+  });
+  ctx.campaignNames = {};
+  order.forEach(function (id) { ctx.campaignNames[id] = camps[id].c.name; });
+  return out;
+}
+
+
+// ── Google's open recommendations ────────────────────────────────────────────
+function recommendations(ctx) {
+  var names = ctx.campaignNames || {};
+  var rows = AdsApp.search('SELECT recommendation.type, recommendation.campaign, recommendation.impact, ' +
+    'recommendation.campaign_budget_recommendation, recommendation.keyword_recommendation ' +
+    'FROM recommendation WHERE recommendation.dismissed = FALSE LIMIT ' + RECS_PER_ACCOUNT);
+  var out = [];
+  while (rows.hasNext()) {
+    var rec = rows.next().recommendation || {}, imp = rec.impact || {};
+    var base = imp.baseMetrics || {}, pot = imp.potentialMetrics || {};
+    var cid = rec.campaign ? String(rec.campaign).split('/').pop() : '';
+    var bud = rec.campaignBudgetRecommendation || {}, kw = rec.keywordRecommendation || {};
+    var detail = '';
+    if (kw.keyword && kw.keyword.text) detail = kw.keyword.text + (kw.keyword.matchType ? ' (' + kw.keyword.matchType + ')' : '');
+    out.push([ctx.name, ctx.cid, ctx.currency, rec.type || '', cid, names[cid] || '', detail,
+      bud.currentBudgetAmountMicros ? money(bud.currentBudgetAmountMicros) : '',
+      bud.recommendedBudgetAmountMicros ? money(bud.recommendedBudgetAmountMicros) : '',
+      num(base.impressions), num(base.clicks), money(base.costMicros), num(base.conversions), num(base.conversionsValue),
+      num(pot.impressions), num(pot.clicks), money(pot.costMicros), num(pot.conversions), num(pot.conversionsValue),
+      'WEEKLY', ctx.now]);
+  }
+  return out;
+}
+
+
+// ── Age range and gender, last 30 days (summed over each campaign's ad groups) ──
+function demographics(ctx) {
+  var sums = {}, order = [];
+  [['Age', 'age_range_view', 'ad_group_criterion.age_range.type', function (k) { return k.ageRange && k.ageRange.type; }],
+   ['Gender', 'gender_view', 'ad_group_criterion.gender.type', function (k) { return k.gender && k.gender.type; }]
+  ].forEach(function (d) {
+    guarded(ctx, d[1], function () {
+      var rows = AdsApp.search('SELECT campaign.id, campaign.name, campaign.advertising_channel_type, ' + d[2] + ', ' +
+        'metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions, metrics.conversions_value ' +
+        'FROM ' + d[1] + ' WHERE segments.date DURING LAST_30_DAYS AND metrics.impressions > 0');
+      while (rows.hasNext()) {
+        var r = rows.next(), seg = d[3](r.adGroupCriterion || {}) || 'UNKNOWN', m = r.metrics;
+        var k = r.campaign.id + '~' + d[0] + '~' + seg;
+        if (!sums[k]) {
+          sums[k] = { c: r.campaign, dim: d[0], seg: seg, imp: 0, clicks: 0, cost: 0, conv: 0, value: 0 };
+          order.push(k);
+        }
+        var s = sums[k];
+        s.imp += num(m.impressions); s.clicks += num(m.clicks); s.cost += Number(m.costMicros || 0);
+        s.conv += num(m.conversions); s.value += num(m.conversionsValue);
+      }
+    });
+  });
+  return order.map(function (k) {
+    var s = sums[k];
+    return [ctx.name, ctx.cid, ctx.currency, s.c.id, s.c.name, s.c.advertisingChannelType || '', s.dim, s.seg,
+      s.imp, s.clicks, money(s.cost), Math.round(s.conv * 100) / 100, Math.round(s.value * 100) / 100,
+      'LAST_30_DAYS', ctx.now];
+  });
+}
+
+
+// ── Landing pages, last 30 days ──────────────────────────────────────────────
+function landingPages(ctx) {
+  var rows = AdsApp.search('SELECT landing_page_view.unexpanded_final_url, metrics.speed_score, ' +
+    'metrics.mobile_friendly_clicks_percentage, metrics.valid_accelerated_mobile_pages_clicks_percentage, ' +
+    'metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions, metrics.conversions_value ' +
+    'FROM landing_page_view WHERE segments.date DURING LAST_30_DAYS AND metrics.impressions > 0 ' +
+    'ORDER BY metrics.cost_micros DESC LIMIT ' + LANDING_PER_ACCOUNT);
+  var out = [];
+  while (rows.hasNext()) {
+    var r = rows.next(), m = r.metrics;
+    out.push([ctx.name, ctx.cid, ctx.currency, (r.landingPageView && r.landingPageView.unexpandedFinalUrl) || '',
+      m.speedScore == null ? '' : Number(m.speedScore), share(m.mobileFriendlyClicksPercentage),
+      share(m.validAcceleratedMobilePagesClicksPercentage),
+      num(m.impressions), num(m.clicks), money(m.costMicros), num(m.conversions), num(m.conversionsValue),
+      'LAST_30_DAYS', ctx.now]);
+  }
+  return out;
+}
+
+
 // ── Writing the sheet ────────────────────────────────────────────────────────
 function writeAll(results) {
   var all = {}, notes = [], accounts = 0;
@@ -734,10 +977,11 @@ function writeAll(results) {
   });
   SECTIONS.forEach(function (x) {
     if (!x.cap) return;
-    var costCol = x.header.indexOf('Cost');
-    all[x.key].sort(function (a, b) { return b[costCol] - a[costCol]; });
+    var col = x.header.indexOf(x.sortBy || 'Cost');
+    all[x.key].sort(function (a, b) { return a[col] < b[col] ? 1 : a[col] > b[col] ? -1 : 0; });
     if (all[x.key].length > x.cap) {
-      notes.push([x.label + ' trimmed', 'Kept the ' + x.cap + ' that spent most of ' + all[x.key].length]);
+      notes.push([x.label + ' trimmed', 'Kept the ' + x.cap + (x.sortBy ? ' newest' : ' that spent most') +
+        ' of ' + all[x.key].length]);
       all[x.key] = all[x.key].slice(0, x.cap);
     }
   });
@@ -756,6 +1000,9 @@ function writeAll(results) {
     ['Devices, hours, locations, conversions range', 'LAST_30_DAYS'],
     ['Ads', 'live ads and asset groups now; performance LAST_30_DAYS; top ' + COMBOS_PER_AD +
       ' served combinations per ad'],
+    ['Changes range', 'last ' + CHANGE_DAYS + ' days, newest ' + CHANGES_PER_ACCOUNT + ' per account'],
+    ['Recommendations', 'open (not dismissed) now; impact is Google\'s weekly estimate'],
+    ['Demographics, landing pages range', 'LAST_30_DAYS'],
     ['Rows written', written.join(', ')]
   ].concat(notes);
   writeTab(ss, TABS.about, ABOUT_HEADER, about, true);
