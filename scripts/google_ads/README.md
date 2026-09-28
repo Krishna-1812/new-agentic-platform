@@ -2,14 +2,28 @@
 
 `export_insights.js` is a Google Ads Script. It feeds the Impression share, Budget pacing, Search terms, Keywords and Quality Score, Devices, Day and hour, Locations, Conversion actions, Ads, Optimization score and recommendations, Change history, Age and gender, and Landing pages panels on `/dashboards/google-ads`. It runs inside Google Ads, not on the server, so the platform needs no Google Ads API developer token.
 
-## Install (once, about 5 minutes)
+## Install (once, about 10 minutes)
+
+The work is split in two so each half gets Google's full time allowance (a manager script with `executeInParallel` may run for 60 minutes). You install the **same file twice**, changing one number.
+
+**Script 1: groups 1 and 2**
 
 1. Sign in to the **manager (MCC) account** that holds the client accounts.
-2. Go to **Tools → Bulk actions → Scripts** and click **+ New script**.
+2. Go to **Tools → Bulk actions → Scripts** and click **+ → New script**. Name it `Dashboard insights part 1`.
 3. Paste the whole of `export_insights.js`.
-4. At the top, set `SPREADSHEET_URL` to the URL of the Google Sheet the dashboard reads. This is the sheet whose ID is in the Railway variable `GOOGLE_ADS_SHEET_ID`. The person authorising the script needs **edit** access to that sheet.
-5. Click **Authorize**, then **Preview**. The log should list, for each account, the number of campaigns, campaign-weeks, budgets and search terms it read.
-6. Click **Run** once, then set **Frequency: Daily**, early morning (for example 06:00), so yesterday's data is complete.
+4. At the top, set:
+   - `SPREADSHEET_URL` to the URL of the Google Sheet the dashboard reads (the sheet whose ID is in the Railway variable `GOOGLE_ADS_SHEET_ID`). The person authorising the script needs **edit** access to that sheet.
+   - `PART = 1`.
+5. Click **Authorize**, then **Preview**. Preview reads Google Ads without changing it but does write the sheet ([Preview mode](https://developers.google.com/google-ads/scripts/docs/preview)). The log starts with the number of live client accounts, then one line per account as it finishes.
+6. Save. On the Scripts list, set **Frequency: Daily**, early morning (for example 06:00).
+
+**Script 2: groups 3 and 4**
+
+7. Repeat steps 2 to 6 with a new script named `Dashboard insights part 2`, the same `SPREADSHEET_URL`, and `PART = 2`. Schedule it an hour after part 1 (for example 07:00).
+
+`PART = 0` runs everything in one script, for managers with few accounts.
+
+**Choosing accounts.** Leave `ACCOUNT_IDS = []` to export every live client account (enabled, not a manager, not a test or hidden account, read in one query). With more than 50, the script ranks them by 30-day spend for up to `RANK_MINUTES` and exports the top 50. To choose them yourself, list them, for example `['123-456-7890', '234-567-8901']`. For a first test, list two or three.
 
 The dashboard picks up the new tabs within 15 minutes, or immediately when you press **Refresh** on the page.
 
@@ -37,7 +51,8 @@ It adds these tabs at the **end** of the sheet. It never changes the first tab, 
 | Insights - Recommendations | Google's open (not dismissed) recommendations: type, campaign, keyword or budget detail, and Google's estimated weekly impact (impressions, clicks, cost, conversions) before and after | Now |
 | Insights - Demographics | Per campaign: performance by age range and by gender | Last 30 days |
 | Insights - Landing pages | Each final URL: Google's mobile speed score (1 to 10), share of mobile clicks to mobile-friendly pages, and performance | Last 30 days, the 500 costliest per account |
-| Insights - About | When it ran, the row counts, and any query that failed | – |
+| Insights - About | When part 1 (or the single script) ran, the row counts, and any query that failed | – |
+| Insights - About (part 2) | The same for part 2 | – |
 
 ## Limits and safety
 

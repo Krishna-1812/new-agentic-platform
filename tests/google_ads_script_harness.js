@@ -10,8 +10,10 @@ var fs = require("fs"), path = require("path"), vm = require("vm");
 
 var src = fs.readFileSync(path.join(__dirname, "..", "scripts", "google_ads", "export_insights.js"), "utf8")
   .replace("PASTE_THE_GOOGLE_ADS_SHEET_URL_HERE", "https://docs.google.com/spreadsheets/d/TEST/edit");
-var manager = process.argv[2] === "manager";
-var queries = [];
+var manager = process.argv.indexOf("manager") > -1;
+var partArg = process.argv.filter(function (a) { return /^part=\d$/.test(a); })[0];
+if (partArg) src = src.replace("var PART = 0;", "var PART = " + partArg.slice(5) + ";");
+var queries = [], logs = [];
 
 function iter(rows) { var i = 0; return { hasNext: function () { return i < rows.length; }, next: function () { return rows[i++]; } }; }
 
@@ -283,6 +285,11 @@ function account(cid, name) {
           { campaign: { id: "12" }, metrics: { costMicros: String(Math.round(4000000000 * f)), clicks: String(30 * f), conversions: 3 * f, conversionsValue: 0 } }
         ]);
       }
+      if (/FROM customer_client/.test(q)) {
+        return iter([{ customerClient: { id: "1111111111", status: "ENABLED", manager: false } },
+                     { customerClient: { id: "2222222222", status: "ENABLED", manager: false } },
+                     { customerClient: { id: "3333333333", status: "ENABLED", manager: false, testAccount: true } }]);
+      }
       if (/FROM customer/.test(q)) return iter([{ metrics: { costMicros: cid === "222-222-2222" ? "900" : "100" } }]);
       if (/FROM campaign WHERE segments\.date DURING LAST_30_DAYS/.test(q)) {
         return iter([
@@ -354,7 +361,7 @@ var sandbox = {
       return fmt.replace(/yyyy|MM|dd|HH|mm/g, function (k) { return p[k]; });
     }
   },
-  Logger: { log: function () {} },
+  Logger: { log: function (m) { logs.push(String(m)); } },
   JSON: JSON, Math: Math, Number: Number, String: String, Date: Date, Object: Object, Error: Error
 };
 if (manager) {
@@ -388,4 +395,4 @@ vm.createContext(sandbox);
 vm.runInContext(src, sandbox);
 if (manager) vm.runInContext("MAX_ACCOUNTS = 1;", sandbox);
 vm.runInContext("main()", sandbox);
-process.stdout.write(JSON.stringify({ tabs: tabs, order: order, queries: queries.length }));
+process.stdout.write(JSON.stringify({ tabs: tabs, order: order, queries: queries.length, logs: logs }));

@@ -63,6 +63,7 @@ TABS = {
     "demographics": "Insights - Demographics",
     "landing": "Insights - Landing pages",
     "about": "Insights - About",
+    "about2": "Insights - About (part 2)",   # written when the script is split into two (PART = 2)
 }
 PREFIX = "Insights - "
 CACHE_TTL = 900
@@ -899,7 +900,7 @@ def build(raw):
     out["recs"] = parse_recs(raw.get("recs"))
     out["demographics"] = parse_demographics(raw.get("demographics"))
     out["landing"] = parse_landing(raw.get("landing"))
-    out["about"] = parse_about(raw.get("about"))
+    out["about"] = parse_about(raw.get("about")) + parse_about(raw.get("about2"))
     out["as_of"] = next((v for k, v in out["about"] if k == "Exported at"), "")
     curs = {}
     for r in out["is"] + out["budget_campaigns"]:

@@ -202,9 +202,27 @@ def test_recommendation_types_get_plain_labels():
 
 @pytest.mark.skipif(not NODE, reason="node is not installed")
 def test_in_a_manager_account_the_busiest_accounts_are_exported():
-    tabs = _harness("manager")["tabs"]
-    accounts = {r[0] for r in tabs[gai.TABS["budgets"]][1:]}
+    res = _harness("manager")
+    accounts = {r[0] for r in res["tabs"][gai.TABS["budgets"]][1:]}
     assert accounts == {"Beta"}, "with the limit at one account, the one that spent most is chosen"
+    assert "2 live client accounts under this manager account." in res["logs"], "the test account is skipped"
+    assert any(l.startswith("Exporting 1 accounts: 222-222-2222") for l in res["logs"]), "progress is logged"
+
+
+@pytest.mark.skipif(not NODE, reason="node is not installed")
+def test_the_script_can_be_split_into_two_parts_that_together_write_every_tab():
+    one, two = _harness("manager", "part=1"), _harness("manager", "part=2")
+    t1, t2 = set(one["order"][1:]), set(two["order"][1:])
+    data = {t for k, t in gai.TABS.items() if k not in ("about", "about2")}
+    assert t1 & t2 == set(), "no tab is written by both parts"
+    assert (t1 | t2) - {gai.TABS["about"], gai.TABS["about2"]} == data
+    assert gai.TABS["about"] in t1 and gai.TABS["about2"] in t2, "each part keeps its own About tab"
+    assert gai.TABS["is"] in t1 and gai.TABS["changes"] in t2
+    assert one["queries"] < _harness("manager")["queries"], "part 1 skips the part 2 queries"
+    recs = gai.parse_recs(two["tabs"][gai.TABS["recs"]])
+    assert recs["rows"][0]["campaign"] == "Generic - Search", "part 2 still names recommendation campaigns"
+    ins = gai.build({"about": one["tabs"][gai.TABS["about"]], "about2": two["tabs"][gai.TABS["about2"]]})
+    assert ("Part", "1 of 2") in [tuple(x) for x in ins["about"]] and ("Part", "2 of 2") in [tuple(x) for x in ins["about"]]
 
 
 def test_the_script_uses_no_deprecated_account_filters():
