@@ -1,11 +1,7 @@
 {
-  "counts": {
-    "C-Suite Join": 67,
-    "C-Suite Exit": 11,
-    "Product Launch": 1
-  },
-  "total": 79,
+  "counts": {},
+  "total": 0,
   "companies": 50,
-  "generated_at": "2026-09-21T15:18:22.811495+00:00",
-  "cutoff": "2026-09-14T15:18:22.809589+00:00"
+  "generated_at": "2026-09-28T16:54:36.720737+00:00",
+  "cutoff": "2026-09-21T16:54:36.720406+00:00"
 }

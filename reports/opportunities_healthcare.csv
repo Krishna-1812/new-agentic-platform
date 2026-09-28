@@ -15,13 +15,13 @@ rank,company,domain,industry,total_score,signal_types,top_signal,top_signal_date
 14,UMass Memorial Health - Harrington,http://www.harringtonhospital.org,hospital & health care,90.0,C-Suite Join,Robin Sodano — Retired as Senior Vice President of Information Services and Chief Information Officer,2026-09-01
 15,PRCS,http://www.prcshealthcare.com,hospital & health care,86.2,C-Suite Exit + C-Suite Join,Brian Dietz — Interim appointment as Interim Hospital Chief Executive,2026-09-10
 16,Sunshine Health,http://www.sunshinehealth.com,hospital & health care,85.5,C-Suite Exit + C-Suite Join,Chris Neczypor — Appointed as Chief Financial Officer,2027-01-01
-17,Whitman Hospital and Medical Clinics,http://www.whmc.org,hospital & health care,72.0,C-Suite Join,Holly Shelden — Appointed as Chief Executive Officer,2026-09-17
-18,UNC Physicians Network,http://www.uncpn.com,hospital & health care,66.0,C-Suite Join,"Min Lee — Appointed as President, UNC Hospitals",2026-07-20
-19,Royal Health Group,http://www.royalhealthgroup.com,hospital & health care,60.0,C-Suite Join,"Alex Roe, CFA — Appointed as Chief Financial Officer",2026-08-06
-20,Nexus Health Systems,http://www.nexushealthsystems.com,hospital & health care,60.0,C-Suite Join,"Akram Boutros, MD, FACHE — Role change as Chief Executive Officer",2026-07-28
-21,Harmony Home Health & Hospice,http://www.harmonyhomehealth.com,hospital & health care,60.0,C-Suite Join,Tom Xu — Appointed as Chief Operating Officer,2026-08-10
-22,Rehoboth McKinley Christian Health Care Services,http://www.rmch.org,hospital & health care,57.7,C-Suite Exit + C-Suite Join,Brian Dietz — Interim appointment as Interim Chief Executive Officer,2026-09-10
-23,Mammoth Hospital,http://www.mammothhospital.org,hospital & health care,57.0,C-Suite Exit + C-Suite Join,Tom Parker — Retired as Chief Executive Officer,2026-10-02
+17,UNC Physicians Network,http://www.uncpn.com,hospital & health care,66.0,C-Suite Join,"Min Lee — Appointed as President, UNC Hospitals",2026-07-20
+18,Royal Health Group,http://www.royalhealthgroup.com,hospital & health care,60.0,C-Suite Join,"Alex Roe, CFA — Appointed as Chief Financial Officer",2026-08-06
+19,Nexus Health Systems,http://www.nexushealthsystems.com,hospital & health care,60.0,C-Suite Join,"Akram Boutros, MD, FACHE — Role change as Chief Executive Officer",2026-07-28
+20,Harmony Home Health & Hospice,http://www.harmonyhomehealth.com,hospital & health care,60.0,C-Suite Join,Tom Xu — Appointed as Chief Operating Officer,2026-08-10
+21,Rehoboth McKinley Christian Health Care Services,http://www.rmch.org,hospital & health care,57.7,C-Suite Exit + C-Suite Join,Brian Dietz — Interim appointment as Interim Chief Executive Officer,2026-09-10
+22,Mammoth Hospital,http://www.mammothhospital.org,hospital & health care,57.0,C-Suite Exit + C-Suite Join,Tom Parker — Retired as Chief Executive Officer,2026-10-02
+23,Whitman Hospital and Medical Clinics,http://www.whmc.org,hospital & health care,57.0,C-Suite Join,Holly Shelden — Appointed as Chief Executive Officer,2026-09-17
 24,Los Alamos Medical Center,http://www.losalamosmedicalcenter.com,hospital & health care,55.5,C-Suite Exit + C-Suite Join,Chris Emond — Appointed as Chief Financial Officer,2026-08-10
 25,Kline Galland,http://www.klinegalland.org,hospital & health care,55.5,C-Suite Exit + C-Suite Join,"Dr. Megan Gillum — Appointed as Medical Director, Kline Galland Hospice",2026-07-21
 26,ST ALPHONSUS REGIONAL MEDICAL CENTER INC,http://www.saintalphonsus.com,hospital & health care,54.7,C-Suite Exit + C-Suite Join,Megan Boyle — Role change as Vice President of Operations,2026-08-31
@@ -34,9 +34,9 @@ rank,company,domain,industry,total_score,signal_types,top_signal,top_signal_date
 33,"St. Joseph Regional Medical Center, Inc.",http://www.sjrmc.org,hospital & health care,42.0,C-Suite Join,Angela Green — Appointed as Chief Nursing Officer / Chief Operating Officer,Unknown
 34,Orange City Area Health System,http://www.ochealthsystem.org,hospital & health care,42.0,C-Suite Join,Chris Sietstra — Appointed as Chief Executive Officer,2026-07-06
 35,TriStar StoneCrest Medical Center,http://www.tristarstonecrest.com,hospital & health care,40.5,C-Suite Join,"Lori Feltner, MSN — Appointed as Chief Nursing Officer",2026-08-29
-36,HealthSource Saginaw,http://www.healthsourcesaginaw.org,hospital & health care,39.0,C-Suite Exit + C-Suite Join,Joel Kincaid — exited as Chief Executive Officer,2026-09-18
-37,Mesa View Regional Hospital,http://www.mesaviewhospital.com,hospital & health care,39.0,C-Suite Join,Michelle Beverly — Promoted as Chief Executive Officer,2026-07-13
-38,Strive Health,http://www.strivehealth.com,hospital & health care,36.0,C-Suite Join,Michele Paige — Appointed as Chief Growth Officer,Unknown
+36,Mesa View Regional Hospital,http://www.mesaviewhospital.com,hospital & health care,39.0,C-Suite Join,Michelle Beverly — Promoted as Chief Executive Officer,2026-07-13
+37,Strive Health,http://www.strivehealth.com,hospital & health care,36.0,C-Suite Join,Michele Paige — Appointed as Chief Growth Officer,Unknown
+38,HealthSource Saginaw,http://www.healthsourcesaginaw.org,hospital & health care,35.2,C-Suite Exit + C-Suite Join,Joel Kincaid — exited as Chief Executive Officer,2026-09-18
 39,DMC Huron Valley-Sinai Hospital,http://www.hvsh.org,hospital & health care,34.5,C-Suite Join,Daniel Lee — Appointed as Chief Executive Officer,2026-09-09
 40,Special Tree Rehabilitation System,http://www.specialtree.com,hospital & health care,33.0,C-Suite Join,Seth Buckman — Appointed as NeuroCare Center Administrator,2026-08-24
 41,"Independent Living Systems, LLC",http://www.ilshealth.com,hospital & health care,33.0,C-Suite Join,Tatiana Pita — Promoted as Senior Vice President of Care Management,2026-08-24
