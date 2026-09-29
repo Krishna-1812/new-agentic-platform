@@ -1213,7 +1213,7 @@ function landingPages(ctx) {
       'metrics.mobile_friendly_clicks_percentage, metrics.valid_accelerated_mobile_pages_clicks_percentage ' +
       'FROM landing_page_view WHERE segments.date DURING LAST_30_DAYS AND metrics.impressions > 0');
     while (q.hasNext()) {
-      var r = q.next(), m = r.metrics;
+      var r = q.next(), m = r.metrics || {};   // Google omits metrics when every one is empty
       quality[(r.landingPageView && r.landingPageView.unexpandedFinalUrl) || ''] = [
         m.speedScore == null || m.speedScore === '' ? '' : Number(m.speedScore),
         share(m.mobileFriendlyClicksPercentage), share(m.validAcceleratedMobilePagesClicksPercentage)];

@@ -810,3 +810,10 @@ def test_the_page_warns_when_the_campaign_report_mixes_currencies(monkeypatch):
     assert "Currencies are mixed" in _client().get("/dashboards/google-ads").get_data(as_text=True)
     monkeypatch.setattr(appmod, "_fetch_google_ads_rows", lambda force=False: ROWS)
     assert "Currencies are mixed" not in _client().get("/dashboards/google-ads").get_data(as_text=True)
+
+
+def test_landing_speed_row_without_metrics_does_not_fail_the_query():
+    # Google leaves out the metrics object when a page has no speed score and no click shares.
+    tabs = _harness()["tabs"]
+    failed = [r for rows in tabs.values() for r in rows if r and r[0] == "Query failed"]
+    assert not failed, failed

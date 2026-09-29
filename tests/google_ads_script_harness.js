@@ -146,7 +146,9 @@ function account(cid, name) {
                        impressions: "20000", clicks: "900", costMicros: "120000000000", conversions: 90, conversionsValue: 0 } },
           { landingPageView: { unexpandedFinalUrl: "https://example.com/" },
             metrics: { speedScore: "8", mobileFriendlyClicksPercentage: 1,
-                       impressions: "4000", clicks: "800", costMicros: "27000000000", conversions: 160, conversionsValue: 0 } }
+                       impressions: "4000", clicks: "800", costMicros: "27000000000", conversions: 160, conversionsValue: 0 } },
+          // no speed score and no click shares: Google sends the row without a metrics object
+          { landingPageView: { unexpandedFinalUrl: "https://example.com/new" } }
         ]);
       }
       if (/FROM ad_group_ad_asset_combination_view/.test(q)) {
