@@ -1064,3 +1064,7 @@ html.gad-locked { overflow: hidden; }
   .gad-tick-track { animation: none !important; flex-wrap: wrap; padding: var(--sp-2) 0; }
   .gad-ln > span { transform: none !important; }
 }
+
+/* Insights panels while the server adds up a new selection: the old figures dim, never pass as new. */
+.gad-panel.is-updating, .gai-chapter.is-updating { opacity: .5; transition: opacity .2s ease; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .gad-panel.is-updating, .gai-chapter.is-updating { transition: none; } }

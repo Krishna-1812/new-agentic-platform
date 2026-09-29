@@ -17,7 +17,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=8"]) }}
+{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=9"]) }}
 </head>
 <body class="gad" data-currency-symbol="{{ currency_symbol }}">
 
@@ -266,13 +266,15 @@
     <div class="gad-movers" id="gad-movers"></div>
   </section>
 
-  {# ── Beyond the report: impression share, budget pacing, search terms.
+  {# ── Beyond the report: impression share, budget pacing, search terms...
      Read from the insights tabs scripts/google_ads/export_insights.js
-     writes; drawn by static/js/google-ads-insights.js, following the
-     account filter and the search box. Hidden until that script has run. #}
+     writes, added up by the server for the page's filters
+     (tracker/google_ads_insights.py) and drawn by
+     static/js/google-ads-insights.js, which asks again whenever a filter
+     changes. Hidden until that script has run. #}
   {% if insights and insights.ok %}
   <section class="gai-chapter bn-reveal" aria-labelledby="gai-title">
-    <span class="gad-lbl">Google Ads insights export &middot; last 30 days</span>
+    <span class="gad-lbl">Google Ads insights export &middot; follows the filters above</span>
     <h2 class="gad-h1 gai-title" id="gai-title">Why spend lands <span class="gad-mk">where it does</span></h2>
     <p class="gai-sub" id="gai-asof"></p>
   </section>
@@ -287,7 +289,7 @@
     <div class="gai-stats" id="gai-share-stats"></div>
     <div class="gad-grid gad-grid--2 gai-inner">
       <div class="gai-block">
-        <h3 class="gai-h3">Week by week</h3>
+        <h3 class="gai-h3" id="gai-weekly-h">Week by week</h3>
         <div class="gad-legend-row" id="gai-weekly-legend"></div>
         <div class="gad-chart" id="gai-weekly"></div>
       </div>
@@ -315,7 +317,7 @@
       </table>
     </div>
     <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-share-more" hidden>Show more</button></div>
-    <p class="gad-note">Impression share is the impressions a campaign got divided by the impressions it was eligible for. Totals weight each campaign by its eligible impressions (impressions &divide; share). Google reports shares below 10% as &ldquo;&lt;10%&rdquo; and lost shares above 90% as &ldquo;&gt;90%&rdquo;, so figures built on those are marked &asymp;. Missed clicks are an estimate: missed impressions &times; the campaign&rsquo;s own click-through rate.</p>
+    <p class="gad-note">Impression share is the impressions a campaign got divided by the impressions it was eligible for. For any dates and any set of campaigns it is rebuilt from Google&rsquo;s daily figures: each day&rsquo;s eligible impressions are its impressions &divide; its share, and the period&rsquo;s share is its impressions &divide; the sum of those (the same for top, absolute-top and click share, and for lost shares). The trend is by day for up to 31 days, by week (Monday to Sunday) beyond; a faded bar is a week only partly in the range. Exact-match share is weighted by eligible impressions, so it is always marked &asymp;. Google reports shares below 10% as &ldquo;&lt;10%&rdquo; and lost shares above 90% as &ldquo;&gt;90%&rdquo;, so figures built on those are marked &asymp;. Missed clicks are an estimate: missed impressions &times; the campaign&rsquo;s own click-through rate.</p>
   </section>
 
   <section class="gad-panel bn-reveal" data-panel="pacing" id="gai-pace-panel">
@@ -369,7 +371,7 @@
     </div>
     <p class="gad-table-empty" id="gai-terms-empty" hidden>No search terms match these filters.</p>
     <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-terms-more" hidden>Show more</button></div>
-    <p class="gad-note">From Google Ads&rsquo; search terms report (last 30 days): the searches that triggered your ads in campaigns that show on Google Search. Performance Max search terms are reported separately and are not included. Google leaves out terms searched by very few people, so these add up to less than the campaigns&rsquo; total spend. A term appears once per ad group and matched keyword.</p>
+    <p class="gad-note">From Google Ads&rsquo; search terms report, every day with clicks in the dates shown (clicks, cost and conversions all fall on click days): the searches that triggered your ads in campaigns that show on Google Search. Performance Max search terms are reported separately and are not included. Google leaves out terms searched by very few people, so these add up to less than the campaigns&rsquo; total spend. A term appears once per ad group and matched keyword. Where an account has more terms than the export keeps, the smaller ones are rolled up: they count toward spend, clicks and conversions (shown as &ldquo;+&rdquo;) but are not listed.</p>
   </section>
 
   <section class="gad-panel bn-reveal" data-panel="keywords" id="gai-kw-panel">
@@ -421,7 +423,7 @@
     </div>
     <p class="gad-table-empty" id="gai-kw-empty" hidden>No keywords match these filters.</p>
     <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-kw-more" hidden>Show more</button></div>
-    <p class="gad-note">Quality Score is Google&rsquo;s 1&ndash;10 rating of a keyword&rsquo;s expected click-through rate, ad relevance and landing page experience against other advertisers; it is current, not for the period, and blank when Google has too little data. Average Quality Score is weighted by impressions. Max CPC is the keyword&rsquo;s effective bid (blank under automated bidding); the first-page bid is Google&rsquo;s estimate of the bid needed to show on the first page of results. Keywords with impressions in the last 30 days, the costliest per account.</p>
+    <p class="gad-note">Quality Score is Google&rsquo;s 1&ndash;10 rating of a keyword&rsquo;s expected click-through rate, ad relevance and landing page experience against other advertisers; it is current, not for the period, and blank when Google has too little data. Average Quality Score is weighted by impressions. Max CPC is the keyword&rsquo;s effective bid (blank under automated bidding); the first-page bid is Google&rsquo;s estimate of the bid needed to show on the first page of results. Keywords with impressions in the dates shown, the costliest per account; search impression share is rebuilt from the daily figures as above.</p>
   </section>
 
   <section class="gad-panel bn-reveal" data-panel="devices" id="gai-dev-panel">
@@ -439,7 +441,7 @@
       </table>
     </div>
     <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-dev-more" hidden>Show more</button></div>
-    <p class="gad-note">Last 30 days. Share of spend against share of conversions shows where each device over- or under-delivers; &ldquo;Other&rdquo; is mostly connected TVs and devices Google could not identify.</p>
+    <p class="gad-note">For the dates shown. Share of spend against share of conversions shows where each device over- or under-delivers; &ldquo;Other&rdquo; is mostly connected TVs and devices Google could not identify.</p>
   </section>
 
   <section class="gad-panel bn-reveal" data-panel="hours" id="gai-hour-panel">
@@ -460,7 +462,7 @@
       <div class="gai-block"><h3 class="gai-h3">Hours that convert best</h3><ol class="gai-rank" id="gai-hour-best"></ol></div>
       <div class="gai-block"><h3 class="gai-h3">Hours that spend without converting</h3><ol class="gai-rank" id="gai-hour-worst"></ol></div>
     </div>
-    <p class="gad-note">Last 30 days, each account in its own time zone. A cell adds up the same hour on every such weekday in the period (about four of each). Rates need at least 20 clicks in an hour before it is ranked.</p>
+    <p class="gad-note">Each account in its own time zone. A cell adds up the same hour on every such weekday in the dates shown. This is an account-level report: it follows the dates and the account, not campaign filters. Rates need at least 20 clicks in an hour before it is ranked.</p>
   </section>
 
   <section class="gad-panel bn-reveal" data-panel="locations" id="gai-loc-panel">
@@ -483,7 +485,7 @@
     </div>
     <div class="gai-bars" id="gai-loc-bars"></div>
     <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-loc-more" hidden>Show more</button></div>
-    <p class="gad-note">Last 30 days, from Google Ads&rsquo; geographic report. &ldquo;People in the place&rdquo; were physically there; &ldquo;people interested in it&rdquo; searched for or showed interest in it from elsewhere. Google groups locations it cannot name precisely at a higher level.</p>
+    <p class="gad-note">For the dates shown, from Google Ads&rsquo; geographic report (account-level: it follows the dates and the account, not campaign filters). &ldquo;People in the place&rdquo; were physically there; &ldquo;people interested in it&rdquo; searched for or showed interest in it from elsewhere. Google groups locations it cannot name precisely at a higher level.</p>
   </section>
 
   <section class="gad-panel bn-reveal" data-panel="conversions" id="gai-conv-panel">
@@ -498,7 +500,7 @@
       <div class="gai-mix" id="gai-conv-mix"></div>
     </div>
     <div class="gai-actions" id="gai-actions"></div>
-    <p class="gad-note">&ldquo;Conversions&rdquo; counts only primary actions, the ones bidding optimises for; &ldquo;all conversions&rdquo; adds the secondary ones. Last 30 days. Setup checks follow Google Ads Help (&ldquo;About conversion counting options&rdquo;: count every conversion for sales, one per click for leads).</p>
+    <p class="gad-note">&ldquo;Conversions&rdquo; counts only primary actions, the ones bidding optimises for; &ldquo;all conversions&rdquo; adds the secondary ones, for the dates shown. &ldquo;Recorded no conversions&rdquo; is judged on the last 30 days exported, whatever the dates. Setup checks follow Google Ads Help (&ldquo;About conversion counting options&rdquo;: count every conversion for sales, one per click for leads).</p>
   </section>
 
   <section class="gad-panel bn-reveal" data-panel="ads" id="gai-ads-panel">
@@ -524,7 +526,7 @@
     <div class="gai-ads" id="gai-ads"></div>
     <p class="gad-table-empty" id="gai-ads-empty" hidden>No ads match these filters.</p>
     <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-ads-more" hidden>Show more</button></div>
-    <p class="gad-note">Live ads in live ad groups and campaigns, and Performance Max asset groups; performance is the last 30 days. Each search ad is previewed with the combination Google served most; &ldquo;served&rdquo; lists come from Google&rsquo;s combinations report (impressions for search ads, Google&rsquo;s own top combinations for Performance Max). Headline and description labels (Best, Good, Low, Learning) are Google&rsquo;s. Google allows up to 15 headlines and 4 descriptions per responsive search ad and says pinning &ldquo;isn&rsquo;t recommended for most advertisers and can affect ad strength&rdquo; (Google Ads Help, &ldquo;About responsive search ads&rdquo;).</p>
+    <p class="gad-note">Live ads in live ad groups and campaigns, and Performance Max asset groups; performance is for the dates shown. Each search ad is previewed with the combination Google served most; &ldquo;served&rdquo; lists come from Google&rsquo;s combinations report for the last 30 days (impressions for search ads, Google&rsquo;s own top combinations for Performance Max). Headline and description labels (Best, Good, Low, Learning) are Google&rsquo;s. Google allows up to 15 headlines and 4 descriptions per responsive search ad and says pinning &ldquo;isn&rsquo;t recommended for most advertisers and can affect ad strength&rdquo; (Google Ads Help, &ldquo;About responsive search ads&rdquo;).</p>
   </section>
 
   <section class="gad-panel bn-reveal" data-panel="health" id="gai-health-panel">
@@ -584,7 +586,7 @@
     <div class="gai-changes" id="gai-changes"></div>
     <p class="gad-table-empty" id="gai-chg-empty" hidden>No changes match these filters.</p>
     <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-chg-more" hidden>Show more</button></div>
-    <p class="gad-note">Every change Google Ads recorded in the last 28 days (Google keeps change history for 30), newest first, with the old and new value of each field that changed. &ldquo;Auto-applied by Google&rdquo; are changes made by subscribing to Google&rsquo;s recommendations. &ldquo;Before and after&rdquo; compares the campaign&rsquo;s average day in the 7 days before a change with the days after it, from the campaign report above; other things change too, so read it as a prompt, not proof.</p>
+    <p class="gad-note">Every change Google Ads recorded in the dates shown, within the last 28 days (Google keeps change history for 30), newest first, with the old and new value of each field that changed. &ldquo;Auto-applied by Google&rdquo; are changes made by subscribing to Google&rsquo;s recommendations. &ldquo;Before and after&rdquo; compares the campaign&rsquo;s average day in the 7 days before a change with the days after it, from the campaign report above; other things change too, so read it as a prompt, not proof.</p>
   </section>
 
   <section class="gad-panel bn-reveal" data-panel="demographics" id="gai-demo-panel">
@@ -598,7 +600,7 @@
       <div class="gai-block"><h3 class="gai-h3">Gender</h3><div class="gai-demo-l" id="gai-demo-gender"></div></div>
     </div>
     <div class="gad-legend-row" id="gai-demo-legend"></div>
-    <p class="gad-note">Last 30 days, from Google Ads&rsquo; age and gender reports, summed over each campaign&rsquo;s ad groups. &ldquo;Unknown&rdquo; is people Google could not place. Campaign types that do not report age and gender are not included.</p>
+    <p class="gad-note">For the dates shown, from Google Ads&rsquo; age and gender reports, summed over each campaign&rsquo;s ad groups. &ldquo;Unknown&rdquo; is people Google could not place. Campaign types that do not report age and gender are not included.</p>
   </section>
 
   <section class="gad-panel bn-reveal" data-panel="landing" id="gai-lp-panel">
@@ -628,7 +630,7 @@
       </table>
     </div>
     <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-lp-more" hidden>Show more</button></div>
-    <p class="gad-note">Last 30 days, from Google Ads&rsquo; landing page report. The mobile speed score is Google&rsquo;s: &ldquo;a 10-point scale, 1 being very slow and 10 being extremely fast&rdquo;, based partly on how speed relates to conversion rate (Google, &ldquo;Speed matters when providing assistive experiences&rdquo;, 2018). The bands 1&ndash;3, 4&ndash;6 and 7&ndash;10 are this dashboard&rsquo;s. Mobile-friendly clicks is the share of mobile clicks that reached a mobile-friendly page; across pages it is weighted by clicks, so it is approximate.</p>
+    <p class="gad-note">Spend, clicks and conversions are for the dates shown, from Google Ads&rsquo; landing page report (account-level: it follows the dates and the account, not campaign filters). The mobile speed score and mobile-friendly clicks are Google&rsquo;s readings for the last 30 days. The speed score is Google&rsquo;s: &ldquo;a 10-point scale, 1 being very slow and 10 being extremely fast&rdquo;, based partly on how speed relates to conversion rate (Google, &ldquo;Speed matters when providing assistive experiences&rdquo;, 2018). The bands 1&ndash;3, 4&ndash;6 and 7&ndash;10 are this dashboard&rsquo;s. Mobile-friendly clicks is the share of mobile clicks that reached a mobile-friendly page; across pages it is weighted by clicks, so it is approximate.</p>
   </section>
   {% elif insights %}
   <section class="gad-panel gai-setup bn-reveal" data-panel="insights-setup">
@@ -702,8 +704,8 @@
 {% endif %}
 
 {{ topbar_script() }}
-{% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=4"></script>{% endif %}
-<script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=5"></script>
+{% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=5"></script>{% endif %}
+<script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=6"></script>
 <script>
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */
 (function(){

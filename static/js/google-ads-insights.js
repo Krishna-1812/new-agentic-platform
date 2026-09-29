@@ -1,21 +1,27 @@
 /* ════════════════════════════════════════════════════════════════════════
    GOOGLE ADS PERFORMANCE — the insights panels.
 
-   Impression share, budget pacing and search terms, from the tabs that
-   scripts/google_ads/export_insights.js writes (read and shaped by
-   tracker/google_ads_insights.py, embedded once as #gad-insights).
+   Impression share, budget pacing, search terms, keywords, devices, hours,
+   locations, conversions, ads, optimization score, change history, age and
+   gender, and landing pages, from the tabs that
+   scripts/google_ads/export_insights.js writes.
 
-   The main page script (google-ads-dashboard.js) announces its filters on
-   every render ("gad:render": account and search text) and a refresh
-   ("gad:insights": new data); these panels follow both. The date filter
-   does not apply: the export covers fixed periods (last 30 days, the last
-   13 weeks, this month, the last 28 days of changes), and every panel says
-   which. The change history's before-and-after reads the campaign report
-   rows the main script already embeds (#gad-data).
+   Every panel follows every filter above it. The main page script
+   (google-ads-dashboard.js) announces its filters on each render
+   ("gad:render": dates, account, campaign type, status, search text, focused
+   campaign); this script asks the server for the insights for exactly those
+   (/api/dashboards/google-ads/insights, built by
+   tracker/google_ads_insights.py from each item's daily figures), so every
+   total covers everything exported, not only what fits on the page. Each
+   panel heading says which dates it covers; current states (budgets this
+   month, optimization score, recommendations) say "Now". Account-level
+   reports (hours, locations, landing pages) say when a campaign filter
+   cannot apply to them. The first render uses the insights embedded in the
+   page (#gad-insights) for the page's opening filters.
 
    Impression-share figures are kept as Google reports them: 0.0999 means
    "below 10%" and 0.9001 "above 90%" (Google Ads API field reference).
-   Anything computed from one is marked "≈".
+   Anything built from such a figure is marked "≈".
 
    Same drawing rules as the main script: plain SVG at the container's real
    width, one hue per meaning (captured = orange, lost to budget = amber,
@@ -42,7 +48,8 @@
     under: ["Spending behind budget", "is-warn"], on_track: ["On track", "is-good"], unknown: ["No daily budget", ""]
   };
   var VERDICT_ORDER = { capped: 0, over: 1, under: 2, on_track: 3, unknown: 4 };
-  var filters = { account: "__all__", search: "" };
+  // The page's filters as last announced; the data in INS has already been filtered by the server.
+  var filters = { account: "__all__", search: "", type: "", status: "", focus: "", from: "", to: "" };
   var ADS_STEP = window.innerWidth < 700 ? 6 : 12;       // ad cards are tall on a phone
   var CHG_STEP = window.innerWidth < 700 ? 8 : 20;
   var ui = { shareShown: 12, shareSort: "cost", shareDir: -1, paceShown: 10, pace: "all",
@@ -76,19 +83,46 @@
   function isLow(v) { return v != null && Math.abs(v - LOW) < 1e-6; }
   function isHigh(v) { return v != null && Math.abs(v - HIGH) < 1e-6; }
   /** A share as Google reports it: <10% and >90% where Google caps it. */
-  function share(v) {
+  function share(v, approx) {
     if (v == null) return "–";
     if (isLow(v)) return "<10%";
     if (isHigh(v)) return ">90%";
-    return (v * 100).toFixed(v >= 0.995 || v < 0.1 ? 0 : 1).replace(/\.0$/, "") + "%";
+    return (approx ? "≈" : "") + (v * 100).toFixed(v >= 0.995 || v < 0.1 ? 0 : 1).replace(/\.0$/, "") + "%";
   }
   function pct(v, approx) { return v == null ? "–" : (approx ? "≈" : "") + (v * 100).toFixed(1).replace(/\.0$/, "") + "%"; }
-  function matchesText(parts) {
-    if (!filters.search) return true;
-    for (var i = 0; i < parts.length; i++) if (String(parts[i] || "").toLowerCase().indexOf(filters.search) > -1) return true;
-    return false;
+  // The server applies every filter (tracker/google_ads_insights.py, Filters), so rows here are kept.
+  function matchesText() { return true; }
+  function inAccount() { return true; }
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function fmtD(iso, year) { return +iso.slice(8, 10) + " " + MONTHS[+iso.slice(5, 7) - 1] + (year ? " " + iso.slice(0, 4) : ""); }
+  function fmtRange(a, b) {
+    if (a === b) return fmtD(a, true);
+    return fmtD(a, a.slice(0, 4) !== b.slice(0, 4)) + " – " + fmtD(b, true);
   }
-  function inAccount(a) { return filters.account === "__all__" || a === filters.account; }
+  function narrowed() { return !!(filters.type || filters.status || filters.search || filters.focus); }
+  /**
+   * What a panel's figures cover, for its heading: the dates (and why they are fewer than the ones
+   * picked, if they are), "Now" for a current state, and a note when a campaign filter cannot apply.
+   */
+  function period(key) {
+    var m = (INS.meta || {})[key] || {}, r = INS.range || {}, out;
+    if (m.scope === "current") return "Now";
+    if (!m.dated) out = "Last 30 days, as exported (update the Google Ads script for date filtering)";
+    else if (!m.cover) out = "No data for " + (r.from && r.to ? fmtRange(r.from, r.to) : "these dates") +
+      (m.from ? " (kept from " + fmtD(m.from, true) + " to " + fmtD(m.to, true) + ")" : "");
+    else {
+      out = fmtRange(m.cover[0], m.cover[1]);
+      // Fewer dates than picked: say why, so a shorter period is never mistaken for the whole one.
+      var cut = [];
+      if (r.from && r.from < m.cover[0]) cut.push("the export keeps " + (key === "changes" ? "changes" : "daily figures") + " from " + fmtD(m.cover[0], true));
+      if (r.to && r.to > m.cover[1]) cut.push("the latest exported day is " + fmtD(m.cover[1], true));
+      if (cut.length) out += " (" + cut.join("; ") + ")";
+    }
+    if (m.scope === "account" && narrowed()) out += " · account-level report: the campaign filters do not apply";
+    return out;
+  }
+  function has(key) { return !INS.has || INS.has[key] !== false; }
+  function mixedNote(t) { return t && t.mixed ? " · " + t.cur + " accounts only" : ""; }
   /** The currency most of the money is in; rows in other currencies are left out of sums. */
   function mainCurrency(rows, costOf, curOf) {
     var by = {};
@@ -153,25 +187,23 @@
       return inAccount(r.account) && matchesText([r.campaign, r.account]);
     });
   }
-  /** Eligible impressions (impressions ÷ share); null when share is unknown or 0. */
-  function eligible(r) { return r.is ? r.impr / r.is : null; }
-  function missed(r) { var e = eligible(r); return e == null ? null : Math.max(0, e - r.impr); }
-  /** Impression-weighted shares over rows: {is, lb, lr, top, abs, click, exact, approx, elig}. */
+  /** Eligible search impressions (the server's sum of impressions ÷ share over each day); null when unknown. */
+  function eligible(r) { return r.se ? r.se : null; }
+  function missed(r) { var e = eligible(r); return e == null ? null : Math.max(0, e - (r.sg || 0)); }
+  var WEIGHTS = ["sg", "se", "lbe", "lre", "xe", "xw", "tg", "te", "ltbe", "ltre", "ag", "ae", "labe", "lare", "cg", "ce", "capped"];
+  /**
+   * Shares over several campaigns, exactly as the server builds a range from days
+   * (google_ads_insights.share_row): every share is its impressions ÷ its eligible impressions,
+   * added up; lost shares are fractions of the same eligible impressions.
+   */
   function combine(rows) {
-    var e = 0, got = 0, lb = 0, lr = 0, top = 0, abs = 0, ex = 0, exW = 0, clicks = 0, eClicks = 0, approx = false;
-    rows.forEach(function (r) {
-      var el_ = eligible(r);
-      if (el_ == null) return;
-      if (isLow(r.is) || isHigh(r.lb) || isHigh(r.lr)) approx = true;
-      e += el_; got += r.impr;
-      lb += el_ * (r.lb || 0); lr += el_ * (r.lr || 0);
-      top += el_ * (r.top || 0); abs += el_ * (r.abs || 0);
-      if (r.exact != null) { ex += el_ * r.exact; exW += el_; }
-      if (r.click) { clicks += r.clicks; eClicks += r.clicks / r.click; }
-    });
-    if (!e) return null;
-    return { is: got / e, lb: lb / e, lr: lr / e, top: top / e, abs: abs / e,
-             exact: exW ? ex / exW : null, click: eClicks ? clicks / eClicks : null, approx: approx, elig: e, impr: got };
+    var t = {};
+    WEIGHTS.forEach(function (k) { t[k] = 0; });
+    rows.forEach(function (r) { WEIGHTS.forEach(function (k) { t[k] += r[k] || 0; }); });
+    if (!t.se) return null;
+    var q = function (a, b) { return b > 0 ? a / b : null; };
+    return { is: t.sg / t.se, lb: t.lbe / t.se, lr: t.lre / t.se, top: q(t.tg, t.te), abs: q(t.ag, t.ae),
+             exact: q(t.xe, t.xw), click: q(t.cg, t.ce), approx: t.capped > 0, elig: t.se, impr: t.sg };
   }
   function heldBack(r) {
     if (r.is == null) return ["", ""];
@@ -186,14 +218,14 @@
     var box = $("gai-share"), stats = $("gai-share-stats");
     clear(box); clear(stats);
     var all = combine(rows);
-    $("gai-share-d").textContent = rows.length + (rows.length === 1 ? " search campaign" : " search campaigns") + " · last 30 days";
+    $("gai-share-d").textContent = period("is") + " · " + rows.length + (rows.length === 1 ? " search campaign" : " search campaigns");
     if (!all) {
       box.appendChild(el("p", "gad-empty-chart", "No search campaigns with impression share for this selection."));
       renderWeekly(); renderMissed([]); renderShareTable([]);
       return;
     }
     // One stacked bar: got / lost to budget / lost to rank.
-    var parts = [["Shown", all.is, C_CAP], ["Lost to budget", all.lb, C_BUD], ["Lost to ad rank", all.lr, C_RANK]];
+    var parts = [["Shown", all.is, C_CAP], ["Lost to budget", all.lb || 0, C_BUD], ["Lost to ad rank", all.lr || 0, C_RANK]];
     var total = parts.reduce(function (s, p) { return s + p[1]; }, 0) || 1;
     var head = el("div", "gai-share-head");
     var big = el("b", "gai-big", pct(all.is, all.approx));
@@ -227,7 +259,7 @@
     [["Top of page", pct(all.top, all.approx), "shown above the organic results"],
      ["Absolute top", pct(all.abs, all.approx), "shown as the very first ad"],
      ["Click share", all.click == null ? "–" : pct(all.click, all.approx), "of the clicks you could have had"],
-     ["Exact-match share", all.exact == null ? "–" : pct(all.exact, all.approx), "for searches matching a keyword exactly"],
+     ["Exact-match share", all.exact == null ? "–" : pct(all.exact, true), "for searches matching a keyword exactly (weighted by eligible impressions)"],
      ["Impressions missed", (all.approx ? "≈" : "") + int(missedImpr), "eligible but not shown"]]
       .forEach(function (s) { kpi(stats, s[0], s[1], s[2]); });
     renderWeekly();
@@ -238,42 +270,37 @@
   function renderWeekly() {
     var box = $("gai-weekly");
     clear(box);
+    var byDay = INS.weekly_grain !== "week";
+    $("gai-weekly-h").textContent = byDay ? "Day by day" : "Week by week";
     legend($("gai-weekly-legend"), [["Shown", C_CAP], ["Lost to budget", C_BUD], ["Lost to ad rank", C_RANK]]);
-    var weeks = {};
-    (INS.weekly || []).forEach(function (r) {
-      if (!inAccount(r.account) || !matchesText([r.campaign, r.account])) return;
-      (weeks[r.week] = weeks[r.week] || []).push(r);
-    });
-    var keys = Object.keys(weeks).sort();
-    if (!keys.length) { box.appendChild(el("p", "gad-empty-chart", "No weekly figures for this selection.")); return; }
-    var pts = keys.map(function (k) { return { week: k, s: combine(weeks[k]) }; }).filter(function (p) { return p.s; });
+    var pts = (INS.weekly || []).filter(function (p) { return p.is != null; });
+    if (!pts.length) { box.appendChild(el("p", "gad-empty-chart", "No impression share for this selection.")); return; }
     var W = box.clientWidth || 520, H = 220, pl = 36, pr = 8, pt = 8, pb = 26, iw = W - pl - pr, ih = H - pt - pb;
     var s = svg("svg", { viewBox: "0 0 " + W + " " + H, height: H, role: "img",
-                         "aria-label": "Search impression share by week" }, box);
+                         "aria-label": "Search impression share by " + (byDay ? "day" : "week") }, box);
     [0, 0.25, 0.5, 0.75, 1].forEach(function (g) {
       var y = pt + ih - g * ih;
       svg("line", { x1: pl, x2: W - pr, y1: y, y2: y, "class": "gad-grid-l" }, s);
       svg("text", { x: pl - 6, y: y + 4, "text-anchor": "end", "class": "gad-ax" }, s).textContent = (g * 100) + "%";
     });
-    var bw = Math.max(6, Math.min(34, iw / pts.length * 0.7));
+    var bw = Math.max(4, Math.min(34, iw / pts.length * 0.7));
     pts.forEach(function (p, i) {
       var x = pl + (i + 0.5) * iw / pts.length - bw / 2, y0 = pt + ih;
-      var tot = (p.s.is + p.s.lb + p.s.lr) || 1;
-      [[p.s.is, C_CAP], [p.s.lb, C_BUD], [p.s.lr, C_RANK]].forEach(function (seg) {
+      var lb = p.lb || 0, lr = p.lr || 0, tot = (p.is + lb + lr) || 1;
+      [[p.is, C_CAP], [lb, C_BUD], [lr, C_RANK]].forEach(function (seg) {
         var h = ih * seg[0] / tot;
-        svg("rect", { x: x, y: y0 - h, width: bw, height: Math.max(0, h), fill: seg[1], rx: 2 }, s);
+        svg("rect", { x: x, y: y0 - h, width: bw, height: Math.max(0, h), fill: seg[1], rx: 2, opacity: p.partial ? 0.55 : 1 }, s);
         y0 -= h;
       });
-      var hit = svg("rect", { x: x - 4, y: pt, width: bw + 8, height: ih, fill: "transparent" }, s);
+      var hit = svg("rect", { x: x - 2, y: pt, width: bw + 4, height: ih, fill: "transparent" }, s);
       hit.addEventListener("mousemove", function (e) {
-        showTip(["Week of " + p.week, ["Shown", pct(p.s.is, p.s.approx), C_CAP], ["Lost to budget", pct(p.s.lb, p.s.approx), C_BUD],
-                 ["Lost to ad rank", pct(p.s.lr, p.s.approx), C_RANK], ["Impressions", int(p.s.impr)]], e.clientX, e.clientY);
+        var title = byDay ? fmtD(p.week, true) : "Week of " + fmtD(p.week, true) + (p.partial ? " (part of the week)" : "");
+        showTip([title, ["Shown", pct(p.is, p.approx), C_CAP], ["Lost to budget", pct(lb, p.approx), C_BUD],
+                 ["Lost to ad rank", pct(lr, p.approx), C_RANK], ["Impressions", int(p.impr)]], e.clientX, e.clientY);
       });
       hit.addEventListener("mouseleave", hideTip);
       if (pts.length <= 8 || i % Math.ceil(pts.length / 7) === 0 || i === pts.length - 1) {
-        var d = new Date(p.week + "T00:00:00Z");
-        svg("text", { x: x + bw / 2, y: H - 8, "text-anchor": "middle", "class": "gad-ax" }, s).textContent =
-          d.getUTCDate() + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getUTCMonth()];
+        svg("text", { x: x + bw / 2, y: H - 8, "text-anchor": "middle", "class": "gad-ax" }, s).textContent = fmtD(p.week);
       }
     });
   }
@@ -283,8 +310,7 @@
     clear(box);
     legend($("gai-missed-legend"), [["Lost to budget", C_BUD], ["Lost to ad rank", C_RANK]]);
     var list = rows.map(function (r) {
-      var e = eligible(r);
-      return { r: r, bud: e * (r.lb || 0), rank: e * (r.lr || 0), ctr: r.impr ? r.clicks / r.impr : 0 };
+      return { r: r, bud: r.lbe || 0, rank: r.lre || 0, ctr: r.impr ? r.clicks / r.impr : 0 };
     }).filter(function (x) { return x.bud + x.rank > 0; })
       .sort(function (a, b) { return (b.bud + b.rank) - (a.bud + a.rank); }).slice(0, 8);
     if (!list.length) { box.appendChild(el("p", "gad-empty-chart", "No missed searches to show.")); return; }
@@ -303,7 +329,7 @@
         seg.style.width = (100 * p[0] / max) + "%"; seg.style.background = p[1];
         seg.addEventListener("mousemove", function (e) {
           showTip([x.r.campaign, [p[2], int(p[0]) + " impressions", p[1]],
-                   ["Share lost", share(p[1] === C_BUD ? x.r.lb : x.r.lr)]], e.clientX, e.clientY);
+                   ["Share lost", share(p[1] === C_BUD ? x.r.lb : x.r.lr, x.r.approx)]], e.clientX, e.clientY);
         });
         seg.addEventListener("mouseleave", hideTip);
         track.appendChild(seg);
@@ -331,8 +357,8 @@
       td.appendChild(el("span", "gai-cell-s", (filters.account === "__all__" ? r.account + " · " : "") +
         (r.bid || "").replace(/_/g, " ").toLowerCase()));
       tr.appendChild(td);
-      [money(r.cost, r.cur), share(r.is), share(r.lb), share(r.lr), share(r.top), share(r.abs), share(r.click),
-       missed(r) == null ? "–" : (isLow(r.is) ? "≈" : "") + int(missed(r))]
+      [money(r.cost, r.cur), share(r.is, r.approx), share(r.lb, r.approx), share(r.lr, r.approx), share(r.top, r.approx),
+       share(r.abs, r.approx), share(r.click, r.approx), missed(r) == null ? "–" : (r.approx ? "≈" : "") + int(missed(r))]
         .forEach(function (v) { tr.appendChild(el("td", "is-num", v)); });
       var hb = heldBack(r), c = el("td");
       if (hb[0]) c.appendChild(el("span", "gai-chip " + hb[1], hb[0]));
@@ -344,11 +370,8 @@
   }
 
   /* ══ Budget pacing ══════════════════════════════════════════════════ */
-  function limitedCampaigns() {
-    var out = {};
-    (INS.is || []).forEach(function (r) { if ((r.lb || 0) >= 0.1) out[r.account + "\u0001" + r.campaign] = r.lb; });
-    return out;
-  }
+  /** Campaigns losing 10% or more of their searches to budget in the last 7 days exported (the server's). */
+  function limitedCampaigns() { return INS.budget_limited || {}; }
   function renderPacing() {
     var box = $("gai-pace"), kpis = $("gai-pace-kpis");
     clear(box); clear(kpis);
@@ -366,7 +389,7 @@
     var sum = function (k) { return same.reduce(function (s, b) { return s + (b[k] || 0); }, 0); };
     var daily = sum("daily"), mtd = sum("mtd"), proj = sum("projected"), cap = sum("month_budget");
     var attention = all.filter(function (b) { return b.verdict === "capped" || b.verdict === "over" || b.verdict === "under"; });
-    $("gai-pace-d").textContent = first.dim ? "Day " + Math.floor(first.elapsed + 1) + " of " + first.dim +
+    $("gai-pace-d").textContent = first.dim ? "Now: day " + Math.floor(first.elapsed + 1) + " of " + first.dim +
       " · " + all.length + (all.length === 1 ? " budget" : " budgets") : "";
     kpi(kpis, "Daily budgets", money(daily, mc.cur), all.length + " budgets" + (mc.mixed ? " (" + mc.cur + " only)" : ""));
     kpi(kpis, "Spent this month", money(mtd, mc.cur), cap ? Math.round(100 * mtd / cap) + "% of the month’s budget" : "");
@@ -374,7 +397,7 @@
       money(Math.abs(proj - cap), mc.cur) : "", proj > cap * 1.05 ? "is-warn" : "");
     kpi(kpis, "Need attention", String(attention.length), "ahead of, behind, or capped", attention.length ? "is-warn" : "is-good");
     kpi(kpis, "Losing searches to budget", String(all.filter(function (b) { return b._lost; }).length),
-      "budgets with a campaign losing ≥10%", all.some(function (b) { return b._lost; }) ? "is-bad" : "is-good");
+      "budgets with a campaign losing ≥10% (last 7 days)", all.some(function (b) { return b._lost; }) ? "is-bad" : "is-good");
 
     var list = all.filter(function (b) {
       if (ui.pace === "attention") return attention.indexOf(b) > -1;
@@ -430,7 +453,7 @@
       });
     row.appendChild(facts);
     var notes = [];
-    if (b._lost) notes.push("A campaign on this budget is losing " + share(b._lost) + " of its searches to budget.");
+    if (b._lost) notes.push("In the last 7 days a campaign on this budget lost " + share(b._lost) + " of its searches to budget.");
     if (b.recommended && b.daily && b.recommended > b.daily * 1.01) {
       notes.push("Google recommends " + money(b.recommended, b.cur) + " a day (" +
         Math.round(100 * (b.recommended / b.daily - 1)) + "% more).");
@@ -448,41 +471,31 @@
       return inAccount(r[T.account]) && matchesText([r[T.term], r[T.campaign], r[T.keyword], r[T.adGroup]]);
     });
   }
+  function termTotals() {
+    return (INS.terms.totals || {}).__all__ || { terms: 0, clicks: 0, cost: 0, conv: 0, value: 0, wasted: 0, wasted_terms: 0,
+                                                 converting: 0, other_cost: 0, other_conv: 0, cur: "" };
+  }
   function renderTerms() {
     var rows = termRows(), kpis = $("gai-terms-kpis");
     clear(kpis);
-    var tot = (INS.terms.totals || {})[filters.account === "__all__" ? "__all__" : filters.account];
-    var mc = mainCurrency(rows, function (r) { return r[T.cost]; }, function (r) { return r[T.cur]; });
-    // With no search text, the totals cover every term read; with it, only the terms on the page.
-    var useTot = tot && !filters.search && tot.cur !== "mixed";
-    var agg = useTot ? tot : rows.reduce(function (a, r) {
-      if (r[T.cur] !== mc.cur) return a;
-      a.terms++; a.cost += r[T.cost]; a.conv += r[T.conv]; a.clicks += r[T.clicks];
-      if (r[T.conv] > 0) a.converting++;
-      if (r[T.conv] <= 0 && r[T.cost] > 0) { a.wasted += r[T.cost]; a.wasted_terms++; }
-      return a;
-    }, { terms: 0, cost: 0, conv: 0, clicks: 0, converting: 0, wasted: 0, wasted_terms: 0 });
-    var cur = useTot ? tot.cur : mc.cur;
-    $("gai-terms-d").textContent = "Last 30 days · " + int(INS.terms.read) + " terms read";
-    kpi(kpis, "Search terms", int(agg.terms), useTot ? "that spent or showed" : "matching the filters");
-    kpi(kpis, "Spend on them", money(agg.cost, cur), int(agg.clicks) + " clicks");
-    kpi(kpis, "Converting terms", int(agg.converting), num1(agg.conv) + " conversions", "is-good");
-    kpi(kpis, "Spend with no conversion", money(agg.wasted, cur),
-      (agg.cost ? Math.round(100 * agg.wasted / agg.cost) : 0) + "% of spend · " + int(agg.wasted_terms) + " terms",
-      agg.cost && agg.wasted / agg.cost > 0.3 ? "is-bad" : "is-warn");
-    kpi(kpis, "Cost / conv.", agg.conv ? money2(agg.cost / agg.conv, cur) : "–", "across these terms");
-    renderMatchMix(rows, mc.cur);
+    // The server's totals: every search term read for these filters, plus each account's rolled-up rest.
+    var t = termTotals(), cur = t.cur, rest = t.other_cost > 0, listed = t.cost - (t.other_cost || 0);
+    $("gai-terms-d").textContent = period("terms") + " · " + int(t.terms) + (rest ? "+" : "") + " search terms with clicks" + mixedNote(t);
+    kpi(kpis, "Search terms", int(t.terms) + (rest ? "+" : ""), rest ? "listed, and smaller ones rolled up" : "with clicks");
+    kpi(kpis, "Spend on them", money(t.cost, cur), int(t.clicks) + " clicks");
+    kpi(kpis, "Converting terms", int(t.converting), num1(t.conv) + " conversions", "is-good");
+    kpi(kpis, "Spend with no conversion", money(t.wasted, cur),
+      (listed ? Math.round(100 * t.wasted / listed) : 0) + "% of " + (rest ? "listed terms' " : "") + "spend · " + int(t.wasted_terms) + " terms",
+      listed && t.wasted / listed > 0.3 ? "is-bad" : "is-warn");
+    kpi(kpis, "Cost / conv.", t.conv ? money2(t.cost / t.conv, cur) : "–", "across these terms");
+    renderMatchMix();
     renderTermTable(rows);
   }
-  function renderMatchMix(rows, cur) {
+  function renderMatchMix() {
     var box = $("gai-match");
     clear(box);
-    var by = {}, total = 0;
-    rows.forEach(function (r) {
-      if (r[T.cur] !== cur) return;
-      var m = r[T.match] || "OTHER";
-      by[m] = by[m] || { cost: 0, conv: 0 }; by[m].cost += r[T.cost]; by[m].conv += r[T.conv]; total += r[T.cost];
-    });
+    var mix = (INS.terms || {}).mix || { parts: {} }, by = mix.parts || {}, cur = mix.cur, total = 0;
+    Object.keys(by).forEach(function (k) { total += by[k].cost; });
     var keys = Object.keys(by).sort(function (a, b) { return by[b].cost - by[a].cost; });
     if (!total) { box.appendChild(el("p", "gad-empty-chart", "No spend to break down.")); return; }
     var bar = el("div", "gai-stack");
@@ -508,22 +521,8 @@
 
   var STOP = { "a": 1, "an": 1, "and": 1, "the": 1, "for": 1, "of": 1, "in": 1, "to": 1, "on": 1, "with": 1, "near": 1,
                "me": 1, "my": 1, "at": 1, "by": 1, "or": 1, "is": 1, "&": 1 };
-  function ngrams(rows, n) {
-    var by = {};
-    rows.forEach(function (r) {
-      var words = String(r[T.term]).toLowerCase().split(/\s+/).filter(Boolean), seen = {};
-      for (var i = 0; i + n <= words.length; i++) {
-        var g = words.slice(i, i + n);
-        if (n === 1 && STOP[g[0]]) continue;
-        var k = g.join(" ");
-        if (seen[k]) continue;
-        seen[k] = 1;
-        var x = by[k] = by[k] || { gram: k, terms: 0, impr: 0, clicks: 0, cost: 0, conv: 0, cur: r[T.cur] };
-        x.terms++; x.impr += r[T.impr]; x.clicks += r[T.clicks]; x.cost += r[T.cost]; x.conv += r[T.conv];
-      }
-    });
-    return Object.keys(by).map(function (k) { return by[k]; });
-  }
+  /** Words and phrases, added up by the server over every search term read (the top ones by spend). */
+  function ngrams(n) { return (((INS.terms || {}).grams || {})[String(n)] || []).map(function (g) { return Object.assign({}, g); }); }
 
   var TERM_COLS = [
     ["term", "Search term"], ["match", "Matched as"], ["keyword", "Keyword"], ["clicks", "Clicks", 1], ["cost", "Spend", 1],
@@ -549,12 +548,15 @@
     var body = $("gai-terms-body"), note = $("gai-terms-note");
     clear(body);
     $("gai-ngram").hidden = ui.view !== "words";
-    var total = rows.reduce(function (s, r) { return s + r[T.cost]; }, 0);
+    var tt = termTotals(), total = tt.cost - (tt.other_cost || 0);
     var list, cols;
     if (ui.view === "words") {
       cols = GRAM_COLS;
-      list = ngrams(rows, ui.n).map(function (g) { g.cpa = g.conv ? g.cost / g.conv : null; g.share = total ? g.cost / total : 0; return g; });
-      note.textContent = "Each word or phrase adds up every search term containing it. Words with spend and no conversions are candidates for negative keywords.";
+      list = ngrams(ui.n).map(function (g) { g.cpa = g.conv ? g.cost / g.conv : null; g.share = total ? g.cost / total : 0; return g; });
+      var nAll = (((INS.terms || {}).gram_count) || {})[String(ui.n)] || list.length;
+      note.textContent = "Each word or phrase adds up every search term containing it" +
+        (nAll > list.length ? " (the " + int(list.length) + " that spent most of " + int(nAll) + ")" : "") +
+        ". Words with spend and no conversions are candidates for negative keywords.";
     } else {
       cols = TERM_COLS;
       list = rows.map(function (r) {
@@ -612,11 +614,12 @@
     var cols = ui._cols || TERM_COLS, list = ui._list || [];
     var rows = [ui.view === "words"
       ? ["Word", "Terms", "Clicks", "Spend", "Conversions", "Cost per conversion", "Share of spend"]
-      : ["Account", "Campaign", "Ad group", "Search term", "Matched as", "Keyword", "Keyword match", "Status", "Impressions",
-         "Clicks", "Spend", "Conversions", "Conv. value", "Currency"]];
+      : ["Account", "Campaign", "Ad group", "Search term", "Matched as", "Keyword", "Keyword match", "Status",
+         "Clicks", "Spend", "Conversions", "Conv. value", "Currency", "From", "To"]];
+    var m = (INS.meta || {}).terms || {}, cov = m.cover || ["", ""];
     list.forEach(function (x) {
       if (ui.view === "words") rows.push([x.gram, x.terms, x.clicks, x.cost.toFixed(2), x.conv, x.cpa == null ? "" : x.cpa.toFixed(2), (x.share * 100).toFixed(1)]);
-      else rows.push(x.r.slice());
+      else rows.push(x.r.slice(0, 8).concat(x.r.slice(9), cov));
     });
     download("google-ads-search-terms-" + ui.view + (filters.account === "__all__" ? "" : "-" + filters.account.replace(/[^\w]+/g, "-").toLowerCase()) + ".csv", rows);
     return cols;
@@ -632,8 +635,9 @@
   }
   function kwTotals(rows) {
     // Without search text: totals over every keyword read. With it: over the keywords on the page.
-    var tot = ((INS.keywords || {}).totals || {})[filters.account === "__all__" ? "__all__" : filters.account];
-    if (tot && !filters.search) return tot;
+    // The server's totals cover every keyword read for these filters.
+    var tot = ((INS.keywords || {}).totals || {}).__all__;
+    if (tot) return tot;
     var t = { keywords: 0, cost: 0, clicks: 0, conv: 0, qs_impr: 0, qs_w: 0, with_qs: 0, low_qs: 0, low_qs_cost: 0,
               below_first_page: 0, rarely_served: 0, dist: {}, parts: {}, cur: "" };
     for (var i = 1; i <= 10; i++) t.dist[i] = { keywords: 0, cost: 0, conv: 0 };
@@ -655,14 +659,14 @@
   }
   function renderKeywords() {
     var panel = $("gai-kw-panel");
-    panel.hidden = !((INS.keywords || {}).rows || []).length;
+    panel.hidden = !has("keywords");
     if (panel.hidden) return;
-    var rows = kwRows(), t = kwTotals(rows), cur = t.cur === "mixed" ? "" : t.cur, kpis = $("gai-kw-kpis");
+    var rows = kwRows(), t = kwTotals(rows), cur = t.cur, kpis = $("gai-kw-kpis");
     clear(kpis);
-    $("gai-kw-d").textContent = int(INS.keywords.read) + " keywords read · last 30 days";
+    $("gai-kw-d").textContent = period("keywords") + " · " + int(t.keywords) + (t.other_cost ? "+" : "") + " keywords with impressions" + mixedNote(t);
     kpi(kpis, "Average Quality Score", t.avg_qs == null ? "–" : t.avg_qs.toFixed(1), "weighted by impressions · " + int(t.with_qs) + " rated",
       t.avg_qs == null ? "" : t.avg_qs < 5 ? "is-bad" : t.avg_qs < 7 ? "is-warn" : "is-good");
-    kpi(kpis, "Keywords with impressions", int(t.keywords), money(t.cost, cur) + " spend");
+    kpi(kpis, "Keywords with impressions", int(t.keywords) + (t.other_cost ? "+" : ""), money(t.cost, cur) + " spend");
     kpi(kpis, "Spend on Quality Score 1–4", money(t.low_qs_cost, cur),
       (t.cost ? Math.round(100 * t.low_qs_cost / t.cost) : 0) + "% of spend · " + int(t.low_qs) + " keywords",
       t.cost && t.low_qs_cost / t.cost > 0.2 ? "is-bad" : "is-warn");
@@ -770,7 +774,7 @@
        k.bid == null ? "–" : money2(k.bid, k.cur)].forEach(function (v) { tr.appendChild(el("td", "is-num", v)); });
       var fp = el("td", "is-num" + (k.bid && k.first_page && k.bid < k.first_page ? " gai-under" : ""), k.first_page == null ? "–" : money2(k.first_page, k.cur));
       tr.appendChild(fp);
-      tr.appendChild(el("td", "is-num", share(k.is)));
+      tr.appendChild(el("td", "is-num", share(k.is, k.approx)));
       if (!k.conv && k.cost > 0) tr.className = "is-waste";
       body.appendChild(tr);
     });
@@ -793,7 +797,7 @@
   var DEVICE_ORDER = ["MOBILE", "DESKTOP", "TABLET", "CONNECTED_TV", "OTHER"];
   function renderDevices() {
     var panel = $("gai-dev-panel");
-    panel.hidden = !(INS.devices || []).length;
+    panel.hidden = !has("devices");
     if (panel.hidden) return;
     var rows = (INS.devices || []).filter(function (d) { return inAccount(d.account) && matchesText([d.campaign, d.account]); });
     var mc = mainCurrency(rows, function (d) { return d.cost; }, function (d) { return d.cur; });
@@ -803,9 +807,10 @@
       var x = by[d.device] = by[d.device] || { cost: 0, conv: 0, clicks: 0, impr: 0, value: 0 };
       ["cost", "conv", "clicks", "impr", "value"].forEach(function (k) { x[k] += d[k]; if (tot[k] != null) tot[k] += d[k]; });
     });
-    $("gai-dev-d").textContent = "Last 30 days" + (mc.mixed ? " · " + mc.cur + " accounts only" : "");
+    $("gai-dev-d").textContent = period("devices") + (mc.mixed ? " · " + mc.cur + " accounts only" : "");
     var box = $("gai-dev");
     clear(box);
+    if (!rows.length) box.appendChild(el("p", "gad-empty-chart", "No device figures for this selection."));
     var avgCpa = tot.conv ? tot.cost / tot.conv : null;
     DEVICE_ORDER.filter(function (k) { return by[k] && (by[k].cost || by[k].impr); }).forEach(function (k) {
       var x = by[k], card = el("div", "gai-dev");
@@ -903,11 +908,12 @@
   }
   function renderHours() {
     var panel = $("gai-hour-panel");
-    panel.hidden = !(INS.hours || []).length;
+    panel.hidden = !has("hours");
     if (panel.hidden) return;
     var H = hourCells(), m = ui.hMetric, box = $("gai-heat");
     clear(box);
-    $("gai-hour-d").textContent = "Last 30 days · " + (H.tzs.length === 1 ? H.tzs[0] : H.tzs.length + " time zones");
+    $("gai-hour-d").textContent = period("hours") + (H.tzs.length ? " · " + (H.tzs.length === 1 ? H.tzs[0] : H.tzs.length + " time zones") : "") +
+      (H.mixed ? " · " + H.cur + " accounts only" : "");
     var vals = [];
     H.grid.forEach(function (row) { row.forEach(function (c) { var v = cellValue(c, m); if (v != null) vals.push(v); }); });
     var max = Math.max.apply(null, vals.concat([0])), min = Math.min.apply(null, vals.concat([max]));
@@ -960,34 +966,23 @@
   /* ══ Locations ══════════════════════════════════════════════════════ */
   function renderLocations() {
     var panel = $("gai-loc-panel");
-    panel.hidden = !((INS.locations || {}).rows || []).length;
+    panel.hidden = !has("locations");
     if (panel.hidden) return;
-    var rows = INS.locations.rows.filter(function (x) {
-      return inAccount(x.account) && (ui.locType === "all" || x.type === ui.locType) && matchesText([x.region, x.city, x.country, x.account]);
-    });
-    var mc = mainCurrency(rows, function (x) { return x.cost; }, function (x) { return x.cur; });
-    var by = {}, total = 0, conv = 0;
-    rows.forEach(function (x) {
-      if (x.cur !== mc.cur) return;
-      var name = ui.locLevel === "city" ? (x.city || "(" + (x.region || x.country) + ", city not known)") : (x.region || x.country || "Unknown");
-      var sub = ui.locLevel === "city" ? [x.region, x.country].filter(Boolean).join(", ") : x.country;
-      var k = name + "\u0001" + sub;
-      var g = by[k] = by[k] || { name: name, sub: sub, cost: 0, conv: 0, clicks: 0, impr: 0 };
-      g.cost += x.cost; g.conv += x.conv; g.clicks += x.clicks; g.impr += x.impr;
-      total += x.cost; conv += x.conv;
-    });
-    var list = Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) { return b.cost - a.cost; });
-    var tot = (INS.locations.totals || {})[filters.account === "__all__" ? "__all__" : filters.account] || {};
-    $("gai-loc-d").textContent = "Last 30 days · " + list.length + (ui.locLevel === "city" ? " cities" : " regions");
+    // Regions and cities as the server added them up over every location read (main currency).
+    var L = INS.locations || {}, G = ((L.groups || {})[ui.locLevel] || {})[ui.locType] ||
+      { list: [], count: 0, spent: 0, cost: 0, conv: 0, waste_cost: 0, waste_n: 0 };
+    var mc = { cur: L.cur || "", mixed: !!L.mixed };
+    var list = G.list, total = G.cost, conv = G.conv;
+    var tot = (L.totals || {}).__all__ || {};
+    var noun = ui.locLevel === "city" ? " cities" : " regions";
+    $("gai-loc-d").textContent = period("locations") + " · " + int(G.spent) + noun + " with spend" + (mc.mixed ? " · " + mc.cur + " accounts only" : "");
     var kpis = $("gai-loc-kpis"); clear(kpis);
-    kpi(kpis, ui.locLevel === "city" ? "Cities with spend" : "Regions with spend", int(list.length), money(total, mc.cur) + " spend");
+    kpi(kpis, ui.locLevel === "city" ? "Cities with spend" : "Regions with spend", int(G.spent), money(total, mc.cur) + " spend");
     kpi(kpis, "Top " + (ui.locLevel === "city" ? "city" : "region"), list[0] ? list[0].name : "–",
       list[0] && total ? Math.round(100 * list[0].cost / total) + "% of spend" : "");
     kpi(kpis, "Cost / conv.", conv ? money2(total / conv, mc.cur) : "–", num1(conv) + " conversions");
-    var waste = list.filter(function (g) { return !g.conv && g.cost > 0; });
-    kpi(kpis, "Spend with no conversion", money(waste.reduce(function (s, g) { return s + g.cost; }, 0), mc.cur),
-      int(waste.length) + (ui.locLevel === "city" ? " cities" : " regions"), waste.length ? "is-warn" : "is-good");
-    kpi(kpis, "From people elsewhere", tot.cost ? Math.round(100 * (tot.interest_cost || 0) / tot.cost) + "%" : "–",
+    kpi(kpis, "Spend with no conversion", money(G.waste_cost, mc.cur), int(G.waste_n) + noun, G.waste_n ? "is-warn" : "is-good");
+    kpi(kpis, "From people elsewhere", tot.cost ? Math.round(100 * (tot.interest_cost || 0) / (tot.cost - (tot.other_cost || 0) || 1)) + "%" : "–",
       "of spend: interested in a place, not in it");
     var box = $("gai-loc-bars"); clear(box);
     var max = list[0] ? list[0].cost : 0, avg = conv ? total / conv : null;
@@ -1008,6 +1003,7 @@
       row.appendChild(facts);
       box.appendChild(row);
     });
+    if (!list.length) box.appendChild(el("p", "gad-empty-chart", "No locations for this selection."));
     $("gai-loc-more").hidden = list.length <= ui.locShown;
   }
 
@@ -1016,7 +1012,7 @@
   function days(n) { return n ? n + (n === 1 ? " day" : " days") : "–"; }
   function renderConversions() {
     var panel = $("gai-conv-panel");
-    panel.hidden = !(INS.actions || []).length && !(INS.conversions || []).length;
+    panel.hidden = !has("conversions");
     if (panel.hidden) return;
     var acts = (INS.actions || []).filter(function (a) { return inAccount(a.account) && matchesText([a.name, a.category, a.account]); });
     var conv = (INS.conversions || []).filter(function (c) { return inAccount(c.account) && matchesText([c.action, c.campaign, c.account]); });
@@ -1026,7 +1022,7 @@
       x.conv += c.conv; x.all += c.all; x.value += c.value; primary += c.conv; all += c.all;
     });
     var flags = acts.reduce(function (n, a) { return n + a.flags.filter(function (f) { return f[0] === "warn"; }).length; }, 0);
-    $("gai-conv-d").textContent = "Last 30 days · " + acts.length + " actions";
+    $("gai-conv-d").textContent = period("conversions") + " · " + acts.length + (acts.length === 1 ? " action" : " actions");
     var kpis = $("gai-conv-kpis"); clear(kpis);
     kpi(kpis, "Conversions", num1(primary), "primary actions: what bidding uses");
     kpi(kpis, "All conversions", num1(all), "adds secondary actions");
@@ -1039,7 +1035,7 @@
     $("gai-conv-mix-h").textContent = usePrimary ? "What the conversions are" : "What the conversions are (all, none are primary)";
     var list = Object.keys(byAction).map(function (k) { return byAction[k]; })
       .filter(function (x) { return x[key] > 0; }).sort(function (a, b) { return b[key] - a[key]; });
-    if (!total) mix.appendChild(el("p", "gad-empty-chart", "No conversions recorded in the last 30 days."));
+    if (!total) mix.appendChild(el("p", "gad-empty-chart", "No conversions recorded for this selection."));
     else {
       var bar = el("div", "gai-stack"), keys = el("div", "gai-stack-keys");
       list.forEach(function (x, i) {
@@ -1105,14 +1101,13 @@
   }
   function renderAds() {
     var panel = $("gai-ads-panel");
-    panel.hidden = !((INS.ads || {}).rows || []).length;
+    panel.hidden = !has("ads");
     if (panel.hidden) return;
     var rows = adRows();
-    var tot = (INS.ads.totals || {})[filters.account === "__all__" ? "__all__" : filters.account];
-    if (!tot || filters.search) tot = adTotals(rows);
-    var cur = tot.cur === "mixed" ? "" : tot.cur, kpis = $("gai-ads-kpis");
+    var tot = (INS.ads.totals || {}).__all__ || adTotals(rows);
+    var cur = tot.cur, kpis = $("gai-ads-kpis");
     clear(kpis);
-    $("gai-ads-d").textContent = int(INS.ads.read) + " live ads and asset groups · last 30 days";
+    $("gai-ads-d").textContent = int(tot.ads) + " live ads and asset groups now · performance " + period("ads") + mixedNote(tot);
     var weak = (tot.strength.POOR.cost || 0) + (tot.strength.AVERAGE.cost || 0);
     kpi(kpis, "Live ads", int(tot.ads), int(tot.rsa) + " search ads · " + int(tot.asset_groups) + " asset groups" +
       (tot.other ? " · " + int(tot.other) + " other" : ""));
@@ -1302,7 +1297,7 @@
   function renderHealth() {
     var H = INS.health || {}, R = INS.recs || {};
     var panel = $("gai-health-panel");
-    panel.hidden = !(H.accounts || []).length && !(R.rows || []).length;
+    panel.hidden = !has("health");
     if (panel.hidden) return;
     var accts = (H.accounts || []).filter(function (a) { return inAccount(a.account) && matchesText([a.account]); });
     var w = 0, sw = 0;
@@ -1320,7 +1315,7 @@
     var types = {}; recs.forEach(function (r) { types[r.label] = (types[r.label] || 0) + 1; });
     var low = camps.filter(function (c) { return c.score != null && c.score < 0.6 && c.cost > 0; });
     var lc = mainCurrency(low, function (c) { return c.cost; }, function (c) { return c.cur; });
-    kpi(kpis, "Campaigns below 60%", int(low.length), low.length ? money(low.reduce(function (s, c) { return s + (c.cur === lc.cur ? c.cost : 0); }, 0), lc.cur) + " spend, 30 days" : "none with spend",
+    kpi(kpis, "Campaigns below 60%", int(low.length), low.length ? money(low.reduce(function (s, c) { return s + (c.cur === lc.cur ? c.cost : 0); }, 0), lc.cur) + " spend, last 30 days" : "none with spend",
       low.length ? "is-warn" : "is-good");
     kpi(kpis, "Open recommendations", int(recs.length), Object.keys(types).length + (Object.keys(types).length === 1 ? " kind" : " kinds"));
     kpi(kpis, "Extra conversions / week", gain.conv ? "+" + num1(Math.round(gain.conv * 10) / 10) : "–", "if all were applied, per Google");
@@ -1465,28 +1460,25 @@
   }
   function renderChanges() {
     var panel = $("gai-chg-panel");
-    panel.hidden = !((INS.changes || {}).rows || []).length;
+    panel.hidden = !has("changes");
     if (panel.hidden) return;
-    var all = INS.changes.rows.filter(function (c) { return inAccount(c.account) && matchesText([c.campaign, c.ad_group, c.item, c.by, c.account]); });
-    var kinds = {}, people = {}, auto = 0, days = {};
-    all.forEach(function (c) {
-      kinds[c.kind] = (kinds[c.kind] || 0) + 1;
-      if (c.by) people[c.by] = 1;
-      if (c.via === "GOOGLE_ADS_RECOMMENDATIONS_SUBSCRIPTION") auto++;
-      var d = days[c.day] = days[c.day] || {}; d[c.kind] = (d[c.kind] || 0) + 1;
-    });
-    var read = (INS.changes.totals[filters.account === "__all__" ? "__all__" : filters.account] || {}).n || all.length;
-    $("gai-chg-d").textContent = "Last 28 days · " + int(all.length) + (all.length === 1 ? " change" : " changes") +
-      (read > all.length && !filters.search ? " shown of " + int(read) : "");
+    var all = (INS.changes.rows || []).slice(), cm = (INS.meta || {}).changes || {};
+    // Counts from the server's totals: every change read for these filters, not only those listed.
+    var CT = (INS.changes.totals || {}).__all__ || { kinds: {}, auto: 0, people: 0, day_kinds: {} };
+    var kinds = CT.kinds || {}, auto = CT.auto || 0, days = CT.day_kinds || {};
+    var read = ((INS.changes.totals || {}).__all__ || {}).n || all.length;
+    $("gai-chg-d").textContent = period("changes") + " · " + int(read) + (read === 1 ? " change" : " changes") +
+      (read > all.length ? " (newest " + int(all.length) + " listed)" : "");
     var kpis = $("gai-chg-kpis"); clear(kpis);
-    kpi(kpis, "Changes", int(all.length), Object.keys(days).length + " days with changes");
+    kpi(kpis, "Changes", int(read), Object.keys(days).length + " days with changes");
     kpi(kpis, "Budget and bidding", int((kinds.budget || 0) + (kinds.bidding || 0)), int(kinds.budget || 0) + " budget · " + int(kinds.bidding || 0) + " bidding");
     kpi(kpis, "Paused or enabled", int(kinds.status || 0), "campaigns, ad groups, ads, keywords");
     kpi(kpis, "Auto-applied by Google", int(auto), auto ? "from recommendation auto-apply" : "none", auto ? "is-warn" : "");
-    kpi(kpis, "People", int(Object.keys(people).length), all[0] ? "last change " + all[0].at : "");
+    kpi(kpis, "People", int(CT.people || 0), all[0] ? "last change " + all[0].at : "");
     // Changes per day: one stacked column per day, oldest to newest.
     var box = $("gai-chg-days"); clear(box);
-    var dayList = Object.keys(days).sort(), last = dayList[dayList.length - 1] || "", first = isoAdd(last || "2000-01-01", -27);
+    // One column per day the change history covers inside the range picked.
+    var first = cm.cover ? cm.cover[0] : "", last = cm.cover ? cm.cover[1] : "";
     var max = 0, cols = [];
     for (var d = first; last && d <= last; d = isoAdd(d, 1)) {
       var t = 0, x = days[d] || {}; KIND_ORDER.forEach(function (k) { t += x[k] || 0; }); max = Math.max(max, t); cols.push([d, x, t]);
@@ -1558,12 +1550,12 @@
   /* ══ Age and gender ═════════════════════════════════════════════════ */
   function renderDemographics() {
     var panel = $("gai-demo-panel");
-    panel.hidden = !(INS.demographics || []).length;
+    panel.hidden = !has("demographics");
     if (panel.hidden) return;
     var rows = INS.demographics.filter(function (d) { return inAccount(d.account) && matchesText([d.campaign, d.account]); });
     var mc = mainCurrency(rows, function (d) { return d.cost; }, function (d) { return d.cur; });
     rows = rows.filter(function (d) { return d.cur === mc.cur; });
-    $("gai-demo-d").textContent = "Last 30 days" + (mc.mixed ? " · " + mc.cur + " accounts only" : "");
+    $("gai-demo-d").textContent = period("demographics") + (mc.mixed ? " · " + mc.cur + " accounts only" : "");
     [["Age", $("gai-demo-age")], ["Gender", $("gai-demo-gender")]].forEach(function (x) {
       var box = x[1]; clear(box);
       var by = {}, tot = { cost: 0, conv: 0 };
@@ -1610,24 +1602,23 @@
   }
   function renderLanding() {
     var panel = $("gai-lp-panel");
-    panel.hidden = !((INS.landing || {}).rows || []).length;
+    panel.hidden = !has("landing");
     if (panel.hidden) return;
-    var rows = INS.landing.rows.filter(function (x) { return inAccount(x.account) && matchesText([x.url, x.account]); });
-    var mc = mainCurrency(rows, function (x) { return x.cost; }, function (x) { return x.cur; });
-    rows = rows.filter(function (x) { return x.cur === mc.cur; });
-    var t = { cost: 0, conv: 0, scored: 0, sw: 0, slow: 0, slowN: 0, mw: 0, mc: 0, buckets: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] };
-    rows.forEach(function (x) {
-      t.cost += x.cost; t.conv += x.conv;
-      if (x.speed != null) { t.scored += x.cost; t.sw += x.speed * x.cost; t.buckets[x.speed - 1] += x.cost; if (x.speed <= 3) { t.slow += x.cost; t.slowN++; } }
-      if (x.mobile != null && x.clicks) { t.mw += x.mobile * x.clicks; t.mc += x.clicks; }
-    });
-    $("gai-lp-d").textContent = "Last 30 days · " + int(rows.length) + (rows.length === 1 ? " page" : " pages") + (mc.mixed ? " · " + mc.cur + " accounts only" : "");
+    // KPIs from the server's totals over every landing page read (and each account's rolled-up rest).
+    var rows = (INS.landing.rows || []).slice(), T = (INS.landing.totals || {}).__all__ ||
+      { pages: 0, cost: 0, conv: 0, scored_cost: 0, speed_w: 0, speed_cost: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], speeds: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        mobile_share: null, avg_speed: null, other_cost: 0, cur: "" };
+    var mc = { cur: T.cur, mixed: !!T.mixed };
+    var t = { cost: T.cost, conv: T.conv, buckets: T.speed_cost.slice(),
+              slow: T.speed_cost[0] + T.speed_cost[1] + T.speed_cost[2], slowN: T.speeds[0] + T.speeds[1] + T.speeds[2] };
+    $("gai-lp-d").textContent = period("landing") + " · " + int(T.pages) + (T.other_cost ? "+" : "") + (T.pages === 1 ? " page" : " pages") +
+      (mc.mixed ? " · " + mc.cur + " accounts only" : "");
     var kpis = $("gai-lp-kpis"); clear(kpis);
-    var avg = t.scored ? t.sw / t.scored : null;
-    kpi(kpis, "Pages with spend", int(rows.length), money(t.cost, mc.cur) + " spend");
-    kpi(kpis, "Speed score", avg == null ? "–" : avg.toFixed(1) + " / 10", "average, weighted by spend", avg == null ? "" : avg <= 3 ? "is-bad" : avg <= 6 ? "is-warn" : "is-good");
+    var avg = T.avg_speed;
+    kpi(kpis, "Pages with spend", int(T.pages) + (T.other_cost ? "+" : ""), money(t.cost, mc.cur) + " spend");
+    kpi(kpis, "Speed score", avg == null ? "–" : avg.toFixed(1) + " / 10", "Google's last 30 days; average weighted by spend", avg == null ? "" : avg <= 3 ? "is-bad" : avg <= 6 ? "is-warn" : "is-good");
     kpi(kpis, "Spend on pages scoring 1–3", money(t.slow, mc.cur), int(t.slowN) + (t.slowN === 1 ? " page" : " pages") + (t.cost ? " · " + Math.round(100 * t.slow / t.cost) + "% of spend" : ""), t.slow ? "is-bad" : "is-good");
-    kpi(kpis, "Mobile-friendly clicks", t.mc ? pct(t.mw / t.mc, true) : "–", "of mobile clicks, weighted", t.mc && t.mw / t.mc < 0.9 ? "is-warn" : "");
+    kpi(kpis, "Mobile-friendly clicks", T.mobile_share != null ? pct(T.mobile_share, true) : "–", "of mobile clicks, Google's last 30 days; weighted", T.mobile_share != null && T.mobile_share < 0.9 ? "is-warn" : "");
     kpi(kpis, "Cost / conv.", t.conv ? money2(t.cost / t.conv, mc.cur) : "–", num1(t.conv) + " conversions");
     // Spend by speed score, 1 to 10.
     var box = $("gai-lp-speed"); clear(box);
@@ -1721,7 +1712,10 @@
   $("gai-lp-more").addEventListener("click", function () { ui.lpShown += 20; renderLanding(); });
 
   function renderAll() {
-    $("gai-asof").textContent = INS.as_of ? "Exported " + INS.as_of + ". Follows the account filter and the search box; the date range above does not apply." : "";
+    var r = INS.range || {};
+    $("gai-asof").textContent = (INS.as_of ? "Exported " + INS.as_of + ". " : "") +
+      "Every panel follows the filters above" + (r.from && r.to ? " (" + fmtRange(r.from, r.to) + ")" : "") +
+      " and says which dates it covers.";
     // Each panel draws alone, so one bad section never blanks the rest.
     [renderShare, renderPacing, renderTerms, renderKeywords, renderDevices, renderHours, renderLocations, renderConversions, renderAds,
      renderHealth, renderChanges, renderDemographics, renderLanding]
@@ -1729,15 +1723,56 @@
         try { fn(); } catch (err) { if (window.console) console.error("google-ads-insights:", fn.name, err); }
       });
   }
+  function resetShown() {
+    ui.shareShown = 12; ui.paceShown = 10; ui.termsShown = 25; ui.kwShown = 25; ui.devShown = 12; ui.locShown = 15; ui.adsShown = ADS_STEP;
+    ui.scoresShown = 10; ui.recsShown = 15; ui.chgShown = CHG_STEP; ui.lpShown = 20;
+  }
+
+  /* ── Asking the server for the page's filters ───────────────────────── */
+  var PARAMS = ["from", "to", "account", "type", "status", "search", "focus"];
+  function keyOf(p) { return PARAMS.map(function (k) { return p[k] || ""; }).join("\u0002"); }
+  var panels = Array.prototype.slice.call(doc.querySelectorAll("[id^='gai-'].gad-panel, .gai-chapter"));
+  function busy(on) { panels.forEach(function (p) { p.classList.toggle("is-updating", on); }); }
+  var seq = 0, timer = null, failed = false;
+  function load(p) {
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      var my = ++seq, q = PARAMS.map(function (k) { return k + "=" + encodeURIComponent(p[k] || ""); }).join("&");
+      busy(true);
+      fetch("/api/dashboards/google-ads/insights?" + q, { credentials: "same-origin", headers: { "X-Requested-With": "fetch" } })
+        .then(function (res) { if (!res.ok) throw new Error(res.status); return res.json(); })
+        .then(function (d) {
+          if (my !== seq) return;                  // a newer request is on its way
+          busy(false);
+          if (!d || !d.ok) throw new Error("empty");
+          failed = false;
+          INS = d; resetShown(); renderAll();
+        })
+        .catch(function () {
+          if (my !== seq) return;
+          busy(false); failed = true;
+          // Never leave figures for other filters looking current.
+          $("gai-asof").textContent = "Could not load the insights for these filters. The panels below still show " +
+            (INS.range && INS.range.from ? fmtRange(INS.range.from, INS.range.to) : "the previous selection") +
+            ": refresh the page to try again.";
+        });
+    }, 120);
+  }
   doc.addEventListener("gad:render", function (e) {
     var d = e.detail || {};
     filters.account = d.account || "__all__";
-    filters.search = (d.search || "").toLowerCase();
-    ui.shareShown = 12; ui.paceShown = 10; ui.termsShown = 25; ui.kwShown = 25; ui.devShown = 12; ui.locShown = 15; ui.adsShown = ADS_STEP;
-    ui.scoresShown = 10; ui.recsShown = 15; ui.chgShown = CHG_STEP; ui.lpShown = 20;
-    renderAll();
+    filters.search = (d.search || "").trim().toLowerCase();
+    filters.type = d.type && d.type !== "__all__" ? d.type : "";
+    filters.status = d.status && d.status !== "__all__" ? d.status : "";
+    filters.focus = d.focus || "";
+    filters.from = d.from || ""; filters.to = d.to || "";
+    var want = { from: filters.from, to: filters.to, account: filters.account === "__all__" ? "" : filters.account,
+                 type: filters.type, status: filters.status, search: filters.search, focus: filters.focus };
+    if (keyOf(want) === keyOf(INS.params || {}) && !failed) { resetShown(); renderAll(); return; }
+    load(want);
   });
-  doc.addEventListener("gad:insights", function (e) { if (e.detail && e.detail.ok) INS = e.detail; });
+  // After Refresh: new data for the page's opening filters; the gad:render that follows asks for the current ones.
+  doc.addEventListener("gad:insights", function (e) { if (e.detail && e.detail.ok) { INS = e.detail; failed = false; } });
   var rt = null, lastW = window.innerWidth;
   window.addEventListener("resize", function () {
     if (window.innerWidth === lastW) return;

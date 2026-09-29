@@ -14,9 +14,39 @@ var manager = process.argv.indexOf("manager") > -1;
 var badZone = process.argv.indexOf("badzone") > -1;   // the sheet's time zone comes back unusable
 var partArg = process.argv.filter(function (a) { return /^part=\d$/.test(a); })[0];
 if (partArg) src = src.replace("var PART = 0;", "var PART = " + partArg.slice(5) + ";");
+// "smallcaps": keep one search term and one keyword per account, so the rest is rolled up.
+if (process.argv.indexOf("smallcaps") > -1) {
+  src = src.replace("var SEARCH_TERMS_PER_ACCOUNT = 3000;", "var SEARCH_TERMS_PER_ACCOUNT = 1;")
+    .replace("var KEYWORDS_PER_ACCOUNT = 4000;", "var KEYWORDS_PER_ACCOUNT = 1;");
+}
+// "tiny": an account may hand back very little, so the longest lists are cut to fit.
+if (process.argv.indexOf("tiny") > -1) src = src.replace("var RETURN_LIMIT = 9500000;", "var RETURN_LIMIT = 1000;");
 var queries = [], logs = [];
 
-function iter(rows) { var i = 0; return { hasNext: function () { return i < rows.length; }, next: function () { return rows[i++]; } }; }
+function iter(rows) {
+  var i = 0;
+  return { rows: rows, hasNext: function () { return i < rows.length; }, next: function () { return rows[i++]; } };
+}
+
+// The script reads daily figures over the last 90 days, ending yesterday (the fake "today" is 27 Sep 2026).
+var WINDOW = ["2026-06-29", "2026-09-26"];
+function isoAdd(iso, n) { var p = iso.split("-"); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] + n)).toISOString().slice(0, 10); }
+/** A daily query's rows: each fake row falls on two days a week apart (so every total is twice the row). */
+function dated(q, it) {
+  var m = q.match(/segments\.date BETWEEN '([\d-]+)' AND '([\d-]+)'/);
+  if (!m) return it;
+  if (m[1] !== WINDOW[0] || m[2] !== WINDOW[1]) throw new Error("daily window should be " + WINDOW.join(" to ") + ": " + q);
+  if (!/segments\.date,/.test(q)) throw new Error("a daily query must select segments.date: " + q);
+  var out = [];
+  it.rows.forEach(function (r) {
+    [WINDOW[1], isoAdd(WINDOW[1], -7)].forEach(function (d) {
+      var seg = Object.assign({}, r.segments || {}, { date: d });
+      if (/segments\.ad_network_type/.test(q) && !seg.adNetworkType) seg.adNetworkType = "SEARCH";
+      out.push(Object.assign({}, r, { segments: seg }));
+    });
+  });
+  return iter(out);
+}
 
 var CAMPAIGNS = [
   { id: "11", name: "Brand - Search", advertisingChannelType: "SEARCH", advertisingChannelSubType: undefined, status: "ENABLED", biddingStrategyType: "TARGET_IMPRESSION_SHARE" },
@@ -28,8 +58,8 @@ var CAMPAIGNS = [
 
 function account(cid, name) {
   return {
-    search: function (q) {
-      queries.push(q);
+    search: function (q) { queries.push(q); return dated(q, this.raw(q)); },
+    raw: function (q) {
       if (/FROM change_event/.test(q)) {
         if (!/change_date_time <= '\d{4}-\d{2}-\d{2}' AND change_event\.change_date_time >= '\d{4}-\d{2}-\d{2}'/.test(q) || !/LIMIT \d+$/.test(q)) {
           throw new Error("change_event needs a date window and a LIMIT: " + q);
@@ -100,7 +130,16 @@ function account(cid, name) {
             metrics: { impressions: "6000", clicks: "250", costMicros: "45000000000", conversions: 20, conversionsValue: 0 } }
         ]);
       }
+      if (/FROM landing_page_view/.test(q) && !/speed_score/.test(q)) {
+        return iter([
+          { landingPageView: { unexpandedFinalUrl: "https://example.com/crm" },
+            metrics: { impressions: "20000", clicks: "900", costMicros: "120000000000", conversions: 90, conversionsValue: 0 } },
+          { landingPageView: { unexpandedFinalUrl: "https://example.com/" },
+            metrics: { impressions: "4000", clicks: "800", costMicros: "27000000000", conversions: 160, conversionsValue: 0 } }
+        ]);
+      }
       if (/FROM landing_page_view/.test(q)) {
+        if (!/DURING LAST_30_DAYS/.test(q)) throw new Error("speed scores are read for the last 30 days: " + q);
         return iter([
           { landingPageView: { unexpandedFinalUrl: "https://example.com/crm" },
             metrics: { speedScore: "3", mobileFriendlyClicksPercentage: 0.62, validAcceleratedMobilePagesClicksPercentage: 0,
@@ -146,11 +185,11 @@ function account(cid, name) {
       if (/FROM ad_group_ad_asset_view/.test(q)) {
         return iter([
           { campaign: { name: "Generic - Search" }, adGroup: { id: "31", name: "CRM" }, adGroupAd: { ad: { id: "801" } },
-            adGroupAdAssetView: { fieldType: "HEADLINE", pinnedField: "HEADLINE_1", performanceLabel: "BEST", enabled: true },
+            adGroupAdAssetView: { resourceName: "customers/1/adGroupAdAssets/31~801~1~HEADLINE", fieldType: "HEADLINE", pinnedField: "HEADLINE_1", performanceLabel: "BEST", enabled: true },
             asset: { textAsset: { text: "Free CRM Trial" } },
             metrics: { impressions: "700", clicks: "60", costMicros: "3000000000", conversions: 4 } },
           { campaign: { name: "Generic - Search" }, adGroup: { id: "31", name: "CRM" }, adGroupAd: { ad: { id: "801" } },
-            adGroupAdAssetView: { fieldType: "DESCRIPTION", performanceLabel: "LOW", enabled: true },
+            adGroupAdAssetView: { resourceName: "customers/1/adGroupAdAssets/31~801~5~DESCRIPTION", fieldType: "DESCRIPTION", performanceLabel: "LOW", enabled: true },
             asset: { textAsset: { text: "No credit card needed." } },
             metrics: { impressions: "650", clicks: "20", costMicros: "900000000", conversions: 0 } }
         ]);
@@ -181,7 +220,7 @@ function account(cid, name) {
       }
       if (/FROM keyword_view/.test(q)) {
         return iter([
-          { campaign: { id: "12", name: "Generic - Search" }, adGroup: { name: "CRM" },
+          { campaign: { id: "12", name: "Generic - Search" }, adGroup: { id: "31", name: "CRM" },
             adGroupCriterion: { criterionId: "7001", status: "ENABLED", systemServingStatus: "ELIGIBLE",
               keyword: { text: "crm software", matchType: "BROAD" },
               qualityInfo: { qualityScore: 4, searchPredictedCtr: "BELOW_AVERAGE", creativeQualityScore: "AVERAGE",
@@ -189,7 +228,7 @@ function account(cid, name) {
               effectiveCpcBidMicros: "40000000", positionEstimates: { firstPageCpcMicros: "55000000", topOfPageCpcMicros: "90000000" } },
             metrics: { impressions: "5000", clicks: "250", costMicros: "11000000000", conversions: 3, conversionsValue: 0,
                        searchImpressionShare: 0.35, searchRankLostImpressionShare: 0.5 } },
-          { campaign: { id: "11", name: "Brand - Search" }, adGroup: { name: "Brand" },
+          { campaign: { id: "11", name: "Brand - Search" }, adGroup: { id: "32", name: "Brand" },
             adGroupCriterion: { criterionId: "7002", status: "ENABLED", systemServingStatus: "ELIGIBLE",
               keyword: { text: name.toLowerCase(), matchType: "EXACT" }, qualityInfo: {} },
             metrics: { impressions: "900", clicks: "300", costMicros: "900000000", conversions: 40, conversionsValue: 0 } }
@@ -232,10 +271,10 @@ function account(cid, name) {
             metrics: { conversions: 30, conversionsValue: 0, allConversions: 30, allConversionsValue: 0 } }
         ]);
       }
-      if (/segments\.day_of_week/.test(q)) {
+      if (/segments\.hour/.test(q)) {
         return iter([
-          { segments: { dayOfWeek: "MONDAY", hour: 10 }, metrics: { impressions: "900", clicks: "40", costMicros: "2000000000", conversions: 4, conversionsValue: 0 } },
-          { segments: { dayOfWeek: "SUNDAY", hour: 2 }, metrics: { impressions: "90", clicks: "3", costMicros: "150000000", conversions: 0, conversionsValue: 0 } }
+          { segments: { hour: 10 }, metrics: { impressions: "900", clicks: "40", costMicros: "2000000000", conversions: 4, conversionsValue: 0 } },
+          { segments: { hour: 2 }, metrics: { impressions: "90", clicks: "3", costMicros: "150000000", conversions: 0, conversionsValue: 0 } }
         ]);
       }
       if (/segments\.device/.test(q)) {
@@ -246,24 +285,14 @@ function account(cid, name) {
       }
       if (/FROM search_term_view/.test(q)) {
         return iter([
-          { campaign: { id: "12", name: "Generic - Search" }, adGroup: { name: "CRM" },
+          { campaign: { id: "12", name: "Generic - Search" }, adGroup: { id: "31", name: "CRM" },
             searchTermView: { searchTerm: "free crm software", status: "NONE" },
             segments: { searchTermMatchType: "BROAD", keyword: { info: { text: "crm software", matchType: "BROAD" } } },
             metrics: { impressions: "900", clicks: "60", costMicros: "5400000000", conversions: 0, conversionsValue: 0 } },
-          { campaign: { id: "11", name: "Brand - Search" }, adGroup: { name: "Brand" },
+          { campaign: { id: "11", name: "Brand - Search" }, adGroup: { id: "32", name: "Brand" },
             searchTermView: { searchTerm: name.toLowerCase() + " login", status: "ADDED" },
             segments: { searchTermMatchType: "EXACT", keyword: { info: { text: name.toLowerCase(), matchType: "PHRASE" } } },
             metrics: { impressions: "400", clicks: "120", costMicros: "900000000", conversions: 30, conversionsValue: 0 } }
-        ]);
-      }
-      if (/segments\.week/.test(q)) {
-        return iter([
-          { campaign: CAMPAIGNS[0], segments: { week: "2026-09-14" },
-            metrics: { impressions: "1000", clicks: "200", costMicros: "3000000000", conversions: 40,
-                       searchImpressionShare: 0.91, searchTopImpressionShare: 0.88, searchAbsoluteTopImpressionShare: 0.7,
-                       searchBudgetLostImpressionShare: 0, searchRankLostImpressionShare: 0.09 } },
-          { campaign: CAMPAIGNS[2], segments: { week: "2026-09-14" },
-            metrics: { impressions: "5000", clicks: "50", costMicros: "1000000000", conversions: 2 } }
         ]);
       }
       if (/target_cpa/.test(q)) return iter(CAMPAIGNS.map(function (c) { return { campaign: c }; }));
@@ -292,18 +321,20 @@ function account(cid, name) {
                      { customerClient: { id: "3333333333", status: "ENABLED", manager: false, testAccount: true } }]);
       }
       if (/FROM customer/.test(q)) return iter([{ metrics: { costMicros: cid === "222-222-2222" ? "900" : "100" } }]);
-      if (/FROM campaign WHERE segments\.date DURING LAST_30_DAYS/.test(q)) {
+      if (/FROM campaign WHERE segments\.date BETWEEN/.test(q)) {
         return iter([
           { campaign: CAMPAIGNS[0], metrics: { impressions: "4000", clicks: "800", costMicros: "27000000000", conversions: 160, conversionsValue: 0,
             searchImpressionShare: 0.92, searchTopImpressionShare: 0.9, searchAbsoluteTopImpressionShare: 0.75,
             searchBudgetLostImpressionShare: 0, searchRankLostImpressionShare: 0.08,
             searchBudgetLostTopImpressionShare: 0, searchRankLostTopImpressionShare: 0.1,
             searchBudgetLostAbsoluteTopImpressionShare: 0, searchRankLostAbsoluteTopImpressionShare: 0.25,
-            searchClickShare: 0.8, searchExactMatchImpressionShare: 0.97 } },
+            searchClickShare: 0.8, searchExactMatchImpressionShare: 0.97,
+            topImpressionPercentage: 0.81, absoluteTopImpressionPercentage: 0.6 } },
           { campaign: CAMPAIGNS[1], metrics: { impressions: "20000", clicks: "900", costMicros: "120000000000", conversions: 90, conversionsValue: 0,
             searchImpressionShare: 0.0999, searchTopImpressionShare: 0.0999, searchAbsoluteTopImpressionShare: 0.0999,
             searchBudgetLostImpressionShare: 0.9001, searchRankLostImpressionShare: 0.05,
-            searchClickShare: 0.0999, searchExactMatchImpressionShare: 0.3 } },
+            searchClickShare: 0.0999, searchExactMatchImpressionShare: 0.3,
+            topImpressionPercentage: 0.05, absoluteTopImpressionPercentage: 0.01 } },
           { campaign: CAMPAIGNS[2], metrics: { impressions: "90000", clicks: "700", costMicros: "30000000000", conversions: 40, conversionsValue: 0 } }
         ]);
       }
@@ -324,14 +355,17 @@ var AdsApp = {
 };
 
 var tabs = {}, order = ["Campaign report"];
+if (process.argv.indexOf("oldweekly") > -1) { tabs["Insights - IS weekly"] = [["Week"]]; order.push("Insights - IS weekly"); }
 var ss = {
   getSheetByName: function (n) { return tabs[n] ? sheet(n) : null; },
   insertSheet: function (n, idx) { tabs[n] = []; order.splice(idx, 0, n); return sheet(n); },
   getNumSheets: function () { return order.length; },
+  deleteSheet: function (sh) { delete tabs[sh.name]; order.splice(order.indexOf(sh.name), 1); },
   getSpreadsheetTimeZone: function () { return badZone ? null : "Asia/Kolkata"; }
 };
 function sheet(n) {
   return {
+    name: n,
     clearContents: function () { tabs[n] = []; },
     getRange: function (r, c, h, w) {
       return { setValues: function (v) {
@@ -377,10 +411,11 @@ if (manager) {
             return { getCustomerId: function () { return a[0]; }, getName: function () { return a[1]; } };
           }));
         },
-        executeInParallel: function (fn, cb) {
+        executeInParallel: function (fn, cb, input) {
+          sandbox.__input = input;
           var results = ACCOUNTS.filter(function (a) { return !ids || ids.indexOf(a[0]) >= 0; }).map(function (a) {
             current = account(a[0], a[1]);
-            var v = vm.runInContext(fn + "()", sandbox);
+            var v = vm.runInContext(fn + "(__input)", sandbox);
             return { getStatus: function () { return "OK"; }, getReturnValue: function () { return v; },
                      getCustomerId: function () { return a[0]; }, getError: function () { return null; } };
           });
