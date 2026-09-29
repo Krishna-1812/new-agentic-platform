@@ -35,81 +35,117 @@ def _harness(*args):
 
 # ── The Google Ads Script ────────────────────────────────────────────────────
 
+def _raw(res):
+    return {k: res["tabs"][t] for k, t in gai.TABS.items() if t in res["tabs"]}
+
+
+# The harness answers each daily query with every fake row on two days, 26 Sep (the last exported day)
+# and 19 Sep, so a whole-window total is twice the row and the 20-26 Sep total is the row itself.
+LAST_WEEK = {"start": "2026-09-20", "end": "2026-09-26"}
+
+
 @pytest.mark.skipif(not NODE, reason="node is not installed")
 def test_the_script_writes_its_tabs_after_the_campaign_report():
     res = _harness()
     assert res["order"][0] == "Campaign report", "the report the dashboard already reads stays first"
-    assert res["order"][1:] == [gai.TABS[k] for k in ("is", "weekly", "budgets", "terms", "keywords", "devices", "hours",
+    assert res["order"][1:] == [gai.TABS[k] for k in ("is", "budgets", "terms", "keywords", "devices", "hours",
                                                       "locations", "conversions", "actions", "ads", "combos",
                                                       "ad_assets", "changes", "health", "recs", "demographics",
                                                       "landing", "about")]
+    about = dict(tuple(r) for r in res["tabs"][gai.TABS["about"]][1:])
+    assert about["Daily detail"].startswith("2026-06-29 to 2026-09-26 (90 days"), "yesterday and the 89 days before"
+
+
+@pytest.mark.skipif(not NODE, reason="node is not installed")
+def test_the_old_weekly_tab_is_removed_once_impression_share_is_daily():
+    res = _harness("oldweekly")
+    assert "Insights - IS weekly" not in res["order"], "the weekly trend is now built from the daily figures"
+
+
+@pytest.mark.skipif(not NODE, reason="node is not installed")
+def test_every_daily_row_carries_its_days_and_the_window_totals():
+    tabs = _harness()["tabs"]
+    head = tabs[gai.TABS["terms"]][0]
+    row = next(r for r in tabs[gai.TABS["terms"]][1:] if r[head.index("Search term")] == "free crm software")
+    daily = json.loads(row[head.index("Daily")])
+    assert daily["v"] == 1 and daily["from"] == "2026-06-29"
+    assert [d[0] for d in daily["d"]] == [82, 89], "19 and 26 Sep, counted from 29 Jun"
+    assert daily["d"][1] == [89, 60, 5400, 0, 0], "clicks, cost, conversions, conv. value"
+    assert row[head.index("Cost")] == 10800 and row[head.index("Date range")] == "2026-06-29 to 2026-09-26"
 
 
 @pytest.mark.skipif(not NODE, reason="node is not installed")
 def test_the_script_keeps_googles_share_limits_and_reads_money_from_micros():
-    tabs = _harness()["tabs"]
-    ins = gai.build({"is": tabs[gai.TABS["is"]], "weekly": tabs[gai.TABS["weekly"]],
-                     "budgets": tabs[gai.TABS["budgets"]], "terms": tabs[gai.TABS["terms"]],
-                     "about": tabs[gai.TABS["about"]]})
+    raw = _raw(_harness())
+    ins = gai.build(raw)
     generic = next(r for r in ins["is"] if r["campaign"] == "Generic - Search")
-    assert generic["is"] == 0.0999 and generic["lb"] == 0.9001, "Google's <10% and >90% markers are kept"
-    assert generic["cost"] == 120000.0
+    assert generic["is"] == pytest.approx(0.0999, abs=1e-6) and generic["lb"] == pytest.approx(0.9001, abs=1e-6)
+    assert generic["approx"], "built from Google's <10% and >90% markers"
+    assert generic["cost"] == 240000.0 and generic["impr"] == 40000
+    brand = next(r for r in ins["is"] if r["campaign"] == "Brand - Search")
+    assert brand["is"] == pytest.approx(0.92) and brand["top"] == pytest.approx(0.9) and not brand["approx"]
     pmax = next(r for r in ins["is"] if r["campaign"] == "PMax - All")
     assert pmax["is"] is None, "no search share for Performance Max: unknown, not zero"
-    assert [w["campaign"] for w in ins["weekly"]] == ["Brand - Search"], "non-search campaigns are left out"
+    assert ins["weekly_grain"] == "week" and sum(w["impr"] for w in ins["weekly"]) == 48000, \
+        "the trend counts search impressions only (Brand and Generic, both days)"
     camps = {c["campaign"]: c for c in ins["budget_campaigns"]}
     assert camps["Generic - Search"]["tcpa"] == 2500.0 and camps["PMax - All"]["troas"] == 4.5
     shared = next(b for b in ins["budgets"] if b["name"] == "Shared generic")
     assert shared["shared"] and sorted(shared["campaigns"]) == ["Generic - Search", "PMax - All"]
     assert shared["recommended"] == 8000.0
     term = next(r for r in ins["terms"]["rows"] if r[3] == "free crm software")
-    assert term[5] == "crm software" and term[4] == "BROAD" and term[10] == 5400.0
+    assert term[5] == "crm software" and term[4] == "BROAD" and term[10] == 10800.0
     assert ins["as_of"].startswith("2026-09-27")
+    week = gai.build(raw, **LAST_WEEK)
+    assert next(r for r in week["is"] if r["campaign"] == "Generic - Search")["cost"] == 120000.0, "one day in range"
+    assert week["weekly_grain"] == "day" and [w["week"] for w in week["weekly"]] == ["2026-09-26"]
+    assert next(r for r in week["terms"]["rows"] if r[3] == "free crm software")[10] == 5400.0
 
 
 @pytest.mark.skipif(not NODE, reason="node is not installed")
 def test_the_script_exports_keywords_devices_hours_locations_and_conversions():
-    tabs = _harness()["tabs"]
-    ins = gai.build({k: tabs[t] for k, t in gai.TABS.items() if t in tabs})
+    ins = gai.build(_raw(_harness()))
     kw = {k["kw"]: k for k in ins["keywords"]["rows"]}
     crm = kw["crm software"]
     assert crm["qs"] == 4 and crm["ctr"] == "BELOW_AVERAGE" and crm["landing"] == "BELOW_AVERAGE"
-    assert crm["bid"] == 40.0 and crm["first_page"] == 55.0 and crm["cost"] == 11000.0
+    assert crm["bid"] == 40.0 and crm["first_page"] == 55.0 and crm["cost"] == 22000.0
+    assert crm["is"] == pytest.approx(0.35, abs=1e-6)
     assert kw["acme"]["qs"] is None and kw["acme"]["bid"] is None, "no Quality Score is unknown, not zero"
     assert {d["device"] for d in ins["devices"]} == {"MOBILE", "DESKTOP"}
-    assert {(h["day"], h["hour"]) for h in ins["hours"]} == {(0, 10), (6, 2)}, "Monday is 0, Sunday 6"
+    assert {(h["day"], h["hour"]) for h in ins["hours"]} == {(5, 10), (5, 2)}, "19 and 26 Sep are Saturdays (Monday is 0)"
+    assert ins["meta"]["hours"]["weekdays"] == [13, 13, 13, 13, 13, 13, 12], "how many of each weekday the window holds"
     locs = ins["locations"]["rows"]
     assert (locs[0]["country"], locs[0]["region"], locs[0]["city"]) == ("India", "Maharashtra", "Mumbai")
     assert locs[1]["region"] == "Location 99999", "an unnamed place keeps its id rather than vanishing"
     acts = {a["name"]: a for a in ins["actions"]}
     assert acts["Lead form"]["primary"] and acts["Lead form"]["counting"] == "MANY_PER_CLICK"
-    assert acts["Lead form"]["all"] == 64.0 and acts["Pricing page view"]["conv"] == 30.0
+    assert acts["Lead form"]["all"] == 128.0 and acts["Pricing page view"]["conv"] == 60.0
 
 
 @pytest.mark.skipif(not NODE, reason="node is not installed")
 def test_the_script_exports_ads_what_google_served_and_each_headline():
-    tabs = _harness()["tabs"]
-    ins = gai.build({k: tabs[t] for k, t in gai.TABS.items() if t in tabs})
+    ins = gai.build(_raw(_harness()))
     ads = {a["id"]: a for a in ins["ads"]["rows"]}
     crm, brand, pmax = ads["801"], ads["802"], ads["91"]
     assert crm["kind"] == "RSA" and crm["strength"] == "AVERAGE" and crm["pinned"] == 1
     assert [h["t"] for h in crm["heads"]][:2] == ["Free CRM Trial", "Rated #1 by Users"]
-    assert crm["cost"] == 9000.0 and crm["impr"] == 1900, "metrics joined from the second query"
+    assert crm["cost"] == 18000.0 and crm["impr"] == 3800, "metrics joined from the daily query"
     assert [c["heads"] for c in crm["combos"]] == [["Rated #1 by Users", "Start in 5 Minutes"],
                                                   ["Free CRM Trial", "Rated #1 by Users"]], "most served first"
     assert crm["combos"][1]["descs"] == ["No credit card needed."]
     labels = {x["t"]: x["label"] for x in crm["assets"]}
     assert labels == {"Free CRM Trial": "BEST", "No credit card needed.": "LOW"}
     assert brand["approval"] == "DISAPPROVED" and "TRADEMARKS_IN_AD_TEXT" in brand["topics"]
-    assert pmax["kind"] == "ASSET_GROUP" and pmax["strength"] == "GOOD" and pmax["cost"] == 30000.0
+    assert brand["impr"] == 0 and brand in ins["ads"]["rows"], "a live ad with no impressions is still listed"
+    assert pmax["kind"] == "ASSET_GROUP" and pmax["strength"] == "GOOD" and pmax["cost"] == 60000.0
     assert pmax["combos"][0]["category"] == "IMAGE"
     assert pmax["combos"][0]["parts"][0]["img"] == "https://tpc.googlesyndication.com/simgad/123"
 
 
 @pytest.mark.skipif(not NODE, reason="node is not installed")
 def test_the_script_exports_changes_scores_recommendations_audiences_and_landing_pages():
-    tabs = _harness()["tabs"]
-    ins = gai.build({k: tabs[t] for k, t in gai.TABS.items() if t in tabs})
+    raw = _raw(_harness())
+    ins = gai.build(raw)
     ch = ins["changes"]["rows"]
     assert [c["kind"] for c in ch] == ["budget", "bidding", "keywords"], "newest first, each classified"
     assert ch[0]["diffs"] == [["amount_micros", 5000, 8000]], "budget micros become money, old and new"
@@ -117,6 +153,9 @@ def test_the_script_exports_changes_scores_recommendations_audiences_and_landing
     assert ch[2]["item"] == "crm for startups" and ch[2]["diffs"][0] == ["keyword.text", None, "crm for startups"]
     t = ins["changes"]["totals"]["__all__"]
     assert t["auto"] == 1 and t["people"] == 1 and t["kinds"]["budget"] == 1
+    assert t["day_kinds"]["2026-09-25"] == {"budget": 1}
+    assert [c["day"] for c in gai.build(raw, **LAST_WEEK)["changes"]["rows"]] == ["2026-09-25", "2026-09-20"], \
+        "only the changes made in the dates picked"
     h = ins["health"]
     assert h["accounts"][0]["score"] == 0.72 and h["overall"] == 0.72
     assert {c["campaign"]: c["score"] for c in h["campaigns"]} == {"Brand - Search": 0.95, "Generic - Search": 0.61,
@@ -129,11 +168,34 @@ def test_the_script_exports_changes_scores_recommendations_audiences_and_landing
     assert next(r for r in recs if r["type"] == "KEYWORD")["detail"] == "crm pricing (PHRASE)"
     assert next(r for r in recs if r["type"] == "RESPONSIVE_SEARCH_AD_ASSET")["gain"] is None, "no impact: unknown, not zero"
     age = {d["label"]: d for d in ins["demographics"] if d["dim"] == "Age"}
-    assert age["25–34"]["cost"] == 45000.0 and age["25–34"]["impr"] == 7000, "ad groups summed per campaign"
+    assert age["25–34"]["cost"] == 90000.0 and age["25–34"]["impr"] == 14000, "ad groups summed per campaign"
     assert age["65+"]["conv"] == 0
     lp = ins["landing"]
     assert [x["speed"] for x in lp["rows"]] == [3, 8] and lp["rows"][0]["mobile"] == 0.62
     assert round(lp["totals"]["__all__"]["avg_speed"], 2) == round((3 * 120000 + 8 * 27000) / 147000, 2)
+
+
+@pytest.mark.skipif(not NODE, reason="node is not installed")
+def test_capped_lists_roll_the_rest_up_per_campaign_so_totals_stay_whole():
+    raw = _raw(_harness("smallcaps"))
+    ins = gai.build(raw)
+    t = ins["terms"]
+    assert [r[3] for r in t["rows"]] == ["free crm software"], "one term kept"
+    assert t["totals"]["__all__"]["cost"] == 10800 + 1800 and t["totals"]["__all__"]["other_cost"] == 1800
+    assert t["totals"]["__all__"]["terms"] == 1, "the rolled-up rest is counted in money, not as a term"
+    camps = {("Acme", "Brand - Search"): {"types": {"Search"}, "states": {"Enabled"}},
+             ("Acme", "Generic - Search"): {"types": {"Search"}, "states": {"Enabled"}}}
+    brand = gai.build(raw, camps=camps, focus="Acme\u0001Brand - Search")["terms"]["totals"]["__all__"]
+    assert brand["cost"] == 1800 and brand["terms"] == 0, "the rest belongs to its campaign, so a campaign filter keeps it"
+    assert gai.build(raw, camps=camps, type_="Search")["keywords"]["totals"]["__all__"]["cost"] == 22000 + 1800
+
+
+@pytest.mark.skipif(not NODE, reason="node is not installed")
+def test_an_account_result_too_large_for_google_is_cut_but_keeps_its_totals():
+    res = _harness("tiny")
+    assert any("result too large; terms cut" in line for line in res["logs"])
+    t = gai.build(_raw(res))["terms"]["totals"]["__all__"]
+    assert t["cost"] == 10800 + 1800, "what was cut is rolled up, not dropped"
 
 
 def test_change_history_stays_inside_googles_limits():
@@ -503,7 +565,7 @@ def test_the_page_shows_the_insights_panels_when_the_tabs_exist(monkeypatch):
     tabs = {gai.TABS["is"]: [IS_HEAD, ["A", "INR", "1", "S", "SEARCH", 10, 1, 5, 0.5, 0.2, 0.3, ""]]}
     ins = gai.build({"is": tabs[gai.TABS["is"]]})
     monkeypatch.setattr(appmod, "_fetch_google_ads_rows", lambda force=False: ROWS)
-    monkeypatch.setattr(appmod, "_google_ads_insights", lambda force=False: dict(ins, symbols={"INR": "₹"}))
+    monkeypatch.setattr(appmod, "_google_ads_insights", lambda *a, **k: dict(ins, symbols={"INR": "₹"}))
     body = _client().get("/dashboards/google-ads").get_data(as_text=True)
     for pid in ("gai-share-panel", "gai-pace-panel", "gai-terms-panel", "gai-kw-panel", "gai-dev-panel",
                 "gai-hour-panel", "gai-loc-panel", "gai-conv-panel", "gai-ads-panel", "gai-health-panel",
@@ -516,7 +578,7 @@ def test_the_page_shows_the_insights_panels_when_the_tabs_exist(monkeypatch):
 
 def test_without_the_tabs_the_page_explains_how_to_switch_them_on(monkeypatch):
     monkeypatch.setattr(appmod, "_fetch_google_ads_rows", lambda force=False: ROWS)
-    monkeypatch.setattr(appmod, "_google_ads_insights", lambda force=False: dict(gai.empty(), symbols={}))
+    monkeypatch.setattr(appmod, "_google_ads_insights", lambda *a, **k: dict(gai.empty(), symbols={}))
     body = _client().get("/dashboards/google-ads").get_data(as_text=True)
     assert "scripts/google_ads/export_insights.js" in body
     assert 'id="gai-share-panel"' not in body and "google-ads-insights.js" not in body
@@ -550,3 +612,145 @@ def test_the_panels_script_inserts_text_never_markup():
         js = fh.read()
     assert "innerHTML" not in js and "insertAdjacentHTML" not in js and "outerHTML" not in js
     assert "eval(" not in js and "document.write" not in js
+
+
+# ── Date ranges and filters ──────────────────────────────────────────────────
+
+def _is_tab(*days, window="2026-09-01 to 2026-09-30"):
+    """An impression-share tab with one campaign and the given days: (date, impressions, share, lost budget)."""
+    d = [[gai._dt.date.fromisoformat(day).toordinal() - gai._dt.date(2026, 9, 1).toordinal()] +
+         [0] * len(gai.IS_DAILY) for day, *_ in days]
+    for row, (day, impr, s, lb) in zip(d, days):
+        e = impr / s
+        vals = dict(impr=impr, sg=impr, se=e, lbe=lb * e, capped=1 if s == 0.0999 else 0)
+        for k, v in vals.items():
+            row[1 + gai.IS_DAILY.index(k)] = v
+    cell = json.dumps({"v": 1, "from": "2026-09-01", "d": d})
+    return [["Account", "Currency", "Campaign", "Channel", "Date range", "Daily"],
+            ["A", "INR", "S", "SEARCH", window, cell]]
+
+
+def test_impression_share_for_a_range_is_rebuilt_from_eligible_impressions_not_averaged():
+    tab = _is_tab(("2026-09-10", 900, 0.9, 0.05), ("2026-09-11", 100, 0.1, 0.8))
+    r = gai.build({"is": tab})["is"][0]
+    # 900 of 1,000 eligible, then 100 of 1,000: 1,000 of 2,000 = 50%, not the 50% average by luck of equal days...
+    assert r["is"] == pytest.approx(0.5)
+    assert r["lb"] == pytest.approx((0.05 * 1000 + 0.8 * 1000) / 2000)
+    uneven = gai.build({"is": _is_tab(("2026-09-10", 900, 0.9, 0), ("2026-09-11", 100, 0.5, 0))})["is"][0]
+    assert uneven["is"] == pytest.approx(1000 / 1200), "…and here the plain average (70%) would be wrong"
+    one = gai.build({"is": tab}, start="2026-09-11", end="2026-09-11")["is"][0]
+    assert one["is"] == pytest.approx(0.1) and one["impr"] == 100
+
+
+def test_a_range_with_a_capped_day_is_marked_approximate():
+    r = gai.build({"is": _is_tab(("2026-09-10", 900, 0.9, 0), ("2026-09-11", 50, 0.0999, 0.9001))})["is"][0]
+    assert r["approx"]
+    clean = gai.build({"is": _is_tab(("2026-09-10", 900, 0.9, 0), ("2026-09-11", 50, 0.0999, 0.9001))},
+                      start="2026-09-10", end="2026-09-10")["is"][0]
+    assert not clean["approx"] and clean["is"] == pytest.approx(0.9)
+
+
+def test_the_trend_is_daily_for_a_month_or_less_and_weekly_beyond():
+    tab = _is_tab(("2026-09-07", 100, 0.5, 0), ("2026-09-08", 100, 0.5, 0), ("2026-09-14", 100, 0.25, 0))
+    assert gai.build({"is": tab}, start="2026-09-01", end="2026-09-30")["weekly_grain"] == "day"
+    assert gai.build({"is": tab}, start="2026-08-01", end="2026-09-30")["weekly_grain"] == "day", \
+        "61 days asked but only 30 held: the grain follows the days shown"
+    tab = _is_tab(("2026-09-07", 100, 0.5, 0), ("2026-09-08", 100, 0.5, 0), ("2026-09-14", 100, 0.25, 0),
+                  window="2026-07-01 to 2026-09-30")
+    wk = gai.build({"is": tab}, start="2026-08-01", end="2026-09-30")
+    assert wk["weekly_grain"] == "week"
+    pts = {p["week"]: p for p in wk["weekly"]}
+    assert set(pts) == {"2026-09-07", "2026-09-14"}, "weeks start on Monday"
+    assert pts["2026-09-07"]["is"] == pytest.approx(0.5) and pts["2026-09-14"]["is"] == pytest.approx(0.25)
+
+
+def test_a_range_outside_the_export_is_empty_and_says_so():
+    ins = gai.build({"is": _is_tab(("2026-09-10", 900, 0.9, 0))}, start="2026-07-01", end="2026-07-31")
+    assert ins["is"] == [] and ins["meta"]["is"]["cover"] is None
+    part = gai.build({"is": _is_tab(("2026-09-10", 900, 0.9, 0))}, start="2026-08-15", end="2026-09-12")
+    assert part["meta"]["is"]["cover"] == ["2026-09-01", "2026-09-12"], "the page says the figures start later"
+
+
+def test_an_older_export_without_daily_figures_is_shown_as_it_was_and_flagged():
+    ins = gai.build({"is": [IS_HEAD, ["A", "INR", "1", "S", "SEARCH", 1000, 50, 2500, 0.45, 0.3, "", ""]]},
+                    start="2026-09-20", end="2026-09-26")
+    assert len(ins["is"]) == 1 and ins["is"][0]["is"] == 0.45
+    assert ins["meta"]["is"]["dated"] is False, "the page labels it 'last 30 days, as exported'"
+
+
+CAMPS = {("A", "Brand"): {"types": {"Search"}, "states": {"Enabled"}},
+         ("A", "PMax"): {"types": {"Performance Max"}, "states": {"Paused"}}}
+
+
+def _devices_and_hours():
+    cell = json.dumps({"v": 1, "from": "2026-09-01", "d": [[0, 10, 1, 100, 1, 0]]})
+    dev = [["Account", "Campaign", "Device", "Date range", "Daily"],
+           ["A", "Brand", "MOBILE", "2026-09-01 to 2026-09-30", cell], ["A", "PMax", "MOBILE", "2026-09-01 to 2026-09-30", cell],
+           ["A", "Unknown", "MOBILE", "2026-09-01 to 2026-09-30", cell], ["B", "Brand", "MOBILE", "2026-09-01 to 2026-09-30", cell]]
+    hrs = [["Account", "Hour", "Date range", "Daily"], ["A", 9, "2026-09-01 to 2026-09-30", cell],
+           ["B", 9, "2026-09-01 to 2026-09-30", cell]]
+    return {"devices": dev, "hours": hrs}
+
+
+def test_campaign_panels_follow_type_status_search_and_focus_like_the_report():
+    raw = _devices_and_hours()
+    by = lambda **kw: sorted((d["account"], d["campaign"]) for d in gai.build(raw, camps=CAMPS, **kw)["devices"])
+    assert by() == [("A", "Brand"), ("A", "PMax"), ("A", "Unknown"), ("B", "Brand")]
+    assert by(type_="Search") == [("A", "Brand")], "a campaign the report does not know is left out under a type filter"
+    assert by(status="Paused") == [("A", "PMax")]
+    assert by(search="pmax") == [("A", "PMax")]
+    assert by(search="b") == [("A", "Brand"), ("B", "Brand")], "search text matches campaign or account names"
+    assert by(focus="A\u0001Brand") == [("A", "Brand")]
+    assert by(account="B") == [("B", "Brand")]
+
+
+def test_account_level_panels_follow_the_account_and_dates_but_not_campaign_filters():
+    raw = _devices_and_hours()
+    ins = gai.build(raw, camps=CAMPS, type_="Search", account="A")
+    assert [(h["account"], h["hour"]) for h in ins["hours"]] == [("A", 9)]
+    assert ins["meta"]["hours"]["scope"] == "account", "the page says the campaign filters do not apply"
+    assert gai.build(raw, start="2026-09-02", end="2026-09-30")["hours"] == [], "the only day, 1 Sep, is outside"
+
+
+def test_a_shared_budget_stays_whole_when_one_of_its_campaigns_is_filtered_in():
+    head = ["Account", "Currency", "Campaign ID", "Campaign", "Budget ID", "Budget name", "Shared budget",
+            "Daily budget", "Cost this month", "Cost last 7 days", "Day of month", "Days in month", "Month elapsed (days)"]
+    raw = {"budgets": [head, ["A", "INR", "1", "Brand", "9", "Shared", True, 1000, 6000, 3500, 16, 30, 15.0],
+                       ["A", "INR", "2", "PMax", "9", "Shared", True, 1000, 9000, 3500, 16, 30, 15.0]]}
+    b = gai.build(raw, camps=CAMPS, type_="Search")["budgets"]
+    assert len(b) == 1 and b[0]["mtd"] == 15000, "pace is worked out from the whole budget's spend"
+
+
+def test_the_insights_api_answers_for_the_pages_filters(monkeypatch):
+    seen = {}
+
+    def fake(rows=None, force=False, **params):
+        seen.update(params)
+        return dict(gai.empty(), ok=True, params=params)
+    monkeypatch.setattr(appmod, "_fetch_google_ads_rows", lambda force=False: ROWS)
+    monkeypatch.setattr(appmod, "_google_ads_insights", fake)
+    c = _client()
+    r = c.get("/api/dashboards/google-ads/insights?from=2026-09-20&to=2026-09-26&account=A&type=Search"
+              "&status=Enabled&search=brand&focus=")
+    assert r.status_code == 200 and r.get_json()["ok"]
+    assert seen == {"start": "2026-09-20", "end": "2026-09-26", "account": "A", "type_": "Search",
+                    "status": "Enabled", "search": "brand", "focus": ""}
+    assert c.get("/api/dashboards/google-ads/insights?from=20-09-2026").status_code == 400
+
+
+def test_the_page_opens_on_the_reports_whole_range(monkeypatch):
+    seen = {}
+    monkeypatch.setattr(appmod, "_fetch_google_ads_rows", lambda force=False: ROWS + [dict(ROWS[0], day="2026-09-26")])
+    monkeypatch.setattr(appmod, "_google_ads_insights", lambda rows=None, **kw: seen.update(kw) or gai.empty())
+    _client().get("/dashboards/google-ads")
+    assert (seen["start"], seen["end"]) == ("2026-09-20", "2026-09-26"), "the same range the page's 'All' shows"
+
+
+def test_the_page_script_announces_every_filter_to_the_panels():
+    with open(os.path.join(ROOT, "static", "js", "google-ads-dashboard.js"), encoding="utf-8") as fh:
+        src = fh.read()
+    for k in ("from: state.from", "to: state.to", "type: state.type", "status: state.status", "focus: state.focus"):
+        assert k in src
+    with open(os.path.join(ROOT, "static", "js", "google-ads-insights.js"), encoding="utf-8") as fh:
+        ins = fh.read()
+    assert "/api/dashboards/google-ads/insights?" in ins and "my !== seq" in ins, "stale answers are dropped"

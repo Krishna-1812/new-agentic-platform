@@ -1314,8 +1314,11 @@
     renderMovers(cur, prevAgg, prev);
     renderTable(cur);
     syncControls();
-    // The insights panels (google-ads-insights.js) follow the account and search filters.
-    doc.dispatchEvent(new CustomEvent("gad:render", { detail: { account: state.account, search: state.search } }));
+    // The insights panels (google-ads-insights.js) follow every filter: they ask the server for
+    // the same dates, account, campaign type, status, search text and focused campaign.
+    doc.dispatchEvent(new CustomEvent("gad:render", { detail: {
+      account: state.account, search: state.search, type: state.type, status: state.status,
+      focus: state.focus || "", from: state.from, to: state.to } }));
   }
 
   /* ── Controls ───────────────────────────────────────────────────────── */

@@ -27,39 +27,54 @@ The work is split in two so each half gets Google's full time allowance (a manag
 
 The dashboard picks up the new tabs within 15 minutes, or immediately when you press **Refresh** on the page.
 
+**Updating from an earlier version.** Paste the new file over the old one in both scripts (keep your `SPREADSHEET_URL`, `PART` and `ACCOUNT_IDS`), then **Run** part 1 and, when it has finished, part 2. The first run rewrites every tab with daily figures and removes the old "Insights - IS weekly" tab. Until then the dashboard shows the old tabs as they were exported and labels them "Last 30 days, as exported".
+
+## Dates and filters
+
+Every panel on the dashboard follows every filter above it: the dates (Last day, 7D, 14D, 30D, All or any custom range), the account, campaign type, status, the search box and a campaign you click into. To make that possible the script reads each performance figure **per day** for the last `DAYS` days (90 by default, ending yesterday) and writes, on each row, a **Daily** cell with that item's figures for every day. The dashboard's server adds up the days inside the range being shown, so every total covers everything exported, not only what fits on the page. Each panel heading states the dates it covers; if the range picked reaches beyond the 90 days, the heading says where the figures start.
+
+- **Impression share is rebuilt exactly for any range.** Each day's eligible impressions are its impressions divided by its impression share, and the range's share is its impressions divided by the sum of those. The same holds for top and absolute-top share (using top impressions), click share (using clicks) and every lost share. Rows are read per network, so each share is divided into the impressions it describes. Averaging daily percentages would be wrong and is never done. Days where Google reports "<10%" or ">90%" make the result approximate, and the dashboard marks it "≈".
+- **Search terms** are read for days with clicks: cost and conversions are reported on the day of the click, so nothing is left out.
+- **Rolled-up rows.** Where an account has more search terms, keywords, locations or landing pages than the script keeps (the costliest `…_PER_ACCOUNT`), the rest are added together into a "(N more …)" row, one per campaign for search terms and keywords. They count toward spend, clicks and conversions but are not listed, so totals still cover the whole account.
+- **Current states follow the filters but not the dates:** budgets and pacing (this month), Quality Score, ad strength and approval, optimization score and recommendations are shown as they are now, labelled "Now".
+- **Account-level reports** (hours of the day, locations, landing pages) follow the dates and the account; Google does not split them by campaign in this export, so their headings say when a campaign filter does not apply to them.
+- **Fixed windows** that Google only reports as a whole: served ad combinations, landing-page speed score and mobile-friendly clicks (last 30 days), and change history (last 28 days; the date filter picks the changes inside it).
+
+If a run times out with many large accounts, lower `DAYS` (for example to 60); the dashboard's presets need at most 30.
+
 ## What it writes
 
 It adds these tabs at the **end** of the sheet. It never changes the first tab, which holds the campaign report the dashboard already reads.
 
 | Tab | Contents | Period |
 |---|---|---|
-| Insights - Impression share | Per campaign: impression share (search, top, absolute top, exact match), share lost to budget and to ad rank at each level, click share, display share, bidding strategy, spend and conversions | Last 30 days |
-| Insights - IS weekly | Search impression share and lost share per campaign per week | Last 13 weeks |
+| Insights - Impression share | Per campaign: impression share (search, top, absolute top, exact match), share lost to budget and to ad rank at each level, click share, display share, bidding strategy, spend and conversions; the dashboard's day-by-day and week-by-week trend comes from the same figures | Daily, last 90 days |
 | Insights - Budgets | Per enabled campaign: budget, whether it is shared, delivery, Google's recommended budget, target CPA or ROAS, and spend today, yesterday, in the last 7 days, this month and last month | This month |
-| Insights - Search terms | Search term, match type, the keyword it matched, whether it was added or excluded, and clicks, spend, conversions and value | Last 30 days, the 3,000 costliest per account |
-| Insights - Keywords | Keyword, match type, serving status, Quality Score and its three parts (expected CTR, ad relevance, landing page experience), max CPC, Google's first-page and top-of-page bid estimates, performance, impression share | Last 30 days, the 4,000 costliest per account |
-| Insights - Devices | Per campaign and device: impressions, clicks, spend, conversions and value | Last 30 days |
-| Insights - Hours | Per account, day of week and hour (in the account's time zone): the same metrics | Last 30 days |
-| Insights - Locations | Region and city, split into people who were in the place and people interested in it, with the same metrics | Last 30 days, the 3,000 costliest rows per account |
-| Insights - Conversions | Per campaign and conversion action: conversions, all conversions and value | Last 30 days |
+| Insights - Search terms | Search term, match type, the keyword it matched, whether it was added or excluded, and clicks, spend, conversions and value | Daily (days with clicks), last 90 days; the 3,000 costliest per account, the rest rolled up |
+| Insights - Keywords | Keyword, match type, serving status, Quality Score and its three parts (expected CTR, ad relevance, landing page experience), max CPC, Google's first-page and top-of-page bid estimates, performance, impression share | Daily, last 90 days; the 4,000 costliest per account, the rest rolled up |
+| Insights - Devices | Per campaign and device: impressions, clicks, spend, conversions and value | Daily, last 90 days |
+| Insights - Hours | Per account and hour (in the account's time zone): the same metrics; the dashboard takes the day of the week from each date | Daily, last 90 days |
+| Insights - Locations | Region and city, split into people who were in the place and people interested in it, with the same metrics | Daily, last 90 days; the 3,000 costliest per account, the rest rolled up |
+| Insights - Conversions | Per campaign and conversion action: conversions, all conversions and value | Daily, last 90 days |
 | Insights - Conversion actions | Every active conversion action: category, status, primary or secondary, counting (one or every), lookback windows, default value, attribution model | Current settings |
-| Insights - Ads | Every live ad and Performance Max asset group: ad strength, approval and policy reasons, final URL, headlines and descriptions (with pinning), performance | Live now; performance last 30 days |
+| Insights - Ads | Every live ad and Performance Max asset group: ad strength, approval and policy reasons, final URL, headlines and descriptions (with pinning), performance | Live now; performance daily, last 90 days |
 | Insights - Ad combinations | The headline and description combinations Google served: top 5 per search ad by impressions, and Google's top combinations per asset group (text, image, video) | Last 30 days |
-| Insights - Ad assets | Each headline and description: pinned position, Google's label (Best, Good, Low, Learning), impressions, clicks, spend, conversions | Last 30 days |
+| Insights - Ad assets | Each headline and description: pinned position, Google's label (Best, Good, Low, Learning), impressions, clicks, spend, conversions | Label now; performance daily, last 90 days |
 | Insights - Changes | Every change Google Ads recorded: when, what (campaign, budget, ad group, keyword, ad, targeting), who, through what (website, API, script, or Google's auto-applied recommendations), and the old and new value of each changed field | Last 28 days, the newest 2,000 per account |
 | Insights - Optimization | Google's optimization score for each account (with Google's score weight) and each campaign, with spend and conversions | Now; spend last 30 days |
 | Insights - Recommendations | Google's open (not dismissed) recommendations: type, campaign, keyword or budget detail, and Google's estimated weekly impact (impressions, clicks, cost, conversions) before and after | Now |
-| Insights - Demographics | Per campaign: performance by age range and by gender | Last 30 days |
-| Insights - Landing pages | Each final URL: Google's mobile speed score (1 to 10), share of mobile clicks to mobile-friendly pages, and performance | Last 30 days, the 500 costliest per account |
+| Insights - Demographics | Per campaign: performance by age range and by gender | Daily, last 90 days |
+| Insights - Landing pages | Each final URL: Google's mobile speed score (1 to 10), share of mobile clicks to mobile-friendly pages, and performance | Performance daily, last 90 days (the 500 costliest per account, the rest rolled up); speed and mobile-friendly clicks last 30 days |
 | Insights - About | When part 1 (or the single script) ran, the row counts, and any query that failed | – |
 | Insights - About (part 2) | The same for part 2 | – |
 
 ## Limits and safety
 
 - **Accounts:** Google runs a manager script in parallel on at most 50 accounts ([Google Ads Scripts limits](https://developers.google.com/google-ads/scripts/docs/limits)). With more than 50, the 50 with the highest spend in the last 30 days are exported. Set `ACCOUNT_IDS` to choose them yourself.
+- **Google's 10 MB limit per account:** `processAccount` "can return up to 10MB of data" ([limits](https://developers.google.com/google-ads/scripts/docs/limits)). If an account's result would pass 9.5 MB, the script keeps fewer items in its longest lists and rolls the rest up, so totals stay complete, and logs it.
 - **A failed run keeps the last good data:** a tab is never cleared when its new result is empty. Failed queries are listed in "Insights - About".
-- **Impression share is written exactly as Google reports it:** 0.0999 means below 10%, and 0.9001 means a lost share above 90% ([field reference](https://developers.google.com/google-ads/api/fields/v25/campaign)). The dashboard shows these as "<10%" and ">90%".
-- **Conversion setup checks follow Google's guidance:** count every conversion for sales and one per click for leads ([About conversion counting options](https://support.google.com/google-ads/answer/3438531)). The dashboard flags lead actions set to count every conversion, page views used as primary actions, and primary actions that recorded nothing in 30 days.
+- **Impression share keeps Google's markers:** 0.0999 means below 10%, and 0.9001 means a lost share above 90% ([field reference](https://developers.google.com/google-ads/api/fields/v25/campaign)). The dashboard shows these as "<10%" and ">90%", and any range built on such a day as "≈".
+- **Conversion setup checks follow Google's guidance:** count every conversion for sales and one per click for leads ([About conversion counting options](https://support.google.com/google-ads/answer/3438531)). The dashboard flags lead actions set to count every conversion, page views used as primary actions, and primary actions that recorded nothing in the last 30 days exported (whatever dates are shown).
 - **Ad checks follow Google's guidance:** up to 15 headlines and 4 descriptions per responsive search ad, and pinning "isn't recommended for most advertisers and can affect ad strength" ([About responsive search ads](https://support.google.com/google-ads/answer/7684791)).
 - **Change history stays inside Google's limits:** the query's date range "must be within the past 30 days" and it needs "a LIMIT clause restricting results to at most 10,000 rows" ([Change event](https://developers.google.com/google-ads/api/docs/change-event)). The script reads 28 days and 2,000 changes per account. Changes carry the email of the person who made them, as in Google Ads' own change history, so keep the sheet restricted to people who may see that.
 - **Recommendations and optimization score are Google's estimates:** impact figures are Google's weekly forecasts if a recommendation is applied ([RecommendationMetrics](https://developers.google.com/google-ads/api/reference/rpc/v25/Recommendation.RecommendationMetrics)); the dashboard shows them as forecasts, never as results.

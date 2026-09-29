@@ -4830,22 +4830,46 @@ def dashboard_legacy_p2(account_id: str, section: str = None):
     return redirect(target, code=301)
 
 # ── Google Ads campaign dashboard ─────────────────────────────────────────────
-# All filtering, aggregation, and charting for this page happen in the
-# browser (static/js/google-ads-dashboard.js) against the full row set, so
+# All filtering, aggregation, and charting of the campaign report happen in
+# the browser (static/js/google-ads-dashboard.js) against the full row set, so
 # every filter -- account, date range, campaign type, search -- is instant
-# with no round trip. The route's only job is the one thing that must
-# happen server-side: read the Sheet (cached) and decide whether there is
-# anything to show at all.
-def _google_ads_insights(force: bool = False):
-    """Impression share, budgets and search terms from the insights tabs, or
-    an empty set (panels stay hidden) until the Google Ads Script has run."""
+# with no round trip. The insights panels below it hold far more rows (every
+# search term, keyword, location... per day), so the server adds them up for
+# the range and filters the page is showing (tracker/google_ads_insights.py,
+# view()) and the page asks again whenever a filter changes.
+def _google_ads_campaigns(rows):
+    """{(account, campaign): {"types", "states"}} from the campaign report, so the insights follow
+    the campaign type and status filters exactly as the report's own panels do."""
+    out = {}
+    for r in rows:
+        x = out.setdefault((r.get("account") or "", r.get("campaign") or ""), {"types": set(), "states": set()})
+        x["types"].add(r.get("type") or "")
+        x["states"].add(r.get("state") or "")
+    return out
+
+
+def _google_ads_default_range(rows):
+    """The range the page opens on ("All"): the first and last day in the campaign report."""
+    days = sorted(r["day"] for r in rows if r.get("day"))
+    return (days[0], days[-1]) if days else ("", "")
+
+
+def _google_ads_insights(rows=None, force: bool = False, **params):
+    """The insights for a date range and filters, or an empty set (panels stay hidden) until the
+    Google Ads Script has run."""
     from tracker import google_ads_insights
     if not GOOGLE_ADS_SHEET_ID:
         return google_ads_insights.empty()
+    rows = rows or []
     ins = google_ads_insights.fetch(_ads_sheet_service, GOOGLE_ADS_SHEET_ID,
-                                    titles=_google_ads_cache.get("titles"), force=force)
+                                    titles=_google_ads_cache.get("titles"), force=force,
+                                    camps=_google_ads_campaigns(rows), camps_key=(id(rows), len(rows)), **params)
+    ins = dict(ins)
     ins["symbols"] = {c: _CURRENCY_SYMBOLS.get(c, c + " ") for c in ins.get("currencies", [])}
     return ins
+
+
+_ISO_DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 @app.route("/dashboards/google-ads")
@@ -4857,20 +4881,45 @@ def google_ads_dashboard():
         import traceback
         log.warning("google_ads_dashboard: %s", traceback.format_exc())
         rows = []
-    insights = _google_ads_insights()
+    start, end = _google_ads_default_range(rows)
+    insights = _google_ads_insights(rows, start=start or None, end=end or None)
     return render_template("google_ads_dashboard.html", user=_get_user(),
                            rows=rows, ok=bool(rows), insights=insights,
                            currency_symbol=_google_ads_currency_symbol(rows))
+
+
+@app.route("/api/dashboards/google-ads/insights")
+@position2_required
+def google_ads_dashboard_insights():
+    """The insights panels for the page's current filters: from, to (yyyy-mm-dd), account, type,
+    status, search, focus (account + U+0001 + campaign)."""
+    a = request.args
+    start, end = a.get("from", ""), a.get("to", "")
+    if (start and not _ISO_DAY.match(start)) or (end and not _ISO_DAY.match(end)):
+        return jsonify({"ok": False, "error": "dates must be yyyy-mm-dd"}), 400
+    try:
+        rows = _fetch_google_ads_rows()
+    except Exception:
+        rows = []
+    ins = _google_ads_insights(rows, start=start or None, end=end or None,
+                               account=a.get("account", "")[:300], type_=a.get("type", "")[:100],
+                               status=a.get("status", "")[:100], search=a.get("search", "")[:200],
+                               focus=a.get("focus", "")[:600])
+    return jsonify(ins)
+
 
 @app.route("/api/dashboards/google-ads/refresh", methods=["POST"])
 @position2_required
 def google_ads_dashboard_refresh():
     """Force-refetch past the cache, for the dashboard's own Refresh button
-    (which then re-renders client-side -- no page reload)."""
+    (which then re-renders client-side -- no page reload; the insights panels
+    then ask for their own filters again)."""
     try:
         rows = _fetch_google_ads_rows(force=True)
-        return jsonify({"ok": bool(rows), "rows": rows, "insights": _google_ads_insights(force=True),
-                         "currency_symbol": _google_ads_currency_symbol(rows)})
+        start, end = _google_ads_default_range(rows)
+        return jsonify({"ok": bool(rows), "rows": rows,
+                        "insights": _google_ads_insights(rows, force=True, start=start or None, end=end or None),
+                        "currency_symbol": _google_ads_currency_symbol(rows)})
     except Exception:
         import traceback
         log.warning("google_ads_dashboard_refresh: %s", traceback.format_exc())
