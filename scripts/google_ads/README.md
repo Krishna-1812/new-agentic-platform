@@ -40,6 +40,16 @@ Every panel on the dashboard follows every filter above it: the dates (Last day,
 - **Account-level reports** (hours of the day, locations, landing pages) follow the dates and the account; Google does not split them by campaign in this export, so their headings say when a campaign filter does not apply to them.
 - **Fixed windows** that Google only reports as a whole: served ad combinations, landing-page speed score and mobile-friendly clicks (last 30 days), and change history (last 28 days; the date filter picks the changes inside it).
 
+## Currencies
+
+Accounts can be billed in different currencies. The script writes each account's figures in its own currency (the "Currency" column), exactly as Google reports them. The dashboard then shows everything in the campaign report's currency, using **Google's own rates**:
+
+- The scheduled campaign report (the first tab) carries each campaign-day's cost twice: "Cost" in the account's currency and "Cost (Converted currency)" in the manager account's currency. For each account and day, converted ÷ own is the rate Google used. The insights are converted day by day with that rate, so every panel agrees with the campaign report to the paisa. A day with no spend in the report takes the nearest earlier day's rate.
+- Settings and forecasts (budgets, bids, targets, recommendation impact) are converted at the account's latest rate. Budget pacing is unaffected, because one rate applies to the whole budget.
+- The change history keeps each change in the currency it was typed in: a USD budget change reads "$50 → $80".
+- If the report cannot give a rate for an account (the account is missing from it, or the converted columns are missing), that account's money stays in its own currency and is never added to another currency's totals. Panel headings then say "INR accounts only", and the insights heading names the accounts affected.
+- If the campaign report itself has no converted-currency columns while accounts bill in different currencies, the dashboard shows a warning at the top: add "Cost (Converted currency)" and "Converted currency code" to the scheduled report.
+
 If a run times out with many large accounts, lower `DAYS` (for example to 60); the dashboard's presets need at most 30.
 
 ## What it writes

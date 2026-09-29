@@ -205,6 +205,77 @@ def _sum_days(days, lo, hi, width):
     return out if hit else None
 
 
+# ── Currencies ───────────────────────────────────────────────────────────────
+MONEY = ("cost", "value", "all_value")
+
+
+class FX:
+    """Google Ads' own exchange rates, taken from the campaign report the page already shows.
+
+    That report carries each campaign-day's cost twice: in the account's currency ("Cost",
+    "Currency code") and converted into the manager account's currency ("Cost (Converted
+    currency)", "Converted currency code"). Their ratio, added up over an account's campaigns
+    for a day, is the rate Google used for that account and day. The insights come from each
+    account in its own currency; converting them with the same rates makes every figure on the
+    page agree with the campaign report. A day with no spend in the report takes the nearest
+    earlier day's rate (else the nearest later one). An account the report cannot convert keeps
+    its own currency, and its money is then never added to other currencies' (see _dominant)."""
+
+    def __init__(self, rows=()):
+        sums, native, to = {}, {}, {}
+        for r in rows or ():
+            a, nat, cur = r.get("account") or "", r.get("currency_native") or "", r.get("currency") or ""
+            if cur:
+                to[cur] = to.get(cur, 0) + 1
+            if nat:
+                native[a] = nat
+            orig, conv = r.get("cost_native") or 0.0, r.get("cost") or 0.0
+            if nat and cur and nat != cur and orig > 0 and conv > 0 and r.get("day"):
+                d = sums.setdefault(a, {}).setdefault(r["day"], [0.0, 0.0])
+                d[0] += conv
+                d[1] += orig
+        self.to = max(sorted(to), key=lambda c: to[c]) if to else ""
+        self.native = native
+        self.rates = {a: {d: c / o for d, (c, o) in days.items()} for a, days in sums.items()}
+        self.days = {a: sorted(days) for a, days in self.rates.items()}
+
+    def rate(self, account, day):
+        rates, days = self.rates.get(account) or {}, self.days.get(account) or []
+        if not days:
+            return None
+        if day in rates:
+            return rates[day]
+        import bisect
+        i = bisect.bisect_left(days, day)
+        return rates[days[i - 1]] if i > 0 else rates[days[0]]
+
+    def latest(self, account):
+        days = self.days.get(account)
+        return self.rates[account][days[-1]] if days else None
+
+    def converts(self, account, cur):
+        """True when an account's figures in `cur` are converted into self.to."""
+        return bool(cur and self.to and cur != self.to and self.native.get(account) == cur
+                    and self.days.get(account))
+
+
+NO_FX = FX()
+
+
+def _money_sum(days, lo, hi, fields, rate):
+    """Like _sum_days, with each day's money fields multiplied by rate(day)."""
+    width, out, hit = len(fields), [0.0] * len(fields), False
+    money = [i for i, f in enumerate(fields) if f in MONEY]
+    for d, vals in days.items():
+        if (lo and d < lo) or (hi and d > hi):
+            continue
+        hit = True
+        r = rate(d)
+        for i in range(width):
+            out[i] += vals[i] * r if i in money else vals[i]
+    return out if hit else None
+
+
 def _dated(values, fields):
     """[(row dict, days or None, window or None)] for a tab, with the Daily cell parsed."""
     out = []
@@ -229,14 +300,24 @@ class Section:
         self.window = (min(w[0] for w in wins), max(w[1] for w in wins)) if wins else None
         self.dated = bool(self.items) and all(d is not None for _, d, _ in self.items)
 
-    def rows(self, lo=None, hi=None, keep_empty=False):
+    def rows(self, lo=None, hi=None, keep_empty=False, fx=NO_FX, acct_cur=None):
         """Each item with its figures for [lo, hi]; items with no day in it are left out (or, with
-        keep_empty, kept with zeros). Items from an older export (no days) keep the totals they were
-        written with."""
+        keep_empty, kept with zeros). Money is converted day by day into fx.to where fx can (the
+        item then carries "native_cur"). Items from an older export (no days) keep the totals they
+        were written with, in their own currency."""
         out = []
         for x, days, _ in self.items:
             if days is None:
                 out.append(dict(x))
+                continue
+            a = x.get("account") or ""
+            cur = x.get("cur") or (acct_cur or {}).get(a, "")
+            if fx.converts(a, cur):
+                sums = _money_sum(days, lo, hi, self.fields, lambda d, a=a: fx.rate(a, d))
+                if sums is None and keep_empty:
+                    sums = [0.0] * len(self.fields)
+                if sums is not None:
+                    out.append(_put(dict(x, cur=fx.to, native_cur=cur), self.fields, sums))
                 continue
             sums = _sum_days(days, lo, hi, len(self.fields))
             if sums is None and keep_empty:
@@ -344,9 +425,9 @@ def read_is(values):
     return Section(items, IS_DAILY)
 
 
-def is_rows(sec, lo=None, hi=None):
+def is_rows(sec, lo=None, hi=None, fx=NO_FX):
     """One row per campaign for the range, with its shares and the weights to combine them."""
-    return [x if x.get("_legacy") else share_row(x) for x in sec.rows(lo, hi)]
+    return [x if x.get("_legacy") else share_row(x) for x in sec.rows(lo, hi, fx=fx)]
 
 
 def combine(rows):
@@ -416,8 +497,14 @@ def parse_is(values):
 
 
 # ── Budgets and pacing ───────────────────────────────────────────────────────
-def parse_budgets(values):
-    """Campaign rows plus the budgets they sit on (a shared budget covers several campaigns)."""
+BUDGET_MONEY = ("tcpa", "daily", "total", "recommended", "today", "yesterday", "last7", "mtd", "value_mtd",
+                "last_month")
+
+
+def parse_budgets(values, fx=NO_FX):
+    """Campaign rows plus the budgets they sit on (a shared budget covers several campaigns). Budgets
+    and this month's spend are converted at the account's latest rate (one rate for the whole
+    budget, so pace and projections are unchanged by the conversion)."""
     camps, budgets = [], {}
     for r in _table(values):
         if not _s(r, "campaign"):
@@ -438,6 +525,9 @@ def parse_budgets(values):
             "day": _z(r.get("day of month")), "dim": _z(r.get("days in month")),
             "elapsed": _z(r.get("month elapsed (days)")),
         }
+        if fx.converts(c["account"], c["cur"]):
+            _convert_now(c, BUDGET_MONEY, fx.latest(c["account"]))
+            c["native_cur"], c["cur"] = c["cur"], fx.to
         camps.append(c)
         key = c["account"] + "\u0001" + (c["budget_id"] or ("campaign:" + c["id"]))
         b = budgets.get(key)
@@ -617,15 +707,23 @@ def read_keywords(values):
     return Section(items, KEYWORDS_DAILY)
 
 
-def keyword_rows(sec, lo=None, hi=None):
+def keyword_rows(sec, lo=None, hi=None, fx=NO_FX):
     out = []
-    for x in sec.rows(lo, hi):
+    for x in sec.rows(lo, hi, fx=fx):
         if not x.get("_legacy"):
             x["is"] = _ratio(x["sg"], x["se"])
             x["lr"] = _ratio(x["lre"], x["se"])
             x["approx"] = x["capped"] > 0
+        if x.get("native_cur"):          # bids are settings: converted at the latest rate
+            _convert_now(x, ("bid", "first_page", "top_page"), fx.latest(x["account"]))
         out.append(x)
     return out
+
+
+def _convert_now(x, keys, rate):
+    for k in keys:
+        if x.get(k) is not None and rate:
+            x[k] = x[k] * rate
 
 
 def summarize_keywords(rows, per_account=KEYWORDS_PER_ACCOUNT, on_page=KEYWORDS_ON_PAGE):
@@ -745,14 +843,16 @@ def read_hours(values):
     return _perf_section(values, attrs)
 
 
-def hour_rows(sec, lo=None, hi=None):
-    """Account x day of week (Monday = 0) x hour, added up over the days in the range."""
+def hour_rows(sec, lo=None, hi=None, fx=NO_FX):
+    """Account x day of week (Monday = 0) x hour, added up over the days in the range, money
+    converted day by day as in Section.rows."""
     out = {}
     for x, days, _ in sec.items:
         if days is None:
             if "day" in x:
                 out[(x["account"], x["day"], x["hour"], len(out))] = dict(x)
             continue
+        conv = fx.converts(x["account"], x["cur"])
         for d, vals in days.items():
             if (lo and d < lo) or (hi and d > hi):
                 continue
@@ -760,10 +860,13 @@ def hour_rows(sec, lo=None, hi=None):
             k = (x["account"], wd, x["hour"])
             h = out.get(k)
             if h is None:
-                h = out[k] = {"account": x["account"], "cur": x["cur"], "tz": x["tz"], "day": wd, "hour": x["hour"],
-                              "impr": 0.0, "clicks": 0.0, "cost": 0.0, "conv": 0.0, "value": 0.0}
+                h = out[k] = {"account": x["account"], "cur": fx.to if conv else x["cur"], "tz": x["tz"], "day": wd,
+                              "hour": x["hour"], "impr": 0.0, "clicks": 0.0, "cost": 0.0, "conv": 0.0, "value": 0.0}
+                if conv:
+                    h["native_cur"] = x["cur"]
+            r = fx.rate(x["account"], d) if conv else 1.0
             for i, f in enumerate(PERF):
-                h[f] += vals[i]
+                h[f] += vals[i] * r if f in MONEY else vals[i]
     return sorted(out.values(), key=lambda h: (h["account"], h["day"], h["hour"]))
 
 
@@ -1227,6 +1330,24 @@ def read_recs(values):
     return rows
 
 
+def convert_recs(rows, fx):
+    """Google's impact estimates and budget amounts are in the account's currency: converted at
+    the account's latest rate (they are forecasts and settings, not spend on a given day)."""
+    out = []
+    for x in rows:
+        if not fx.converts(x["account"], x["cur"]):
+            out.append(x)
+            continue
+        r = fx.latest(x["account"])
+        y = dict(x, cur=fx.to, native_cur=x["cur"])
+        _convert_now(y, ("budget_now", "budget_rec"), r)
+        for k in ("base", "pot", "gain"):
+            if y[k]:
+                y[k] = dict(y[k], cost=y[k]["cost"] * r, value=y[k]["value"] * r)
+        out.append(y)
+    return out
+
+
 def summarize_recs(rows, per_account=RECS_PER_ACCOUNT):
     totals = {}
     for x in rows:
@@ -1393,14 +1514,19 @@ def load(raw):
         "about": about,
         "as_of": next((v for k, v in about if k == "Exported at"), ""),
     }
-    curs = {}
-    for x, _, _ in st["is"].items:
-        if x.get("cur"):
-            curs[x["cur"]] = curs.get(x["cur"], 0) + 1
-    for c in parse_budgets(st["budgets"])[0]:
+    # Each account's own currency, from every tab that states it (the conversions tab does not).
+    curs, acct_cur = {}, {}
+    for k in ("is", "terms", "keywords", "devices", "hours", "locations", "ads", "demographics", "landing"):
+        for x, _, _ in st[k].items:
+            if x.get("cur"):
+                curs[x["cur"]] = curs.get(x["cur"], 0) + 1
+                acct_cur.setdefault(x["account"], x["cur"])
+    for c in parse_budgets(st["budgets"])[0] + st["changes"] + st["recs"]:
         if c.get("cur"):
             curs[c["cur"]] = curs.get(c["cur"], 0) + 1
+            acct_cur.setdefault(c["account"], c["cur"])
     st["currencies"] = sorted(curs, key=lambda c: -curs[c])
+    st["acct_cur"] = acct_cur
     st["ok"] = any(st[k].items for k in ("is", "terms", "keywords", "devices", "hours", "locations", "ads",
                                          "demographics", "landing")) or bool(
         st["budgets"][1:] or st["actions"][1:] or st["changes"] or st["health"]["accounts"] or st["recs"])
@@ -1473,8 +1599,11 @@ def _meta(sec, lo, hi, scope):
             "empty": isinstance(sec, Section) and not sec.items}
 
 
-def view(st, start=None, end=None, account="", type_="", status="", search="", focus="", camps=None):
-    """The page's insights for one date range and set of filters."""
+def view(st, start=None, end=None, account="", type_="", status="", search="", focus="", camps=None, fx=None):
+    """The page's insights for one date range and set of filters, money in fx.to where the campaign
+    report gives Google's rate for an account (see FX)."""
+    fx = fx or NO_FX
+    ac = (st or {}).get("acct_cur", {})
     out = empty()
     if not st or not st.get("ok"):
         out["about"] = (st or {}).get("about", [])
@@ -1484,14 +1613,14 @@ def view(st, start=None, end=None, account="", type_="", status="", search="", f
     meta = {}
 
     # Impression share, and its trend by day or week.
-    rows = [x for x in is_rows(st["is"], lo, hi) if f.campaign(x)]
+    rows = [x for x in is_rows(st["is"], lo, hi, fx) if f.campaign(x)]
     out["is"] = rows
     out["weekly_grain"], out["weekly"] = trend(st["is"], lo, hi, f.campaign)
     meta["is"] = _meta(st["is"], lo, hi, "campaign")
 
     # Budgets (this month, now): a budget stays whole when any of its campaigns passes the filters,
     # so a shared budget's pace is never worked out from part of its spend.
-    camps_b, budgets = parse_budgets(st["budgets"])
+    camps_b, budgets = parse_budgets(st["budgets"], fx)
     out["budget_campaigns"] = [c for c in camps_b if f.campaign(c)]
     out["budgets"] = [b for b in budgets
                       if any(f.campaign({"account": b["account"], "campaign": c}) for c in b["campaigns"])]
@@ -1506,15 +1635,15 @@ def view(st, start=None, end=None, account="", type_="", status="", search="", f
                        "limited_from": since if win else None, "limited_to": win[1] if win else None}
 
     # Search terms and keywords: every row read counts toward the totals.
-    out["terms"] = summarize_terms([x for x in st["terms"].rows(lo, hi) if f.row(x)])
+    out["terms"] = summarize_terms([x for x in st["terms"].rows(lo, hi, fx=fx) if f.row(x)])
     meta["terms"] = _meta(st["terms"], lo, hi, "campaign")
-    out["keywords"] = summarize_keywords([x for x in keyword_rows(st["keywords"], lo, hi) if f.row(x)])
+    out["keywords"] = summarize_keywords([x for x in keyword_rows(st["keywords"], lo, hi, fx) if f.row(x)])
     meta["keywords"] = _meta(st["keywords"], lo, hi, "campaign")
 
-    out["devices"] = [x for x in st["devices"].rows(lo, hi) if f.campaign(x)]
+    out["devices"] = [x for x in st["devices"].rows(lo, hi, fx=fx) if f.campaign(x)]
     meta["devices"] = _meta(st["devices"], lo, hi, "campaign")
     # Hours, locations and landing pages are account-level reports: account and dates only.
-    out["hours"] = [x for x in hour_rows(st["hours"], lo, hi) if f.in_account(x)]
+    out["hours"] = [x for x in hour_rows(st["hours"], lo, hi, fx) if f.in_account(x)]
     meta["hours"] = _meta(st["hours"], lo, hi, "account")
     cov = cover(st["hours"].window, lo, hi)
     if cov:
@@ -1524,21 +1653,26 @@ def view(st, start=None, end=None, account="", type_="", status="", search="", f
             n[d.weekday()] += 1
             d += _dt.timedelta(days=1)
         meta["hours"]["weekdays"] = n
-    out["locations"] = summarize_locations([x for x in st["locations"].rows(lo, hi) if f.in_account(x)])
+    out["locations"] = summarize_locations([x for x in st["locations"].rows(lo, hi, fx=fx) if f.in_account(x)])
     meta["locations"] = _meta(st["locations"], lo, hi, "account")
 
-    out["conversions"] = [x for x in st["conversions"].rows(lo, hi) if f.campaign(x)]
+    out["conversions"] = [dict(x, cur=x.get("cur") or ac.get(x["account"], ""))
+                          for x in st["conversions"].rows(lo, hi, fx=fx, acct_cur=ac) if f.campaign(x)]
     meta["conversions"] = _meta(st["conversions"], lo, hi, "campaign")
     recent = None
     cwin = st["conversions"].window
     if cwin:
         end_ = _dt.date.fromisoformat(cwin[1])
-        recent = st["conversions"].rows((end_ - _dt.timedelta(days=29)).isoformat(), cwin[1])
+        recent = st["conversions"].rows((end_ - _dt.timedelta(days=29)).isoformat(), cwin[1], fx=fx, acct_cur=ac)
     out["actions"] = [a for a in parse_actions(st["actions"], out["conversions"], recent) if f.in_account(a)]
+    for a in out["actions"]:
+        a["native_cur"] = ac.get(a["account"], "")
+        a["cur"] = next((c["cur"] for c in out["conversions"] if c["account"] == a["account"]),
+                        fx.to if fx.converts(a["account"], a["native_cur"]) else a["native_cur"])
 
     # Ads: the live ones now, with their performance in the range.
-    ad_rows = [x for x in st["ads"].rows(lo, hi, keep_empty=True) if f.campaign(x)]
-    asset_rows = st["ad_assets"].rows(lo, hi, keep_empty=True)
+    ad_rows = [x for x in st["ads"].rows(lo, hi, keep_empty=True, fx=fx) if f.campaign(x)]
+    asset_rows = st["ad_assets"].rows(lo, hi, keep_empty=True, fx=fx, acct_cur=ac)
     out["ads"] = summarize_ads(ad_rows, st["combos"], asset_rows)
     meta["ads"] = _meta(st["ads"], lo, hi, "campaign")
 
@@ -1555,20 +1689,42 @@ def view(st, start=None, end=None, account="", type_="", status="", search="", f
     meta["changes"] = _meta(cwin, lo, hi, "campaign")
 
     h = st["health"]
-    accounts = [a for a in h["accounts"] if f.in_account(a)]
-    out["health"] = {"accounts": accounts, "campaigns": [c for c in h["campaigns"] if f.campaign(c)],
-                     "overall": weighted_score(accounts)}
-    out["recs"] = summarize_recs([r for r in st["recs"] if f.row(r)])
+    accounts = [dict(a) for a in h["accounts"] if f.in_account(a)]
+    campaigns = [dict(c) for c in h["campaigns"] if f.campaign(c)]
+    # Spend beside each score: the last 30 days exported, from the daily figures (converted like
+    # every other panel) whenever the export has them.
+    if st["is"].dated and st["is"].window:
+        last = _dt.date.fromisoformat(st["is"].window[1])
+        spend = {}
+        for x in is_rows(st["is"], (last - _dt.timedelta(days=29)).isoformat(), st["is"].window[1], fx):
+            spend[(x["account"], x["id"])] = x
+        for c in campaigns:
+            x = spend.get((c["account"], c["id"]))
+            c.update(cost=x["cost"] if x else 0.0, conv=x["conv"] if x else 0.0, cur=x["cur"] if x else c["cur"])
+        for a in accounts:
+            mine = [x for (acct, _), x in spend.items() if acct == a["account"]]
+            a.update(cost=sum(x["cost"] for x in mine), conv=sum(x["conv"] for x in mine),
+                     cur=mine[0]["cur"] if mine else a["cur"])
+    out["health"] = {"accounts": accounts, "campaigns": campaigns, "overall": weighted_score(accounts)}
+    out["recs"] = summarize_recs(convert_recs([r for r in st["recs"] if f.row(r)], fx))
     meta["health"] = meta["recs"] = {"scope": "current", "dated": False, "from": None, "to": None, "cover": None}
 
-    out["demographics"] = [x for x in st["demographics"].rows(lo, hi) if f.campaign(x)]
+    out["demographics"] = [x for x in st["demographics"].rows(lo, hi, fx=fx) if f.campaign(x)]
     meta["demographics"] = _meta(st["demographics"], lo, hi, "campaign")
-    out["landing"] = summarize_landing([x for x in st["landing"].rows(lo, hi) if f.in_account(x)])
+    out["landing"] = summarize_landing([x for x in st["landing"].rows(lo, hi, fx=fx) if f.in_account(x)])
     meta["landing"] = _meta(st["landing"], lo, hi, "account")
 
     out["about"] = st["about"]
     out["as_of"] = st["as_of"]
-    out["currencies"] = st["currencies"]
+    # Which accounts were converted, and which could not be (their money stays in their own currency
+    # and is never added to another currency's).
+    converted, kept = {}, {}
+    for a, cur in sorted(ac.items()):
+        if not f.in_account({"account": a}) or not cur or cur == fx.to or not fx.to:
+            continue
+        (converted if fx.converts(a, cur) else kept).setdefault(cur, []).append(a)
+    out["fx"] = {"to": fx.to, "converted": converted, "kept": kept}
+    out["currencies"] = sorted(set(st["currencies"]) | ({fx.to} if fx.to else set()))
     out["meta"] = meta
     out["range"] = {"from": lo, "to": hi}
     out["params"] = {"from": lo or "", "to": hi or "", "account": f.account, "type": f.type, "status": f.status,
@@ -1636,6 +1792,7 @@ def fetch(svc_factory, sheet_id, titles=None, force=False, **params):
     """The page's insights for the given range and filters (see view), from the cached tabs."""
     st = store(svc_factory, sheet_id, titles, force)
     camps = params.pop("camps", None)
+    fx = params.pop("fx", None)
     key = (id(st), tuple(sorted(params.items())), params.get("camps_key"))
     params.pop("camps_key", None)
     with _LOCK:
@@ -1643,7 +1800,7 @@ def fetch(svc_factory, sheet_id, titles=None, force=False, **params):
         if hit is not None:
             _VIEWS.move_to_end(key)
             return hit
-    value = view(st, camps=camps, **params)
+    value = view(st, camps=camps, fx=fx, **params)
     if _CACHE.get("error"):
         value["error"] = _CACHE["error"]
     with _LOCK:

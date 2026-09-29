@@ -1067,8 +1067,9 @@
       head.appendChild(chips);
       card.appendChild(head);
       var facts = el("div", "gai-pfacts");
-      [["Conversions", num1(a.conv)], ["All conversions", num1(a.all)], ["Value", a.all_value ? int(a.all_value) : "–"],
-       ["Default value", a.default_value == null ? "–" : String(a.default_value) + (a.always_default ? " (always)" : "")],
+      [["Conversions", num1(a.conv)], ["All conversions", num1(a.all)], ["Value", a.all_value ? money(a.all_value, a.cur) : "–"],
+       // A setting typed in the account's own currency: shown in it.
+       ["Default value", a.default_value == null ? "–" : money2(a.default_value, a.native_cur || a.cur).replace(/\.00$/, "") + (a.always_default ? " (always)" : "")],
        ["Click window", days(a.click_window)], ["View window", days(a.view_window)],
        ["Attribution", (a.model || "–").replace(/^GOOGLE_(SEARCH_)?ATTRIBUTION_/, "").replace(/_/g, " ").toLowerCase()],
        ["In “Conversions”", a.in_conversions ? "Yes" : "No"]].forEach(function (f) {
@@ -1533,7 +1534,9 @@
       }
       var ba = beforeAfter(c);
       if (ba) {
-        var p = el("p", "gai-ba"), cur = c.cur;
+        // Spend here comes from the campaign report above, so it is in the report's currency,
+        // not the account's own (the change itself stays in the currency it was typed in).
+        var p = el("p", "gai-ba"), cur = (INS.fx || {}).to || c.cur;
         var cb = ba.b.cost / ba.b.n, ca = ba.a.cost / ba.a.n, vb = ba.b.conv / ba.b.n, va = ba.a.conv / ba.a.n;
         p.appendChild(el("span", "gai-ba-l", "Before and after (" + ba.a.n + (ba.a.n === 1 ? " day" : " days") + " after)"));
         p.appendChild(el("span", "", "Spend a day " + money(cb, cur) + " → " + money(ca, cur) + (cb ? " (" + (ca >= cb ? "+" : "−") + Math.round(Math.abs(100 * (ca / cb - 1))) + "%)" : "")));
@@ -1711,11 +1714,27 @@
   $("gai-chg-more").addEventListener("click", function () { ui.chgShown += CHG_STEP; renderChanges(); });
   $("gai-lp-more").addEventListener("click", function () { ui.lpShown += 20; renderLanding(); });
 
+  /** One sentence on currencies: which accounts were converted, and which could not be. */
+  function fxNote() {
+    var f = INS.fx || {}, out = [];
+    var conv = f.converted || {}, kept = f.kept || {};
+    Object.keys(conv).forEach(function (c) {
+      var n = conv[c].length;
+      out.push((n === 1 ? conv[c][0] + " is" : n + " accounts are") + " billed in " + c + ": converted to " + f.to +
+        " at Google Ads’ own daily rates, from the campaign report above.");
+    });
+    Object.keys(kept).forEach(function (c) {
+      var n = kept[c].length;
+      out.push((n === 1 ? kept[c][0] + " is" : n + " accounts are") + " billed in " + c +
+        " and the campaign report gives no rate for " + (n === 1 ? "it" : "them") + ": shown in " + c + ", never added to " + f.to + " totals.");
+    });
+    return out.join(" ");
+  }
   function renderAll() {
     var r = INS.range || {};
     $("gai-asof").textContent = (INS.as_of ? "Exported " + INS.as_of + ". " : "") +
       "Every panel follows the filters above" + (r.from && r.to ? " (" + fmtRange(r.from, r.to) + ")" : "") +
-      " and says which dates it covers.";
+      " and says which dates it covers. " + fxNote();
     // Each panel draws alone, so one bad section never blanks the rest.
     [renderShare, renderPacing, renderTerms, renderKeywords, renderDevices, renderHours, renderLocations, renderConversions, renderAds,
      renderHealth, renderChanges, renderDemographics, renderLanding]

@@ -148,6 +148,8 @@ def test_fetch_rows_prefers_the_converted_currency_cost_column(fake_sheet):
     # the converted figure is what a Markify (India) dashboard should show.
     assert rows[0]["cost"] == pytest.approx(1034.72)
     assert rows[0]["currency"] == "INR"
+    # The account's own currency is kept beside it: their ratio is Google's rate for that day.
+    assert rows[0]["cost_native"] == pytest.approx(10.85) and rows[0]["currency_native"] == "USD"
 
 
 def test_fetch_rows_reads_ad_position_and_view_through(fake_sheet):
