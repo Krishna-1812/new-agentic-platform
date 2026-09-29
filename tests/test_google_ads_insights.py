@@ -754,3 +754,59 @@ def test_the_page_script_announces_every_filter_to_the_panels():
     with open(os.path.join(ROOT, "static", "js", "google-ads-insights.js"), encoding="utf-8") as fh:
         ins = fh.read()
     assert "/api/dashboards/google-ads/insights?" in ins and "my !== seq" in ins, "stale answers are dropped"
+
+
+# ── Currencies ───────────────────────────────────────────────────────────────
+
+def _report(account, day, native, converted, nat_cur, cur="INR"):
+    return {"account": account, "campaign": "C", "day": day, "cost": converted, "currency": cur,
+            "cost_native": native, "currency_native": nat_cur}
+
+
+def test_googles_own_rate_comes_from_the_campaign_report_per_account_and_day():
+    fx = gai.FX([_report("US", "2026-09-10", 10.0, 830.0, "USD"), _report("US", "2026-09-10", 5.0, 415.0, "USD"),
+                 _report("US", "2026-09-12", 10.0, 845.0, "USD"), _report("IN", "2026-09-10", 100.0, 100.0, "INR")])
+    assert fx.to == "INR"
+    assert fx.rate("US", "2026-09-10") == pytest.approx(83.0) and fx.rate("US", "2026-09-12") == pytest.approx(84.5)
+    assert fx.rate("US", "2026-09-11") == pytest.approx(83.0), "a day without spend takes the day before's rate"
+    assert fx.rate("US", "2026-09-01") == pytest.approx(83.0), "…or the first one known"
+    assert fx.latest("US") == pytest.approx(84.5)
+    assert fx.converts("US", "USD") and not fx.converts("IN", "INR") and not fx.converts("CA", "CAD")
+
+
+def _usd_devices():
+    cell = json.dumps({"v": 1, "from": "2026-09-10", "d": [[0, 100, 10, 10.0, 1, 20.0], [2, 100, 10, 10.0, 1, 0]]})
+    head = ["Account", "Currency", "Campaign", "Device", "Date range", "Daily"]
+    return {"devices": [head, ["US", "USD", "C", "MOBILE", "2026-09-10 to 2026-09-12", cell],
+                        ["IN", "INR", "C", "MOBILE", "2026-09-10 to 2026-09-12", cell],
+                        ["CA", "CAD", "C", "MOBILE", "2026-09-10 to 2026-09-12", cell]]}
+
+
+def test_money_is_converted_day_by_day_into_the_reports_currency():
+    fx = gai.FX([_report("US", "2026-09-10", 10.0, 830.0, "USD"), _report("US", "2026-09-12", 10.0, 845.0, "USD"),
+                 _report("IN", "2026-09-10", 1.0, 1.0, "INR")])
+    ins = gai.build(_usd_devices(), fx=fx)
+    by = {d["account"]: d for d in ins["devices"]}
+    assert by["US"]["cost"] == pytest.approx(10 * 83 + 10 * 84.5) and by["US"]["cur"] == "INR"
+    assert by["US"]["value"] == pytest.approx(20 * 83) and by["US"]["native_cur"] == "USD"
+    assert by["US"]["clicks"] == 20, "counts are never converted"
+    assert by["IN"]["cost"] == 20.0 and by["IN"]["cur"] == "INR"
+    assert by["CA"]["cur"] == "CAD" and by["CA"]["cost"] == 20.0, "no rate for CAD: kept in CAD, not guessed"
+    assert ins["fx"] == {"to": "INR", "converted": {"USD": ["US"]}, "kept": {"CAD": ["CA"]}}
+
+
+def test_without_a_rate_other_currencies_are_never_added_to_the_main_one():
+    head = TERMS_HEAD
+    t = gai.parse_terms([head, ["A", "INR", "C", "G", "a", "BROAD", "kw", "NONE", 1, 1, 100.0, 1],
+                         ["B", "USD", "C", "G", "b", "BROAD", "kw", "NONE", 1, 1, 5.0, 0]])
+    assert t["totals"]["__all__"]["cost"] == 100.0 and t["totals"]["__all__"]["mixed"]
+    assert t["totals"]["B"]["cost"] == 5.0 and t["totals"]["B"]["cur"] == "USD"
+
+
+def test_the_page_warns_when_the_campaign_report_mixes_currencies(monkeypatch):
+    rows = [dict(ROWS[0]), dict(ROWS[0], account="B", currency="USD")]
+    monkeypatch.setattr(appmod, "_fetch_google_ads_rows", lambda force=False: rows)
+    monkeypatch.setattr(appmod, "_google_ads_insights", lambda *a, **k: gai.empty())
+    assert "Currencies are mixed" in _client().get("/dashboards/google-ads").get_data(as_text=True)
+    monkeypatch.setattr(appmod, "_fetch_google_ads_rows", lambda force=False: ROWS)
+    assert "Currencies are mixed" not in _client().get("/dashboards/google-ads").get_data(as_text=True)

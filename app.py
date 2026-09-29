@@ -4863,7 +4863,8 @@ def _google_ads_insights(rows=None, force: bool = False, **params):
     rows = rows or []
     ins = google_ads_insights.fetch(_ads_sheet_service, GOOGLE_ADS_SHEET_ID,
                                     titles=_google_ads_cache.get("titles"), force=force,
-                                    camps=_google_ads_campaigns(rows), camps_key=(id(rows), len(rows)), **params)
+                                    camps=_google_ads_campaigns(rows), camps_key=(id(rows), len(rows)),
+                                    fx=google_ads_insights.FX(rows), **params)
     ins = dict(ins)
     ins["symbols"] = {c: _CURRENCY_SYMBOLS.get(c, c + " ") for c in ins.get("currencies", [])}
     return ins
@@ -4885,7 +4886,8 @@ def google_ads_dashboard():
     insights = _google_ads_insights(rows, start=start or None, end=end or None)
     return render_template("google_ads_dashboard.html", user=_get_user(),
                            rows=rows, ok=bool(rows), insights=insights,
-                           currency_symbol=_google_ads_currency_symbol(rows))
+                           currency_symbol=_google_ads_currency_symbol(rows),
+                           mixed_currencies=_google_ads_mixed_currencies(rows))
 
 
 @app.route("/api/dashboards/google-ads/insights")
@@ -17360,6 +17362,10 @@ def _fetch_google_ads_rows(force: bool = False):
             "view_through": _parse_ads_number(_col(row, "view-through conv.")),
             "top_pct":      _parse_ads_number(_col(row, "impr. (top) %")),
             "abs_top_pct":  _parse_ads_number(_col(row, "impr. (abs. top) %")),
+            # The account's own currency next to the converted one: their ratio is Google's
+            # exchange rate for that account and day, which the insights panels convert with.
+            "cost_native":     _parse_ads_number(_col(row, "cost")),
+            "currency_native": _col(row, "currency code"),
         })
 
     _google_ads_cache.update(rows=rows, at=now)
@@ -17378,6 +17384,15 @@ def _dominant_ads_currency(rows) -> str:
         if r["currency"]:
             counts[r["currency"]] = counts.get(r["currency"], 0) + 1
     return max(counts, key=counts.get) if counts else "INR"
+
+
+def _google_ads_mixed_currencies(rows) -> list:
+    """The currencies the campaign report's cost column is in, when there is more than one. The
+    scheduled report normally carries "Cost (Converted currency)", one currency for every account;
+    without that column each account's cost is in its own currency and adding them up across
+    accounts is meaningless, so the page says so instead of showing such a total as fact."""
+    curs = sorted({r["currency"] for r in rows if r.get("currency")})
+    return curs if len(curs) > 1 else []
 
 
 def _google_ads_currency_symbol(rows) -> str:

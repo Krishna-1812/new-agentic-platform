@@ -17,7 +17,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=9"]) }}
+{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=10"]) }}
 </head>
 <body class="gad" data-currency-symbol="{{ currency_symbol }}">
 
@@ -44,6 +44,12 @@
      (so it can carry the marker and the mask reveal); a native <select> is
      laid over it, transparent, so clicking the name opens a real dropdown
      with keyboard and screen-reader support for free. #}
+  {% if mixed_currencies %}
+  <p class="gad-fx-warn" role="alert"><b>Currencies are mixed.</b> The campaign report&rsquo;s cost is in
+    {{ mixed_currencies|join(", ") }}, not converted to one currency, so totals across accounts add different
+    currencies together. Add &ldquo;Cost (Converted currency)&rdquo; and &ldquo;Converted currency code&rdquo; to the
+    scheduled Google Ads report, or look at one account at a time.</p>
+  {% endif %}
   <section class="gad-hero" data-gad-settle>
     <div class="gad-hero-top">
       <span class="gad-lbl" data-gad-decode>Client reporting &middot; Google Ads</span>
@@ -704,7 +710,7 @@
 {% endif %}
 
 {{ topbar_script() }}
-{% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=5"></script>{% endif %}
+{% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=6"></script>{% endif %}
 <script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=6"></script>
 <script>
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */
