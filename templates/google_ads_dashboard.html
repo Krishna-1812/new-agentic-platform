@@ -76,6 +76,10 @@
     <div class="gad-hero-foot">
       <p class="gad-hero-sub" id="gad-hero-sub">&nbsp;</p>
       <div class="gad-hero-actions">
+        <a class="gad-btn gad-btn--ghost" id="gad-ai-link" href="/dashboards/google-ads/ai-review">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3"/><path d="M12 18v3"/><path d="M3 12h3"/><path d="M18 12h3"/><path d="m6 6 2 2"/><path d="m16 16 2 2"/><path d="m18 6-2 2"/><path d="m8 16-2 2"/></svg>
+          AI review
+        </a>
         <button type="button" class="gad-btn gad-btn--ghost" data-gad-export>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
           Export CSV
@@ -710,6 +714,20 @@
 {% endif %}
 
 {{ topbar_script() }}
+<script>
+/* The AI review opens on the account picked here (all accounts: the first one there). */
+(function () {
+  var sel = document.getElementById("gad-account-select"), link = document.getElementById("gad-ai-link");
+  if (!sel || !link) return;
+  function sync() {
+    var v = sel.value;
+    link.href = "/dashboards/google-ads/ai-review" + (v && v !== "__all__" ? "?account=" + encodeURIComponent(v) : "");
+  }
+  sel.addEventListener("change", sync);
+  document.addEventListener("gad:render", sync);
+  sync();
+})();
+</script>
 {% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=7"></script>{% endif %}
 <script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=6"></script>
 <script>

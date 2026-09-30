@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    GOOGLE ADS AI REVIEW — one account, every campaign, judged against its brief.
+
+    The brief (what the client and agency agreed) is kept per account and
+    versioned; a review is a background job (tracker/gads_ai.py) that reads the
+    account's full insights, measures the brief's targets in code, and has
+    Claude write the review. static/js/google-ads-ai.js drives the page.
+-#}
+<html lang="en">
+<head>
+{{ head("Google Ads AI review", ["google-ads-dashboard.css?v=10", "google-ads-ai.css?v=1"]) }}
+</head>
+<body class="gad gar">
+
+{{ topbar([("Google Ads", "/dashboards/google-ads"), ("AI review", none)]) }}
+
+<main class="gad-shell">
+
+  <section class="gad-hero gar-hero">
+    <div class="gad-hero-top">
+      <span class="gad-lbl">Google Ads &middot; AI review</span>
+    </div>
+    <div class="gad-hero-title">
+      <label class="gad-hero-pre" for="gar-account">Review of</label>
+      <div class="gar-pick">
+        <select id="gar-account" class="gar-select" aria-label="Account">
+          {% for a in accounts %}<option value="{{ a.name }}"{% if a.name == current %} selected{% endif %}>{{ a.name }}{% if not a.briefed %} (no brief){% endif %}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="gad-hero-foot">
+      <p class="gad-hero-sub">Claude reads every campaign in the account against its brief: what is working, what is not,
+        where the account does not follow the brief, and what to do about it.</p>
+      <div class="gad-hero-actions">
+        <a class="gad-btn gad-btn--ghost" href="/dashboards/google-ads" aria-label="Back to the dashboard">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg>
+          Dashboard
+        </a>
+        <button type="button" class="gad-btn gad-btn--acc" id="gar-run"{% if not configured or not accounts %} disabled{% endif %}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+          <span>Run the review</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  {% if not accounts %}
+  <p class="gad-fx-warn" role="alert">No accounts yet: the campaign report has no rows. Check the Google Ads dashboard first.</p>
+  {% endif %}
+  {% if not configured %}
+  <p class="gad-fx-warn" role="alert"><b>Claude is not configured.</b> Set <code>ANTHROPIC_API_KEY</code> in this service's
+    environment to run reviews. Briefs can be written and saved meanwhile.</p>
+  {% endif %}
+  {% if storage == "memory" %}
+  <p class="gad-fx-warn" role="alert"><b>Briefs and reviews are kept in memory only.</b> Set <code>DATABASE_URL</code> so they
+    survive a restart or deploy.</p>
+  {% endif %}
+
+  <div class="gar-top">
+    <section class="gad-panel gar-brief" id="gar-brief-panel">
+      <div class="gad-panel-head"><div>
+        <span class="gad-lbl">What the account is for</span>
+        <h2 class="gad-h2">The brief</h2>
+      </div>
+      <span class="gad-panel-d" id="gar-brief-d"></span></div>
+      <p class="gar-help">Objectives, targets (budget, ROAS or CPA, conversions), locations, audiences, campaign types, and what
+        the account manager is responsible for. The review checks the account against every target and requirement here,
+        so the more precise the numbers, the sharper the review.</p>
+      <label class="gar-sr" for="gar-brief">Brief text</label>
+      <textarea id="gar-brief" class="gar-text" rows="18" spellcheck="true" placeholder="Paste the brief, upload a file, or start from the template."></textarea>
+      <div class="gar-bar">
+        <button type="button" class="gad-btn gad-btn--line" id="gar-save">Save the brief</button>
+        <label class="gad-btn gad-btn--line gar-upload">
+          <input type="file" id="gar-file" accept=".txt,.md,.docx,.pdf" hidden>
+          Upload a file
+        </label>
+        <button type="button" class="gad-btn gad-btn--line" id="gar-template">Start from the template</button>
+        <span class="gar-msg" id="gar-brief-msg" role="status" aria-live="polite"></span>
+      </div>
+      <details class="gar-versions" id="gar-versions-box" hidden>
+        <summary>Earlier versions</summary>
+        <ol id="gar-versions"></ol>
+      </details>
+    </section>
+
+    <section class="gad-panel gar-history">
+      <div class="gad-panel-head"><div>
+        <span class="gad-lbl">This account</span>
+        <h2 class="gad-h2">Reviews</h2>
+      </div></div>
+      <ol class="gar-list" id="gar-list"></ol>
+      <p class="gad-note">A review takes a few minutes. Each costs roughly US$0.50–2 of Claude usage, depending on the size of
+        the account, and uses {{ model }} thinking at high effort.</p>
+    </section>
+  </div>
+
+  <section class="gad-panel gar-review" id="gar-review" aria-live="polite">
+    <div class="gar-empty" id="gar-empty">No review yet for this account. Save a brief, then run the review.</div>
+  </section>
+
+</main>
+
+<script type="application/json" id="gar-data">{{ {"template": template, "configured": configured}|tojson }}</script>
+{{ topbar_script() }}
+<script defer src="{{ url_for('static', filename='js/google-ads-ai.js') }}?v=1"></script>
+</body>
+</html>

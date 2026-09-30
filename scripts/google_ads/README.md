@@ -80,6 +80,14 @@ It adds these tabs at the **end** of the sheet. It never changes the first tab, 
 | Insights - About | When part 1 (or the single script) ran, the row counts, and any query that failed | – |
 | Insights - About (part 2) | The same for part 2 | – |
 
+## AI review
+
+**Dashboard → AI review** (`/dashboards/google-ads/ai-review`) has Claude review one account, every campaign, against the account's **brief**.
+
+- **The brief** is saved per account on that page: paste it, upload a `.txt`, `.md`, `.docx` or `.pdf`, or start from the template (objectives, targets such as budget, ROAS or CPA and conversions, locations, audiences, campaign types, conversion actions, and what the account manager is responsible for). Every save is a new version, and each review keeps the version it was judged against.
+- **A review** reads everything the dashboard has for the account (every campaign for the last 30 days against the 30 before, month-to-date pacing, bidding, impression share, search terms, keywords and Quality Score, ads, devices, age and gender, conversions and their setup, locations, hours, landing pages, change history and Google's recommendations). Claude lists the brief's targets and requirements. The server then measures each target from the data itself: spend and pace, ROAS, CPA, conversions, rates, impression share, and spend inside and outside the target locations. Claude (`claude-opus-5-5`, thinking at high effort) then writes the review: a scorecard against the brief, where the account does not follow it, what is working and what is not, prioritised actions (P1–P3) and a verdict per campaign, plus what the brief is missing.
+- **Needs:** `ANTHROPIC_API_KEY` (already set for Local Business Radar) and `DATABASE_URL`, so briefs and reviews survive a deploy. A review takes a few minutes and costs roughly US$0.50–2 of Claude usage; the cost of each review is shown next to it.
+
 ## Limits and safety
 
 - **Accounts:** Google runs a manager script in parallel on at most 50 accounts ([Google Ads Scripts limits](https://developers.google.com/google-ads/scripts/docs/limits)). With more than 50, the 50 with the highest spend in the last 30 days are exported. Set `ACCOUNT_IDS` to choose them yourself.

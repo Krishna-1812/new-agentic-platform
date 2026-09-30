@@ -4941,6 +4941,182 @@ def _no_html_cache(resp):
     return resp
 
 
+# ── Google Ads AI review ─────────────────────────────────────────────────────
+# Claude reads one account, every campaign, against the account's brief (what the
+# client and agency agreed: objectives, targets, locations, what the account
+# manager does) and says what is working, what is not and what to do. The work
+# lives in tracker/gads_ai.py; briefs and reviews in tracker/gads_ai_store.py.
+GADS_AI = "/api/dashboards/google-ads/ai"
+
+
+def _gads_ai_guard():
+    """POSTs must come from the page's own script (a cross-site form cannot set this header)."""
+    if request.headers.get("X-Requested-With") != "fetch":
+        return jsonify({"ok": False, "error": "Send this from the dashboard."}), 400
+    return None
+
+
+def _gads_ai_accounts(rows):
+    """[(account, customer id)] from the campaign report, by spend."""
+    spend, cid = {}, {}
+    for r in rows:
+        a = r.get("account") or ""
+        if a:
+            spend[a] = spend.get(a, 0.0) + (r.get("cost") or 0.0)
+            cid.setdefault(a, r.get("customer_id") or "")
+    return [(a, cid[a]) for a in sorted(spend, key=lambda a: -spend[a])]
+
+
+def _gads_ai_load():
+    """What a review reads: the insights views, the campaign report, and Google's rates."""
+    from tracker import google_ads_insights as g
+    rows = _fetch_google_ads_rows()
+    st = g.store(_ads_sheet_service, GOOGLE_ADS_SHEET_ID, titles=_google_ads_cache.get("titles"))
+    return g, st, rows, g.FX(rows), g.Spend(rows), _google_ads_campaigns(rows)
+
+
+def _gads_ai_spawn(fn, *args):
+    """Run a review in the background (a function of its own, so tests can run it inline)."""
+    threading.Thread(target=fn, args=args, name="gads-ai-review", daemon=True).start()
+
+
+def _gads_ai_review_out(r, full=False):
+    out = {k: r.get(k) for k in ("id", "account", "email", "status", "stage", "error", "created_at",
+                                 "finished_at", "period_from", "period_to", "brief_id")}
+    out["cost_usd"] = (r.get("cost") or {}).get("usd")
+    if full:
+        out["report"] = r.get("report") or {}
+        out["stats"] = r.get("stats") or {}
+    return out
+
+
+@app.route("/dashboards/google-ads/ai-review")
+@position2_required
+def google_ads_ai_review():
+    from tracker import gads_ai, gads_ai_store
+    try:
+        rows = _fetch_google_ads_rows()
+    except Exception:
+        rows = []
+    accounts = _gads_ai_accounts(rows)
+    try:
+        briefed = gads_ai_store.briefed_accounts()
+    except Exception:
+        app.logger.exception("gads_ai: could not read briefs")
+        briefed = {}
+    want = request.args.get("account", "")
+    current = want if any(a == want for a, _ in accounts) else (accounts[0][0] if accounts else "")
+    return render_template("google_ads_ai_review.html", user=_get_user(),
+                           accounts=[{"name": a, "cid": c, "briefed": a in briefed} for a, c in accounts],
+                           current=current, configured=gads_ai.configured(), storage=gads_ai_store.backend(),
+                           template=gads_ai.BRIEF_TEMPLATE, model=gads_ai.MODEL)
+
+
+@app.route(GADS_AI + "/brief")
+@position2_required
+def google_ads_ai_brief():
+    from tracker import gads_ai_store
+    account = request.args.get("account", "")[:300]
+    bid = request.args.get("id", type=int)
+    try:
+        brief = gads_ai_store.get_brief(account=account or None, brief_id=bid)
+        history = gads_ai_store.brief_history(account) if account and not bid else []
+    except Exception:
+        app.logger.exception("gads_ai: brief read failed")
+        return jsonify({"ok": False, "error": "The briefs could not be read."}), 503
+    return jsonify({"ok": True, "brief": brief, "history": history})
+
+
+@app.route(GADS_AI + "/brief", methods=["POST"])
+@position2_required
+def google_ads_ai_brief_save():
+    from tracker import gads_ai, gads_ai_store
+    bad = _gads_ai_guard()
+    if bad:
+        return bad
+    try:
+        known = dict(_gads_ai_accounts(_fetch_google_ads_rows()))
+    except Exception:
+        app.logger.exception("gads_ai: campaign report unreadable")
+        return jsonify({"ok": False, "error": "The campaign report could not be read. Try again."}), 503
+    upload = request.files.get("file")
+    account = (request.form.get("account") if upload else (request.get_json(silent=True) or {}).get("account")) or ""
+    if account not in known:
+        return jsonify({"ok": False, "error": "Pick an account from the list."}), 400
+    try:
+        if upload:
+            data = upload.read(5 * 1024 * 1024 + 1)
+            if len(data) > 5 * 1024 * 1024:
+                return jsonify({"ok": False, "error": "The file is larger than 5 MB."}), 400
+            text, filename = gads_ai.brief_text_from_file(upload.filename, data), upload.filename[:200]
+        else:
+            text, filename = str((request.get_json(silent=True) or {}).get("text") or ""), ""
+        text = gads_ai.clean_brief(text)
+    except gads_ai.ReviewError as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
+    except Exception:
+        app.logger.exception("gads_ai: brief file unreadable")
+        return jsonify({"ok": False, "error": "That file could not be read."}), 400
+    if not text:
+        return jsonify({"ok": False, "error": "The brief is empty."}), 400
+    email = (_get_user() or {}).get("email", "").lower()
+    try:
+        brief = gads_ai_store.save_brief(account, text, email, customer_id=known[account], filename=filename)
+    except Exception:
+        app.logger.exception("gads_ai: brief save failed")
+        return jsonify({"ok": False, "error": "The brief could not be saved."}), 503
+    return jsonify({"ok": True, "brief": brief, "history": gads_ai_store.brief_history(account)})
+
+
+@app.route(GADS_AI + "/reviews")
+@position2_required
+def google_ads_ai_reviews():
+    from tracker import gads_ai_store
+    account = request.args.get("account", "")[:300]
+    try:
+        return jsonify({"ok": True, "reviews": [_gads_ai_review_out(r) for r in gads_ai_store.list_reviews(account)]})
+    except Exception:
+        app.logger.exception("gads_ai: review list failed")
+        return jsonify({"ok": False, "error": "The reviews could not be read."}), 503
+
+
+@app.route(GADS_AI + "/reviews/<int:review_id>")
+@position2_required
+def google_ads_ai_review_get(review_id):
+    from tracker import gads_ai_store
+    r = gads_ai_store.get_review(review_id)
+    if not r:
+        return jsonify({"ok": False, "error": "No such review."}), 404
+    return jsonify({"ok": True, "review": _gads_ai_review_out(r, full=True)})
+
+
+@app.route(GADS_AI + "/reviews", methods=["POST"])
+@position2_required
+def google_ads_ai_review_start():
+    from tracker import gads_ai, gads_ai_store
+    bad = _gads_ai_guard()
+    if bad:
+        return bad
+    if not gads_ai.configured():
+        return jsonify({"ok": False, "error": "Claude is not configured: set ANTHROPIC_API_KEY."}), 503
+    account = str((request.get_json(silent=True) or {}).get("account") or "")
+    try:
+        known = dict(_gads_ai_accounts(_fetch_google_ads_rows()))
+    except Exception:
+        app.logger.exception("gads_ai: campaign report unreadable")
+        return jsonify({"ok": False, "error": "The campaign report could not be read. Try again."}), 503
+    if account not in known:
+        return jsonify({"ok": False, "error": "Pick an account from the list."}), 400
+    running = gads_ai_store.active_review(account)
+    if running:
+        return jsonify({"ok": True, "review": _gads_ai_review_out(running), "already": True})
+    brief = gads_ai_store.get_brief(account)
+    email = (_get_user() or {}).get("email", "").lower()
+    rid = gads_ai_store.create_review(account, email, brief_id=(brief or {}).get("id"))
+    _gads_ai_spawn(gads_ai.run_review, rid, account, _gads_ai_load, gads_ai_store)
+    return jsonify({"ok": True, "review": _gads_ai_review_out(gads_ai_store.get_review(rid))}), 202
+
+
 # (Static JS/CSS/image/font caching is set at the top of this file via
 # app.config["SEND_FILE_MAX_AGE_DEFAULT"] -- every static asset in this repo is
 # served through send_file()/send_from_directory()/the built-in /static route,
