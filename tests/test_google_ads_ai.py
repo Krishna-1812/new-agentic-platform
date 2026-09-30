@@ -520,3 +520,16 @@ def test_linking_the_doc_checks_it_first_and_the_page_shows_each_accounts_part(p
     assert bad["error_kind"] == "not_shared"
     html = page.get("/dashboards/google-ads/ai-review").get_data(as_text=True)
     assert 'id="gar-doc"' in html and "Or write this account's notes here instead" in html
+
+
+def test_a_shortened_tab_title_names_the_one_account_it_starts():
+    accounts = ["Hare Krishna Movement Charitable Foundation Hyderabad", "Krishnamurti Foundation India",
+                "JulyMode x 2025", "Acme", "Acme Health"]
+    assert gd.owner("Hare Krishna", accounts) == accounts[0]
+    assert gd.owner("Krishnamurti", accounts) == accounts[1]
+    assert gd.owner("JulyMode", accounts) == accounts[2]
+    assert gd.owner("Krishna", accounts) is None, "a part of a word is not a name"
+    assert gd.owner("Acme", accounts) == "Acme", "an exact name wins over longer names it starts"
+    assert gd.owner("Tab 1", accounts) is None and gd.owner("Jul", accounts) is None, "under 4 letters: no guess"
+    doc = {"title": "n", "tabs": [{"tabProperties": {"title": "Hare Krishna"}, "documentTab": {"body": {"content": [_p("Temple.")]}}}]}
+    assert gd.context_for(doc, accounts[0], accounts)["where"] == ["tab “Hare Krishna”"]

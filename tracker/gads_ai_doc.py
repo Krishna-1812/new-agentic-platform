@@ -12,8 +12,9 @@ Each account has its own part of it, found by name:
 A tab or heading called "General", "All accounts", "Agency", "Common" or "Overall"
 is shared: it goes with every account's part (house rules, reporting cadence...).
 A heading or tab belongs to the account whose name it contains; where it contains
-more than one, the longest name wins (so "AIHS Delhi" is not read as "AIHS"... unless
-no longer name matches).
+more than one, the longest name wins; a shortened name (a tab titled "Hare Krishna" for
+"Hare Krishna Movement Charitable Foundation Hyderabad") counts when exactly one account's
+name starts with it.
 
 Headings are kept as Markdown (#, ##) and tables as rows, so the review sees the
 doc's structure. Read with the same service account that reads the Google Ads
@@ -152,7 +153,9 @@ def _norm(s):
 
 
 def owner(text, accounts, cids=None):
-    """The account a heading or tab title names (the longest name it contains), or None."""
+    """The account a heading or tab title names, or None: the longest account name it contains; else
+    its customer ID; else, for a shortened name (a tab title such as "Hare Krishna"), the one account
+    whose name starts with it, word for word (at least 4 letters, and never when two accounts do)."""
     t = " %s " % _norm(text)
     best = None
     for a in accounts:
@@ -165,6 +168,12 @@ def owner(text, accounts, cids=None):
             d = re.sub(r"\D", "", cid or "")
             if len(d) >= 8 and d in digits:
                 return a
+    if best is None:
+        short = _norm(text)
+        if len(short.replace(" ", "")) >= 4:
+            starts = [a for a in accounts if (_norm(a) + " ").startswith(short + " ")]
+            if len(starts) == 1:
+                return starts[0]
     return best
 
 
