@@ -260,7 +260,7 @@ def test_no_brief_still_reviews_on_the_accounts_own_numbers():
                   client=fake, beat_every=0.05)
     r = store.get_review(rid)
     assert r["status"] == "complete" and not r["report"]["has_brief"] and len(fake.calls) == 1
-    assert "There is no brief for this account yet" in fake.calls[0]["messages"][0]["content"]
+    assert "There are no notes on this account yet" in fake.calls[0]["messages"][0]["content"]
 
 
 def test_api_errors_become_plain_reasons():
@@ -315,7 +315,8 @@ def test_starting_a_review_runs_it_in_the_background(page, monkeypatch):
     real = ai.run_review
     monkeypatch.setattr(ai, "run_review", lambda *a, **k: real(*a, client=fake, beat_every=0.05, **k))
     started = []
-    monkeypatch.setattr(appmod, "_gads_ai_spawn", lambda fn, *args: started.append(fn) or fn(*args))
+    monkeypatch.setattr(appmod, "_gads_ai_spawn", lambda fn, *args, **kw: started.append(fn) or fn(*args, **kw))
+    monkeypatch.setattr(appmod, "_gads_ai_doc_setting", lambda: ("", "", ""))
     r = page.post("/api/dashboards/google-ads/ai/reviews", json={"account": ACCOUNT}, headers=h)
     assert r.status_code == 202 and len(started) == 1
     rid = r.get_json()["review"]["id"]
@@ -338,3 +339,184 @@ def test_the_page_script_never_writes_server_text_as_html():
         src = fh.read()
     assert "innerHTML" not in src and "insertAdjacentHTML" not in src
     assert '"X-Requested-With": "fetch"' in src
+
+
+
+# ── The account context in one running Google Doc ────────────────────────────
+from tracker import gads_ai_doc as gd   # noqa: E402
+
+
+def _p(text, style=None, bullet=False):
+    para = {"elements": [{"textRun": {"content": text + "\n"}}], "paragraphStyle": {"namedStyleType": style or "NORMAL_TEXT"}}
+    if bullet:
+        para["bullet"] = {"listId": "x"}
+    return {"paragraph": para}
+
+
+def _table(rows):
+    return {"table": {"tableRows": [{"tableCells": [{"content": [_p(c)]} for c in r]} for r in rows]}}
+
+
+NOTES = {"title": "Account notes", "revisionId": "r1", "body": {"content": [
+    _p("Account notes", "TITLE"),
+    _p("General", "HEADING_1"),
+    _p("Report every Monday. Never bid on competitor names."),
+    _p("Acme", "HEADING_1"),
+    _p("CRM software for Indian SMBs."),
+    _p("Targets", "HEADING_2"),
+    _table([["Metric", "Target"], ["CPA", "INR 900"]]),
+    _p("Mumbai only", bullet=True),
+    _p("12 Sep: CPA target moved to INR 800.", "HEADING_3"),
+    _p("Acme Health – brief", "HEADING_1"),
+    _p("Clinics in Pune."),
+    _p("Archive", "HEADING_1"),
+    _p("Old notes."),
+]}}
+ACCOUNTS = ["Acme", "Acme Health", "Beta Clinics"]
+
+
+def test_a_docs_link_or_id_is_accepted():
+    did = "1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"
+    assert gd.doc_id("https://docs.google.com/document/d/%s/edit?tab=t.0" % did) == did
+    assert gd.doc_id("https://docs.google.com/document/u/1/d/%s/" % did) == did
+    assert gd.doc_id(did) == did and gd.doc_id("not a doc") == "" and gd.doc_id("") == ""
+
+
+def test_each_account_gets_its_own_part_of_the_doc_and_the_shared_notes():
+    acme = gd.context_for(NOTES, "Acme", ACCOUNTS)
+    assert acme["found"] and acme["where"] == ["heading “Acme”"]
+    t = acme["text"]
+    assert "CRM software" in t and "## Targets" in t and "CPA | INR 900" in t and "- Mumbai only" in t
+    assert "12 Sep: CPA target moved to INR 800." in t, "sub-headings stay inside the account's part"
+    assert "Clinics in Pune" not in t and "Old notes" not in t
+    assert '<shared_notes source="heading “General”">' in t and "Never bid on competitor names" in t
+    health = gd.context_for(NOTES, "Acme Health", ACCOUNTS)
+    assert health["found"] and "Clinics in Pune" in health["text"] and "CRM software" not in health["text"], \
+        "a heading naming the longer account belongs to it, not to Acme"
+    beta = gd.context_for(NOTES, "Beta Clinics", ACCOUNTS)
+    assert not beta["found"] and "Never bid" in beta["text"], "no part of its own: only the shared notes"
+    cov = gd.coverage(NOTES, ACCOUNTS)
+    assert cov["with"] == ["Acme", "Acme Health"] and cov["without"] == ["Beta Clinics"]
+
+
+def test_a_doc_without_heading_styles_splits_on_lines_naming_an_account():
+    doc = {"title": "n", "body": {"content": [_p("Acme"), _p("Target CPA 900."), _p("Beta Clinics"), _p("ROAS 5x.")]}}
+    assert gd.context_for(doc, "Acme", ACCOUNTS)["text"] == "Acme\nTarget CPA 900."
+    assert gd.context_for(doc, "Beta Clinics", ACCOUNTS)["text"] == "Beta Clinics\nROAS 5x."
+
+
+def test_one_tab_per_account_works_too():
+    def tab(title, content, children=()):
+        return {"tabProperties": {"title": title}, "documentTab": {"body": {"content": content}}, "childTabs": list(children)}
+    doc = {"title": "Tabs", "tabs": [tab("General", [_p("House rules.")]),
+                                     tab("Clients", [], [tab("Acme", [_p("Acme notes.")]),
+                                                         tab("Beta Clinics (123-456-7890)", [_p("Beta notes.")])])]}
+    acme = gd.context_for(doc, "Acme", ACCOUNTS)
+    assert acme["where"] == ["tab “Acme”"] and "Acme notes." in acme["text"] and "House rules." in acme["text"]
+    assert "Beta notes." in gd.context_for(doc, "Beta Clinics", ACCOUNTS)["text"]
+    assert gd.owner("Notes 1234567890", ["X"], {"X": "123-456-7890"}) == "X", "a customer ID names the account too"
+
+
+def test_googles_errors_become_what_to_do():
+    class E(Exception):
+        def __init__(self, status, reason):
+            self.resp, self.reason = types.SimpleNamespace(status=status), reason
+    off = gd._explain(E(403, "Google Docs API has not been used in project 42 before or it is disabled. Enable it by visiting "
+                             "https://console.developers.google.com/apis/api/docs.googleapis.com/overview?project=42 then retry."), "sa@x")
+    assert off.kind == "api_off" and "overview?project=42" in str(off)
+    shared = gd._explain(E(403, "The caller does not have permission"), "sa@x.iam.gserviceaccount.com")
+    assert shared.kind == "not_shared" and "sa@x.iam.gserviceaccount.com as a Viewer" in str(shared)
+    assert gd._explain(E(404, "not found"), "").kind == "not_shared"
+
+
+def _ctx(doc, accounts=ACCOUNTS):
+    def read(account):
+        c = gd.context_for(doc, account, accounts)
+        c["url"] = "https://docs.google.com/document/d/x/edit"
+        return c
+    return read
+
+
+def test_a_review_reads_the_doc_and_keeps_what_it_read():
+    st = _state()
+    load = lambda: (g, st, REPORT_ROWS, g.FX(REPORT_ROWS), None, None)
+    rid = store.create_review(ACCOUNT, "a@x.com")
+    fake = FakeClaude(TARGETS, REVIEW)
+    ai.run_review(rid, ACCOUNT, load, store, client=fake, beat_every=0.05, context=_ctx(NOTES))
+    r = store.get_review(rid)
+    assert r["status"] == "complete", r["error"]
+    snap = store.get_brief(brief_id=r["brief_id"])
+    assert snap["email"] == "google-doc" and snap["filename"] == "Google Doc: Account notes" and "CRM software" in snap["text"]
+    assert r["report"]["context"] == {"kind": "doc", "title": "Account notes", "url": "https://docs.google.com/document/d/x/edit",
+                                      "where": ["heading “Acme”"], "shared": ["heading “General”"], "found": True}
+    assert "CRM software" in fake.calls[0]["messages"][0]["content"] and "most recent one is the current" in fake.calls[0]["system"]
+    rid2 = store.create_review(ACCOUNT, "a@x.com")
+    ai.run_review(rid2, ACCOUNT, load, store, client=FakeClaude(TARGETS, REVIEW), beat_every=0.05, context=_ctx(NOTES))
+    assert store.get_review(rid2)["brief_id"] == snap["id"], "an unchanged doc is not saved again"
+    assert len(store.brief_history(ACCOUNT)) == 1
+
+
+def test_without_a_part_in_the_doc_the_notes_written_on_the_page_are_used():
+    st = _state()
+    doc = {"title": "n", "body": {"content": [_p("General", "HEADING_1"), _p("House rules.")]}}
+    page = store.save_brief(ACCOUNT, "Page notes: CPA 900.", "a@x.com")
+    rid = store.create_review(ACCOUNT, "a@x.com", brief_id=page["id"])
+    fake = FakeClaude(TARGETS, REVIEW)
+    ai.run_review(rid, ACCOUNT, lambda: (g, st, REPORT_ROWS, g.FX(REPORT_ROWS), None, None), store, client=fake,
+                  beat_every=0.05, context=_ctx(doc))
+    r = store.get_review(rid)
+    assert r["status"] == "complete" and r["report"]["context"]["page_notes"] and not r["report"]["context"]["found"]
+    body = fake.calls[0]["messages"][0]["content"]
+    assert "House rules." in body and "Page notes: CPA 900." in body
+
+
+def test_a_doc_that_cannot_be_read_stops_the_review_with_the_fix():
+    def broken(account):
+        raise gd.DocError("The service account cannot open this doc. In the doc, click Share and add sa@x as a Viewer.",
+                          kind="not_shared")
+    rid = store.create_review(ACCOUNT, "a@x.com")
+    fake = FakeClaude()
+    ai.run_review(rid, ACCOUNT, lambda: None, store, client=fake, beat_every=0.05, context=broken)
+    r = store.get_review(rid)
+    assert r["status"] == "failed" and "add sa@x as a Viewer" in r["error"] and not fake.calls, "nothing spent on Claude"
+
+
+class _Docs:
+    def __init__(self, doc=None, err=None):
+        self.doc, self.err, self.asked = doc, err, []
+
+    def documents(self):
+        return self
+
+    def get(self, documentId, includeTabsContent):
+        self.asked.append((documentId, includeTabsContent))
+        return self
+
+    def execute(self):
+        if self.err:
+            raise self.err
+        return self.doc
+
+
+def test_linking_the_doc_checks_it_first_and_the_page_shows_each_accounts_part(page, monkeypatch):
+    gd.clear_cache()
+    docs = _Docs(NOTES)
+    monkeypatch.setattr(appmod, "_gads_ai_docs_service", lambda: docs)
+    monkeypatch.delenv("GOOGLE_ADS_CONTEXT_DOC", raising=False)
+    h = {"X-Requested-With": "fetch"}
+    none = page.get("/api/dashboards/google-ads/ai/context?account=Acme").get_json()
+    assert none["doc"] is None
+    assert page.post("/api/dashboards/google-ads/ai/context-doc", json={"url": "hello"}, headers=h).status_code == 400
+    did = "1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"
+    j = page.post("/api/dashboards/google-ads/ai/context-doc", json={"url": "https://docs.google.com/document/d/%s/edit" % did,
+                                                                     "account": "Acme"}, headers=h).get_json()
+    assert j["ok"] and j["doc"]["id"] == did and j["doc"]["title"] == "Account notes" and docs.asked[0] == (did, True)
+    assert j["context"]["found"] and "CRM software" in j["context"]["text"]
+    assert j["coverage"]["with"] == ["Acme"], "only accounts in the campaign report count"
+    gd.clear_cache()
+    docs.err = type("HttpError", (Exception,), {})()
+    docs.err.resp, docs.err.reason = types.SimpleNamespace(status=403), "The caller does not have permission"
+    bad = page.get("/api/dashboards/google-ads/ai/context?account=Acme&refresh=1").get_json()
+    assert bad["error_kind"] == "not_shared"
+    html = page.get("/dashboards/google-ads/ai-review").get_data(as_text=True)
+    assert 'id="gar-doc"' in html and "Or write this account's notes here instead" in html

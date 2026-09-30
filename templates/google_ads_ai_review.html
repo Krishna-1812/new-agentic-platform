@@ -10,7 +10,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Google Ads AI review", ["google-ads-dashboard.css?v=10", "google-ads-ai.css?v=1"]) }}
+{{ head("Google Ads AI review", ["google-ads-dashboard.css?v=10", "google-ads-ai.css?v=2"]) }}
 </head>
 <body class="gad gar">
 
@@ -62,26 +62,30 @@
     <section class="gad-panel gar-brief" id="gar-brief-panel">
       <div class="gad-panel-head"><div>
         <span class="gad-lbl">What the account is for</span>
-        <h2 class="gad-h2">The brief</h2>
+        <h2 class="gad-h2">Account context</h2>
       </div>
-      <span class="gad-panel-d" id="gar-brief-d"></span></div>
-      <p class="gar-help">Objectives, targets (budget, ROAS or CPA, conversions), locations, audiences, campaign types, and what
-        the account manager is responsible for. The review checks the account against every target and requirement here,
-        so the more precise the numbers, the sharper the review.</p>
-      <label class="gar-sr" for="gar-brief">Brief text</label>
-      <textarea id="gar-brief" class="gar-text" rows="18" spellcheck="true" placeholder="Paste the brief, upload a file, or start from the template."></textarea>
-      <div class="gar-bar">
-        <button type="button" class="gad-btn gad-btn--line" id="gar-save">Save the brief</button>
-        <label class="gad-btn gad-btn--line gar-upload">
-          <input type="file" id="gar-file" accept=".txt,.md,.docx,.pdf" hidden>
-          Upload a file
-        </label>
-        <button type="button" class="gad-btn gad-btn--line" id="gar-template">Start from the template</button>
-        <span class="gar-msg" id="gar-brief-msg" role="status" aria-live="polite"></span>
-      </div>
-      <details class="gar-versions" id="gar-versions-box" hidden>
-        <summary>Earlier versions</summary>
-        <ol id="gar-versions"></ol>
+      <span class="gad-panel-d" id="gar-ctx-d"></span></div>
+      <div id="gar-doc" aria-live="polite"><p class="gar-help">Reading the Google Doc…</p></div>
+
+      <details class="gar-alt" id="gar-alt">
+        <summary>Or write this account's notes here instead</summary>
+        <p class="gar-help">Used only when the Google Doc has no part for this account.</p>
+        <label class="gar-sr" for="gar-brief">Notes for this account</label>
+        <textarea id="gar-brief" class="gar-text" rows="14" spellcheck="true" placeholder="Paste the notes, upload a file, or start from the template."></textarea>
+        <div class="gar-bar">
+          <button type="button" class="gad-btn gad-btn--line" id="gar-save">Save the notes</button>
+          <label class="gad-btn gad-btn--line gar-upload">
+            <input type="file" id="gar-file" accept=".txt,.md,.docx,.pdf" hidden>
+            Upload a file
+          </label>
+          <button type="button" class="gad-btn gad-btn--line" id="gar-template">Start from the template</button>
+          <span class="gar-msg" id="gar-brief-msg" role="status" aria-live="polite"></span>
+        </div>
+        <p class="gad-note" id="gar-brief-d"></p>
+        <details class="gar-versions" id="gar-versions-box" hidden>
+          <summary>Earlier versions (including what each review read from the doc)</summary>
+          <ol id="gar-versions"></ol>
+        </details>
       </details>
     </section>
 
@@ -104,6 +108,6 @@
 
 <script type="application/json" id="gar-data">{{ {"template": template, "configured": configured}|tojson }}</script>
 {{ topbar_script() }}
-<script defer src="{{ url_for('static', filename='js/google-ads-ai.js') }}?v=1"></script>
+<script defer src="{{ url_for('static', filename='js/google-ads-ai.js') }}?v=2"></script>
 </body>
 </html>

@@ -4975,9 +4975,79 @@ def _gads_ai_load():
     return g, st, rows, g.FX(rows), g.Spend(rows), _google_ads_campaigns(rows)
 
 
-def _gads_ai_spawn(fn, *args):
+def _gads_ai_spawn(fn, *args, **kwargs):
     """Run a review in the background (a function of its own, so tests can run it inline)."""
-    threading.Thread(target=fn, args=args, name="gads-ai-review", daemon=True).start()
+    threading.Thread(target=fn, args=args, kwargs=kwargs, name="gads-ai-review", daemon=True).start()
+
+
+# The account context: one running Google Doc for every account (tracker/gads_ai_doc.py), linked on
+# the page or with GOOGLE_ADS_CONTEXT_DOC, read with the Google Ads sheet's service account.
+def _gads_ai_sa_info():
+    import json as _j
+    sa_str = os.environ.get("GOOGLE_ADS_SHEET_SA_JSON", "") or os.environ.get("GOOGLE_SA_JSON", "")
+    return _j.loads(sa_str) if sa_str else None
+
+
+def _gads_ai_docs_service():
+    from google.oauth2 import service_account
+    from googleapiclient.discovery import build
+    from tracker import gads_ai_doc
+    info = _gads_ai_sa_info()
+    if not info:
+        raise gads_ai_doc.DocError("No Google service account is configured (GOOGLE_ADS_SHEET_SA_JSON).", kind="config")
+    creds = service_account.Credentials.from_service_account_info(info, scopes=[gads_ai_doc.SCOPE])
+    return build("docs", "v1", credentials=creds, cache_discovery=False, static_discovery=True)
+
+
+def _gads_ai_doc_setting():
+    """(doc id, who linked it, when) from the page's setting, else GOOGLE_ADS_CONTEXT_DOC; ("", ...) if neither."""
+    from tracker import gads_ai_doc, gads_ai_store
+    try:
+        s = gads_ai_store.get_setting("context_doc")
+    except Exception:
+        app.logger.exception("gads_ai: settings unreadable")
+        s = None
+    if s and s.get("value"):
+        return s["value"], s.get("email"), s.get("updated_at")
+    return gads_ai_doc.doc_id(os.environ.get("GOOGLE_ADS_CONTEXT_DOC", "")), "", ""
+
+
+def _gads_ai_context(account, force=True):
+    """The account's part of the linked doc (gads_ai_doc.context_for), or None when no doc is linked."""
+    from tracker import gads_ai_doc
+    did = _gads_ai_doc_setting()[0]
+    if not did:
+        return None
+    accounts = _gads_ai_accounts(_fetch_google_ads_rows())
+    doc = gads_ai_doc.fetch(_gads_ai_docs_service, did, sa_email=(_gads_ai_sa_info() or {}).get("client_email", ""),
+                            force=force)
+    ctx = gads_ai_doc.context_for(doc, account, [a for a, _ in accounts], dict(accounts))
+    ctx["url"] = gads_ai_doc.doc_url(did)
+    return ctx
+
+
+def _gads_ai_context_out(account, force=False):
+    """What the page shows about the linked doc and this account's part of it."""
+    from tracker import gads_ai_doc
+    did, by, at = _gads_ai_doc_setting()
+    out = {"ok": True, "sa_email": (_gads_ai_sa_info() or {}).get("client_email", ""), "doc": None,
+           "context": None, "coverage": None, "error": None}
+    if not did:
+        return out
+    out["doc"] = {"id": did, "url": gads_ai_doc.doc_url(did), "linked_by": by, "linked_at": at}
+    try:
+        accounts = _gads_ai_accounts(_fetch_google_ads_rows())
+        doc = gads_ai_doc.fetch(_gads_ai_docs_service, did, sa_email=out["sa_email"], force=force)
+        names, cids = [a for a, _ in accounts], dict(accounts)
+        out["doc"]["title"] = doc.get("title") or ""
+        out["context"] = gads_ai_doc.context_for(doc, account, names, cids) if account else None
+        out["coverage"] = gads_ai_doc.coverage(doc, names, cids)
+    except gads_ai_doc.DocError as e:
+        out["error"], out["error_kind"] = str(e), e.kind
+    except Exception:
+        app.logger.exception("gads_ai: context doc unreadable")
+        out["error"] = "The Google Doc could not be read just now."
+    return out
 
 
 def _gads_ai_review_out(r, full=False):
@@ -5068,6 +5138,39 @@ def google_ads_ai_brief_save():
     return jsonify({"ok": True, "brief": brief, "history": gads_ai_store.brief_history(account)})
 
 
+@app.route(GADS_AI + "/context")
+@position2_required
+def google_ads_ai_context():
+    return jsonify(_gads_ai_context_out(request.args.get("account", "")[:300], force=bool(request.args.get("refresh"))))
+
+
+@app.route(GADS_AI + "/context-doc", methods=["POST"])
+@position2_required
+def google_ads_ai_context_doc():
+    """Link (or, with an empty link, unlink) the running Google Doc every account's context comes from."""
+    from tracker import gads_ai_doc, gads_ai_store
+    bad = _gads_ai_guard()
+    if bad:
+        return bad
+    p = request.get_json(silent=True) or {}
+    raw = str(p.get("url") or "").strip()
+    did = gads_ai_doc.doc_id(raw)
+    if raw and not did:
+        return jsonify({"ok": False, "error": "Paste the Google Doc's link (docs.google.com/document/d/…)."}), 400
+    if did:
+        try:
+            gads_ai_doc.fetch(_gads_ai_docs_service, did, force=True,
+                              sa_email=(_gads_ai_sa_info() or {}).get("client_email", ""))
+        except gads_ai_doc.DocError as e:
+            return jsonify({"ok": False, "error": str(e), "error_kind": e.kind}), 400
+    try:
+        gads_ai_store.set_setting("context_doc", did, (_get_user() or {}).get("email", "").lower())
+    except Exception:
+        app.logger.exception("gads_ai: setting save failed")
+        return jsonify({"ok": False, "error": "The link could not be saved."}), 503
+    return jsonify(_gads_ai_context_out(str(p.get("account") or "")[:300]))
+
+
 @app.route(GADS_AI + "/reviews")
 @position2_required
 def google_ads_ai_reviews():
@@ -5113,7 +5216,7 @@ def google_ads_ai_review_start():
     brief = gads_ai_store.get_brief(account)
     email = (_get_user() or {}).get("email", "").lower()
     rid = gads_ai_store.create_review(account, email, brief_id=(brief or {}).get("id"))
-    _gads_ai_spawn(gads_ai.run_review, rid, account, _gads_ai_load, gads_ai_store)
+    _gads_ai_spawn(gads_ai.run_review, rid, account, _gads_ai_load, gads_ai_store, context=_gads_ai_context)
     return jsonify({"ok": True, "review": _gads_ai_review_out(gads_ai_store.get_review(rid))}), 202
 
 

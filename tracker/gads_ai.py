@@ -457,8 +457,13 @@ TARGETS_SCHEMA = {
                  "missing"],
     "additionalProperties": False}
 
-TARGETS_SYSTEM = """You read a Google Ads account brief and list what it asks of the account, so the account can be \
-checked against it.
+TARGETS_SYSTEM = """You read the agency's notes on one Google Ads account (its brief: the business, objectives, \
+targets, targeting and the account manager's responsibilities) and list what they ask of the account, so the account \
+can be checked against it.
+
+The notes are often a running document, updated over time, and may include dated entries and notes shared by all \
+accounts. Where two statements conflict, the most recent one is the current requirement (use dates where given, \
+otherwise the later position in the notes). A shared note applies unless the account's own notes say otherwise.
 
 List every measurable target and every targeting or process requirement the brief states, each with the exact \
 sentence it comes from as the quote. Use only what the brief says: never infer a target it does not state, and \
@@ -485,7 +490,7 @@ def extract_targets(brief, account, client=None):
     """What the brief asks of the account, as TARGETS_SCHEMA; plus the call's usage."""
     if not brief.strip():
         return {"business": "", "objectives": [], "targets": [], "account_manager_tasks": [], "brand_terms": [],
-                "negative_themes": [], "missing": ["There is no brief for this account yet."]}, {}
+                "negative_themes": [], "missing": ["There are no notes on this account yet: the context Google Doc has no part for it."]}, {}
     text, usage = _call(client, TARGETS_SYSTEM,
                         "Account: %s\n\n<brief>\n%s\n</brief>" % (account, brief),
                         TARGETS_SCHEMA, effort="medium", max_tokens=32000)
@@ -667,8 +672,9 @@ REVIEW_SYSTEM = """You are the senior paid-search strategist at a performance ma
 Google Ads account for the agency's leadership and its account manager, and they will act on what you write.
 
 You are given:
-- the account brief the client and agency agreed: the business, objectives, targets, targeting, and what the \
-account manager is meant to do;
+- the account brief: the agency's running notes on this account (the business, objectives, targets, targeting, \
+what the account manager is meant to do, and updates over time). Where notes conflict, the most recent is current; \
+use older entries as history, for example to judge whether something agreed was done;
 - the targets extracted from it, each with the sentence it came from;
 - checks the system has already measured against those targets (figures computed from the account data; trust them);
 - the account's data pack: every campaign for the last 30 days against the 30 before, month-to-date budgets and \
@@ -705,7 +711,7 @@ def review_prompt(account, brief, targets, checks, pack):
     return ("Account: %s\n\n<brief>\n%s\n</brief>\n\n<targets_from_brief>\n%s\n</targets_from_brief>\n\n"
             "<measured_checks>\n%s\n</measured_checks>\n\n<data_pack>\n%s\n</data_pack>\n\n"
             "Write the review of %s." %
-            (account, brief.strip() or "(There is no brief for this account yet. Review the account on its own "
+            (account, brief.strip() or "(There are no notes on this account yet. Review the account on its own "
                                        "numbers, and say in brief_gaps what a brief needs to state.)",
              json.dumps(targets, ensure_ascii=False, separators=(",", ":")),
              json.dumps(checks, ensure_ascii=False, separators=(",", ":")),
@@ -784,8 +790,10 @@ def cost_usd(usages):
 
 
 # ── The whole run ────────────────────────────────────────────────────────────
-def run_review(review_id, account, load, store, client=None, beat_every=30.0):
+def run_review(review_id, account, load, store, client=None, beat_every=30.0, context=None):
     """Run one review end to end, saving each stage. `load()` returns (g, st, rows, fx, spend, camps).
+    `context(account)`, when given, reads the account's part of the linked Google Doc
+    (tracker/gads_ai_doc.context_for), or returns None when no doc is linked.
     A heartbeat is saved every `beat_every` seconds while it runs, so a review cut off by a restart is
     recognised as stopped (gads_ai_store._expire) rather than left running."""
     import threading
@@ -799,23 +807,53 @@ def run_review(review_id, account, load, store, client=None, beat_every=30.0):
                 pass
     threading.Thread(target=pulse, name="gads-ai-beat", daemon=True).start()
     try:
-        _run(review_id, account, load, store, client)
+        _run(review_id, account, load, store, client, context)
     finally:
         done.set()
 
 
-def _run(review_id, account, load, store, client):
+def _brief_for(review_id, account, store, context):
+    """(text, source): the account's context from the linked doc (snapshotted as a brief version, so the
+    review keeps exactly what it read), else the notes saved on the page."""
+    review = store.get_review(review_id) or {}
+    saved = store.get_brief(brief_id=review["brief_id"]) if review.get("brief_id") else None
+    ctx = context(account) if context else None
+    if ctx is None:
+        return (saved or {}).get("text") or "", {"kind": "page" if saved else "none"}
+    source = {"kind": "doc", "title": ctx.get("title"), "url": ctx.get("url"), "where": ctx.get("where"),
+              "shared": ctx.get("shared_where"), "found": ctx["found"]}
+    text = ctx["text"]
+    if not ctx["found"] and saved and saved.get("email") != DOC_AUTHOR:
+        text = (text + "\n\n" if text else "") + saved["text"]
+        source["page_notes"] = True
+    if text:
+        latest = store.get_brief(account)
+        if not latest or latest.get("text") != text:
+            latest = store.save_brief(account, text, DOC_AUTHOR, filename=("Google Doc: " + (ctx.get("title") or ""))[:200])
+        store.update_review(review_id, brief_id=latest["id"])
+    return text, source
+
+
+DOC_AUTHOR = "google-doc"
+
+
+def _run(review_id, account, load, store, client, context=None):
     usages = []
     try:
-        store.update_review(review_id, status="running", stage="pack")
+        store.update_review(review_id, status="running", stage="context")
+        try:
+            brief, source = _brief_for(review_id, account, store, context)
+        except Exception as exc:
+            from tracker.gads_ai_doc import DocError
+            if isinstance(exc, DocError):
+                raise ReviewError(str(exc), kind="context")
+            raise
+        store.beat(review_id, "pack")
         g, st, rows, fx, spend, camps = load()
         pack = build_pack(g, st, account, rows, fx, spend, camps)
         store.update_review(review_id, period_from=pack["period"]["last_30_days"][0],
                             period_to=pack["period"]["last_30_days"][1],
                             stats={"campaigns": len(pack["campaigns"]), "pack_chars": len(json.dumps(pack, default=str))})
-        review = store.get_review(review_id) or {}
-        brief_row = store.get_brief(brief_id=review["brief_id"]) if review.get("brief_id") else None
-        brief = (brief_row or {}).get("text") or ""
         store.beat(review_id, "targets")
         targets, u = extract_targets(brief, account, client)
         if u:
@@ -830,6 +868,7 @@ def _run(review_id, account, load, store, client):
         report["period"] = pack["period"]
         report["currency"] = pack["currency"]
         report["has_brief"] = bool(brief)
+        report["context"] = source
         store.update_review(review_id, status="complete", stage="done", report=report,
                             cost={"usd": cost_usd(usages), "calls": usages},
                             finished_at=_dt.datetime.now(_dt.timezone.utc))
