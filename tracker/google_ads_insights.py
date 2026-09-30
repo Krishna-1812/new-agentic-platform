@@ -238,6 +238,8 @@ class FX:
         self.native = native
         self.rates = {a: {d: c / o for d, (c, o) in days.items()} for a, days in sums.items()}
         self.days = {a: sorted(days) for a, days in self.rates.items()}
+        all_days = sorted(r["day"] for r in rows or () if r.get("day"))
+        self.span = (all_days[0], all_days[-1]) if all_days else None
 
     def rate(self, account, day):
         rates, days = self.rates.get(account) or {}, self.days.get(account) or []
@@ -260,6 +262,33 @@ class FX:
 
 
 NO_FX = FX()
+
+
+class Spend:
+    """The campaign report's own cost per account, campaign and day (in its converted currency), to
+    say how much of it a panel built from another Google Ads report accounts for. Google's search
+    terms, geographic, landing page and ad reports do not always add up to a campaign's cost (rare
+    search terms are withheld; clicks Google cannot place or attribute to a page are left out; ads
+    since removed are not listed), and the page says so with the figures rather than leaving a
+    smaller total to be read as the whole spend."""
+
+    def __init__(self, rows=()):
+        self.rows = [(r.get("account") or "", r.get("campaign") or "", r.get("type") or "", r["day"],
+                      r.get("cost") or 0.0) for r in rows or () if r.get("day")]
+        curs = {r.get("currency") for r in rows or () if r.get("currency")}
+        self.cur = next(iter(curs)) if len(curs) == 1 else ""
+        days = sorted(d for _, _, _, d, _ in self.rows)
+        self.span = (days[0], days[-1]) if days else None
+
+    def covers(self, lo, hi):
+        return bool(self.span and self.cur and lo and hi and self.span[0] <= lo and hi <= self.span[1])
+
+    def total(self, lo, hi, keep):
+        return sum(c for a, n, t, d, c in self.rows
+                   if lo <= d <= hi and keep({"account": a, "campaign": n, "type": t}))
+
+
+NO_SPEND = Spend()
 
 
 def _money_sum(days, lo, hi, fields, rate):
@@ -452,11 +481,11 @@ def cover(window, lo, hi):
     return (a, b) if a <= b else None
 
 
-def trend(sec, lo, hi, keep):
+def trend(sec, lo, hi, keep, window=None):
     """Impression share over time for the campaigns `keep` lets through: by day for a range of up to
     DAILY_TREND_DAYS days, else by week (Monday to Sunday, as Google Ads' own weeks). A week only
     partly inside the range is marked "partial"."""
-    cov = cover(sec.window, lo, hi)
+    cov = cover(window or sec.window, lo, hi)
     if not cov:
         return "day", []
     span = (_dt.date.fromisoformat(cov[1]) - _dt.date.fromisoformat(cov[0])).days + 1
@@ -1482,7 +1511,7 @@ def empty():
             "health": {"accounts": [], "campaigns": [], "overall": None},
             "recs": {"rows": [], "totals": {}, "read": 0}, "demographics": [],
             "landing": {"rows": [], "totals": {}, "read": 0},
-            "range": {"from": None, "to": None}, "meta": {}, "params": {}, "has": {}}
+            "range": {"from": None, "to": None}, "meta": {}, "params": {}, "has": {}, "coverage": {}}
 
 
 # ── Reading once, viewing by range and filters ──────────────────────────────
@@ -1590,8 +1619,8 @@ class Filters:
         return self.campaign(x) if x.get("campaign") else self.whole_account(x)
 
 
-def _meta(sec, lo, hi, scope):
-    win = sec.window if isinstance(sec, Section) else sec
+def _meta(sec, lo, hi, scope, win=None):
+    win = win or (sec.window if isinstance(sec, Section) else sec)
     dated = sec.dated if isinstance(sec, Section) else bool(win)
     cov = cover(win, lo, hi) if win else None
     return {"from": win[0] if win else None, "to": win[1] if win else None,
@@ -1599,10 +1628,43 @@ def _meta(sec, lo, hi, scope):
             "empty": isinstance(sec, Section) and not sec.items}
 
 
-def view(st, start=None, end=None, account="", type_="", status="", search="", focus="", camps=None, fx=None):
+def _account_windows(sec, keep):
+    wins = {}
+    for x, _, w in sec.items:
+        if w and keep(x):
+            a = x.get("account") or ""
+            o = wins.get(a)
+            wins[a] = (min(o[0], w[0]), max(o[1], w[1])) if o else w
+    return wins
+
+
+def common_window(sec, keep, accounts=None):
+    """(window, latest): the days every account with rows `keep` lets through was exported for, and
+    the last day any of them has. Each account is exported up to its own yesterday, in its own time
+    zone, so accounts ahead of the others have one more day; adding up a day only some accounts have
+    would make a total that matches no report, so a panel covers only the days all of its accounts
+    have. When no row passes, the accounts `accounts` lets through decide (the panel is then empty
+    for days they were exported for, not for days they were not)."""
+    wins = _account_windows(sec, keep)
+    if not wins and accounts is not None:
+        wins = _account_windows(sec, accounts)
+    if not wins:
+        return sec.window, (sec.window[1] if sec.window else None)
+    w = (max(v[0] for v in wins.values()), min(v[1] for v in wins.values()))
+    return (w if w[0] <= w[1] else None), max(v[1] for v in wins.values())
+
+
+_NO_DAY = "0000-00-00"   # a range no day falls in
+
+
+def view(st, start=None, end=None, account="", type_="", status="", search="", focus="", camps=None, fx=None,
+         spend=None):
     """The page's insights for one date range and set of filters, money in fx.to where the campaign
-    report gives Google's rate for an account (see FX)."""
+    report gives Google's rate for an account (see FX), each panel over the days all of its accounts
+    were exported for (see common_window), with how much of the campaign report's spend the panels
+    that come from narrower Google reports account for (see Spend)."""
     fx = fx or NO_FX
+    ref = spend or NO_SPEND
     ac = (st or {}).get("acct_cur", {})
     out = empty()
     if not st or not st.get("ok"):
@@ -1611,12 +1673,31 @@ def view(st, start=None, end=None, account="", type_="", status="", search="", f
     lo, hi = start or None, end or None
     f = Filters(account, type_, status, search, focus, camps)
     meta = {}
+    windows, latest = {}, {}
+
+    def span(key, sec, keep):
+        """(lo, hi) for a section: the range asked for, within the days all its accounts have."""
+        win = None
+        if isinstance(sec, Section) and sec.dated:
+            win, latest[key] = common_window(sec, keep, f.in_account)
+        windows[key] = win
+        if not win:
+            return lo, hi
+        cov = cover(win, lo, hi)
+        return cov if cov else (_NO_DAY, _NO_DAY)
+
+    def meta_of(key, sec, scope):
+        m = _meta(sec, lo, hi, scope, windows.get(key))
+        if windows.get(key) and latest.get(key) and windows[key][1] < latest[key]:
+            m["ahead"] = latest[key]   # some accounts shown have days up to here
+        return m
 
     # Impression share, and its trend by day or week.
-    rows = [x for x in is_rows(st["is"], lo, hi, fx) if f.campaign(x)]
+    a, b = span("is", st["is"], f.campaign)
+    rows = [x for x in is_rows(st["is"], a, b, fx) if f.campaign(x)]
     out["is"] = rows
-    out["weekly_grain"], out["weekly"] = trend(st["is"], lo, hi, f.campaign)
-    meta["is"] = _meta(st["is"], lo, hi, "campaign")
+    out["weekly_grain"], out["weekly"] = trend(st["is"], a, b, f.campaign, windows["is"])
+    meta["is"] = meta_of("is", st["is"], "campaign")
 
     # Budgets (this month, now): a budget stays whole when any of its campaigns passes the filters,
     # so a shared budget's pace is never worked out from part of its spend.
@@ -1635,17 +1716,21 @@ def view(st, start=None, end=None, account="", type_="", status="", search="", f
                        "limited_from": since if win else None, "limited_to": win[1] if win else None}
 
     # Search terms and keywords: every row read counts toward the totals.
-    out["terms"] = summarize_terms([x for x in st["terms"].rows(lo, hi, fx=fx) if f.row(x)])
-    meta["terms"] = _meta(st["terms"], lo, hi, "campaign")
-    out["keywords"] = summarize_keywords([x for x in keyword_rows(st["keywords"], lo, hi, fx) if f.row(x)])
-    meta["keywords"] = _meta(st["keywords"], lo, hi, "campaign")
+    a, b = span("terms", st["terms"], f.row)
+    out["terms"] = summarize_terms([x for x in st["terms"].rows(a, b, fx=fx) if f.row(x)])
+    meta["terms"] = meta_of("terms", st["terms"], "campaign")
+    a, b = span("keywords", st["keywords"], f.row)
+    out["keywords"] = summarize_keywords([x for x in keyword_rows(st["keywords"], a, b, fx) if f.row(x)])
+    meta["keywords"] = meta_of("keywords", st["keywords"], "campaign")
 
-    out["devices"] = [x for x in st["devices"].rows(lo, hi, fx=fx) if f.campaign(x)]
-    meta["devices"] = _meta(st["devices"], lo, hi, "campaign")
+    a, b = span("devices", st["devices"], f.campaign)
+    out["devices"] = [x for x in st["devices"].rows(a, b, fx=fx) if f.campaign(x)]
+    meta["devices"] = meta_of("devices", st["devices"], "campaign")
     # Hours, locations and landing pages are account-level reports: account and dates only.
-    out["hours"] = [x for x in hour_rows(st["hours"], lo, hi, fx) if f.in_account(x)]
-    meta["hours"] = _meta(st["hours"], lo, hi, "account")
-    cov = cover(st["hours"].window, lo, hi)
+    a, b = span("hours", st["hours"], f.in_account)
+    out["hours"] = [x for x in hour_rows(st["hours"], a, b, fx) if f.in_account(x)]
+    meta["hours"] = meta_of("hours", st["hours"], "account")
+    cov = cover(windows["hours"] or st["hours"].window, lo, hi)
     if cov:
         n = [0] * 7
         d = _dt.date.fromisoformat(cov[0])
@@ -1653,12 +1738,14 @@ def view(st, start=None, end=None, account="", type_="", status="", search="", f
             n[d.weekday()] += 1
             d += _dt.timedelta(days=1)
         meta["hours"]["weekdays"] = n
-    out["locations"] = summarize_locations([x for x in st["locations"].rows(lo, hi, fx=fx) if f.in_account(x)])
-    meta["locations"] = _meta(st["locations"], lo, hi, "account")
+    a, b = span("locations", st["locations"], f.in_account)
+    out["locations"] = summarize_locations([x for x in st["locations"].rows(a, b, fx=fx) if f.in_account(x)])
+    meta["locations"] = meta_of("locations", st["locations"], "account")
 
+    a, b = span("conversions", st["conversions"], f.campaign)
     out["conversions"] = [dict(x, cur=x.get("cur") or ac.get(x["account"], ""))
-                          for x in st["conversions"].rows(lo, hi, fx=fx, acct_cur=ac) if f.campaign(x)]
-    meta["conversions"] = _meta(st["conversions"], lo, hi, "campaign")
+                          for x in st["conversions"].rows(a, b, fx=fx, acct_cur=ac) if f.campaign(x)]
+    meta["conversions"] = meta_of("conversions", st["conversions"], "campaign")
     recent = None
     cwin = st["conversions"].window
     if cwin:
@@ -1671,10 +1758,11 @@ def view(st, start=None, end=None, account="", type_="", status="", search="", f
                         fx.to if fx.converts(a["account"], a["native_cur"]) else a["native_cur"])
 
     # Ads: the live ones now, with their performance in the range.
-    ad_rows = [x for x in st["ads"].rows(lo, hi, keep_empty=True, fx=fx) if f.campaign(x)]
-    asset_rows = st["ad_assets"].rows(lo, hi, keep_empty=True, fx=fx, acct_cur=ac)
+    a, b = span("ads", st["ads"], f.campaign)
+    ad_rows = [x for x in st["ads"].rows(a, b, keep_empty=True, fx=fx) if f.campaign(x)]
+    asset_rows = st["ad_assets"].rows(a, b, keep_empty=True, fx=fx, acct_cur=ac)
     out["ads"] = summarize_ads(ad_rows, st["combos"], asset_rows)
-    meta["ads"] = _meta(st["ads"], lo, hi, "campaign")
+    meta["ads"] = meta_of("ads", st["ads"], "campaign")
 
     # Change history: the changes made inside the range.
     changes = [c for c in st["changes"] if (not lo or c["day"] >= lo) and (not hi or c["day"] <= hi) and f.row(c)]
@@ -1709,10 +1797,32 @@ def view(st, start=None, end=None, account="", type_="", status="", search="", f
     out["recs"] = summarize_recs(convert_recs([r for r in st["recs"] if f.row(r)], fx))
     meta["health"] = meta["recs"] = {"scope": "current", "dated": False, "from": None, "to": None, "cover": None}
 
-    out["demographics"] = [x for x in st["demographics"].rows(lo, hi, fx=fx) if f.campaign(x)]
-    meta["demographics"] = _meta(st["demographics"], lo, hi, "campaign")
-    out["landing"] = summarize_landing([x for x in st["landing"].rows(lo, hi, fx=fx) if f.in_account(x)])
-    meta["landing"] = _meta(st["landing"], lo, hi, "account")
+    a, b = span("demographics", st["demographics"], f.campaign)
+    out["demographics"] = [x for x in st["demographics"].rows(a, b, fx=fx) if f.campaign(x)]
+    meta["demographics"] = meta_of("demographics", st["demographics"], "campaign")
+    a, b = span("landing", st["landing"], f.in_account)
+    out["landing"] = summarize_landing([x for x in st["landing"].rows(a, b, fx=fx) if f.in_account(x)])
+    meta["landing"] = meta_of("landing", st["landing"], "account")
+
+    # How much of the campaign report's spend, over the same days, the panels from narrower Google
+    # reports account for: only when the report has every one of those days and everything is in
+    # one currency (a total left partly in another currency is not comparable).
+    coverage = {}
+    search_only = lambda x: x["type"] == "Search" and f.campaign(x)
+    for key, total, keep, scope in (
+            ("terms", out["terms"]["totals"].get("__all__"), search_only, "search"),
+            ("locations", out["locations"]["totals"].get("__all__"), f.in_account, "all"),
+            ("landing", out["landing"]["totals"].get("__all__"), f.in_account, "all"),
+            ("ads", out["ads"]["totals"].get("__all__"), f.campaign, "all")):
+        c = meta[key].get("cover")
+        if not c or not ref.covers(c[0], c[1]):
+            continue
+        if total and (total.get("mixed") or total.get("cur") != ref.cur):
+            continue
+        spent = ref.total(c[0], c[1], keep)
+        if spent > 0:   # nothing listed at all reads as none of the spend
+            coverage[key] = {"shown": (total or {}).get("cost") or 0.0, "spent": spent, "cur": ref.cur, "scope": scope}
+    out["coverage"] = coverage
 
     out["about"] = st["about"]
     out["as_of"] = st["as_of"]
@@ -1724,6 +1834,13 @@ def view(st, start=None, end=None, account="", type_="", status="", search="", f
             continue
         (converted if fx.converts(a, cur) else kept).setdefault(cur, []).append(a)
     out["fx"] = {"to": fx.to, "converted": converted, "kept": kept}
+    # Days outside the campaign report have no rate of their own: they take the report's nearest
+    # day's rate, an estimate the page names.
+    covs = [m["cover"] for m in meta.values() if m.get("cover")]
+    if converted and fx.span and covs:
+        first, last = min(c[0] for c in covs), max(c[1] for c in covs)
+        if first < fx.span[0] or last > fx.span[1]:
+            out["fx"]["estimated"] = {"from": fx.span[0], "to": fx.span[1]}
     out["currencies"] = sorted(set(st["currencies"]) | ({fx.to} if fx.to else set()))
     out["meta"] = meta
     out["range"] = {"from": lo, "to": hi}
@@ -1793,6 +1910,7 @@ def fetch(svc_factory, sheet_id, titles=None, force=False, **params):
     st = store(svc_factory, sheet_id, titles, force)
     camps = params.pop("camps", None)
     fx = params.pop("fx", None)
+    spend = params.pop("spend", None)
     key = (id(st), tuple(sorted(params.items())), params.get("camps_key"))
     params.pop("camps_key", None)
     with _LOCK:
@@ -1800,7 +1918,7 @@ def fetch(svc_factory, sheet_id, titles=None, force=False, **params):
         if hit is not None:
             _VIEWS.move_to_end(key)
             return hit
-    value = view(st, camps=camps, fx=fx, **params)
+    value = view(st, camps=camps, fx=fx, spend=spend, **params)
     if _CACHE.get("error"):
         value["error"] = _CACHE["error"]
     with _LOCK:

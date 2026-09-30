@@ -93,6 +93,10 @@ var PART = 0;                         // 0 = everything in one script. To split 
 var ACCOUNT_IDS = [];                 // optional: limit to e.g. ['123-456-7890']; empty = all (busiest 50 if more)
 var DAYS = 90;                        // days of daily detail (yesterday and the DAYS - 1 before it); the
                                       // dashboard's date filter works inside them. Lower it if runs time out.
+var SETTLE_HOURS = 6;                 // yesterday counts as the last day only once it is this late in the
+                                      // account's time zone: Google keeps adding the day's late clicks and
+                                      // conversions for a few hours after midnight, so a run just after
+                                      // midnight ends the day before, whose figures have settled.
 var MAX_ACCOUNTS = 50;                // executeInParallel's own ceiling
 var RANK_MINUTES = 6;                 // time allowed for ranking accounts by spend when there are more than 50
 var SEARCH_TERMS_PER_ACCOUNT = 3000;  // by spend; the rest of an account's terms are rolled up into one row
@@ -342,11 +346,12 @@ function processAccount(input) {
   var opts = {};
   try { opts = JSON.parse(input || '{}') || {}; } catch (e) { opts = {}; }
   var today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  var last = isoAdd(today, Number(Utilities.formatDate(new Date(), tz, 'H')) < SETTLE_HOURS ? -2 : -1);
   var ctx = {
     name: acct.getName(), cid: acct.getCustomerId(), currency: acct.getCurrencyCode(), tz: tz,
     now: Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm'), errors: [], lists: {},
     accounts: Math.max(1, Number(opts.accounts) || 1),
-    from: isoAdd(today, -DAYS), to: isoAdd(today, -1)
+    from: isoAdd(last, 1 - DAYS), to: last
   };
   ctx.during = "segments.date BETWEEN '" + ctx.from + "' AND '" + ctx.to + "'";
   ctx.range = ctx.from + ' to ' + ctx.to;
@@ -1275,7 +1280,8 @@ function writeAll(results) {
     ['Exported at', Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm') + ' (' + tz + ')'],
     ['Part', PART ? String(PART) + ' of 2' : 'everything'],
     ['Accounts', String(accounts)],
-    ['Daily detail', (from && to ? from + ' to ' + to : 'none') + ' (' + DAYS + ' days, each account\'s time zone)'],
+    ['Daily detail', (from && to ? from + ' to ' + to : 'none') + ' (' + DAYS + ' days per account, in its own time zone, ' +
+      'ending on its last day settled ' + SETTLE_HOURS + ' hours; the dashboard adds up only days every account shown has)'],
     ['Search terms', 'days with clicks; top ' + SEARCH_TERMS_PER_ACCOUNT + ' per account by spend, the rest rolled up'],
     ['Keywords', 'top ' + KEYWORDS_PER_ACCOUNT + ' per account by spend, the rest rolled up; Quality Score is current'],
     ['Locations, landing pages', 'top ' + LOCATIONS_PER_ACCOUNT + ' and ' + LANDING_PER_ACCOUNT +

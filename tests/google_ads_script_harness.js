@@ -28,8 +28,10 @@ function iter(rows) {
   return { rows: rows, hasNext: function () { return i < rows.length; }, next: function () { return rows[i++]; } };
 }
 
-// The script reads daily figures over the last 90 days, ending yesterday (the fake "today" is 27 Sep 2026).
-var WINDOW = ["2026-06-29", "2026-09-26"];
+// The script reads daily figures over the last 90 days, ending yesterday (the fake "today" is 27 Sep 2026,
+// 10:30). "early": the run is at 02:30, before yesterday's figures settle, so the days end the day before.
+var early = process.argv.indexOf("early") > -1;
+var WINDOW = early ? ["2026-06-28", "2026-09-25"] : ["2026-06-29", "2026-09-26"];
 function isoAdd(iso, n) { var p = iso.split("-"); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] + n)).toISOString().slice(0, 10); }
 /** A daily query's rows: each fake row falls on two days a week apart (so every total is twice the row). */
 function dated(q, it) {
@@ -388,7 +390,7 @@ var sandbox = {
       var fixed = new Date(Date.UTC(2026, 8, 27, 10, 30));   // 27 Sep 2026, 10:30 in the account's zone
       var p = { yyyy: "2026", MM: "09", dd: "27", HH: "10", mm: "30" };
       if (fmt === "d") return "27";
-      if (fmt === "H") return "10";
+      if (fmt === "H") return early ? "2" : "10";
       if (fmt === "m") return "30";
       if (fmt === "M") return "9";
       if (fmt === "yyyy") return "2026";
