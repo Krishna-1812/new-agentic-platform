@@ -817,3 +817,91 @@ def test_landing_speed_row_without_metrics_does_not_fail_the_query():
     tabs = _harness()["tabs"]
     failed = [r for rows in tabs.values() for r in rows if r and r[0] == "Query failed"]
     assert not failed, failed
+
+
+# ── Days every account has, and how much of the campaign report a panel covers ──
+
+def _cell(start, days):
+    """A Daily cell: {day offset: cost}, 10 impressions and 1 click a day."""
+    return json.dumps({"v": 1, "from": start, "d": [[i, 10, 1, c, 0, 0] for i, c in sorted(days.items())]})
+
+
+def _devices_two_zones():
+    head = ["Account", "Currency", "Campaign", "Device", "Date range", "Daily"]
+    return {"devices": [head,
+                        ["Early", "INR", "E", "MOBILE", "2026-09-01 to 2026-09-28", _cell("2026-09-01", {26: 5.0, 27: 7.0})],
+                        ["Ahead", "INR", "A", "MOBILE", "2026-09-02 to 2026-09-29", _cell("2026-09-02", {25: 3.0, 26: 4.0, 27: 9.0})]]}
+
+
+def test_panels_add_up_only_the_days_every_account_shown_was_exported_for():
+    st = gai.load(_devices_two_zones())
+    v = gai.view(st, "2026-09-27", "2026-09-29")
+    assert sum(d["cost"] for d in v["devices"]) == 5.0 + 7.0 + 3.0 + 4.0, "29 Sep only exists for one account: left out"
+    assert v["meta"]["devices"]["cover"] == ["2026-09-27", "2026-09-28"] and v["meta"]["devices"]["ahead"] == "2026-09-29"
+    one = gai.view(st, "2026-09-27", "2026-09-29", account="Ahead")
+    assert sum(d["cost"] for d in one["devices"]) == 3.0 + 4.0 + 9.0, "one account alone keeps all of its days"
+    assert one["meta"]["devices"]["cover"] == ["2026-09-27", "2026-09-29"] and "ahead" not in one["meta"]["devices"]
+    assert gai.view(st, "2026-09-29", "2026-09-29")["meta"]["devices"]["cover"] is None
+    alone = gai.view(st, "2026-09-27", "2026-09-29", account="Early")["meta"]["devices"]
+    assert alone["cover"] == ["2026-09-27", "2026-09-28"] and "ahead" not in alone, "its own latest day, no other account's"
+    first = gai.view(st, "2026-09-01", "2026-09-28")["meta"]["devices"]["cover"]
+    assert first == ["2026-09-02", "2026-09-28"], "the later start counts too"
+
+
+def test_a_filter_that_leaves_no_rows_keeps_its_accounts_days():
+    st = gai.load(_devices_two_zones())
+    camps = {("Early", "E"): {"types": {"Search"}, "states": {"Enabled"}},
+             ("Ahead", "A"): {"types": {"Search"}, "states": {"Enabled"}}}
+    v = gai.view(st, "2026-09-29", "2026-09-29", account="Early", type_="Performance Max", camps=camps)
+    assert v["devices"] == [] and v["meta"]["devices"]["cover"] is None, "Early was never exported for 29 Sep"
+
+
+def _spend_row(account, campaign, typ, day, cost, cur="INR"):
+    return {"account": account, "campaign": campaign, "type": typ, "day": day, "cost": cost, "currency": cur}
+
+
+def _landing(cost_by_day):
+    head = ["Account", "Currency", "Landing page", "Date range", "Daily"]
+    return [head, ["Early", "INR", "https://example.com/", "2026-09-01 to 2026-09-28", _cell("2026-09-01", cost_by_day)]]
+
+
+def test_narrower_reports_say_how_much_of_the_campaign_reports_spend_they_cover():
+    rows = [_spend_row("Early", "E", "Search", "2026-09-27", 10.0), _spend_row("Early", "E", "Search", "2026-09-28", 10.0),
+            _spend_row("Early", "P", "Performance Max", "2026-09-28", 5.0), _spend_row("Early", "E", "Search", "2026-09-29", 99.0)]
+    spend = gai.Spend(rows)
+    v = gai.view(gai.load({"landing": _landing({26: 6.0, 27: 6.0})}), "2026-09-27", "2026-09-29", spend=spend)
+    c = v["coverage"]["landing"]
+    assert (c["shown"], c["spent"], c["cur"], c["scope"]) == (12.0, 25.0, "INR", "all"), \
+        "the report's spend over the panel's own days (27-28 Sep), every campaign type: the landing report is account-level"
+    assert "ads" not in v["coverage"], "no ads read at all and no rows: nothing to compare"
+    assert spend.total("2026-09-27", "2026-09-28", lambda x: x["type"] == "Search") == 20.0
+
+
+def test_coverage_is_left_out_when_the_report_misses_a_day_or_mixes_currencies():
+    st = gai.load({"landing": _landing({26: 6.0, 27: 6.0})})
+    late = gai.Spend([_spend_row("Early", "E", "Search", "2026-09-28", 10.0)])
+    assert gai.view(st, "2026-09-27", "2026-09-28", spend=late)["coverage"] == {}, "27 Sep is not in the report"
+    mixed = gai.Spend([_spend_row("Early", "E", "Search", "2026-09-27", 10.0),
+                       _spend_row("Other", "O", "Search", "2026-09-28", 10.0, cur="USD")])
+    assert gai.view(st, "2026-09-27", "2026-09-28", spend=mixed)["coverage"] == {}
+
+
+def test_converted_days_outside_the_campaign_report_are_flagged_as_estimated():
+    fx = gai.FX([_report("US", "2026-09-11", 10.0, 830.0, "USD"), _report("US", "2026-09-12", 10.0, 845.0, "USD")])
+    assert gai.build(_usd_devices(), fx=fx)["fx"]["estimated"] == {"from": "2026-09-11", "to": "2026-09-12"}
+    assert "estimated" not in gai.build(_usd_devices(), fx=fx, start="2026-09-11", end="2026-09-12")["fx"]
+
+
+def test_a_run_just_after_midnight_ends_the_day_before_yesterday():
+    # The harness checks every daily query's dates: at 02:30 they end on 25 Sep, not 26 Sep.
+    res = _harness("early")
+    about = {r[0]: r[1] for r in res["tabs"]["Insights - About"][1:] if len(r) > 1}
+    assert about["Daily detail"].startswith("2026-06-28 to 2026-09-25 (90 days")
+
+
+def test_the_page_shows_coverage_and_estimated_rates():
+    with open(os.path.join(ROOT, "static", "js", "google-ads-insights.js"), encoding="utf-8") as fh:
+        src = fh.read()
+    for key in ("terms", "locations", "landing", "ads"):
+        assert 'coverage("%s")' % key in src
+    assert "f.estimated" in src and "m.ahead" in src

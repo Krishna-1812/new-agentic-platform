@@ -4864,7 +4864,8 @@ def _google_ads_insights(rows=None, force: bool = False, **params):
     ins = google_ads_insights.fetch(_ads_sheet_service, GOOGLE_ADS_SHEET_ID,
                                     titles=_google_ads_cache.get("titles"), force=force,
                                     camps=_google_ads_campaigns(rows), camps_key=(id(rows), len(rows)),
-                                    fx=google_ads_insights.FX(rows), **params)
+                                    fx=google_ads_insights.FX(rows), spend=google_ads_insights.Spend(rows),
+                                    **params)
     ins = dict(ins)
     ins["symbols"] = {c: _CURRENCY_SYMBOLS.get(c, c + " ") for c in ins.get("currencies", [])}
     return ins

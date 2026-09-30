@@ -109,17 +109,38 @@
     if (m.scope === "current") return "Now";
     if (!m.dated) out = "Last 30 days, as exported (update the Google Ads script for date filtering)";
     else if (!m.cover) out = "No data for " + (r.from && r.to ? fmtRange(r.from, r.to) : "these dates") +
-      (m.from ? " (kept from " + fmtD(m.from, true) + " to " + fmtD(m.to, true) + ")" : "");
+      (m.from ? " (kept from " + fmtD(m.from, true) + " to " + fmtD(m.to, true) + ")" : "") +
+      (m.ahead ? "; not yet exported for every account shown, each being exported up to its own yesterday" : "");
     else {
       out = fmtRange(m.cover[0], m.cover[1]);
       // Fewer dates than picked: say why, so a shorter period is never mistaken for the whole one.
       var cut = [];
       if (r.from && r.from < m.cover[0]) cut.push("the export keeps " + (key === "changes" ? "changes" : "daily figures") + " from " + fmtD(m.cover[0], true));
-      if (r.to && r.to > m.cover[1]) cut.push("the latest exported day is " + fmtD(m.cover[1], true));
+      if (r.to && r.to > m.cover[1]) cut.push(m.ahead
+        ? "later days are not yet exported for every account shown"
+        : "the latest exported day is " + fmtD(m.cover[1], true));
       if (cut.length) out += " (" + cut.join("; ") + ")";
     }
     if (m.scope === "account" && narrowed()) out += " · account-level report: the campaign filters do not apply";
     return out;
+  }
+  /** How much of the campaign report's spend, over the same days, a panel from a narrower Google report
+   * accounts for, when it is not all of it: the figures and Google's reason. */
+  var SHORT = {
+    terms: "Google withholds search terms very few people searched",
+    locations: "the rest is spend Google's geographic report does not place",
+    landing: "the rest is spend Google's landing page report does not assign to a page",
+    ads: "the rest was spent by ads paused or removed since, which the list leaves out"
+  };
+  function coverage(key) {
+    var c = (INS.coverage || {})[key];
+    if (!c || !(c.spent > 0)) return "";
+    var gap = c.spent - c.shown;
+    if (Math.abs(gap) <= Math.max(1, c.spent * 0.005)) return "";
+    if (gap < 0) return "";
+    return " · " + money(c.shown, c.cur) + " of the " + money(c.spent, c.cur) + " spent" +
+      (c.scope === "search" ? " on Search campaigns" : "") + " in these dates (" +
+      Math.round(100 * c.shown / c.spent) + "%): " + SHORT[key];
   }
   function has(key) { return !INS.has || INS.has[key] !== false; }
   function mixedNote(t) { return t && t.mixed ? " · " + t.cur + " accounts only" : ""; }
@@ -480,7 +501,8 @@
     clear(kpis);
     // The server's totals: every search term read for these filters, plus each account's rolled-up rest.
     var t = termTotals(), cur = t.cur, rest = t.other_cost > 0, listed = t.cost - (t.other_cost || 0);
-    $("gai-terms-d").textContent = period("terms") + " · " + int(t.terms) + (rest ? "+" : "") + " search terms with clicks" + mixedNote(t);
+    $("gai-terms-d").textContent = period("terms") + " · " + int(t.terms) + (rest ? "+" : "") + " search terms with clicks" + mixedNote(t) +
+      coverage("terms");
     kpi(kpis, "Search terms", int(t.terms) + (rest ? "+" : ""), rest ? "listed, and smaller ones rolled up" : "with clicks");
     kpi(kpis, "Spend on them", money(t.cost, cur), int(t.clicks) + " clicks");
     kpi(kpis, "Converting terms", int(t.converting), num1(t.conv) + " conversions", "is-good");
@@ -975,7 +997,8 @@
     var list = G.list, total = G.cost, conv = G.conv;
     var tot = (L.totals || {}).__all__ || {};
     var noun = ui.locLevel === "city" ? " cities" : " regions";
-    $("gai-loc-d").textContent = period("locations") + " · " + int(G.spent) + noun + " with spend" + (mc.mixed ? " · " + mc.cur + " accounts only" : "");
+    $("gai-loc-d").textContent = period("locations") + " · " + int(G.spent) + noun + " with spend" + (mc.mixed ? " · " + mc.cur + " accounts only" : "") +
+      coverage("locations");
     var kpis = $("gai-loc-kpis"); clear(kpis);
     kpi(kpis, ui.locLevel === "city" ? "Cities with spend" : "Regions with spend", int(G.spent), money(total, mc.cur) + " spend");
     kpi(kpis, "Top " + (ui.locLevel === "city" ? "city" : "region"), list[0] ? list[0].name : "–",
@@ -1108,7 +1131,8 @@
     var tot = (INS.ads.totals || {}).__all__ || adTotals(rows);
     var cur = tot.cur, kpis = $("gai-ads-kpis");
     clear(kpis);
-    $("gai-ads-d").textContent = int(tot.ads) + " live ads and asset groups now · performance " + period("ads") + mixedNote(tot);
+    $("gai-ads-d").textContent = int(tot.ads) + " live ads and asset groups now · performance " + period("ads") + mixedNote(tot) +
+      coverage("ads");
     var weak = (tot.strength.POOR.cost || 0) + (tot.strength.AVERAGE.cost || 0);
     kpi(kpis, "Live ads", int(tot.ads), int(tot.rsa) + " search ads · " + int(tot.asset_groups) + " asset groups" +
       (tot.other ? " · " + int(tot.other) + " other" : ""));
@@ -1615,7 +1639,7 @@
     var t = { cost: T.cost, conv: T.conv, buckets: T.speed_cost.slice(),
               slow: T.speed_cost[0] + T.speed_cost[1] + T.speed_cost[2], slowN: T.speeds[0] + T.speeds[1] + T.speeds[2] };
     $("gai-lp-d").textContent = period("landing") + " · " + int(T.pages) + (T.other_cost ? "+" : "") + (T.pages === 1 ? " page" : " pages") +
-      (mc.mixed ? " · " + mc.cur + " accounts only" : "");
+      (mc.mixed ? " · " + mc.cur + " accounts only" : "") + coverage("landing");
     var kpis = $("gai-lp-kpis"); clear(kpis);
     var avg = T.avg_speed;
     kpi(kpis, "Pages with spend", int(T.pages) + (T.other_cost ? "+" : ""), money(t.cost, mc.cur) + " spend");
@@ -1728,6 +1752,8 @@
       out.push((n === 1 ? kept[c][0] + " is" : n + " accounts are") + " billed in " + c +
         " and the campaign report gives no rate for " + (n === 1 ? "it" : "them") + ": shown in " + c + ", never added to " + f.to + " totals.");
     });
+    if (f.estimated) out.push("The campaign report has rates from " + fmtD(f.estimated.from, true) + " to " + fmtD(f.estimated.to, true) +
+      "; converted days outside them use the nearest day's rate, an estimate.");
     return out.join(" ");
   }
   function renderAll() {
