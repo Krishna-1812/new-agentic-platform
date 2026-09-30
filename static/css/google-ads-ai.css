@@ -47,6 +47,26 @@
 .gar-versions li { margin: 4px 0; }
 .gar-versions button { font: inherit; color: var(--acc-tx); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
 
+/* The Google Doc panel. */
+.gar-doc-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 var(--sp-3); font-size: 16px; }
+.gar-doc-head a { color: var(--tx); font-weight: var(--fw-semi); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.gar-k2 { font-size: 12px; font-weight: var(--fw-medium); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--tx3); }
+.gar-doc-state { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 var(--sp-3); font-size: 14px; line-height: 1.55; color: var(--tx2); }
+.gar-preview { margin: 0 0 var(--sp-3); }
+.gar-preview summary { cursor: pointer; font-size: 14px; color: var(--tx2); }
+.gar-preview pre { margin: var(--sp-2) 0 0; max-height: 360px; overflow: auto; white-space: pre-wrap; word-break: break-word;
+  font: 13px/1.6 var(--font-body); color: var(--tx); background: var(--bg); border-radius: 14px; padding: 14px 16px; }
+.gar-steps-how { margin: 0 0 var(--sp-4); padding-left: 20px; font-size: 14px; line-height: 1.6; color: var(--tx2); max-width: 72ch; }
+.gar-steps-how li + li { margin-top: 6px; }
+.gar-steps-how b { color: var(--tx); font-weight: var(--fw-semi); word-break: break-all; }
+.gar-link { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+.gar-input { flex: 1 1 280px; min-width: 0; font: 14px var(--font-body); color: var(--tx); background: var(--bg);
+  border: 1px solid var(--s3); border-radius: 999px; padding: 11px 16px; }
+.gar-input:focus { outline: 2px solid var(--acc); outline-offset: 1px; border-color: transparent; }
+.gar-alt { margin-top: var(--sp-5); border-top: 1px solid var(--s2); padding-top: var(--sp-4); }
+.gar-alt > summary { cursor: pointer; font-size: 14px; color: var(--tx2); }
+.gar-alt[open] > summary { margin-bottom: var(--sp-3); }
+
 .gar-list { list-style: none; margin: 0; padding: 0; }
 .gar-list li + li { border-top: 1px solid var(--s2); }
 .gar-list button {

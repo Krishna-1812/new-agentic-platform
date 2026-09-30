@@ -11,6 +11,7 @@ Tables:
                    the latest version per account is the current one.
   gads_ai_reviews  one row per review: the account, who asked, where it has
                    got to, the finished report and what it cost.
+  gads_ai_settings a few named values set from the page (the linked context doc).
 
 A review whose heartbeat stops (the process was redeployed mid-run) is marked
 failed when next read, so a page never waits on a run that will not finish.
@@ -28,7 +29,7 @@ log = logging.getLogger(__name__)
 
 STATUSES = ("queued", "running", "complete", "failed")
 REVIEW_FIELDS = ("status", "stage", "report", "cost", "error", "heartbeat_at", "finished_at",
-                 "period_from", "period_to", "stats")
+                 "period_from", "period_to", "stats", "brief_id")
 JSON_FIELDS = ("report", "cost", "stats")
 STALE_AFTER = timedelta(minutes=12)   # a live run beats at least every minute
 
@@ -100,6 +101,12 @@ def _ensure(conn):
                     heartbeat_at TIMESTAMPTZ,
                     finished_at TIMESTAMPTZ)""")
             cur.execute("CREATE INDEX IF NOT EXISTS gads_ai_reviews_account ON gads_ai_reviews (account, id DESC)")
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS gads_ai_settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL,
+                    email TEXT NOT NULL,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT now())""")
         conn.commit()
         _TABLES_READY = True
 
@@ -122,7 +129,7 @@ def _review_row(r):
 
 
 # ── In-process ───────────────────────────────────────────────────────────────
-_MEM = {"briefs": [], "reviews": []}
+_MEM = {"briefs": [], "reviews": [], "settings": {}}
 _MEM_LOCK = threading.Lock()
 
 
@@ -130,6 +137,35 @@ def reset_memory():
     with _MEM_LOCK:
         _MEM["briefs"].clear()
         _MEM["reviews"].clear()
+        _MEM["settings"].clear()
+
+
+# ── Settings ─────────────────────────────────────────────────────────────────
+def get_setting(key):
+    """{"value", "email", "updated_at"} or None."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            v = _MEM["settings"].get(key)
+            return dict(v) if v else None
+    with _pg() as conn:
+        _ensure(conn)
+        with conn.cursor() as cur:
+            cur.execute("SELECT value, email, updated_at FROM gads_ai_settings WHERE key = %s", (key,))
+            r = cur.fetchone()
+            return {"value": r[0], "email": r[1], "updated_at": _iso(r[2])} if r else None
+
+
+def set_setting(key, value, email):
+    if backend() == "memory":
+        with _MEM_LOCK:
+            _MEM["settings"][key] = {"value": value, "email": email, "updated_at": _iso(_now())}
+            return
+    with _pg() as conn:
+        _ensure(conn)
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO gads_ai_settings (key, value, email) VALUES (%s, %s, %s) "
+                        "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, email = EXCLUDED.email, "
+                        "updated_at = now()", (key, value, email))
 
 
 # ── Briefs ───────────────────────────────────────────────────────────────────

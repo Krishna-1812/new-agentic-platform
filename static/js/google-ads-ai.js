@@ -8,8 +8,9 @@
   "use strict";
   var API = "/api/dashboards/google-ads/ai";
   var DATA = JSON.parse(document.getElementById("gar-data").textContent || "{}");
-  var STAGES = [["pack", "Reading every campaign in the account"], ["targets", "Reading the brief"],
-                ["checks", "Measuring the brief's targets"], ["analysis", "Writing the review (thinking; a few minutes)"]];
+  var STAGES = [["context", "Reading the account's notes in the Google Doc"],
+                ["pack", "Reading every campaign in the account"], ["targets", "Listing the targets in the notes"],
+                ["checks", "Measuring the targets in the account data"], ["analysis", "Writing the review (thinking; a few minutes)"]];
   var $ = function (id) { return document.getElementById(id); };
   var state = { account: $("gar-account") ? $("gar-account").value : "", brief: null, saved: "", reviews: [],
                 shown: null, poll: null, seq: 0 };
@@ -72,15 +73,18 @@
     var t = $("gar-brief");
     t.value = b ? b.text : "";
     state.saved = t.value;
-    $("gar-brief-d").textContent = b ? "Saved " + when(b.created_at) + " by " + b.email + (b.filename ? " · from " + b.filename : "")
-                                     : "No brief yet";
+    $("gar-brief-d").textContent = b ? "Last version " + when(b.created_at) + " by " + (b.email === "google-doc" ? "the Google Doc" : b.email) +
+                                       (b.filename ? " · " + b.filename : "") : "No notes written here.";
+    if (b && b.email === "google-doc") t.value = "";   // a snapshot of the doc is not page notes
+    state.saved = t.value;
     var box = $("gar-versions-box"), list = $("gar-versions");
     clear(list);
-    var older = (history || []).slice(1);
+    var older = (history || []).slice(b && b.email === "google-doc" ? 0 : 1);
     box.hidden = !older.length;
     older.forEach(function (v) {
       var li = el("li");
-      var btn = el("button", "", when(v.created_at) + " · " + v.email + (v.filename ? " · " + v.filename : ""));
+      var btn = el("button", "", when(v.created_at) + " · " + (v.email === "google-doc" ? "read from the Google Doc" : v.email) +
+                            (v.filename ? " · " + v.filename : ""));
       btn.type = "button";
       btn.addEventListener("click", function () {
         send(API + "/brief?id=" + v.id).then(function (j) {
@@ -128,6 +132,109 @@
     if (opt) opt.textContent = state.account;
   }
 
+  // ── The Google Doc ─────────────────────────────────────────────────────
+  function linkForm(box, out, current) {
+    var f = el("form", "gar-link");
+    var lab = el("label", "gar-sr", "Google Doc link");
+    lab.htmlFor = "gar-doc-url";
+    var inp = el("input", "gar-input");
+    inp.id = "gar-doc-url"; inp.type = "url"; inp.placeholder = "https://docs.google.com/document/d/…";
+    inp.value = current || "";
+    var go = el("button", "gad-btn gad-btn--line", current ? "Use this doc" : "Link the doc");
+    go.type = "submit";
+    f.appendChild(lab); f.appendChild(inp); f.appendChild(go);
+    var note = el("p", "gar-msg");
+    f.addEventListener("submit", function (e) {
+      e.preventDefault();
+      note.textContent = "Checking the doc…"; note.classList.remove("is-bad");
+      send(API + "/context-doc", { method: "POST", headers: { "Content-Type": "application/json" },
+                                   body: JSON.stringify({ url: inp.value, account: state.account }) })
+        .then(function (j) {
+          if (!j.ok) { note.textContent = j.error || "The doc could not be linked."; note.classList.add("is-bad"); return; }
+          drawDoc(j);
+        });
+    });
+    box.appendChild(f);
+    box.appendChild(note);
+  }
+
+  function steps(box, out) {
+    var ol = el("ol", "gar-steps-how");
+    ol.appendChild(el("li", "", "Keep one Google Doc for all accounts. Give each account a heading (or a tab) with its name exactly as in Google Ads, and write its notes under it: objectives, targets, locations, audiences, what the account manager does, and updates as things change. A heading or tab called “General” is read for every account."));
+    var li = el("li");
+    li.appendChild(document.createTextNode("Share the doc with "));
+    li.appendChild(el("b", "", out.sa_email || "the dashboard's Google service account"));
+    li.appendChild(document.createTextNode(" as a Viewer (the same account that reads the Google Ads sheet)."));
+    ol.appendChild(li);
+    ol.appendChild(el("li", "", "Paste the doc's link below. Each review reads the doc fresh, so keep editing it as things change."));
+    box.appendChild(ol);
+  }
+
+  function drawDoc(out) {
+    var box = $("gar-doc");
+    clear(box);
+    state.ctx = out;
+    var d = $("gar-ctx-d");
+    if (!out || !out.doc) {
+      d.textContent = "No Google Doc linked yet";
+      box.appendChild(el("p", "gar-help", "The review reads each account's notes from one running Google Doc that you keep up to date."));
+      steps(box, out || {});
+      linkForm(box, out || {}, "");
+      $("gar-alt").open = false;
+      return;
+    }
+    var head = el("p", "gar-doc-head");
+    var a = el("a", "", out.doc.title || "The linked Google Doc");
+    a.href = out.doc.url; a.target = "_blank"; a.rel = "noopener";
+    head.appendChild(el("span", "gar-k2", "Google Doc"));
+    head.appendChild(a);
+    box.appendChild(head);
+    d.textContent = out.doc.linked_by ? "Linked by " + out.doc.linked_by : "";
+    if (out.error) {
+      box.appendChild(el("div", "gar-fail", out.error));
+    } else if (out.context) {
+      var c = out.context, st = el("p", "gar-doc-state");
+      if (c.found) {
+        st.appendChild(pill("followed"));
+        st.lastChild.textContent = "Found";
+        st.appendChild(document.createTextNode(" " + state.account + ": " + c.where.join(", ") +
+          (c.shared_where.length ? " · plus shared notes (" + c.shared_where.join(", ") + ")" : "")));
+      } else {
+        st.appendChild(pill("not_followed"));
+        st.lastChild.textContent = "Not in the doc";
+        st.appendChild(document.createTextNode(" Nothing in the doc names “" + state.account + "”. Add a heading or tab with that name" +
+          (c.shared_where.length ? " (only the shared notes will be read until then)." : ".")));
+      }
+      box.appendChild(st);
+      if (c.text) {
+        var det = el("details", "gar-preview");
+        det.appendChild(el("summary", "", "What the review will read (" + c.text.length.toLocaleString("en-IN") + " characters)"));
+        det.appendChild(el("pre", "", c.text));
+        box.appendChild(det);
+      }
+      if (out.coverage) {
+        var cv = out.coverage, total = cv["with"].length + cv.without.length;
+        box.appendChild(el("p", "gad-note", "The doc has notes for " + cv["with"].length + " of " + total + " accounts" +
+          (cv.without.length ? ". Missing: " + cv.without.join(", ") + "." : ".")));
+      }
+    }
+    var bar = el("div", "gar-bar");
+    var again = el("button", "gad-btn gad-btn--line", "Read the doc again");
+    again.type = "button";
+    again.addEventListener("click", function () {
+      again.disabled = true;
+      send(API + "/context?refresh=1&account=" + encodeURIComponent(state.account)).then(drawDoc);
+    });
+    var change = el("button", "gad-btn gad-btn--line", "Change the doc");
+    change.type = "button";
+    var holder = el("div");
+    change.addEventListener("click", function () { clear(holder); steps(holder, out); linkForm(holder, out, out.doc.url); change.hidden = true; });
+    bar.appendChild(again); bar.appendChild(change);
+    box.appendChild(bar);
+    box.appendChild(holder);
+    $("gar-alt").open = !!(out.context && !out.context.found && !out.error && ($("gar-brief").value || "").trim());
+  }
+
   // ── Reviews list ───────────────────────────────────────────────────────
   function showList() {
     var list = $("gar-list");
@@ -159,10 +266,13 @@
     clear(box);
     box.appendChild(el("div", "gar-empty", "Loading…"));
     try { history.replaceState(null, "", "?account=" + encodeURIComponent(account)); } catch (e) { /* not essential */ }
+    $("gar-doc").textContent = "Reading the Google Doc…";
     Promise.all([send(API + "/brief?account=" + encodeURIComponent(account)),
-                 send(API + "/reviews?account=" + encodeURIComponent(account))]).then(function (res) {
+                 send(API + "/reviews?account=" + encodeURIComponent(account)),
+                 send(API + "/context?account=" + encodeURIComponent(account))]).then(function (res) {
       if (my !== state.seq) return;
       var b = res[0], r = res[1];
+      drawDoc(res[2]);
       showBrief(b.ok ? b.brief : null, b.ok ? b.history : []);
       if (!b.ok) msg(b.error || "The brief could not be read.", true);
       state.reviews = r.ok ? r.reviews : [];
@@ -170,7 +280,7 @@
       var latest = state.reviews.find(function (x) { return x.status === "complete" || x.status === "running" || x.status === "queued"; })
                    || state.reviews[0];
       if (latest) openReview(latest.id);
-      else { clear(box); box.appendChild(el("div", "gar-empty", "No review yet for this account. Save a brief, then run the review.")); }
+      else { clear(box); box.appendChild(el("div", "gar-empty", "No review yet for this account.")); }
     });
   }
 
@@ -253,6 +363,16 @@
     parent.appendChild(p);
   }
 
+  function contextLine(R) {
+    var c = R.context || {};
+    if (c.kind === "doc") {
+      if (c.found) return "Judged against the account's notes in the Google Doc “" + (c.title || "") + "” (" + (c.where || []).join(", ") + "), as they read at the time. ";
+      if (c.page_notes) return "The Google Doc had no part for this account: judged against the notes written on this page. ";
+      return "The Google Doc had no part for this account: judged on the account's own numbers" + ((c.shared || []).length ? " and the shared notes" : "") + ". ";
+    }
+    if (R.has_brief) return "Judged against the notes saved at the time. ";
+    return "No notes on the account: judged on its own numbers. ";
+  }
   function drawReport(r) {
     var R = r.report || {}, box = $("gar-review");
     clear(box);
@@ -276,7 +396,7 @@
     meta.appendChild(document.createTextNode(
       (per ? "Last 30 days: " + day(per[0]) + " – " + day(per[1]) + (R.period.previous_30_days ? ", against the 30 before" : "") + ". " : "") +
       (R.currency ? "Money in " + R.currency + ". " : "") +
-      (R.has_brief ? "Judged against the brief saved at the time. " : "No brief was saved: judged on the account's own numbers. ") +
+      contextLine(R) +
       "Requested by " + r.email + (r.cost_usd != null ? " · Claude usage US$" + r.cost_usd.toFixed(2) : "") + "."));
     box.appendChild(meta);
 
