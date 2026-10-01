@@ -12,9 +12,9 @@ Each account has its own part of it, found by name:
 A tab or heading called "General", "All accounts", "Agency", "Common" or "Overall"
 is shared: it goes with every account's part (house rules, reporting cadence...).
 A heading or tab belongs to the account whose name it contains; where it contains
-more than one, the longest name wins; a shortened name (a tab titled "Hare Krishna" for
-"Hare Krishna Movement Charitable Foundation Hyderabad") counts when exactly one account's
-name starts with it.
+more than one, the longest name wins; a tab title may shorten the name ("Hare Krishna" for
+"Hare Krishna Movement Charitable Foundation Hyderabad") when exactly one account's name starts
+with it. Headings must give the account's name in full.
 
 Headings are kept as Markdown (#, ##) and tables as rows, so the review sees the
 doc's structure. Read with the same service account that reads the Google Ads
@@ -152,10 +152,12 @@ def _norm(s):
     return " ".join(re.sub(r"[^a-z0-9]+", " ", (s or "").lower()).split())
 
 
-def owner(text, accounts, cids=None):
+def owner(text, accounts, cids=None, shortened=False):
     """The account a heading or tab title names, or None: the longest account name it contains; else
-    its customer ID; else, for a shortened name (a tab title such as "Hare Krishna"), the one account
-    whose name starts with it, word for word (at least 4 letters, and never when two accounts do)."""
+    its customer ID; else, with `shortened` (tab titles only), the one account whose name starts with
+    it word for word, such as "Hare Krishna" (at least 4 letters, never when two accounts do). Headings
+    and lines inside a tab never match a shortened name: an ordinary heading such as "Outcomes" must not
+    be read as an account called "Outcomes Digital"."""
     t = " %s " % _norm(text)
     best = None
     for a in accounts:
@@ -168,7 +170,7 @@ def owner(text, accounts, cids=None):
             d = re.sub(r"\D", "", cid or "")
             if len(d) >= 8 and d in digits:
                 return a
-    if best is None:
+    if best is None and shortened:
         short = _norm(text)
         if len(short.replace(" ", "")) >= 4:
             starts = [a for a in accounts if (_norm(a) + " ").startswith(short + " ")]
@@ -190,7 +192,7 @@ def parts(doc, accounts, cids=None):
     """{"accounts": {account: [(where, text)]}, "shared": [(where, text)]} for the whole doc."""
     found, shared = {}, []
     for title, lines in tabs(doc):
-        who = owner(title, accounts, cids) if title else None
+        who = owner(title, accounts, cids, shortened=True) if title else None
         if who:
             found.setdefault(who, []).append(("tab “%s”" % title, _md(lines)))
             continue
