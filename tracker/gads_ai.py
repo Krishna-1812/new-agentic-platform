@@ -389,8 +389,8 @@ def _count(values):
 
 
 def _data_notes(now, cur, currency):
-    notes = ["Money is in %s. Accounts billed in another currency are converted at Google Ads' own daily "
-             "rates (from the campaign report)." % currency,
+    notes = ["Money is in %s. Accounts billed in another currency are converted at the same daily exchange "
+             "rates as the campaign report." % currency,
              "Conversions for the last few days can still rise as late conversions are recorded.",
              "Quality Score, ad strength and approval, optimization score and recommendations are current, not "
              "for the period."]

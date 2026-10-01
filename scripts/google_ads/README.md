@@ -42,6 +42,12 @@ Every panel on the dashboard follows every filter above it: the dates (Last day,
 - **How much of the spend a panel covers.** Google's search terms, geographic, landing page and ad reports do not always add up to the campaigns' cost: rare search terms are withheld, some clicks are not placed or assigned to a page, and ads paused or removed since are not listed. Where the campaign report has every day shown, these panels say how much of its spend they account for, e.g. "₹6,10,591 of the ₹9,37,265 spent on Search campaigns in these dates (65%)".
 - **Fixed windows** that Google only reports as a whole: served ad combinations, landing-page speed score and mobile-friendly clicks (last 30 days), and change history (last 28 days; the date filter picks the changes inside it).
 
+## The campaign report script (optional)
+
+`export_campaign_report.js` writes the **Daily Campaign Performance** tab, the campaign report the dashboard's main panels read, so it no longer has to come from a report scheduled in the Google Ads interface. It writes the same columns and the same title and date rows, one row per campaign per day with an impression, for the last `DAYS` days (30 by default) ending on each account's own yesterday. Install it in the manager account like the insights script, schedule it daily before the insights script, and **turn off the Google Ads scheduled report** that filled the tab, so the two never overwrite each other.
+
+One difference: the Google Ads API has no converted-currency cost (Google's own conversion exists only in reports built in the Google Ads interface). The script converts each account into the manager account's currency at the **European Central Bank's daily reference rates** (from frankfurter.app; a weekend or holiday takes the last published rate), and US-dollar-pegged currencies (AED, SAR, QAR, OMR, BHD, JOD) through their fixed rate. Row 2 says so, and the dashboard's currency notes then name these rates instead of Google's. They can differ from Google's by a fraction of a percent. A currency with no rate stays in its own currency and the dashboard flags it.
+
 ## Currencies
 
 Accounts can be billed in different currencies. The script writes each account's figures in its own currency (the "Currency" column), exactly as Google reports them. The dashboard then shows everything in the campaign report's currency, using **Google's own rates**:
