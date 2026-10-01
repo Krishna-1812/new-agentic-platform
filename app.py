@@ -4868,6 +4868,7 @@ def _google_ads_insights(rows=None, force: bool = False, **params):
                                     **params)
     ins = dict(ins)
     ins["symbols"] = {c: _CURRENCY_SYMBOLS.get(c, c + " ") for c in ins.get("currencies", [])}
+    ins["rate_source"] = _google_ads_cache.get("rate_source") or "google"
     return ins
 
 
@@ -17613,6 +17614,10 @@ def _fetch_google_ads_rows(force: bool = False):
         return []
 
     headers = [str(h).strip().lower() for h in raw_rows[header_idx]]
+    # Which exchange rates the converted columns use: Google's own (a Google Ads report), or the
+    # European Central Bank's (scripts/google_ads/export_campaign_report.js says so above the header).
+    above = " ".join(str(c) for r in raw_rows[:header_idx] for c in r)
+    _google_ads_cache["rate_source"] = "ecb" if "European Central Bank" in above else "google"
 
     def _col(row, *names):
         for name in names:

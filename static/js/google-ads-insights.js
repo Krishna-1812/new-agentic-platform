@@ -1745,7 +1745,9 @@
     Object.keys(conv).forEach(function (c) {
       var n = conv[c].length;
       out.push((n === 1 ? conv[c][0] + " is" : n + " accounts are") + " billed in " + c + ": converted to " + f.to +
-        " at Google Ads’ own daily rates, from the campaign report above.");
+        (INS.rate_source === "ecb"
+          ? " at the European Central Bank daily reference rates the campaign report above uses."
+          : " at Google Ads’ own daily rates, from the campaign report above."));
     });
     Object.keys(kept).forEach(function (c) {
       var n = kept[c].length;
