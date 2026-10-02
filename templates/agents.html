@@ -34,8 +34,6 @@
   'signals':      'Signals',
   'solutions':    'Solutions',
   'why':          'How we compare',
-  'privacy':      'Privacy',
-  'terms':        'Terms',
   'integrations': 'Integrations',
   'resources':    'Resources',
   'industries':   'Industries',
@@ -297,7 +295,6 @@
           <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>Your data, your control</h4><p>We do not sell your data. Request an export or a deletion at any time.</p></div></div>
           <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>Handled with care</h4><p>Encrypted connections, least-privilege access and reviewed data handling.</p></div></div>
         </div>
-        <div class="btns" style="margin-top:var(--s6)"><a class="btn btn-3 lk-d" href="/privacy">Read the privacy policy <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>
       </div>
     </div>
   </section>
@@ -904,34 +901,6 @@
   {% set cta_p = 'The fastest way to test any of this is to point it at the companies you already care about.' %}
   {% include "_press_cta.html" %}
 
-{# ═══════════════════════════════ LEGAL ═══════════════════════════════ #}
-{% elif page == 'privacy' or page == 'terms' %}
-
-  <header class="wrap hero">
-    <span class="lbl rv fade">{% if page == 'privacy' %}Privacy policy{% else %}Terms of use{% endif %}</span>
-    <h1 class="d2 rv"><span class="ln"><span>{% if page == 'privacy' %}Privacy <span class="it">policy.</span>{% else %}Terms of <span class="it">use.</span>{% endif %}</span></span></h1>
-    <p class="lead rv fade" style="margin-top:var(--s5)">{% if page == 'privacy' %}How {{ brand.legal_entity }} collects, uses and protects information across our websites and services.{% else %}The terms governing your access to {{ brand.legal_entity }}&rsquo;s websites and services.{% endif %}</p>
-    <p class="legal-meta rv fade" style="margin-top:var(--s4)">Last updated August 6, 2026</p>
-  </header>
-
-  <section class="wrap sec-sm">
-    <span class="rule rule-ink rv"></span>
-    <div class="legal" style="margin-top:var(--s7)">
-      <aside class="legal-side">
-        <span class="lbl" style="display:block;margin-bottom:var(--s4)">On this page</span>
-        <nav class="foot-col" id="legalNav" aria-label="Document sections"></nav>
-      </aside>
-      <div class="legal-body">
-        {% if page == 'privacy' %}{% include "_press_privacy.html" %}{% else %}{% include "_press_terms.html" %}{% endif %}
-      </div>
-    </div>
-  </section>
-
-  {% set cta_h = 'Need a Data Processing Agreement?' %}
-  {% set cta_p = 'We will share our DPA and a security overview on request.' %}
-  {% set cta_interest = 'Security & DPA' %}
-  {% include "_press_cta.html" %}
-
 {# ════════════════════════════ INTEGRATIONS ═══════════════════════════ #}
 {% elif page == 'integrations' %}
 
@@ -994,7 +963,6 @@
       <a class="cell" href="/agents"><span class="lbl">Directory</span><h3 style="margin-top:var(--s4)">The {{ brand.agents_plural|lower }}</h3><p>What each agent does, how it works, and who on your team it helps.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
       <a class="cell" href="/platform"><span class="lbl">Explainer</span><h3 style="margin-top:var(--s4)">How intent scoring works</h3><p>Type, severity, recency and stacking &mdash; and why one number beats five dashboards.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
       <a class="cell" href="/why-intelligence"><span class="lbl">Comparison</span><h3 style="margin-top:var(--s4)">How we compare</h3><p>A sourced, footnoted look at the alternatives, including where they are ahead.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="/privacy"><span class="lbl">Policy</span><h3 style="margin-top:var(--s4)">How we handle data</h3><p>What we collect, what we do not, and the controls you have over it.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
       <a class="cell" href="#" data-demo data-interest="The 2026 report" data-prefill="I'd like the State of Buying Signals 2026 report."><span class="lbl">Report</span><h3 style="margin-top:var(--s4)">State of buying signals 2026</h3><p>Ask us for a copy and we will send it over.</p><span class="more">Request it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
     </div>
   </section>
@@ -1216,12 +1184,9 @@
       </div>
       <div class="foot-col"><h5>Company</h5><a class="lk-d" href="/solutions">Solutions</a></div>
       <div class="foot-col"><h5>Resources</h5>
-        <a class="lk-d" href="/resources">Insights</a><a class="lk-d" href="/privacy">Privacy</a>
-        <a class="lk-d" href="/terms">Terms</a><a class="lk-d" href="/login">Log in</a>
+        <a class="lk-d" href="/resources">Insights</a><a class="lk-d" href="/login">Log in</a>
       </div>
     </div>
-    {% else %}
-    <div class="foot-links"><a class="lk-d" href="/privacy">Privacy</a><a class="lk-d" href="/terms">Terms</a></div>
     {% endif %}
   </div>
   <div class="wrap foot-bottom">
@@ -1422,19 +1387,6 @@
         g.style.display = g.querySelector('.srow:not([style*="none"])') ? '' : 'none';
       });
       if (sigNull) sigNull.style.display = shown ? 'none' : 'block';
-    });
-  }
-
-  /* ── legal contents ─────────────────────────────────────────────────
-     Built from the document rather than typed beside it, so the sidebar
-     cannot drift out of step with the policy it indexes. */
-  var lnav = document.getElementById('legalNav');
-  if (lnav){
-    document.querySelectorAll('.legal-body h2').forEach(function(h, i){
-      var id = 'sec-' + i; h.id = id;
-      var a = document.createElement('a');
-      a.href = '#' + id; a.textContent = h.textContent; a.className = 'lk-d';
-      lnav.appendChild(a);
     });
   }
 

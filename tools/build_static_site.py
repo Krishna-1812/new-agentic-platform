@@ -137,8 +137,6 @@ def routes(app_mod):
         ("/why-intelligence", "why-intelligence"),
         ("/integrations", "integrations"),
         ("/resources", "resources"),
-        ("/privacy", "privacy"),
-        ("/terms", "terms"),
         ("/login", "login"),
         ("/login-preview", "login-preview"),
         ("/industries", "industries"),

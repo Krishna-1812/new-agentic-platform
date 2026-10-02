@@ -242,7 +242,7 @@
       el.setAttribute("aria-label", "Cookie consent");
       el.innerHTML =
         '<div class="k">Cookies</div>' +
-        '<div class="t">We use one first-party cookie for anonymous analytics. No ad networks, no third parties. <a href="/privacy">Privacy</a></div>' +
+        '<div class="t">We use one first-party cookie for anonymous analytics. No ad networks, no third parties.</div>' +
         '<div class="r"><button class="ok" id="p2ccY">Allow</button><button class="no" id="p2ccN">Decline</button></div>';
       document.head.appendChild(st);
       document.body.appendChild(el);

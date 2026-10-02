@@ -18,7 +18,7 @@
 <link rel="apple-touch-icon" href="/new-agentic-platform/static/favicon.png?v=7">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Zalando+Sans:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/new-agentic-platform/static/css/press.css?v=3"><script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' vt');</script>
+<link rel="stylesheet" href="/new-agentic-platform/static/css/press.css?v=4"><script>document.documentElement.className+=' js'+((window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':' vt');</script>
 </head>
 <body data-page="agents">
 
@@ -421,8 +421,7 @@
       </div>
       <div class="foot-col"><h5>Company</h5><a class="lk-d" href="/new-agentic-platform/solutions/">Solutions</a></div>
       <div class="foot-col"><h5>Resources</h5>
-        <a class="lk-d" href="/new-agentic-platform/resources/">Insights</a><a class="lk-d" href="/new-agentic-platform/privacy/">Privacy</a>
-        <a class="lk-d" href="/new-agentic-platform/terms/">Terms</a><a class="lk-d" href="/new-agentic-platform/login/">Log in</a>
+        <a class="lk-d" href="/new-agentic-platform/resources/">Insights</a><a class="lk-d" href="/new-agentic-platform/login/">Log in</a>
       </div>
     </div>
     
@@ -601,19 +600,6 @@
         g.style.display = g.querySelector('.srow:not([style*="none"])') ? '' : 'none';
       });
       if (sigNull) sigNull.style.display = shown ? 'none' : 'block';
-    });
-  }
-
-  /* ── legal contents ─────────────────────────────────────────────────
-     Built from the document rather than typed beside it, so the sidebar
-     cannot drift out of step with the policy it indexes. */
-  var lnav = document.getElementById('legalNav');
-  if (lnav){
-    document.querySelectorAll('.legal-body h2').forEach(function(h, i){
-      var id = 'sec-' + i; h.id = id;
-      var a = document.createElement('a');
-      a.href = '#' + id; a.textContent = h.textContent; a.className = 'lk-d';
-      lnav.appendChild(a);
     });
   }
 

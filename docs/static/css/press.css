@@ -281,6 +281,10 @@ html:not(.js) .fade      { opacity: 1; }
   text-wrap: balance;
 }
 .d1 { font-size: var(--fs-hero); }
+/* The hero's 46px floor is wider than a 360px phone's column: "Know" sat
+   alone on the first line and the headline ran to five. Scaling down on the
+   narrowest phones keeps it to three lines from 320px up. */
+@media (max-width: 380px) { .d1 { font-size: clamp(34px, 11.1vw, 40px); } }
 .d2 { font-size: var(--fs-h1);   }
 .d3 { font-size: var(--fs-h2);   }
 .d4 { font-size: var(--fs-h3); line-height: var(--lh-snug); letter-spacing: var(--ls-h);
