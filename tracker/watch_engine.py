@@ -212,8 +212,18 @@ def run_check(target_id, *, capture=None):
                                        _storable(report), composite_id=composite_id)
     _retire(previous["_snapshot"])
     now = datetime.now(timezone.utc)
+    # The ignored and learned areas were drawn on the old baseline; move them
+    # to where their content is on the new one.
+    moved = {}
+    if settings["ignore"]:
+        moved["ignore"] = watch_detect.carry(settings["ignore"], report, keep_removed=True)
+    learned = settings.get("learned") or {}
+    if learned.get("rects"):
+        stored = dict(target.get("settings") or {})
+        stored["learned"] = dict(learned, rects=watch_detect.carry(learned["rects"], report))
+        moved["settings"] = stored
     watch_store.update_target(target_id, baseline_id=sid, state="changed", fail_count=0,
-                              last_change_at=now, last_check_at=now)
+                              last_change_at=now, last_check_at=now, **moved)
     watch_store.finish_check(check_id, outcome="changed", snapshot_id=sid, change_id=change_id, **facts)
     return {"check_id": check_id, "outcome": "changed", "change_id": change_id, "report": report}
 
@@ -230,6 +240,6 @@ def _storable(report):
         if hasattr(v, "item") and not isinstance(v, (bytes, str)):
             return v.item()
         return v
-    out = fix(report)
+    out = fix({k: v for k, v in report.items() if not k.startswith("_")})
     json.dumps(out)
     return out

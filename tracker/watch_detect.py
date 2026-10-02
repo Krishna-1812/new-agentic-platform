@@ -49,12 +49,16 @@ def compare(previous, current, settings=None):
     ignore = list(s.get("ignore") or []) + list(learned.get("rects") or [])
     skip = learned.get("sels") or []
 
+    # Ignored areas are drawn on the old page. The old page's blocks are
+    # tested against them as they are; the new page's are first mapped back
+    # to where they were (see watch_visual.compare), which needs the visual
+    # alignment, so the visual comparison runs first.
     blocks_prev = watch_text.select(previous.get("blocks") or [], area_prev, ignore, skip)
-    blocks_now = watch_text.select(current.blocks, area_now, ignore, skip)
-    text = watch_text.diff(blocks_prev, blocks_now) if s["text"] else None
+    unfiltered_now = watch_text.select(current.blocks, area_now, (), skip)
 
     visual = None
     noise_now = None
+    rows = None
     if s["visual"] and previous.get("screenshot") and current.screenshot:
         if current.control:
             noise_now = watch_visual.noise_cells(current.screenshot, current.control)
@@ -62,7 +66,10 @@ def compare(previous, current, settings=None):
             previous["screenshot"], current.screenshot, after_control=current.control,
             before_noise=watch_visual.unpack_grid(previous.get("noise")) if isinstance(
                 previous.get("noise"), dict) else previous.get("noise"),
-            ignore=ignore, area=area_now or area_prev, shifts=shifts(blocks_prev, blocks_now))
+            ignore=ignore, area=area_now or area_prev, shifts=shifts(blocks_prev, unfiltered_now))
+        rows = visual.pop("rows", None)
+    blocks_now = [b for b in unfiltered_now if not _ignored_now(b, ignore, rows)]
+    text = watch_text.diff(blocks_prev, blocks_now) if s["text"] else None
 
     facts = {}
     if (previous.get("title") or "") != (current.title or "") and not s["area"]:
@@ -81,10 +88,43 @@ def compare(previous, current, settings=None):
         "outcome": "changed" if changed else "same",
         "text": text, "visual": visual, "facts": facts, "areas": areas, "area_lost": area_lost,
         "fingerprint": watch_text.fingerprint(blocks_now),
+        "_rows": rows,                    # for carry(); never stored
     }
     report["level"], report["reasons"] = level(report)
     report["headline"] = headline(report)
     return report, watch_visual.pack_grid(noise_now)
+
+
+def carry(rects, report, keep_removed=False):
+    """Move rects drawn on the old page to where that content is on the new
+    one, when the new reading becomes the baseline. A rect whose content was
+    removed is dropped, or kept where it was with `keep_removed` (an area
+    the user drew stays theirs to edit)."""
+    rows = (report or {}).get("_rows")
+    if rows is None:
+        return [list(r) for r in rects or []]
+    out = []
+    for x, y, w, h in rects or []:
+        span = rows.new_span(y, y + h)
+        if span is None:
+            if keep_removed:
+                out.append([x, y, w, h])
+            continue
+        out.append([x, span[0], w, span[1] - span[0]])
+    return out
+
+
+def _ignored_now(block, ignore, rows):
+    """Is a block of the NEW page inside an ignored area of the OLD page?"""
+    box = block.get("box")
+    if not ignore or not box:
+        return False
+    if rows is not None:
+        old = rows.old_y(box[1] + box[3] / 2)
+        if old is None:                   # on rows the new page added
+            return False
+        box = [box[0], old - box[3] / 2, box[2], box[3]]
+    return any(watch_text.inside(box, r) for r in ignore)
 
 
 def shifts(before, after, most=16):

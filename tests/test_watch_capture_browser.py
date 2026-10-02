@@ -38,8 +38,19 @@ body{font:16px Arial,sans-serif;margin:0;padding:24px}
 <p id="lazy"></p>
 <div class="cookie">We use cookies to improve your experience. <button>Accept</button></div>
 <div id="intercom-container"></div>
+<div class="help" style="position:fixed;right:16px;bottom:16px;width:220px;height:90px;background:#fff;border:1px solid #ccc">13 sales reps available <button>Chat now</button></div>
 <script>
-addEventListener('scroll', () => { if (scrollY > 1500) document.getElementById('lazy').textContent = 'Loaded when scrolled'; });
+addEventListener('scroll', () => {
+  if (scrollY > 1500) document.getElementById('lazy').textContent = 'Loaded when scrolled';
+  // A consent manager that arrives late, after the first hiding pass.
+  if (scrollY > 1500 && !document.getElementById('onetrust-banner-sdk')) {
+    const ot = document.createElement('div');
+    ot.id = 'onetrust-banner-sdk';
+    ot.textContent = 'This site employs technologies to record your visit. Accept all?';
+    ot.setAttribute('style', 'position:absolute;top:0;left:0;right:0;padding:30px;background:#333;color:#fff');
+    document.body.appendChild(ot);
+  }
+});
 </script>
 </body></html>"""
 
@@ -115,6 +126,9 @@ def test_a_real_capture_is_stable_and_complete(server, local_only, browser_ok):
     # The cookie notice and the chat bubble were hidden before reading.
     assert not any("We use cookies" in t for t in texts)
     assert "cookie notice" in cap.hidden and "#intercom-container" in cap.hidden
+    # A help box floating in a corner, and a consent banner that arrived late.
+    assert not any("sales reps" in t or "employs technologies" in t for t in texts)
+    assert "corner widget" in cap.hidden
     # Every block has a position; the button is named as a link.
     sign = next(b for b in cap.blocks if b["text"] == "Sign Up")
     assert sign["tag"] == "a" and sign["box"][2] > 20 and sign["box"][3] > 10

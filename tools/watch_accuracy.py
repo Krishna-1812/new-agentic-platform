@@ -134,6 +134,7 @@ def run_page(url):
     a = watch_capture.capture(url)
     if not a.ok:
         res["skipped"] = a.error or "bot_check"
+        res["detail"] = a.error_detail
         return res
     prev = watch_detect.snapshot_from(a, watch_visual.pack_grid(watch_visual.noise_cells(a.screenshot, a.control)))
     # Calibration, as the engine does it for a new watch: two more readings,
@@ -165,7 +166,7 @@ def run_page(url):
 def _score_edits(url, prev, script, kinds, settings=None):
     cap = watch_capture.capture(url, mutate=script)
     if not cap.ok:
-        return {"skipped": cap.error or "bot_check"}
+        return {"skipped": cap.error or "bot_check", "detail": cap.error_detail}
     did = cap.mutation or {}
     r, _ = watch_detect.compare(prev, cap, settings)
     t, v = r["text"], r["visual"] or {"after": [], "before": []}

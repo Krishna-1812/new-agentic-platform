@@ -288,17 +288,25 @@ def compare(before, after, *, after_control=None, before_noise=None, ignore=(), 
     """Find what changed visually between two screenshots (PNG bytes).
 
     before_noise   the previous capture's noise grid (from noise_cells), or None.
-    ignore         px rects in the NEW page to leave out.
+    ignore         px rects on the OLD page to leave out (an area the user
+                   picked, or one learned at calibration). They follow the
+                   content: where the page moved, the new page's rows are
+                   mapped back to the old page's, and rows the new page added
+                   are never ignored, so a section inserted above an ignored
+                   area neither hides under it nor pushes content out of it.
     area           px rect [x, y, w, h]: compare only inside it (cropped from both).
 
     Returns {"same", "after": [boxes], "before": [boxes], "added_px", "removed_px",
-             "changed_share", "aligned", "noise_share", "size_before", "size_after"}.
+             "changed_share", "aligned", "noise_share", "size_before", "size_after",
+             "rows"}; "rows" is the row map for watch_detect and is not stored.
     """
     a, b = load(before), load(after)
     noise_after = noise_cells(after, after_control) if after_control else np.zeros(
         (b.shape[0] // C, b.shape[1] // C), dtype=bool)
+    ox = oy = 0
     if area:
         a, b, noise_after, before_noise = _crop_area(a, b, noise_after, before_noise, area)
+        ox, oy = max(0, int(area[0])) // C * C, max(0, int(area[1])) // C * C
     w = min(a.shape[1], b.shape[1])
     a, b = a[:, :w], b[:, :w]
     # The control shot can come out a little shorter than the screenshot (the
@@ -344,8 +352,13 @@ def compare(before, after, *, after_control=None, before_noise=None, ignore=(), 
         grid_before[np.minimum(old_rows[keep] // C, rows_a - 1), cs_[keep]] = True
     added_px = int(added_rows.sum())
     removed_px = int(removed_rows.sum())
-    grid_after = _mask_rects(grid_after, ignore)
-    grid_before = _mask_rects(grid_before, ignore)
+    if ignore:
+        old_ignored = ~_mask_rects(np.ones((rows_a, cols), dtype=bool),
+                                   [[x - ox, y - oy, rw, rh] for x, y, rw, rh in ignore])
+        new_ignored = np.zeros((rows_b, cols), dtype=bool)
+        new_ignored[ok] = old_ignored[np.minimum(src[ok] // C, rows_a - 1)]
+        grid_after &= ~new_ignored
+        grid_before &= ~old_ignored
     boxes_after = regions(grid_after)
     boxes_before = regions(grid_before)
     # Row alignment lines up whole rows; content that moved on its own (one
@@ -358,8 +371,8 @@ def compare(before, after, *, after_control=None, before_noise=None, ignore=(), 
                                                        list(shifts) + [(0, d) for d in row_shifts])
     total = max(1, rows_b * cols)
     if area:
-        boxes_after = [[x + area[0], y + area[1], bw, bh] for x, y, bw, bh in boxes_after]
-        boxes_before = [[x + area[0], y + area[1], bw, bh] for x, y, bw, bh in boxes_before]
+        boxes_after = [[x + ox, y + oy, bw, bh] for x, y, bw, bh in boxes_after]
+        boxes_before = [[x + ox, y + oy, bw, bh] for x, y, bw, bh in boxes_before]
     return {
         "same": not boxes_after and not boxes_before,
         "after": boxes_after,
@@ -372,7 +385,35 @@ def compare(before, after, *, after_control=None, before_noise=None, ignore=(), 
         "moved_areas": moved,
         "size_before": [int(a.shape[1]), int(a.shape[0])],
         "size_after": [int(b.shape[1]), int(b.shape[0])],
+        "rows": RowMap(amap, oy, a.shape[0]),
     }
+
+
+class RowMap:
+    """Where each row of the new page was on the old page (page px), or None
+    for a row the new page added."""
+
+    def __init__(self, amap, offset=0, old_height=None):
+        self._m, self._off = amap, offset
+        self._old_h = int(old_height if old_height is not None else int(amap.max(initial=-1)) + 1)
+
+    def old_y(self, y):
+        i = int(y) - self._off
+        if i < 0 or i >= len(self._m):
+            return int(y)                  # outside the compared band: unmoved
+        r = int(self._m[i])
+        return None if r < 0 else r + self._off
+
+    def new_span(self, y0, y1):
+        """The new page's rows [top, bottom) that show old rows y0..y1, or
+        None when none do (that part of the old page was removed)."""
+        lo, hi = int(y0) - self._off, int(y1) - self._off
+        if hi <= 0 or lo >= self._old_h:
+            return int(y0), int(y1)        # outside the compared band: unmoved
+        hit = np.nonzero((self._m >= lo) & (self._m < hi))[0]
+        if not len(hit):
+            return None
+        return int(hit[0]) + self._off, int(hit[-1]) + 1 + self._off
 
 
 def _content(strip):

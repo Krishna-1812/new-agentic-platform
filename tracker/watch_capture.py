@@ -177,6 +177,10 @@ _STILL_CSS = """
 video, audio { visibility: hidden !important; }
 """
 
+# The known banners and widgets, as a stylesheet: a rule also hides one that
+# is inserted after the page was checked (consent managers often load late).
+_HIDE_CSS = "\n".join("%s { display: none !important; }" % s for s in HIDE_SELECTORS)
+
 _HIDE_JS = r"""
 (sels) => {
   const hidden = [];
@@ -201,7 +205,12 @@ _HIDE_JS = r"""
     const cookie = /\b(cookies?|consent|gdpr|privacy preferences|we use)\b/i.test(t) && t.length < 1500;
     const dialog = el.getAttribute('role') === 'dialog' || el.getAttribute('aria-modal') === 'true';
     const modal = cs.position === 'fixed' && r.width * r.height > 0.5 * vw * vh && (dialog || t.trim().length > 20);
-    if (cookie || modal) hide(el, cookie ? 'cookie notice' : 'full-screen overlay');
+    // A small box floating in a bottom corner is a chat or help launcher (it
+    // often appears a few seconds after load, so not on every reading).
+    const corner = cs.position === 'fixed' && r.width <= 480 && r.height <= 480 &&
+        r.bottom >= vh - 48 && r.bottom <= vh + 1 && (r.right >= vw - 48 || r.left <= 48) &&
+        r.width < 0.4 * vw;
+    if (cookie || modal || corner) hide(el, cookie ? 'cookie notice' : modal ? 'full-screen overlay' : 'corner widget');
   }
   for (const el of [document.documentElement, document.body]) {
     if (!el) continue;
@@ -399,7 +408,7 @@ async def _browse(url, area, screenshots, mutate=None):
             await _settle(page)
             if mutate:
                 cap.mutation = await page.evaluate(mutate)
-            await page.add_style_tag(content=_STILL_CSS)
+            await page.add_style_tag(content=_STILL_CSS + _HIDE_CSS)
             cap.hidden = await page.evaluate(_HIDE_JS, HIDE_SELECTORS)
             # Lazy images load as they are scrolled to, so some readings would
             # catch them half-loaded: ask for all of them now, then wait.
@@ -407,6 +416,10 @@ async def _browse(url, area, screenshots, mutate=None):
             await _scroll_through(page)
             await _images_loaded(page)
             await page.evaluate("document.fonts && document.fonts.ready")
+            # Again, for what appeared while scrolling and loading.
+            for why in await page.evaluate(_HIDE_JS, HIDE_SELECTORS):
+                if why not in cap.hidden:
+                    cap.hidden.append(why)
             await page.wait_for_timeout(400)
             cap.final_url = page.url
             cap.title = (await page.title() or "").strip()[:300]

@@ -73,18 +73,30 @@ def similarity(a, b):
     return difflib.SequenceMatcher(None, wa, wb, autojunk=False).ratio()
 
 
+# Under the same selector, two longer texts are one element edited when they
+# share at least this much (BLOCK_MATCH_RATIO applies everywhere else).
+SAME_SEL_RATIO = 0.25
+
+
 def same_place(a, b):
     """1.0 when two blocks are the same element in the same spot (a short label
-    whose words all changed, such as "$20" -> "$25"), else 0.0."""
+    whose words all changed, such as "$20" -> "$25"), else 0.0.
+
+    A selector is a position among siblings, so content inserted before an
+    element hands its selector to something else: the same selector alone
+    pairs only short labels or texts that still share some words. A long
+    text that took an old one's selector was removed and added, not edited.
+    """
     ba, bb = a.get("box"), b.get("box")
     if not ba or not bb or a.get("tag") != b.get("tag"):
         return 0.0
+    short = len(a.get("text", "").split()) <= 6 and len(b.get("text", "").split()) <= 6
     if a.get("sel") and a.get("sel") == b.get("sel"):
-        return 1.0
+        if short or similarity(key(a.get("text", "")), key(b.get("text", ""))) >= SAME_SEL_RATIO:
+            return 1.0
     ca = (ba[0] + ba[2] / 2, ba[1] + ba[3] / 2)
     cb = (bb[0] + bb[2] / 2, bb[1] + bb[3] / 2)
     near = abs(ca[0] - cb[0]) <= 40 and abs(ca[1] - cb[1]) <= 40
-    short = len(a.get("text", "").split()) <= 6 and len(b.get("text", "").split()) <= 6
     return 1.0 if near and short else 0.0
 
 

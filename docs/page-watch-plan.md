@@ -121,7 +121,10 @@ The first check runs straight away and becomes the baseline.
      section is not counted as changed. Content that only moved on its own
      (one column of a two-column page shifting up, a fixed sidebar left in
      place while the page moved) is recognised by matching it at the offset
-     its unchanged text moved by, and left out.
+     its unchanged text moved by, and left out. Ignored and learned areas
+     follow their content the same way: a banner inserted above an ignored
+     area is still seen, and what the area covered stays ignored. When a
+     change becomes the new baseline, the areas move with it.
 6. **Decide:** no change, or a change with its evidence (text added, removed
    and changed; prices; visual boxes; how much of the page changed).
 7. **Confirm:** a change is re-checked once a few minutes later before anyone

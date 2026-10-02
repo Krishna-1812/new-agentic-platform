@@ -564,3 +564,85 @@ def test_a_missing_watched_area_is_an_error_not_a_change(store):
     assert store.list_changes(tid) == []
     r = watch_engine.run_check(tid, capture=_fake_reader(cap_from(page(), area_box=None, area_found=False)))
     assert store.get_target(tid)["state"] == "error"
+
+
+# ── Ignored areas follow the content ─────────────────────────────────────────
+def _pushed(dy, extra=(), **over):
+    """blocks() as on a page pushed down by `dy` px, plus `extra` blocks."""
+    out = [dict(b, box=[b["box"][0], b["box"][1] + dy, b["box"][2], b["box"][3]]) for b in blocks(**over)]
+    return list(extra) + out
+
+
+BANNER = {"tag": "div", "text": "Announcement: our plans change on November 1.", "box": [40, 20, 460, 20],
+          "sel": "body > div:nth-of-type(1)"}
+
+
+def test_an_ignored_area_follows_its_content_when_a_banner_pushes_it_down():
+    """The ignored area covers the heading on the old page. A banner inserted
+    above it pushes the heading 60px down: the banner (on rows the new page
+    added) is still seen, and the edited heading (where the ignored area now
+    is) is still ignored, in the text and in the picture."""
+    before = cap_from(page(), blk=blocks())
+    after = cap_from(page(banner=60, heading_word="Remarkable"),
+                     blk=_pushed(60, [BANNER], **{"Plans for every team": {"text": "Remarkable plans for every team"}}))
+    report, _ = watch_detect.compare(prev_from(before), after, {"ignore": [[0, 30, 800, 60]]})
+    assert [a["text"] for a in report["text"]["added"]] == [BANNER["text"]]
+    assert report["text"]["changed"] == [] and report["text"]["removed"] == []
+    boxes = report["visual"]["after"]
+    assert boxes and all(y + h <= 64 for x, y, w, h in boxes), boxes
+    assert "_rows" in report and "rows" not in report["visual"]
+
+
+def test_an_ignored_area_still_ignores_when_nothing_moved():
+    before = cap_from(page(), blk=blocks())
+    after = cap_from(page(heading_word="Remarkable"),
+                     blk=blocks(**{"Plans for every team": {"text": "Remarkable plans for every team"}}))
+    report, _ = watch_detect.compare(prev_from(before), after, {"ignore": [[0, 30, 400, 60]]})
+    assert report["outcome"] == "same", report["headline"]
+
+
+def test_carry_moves_areas_onto_the_new_baseline_and_drops_removed_ones():
+    pushed, _ = watch_detect.compare(prev_from(cap_from(page(), blk=blocks())),
+                                     cap_from(page(banner=60), blk=_pushed(60, [BANNER])))
+    assert watch_detect.carry([[300, 1100, 400, 200]], pushed) == [[300, 1160, 400, 200]]
+    shorter, _ = watch_detect.compare(prev_from(cap_from(page(), blk=blocks())),
+                                      cap_from(page(removed=True), blk=blocks()))
+    gone = [40, 528, 400, 32]                       # the removed paragraph's rows
+    assert watch_detect.carry([gone], shorter) == []
+    assert watch_detect.carry([gone], shorter, keep_removed=True) == [gone]
+    # Without screenshots there is no alignment, and nothing moves.
+    assert watch_detect.carry([[1, 2, 3, 4]], {"_rows": None}) == [[1, 2, 3, 4]]
+
+
+def test_after_a_change_the_watch_keeps_ignoring_the_same_content(store):
+    tid = store.create_target("ana@markifydigital.com", "https://example.com/pricing", ignore=[[280, 1090, 440, 220]])
+    watch_engine.run_check(tid, capture=_fake_reader(cap_from(page()), cap_from(page()), cap_from(page())))
+    changed = watch_engine.run_check(tid, capture=_fake_reader(cap_from(page(banner=60), blk=_pushed(60, [BANNER]))))
+    assert changed["outcome"] == "changed"
+    assert "_rows" not in store.get_change(changed["change_id"])["report"]
+    assert store.get_target(tid)["ignore"] == [[280, 1150, 440, 220]]
+    # The carousel inside the area rotates on the next visit: not a change.
+    later = watch_engine.run_check(tid, capture=_fake_reader(
+        cap_from(page(banner=60, carousel=1), blk=_pushed(60, [BANNER]))))
+    assert later["outcome"] == "same", later["report"]["headline"]
+
+
+# ── A selector handed to new content ─────────────────────────────────────────
+def test_a_long_text_that_takes_an_old_selector_is_added_not_an_edit():
+    old = [{"tag": "div", "text": "Free shipping on every order over fifty dollars this month only",
+            "box": [0, 0, 800, 40], "sel": "body > div:nth-of-type(1)"}]
+    new = [{"tag": "div", "text": "Announcement: our plans change on November 1. Read what is new.",
+            "box": [0, 0, 800, 40], "sel": "body > div:nth-of-type(1)"}]
+    d = watch_text.diff(old, new)
+    assert [a["text"] for a in d["added"]] == [new[0]["text"]]
+    assert [r["text"] for r in d["removed"]] == [old[0]["text"]] and d["changed"] == []
+
+
+def test_the_same_selector_still_pairs_a_short_label_and_a_light_edit():
+    a = {"tag": "span", "text": "$20", "box": [0, 0, 40, 20], "sel": "div.price > span"}
+    b = dict(a, text="$25", box=[0, 300, 40, 20])
+    assert watch_text.same_place(a, b) == 1.0
+    long_a = {"tag": "p", "text": "Pro gives your team more usage, support and early access to new features.",
+              "box": [0, 0, 600, 40], "sel": "main > p"}
+    long_b = dict(long_a, text="Pro gives every team more usage and priority support on all plans.", box=[0, 400, 600, 40])
+    assert watch_text.same_place(long_a, long_b) == 1.0
