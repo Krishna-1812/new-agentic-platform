@@ -123,6 +123,41 @@ The figures come from the same sheet and the same conversions as the dashboard. 
 
 The digest never uses `SLACK_BOT_TOKEN` or `SLACK_CHANNEL_ID`. The Action's log shows only counts and Slack error codes, never account names or figures.
 
+### Asking Ads Insight questions in Slack
+
+The Slack app (named **Ads Insight**) also answers questions in its channel.
+
+- **Reply in the thread under an account's morning message** ("why did CPA rise?", "which search terms wasted money?", "what should we change this week?"). The question is about that account. Follow-up replies in the same thread are answered too, unless they @mention someone else.
+- **@mention it anywhere in the channel** (`@Ads Insight how is Acme pacing this month?`). It answers in a thread about the account the question names, or compares every account when it names none.
+
+It posts "Checking the numbers..." at once, then replaces it with the answer, usually within a minute.
+
+**What the answer is based on.** Claude (`claude-opus-5-5`, medium effort) answers from:
+
+- the same figures as the dashboard and the AI review: last 30 days against the previous 30 for every campaign, pacing, search terms, keywords, ads and so on;
+- the campaign report day by day for the last 30 days;
+- the account's part of the context Google Doc;
+- the latest AI review.
+
+It is told to quote exact figures and to say when the data does not hold the answer. Most answers cost a few US cents; follow-ups within a few minutes reuse the cached data.
+
+**Limits.**
+
+- Only the channel in `GOOGLE_ADS_SLACK_CHANNEL` is answered, never direct messages or other channels, so client figures stay in that channel. Everyone in the channel can ask.
+- At most `GOOGLE_ADS_SLACK_MAX_QUESTIONS_PER_DAY` questions a day (default 150, India time).
+
+**Setup** (once, after the digest works).
+
+1. In Railway, set `GOOGLE_ADS_SLACK_SIGNING_SECRET`. The value is on the Slack app's **Basic Information** page under **App Credentials**.
+2. Update the app's manifest with the event subscription and these scopes:
+   - `app_mentions:read`
+   - `channels:history`
+   - `groups:history`
+3. The events address is `https://<site>/api/slack/events`.
+4. Reinstall the app to the workspace.
+
+The endpoint refuses any request not signed with that secret, or older than five minutes.
+
 ## Limits and safety
 
 - **Accounts:** Google runs a manager script in parallel on at most 50 accounts ([Google Ads Scripts limits](https://developers.google.com/google-ads/scripts/docs/limits)). With more than 50, the 50 with the highest spend in the last 30 days are exported. Set `ACCOUNT_IDS` to choose them yourself.

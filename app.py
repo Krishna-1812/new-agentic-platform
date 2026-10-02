@@ -27,7 +27,7 @@ from brand import BRAND, brand_context  # user-facing product naming (single sou
 # so the gate and what the UI says about it cannot disagree. See brand.py.
 STAFF_EMAIL_SUFFIX = "@" + BRAND["staff_domain"]
 import requests
-from collections import Counter
+from collections import Counter, OrderedDict
 
 log = logging.getLogger(__name__)
 
@@ -4982,7 +4982,158 @@ def _gads_digest_run(dry_run, force=False, account=""):
                            token=os.environ.get("GOOGLE_ADS_SLACK_BOT_TOKEN", ""),
                            channel=os.environ.get("GOOGLE_ADS_SLACK_CHANNEL", ""),
                            base_url=_gads_digest_base_url(), dry_run=dry_run, force=force,
-                           last_posted=last_posted, mark_posted=mark_posted)
+                           last_posted=last_posted, mark_posted=mark_posted, on_thread=_slack_thread_remember)
+
+
+# ── Ads Insight answers questions in Slack ───────────────────────────────────
+# Slack's Events API posts every reply and @mention in the bot's channels here
+# (tracker/gads_slack_chat.py). The request is checked against the app's signing secret and answered
+# at once (Slack wants a reply within 3 seconds and retries otherwise); the question is worked on in a
+# background thread that posts "Checking the numbers..." and replaces it with the answer.
+SLACK_EVENTS = "/api/slack/events"
+_slack_seen = OrderedDict()
+_slack_seen_lock = threading.Lock()
+
+
+def _slack_thread_key(ts):
+    return "slack_thread:" + str(ts)
+
+
+def _slack_thread_remember(account, ts):
+    """Which account a thread is about ("*" for every account), so replies under it are answered."""
+    from tracker import gads_ai_store
+    try:
+        gads_ai_store.set_setting(_slack_thread_key(ts), account or "*", "ads-insight")
+    except Exception:
+        app.logger.exception("ads-insight: could not record the thread")
+
+
+def _slack_thread_account(ts):
+    """The account a thread is about: None when Ads Insight is not part of it, "" for every account."""
+    from tracker import gads_ai_store
+    try:
+        got = gads_ai_store.get_setting(_slack_thread_key(ts))
+    except Exception:
+        app.logger.exception("ads-insight: could not read the thread")
+        return None
+    if not got:
+        return None
+    return "" if got["value"] == "*" else got["value"]
+
+
+def _slack_daily_allowance():
+    """True while today's question count (India time) is under GOOGLE_ADS_SLACK_MAX_QUESTIONS_PER_DAY."""
+    from tracker import gads_ai_store, gads_digest, gads_slack_chat
+    try:
+        cap = int(os.environ.get("GOOGLE_ADS_SLACK_MAX_QUESTIONS_PER_DAY", "") or gads_slack_chat.DEFAULT_MAX_PER_DAY)
+    except ValueError:
+        cap = gads_slack_chat.DEFAULT_MAX_PER_DAY
+    key = "slack_questions:" + gads_digest.today_ist().isoformat()
+    try:
+        got = gads_ai_store.get_setting(key)
+        n = int(got["value"]) if got else 0
+        if n >= cap:
+            return False
+        gads_ai_store.set_setting(key, str(n + 1), "ads-insight")
+    except Exception:
+        app.logger.exception("ads-insight: could not count questions")
+    return True
+
+
+def _slack_latest_review(account):
+    from tracker import gads_ai_store
+    done = next((r for r in gads_ai_store.list_reviews(account, 10) if r.get("status") == "complete"), None)
+    if not done:
+        return None
+    rep = (gads_ai_store.get_review(done["id"]) or {}).get("report") or {}
+    keep = ("headline", "overall", "scorecard", "not_working", "actions", "campaigns", "brief_gaps")
+    return {"reviewed_on": (done.get("created_at") or "")[:10], **{k: rep[k] for k in keep if k in rep}}
+
+
+def _slack_answer(event, bot, thread, text, thread_account, base_url):
+    """The background half: read the data, ask Claude, post the answer."""
+    from tracker import gads_ai, gads_slack_chat
+    try:
+        g, st, rows, fx, spend, camps = _gads_ai_load()
+        accounts = [a for a, _ in _gads_ai_accounts(rows)]
+
+        def pack(account):
+            return gads_ai.build_pack(g, st, account, rows, fx, spend, camps)
+
+        def context(account):
+            ctx = _gads_ai_context(account, force=False)
+            return ctx if ctx and ctx.get("text") else None
+
+        res = gads_slack_chat.answer(
+            event, token=os.environ.get("GOOGLE_ADS_SLACK_BOT_TOKEN", ""),
+            channel=os.environ.get("GOOGLE_ADS_SLACK_CHANNEL", ""), bot=bot, accounts=accounts, rows=rows,
+            thread=thread, text=text, thread_account=thread_account, load_pack=pack, context=context,
+            latest_review=_slack_latest_review, st=st, fx=fx,
+            remember=lambda ts, account: _slack_thread_remember(account, ts), base_url=base_url)
+        if res.get("usage"):
+            app.logger.info("ads-insight: answered (%s), cost about US$%.3f", res.get("account") or "all accounts",
+                            gads_ai.cost_usd([res["usage"]]))
+        elif res.get("error"):
+            app.logger.warning("ads-insight: could not answer: %s", res["error"])
+    except Exception:
+        app.logger.exception("ads-insight: answering failed")
+
+
+def _slack_spawn(fn, *args):
+    """Run an answer in the background (a function of its own, so tests can run it inline)."""
+    threading.Thread(target=fn, args=args, name="ads-insight", daemon=True).start()
+
+
+@app.route(SLACK_EVENTS, methods=["POST"])
+def slack_events():
+    """Slack's Events API. Signed with GOOGLE_ADS_SLACK_SIGNING_SECRET; anything else is refused."""
+    from tracker import gads_slack_chat
+    secret = os.environ.get("GOOGLE_ADS_SLACK_SIGNING_SECRET", "")
+    if not secret:
+        return jsonify({"ok": False, "error": "GOOGLE_ADS_SLACK_SIGNING_SECRET is not set."}), 503
+    body = request.get_data(cache=True)
+    if not gads_slack_chat.verify(secret, request.headers.get("X-Slack-Request-Timestamp", ""), body,
+                                  request.headers.get("X-Slack-Signature", "")):
+        return jsonify({"ok": False}), 401
+    try:
+        payload = json.loads(body or b"{}")
+    except ValueError:
+        return jsonify({"ok": False}), 400
+    if payload.get("type") == "url_verification":
+        return jsonify({"challenge": payload.get("challenge", "")})
+    # Slack retries when it did not hear back in 3 seconds; the first delivery is already being answered.
+    if request.headers.get("X-Slack-Retry-Num") or payload.get("type") != "event_callback":
+        return "", 200
+    eid = payload.get("event_id") or ""
+    with _slack_seen_lock:
+        if eid in _slack_seen:
+            return "", 200
+        _slack_seen[eid] = True
+        while len(_slack_seen) > 500:
+            _slack_seen.popitem(last=False)
+    channel = os.environ.get("GOOGLE_ADS_SLACK_CHANNEL", "")
+    if not (channel and os.environ.get("GOOGLE_ADS_SLACK_BOT_TOKEN")):
+        return "", 200
+    event = payload.get("event") or {}
+    bot = gads_slack_chat.bot_user(payload)
+    known = {}
+
+    def known_thread(ts):
+        known[ts] = _slack_thread_account(ts)
+        return known[ts] is not None
+
+    try:
+        thread, text = gads_slack_chat.question(event, channel, bot, known_thread)
+    except gads_slack_chat.Skip:
+        return "", 200
+    thread_account = known[thread] if thread in known else _slack_thread_account(thread)
+    if not _slack_daily_allowance():
+        gads_slack_chat.slack("chat.postMessage", os.environ.get("GOOGLE_ADS_SLACK_BOT_TOKEN", ""),
+                              channel=channel, thread_ts=thread,
+                              text="I've answered today's limit of questions. Ask again tomorrow, or open the dashboard.")
+        return "", 200
+    _slack_spawn(_slack_answer, event, bot, thread, text, thread_account or "", _gads_digest_base_url())
+    return "", 200
 
 
 @app.route(GADS_DIGEST, methods=["POST"])
