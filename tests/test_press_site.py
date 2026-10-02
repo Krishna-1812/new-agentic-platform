@@ -107,6 +107,18 @@ def test_the_headings_keep_their_fraunces_settings():
     assert "'SOFT' 0, 'WONK' 1, 'opsz' 144" in head
 
 
+def test_the_hero_scales_down_on_the_narrowest_phones():
+    """At the 46px floor "Know who's ready" is wider than a 360px phone's
+    column, so the headline ran to five lines. Below 381px it scales with the
+    viewport instead, never past 40px and never under 34px."""
+    css = _strip_comments(_press())
+    m = re.search(r"@media \(max-width: 380px\) \{ \.d1 \{ font-size: ([^;]+); \} \}", css)
+    assert m, "no small-phone size for the hero headline"
+    assert m.group(1) == "clamp(34px, 11.1vw, 40px)"
+    # 11.1vw is 39.96px at 360px and 35.5px at 320px.
+    assert round(360 * 0.111, 2) <= 40 and round(320 * 0.111, 2) >= 34
+
+
 # ── The clip-path / IntersectionObserver trap ────────────────────────────────
 
 @pytest.mark.parametrize("name", PRESS_TEMPLATES)
