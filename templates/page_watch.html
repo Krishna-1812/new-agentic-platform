@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    PAGE WATCH (/strategic-agents/page-watch)
+
+    Give it a link or a name; it reads the page now and then on a schedule,
+    and says, in a sentence and with a before-and-after picture, when
+    something on it changed. This page adds watches (the first reading is
+    the live preview), and is the dashboard of every watched page.
+
+    The cards are drawn by static/js/page-watch.js from the JSON below and
+    redrawn as checks finish; with JS off, the noscript list still links to
+    every watch. Plan: docs/page-watch-plan.md.
+-#}
+<html lang="en">
+<head>
+{{ head("Page Watch", ["strategic-agents.css?v=2", "page-watch.css?v=1"]) }}
+</head>
+<body class="sa pw">
+
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Page Watch", none)]) }}
+<div class="sa-prog" aria-hidden="true"><i></i></div>
+
+<main class="sa-shell" id="pw">
+
+  {# ── Hero: the ask ────────────────────────────────────────────────────── #}
+  <section class="sa-hero pw-hero" data-sa-settle>
+    <div class="sa-hero-top">
+      <span class="sa-lbl" data-sa-decode>Go-to-market &middot; Page Watch</span>
+      {%- set w = status.worker %}
+      {% if w == 'ok' or w == 'idle' %}
+      <span class="sa-live" id="pw-live"><i></i>Watching</span>
+      {% elif w == 'behind' %}
+      <span class="sa-live pw-live--warn" id="pw-live"><i></i>Running behind</span>
+      {% elif w == 'no_browser' %}
+      <span class="sa-live pw-live--warn" id="pw-live"><i></i>Checker has no browser</span>
+      {% else %}
+      <span class="sa-live pw-live--off" id="pw-live"><i></i>Checker not running</span>
+      {% endif %}
+      <div class="pw-lens" aria-hidden="true">
+        <div class="pw-lens-page"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="pw-lens-page pw-lens-page--after"><i></i><i></i><i></i><i></i><i></i><span class="pw-lens-scan"></span><span class="pw-lens-box"></span></div>
+      </div>
+    </div>
+
+    <h1 class="sa-h1" data-sa-springy>
+      <span class="sa-ln"><span>Any page on the web,</span></span>
+      <span class="sa-ln"><span><span class="sa-mk">watched</span> <em class="sa-it">for you.</em></span></span>
+    </h1>
+
+    <form class="pw-ask" id="pw-ask" autocomplete="off" novalidate>
+      <label class="sa-sr" for="pw-q" style="position:absolute;left:-9999px">A link or the name of a page</label>
+      <input id="pw-q" name="q" maxlength="300" placeholder="vercel.com/pricing  or  HubSpot pricing" required>
+      <button type="submit" class="sa-btn sa-btn--hero" id="pw-go">Watch it</button>
+    </form>
+    <p class="pw-hint">Paste a link, or type a name and pick the page. It reads the page now and shows you what it sees;
+      after that it checks on your schedule and says <b>what changed</b>, with a before-and-after picture.</p>
+    <p class="pw-error" id="pw-error" role="alert" hidden></p>
+
+    <div class="sa-figs" aria-live="polite">
+      <div class="sa-fig"><b id="pw-f-watching">{{ board.counts.all }}</b><span>Pages watched</span></div>
+      <div class="sa-fig"><b id="pw-f-changed">{{ board.counts.changed or 0 }}</b><span>Changed</span></div>
+      <div class="sa-fig"><b id="pw-f-errors">{{ (board.counts.error or 0) + (board.counts.blocked or 0) }}</b><span>Can't read</span></div>
+      <div class="sa-fig"><b id="pw-f-spend">${{ '%.2f' % status.claude.spent_usd }}</b><span>Claude this month</span></div>
+    </div>
+  </section>
+
+  {# ── Adding a page ───────────────────────────────────────────────────── #}
+  <section class="pw-add" id="pw-add" hidden aria-live="polite">
+    <div class="pw-add-head">
+      <div>
+        <span class="sa-lbl" id="pw-add-lbl">New watch</span>
+        <h2 id="pw-add-h">Which page?</h2>
+      </div>
+      <ol class="pw-steps" aria-label="Steps">
+        <li data-step="find">Find</li><li data-step="read">Read</li><li data-step="set">Set up</li>
+      </ol>
+    </div>
+
+    <div id="pw-step-find" hidden>
+      <div class="pw-cands" id="pw-cands"></div>
+    </div>
+
+    <div id="pw-step-read" class="pw-reading" hidden>
+      <div class="pw-ghost" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <ol class="pw-phases" id="pw-phases">
+        <li>Opening the page in a real browser</li>
+        <li>Holding it still: animations, cookie notices and chat bubbles</li>
+        <li>Scrolling through so everything loads</li>
+        <li>Reading every line of text</li>
+        <li>Taking the picture, then a second one to spot what moves on its own</li>
+        <li>Reading it twice more to learn what changes on every visit</li>
+      </ol>
+      <p class="pw-wait-note" id="pw-wait-note" hidden></p>
+    </div>
+
+    <div id="pw-step-set" class="pw-preview" hidden>
+      <div>
+        <ul class="pw-facts" id="pw-facts"></ul>
+        <div class="pw-tools" role="toolbar" aria-label="What to watch on the page">
+          <button type="button" class="pw-tool is-on" data-pw-mode="all">Whole page</button>
+          <button type="button" class="pw-tool" data-pw-mode="area">Pick an area</button>
+          <button type="button" class="pw-tool pw-tool--ignore" data-pw-mode="ignore">Ignore an area</button>
+          <p class="pw-tool-help" id="pw-tool-help">Watching everything on the page. To watch one part, choose Pick an area and drag a box round it.</p>
+        </div>
+        <div class="pw-frame"><div class="pw-canvas" id="pw-canvas"></div></div>
+      </div>
+      <form class="pw-form" id="pw-form" novalidate></form>
+    </div>
+  </section>
+
+  {# ── The dashboard ───────────────────────────────────────────────────── #}
+  <section class="pw-board" aria-labelledby="pw-board-t">
+    <div class="sa-sec-head">
+      <span class="sa-idx">01</span>
+      <div>
+        <span class="sa-lbl" data-sa-decode>Your watches</span>
+        <h2 class="sa-h2" id="pw-board-t">Every page, <span class="sa-mk sa-mk--sm">every change.</span></h2>
+      </div>
+    </div>
+    <div class="pw-bar" id="pw-bar">
+      <div class="sa-chips" role="radiogroup" aria-label="Show">
+        <button type="button" class="sa-chip is-on" role="radio" aria-checked="true" data-pw-filter="all">All <em data-n="all">{{ board.counts.all }}</em></button>
+        <button type="button" class="sa-chip" role="radio" aria-checked="false" data-pw-filter="changed">Changed <em data-n="changed">{{ board.counts.changed or 0 }}</em></button>
+        <button type="button" class="sa-chip" role="radio" aria-checked="false" data-pw-filter="ok">No change <em data-n="ok">{{ board.counts.ok or 0 }}</em></button>
+        <button type="button" class="sa-chip" role="radio" aria-checked="false" data-pw-filter="problem">Can't read <em data-n="problem">{{ (board.counts.error or 0) + (board.counts.blocked or 0) }}</em></button>
+        <button type="button" class="sa-chip" role="radio" aria-checked="false" data-pw-filter="paused">Paused <em data-n="paused">{{ board.counts.paused or 0 }}</em></button>
+      </div>
+      <div class="pw-search">
+        <select id="pw-client" aria-label="Client or group"><option value="">Every client</option>
+          {% for c in board.clients %}<option>{{ c }}</option>{% endfor %}</select>
+        <input id="pw-find" type="search" placeholder="Search" aria-label="Search watches">
+      </div>
+    </div>
+    <div class="pw-grid" id="pw-grid"></div>
+    <div class="pw-empty" id="pw-empty" hidden>
+      <div class="pw-lens" aria-hidden="true" style="margin:0">
+        <div class="pw-lens-page"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="pw-lens-page pw-lens-page--after"><i></i><i></i><i></i><i></i><i></i><span class="pw-lens-scan"></span><span class="pw-lens-box"></span></div>
+      </div>
+      <div>
+        <h3 id="pw-empty-h">Nothing watched yet.</h3>
+        <p id="pw-empty-p">Paste a competitor's pricing page above. The first check takes about half a minute, and from then on you hear only when something changes.</p>
+      </div>
+    </div>
+    <noscript>
+      <ul>{% for w in board.watches %}<li><a href="{{ w.url_page }}">{{ w.name }}</a> &middot; {{ w.state_label }}</li>{% endfor %}</ul>
+    </noscript>
+  </section>
+
+  {# ── How it watches ──────────────────────────────────────────────────── #}
+  <section class="sa-ink pw-how" data-sa-portal aria-labelledby="pw-how-t">
+    <div class="sa-ink-in">
+      <div class="sa-sec-head sa-sec-head--ink">
+        <span class="sa-idx">02</span>
+        <div>
+          <span class="sa-lbl" data-sa-decode>How it watches</span>
+          <h2 class="sa-h2" id="pw-how-t">Nine steps, <em class="sa-it">and only real changes</em> get through.</h2>
+        </div>
+      </div>
+      <div class="pw-how-grid">
+        <div class="pw-how-i"><b>01</b><h3>Load</h3><p>A real browser, the same desktop size, language and time zone on every visit.</p></div>
+        <div class="pw-how-i"><b>02</b><h3>Hold still</h3><p>Animations frozen, cookie notices and chat bubbles hidden, lazy pictures loaded.</p></div>
+        <div class="pw-how-i"><b>03</b><h3>Read</h3><p>Every line of text with its place on the page, and a full-length picture.</p></div>
+        <div class="pw-how-i"><b>04</b><h3>Look twice</h3><p>A second picture seconds later shows what moves on its own: carousels, counters, ads.</p></div>
+        <div class="pw-how-i"><b>05</b><h3>Compare</h3><p>Text line by line, pictures pixel row by row, so a new banner does not make the rest of the page look changed.</p></div>
+        <div class="pw-how-i"><b>06</b><h3>Name it</h3><p>Every changed area is matched to what is in it: "the Sign Up button", "the price $25".</p></div>
+        <div class="pw-how-i"><b>07</b><h3>Confirm</h3><p>A change is read again three minutes later. Gone means a glitch, and nobody is told.</p></div>
+        <div class="pw-how-i"><b>08</b><h3>Judge</h3><p>Claude says what changed and whether it matters, following your note for the page.</p></div>
+        <div class="pw-how-i"><b>09</b><h3>Tell</h3><p>Important changes straight away; the rest in a daily round-up. Your ratings teach it.</p></div>
+      </div>
+    </div>
+  </section>
+
+  {# ── What it runs on ─────────────────────────────────────────────────── #}
+  <section class="pw-how" aria-labelledby="pw-runs-t">
+    <div class="sa-sec-head">
+      <span class="sa-idx">03</span>
+      <div>
+        <span class="sa-lbl" data-sa-decode>What it runs on</span>
+        <h2 class="sa-h2" id="pw-runs-t">The checker and <span class="sa-mk sa-mk--sm">the judge.</span></h2>
+      </div>
+    </div>
+    <div class="pw-runs">
+      {%- set q = status.queue or {} %}
+      <div class="pw-run{{ '' if w in ('ok', 'idle') else ' pw-run--warn' }}" id="pw-run-worker">
+        <b>The checker</b>
+        <span>{% if w == 'ok' %}Running. {{ q.running or 0 }} checking now, {{ q.due or 0 }} waiting.
+          {% elif w == 'idle' %}Ready. Nothing is due.
+          {% elif w == 'behind' %}Running, but {{ q.late or 0 }} checks are more than 15 minutes late. Give it more memory or threads.
+          {% elif w == 'no_browser' %}Running without a browser, so pages are read as text only. Set RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1 on the worker service.
+          {% else %}Not running. Watches are saved and will be read as soon as the worker service starts.{% endif %}</span>
+        <code>python -m tracker.watch_worker</code>
+      </div>
+      {%- set cl = status.claude %}
+      <div class="pw-run{{ '' if cl.state == 'on' else ' pw-run--warn' }}">
+        <b>The judge</b>
+        <span>{{ cl.detail }}</span>
+        <div class="pw-meter" aria-label="Claude spending this month"><i style="width: {{ [100, (100 * cl.spent_usd / (cl.cap_usd or 1))|round(0, 'ceil')]|min }}%"></i></div>
+        <code>${{ '%.2f' % cl.spent_usd }} of ${{ '%.2f' % cl.cap_usd }} this month &middot; {{ cl.model }}</code>
+      </div>
+      <div class="pw-run">
+        <b>Health</b>
+        <span>The worker's heartbeat and the queue, as JSON, for when something looks stuck.</span>
+        <code><a href="/strategic-agents/page-watch/health">/strategic-agents/page-watch/health</a></code>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="sa-foot">
+  <div class="sa-foot-top">
+    <span class="sa-foot-word" aria-label="{{ brand.name }}">{{ brand.name }}</span>
+    <div class="sa-toys" aria-hidden="true">
+      <span class="sa-toy sa-toy--ink"></span><span class="sa-toy sa-toy--paper"></span><span class="sa-toy sa-toy--sky"></span>
+      <span class="sa-toy sa-toy--red"></span><span class="sa-toy sa-toy--acc"></span><span class="sa-toy sa-toy--paper2"></span>
+    </div>
+  </div>
+  <div class="sa-foot-bottom">
+    <span>{{ brand.name }} &middot; Internal use only</span>
+    <a href="/strategic-agents">{{ brand.agents_plural }}</a>
+  </div>
+</footer>
+
+<script type="application/json" id="pw-data">{{ {"board": board, "status": status, "days": days, "dayNames": day_names}|tojson }}</script>
+{{ topbar_script() }}
+<script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
+<script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=1"></script>
+</body>
+</html>

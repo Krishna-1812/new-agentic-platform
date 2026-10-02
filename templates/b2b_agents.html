@@ -68,9 +68,9 @@
 
     {# Counted from the rows below; tests/test_hub_card_counts.py checks they agree. #}
     <div class="sa-figs">
-      <div class="sa-fig"><b data-sa-odo data-figure="agents">12</b><span>agents</span></div>
+      <div class="sa-fig"><b data-sa-odo data-figure="agents">13</b><span>agents</span></div>
       <div class="sa-fig"><b data-sa-odo data-figure="live">10</b><span>live</span></div>
-      <div class="sa-fig"><b data-sa-odo data-figure="building">2</b><span>in build</span></div>
+      <div class="sa-fig"><b data-sa-odo data-figure="building">3</b><span>in build</span></div>
       {% if tracked_companies %}
       <div class="sa-fig"><b data-sa-odo>{{ "{:,}".format(tracked_companies) }}+</b><span>companies tracked</span></div>
       {% endif %}
@@ -84,6 +84,7 @@
         ("c", "ABM Signal Tracker", "/abm-signal-tracker/healthcare"),
         ("c", "Anonymous Visitors", "/strategic-agents/anonymous-visitors"),
         ("c", "Job Change Alert", "/strategic-agents/job-change-alert"),
+        ("c", "Page Watch", "/strategic-agents/page-watch"),
         ("b", "LinkedIn Intelligence", "/strategic-agents/linkedin-intelligence"),
         ("b", "Contact Finder", "/strategic-agents/company-people-intelligence"),
         ("b", "LinkedIn Strategy Researcher", "/strategic-agents/linkedin-strategy-researcher"),
@@ -166,8 +167,8 @@
     <div class="sa-filters" id="sa-filters">
       <div class="sa-filters-in">
         <div class="sa-chips" role="group" aria-label="Group">
-          <button type="button" class="sa-chip is-on" data-sa-group="all">All <b>12</b></button>
-          <button type="button" class="sa-chip" data-sa-group="signals"><i class="sa-dot sa-dot--c"></i>Signals <b>3</b></button>
+          <button type="button" class="sa-chip is-on" data-sa-group="all">All <b>13</b></button>
+          <button type="button" class="sa-chip" data-sa-group="signals"><i class="sa-dot sa-dot--c"></i>Signals <b>4</b></button>
           <button type="button" class="sa-chip" data-sa-group="people"><i class="sa-dot sa-dot--b"></i>People &amp; Research <b>6</b></button>
           <button type="button" class="sa-chip" data-sa-group="vertical"><i class="sa-dot sa-dot--a"></i>Vertical Tools <b>3</b></button>
         </div>
@@ -181,7 +182,7 @@
           <input type="search" id="sa-q" placeholder="Search agents, signals, sources&hellip;" aria-label="Search agents">
           <kbd class="sa-slash" aria-hidden="true">/</kbd>
         </label>
-        <span class="sa-count" id="sa-count" aria-live="polite">Showing 12 of 12</span>
+        <span class="sa-count" id="sa-count" aria-live="polite">Showing 13 of 13</span>
       </div>
     </div>
 
@@ -193,7 +194,7 @@
           <h3 class="sa-group-name">Signals</h3>
           <p class="sa-group-sub">Things that fire on their own, so you hear about the moment instead of finding it later.</p>
         </div>
-        <span class="sa-group-count">3 agents</span>
+        <span class="sa-group-count">4 agents</span>
       </div>
       <div class="sa-grid">
 
@@ -242,6 +243,22 @@
             <span><em>Hands you</em>Who just started a new role, and the weekly trend</span>
           </span>
           <span class="sa-tags dir-tags"><span class="sa-tag">Triggers</span><span class="sa-tag">Alerts</span></span>
+          <span class="sa-go">Open agent <span aria-hidden="true">&rarr;</span></span>
+        </a>
+
+        <a href="/strategic-agents/page-watch" id="a-c-pw" class="sa-card" data-agent="c-pw" data-state="active" data-badge="building" data-group="signals">
+          <span class="sa-card-top">
+            <span class="sa-ic"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4" width="8" height="16" rx="1.5"/><rect x="13" y="4" width="8" height="16" rx="1.5"/><path d="M15 12h4"/><path d="M5 8h4M5 11h2"/><path d="M15 8h4"/></svg></span>
+            <span class="sa-num">13</span>
+            <span class="sa-state sa-state--build"><i></i>Building</span>
+          </span>
+          <span class="sa-name" data-agent-name>Page Watch</span>
+          <span class="sa-desc">Give it a link or a name. It checks the page on your schedule and tells you what changed, in a sentence, with a before-and-after picture: a new price, a new plan, a reworded headline, a broken page.</span>
+          <span class="sa-dl">
+            <span><em>Watches</em>Competitors' pricing and product pages, clients' own pages, any page</span>
+            <span><em>Hands you</em>What changed and whether it matters, boxed on the page</span>
+          </span>
+          <span class="sa-tags dir-tags"><span class="sa-tag">Competitors</span><span class="sa-tag">Pricing</span><span class="sa-tag">Alerts</span></span>
           <span class="sa-go">Open agent <span aria-hidden="true">&rarr;</span></span>
         </a>
       </div>

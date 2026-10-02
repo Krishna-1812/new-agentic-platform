@@ -748,19 +748,45 @@ def renew_lease(target_id, owner, *, now=None, lease_s=LEASE_S):
         return cur.rowcount > 0
 
 
-def release(target_id, owner, next_check_at):
-    """Hand a watch back with its next check time. False when not held by owner."""
+_UNSEEN = object()
+
+
+def release(target_id, owner, next_check_at, seen=_UNSEEN):
+    """Hand a watch back with its next check time. False when not held by owner.
+
+    `seen` is the next check time the watch had when it was claimed. If
+    someone changed it during the check ("Check now", or a new area that
+    restarts the watch), their time is kept when it is earlier, so a request
+    made mid-check is never overwritten by the check that was running."""
     if backend() == "memory":
         with _MEM_LOCK:
             t = _MEM["targets"].get(target_id)
             if not t or t["lease_owner"] != owner:
                 return False
-            t.update(lease_owner=None, lease_until=None, next_check_at=_iso(next_check_at))
+            nxt = next_check_at
+            if seen is not _UNSEEN and t["next_check_at"] != _iso(seen) and t["next_check_at"]:
+                nxt = min(_dt(t["next_check_at"]), next_check_at)
+            t.update(lease_owner=None, lease_until=None, next_check_at=_iso(nxt))
             return True
     with _pg() as conn, conn.cursor() as cur:
-        cur.execute("UPDATE watch_targets SET lease_owner = NULL, lease_until = NULL, next_check_at = %s, "
-                    "updated_at = now() WHERE id = %s AND lease_owner = %s", (next_check_at, target_id, owner))
+        if seen is _UNSEEN:
+            cur.execute("UPDATE watch_targets SET lease_owner = NULL, lease_until = NULL, next_check_at = %s, "
+                        "updated_at = now() WHERE id = %s AND lease_owner = %s", (next_check_at, target_id, owner))
+        else:
+            cur.execute("""
+                UPDATE watch_targets SET lease_owner = NULL, lease_until = NULL, updated_at = now(),
+                    next_check_at = CASE
+                        WHEN next_check_at IS DISTINCT FROM %(seen)s AND next_check_at IS NOT NULL
+                        THEN LEAST(next_check_at, %(next)s) ELSE %(next)s END
+                WHERE id = %(id)s AND lease_owner = %(owner)s""",
+                        {"seen": _dt(seen), "next": next_check_at, "id": target_id, "owner": owner})
         return cur.rowcount > 0
+
+
+def leased(target, now=None):
+    """Is a worker checking this watch right now?"""
+    until = _dt(target.get("lease_until"))
+    return bool(target.get("lease_owner")) and until is not None and until > (now or _now())
 
 
 def beat(worker_id, *, host="", pid=None, version="", state="running", checks=0, current=(), now=None):
@@ -982,3 +1008,60 @@ def list_feedback(target_id, limit=10):
         cur.execute("SELECT id, headline, verdict, feedback, created_at FROM watch_changes "
                     "WHERE target_id = %s AND feedback IS NOT NULL ORDER BY id DESC LIMIT %s", (target_id, limit))
         return _rows(cur)
+
+
+# ── The dashboard, in a fixed number of queries ──────────────────────────────
+def dashboard(email, strip=30):
+    """Every watch of `email` (archived ones left out), each with:
+       checks   its last `strip` checks, newest first [{outcome, started_at, error}]
+       latest   its newest change {id, headline, level, verdict, feedback, created_at} or None
+       thumb_id the thumbnail of its baseline, or None
+    Four queries however many watches there are."""
+    email = _norm_email(email)
+    if backend() == "memory":
+        with _MEM_LOCK:
+            out = []
+            for t in sorted((t for t in _MEM["targets"].values() if t["email"] == email and not t["archived_at"]),
+                            key=lambda t: t["created_at"], reverse=True):
+                rec = copy.deepcopy(t)
+                checks = sorted((c for c in _MEM["checks"].values() if c["target_id"] == t["id"]),
+                                key=lambda c: c["id"], reverse=True)[:strip]
+                rec["checks"] = [{"outcome": c["outcome"], "started_at": c["started_at"], "error": c.get("error")}
+                                 for c in checks]
+                changes = sorted((c for c in _MEM["changes"].values() if c["target_id"] == t["id"]),
+                                 key=lambda c: c["id"], reverse=True)
+                rec["latest"] = ({k: copy.deepcopy(changes[0][k]) for k in
+                                  ("id", "headline", "level", "verdict", "feedback", "created_at")}
+                                 if changes else None)
+                snap = _MEM["snapshots"].get(t.get("baseline_id"))
+                rec["thumb_id"] = snap.get("thumb_id") if snap else None
+                out.append(rec)
+            return out
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("SELECT * FROM watch_targets WHERE email = %s AND archived_at IS NULL ORDER BY created_at DESC",
+                    [email])
+        targets = _rows(cur)
+        if not targets:
+            return []
+        ids = [t["id"] for t in targets]
+        cur.execute("""
+            SELECT target_id, outcome, started_at, error FROM (
+                SELECT target_id, outcome, started_at, error,
+                       row_number() OVER (PARTITION BY target_id ORDER BY id DESC) AS n
+                FROM watch_checks WHERE target_id = ANY(%s)) x
+            WHERE n <= %s ORDER BY target_id, n""", (ids, strip))
+        checks = {}
+        for r in _rows(cur):
+            checks.setdefault(r.pop("target_id"), []).append(r)
+        cur.execute("""
+            SELECT DISTINCT ON (target_id) target_id, id, headline, level, verdict, feedback, created_at
+            FROM watch_changes WHERE target_id = ANY(%s) ORDER BY target_id, id DESC""", (ids,))
+        latest = {r.pop("target_id"): r for r in _rows(cur)}
+        cur.execute("SELECT t.id, s.thumb_id FROM watch_targets t JOIN watch_snapshots s ON s.id = t.baseline_id "
+                    "WHERE t.id = ANY(%s)", (ids,))
+        thumbs = dict(cur.fetchall())
+    for t in targets:
+        t["checks"] = checks.get(t["id"], [])
+        t["latest"] = latest.get(t["id"])
+        t["thumb_id"] = thumbs.get(t["id"])
+    return targets

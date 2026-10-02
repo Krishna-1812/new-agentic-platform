@@ -68,6 +68,11 @@ NOISE_GROW_CELLS = 2
 # Composite image: each screenshot is scaled to this width side by side.
 COMPOSITE_WIDTH = 900
 
+# ── People ───────────────────────────────────────────────────────────────────
+# Each person can watch at most this many pages. A check is a browser for up
+# to a minute; this keeps one account from filling the worker's day.
+MAX_WATCHES_PER_USER = 200
+
 # ── Deciding ─────────────────────────────────────────────────────────────────
 # A visual-only change smaller than this share of the page, with no text
 # change and no named element under it, is recorded as minor.

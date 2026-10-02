@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    PAGE WATCH: ONE CHANGE (/strategic-agents/page-watch/changes/<id>)
+
+    Claude's verdict as a block in its importance colour, Useful / Not
+    useful / Mute this kind, then the page before and after: a slider with
+    the changed areas boxed on each side (or side by side, or the single
+    picture the alerts carry), then the words and prices that changed.
+-#}
+<html lang="en">
+<head>
+{{ head("Change · " ~ c.watch.name, ["strategic-agents.css?v=2", "page-watch.css?v=1"]) }}
+</head>
+<body class="sa pw">
+
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Page Watch", "/strategic-agents/page-watch"),
+           (c.watch.name, c.watch.page), ("Change", none)]) }}
+
+<main class="sa-shell" id="pw-change">
+  {%- set v = c.verdict %}
+  <section class="pw-verdict-block pw-verdict-block--{{ v.importance }}">
+    <span class="sa-lbl">{{ v.importance_label }} &middot; {{ c.watch.name }} &middot; <time data-rel datetime="{{ c.created_at }}">{{ (c.created_at or '')[:16] }}</time></span>
+    <h1>{{ v.summary }}</h1>
+    {% if v.explanation %}<p>{{ v.explanation }}</p>{% endif %}
+    <div class="pw-vtags">
+      {% if v.category %}<span>{{ v.category|capitalize }}</span>{% endif %}
+      {% if v.noise %}<span>Noise</span>{% endif %}
+      {% if v.muted %}<span>Muted, not alerted</span>{% endif %}
+      {% if v.judged_by == 'claude' %}<span>Judged by Claude{% if v.confidence %}, {{ v.confidence }} confidence{% endif %}</span>
+      {% else %}<span>Rated by rules</span>{% endif %}
+      <span><a href="{{ c.watch.url }}" target="_blank" rel="noopener noreferrer nofollow" style="color:inherit">Open the live page &nearr;</a></span>
+    </div>
+    <div class="pw-feedback" role="group" aria-label="Was this useful?">
+      <button type="button" data-pw-fb="useful" aria-pressed="{{ 'true' if v.feedback == 'useful' else 'false' }}">Useful</button>
+      <button type="button" data-pw-fb="not_useful" aria-pressed="{{ 'true' if v.feedback == 'not_useful' else 'false' }}">Not useful</button>
+      <button type="button" data-pw-fb="mute" aria-pressed="{{ 'true' if v.feedback == 'mute' else 'false' }}">Mute this kind</button>
+      <small id="pw-fb-msg" role="status"></small>
+    </div>
+  </section>
+
+  {% if c.before.shot and c.after.shot %}
+  <section class="pw-compare" aria-labelledby="pw-cmp-t">
+    <div class="pw-compare-bar">
+      <h2 class="sa-lbl" id="pw-cmp-t" style="margin:0">Before and after</h2>
+      <div class="pw-seg" role="group" aria-label="View">
+        <button type="button" data-pw-view="slider" aria-pressed="true">Slider</button>
+        <button type="button" data-pw-view="side" aria-pressed="false">Side by side</button>
+        {% if c.composite %}<button type="button" data-pw-view="composite" aria-pressed="false">Picture for alerts</button>{% endif %}
+      </div>
+    </div>
+
+    <div data-pw-pane="slider">
+      <div class="pw-slider" id="pw-slider">
+        <div class="pw-slider-in" style="--cut:50%">
+          <span class="pw-tagb">Before</span><span class="pw-taga">After</span>
+          <div class="pw-layer pw-layer--after"><img src="{{ c.after.shot }}" alt="The page after the change"></div>
+          <div class="pw-layer pw-layer--before"><img src="{{ c.before.shot }}" alt="The page before the change"></div>
+          <div class="pw-handle"><button type="button" class="pw-grip" role="slider" aria-label="Move between before and after"
+               aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">&#8596;</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div data-pw-pane="side" hidden>
+      <div class="pw-side">
+        <figure data-side="before"><figcaption>Before</figcaption>
+          <div class="pw-canvas"><img src="{{ c.before.shot }}" alt="The page before the change" loading="lazy"><div class="pw-side-layer" style="position:absolute;inset:0"></div></div></figure>
+        <figure data-side="after"><figcaption>After</figcaption>
+          <div class="pw-canvas"><img src="{{ c.after.shot }}" alt="The page after the change" loading="lazy"><div class="pw-side-layer" style="position:absolute;inset:0"></div></div></figure>
+      </div>
+    </div>
+
+    {% if c.composite %}
+    <div data-pw-pane="composite" hidden class="pw-composite">
+      <img src="{{ c.composite }}" alt="Before and after, side by side, with the changes boxed" loading="lazy">
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <section class="pw-diff" aria-label="What changed in the text">
+    {% if c.prices %}
+    <div class="pw-panel">
+      <h3>Prices</h3>
+      <table class="pw-prices">
+        {% for p in c.prices %}
+        <tr><td>{{ (p.before or ['none'])|join(', ') }}</td><td>{{ (p.after or ['none'])|join(', ') }}</td><td>{{ p.context }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endif %}
+    {% if c.changed %}
+    <div class="pw-panel">
+      <h3>Edited</h3>
+      {% for x in c.changed %}
+      <div class="pw-diff-row">{% for op, t in x.segments %}{% if op == '-' %}<del>{{ t }}</del>{% elif op == '+' %}<ins>{{ t }}</ins>{% else %}{{ t }}{% endif %} {% endfor %}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if c.added %}
+    <div class="pw-panel">
+      <h3>Added</h3>
+      {% for t in c.added %}<div class="pw-diff-row pw-plus">{{ t }}</div>{% endfor %}
+    </div>
+    {% endif %}
+    {% if c.removed %}
+    <div class="pw-panel">
+      <h3>Removed</h3>
+      {% for t in c.removed %}<div class="pw-diff-row pw-minus">{{ t }}</div>{% endfor %}
+    </div>
+    {% endif %}
+    {% if c.facts %}
+    <div class="pw-panel">
+      <h3>About the page</h3>
+      {% for k, pair in c.facts.items() %}
+      <div class="pw-diff-row">{{ {'title': 'Title', 'final_url': 'Address after redirects', 'status': 'Status code'}.get(k, k) }}:
+        <del>{{ pair[0] }}</del> <ins>{{ pair[1] }}</ins></div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if not (c.prices or c.changed or c.added or c.removed or c.facts) %}
+    <div class="pw-panel"><h3>The words</h3><p class="pw-quiet">No text changed: this change is in how the page looks. The boxes above show where.</p></div>
+    {% endif %}
+  </section>
+</main>
+
+<script type="application/json" id="pw-data">{{ {"change": {"id": c.id, "before": c.before, "after": c.after,
+  "boxes_before": c.boxes_before, "boxes_after": c.boxes_after}}|tojson }}</script>
+{{ topbar_script() }}
+<script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=1"></script>
+</body>
+</html>

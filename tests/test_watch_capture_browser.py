@@ -130,6 +130,8 @@ def test_a_real_capture_is_stable_and_complete(server, local_only, browser_ok):
     assert not any("sales reps" in t or "employs technologies" in t for t in texts)
     assert "corner widget" in cap.hidden
     # Every block has a position; the button is named as a link.
+    # Every block also has its whole path, for the area picker.
+    assert all(b["path"].startswith(("body", "#")) for b in cap.blocks)
     sign = next(b for b in cap.blocks if b["text"] == "Sign Up")
     assert sign["tag"] == "a" and sign["box"][2] > 20 and sign["box"][3] > 10
     # The endless animation is frozen: the control shot matches the screenshot.

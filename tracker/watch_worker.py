@@ -117,7 +117,7 @@ class Worker:
         fresh = watch_store.get_target(tid)
         if fresh is not None:
             nxt = next_check_time(fresh, result, datetime.now(timezone.utc))
-            if not watch_store.release(tid, self.id, nxt):
+            if not watch_store.release(tid, self.id, nxt, seen=target.get("next_check_at")):
                 log.warning("watch %s: the lease was lost during the check", tid)
         with self._lock:
             self.checks += 1
