@@ -4978,11 +4978,68 @@ def _gads_digest_run(dry_run, force=False, account=""):
         except Exception:
             app.logger.exception("gads_digest: could not record the post")
 
+    base_url = _gads_digest_base_url()
     return gads_digest.run(rows, accounts, st,
                            token=os.environ.get("GOOGLE_ADS_SLACK_BOT_TOKEN", ""),
                            channel=os.environ.get("GOOGLE_ADS_SLACK_CHANNEL", ""),
-                           base_url=_gads_digest_base_url(), dry_run=dry_run, force=force,
-                           last_posted=last_posted, mark_posted=mark_posted, on_thread=_slack_thread_remember)
+                           base_url=base_url, dry_run=dry_run, force=force,
+                           last_posted=last_posted, mark_posted=mark_posted, on_thread=_slack_thread_remember,
+                           chart_url=lambda a, day: _gads_chart_url(base_url, a, day))
+
+
+# The chart in each digest message is an image Slack fetches from here. Slack needs a public address,
+# so each one is signed for its account and day with GOOGLE_ADS_DIGEST_TOKEN (unguessable, and useless
+# for any other account or day) and expires after CHART_DAYS.
+GADS_CHART = "/api/dashboards/google-ads/slack-chart"
+CHART_DAYS = 45
+
+
+def _gads_chart_sig(account, day):
+    import hmac
+    secret = os.environ.get("GOOGLE_ADS_DIGEST_TOKEN", "")
+    if not secret:
+        return ""
+    return hmac.new(secret.encode(), ("chart\x01%s\x01%s" % (account, day)).encode(), "sha256").hexdigest()[:40]
+
+
+def _gads_chart_url(base_url, account, day):
+    sig = _gads_chart_sig(account, day)
+    if not (sig and base_url):
+        return ""
+    from urllib.parse import quote
+    return "%s%s/%s/%s.png?a=%s" % (base_url, GADS_CHART, day, sig, quote(account, safe=""))
+
+
+@app.route(GADS_CHART + "/<day>/<sig>.png")
+def google_ads_slack_chart(day, sig):
+    import hmac
+    from tracker import gads_digest, gads_digest_chart
+    account = request.args.get("a", "")[:300]
+    want = _gads_chart_sig(account, day)
+    if not (want and _ISO_DAY.match(day) and hmac.compare_digest(want, sig)):
+        abort(404)
+    try:
+        age = (gads_digest.today_ist() - datetime.strptime(day, "%Y-%m-%d").date()).days
+    except ValueError:
+        abort(404)
+    if age > CHART_DAYS or age < -2:
+        abort(404)
+    try:
+        rows = _fetch_google_ads_rows()
+    except Exception:
+        abort(503)
+    series = gads_digest_chart.days_for(rows, account, day)
+    if not any(c or v for _, c, v in series):
+        abort(404)
+    upto = [r for r in rows if r.get("day", "") <= day]
+    s = gads_digest.summarize(upto, account) or {}
+    base = s.get("base") or {}
+    cur = s.get("cur", "")
+    png = gads_digest_chart.render(series, lambda v: gads_digest.money(v, cur),
+                                   base.get("cost"), base.get("conversions"))
+    resp = app.response_class(png, mimetype="image/png")
+    resp.headers["Cache-Control"] = "public, max-age=604800"
+    return resp
 
 
 # ── Ads Insight answers questions in Slack ───────────────────────────────────
@@ -5133,6 +5190,20 @@ def slack_events():
                               text="I've answered today's limit of questions. Ask again tomorrow, or open the dashboard.")
         return "", 200
     _slack_spawn(_slack_answer, event, bot, thread, text, thread_account or "", _gads_digest_base_url())
+    return "", 200
+
+
+@app.route("/api/slack/interactions", methods=["POST"])
+def slack_interactions():
+    """Button clicks in Ads Insight's messages. The buttons are links that open in the browser by
+    themselves; Slack still reports the click here and shows a warning unless it is acknowledged."""
+    from tracker import gads_slack_chat
+    secret = os.environ.get("GOOGLE_ADS_SLACK_SIGNING_SECRET", "")
+    if not secret:
+        return "", 503
+    if not gads_slack_chat.verify(secret, request.headers.get("X-Slack-Request-Timestamp", ""),
+                                  request.get_data(cache=True), request.headers.get("X-Slack-Signature", "")):
+        return "", 401
     return "", 200
 
 

@@ -251,6 +251,37 @@ def to_slack(text):
     return text
 
 
+# ── How an answer looks ─────────────────────────────────────────────────────
+def thinking_blocks():
+    return [{"type": "context", "elements": [{"type": "mrkdwn", "text": "\u23F3  " + THINKING}]}]
+
+
+def answer_blocks(reply, account, latest, base_url="", ok=True):
+    """The answer as Block Kit: what it is about, the answer itself, where it came from, a dashboard button."""
+    who = account or "All accounts"
+    head = "\U0001F4A1  *%s*" % gads_digest.esc(who) if ok else "\u26A0\uFE0F  *Couldn't answer*"
+    blocks = [{"type": "context", "elements": [{"type": "mrkdwn", "text": head}]}]
+    rest = reply
+    while rest:   # Slack allows 3,000 characters per section
+        cut = rest if len(rest) <= 2900 else rest[:2900].rsplit("\n", 1)[0] or rest[:2900]
+        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": cut}})
+        rest = rest[len(cut):].lstrip("\n")
+    if ok:
+        src = "\U0001F916 Ads Insight  \u00b7  Google Ads data"
+        if latest:
+            src += " up to %s" % gads_digest.day_label(latest)
+        src += "  \u00b7  Ask a follow-up in this thread"
+        blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": src}]})
+    if ok and base_url:
+        url = "%s/dashboards/google-ads" % base_url + ("?account=" + quote(account, safe="") if account else "")
+        blocks.append({"type": "actions", "elements": [
+            {"type": "button", "action_id": "open_dashboard",
+             "text": {"type": "plain_text", "emoji": True, "text": "\U0001F4CA  Open %s" % (
+                 "dashboard" if not account else account[:60])},
+             "url": url}]})
+    return blocks
+
+
 # ── One question, end to end ────────────────────────────────────────────────
 def answer(event, *, token, channel, bot, accounts, rows, thread, text, thread_account,
            load_pack=None, context=None, latest_review=None, st=None, fx=None,
@@ -260,21 +291,22 @@ def answer(event, *, token, channel, bot, accounts, rows, thread, text, thread_a
     thread_account: the account the thread is about ("" for none or every account).
     remember(thread, account) records the thread so its next replies are answered too.
     Returns {"ok", "account", "error", "usage"}."""
-    held = slack("chat.postMessage", token, session, channel=channel, thread_ts=thread, text=THINKING)
+    held = slack("chat.postMessage", token, session, channel=channel, thread_ts=thread, text=THINKING,
+                 blocks=thinking_blocks())
     placeholder = held.get("ts") if held.get("ok") else None
     account = thread_account or account_named(text, accounts)
     out = {"ok": False, "account": account, "error": "", "usage": None}
+    latest = ""
     try:
         if account:
             data = account_data(account, rows, load_pack, context, latest_review, st, fx)
+            latest = (data.get("latest_day") or {}).get("day", "")
         else:
             data = overview(rows, accounts, st, fx)
+            latest = max((a["day"] for a in data["accounts"]), default="")
         history = thread_history(token, channel, thread, bot, event.get("ts"), session)
         system, messages = prompt_parts(data, history, text)
         reply, out["usage"] = ask_claude(system, messages, client)
-        if base_url and account:
-            reply += "\n<%s/dashboards/google-ads?account=%s|Open %s in the dashboard>" % (
-                base_url, quote(account, safe=""), gads_digest.esc(account))
         out["ok"] = True
     except Exception as exc:
         from tracker import gads_ai
@@ -286,12 +318,13 @@ def answer(event, *, token, channel, bot, accounts, rows, thread, text, thread_a
             reason = "Something went wrong (%s)." % type(exc).__name__
         reply = "Sorry, I couldn't answer that. " + reason
         out["error"] = type(exc).__name__
+    blocks = answer_blocks(reply, account, latest, base_url, ok=out["ok"])
     if placeholder:
-        done = slack("chat.update", token, session, channel=channel, ts=placeholder, text=reply)
+        done = slack("chat.update", token, session, channel=channel, ts=placeholder, text=reply, blocks=blocks)
         if not done.get("ok"):
-            slack("chat.postMessage", token, session, channel=channel, thread_ts=thread, text=reply)
+            slack("chat.postMessage", token, session, channel=channel, thread_ts=thread, text=reply, blocks=blocks)
     else:
-        slack("chat.postMessage", token, session, channel=channel, thread_ts=thread, text=reply)
+        slack("chat.postMessage", token, session, channel=channel, thread_ts=thread, text=reply, blocks=blocks)
     if remember:
         remember(thread, account)
     return out

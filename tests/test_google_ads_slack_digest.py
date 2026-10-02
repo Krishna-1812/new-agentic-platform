@@ -119,16 +119,51 @@ def test_pacing_budget_limits_and_disapproved_ads_come_from_the_insights():
 
 # ── The message ──────────────────────────────────────────────────────────────
 def test_the_message_reads_plainly_and_escapes_names():
-    rows = _week(account="A & <B>", last=[("Brand <x>", 1600.0, 6.0)])
+    rows = _week(account="A & <B>", last=[("Brand <x>", 1600.0, 2.0)])
     s = d.summarize(rows, "A & <B>", today=TODAY)
-    msg = d.message(s, "https://app.example")
+    msg = d.message(s, "https://app.example", "https://app.example/chart.png")
     blob = json.dumps(msg["blocks"], ensure_ascii=False)
-    assert msg["blocks"][0]["text"]["text"] == "Google Ads · A & <B>", "a plain_text header needs no escaping"
+    assert msg["blocks"][0]["text"]["text"] == "\U0001F7E0  A & <B>", "status light, and plain_text needs no escaping"
+    assert "Worth a look" in blob and "Sat 26 Sep 2026" in blob
     assert "Brand &lt;x&gt;" in blob and "Brand <x>" not in blob
-    assert "https://app.example/dashboards/google-ads?account=A%20%26%20%3CB%3E|Open the dashboard" in blob
-    assert "₹1,600" in blob and "↑ +60%" in blob and "_7-day avg ₹1,000_" in blob
-    assert msg["text"].startswith("Google Ads A & <B>, Sat 26 Sep 2026: spend ₹1,600, 6 conversions")
+    assert '"url": "https://app.example/dashboards/google-ads?account=A%20%26%20%3CB%3E"' in blob
+    assert "\u20b91,600" in blob and "_7-day avg \u20b91,000_" in blob
+    assert "\u26aa `\u25b2 60%`" in blob, "spend has no good or bad direction: a white pill"
+    assert "\U0001F534 `\u25b2 220%`" in blob, "dearer conversions are red"
+    assert "\U0001F534 `\u25bc 50%`" in blob, "fewer conversions are red"
+    assert {"type": "image", "image_url": "https://app.example/chart.png",
+            "alt_text": "Daily spend and conversions for A & <B> over the last 14 days"} in msg["blocks"]
+    assert "\U0001F947  *Brand &lt;x&gt;*" in blob, "top campaigns get medals"
+    assert msg["text"].startswith("\U0001F7E0 A & <B>, Sat 26 Sep 2026: spend \u20b91,600, 2 conversions")
     assert all(len(f["text"]) < 2000 for b in msg["blocks"] for f in b.get("fields", []))
+    assert len(msg["blocks"]) <= 50
+
+
+def test_alerts_carry_a_level_and_the_most_serious_sets_the_light():
+    s = d.summarize(_week(last=[("Generic - Search", 1000.0, 0.0)]), "Acme", today=TODAY)
+    assert s["alert_items"][0] == (d.CRITICAL, "No conversions (7-day average 4 a day).") and s["status"] == d.CRITICAL
+    calm = d.summarize(_week(last=[("Generic - Search", 1050.0, 4.0)]), "Acme", today=TODAY)
+    assert calm["status"] == "good"
+    assert "All clear" in json.dumps(d.message(calm)["blocks"])
+
+
+def test_the_pill_and_meter():
+    assert d.pill(110, 100, d.GOOD_UP) == "\U0001F7E2 `\u25b2 10%`"
+    assert d.pill(110, 100, d.GOOD_DOWN) == "\U0001F534 `\u25b2 10%`"
+    assert d.pill(102, 100, d.GOOD_UP) == "`= flat`" and d.pill(5, 0, d.GOOD_UP) == ""
+    assert d.meter(0.32) == "\u25b0" * 3 + "\u25b1" * 7 and d.meter(1.7) == "\u25b0" * 10
+
+
+def test_the_morning_overview_ranks_accounts_most_urgent_first():
+    rows = (_week(last=[("Generic - Search", 1000.0, 0.0)]) + _week("Calm", last=[("S", 1000.0, 4.0)])
+            + _week("Busy", last=[("S", 1700.0, 6.0)]))
+    ss = [d.summarize(rows, a, today=TODAY) for a in ("Calm", "Busy", "Acme")]
+    msg = d.overview(ss, "https://app.example", today=TODAY)
+    blob = json.dumps(msg["blocks"], ensure_ascii=False)
+    assert blob.index("*Acme*") < blob.index("*Busy*") < blob.index("*Calm*")
+    assert "\U0001F534 1  \u00b7  \U0001F7E0 1  \u00b7  \U0001F7E2 1" in blob
+    assert "\u20b93,700" in blob, "one currency: the total is shown"
+    assert msg["text"] == "Google Ads morning briefing: 3 accounts, 1 need action, 1 worth a look."
 
 
 def test_rupees_use_lakh_grouping_and_other_currencies_commas():
@@ -140,22 +175,27 @@ def test_rupees_use_lakh_grouping_and_other_currencies_commas():
 
 
 # ── Posting ──────────────────────────────────────────────────────────────────
-def test_one_message_per_account_spaced_a_second_apart_and_never_twice():
+def test_an_overview_then_one_message_per_account_spaced_a_second_apart_and_never_twice():
     rows = _week(last=[("Generic - Search", 1000.0, 4.0)]) + _week("Beta", last=[("Generic - Search", 900.0, 4.0)])
-    slack, slept, posted = FakeSlack(), [], {}
+    slack, slept, posted, threads = FakeSlack((200, {"ok": True, "ts": "1.1"})), [], {}, []
     kw = dict(token="xoxb-test", channel="C123", today=TODAY, session=slack, sleep=slept.append,
-              last_posted=posted.get, mark_posted=posted.__setitem__)
+              last_posted=posted.get, mark_posted=posted.__setitem__, on_thread=lambda a, ts: threads.append(a),
+              chart_url=lambda a, day: "https://x/%s/%s.png" % (a, day))
     out = d.run(rows, ["Acme", "Beta"], **kw)
-    assert [r["status"] for r in out] == ["posted", "posted"] and len(slack.calls) == 2
-    assert slept == [d.SPACING_SECONDS]
-    call = slack.calls[0]
+    assert [(r["account"], r["status"]) for r in out] == [(d.OVERVIEW, "posted"), ("Acme", "posted"), ("Beta", "posted")]
+    assert len(slack.calls) == 3 and slept == [d.SPACING_SECONDS] * 2
+    assert threads == ["", "Acme", "Beta"], "replies under the overview are about every account"
+    call = slack.calls[1]
     assert call["url"] == "https://slack.com/api/chat.postMessage"
     assert call["headers"]["Authorization"] == "Bearer xoxb-test" and call["json"]["channel"] == "C123"
-    assert posted == {"Acme": "2026-09-26", "Beta": "2026-09-26"}
+    assert {"type": "image", "image_url": "https://x/Acme/2026-09-26.png",
+            "alt_text": "Daily spend and conversions for Acme over the last 14 days"} in call["json"]["blocks"]
+    assert posted == {d.OVERVIEW: "2026-09-27", "Acme": "2026-09-26", "Beta": "2026-09-26"}
     again = d.run(rows, ["Acme", "Beta"], **kw)
-    assert [r["status"] for r in again] == ["skipped", "skipped"] and len(slack.calls) == 2
+    assert [r["status"] for r in again] == ["skipped"] * 3 and len(slack.calls) == 3
     forced = d.run(rows, ["Acme"], force=True, **kw)
-    assert forced[0]["status"] == "posted" and len(slack.calls) == 3
+    assert [r["account"] for r in forced] == ["Acme"], "one account: no overview"
+    assert forced[0]["status"] == "posted" and len(slack.calls) == 4
 
 
 def test_slack_errors_are_reported_and_a_rate_limit_is_retried_once():
@@ -246,3 +286,55 @@ def test_the_dashboard_opens_on_the_account_in_its_link():
         js = f.read()
     assert 'URLSearchParams(window.location.search).get("account")' in js
     assert js.index("ACCOUNTS.indexOf(wanted)") < js.index("  initControls();\n  initDrawer();")
+
+
+# ── The chart ────────────────────────────────────────────────────────────────
+def test_the_chart_covers_14_days_with_missing_days_as_zero_and_is_a_png():
+    from tracker import gads_digest_chart as ch
+    rows = _week(last=[("Generic - Search", 1600.0, 6.0)])
+    series = ch.days_for(rows, "Acme", "2026-09-26")
+    assert len(series) == 14 and series[0] == ("2026-09-13", 0.0, 0.0) and series[-1] == ("2026-09-26", 1600.0, 6.0)
+    png = ch.render(series, lambda v: d.money(v, "INR"), 1000.0, 4.0)
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
+    from PIL import Image
+    import io
+    assert Image.open(io.BytesIO(png)).size == (ch.W * ch.SCALE, ch.H * ch.SCALE)
+    assert os.path.exists(os.path.join(ch.FONT_DIR, "DejaVuSans.ttf")), "a font with the rupee sign ships with the code"
+
+
+def test_the_chart_address_is_signed_for_one_account_and_day(site, monkeypatch):
+    c = appmod.app.test_client()
+    url = appmod._gads_chart_url("https://web.example", "Acme", "2026-09-26")
+    assert url.startswith("https://web.example/api/dashboards/google-ads/slack-chart/2026-09-26/") and url.endswith("?a=Acme")
+    path = url[len("https://web.example"):]
+    r = c.get(path)
+    assert r.status_code == 200 and r.mimetype == "image/png" and "max-age" in r.headers["Cache-Control"]
+    assert c.get(path.replace("?a=Acme", "?a=Other")).status_code == 404, "the signature names the account"
+    assert c.get(path.replace("2026-09-26/", "2026-09-25/", 1)).status_code == 404, "and the day"
+    monkeypatch.setattr(d, "today_ist", lambda: dt.date(2026, 12, 31))
+    assert c.get(path).status_code == 404, "old charts expire"
+    monkeypatch.delenv("GOOGLE_ADS_DIGEST_TOKEN")
+    assert appmod._gads_chart_url("https://web.example", "Acme", "2026-09-26") == ""
+
+
+def test_the_posted_digest_links_its_chart(site):
+    appmod.app.test_client().post("/api/dashboards/google-ads/slack-digest",
+                                  headers={"Authorization": "Bearer s3cret"}, base_url="http://web.example")
+    blocks = site.calls[0]["json"]["blocks"]
+    img = next(b for b in blocks if b["type"] == "image")
+    assert img["image_url"].startswith("https://web.example/api/dashboards/google-ads/slack-chart/2026-09-26/")
+
+
+def test_button_clicks_are_acknowledged_only_for_slack(site, monkeypatch):
+    import hashlib
+    import hmac
+    import time
+    c = appmod.app.test_client()
+    monkeypatch.setenv("GOOGLE_ADS_SLACK_SIGNING_SECRET", "sig")
+    body = b"payload=%7B%7D"
+    ts = str(int(time.time()))
+    sig = "v0=" + hmac.new(b"sig", ("v0:%s:" % ts).encode() + body, hashlib.sha256).hexdigest()
+    h = {"X-Slack-Request-Timestamp": ts, "X-Slack-Signature": sig}
+    assert c.post("/api/slack/interactions", data=body, headers=h,
+                  content_type="application/x-www-form-urlencoded").status_code == 200
+    assert c.post("/api/slack/interactions", data=body, content_type="application/x-www-form-urlencoded").status_code == 401
