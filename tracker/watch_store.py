@@ -18,6 +18,8 @@ Tables
                    endpoint.
   watch_ai_calls   one row per Claude call (a change judged, a page found by
                    name): its tokens and what it cost, for the monthly cap.
+  watch_meta       a few named values the workers share: when the digest
+                   was last posted, whether the watchdog has already warned.
 
 The worker claims due watches with a lease (claim_due), renews it while a
 check runs (renew_lease) and hands the watch back with its next time
@@ -215,6 +217,11 @@ def _ensure(conn):
                     detail TEXT NOT NULL DEFAULT '',
                     created_at TIMESTAMPTZ NOT NULL DEFAULT now())""")
             cur.execute("CREATE INDEX IF NOT EXISTS watch_ai_calls_time ON watch_ai_calls (created_at)")
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS watch_meta (
+                    key TEXT PRIMARY KEY,
+                    value JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT now())""")
         conn.commit()
         _READY = True
 
@@ -246,7 +253,7 @@ def reset_memory():
     """Empty the in-process store (tests)."""
     with _MEM_LOCK:
         _MEM.clear()
-        _MEM.update(targets={}, images={}, snapshots={}, changes={}, checks={}, workers={}, ai_calls={},
+        _MEM.update(targets={}, images={}, snapshots={}, changes={}, checks={}, workers={}, ai_calls={}, meta={},
                     ids={"targets": 0, "images": 0, "snapshots": 0, "changes": 0, "checks": 0, "ai_calls": 0})
 
 
@@ -1065,3 +1072,85 @@ def dashboard(email, strip=30):
         t["latest"] = latest.get(t["id"])
         t["thumb_id"] = thumbs.get(t["id"])
     return targets
+
+
+# ── Shared values and the alert queue ────────────────────────────────────────
+def get_meta(key, default=None):
+    if backend() == "memory":
+        with _MEM_LOCK:
+            return copy.deepcopy(_MEM["meta"].get(key, default))
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("SELECT value FROM watch_meta WHERE key = %s", (key,))
+        row = cur.fetchone()
+        return row[0] if row else default
+
+
+def set_meta(key, value):
+    if backend() == "memory":
+        with _MEM_LOCK:
+            _MEM["meta"][key] = copy.deepcopy(value)
+            return
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("INSERT INTO watch_meta (key, value, updated_at) VALUES (%s, %s, now()) "
+                    "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()", (key, _j(value)))
+
+
+def claim_meta(key, value, unless):
+    """Set `key` to `value` only if its current value is not `unless`. True
+    when this caller set it: the one worker that should post a daily message."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            if _MEM["meta"].get(key) == unless:
+                return False
+            _MEM["meta"][key] = copy.deepcopy(value)
+            return True
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO watch_meta (key, value, updated_at) VALUES (%(k)s, %(v)s, now())
+            ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()
+            WHERE watch_meta.value IS DISTINCT FROM %(u)s::jsonb RETURNING key""",
+                    {"k": key, "v": _j(value), "u": _j(unless)})
+        return cur.fetchone() is not None
+
+
+def queued_alerts(limit=500):
+    """Changes waiting for the digest, oldest first, each with its watch:
+    [{"change": {...}, "target": {...}}]."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            rows = sorted((c for c in _MEM["changes"].values() if (c.get("alert") or {}).get("state") == "queued"),
+                          key=lambda c: c["id"])[:limit]
+            return [{"change": copy.deepcopy(c), "target": copy.deepcopy(_MEM["targets"].get(c["target_id"]))}
+                    for c in rows if c["target_id"] in _MEM["targets"]]
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("""
+            SELECT c.id, c.target_id, c.headline, c.level, c.verdict, c.alert, c.created_at,
+                   t.email, t.name, t.url, t.client, t.channel
+            FROM watch_changes c JOIN watch_targets t ON t.id = c.target_id
+            WHERE c.alert->>'state' = 'queued' ORDER BY c.id LIMIT %s""", (limit,))
+        out = []
+        for r in _rows(cur):
+            out.append({"change": {k: r[k] for k in ("id", "target_id", "headline", "level", "verdict", "alert",
+                                                    "created_at")},
+                        "target": {"id": r["target_id"], "email": r["email"], "name": r["name"], "url": r["url"],
+                                   "client": r["client"], "channel": r["channel"]}})
+        return out
+
+
+def changes_between(since, until):
+    """Every change recorded in [since, until), with its watch, for the weekly summary."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            rows = sorted((c for c in _MEM["changes"].values() if since <= _dt(c["created_at"]) < until),
+                          key=lambda c: c["id"])
+            return [{"change": copy.deepcopy(c), "target": copy.deepcopy(_MEM["targets"].get(c["target_id"]))}
+                    for c in rows if c["target_id"] in _MEM["targets"]]
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("""
+            SELECT c.id, c.target_id, c.headline, c.level, c.verdict, c.alert, c.created_at,
+                   t.email, t.name, t.url, t.client, t.channel
+            FROM watch_changes c JOIN watch_targets t ON t.id = c.target_id
+            WHERE c.created_at >= %s AND c.created_at < %s ORDER BY c.id""", (since, until))
+        return [{"change": {k: r[k] for k in ("id", "target_id", "headline", "level", "verdict", "alert", "created_at")},
+                 "target": {"id": r["target_id"], "email": r["email"], "name": r["name"], "url": r["url"],
+                            "client": r["client"], "channel": r["channel"]}} for r in _rows(cur)]

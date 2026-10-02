@@ -174,6 +174,11 @@ class Worker:
                 if time.monotonic() - self._last_prune >= PRUNE_EVERY_S and self._leader():
                     self._last_prune = time.monotonic()
                     log.info("retention: %s", watch_store.prune())
+                # The daily digest: due once a day; claim_meta lets one worker post it.
+                from tracker import watch_alerts
+                done = watch_alerts.run_digest()
+                if done:
+                    log.info("digest: %s", done)
             except Exception:
                 log.exception("heartbeat")
 

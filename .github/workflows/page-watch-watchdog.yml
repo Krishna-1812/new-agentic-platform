@@ -1,0 +1,50 @@
+name: Page Watch watchdog
+
+# Every 30 minutes, asks the live site whether the Page Watch checker (the
+# worker service) is alive and keeping up. A worker that has died cannot say
+# so itself; the site posts one Slack message to WATCH_SLACK_CHANNEL when it
+# stops or falls behind, and nothing more until it is healthy again
+# (tracker/watch_alerts.py, watchdog). The reply holds a status word only.
+#
+# Needs the repository secret WATCH_CRON_TOKEN (the same value as the Railway
+# variable on the web service). Until it is set this exits quietly, so it
+# does not fail every half hour before Page Watch is switched on. The site
+# address defaults to the Railway one; set the repository variable APP_URL
+# to change it.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Minutes 7 and 37: off the hour and half hour, when GitHub's scheduled
+    # runs start latest.
+    - cron: '7,37 * * * *'
+
+permissions: {}
+
+concurrency:
+  group: page-watch-watchdog
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ask the site
+        env:
+          TOKEN: ${{ secrets.WATCH_CRON_TOKEN }}
+          APP_URL: ${{ vars.APP_URL || 'https://web-production-6748e.up.railway.app' }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::notice::WATCH_CRON_TOKEN is not set yet, so the watchdog is off (Settings > Secrets and variables > Actions)."
+            exit 0
+          fi
+          code=$(curl -sS -o reply.json -w '%{http_code}' --max-time 60 \
+                      --retry 2 --retry-delay 20 --retry-all-errors \
+                      -X POST -H "Authorization: Bearer $TOKEN" "$APP_URL/api/page-watch/watchdog") || code=000
+          echo "HTTP $code"
+          cat reply.json 2>/dev/null; echo
+          if [ "$code" != "200" ]; then
+            echo "::error::The watchdog could not run (HTTP $code)."
+            exit 1
+          fi

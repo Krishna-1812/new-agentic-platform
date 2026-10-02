@@ -272,9 +272,9 @@ It then scores and tiers the businesses worth pitching (website build, local SEO
   - optional: `APIFY_API_TOKEN`, `PAGESPEED_API_KEY` (or the Maps key), `HUNTER_API_KEY`;
   - tuning: `LBR_SOURCE`, `LBR_RENDER`, `LBR_RENDER_CONCURRENCY`, `LBR_RETENTION_DAYS`, `LBR_PRICES_JSON`, `LBR_APIFY_PRICING`.
 
-### 9a. Page Watch (in build: Phases 1–4 of 5 done)
+### 9a. Page Watch (built: all 5 phases; switching on needs the checklist in docs/page-watch-plan.md, section 7)
 
-Watches any web page and reports, in plain words and with a before-and-after picture, when it changes. The plan and the five phases are in `docs/page-watch-plan.md`. Phase 1 is the detection engine (`tracker/watch_*.py`); Phase 2 the worker and schedules; Phase 3 Claude's verdict; Phase 4 the pages: `/strategic-agents/page-watch` (add flow and dashboard), `/watches/<id>` (timeline and settings) and `/changes/<id>` (verdict and before/after slider), backed by `tracker/watch_web.py`. Slack alerts are Phase 5.
+Watches any web page and reports, in plain words and with a before-and-after picture, when it changes. The plan and the five phases are in `docs/page-watch-plan.md`. Phase 1 is the detection engine (`tracker/watch_*.py`); Phase 2 the worker and schedules; Phase 3 Claude's verdict; Phase 4 the pages: `/strategic-agents/page-watch` (add flow and dashboard), `/watches/<id>` (timeline and settings) and `/changes/<id>` (verdict and before/after slider), backed by `tracker/watch_web.py`. Phase 5 is Slack: `tracker/watch_alerts.py` handles alerts, the digest, the weekly summary, failure and recovery notices, and the watchdog (`.github/workflows/page-watch-watchdog.yml`).
 
 - **Reading a page** (`watch_capture`): headless Chromium at 1440×900, fixed language and time zone, animations frozen, cookie notices and chat bubbles hidden, lazy content scrolled into view. Returns every visible text block with its position, a full-page screenshot and a control screenshot a few seconds later. Every request the browser makes is checked against private addresses, one redirect at a time (same rule as Local Business Radar). Without a browser it reads plain HTTP (text only).
 - **Comparing** (`watch_text`, `watch_visual`, `watch_detect`): text block by block (volatile text such as "3 minutes ago" neutralised); screenshots row-aligned to the pixel, so an inserted banner does not make the rest of the page count as changed; content that only moved (one column shifting, a fixed sidebar) is recognised and left out.
@@ -298,7 +298,7 @@ Watches any web page and reports, in plain words and with a before-and-after pic
   - `find_pages` turns a name into candidate links using web search.
   - Tests never call Claude: `conftest.py` sets `WATCH_JUDGE=off`, and `tests/test_watch_judge.py` uses a fake client plus the real SDK against a local stand-in server.
 - **Health:** `/strategic-agents/page-watch/health` (staff only) returns JSON with `ok`, `behind`, `no_worker`, `no_browser` or `idle`.
-- **Env:** `WATCH_BROWSER=off` turns the browser off; `WATCH_CHROMIUM_PATH` points at a Chromium to use; `WATCH_WORKER_THREADS` (default 2); `RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1` and `ANTHROPIC_API_KEY` on the worker service; `WATCH_CLAUDE_MODEL`, `WATCH_CLAUDE_EFFORT`, `WATCH_CLAUDE_MONTHLY_USD`, `WATCH_JUDGE`.
+- **Env:** `WATCH_BROWSER=off` turns the browser off; `WATCH_CHROMIUM_PATH` points at a Chromium to use; `WATCH_WORKER_THREADS` (default 2); `RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1` and `ANTHROPIC_API_KEY` on the worker service; `WATCH_CLAUDE_MODEL`, `WATCH_CLAUDE_EFFORT`, `WATCH_CLAUDE_MONTHLY_USD`, `WATCH_JUDGE`; `WATCH_SLACK_CHANNEL`, `WATCH_SLACK_BOT_TOKEN` (falls back to `GOOGLE_ADS_SLACK_BOT_TOKEN`), `WATCH_DIGEST_AT`, `WATCH_ALERTS`, `WATCH_CRON_TOKEN` (web, and the GitHub secret for the watchdog), `PUBLIC_BASE_URL` and `SECRET_KEY` (also on the worker).
 
 ## 10. Environment variables (Railway → web → Variables)
 

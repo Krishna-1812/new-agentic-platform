@@ -27,6 +27,9 @@ os.environ.setdefault("LBR_APIFY_PRICING", "list")
 # Page Watch never calls Claude in tests unless a test switches the judge on
 # with a fake client (tests/test_watch_judge.py).
 os.environ.setdefault("WATCH_JUDGE", "off")
+# ...and never posts to Slack unless a test switches alerts on with a fake
+# Slack (tests/test_watch_alerts.py).
+os.environ.setdefault("WATCH_ALERTS", "off")
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

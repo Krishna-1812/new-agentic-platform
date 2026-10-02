@@ -329,7 +329,51 @@ The plan as first written:
 - A page's timeline.
 - The card in the Strategic Agents directory.
 
-### Phase 5 — Alerts, hardening and launch
+### Phase 5 — Alerts, hardening and launch (done)
+
+`tracker/watch_alerts.py`, the routes it needs, and
+`.github/workflows/page-watch-watchdog.yml`.
+
+- **What happens to each recorded change:**
+  - **Important or Worth a look:** posted to the watch's Slack channel (or
+    `WATCH_SLACK_CHANNEL`) straight away. The message carries a coloured
+    bar, the summary, Claude's explanation, the before-and-after picture,
+    "See the change", and Useful / Not useful / Mute this kind buttons.
+  - **Minor:** queued for the daily digest (`WATCH_DIGEST_AT`, 09:30 India
+    time). There is one digest per channel; the first worker to reach it
+    posts it, once.
+  - **Muted or noise:** recorded, not posted.
+- **The picture in Slack:** a signed link (HMAC from `SECRET_KEY`) that
+  expires after 30 days. Slack fetches it without a login.
+- **The buttons:** clicks arrive at the Slack app's existing
+  `/api/slack/interactions` URL. They are verified with its signing
+  secret, recorded as feedback on the change, and confirmed with a reply
+  only the person who clicked sees.
+- **Mondays:** a weekly summary goes to `WATCH_SLACK_CHANNEL`.
+- **A failing watch:** posted once after two failed checks in a row, and
+  once more when it reads again.
+- **The watchdog:** a GitHub Action every 30 minutes calls
+  `/api/page-watch/watchdog` (`WATCH_CRON_TOKEN`). The site posts once when
+  the checker stops, falls behind or has no browser, and stays quiet until
+  it is healthy again.
+- **`WATCH_ALERTS=off`** silences everything; changes are still recorded.
+- **Tested** (`tests/test_watch_alerts.py`, `tests/test_watch_hardening.py`):
+  - **Soak:** 40 visits of an unchanged page, each with sub-threshold
+    noise, 1px jitter, a carousel caught mid-turn and a changing "minutes
+    ago" line, all came back "same". A real edit made after them was still
+    found.
+  - **Load:** 400 watches with 30 checks each. The dashboard took 0.4 s in
+    memory and under 3 s on Postgres, including setup. A claim took well
+    under a second.
+  - **Failures:** a capture that raises, a database failing mid-check, a
+    site that times out.
+- **Live drills** on the real worker, browser and Postgres:
+  - SIGTERM and SIGKILL in the middle of a check (Phase 2);
+  - **the database stopped for 15 s under a running worker:** it logged
+    the errors, stayed up, and checked normally when the database came
+    back.
+
+The plan as first written:
 
 - Slack alerts with the composite image (served from a signed, expiring link,
   as the Google Ads digest charts are), buttons wired to feedback.
@@ -402,3 +446,44 @@ Deploys: Railway sends SIGTERM; the worker stops taking checks, gives running
 ones up to 60 seconds (`drainingSeconds = 75` in the config file), and hands
 back the rest to be checked at once. A worker that dies outright loses its
 watches within 3 minutes (the lease), and the next worker takes them.
+
+---
+
+## 7. Switching it on: the launch checklist
+
+Everything is built; three services need a few settings. Never paste a key or
+token into chat; set it in Railway or GitHub yourself.
+
+**A. The worker service** (section 6 first, then these Variables on it):
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | the same reference the web service uses (Add Reference) |
+| `RAILPACK_PYTHON_PLAYWRIGHT_INSTALL` | `1` |
+| `ANTHROPIC_API_KEY` | reference the web service's (Claude's verdicts) |
+| `SECRET_KEY` | reference the web service's (signs the pictures in Slack) |
+| `GOOGLE_ADS_SLACK_BOT_TOKEN` | reference the web service's (the same Slack app posts the alerts) |
+| `PUBLIC_BASE_URL` | the site's address, for example `https://web-production-6748e.up.railway.app` |
+| `WATCH_SLACK_CHANNEL` | the channel for alerts, digests and notices, for example `page-watch` |
+
+**B. The web service** (Railway → web → Variables → New Variable):
+
+| Variable | Value |
+|---|---|
+| `WATCH_CRON_TOKEN` | a long random value (Railway can make one: type `${{ secret(48) }}`) |
+| `WATCH_SLACK_CHANNEL` | the same channel as on the worker |
+| `PUBLIC_BASE_URL` | as on the worker, if it is not already set |
+
+**C. GitHub** → the repository → Settings → Secrets and variables →
+Actions → New repository secret: name `WATCH_CRON_TOKEN`, value the same as
+on the web service (Railway → web → Variables → the eye icon to reveal it).
+The watchdog then starts on its own; Actions → Page Watch watchdog → Run
+workflow tests it at once.
+
+**D. Slack:** in each channel alerts go to, type `/invite @` and the Slack
+app's name (the same app that posts the Google Ads digest). Its button URL
+is already set, so Useful / Not useful / Mute work without changes.
+
+**E. Check it:** add a page on `/strategic-agents/page-watch`; it should be
+read within a minute. `/strategic-agents/page-watch/health` should say
+`"status": "ok"`.
