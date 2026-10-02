@@ -16,6 +16,8 @@ Tables
                    so listing pages never loads them.
   watch_workers    one row per worker process: its heartbeat, for the health
                    endpoint.
+  watch_ai_calls   one row per Claude call (a change judged, a page found by
+                   name): its tokens and what it cost, for the monthly cap.
 
 The worker claims due watches with a lease (claim_due), renews it while a
 check runs (renew_lease) and hands the watch back with its next time
@@ -196,6 +198,23 @@ def _ensure(conn):
                     current JSONB NOT NULL DEFAULT '[]'::jsonb,
                     started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                     beat_at TIMESTAMPTZ NOT NULL DEFAULT now())""")
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS watch_ai_calls (
+                    id BIGSERIAL PRIMARY KEY,
+                    email TEXT NOT NULL DEFAULT '',
+                    target_id INTEGER,
+                    change_id BIGINT,
+                    purpose TEXT NOT NULL,
+                    model TEXT NOT NULL DEFAULT '',
+                    ok BOOLEAN NOT NULL DEFAULT TRUE,
+                    input_tokens INTEGER NOT NULL DEFAULT 0,
+                    output_tokens INTEGER NOT NULL DEFAULT 0,
+                    cache_read_tokens INTEGER NOT NULL DEFAULT 0,
+                    searches INTEGER NOT NULL DEFAULT 0,
+                    cost_usd NUMERIC(10, 5) NOT NULL DEFAULT 0,
+                    detail TEXT NOT NULL DEFAULT '',
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT now())""")
+            cur.execute("CREATE INDEX IF NOT EXISTS watch_ai_calls_time ON watch_ai_calls (created_at)")
         conn.commit()
         _READY = True
 
@@ -227,8 +246,8 @@ def reset_memory():
     """Empty the in-process store (tests)."""
     with _MEM_LOCK:
         _MEM.clear()
-        _MEM.update(targets={}, images={}, snapshots={}, changes={}, checks={}, workers={},
-                    ids={"targets": 0, "images": 0, "snapshots": 0, "changes": 0, "checks": 0})
+        _MEM.update(targets={}, images={}, snapshots={}, changes={}, checks={}, workers={}, ai_calls={},
+                    ids={"targets": 0, "images": 0, "snapshots": 0, "changes": 0, "checks": 0, "ai_calls": 0})
 
 
 reset_memory()
@@ -862,6 +881,8 @@ def prune(*, now=None):
             for k in [k for k, w in _MEM["workers"].items() if _dt(w["beat_at"]) < old_workers]:
                 del _MEM["workers"][k]
                 out["workers"] += 1
+            for k in [k for k, a in _MEM["ai_calls"].items() if _dt(a["created_at"]) < old_checks]:
+                del _MEM["ai_calls"][k]
             return out
     out = {}
     with _pg() as conn, conn.cursor() as cur:
@@ -890,4 +911,74 @@ def prune(*, now=None):
         out["images"] = cur.rowcount
         cur.execute("DELETE FROM watch_workers WHERE beat_at < %s", (old_workers,))
         out["workers"] = cur.rowcount
+        cur.execute("DELETE FROM watch_ai_calls WHERE created_at < %s", (old_checks,))
     return out
+
+
+# ── Claude calls and their cost ──────────────────────────────────────────────
+AI_FIELDS = ("email", "target_id", "change_id", "purpose", "model", "ok", "input_tokens", "output_tokens",
+             "cache_read_tokens", "searches", "cost_usd", "detail")
+
+
+def add_ai_call(purpose, *, now=None, **fields):
+    """Record one Claude call. Returns its id."""
+    bad = set(fields) - set(AI_FIELDS)
+    if bad:
+        raise ValueError("unknown fields: %s" % ", ".join(sorted(bad)))
+    rec = {"email": "", "target_id": None, "change_id": None, "model": "", "ok": True, "input_tokens": 0,
+           "output_tokens": 0, "cache_read_tokens": 0, "searches": 0, "cost_usd": 0.0, "detail": ""}
+    rec.update(fields)
+    rec["purpose"] = purpose
+    rec["email"] = _norm_email(rec["email"])
+    rec["detail"] = (rec["detail"] or "")[:300]
+    now = now or _now()
+    if backend() == "memory":
+        with _MEM_LOCK:
+            aid = _mem_id("ai_calls")
+            _MEM["ai_calls"][aid] = dict(rec, id=aid, created_at=now.isoformat())
+            return aid
+    cols = list(rec) + ["created_at"]
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("INSERT INTO watch_ai_calls (%s) VALUES (%s) RETURNING id"
+                    % (", ".join(cols), ", ".join(["%s"] * len(cols))), [rec[k] for k in rec] + [now])
+        return cur.fetchone()[0]
+
+
+def ai_spend(since, until=None, email=None):
+    """{"calls", "cost_usd", "input_tokens", "output_tokens", "searches"} from `since` on."""
+    until = until or _now() + _td(1)
+    if backend() == "memory":
+        with _MEM_LOCK:
+            rows = [r for r in _MEM["ai_calls"].values() if since <= _dt(r["created_at"]) < until
+                    and (email is None or r["email"] == _norm_email(email))]
+        return {"calls": len(rows), "cost_usd": round(sum(float(r["cost_usd"]) for r in rows), 5),
+                "input_tokens": sum(r["input_tokens"] for r in rows),
+                "output_tokens": sum(r["output_tokens"] for r in rows),
+                "searches": sum(r["searches"] for r in rows)}
+    q = ("SELECT count(*), COALESCE(sum(cost_usd), 0), COALESCE(sum(input_tokens), 0), "
+         "COALESCE(sum(output_tokens), 0), COALESCE(sum(searches), 0) FROM watch_ai_calls "
+         "WHERE created_at >= %s AND created_at < %s")
+    args = [since, until]
+    if email is not None:
+        q += " AND email = %s"
+        args.append(_norm_email(email))
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute(q, args)
+        n, cost, tin, tout, searches = cur.fetchone()
+        return {"calls": int(n), "cost_usd": round(float(cost), 5), "input_tokens": int(tin),
+                "output_tokens": int(tout), "searches": int(searches)}
+
+
+def list_feedback(target_id, limit=10):
+    """The watch's latest changes that someone rated, newest first:
+    [{"id", "headline", "verdict", "feedback", "created_at"}]."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            rows = [c for c in _MEM["changes"].values() if c["target_id"] == target_id and c.get("feedback")]
+            rows = sorted(rows, key=lambda c: c["id"], reverse=True)[:limit]
+            return [{k: copy.deepcopy(c[k]) for k in ("id", "headline", "verdict", "feedback", "created_at")}
+                    for c in rows]
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("SELECT id, headline, verdict, feedback, created_at FROM watch_changes "
+                    "WHERE target_id = %s AND feedback IS NOT NULL ORDER BY id DESC LIMIT %s", (target_id, limit))
+        return _rows(cur)

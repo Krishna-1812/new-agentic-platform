@@ -330,6 +330,15 @@ def _record_change(target, check_id, previous, cap, noise, report, facts, settin
             log.exception("watch_engine: composite failed for watch %s", target_id)
     change_id = watch_store.add_change(target_id, baseline_id, sid, report["level"], report["headline"],
                                        _storable(report), composite_id=composite_id)
+    # Claude's verdict (or the rules', without Claude). Never fails the check.
+    verdict = None
+    try:
+        from tracker import watch_judge
+        verdict = watch_judge.judge(target, report, before_png=previous.get("screenshot"),
+                                    after_png=cap.screenshot, change_id=change_id)
+        watch_store.update_change(change_id, verdict=verdict)
+    except Exception:
+        log.exception("watch_engine: judging change %s failed", change_id)
     _retire(previous["_snapshot"])
     now = datetime.now(timezone.utc)
     # The ignored, learned and flickering areas were drawn on the old
@@ -354,7 +363,8 @@ def _record_change(target, check_id, previous, cap, noise, report, facts, settin
     watch_store.update_target(target_id, baseline_id=sid, state="changed", fail_count=0, pending_id=None,
                               last_change_at=now, last_check_at=now, **moved)
     watch_store.finish_check(check_id, outcome="changed", snapshot_id=sid, change_id=change_id, **facts)
-    return {"check_id": check_id, "outcome": "changed", "change_id": change_id, "report": report}
+    return {"check_id": check_id, "outcome": "changed", "change_id": change_id, "report": report,
+            "verdict": verdict}
 
 
 def _storable(report):

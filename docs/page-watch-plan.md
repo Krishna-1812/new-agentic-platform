@@ -236,7 +236,38 @@ The heart of the agent, proven on real sites before anything is built on it.
 - Railway setup steps for the worker service; a health endpoint showing the
   worker's last heartbeat and queue depth.
 
-### Phase 3 — Claude intelligence
+### Phase 3 — Claude intelligence (done)
+
+`tracker/watch_judge.py`. Every recorded change is judged straight away.
+
+- **Model and effort:** Claude Opus 5.5 at medium effort, with the server-side
+  refusal fallback on.
+- **What Claude is shown:**
+  - the evidence the engine found;
+  - up to three close-ups of the changed areas, before and after;
+  - the watch's "what matters" note;
+  - the user's ratings of its last 8 changes.
+- **The answer:** structured, against a fixed schema, so it is always
+  readable.
+- **Page text:** fenced off and declared to be data, never instructions.
+- **When Claude is not used:** without a key, past the monthly cap, or when
+  Claude fails or declines, a rules verdict takes over. A check never fails
+  because of Claude.
+- **Cost:** every call is logged with its cost in `watch_ai_calls`. A
+  verdict costs about 2–5 cents.
+- **Feedback** (`give_feedback`): Useful, Not useful, or Mute this kind,
+  which mutes the category on that watch so its changes are never alerted.
+- **Finding a page by name** (`find_pages`): Claude with web search returns
+  up to 4 candidate links. Each is checked like a pasted link. A link typed
+  directly is used as it is, without Claude.
+- **Settings:**
+  - `WATCH_CLAUDE_MODEL` (default `claude-opus-5-5`);
+  - `WATCH_CLAUDE_EFFORT` (default `medium`);
+  - `WATCH_CLAUDE_MONTHLY_USD` (default 25, all watches together);
+  - `WATCH_JUDGE=off`;
+  - the worker needs `ANTHROPIC_API_KEY` in its own Variables.
+
+The plan as first written:
 
 - The judge: text diff plus before-and-after crops in, structured verdict out
   (summary, explanation, category, importance, noise).
@@ -306,6 +337,10 @@ then it would sit idle. Steps:
      value to the worker the same way. If it is a reference such as
      `${{Postgres.DATABASE_URL}}`, use **Add Reference** to make the same
      reference; never paste the database password into chat.
+   - `ANTHROPIC_API_KEY`: the same key the web service uses. Add it with
+     **Add Reference** pointing at the web service's variable, or paste it
+     into Railway yourself. Never paste it into chat. Without it, changes
+     are still found and rated by rules, just not by Claude.
    - `RAILPACK_PYTHON_PLAYWRIGHT_INSTALL` = `1`. This makes the build install
      Chromium and its system libraries. Without it every check falls back to
      text only and the health page says `no_browser`.

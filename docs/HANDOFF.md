@@ -272,7 +272,7 @@ It then scores and tiers the businesses worth pitching (website build, local SEO
   - optional: `APIFY_API_TOKEN`, `PAGESPEED_API_KEY` (or the Maps key), `HUNTER_API_KEY`;
   - tuning: `LBR_SOURCE`, `LBR_RENDER`, `LBR_RENDER_CONCURRENCY`, `LBR_RETENTION_DAYS`, `LBR_PRICES_JSON`, `LBR_APIFY_PRICING`.
 
-### 9a. Page Watch (in build: Phases 1 and 2 of 5 done)
+### 9a. Page Watch (in build: Phases 1–3 of 5 done)
 
 Watches any web page and reports, in plain words and with a before-and-after picture, when it changes. The plan and the five phases are in `docs/page-watch-plan.md`. Phase 1 is the detection engine (`tracker/watch_*.py`); Phase 2 the worker and schedules. There is no page yet (Phase 4).
 
@@ -289,8 +289,16 @@ Watches any web page and reports, in plain words and with a before-and-after pic
   - on SIGTERM, lets running checks finish and hands back the rest.
 - **Schedules** (`watch_schedule`): hourly, 6-hourly, daily at a time, or weekly, in India time. Each watch is offset a few minutes from the exact time, fixed per watch.
 - **Confirmation:** a change is held as "suspected" and re-read 3 minutes later. If it is gone, it is a glitch. An area that flickers twice is learned as noise.
+- **Claude's verdict** (`watch_judge`):
+  - each recorded change gets a summary, explanation, category, importance, a noise flag and a confidence level;
+  - the model is Opus 5.5 at medium effort, with the fallback on and structured output;
+  - without a key, past the monthly cap, or on any Claude failure, a rules verdict takes over;
+  - calls and costs are logged in `watch_ai_calls`;
+  - feedback (useful, not useful, mute this kind) is shown to Claude on later changes, and a muted category is never alerted;
+  - `find_pages` turns a name into candidate links using web search.
+  - Tests never call Claude: `conftest.py` sets `WATCH_JUDGE=off`, and `tests/test_watch_judge.py` uses a fake client plus the real SDK against a local stand-in server.
 - **Health:** `/strategic-agents/page-watch/health` (staff only) returns JSON with `ok`, `behind`, `no_worker`, `no_browser` or `idle`.
-- **Env:** `WATCH_BROWSER=off` turns the browser off; `WATCH_CHROMIUM_PATH` points at a Chromium to use; `WATCH_WORKER_THREADS` (default 2); `RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1` on the worker service.
+- **Env:** `WATCH_BROWSER=off` turns the browser off; `WATCH_CHROMIUM_PATH` points at a Chromium to use; `WATCH_WORKER_THREADS` (default 2); `RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1` and `ANTHROPIC_API_KEY` on the worker service; `WATCH_CLAUDE_MODEL`, `WATCH_CLAUDE_EFFORT`, `WATCH_CLAUDE_MONTHLY_USD`, `WATCH_JUDGE`.
 
 ## 10. Environment variables (Railway → web → Variables)
 

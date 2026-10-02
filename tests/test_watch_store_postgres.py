@@ -191,3 +191,29 @@ def test_retention_in_sql_keeps_the_baseline(email):
     snap = watch_store.get_snapshot(base)
     assert snap is not None and watch_store.get_image(snap["shot_id"]) is not None
     assert watch_store.delete_snapshot(base) is True
+
+
+# ── Phase 3: Claude's calls and the feedback history, on real SQL ────────────
+def test_ai_calls_and_monthly_spend_in_sql(email):
+    from datetime import datetime, timedelta, timezone
+    now = datetime.now(timezone.utc)
+    start = now - timedelta(seconds=5)
+    watch_store.add_ai_call("judge", email=email.upper(), target_id=None, model="claude-opus-5-5",
+                            input_tokens=3000, output_tokens=400, cost_usd=0.02)
+    watch_store.add_ai_call("find", email=email, searches=2, cost_usd=0.035, ok=False, detail="x" * 999)
+    watch_store.add_ai_call("judge", email=email, cost_usd=9.0, now=now - timedelta(days=40))
+    mine = watch_store.ai_spend(start, email=email)
+    assert mine["calls"] == 2 and mine["cost_usd"] == 0.055 and mine["searches"] == 2
+    assert mine["input_tokens"] == 3000 and mine["output_tokens"] == 400
+
+
+def test_feedback_history_in_sql(email):
+    tid = watch_store.create_target(email, "https://example.com/fb")
+    a = watch_store.add_change(tid, None, None, "major", "First", {}, None)
+    b = watch_store.add_change(tid, None, None, "minor", "Second", {}, None)
+    watch_store.add_change(tid, None, None, "minor", "Unrated", {}, None)
+    watch_store.update_change(a, email, feedback="useful", verdict={"summary": "First", "category": "price"})
+    watch_store.update_change(b, email, feedback="mute", verdict={"summary": "Second", "category": "design"})
+    rows = watch_store.list_feedback(tid)
+    assert [r["feedback"] for r in rows] == ["mute", "useful"]
+    assert rows[1]["verdict"]["category"] == "price"
