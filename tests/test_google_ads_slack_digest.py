@@ -118,52 +118,64 @@ def test_pacing_budget_limits_and_disapproved_ads_come_from_the_insights():
 
 
 # ── The message ──────────────────────────────────────────────────────────────
+def _card(msg):
+    return msg["attachments"][0]["blocks"]
+
+
 def test_the_message_reads_plainly_and_escapes_names():
     rows = _week(account="A & <B>", last=[("Brand <x>", 1600.0, 2.0)])
     s = d.summarize(rows, "A & <B>", today=TODAY)
     msg = d.message(s, "https://app.example", "https://app.example/chart.png")
-    blob = json.dumps(msg["blocks"], ensure_ascii=False)
-    assert msg["blocks"][0]["text"]["text"] == "\U0001F7E0  A & <B>", "status light, and plain_text needs no escaping"
-    assert "Worth a look" in blob and "Sat 26 Sep 2026" in blob
+    blob = json.dumps(msg, ensure_ascii=False)
+    assert msg["blocks"] == [{"type": "header", "text": {"type": "plain_text", "text": "A & <B>"}}], \
+        "plain_text needs no escaping"
+    assert msg["attachments"][0]["color"] == d.STATUS_COLOR[d.WARNING], "the status is the card's coloured bar"
+    assert "*Worth a look*" in blob and "Sat 26 Sep 2026" in blob
     assert "Brand &lt;x&gt;" in blob and "Brand <x>" not in blob
     assert '"url": "https://app.example/dashboards/google-ads?account=A%20%26%20%3CB%3E"' in blob
-    assert "\u20b91,600" in blob and "_7-day avg \u20b91,000_" in blob
-    assert "\u26aa `\u25b2 60%`" in blob, "spend has no good or bad direction: a white pill"
-    assert "\U0001F534 `\u25b2 220%`" in blob, "dearer conversions are red"
-    assert "\U0001F534 `\u25bc 50%`" in blob, "fewer conversions are red"
-    assert {"type": "image", "image_url": "https://app.example/chart.png",
-            "alt_text": "Daily spend and conversions for A & <B> over the last 14 days"} in msg["blocks"]
-    assert "\U0001F947  *Brand &lt;x&gt;*" in blob, "top campaigns get medals"
-    assert msg["text"].startswith("\U0001F7E0 A & <B>, Sat 26 Sep 2026: spend \u20b91,600, 2 conversions")
-    assert all(len(f["text"]) < 2000 for b in msg["blocks"] for f in b.get("fields", []))
-    assert len(msg["blocks"]) <= 50
+    fields = next(b for b in _card(msg) if b.get("fields"))["fields"]
+    assert fields[0]["text"] == "Spend\n*\u20b91,600*   \u25b2 60%\n_7-day avg \u20b91,000_"
+    assert fields[1]["text"] == "Conversions\n*2*   \u25bc 50%\n_7-day avg 4_"
+    img = next(b for b in _card(msg) if b["type"] == "image")
+    assert img["image_url"] == "https://app.example/chart.png" and img["title"]["text"] == "Last 14 days"
+    assert "1.  Brand &lt;x&gt;" in blob, "top campaigns are numbered"
+    texts = [b["text"]["text"] for b in _card(msg) if b["type"] == "section" and "text" in b]
+    assert any(t.startswith("*Watch*\n\u2022  Spend up 60%") for t in texts)
+    assert not any(ord(ch) >= 0x1F000 for ch in blob), "no emoji"
+    assert msg["text"].startswith("A & <B>: worth a look, Sat 26 Sep 2026. Spend \u20b91,600, 2 conversions")
+    assert all(len(f["text"]) < 2000 for b in _card(msg) for f in b.get("fields", []))
+    assert len(_card(msg)) <= 50
 
 
-def test_alerts_carry_a_level_and_the_most_serious_sets_the_light():
+def test_alerts_carry_a_level_and_the_most_serious_sets_the_colour():
     s = d.summarize(_week(last=[("Generic - Search", 1000.0, 0.0)]), "Acme", today=TODAY)
     assert s["alert_items"][0] == (d.CRITICAL, "No conversions (7-day average 4 a day).") and s["status"] == d.CRITICAL
+    texts = [b["text"]["text"] for b in _card(d.message(s)) if b["type"] == "section" and "text" in b]
+    assert any(t.startswith("*Action needed*\n\u2022  No conversions") for t in texts)
     calm = d.summarize(_week(last=[("Generic - Search", 1050.0, 4.0)]), "Acme", today=TODAY)
     assert calm["status"] == "good"
-    assert "All clear" in json.dumps(d.message(calm)["blocks"])
+    msg = d.message(calm)
+    assert msg["attachments"][0]["color"] == d.STATUS_COLOR["good"] and "All clear" in json.dumps(msg)
 
 
-def test_the_pill_and_meter():
-    assert d.pill(110, 100, d.GOOD_UP) == "\U0001F7E2 `\u25b2 10%`"
-    assert d.pill(110, 100, d.GOOD_DOWN) == "\U0001F534 `\u25b2 10%`"
-    assert d.pill(102, 100, d.GOOD_UP) == "`= flat`" and d.pill(5, 0, d.GOOD_UP) == ""
-    assert d.meter(0.32) == "\u25b0" * 3 + "\u25b1" * 7 and d.meter(1.7) == "\u25b0" * 10
+def test_the_change_against_the_average():
+    assert d.delta(110, 100) == "\u25b2 10%" and d.delta(10, 100) == "\u25bc 90%"
+    assert d.delta(102, 100) == "flat" and d.delta(5, 0) == ""
 
 
-def test_the_morning_overview_ranks_accounts_most_urgent_first():
+def test_the_morning_overview_groups_accounts_most_urgent_first():
     rows = (_week(last=[("Generic - Search", 1000.0, 0.0)]) + _week("Calm", last=[("S", 1000.0, 4.0)])
             + _week("Busy", last=[("S", 1700.0, 6.0)]))
     ss = [d.summarize(rows, a, today=TODAY) for a in ("Calm", "Busy", "Acme")]
     msg = d.overview(ss, "https://app.example", today=TODAY)
-    blob = json.dumps(msg["blocks"], ensure_ascii=False)
-    assert blob.index("*Acme*") < blob.index("*Busy*") < blob.index("*Calm*")
-    assert "\U0001F534 1  \u00b7  \U0001F7E0 1  \u00b7  \U0001F7E2 1" in blob
+    blob = json.dumps(msg, ensure_ascii=False)
+    assert blob.index("*Needs action*") < blob.index("*Acme*") < blob.index("*Worth a look*") < blob.index("*Busy*") \
+        < blob.index("*On track*") < blob.index("*Calm*")
+    assert "*1* need action  \u00b7  *1* worth a look  \u00b7  *1* on track" in blob
     assert "\u20b93,700" in blob, "one currency: the total is shown"
-    assert msg["text"] == "Google Ads morning briefing: 3 accounts, 1 need action, 1 worth a look."
+    assert msg["attachments"][0]["color"] == d.STATUS_COLOR[d.CRITICAL]
+    assert msg["text"] == "Google Ads daily briefing: 3 accounts, 1 need action, 1 worth a look."
+    assert not any(ord(ch) >= 0x1F000 for ch in blob)
 
 
 def test_rupees_use_lakh_grouping_and_other_currencies_commas():
@@ -188,8 +200,8 @@ def test_an_overview_then_one_message_per_account_spaced_a_second_apart_and_neve
     call = slack.calls[1]
     assert call["url"] == "https://slack.com/api/chat.postMessage"
     assert call["headers"]["Authorization"] == "Bearer xoxb-test" and call["json"]["channel"] == "C123"
-    assert {"type": "image", "image_url": "https://x/Acme/2026-09-26.png",
-            "alt_text": "Daily spend and conversions for Acme over the last 14 days"} in call["json"]["blocks"]
+    img = next(b for b in call["json"]["attachments"][0]["blocks"] if b["type"] == "image")
+    assert img["image_url"] == "https://x/Acme/2026-09-26.png"
     assert posted == {d.OVERVIEW: "2026-09-27", "Acme": "2026-09-26", "Beta": "2026-09-26"}
     again = d.run(rows, ["Acme", "Beta"], **kw)
     assert [r["status"] for r in again] == ["skipped"] * 3 and len(slack.calls) == 3
@@ -320,7 +332,7 @@ def test_the_chart_address_is_signed_for_one_account_and_day(site, monkeypatch):
 def test_the_posted_digest_links_its_chart(site):
     appmod.app.test_client().post("/api/dashboards/google-ads/slack-digest",
                                   headers={"Authorization": "Bearer s3cret"}, base_url="http://web.example")
-    blocks = site.calls[0]["json"]["blocks"]
+    blocks = site.calls[0]["json"]["attachments"][0]["blocks"]
     img = next(b for b in blocks if b["type"] == "image")
     assert img["image_url"].startswith("https://web.example/api/dashboards/google-ads/slack-chart/2026-09-26/")
 

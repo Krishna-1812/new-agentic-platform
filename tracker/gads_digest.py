@@ -179,7 +179,7 @@ def summarize(rows, account, st=None, fx=None, today=None):
 
 
 CRITICAL, WARNING, INFO = "critical", "warning", "info"
-LEVEL_ICON = {CRITICAL: "\U0001F534", WARNING: "\U0001F7E0", INFO: "\U0001F535"}   # red, orange, blue circles
+LEVEL_HEADING = {CRITICAL: "Action needed", WARNING: "Watch", INFO: "For information"}
 
 
 def alert_items(s, limited=(), disapproved=0, today=None):
@@ -228,7 +228,8 @@ def status(items):
     return CRITICAL if CRITICAL in levels else WARNING if WARNING in levels else "good"
 
 
-STATUS_ICON = {CRITICAL: "\U0001F534", WARNING: "\U0001F7E0", "good": "\U0001F7E2"}
+# The coloured bar down the side of each message (the reference data-viz palette's status colours).
+STATUS_COLOR = {CRITICAL: "#d03b3b", WARNING: "#fab219", "good": "#0ca30c"}
 STATUS_WORD = {CRITICAL: "Needs action", WARNING: "Worth a look", "good": "On track"}
 
 
@@ -239,124 +240,117 @@ def _names(xs, keep=3):
 
 
 # ── The Slack message ────────────────────────────────────────────────────────
-# Polarity: which way is good for each figure. Spend has none (more can be right or wrong), so its
-# change is shown without a colour.
-GOOD_UP, GOOD_DOWN, NEUTRAL = 1, -1, 0
 UP, DOWN = "\u25B2", "\u25BC"
-GREEN, RED, WHITE = "\U0001F7E2", "\U0001F534", "\u26AA"
-MEDALS = ("\U0001F947", "\U0001F948", "\U0001F949")
+DOT = "  \u00b7  "
 
 
-def pill(now, base, polarity):
-    """The change against the 7-day average as a coloured pill: "🟢 `▲ 22%`", "🔴 `▲ 81%`", "`= flat`"."""
+def delta(now, base):
+    """The change against the 7-day average: "▲ 22%", "▼ 90%", "flat", or "" with nothing to compare."""
     if now is None or not base:
         return ""
     pct = round(100 * (now - base) / base)
     if abs(pct) < 5:
-        return "`= flat`"
-    arrow = UP if pct > 0 else DOWN
-    mark = WHITE if polarity == NEUTRAL else GREEN if (pct > 0) == (polarity == GOOD_UP) else RED
-    return "%s `%s %d%%`" % (mark, arrow, abs(pct))
+        return "flat"
+    return "%s %d%%" % (UP if pct > 0 else DOWN, abs(pct))
 
 
-def meter(share, cells=10):
-    """A text progress bar: ▰▰▰▱▱▱▱▱▱▱."""
-    share = max(0.0, min(1.0, share or 0.0))
-    full = int(round(share * cells))
-    return "\u25B0" * full + "\u25B1" * (cells - full)
+def _attachment(color, blocks):
+    """Blocks inside an attachment get Slack's coloured side bar: the account's status at a glance."""
+    return [{"color": color, "blocks": blocks}]
+
+
+def _alert_text(items):
+    if not items:
+        return "*All clear*\nNothing unusual against the last 7 days."
+    parts = []
+    for lvl in (CRITICAL, WARNING, INFO):
+        mine = [t for l, t in items if l == lvl]
+        if mine:
+            parts.append("*%s*\n" % LEVEL_HEADING[lvl] + "\n".join("\u2022  " + esc(t) for t in mine))
+    return "\n\n".join(parts)
 
 
 def message(s, base_url="", chart_url=""):
-    """Slack Block Kit blocks and a plain-text fallback for one account's digest."""
+    """One account's digest: a header, then a status-coloured card with the figures, a 14-day chart,
+    what needs attention, the top campaigns and links. Returns {"text", "blocks", "attachments"}."""
     cur, now, base = s["cur"], s["now"], s["base"]
     b = base or {}
     items = s.get("alert_items") or [(WARNING, t) for t in s.get("alerts") or []]
     st = s.get("status") or status(items)
 
-    def tile(icon, label, value, now_v, base_v, base_text, polarity):
-        text = "%s  *%s*\n*%s*   %s" % (icon, label, value, pill(now_v, base_v, polarity))
+    def tile(label, value, now_v, base_v, base_text):
+        line2 = "*%s*" % value
+        d = delta(now_v, base_v)
+        if d:
+            line2 += "   %s" % d
+        text = "%s\n%s" % (label, line2)
         if base_text:
             text += "\n_7-day avg %s_" % base_text
-        return {"type": "mrkdwn", "text": text.rstrip()}
+        return {"type": "mrkdwn", "text": text}
 
     tiles = [
-        tile("\U0001F4B8", "Spend", money(now["cost"], cur), now["cost"], b.get("cost"),
-             money(b["cost"], cur) if base else "", NEUTRAL),
-        tile("\U0001F3AF", "Conversions", number(now["conversions"]), now["conversions"], b.get("conversions"),
-             number(b["conversions"]) if base else "", GOOD_UP),
-        tile("\U0001F9FE", "Cost per conversion", money(s["cpa"], cur), s["cpa"], s["base_cpa"],
-             money(s["base_cpa"], cur) if s["base_cpa"] else "", GOOD_DOWN),
-        tile("\U0001F5B1\uFE0F", "Clicks", number(now["clicks"]), now["clicks"], b.get("clicks"),
-             number(b["clicks"]) if base else "", GOOD_UP),
+        tile("Spend", money(now["cost"], cur), now["cost"], b.get("cost"), money(b["cost"], cur) if base else ""),
+        tile("Conversions", number(now["conversions"]), now["conversions"], b.get("conversions"),
+             number(b["conversions"]) if base else ""),
+        tile("Cost per conversion", money(s["cpa"], cur) if s["cpa"] else "\u2014", s["cpa"], s["base_cpa"],
+             money(s["base_cpa"], cur) if s["base_cpa"] else ""),
+        tile("Clicks", number(now["clicks"]), now["clicks"], b.get("clicks"), number(b["clicks"]) if base else ""),
     ]
     if s["roas"] is not None:
-        tiles.append(tile("\U0001F4B0", "ROAS", "%.2fx" % s["roas"], s["roas"], s["base_roas"],
-                          ("%.2fx" % s["base_roas"]) if s["base_roas"] else "", GOOD_UP))
+        tiles.append(tile("ROAS", "%.2fx" % s["roas"], s["roas"], s["base_roas"],
+                          ("%.2fx" % s["base_roas"]) if s["base_roas"] else ""))
     p = s.get("pacing")
     if p:
-        text = "\U0001F4C6  *Month to date*\n*%s*" % money(p["mtd"], p["cur"])
+        text = "Month to date\n*%s*" % money(p["mtd"], p["cur"])
         if p["month_budget"]:
             text += " of %s" % money(p["month_budget"], p["cur"])
         if p["pace"] is not None:
-            text += "\n`%s` %d%% of expected pace" % (meter(p["pace"]), round(100 * p["pace"]))
+            text += "\n_%d%% of expected pace_" % round(100 * p["pace"])
         tiles.append({"type": "mrkdwn", "text": text})
 
-    blocks = [
-        {"type": "header", "text": {"type": "plain_text", "emoji": True,
-                                    "text": ("%s  %s" % (STATUS_ICON[st], s["account"]))[:150]}},
-        {"type": "context", "elements": [{"type": "mrkdwn", "text": "*%s*  \u00b7  %s  \u00b7  vs the %d days before" % (
-            STATUS_WORD[st], day_label(s["day"]), s["base_days"] or BASELINE_DAYS)}]},
+    card = [
+        {"type": "context", "elements": [{"type": "mrkdwn", "text": "*%s*%s%s%scompared with the %d days before" % (
+            STATUS_WORD[st], DOT, day_label(s["day"]), DOT, s["base_days"] or BASELINE_DAYS)}]},
         {"type": "section", "fields": tiles[:10]},
     ]
     if chart_url:
-        blocks.append({"type": "image", "image_url": chart_url,
-                       "alt_text": "Daily spend and conversions for %s over the last 14 days" % s["account"][:200]})
-    blocks.append({"type": "divider"})
-    if items:
-        lines = ["%s  %s" % (LEVEL_ICON[lvl], esc(t)) for lvl, t in items]
-        text = "*\u26A0\uFE0F  Needs attention*\n" + "\n".join(lines)
-    else:
-        text = "*\u2705  All clear*\nNothing unusual against the last 7 days."
-    blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": text[:2900]}})
+        card.append({"type": "image", "image_url": chart_url, "title": {"type": "plain_text", "text": "Last 14 days"},
+                     "alt_text": "Daily spend and conversions for %s over the last 14 days" % s["account"][:200]})
+    card.append({"type": "divider"})
+    card.append({"type": "section", "text": {"type": "mrkdwn", "text": _alert_text(items)[:2900]}})
     if s["top"]:
-        lines = ["%s  *%s*  \u00b7  %s  \u00b7  %s conv." % (MEDALS[i], esc(c["campaign"]), money(c["cost"], cur),
-                                                         number(c["conversions"])) for i, c in enumerate(s["top"])]
-        blocks.append({"type": "section", "text": {"type": "mrkdwn",
-                                                    "text": ("*\U0001F3C6  Top campaigns*\n" + "\n".join(lines))[:2900]}})
+        lines = ["%d.  %s%s%s%s%s conv." % (i + 1, esc(c["campaign"]), DOT, money(c["cost"], cur), DOT,
+                                             number(c["conversions"])) for i, c in enumerate(s["top"])]
+        card.append({"type": "section", "text": {"type": "mrkdwn",
+                                                  "text": ("*Top campaigns*\n" + "\n".join(lines))[:2900]}})
     if base_url:
         q = "?account=" + quote(s["account"], safe="")
-        blocks.append({"type": "actions", "elements": [
-            {"type": "button", "style": "primary", "action_id": "open_dashboard",
-             "text": {"type": "plain_text", "emoji": True, "text": "\U0001F4CA  Open dashboard"},
+        card.append({"type": "actions", "elements": [
+            {"type": "button", "action_id": "open_dashboard", "text": {"type": "plain_text", "text": "Open dashboard"},
              "url": "%s/dashboards/google-ads%s" % (base_url, q)},
-            {"type": "button", "action_id": "open_ai_review",
-             "text": {"type": "plain_text", "emoji": True, "text": "\U0001F916  AI review"},
+            {"type": "button", "action_id": "open_ai_review", "text": {"type": "plain_text", "text": "AI review"},
              "url": "%s/dashboards/google-ads/ai-review%s" % (base_url, q)}]})
-    blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text":
-        "\U0001F4AC Reply in this thread to ask Ads Insight about %s  \u00b7  Money in %s; the latest day can "
-        "still move slightly as Google adds late clicks." % (esc(s["account"]), cur or "the report's currency")}]})
+    card.append({"type": "context", "elements": [{"type": "mrkdwn", "text":
+        "Reply in this thread to ask about %s%sMoney in %s; the latest day can still move slightly as Google "
+        "adds late clicks." % (esc(s["account"]), DOT, cur or "the report's currency")}]})
 
-    fallback = "%s %s, %s: spend %s, %s conversions" % (
-        STATUS_ICON[st], s["account"], day_label(s["day"]), money(now["cost"], cur), number(now["conversions"]))
-    if items:
-        fallback += ". %d thing%s need%s attention." % (len(items), "" if len(items) == 1 else "s",
-                                                          "s" if len(items) == 1 else "")
-    return {"text": fallback, "blocks": blocks}
+    fallback = "%s: %s, %s. Spend %s, %s conversions" % (
+        s["account"], STATUS_WORD[st].lower(), day_label(s["day"]), money(now["cost"], cur), number(now["conversions"]))
+    blocks = [{"type": "header", "text": {"type": "plain_text", "text": s["account"][:150]}}]
+    return {"text": fallback, "blocks": blocks, "attachments": _attachment(STATUS_COLOR[st], card)}
 
 
 def overview(summaries, base_url="", today=None):
-    """The morning's first message: every account at a glance, most urgent first."""
+    """The morning's first message: every account at a glance, grouped by status, most urgent first."""
     order = {CRITICAL: 0, WARNING: 1, "good": 2}
     ss = sorted(summaries, key=lambda s: (order[s["status"]], -s["now"]["cost"]))
     counts = {k: sum(1 for s in ss if s["status"] == k) for k in order}
+    worst = next((k for k in order if counts[k]), "good")
     curs = {s["cur"] for s in ss}
     days = sorted({s["day"] for s in ss})
-    blocks = [
-        {"type": "header", "text": {"type": "plain_text", "emoji": True,
-                                    "text": "\u2600\uFE0F  Google Ads morning briefing"}},
-        {"type": "context", "elements": [{"type": "mrkdwn", "text": "%s  \u00b7  %d account%s  \u00b7  each account's latest day vs its 7-day average" % (
-            day_label((today or today_ist()).isoformat()), len(ss), "" if len(ss) == 1 else "s")}]},
-    ]
+    blocks = [{"type": "header", "text": {"type": "plain_text", "text": "Google Ads daily briefing"}}]
+    card = [{"type": "context", "elements": [{"type": "mrkdwn", "text": "%s%s%d account%s%seach account's latest day against its 7-day average" % (
+        day_label((today or today_ist()).isoformat()), DOT, len(ss), "" if len(ss) == 1 else "s", DOT)}]}]
     fields = []
     if len(curs) == 1:
         cur = next(iter(curs))
@@ -364,38 +358,41 @@ def overview(summaries, base_url="", today=None):
         base = sum((s["base"] or {}).get("cost", 0) for s in ss)
         conv = sum(s["now"]["conversions"] for s in ss)
         bconv = sum((s["base"] or {}).get("conversions", 0) for s in ss)
-        fields += [{"type": "mrkdwn", "text": "\U0001F4B8  *Total spend*\n*%s*   %s" % (money(spend, cur), pill(spend, base, NEUTRAL))},
-                   {"type": "mrkdwn", "text": "\U0001F3AF  *Conversions*\n*%s*   %s" % (number(conv), pill(conv, bconv, GOOD_UP))}]
-    fields.append({"type": "mrkdwn", "text": "\U0001F6A6  *Status*\n%s %d  \u00b7  %s %d  \u00b7  %s %d" % (
-        STATUS_ICON[CRITICAL], counts[CRITICAL], STATUS_ICON[WARNING], counts[WARNING], STATUS_ICON["good"], counts["good"])})
-    blocks.append({"type": "section", "fields": fields})
-    blocks.append({"type": "divider"})
-    lines = []
-    for s in ss:
-        why = (s.get("alerts") or ["On track"])[0]
-        lines.append("%s  *%s*  \u00b7  %s  \u00b7  %s conv.\n        _%s_" % (
-            STATUS_ICON[s["status"]], esc(s["account"]), money(s["now"]["cost"], s["cur"]),
-            number(s["now"]["conversions"]), esc(why)))
-    chunk = ""
-    for line in lines:   # Slack allows 3,000 characters per section
-        if len(chunk) + len(line) > 2800:
-            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": chunk}})
-            chunk = ""
-        chunk += ("\n" if chunk else "") + line
-    if chunk:
-        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": chunk}})
-    note = "\U0001F447 Each account's briefing follows. Reply under any of them, or @Ads Insight, to ask a question."
-    if len(days) > 1:
-        note += "  \u00b7  Latest days differ by account (%s to %s)." % (days[0], days[-1])
-    blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": note}]})
+        fields += [{"type": "mrkdwn", "text": "Total spend\n*%s*   %s" % (money(spend, cur), delta(spend, base))},
+                   {"type": "mrkdwn", "text": "Conversions\n*%s*   %s" % (number(conv), delta(conv, bconv))}]
+    fields.append({"type": "mrkdwn", "text": "Accounts\n*%d* need action%s*%d* worth a look%s*%d* on track" % (
+        counts[CRITICAL], DOT, counts[WARNING], DOT, counts["good"])})
+    card.append({"type": "section", "fields": fields})
+    card.append({"type": "divider"})
+    for k in order:
+        group = [s for s in ss if s["status"] == k]
+        if not group:
+            continue
+        lines = []
+        for s in group:
+            line = "*%s*%s%s%s%s conv." % (esc(s["account"]), DOT, money(s["now"]["cost"], s["cur"]), DOT,
+                                         number(s["now"]["conversions"]))
+            if s.get("alerts"):
+                line += "\n_%s_" % esc(s["alerts"][0])
+            lines.append(line)
+        chunk = "*%s*" % STATUS_WORD[k]
+        for line in lines:   # Slack allows 3,000 characters per section
+            if len(chunk) + len(line) > 2800:
+                card.append({"type": "section", "text": {"type": "mrkdwn", "text": chunk}})
+                chunk = ""
+            chunk += ("\n" if chunk else "") + line
+        card.append({"type": "section", "text": {"type": "mrkdwn", "text": chunk}})
     if base_url:
-        blocks.append({"type": "actions", "elements": [
-            {"type": "button", "style": "primary", "action_id": "open_dashboard_all",
-             "text": {"type": "plain_text", "emoji": True, "text": "\U0001F4CA  Open dashboard"},
+        card.append({"type": "actions", "elements": [
+            {"type": "button", "action_id": "open_dashboard_all", "text": {"type": "plain_text", "text": "Open dashboard"},
              "url": "%s/dashboards/google-ads" % base_url}]})
-    text = "Google Ads morning briefing: %d accounts, %d need action, %d worth a look." % (
+    note = "Each account's briefing follows. Reply under any of them, or mention @Ads Insight, to ask a question."
+    if len(days) > 1:
+        note += "%sLatest days differ by account (%s to %s)." % (DOT, days[0], days[-1])
+    card.append({"type": "context", "elements": [{"type": "mrkdwn", "text": note}]})
+    text = "Google Ads daily briefing: %d accounts, %d need action, %d worth a look." % (
         len(ss), counts[CRITICAL], counts[WARNING])
-    return {"text": text, "blocks": blocks[:50]}
+    return {"text": text, "blocks": blocks, "attachments": _attachment(STATUS_COLOR[worst], card[:49])}
 
 
 # ── Posting ──────────────────────────────────────────────────────────────────
@@ -405,6 +402,8 @@ def post(token, channel, msg, session=None, sleep=time.sleep):
     http = session or requests
     body = {"channel": channel, "text": msg["text"], "blocks": msg["blocks"],
             "unfurl_links": False, "unfurl_media": False}
+    if msg.get("attachments"):
+        body["attachments"] = msg["attachments"]
     headers = {"Authorization": "Bearer " + token, "Content-Type": "application/json; charset=utf-8"}
     for attempt in range(2):
         try:
