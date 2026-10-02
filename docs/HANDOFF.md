@@ -272,6 +272,17 @@ It then scores and tiers the businesses worth pitching (website build, local SEO
   - optional: `APIFY_API_TOKEN`, `PAGESPEED_API_KEY` (or the Maps key), `HUNTER_API_KEY`;
   - tuning: `LBR_SOURCE`, `LBR_RENDER`, `LBR_RENDER_CONCURRENCY`, `LBR_RETENTION_DAYS`, `LBR_PRICES_JSON`, `LBR_APIFY_PRICING`.
 
+### 9a. Page Watch (in build: Phase 1 of 5 done)
+
+Watches any web page and reports, in plain words and with a before-and-after picture, when it changes. The plan and the five phases are in `docs/page-watch-plan.md`. Phase 1 is the detection engine (`tracker/watch_*.py`); there is no page or schedule yet.
+
+- **Reading a page** (`watch_capture`): headless Chromium at 1440×900, fixed language and time zone, animations frozen, cookie notices and chat bubbles hidden, lazy content scrolled into view. Returns every visible text block with its position, a full-page screenshot and a control screenshot a few seconds later. Every request the browser makes is checked against private addresses, one redirect at a time (same rule as Local Business Radar). Without a browser it reads plain HTTP (text only).
+- **Comparing** (`watch_text`, `watch_visual`, `watch_detect`): text block by block (volatile text such as "3 minutes ago" neutralised); screenshots row-aligned to the pixel, so an inserted banner does not make the rest of the page count as changed; content that only moved (one column shifting, a fixed sidebar) is recognised and left out.
+- **Calibration** (`watch_engine.calibrate`): a new watch's page is read twice more straight after its baseline; whatever differs between those readings (a random button colour, a rotating quote) is learned as noise for that watch.
+- **Accuracy harness:** `python tools/watch_accuracy.py` measures false alarms and detection of known edits on real pages.
+- **Storage** (`watch_store`): `watch_targets`, `watch_checks`, `watch_snapshots`, `watch_changes`, `watch_images` on Postgres (in-memory without `DATABASE_URL`). The baseline screenshot is stored lossless; replaced baselines are re-saved lossy.
+- **Env:** `WATCH_BROWSER=off` turns the browser off; `WATCH_CHROMIUM_PATH` points at a Chromium to use.
+
 ## 10. Environment variables (Railway → web → Variables)
 
 Names only. Values live in Railway and must never be copied into the repo or chat. A missing variable disables only its feature.
