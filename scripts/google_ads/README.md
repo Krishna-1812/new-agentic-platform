@@ -98,8 +98,14 @@ It adds these tabs at the **end** of the sheet. It never changes the first tab, 
 
 Every morning at about **10:00 India time**, the site posts to one Slack channel.
 
-- **First, an overview.** Every account is listed with a status light: 🔴 needs action, 🟠 worth a look, 🟢 on track. The most urgent accounts come first, each with its main reason, and the totals are shown when every account uses one currency.
-- **Then one message per account.** Each opens with the same status light. It has KPI tiles with change pills (🟢/🔴 where up or down is clearly good or bad, ⚪ for spend), a pacing bar, a 14-day chart of spend and conversions, alerts marked by severity, medals for the top three campaigns, and buttons to the dashboard and the AI review.
+- **First, an overview.** Accounts are grouped under *Needs action*, *Worth a look* and *On track*, each with its main reason. It also shows the day's totals when every account uses one currency.
+- **Then one message per account.** Each is a card whose coloured side bar is the account's status: red, amber or green. The card holds:
+  - the key figures, each with its change against the 7-day average;
+  - month-to-date pacing;
+  - a 14-day chart of spend and conversions;
+  - what needs attention, under *Action needed*, *Watch* and *For information*;
+  - the top three campaigns;
+  - buttons to the dashboard and the AI review.
 
 Each account message shows:
 

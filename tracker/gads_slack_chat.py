@@ -253,13 +253,13 @@ def to_slack(text):
 
 # ── How an answer looks ─────────────────────────────────────────────────────
 def thinking_blocks():
-    return [{"type": "context", "elements": [{"type": "mrkdwn", "text": "\u23F3  " + THINKING}]}]
+    return [{"type": "context", "elements": [{"type": "mrkdwn", "text": THINKING}]}]
 
 
 def answer_blocks(reply, account, latest, base_url="", ok=True):
     """The answer as Block Kit: what it is about, the answer itself, where it came from, a dashboard button."""
     who = account or "All accounts"
-    head = "\U0001F4A1  *%s*" % gads_digest.esc(who) if ok else "\u26A0\uFE0F  *Couldn't answer*"
+    head = "*%s*" % gads_digest.esc(who) if ok else "*Couldn't answer*"
     blocks = [{"type": "context", "elements": [{"type": "mrkdwn", "text": head}]}]
     rest = reply
     while rest:   # Slack allows 3,000 characters per section
@@ -267,7 +267,7 @@ def answer_blocks(reply, account, latest, base_url="", ok=True):
         blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": cut}})
         rest = rest[len(cut):].lstrip("\n")
     if ok:
-        src = "\U0001F916 Ads Insight  \u00b7  Google Ads data"
+        src = "Ads Insight  \u00b7  Google Ads data"
         if latest:
             src += " up to %s" % gads_digest.day_label(latest)
         src += "  \u00b7  Ask a follow-up in this thread"
@@ -276,7 +276,7 @@ def answer_blocks(reply, account, latest, base_url="", ok=True):
         url = "%s/dashboards/google-ads" % base_url + ("?account=" + quote(account, safe="") if account else "")
         blocks.append({"type": "actions", "elements": [
             {"type": "button", "action_id": "open_dashboard",
-             "text": {"type": "plain_text", "emoji": True, "text": "\U0001F4CA  Open %s" % (
+             "text": {"type": "plain_text", "text": "Open %s" % (
                  "dashboard" if not account else account[:60])},
              "url": url}]})
     return blocks

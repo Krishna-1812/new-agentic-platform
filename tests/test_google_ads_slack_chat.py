@@ -129,7 +129,7 @@ def test_an_answer_replaces_the_placeholder_and_reads_the_thread_and_the_account
     assert final["ts"] == "1700000100.000001", "the placeholder is replaced, not followed"
     assert final["text"].startswith("*CPA rose* because"), "Slack bold, not Markdown"
     blob = json.dumps(final["blocks"], ensure_ascii=False)
-    assert final["blocks"][0]["elements"][0]["text"] == "\U0001F4A1  *Acme*"
+    assert final["blocks"][0]["elements"][0]["text"] == "*Acme*"
     assert final["blocks"][1]["text"]["text"].startswith("*CPA rose* because")
     assert "Google Ads data up to Sat 26 Sep 2026" in blob
     assert '"url": "https://app.example/dashboards/google-ads?account=Acme"' in blob
