@@ -287,7 +287,8 @@ def message(s, base_url=""):
 
 # ── Posting ──────────────────────────────────────────────────────────────────
 def post(token, channel, msg, session=None, sleep=time.sleep):
-    """Post one message. Returns (ok, error): Slack's own error code on failure, never the token."""
+    """Post one message. Returns (ok, error, ts): Slack's own error code on failure, never the token, and
+    the message's timestamp (its id in the channel, so replies under it can be told apart)."""
     http = session or requests
     body = {"channel": channel, "text": msg["text"], "blocks": msg["blocks"],
             "unfurl_links": False, "unfurl_media": False}
@@ -296,7 +297,7 @@ def post(token, channel, msg, session=None, sleep=time.sleep):
         try:
             r = http.post(SLACK_POST, headers=headers, json=body, timeout=15)
         except requests.RequestException as exc:
-            return False, type(exc).__name__
+            return False, type(exc).__name__, ""
         if r.status_code == 429 and attempt == 0:
             try:
                 wait = min(30, int(r.headers.get("Retry-After", "1")))
@@ -307,17 +308,20 @@ def post(token, channel, msg, session=None, sleep=time.sleep):
         try:
             data = r.json()
         except ValueError:
-            return False, "http_%d" % r.status_code
-        return (True, "") if data.get("ok") else (False, str(data.get("error") or "unknown_error")[:80])
-    return False, "ratelimited"
+            return False, "http_%d" % r.status_code, ""
+        if data.get("ok"):
+            return True, "", str(data.get("ts") or "")
+        return False, str(data.get("error") or "unknown_error")[:80], ""
+    return False, "ratelimited", ""
 
 
 def run(rows, accounts, st=None, token="", channel="", base_url="", dry_run=False, force=False,
-        last_posted=None, mark_posted=None, today=None, session=None, sleep=time.sleep):
+        last_posted=None, mark_posted=None, on_thread=None, today=None, session=None, sleep=time.sleep):
     """Build and post the digest for each account, in the order given.
 
     last_posted(account) -> the day last posted for it (so a retried run never posts twice);
-    mark_posted(account, day) records a post. Returns one result per account:
+    mark_posted(account, day) records a post; on_thread(account, ts) records which account a posted
+    message is about, so Ads Insight can answer replies under it. Returns one result per account:
     {"account", "day", "status": posted | skipped | preview | failed | no_data, "error", "message"}."""
     fx = g.FX(rows)
     out, sent = [], 0
@@ -335,10 +339,12 @@ def run(rows, accounts, st=None, token="", channel="", base_url="", dry_run=Fals
         else:
             if sent:
                 sleep(SPACING_SECONDS)
-            ok, err = post(token, channel, msg, session=session, sleep=sleep)
+            ok, err, ts = post(token, channel, msg, session=session, sleep=sleep)
             sent += 1
             res.update(status="posted" if ok else "failed", error=err)
             if ok and mark_posted:
                 mark_posted(account, s["day"])
+            if ok and ts and on_thread:
+                on_thread(account, ts)
         out.append(res)
     return out
