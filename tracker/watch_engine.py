@@ -227,8 +227,10 @@ def run_check(target_id, *, capture=None, confirm=None):
     try:
         cap = _read(read, target, settings)
     except watch_capture.watch_safety.BadURL as exc:
-        watch_store.finish_check(check_id, outcome="error", error="bad_url", error_detail=str(exc))
-        return {"check_id": check_id, "outcome": "error", "error": "bad_url", "detail": str(exc)}
+        # The link no longer passes the safety check: its name stopped
+        # resolving, or now points at a private address. A failure like any
+        # other, so two in a row show the watch as "can't read".
+        return _failed(target, check_id, "error", "bad_url", str(exc), {})
 
     facts = {"engine": cap.engine, "status": cap.status, "final_url": cap.final_url or None,
              "elapsed_ms": cap.elapsed_ms}

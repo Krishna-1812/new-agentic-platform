@@ -217,3 +217,40 @@ def test_feedback_history_in_sql(email):
     rows = watch_store.list_feedback(tid)
     assert [r["feedback"] for r in rows] == ["mute", "useful"]
     assert rows[1]["verdict"]["category"] == "price"
+
+
+# ── Phase 4: the dashboard query and a request made mid-check, on real SQL ───
+def test_dashboard_in_four_queries_in_sql(email):
+    import sys
+    sys.path.insert(0, os.path.dirname(__file__))
+    from test_watch_engine import cap_from, page
+
+    def reader(*caps):
+        seq = list(caps)
+        return lambda url, area=None, screenshots=True: seq.pop(0)
+    a = watch_store.create_target(email, "https://example.com/dash-a", name="A")
+    b = watch_store.create_target(email, "https://example.com/dash-b", name="B")
+    watch_engine.run_check(a, capture=reader(cap_from(page()), cap_from(page()), cap_from(page())))
+    watch_engine.run_check(a, confirm=False, capture=reader(cap_from(page(price=False))))
+    rows = {r["id"]: r for r in watch_store.dashboard(email)}
+    assert set(rows) == {a, b}
+    assert [c["outcome"] for c in rows[a]["checks"]] == ["changed", "baseline"]
+    assert rows[a]["latest"]["headline"] and rows[a]["thumb_id"]
+    assert rows[b]["checks"] == [] and rows[b]["latest"] is None and rows[b]["thumb_id"] is None
+    assert watch_store.dashboard("nobody-%s@markifydigital.com" % uuid.uuid4().hex[:6]) == []
+
+
+def test_a_request_made_mid_check_survives_the_release_in_sql(email):
+    from datetime import datetime, timedelta, timezone
+    tid = watch_store.create_target(email, "https://midcheck-%s.example.com/" % uuid.uuid4().hex[:6])
+    far = datetime.now(timezone.utc) + timedelta(days=30)
+    watch_store.update_target(tid, next_check_at=datetime.now(timezone.utc) - timedelta(minutes=1))
+    claimed = next(r for r in watch_store.claim_due("w", limit=50) if r["id"] == tid)
+    now = datetime.now(timezone.utc)
+    watch_store.update_target(tid, next_check_at=now)                          # "Check now", mid-check
+    assert watch_store.release(tid, "w", far, seen=claimed["next_check_at"])
+    got = datetime.fromisoformat(watch_store.get_target(tid)["next_check_at"])
+    assert abs((got - now).total_seconds()) < 1
+    claimed = next(r for r in watch_store.claim_due("w", limit=50) if r["id"] == tid)
+    assert watch_store.release(tid, "w", far, seen=claimed["next_check_at"])
+    assert datetime.fromisoformat(watch_store.get_target(tid)["next_check_at"]) == far

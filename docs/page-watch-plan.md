@@ -277,7 +277,47 @@ The plan as first written:
   the next judgements for that watch.
 - Cost tracking per check and a monthly cap.
 
-### Phase 4 — The experience
+### Phase 4 — The experience (done)
+
+The pages are `templates/page_watch*.html`, `static/css/page-watch.css` and
+`static/js/page-watch.js`, with `tracker/watch_web.py` behind the routes.
+
+- **`/strategic-agents/page-watch`:**
+  - **Hero:** a link-or-name box and figures for pages watched, changed,
+    can't read and Claude's spending this month.
+  - **The add flow:** find (Claude's candidates for a name), then read (the
+    worker's first look, shown live while it happens), then set up.
+  - **Setting up:** the real screenshot, with "pick an area" (drag a box;
+    it becomes the nearest common container of the text inside, found
+    again on every visit) and "ignore an area"; schedule, the note for
+    Claude, the client, the Slack channel, and what to compare.
+  - **Dashboard:** cards with a thumbnail, state, the latest verdict and a
+    strip of the last 30 checks; filters by state and client, and search.
+    Built in four queries however many watches there are, and refreshed
+    while pages are being read.
+  - **Below the dashboard:** how it works, and the worker's and Claude's
+    status.
+- **`/watches/<id>`:**
+  - the page's picture;
+  - its changes and every check;
+  - settings, the area picker and muted categories;
+  - check now, pause and resume, and stop watching.
+- **`/changes/<id>`:**
+  - Claude's verdict, set in the importance colour;
+  - Useful, Not useful and Mute this kind;
+  - before and after as a slider, side by side, or the alert picture, with
+    the changed areas boxed;
+  - the edited, added and removed words, the prices, and the page facts.
+- **Safety:**
+  - every route is staff-only and scoped to the signed-in user;
+  - writes accept JSON only;
+  - page text is shown as text, never as HTML;
+  - images are private and immutable once stored.
+- **A save can't race a running check:** a change to what is watched is
+  refused (409) while the page is being read. A check asked for during a
+  check is kept rather than overwritten.
+
+The plan as first written:
 
 - The agent page under Strategic Agents, in the platform's design system.
 - The add-a-page flow: link or name, live preview, area picker on the

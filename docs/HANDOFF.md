@@ -272,9 +272,9 @@ It then scores and tiers the businesses worth pitching (website build, local SEO
   - optional: `APIFY_API_TOKEN`, `PAGESPEED_API_KEY` (or the Maps key), `HUNTER_API_KEY`;
   - tuning: `LBR_SOURCE`, `LBR_RENDER`, `LBR_RENDER_CONCURRENCY`, `LBR_RETENTION_DAYS`, `LBR_PRICES_JSON`, `LBR_APIFY_PRICING`.
 
-### 9a. Page Watch (in build: Phases 1–3 of 5 done)
+### 9a. Page Watch (in build: Phases 1–4 of 5 done)
 
-Watches any web page and reports, in plain words and with a before-and-after picture, when it changes. The plan and the five phases are in `docs/page-watch-plan.md`. Phase 1 is the detection engine (`tracker/watch_*.py`); Phase 2 the worker and schedules. There is no page yet (Phase 4).
+Watches any web page and reports, in plain words and with a before-and-after picture, when it changes. The plan and the five phases are in `docs/page-watch-plan.md`. Phase 1 is the detection engine (`tracker/watch_*.py`); Phase 2 the worker and schedules; Phase 3 Claude's verdict; Phase 4 the pages: `/strategic-agents/page-watch` (add flow and dashboard), `/watches/<id>` (timeline and settings) and `/changes/<id>` (verdict and before/after slider), backed by `tracker/watch_web.py`. Slack alerts are Phase 5.
 
 - **Reading a page** (`watch_capture`): headless Chromium at 1440×900, fixed language and time zone, animations frozen, cookie notices and chat bubbles hidden, lazy content scrolled into view. Returns every visible text block with its position, a full-page screenshot and a control screenshot a few seconds later. Every request the browser makes is checked against private addresses, one redirect at a time (same rule as Local Business Radar). Without a browser it reads plain HTTP (text only).
 - **Comparing** (`watch_text`, `watch_visual`, `watch_detect`): text block by block (volatile text such as "3 minutes ago" neutralised); screenshots row-aligned to the pixel, so an inserted banner does not make the rest of the page count as changed; content that only moved (one column shifting, a fixed sidebar) is recognised and left out.

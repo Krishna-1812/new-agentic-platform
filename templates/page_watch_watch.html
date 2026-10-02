@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    PAGE WATCH: ONE WATCHED PAGE (/strategic-agents/page-watch/watches/<id>)
+
+    The page's picture and state, its changes, every check (its timeline),
+    its settings (what is watched, when, the note for Claude, the channel),
+    the categories muted on it, and pause / check now / stop watching.
+-#}
+<html lang="en">
+<head>
+{{ head(w.name ~ " · Page Watch", ["strategic-agents.css?v=2", "page-watch.css?v=1"]) }}
+</head>
+<body class="sa pw">
+
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Page Watch", "/strategic-agents/page-watch"), (w.name, none)]) }}
+
+<main class="sa-shell" id="pw-watch">
+  <section class="pw-watch-head">
+    <div>
+      <span class="sa-lbl">{{ w.client or 'Watched page' }}</span>
+      <h1 class="sa-h2">{{ w.name }}</h1>
+      <div class="pw-watch-meta">
+        <span class="pw-state pw-state--{{ w.state }}" style="position:static;box-shadow:none"><i></i>{{ w.state_label }}</span>
+        <span><a href="{{ w.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ w.url }}</a></span>
+        <span>{{ w.schedule }}</span>
+        {% if w.area %}<span>Area: {{ w.area }}</span>{% endif %}
+        {% if w.last_check_at %}<span>Checked <time data-rel datetime="{{ w.last_check_at }}">{{ w.last_check_at[:16] }}</time></span>{% endif %}
+        {% if w.next_check_at and w.status != 'paused' %}<span>Next <time data-rel datetime="{{ w.next_check_at }}">{{ w.next_check_at[:16] }}</time></span>{% endif %}
+      </div>
+      <div class="pw-actions" style="margin-top:var(--sp-5)">
+        <button type="button" class="sa-btn sa-btn--dark" id="pw-check-now">Check now</button>
+        <button type="button" class="sa-btn sa-btn--line" id="pw-pause">{{ 'Resume' if w.status == 'paused' else 'Pause' }}</button>
+      </div>
+      <p class="pw-wait-note" id="pw-watch-msg" role="status" hidden style="margin-top:var(--sp-4)"></p>
+    </div>
+    <div class="pw-watch-shot">
+      {% if w.thumb %}<img src="{{ w.thumb }}" alt="The page when it was last recorded">{% else %}<span class="pw-thumb-empty">Not read yet</span>{% endif %}
+    </div>
+  </section>
+
+  <div class="pw-cols">
+    <div>
+      <section class="pw-panel" aria-labelledby="pw-ch-t">
+        <h3 id="pw-ch-t">Changes</h3>
+        {% if w.changes %}
+        <div class="pw-changes">
+          {% for c in w.changes %}
+          <a class="pw-change" href="{{ c.url }}">
+            <span class="pw-imp pw-imp--{{ 'muted' if c.muted else c.importance }}">{{ c.importance_label }}</span>
+            <p>{{ c.summary }}</p>
+            <time data-rel datetime="{{ c.created_at }}">{{ (c.created_at or '')[:10] }}</time>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="pw-quiet">No changes yet. When something changes it appears here with its before-and-after picture.</p>
+        {% endif %}
+      </section>
+
+      <section class="pw-panel" style="margin-top:var(--sp-5)" aria-labelledby="pw-tl-t">
+        <h3 id="pw-tl-t">Every check</h3>
+        {% if w.strip %}
+        <div class="pw-strip" style="margin-bottom:var(--sp-4)" role="img" aria-label="Last checks">
+          {% for _ in range(30 - w.strip|length) %}<i></i>{% endfor %}
+          {% for s in w.strip %}<i class="o-{{ s.o }}" title="{{ s.label }}"></i>{% endfor %}
+        </div>
+        {% endif %}
+        <ol class="pw-tl">
+          {% for k in w.checks %}
+          <li class="o-{{ k.outcome or 'running' }}">
+            <i aria-hidden="true"></i>
+            <div>{{ k.label }}{% if k.change %} &middot; <a href="{{ k.change }}">see the change</a>{% endif %}
+              {% if k.detail %}<small>{{ k.detail }}</small>{% endif %}</div>
+            <time data-rel datetime="{{ k.at }}">{{ (k.at or '')[:16] }}</time>
+          </li>
+          {% else %}
+          <li><i aria-hidden="true"></i><div>Waiting for the first check.</div><span></span></li>
+          {% endfor %}
+        </ol>
+      </section>
+    </div>
+
+    <div>
+      <section class="pw-panel" aria-labelledby="pw-set-t">
+        <h3 id="pw-set-t">Settings</h3>
+        <form class="pw-form" id="pw-watch-form" novalidate></form>
+      </section>
+
+      <section class="pw-panel" style="margin-top:var(--sp-5)" aria-labelledby="pw-what-t">
+        <h3 id="pw-what-t">What is watched</h3>
+        <p class="pw-quiet">{% if w.area %}One area: {{ w.area }}.{% else %}The whole page.{% endif %}
+          {% if w.ignore %}{{ w.ignore|length }} area{{ '' if w.ignore|length == 1 else 's' }} ignored.{% endif %}</p>
+        <button type="button" class="sa-btn sa-btn--line" id="pw-open-picker" style="margin-top:var(--sp-4)">Pick an area or ignore one</button>
+        <div class="pw-picker" id="pw-picker" hidden>
+          <ul class="pw-facts" id="pw-facts"></ul>
+          <div class="pw-tools" role="toolbar" aria-label="What to watch on the page">
+            <button type="button" class="pw-tool is-on" data-pw-mode="all">Whole page</button>
+            <button type="button" class="pw-tool" data-pw-mode="area">Pick an area</button>
+            <button type="button" class="pw-tool pw-tool--ignore" data-pw-mode="ignore">Ignore an area</button>
+            <p class="pw-tool-help" id="pw-tool-help">Drag on the picture, then Save changes above.</p>
+          </div>
+          <div class="pw-frame"><div class="pw-canvas" id="pw-canvas"></div></div>
+        </div>
+      </section>
+
+      <section class="pw-panel" style="margin-top:var(--sp-5)" aria-labelledby="pw-mute-t">
+        <h3 id="pw-mute-t">Muted kinds of change</h3>
+        <p class="pw-quiet" style="margin-bottom:var(--sp-3)">Muted changes are still recorded and judged, but never alerted.</p>
+        <div class="pw-muted-list">
+          {% for cat in categories %}
+          <button type="button" data-pw-mute="{{ cat }}" aria-pressed="{{ 'true' if cat in w.muted else 'false' }}">{{ cat|capitalize }}</button>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script type="application/json" id="pw-data">{{ {"watch": {"id": w.id, "name": w.name, "client": w.client, "schedule": w.schedule_raw,
+  "instructions": w.instructions, "channel": w.channel, "watch_text": w.watch_text, "watch_visual": w.watch_visual,
+  "status": w.status, "ignore": w.ignore, "area_selector": w.area_selector, "area": w.area}, "days": days, "dayNames": day_names}|tojson }}</script>
+{{ topbar_script() }}
+<script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=1"></script>
+</body>
+</html>

@@ -267,6 +267,26 @@ _BLOCKS_JS = r"""
     }
     return parts.join(' > ');
   };
+  // The element's whole path, from the nearest uniquely named ancestor (or
+  // the body) down. Unlike sel(), it never stops early, so the paths of two
+  // blocks share a start exactly as far as the blocks share ancestors: the
+  // area picker (watch_web.area_from_rect) finds their common container so.
+  const ids = new Map();
+  const path = (el) => {
+    const parts = [];
+    for (let e = el; e && e.nodeType === 1 && e !== document.documentElement; e = e.parentElement) {
+      if (e === document.body) { parts.unshift('body'); break; }
+      if (e.id && /^[A-Za-z][\w-]{0,60}$/.test(e.id)) {
+        if (!ids.has(e.id)) ids.set(e.id, unique('#' + e.id));
+        if (ids.get(e.id)) { parts.unshift('#' + e.id); break; }
+      }
+      let p = e.tagName.toLowerCase();
+      const sib = e.parentElement ? [...e.parentElement.children].filter(c => c.tagName === e.tagName) : [];
+      if (sib.length > 1) p += ':nth-of-type(' + (sib.indexOf(e) + 1) + ')';
+      parts.unshift(p);
+    }
+    return parts.join(' > ');
+  };
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   const range = document.createRange();
   let n, count = 0;
@@ -299,7 +319,7 @@ _BLOCKS_JS = r"""
     const text = b.parts.join(' ').replace(/\s+/g, ' ').trim().slice(0, limits.maxChars);
     return {tag, text,
             box: [Math.round(b.x1), Math.round(b.y1), Math.round(b.x2 - b.x1), Math.round(b.y2 - b.y1)],
-            sel: sel(b.el)};
+            sel: sel(b.el), path: path(b.el)};
   }).filter(b => b.text && b.box[0] + b.box[2] > 0 && b.box[1] + b.box[3] > 0 && b.box[2] > 1 && b.box[3] > 1);
 }
 """

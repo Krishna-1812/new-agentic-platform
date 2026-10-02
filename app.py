@@ -17603,6 +17603,205 @@ def page_watch_health():
         return jsonify(status="unavailable", error="The Page Watch store could not be read."), 503
 
 
+# ── Page Watch (tracker/watch_*.py; plan: docs/page-watch-plan.md) ───────────
+# The website never opens a browser: it stores watches and shows them. The
+# worker service checks them (python -m tracker.watch_worker). Every write
+# takes JSON only: a cross-site form cannot send application/json without a
+# CORS preflight this app never answers, so no other site can act for a
+# signed-in user.
+PW_BASE = "/strategic-agents/page-watch"
+
+
+def _pw_email():
+    return (_get_user() or {}).get("email", "")
+
+
+def _pw_body():
+    if not request.is_json:
+        return None
+    body = request.get_json(silent=True)
+    return body if isinstance(body, dict) else None
+
+
+def _pw_invalid(exc):
+    return jsonify(ok=False, field=getattr(exc, "field", None), error=str(exc)), 400
+
+
+@app.route(PW_BASE)
+@position2_required
+def page_watch_page():
+    from tracker import watch_schedule, watch_web
+    return render_template("page_watch.html", user=_get_user(), board=watch_web.dashboard(_pw_email()),
+                           status=watch_web.agent_status(), days=watch_schedule.DAYS,
+                           day_names=watch_schedule.DAY_NAMES)
+
+
+@app.route(PW_BASE + "/watches/<int:target_id>")
+@position2_required
+def page_watch_watch_page(target_id):
+    from tracker import watch_judge, watch_schedule, watch_web
+    view = watch_web.timeline(target_id, _pw_email())
+    if not view:
+        abort(404)
+    return render_template("page_watch_watch.html", user=_get_user(), w=view, days=watch_schedule.DAYS,
+                           day_names=watch_schedule.DAY_NAMES, categories=watch_judge.CATEGORIES)
+
+
+@app.route(PW_BASE + "/changes/<int:change_id>")
+@position2_required
+def page_watch_change_page(change_id):
+    from tracker import watch_web
+    view = watch_web.change_view(change_id, _pw_email())
+    if not view:
+        abort(404)
+    return render_template("page_watch_change.html", user=_get_user(), c=view)
+
+
+@app.route(PW_BASE + "/images/<int:image_id>")
+@position2_required
+def page_watch_image(image_id):
+    from tracker import watch_store
+    img = watch_store.get_image(image_id, _pw_email())
+    if not img:
+        abort(404)
+    resp = make_response(img["bytes"])
+    resp.headers["Content-Type"] = img.get("mime") or "image/webp"
+    # An image never changes once stored; it is private to its owner.
+    resp.headers["Cache-Control"] = "private, max-age=86400, immutable"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    return resp
+
+
+@app.route(PW_BASE + "/api/status")
+@position2_required
+def page_watch_api_status():
+    from tracker import watch_web
+    return jsonify(watch_web.agent_status())
+
+
+@app.route(PW_BASE + "/api/watches", methods=["GET", "POST"])
+@position2_required
+def page_watch_api_watches():
+    from tracker import watch_web
+    if request.method == "GET":
+        return jsonify(watch_web.dashboard(_pw_email()))
+    body = _pw_body()
+    if body is None:
+        return jsonify(ok=False, error="Send JSON."), 415
+    try:
+        tid = watch_web.create(_pw_email(), body)
+    except watch_web.Invalid as exc:
+        return _pw_invalid(exc)
+    return jsonify(ok=True, id=tid, page="%s/watches/%d" % (PW_BASE, tid)), 201
+
+
+@app.route(PW_BASE + "/api/watches/<int:target_id>", methods=["GET", "PATCH", "DELETE"])
+@position2_required
+def page_watch_api_watch(target_id):
+    from tracker import watch_store, watch_web
+    email = _pw_email()
+    if request.method == "GET":
+        view = watch_web.timeline(target_id, email)
+        return (jsonify(view), 200) if view else (jsonify(ok=False, error="Not found."), 404)
+    if request.method == "DELETE":
+        if not request.is_json:
+            return jsonify(ok=False, error="Send JSON."), 415
+        return (jsonify(ok=True), 200) if watch_store.delete_target(target_id, email) else (
+            jsonify(ok=False, error="Not found."), 404)
+    body = _pw_body()
+    if body is None:
+        return jsonify(ok=False, error="Send JSON."), 415
+    try:
+        t = watch_web.update(target_id, email, body)
+    except watch_web.Invalid as exc:
+        return _pw_invalid(exc)
+    except watch_web.Busy as exc:
+        return jsonify(ok=False, error=str(exc)), 409
+    if not t:
+        return jsonify(ok=False, error="Not found."), 404
+    return jsonify(ok=True, restarted=t.get("baseline_id") is None)
+
+
+@app.route(PW_BASE + "/api/watches/<int:target_id>/preview")
+@position2_required
+def page_watch_api_preview(target_id):
+    from tracker import watch_web
+    view = watch_web.preview(target_id, _pw_email())
+    return (jsonify(view), 200) if view else (jsonify(ok=False, error="Not found."), 404)
+
+
+@app.route(PW_BASE + "/api/watches/<int:target_id>/check", methods=["POST"])
+@position2_required
+def page_watch_api_check(target_id):
+    from tracker import watch_web
+    if _pw_body() is None:
+        return jsonify(ok=False, error="Send JSON."), 415
+    return (jsonify(ok=True), 200) if watch_web.check_now(target_id, _pw_email()) else (
+        jsonify(ok=False, error="Not found."), 404)
+
+
+@app.route(PW_BASE + "/api/watches/<int:target_id>/area", methods=["POST"])
+@position2_required
+def page_watch_api_area(target_id):
+    """The element a rectangle drawn on the first reading covers (not saved)."""
+    from tracker import watch_web
+    body = _pw_body()
+    if body is None:
+        return jsonify(ok=False, error="Send JSON."), 415
+    view = watch_web.preview(target_id, _pw_email())
+    if not view or not view.get("ready"):
+        return jsonify(ok=False, error="The page has not been read yet."), 409
+    try:
+        rect = [float(v) for v in body.get("rect") or []]
+        assert len(rect) == 4
+    except (TypeError, ValueError, AssertionError):
+        return jsonify(ok=False, error="Draw a rectangle on the picture."), 400
+    area = watch_web.area_from_rect(view["blocks"], rect)
+    if not area:
+        return jsonify(ok=False, error="No text there to anchor an area. Draw round some words."), 422
+    return jsonify(ok=True, area=area)
+
+
+@app.route(PW_BASE + "/api/watches/<int:target_id>/mute", methods=["POST"])
+@position2_required
+def page_watch_api_mute(target_id):
+    from tracker import watch_judge
+    body = _pw_body()
+    if body is None:
+        return jsonify(ok=False, error="Send JSON."), 415
+    try:
+        muted = watch_judge.mute(target_id, _pw_email(), str(body.get("category") or ""), on=bool(body.get("on", True)))
+    except ValueError as exc:
+        return jsonify(ok=False, error=str(exc)), 400
+    return (jsonify(ok=True, muted=muted), 200) if muted is not None else (jsonify(ok=False, error="Not found."), 404)
+
+
+@app.route(PW_BASE + "/api/find", methods=["POST"])
+@position2_required
+def page_watch_api_find():
+    from tracker import watch_judge
+    body = _pw_body()
+    if body is None:
+        return jsonify(ok=False, error="Send JSON."), 415
+    return jsonify(watch_judge.find_pages(body.get("query"), _pw_email()))
+
+
+@app.route(PW_BASE + "/api/changes/<int:change_id>/feedback", methods=["POST"])
+@position2_required
+def page_watch_api_feedback(change_id):
+    from tracker import watch_judge
+    body = _pw_body()
+    if body is None:
+        return jsonify(ok=False, error="Send JSON."), 415
+    try:
+        change = watch_judge.give_feedback(change_id, _pw_email(), str(body.get("kind") or ""))
+    except ValueError as exc:
+        return jsonify(ok=False, error=str(exc)), 400
+    if not change:
+        return jsonify(ok=False, error="Not found."), 404
+    return jsonify(ok=True, feedback=change.get("feedback"))
+
+
 @app.route("/api/weekly-stats")
 @app.route("/api/weekly-stats/<account_id>")
 @position2_required
