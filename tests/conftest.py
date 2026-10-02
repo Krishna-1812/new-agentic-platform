@@ -24,6 +24,9 @@ os.environ.setdefault("LBR_RENDER", "off")
 # ...and prices Apify at the list prices unless a test asks Apify for them
 # (tests/test_lbr_apify_pricing.py).
 os.environ.setdefault("LBR_APIFY_PRICING", "list")
+# Page Watch never calls Claude in tests unless a test switches the judge on
+# with a fake client (tests/test_watch_judge.py).
+os.environ.setdefault("WATCH_JUDGE", "off")
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
