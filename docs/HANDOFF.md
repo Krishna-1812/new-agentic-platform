@@ -142,7 +142,7 @@ Google Sign-In is open to any Google account, so access is split into surfaces:
 
 | Surface | Who | Gate | Paths |
 |---|---|---|---|
-| Public marketing site | anyone | none | `/`, `/agents`, `/platform`, `/privacy`, `/terms` … |
+| Public marketing site | anyone | none | `/`, `/agents`, `/platform`, `/signals`, `/resources` … (`/privacy` and `/terms` were removed until outcomes.digital's own text is added) |
 | Member workspace | any signed-in Google user | `@login_required` | `/app/*` |
 | Internal staff app | `@markifydigital.com` and the admins | `@position2_required` (the decorator's name is historical) | `/hub`, `/strategic-agents/*`, `/seo-aeo/*`, `/dashboards/*`, `/abm-signal-tracker/*`, `/playbook/*` |
 | Admin | `ADMIN_EMAILS` only | `@admin_required` | `/admin/*` |

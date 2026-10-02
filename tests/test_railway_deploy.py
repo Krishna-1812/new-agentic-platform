@@ -79,7 +79,7 @@ def test_the_public_marketing_pages_can_be_indexed():
     rules = _rules()
     for path in ("/", "/agents", "/agents/signal-tracker", "/industries/health-tech",
                  "/platform", "/signals", "/solutions", "/why-intelligence",
-                 "/integrations", "/resources", "/privacy", "/terms", "/static/css/press.css"):
+                 "/integrations", "/resources", "/static/css/press.css"):
         assert _allowed(path, rules), path
 
 

@@ -1447,7 +1447,7 @@ def auth_google():
 # alone; each other entry covers its page and everything under it.
 ROBOTS_PUBLIC_PATHS = ["/$", "/agents", "/industries", "/platform", "/signals",
                        "/solutions", "/why-intelligence", "/integrations",
-                       "/resources", "/privacy", "/terms", "/static/", "/favicon"]
+                       "/resources", "/static/", "/favicon"]
 
 
 @app.route("/robots.txt")
@@ -3397,13 +3397,6 @@ def app_settings():
     return render_template("app_settings.html", user=_get_user())
 
 
-@app.route("/privacy")
-def privacy_page():
-    return render_template("agents.html", page="privacy", agents=AGENTS, agent=None, related=[])
-
-@app.route("/terms")
-def terms_page():
-    return render_template("agents.html", page="terms", agents=AGENTS, agent=None, related=[])
 
 @app.route("/integrations")
 def integrations_page():
