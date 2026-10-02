@@ -110,6 +110,12 @@ def _mine(rows, ids, owner):
     return out
 
 
+def _only(rows, tid, owner):
+    """This test's watch from a claim; anything else claimed is handed back."""
+    _mine(rows, {tid}, owner)
+    return next(r for r in rows if r["id"] == tid)
+
+
 def test_claims_leases_and_the_site_rule_in_sql(email):
     from datetime import datetime, timedelta, timezone
     tag = uuid.uuid4().hex[:8]
@@ -245,12 +251,42 @@ def test_a_request_made_mid_check_survives_the_release_in_sql(email):
     tid = watch_store.create_target(email, "https://midcheck-%s.example.com/" % uuid.uuid4().hex[:6])
     far = datetime.now(timezone.utc) + timedelta(days=30)
     watch_store.update_target(tid, next_check_at=datetime.now(timezone.utc) - timedelta(minutes=1))
-    claimed = next(r for r in watch_store.claim_due("w", limit=50) if r["id"] == tid)
+    claimed = _only(watch_store.claim_due("w", limit=50), tid, "w")
     now = datetime.now(timezone.utc)
     watch_store.update_target(tid, next_check_at=now)                          # "Check now", mid-check
     assert watch_store.release(tid, "w", far, seen=claimed["next_check_at"])
     got = datetime.fromisoformat(watch_store.get_target(tid)["next_check_at"])
     assert abs((got - now).total_seconds()) < 1
-    claimed = next(r for r in watch_store.claim_due("w", limit=50) if r["id"] == tid)
+    claimed = _only(watch_store.claim_due("w", limit=50), tid, "w")
     assert watch_store.release(tid, "w", far, seen=claimed["next_check_at"])
     assert datetime.fromisoformat(watch_store.get_target(tid)["next_check_at"]) == far
+
+
+# ── Phase 5: load, on real SQL ───────────────────────────────────────────────
+def test_four_hundred_watches_with_their_history_stay_fast_in_sql(email):
+    """400 watches with 30 checks each: the dashboard (four queries) and a
+    claim (one advisory-locked query) stay well inside a page load."""
+    import time
+    from datetime import datetime, timedelta, timezone
+    tag = uuid.uuid4().hex[:6]
+    ids = [watch_store.create_target(email, "https://load%d-%s.example.com/" % (i, tag), name="Load %d" % i)
+           for i in range(400)]
+    with watch_store._pg() as conn, conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO watch_checks (target_id, outcome, started_at, finished_at)
+            SELECT t, CASE WHEN g %% 9 = 0 THEN 'changed' ELSE 'same' END,
+                   now() - (g || ' hours')::interval, now() - (g || ' hours')::interval
+            FROM unnest(%s::int[]) AS t, generate_series(1, 30) AS g""", (ids,))
+    t0 = time.perf_counter()
+    rows = watch_store.dashboard(email)
+    took = time.perf_counter() - t0
+    assert len(rows) == 400 and all(len(r["checks"]) == 30 for r in rows)
+    assert took < 3, took
+    past = datetime.now(timezone.utc) - timedelta(minutes=1)
+    with watch_store._pg() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE watch_targets SET next_check_at = %s WHERE id = ANY(%s)", (past, ids))
+    t0 = time.perf_counter()
+    claimed = watch_store.claim_due("load-w", limit=50)
+    got = [r for r in claimed if r["id"] in set(ids)]
+    _mine([r for r in claimed if r["id"] not in set(ids)], set(), "load-w")
+    assert time.perf_counter() - t0 < 2 and len(got) >= 40

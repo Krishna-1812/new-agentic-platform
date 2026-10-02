@@ -158,6 +158,9 @@ def _failed(target, check_id, outcome, error, detail, facts):
     if fails >= FAILS_BEFORE_ALERT:
         fields["state"] = outcome if outcome in watch_store.STATES else "error"
     watch_store.update_target(target["id"], **fields)
+    if fails == FAILS_BEFORE_ALERT:
+        # The one message about it; the next comes when it reads again.
+        _safely(lambda: _alerts().alert_failure(target, outcome, detail), "failure notice", target["id"])
     return {"check_id": check_id, "outcome": outcome, "error": error, "detail": detail, "fail_count": fails}
 
 
@@ -203,6 +206,25 @@ def _flapped(target, found):
     if promote["rects"] or promote["sels"]:
         stored["learned"] = watch_detect.absorb(stored.get("learned"), promote)
     return stored
+
+
+def _alerts():
+    from tracker import watch_alerts
+    return watch_alerts
+
+
+def _safely(fn, what, target_id):
+    """Telling people never fails a check."""
+    try:
+        return fn()
+    except Exception:
+        log.exception("watch_engine: %s for watch %s failed", what, target_id)
+        return None
+
+
+def _recovered(target):
+    if target.get("state") in ("error", "blocked"):
+        _safely(lambda: _alerts().alert_recovered(target), "recovery notice", target["id"])
 
 
 def run_check(target_id, *, capture=None, confirm=None):
@@ -290,6 +312,7 @@ def run_check(target_id, *, capture=None, confirm=None):
             stored = _flapped(target, flicker)
             watch_store.update_target(target_id, settings=stored, fail_count=0, last_check_at=now,
                                       **({"state": "ok"} if target.get("state") in ("error", "blocked", "pending") else {}))
+            _recovered(target)
             watch_store.finish_check(check_id, outcome="glitch", snapshot_id=None,
                                      error_detail="Seen once, gone on the re-check: %s" % (suspect.get("headline") or "a change"),
                                      **facts)
@@ -302,6 +325,7 @@ def run_check(target_id, *, capture=None, confirm=None):
     if report["outcome"] == "same":
         recovered = {"state": "ok"} if target.get("state") in ("error", "blocked", "pending") else {}
         watch_store.update_target(target_id, fail_count=0, last_check_at=now, **recovered)
+        _recovered(target)
         watch_store.finish_check(check_id, outcome="same", **facts)
         return {"check_id": check_id, "outcome": "same", "report": report}
 
@@ -341,6 +365,8 @@ def _record_change(target, check_id, previous, cap, noise, report, facts, settin
         watch_store.update_change(change_id, verdict=verdict)
     except Exception:
         log.exception("watch_engine: judging change %s failed", change_id)
+    _recovered(target)
+    _safely(lambda: _alerts().alert_change(target, change_id, verdict or {}), "alert", target_id)
     _retire(previous["_snapshot"])
     now = datetime.now(timezone.utc)
     # The ignored, learned and flickering areas were drawn on the old

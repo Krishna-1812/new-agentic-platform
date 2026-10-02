@@ -5188,8 +5188,10 @@ def slack_events():
 
 @app.route("/api/slack/interactions", methods=["POST"])
 def slack_interactions():
-    """Button clicks in Ads Insight's messages. The buttons are links that open in the browser by
-    themselves; Slack still reports the click here and shows a warning unless it is acknowledged."""
+    """Button clicks in the Slack app's messages. Ads Insight's buttons are links that open in the
+    browser by themselves; Slack still reports the click here and shows a warning unless it is
+    acknowledged. Page Watch's Useful / Not useful / Mute this kind buttons are recorded as feedback
+    on the change, and the clicker is told so in a message only they see."""
     from tracker import gads_slack_chat
     secret = os.environ.get("GOOGLE_ADS_SLACK_SIGNING_SECRET", "")
     if not secret:
@@ -5197,7 +5199,43 @@ def slack_interactions():
     if not gads_slack_chat.verify(secret, request.headers.get("X-Slack-Request-Timestamp", ""),
                                   request.get_data(cache=True), request.headers.get("X-Slack-Signature", "")):
         return "", 401
+    try:
+        payload = json.loads(request.form.get("payload") or "{}")
+    except ValueError:
+        payload = {}
+    _page_watch_slack_feedback(payload)
     return "", 200
+
+
+def _page_watch_slack_feedback(payload):
+    """Record a Page Watch feedback click from Slack (already signature-checked). The change's own
+    watch owner is the account it is recorded on: the buttons are in that watch's channel."""
+    from tracker import watch_alerts, watch_judge, watch_store
+    for action in payload.get("actions") or []:
+        kind = watch_alerts.FEEDBACK_ACTIONS.get(action.get("action_id"))
+        if not kind:
+            continue
+        try:
+            change_id = int(action.get("value") or 0)
+        except ValueError:
+            continue
+        change = watch_store.get_change(change_id)
+        target = watch_store.get_target(change["target_id"]) if change else None
+        if not target:
+            continue
+        watch_judge.give_feedback(change_id, target["email"], kind)
+        reply = {"useful": "Marked useful. Claude will weigh this on the next change to this page.",
+                 "not_useful": "Marked not useful. Claude will weigh this on the next change to this page.",
+                 "mute": "Muted: changes of this kind on this page will no longer be posted."}[kind]
+        url = payload.get("response_url") or ""
+        if url.startswith("https://hooks.slack.com/"):
+            def tell(url=url, reply=reply):
+                try:
+                    requests.post(url, json={"response_type": "ephemeral", "replace_original": False,
+                                             "text": reply}, timeout=8)
+                except requests.RequestException:
+                    pass
+            threading.Thread(target=tell, daemon=True).start()
 
 
 @app.route(GADS_DIGEST, methods=["POST"])
@@ -17670,6 +17708,46 @@ def page_watch_image(image_id):
     resp.headers["Cache-Control"] = "private, max-age=86400, immutable"
     resp.headers["X-Content-Type-Options"] = "nosniff"
     return resp
+
+
+@app.route("/api/page-watch/alert-image/<int:change_id>/<day>/<sig>.png")
+def page_watch_alert_image(change_id, day, sig):
+    """The before-and-after picture in a Slack alert. Slack fetches it without a login, so the link
+    is signed for this change and day (tracker/watch_alerts.sign) and expires after IMAGE_DAYS."""
+    from tracker import watch_alerts, watch_store
+    if not (_ISO_DAY.match(day) and watch_alerts.check_image(change_id, day, sig)):
+        abort(404)
+    change = watch_store.get_change(change_id)
+    img = watch_store.get_image(change["composite_id"]) if change and change.get("composite_id") else None
+    if not img:
+        abort(404)
+    resp = make_response(img["bytes"])
+    resp.headers["Content-Type"] = img.get("mime") or "image/png"
+    resp.headers["Cache-Control"] = "public, max-age=604800"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    return resp
+
+
+@app.route("/api/page-watch/watchdog", methods=["POST"])
+def page_watch_watchdog():
+    """Called by the scheduled GitHub Action (.github/workflows/page-watch-watchdog.yml) with
+    "Authorization: Bearer <WATCH_CRON_TOKEN>": a worker that has died cannot say so itself. Posts
+    once to WATCH_SLACK_CHANNEL when the checker stops or falls behind. The reply holds the status
+    word only: the Action's log may be public."""
+    import hmac
+    from tracker import watch_alerts, watch_worker
+    secret = os.environ.get("WATCH_CRON_TOKEN", "")
+    if not secret:
+        return jsonify({"ok": False, "error": "WATCH_CRON_TOKEN is not set on the server."}), 503
+    if not hmac.compare_digest(request.headers.get("Authorization", "").encode(), ("Bearer " + secret).encode()):
+        return jsonify({"ok": False, "error": "Not allowed."}), 403
+    try:
+        health = watch_worker.health()
+        result = watch_alerts.watchdog(health)
+    except Exception:
+        app.logger.exception("page watch watchdog")
+        return jsonify({"ok": False, "error": "The Page Watch store could not be read."}), 502
+    return jsonify({"ok": True, "status": health["status"], "result": result})
 
 
 @app.route(PW_BASE + "/api/status")
