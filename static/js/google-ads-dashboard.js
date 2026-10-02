@@ -1520,6 +1520,11 @@
 
   derive();
   applyPreset("all");
+  // ?account= (the Slack digest's and the AI review's links) opens on that account.
+  try {
+    var wanted = new URLSearchParams(window.location.search).get("account");
+    if (wanted && ACCOUNTS.indexOf(wanted) >= 0) state.account = wanted;
+  } catch (e) { /* an old browser without URLSearchParams opens on all accounts */ }
   initControls();
   initDrawer();
   arrive();

@@ -290,6 +290,7 @@ Names only. Values live in Railway and must never be copied into the repo or cha
   - `IPINFO_TOKEN`, `IDENTIFY_TOKEN`;
   - `GOOGLE_MAPS_API_KEY`, `PAGESPEED_API_KEY`, `HUNTER_API_KEY`.
 - **SEO Studio:** `SEO_STUDIO_URL`, `SEO_STUDIO_SECRET` (the same secret on both services).
+- **Google Ads Slack digest:** `GOOGLE_ADS_SLACK_BOT_TOKEN`, `GOOGLE_ADS_SLACK_CHANNEL`, `GOOGLE_ADS_DIGEST_TOKEN` (the same value is the GitHub secret of that name), `PUBLIC_BASE_URL` (optional, for the links). See `scripts/google_ads/README.md`.
 - **Slack, email, GitHub:** `SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID`, `SLACK_WEBHOOK_URL`, `SMTP_*`, `GMAIL_SENDER` (SMTP doesn't work on Railway), `GH_DISPATCH_TOKEN`, `GH_REPO`, `GH_WORKFLOW`.
 
 Note: the website's own AI features bill the **Anthropic API key in Railway** (Anthropic Console). That is separate from any claude.ai subscription, so moving Claude accounts changes nothing on the live site.
