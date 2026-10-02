@@ -1,0 +1,45 @@
+name: Google Ads Slack digest
+
+# Each morning, asks the live site to post one Slack message per Google Ads account (yesterday
+# against the 7 days before, month-to-date pacing, what needs attention). The site does the work
+# (tracker/gads_digest.py); this only calls it, so the figures never pass through this log.
+# The reply holds counts and Slack error codes only.
+#
+# Needs the repository secret GOOGLE_ADS_DIGEST_TOKEN (the same value as the Railway variable).
+# The site address defaults to the Railway one; set the repository variable APP_URL to change it.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 04:25 UTC = 09:55 India time. GitHub starts scheduled runs a few minutes late, more so on
+    # the hour and half hour, so this lands at about 10:00.
+    - cron: '25 4 * * *'
+
+permissions: {}
+
+concurrency:
+  group: google-ads-slack-digest
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Post the digest
+        env:
+          TOKEN: ${{ secrets.GOOGLE_ADS_DIGEST_TOKEN }}
+          APP_URL: ${{ vars.APP_URL || 'https://web-production-6748e.up.railway.app' }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::Add the repository secret GOOGLE_ADS_DIGEST_TOKEN (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          # A retry never posts twice: the site remembers the day it last posted for each account.
+          code=$(curl -sS -o reply.json -w '%{http_code}' --max-time 280 \
+                      --retry 2 --retry-delay 30 --retry-all-errors \
+                      -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+                      -d '{}' "$APP_URL/api/dashboards/google-ads/slack-digest") || code=000
+          echo "HTTP $code"
+          cat reply.json 2>/dev/null; echo
+          [ "$code" = "200" ]

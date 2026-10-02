@@ -4929,6 +4929,105 @@ def google_ads_dashboard_refresh():
         log.warning("google_ads_dashboard_refresh: %s", traceback.format_exc())
         return jsonify({"ok": False, "rows": []}), 502
 
+
+# ── Google Ads daily Slack digest ────────────────────────────────────────────
+# One Slack message per account each morning (tracker/gads_digest.py). A scheduled GitHub Action
+# (.github/workflows/google-ads-slack-digest.yml) calls the POST below with GOOGLE_ADS_DIGEST_TOKEN;
+# staff can preview the messages from the browser with the GET. Its own Slack bot token and channel,
+# never the SLACK_BOT_TOKEN / SLACK_CHANNEL_ID pair the access-request alerts use, so client spend
+# can only go where these two variables point.
+GADS_DIGEST = "/api/dashboards/google-ads/slack-digest"
+
+
+def _gads_digest_base_url():
+    base = os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/")
+    if base:
+        return base
+    root = request.url_root.rstrip("/")
+    # Railway ends TLS at its proxy, so Flask sees http; the links must be the https address.
+    if root.startswith("http://") and not re.match(r"^http://(localhost|127\.0\.0\.1)(:|$)", root):
+        root = "https://" + root[len("http://"):]
+    return root
+
+
+def _gads_digest_run(dry_run, force=False, account=""):
+    from tracker import gads_ai_store, gads_digest
+    rows = _fetch_google_ads_rows(force=not dry_run)
+    st = None
+    try:
+        from tracker import google_ads_insights as g
+        st = g.store(_ads_sheet_service, GOOGLE_ADS_SHEET_ID, titles=_google_ads_cache.get("titles"),
+                     force=not dry_run)
+    except Exception:
+        app.logger.exception("gads_digest: insights unavailable, sending the campaign report figures only")
+    accounts = [a for a, _ in _gads_ai_accounts(rows)]
+    if account:
+        accounts = [a for a in accounts if a == account]
+
+    def last_posted(a):
+        try:
+            got = gads_ai_store.get_setting("slack_digest:" + a)
+            return got["value"] if got else None
+        except Exception:
+            app.logger.exception("gads_digest: could not read what was last posted")
+            return None
+
+    def mark_posted(a, day):
+        try:
+            gads_ai_store.set_setting("slack_digest:" + a, day, "slack-digest")
+        except Exception:
+            app.logger.exception("gads_digest: could not record the post")
+
+    return gads_digest.run(rows, accounts, st,
+                           token=os.environ.get("GOOGLE_ADS_SLACK_BOT_TOKEN", ""),
+                           channel=os.environ.get("GOOGLE_ADS_SLACK_CHANNEL", ""),
+                           base_url=_gads_digest_base_url(), dry_run=dry_run, force=force,
+                           last_posted=last_posted, mark_posted=mark_posted)
+
+
+@app.route(GADS_DIGEST, methods=["POST"])
+def google_ads_slack_digest():
+    """Post today's digest. Called by the scheduled GitHub Action with "Authorization: Bearer
+    <GOOGLE_ADS_DIGEST_TOKEN>". The reply holds counts and Slack error codes only, never account
+    names or figures, because the Action's log may be public."""
+    import hmac
+    secret = os.environ.get("GOOGLE_ADS_DIGEST_TOKEN", "")
+    if not secret:
+        return jsonify({"ok": False, "error": "GOOGLE_ADS_DIGEST_TOKEN is not set on the server."}), 503
+    given = request.headers.get("Authorization", "")
+    if not hmac.compare_digest(given.encode(), ("Bearer " + secret).encode()):
+        return jsonify({"ok": False, "error": "Not allowed."}), 403
+    missing = [v for v in ("GOOGLE_ADS_SLACK_BOT_TOKEN", "GOOGLE_ADS_SLACK_CHANNEL") if not os.environ.get(v)]
+    if missing:
+        return jsonify({"ok": False, "error": "Not set on the server: " + ", ".join(missing)}), 503
+    body = request.get_json(silent=True) or {}
+    try:
+        results = _gads_digest_run(dry_run=False, force=bool(body.get("force")))
+    except Exception as exc:
+        app.logger.exception("gads_digest: run failed")
+        return jsonify({"ok": False, "error": "Could not read the Google Ads sheet (%s)." % type(exc).__name__}), 502
+    counts = {}
+    for r in results:
+        counts[r["status"]] = counts.get(r["status"], 0) + 1
+    errors = sorted({r["error"] for r in results if r["status"] == "failed" and r["error"]})
+    for r in results:
+        if r["status"] == "failed":
+            app.logger.warning("gads_digest: %s not posted: %s", r["account"], r["error"])
+    ok = bool(results) and not counts.get("failed")
+    return jsonify({"ok": ok, "accounts": len(results), "counts": counts, "errors": errors}), (200 if ok else 502)
+
+
+@app.route(GADS_DIGEST + "/preview")
+@position2_required
+def google_ads_slack_digest_preview():
+    """What the digest would post for each account (or ?account=), without posting or marking anything."""
+    try:
+        results = _gads_digest_run(dry_run=True, account=request.args.get("account", "")[:300])
+    except Exception as exc:
+        return jsonify({"ok": False, "error": "Could not read the Google Ads sheet (%s)." % type(exc).__name__}), 502
+    return jsonify({"ok": True, "channel_set": bool(os.environ.get("GOOGLE_ADS_SLACK_CHANNEL")),
+                    "token_set": bool(os.environ.get("GOOGLE_ADS_SLACK_BOT_TOKEN")), "results": results})
+
 @app.after_request
 def _no_html_cache(resp):
     """Never let browsers cache HTML pages — UI updates must show immediately after deploys."""
