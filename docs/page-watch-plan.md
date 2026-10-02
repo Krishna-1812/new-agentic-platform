@@ -127,8 +127,18 @@ The first check runs straight away and becomes the baseline.
      change becomes the new baseline, the areas move with it.
 6. **Decide:** no change, or a change with its evidence (text added, removed
    and changed; prices; visual boxes; how much of the page changed).
-7. **Confirm:** a change is re-checked once a few minutes later before anyone
-   is told. A change that vanishes was a glitch and is dropped.
+7. **Confirm:** a change is re-checked 3 minutes later before anyone is
+   told. The first reading is kept as "suspected" (in the database, so a
+   deploy in between does not lose it), and the re-check decides:
+   - **still there:** recorded as a change;
+   - **gone:** a glitch. Nothing is recorded but the check, and the areas
+     involved get a flicker count. An area that flickers **twice** is
+     learned as noise; once is not enough, so a real change that happened
+     to be undone within minutes never silences that part of the page;
+   - **different again** (a third state, like a carousel or a live counter):
+     that part is left out of this re-check and counted as a flicker, so it
+     is learned the second time. A real change caught half-loaded the first
+     time is therefore delayed by one check, never lost.
 8. **Judge (Claude):** Claude gets the text differences, the before-and-after
    crops of each changed area, and the user's "what matters" note. It returns
    a one-line summary, a short explanation, a category (price, product,
@@ -151,9 +161,16 @@ Every read a user can reach is scoped to their email in the SQL itself, as
 in the other agents. Without `DATABASE_URL`, an in-memory store with the same
 functions is used, so tests need no database.
 
-**Retention:** the baseline and every snapshot tied to a change are kept for
-a year. Routine "no change" snapshots keep only their text fingerprint after
-7 days, and their screenshots are deleted.
+**Retention** (once an hour, by one worker): a "no change" check stores only
+its row in `watch_checks`, never a reading, so nothing else accumulates.
+
+- **Changes:** kept for a year, with their pictures and both readings. At
+  most 300 per watch.
+- **Check log:** kept for 400 days.
+- **Never deleted:** the current baseline, and a reading waiting for its
+  re-check.
+- **Orphans:** a glitch's reading and replaced copies of images are deleted
+  after a day.
 
 ### Safety
 
@@ -185,7 +202,7 @@ The pages come from users, and the server opens them, so:
 Each phase ends with a merged PR: tests added, the full suite green, the
 secret check clean.
 
-### Phase 1 — Plan and detection engine
+### Phase 1 — Plan and detection engine (done)
 
 The heart of the agent, proven on real sites before anything is built on it.
 
@@ -207,7 +224,7 @@ The heart of the agent, proven on real sites before anything is built on it.
   - detection: known edits made in the browser (a price, a button colour, a
     removed section, an added banner) must each be found and boxed.
 
-### Phase 2 — Worker and schedule
+### Phase 2 — Worker and schedule (done)
 
 - The worker process: due checks, leases, heartbeats, graceful shutdown.
 - Schedules (hourly, 6-hourly, daily at a time, weekly), with jitter so
@@ -263,3 +280,50 @@ The heart of the agent, proven on real sites before anything is built on it.
 - **Pages that change on every load** (live prices, random testimonials) are
   handled by the control shot and ignore areas, but a page that is different
   on every visit can only be watched for parts that are stable.
+
+---
+
+## 6. Setting up the worker on Railway
+
+The worker is a second service in the same Railway project, built from the
+same GitHub repo. It is needed once watches can be added (Phase 4); until
+then it would sit idle. Steps:
+
+1. **Railway → your project → Create (top right) → GitHub Repo →** pick this
+   repository. Railway adds a new service and starts a first deploy. That
+   deploy runs the website's command, so stop it or let it fail; step 3
+   fixes it.
+2. Open the new service → **Settings**:
+   - **Service name:** `page-watch-worker`.
+   - **Config-as-code → Railway Config File:** `/railway.worker.toml`. This
+     file makes the service run `python -m tracker.watch_worker` instead of
+     the website, with no HTTP health check. A config file overrides the
+     dashboard, which is why the path matters.
+   - **Region:** the same as the web service (US West).
+   - **Networking:** add no public domain. The worker serves no pages.
+3. **Variables** (the worker's own tab):
+   - `DATABASE_URL`: open **web → Variables → DATABASE_URL** and add the same
+     value to the worker the same way. If it is a reference such as
+     `${{Postgres.DATABASE_URL}}`, use **Add Reference** to make the same
+     reference; never paste the database password into chat.
+   - `RAILPACK_PYTHON_PLAYWRIGHT_INSTALL` = `1`. This makes the build install
+     Chromium and its system libraries. Without it every check falls back to
+     text only and the health page says `no_browser`.
+   - Optional: `WATCH_WORKER_THREADS` = `2` (the default). Each thread runs
+     one browser, about 400–700 MB.
+4. **Settings → Resources:** give it at least 2 GB of memory (1 GB is too
+   little for two browsers and image comparison).
+5. **Deploy**, then check it: open
+   `https://<your site>/strategic-agents/page-watch/health` while signed in
+   as staff. `"status": "ok"` and a worker with `"alive": true` means it is
+   running. Other values:
+   - `idle`: no watches yet;
+   - `no_worker`: no heartbeat for 3 minutes;
+   - `no_browser`: see step 3;
+   - `behind`: checks are running more than 15 minutes late. Add threads or
+     memory.
+
+Deploys: Railway sends SIGTERM; the worker stops taking checks, gives running
+ones up to 60 seconds (`drainingSeconds = 75` in the config file), and hands
+back the rest to be checked at once. A worker that dies outright loses its
+watches within 3 minutes (the lease), and the next worker takes them.

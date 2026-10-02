@@ -14,6 +14,13 @@ Tables
                    picture, Claude's verdict (Phase 3) and the alert (Phase 5).
   watch_images     the image bytes (WebP or PNG), kept out of the other rows
                    so listing pages never loads them.
+  watch_workers    one row per worker process: its heartbeat, for the health
+                   endpoint.
+
+The worker claims due watches with a lease (claim_due), renews it while a
+check runs (renew_lease) and hands the watch back with its next time
+(release). Claims are serialised by one advisory lock, so two workers never
+take the same watch, and never two watches of the same site at once.
 
 Every read a user can reach takes their email and scopes the query to it in
 SQL (a row of another table is reached through its watch_targets row), never
@@ -32,10 +39,18 @@ from datetime import datetime, timezone
 TARGET_FIELDS = ("name", "client", "url", "area_selector", "area_label", "ignore", "watch_text",
                  "watch_visual", "instructions", "schedule", "channel", "status", "state",
                  "next_check_at", "last_check_at", "last_change_at", "baseline_id", "fail_count",
-                 "archived_at", "lease_until", "lease_owner", "settings")
+                 "archived_at", "lease_until", "lease_owner", "settings", "site", "pending_id")
 TARGET_JSON = ("ignore", "schedule", "settings")
 STATES = ("pending", "ok", "changed", "error", "blocked")
-OUTCOMES = ("baseline", "same", "changed", "glitch", "error", "blocked")
+# suspected: a change seen once, waiting for its confirming re-check.
+# glitch: a suspected change that the re-check did not see again.
+# interrupted: the worker stopped (a deploy, a crash) before the check finished.
+OUTCOMES = ("baseline", "same", "suspected", "changed", "glitch", "error", "blocked", "interrupted")
+# Two checks of the same site are at least this far apart, whichever watches
+# they belong to: one browser at a time per site, and a pause between.
+SITE_GAP_S = 20
+# How long a claimed watch stays with its worker without a renewal.
+LEASE_S = 180
 IMAGE_KINDS = ("shot", "thumb", "composite", "crop")
 
 
@@ -166,6 +181,21 @@ def _ensure(conn):
                     started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                     finished_at TIMESTAMPTZ)""")
             cur.execute("CREATE INDEX IF NOT EXISTS watch_checks_target ON watch_checks (target_id, started_at DESC)")
+            # Phase 2 columns, added in place on a database made by Phase 1.
+            cur.execute("ALTER TABLE watch_targets ADD COLUMN IF NOT EXISTS site TEXT NOT NULL DEFAULT ''")
+            cur.execute("ALTER TABLE watch_targets ADD COLUMN IF NOT EXISTS pending_id BIGINT")
+            cur.execute("CREATE INDEX IF NOT EXISTS watch_targets_site ON watch_targets (site)")
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS watch_workers (
+                    id TEXT PRIMARY KEY,
+                    host TEXT NOT NULL DEFAULT '',
+                    pid INTEGER,
+                    version TEXT NOT NULL DEFAULT '',
+                    state TEXT NOT NULL DEFAULT 'running',
+                    checks INTEGER NOT NULL DEFAULT 0,
+                    current JSONB NOT NULL DEFAULT '[]'::jsonb,
+                    started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    beat_at TIMESTAMPTZ NOT NULL DEFAULT now())""")
         conn.commit()
         _READY = True
 
@@ -197,7 +227,7 @@ def reset_memory():
     """Empty the in-process store (tests)."""
     with _MEM_LOCK:
         _MEM.clear()
-        _MEM.update(targets={}, images={}, snapshots={}, changes={}, checks={},
+        _MEM.update(targets={}, images={}, snapshots={}, changes={}, checks={}, workers={},
                     ids={"targets": 0, "images": 0, "snapshots": 0, "changes": 0, "checks": 0})
 
 
@@ -222,7 +252,15 @@ TARGET_DEFAULTS = {"name": "", "client": "", "area_selector": None, "area_label"
                    "channel": "", "status": "active", "state": "pending", "settings": {},
                    "next_check_at": None, "last_check_at": None, "last_change_at": None,
                    "baseline_id": None, "fail_count": 0, "lease_until": None, "lease_owner": None,
-                   "archived_at": None}
+                   "archived_at": None, "site": "", "pending_id": None}
+
+
+def _site(url):
+    from tracker import watch_safety
+    try:
+        return watch_safety.site_key(url)
+    except Exception:
+        return ""
 
 
 def create_target(email, url, **fields):
@@ -230,6 +268,7 @@ def create_target(email, url, **fields):
     if bad:
         raise ValueError("unknown fields: %s" % ", ".join(sorted(bad)))
     row = dict(TARGET_DEFAULTS, **fields)
+    row["site"] = row["site"] or _site(url)
     email = _norm_email(email)
     if backend() == "memory":
         with _MEM_LOCK:
@@ -286,6 +325,8 @@ def update_target(target_id, email=None, **fields):
         raise ValueError("unknown fields: %s" % ", ".join(sorted(bad)))
     if not fields:
         return get_target(target_id, email) is not None
+    if "url" in fields and "site" not in fields:
+        fields["site"] = _site(fields["url"])
     if backend() == "memory":
         with _MEM_LOCK:
             t = _mem_target(target_id, email)
@@ -408,6 +449,16 @@ def get_snapshot(snapshot_id, email=None):
         cur.execute(q, args)
         rows = _rows(cur)
         return rows[0] if rows else None
+
+
+def delete_snapshot(snapshot_id):
+    """Delete one snapshot row (its images are deleted separately)."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            return _MEM["snapshots"].pop(snapshot_id, None) is not None
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM watch_snapshots WHERE id = %s", (snapshot_id,))
+        return cur.rowcount > 0
 
 
 def update_snapshot(snapshot_id, **fields):
@@ -556,3 +607,287 @@ def list_checks(target_id, email=None, limit=30):
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q + " ORDER BY k.id DESC LIMIT %s", args + [limit])
         return _rows(cur)
+
+
+def close_stale_checks(target_id, before=None):
+    """Checks of this watch left open by a worker that stopped mid-check are
+    closed as "interrupted". Returns how many."""
+    before = before or _now()
+    if backend() == "memory":
+        with _MEM_LOCK:
+            n = 0
+            for c in _MEM["checks"].values():
+                if c["target_id"] == target_id and not c.get("finished_at") and _dt(c["started_at"]) < before:
+                    c.update(outcome="interrupted", finished_at=_now().isoformat(),
+                             error_detail="The check was stopped before it finished (a restart or deploy).")
+                    n += 1
+            return n
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE watch_checks SET outcome = 'interrupted', finished_at = now(), "
+                    "error_detail = 'The check was stopped before it finished (a restart or deploy).' "
+                    "WHERE target_id = %s AND finished_at IS NULL AND started_at < %s", (target_id, before))
+        return cur.rowcount
+
+
+# ── The worker's queue ───────────────────────────────────────────────────────
+def _dt(v):
+    if v is None or isinstance(v, datetime):
+        return v
+    return datetime.fromisoformat(v)
+
+
+def _due_mem(t, now):
+    nxt = _dt(t["next_check_at"])
+    lease = _dt(t["lease_until"])
+    return (t["status"] == "active" and not t["archived_at"] and (nxt is None or nxt <= now)
+            and (lease is None or lease <= now))
+
+
+def claim_due(owner, *, now=None, limit=1, lease_s=LEASE_S, site_gap_s=SITE_GAP_S):
+    """Take up to `limit` due watches for `owner`, oldest due first.
+
+    A watch is due when it is active, not archived, its next check time has
+    passed (a new watch has none, so it is due at once) and nobody holds it.
+    A watch is passed over while another watch of the same site is being
+    checked or was checked in the last `site_gap_s` seconds. Returns the
+    claimed watches (full rows).
+    """
+    now = now or _now()
+    until = now + _td(lease_s)
+    gap_from = now - _td(site_gap_s)
+    if backend() == "memory":
+        with _MEM_LOCK:
+            busy = {}                     # site -> ids holding it (another watch must not)
+            for t in _MEM["targets"].values():
+                lease = _dt(t["lease_until"])
+                last = _dt(t["last_check_at"])
+                if t["site"] and ((lease and lease > now) or (last and last > gap_from)):
+                    busy.setdefault(t["site"], set()).add(t["id"])
+            due = sorted((t for t in _MEM["targets"].values() if _due_mem(t, now)),
+                         key=lambda t: (_dt(t["next_check_at"]) or datetime.min.replace(tzinfo=timezone.utc), t["id"]))
+            out = []
+            for t in due:
+                if len(out) >= limit:
+                    break
+                if t["site"] and busy.get(t["site"], set()) - {t["id"]}:
+                    continue
+                t.update(lease_owner=owner, lease_until=until.isoformat())
+                if t["site"]:
+                    busy.setdefault(t["site"], set()).add(t["id"])
+                out.append(copy.deepcopy(t))
+            return out
+    with _pg() as conn, conn.cursor() as cur:
+        # One claim at a time across all workers: the site rule needs to see
+        # every other claim, which row locks alone would not give.
+        cur.execute("SELECT pg_advisory_xact_lock(hashtext('watch_claim'))")
+        cur.execute("""
+            SELECT t.id, t.site FROM watch_targets t
+            WHERE t.status = 'active' AND t.archived_at IS NULL
+              AND (t.next_check_at IS NULL OR t.next_check_at <= %(now)s)
+              AND (t.lease_until IS NULL OR t.lease_until <= %(now)s)
+              AND (t.site = '' OR NOT EXISTS (
+                    SELECT 1 FROM watch_targets o
+                    WHERE o.site = t.site AND o.id <> t.id
+                      AND (o.lease_until > %(now)s OR o.last_check_at > %(gap)s)))
+            ORDER BY t.next_check_at NULLS FIRST, t.id
+            LIMIT %(scan)s""", {"now": now, "gap": gap_from, "scan": max(limit * 5, 20)})
+        ids, sites = [], set()
+        for tid, site in cur.fetchall():
+            if len(ids) >= limit:
+                break
+            if site and site in sites:
+                continue
+            sites.add(site)
+            ids.append(tid)
+        if not ids:
+            return []
+        cur.execute("UPDATE watch_targets SET lease_owner = %s, lease_until = %s WHERE id = ANY(%s) RETURNING *",
+                    (owner, until, ids))
+        rows = _rows(cur)
+        return sorted(rows, key=lambda r: ids.index(r["id"]))
+
+
+def _td(seconds):
+    from datetime import timedelta
+    return timedelta(seconds=seconds)
+
+
+def renew_lease(target_id, owner, *, now=None, lease_s=LEASE_S):
+    """Extend a held lease. False when the lease was lost (expired and taken)."""
+    now = now or _now()
+    until = now + _td(lease_s)
+    if backend() == "memory":
+        with _MEM_LOCK:
+            t = _MEM["targets"].get(target_id)
+            if not t or t["lease_owner"] != owner:
+                return False
+            t["lease_until"] = until.isoformat()
+            return True
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE watch_targets SET lease_until = %s WHERE id = %s AND lease_owner = %s",
+                    (until, target_id, owner))
+        return cur.rowcount > 0
+
+
+def release(target_id, owner, next_check_at):
+    """Hand a watch back with its next check time. False when not held by owner."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            t = _MEM["targets"].get(target_id)
+            if not t or t["lease_owner"] != owner:
+                return False
+            t.update(lease_owner=None, lease_until=None, next_check_at=_iso(next_check_at))
+            return True
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE watch_targets SET lease_owner = NULL, lease_until = NULL, next_check_at = %s, "
+                    "updated_at = now() WHERE id = %s AND lease_owner = %s", (next_check_at, target_id, owner))
+        return cur.rowcount > 0
+
+
+def beat(worker_id, *, host="", pid=None, version="", state="running", checks=0, current=(), now=None):
+    """Record a worker's heartbeat."""
+    now = now or _now()
+    rec = {"id": worker_id, "host": host, "pid": pid, "version": version, "state": state,
+           "checks": int(checks), "current": list(current), "beat_at": now.isoformat()}
+    if backend() == "memory":
+        with _MEM_LOCK:
+            old = _MEM["workers"].get(worker_id)
+            rec["started_at"] = old["started_at"] if old else now.isoformat()
+            _MEM["workers"][worker_id] = rec
+            return
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO watch_workers (id, host, pid, version, state, checks, current, started_at, beat_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id) DO UPDATE SET host = EXCLUDED.host, pid = EXCLUDED.pid, version = EXCLUDED.version,
+                state = EXCLUDED.state, checks = EXCLUDED.checks, current = EXCLUDED.current,
+                beat_at = EXCLUDED.beat_at""",
+                    (worker_id, host, pid, version, state, int(checks), _j(list(current)), now, now))
+
+
+def list_workers(since=None):
+    """Workers that beat after `since` (all when None), latest first."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            rows = [dict(w) for w in _MEM["workers"].values() if since is None or _dt(w["beat_at"]) >= since]
+            return sorted(rows, key=lambda w: w["beat_at"], reverse=True)
+    q, args = "SELECT * FROM watch_workers", []
+    if since is not None:
+        q += " WHERE beat_at >= %s"
+        args.append(since)
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute(q + " ORDER BY beat_at DESC", args)
+        return _rows(cur)
+
+
+def queue_stats(*, now=None, late_s=900):
+    """{"active", "due", "late", "running", "states": {state: n}} over every watch."""
+    now = now or _now()
+    late_from = now - _td(late_s)
+    if backend() == "memory":
+        with _MEM_LOCK:
+            act = [t for t in _MEM["targets"].values() if t["status"] == "active" and not t["archived_at"]]
+            states = {}
+            for t in act:
+                states[t["state"]] = states.get(t["state"], 0) + 1
+            return {"active": len(act),
+                    "due": sum(_due_mem(t, now) for t in act),
+                    "late": sum(_due_mem(t, now) and (_dt(t["next_check_at"]) or now) < late_from for t in act),
+                    "running": sum(bool(_dt(t["lease_until"]) and _dt(t["lease_until"]) > now) for t in act),
+                    "states": states}
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("""
+            SELECT count(*),
+                   count(*) FILTER (WHERE (next_check_at IS NULL OR next_check_at <= %(now)s)
+                                     AND (lease_until IS NULL OR lease_until <= %(now)s)),
+                   count(*) FILTER (WHERE next_check_at < %(late)s
+                                     AND (lease_until IS NULL OR lease_until <= %(now)s)),
+                   count(*) FILTER (WHERE lease_until > %(now)s)
+            FROM watch_targets WHERE status = 'active' AND archived_at IS NULL""", {"now": now, "late": late_from})
+        active, due, late, running = cur.fetchone()
+        cur.execute("SELECT state, count(*) FROM watch_targets WHERE status = 'active' AND archived_at IS NULL "
+                    "GROUP BY state")
+        return {"active": active, "due": due, "late": late, "running": running, "states": dict(cur.fetchall())}
+
+
+# ── Retention ────────────────────────────────────────────────────────────────
+KEEP_DAYS = 365          # changes, their pictures and their snapshots
+KEEP_CHECK_DAYS = 400    # the check log (a little longer, for the yearly view)
+KEEP_CHANGES = 300       # at most this many changes per watch
+WORKER_DAYS = 7          # a worker row that has not beaten for this long
+
+
+def prune(*, now=None):
+    """Delete what is past its keeping time. Returns {table: rows deleted}.
+
+    Never deletes a watch's baseline or the reading waiting for its re-check.
+    Images no snapshot or change points to any more (a glitch's reading, a
+    replaced copy) are deleted once they are a day old.
+    """
+    now = now or _now()
+    old = now - _td(KEEP_DAYS * 86400)
+    old_checks = now - _td(KEEP_CHECK_DAYS * 86400)
+    day = now - _td(86400)
+    old_workers = now - _td(WORKER_DAYS * 86400)
+    if backend() == "memory":
+        with _MEM_LOCK:
+            out = {"checks": 0, "changes": 0, "snapshots": 0, "images": 0, "workers": 0}
+            for k in [k for k, c in _MEM["checks"].items() if _dt(c["started_at"]) < old_checks]:
+                del _MEM["checks"][k]
+                out["checks"] += 1
+            by_target = {}
+            for c in _MEM["changes"].values():
+                by_target.setdefault(c["target_id"], []).append(c)
+            for rows in by_target.values():
+                rows.sort(key=lambda c: c["id"], reverse=True)
+                for i, c in enumerate(rows):
+                    if i >= KEEP_CHANGES or _dt(c["created_at"]) < old:
+                        del _MEM["changes"][c["id"]]
+                        out["changes"] += 1
+            keep = {t.get("baseline_id") for t in _MEM["targets"].values()} | \
+                   {t.get("pending_id") for t in _MEM["targets"].values()}
+            used = set()
+            for c in _MEM["changes"].values():
+                used |= {c["before_id"], c["after_id"]}
+            for k in [k for k, x in _MEM["snapshots"].items()
+                      if k not in keep and (k not in used or _dt(x["created_at"]) < old) and _dt(x["created_at"]) < day]:
+                del _MEM["snapshots"][k]
+                out["snapshots"] += 1
+            refs = {c.get("composite_id") for c in _MEM["changes"].values()}
+            for x in _MEM["snapshots"].values():
+                refs |= {x.get("shot_id"), x.get("thumb_id")}
+            for k in [k for k, im in _MEM["images"].items() if k not in refs and _dt(im["created_at"]) < day]:
+                del _MEM["images"][k]
+                out["images"] += 1
+            for k in [k for k, w in _MEM["workers"].items() if _dt(w["beat_at"]) < old_workers]:
+                del _MEM["workers"][k]
+                out["workers"] += 1
+            return out
+    out = {}
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM watch_checks WHERE started_at < %s", (old_checks,))
+        out["checks"] = cur.rowcount
+        cur.execute("""
+            DELETE FROM watch_changes WHERE id IN (
+                SELECT id FROM (
+                    SELECT id, created_at, row_number() OVER (PARTITION BY target_id ORDER BY id DESC) AS n
+                    FROM watch_changes) x
+                WHERE x.n > %s OR x.created_at < %s)""", (KEEP_CHANGES, old))
+        out["changes"] = cur.rowcount
+        cur.execute("""
+            DELETE FROM watch_snapshots s
+            WHERE s.created_at < %(day)s
+              AND NOT EXISTS (SELECT 1 FROM watch_targets t WHERE t.baseline_id = s.id OR t.pending_id = s.id)
+              AND (s.created_at < %(old)s OR NOT EXISTS (
+                    SELECT 1 FROM watch_changes c WHERE c.before_id = s.id OR c.after_id = s.id))""",
+                    {"day": day, "old": old})
+        out["snapshots"] = cur.rowcount
+        cur.execute("""
+            DELETE FROM watch_images i
+            WHERE i.created_at < %s
+              AND NOT EXISTS (SELECT 1 FROM watch_snapshots s WHERE s.shot_id = i.id OR s.thumb_id = i.id)
+              AND NOT EXISTS (SELECT 1 FROM watch_changes c WHERE c.composite_id = i.id)""", (day,))
+        out["images"] = cur.rowcount
+        cur.execute("DELETE FROM watch_workers WHERE beat_at < %s", (old_workers,))
+        out["workers"] = cur.rowcount
+    return out

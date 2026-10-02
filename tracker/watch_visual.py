@@ -404,6 +404,18 @@ class RowMap:
         r = int(self._m[i])
         return None if r < 0 else r + self._off
 
+    def old_span(self, y0, y1):
+        """The old page's rows [top, bottom) shown by new rows y0..y1, or None
+        when all of them were added by the new page."""
+        lo, hi = max(0, int(y0) - self._off), min(len(self._m), int(y1) - self._off)
+        if hi <= 0 or lo >= len(self._m):
+            return int(y0), int(y1)        # outside the compared band: unmoved
+        rows = self._m[lo:hi]
+        rows = rows[rows >= 0]
+        if not len(rows):
+            return None
+        return int(rows.min()) + self._off, int(rows.max()) + 1 + self._off
+
     def new_span(self, y0, y1):
         """The new page's rows [top, bottom) that show old rows y0..y1, or
         None when none do (that part of the old page was removed)."""
@@ -467,21 +479,23 @@ GREEN = (22, 163, 74)
 
 
 def composite(before, after, result, *, focus=True, margin=160, max_height=1400, title_before="Before",
-              title_after="After"):
+              title_after="After", rows=None):
     """Before and after side by side, changed areas boxed. PNG bytes.
 
     With `focus`, both are cropped to the vertical band holding the changes
     (plus `margin`), so a change in the footer of a long page is visible.
+    `rows` (the comparison's RowMap) lines the two bands up: each side shows
+    the same stretch of the page, so a removed paragraph on the left faces
+    the place it closed up on the right, and both panels are equally tall.
     """
     A = Image.open(io.BytesIO(before)).convert("RGB")
     B = Image.open(io.BytesIO(after)).convert("RGB")
     boxes_a, boxes_b = result.get("before") or [], result.get("after") or []
-    top_a, bot_a = _span(boxes_a, A.height, margin, max_height) if focus else (0, A.height)
-    top_b, bot_b = _span(boxes_b, B.height, margin, max_height) if focus else (0, B.height)
-    if focus and boxes_b and not boxes_a:
-        top_a, bot_a = top_b, min(A.height, bot_b)
-    if focus and boxes_a and not boxes_b:
-        top_b, bot_b = top_a, min(B.height, bot_a)
+    if focus:
+        top_a, bot_a, top_b, bot_b = bands(boxes_a, boxes_b, A.height, B.height, rows=rows,
+                                           margin=margin, max_height=max_height)
+    else:
+        top_a, bot_a, top_b, bot_b = 0, A.height, 0, B.height
     A, B = _boxed(A, boxes_a, RED), _boxed(B, boxes_b, RED)
     A = A.crop((0, top_a, A.width, max(top_a + 1, bot_a)))
     B = B.crop((0, top_b, B.width, max(top_b + 1, bot_b)))
@@ -504,6 +518,30 @@ def composite(before, after, result, *, focus=True, margin=160, max_height=1400,
     buf = io.BytesIO()
     out.save(buf, "PNG", optimize=True)
     return buf.getvalue()
+
+
+def bands(boxes_a, boxes_b, height_a, height_b, *, rows=None, margin=160, max_height=1400):
+    """(top_a, bot_a, top_b, bot_b): the stretch of each page the composite
+    shows. Each covers its changed boxes plus `margin`; with `rows` each is
+    widened to the other's stretch as it appears on its page; both are then
+    made equally tall, within the page and `max_height`."""
+    top_a, bot_a = _span(boxes_a, height_a, margin, max_height)
+    top_b, bot_b = _span(boxes_b, height_b, margin, max_height)
+    if boxes_b and not boxes_a:
+        top_a, bot_a = top_b, min(height_a, bot_b)
+    if boxes_a and not boxes_b:
+        top_b, bot_b = top_a, min(height_b, bot_a)
+    if rows is not None and boxes_a and boxes_b:
+        old = rows.old_span(top_b, bot_b)
+        new = rows.new_span(top_a, bot_a)
+        if old:
+            top_a, bot_a = min(top_a, old[0]), max(bot_a, old[1])
+        if new:
+            top_b, bot_b = min(top_b, new[0]), max(bot_b, new[1])
+    tall = min(max(bot_a - top_a, bot_b - top_b), max_height)
+    bot_a, bot_b = min(height_a, top_a + tall), min(height_b, top_b + tall)
+    top_a, top_b = max(0, bot_a - tall), max(0, bot_b - tall)
+    return top_a, bot_a, top_b, bot_b
 
 
 def _span(boxes, height, margin, max_height):

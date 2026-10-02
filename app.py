@@ -17590,6 +17590,19 @@ def health():
         for aid, cfg in ACCOUNTS.items()
     }})
 
+@app.route("/strategic-agents/page-watch/health")
+@position2_required
+def page_watch_health():
+    """Page Watch worker health: live workers, their last heartbeat, the queue.
+    status is ok | behind (checks running late) | no_worker | no_browser | idle."""
+    from tracker import watch_worker
+    try:
+        return jsonify(watch_worker.health())
+    except Exception:
+        app.logger.exception("page watch health")
+        return jsonify(status="unavailable", error="The Page Watch store could not be read."), 503
+
+
 @app.route("/api/weekly-stats")
 @app.route("/api/weekly-stats/<account_id>")
 @position2_required

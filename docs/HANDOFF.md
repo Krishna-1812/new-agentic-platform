@@ -272,16 +272,25 @@ It then scores and tiers the businesses worth pitching (website build, local SEO
   - optional: `APIFY_API_TOKEN`, `PAGESPEED_API_KEY` (or the Maps key), `HUNTER_API_KEY`;
   - tuning: `LBR_SOURCE`, `LBR_RENDER`, `LBR_RENDER_CONCURRENCY`, `LBR_RETENTION_DAYS`, `LBR_PRICES_JSON`, `LBR_APIFY_PRICING`.
 
-### 9a. Page Watch (in build: Phase 1 of 5 done)
+### 9a. Page Watch (in build: Phases 1 and 2 of 5 done)
 
-Watches any web page and reports, in plain words and with a before-and-after picture, when it changes. The plan and the five phases are in `docs/page-watch-plan.md`. Phase 1 is the detection engine (`tracker/watch_*.py`); there is no page or schedule yet.
+Watches any web page and reports, in plain words and with a before-and-after picture, when it changes. The plan and the five phases are in `docs/page-watch-plan.md`. Phase 1 is the detection engine (`tracker/watch_*.py`); Phase 2 the worker and schedules. There is no page yet (Phase 4).
 
 - **Reading a page** (`watch_capture`): headless Chromium at 1440×900, fixed language and time zone, animations frozen, cookie notices and chat bubbles hidden, lazy content scrolled into view. Returns every visible text block with its position, a full-page screenshot and a control screenshot a few seconds later. Every request the browser makes is checked against private addresses, one redirect at a time (same rule as Local Business Radar). Without a browser it reads plain HTTP (text only).
 - **Comparing** (`watch_text`, `watch_visual`, `watch_detect`): text block by block (volatile text such as "3 minutes ago" neutralised); screenshots row-aligned to the pixel, so an inserted banner does not make the rest of the page count as changed; content that only moved (one column shifting, a fixed sidebar) is recognised and left out.
 - **Calibration** (`watch_engine.calibrate`): a new watch's page is read twice more straight after its baseline; whatever differs between those readings (a random button colour, a rotating quote) is learned as noise for that watch.
 - **Accuracy harness:** `python tools/watch_accuracy.py` measures false alarms and detection of known edits on real pages.
 - **Storage** (`watch_store`): `watch_targets`, `watch_checks`, `watch_snapshots`, `watch_changes`, `watch_images` on Postgres (in-memory without `DATABASE_URL`). The baseline screenshot is stored lossless; replaced baselines are re-saved lossy.
-- **Env:** `WATCH_BROWSER=off` turns the browser off; `WATCH_CHROMIUM_PATH` points at a Chromium to use.
+- **Worker** (`watch_worker`, a second Railway service using `railway.worker.toml`; setup steps in the plan, section 6):
+  - claims due watches with a 3-minute lease that is renewed while a check runs;
+  - checks one page per site at a time, 20 seconds apart;
+  - reruns a failed check after 5, then 15 minutes, then returns to its schedule;
+  - writes a heartbeat row and runs the hourly retention job;
+  - on SIGTERM, lets running checks finish and hands back the rest.
+- **Schedules** (`watch_schedule`): hourly, 6-hourly, daily at a time, or weekly, in India time. Each watch is offset a few minutes from the exact time, fixed per watch.
+- **Confirmation:** a change is held as "suspected" and re-read 3 minutes later. If it is gone, it is a glitch. An area that flickers twice is learned as noise.
+- **Health:** `/strategic-agents/page-watch/health` (staff only) returns JSON with `ok`, `behind`, `no_worker`, `no_browser` or `idle`.
+- **Env:** `WATCH_BROWSER=off` turns the browser off; `WATCH_CHROMIUM_PATH` points at a Chromium to use; `WATCH_WORKER_THREADS` (default 2); `RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1` on the worker service.
 
 ## 10. Environment variables (Railway → web → Variables)
 

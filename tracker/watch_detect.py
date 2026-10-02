@@ -114,6 +114,58 @@ def carry(rects, report, keep_removed=False):
     return out
 
 
+def to_old(rects, report):
+    """Rects drawn on the NEW page of `report`, moved to the old page (the
+    baseline). A rect wholly on rows the new page added has no place there
+    and is left out."""
+    rows = (report or {}).get("_rows")
+    if rows is None:
+        return [list(r) for r in rects or []]
+    out = []
+    for x, y, w, h in rects or []:
+        span = rows.old_span(y, y + h)
+        if span is not None:
+            out.append([x, span[0], w, span[1] - span[0]])
+    return out
+
+
+def unstable(report, onto, only=None):
+    """The areas and elements `report` found changed, as {"rects", "sels"} on
+    the baseline, for learning them as noise.
+
+    `onto` is the comparison of the baseline with the new page of `report`;
+    the new page's changed areas are moved to the baseline through it. When
+    `report` itself compares with the baseline (onto is report), its old
+    page's changed areas are already on the baseline and are kept too.
+    `only` (a comparison ending on the same new page) keeps just the areas
+    and elements that it found changed as well.
+    """
+    v = report.get("visual") or {}
+    after = list(v.get("after") or [])
+    sels = _sels(report)
+    if only is not None:
+        keep = (only.get("visual") or {}).get("after") or []
+        after = [r for r in after if any(_overlap(r, k) > 0 for k in keep)]
+        also = set(_sels(only))
+        sels = [x for x in sels if x in also]
+    rects = to_old(after, onto)
+    if onto is report:
+        rects += [list(r) for r in v.get("before") or []]
+    return {"rects": rects, "sels": sels}
+
+
+def _sels(report):
+    t = report.get("text") or {}
+    sels = [i.get("sel") for i in (t.get("changed") or []) + (t.get("added") or []) + (t.get("removed") or [])
+            if i.get("sel")]
+    return list(dict.fromkeys(sels))
+
+
+def _covers(outer, inner):
+    return (outer[0] <= inner[0] and outer[1] <= inner[1] and inner[0] + inner[2] <= outer[0] + outer[2]
+            and inner[1] + inner[3] <= outer[1] + outer[3])
+
+
 def _ignored_now(block, ignore, rows):
     """Is a block of the NEW page inside an ignored area of the OLD page?"""
     box = block.get("box")
@@ -289,17 +341,24 @@ def learn(report, known=None):
     and its elements are left out of every later comparison.
     Returns the merged {"rects": [...], "sels": [...]}.
     """
+    v = report.get("visual") or {}
+    t = report.get("text") or {}
+    sels = [i.get("sel") for i in (t.get("changed") or []) + (t.get("added") or []) + (t.get("removed") or [])]
+    return absorb(known, {"rects": v.get("after") or [], "sels": [x for x in sels if x]})
+
+
+def absorb(known, found):
+    """`known` learned noise with `found` ({"rects", "sels"}) added; rects are
+    padded by LEARN_PAD so the same element drawn a few pixels away on the
+    next visit is still covered."""
     known = known or {}
     rects = [list(r) for r in known.get("rects") or []]
     sels = list(known.get("sels") or [])
-    v = report.get("visual") or {}
-    for x, y, w, h in v.get("after") or []:
+    for x, y, w, h in found.get("rects") or []:
         r = [max(0, x - LEARN_PAD), max(0, y - LEARN_PAD), w + 2 * LEARN_PAD, h + 2 * LEARN_PAD]
-        if r not in rects:
+        if not any(_covers(k, r) for k in rects):
             rects.append(r)
-    t = report.get("text") or {}
-    for item in (t.get("changed") or []) + (t.get("added") or []) + (t.get("removed") or []):
-        sel = item.get("sel")
+    for sel in found.get("sels") or []:
         if sel and sel not in sels:
             sels.append(sel)
     return {"rects": rects, "sels": sels}

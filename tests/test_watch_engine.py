@@ -403,11 +403,19 @@ def test_a_full_watch_lifecycle(store):
     assert same["outcome"] == "same"
     assert store.get_target(tid)["baseline_id"] == first["snapshot_id"]
 
-    changed = watch_engine.run_check(tid, capture=_fake_reader(
-        cap_from(page(price=False), blk=blocks(**{"$20": {"text": "$25"}}))))
+    # Seen once: held back, the reading kept, nothing recorded as a change.
+    new_price = dict(price=False), blocks(**{"$20": {"text": "$25"}})
+    suspected = watch_engine.run_check(tid, capture=_fake_reader(cap_from(page(**new_price[0]), blk=new_price[1])))
+    assert suspected["outcome"] == "suspected" and suspected["confirm_in_s"] == watch_engine.CONFIRM_DELAY_S
+    t = store.get_target(tid)
+    assert t["pending_id"] == suspected["snapshot_id"] and t["baseline_id"] == first["snapshot_id"]
+    assert store.list_changes(tid) == [] and t["state"] == "ok"
+    # Seen again on the re-check: recorded.
+    changed = watch_engine.run_check(tid, capture=_fake_reader(cap_from(page(**new_price[0]), blk=new_price[1])))
     assert changed["outcome"] == "changed"
     t = store.get_target(tid)
-    assert t["state"] == "changed" and t["baseline_id"] != first["snapshot_id"]
+    assert t["state"] == "changed" and t["baseline_id"] != first["snapshot_id"] and t["pending_id"] is None
+    assert store.get_snapshot(suspected["snapshot_id"]) is None       # the held reading is not kept twice
     change = store.get_change(changed["change_id"], "ana@markifydigital.com")
     assert change["headline"] == "Price changed: $20 → $25." and change["level"] == "major"
     assert store.get_image(change["composite_id"], "ana@markifydigital.com")["mime"] == "image/png"
@@ -415,7 +423,7 @@ def test_a_full_watch_lifecycle(store):
     # The replaced baseline's screenshot was re-saved lossy, the lossless copy deleted.
     old = store.get_snapshot(first["snapshot_id"])
     assert store.get_image(old["shot_id"])["lossless"] is False
-    assert [c["outcome"] for c in store.list_checks(tid)] == ["changed", "same", "baseline"]
+    assert [c["outcome"] for c in store.list_checks(tid)] == ["changed", "suspected", "same", "baseline"]
 
 
 def test_errors_and_bot_checks_never_touch_the_baseline(store):
@@ -465,7 +473,7 @@ def test_calibration_learns_what_changes_on_every_visit(store):
     later = watch_engine.run_check(tid, capture=_fake_reader(
         cap_from(page(button="#db2777"), blk=blocks(**{"Updated 3 minutes ago": {"text": "Quote: be kind", "sel": "p.quote"}}))))
     assert later["outcome"] == "same"
-    price = watch_engine.run_check(tid, capture=_fake_reader(
+    price = watch_engine.run_check(tid, confirm=False, capture=_fake_reader(
         cap_from(page(price=False), blk=blocks(**dict(rotating, **{"$20": {"text": "$25"}})))))
     assert price["outcome"] == "changed" and price["report"]["headline"] == "Price changed: $20 → $25."
 
@@ -617,7 +625,8 @@ def test_carry_moves_areas_onto_the_new_baseline_and_drops_removed_ones():
 def test_after_a_change_the_watch_keeps_ignoring_the_same_content(store):
     tid = store.create_target("ana@markifydigital.com", "https://example.com/pricing", ignore=[[280, 1090, 440, 220]])
     watch_engine.run_check(tid, capture=_fake_reader(cap_from(page()), cap_from(page()), cap_from(page())))
-    changed = watch_engine.run_check(tid, capture=_fake_reader(cap_from(page(banner=60), blk=_pushed(60, [BANNER]))))
+    changed = watch_engine.run_check(tid, confirm=False,
+                                     capture=_fake_reader(cap_from(page(banner=60), blk=_pushed(60, [BANNER]))))
     assert changed["outcome"] == "changed"
     assert "_rows" not in store.get_change(changed["change_id"])["report"]
     assert store.get_target(tid)["ignore"] == [[280, 1150, 440, 220]]
@@ -646,3 +655,29 @@ def test_the_same_selector_still_pairs_a_short_label_and_a_light_edit():
               "box": [0, 0, 600, 40], "sel": "main > p"}
     long_b = dict(long_a, text="Pro gives every team more usage and priority support on all plans.", box=[0, 400, 600, 40])
     assert watch_text.same_place(long_a, long_b) == 1.0
+
+
+# ── The before-and-after picture ─────────────────────────────────────────────
+def test_both_panels_show_the_same_stretch_of_the_page():
+    """A removed paragraph is boxed only on the old page, a recoloured button
+    on both. Each panel still shows the same stretch: the new page's panel
+    reaches down to where the paragraph closed up, and the two are equally
+    tall."""
+    report, _ = watch_detect.compare(prev_from(cap_from(page(), blk=blocks())),
+                                     cap_from(page(removed=True, button="#2563eb"), blk=blocks()))
+    v = report["visual"]
+    assert v["before"] and v["after"]
+    ha, hb = watch_visual.load(page()).shape[0], watch_visual.load(page(removed=True)).shape[0]
+    plain = watch_visual.bands(v["before"], v["after"], ha, hb, margin=40)
+    lined = watch_visual.bands(v["before"], v["after"], ha, hb, rows=report["_rows"], margin=40)
+    assert lined[1] - lined[0] == lined[3] - lined[2]                 # equally tall
+    assert lined[3] > max(y + h for x, y, w, h in v["after"]) + 40     # reaches past the button
+    assert lined[3] >= plain[3]
+    png = watch_visual.composite(page(), page(removed=True, button="#2563eb"), v, rows=report["_rows"])
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_bands_stay_inside_the_pages_and_the_size_limit():
+    t = watch_visual.bands([[0, 50, 10, 10]], [[0, 2900, 10, 10]], 1000, 3000, margin=100, max_height=500)
+    assert t[0] >= 0 and t[1] <= 1000 and t[2] >= 0 and t[3] <= 3000
+    assert t[1] - t[0] == t[3] - t[2] <= 500
