@@ -172,41 +172,64 @@ def summarize(rows, account, st=None, fx=None, today=None):
                          "over": [b["name"] for b in budgets if b["verdict"] in ("over", "capped")],
                          "under": [b["name"] for b in budgets if b["verdict"] == "under"]}
 
-    out["alerts"] = alerts(out, limited, disapproved, today or today_ist())
+    out["alert_items"] = alert_items(out, limited, disapproved, today or today_ist())
+    out["alerts"] = [t for _, t in out["alert_items"]]
+    out["status"] = status(out["alert_items"])
     return out
+
+
+CRITICAL, WARNING, INFO = "critical", "warning", "info"
+LEVEL_ICON = {CRITICAL: "\U0001F534", WARNING: "\U0001F7E0", INFO: "\U0001F535"}   # red, orange, blue circles
+
+
+def alert_items(s, limited=(), disapproved=0, today=None):
+    """What needs a look today as (level, text), most urgent first: critical (money or tracking may be
+    broken), warning (a figure moved the wrong way), info (worth knowing)."""
+    a = []
+    now, base, cur = s["now"], s["base"], s["cur"]
+    if today and (today - _dt.date.fromisoformat(s["day"])).days > STALE_AFTER_DAYS:
+        a.append((CRITICAL, "No data after %s. Check that the Google Ads scripts ran." % day_label(s["day"])))
+    if base and base["cost"] > 0:
+        if now["cost"] == 0:
+            a.append((CRITICAL, "Spent nothing (7-day average %s a day)." % money(base["cost"], cur)))
+        elif now["cost"] >= base["cost"] * (1 + SPEND_SWING):
+            a.append((WARNING, "Spend up %d%% on the 7-day average." % round(100 * (now["cost"] / base["cost"] - 1))))
+        elif now["cost"] <= base["cost"] * (1 - SPEND_SWING):
+            a.append((WARNING, "Spend down %d%% on the 7-day average." % round(100 * (1 - now["cost"] / base["cost"]))))
+    if base and base["conversions"] >= MIN_BASE_CONV and now["conversions"] == 0 and now["cost"] > 0:
+        a.append((CRITICAL, "No conversions (7-day average %s a day)." % number(base["conversions"])))
+    if disapproved:
+        a.append((CRITICAL, "%d disapproved ad%s." % (disapproved, "" if disapproved == 1 else "s")))
+    if s["cpa"] and s["base_cpa"] and s["cpa"] >= s["base_cpa"] * (1 + CPA_RISE):
+        a.append((WARNING, "Cost per conversion %s, up %d%% on the 7-day %s." %
+                  (money(s["cpa"], cur), round(100 * (s["cpa"] / s["base_cpa"] - 1)), money(s["base_cpa"], cur))))
+    if s["roas"] is not None and s["base_roas"] and s["roas"] <= s["base_roas"] * (1 - ROAS_DROP):
+        a.append((WARNING, "ROAS %.2fx, down %d%% on the 7-day %.2fx." %
+                  (s["roas"], round(100 * (1 - s["roas"] / s["base_roas"])), s["base_roas"])))
+    p = s.get("pacing")
+    if p and p["over"]:
+        a.append((WARNING, "Budget over-pacing this month: %s." % _names(p["over"])))
+    if limited:
+        a.append((WARNING, "Losing searches to budget (last 7 days): %s." % _names(limited)))
+    if p and p["under"]:
+        a.append((INFO, "Budget under-pacing this month: %s." % _names(p["under"])))
+    order = {CRITICAL: 0, WARNING: 1, INFO: 2}
+    return sorted(a, key=lambda x: order[x[0]])
 
 
 def alerts(s, limited=(), disapproved=0, today=None):
     """What needs a look today, most urgent first, in plain words."""
-    a = []
-    now, base, cur = s["now"], s["base"], s["cur"]
-    if today and (today - _dt.date.fromisoformat(s["day"])).days > STALE_AFTER_DAYS:
-        a.append("No data after %s. Check that the Google Ads scripts ran." % day_label(s["day"]))
-    if base and base["cost"] > 0:
-        if now["cost"] == 0:
-            a.append("Spent nothing (7-day average %s a day)." % money(base["cost"], cur))
-        elif now["cost"] >= base["cost"] * (1 + SPEND_SWING):
-            a.append("Spend up %d%% on the 7-day average." % round(100 * (now["cost"] / base["cost"] - 1)))
-        elif now["cost"] <= base["cost"] * (1 - SPEND_SWING):
-            a.append("Spend down %d%% on the 7-day average." % round(100 * (1 - now["cost"] / base["cost"])))
-    if base and base["conversions"] >= MIN_BASE_CONV and now["conversions"] == 0 and now["cost"] > 0:
-        a.append("No conversions (7-day average %s a day)." % number(base["conversions"]))
-    if s["cpa"] and s["base_cpa"] and s["cpa"] >= s["base_cpa"] * (1 + CPA_RISE):
-        a.append("Cost per conversion %s, up %d%% on the 7-day %s." %
-                 (money(s["cpa"], cur), round(100 * (s["cpa"] / s["base_cpa"] - 1)), money(s["base_cpa"], cur)))
-    if s["roas"] is not None and s["base_roas"] and s["roas"] <= s["base_roas"] * (1 - ROAS_DROP):
-        a.append("ROAS %.2fx, down %d%% on the 7-day %.2fx." %
-                 (s["roas"], round(100 * (1 - s["roas"] / s["base_roas"])), s["base_roas"]))
-    p = s.get("pacing")
-    if p and p["over"]:
-        a.append("Budget over-pacing this month: %s." % _names(p["over"]))
-    if p and p["under"]:
-        a.append("Budget under-pacing this month: %s." % _names(p["under"]))
-    if limited:
-        a.append("Losing searches to budget (last 7 days): %s." % _names(limited))
-    if disapproved:
-        a.append("%d disapproved ad%s." % (disapproved, "" if disapproved == 1 else "s"))
-    return a
+    return [t for _, t in alert_items(s, limited, disapproved, today)]
+
+
+def status(items):
+    """The account's light: the most serious level among its alerts, else "good"."""
+    levels = {lvl for lvl, _ in items}
+    return CRITICAL if CRITICAL in levels else WARNING if WARNING in levels else "good"
+
+
+STATUS_ICON = {CRITICAL: "\U0001F534", WARNING: "\U0001F7E0", "good": "\U0001F7E2"}
+STATUS_WORD = {CRITICAL: "Needs action", WARNING: "Worth a look", "good": "On track"}
 
 
 def _names(xs, keep=3):
@@ -216,73 +239,163 @@ def _names(xs, keep=3):
 
 
 # ── The Slack message ────────────────────────────────────────────────────────
-def message(s, base_url=""):
+# Polarity: which way is good for each figure. Spend has none (more can be right or wrong), so its
+# change is shown without a colour.
+GOOD_UP, GOOD_DOWN, NEUTRAL = 1, -1, 0
+UP, DOWN = "\u25B2", "\u25BC"
+GREEN, RED, WHITE = "\U0001F7E2", "\U0001F534", "\u26AA"
+MEDALS = ("\U0001F947", "\U0001F948", "\U0001F949")
+
+
+def pill(now, base, polarity):
+    """The change against the 7-day average as a coloured pill: "🟢 `▲ 22%`", "🔴 `▲ 81%`", "`= flat`"."""
+    if now is None or not base:
+        return ""
+    pct = round(100 * (now - base) / base)
+    if abs(pct) < 5:
+        return "`= flat`"
+    arrow = UP if pct > 0 else DOWN
+    mark = WHITE if polarity == NEUTRAL else GREEN if (pct > 0) == (polarity == GOOD_UP) else RED
+    return "%s `%s %d%%`" % (mark, arrow, abs(pct))
+
+
+def meter(share, cells=10):
+    """A text progress bar: ▰▰▰▱▱▱▱▱▱▱."""
+    share = max(0.0, min(1.0, share or 0.0))
+    full = int(round(share * cells))
+    return "\u25B0" * full + "\u25B1" * (cells - full)
+
+
+def message(s, base_url="", chart_url=""):
     """Slack Block Kit blocks and a plain-text fallback for one account's digest."""
     cur, now, base = s["cur"], s["now"], s["base"]
-
-    def field(label, value, now_v=None, base_v=None, base_text=None):
-        line = "*%s*\n%s" % (label, value)
-        ch = change(now_v, base_v)
-        if ch:
-            line += "  %s" % ch
-        if base_text:
-            line += "\n_7-day avg %s_" % base_text
-        return {"type": "mrkdwn", "text": line}
-
     b = base or {}
-    fields = [
-        field("Spend", money(now["cost"], cur), now["cost"], b.get("cost"),
-              money(b["cost"], cur) if base else None),
-        field("Conversions", number(now["conversions"]), now["conversions"], b.get("conversions"),
-              number(b["conversions"]) if base else None),
-        field("Cost per conversion", money(s["cpa"], cur), s["cpa"], s["base_cpa"],
-              money(s["base_cpa"], cur) if s["base_cpa"] else None),
-        field("Clicks", number(now["clicks"]), now["clicks"], b.get("clicks"),
-              number(b["clicks"]) if base else None),
+    items = s.get("alert_items") or [(WARNING, t) for t in s.get("alerts") or []]
+    st = s.get("status") or status(items)
+
+    def tile(icon, label, value, now_v, base_v, base_text, polarity):
+        text = "%s  *%s*\n*%s*   %s" % (icon, label, value, pill(now_v, base_v, polarity))
+        if base_text:
+            text += "\n_7-day avg %s_" % base_text
+        return {"type": "mrkdwn", "text": text.rstrip()}
+
+    tiles = [
+        tile("\U0001F4B8", "Spend", money(now["cost"], cur), now["cost"], b.get("cost"),
+             money(b["cost"], cur) if base else "", NEUTRAL),
+        tile("\U0001F3AF", "Conversions", number(now["conversions"]), now["conversions"], b.get("conversions"),
+             number(b["conversions"]) if base else "", GOOD_UP),
+        tile("\U0001F9FE", "Cost per conversion", money(s["cpa"], cur), s["cpa"], s["base_cpa"],
+             money(s["base_cpa"], cur) if s["base_cpa"] else "", GOOD_DOWN),
+        tile("\U0001F5B1\uFE0F", "Clicks", number(now["clicks"]), now["clicks"], b.get("clicks"),
+             number(b["clicks"]) if base else "", GOOD_UP),
     ]
     if s["roas"] is not None:
-        fields.append(field("ROAS", "%.2fx" % s["roas"], s["roas"], s["base_roas"],
-                            ("%.2fx" % s["base_roas"]) if s["base_roas"] else None))
+        tiles.append(tile("\U0001F4B0", "ROAS", "%.2fx" % s["roas"], s["roas"], s["base_roas"],
+                          ("%.2fx" % s["base_roas"]) if s["base_roas"] else "", GOOD_UP))
     p = s.get("pacing")
     if p:
-        text = money(p["mtd"], p["cur"])
+        text = "\U0001F4C6  *Month to date*\n*%s*" % money(p["mtd"], p["cur"])
         if p["month_budget"]:
-            text += " of %s budget" % money(p["month_budget"], p["cur"])
+            text += " of %s" % money(p["month_budget"], p["cur"])
         if p["pace"] is not None:
-            text += "\n_%d%% of the spend expected by now_" % round(100 * p["pace"])
-        fields.append({"type": "mrkdwn", "text": "*Month to date*\n" + text})
+            text += "\n`%s` %d%% of expected pace" % (meter(p["pace"]), round(100 * p["pace"]))
+        tiles.append({"type": "mrkdwn", "text": text})
 
     blocks = [
-        {"type": "header", "text": {"type": "plain_text", "text": ("Google Ads · " + s["account"])[:150]}},
-        {"type": "context", "elements": [{"type": "mrkdwn", "text": "*%s* compared with the %d days before it" %
-                                          (day_label(s["day"]), s["base_days"] or BASELINE_DAYS)}]},
-        {"type": "section", "fields": fields[:10]},
+        {"type": "header", "text": {"type": "plain_text", "emoji": True,
+                                    "text": ("%s  %s" % (STATUS_ICON[st], s["account"]))[:150]}},
+        {"type": "context", "elements": [{"type": "mrkdwn", "text": "*%s*  \u00b7  %s  \u00b7  vs the %d days before" % (
+            STATUS_WORD[st], day_label(s["day"]), s["base_days"] or BASELINE_DAYS)}]},
+        {"type": "section", "fields": tiles[:10]},
     ]
-    if s["alerts"]:
-        text = "*Needs attention*\n" + "\n".join("• " + esc(x) for x in s["alerts"])
+    if chart_url:
+        blocks.append({"type": "image", "image_url": chart_url,
+                       "alt_text": "Daily spend and conversions for %s over the last 14 days" % s["account"][:200]})
+    blocks.append({"type": "divider"})
+    if items:
+        lines = ["%s  %s" % (LEVEL_ICON[lvl], esc(t)) for lvl, t in items]
+        text = "*\u26A0\uFE0F  Needs attention*\n" + "\n".join(lines)
     else:
-        text = "*Needs attention*\nNothing unusual."
+        text = "*\u2705  All clear*\nNothing unusual against the last 7 days."
     blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": text[:2900]}})
     if s["top"]:
-        lines = ["• %s: %s, %s conv." % (esc(c["campaign"]), money(c["cost"], cur), number(c["conversions"]))
-                 for c in s["top"]]
+        lines = ["%s  *%s*  \u00b7  %s  \u00b7  %s conv." % (MEDALS[i], esc(c["campaign"]), money(c["cost"], cur),
+                                                         number(c["conversions"])) for i, c in enumerate(s["top"])]
         blocks.append({"type": "section", "text": {"type": "mrkdwn",
-                                                    "text": ("*Top campaigns by spend*\n" + "\n".join(lines))[:2900]}})
-    links = []
+                                                    "text": ("*\U0001F3C6  Top campaigns*\n" + "\n".join(lines))[:2900]}})
     if base_url:
         q = "?account=" + quote(s["account"], safe="")
-        links = ["<%s/dashboards/google-ads%s|Open the dashboard>" % (base_url, q),
-                 "<%s/dashboards/google-ads/ai-review%s|AI review>" % (base_url, q)]
-    links.append("Money in %s, from the campaign report. Google adds late clicks for a few hours, so the "
-                 "latest day can still move slightly." % (cur or "the report's currency"))
-    blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": " · ".join(links)}]})
+        blocks.append({"type": "actions", "elements": [
+            {"type": "button", "style": "primary", "action_id": "open_dashboard",
+             "text": {"type": "plain_text", "emoji": True, "text": "\U0001F4CA  Open dashboard"},
+             "url": "%s/dashboards/google-ads%s" % (base_url, q)},
+            {"type": "button", "action_id": "open_ai_review",
+             "text": {"type": "plain_text", "emoji": True, "text": "\U0001F916  AI review"},
+             "url": "%s/dashboards/google-ads/ai-review%s" % (base_url, q)}]})
+    blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text":
+        "\U0001F4AC Reply in this thread to ask Ads Insight about %s  \u00b7  Money in %s; the latest day can "
+        "still move slightly as Google adds late clicks." % (esc(s["account"]), cur or "the report's currency")}]})
 
-    fallback = "Google Ads %s, %s: spend %s, %s conversions" % (
-        s["account"], day_label(s["day"]), money(now["cost"], cur), number(now["conversions"]))
-    if s["alerts"]:
-        fallback += ". %d thing%s need%s attention." % (len(s["alerts"]), "" if len(s["alerts"]) == 1 else "s",
-                                                          "s" if len(s["alerts"]) == 1 else "")
+    fallback = "%s %s, %s: spend %s, %s conversions" % (
+        STATUS_ICON[st], s["account"], day_label(s["day"]), money(now["cost"], cur), number(now["conversions"]))
+    if items:
+        fallback += ". %d thing%s need%s attention." % (len(items), "" if len(items) == 1 else "s",
+                                                          "s" if len(items) == 1 else "")
     return {"text": fallback, "blocks": blocks}
+
+
+def overview(summaries, base_url="", today=None):
+    """The morning's first message: every account at a glance, most urgent first."""
+    order = {CRITICAL: 0, WARNING: 1, "good": 2}
+    ss = sorted(summaries, key=lambda s: (order[s["status"]], -s["now"]["cost"]))
+    counts = {k: sum(1 for s in ss if s["status"] == k) for k in order}
+    curs = {s["cur"] for s in ss}
+    days = sorted({s["day"] for s in ss})
+    blocks = [
+        {"type": "header", "text": {"type": "plain_text", "emoji": True,
+                                    "text": "\u2600\uFE0F  Google Ads morning briefing"}},
+        {"type": "context", "elements": [{"type": "mrkdwn", "text": "%s  \u00b7  %d account%s  \u00b7  each account's latest day vs its 7-day average" % (
+            day_label((today or today_ist()).isoformat()), len(ss), "" if len(ss) == 1 else "s")}]},
+    ]
+    fields = []
+    if len(curs) == 1:
+        cur = next(iter(curs))
+        spend = sum(s["now"]["cost"] for s in ss)
+        base = sum((s["base"] or {}).get("cost", 0) for s in ss)
+        conv = sum(s["now"]["conversions"] for s in ss)
+        bconv = sum((s["base"] or {}).get("conversions", 0) for s in ss)
+        fields += [{"type": "mrkdwn", "text": "\U0001F4B8  *Total spend*\n*%s*   %s" % (money(spend, cur), pill(spend, base, NEUTRAL))},
+                   {"type": "mrkdwn", "text": "\U0001F3AF  *Conversions*\n*%s*   %s" % (number(conv), pill(conv, bconv, GOOD_UP))}]
+    fields.append({"type": "mrkdwn", "text": "\U0001F6A6  *Status*\n%s %d  \u00b7  %s %d  \u00b7  %s %d" % (
+        STATUS_ICON[CRITICAL], counts[CRITICAL], STATUS_ICON[WARNING], counts[WARNING], STATUS_ICON["good"], counts["good"])})
+    blocks.append({"type": "section", "fields": fields})
+    blocks.append({"type": "divider"})
+    lines = []
+    for s in ss:
+        why = (s.get("alerts") or ["On track"])[0]
+        lines.append("%s  *%s*  \u00b7  %s  \u00b7  %s conv.\n        _%s_" % (
+            STATUS_ICON[s["status"]], esc(s["account"]), money(s["now"]["cost"], s["cur"]),
+            number(s["now"]["conversions"]), esc(why)))
+    chunk = ""
+    for line in lines:   # Slack allows 3,000 characters per section
+        if len(chunk) + len(line) > 2800:
+            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": chunk}})
+            chunk = ""
+        chunk += ("\n" if chunk else "") + line
+    if chunk:
+        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": chunk}})
+    note = "\U0001F447 Each account's briefing follows. Reply under any of them, or @Ads Insight, to ask a question."
+    if len(days) > 1:
+        note += "  \u00b7  Latest days differ by account (%s to %s)." % (days[0], days[-1])
+    blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": note}]})
+    if base_url:
+        blocks.append({"type": "actions", "elements": [
+            {"type": "button", "style": "primary", "action_id": "open_dashboard_all",
+             "text": {"type": "plain_text", "emoji": True, "text": "\U0001F4CA  Open dashboard"},
+             "url": "%s/dashboards/google-ads" % base_url}]})
+    text = "Google Ads morning briefing: %d accounts, %d need action, %d worth a look." % (
+        len(ss), counts[CRITICAL], counts[WARNING])
+    return {"text": text, "blocks": blocks[:50]}
 
 
 # ── Posting ──────────────────────────────────────────────────────────────────
@@ -315,36 +428,53 @@ def post(token, channel, msg, session=None, sleep=time.sleep):
     return False, "ratelimited", ""
 
 
-def run(rows, accounts, st=None, token="", channel="", base_url="", dry_run=False, force=False,
-        last_posted=None, mark_posted=None, on_thread=None, today=None, session=None, sleep=time.sleep):
-    """Build and post the digest for each account, in the order given.
+OVERVIEW = "__overview__"
 
-    last_posted(account) -> the day last posted for it (so a retried run never posts twice);
-    mark_posted(account, day) records a post; on_thread(account, ts) records which account a posted
-    message is about, so Ads Insight can answer replies under it. Returns one result per account:
+
+def run(rows, accounts, st=None, token="", channel="", base_url="", dry_run=False, force=False,
+        last_posted=None, mark_posted=None, on_thread=None, today=None, session=None, sleep=time.sleep,
+        chart_url=None):
+    """Post the morning overview (with two or more accounts), then each account's digest, in the order given.
+
+    last_posted(key) -> the day last posted for an account (or OVERVIEW), so a retried run never posts
+    twice; mark_posted(key, day) records a post; on_thread(account, ts) records which account a posted
+    message is about ("" for the overview), so Ads Insight can answer replies under it;
+    chart_url(account, day) -> the address of the account's chart image, or "". Returns one result
+    per account (and one for the overview, account OVERVIEW):
     {"account", "day", "status": posted | skipped | preview | failed | no_data, "error", "message"}."""
     fx = g.FX(rows)
-    out, sent = [], 0
+    today = today or today_ist()
+    out, sent = [], [0]
+    summaries = []
     for account in accounts:
         s = summarize(rows, account, st, fx, today)
-        if not s:
+        if s:
+            summaries.append(s)
+        else:
             out.append({"account": account, "day": "", "status": "no_data", "error": ""})
-            continue
-        msg = message(s, base_url)
-        res = {"account": account, "day": s["day"], "status": "", "error": "", "alerts": len(s["alerts"])}
+
+    def send(key, day, msg, thread_account, extra=None):
+        res = {"account": key, "day": day, "status": "", "error": ""}
+        res.update(extra or {})
         if dry_run:
             res.update(status="preview", message=msg)
-        elif not force and last_posted and last_posted(account) == s["day"]:
+        elif not force and last_posted and last_posted(key) == day:
             res["status"] = "skipped"
         else:
-            if sent:
+            if sent[0]:
                 sleep(SPACING_SECONDS)
             ok, err, ts = post(token, channel, msg, session=session, sleep=sleep)
-            sent += 1
+            sent[0] += 1
             res.update(status="posted" if ok else "failed", error=err)
             if ok and mark_posted:
-                mark_posted(account, s["day"])
+                mark_posted(key, day)
             if ok and ts and on_thread:
-                on_thread(account, ts)
+                on_thread(thread_account, ts)
         out.append(res)
+
+    if len(summaries) > 1:
+        send(OVERVIEW, today.isoformat(), overview(summaries, base_url, today), "")
+    for s in summaries:
+        url = chart_url(s["account"], s["day"]) if chart_url else ""
+        send(s["account"], s["day"], message(s, base_url, url), s["account"], {"alerts": len(s["alerts"])})
     return out

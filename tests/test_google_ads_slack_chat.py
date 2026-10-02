@@ -124,11 +124,15 @@ def test_an_answer_replaces_the_placeholder_and_reads_the_thread_and_the_account
                    remember=remembered.__setitem__, client=claude, session=slack, base_url="https://app.example")
     assert res["ok"] and res["account"] == "Acme" and remembered == {"100.0": "Acme"}
     placeholder = slack.sent("chat.postMessage")[0]
-    assert placeholder == {"channel": CHANNEL, "thread_ts": "100.0", "text": c.THINKING}
+    assert placeholder == {"channel": CHANNEL, "thread_ts": "100.0", "text": c.THINKING, "blocks": c.thinking_blocks()}
     final = slack.sent("chat.update")[0]
     assert final["ts"] == "1700000100.000001", "the placeholder is replaced, not followed"
     assert final["text"].startswith("*CPA rose* because"), "Slack bold, not Markdown"
-    assert "<https://app.example/dashboards/google-ads?account=Acme|Open Acme in the dashboard>" in final["text"]
+    blob = json.dumps(final["blocks"], ensure_ascii=False)
+    assert final["blocks"][0]["elements"][0]["text"] == "\U0001F4A1  *Acme*"
+    assert final["blocks"][1]["text"]["text"].startswith("*CPA rose* because")
+    assert "Google Ads data up to Sat 26 Sep 2026" in blob
+    assert '"url": "https://app.example/dashboards/google-ads?account=Acme"' in blob
     call = claude.calls[0]
     assert call["model"] == "claude-opus-5-5" and call["output_config"] == {"effort": "medium"}
     assert call["fallbacks"] == "default" and call["thinking"] == {"type": "adaptive"}
@@ -263,3 +267,12 @@ def test_the_background_half_answers_from_the_dashboards_data(events, monkeypatc
     appmod._slack_answer({"ts": "300.1"}, BOT, "300.1", "how is Acme?", "", "https://app.example")
     assert slack.sent("chat.update")[0]["text"].startswith("Spend rose on Generic - Search.")
     assert appmod._slack_thread_account("300.1") == "Acme", "follow-ups in this thread stay on Acme"
+
+
+def test_a_long_answer_is_split_into_sections_slack_accepts():
+    blocks = c.answer_blocks(("line of the answer\n" * 400).strip(), "Acme", "2026-09-26", "https://app.example")
+    sections = [b for b in blocks if b["type"] == "section"]
+    assert len(sections) >= 3 and all(len(b["text"]["text"]) <= 3000 for b in sections)
+    assert blocks[-1]["elements"][0]["text"]["text"].endswith("Open Acme")
+    failed = c.answer_blocks("Sorry, I couldn't answer that.", "", "", "https://app.example", ok=False)
+    assert failed[0]["elements"][0]["text"].endswith("*Couldn't answer*") and failed[-1]["type"] == "section"

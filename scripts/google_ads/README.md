@@ -96,7 +96,12 @@ It adds these tabs at the **end** of the sheet. It never changes the first tab, 
 
 ## Daily Slack digest
 
-Every morning at about **10:00 India time**, the site posts **one Slack message per account** to one channel. Each message shows:
+Every morning at about **10:00 India time**, the site posts to one Slack channel.
+
+- **First, an overview.** Every account is listed with a status light: 🔴 needs action, 🟠 worth a look, 🟢 on track. The most urgent accounts come first, each with its main reason, and the totals are shown when every account uses one currency.
+- **Then one message per account.** Each opens with the same status light. It has KPI tiles with change pills (🟢/🔴 where up or down is clearly good or bad, ⚪ for spend), a pacing bar, a 14-day chart of spend and conversions, alerts marked by severity, medals for the top three campaigns, and buttons to the dashboard and the AI review.
+
+Each account message shows:
 
 - the account's latest day (its own yesterday) against the average of the 7 days before it: spend, conversions, cost per conversion, clicks and, where conversion values are recorded, ROAS;
 - month-to-date spend against the month's budget and the share of the spend expected by now;
@@ -120,6 +125,8 @@ The figures come from the same sheet and the same conversions as the dashboard. 
    - `GOOGLE_ADS_SLACK_CHANNEL` (the channel ID);
    - `GOOGLE_ADS_DIGEST_TOKEN` (any long random string).
 3. Put the same `GOOGLE_ADS_DIGEST_TOKEN` in GitHub → Settings → Secrets and variables → Actions as a repository secret.
+
+The chart is a PNG that Slack fetches from `/api/dashboards/google-ads/slack-chart/…`. Each address is signed for one account and day with `GOOGLE_ADS_DIGEST_TOKEN`, and expires after 45 days. The buttons need the app's **Interactivity** pointed at `/api/slack/interactions`, which only acknowledges the click. To post again on the same day, run the Action by hand with **force** ticked.
 
 The digest never uses `SLACK_BOT_TOKEN` or `SLACK_CHANNEL_ID`. The Action's log shows only counts and Slack error codes, never account names or figures.
 

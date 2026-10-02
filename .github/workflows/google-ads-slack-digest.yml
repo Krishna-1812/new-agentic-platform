@@ -10,6 +10,11 @@ name: Google Ads Slack digest
 
 on:
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Post again even if today's digest was already posted"
+        type: boolean
+        default: false
   schedule:
     # 04:25 UTC = 09:55 India time. GitHub starts scheduled runs a few minutes late, more so on
     # the hour and half hour, so this lands at about 10:00.
@@ -30,6 +35,7 @@ jobs:
         env:
           TOKEN: ${{ secrets.GOOGLE_ADS_DIGEST_TOKEN }}
           APP_URL: ${{ vars.APP_URL || 'https://web-production-6748e.up.railway.app' }}
+          FORCE: ${{ inputs.force && 'true' || 'false' }}
         run: |
           if [ -z "$TOKEN" ]; then
             echo "::error::Add the repository secret GOOGLE_ADS_DIGEST_TOKEN (Settings > Secrets and variables > Actions)."
@@ -39,7 +45,7 @@ jobs:
           code=$(curl -sS -o reply.json -w '%{http_code}' --max-time 280 \
                       --retry 2 --retry-delay 30 --retry-all-errors \
                       -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-                      -d '{}' "$APP_URL/api/dashboards/google-ads/slack-digest") || code=000
+                      -d "{\"force\": $FORCE}" "$APP_URL/api/dashboards/google-ads/slack-digest") || code=000
           echo "HTTP $code"
           cat reply.json 2>/dev/null; echo
           [ "$code" = "200" ]
