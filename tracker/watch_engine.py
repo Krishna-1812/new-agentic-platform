@@ -323,7 +323,8 @@ def _record_change(target, check_id, previous, cap, noise, report, facts, settin
     composite_id = None
     if report.get("visual") and previous.get("screenshot") and cap.screenshot:
         try:
-            comp = watch_visual.composite(previous["screenshot"], cap.screenshot, report["visual"])
+            comp = watch_visual.composite(previous["screenshot"], cap.screenshot, report["visual"],
+                                          rows=report.get("_rows"))
             composite_id = watch_store.add_image(target_id, "composite", comp, mime="image/png")
         except Exception:
             log.exception("watch_engine: composite failed for watch %s", target_id)

@@ -655,3 +655,29 @@ def test_the_same_selector_still_pairs_a_short_label_and_a_light_edit():
               "box": [0, 0, 600, 40], "sel": "main > p"}
     long_b = dict(long_a, text="Pro gives every team more usage and priority support on all plans.", box=[0, 400, 600, 40])
     assert watch_text.same_place(long_a, long_b) == 1.0
+
+
+# ── The before-and-after picture ─────────────────────────────────────────────
+def test_both_panels_show_the_same_stretch_of_the_page():
+    """A removed paragraph is boxed only on the old page, a recoloured button
+    on both. Each panel still shows the same stretch: the new page's panel
+    reaches down to where the paragraph closed up, and the two are equally
+    tall."""
+    report, _ = watch_detect.compare(prev_from(cap_from(page(), blk=blocks())),
+                                     cap_from(page(removed=True, button="#2563eb"), blk=blocks()))
+    v = report["visual"]
+    assert v["before"] and v["after"]
+    ha, hb = watch_visual.load(page()).shape[0], watch_visual.load(page(removed=True)).shape[0]
+    plain = watch_visual.bands(v["before"], v["after"], ha, hb, margin=40)
+    lined = watch_visual.bands(v["before"], v["after"], ha, hb, rows=report["_rows"], margin=40)
+    assert lined[1] - lined[0] == lined[3] - lined[2]                 # equally tall
+    assert lined[3] > max(y + h for x, y, w, h in v["after"]) + 40     # reaches past the button
+    assert lined[3] >= plain[3]
+    png = watch_visual.composite(page(), page(removed=True, button="#2563eb"), v, rows=report["_rows"])
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_bands_stay_inside_the_pages_and_the_size_limit():
+    t = watch_visual.bands([[0, 50, 10, 10]], [[0, 2900, 10, 10]], 1000, 3000, margin=100, max_height=500)
+    assert t[0] >= 0 and t[1] <= 1000 and t[2] >= 0 and t[3] <= 3000
+    assert t[1] - t[0] == t[3] - t[2] <= 500
