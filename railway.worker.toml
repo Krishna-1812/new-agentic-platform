@@ -1,0 +1,16 @@
+# Page Watch worker: a second Railway service built from this same repo.
+# The web service reads railway.toml; this service is pointed at this file
+# instead (Settings -> Config-as-code -> Railway Config File:
+# /railway.worker.toml), so it runs the worker and not the website.
+# Steps: docs/page-watch-plan.md, "Setting up the worker on Railway".
+[build]
+builder = "RAILPACK"
+
+[deploy]
+startCommand = "python -m tracker.watch_worker"
+# No web port, so no HTTP health check: the website's
+# /strategic-agents/page-watch/health shows the worker's heartbeat.
+restartPolicyType = "ALWAYS"
+# On a deploy, running checks get this long to finish after SIGTERM; the
+# worker hands back what is left (tracker/watch_worker.py, GRACE_S).
+drainingSeconds = 75

@@ -39,6 +39,19 @@ def test_railway_builds_with_railpack_and_starts_the_flask_app():
     assert appmod.app.test_client().get("/health").status_code == 200
 
 
+def test_the_page_watch_worker_service_runs_the_worker_not_the_website():
+    """A second Railway service points at railway.worker.toml (setup steps:
+    docs/page-watch-plan.md, section 6)."""
+    from tracker import watch_worker
+    toml = _read("railway.worker.toml")
+    assert re.search(r'^builder = "RAILPACK"$', toml, re.M)
+    assert re.search(r'^startCommand = "python -m tracker\.watch_worker"$', toml, re.M)
+    assert "healthcheckPath" not in toml and "gunicorn" not in toml
+    draining = int(re.search(r'^drainingSeconds = (\d+)$', toml, re.M).group(1))
+    assert draining > watch_worker.GRACE_S          # running checks get their grace before SIGKILL
+    assert callable(watch_worker.main)
+
+
 def test_ffmpeg_is_installed_without_dropping_railpacks_own_packages():
     cfg = json.loads(_read("railpack.json"))
     assert cfg["deploy"]["aptPackages"] == ["...", "ffmpeg"]

@@ -404,6 +404,18 @@ class RowMap:
         r = int(self._m[i])
         return None if r < 0 else r + self._off
 
+    def old_span(self, y0, y1):
+        """The old page's rows [top, bottom) shown by new rows y0..y1, or None
+        when all of them were added by the new page."""
+        lo, hi = max(0, int(y0) - self._off), min(len(self._m), int(y1) - self._off)
+        if hi <= 0 or lo >= len(self._m):
+            return int(y0), int(y1)        # outside the compared band: unmoved
+        rows = self._m[lo:hi]
+        rows = rows[rows >= 0]
+        if not len(rows):
+            return None
+        return int(rows.min()) + self._off, int(rows.max()) + 1 + self._off
+
     def new_span(self, y0, y1):
         """The new page's rows [top, bottom) that show old rows y0..y1, or
         None when none do (that part of the old page was removed)."""
