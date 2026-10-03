@@ -40,8 +40,10 @@ def test_railway_builds_with_railpack_and_starts_the_flask_app():
 
 
 def test_the_page_watch_worker_service_runs_the_worker_not_the_website():
-    """A second Railway service points at railway.worker.toml (setup steps:
-    docs/page-watch-plan.md, section 6)."""
+    """A second Railway service runs the worker. Railway no longer lets a new
+    service use a config file, so its Settings are entered by hand from
+    docs/page-watch-plan.md, section 6; railway.worker.toml records them and
+    the doc must give the same start command."""
     from tracker import watch_worker
     toml = _read("railway.worker.toml")
     assert re.search(r'^builder = "RAILPACK"$', toml, re.M)
@@ -103,3 +105,27 @@ def test_signed_in_internal_and_client_areas_cannot():
                  "/auth/google", "/login", "/logout", "/ppc", "/dashboard/healthcare",
                  "/" + client, "/" + client + "/agents/x"):
         assert not _allowed(path, rules), path
+
+
+def test_the_worker_setup_steps_match_its_recorded_settings():
+    plan = _read("docs/page-watch-plan.md")
+    toml = _read("railway.worker.toml")
+    cmd = re.search(r'^startCommand = "([^"]+)"$', toml, re.M).group(1)
+    assert "**Custom Start Command** (filter `start`): `%s`" % cmd in plan
+    assert "Healthcheck Path" in plan
+    # The deprecated config-file path is not given as a step to follow.
+    assert "Railway Config File:** `/railway.worker.toml`" not in plan
+
+
+def test_the_worker_logs_to_stdout_so_railway_does_not_show_info_as_errors(monkeypatch):
+    import logging
+    import sys
+    from tracker import watch_worker
+    root = logging.getLogger()
+    saved = root.handlers[:]
+    root.handlers[:] = []
+    try:
+        watch_worker.setup_logging()
+        assert [h.stream for h in root.handlers] == [sys.stdout]
+    finally:
+        root.handlers[:] = saved

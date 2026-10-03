@@ -281,7 +281,7 @@ Watches any web page and reports, in plain words and with a before-and-after pic
 - **Calibration** (`watch_engine.calibrate`): a new watch's page is read twice more straight after its baseline; whatever differs between those readings (a random button colour, a rotating quote) is learned as noise for that watch.
 - **Accuracy harness:** `python tools/watch_accuracy.py` measures false alarms and detection of known edits on real pages.
 - **Storage** (`watch_store`): `watch_targets`, `watch_checks`, `watch_snapshots`, `watch_changes`, `watch_images` on Postgres (in-memory without `DATABASE_URL`). The baseline screenshot is stored lossless; replaced baselines are re-saved lossy.
-- **Worker** (`watch_worker`, a second Railway service using `railway.worker.toml`; setup steps in the plan, section 6):
+- **Worker** (`watch_worker`, a second Railway service, `page-watch-worker`, whose Custom Start Command is `python -m tracker.watch_worker` (`railway.worker.toml` records its settings); setup steps in the plan, section 6):
   - claims due watches with a 3-minute lease that is renewed while a check runs;
   - checks one page per site at a time, 20 seconds apart;
   - reruns a failed check after 5, then 15 minutes, then returns to its schedule;
