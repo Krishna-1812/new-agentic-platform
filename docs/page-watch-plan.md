@@ -406,16 +406,23 @@ then it would sit idle. Steps:
 
 1. **Railway → your project → Create (top right) → GitHub Repo →** pick this
    repository. Railway adds a new service and starts a first deploy. That
-   deploy runs the website's command, so stop it or let it fail; step 3
-   fixes it.
-2. Open the new service → **Settings**:
+   deploy runs the website (`gunicorn` in its log); step 2 fixes it.
+2. Open the new service → **Settings** (the "Filter Settings…" box at the top
+   finds each one):
    - **Service name:** `page-watch-worker`.
-   - **Config-as-code → Railway Config File:** `/railway.worker.toml`. This
-     file makes the service run `python -m tracker.watch_worker` instead of
-     the website, with no HTTP health check. A config file overrides the
-     dashboard, which is why the path matters.
-   - **Region:** the same as the web service (US West).
-   - **Networking:** add no public domain. The worker serves no pages.
+   - **Custom Start Command** (filter `start`): `python -m tracker.watch_worker`.
+     This is what makes it the checker and not the website.
+   - **Healthcheck Path** (filter `health`): empty. The worker serves no
+     pages; the website's health page shows its heartbeat.
+   - **Restart Policy:** Always if the plan offers it, otherwise On Failure
+     with 10 retries.
+   - **Draining Seconds** (filter `drain`), if shown: `75`.
+   - **Region:** the same as the web service.
+   - **Networking:** add no public domain.
+   Do not use **Config-as-code → Railway Config File**: Railway deprecated it,
+   and since 2026-08-28 a new service cannot opt in (the path is removed as
+   soon as it is saved). `railway.worker.toml` records the same settings for
+   reference.
 3. **Variables** (the worker's own tab):
    - `DATABASE_URL`: open **web → Variables → DATABASE_URL** and add the same
      value to the worker the same way. If it is a reference such as
@@ -432,7 +439,9 @@ then it would sit idle. Steps:
      one browser, about 400–700 MB.
 4. **Settings → Resources:** give it at least 2 GB of memory (1 GB is too
    little for two browsers and image comparison).
-5. **Deploy**, then check it: open
+5. **Deploy**, then open the newest deployment → **Deploy Logs**. It should
+   say `page_watch.worker: … started: 2 threads, version …` and nothing
+   about `gunicorn`. Then open
    `https://<your site>/strategic-agents/page-watch/health` while signed in
    as staff. `"status": "ok"` and a worker with `"alive": true` means it is
    running. Other values:
@@ -443,7 +452,7 @@ then it would sit idle. Steps:
      memory.
 
 Deploys: Railway sends SIGTERM; the worker stops taking checks, gives running
-ones up to 60 seconds (`drainingSeconds = 75` in the config file), and hands
+ones up to 60 seconds (Draining Seconds 75, where Railway offers it), and hands
 back the rest to be checked at once. A worker that dies outright loses its
 watches within 3 minutes (the lease), and the next worker takes them.
 

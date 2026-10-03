@@ -1,7 +1,9 @@
 # Page Watch worker: a second Railway service built from this same repo.
-# The web service reads railway.toml; this service is pointed at this file
-# instead (Settings -> Config-as-code -> Railway Config File:
-# /railway.worker.toml), so it runs the worker and not the website.
+# The web service reads railway.toml. Railway no longer lets a new service
+# opt in to a config file (Config-as-code is deprecated; since 2026-08-28 the
+# path is dropped when saved), so these settings are entered by hand on the
+# worker's Settings page: Custom Start Command, no Healthcheck Path, Restart
+# Policy, Draining Seconds. This file records them and the tests check them.
 # Steps: docs/page-watch-plan.md, "Setting up the worker on Railway".
 [build]
 builder = "RAILPACK"

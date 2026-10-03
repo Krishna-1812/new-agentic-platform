@@ -33,6 +33,7 @@ import os
 import random
 import signal
 import socket
+import sys
 import threading
 import time
 import uuid
@@ -268,6 +269,13 @@ def health(now=None):
     return {"status": status, "workers": out, "queue": queue, "checked_at": now.isoformat()}
 
 
+def setup_logging():
+    """Log to stdout: Railway colours everything on stderr red, as if it
+    were an error, even routine INFO lines."""
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout,
+                        format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
+
 def main(argv=None):
     import argparse
     parser = argparse.ArgumentParser(description="Page Watch worker")
@@ -275,7 +283,7 @@ def main(argv=None):
     parser.add_argument("--migrate", action="store_true", help="create the tables, then exit")
     parser.add_argument("--threads", type=int, default=None)
     args = parser.parse_args(argv)
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    setup_logging()
     if watch_store.backend() != "postgres":
         log.warning("DATABASE_URL is not set: the worker would only see its own in-memory store.")
     if args.migrate:
