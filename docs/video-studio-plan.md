@@ -1,9 +1,11 @@
 # Video Studio: plan
 
 Working name: **Video Studio**.
-Status: **being built**. Phases 1 to 4 are built: the render engine; the
-sources, brand and plan; building the video with Claude; and the pages
-people use. Progress and the live checks are in section 7.
+Status: **being built** (badge "building"). Phases 1 to 5 are built: the
+render engine; the sources, brand and plan; building the video with Claude;
+the pages people use; and hardening. The badge goes to "live" once the launch
+checklist in section 7 has been followed on Railway and the first real client
+videos are made.
 
 Tell it what video you want: a launch, an explainer, a product demo, an ad, a
 hiring post, a set of results, or anything else. Give it what it should use: a
@@ -768,4 +770,135 @@ cover step is now in the log.
 
 **Done when:** a staff member has made two different kinds of video without
 help. The browser drive is done.
+
+### Phase 5 is built
+
+**Every failure, its test and its live drill:**
+
+| Failure | What the person sees | Test (`tests/test_video_hardening.py`) | Live drill |
+|---|---|---|---|
+| The worker restarts mid-render | "Making" carries on; the job is handed back and runs again. After two lost workers, it fails in plain words. | `test_a_render_stopped_by_a_restart...`, `test_a_job_whose_worker_died_twice...` | Engine page → **Load run**, then redeploy the worker while it renders (below) |
+| A site that never answers | The reading says the site took too long, and the plan goes on without it. A slow site stops after a 2-minute reading budget, not 9 minutes. | `test_a_site_that_never_answers...`, `test_a_slow_site_is_read_within_the_budget` | Engine page → **Website never answers** |
+| A bad upload | A sentence under the field: not an image, larger than 15 MB, one column, an unclosed quote, over 50 rows, too long. A request over 32 MB gets a JSON answer. | `test_bad_uploads_are_refused...`, `test_a_request_over_the_size_limit...` | By hand on the start page (below) |
+| Claude unavailable | The plan step fails with "Claude could not be reached. Try again", and no plan is made. During a change, the video is kept. | `test_claude_unavailable_...` (2) | Engine page → **Claude unreachable**, then **Try again** |
+| The monthly budget is reached | New plans, new ideas and changes in words say why. Approving, another shape and downloads still work, with no review. | `test_past_the_budget_finishing_work_is_allowed...` | Engine page → **Budget used up** |
+| A render fails | The reason in plain words. **Try again** renders again without rebuilding; a failed build is built again. | `test_a_failed_render_says_why...`, `test_a_failed_build_is_built_again` | Engine page → **Render fails**, then **Try again** |
+
+Drill videos open on the video page like any other, but stay out of the
+library and send no Slack message (`tracker/video_drills.py`).
+
+**The load run** (`scripts/load_video_studio.py`, here, with the real engine).
+Three videos were queued at once: 10 s landscape, 45 s vertical with a chart,
+and 60 s landscape with all 16 templates. Page checks ran beside them in 2
+threads with the real browser, as the worker does.
+
+| | |
+|---|---|
+| Renders | all 3 ready, in 5 minutes together (check + render: 38 s, 105 s, 152 s) |
+| Page checks meanwhile | 76, none failed |
+| Peak memory, all programs together | **2,063 MB**: browsers 924, ffmpeg 596, Node 187, the rest 356 |
+
+**Decision:** the renderer stays on the worker, which needs **4 GB of memory**
+(the 2 GB set for Page Watch is too little; the peak was just over 2 GB). The
+worker renders one video at a time, so more videos queue rather than add
+memory. If Railway's memory graph for the worker goes past about 3 GB in the
+live load run, the renderer moves to its own service.
+
+**Keeping:**
+- **Versions:** at most 20 per video. Past that, Duplicate it.
+- **Daily limits:** 20 videos (approve, change, another shape) and 40 plans
+  (new, another idea, duplicate) per person per day (UTC). Set them with
+  `VIDEO_DAILY_VIDEOS` and `VIDEO_DAILY_PLANS`.
+- **Clean-up** on the worker every 6 hours:
+  - MP4s are removed after `VIDEO_KEEP_DAYS` (90). The cover, plan and
+    composition stay, so **Make it again** renders it in a few minutes.
+  - Key frames are removed after 30 days.
+  - Drafts that were never started are removed after 2 days.
+
+**Slack (optional).** When a video is ready, or making one fails, a message
+with a link goes to the client's channel, set on the brands page, or to
+`VIDEO_SLACK_CHANNEL`. It uses Page Watch's Slack app and token. Plans and
+drills send no message.
+
+**Security review:**
+- **The sandbox, attacked with a hostile composition**
+  (`scripts/check_video_sandbox.py`, real engine). Every one of these was
+  blocked:
+  - reading files outside the project through the engine's server (`../`,
+    encoded `../`, `/etc/passwd`, `/proc/self/environ`);
+  - `file://`;
+  - the internet and the cloud metadata address (both refused by the proxy
+    trap and logged);
+  - a service on the worker's loopback, read across origins;
+  - WebRTC to a STUN server, by name and by address.
+  - Added: Chromium's flag that stops WebRTC sending UDP around the proxy.
+    This container may have blocked UDP itself, and Railway may not.
+  - Fixed: the proxy's log now records IP addresses correctly (it logged
+    "http").
+- **Claude's tools:** reads and writes stay inside the project; a link
+  pointing out of it is now refused too. Writes are limited to HTML, CSS and
+  JS, with no outside addresses.
+- **Uploads:** images are decoded by Pillow and re-encoded. SVG is refused.
+  The pixel count is checked from the header. Names are cleaned. Each
+  picture is its own request.
+- **Tables:**
+  - the size is capped (512 KB) before reading;
+  - reading stops one row past the limit, so a huge paste is refused, not
+    parsed;
+  - an unclosed quote is refused;
+  - cells are capped at 200 characters.
+- **Pages:** every write is JSON only; every read is scoped to its owner;
+  all text is set as text, never HTML; errors have their internals removed.
+
+**What has been checked here:**
+- **Tests:** 28 tests in `tests/test_video_hardening.py`. The full suite
+  passes.
+- **Real engine:** the hostile composition and the load run.
+- **Real browser:** the drive of the whole journey at 1440 and 390 wide, run
+  again.
+
+### Launch checklist (Railway)
+
+Do these on Railway, in order.
+
+1. **Worker memory.** Open Railway → your project → the **page-watch-worker**
+   service → **Settings** → **Resources**. Set **Memory** to **4 GB**, then
+   save.
+2. **Worker variables.** In the same service, open **Variables** → **New
+   Variable** for each:
+   - `ANTHROPIC_API_KEY`: use **Add Reference** to the web service's variable,
+     or paste the key there yourself. Never paste it into chat.
+   - `PUBLIC_BASE_URL`: your site's address, for the links in Slack.
+   - Optional: `VIDEO_SLACK_CHANNEL` (for example `#videos`),
+     `VIDEO_CLAUDE_MONTHLY_USD` (10), `VIDEO_DAILY_VIDEOS` (20),
+     `VIDEO_DAILY_PLANS` (40), `VIDEO_KEEP_DAYS` (90).
+   - For Slack, `WATCH_SLACK_BOT_TOKEN` (or `GOOGLE_ADS_SLACK_BOT_TOKEN`) must
+     already be there for Page Watch. Invite the bot to each video channel:
+     in Slack, open the channel → type `/invite @` and the bot's name.
+3. **Deploy** the worker (**Deployments** → **Deploy**). Its **Deploy Logs**
+   should say `video renderer started`.
+4. **Engine page** (`/strategic-agents/video-studio/engine`):
+   - **Render the test videos**, then both drills.
+   - The four failure drills; open each and use its buttons.
+   - **Load run**. While it renders, open Railway → page-watch-worker →
+     **Metrics** → **Memory**, and press Win+Shift+S to keep a picture of the
+     graph. It must stay under 4 GB.
+5. **Restart drill.** Start **Load run** again. While the 60-second video
+   renders, open Railway → page-watch-worker → **Deployments** → the ⋮ menu
+   on the newest deployment → **Redeploy**. On the engine page the video goes
+   back to waiting, then renders again on the new worker.
+6. **Bad uploads, by hand**, on `/strategic-agents/video-studio`. Each must
+   show a sentence and start nothing:
+   - a `.txt` file renamed to `.png`;
+   - a picture over 15 MB;
+   - a table with one column;
+   - a table with a quote mark that is never closed.
+7. **The first real client videos.** Make two different kinds (for example
+   a website explainer and a results video), approve them, download them and
+   share them.
+8. **Then the badge goes live.** Tell me the steps above are done, and I'll
+   switch the directory card from "Building" to "Live".
+
+**Done when:** every step above has been followed and the first two real
+client videos are made.
 

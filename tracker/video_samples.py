@@ -383,3 +383,18 @@ def library_plan(length="short"):
 def library_tables():
     from tracker import video_uploads
     return {30: video_uploads.numbers(LIBRARY_TABLE)}
+
+
+def sixty_seconds():
+    """All 16 templates in one 60-second landscape video (the load run's long render)."""
+    from tracker import video_brand, video_build
+    plan = library_plan("short")
+    total = sum(sc["seconds"] for sc in plan["scenes"])
+    for sc in plan["scenes"]:
+        sc["seconds"] = round(sc["seconds"] * 60.0 / total, 2)
+    plan["scenes"][-1]["seconds"] = round(60.0 - sum(sc["seconds"] for sc in plan["scenes"][:-1]), 2)
+    out = video_build.compose(plan, video_brand.resolve(LIGHT_BRAND), "landscape", assets=library_assets(),
+                              tables=library_tables())
+    return {"files": video_build.stored(out["files"]), "shape": "landscape", "duration_s": out["duration"],
+            "cover_at": out["cover_at"], "title": "Load run: 60 s landscape, all 16 templates"}
+

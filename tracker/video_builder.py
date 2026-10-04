@@ -34,6 +34,33 @@ class Refused(ValueError):
     """The request cannot be done; the message is for the person."""
 
 
+# ── Limits ───────────────────────────────────────────────────────────────────
+def _today():
+    now = datetime.now(timezone.utc)
+    return now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def check_daily(email, what):
+    """Refuse past a person's daily limit: what is "videos" or "plans"."""
+    kinds, limit = (("build", "change"), cfg.daily_videos()) if what == "videos" else (("plan",), cfg.daily_plans())
+    if video_store.jobs_since(email, kinds, _today()) >= limit:
+        raise Refused("You have reached today's limit of %d %s. It starts again at midnight (UTC)."
+                      % (limit, "videos" if what == "videos" else "plans"))
+
+
+def check_versions(project_id):
+    if len(video_store.list_versions(project_id)) >= cfg.MAX_VERSIONS:
+        raise Refused("This video has %d versions, the most one video can have. Duplicate it to carry on."
+                      % cfg.MAX_VERSIONS)
+
+
+def check_budget():
+    """Changes need Claude; past the monthly budget they wait, but approving does not."""
+    if video_plan.spent_this_month() >= video_plan.monthly_cap():
+        raise Refused("This month's Video Studio budget is used up, so changes in words wait until the 1st. "
+                      "Approving plans, another shape and downloads still work.")
+
+
 # ── Starting work ────────────────────────────────────────────────────────────
 def _plan_ready(version):
     plan = version.get("plan") or {}
@@ -49,8 +76,9 @@ def approve(email, version_id):
     if not v:
         return None
     _plan_ready(v)
-    if v["status"] in ("building", "making", "queued_render"):
+    if v["status"] in ("building", "making", "queued_render", "queued_build"):
         raise Refused("This video is already being made.")
+    check_daily(email, "videos")
     video_store.update_version(version_id, status="queued_build", error="")
     return video_store.enqueue(version_id, kind="build", settings={"review": True})
 
@@ -74,6 +102,9 @@ def make_changes(email, version_id, request):
         raise Refused("Say what to change, for example 'slower' or 'end on Start free'.")
     if len(text) > 1000:
         raise Refused("Keep the change under 1,000 characters.")
+    check_versions(v["project_id"])
+    check_budget()
+    check_daily(email, "videos")
     new = _copy(v, email, change_request=text)
     video_store.enqueue(new, kind="change", settings={"from": version_id})
     return new
@@ -88,6 +119,8 @@ def another_shape(email, version_id, shape):
         raise Refused("Pick a shape: %s." % ", ".join(cfg.SHAPE_LABELS.values()))
     if shape == v["shape"]:
         raise Refused("This version is already %s." % cfg.SHAPE_LABELS[shape])
+    check_versions(v["project_id"])
+    check_daily(email, "videos")
     new = _copy(v, email, shape=shape, change_request="Make it %s" % cfg.SHAPE_LABELS[shape])
     video_store.enqueue(new, kind="build", settings={"review": False})
     return new

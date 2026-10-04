@@ -132,3 +132,25 @@ def test_the_library_drafts_and_brands_for_the_pages(email):
     rows = video_store.list_brands(email)
     assert len(rows) == 1 and rows[0]["brand"]["name"] == "acme co" and rows[0]["has_logo"] is False
     assert video_store.delete_brand(email, "ACME CO") and video_store.list_brands(email) == []
+
+
+def test_daily_counts_and_the_clean_up(email):
+    """Phase 5: the daily limits' count and the clean-up, in SQL."""
+    now = datetime.now(timezone.utc)
+    pid = video_store.create_project(email, brief="Old video")
+    v = video_store.create_version(pid, status="ready", mp4=b"MP4", cover=b"JPG", mp4_bytes=3,
+                                   finished_at=now - timedelta(days=100))
+    fresh = video_store.create_version(pid, status="ready", mp4=b"MP4", mp4_bytes=3, finished_at=now)
+    video_store.enqueue(v, kind="build")
+    video_store.enqueue(v, kind="plan")
+    assert video_store.jobs_since(email, ("build", "change"), now - timedelta(hours=1)) == 1
+    assert video_store.jobs_since(email, ("build",), now + timedelta(hours=1)) == 0
+    assert video_store.jobs_since("other@markifydigital.com", ("build",), now - timedelta(hours=1)) == 0
+    video_store.add_asset(pid, "frame", mime="image/jpeg", data={"version_id": v}, blob=b"J")
+    draft = video_store.create_project(email, brief="Never started", status="draft")
+    out = video_store.prune(now=now + timedelta(days=3))
+    assert out["mp4s"] >= 1 and out["drafts"] >= 1
+    assert video_store.get_media(v, "mp4") is None and video_store.get_media(v, "cover") == b"JPG"
+    assert video_store.get_media(fresh, "mp4") == b"MP4" and video_store.get_project(draft) is None
+    assert video_store.get_version(v)["mp4_bytes"] == 0
+    _drain()

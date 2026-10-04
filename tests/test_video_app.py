@@ -413,7 +413,8 @@ def test_brands_can_be_added_edited_and_removed(store):
     assert view == [{"client": "Acme Co", "key": "acme co", "colors": {"background": "#ffffff", "text": "#111111",
                                                                       "accent": "#ff6022"},
                      "fonts": {"heading": "Fraunces", "body": "Inter"},
-                     "logo": BASE + "/brands/logo?client=acme%20co", "updated_at": view[0]["updated_at"]}]
+                     "logo": BASE + "/brands/logo?client=acme%20co", "slack_channel": "",
+                     "updated_at": view[0]["updated_at"]}]
     assert video_app.brand_logo(ANA, "ACME CO")[:4] == b"\x89PNG"
     view = video_app.save_brand(ANA, {"client": "acme co", "accent": "#2f5bea"})      # the rest is kept
     assert view[0]["colors"]["accent"] == "#2f5bea" and view[0]["fonts"]["heading"] == "Fraunces" and view[0]["logo"]

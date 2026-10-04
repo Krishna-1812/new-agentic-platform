@@ -77,6 +77,13 @@ app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024
 def forbidden(e):
     return render_template("403.html"), 403
 
+@app.errorhandler(413)
+def too_large(e):
+    """A body over MAX_CONTENT_LENGTH: API routes answer in JSON, so the page can say so."""
+    if "/api/" in request.path:
+        return jsonify(ok=False, error="That is too large to upload (32 MB at most per request)."), 413
+    return ("Request too large", 413)
+
 @app.errorhandler(500)
 def server_error(e):
     """Always answer API routes with JSON so the frontend never chokes on an HTML error page."""
@@ -17923,6 +17930,21 @@ def video_studio_engine_tests():
             return jsonify(ok=False, error=str(exc)), 400
         return jsonify(ok=True, versions=ids, page=video_web.engine_page(_pw_email()))
     return jsonify(ok=True, page=video_web.engine_page(_pw_email()))
+
+
+@app.route(VS_BASE + "/api/drills", methods=["POST"])
+@position2_required
+def video_studio_drills():
+    """Phase 5's failure drills, run on the live worker (tracker/video_drills.py)."""
+    from tracker import video_drills, video_web
+    body = _pw_body()
+    if body is None:
+        return jsonify(ok=False, error="Send JSON."), 400
+    try:
+        pid, _ = video_drills.start(_pw_email(), str(body.get("drill") or ""))
+    except ValueError as exc:
+        return jsonify(ok=False, error=str(exc)), 400
+    return jsonify(ok=True, url="%s/videos/%d" % (VS_BASE, pid), page=video_web.engine_page(_pw_email()))
 
 
 @app.route(VS_BASE + "/media/<int:version_id>.<ext>")

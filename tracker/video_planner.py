@@ -88,6 +88,13 @@ def run_job(job, *, stop=None, read_site=video_site.read, client=None):
         video_store.add_log(jid, name, detail)
 
     settings = job.get("settings") or {}
+    drill = settings.get("drill")                     # the failure drills (video_drills)
+    if drill == "site_never_answers":
+        from tracker import video_drills
+        read_site = video_drills.never_answering_reader()
+    elif drill == "claude_down":
+        from tracker import video_drills
+        client = video_drills.DownClaude()
     # "Try another idea" keeps the website reading and the brand of the plan
     # before it (with the person's edits), and asks for a different idea.
     reuse = bool(settings.get("reuse_site"))
@@ -112,6 +119,7 @@ def run_job(job, *, stop=None, read_site=video_site.read, client=None):
             reading = {"ok": False, "message": "The website could not be read (%s). Upload your own screenshots "
                                                "instead." % type(exc).__name__}
         if reading.get("ok"):
+            notes.extend(reading.get("notes") or [])
             website_logo = store_site(pid, reading)
             website_brand = reading.get("brand")
             step("site_done", "%d page(s), %d picture(s)" % (len(reading["pages"]), len(reading["images"])))
@@ -151,7 +159,7 @@ def run_job(job, *, stop=None, read_site=video_site.read, client=None):
     avoid = [str(x)[:300] for x in (settings.get("avoid") or []) if x][:6]
     try:
         result = video_plan.make_plan(brief, choices, brand, sources, client=client, email=email, project_id=pid,
-                                      version_id=vid, avoid=avoid,
+                                      version_id=vid, avoid=avoid, cap=0.0 if drill == "budget" else None,
                                       load_blob=lambda aid: (video_store.get_asset(aid, blob=True) or {}).get("bytes"))
     except video_plan.PlanError as exc:
         step("failed", str(exc))
