@@ -630,3 +630,52 @@ def make_plan(brief, choices, brand, sources, *, client=None, load_blob=None, em
             if len(problems2) <= len(problems):
                 plan, problems = plan2, problems2
     return {"plan": plan, "problems": problems, "attempts": attempts, "cost_usd": round(cost, 5), "model": model()}
+
+
+# ── Changing an approved plan ("Make changes") ───────────────────────────────
+EDIT_NOTE = """The person has seen the video made from this plan and asks for a change. \
+Return the whole plan again with that change made and everything else kept as it is \
+(same scenes, words, pictures and seconds) unless the change needs otherwise. The rules \
+above still hold: the seconds must still add up to %s, and nothing may be invented. If \
+the change cannot be made without breaking a rule, make the closest change that keeps \
+the rules and say so in notes."""
+
+
+def edit_plan(plan, request, brief, choices, brand, sources, *, client=None, load_blob=None, email="",
+              project_id=None, version_id=None):
+    """The plan with a person's change made: {"plan", "problems", "attempts", "cost_usd", "model"}."""
+    if client is None and not _key():
+        raise PlanError("Claude is not set up: add ANTHROPIC_API_KEY to the worker service in Railway.")
+    if spent_this_month() >= monthly_cap():
+        raise PlanError("This month's Video Studio budget ($%.2f) is used up." % monthly_cap())
+    client = client or _client()
+    record = {"email": email, "project_id": project_id, "version_id": version_id}
+    content = request_content(brief, choices, brand, sources, load_blob=load_blob or (lambda aid: None))
+    keep = {k: plan.get(k) for k in ("idea", "audience", "hook", "scenes", "ending", "cover_scene", "share_copy", "notes")}
+    content[-1] = {"type": "text", "text": "The approved plan:\n%s\n\nThe change asked for: %s\n\n%s" % (
+        json.dumps(keep, ensure_ascii=False), " ".join(str(request).split())[:1000],
+        EDIT_NOTE % _num(choices["seconds"]))}
+    messages = [{"role": "user", "content": content}]
+    new, raw, cost = _ask(client, messages, record)
+    problems = check(new, choices, sources, brief)
+    attempts = 1
+    if problems and spent_this_month() < monthly_cap():
+        messages += [{"role": "assistant", "content": raw},
+                     {"role": "user", "content": "The plan breaks these rules. Fix every one and return the whole "
+                                                 "plan again:\n- " + "\n- ".join(problems)}]
+        new2, _, cost2 = _ask(client, messages, record)
+        cost += cost2
+        attempts = 2
+        problems2 = check(new2, choices, sources, brief)
+        if len(problems2) <= len(problems):
+            new, problems = new2, problems2
+    return {"plan": new, "problems": problems, "attempts": attempts, "cost_usd": round(cost, 5), "model": model()}
+
+
+def same_shape_of_plan(a, b):
+    """True when two plans differ only in their words: the change can skip the full build."""
+    sa, sb = a.get("scenes") or [], b.get("scenes") or []
+    if len(sa) != len(sb):
+        return False
+    keys = ("type", "seconds", "asset_ids", "chart")
+    return all(all(x.get(k) == y.get(k) for k in keys) for x, y in zip(sa, sb))

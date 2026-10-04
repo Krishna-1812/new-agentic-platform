@@ -40,6 +40,74 @@
     box.appendChild(stat("Claude cost", "$" + t.cost_usd.toFixed(3)));
   }
 
+  function drawVideos() {
+    var v = data.videos || {}, box = document.getElementById("vp-videos");
+    box.textContent = "";
+    if (!v.ready && !data.runs.some(function (r) { return r.versions && r.versions.length; })) return;
+    box.appendChild(stat("Videos ready", v.ready));
+    box.appendChild(stat("Scored", v.scored + " of " + v.ready));
+    box.appendChild(stat("Good enough to post", v.good_to_post, v.scored ? v.good_to_post >= 12 : undefined));
+    box.appendChild(stat("Kinds with a good video", v.kinds_with_a_good_video));
+    box.appendChild(stat("Average cost a video", "$" + (v.avg_cost_usd || 0).toFixed(2)));
+    box.appendChild(stat("Average minutes to make", String(v.avg_minutes || 0)));
+  }
+
+  function post(url, body, msgEl) {
+    return fetch(url, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body || {}) }).then(function (r) { return r.json(); }).then(function (j) {
+        if (!j.ok) { if (msgEl) msgEl.textContent = j.error || "That did not work."; return; }
+        data = j.page; draw();
+      }).catch(function () { if (msgEl) msgEl.textContent = "The server could not be reached."; });
+  }
+
+  var QUESTIONS = [["does_the_brief", "Does what the brief asked"], ["readable_on_brand", "Readable, on brand, nothing cut off"],
+                   ["strong_start", "Strong first 3 seconds"], ["numbers_right", "Numbers correct"],
+                   ["good_to_post", "Good enough to post as it is"]];
+
+  function drawVersion(x) {
+    var VS = { queued: "Waiting", queued_build: "Waiting to build", building: "Building", queued_render: "Waiting to render",
+               making: "Rendering", ready: "Ready", failed: "Failed", planned: "Planned", planning: "Planning" };
+    var bits = ["v" + x.number, x.shape, (x.seconds || 0) + " s", "$" + (x.cost_usd || 0).toFixed(3)];
+    if (x.timings.build_s) bits.push("built in " + Math.round(x.timings.build_s) + " s");
+    if (x.timings.render_s) bits.push("rendered in " + Math.round(x.timings.render_s) + " s");
+    if (x.mb) bits.push(x.mb + " MB");
+    var kids = [el("p", { cls: "ve-meta" }, [el("b", { cls: x.status === "ready" ? "ve-ok" : x.status === "failed" ? "ve-bad" : "ve-wait",
+      text: VS[x.status] || x.status }), " · " + bits.join(" · ") + (x.change ? " · change: " + x.change : "")])];
+    if (x.error) kids.push(el("p", { cls: "ve-meta ve-bad", text: x.error }));
+    if (x.build && x.build.summary) kids.push(el("p", { cls: "ve-meta", text: "Claude's review: " + x.build.summary }));
+    if (x.status === "ready") {
+      kids.push(el("video", { src: BASE + "/media/" + x.id + ".mp4", controls: "", preload: "none",
+        poster: BASE + "/media/" + x.id + ".jpg", style: "max-width:100%;max-height:420px;border-radius:12px;display:block" }));
+      var sc = x.score || {}, form = el("div", { cls: "ve-actions" });
+      QUESTIONS.forEach(function (q) {
+        var id = "q" + x.id + q[0];
+        var box = el("input", { type: "checkbox", id: id }); box.checked = !!sc[q[0]]; box.setAttribute("data-k", q[0]);
+        form.appendChild(el("label", { "for": id, cls: "ve-meta" }, [box, " " + q[1]]));
+      });
+      var save = el("button", { type: "button", cls: "sa-btn sa-btn--line", text: sc.by ? "Update score" : "Save score" });
+      save.onclick = function () {
+        var scores = {};
+        form.querySelectorAll("input[data-k]").forEach(function (i) { scores[i.getAttribute("data-k")] = i.checked; });
+        post(BASE + "/api/versions/" + x.id + "/score", { scores: scores });
+      };
+      form.appendChild(save);
+      kids.push(form);
+      var change = el("input", { type: "text", placeholder: "Make changes, e.g. slower, bigger logo, end on 'Start free'",
+        style: "flex:1 1 260px;min-height:44px;border-radius:10px;border:1px solid #ccc;padding:0 12px" });
+      var go = el("button", { type: "button", cls: "sa-btn sa-btn--line", text: "Make changes" });
+      var msg = el("span", { cls: "ve-meta ve-bad" });
+      go.onclick = function () { post(BASE + "/api/versions/" + x.id + "/change", { request: change.value }, msg); };
+      var shape = el("select", { style: "min-height:44px;border-radius:10px" });
+      ["landscape", "vertical", "square", "portrait"].forEach(function (k) { if (k !== x.shape) shape.appendChild(el("option", { value: k, text: k })); });
+      var reshape = el("button", { type: "button", cls: "sa-btn sa-btn--line", text: "Make another shape" });
+      reshape.onclick = function () { post(BASE + "/api/versions/" + x.id + "/shape", { shape: shape.value }, msg); };
+      kids.push(el("div", { cls: "ve-actions" }, [change, go, shape, reshape, msg]));
+    }
+    kids.push(el("details", {}, [el("summary", { cls: "ve-meta", text: "Steps" }),
+      el("ul", { cls: "ve-log" }, x.log.map(function (l) { return el("li", {}, [el("b", { text: l.step + ": " }), l.detail || ""]); }))]));
+    return el("div", { cls: "ve-card", style: "padding:16px;margin-top:10px" }, kids);
+  }
+
   var STATUS = { queued: "Waiting for the worker", planning: "Planning", planned: "Planned", failed: "Failed" };
 
   function sceneRow(s, i, pictures, cover) {
@@ -107,6 +175,10 @@
       ]));
     }
     body.push(el("ul", { cls: "ve-log" }, r.log.map(function (l) { return el("li", {}, [el("b", { text: l.step + ": " }), l.detail || ""]); })));
+    if (r.versions && r.versions.length) {
+      body.push(el("h3", { text: "The video", style: "margin-top:14px" }));
+      r.versions.forEach(function (x) { body.push(drawVersion(x)); });
+    }
     var d = el("details", { cls: "ve-run vp-run" }, [
       el("summary", {}, [el("b", { text: r.label }), " ", el("span", { cls: cls, text: label }),
         el("div", { cls: "ve-meta", text: bits.join(" · ") })]),
@@ -118,6 +190,7 @@
 
   function draw() {
     drawTotals();
+    drawVideos();
     var box = document.getElementById("vp-runs");
     box.textContent = "";
     if (!data.runs.length) box.appendChild(el("p", { cls: "ve-sub", text: "Not run yet." }));
@@ -145,6 +218,13 @@
         msg.textContent = "Queued. The worker plans them one at a time; this page fills in as they finish (about 15 to 25 minutes in all).";
         data = j.page; draw();
       }).catch(function () { b.disabled = false; msg.textContent = "The server could not be reached. Try again."; });
+  });
+
+  document.getElementById("vp-build").addEventListener("click", function () {
+    var msg = document.getElementById("vp-msg");
+    if (!window.confirm("Make a video from every valid plan? Each costs about $0.40 to $1.60 and takes a few minutes; the worker makes them one at a time.")) return;
+    msg.textContent = "Queuing…";
+    post(BASE + "/api/plan-tests/build", {}, msg).then(function () { msg.textContent = "Queued. Videos appear under each plan as they finish."; });
   });
 
   draw();

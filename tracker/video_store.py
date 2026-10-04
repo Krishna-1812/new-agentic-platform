@@ -47,7 +47,7 @@ VERSION_FIELDS = ("plan", "files", "change_request", "status", "error", "shape",
                   "cost_usd", "timings", "mp4", "cover", "mp4_bytes", "finished_at")
 VERSION_JSON = ("plan", "files", "timings")
 VERSION_STATES = ("draft", "queued", "making", "ready", "failed")
-JOB_KINDS = ("plan", "render")
+JOB_KINDS = ("plan", "build", "change", "render")
 ASSET_KINDS = ("image", "logo", "screenshot", "crop", "text", "numbers", "site")
 JOB_STATES = ("queued", "running", "done", "failed")
 # A worker row's job log is cut to this many entries.

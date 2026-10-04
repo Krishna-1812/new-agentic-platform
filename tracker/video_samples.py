@@ -277,3 +277,109 @@ DRILLS = {"outside_drill": outside_drill, "hang_drill": hang_drill}
 # Settings the drills run with: the hang drill skips the check (which would
 # also hang) and has a short limit, so the drill is quick.
 DRILL_SETTINGS = {"outside_drill": {}, "hang_drill": {"skip_check": True, "render_timeout_s": 60}}
+
+
+# ── The scene library, every template in one plan (Phase 3) ──────────────────
+LIGHT_BRAND = {"background": "#F7F5F0", "text": "#16181D", "accent": "#2F5BEA", "heading_font": "Fraunces",
+               "body_font": "Inter"}
+DARK_BRAND = {"background": "#101820", "text": "#F2EFE8", "accent": "#F2B134", "heading_font": "Montserrat",
+              "body_font": "DM Sans"}
+LIBRARY_TABLE = "Month,Leads\nJan,120\nFeb,164\nMar,151\nApr,208\nMay,247\nJun,290\n"
+
+
+def library_assets():
+    """{id: asset} for the library plan: photos, a screenshot, a phone screen, people, logos."""
+    from tracker import video_briefs
+    from PIL import Image
+    pics = {}
+
+    def add(aid, kind, data, name):
+        im = Image.open(io.BytesIO(data))
+        pics[aid] = {"bytes": data, "mime": "image/png" if data[:4] == b"\x89PNG" else "image/jpeg",
+                     "width": im.width, "height": im.height, "kind": kind, "name": name}
+    add(1, "image", sample_image(), "Hills")
+    add(2, "screenshot", video_briefs.app_screen("Reports"), "Reports screen")
+    tall = Image.new("RGB", (390, 1800), (246, 247, 250))
+    from PIL import ImageDraw
+    d = ImageDraw.Draw(tall)
+    for k in range(12):
+        d.rounded_rectangle([20, 30 + k * 145, 370, 150 + k * 145], 18, fill=(255, 255, 255), outline=(220, 224, 232))
+        d.rectangle([40, 60 + k * 145, 40 + 120 + (k % 3) * 60, 76 + k * 145], fill=(47, 91, 234))
+    buf = io.BytesIO()
+    tall.save(buf, "PNG")
+    add(3, "screenshot", buf.getvalue(), "Phone screen")
+    add(4, "image", video_briefs.person(), "Priya Raman")
+    add(5, "image", video_briefs.person((60, 90, 160)), "Arjun Iyer")
+    add(6, "image", video_briefs.person((150, 70, 80)), "Mei Tan")
+    for k, word in enumerate(("Northwind", "Kestrel", "Ledgerly", "Brightdesk", "Acme", "Globex"), 7):
+        add(k, "logo", video_briefs.text_logo(word), word)
+    add(20, "logo", video_briefs.text_logo("Studio"), "Brand logo")
+    return pics
+
+
+def library_plan(length="short"):
+    """All 16 templates, with short words or with words at each template's limit."""
+    long = length == "long"
+
+    def sc(kind, seconds, **kw):
+        out = {"type": kind, "seconds": seconds, "purpose": "", "headline": "", "subline": "", "items": [],
+               "number": "", "attribution": "", "asset_ids": [],
+               "chart": {"asset_id": 0, "label_column": "", "value_column": "", "kind": "none"}, "motion": ""}
+        out.update(kw)
+        out["items"] = [{"label": a, "detail": b} for a, b in out["items"]]
+        return out
+    L = lambda short, longer: longer if long else short          # noqa: E731
+    scenes = [
+        sc("title", 3, headline=L("Books closed fast", "Close your books in five days, not twelve, every month"),
+           subline=L("Ledgerly for finance teams", "The month-end close tool built for finance teams who are tired of spreadsheets")),
+        sc("words", 3, headline=L("Month-end, without dread", "Month-end used to mean late nights, missed weekends and a lot of copy and paste"),
+           subline=L("", "Here is what changed for one finance team in a single quarter")),
+        sc("screenshot", 4, headline=L("Every report in one place", "Every report your board asks for, in one place"),
+           subline=L("", "Built from the ledger, updated as entries post"), asset_ids=[2]),
+        sc("image", 3, headline=L("Made in the hills", "Grown and packed by the people who live in these hills"),
+           subline=L("", "Every box says where it came from"), asset_ids=[1]),
+        sc("list", 4, headline=L("What you get", "What every plan includes from the very first day"),
+           items=[("Bank feeds", L("", "Every account, synced each morning")), ("Auto-matching", L("", "Most entries matched before you log in")),
+                  ("Close checklist", L("", "Every task with an owner and a due date"))] + ([("Audit trail", "Every change recorded, with who and when"),
+                                                                                           ("Board pack", "Reports ready the morning after close")] if long else [])),
+        sc("steps", 4, headline=L("How to start", "How to get started in less than one afternoon"),
+           items=[("Connect your bank", L("", "Read-only, in two minutes")), ("Import last year", L("", "From a spreadsheet or your old tool")),
+                  ("Invite your team", L("", "Everyone sees what is theirs"))] + ([("Run your first close", "With the checklist, end to end")] if long else [])),
+        sc("big_number", 3, headline=L("Leads", "Leads from paid search, January to June"), number="142%",
+           subline=L("more in June", "more leads in June than in January, at a lower cost per lead")),
+        sc("chart", 5, headline=L("Leads by month", "Leads by month, from January to June this year"),
+           chart={"asset_id": 30, "label_column": "Month", "value_column": "Leads", "kind": "bar"}),
+        sc("chart", 4, headline=L("The trend", "The same months, as a line"),
+           chart={"asset_id": 30, "label_column": "Month", "value_column": "Leads", "kind": "line"}),
+        sc("chart", 4, headline=L("Share by month", "How the six months add up"),
+           chart={"asset_id": 30, "label_column": "Month", "value_column": "Leads", "kind": "donut"}),
+        sc("comparison", 4, headline=L("Before and after", "What changed between last year and this year"),
+           items=[("Before", L("12 days to close", "Twelve days to close, with most of the team working late every night")),
+                  ("After", L("5 days to close", "Five days to close, with the checklist doing the chasing for everyone"))],
+           asset_ids=[1, 2] if long else []),
+        sc("quote", 4, headline=L("We finally get weekends back.",
+                                  "We used to dread month-end. With Ledgerly our close went from twelve days to five, and my team finally gets weekends back."),
+           attribution=L("Anita Shah, Kestrel Foods", "Anita Shah, Finance Director, Kestrel Foods"), asset_ids=[4] if long else []),
+        sc("timeline", 4, headline=L("Our year", "How the year went, quarter by quarter"),
+           items=[("Q1", L("Launch", "Launched in India with two pilot customers")), ("Q2", L("100 clients", "Reached one hundred paying clients")),
+                  ("Q3", L("New office", "Opened the Bengaluru office"))] + ([("Q4", "Partner programme goes live")] if long else [])),
+        sc("people", 4, headline=L("Your speakers", "The people you will hear from on the day"),
+           items=[("Priya Raman", L("CFO", "Chief Financial Officer, Ledgerly")), ("Arjun Iyer", L("Head of Product", "Head of Product, Ledgerly"))]
+           + ([("Mei Tan", "Finance Director, Kestrel Foods")] if long else []), asset_ids=[4, 5, 6] if long else [4, 5]),
+        sc("phone", 4, headline=L("On your phone too", "Approve entries from your phone, wherever you are"),
+           subline=L("", "The same checklist, in your pocket"), asset_ids=[3]),
+        sc("logo_wall", 3, headline=L("Trusted by", "Trusted by finance teams at these companies"),
+           asset_ids=[7, 8, 9, 10, 11, 12] if long else [7, 8, 9]),
+        sc("event_card", 4, headline=L("Budgeting for AI", "Webinar: Budgeting for AI in 2027, what finance teams need to know"),
+           items=[("When", L("12 Nov, 4 pm", "Thursday 12 November 2026, 4 pm IST")), ("Where", L("Online", "Online on Zoom, free"))]
+           + ([("Speaker", "Priya Raman, CFO of Ledgerly")] if long else []), asset_ids=[4] if long else []),
+        sc("end_card", 3, headline=L("Start free", "Start your free trial today"),
+           subline=L("ledgerly.example", "ledgerly.example/start, no card needed")),
+    ]
+    return {"idea": "Library test", "hook": "", "scenes": scenes, "cover_scene": 0,
+            "share_copy": {"linkedin": "", "x": "", "instagram": ""}, "notes": []}
+
+
+def library_tables():
+    from tracker import video_uploads
+    return {30: video_uploads.numbers(LIBRARY_TABLE)}

@@ -1,8 +1,9 @@
 # Video Studio: plan
 
 Working name: **Video Studio**.
-Status: **being built**. Phase 1 (the render engine) and Phase 2 (sources,
-brand and the plan) are built; progress and the live checks are in section 7.
+Status: **being built**. Phases 1 to 3 are built: the render engine; the
+sources, brand and plan; and building the video with Claude. Progress and
+the live checks are in section 7.
 
 Tell it what video you want: a launch, an explainer, a product demo, an ad, a
 hiring post, a set of results, or anything else. Give it what it should use: a
@@ -625,3 +626,74 @@ the 15 briefs and a person's review:
 
 **Done when:** all 15 show **Valid plan** and every one is reviewed as
 matching its brief.
+
+### Phase 3 is built
+
+| Part | Where |
+|---|---|
+| The scene library: 16 templates, each laid out for all 4 shapes, with type sized to fit its words | `tracker/video_scenes.py` |
+| Putting a plan together as one composition: tracks, wipes between scenes, brand colours and fonts, the cover moment | `tracker/video_build.py` |
+| Claude's review loop: `read_file`, `write_file`, `check`, `snapshot`, `done`, with its limits | `tracker/video_agent.py` |
+| Changing a plan in plain words, with the same checks | `video_plan.edit_plan` |
+| The "build" and "change" jobs; Approve, Make changes, Make another shape | `tracker/video_builder.py` |
+| Checking the whole library with the real engine | `scripts/check_video_scenes.py` |
+| Videos, scoring and changes on the staff plan tests page | `/strategic-agents/video-studio/plans` |
+
+**How a video is made:**
+
+1. The approved plan is laid out from the templates.
+2. `hyperframes check` samples every scene once it has settled.
+3. Claude is shown a frame of every scene and the findings. It fixes only
+   what is wrong: words cut off or crowded, a weak first three seconds, or a
+   "custom" scene that needs its own motion. It may not change the words or
+   facts the person approved.
+   - Limits: 30 tool calls, 2 fix rounds and 15 minutes, within the monthly
+     budget.
+4. The program runs the check once more. Only a video that passes is
+   rendered.
+
+Without Claude, the templates' version is used if it passes the check.
+
+**Changes:**
+- **Words only** (same scenes, timings and pictures): the video is laid out
+  again and checked without Claude's review.
+- **Anything else**: the video is built in full.
+- **Another shape**: the same plan is laid out again for the new shape, not
+  cropped.
+
+**What has been checked here:**
+
+- **Real `hyperframes check`.** The 16 templates pass in all 4 shapes, with
+  short and long words, on a light brand and a dark one. That is 16
+  compositions of 18 scenes each, and the frames were looked at.
+  - Only harmless warnings remain: nested sections, a dense track, and
+    pictures reused in the test file.
+  - Run it with `python scripts/check_video_scenes.py`.
+- **The whole pipeline, live with the real engine.** Three briefs went from
+  plan to approval, build, check, render and cover:
+  - square 25 s (a chart from uploaded numbers);
+  - landscape 30 s (uploaded screenshots);
+  - vertical 24 s (a script used exactly).
+  - Here the plan came from the stand-in Claude and there was no review,
+    because this container has no Claude key.
+- **A bug found and fixed.** The check's JSON report can be larger than the
+  output kept in memory. Read from that cut-off tail, a failing check could
+  read as passing. The report is now written to a file and read whole.
+
+**Finishing Phase 3 on Railway.** This needs Phase 2's 15 plans first:
+
+1. On `/strategic-agents/video-studio/plans`, after the 15 plans are valid,
+   click **Make the videos of the valid plans**. Each video costs about
+   $0.40 to $1.60 and takes a few minutes. The worker makes them one at a
+   time, so expect an hour or two for all 15.
+2. Watch each video and tick the five boxes: does what the brief asked;
+   readable, on brand, nothing cut off; strong first 3 seconds; numbers
+   correct; good enough to post as it is.
+3. Try **Make changes** and **Make another shape** on two or three of them.
+
+**Done when:**
+- at least 12 of the 15 videos are good enough to post;
+- at least one good video exists for each starting point tested.
+
+The page shows the average cost and minutes per video; those replace the
+estimates in section 3.7.

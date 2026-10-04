@@ -31,8 +31,10 @@
     <h2 class="ve-h2" id="vp-sum-h">Results</h2>
     <p class="ve-sub" id="vp-claude">&nbsp;</p>
     <div class="ve-grid" id="vp-totals"></div>
+    <div class="ve-grid" id="vp-videos" style="margin-top:12px"></div>
     <div class="ve-actions" style="margin-top:16px">
       <button type="button" class="sa-btn sa-btn--dark" id="vp-run">Run the 15 plan tests</button>
+      <button type="button" class="sa-btn sa-btn--line" id="vp-build">Make the videos of the valid plans</button>
       <a class="sa-btn sa-btn--line" href="/strategic-agents/video-studio/api/plan-tests/export">Download the results (JSON)</a>
     </div>
     <p class="ve-msg" id="vp-msg" role="status" aria-live="polite"></p>
@@ -45,7 +47,7 @@
 </main>
 
 <script type="application/json" id="vp-data">{{ data|tojson }}</script>
-<script src="{{ url_for('static', filename='js/video-plans.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/video-plans.js') }}?v=2"></script>
 {{ topbar_script() }}
 </body>
 </html>
