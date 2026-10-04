@@ -355,7 +355,7 @@
         var at = Math.min(phases.length - 1, Math.floor(s / 6));
         phases.forEach(function (li, i) { li.classList.toggle("is-on", i === at); li.classList.toggle("is-done", i < at); });
         if (s > 12 && ["ok", "idle", "behind"].indexOf((status || {}).worker) < 0) {
-          note.textContent = "The checker is not running yet, so the page cannot be read now. The watch is saved and will be read as soon as the worker service starts (setup: docs/page-watch-plan.md, section 6).";
+          note.textContent = "The page can't be read right now. Your watch is saved and will be read automatically in a few minutes.";
           note.hidden = false;
         }
         if (Math.round(s) % 2 !== 0) return;

@@ -362,3 +362,15 @@ def test_the_directory_and_the_palette_list_page_watch(client):
     assert any(i["u"] == "/strategic-agents/page-watch" for i in items)
     keys = [i["k"] for i in items]
     assert len(keys) == len(set(keys))                                            # one letter each
+
+
+def test_the_main_page_shows_no_internals(client, store):
+    """No worker command, model name, budget meter or health link on the page
+    people use; the badge at the top still says when the checker is down."""
+    html = client.get(BASE).data
+    for internal in (b"What it runs on", b"tracker.watch_worker", b"pw-meter", b"page-watch/health",
+                     b"claude-sonnet", b"claude-opus"):
+        assert internal not in html, internal
+    assert b"Checker not running" in html or b"Watching" in html
+    js = open(os.path.join(os.path.dirname(__file__), "..", "static", "js", "page-watch.js")).read()
+    assert "docs/page-watch-plan.md" not in js and "worker service" not in js

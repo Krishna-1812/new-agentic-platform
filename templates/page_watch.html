@@ -171,41 +171,6 @@
       </div>
     </div>
   </section>
-
-  {# ── What it runs on ─────────────────────────────────────────────────── #}
-  <section class="pw-how" aria-labelledby="pw-runs-t">
-    <div class="sa-sec-head">
-      <span class="sa-idx">03</span>
-      <div>
-        <span class="sa-lbl" data-sa-decode>What it runs on</span>
-        <h2 class="sa-h2" id="pw-runs-t">The checker and <span class="sa-mk sa-mk--sm">the judge.</span></h2>
-      </div>
-    </div>
-    <div class="pw-runs">
-      {%- set q = status.queue or {} %}
-      <div class="pw-run{{ '' if w in ('ok', 'idle') else ' pw-run--warn' }}" id="pw-run-worker">
-        <b>The checker</b>
-        <span>{% if w == 'ok' %}Running. {{ q.running or 0 }} checking now, {{ q.due or 0 }} waiting.
-          {% elif w == 'idle' %}Ready. Nothing is due.
-          {% elif w == 'behind' %}Running, but {{ q.late or 0 }} checks are more than 15 minutes late. Give it more memory or threads.
-          {% elif w == 'no_browser' %}Running without a browser, so pages are read as text only. Set RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1 on the worker service.
-          {% else %}Not running. Watches are saved and will be read as soon as the worker service starts.{% endif %}</span>
-        <code>python -m tracker.watch_worker</code>
-      </div>
-      {%- set cl = status.claude %}
-      <div class="pw-run{{ '' if cl.state == 'on' else ' pw-run--warn' }}">
-        <b>The judge</b>
-        <span>{{ cl.detail }}</span>
-        <div class="pw-meter" aria-label="Claude spending this month"><i style="width: {{ [100, (100 * cl.spent_usd / (cl.cap_usd or 1))|round(0, 'ceil')]|min }}%"></i></div>
-        <code>${{ '%.2f' % cl.spent_usd }} of ${{ '%.2f' % cl.cap_usd }} this month &middot; {{ cl.model }}</code>
-      </div>
-      <div class="pw-run">
-        <b>Health</b>
-        <span>The worker's heartbeat and the queue, as JSON, for when something looks stuck.</span>
-        <code><a href="/strategic-agents/page-watch/health">/strategic-agents/page-watch/health</a></code>
-      </div>
-    </div>
-  </section>
 </main>
 
 <footer class="sa-foot">
@@ -222,7 +187,7 @@
   </div>
 </footer>
 
-<script type="application/json" id="pw-data">{{ {"board": board, "status": status, "days": days, "dayNames": day_names}|tojson }}</script>
+<script type="application/json" id="pw-data">{{ {"board": board, "status": {"worker": status.worker}, "days": days, "dayNames": day_names}|tojson }}</script>
 {{ topbar_script() }}
 <script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
 <script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=1"></script>
