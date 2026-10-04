@@ -266,15 +266,6 @@
 .pw-how-i h3 { margin: var(--sp-2) 0 6px; font-family: var(--font-display); font-variation-settings: var(--display-axes); font-weight: 600; font-size: 21px; color: var(--ink-paper); }
 .pw-how-i p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
 
-.pw-runs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--sp-4); margin-top: var(--sp-6); }
-.pw-run { background: var(--s1); border-radius: var(--r-lg); padding: var(--sp-5); box-shadow: var(--shadow-block); display: grid; gap: 6px; }
-.pw-run b { font-size: 15px; }
-.pw-run span { font-size: 14px; color: var(--tx2); line-height: 1.5; }
-.pw-run code { font-size: 12px; color: var(--tx3); }
-.pw-meter { height: 8px; border-radius: 4px; background: var(--s2); overflow: hidden; margin-top: 6px; }
-.pw-meter i { display: block; height: 100%; background: var(--ink); border-radius: 4px; }
-.pw-run--warn { box-shadow: inset 0 0 0 2px var(--cream), var(--shadow-block); }
-
 /* ── A watch's own page ───────────────────────────────────────────────── */
 .pw-watch-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 420px); gap: var(--sp-6); align-items: start; }
 .pw-watch-head .sa-h2 { max-width: none; overflow-wrap: anywhere; }
