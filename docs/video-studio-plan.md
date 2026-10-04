@@ -1,8 +1,8 @@
 # Video Studio: plan
 
 Working name: **Video Studio**.
-Status: **being built**. Phase 1 (the render engine) is built; progress and
-the live checks are in section 7.
+Status: **being built**. Phase 1 (the render engine) and Phase 2 (sources,
+brand and the plan) are built; progress and the live checks are in section 7.
 
 Tell it what video you want: a launch, an explainer, a product demo, an ad, a
 hiring post, a set of results, or anything else. Give it what it should use: a
@@ -579,3 +579,49 @@ for `node`. Railpack installs it from the `packages` entry in
 `railpack.json`. Without a browser, check that
 `RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1` is still set on the worker, as Page
 Watch needs. `VIDEO_STUDIO=off` on the worker stops it taking render jobs.
+
+### Phase 2 is built
+
+| Part | Where |
+|---|---|
+| Starting points (all 12) and the choices check | `tracker/video_starts.py` |
+| Uploads: images checked and re-encoded (hidden data removed), text, numbers from CSV or a pasted table | `tracker/video_uploads.py` |
+| Reading a website: up to 5 pages chosen by the brief, desktop and phone screenshots, crops, text, colours from the CSS, fonts, the logo | `tracker/video_site.py` (on Page Watch's reader, `watch_capture`) |
+| 21 bundled font families, and mapping any brand font onto them | `tracker/video_fonts.py`, `tracker/video_kit/fonts.json`, `scripts/fetch_video_fonts.py` |
+| The brand: by hand, then saved for the client, then the website, then a default; readable colours; saved per client | `tracker/video_brand.py` |
+| The plan call: structured output, cached system prompt, the checks, one retry, cost record and monthly cap | `tracker/video_plan.py` |
+| The "plan" job on the worker, with a live step log | `tracker/video_planner.py` |
+| The 15 test briefs | `tracker/video_briefs.py` |
+| The staff plan tests page | `/strategic-agents/video-studio/plans` |
+
+New tables: `video_assets`, `video_brands`, `video_ai_calls`.
+
+**What has been checked here.** The cloud container has no Claude key, so
+plans were tested with a stand-in Claude:
+
+- **Stand-in Claude.** It reads the real request and follows the rules, or
+  breaks a chosen rule on purpose. All 15 briefs run through the real plan
+  job, and every check is tested.
+- **Real SDK.** One test sends the request through the installed Anthropic
+  SDK to a local server, to prove it serializes.
+- **Website reading.** This ran live on python.org and djangoproject.com,
+  which both read cleanly. On g2.com ("forbidden") and indeed.com (a
+  security check), the reader correctly reports that robots are blocked.
+
+**Finishing Phase 2 on Railway.** The finish line needs the real Claude on
+the 15 briefs and a person's review:
+
+1. Check that the worker service has `ANTHROPIC_API_KEY`. Page Watch already
+   uses it.
+2. Optional: set `VIDEO_CLAUDE_MONTHLY_USD` on the worker. Without it, the
+   cap is $10 a month.
+3. Open `/strategic-agents/video-studio/plans` and click **Run the 15 plan
+   tests**. They cost about $1 to $3 and take 15 to 25 minutes, because the
+   worker plans one at a time.
+4. Open each plan and click **Yes, it matches** or **No, it misses** (with a
+   note).
+5. Click **Download the results (JSON)**. That file is kept as the test
+   fixture of real plans.
+
+**Done when:** all 15 show **Valid plan** and every one is reviewed as
+matching its brief.

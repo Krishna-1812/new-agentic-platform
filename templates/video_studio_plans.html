@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    VIDEO STUDIO · PLAN TESTS (/strategic-agents/video-studio/plans), staff only
+
+    Phase 2 of docs/video-studio-plan.md: the 15 test briefs
+    (tracker/video_briefs.py) planned by the worker with the real Claude.
+    Each plan shows its scenes, the program's checks and the cost, and a
+    person marks whether it does what the brief asked. Drawn by
+    static/js/video-plans.js from the JSON below.
+-#}
+<html lang="en">
+<head>
+{{ head("Video Studio plan tests", ["strategic-agents.css?v=2", "video-studio.css?v=1"]) }}
+</head>
+<body class="sa">
+
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Video Studio", none), ("Plan tests", none)]) }}
+
+<main class="sa-shell ve" id="vp">
+  <section class="sa-hero">
+    <div class="sa-hero-top"><span class="sa-lbl">Video Studio &middot; staff only</span></div>
+    <h1 class="sa-h1"><span class="sa-ln"><span>Fifteen briefs,</span></span>
+      <span class="sa-ln"><span><em class="sa-it">planned and checked.</em></span></span></h1>
+    <p class="ve-sub">Each test brief is a different kind of video with different sources. The worker reads the
+      sources, Claude writes the plan, and the program checks it: the seconds add up, every picture exists, the
+      words fit, and nothing is invented. Then you judge whether each plan does what its brief asked.</p>
+  </section>
+
+  <section class="ve-card" aria-labelledby="vp-sum-h">
+    <h2 class="ve-h2" id="vp-sum-h">Results</h2>
+    <p class="ve-sub" id="vp-claude">&nbsp;</p>
+    <div class="ve-grid" id="vp-totals"></div>
+    <div class="ve-actions" style="margin-top:16px">
+      <button type="button" class="sa-btn sa-btn--dark" id="vp-run">Run the 15 plan tests</button>
+      <a class="sa-btn sa-btn--line" href="/strategic-agents/video-studio/api/plan-tests/export">Download the results (JSON)</a>
+    </div>
+    <p class="ve-msg" id="vp-msg" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="ve-card" aria-labelledby="vp-runs-h">
+    <h2 class="ve-h2" id="vp-runs-h">The plans</h2>
+    <div class="ve-runs" id="vp-runs"></div>
+  </section>
+</main>
+
+<script type="application/json" id="vp-data">{{ data|tojson }}</script>
+<script src="{{ url_for('static', filename='js/video-plans.js') }}?v=1"></script>
+{{ topbar_script() }}
+</body>
+</html>

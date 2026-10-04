@@ -178,7 +178,8 @@ def test_the_sandbox_hides_secrets_points_the_browser_at_the_trap_and_cleans_up(
     fake_browser.write_text("")
     with video_sandbox.Sandbox(7, browser=str(fake_browser), hyperframes="/bin/true") as box:
         assert os.path.exists(os.path.join(box.project, "kit", "gsap.min.js"))
-        assert os.path.exists(os.path.join(box.project, "kit", "fonts", "dmsans.woff2"))
+        assert os.path.exists(os.path.join(box.project, "kit", "fonts.json"))
+        assert len(os.listdir(os.path.join(box.project, "kit", "fonts"))) >= 40
         box.write({"index.html": b"<html></html>", "media/a.png": b"x"})
         assert open(os.path.join(box.project, "media", "a.png"), "rb").read() == b"x"
         env = box.env()
@@ -445,8 +446,10 @@ def test_each_test_composition_is_complete_and_loads_only_its_own_files(name):
     assert 0 <= s["cover_at"] < s["duration_s"]
     expected = sorted(video_samples.OUTSIDE_HOSTS) if name == "outside_drill" else []
     assert video_sandbox.outside_addresses(files) == expected
-    for ref in ("kit/fonts/fraunces-600.woff2", "kit/fonts/dmsans.woff2"):
-        assert ref in html and os.path.exists(os.path.join(video_config.kit_dir(), ref[4:]))
+    import re
+    refs = re.findall(r'url\("kit/(fonts/[^"]+)"\)', html)
+    assert refs and all(os.path.exists(os.path.join(video_config.kit_dir(), r)) for r in refs)
+    assert 'font-family: "Fraunces"' in html and 'font-family: "DM Sans"' in html
 
 
 def test_the_two_test_videos_match_the_plan():
@@ -532,8 +535,11 @@ def test_the_build_adds_node_22_and_keeps_ffmpeg():
 def test_the_kit_holds_gsap_and_the_fonts_with_their_licences():
     kit = video_config.kit_dir()
     assert open(os.path.join(kit, "gsap.min.js")).read(200).find("GSAP 3.") != -1
-    for f in ("fraunces-600.woff2", "fraunces-600-italic.woff2", "dmsans.woff2"):
-        assert open(os.path.join(kit, "fonts", f), "rb").read(4) == b"wOF2"
+    manifest = json.load(open(os.path.join(kit, "fonts.json")))
+    assert len(manifest["families"]) == 21 and manifest["licence"] == "SIL Open Font License 1.1"
+    for fam in manifest["families"]:
+        for face in fam["faces"]:
+            assert open(os.path.join(kit, face["file"]), "rb").read(4) == b"wOF2"
     text = open(os.path.join(kit, "LICENSES.md")).read()
     assert "Open Font License" in text and "No Charge" in text
 

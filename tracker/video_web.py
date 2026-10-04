@@ -61,3 +61,146 @@ def engine_page(email, limit=12):
         engine = None
     return {"engine": engine, "queue": video_store.queue_stats(), "runs": runs,
             "busy": any(r["status"] in ("queued", "making") for r in runs)}
+
+
+# ── New projects (Phase 2: used by the plan tests; Phase 4: by the start page) ──
+MAX_TEXTS = 6
+MAX_TABLES = 3
+
+
+def new_project(email, *, brief, kind=None, shape=None, seconds=None, style=None, words="write", script="",
+                website="", brand=None, client="", texts=(), tables=(), images=(), logo=None, title="",
+                project_kind=None):
+    """Check a request, store it with its sources, and queue its plan.
+
+    texts:  [(name, text)]; tables: [(name, csv or pasted text)];
+    images: [(name, bytes)]; logo: (name, bytes) or None.
+    Returns (project id, version id). Raises video_starts.Bad or
+    video_uploads.Bad with a sentence for the person.
+    """
+    from tracker import video_brand, video_starts, video_uploads, watch_safety
+    brief = video_starts.brief(brief)
+    choices = video_starts.choices(kind, shape=shape, seconds=seconds, style=style, words=words, script=script)
+    if website:
+        try:
+            choices["website"] = watch_safety.normalise(website)
+        except watch_safety.BadURL as exc:
+            raise video_starts.Bad(str(exc), "website")
+    else:
+        choices["website"] = ""
+    clean_brand = {}
+    for k in ("background", "text", "accent"):
+        if (brand or {}).get(k):
+            c = video_brand.hex_colour(brand[k])
+            if not c:
+                raise video_starts.Bad("%s is not a colour like #1A2B3C." % brand[k], "brand")
+            clean_brand[k] = c
+    for k in ("heading_font", "body_font"):
+        if (brand or {}).get(k):
+            clean_brand[k] = " ".join(str(brand[k]).split())[:80]
+    choices["brand"] = clean_brand
+    if len(texts) > MAX_TEXTS or len(tables) > MAX_TABLES or len(images) > video_uploads.MAX_IMAGES:
+        raise video_starts.Bad("Too many sources: at most %d texts, %d tables and %d images."
+                               % (MAX_TEXTS, MAX_TABLES, video_uploads.MAX_IMAGES), "sources")
+    # Check every source before storing anything.
+    ready_texts = [(n, video_uploads.text(t, "text")) for n, t in texts]
+    ready_tables = [(n, video_uploads.numbers(t)) for n, t in tables]
+    ready_images = [video_uploads.image(b, n) for n, b in images]
+    ready_logo = video_uploads.image(logo[1], logo[0]) if logo else None
+    pid = video_store.create_project(email, client=(client or "").strip()[:120],
+                                     title=(title or brief)[:120], brief=brief,
+                                     kind=project_kind or choices["kind"], choices=choices)
+    for n, t in ready_texts:
+        video_store.add_asset(pid, "text", name=n, data={"text": t})
+    for n, t in ready_tables:
+        video_store.add_asset(pid, "numbers", name=n, data=t)
+    for im in ready_images:
+        video_store.add_asset(pid, "image", name=im["name"], mime=im["mime"], width=im["width"],
+                              height=im["height"], data={"from": "upload"}, blob=im["bytes"])
+    if ready_logo:
+        video_store.add_asset(pid, "logo", name=ready_logo["name"], mime=ready_logo["mime"],
+                              width=ready_logo["width"], height=ready_logo["height"], data={"from": "upload"},
+                              blob=ready_logo["bytes"])
+    vid = video_store.create_version(pid, status="queued", shape=choices["shape"], duration_s=choices["seconds"])
+    video_store.enqueue(vid, kind="plan")
+    return pid, vid
+
+
+# ── The plan tests (Phase 2's finish line) ────────────────────────────────────
+REVIEWS = ("matches", "misses")
+
+
+def _sources_summary(assets):
+    count = {}
+    for a in assets:
+        k = a["kind"]
+        if k in ("screenshot", "crop", "site") or (a.get("data") or {}).get("from") == "website":
+            k = "website"
+        count[k] = count.get(k, 0) + 1
+    return count
+
+
+def plan_view(version, project, email):
+    plan = version.get("plan") or {}
+    jobs = video_store.jobs_for_version(version["id"], email)
+    job = jobs[0] if jobs else {}
+    assets = video_store.list_assets(project["id"], email)
+    pictures = {a["id"]: {"kind": a["kind"], "name": a["name"]} for a in assets
+                if a["kind"] in ("image", "logo", "screenshot", "crop")}
+    return {"version": version["id"], "project": project["id"], "label": project.get("title"),
+            "brief": project.get("brief"), "choices": {k: v for k, v in (project.get("choices") or {}).items()
+                                                       if k != "brand"},
+            "status": version["status"], "error": version.get("error") or "",
+            "cost_usd": version.get("cost_usd") or 0, "sources": _sources_summary(assets), "pictures": pictures,
+            "idea": plan.get("idea"), "audience": plan.get("audience"), "hook": plan.get("hook"),
+            "scenes": plan.get("scenes") or [], "ending": plan.get("ending"),
+            "cover_scene": plan.get("cover_scene"), "share_copy": plan.get("share_copy") or {},
+            "notes": plan.get("notes") or [], "problems": plan.get("problems") or [],
+            "attempts": plan.get("attempts"), "seconds_taken": plan.get("seconds_taken"),
+            "brand": plan.get("brand"), "review": plan.get("review"), "model": plan.get("model"),
+            "log": [{"step": e.get("step"), "detail": e.get("detail")} for e in job.get("log") or []]}
+
+
+def plan_tests_page(email):
+    """The newest run of each test brief, in the briefs' order, with totals."""
+    from tracker import video_briefs, video_plan
+    order = {b["label"]: i for i, b in enumerate(video_briefs.briefs())}
+    newest = {}
+    for p in video_store.list_projects(email, limit=200, kind=video_briefs.PLAN_TEST_KIND):
+        if p.get("title") in order and p["title"] not in newest:
+            newest[p["title"]] = p
+    runs = []
+    for label, p in sorted(newest.items(), key=lambda kv: order[kv[0]]):
+        versions = video_store.list_versions(p["id"], email)
+        if versions:
+            runs.append(plan_view(versions[0], p, email))
+    done = [r for r in runs if r["status"] in ("planned", "failed")]
+    return {"runs": runs, "claude": video_plan.status(),
+            "totals": {"briefs": len(video_briefs.briefs()), "run": len(runs), "done": len(done),
+                       "valid": sum(r["status"] == "planned" and not r["problems"] for r in runs),
+                       "with_problems": sum(r["status"] == "planned" and bool(r["problems"]) for r in runs),
+                       "failed": sum(r["status"] == "failed" for r in runs),
+                       "matches": sum((r["review"] or {}).get("verdict") == "matches" for r in runs),
+                       "cost_usd": round(sum(r["cost_usd"] for r in runs), 3)},
+            "busy": any(r["status"] in ("queued", "planning") for r in runs)}
+
+
+def review_plan(email, version_id, verdict, note=""):
+    """A person's judgement of a test plan: does it do what the brief asked?"""
+    if verdict not in REVIEWS:
+        raise ValueError("Choose matches or misses.")
+    v = video_store.get_version(version_id, email)
+    if not v or not v.get("plan"):
+        return False
+    plan = dict(v["plan"], review={"verdict": verdict, "note": " ".join(str(note or "").split())[:500],
+                                   "by": email})
+    return video_store.update_version(version_id, plan=plan)
+
+
+def export_plan_tests(email):
+    """Every test brief with its sources and plan, for keeping as test fixtures."""
+    out = []
+    for r in plan_tests_page(email)["runs"]:
+        out.append({k: r[k] for k in ("label", "brief", "choices", "sources", "status", "idea", "hook", "scenes",
+                                      "share_copy", "notes", "problems", "attempts", "cost_usd", "review")})
+    return out

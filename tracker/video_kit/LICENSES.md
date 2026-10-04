@@ -6,7 +6,8 @@ anything from the internet (the render browser has no network).
 | File | What | Licence |
 |---|---|---|
 | `gsap.min.js` | GSAP 3.14.2, the animation library HyperFrames compositions use | GreenSock Standard "No Charge" licence: free, including commercial use (gsap.com/standard-license) |
-| `fonts/fraunces-600.woff2`, `fonts/fraunces-600-italic.woff2` | Fraunces, weight 600 | SIL Open Font License 1.1 |
-| `fonts/dmsans.woff2` | DM Sans, weights 400 to 700 | SIL Open Font License 1.1 |
+| `fonts/*.woff2`, listed in `fonts.json` | 21 font families from Google Fonts, latin and latin-ext: Inter, Roboto, Open Sans, Lato, Montserrat, Poppins, Raleway, Nunito, Work Sans, DM Sans, Manrope, Plus Jakarta Sans, Source Sans 3, IBM Plex Sans, Space Grotesk, Playfair Display, Merriweather, Lora, Fraunces, DM Serif Display, JetBrains Mono | SIL Open Font License 1.1 |
 
-Phase 2 adds the rest of the bundled font set that brand fonts are mapped to.
+The fonts are fetched by `scripts/fetch_video_fonts.py`, which also writes
+`fonts.json`. A brand font that is not in the set is mapped to the nearest
+one in it (`tracker/video_fonts.py`), and the plan says so.

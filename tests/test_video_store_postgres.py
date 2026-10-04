@@ -85,3 +85,26 @@ def test_the_log_keeps_its_newest_lines(email):
         video_store.add_log(jid, "s", str(i))
     log = video_store.get_job(jid)["log"]
     assert len(log) == video_store.MAX_LOG and log[0]["detail"] == "3" and log[-1]["detail"] == str(video_store.MAX_LOG + 2)
+
+
+def test_assets_brands_and_claude_calls_round_trip(email):
+    pid = video_store.create_project(email, client="Acme")
+    a = video_store.add_asset(pid, "image", name="Photo", mime="image/jpeg", width=10, height=8,
+                              data={"from": "upload"}, blob=b"\xff\xd8bytes")
+    t = video_store.add_asset(pid, "numbers", name="Leads", data={"columns": ["Month", "Leads"], "rows": [["Jan", "1"]]})
+    assert [x["kind"] for x in video_store.list_assets(pid, email)] == ["image", "numbers"]
+    assert "bytes" not in video_store.list_assets(pid, email)[0]
+    assert video_store.get_asset(a, email, blob=True)["bytes"] == b"\xff\xd8bytes"
+    assert video_store.get_asset(a, "other@markifydigital.com") is None
+    assert [x["id"] for x in video_store.list_assets(pid, kinds=("numbers",))] == [t]
+    assert video_store.delete_asset(t) and video_store.delete_assets(pid, ("image",)) == 1
+    assert video_store.list_assets(pid) == []
+    assert video_store.save_brand(email, "Acme", {"accent": "#ff0000"}, b"PNGLOGO")
+    assert video_store.save_brand(email, "acme", {"accent": "#00ff00"})              # logo kept
+    b = video_store.get_brand(email, " ACME ")
+    assert b["brand"] == {"accent": "#00ff00"} and b["logo"] == b"PNGLOGO"
+    assert video_store.get_brand("other@markifydigital.com", "acme") is None
+    since = datetime.now(timezone.utc) - timedelta(seconds=5)
+    video_store.add_ai_call("plan", email=email, project_id=pid, version_id=None, model="m", cost_usd=0.25,
+                            input_tokens=10, output_tokens=5)
+    assert video_store.ai_spend(since)["cost_usd"] >= 0.25
