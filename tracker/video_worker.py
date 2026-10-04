@@ -33,10 +33,13 @@ ENGINE_META = "video_engine"
 
 
 def run_any(job, stop=None):
-    """Run a job by its kind: "plan" (read the sources, write the plan) or "render"."""
+    """Run a job by its kind: "plan", "build", "change" or "render"."""
     if job.get("kind") == "plan":
         from tracker import video_planner
         return video_planner.run_job(job, stop=stop)
+    if job.get("kind") in ("build", "change"):
+        from tracker import video_builder
+        return video_builder.run_job(job, stop=stop)
     return video_render.run_job(job, stop=stop)
 
 

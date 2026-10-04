@@ -18005,6 +18005,44 @@ def video_studio_asset(asset_id):
     return resp
 
 
+# Phase 3: making the videos. Approve a plan (build and render), make
+# changes in plain words, make another shape, and score a finished video.
+@app.route(VS_BASE + "/api/plan-tests/build", methods=["POST"])
+@position2_required
+def video_studio_build_tests():
+    from tracker import video_web
+    if _pw_body() is None:
+        return jsonify(ok=False, error="Send JSON."), 400
+    n = video_web.build_all_tests(_pw_email())
+    return jsonify(ok=True, queued=n, page=video_web.plan_tests_page(_pw_email()))
+
+
+@app.route(VS_BASE + "/api/versions/<int:version_id>/<action>", methods=["POST"])
+@position2_required
+def video_studio_version_action(version_id, action):
+    from tracker import video_builder, video_web
+    body = _pw_body()
+    if body is None:
+        return jsonify(ok=False, error="Send JSON."), 400
+    email = _pw_email()
+    try:
+        if action == "approve":
+            out = video_builder.approve(email, version_id)
+        elif action == "change":
+            out = video_builder.make_changes(email, version_id, body.get("request"))
+        elif action == "shape":
+            out = video_builder.another_shape(email, version_id, body.get("shape"))
+        elif action == "score":
+            out = video_web.score_video(email, version_id, body.get("scores"), body.get("note", "")) or None
+        else:
+            abort(404)
+    except video_builder.Refused as exc:
+        return jsonify(ok=False, error=str(exc)), 400
+    if not out:
+        abort(404)
+    return jsonify(ok=True, page=video_web.plan_tests_page(email))
+
+
 # ── Account picker moved to templates/accounts.html ─────────────────────────────
 _ACCOUNTS_HTML_UNUSED = """
 <html lang="en">

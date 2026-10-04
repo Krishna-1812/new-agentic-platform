@@ -173,16 +173,21 @@ def plan_tests_page(email):
     for label, p in sorted(newest.items(), key=lambda kv: order[kv[0]]):
         versions = video_store.list_versions(p["id"], email)
         if versions:
-            runs.append(plan_view(versions[0], p, email))
-    done = [r for r in runs if r["status"] in ("planned", "failed")]
-    return {"runs": runs, "claude": video_plan.status(),
+            plan_version = next((v for v in reversed(versions) if v["number"] == 1), versions[-1])
+            view = plan_view(plan_version, p, email)
+            view["versions"] = version_views(p["id"], email) if len(versions) > 1 or \
+                plan_version["status"] not in ("queued", "planning", "planned", "failed") else []
+            runs.append(view)
+    done = [r for r in runs if r["status"] not in ("queued", "planning")]
+    making = any(x["status"] not in ("ready", "failed", "planned") for r in runs for x in r["versions"])
+    return {"runs": runs, "claude": video_plan.status(), "videos": video_totals(runs),
             "totals": {"briefs": len(video_briefs.briefs()), "run": len(runs), "done": len(done),
-                       "valid": sum(r["status"] == "planned" and not r["problems"] for r in runs),
-                       "with_problems": sum(r["status"] == "planned" and bool(r["problems"]) for r in runs),
+                       "valid": sum(r["status"] != "failed" and bool(r["scenes"]) and not r["problems"] for r in runs),
+                       "with_problems": sum(bool(r["scenes"]) and bool(r["problems"]) for r in runs),
                        "failed": sum(r["status"] == "failed" for r in runs),
                        "matches": sum((r["review"] or {}).get("verdict") == "matches" for r in runs),
                        "cost_usd": round(sum(r["cost_usd"] for r in runs), 3)},
-            "busy": any(r["status"] in ("queued", "planning") for r in runs)}
+            "busy": making or any(r["status"] in ("queued", "planning") for r in runs)}
 
 
 def review_plan(email, version_id, verdict, note=""):
@@ -204,3 +209,59 @@ def export_plan_tests(email):
         out.append({k: r[k] for k in ("label", "brief", "choices", "sources", "status", "idea", "hook", "scenes",
                                       "share_copy", "notes", "problems", "attempts", "cost_usd", "review")})
     return out
+
+
+# ── Videos from the test plans (Phase 3's finish line) ────────────────────────
+SCORE_KEYS = ("does_the_brief", "readable_on_brand", "strong_start", "numbers_right", "good_to_post")
+
+
+def version_views(project_id, email):
+    out = []
+    for v in video_store.list_versions(project_id, email):
+        plan = v.get("plan") or {}
+        jobs = video_store.jobs_for_version(v["id"], email)
+        out.append({"id": v["id"], "number": v["number"], "status": v["status"], "error": v.get("error") or "",
+                    "shape": v["shape"], "seconds": v.get("duration_s"), "change": v.get("change_request") or "",
+                    "mb": round((v.get("mp4_bytes") or 0) / 1e6, 1), "has_cover": v.get("has_cover"),
+                    "cost_usd": round(float(v.get("cost_usd") or 0), 4), "timings": v.get("timings") or {},
+                    "build": plan.get("build"), "score": plan.get("score"),
+                    "log": [{"step": e.get("step"), "detail": e.get("detail")}
+                            for j in reversed(jobs) for e in (j.get("log") or [])][-40:]})
+    return out
+
+
+def build_all_tests(email):
+    """Queue the video of every test plan that is valid and not yet made. Returns how many."""
+    from tracker import video_builder
+    n = 0
+    for r in plan_tests_page(email)["runs"]:
+        if r["status"] == "planned" and not r["problems"]:
+            try:
+                video_builder.approve(email, r["version"])
+                n += 1
+            except video_builder.Refused:
+                continue
+    return n
+
+
+def score_video(email, version_id, scores, note=""):
+    """A person's score of a finished video, on the Phase 3 questions."""
+    v = video_store.get_version(version_id, email)
+    if not v or v["status"] != "ready":
+        return False
+    clean = {k: bool((scores or {}).get(k)) for k in SCORE_KEYS}
+    plan = dict(v.get("plan") or {}, score=dict(clean, note=" ".join(str(note or "").split())[:500], by=email))
+    return video_store.update_version(version_id, plan=plan)
+
+
+def video_totals(runs):
+    ready = [x for r in runs for x in r.get("versions", []) if x["status"] == "ready"]
+    good = [x for x in ready if (x.get("score") or {}).get("good_to_post")]
+    kinds = {r["choices"].get("kind") for r in runs
+             if any((x.get("score") or {}).get("good_to_post") for x in r.get("versions", []))}
+    made = [x for x in ready if x["timings"].get("build_s")]
+    return {"ready": len(ready), "good_to_post": len(good), "kinds_with_a_good_video": len(kinds),
+            "scored": sum(bool(x.get("score")) for x in ready),
+            "avg_cost_usd": round(sum(x["cost_usd"] for x in made) / len(made), 3) if made else 0,
+            "avg_minutes": round(sum((x["timings"].get("build_s") or 0) + (x["timings"].get("render_s") or 0)
+                                     for x in made) / len(made) / 60, 1) if made else 0}

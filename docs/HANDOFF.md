@@ -316,6 +316,11 @@ Watches any web page and reports, in plain words and with a before-and-after pic
   - Calls and costs go to `video_ai_calls`.
   - Staff page `/strategic-agents/video-studio/plans` runs the 15 test briefs (`video_briefs`) with the real Claude.
   - Tests use a stand-in Claude (`tests/video_fakes.py`).
+- **Phase 3 (built):** building the video.
+  - The scene library has 16 templates × 4 shapes (`video_scenes`). The composer is `video_build`.
+  - Claude's review loop is `video_agent`: tools `read_file`, `write_file`, `check`, `snapshot` and `done`, with a 30-call limit, 2 fix rounds, 15 minutes and the budget. The program's final check is the gate.
+  - Jobs `build` and `change` (`video_builder`) cover Approve, Make changes and Make another shape.
+  - `scripts/check_video_scenes.py` checks the library with the real engine.
 - **Env:** `VIDEO_STUDIO=off` (worker) stops video jobs; `VIDEO_CLAUDE_MODEL` (default claude-sonnet-5-5), `VIDEO_CLAUDE_EFFORT` (medium), `VIDEO_CLAUDE_MONTHLY_USD` (10); `VIDEO_ENGINE_DIR`, `VIDEO_WORK_DIR`, `VIDEO_BROWSER_PATH` override the defaults.
 
 ## 10. Environment variables (Railway → web → Variables)
