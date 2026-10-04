@@ -37,6 +37,8 @@ from tracker import video_web
 
 BASE = "/strategic-agents/video-studio"
 HIDDEN_KINDS = ("engine_test", "plan_test")
+# Drill videos open on the video page but stay out of the library.
+LIBRARY_HIDDEN = HIDDEN_KINDS + ("drill",)
 IMAGE_KINDS = video_plan.IMAGE_KINDS
 UPLOAD_KINDS = ("image", "screenshot", "logo")
 MAX_TYPED = 200
@@ -101,6 +103,8 @@ def public_error(message):
     text = " ".join(str(message or "").split())
     if not text:
         return ""
+    # A bracketed internal ("(stopped after 60s: hyperframes)") goes; the sentence stays.
+    text = re.sub(r"\s*\([^()]*\)", lambda m: "" if _INTERNAL.search(m.group(0)) else m.group(0), text)
     kept = [s for s in re.split(r"(?<=[.!?])\s+", text) if s and not _INTERNAL.search(s)]
     if not kept:
         return "Video Studio is not fully set up yet. Tell the platform team, and try again later."
@@ -125,7 +129,9 @@ def _claude_state():
     return {"state": s["state"], "spent_usd": s["spent_usd"], "cap_usd": s["cap_usd"]}
 
 
-def _can_plan():
+def _can_plan(email=None):
+    if email:
+        video_builder.check_daily(email, "plans")
     state = video_plan.status()["state"]
     if state == "capped":
         raise Refused("This month's Video Studio budget is used up. New plans can start on the 1st; videos already "
@@ -153,12 +159,15 @@ def start_draft(email, body):
     tables = [(str(t.get("name") or "Numbers")[:80], t.get("text")) for t in (body.get("tables") or [])
               if isinstance(t, dict)]
     brand = body.get("brand") if isinstance(body.get("brand"), dict) else {}
-    _can_plan()
-    pid, _ = video_web.new_project(
-        email, brief=body.get("brief"), kind=body.get("kind") or None, shape=body.get("shape") or None,
-        seconds=body.get("seconds"), style=body.get("style"), words=body.get("words") or "write",
-        script=body.get("script") or "", website=str(body.get("website") or "").strip(), brand=brand,
-        client=str(body.get("client") or ""), texts=texts, tables=tables, hold=True)
+    _can_plan(email)
+    try:
+        pid, _ = video_web.new_project(
+            email, brief=body.get("brief"), kind=body.get("kind") or None, shape=body.get("shape") or None,
+            seconds=body.get("seconds"), style=body.get("style"), words=body.get("words") or "write",
+            script=body.get("script") or "", website=str(body.get("website") or "").strip(), brand=brand,
+            client=str(body.get("client") or ""), texts=texts, tables=tables, hold=True)
+    except video_uploads.Bad as exc:                  # a text or a table that cannot be used
+        raise video_starts.Bad(str(exc), "sources")
     return pid
 
 
@@ -196,7 +205,7 @@ def start(email, project_id):
         return None
     if p.get("status") != "draft" or video_store.list_versions(project_id, email):
         raise Refused("This video has already started.")
-    _can_plan()
+    _can_plan(email)
     video_store.update_project(project_id, status="active")
     return video_web.queue_plan(project_id, p["choices"])
 
@@ -411,10 +420,12 @@ def project_view(email, project_id, version_id=None):
                                         key=lambda f: f["at"] or 0)}
     if phase == "result":
         share = plan.get("share_copy") or {}
+        expired = not current.get("mp4_bytes")
         v["result"] = {"mp4": "%s/media/%d.mp4" % (BASE, current["id"]),
                        "download": "%s/media/%d.mp4?download=1" % (BASE, current["id"]),
                        "cover": "%s/media/%d.jpg" % (BASE, current["id"]) if current.get("has_cover") else None,
-                       "mb": round((current.get("mp4_bytes") or 0) / 1e6, 1),
+                       "mb": round((current.get("mp4_bytes") or 0) / 1e6, 1), "expired": expired,
+                       "keep_days": cfg.keep_days(),
                        "share": [{"key": k, "label": SHARE_LABELS[k], "text": share.get(k)}
                                  for k in SHARE_SUITS.get(current["shape"], ("x",)) if share.get(k)],
                        "other_shapes": [{"key": k, "label": lab} for k, lab in cfg.SHAPE_LABELS.items()
@@ -525,7 +536,8 @@ def another_idea(email, version_id):
     jobs = video_store.jobs_for_version(version_id, email)
     if phase_of(v, jobs) not in ("plan", "failed"):
         raise Refused("Another idea can be asked for while the plan is waiting for approval.")
-    _can_plan()
+    video_builder.check_versions(p["id"])
+    _can_plan(email)
     plan = v.get("plan") or {}
     settings = {}
     if plan.get("scenes"):
@@ -538,13 +550,23 @@ def another_idea(email, version_id):
 
 
 def retry(email, version_id):
-    """Try a failed version again: its plan, or making it. Returns the version id to show."""
-    v = video_store.get_version(version_id, email)
+    """Try a failed version again, or make an expired one again. Returns the version id to show.
+
+    A failed plan is planned again (a new version). A video whose build passed
+    but whose render failed is only rendered again; one whose build failed is
+    built again. A video whose MP4 was removed by the clean-up is rendered
+    again from its composition."""
+    v = video_store.get_version(version_id, email, files=True)
     if not v:
         return None
-    if v["status"] != "failed":
+    expired = v["status"] == "ready" and not v.get("mp4_bytes") and v.get("files")
+    if v["status"] != "failed" and not expired:
         raise Refused("Only a failed video can be tried again.")
     plan = v.get("plan") or {}
+    if v.get("files") and (expired or plan.get("build")):
+        video_store.update_version(version_id, status="queued_render", error="")
+        video_store.enqueue(version_id, kind="render")
+        return version_id
     if not plan.get("scenes"):
         return another_idea(email, version_id)
     if plan.get("problems"):
@@ -556,7 +578,7 @@ def retry(email, version_id):
 # ── The library ──────────────────────────────────────────────────────────────
 def library_view(email, limit=200):
     out = []
-    for r in video_store.library(email, limit=limit, exclude_kinds=HIDDEN_KINDS):
+    for r in video_store.library(email, limit=limit, exclude_kinds=LIBRARY_HIDDEN):
         latest, ready = r.get("latest") or {}, r.get("ready") or {}
         start = video_starts.STARTS.get(r["kind"], video_starts.STARTS["custom"])
         if r.get("status") == "draft":
@@ -582,7 +604,7 @@ def duplicate(email, project_id):
     p = video_store.get_project(project_id, email)
     if not p or p["kind"] in HIDDEN_KINDS:
         return None
-    _can_plan()
+    _can_plan(email)
     pid = video_store.create_project(email, client=p.get("client") or "", title=p.get("title") or "",
                                      brief=p["brief"], kind=p["kind"], choices=p.get("choices") or {})
     for a in video_store.list_assets(project_id, email):
@@ -609,6 +631,7 @@ def brands_view(email):
                     "colors": {k: b.get(k) for k in video_brand.COLOR_KEYS},
                     "fonts": {"heading": b.get("heading_font"), "body": b.get("body_font")},
                     "logo": brand_logo_url(r["client"]) if r.get("has_logo") else None,
+                    "slack_channel": b.get("slack_channel") or "",
                     "updated_at": r.get("updated_at")})
     return out
 
@@ -630,6 +653,15 @@ def save_brand(email, body):
         if f not in video_fonts.manifest():
             raise video_starts.Bad("Choose a font from the list.", key)
         saved[key] = f
+    if "slack_channel" in body:
+        from tracker import video_notify
+        raw = str(body.get("slack_channel") or "").strip()
+        chan = video_notify.clean_channel(raw)
+        if raw and not chan:
+            raise video_starts.Bad("A Slack channel is a name like #client-videos, or its id.", "slack_channel")
+        saved["slack_channel"] = chan
+    elif old.get("slack_channel"):
+        saved["slack_channel"] = old["slack_channel"]
     logo = None
     if body.get("logo"):
         im = video_uploads.image(_decode(body["logo"]), "logo")

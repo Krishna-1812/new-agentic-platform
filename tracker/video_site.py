@@ -26,6 +26,7 @@ from __future__ import annotations
 import io
 import logging
 import re
+import time
 from urllib.parse import urldefrag, urlsplit
 
 from tracker import watch_capture, watch_safety
@@ -33,6 +34,10 @@ from tracker import watch_capture, watch_safety
 log = logging.getLogger("video_studio.site")
 
 MAX_EXTRA_PAGES = 4
+# The whole reading's time budget. Each page has its own limit (the capture's
+# 90 s); past this budget no further page is opened, so a slow site costs
+# about two minutes, not one limit per page.
+READ_BUDGET_S = 120
 DESKTOP = {"width": 1440, "height": 900}
 PHONE = {"width": 390, "height": 844}
 MAX_CROPS = 12
@@ -321,21 +326,30 @@ def _failure(cap):
     return "The website could not be read (%s). Upload your own screenshots instead." % (cap.error or "unknown")
 
 
-def read(url, brief="", *, capture=watch_capture.capture, on_step=None):
-    """Read a site for a video. {"ok", "message", "url", "pages", "images", "brand", "logo"}."""
+def read(url, brief="", *, capture=watch_capture.capture, on_step=None, budget_s=READ_BUDGET_S,
+         clock=time.monotonic):
+    """Read a site for a video. {"ok", "message", "url", "pages", "images", "brand", "logo", "notes"}."""
     step = on_step or (lambda *a: None)
     url = watch_safety.normalise(url)
     watch_safety.check(url)
+    started = clock()
+    notes = []
+
+    def out_of_time():
+        return clock() - started >= budget_s
     step("open", url)
     first = capture(url, screenshots=True, control=False, viewport=DESKTOP, extra=_extra)
     if not first.ok:
         return {"ok": False, "message": _failure(first), "url": url, "pages": [], "images": [], "brand": None,
-                "logo": None}
+                "logo": None, "notes": []}
     extra = first.extra or {}
     picks = choose_pages(first.final_url or url, extra.get("links"), brief)
     step("pages", "%d more page(s): %s" % (len(picks), ", ".join(picks)))
     caps = [first]
     for link in picks:
+        if out_of_time():
+            notes.append("The website was slow, so only %d of its pages were read." % len(caps))
+            break
         try:
             cap = capture(link, screenshots=True, control=False, viewport=DESKTOP)
         except watch_safety.BadURL:
@@ -359,6 +373,8 @@ def read(url, brief="", *, capture=watch_capture.capture, on_step=None):
             if sum(im["kind"] == "crop" for im in images) < MAX_CROPS:
                 images.extend(crops(cap.screenshot, blocks, name)[:MAX_CROPS - sum(im["kind"] == "crop" for im in images)])
     try:
+        if out_of_time():
+            raise TimeoutError("the reading's time budget is spent")
         phone = capture(first.final_url or url, screenshots=True, control=False, viewport=PHONE)
         if phone.ok and phone.screenshot:
             images.append(_shot(phone.screenshot, "Phone: %s" % _page_name(phone, 0), PHONE_MAX_H,
@@ -368,4 +384,4 @@ def read(url, brief="", *, capture=watch_capture.capture, on_step=None):
     step("brand", "colours, fonts and logo")
     brand = dict(colours(extra), heading_font=extra.get("heading_font") or "", body_font=extra.get("body_font") or "")
     return {"ok": True, "message": "", "url": first.final_url or url, "pages": pages, "images": images,
-            "brand": brand, "logo": extra.get("logo_png")}
+            "brand": brand, "logo": extra.get("logo_png"), "notes": notes}

@@ -150,7 +150,7 @@
         sel.value = im.kind; sel.addEventListener("change", function () { im.kind = sel.value; });
         meta.appendChild(sel); li.appendChild(meta);
         li.appendChild(btn("×", "vs-x", function () { URL.revokeObjectURL(im.preview); st.images.splice(i, 1); drawThumbs(); }));
-        thumbs.lastChild ? thumbs.appendChild(li) : thumbs.appendChild(li);
+        thumbs.appendChild(li);
       });
       count.textContent = st.images.length ? st.images.length + " of " + L.images : "";
     }
@@ -431,6 +431,9 @@
       stage.textContent = ""; editor = null;
       var v = V.version;
       if (!v) { stage.appendChild(el("p", "pw-quiet", "This video has not started.")); return; }
+      if (V.claude && V.claude.state === "capped" && (v.phase === "plan" || v.phase === "result" || v.phase === "failed")) {
+        stage.appendChild(el("div", "vs-note vs-note--warn", "This month's Video Studio budget is used up. Approving plans, another shape and downloads still work; changes in words and new ideas wait until the 1st."));
+      }
       if (v.phase === "reading") return drawReading(v);
       if (v.phase === "plan") return drawPlan(v);
       if (v.phase === "making") return drawMaking(v);
@@ -859,6 +862,14 @@
     // ── The result ────────────────────────────────────────────────────────
     function drawResult(v) {
       var r = v.result;
+      if (r.expired) {
+        var gone = panel("This video's file was removed", "vs-failed");
+        gone.appendChild(el("p", "vs-fail-msg", "Videos are kept for " + r.keep_days + " days. Its plan and layout are kept, so it can be made again in a few minutes."));
+        var row0 = el("div", "vs-approve");
+        var again0 = btn("Make it again", "sa-btn sa-btn--dark", function () { again0.disabled = true; act("retry", {}).catch(function () { again0.disabled = false; }); });
+        row0.appendChild(again0); gone.appendChild(row0); stage.appendChild(gone);
+        return;
+      }
       var grid = el("div", "vs-result");
       var left = el("div", "vs-player vs-player--" + v.shape);
       var vid = el("video"); vid.controls = true; vid.playsInline = true; vid.preload = "metadata"; vid.src = r.mp4;
@@ -977,6 +988,9 @@
         var s = el("select"); FONTS.forEach(function (x) { var o = el("option", null, x); o.value = x; s.appendChild(o); });
         s.value = FONTS.indexOf(r[2]) >= 0 ? r[2] : "Inter"; fonts[r[0]] = s; f.appendChild(s); card.appendChild(f);
       });
+      var sf = el("label", "pw-field"); sf.appendChild(el("span", null, "Slack channel for finished videos"));
+      var slack = el("input"); slack.maxLength = 81; slack.placeholder = "#client-videos (optional)"; slack.value = b.slack_channel ? "#" + b.slack_channel : "";
+      sf.appendChild(slack); card.appendChild(sf);
       var lf = el("label", "pw-field"); lf.appendChild(el("span", null, b.logo ? "Replace the logo" : "Logo"));
       var logo = el("input"); logo.type = "file"; logo.accept = "image/png,image/jpeg,image/webp"; lf.appendChild(logo); card.appendChild(lf);
       var removeLogo = false;
@@ -989,7 +1003,8 @@
       var save = btn(isNew ? "Save the brand" : "Save", "sa-btn sa-btn--dark", function () {
         showError("");
         var body = { client: isNew ? name.value : b.client, background: vals.background, text: vals.text, accent: vals.accent,
-          heading_font: fonts.heading_font.value, body_font: fonts.body_font.value, remove_logo: removeLogo };
+          heading_font: fonts.heading_font.value, body_font: fonts.body_font.value, remove_logo: removeLogo,
+          slack_channel: slack.value };
         var p = logo.files[0] ? readFile(logo.files[0]).then(function (d) { body.logo = d; }) : Promise.resolve();
         save.disabled = true;
         p.then(function () { return api("POST", BASE + "/api/brands", body); })

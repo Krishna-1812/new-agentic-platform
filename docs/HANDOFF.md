@@ -326,7 +326,13 @@ Watches any web page and reports, in plain words and with a before-and-after pic
   - The logic is in `video_app`; the pages are drawn by `static/js/video-studio.js`. Writes are JSON only, and pictures are uploaded one per request.
   - Edits are checked by `video_plan.check`; words the person types count as facts (`plan["typed"]`). Key frames are stored as assets of kind `frame`.
   - `scripts/drive_video_studio.py` drives the whole journey in a real browser with stand-ins for the worker's outside world.
-- **Env:** `VIDEO_STUDIO=off` (worker) stops video jobs; `VIDEO_CLAUDE_MODEL` (default claude-sonnet-5-5), `VIDEO_CLAUDE_EFFORT` (medium), `VIDEO_CLAUDE_MONTHLY_USD` (10); `VIDEO_ENGINE_DIR`, `VIDEO_WORK_DIR`, `VIDEO_BROWSER_PATH` override the defaults.
+- **Phase 5 (built):** hardening.
+  - Failures, their tests and drills: `tests/test_video_hardening.py` and `tracker/video_drills.py`, run from the engine page.
+  - Limits: 20 versions, 20 videos and 40 plans per person per day. The worker's clean-up (`video_store.prune`) removes MP4s after 90 days ("Make it again" renders them back).
+  - The optional Slack message is `video_notify`.
+  - `scripts/check_video_sandbox.py` attacks the sandbox; `scripts/load_video_studio.py` is the load run (peak 2.06 GB, so the worker needs 4 GB).
+  - The launch checklist is in `docs/video-studio-plan.md` section 7. The badge stays "building" until it has been followed.
+- **Env:** `VIDEO_STUDIO=off` (worker) stops video jobs; `VIDEO_CLAUDE_MODEL` (default claude-sonnet-5-5), `VIDEO_CLAUDE_EFFORT` (medium), `VIDEO_CLAUDE_MONTHLY_USD` (10); `VIDEO_ENGINE_DIR`, `VIDEO_WORK_DIR`, `VIDEO_BROWSER_PATH` override the defaults; `VIDEO_DAILY_VIDEOS` (20), `VIDEO_DAILY_PLANS` (40), `VIDEO_KEEP_DAYS` (90), `VIDEO_SLACK_CHANNEL`, `VIDEO_SLACK=off`.
 
 ## 10. Environment variables (Railway → web → Variables)
 

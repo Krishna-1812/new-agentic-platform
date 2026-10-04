@@ -614,13 +614,16 @@ The earlier idea(s):
 
 
 def make_plan(brief, choices, brand, sources, *, client=None, load_blob=None, email="", project_id=None,
-              version_id=None, avoid=()):
-    """{"plan", "problems", "attempts", "cost_usd", "model"}; raises PlanError when no plan can be made."""
+              version_id=None, avoid=(), cap=None):
+    """{"plan", "problems", "attempts", "cost_usd", "model"}; raises PlanError when no plan can be made.
+
+    cap: the monthly budget to hold to (the budget drill passes 0)."""
+    cap = monthly_cap() if cap is None else cap
     if client is None and not _key():
         raise PlanError("Claude is not set up: add ANTHROPIC_API_KEY to the worker service in Railway.")
-    if spent_this_month() >= monthly_cap():
+    if spent_this_month() >= cap:
         raise PlanError("This month's Video Studio budget ($%.2f) is used up. New plans wait until the 1st, "
-                        "or raise VIDEO_CLAUDE_MONTHLY_USD." % monthly_cap())
+                        "or raise VIDEO_CLAUDE_MONTHLY_USD." % cap)
     client = client or _client()
     record = {"email": email, "project_id": project_id, "version_id": version_id}
     content = request_content(brief, choices, brand, sources, load_blob=load_blob or (lambda aid: None))

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import csv
 import io
+import itertools
 import re
 
 MAX_IMAGES = 12
@@ -26,6 +27,8 @@ MAX_TEXT = 20_000
 MAX_ROWS = 50
 MAX_COLS = 12
 MAX_CELL = 200
+# A pasted or uploaded table, in characters (the CSV file limit is 512 KB).
+MAX_TABLE_CHARS = 512 * 1024
 ALLOWED_FORMATS = {"PNG": "image/png", "JPEG": "image/jpeg", "WEBP": "image/webp", "GIF": "image/gif"}
 
 
@@ -119,14 +122,21 @@ def numbers(raw, name="numbers"):
     t = str(raw or "").strip()
     if not t:
         raise Bad("The %s are empty." % name)
+    if len(t) > MAX_TABLE_CHARS:
+        raise Bad("The %s are too long; keep the table under %d rows." % (name, MAX_ROWS))
+    t = t.replace("\x00", "")
     first = t.splitlines()[0]
     delim = max(("\t", ",", ";", "|"), key=lambda d: first.count(d))
     if first.count(delim) == 0:
         raise Bad("The %s need at least two columns (a label and a value)." % name)
     try:
-        rows = [r for r in csv.reader(io.StringIO(t), delimiter=delim) if any(c.strip() for c in r)]
+        # Stop reading one row past the limit: a huge paste is refused, not parsed.
+        rows = [r for r in itertools.islice((r for r in csv.reader(io.StringIO(t), delimiter=delim)
+                                             if any(c.strip() for c in r)), MAX_ROWS + 2)]
     except csv.Error:
         raise Bad("The %s could not be read as a table." % name)
+    if any("\n" in c for r in rows for c in r):
+        raise Bad("The %s have a quote mark that is never closed; check the table." % name)
     if len(rows) < 2:
         raise Bad("The %s need a header row and at least one row of values." % name)
     if len(rows) - 1 > MAX_ROWS:

@@ -240,7 +240,10 @@ def run_loop(box, client, *, plan, spans, report, frames, record, step, deadline
                     path = video_sandbox.check_path(args.get("path"))
                     if not path.endswith(WRITABLE):
                         raise video_sandbox.BadFile("only .html, .css and .js files can be read")
-                    with open(os.path.join(box.project, *path.split("/")), encoding="utf-8") as fh:
+                    full = os.path.join(box.project, *path.split("/"))
+                    if not os.path.realpath(full).startswith(os.path.realpath(box.project) + os.sep):
+                        raise video_sandbox.BadFile("only files inside the project can be read")
+                    with open(full, encoding="utf-8") as fh:
                         results.append(_result(u, fh.read()))
                 elif name == "write_file":
                     path = video_sandbox.check_path(args.get("path"))

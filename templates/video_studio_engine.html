@@ -37,13 +37,33 @@
     <p class="ve-sub"><b>Test videos</b> renders a 10-second landscape video (title, image, end card) and a
       45-second vertical one with a chart. <b>Outside-address drill</b> renders a video that tries to load an image and
       a request from the internet: it must finish without them, and its log must name both addresses.
-      <b>Time-limit drill</b> renders a page that never finishes loading: it must be stopped at its 60-second limit.</p>
+      <b>Time-limit drill</b> renders a page that never finishes loading: it must be stopped at its 60-second limit.
+      <b>Load run</b> queues three videos at once, the longest 60 seconds; watch the worker's memory in Railway while
+      they render.</p>
     <div class="ve-actions">
       <button type="button" class="sa-btn sa-btn--dark" data-test="samples">Render the test videos</button>
       <button type="button" class="sa-btn sa-btn--line" data-test="outside_drill">Outside-address drill</button>
       <button type="button" class="sa-btn sa-btn--line" data-test="hang_drill">Time-limit drill</button>
+      <button type="button" class="sa-btn sa-btn--line" data-test="load">Load run (3 videos, one 60 s)</button>
     </div>
     <p class="ve-msg" id="ve-msg" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="ve-card" aria-labelledby="ve-drills-h">
+    <h2 class="ve-h2" id="ve-drills-h">Failure drills</h2>
+    <p class="ve-sub">Each drill makes one video that meets a failure on the live worker. Open it to see what a person
+      would see, then use its buttons (Try again) to check it recovers. <b>Website never answers</b> takes about a
+      minute and then plans without the site. <b>Claude unreachable</b> and <b>Budget used up</b> stop at the plan with
+      a plain message. <b>Render fails</b> runs out of time on purpose; Try again renders it properly.
+      A restart mid-render and bad uploads are drilled by hand (docs/video-studio-plan.md, section 7).</p>
+    <div class="ve-actions">
+      <button type="button" class="sa-btn sa-btn--line" data-drill="site_never_answers">Website never answers</button>
+      <button type="button" class="sa-btn sa-btn--line" data-drill="claude_down">Claude unreachable</button>
+      <button type="button" class="sa-btn sa-btn--line" data-drill="budget">Budget used up</button>
+      <button type="button" class="sa-btn sa-btn--line" data-drill="render_fails">Render fails</button>
+    </div>
+    <p class="ve-msg" id="ve-drill-msg" role="status" aria-live="polite"></p>
+    <div class="ve-runs" id="ve-drills"></div>
   </section>
 
   <section class="ve-card" aria-labelledby="ve-runs-h">
@@ -54,7 +74,7 @@
 
 <script type="application/json" id="ve-data">{{ data|tojson }}</script>
 <script>window.VE_PINNED = {{ pinned|tojson }};</script>
-<script src="{{ url_for('static', filename='js/video-engine.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/video-engine.js') }}?v=2"></script>
 {{ topbar_script() }}
 </body>
 </html>

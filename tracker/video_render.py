@@ -103,7 +103,9 @@ def run_job(job, *, stop=None, sandbox=video_sandbox.Sandbox):
         raise
     except video_engine.TimedOut as exc:
         _log_blocked(job, box)
-        return _failed(job, vid, "The render was stopped at its time limit (%s)." % exc, timings)
+        video_store.add_log(job["id"], "timed_out", str(exc))
+        return _failed(job, vid, "The render took longer than its time limit, so it was stopped. Try again; if it "
+                       "happens again, make the video shorter or simpler.", timings)
     except video_sandbox.BadFile as exc:
         return _failed(job, vid, "A file of the video cannot be used: %s." % exc, timings)
     except Exception as exc:

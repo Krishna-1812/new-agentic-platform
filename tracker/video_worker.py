@@ -14,6 +14,10 @@ The pattern is Page Watch's:
   * After each job, and at start, the runner records what the engine has on
     this machine (Node, ffmpeg, the browser, the HyperFrames version) for the
     staff page.
+  * When a video is ready, or making one failed, the client's Slack channel
+    is told (video_notify; optional).
+  * Every PRUNE_EVERY_S the clean-up runs (video_store.prune): MP4s older
+    than VIDEO_KEEP_DAYS, old key frames, drafts never started.
 """
 
 from __future__ import annotations
@@ -22,6 +26,7 @@ import logging
 import random
 import socket
 import threading
+import time
 from datetime import datetime, timezone
 
 from tracker import video_config as cfg
@@ -52,6 +57,7 @@ class VideoRunner:
         self.current = None
         self.jobs = 0
         self._thread = None
+        self._last_prune = float("-inf")
 
     def process_one(self):
         """Claim and run one job. False when there was none."""
@@ -84,10 +90,35 @@ class VideoRunner:
         status = "done" if result.get("outcome") == "done" else "failed"
         if not video_store.finish_job(job["id"], self.owner, status, result.get("error", "")):
             log.warning("video job %s: the lease was lost during the render", job["id"])
+        self.tell(job, status)
         self.jobs += 1
         log.info("video job %s: %s", job["id"], status)
         self.record_engine()
         return True
+
+    def tell(self, job, status):
+        """The optional Slack message: a finished render, or a failed build, change or render."""
+        if job.get("kind") == "plan" or (status == "done" and job.get("kind") != "render"):
+            return
+        try:
+            from tracker import video_notify
+            video_notify.version_finished(job["version_id"], status == "done")
+        except Exception:
+            log.exception("video job %s: the Slack message failed", job["id"])
+
+    def housekeeping(self, now=None):
+        """The clean-up, at most every PRUNE_EVERY_S."""
+        now = now if now is not None else time.monotonic()
+        if now - self._last_prune < cfg.PRUNE_EVERY_S:
+            return None
+        self._last_prune = now
+        try:
+            out = video_store.prune(keep_mp4_days=cfg.keep_days())
+            log.info("video clean-up: %s", out)
+            return out
+        except Exception:
+            log.exception("video clean-up")
+            return None
 
     def _renew(self, job_id, done):
         while not done.wait(self.lease_s / 3):
@@ -106,6 +137,7 @@ class VideoRunner:
             log.warning("the video engine is not ready: %s", str(exc)[:300])
         self.record_engine()
         while not self.stopping.is_set():
+            self.housekeeping()
             try:
                 busy = self.process_one()
             except Exception:

@@ -94,9 +94,27 @@
     });
   }
 
+  var DRILL_LABEL = { queued: "Waiting", planning: "Planning", planned: "Plan ready", queued_build: "Waiting",
+    building: "Building", queued_render: "Waiting to render", making: "Rendering", ready: "Ready", failed: "Failed" };
+
+  function drawDrills() {
+    var box = document.getElementById("ve-drills");
+    box.textContent = "";
+    (data.drills || []).forEach(function (d) {
+      var cls = d.status === "ready" || d.status === "planned" ? "ve-ok" : d.status === "failed" ? "ve-bad" : "ve-wait";
+      box.appendChild(el("p", { cls: "ve-meta" }, [
+        el("a", { href: d.url, text: d.title }), document.createTextNode(" · "),
+        el("b", { cls: cls, text: DRILL_LABEL[d.status] || d.status }),
+        document.createTextNode((d.versions > 1 ? " · " + d.versions + " versions" : "") + " · " + ago(d.created_at)),
+        d.error ? el("span", { cls: "ve-bad", text: " · " + d.error }) : null
+      ]));
+    });
+  }
+
   function draw() {
     drawEngine();
     drawRuns();
+    drawDrills();
     clearTimeout(timer);
     if (data.busy) timer = setTimeout(refresh, 5000);
   }
@@ -121,6 +139,25 @@
         b.disabled = false;
         if (!j.ok) { msg.textContent = j.error || "That did not work."; return; }
         msg.textContent = "Queued. The worker takes it within a few seconds.";
+        data = j.page;
+        draw();
+      }).catch(function () { b.disabled = false; msg.textContent = "The server could not be reached. Try again."; });
+    });
+  });
+
+  document.querySelectorAll("[data-drill]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var msg = document.getElementById("ve-drill-msg");
+      b.disabled = true;
+      msg.textContent = "Starting the drill…";
+      fetch(BASE + "/api/drills", {
+        method: "POST", credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ drill: b.getAttribute("data-drill") })
+      }).then(function (r) { return r.json(); }).then(function (j) {
+        b.disabled = false;
+        if (!j.ok) { msg.textContent = j.error || "That did not work."; return; }
+        msg.textContent = "Started. Open it from the list below.";
         data = j.page;
         draw();
       }).catch(function () { b.disabled = false; msg.textContent = "The server could not be reached. Try again."; });

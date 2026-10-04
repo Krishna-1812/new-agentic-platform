@@ -339,7 +339,8 @@ def update_project(project_id, **fields):
 
 
 def delete_project(project_id, email):
-    """Remove a project with its versions, jobs and assets (only its owner can)."""
+    """Remove a project with its versions, jobs and assets (only its owner can;
+    email None is the worker's clean-up)."""
     if backend() == "memory":
         with _MEM_LOCK:
             if not _mem_project(project_id, email):
@@ -353,7 +354,10 @@ def delete_project(project_id, email):
                     del _MEM[table][k]
             return True
     with _pg() as conn, conn.cursor() as cur:
-        cur.execute("DELETE FROM video_projects WHERE id = %s AND email = %s", (project_id, _norm_email(email)))
+        if email is None:
+            cur.execute("DELETE FROM video_projects WHERE id = %s", (project_id,))
+        else:
+            cur.execute("DELETE FROM video_projects WHERE id = %s AND email = %s", (project_id, _norm_email(email)))
         return cur.rowcount > 0
 
 
@@ -702,6 +706,60 @@ def queue_stats(*, now=None):
         return {"queued": q, "running": r, "stalled": s}
 
 
+def jobs_since(email, kinds, since):
+    """How many jobs of these kinds a person's projects were given since `since`
+    (the daily limits)."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            n = 0
+            for j in _MEM["jobs"].values():
+                v = _MEM["versions"].get(j["version_id"])
+                p = _MEM["projects"].get(v["project_id"]) if v else None
+                if p and p["email"] == _norm_email(email) and j["kind"] in kinds and _dt(j["created_at"]) >= since:
+                    n += 1
+            return n
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("SELECT count(*) FROM video_jobs j JOIN video_versions v ON v.id = j.version_id "
+                    "JOIN video_projects p ON p.id = v.project_id "
+                    "WHERE p.email = %s AND j.kind = ANY(%s) AND j.created_at >= %s",
+                    (_norm_email(email), list(kinds), since))
+        return cur.fetchone()[0]
+
+
+def prune(*, now=None, keep_mp4_days=90, keep_frames_days=30, keep_drafts_days=2):
+    """The clean-up: MP4s of versions finished more than keep_mp4_days ago are
+    removed (the cover, plan and composition stay, so the video can be made
+    again); key frames after keep_frames_days; drafts never started after
+    keep_drafts_days. Returns what was removed."""
+    now = now or _now()
+    mp4_before = now - timedelta(days=keep_mp4_days)
+    frames_before = now - timedelta(days=keep_frames_days)
+    drafts_before = now - timedelta(days=keep_drafts_days)
+    if backend() == "memory":
+        with _MEM_LOCK:
+            mp4s = [v for v in _MEM["versions"].values() if v.get("mp4") is not None and v.get("finished_at")
+                    and _dt(v["finished_at"]) < mp4_before]
+            for v in mp4s:
+                v.update(mp4=None, mp4_bytes=0)
+            frames = [k for k, a in _MEM["assets"].items() if a["kind"] == "frame"
+                      and _dt(a["created_at"]) < frames_before]
+            for k in frames:
+                del _MEM["assets"][k]
+            drafts = [p["id"] for p in _MEM["projects"].values() if p["status"] == "draft"
+                      and _dt(p["created_at"]) < drafts_before]
+        for pid in drafts:
+            delete_project(pid, None)
+        return {"mp4s": len(mp4s), "frames": len(frames), "drafts": len(drafts)}
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE video_versions SET mp4 = NULL, mp4_bytes = 0 "
+                    "WHERE mp4 IS NOT NULL AND finished_at < %s", (mp4_before,))
+        mp4s = cur.rowcount
+        cur.execute("DELETE FROM video_assets WHERE kind = 'frame' AND created_at < %s", (frames_before,))
+        frames = cur.rowcount
+        cur.execute("DELETE FROM video_projects WHERE status = 'draft' AND created_at < %s", (drafts_before,))
+        return {"mp4s": mp4s, "frames": frames, "drafts": cur.rowcount}
+
+
 # ── Assets ───────────────────────────────────────────────────────────────────
 _ASSET_LIST_COLS = "a.id, a.project_id, a.kind, a.name, a.mime, a.width, a.height, a.data, a.created_at"
 
@@ -800,6 +858,10 @@ def save_brand(email, client, brand, logo=None, clear_logo=False):
     if not client:
         return False
     brand = dict(brand, name=client)
+    if "slack_channel" not in brand:          # set on the brands page; a plan's brand does not carry it
+        old = (get_brand(email, client) or {}).get("brand") or {}
+        if old.get("slack_channel"):
+            brand["slack_channel"] = old["slack_channel"]
     if backend() == "memory":
         with _MEM_LOCK:
             old = _MEM["brands"].get((email, client.lower())) or {}

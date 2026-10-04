@@ -69,6 +69,35 @@ ALLOWED_SUFFIXES = (".html", ".css", ".js", ".json", ".svg", ".png", ".jpg", ".j
 MAX_MP4_BYTES = 80 * 1024 * 1024
 
 
+# ── Keeping ──────────────────────────────────────────────────────────────────
+# Versions one video may have (each change and shape is one).
+MAX_VERSIONS = 20
+# The clean-up runs on the worker this often.
+PRUNE_EVERY_S = 6 * 3600
+
+
+def _int_env(name, default, low=0):
+    try:
+        return max(low, int(os.environ.get(name) or default))
+    except ValueError:
+        return default
+
+
+def daily_videos():
+    """Videos one person may have made a day (approve, change, another shape): VIDEO_DAILY_VIDEOS."""
+    return _int_env("VIDEO_DAILY_VIDEOS", 20)
+
+
+def daily_plans():
+    """Plans one person may ask for a day (new video, another idea, duplicate): VIDEO_DAILY_PLANS."""
+    return _int_env("VIDEO_DAILY_PLANS", 40)
+
+
+def keep_days():
+    """Days a finished MP4 is kept before the clean-up removes it: VIDEO_KEEP_DAYS."""
+    return _int_env("VIDEO_KEEP_DAYS", 90, low=1)
+
+
 def switched_on():
     return (os.environ.get("VIDEO_STUDIO") or "on").strip().lower() not in ("off", "0", "false", "no")
 

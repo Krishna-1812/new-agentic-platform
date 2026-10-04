@@ -12,7 +12,7 @@ from __future__ import annotations
 from tracker import video_samples, video_store, video_worker
 
 TEST_KIND = "engine_test"
-TESTS = ("samples", "outside_drill", "hang_drill")
+TESTS = ("samples", "outside_drill", "hang_drill", "load")
 
 
 def _test_project(email, create=False):
@@ -27,11 +27,18 @@ def start_test(email, which):
     """Queue an engine test; returns the new version ids."""
     if which not in TESTS:
         raise ValueError("Unknown test.")
-    names = list(video_samples.SAMPLES) if which == "samples" else [which]
+    if which == "samples":
+        names = list(video_samples.SAMPLES)
+    elif which == "load":
+        # The load run: three videos queued at once, the longest 60 s (watch the worker's memory meanwhile).
+        names = list(video_samples.SAMPLES) + ["sixty_seconds"]
+    else:
+        names = [which]
     pid = _test_project(email, create=True)
     out = []
     for name in names:
-        s = (video_samples.SAMPLES.get(name) or video_samples.DRILLS[name])()
+        make = video_samples.SAMPLES.get(name) or video_samples.DRILLS.get(name) or video_samples.sixty_seconds
+        s = make()
         vid = video_store.create_version(pid, files=s["files"], shape=s["shape"], duration_s=s["duration_s"],
                                          cover_at=s["cover_at"], status="queued",
                                          plan={"title": s["title"], "test": name})
@@ -59,8 +66,11 @@ def engine_page(email, limit=12):
         engine = video_worker.engine_status()
     except Exception:
         engine = None
-    return {"engine": engine, "queue": video_store.queue_stats(), "runs": runs,
-            "busy": any(r["status"] in ("queued", "making") for r in runs)}
+    from tracker import video_drills
+    drills = video_drills.runs(email)
+    return {"engine": engine, "queue": video_store.queue_stats(), "runs": runs, "drills": drills,
+            "busy": any(r["status"] in ("queued", "making") for r in runs) or
+            any(d["status"] not in ("ready", "failed", "planned", "draft") for d in drills)}
 
 
 # ── New projects (Phase 2: used by the plan tests; Phase 4: by the start page) ──

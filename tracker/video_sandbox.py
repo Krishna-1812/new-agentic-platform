@@ -10,7 +10,9 @@ as untrusted code:
     nothing has to be fetched.
   * The browser has no network. HyperFrames starts it through a small script
     that points every request at a proxy inside this process (ProxyTrap),
-    which refuses it and records the address. Only the job's own files,
+    which refuses it and records the address; WebRTC may not send UDP around
+    the proxy. scripts/check_video_sandbox.py attacks all of this with a
+    hostile composition. Only the job's own files,
     served by HyperFrames on this machine, load. A composition that tries to
     reach the site, the database or the internet still renders, without what
     it asked for, and the attempt is logged with the job.
@@ -111,6 +113,17 @@ def outside_addresses(files):
     return sorted(hosts)
 
 
+def _host_of(target):
+    """The host a proxy request was for: "http://1.2.3.4/x" or "example.com:443" -> its host."""
+    from urllib.parse import urlsplit
+    t = str(target or "?")
+    try:
+        host = urlsplit(t if "//" in t else "//" + t).hostname
+    except ValueError:
+        host = None
+    return (host or t.rsplit(":", 1)[0] or "?").lower()[:200]
+
+
 class ProxyTrap:
     """A proxy on 127.0.0.1 that refuses every request and records where it was going."""
 
@@ -142,8 +155,7 @@ class ProxyTrap:
             first = conn.recv(4096).split(b"\r\n", 1)[0].decode("latin-1", "replace")
             parts = first.split()
             target = parts[1] if len(parts) > 1 else "?"
-            m = _URL.search(target) if "//" in target else None
-            host = (m.group(1) if m else target.rsplit(":", 1)[0]).lower()[:200]
+            host = _host_of(target)
             with self._lock:
                 if host not in self.blocked:
                     self.blocked.append(host)
@@ -211,9 +223,12 @@ class Sandbox:
         path = os.path.join(self.root, "browser.sh")
         with open(path, "w") as fh:
             fh.write("#!/bin/sh\n# Every request that is not to this machine goes to the proxy trap.\n")
-            fh.write("exec %s %s %s \"$@\"\n" % (
+            # WebRTC would send UDP around the proxy (to a STUN server, say): it may not.
+            fh.write("exec %s %s %s %s %s \"$@\"\n" % (
                 shlex.quote(browser), shlex.quote("--proxy-server=http://127.0.0.1:%d" % self.trap.port),
-                shlex.quote("--proxy-bypass-list=<-loopback>;127.0.0.1;localhost")))
+                shlex.quote("--proxy-bypass-list=<-loopback>;127.0.0.1;localhost"),
+                shlex.quote("--force-webrtc-ip-handling-policy=disable_non_proxied_udp"),
+                shlex.quote("--webrtc-ip-handling-policy=disable_non_proxied_udp")))
         os.chmod(path, 0o700)
         return path
 
