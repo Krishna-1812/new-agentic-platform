@@ -18,6 +18,8 @@ Tables
   video_assets    what a project is made from: uploaded images, text and
                   numbers, and what was read from a website (screenshots,
                   crops, the logo, the page text). Image bytes live here.
+                  Also the key frames a build looked at ("frame", with
+                  data.version_id), shown on the making screen.
   video_brands    one saved brand per person and client: colours, fonts,
                   logo, used again for that client's next video.
   video_ai_calls  one row per Claude call, with its tokens and cost, for the
@@ -48,7 +50,7 @@ VERSION_FIELDS = ("plan", "files", "change_request", "status", "error", "shape",
 VERSION_JSON = ("plan", "files", "timings")
 VERSION_STATES = ("draft", "queued", "making", "ready", "failed")
 JOB_KINDS = ("plan", "build", "change", "render")
-ASSET_KINDS = ("image", "logo", "screenshot", "crop", "text", "numbers", "site")
+ASSET_KINDS = ("image", "logo", "screenshot", "crop", "text", "numbers", "site", "frame")
 JOB_STATES = ("queued", "running", "done", "failed")
 # A worker row's job log is cut to this many entries.
 MAX_LOG = 60
@@ -314,6 +316,85 @@ def list_projects(email, limit=50, kind=None):
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q + " ORDER BY id DESC LIMIT %s", args + [int(limit)])
         return _rows(cur)
+
+
+def update_project(project_id, **fields):
+    bad = set(fields) - set(PROJECT_FIELDS)
+    if bad:
+        raise ValueError("unknown fields: %s" % ", ".join(sorted(bad)))
+    if not fields:
+        return False
+    if backend() == "memory":
+        with _MEM_LOCK:
+            p = _MEM["projects"].get(project_id)
+            if not p:
+                return False
+            p.update(copy.deepcopy(fields), updated_at=_now().isoformat())
+            return True
+    sets = ", ".join("%s = %%s" % k for k in fields)
+    vals = [_j(fields[k]) if k in PROJECT_JSON else fields[k] for k in fields]
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE video_projects SET %s, updated_at = now() WHERE id = %%s" % sets, vals + [project_id])
+        return cur.rowcount > 0
+
+
+def delete_project(project_id, email):
+    """Remove a project with its versions, jobs and assets (only its owner can)."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            if not _mem_project(project_id, email):
+                return False
+            del _MEM["projects"][project_id]
+            vids = [k for k, v in _MEM["versions"].items() if v["project_id"] == project_id]
+            for k in vids:
+                del _MEM["versions"][k]
+            for table, key, ids in (("jobs", "version_id", vids), ("assets", "project_id", [project_id])):
+                for k in [k for k, r in _MEM[table].items() if r[key] in ids]:
+                    del _MEM[table][k]
+            return True
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM video_projects WHERE id = %s AND email = %s", (project_id, _norm_email(email)))
+        return cur.rowcount > 0
+
+
+def library(email, limit=200, exclude_kinds=()):
+    """A person's projects, newest first, each with its newest version and its
+    newest finished one: {project fields, "versions", "latest": {...} | None,
+    "ready": {"id", "shape", "duration_s"} | None}. One query on Postgres."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            out = []
+            for p in sorted(_MEM["projects"].values(), key=lambda p: p["id"], reverse=True):
+                if p["email"] != _norm_email(email) or p["kind"] in exclude_kinds:
+                    continue
+                vs = sorted((v for v in _MEM["versions"].values() if v["project_id"] == p["id"]),
+                            key=lambda v: v["number"], reverse=True)
+                ready = next((v for v in vs if v["status"] == "ready"), None)
+                out.append(dict(copy.deepcopy(p), versions=len(vs),
+                                latest=_library_version(vs[0]) if vs else None,
+                                ready=_library_version(ready) if ready else None))
+                if len(out) >= limit:
+                    break
+            return out
+    q = """
+        SELECT p.*, (SELECT count(*) FROM video_versions c WHERE c.project_id = p.id) AS versions,
+          (SELECT json_build_object('id', v.id, 'number', v.number, 'status', v.status, 'shape', v.shape,
+                                    'duration_s', v.duration_s, 'idea', v.plan->>'idea', 'cost_usd', v.cost_usd)
+             FROM video_versions v WHERE v.project_id = p.id ORDER BY v.number DESC LIMIT 1) AS latest,
+          (SELECT json_build_object('id', v.id, 'number', v.number, 'status', v.status, 'shape', v.shape,
+                                    'duration_s', v.duration_s, 'idea', v.plan->>'idea', 'cost_usd', v.cost_usd)
+             FROM video_versions v WHERE v.project_id = p.id AND v.status = 'ready'
+             ORDER BY v.number DESC LIMIT 1) AS ready
+        FROM video_projects p WHERE p.email = %s AND NOT (p.kind = ANY(%s))
+        ORDER BY p.id DESC LIMIT %s"""
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute(q, (_norm_email(email), list(exclude_kinds) or [""], int(limit)))
+        return _rows(cur)
+
+
+def _library_version(v):
+    return {"id": v["id"], "number": v["number"], "status": v["status"], "shape": v["shape"],
+            "duration_s": v["duration_s"], "idea": (v.get("plan") or {}).get("idea"), "cost_usd": v["cost_usd"]}
 
 
 # ── Versions ─────────────────────────────────────────────────────────────────
@@ -711,26 +792,59 @@ def delete_assets(project_id, kinds):
 
 
 # ── Saved brands ─────────────────────────────────────────────────────────────
-def save_brand(email, client, brand, logo=None):
-    email, client = _norm_email(email), (client or "").strip()[:120]
+def save_brand(email, client, brand, logo=None, clear_logo=False):
+    """Keep a brand for a client. The client's name as typed is kept in the
+    brand ("name"); the key is its lower case. A logo of None keeps the one
+    saved before, unless clear_logo."""
+    email, client = _norm_email(email), " ".join((client or "").split())[:120]
     if not client:
         return False
+    brand = dict(brand, name=client)
     if backend() == "memory":
         with _MEM_LOCK:
-            _MEM["brands"][(email, client.lower())] = {"email": email, "client": client, "brand": copy.deepcopy(brand),
-                                                       "logo": logo, "updated_at": _now().isoformat()}
+            old = _MEM["brands"].get((email, client.lower())) or {}
+            keep = None if clear_logo else old.get("logo")
+            _MEM["brands"][(email, client.lower())] = {"email": email, "client": client.lower(),
+                                                       "brand": copy.deepcopy(brand),
+                                                       "logo": logo if logo is not None else keep,
+                                                       "updated_at": _now().isoformat()}
             return True
     with _pg() as conn, conn.cursor() as cur:
         cur.execute("INSERT INTO video_brands (email, client, brand, logo, updated_at) VALUES (%s, %s, %s, %s, now()) "
                     "ON CONFLICT (email, client) DO UPDATE SET brand = EXCLUDED.brand, "
-                    "logo = COALESCE(EXCLUDED.logo, video_brands.logo), updated_at = now()",
+                    "logo = " + ("EXCLUDED.logo" if clear_logo else "COALESCE(EXCLUDED.logo, video_brands.logo)")
+                    + ", updated_at = now()",
                     (email, client.lower(), _j(brand), logo))
         return True
 
 
+def list_brands(email):
+    """A person's saved brands, by client: [{"client", "brand", "has_logo", "updated_at"}]."""
+    email = _norm_email(email)
+    if backend() == "memory":
+        with _MEM_LOCK:
+            rows = [{"client": b["client"], "brand": copy.deepcopy(b["brand"]), "has_logo": b.get("logo") is not None,
+                     "updated_at": b["updated_at"]} for (e, _), b in _MEM["brands"].items() if e == email]
+        return sorted(rows, key=lambda r: r["client"])
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("SELECT client, brand, (logo IS NOT NULL) AS has_logo, updated_at FROM video_brands "
+                    "WHERE email = %s ORDER BY client", (email,))
+        return _rows(cur)
+
+
+def delete_brand(email, client):
+    email, client = _norm_email(email), " ".join((client or "").split()).lower()
+    if backend() == "memory":
+        with _MEM_LOCK:
+            return _MEM["brands"].pop((email, client), None) is not None
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM video_brands WHERE email = %s AND client = %s", (email, client))
+        return cur.rowcount > 0
+
+
 def get_brand(email, client):
     """{"brand", "logo", "updated_at"} saved for this person and client, or None."""
-    email, client = _norm_email(email), (client or "").strip().lower()
+    email, client = _norm_email(email), " ".join((client or "").split()).lower()
     if not client:
         return None
     if backend() == "memory":

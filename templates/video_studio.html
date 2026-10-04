@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    VIDEO STUDIO (/strategic-agents/video-studio)
+
+    Say what video you want; give it a website, pictures, text or numbers if
+    you have them. It proposes the video scene by scene, and once the plan is
+    approved it makes it. This page is the start (the brief, the starting
+    points, the choices, the sources and the brand) and the library of every
+    video. Drawn by static/js/video-studio.js from the JSON below; with JS
+    off, the noscript list still links to every video.
+    Plan: docs/video-studio-plan.md, sections 2.1 and 2.6.
+-#}
+<html lang="en">
+<head>
+{{ head("Video Studio", ["strategic-agents.css?v=2", "page-watch.css?v=1", "video-studio-app.css?v=1"]) }}
+</head>
+<body class="sa pw vs">
+
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Video Studio", none)]) }}
+
+<main class="sa-shell" id="vs-home">
+
+  {# ── Hero: the brief ─────────────────────────────────────────────────── #}
+  <section class="sa-hero vs-hero" data-sa-settle>
+    <div class="sa-hero-top">
+      <span class="sa-lbl" data-sa-decode>Content &middot; Video Studio</span>
+      {% if data.claude.state == 'on' %}
+      <span class="sa-live"><i></i>Ready</span>
+      {% elif data.claude.state == 'capped' %}
+      <span class="sa-live pw-live--warn"><i></i>Monthly budget used</span>
+      {% else %}
+      <span class="sa-live pw-live--off"><i></i>Not set up yet</span>
+      {% endif %}
+      <div class="vs-reel" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    </div>
+
+    <h1 class="sa-h1 vs-h1" data-sa-springy>
+      <span class="sa-ln"><span>Say what the video is.</span></span>
+      <span class="sa-ln"><span><span class="sa-mk">It makes it</span> <em class="sa-it">for you.</em></span></span>
+    </h1>
+
+    <form class="vs-ask" id="vs-form" autocomplete="off" novalidate>
+      <label class="vs-ask-l" for="vs-brief">What video do you want?</label>
+      <textarea id="vs-brief" name="brief" rows="3" maxlength="{{ data.limits.brief }}"
+        placeholder="A 30-second explainer of our month-end close service for CFOs, calm and clear, ending on 'Book a call'."></textarea>
+      <p class="vs-field-err" data-err="brief" hidden></p>
+      <div class="vs-starts" id="vs-starts" role="radiogroup" aria-label="Starting point"></div>
+      <p class="vs-start-hint" id="vs-start-hint"></p>
+    </form>
+  </section>
+
+  {# ── The choices, sources and brand ──────────────────────────────────── #}
+  <section class="vs-setup" id="vs-setup" aria-label="Choices and sources">
+    <div class="vs-setup-grid">
+      <div class="vs-col">
+        <h2 class="vs-h3">Choices</h2>
+        <div class="pw-field"><span>Shape</span><div class="vs-shapes" id="vs-shape" role="radiogroup" aria-label="Shape"></div></div>
+        <label class="pw-field"><span>Length</span>
+          <div class="vs-len"><input type="range" id="vs-seconds-r" min="{{ data.limits.min_s }}" max="{{ data.limits.max_s }}" step="1" aria-label="Length in seconds">
+            <input type="number" id="vs-seconds" min="{{ data.limits.min_s }}" max="{{ data.limits.max_s }}" step="1" inputmode="numeric"><em>seconds</em></div>
+          <p class="vs-field-err" data-err="seconds" hidden></p>
+        </label>
+        <div class="pw-field"><span>Style</span>
+          <div class="pw-examples vs-styles" id="vs-styles"></div>
+          <input id="vs-style" maxlength="160" placeholder="Or describe it: like an Apple keynote">
+        </div>
+        <div class="pw-field"><span>Words on screen</span>
+          <div class="pw-seg" id="vs-words" role="group" aria-label="Words on screen">
+            <button type="button" data-words="write" aria-pressed="true">Write them for me</button>
+            <button type="button" data-words="exact" aria-pressed="false">Use my script exactly</button>
+          </div>
+          <textarea id="vs-script" rows="4" placeholder="Paste the script. Every word is used, in order." hidden></textarea>
+          <p class="vs-field-err" data-err="script" hidden></p>
+        </div>
+      </div>
+
+      <div class="vs-col">
+        <h2 class="vs-h3">Sources <small>optional, any mix</small></h2>
+        <label class="pw-field"><span>A website</span>
+          <input id="vs-website" type="url" inputmode="url" placeholder="acme.com/pricing" maxlength="500">
+          <p class="vs-field-err" data-err="website" hidden></p>
+        </label>
+        <div class="pw-field"><span>Pictures <small id="vs-img-count"></small></span>
+          <label class="vs-drop" id="vs-drop">
+            <input type="file" id="vs-files" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+            <b>Add screenshots, photos or a logo</b>
+            <small>PNG, JPEG, WebP or GIF, up to {{ data.limits.image_mb }} MB each, {{ data.limits.images }} at most</small>
+          </label>
+          <ul class="vs-thumbs" id="vs-thumbs"></ul>
+        </div>
+        <div class="pw-field"><span>Text and numbers</span>
+          <div class="vs-adders">
+            <button type="button" class="vs-add" id="vs-add-text">+ Text: a script, notes, a quote</button>
+            <button type="button" class="vs-add" id="vs-add-table">+ Numbers: paste a table or a CSV</button>
+          </div>
+          <div class="vs-blocks" id="vs-blocks"></div>
+          <p class="vs-field-err" data-err="sources" hidden></p>
+        </div>
+      </div>
+
+      <div class="vs-col">
+        <h2 class="vs-h3">Client and brand</h2>
+        <label class="pw-field"><span>Client</span>
+          <input id="vs-client" list="vs-clients" maxlength="120" placeholder="Optional; its brand is remembered">
+          <datalist id="vs-clients"></datalist>
+        </label>
+        <p class="vs-brand-note" id="vs-brand-note">The brand comes from the website when there is one. Set it here to choose it yourself.</p>
+        <details class="vs-hand" id="vs-hand">
+          <summary>Set the brand by hand</summary>
+          <div class="vs-colours" id="vs-colours"></div>
+          <div class="vs-fonts">
+            <label class="pw-field"><span>Heading font</span><select id="vs-head-font"></select></label>
+            <label class="pw-field"><span>Body font</span><select id="vs-body-font"></select></label>
+          </div>
+          <label class="pw-field"><span>Logo</span><input type="file" id="vs-logo" accept="image/png,image/jpeg,image/webp"></label>
+          <p class="vs-field-err" data-err="brand" hidden></p>
+        </details>
+        <a class="vs-link" href="/strategic-agents/video-studio/brands">Saved brands &rarr;</a>
+      </div>
+    </div>
+
+    <div class="vs-go-row">
+      <p class="pw-error vs-error" id="vs-error" role="alert" hidden></p>
+      <p class="vs-progress" id="vs-progress" role="status" aria-live="polite"></p>
+      <button type="button" class="sa-btn sa-btn--dark vs-go" id="vs-go">Make a plan</button>
+    </div>
+    <p class="vs-small">Nothing is made, and almost nothing is spent, until you approve the plan.</p>
+  </section>
+
+  {# ── The library ─────────────────────────────────────────────────────── #}
+  <section class="pw-board" aria-labelledby="vs-lib-t">
+    <div class="sa-sec-head">
+      <span class="sa-idx">01</span>
+      <div>
+        <span class="sa-lbl" data-sa-decode>Your videos</span>
+        <h2 class="sa-h2" id="vs-lib-t">Every video, <span class="sa-mk sa-mk--sm">every version.</span></h2>
+      </div>
+    </div>
+    <div class="pw-bar">
+      <div class="sa-chips" id="vs-kinds" role="radiogroup" aria-label="Kind"></div>
+      <div class="pw-search">
+        <select id="vs-lib-client" aria-label="Client"><option value="">Every client</option></select>
+        <input id="vs-lib-find" type="search" placeholder="Search" aria-label="Search videos">
+      </div>
+    </div>
+    <div class="vs-lib" id="vs-lib"></div>
+    <div class="pw-empty" id="vs-lib-empty" hidden>
+      <div class="vs-reel vs-reel--paper" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div>
+        <h3>No videos yet.</h3>
+        <p>Write a brief above. The plan takes about a minute; once you approve it, the video takes a few minutes and waits here.</p>
+      </div>
+    </div>
+    <noscript>
+      <ul>{% for v in data.library %}<li><a href="{{ v.url }}">{{ v.brief[:90] }}</a> &middot; {{ v.status_label }}</li>{% endfor %}</ul>
+    </noscript>
+  </section>
+</main>
+
+<footer class="sa-foot">
+  <div class="sa-foot-top">
+    <span class="sa-foot-word" aria-label="{{ brand.name }}">{{ brand.name }}</span>
+    <div class="sa-toys" aria-hidden="true">
+      <span class="sa-toy sa-toy--ink"></span><span class="sa-toy sa-toy--paper"></span><span class="sa-toy sa-toy--sky"></span>
+      <span class="sa-toy sa-toy--red"></span><span class="sa-toy sa-toy--acc"></span><span class="sa-toy sa-toy--paper2"></span>
+    </div>
+  </div>
+  <div class="sa-foot-bottom">
+    <span>{{ brand.name }} &middot; Internal use only</span>
+    <a href="/strategic-agents">{{ brand.agents_plural }}</a>
+  </div>
+</footer>
+
+<script type="application/json" id="vs-data">{{ data|tojson }}</script>
+{{ topbar_script() }}
+<script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
+<script defer src="{{ url_for('static', filename='js/video-studio.js') }}?v=1"></script>
+</body>
+</html>

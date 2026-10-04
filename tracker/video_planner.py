@@ -14,6 +14,10 @@ Claude key lives there too. For one version of a project it:
 Each step is written to the job's log, which is the live step list the
 person sees while they wait.
 
+A job's settings may hold {"reuse_site": True, "brand": {...}, "avoid": [ideas]}
+for "Try another idea": the website is not read again, the brand is kept as
+it was (with the person's edits), and Claude is asked for a different idea.
+
 The project's choices hold the settings the person gave:
   {"kind", "shape", "seconds", "style", "words", "script",
    "website": url | "", "brand": {background, text, accent, heading_font, body_font} | {}}
@@ -83,9 +87,23 @@ def run_job(job, *, stop=None, read_site=video_site.read, client=None):
     def step(name, detail=""):
         video_store.add_log(jid, name, detail)
 
+    settings = job.get("settings") or {}
+    # "Try another idea" keeps the website reading and the brand of the plan
+    # before it (with the person's edits), and asks for a different idea.
+    reuse = bool(settings.get("reuse_site"))
+
     # 1. The website.
     url = (choices.get("website") or "").strip()
-    if url:
+    if url and reuse and _site_assets(pid):
+        step("site_done", "Using the website reading from before")
+        website_logo = next((a["id"] for a in video_store.list_assets(pid, kinds=("logo",))
+                             if (a.get("data") or {}).get("from") == "website"), None)
+    elif url and reuse:
+        # It could not be read last time; it is not tried again.
+        message = "The website could not be read before, so this plan uses your own pictures and text."
+        notes.append(message)
+        step("site_blocked", message)
+    elif url:
         step("site", "Opening %s" % url)
         try:
             reading = read_site(url, brief, on_step=lambda k, d="": step("site_" + k, d))
@@ -107,24 +125,33 @@ def run_job(job, *, stop=None, read_site=video_site.read, client=None):
 
     # 2. The brand.
     step("brand", "Settling colours, fonts and logo")
-    saved = video_store.get_brand(email, project.get("client"))
-    manual_logo = next((a["id"] for a in video_store.list_assets(pid, kinds=("logo",))
-                        if (a.get("data") or {}).get("from") == "upload"), None)
-    brand = video_brand.resolve(choices.get("brand") or {}, (saved or {}).get("brand"), website_brand,
-                                website_logo_asset=website_logo, manual_logo_asset=manual_logo,
-                                saved_logo_asset=_saved_logo_asset(pid, saved))
-    if project.get("client") and brand["source"]["colors"] != "default":
+    kept = settings.get("brand") if isinstance(settings.get("brand"), dict) else None
+    if kept and kept.get("colors") and kept.get("fonts"):
+        brand = kept
+    else:
+        saved = video_store.get_brand(email, project.get("client"))
+        manual_logo = next((a["id"] for a in video_store.list_assets(pid, kinds=("logo",))
+                            if (a.get("data") or {}).get("from") == "upload"), None)
+        brand = video_brand.resolve(choices.get("brand") or {}, (saved or {}).get("brand"), website_brand,
+                                    website_logo_asset=website_logo, manual_logo_asset=manual_logo,
+                                    saved_logo_asset=_saved_logo_asset(pid, saved))
+    if project.get("client") and brand["source"]["colors"] != "default" and not kept:
         logo_bytes = None
         if brand.get("logo_asset"):
             logo_bytes = (video_store.get_asset(brand["logo_asset"], blob=True) or {}).get("bytes")
         video_store.save_brand(email, project["client"], video_brand.to_saved(brand), logo_bytes)
 
     # 3. The plan.
+    sources = {"assets": [a for a in video_store.list_assets(pid) if a["kind"] != "frame"]}
+    mine = [a for a in sources["assets"] if (a.get("data") or {}).get("from") != "website" and a["kind"] != "site"]
+    step("sources", "%d picture(s), %d text(s), %d table(s)" % (
+        sum(a["kind"] in video_plan.IMAGE_KINDS for a in mine), sum(a["kind"] == "text" for a in mine),
+        sum(a["kind"] == "numbers" for a in mine)))
     step("plan", "Writing the plan")
-    sources = {"assets": video_store.list_assets(pid)}
+    avoid = [str(x)[:300] for x in (settings.get("avoid") or []) if x][:6]
     try:
         result = video_plan.make_plan(brief, choices, brand, sources, client=client, email=email, project_id=pid,
-                                      version_id=vid,
+                                      version_id=vid, avoid=avoid,
                                       load_blob=lambda aid: (video_store.get_asset(aid, blob=True) or {}).get("bytes"))
     except video_plan.PlanError as exc:
         step("failed", str(exc))

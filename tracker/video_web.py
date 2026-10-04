@@ -70,13 +70,17 @@ MAX_TABLES = 3
 
 def new_project(email, *, brief, kind=None, shape=None, seconds=None, style=None, words="write", script="",
                 website="", brand=None, client="", texts=(), tables=(), images=(), logo=None, title="",
-                project_kind=None):
+                project_kind=None, hold=False):
     """Check a request, store it with its sources, and queue its plan.
 
     texts:  [(name, text)]; tables: [(name, csv or pasted text)];
     images: [(name, bytes)]; logo: (name, bytes) or None.
     Returns (project id, version id). Raises video_starts.Bad or
     video_uploads.Bad with a sentence for the person.
+
+    hold: store the project as a draft and queue nothing (version id None);
+    the start page then uploads the pictures one by one and starts it
+    (video_app.start).
     """
     from tracker import video_brand, video_starts, video_uploads, watch_safety
     brief = video_starts.brief(brief)
@@ -107,9 +111,10 @@ def new_project(email, *, brief, kind=None, shape=None, seconds=None, style=None
     ready_tables = [(n, video_uploads.numbers(t)) for n, t in tables]
     ready_images = [video_uploads.image(b, n) for n, b in images]
     ready_logo = video_uploads.image(logo[1], logo[0]) if logo else None
-    pid = video_store.create_project(email, client=(client or "").strip()[:120],
+    pid = video_store.create_project(email, client=" ".join((client or "").split())[:120],
                                      title=(title or brief)[:120], brief=brief,
-                                     kind=project_kind or choices["kind"], choices=choices)
+                                     kind=project_kind or choices["kind"], choices=choices,
+                                     status="draft" if hold else "active")
     for n, t in ready_texts:
         video_store.add_asset(pid, "text", name=n, data={"text": t})
     for n, t in ready_tables:
@@ -121,9 +126,17 @@ def new_project(email, *, brief, kind=None, shape=None, seconds=None, style=None
         video_store.add_asset(pid, "logo", name=ready_logo["name"], mime=ready_logo["mime"],
                               width=ready_logo["width"], height=ready_logo["height"], data={"from": "upload"},
                               blob=ready_logo["bytes"])
-    vid = video_store.create_version(pid, status="queued", shape=choices["shape"], duration_s=choices["seconds"])
-    video_store.enqueue(vid, kind="plan")
-    return pid, vid
+    if hold:
+        return pid, None
+    return pid, queue_plan(pid, choices)
+
+
+def queue_plan(project_id, choices, settings=None):
+    """A new version of the project, with its plan job queued. Returns its id."""
+    vid = video_store.create_version(project_id, status="queued", shape=choices["shape"],
+                                     duration_s=choices["seconds"])
+    video_store.enqueue(vid, kind="plan", settings=settings or {})
+    return vid
 
 
 # ── The plan tests (Phase 2's finish line) ────────────────────────────────────

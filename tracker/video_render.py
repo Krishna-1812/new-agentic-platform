@@ -55,7 +55,8 @@ def run_job(job, *, stop=None, sandbox=video_sandbox.Sandbox):
     version = video_store.get_version(vid, files=True)
     if not version:
         return {"outcome": "failed", "error": "The version no longer exists."}
-    timings = {}
+    # The build's timings are kept; the render adds its own.
+    timings = dict(version.get("timings") or {})
     video_store.update_version(vid, status="making", error="")
     video_store.add_log(job["id"], "start", "attempt %d" % job.get("attempts", 1))
     duration = float(version.get("duration_s") or 0)
@@ -88,6 +89,7 @@ def run_job(job, *, stop=None, sandbox=video_sandbox.Sandbox):
             cover_at = version.get("cover_at")
             cover_at = float(cover_at) if cover_at is not None else min(duration * 0.4, 3.0)
             t = time.monotonic()
+            video_store.add_log(job["id"], "cover", "at %.1f s" % cover_at)
             cover = box.cover(mp4, min(cover_at, max(0.0, duration - 0.1)))
             timings["cover_s"] = round(time.monotonic() - t, 1)
             _log_blocked(job, box)

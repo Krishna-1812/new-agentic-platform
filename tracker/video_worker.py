@@ -72,7 +72,9 @@ class VideoRunner:
                 return True
             except Exception as exc:
                 log.exception("video job %s", job["id"])
-                result = {"outcome": "failed", "error": "The render crashed (%s)." % type(exc).__name__}
+                what = {"plan": "Making the plan", "build": "Building the video", "change": "Making the change"}
+                result = {"outcome": "failed", "error": "%s stopped with an error (%s). Try again." % (
+                    what.get(job.get("kind"), "The render"), type(exc).__name__)}
                 video_store.update_version(job["version_id"], status="failed", error=result["error"],
                                            finished_at=datetime.now(timezone.utc))
         finally:

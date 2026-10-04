@@ -68,9 +68,9 @@
 
     {# Counted from the rows below; tests/test_hub_card_counts.py checks they agree. #}
     <div class="sa-figs">
-      <div class="sa-fig"><b data-sa-odo data-figure="agents">13</b><span>agents</span></div>
+      <div class="sa-fig"><b data-sa-odo data-figure="agents">14</b><span>agents</span></div>
       <div class="sa-fig"><b data-sa-odo data-figure="live">10</b><span>live</span></div>
-      <div class="sa-fig"><b data-sa-odo data-figure="building">3</b><span>in build</span></div>
+      <div class="sa-fig"><b data-sa-odo data-figure="building">4</b><span>in build</span></div>
       {% if tracked_companies %}
       <div class="sa-fig"><b data-sa-odo>{{ "{:,}".format(tracked_companies) }}+</b><span>companies tracked</span></div>
       {% endif %}
@@ -85,6 +85,7 @@
         ("c", "Anonymous Visitors", "/strategic-agents/anonymous-visitors"),
         ("c", "Job Change Alert", "/strategic-agents/job-change-alert"),
         ("c", "Page Watch", "/strategic-agents/page-watch"),
+        ("c", "Video Studio", "/strategic-agents/video-studio"),
         ("b", "LinkedIn Intelligence", "/strategic-agents/linkedin-intelligence"),
         ("b", "Contact Finder", "/strategic-agents/company-people-intelligence"),
         ("b", "LinkedIn Strategy Researcher", "/strategic-agents/linkedin-strategy-researcher"),
@@ -194,7 +195,7 @@
           <h3 class="sa-group-name">Signals</h3>
           <p class="sa-group-sub">Things that fire on their own, so you hear about the moment instead of finding it later.</p>
         </div>
-        <span class="sa-group-count">4 agents</span>
+        <span class="sa-group-count">5 agents</span>
       </div>
       <div class="sa-grid">
 
@@ -259,6 +260,22 @@
             <span><em>Hands you</em>What changed and whether it matters, boxed on the page</span>
           </span>
           <span class="sa-tags dir-tags"><span class="sa-tag">Competitors</span><span class="sa-tag">Pricing</span><span class="sa-tag">Alerts</span></span>
+          <span class="sa-go">Open agent <span aria-hidden="true">&rarr;</span></span>
+        </a>
+
+        <a href="/strategic-agents/video-studio" id="a-c-vs" class="sa-card" data-agent="c-vs" data-state="active" data-badge="building" data-group="signals">
+          <span class="sa-card-top">
+            <span class="sa-ic"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9.5 4.5 2.5-4.5 2.5z"/><path d="M3 9h2M3 15h2M19 9h2M19 15h2"/></svg></span>
+            <span class="sa-num">14</span>
+            <span class="sa-state sa-state--build"><i></i>Building</span>
+          </span>
+          <span class="sa-name" data-agent-name>Video Studio</span>
+          <span class="sa-desc">Say what video you want and give it a website, pictures, text or numbers. It proposes the video scene by scene, and once you approve the plan it makes it in the brand's colours and fonts, with share copy, ready to download.</span>
+          <span class="sa-dl">
+            <span><em>Makes</em>Launches, explainers, demos, ads, results, tips, events, hiring posts, any short video</span>
+            <span><em>Hands you</em>An MP4 in any shape, the share text, and new versions from plain-words changes</span>
+          </span>
+          <span class="sa-tags dir-tags"><span class="sa-tag">Video</span><span class="sa-tag">Content</span><span class="sa-tag">Social</span></span>
           <span class="sa-go">Open agent <span aria-hidden="true">&rarr;</span></span>
         </a>
       </div>

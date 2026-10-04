@@ -1,9 +1,9 @@
 # Video Studio: plan
 
 Working name: **Video Studio**.
-Status: **being built**. Phases 1 to 3 are built: the render engine; the
-sources, brand and plan; and building the video with Claude. Progress and
-the live checks are in section 7.
+Status: **being built**. Phases 1 to 4 are built: the render engine; the
+sources, brand and plan; building the video with Claude; and the pages
+people use. Progress and the live checks are in section 7.
 
 Tell it what video you want: a launch, an explainer, a product demo, an ad, a
 hiring post, a set of results, or anything else. Give it what it should use: a
@@ -697,3 +697,75 @@ Without Claude, the templates' version is used if it passes the check.
 
 The page shows the average cost and minutes per video; those replace the
 estimates in section 3.7.
+
+### Phase 4 is built
+
+| Part | Where |
+|---|---|
+| The start page: the brief, the 12 starting points, the choices, the sources, the client and the brand; and the library with the client and kind filters and Duplicate | `/strategic-agents/video-studio` (`templates/video_studio.html`) |
+| One video: live reading steps, the plan editor, live making steps with the key frames, the result, the versions | `/strategic-agents/video-studio/videos/<id>` (`templates/video_studio_video.html`) |
+| Saved brands per client, editable | `/strategic-agents/video-studio/brands` |
+| What the pages get and do: drafts, uploads, the live state, edits, Try another idea, Try again, Duplicate, brands | `tracker/video_app.py` |
+| The pages' script and styles | `static/js/video-studio.js`, `static/css/video-studio-app.css` (on Page Watch's `page-watch.css`) |
+| The directory card (Signals, "Building") and the hub counts | `templates/b2b_agents.html`, `templates/hub.html` |
+| The real-browser drive of the whole journey | `scripts/drive_video_studio.py` |
+
+**How it works:**
+- **Starting.** The brief, choices, texts and tables are saved as a draft.
+  The pictures are then uploaded one per request, so no request is large,
+  and the plan is queued. If an upload fails, the draft is removed.
+- **The plan editor.** Any words can be edited in place, with the word
+  limits shown. Scenes can be reordered, deleted or added from the scene
+  menu. A picture is swapped by clicking it (or uploading a new one). Charts
+  can be pointed at other columns. The brand's colours, fonts and logo can
+  be changed, and so can the share copy and the cover scene. The timeline
+  shows the total seconds live, with **Fit** to bring it back to the length.
+  - Edits save as you type. The server holds them to the same rules as
+    Claude's plan: seconds, word limits, pictures and charts.
+  - Words the person types count as facts, because the person stands behind
+    them. A figure they add is not flagged as invented, and it stays a fact
+    through later changes.
+  - Brand edits are corrected for contrast and saved for the client's next
+    video.
+- **Try another idea** makes a new version with a different idea. It keeps
+  the website reading, so the site is not read again (and a site that
+  refused is not tried again), and it keeps the brand with any edits. The
+  earlier plan stays as its own version.
+- **Making.** The six steps are shown live, with the key frames Claude looks
+  at. A quick rebuild (words only, or another shape) shows "Not needed" for
+  the review steps.
+- **The result.** The player, **Download MP4**, **Copy** for each platform the
+  shape suits, **Make changes** (with examples), **Make another shape**, and
+  every version with what changed, its time and its cost.
+- **No internal details on the pages.** Errors are shown without model,
+  service or variable names (`video_app.public_error`). Tests check every page
+  and the live-state JSON for them.
+
+Fixed on the way: a render no longer wipes out the build's timings, and the
+cover step is now in the log.
+
+**What has been checked here:**
+- `tests/test_video_app.py` covers drafts and uploads, every phase of a
+  video, edits and their rules, Try another idea, Duplicate, the library,
+  brands, the routes and the pages.
+- **The whole journey in a real browser, at 1440 and 390 wide.** Three briefs
+  were driven start to finish: a website brief, an uploads-only brief and a
+  numbers brief. Each went through the brief, sources, plan, edits, approve,
+  making with frames, result, share text, a change and another shape. The
+  library, Duplicate and brands were driven too. There were no script
+  errors, no failed requests, no sideways scrolling and no internal details.
+  - Run it with `python scripts/drive_video_studio.py`.
+  - The drive's worker uses stand-ins for Claude, the website reader and the
+    engine, with a real small MP4. The test browser plays VP9, not H.264;
+    Chrome, Edge and Safari play the real H.264 videos.
+
+**Finishing Phase 4 on Railway** (after the Phase 2 and 3 checks):
+1. Open `/strategic-agents/video-studio`. Make two different kinds of video
+   from your own briefs, for example a website explainer and a numbers
+   video. Edit each plan before approving it.
+2. Ask a colleague to do the same without help, and note anything that
+   confused them.
+
+**Done when:** a staff member has made two different kinds of video without
+help. The browser drive is done.
+

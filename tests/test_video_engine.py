@@ -315,7 +315,7 @@ def test_a_render_job_stores_the_video_its_cover_and_its_timings(store):
     assert v["status"] == "ready" and v["mp4_bytes"] == 7 and set(v["timings"]) == {"check_s", "render_s", "cover_s"}
     assert store.get_media(vid, "mp4") == b"MP4DATA" and store.get_media(vid, "cover") == b"JPEG"
     steps = [e["step"] for e in store.get_job(job["id"])["log"]]
-    assert steps == ["start", "check", "render", "blocked", "done"]
+    assert steps == ["start", "check", "render", "cover", "blocked", "done"]
 
 
 def test_a_composition_that_fails_its_check_is_never_rendered(store):
@@ -389,7 +389,7 @@ def test_the_runner_hands_back_a_stopped_job_and_fails_a_crashed_one(store, monk
         raise KeyError("boom")
     video_worker.VideoRunner("w1", run=crash).process_one()
     job = video_store.get_job(a)
-    assert job["status"] == "failed" and "crashed" in job["error"]
+    assert job["status"] == "failed" and "stopped with an error (KeyError)" in job["error"]
     assert video_store.get_version(job["version_id"])["status"] == "failed"
 
 
