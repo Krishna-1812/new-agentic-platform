@@ -17894,6 +17894,57 @@ def weekly_stats(account_id: str = "healthcare"):
         return jsonify({"error": "Not found"}), 503
     return jsonify(json.loads(p.read_text()))
 
+# ── Video Studio (tracker/video_*.py; plan: docs/video-studio-plan.md) ────────
+# Phase 1: the render engine. The website never renders: it queues jobs that
+# the worker service runs (tracker/video_worker.py). The engine page is for
+# staff, to run the engine tests and the sandbox drills on the live worker.
+VS_BASE = "/strategic-agents/video-studio"
+
+
+@app.route(VS_BASE + "/engine")
+@position2_required
+def video_studio_engine_page():
+    from tracker import video_config, video_web
+    return render_template("video_studio_engine.html", user=_get_user(),
+                           data=video_web.engine_page(_pw_email()), pinned=video_config.HYPERFRAMES_VERSION)
+
+
+@app.route(VS_BASE + "/api/engine-tests", methods=["GET", "POST"])
+@position2_required
+def video_studio_engine_tests():
+    from tracker import video_web
+    if request.method == "POST":
+        body = _pw_body()
+        if body is None:
+            return jsonify(ok=False, error="Send JSON."), 400
+        try:
+            ids = video_web.start_test(_pw_email(), str(body.get("test") or ""))
+        except ValueError as exc:
+            return jsonify(ok=False, error=str(exc)), 400
+        return jsonify(ok=True, versions=ids, page=video_web.engine_page(_pw_email()))
+    return jsonify(ok=True, page=video_web.engine_page(_pw_email()))
+
+
+@app.route(VS_BASE + "/media/<int:version_id>.<ext>")
+@position2_required
+def video_studio_media(version_id, ext):
+    from tracker import video_store
+    kinds = {"mp4": ("mp4", "video/mp4"), "jpg": ("cover", "image/jpeg")}
+    if ext not in kinds:
+        abort(404)
+    kind, mime = kinds[ext]
+    data = video_store.get_media(version_id, kind, _pw_email())
+    if not data:
+        abort(404)
+    resp = make_response(data)
+    resp.headers["Content-Type"] = mime
+    resp.headers["Cache-Control"] = "private, max-age=3600"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    if request.args.get("download") == "1":
+        resp.headers["Content-Disposition"] = 'attachment; filename="video-%d.%s"' % (version_id, ext)
+    return resp
+
+
 # ── Account picker moved to templates/accounts.html ─────────────────────────────
 _ACCOUNTS_HTML_UNUSED = """
 <html lang="en">

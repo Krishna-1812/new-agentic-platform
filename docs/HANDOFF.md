@@ -300,6 +300,17 @@ Watches any web page and reports, in plain words and with a before-and-after pic
 - **Health:** `/strategic-agents/page-watch/health` (staff only) returns JSON with `ok`, `behind`, `no_worker`, `no_browser` or `idle`.
 - **Env:** `WATCH_BROWSER=off` turns the browser off; `WATCH_CHROMIUM_PATH` points at a Chromium to use; `WATCH_WORKER_THREADS` (default 2); `RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1` and `ANTHROPIC_API_KEY` on the worker service; `WATCH_CLAUDE_MODEL`, `WATCH_CLAUDE_EFFORT`, `WATCH_CLAUDE_MONTHLY_USD`, `WATCH_JUDGE`; `WATCH_SLACK_CHANNEL`, `WATCH_SLACK_BOT_TOKEN` (falls back to `GOOGLE_ADS_SLACK_BOT_TOKEN`), `WATCH_DIGEST_AT`, `WATCH_ALERTS`, `WATCH_CRON_TOKEN` (web, and the GitHub secret for the watchdog), `PUBLIC_BASE_URL` and `SECRET_KEY` (also on the worker).
 
+### Video Studio (being built; plan and progress: `docs/video-studio-plan.md`)
+
+- **What it is:** a short video from a brief the user writes. Claude plans it, builds it as a HyperFrames composition, and the worker renders it.
+- **Phase 1 (built):** the render engine on the Page Watch worker (`tracker/video_*.py`).
+  - One render thread per worker, queue `video_jobs` with a lease, two attempts, hand-back on SIGTERM.
+  - HyperFrames is pinned (`video_config.HYPERFRAMES_VERSION`) and installed with npm on the worker's first start. Node 22 comes from `railpack.json`.
+  - The sandbox gives the render browser no network: a refusing proxy inside the worker records every outside address it was asked for. Programs get no secrets, and every program has a time limit that stops its whole process group.
+  - Staff page: `/strategic-agents/video-studio/engine` runs the two test videos and the two drills.
+  - Tests never render: `conftest.py` sets `VIDEO_STUDIO=off`; `VIDEO_LIVE=1` runs the one live render test.
+- **Env:** `VIDEO_STUDIO=off` (worker) stops rendering; `VIDEO_ENGINE_DIR`, `VIDEO_WORK_DIR`, `VIDEO_BROWSER_PATH` override the defaults.
+
 ## 10. Environment variables (Railway → web → Variables)
 
 Names only. Values live in Railway and must never be copied into the repo or chat. A missing variable disables only its feature.

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    VIDEO STUDIO · ENGINE (/strategic-agents/video-studio/engine), staff only
+
+    Phase 1 of docs/video-studio-plan.md: proof that the worker renders.
+    Runs the two test videos and the two sandbox drills on the live worker
+    and shows each run's log, cover and MP4. The list is drawn by
+    static/js/video-engine.js from the JSON below and refreshed while a run
+    is waiting or rendering.
+-#}
+<html lang="en">
+<head>
+{{ head("Video Studio engine", ["strategic-agents.css?v=2"]) }}
+<style>
+  .ve { display: grid; gap: 20px; padding-bottom: 64px; }
+  .ve-card { background: var(--card, #fff); border: 1px solid var(--line, #e5ded0); border-radius: 20px; padding: 24px; }
+  .ve-h2 { font-family: "Fraunces", serif; font-weight: 600; font-size: 24px; margin: 0 0 6px; }
+  .ve-sub { margin: 0 0 16px; color: var(--ink2, #5a554b); line-height: 1.5; }
+  .ve-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .ve-stat { border: 1px solid var(--line, #e5ded0); border-radius: 14px; padding: 12px 14px; }
+  .ve-stat b { display: block; font-size: 18px; margin-top: 4px; }
+  .ve-stat span { font-size: 13px; color: var(--ink2, #5a554b); }
+  .ve-ok { color: #1f6b43; } .ve-bad { color: #a2332a; } .ve-wait { color: #93601a; }
+  .ve-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .ve-actions .sa-btn { min-height: 44px; }
+  .ve-msg { margin: 12px 0 0; min-height: 1.4em; }
+  .ve-runs { display: grid; gap: 14px; }
+  .ve-run { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 18px; border: 1px solid var(--line, #e5ded0); border-radius: 16px; padding: 14px; }
+  .ve-thumb { width: 180px; aspect-ratio: 16 / 10; border-radius: 10px; background: #eae4d6; object-fit: contain; }
+  .ve-run h3 { margin: 0 0 4px; font-size: 17px; }
+  .ve-meta { font-size: 14px; color: var(--ink2, #5a554b); margin: 0 0 8px; overflow-wrap: anywhere; }
+  .ve-log { margin: 8px 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--ink2, #5a554b); }
+  .ve-log li { padding: 2px 0; overflow-wrap: anywhere; }
+  .ve-log b { color: var(--ink, #1c1a16); font-weight: 600; }
+  .ve-links { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; font-weight: 600; }
+  @media (max-width: 640px) {
+    .ve-run { grid-template-columns: 1fr; }
+    .ve-thumb { width: 100%; }
+  }
+</style>
+</head>
+<body class="sa">
+
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Video Studio", none), ("Engine", none)]) }}
+
+<main class="sa-shell ve" id="ve">
+  <section class="sa-hero">
+    <div class="sa-hero-top"><span class="sa-lbl">Video Studio &middot; staff only</span></div>
+    <h1 class="sa-h1"><span class="sa-ln"><span>The render engine,</span></span>
+      <span class="sa-ln"><span><em class="sa-it">tested on the worker.</em></span></span></h1>
+    <p class="ve-sub">Each test is queued here and rendered by the worker service, the same way every video will be.
+      The page refreshes while a test is waiting or rendering.</p>
+  </section>
+
+  <section class="ve-card" aria-labelledby="ve-engine-h">
+    <h2 class="ve-h2" id="ve-engine-h">What the worker has</h2>
+    <p class="ve-sub" id="ve-engine-when">&nbsp;</p>
+    <div class="ve-grid" id="ve-engine"></div>
+  </section>
+
+  <section class="ve-card" aria-labelledby="ve-tests-h">
+    <h2 class="ve-h2" id="ve-tests-h">Run a test</h2>
+    <p class="ve-sub"><b>Test videos</b> renders a 10-second landscape video (title, image, end card) and a
+      45-second vertical one with a chart. <b>Outside-address drill</b> renders a video that tries to load an image and
+      a request from the internet: it must finish without them, and its log must name both addresses.
+      <b>Time-limit drill</b> renders a page that never finishes loading: it must be stopped at its 60-second limit.</p>
+    <div class="ve-actions">
+      <button type="button" class="sa-btn sa-btn--dark" data-test="samples">Render the test videos</button>
+      <button type="button" class="sa-btn sa-btn--line" data-test="outside_drill">Outside-address drill</button>
+      <button type="button" class="sa-btn sa-btn--line" data-test="hang_drill">Time-limit drill</button>
+    </div>
+    <p class="ve-msg" id="ve-msg" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="ve-card" aria-labelledby="ve-runs-h">
+    <h2 class="ve-h2" id="ve-runs-h">Your test runs</h2>
+    <div class="ve-runs" id="ve-runs"></div>
+  </section>
+</main>
+
+<script type="application/json" id="ve-data">{{ data|tojson }}</script>
+<script>window.VE_PINNED = {{ pinned|tojson }};</script>
+<script src="{{ url_for('static', filename='js/video-engine.js') }}?v=1"></script>
+{{ topbar_script() }}
+</body>
+</html>
