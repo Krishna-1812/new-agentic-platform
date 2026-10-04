@@ -23,11 +23,10 @@ from __future__ import annotations
 import base64
 import io
 
-FONTS = """
-@font-face { font-family: "Fraunces"; font-weight: 600; src: url("kit/fonts/fraunces-600.woff2") format("woff2"); }
-@font-face { font-family: "Fraunces"; font-style: italic; font-weight: 600; src: url("kit/fonts/fraunces-600-italic.woff2") format("woff2"); }
-@font-face { font-family: "DM Sans"; font-weight: 400 700; src: url("kit/fonts/dmsans.woff2") format("woff2"); }
-"""
+def _fonts():
+    from tracker import video_fonts
+    return video_fonts.font_css(["Fraunces", "DM Sans"])
+
 
 PALETTE = """
 :root { --paper: #F4EFE6; --ink: #1B1A17; --ink2: #4B473F; --forest: #183A2C; --honey: #C8892B;
@@ -67,7 +66,7 @@ def _page(width, height, duration, body, script, extra_css="", head_extra=""):
     </script>
   </body>
 </html>
-""" % {"w": width, "h": height, "d": _num(duration), "fonts": FONTS, "palette": PALETTE, "css": extra_css,
+""" % {"w": width, "h": height, "d": _num(duration), "fonts": _fonts(), "palette": PALETTE, "css": extra_css,
        "body": body, "script": script, "head_extra": head_extra}
 
 

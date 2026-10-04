@@ -92,6 +92,7 @@ class Capture:
     elapsed_ms: int = 0
     requests: int = 0
     mutation: dict | None = None   # what the accuracy harness's edit script reported
+    extra: dict | None = None      # what a caller's `extra` reader returned (Video Studio)
 
     @property
     def ok(self):
@@ -105,8 +106,13 @@ def browser_available():
     return cfg.browser_enabled() and importlib.util.find_spec("playwright") is not None
 
 
-def capture(url, *, area=None, screenshots=True, mutate=None):
+def capture(url, *, area=None, screenshots=True, mutate=None, viewport=None, control=True, extra=None):
     """Read `url`. `area` is a CSS selector to watch instead of the whole page.
+
+    Video Studio reads pages with the same browser and the same safety:
+    `viewport` reads at another window size (a phone), `control=False` skips
+    the second screenshot, and `extra` is an async function given the settled
+    page whose result is kept in Capture.extra (links, colours, the logo).
 
     `mutate` is JavaScript run once the page has settled, before it is read:
     the accuracy harness (tools/watch_accuracy.py) uses it to make known edits.
@@ -120,7 +126,7 @@ def capture(url, *, area=None, screenshots=True, mutate=None):
     cap = None
     if browser_available():
         try:
-            cap = _run_browser(url, area, screenshots, mutate)
+            cap = _run_browser(url, area, screenshots, mutate, viewport, control, extra)
         except _BrowserUnavailable as exc:
             log.warning("watch_capture: no browser (%s); reading %s over HTTP", exc, url)
         except Exception as exc:   # a crash or a hang must not stop the watch
@@ -335,15 +341,17 @@ _AREA_JS = r"""
 """
 
 
-def _run_browser(url, area, screenshots, mutate=None):
+def _run_browser(url, area, screenshots, mutate=None, viewport=None, control=True, extra=None):
     with _SLOTS:
         try:
-            return asyncio.run(asyncio.wait_for(_browse(url, area, screenshots, mutate), cfg.CHECK_TIMEOUT_S))
+            return asyncio.run(asyncio.wait_for(_browse(url, area, screenshots, mutate, viewport, control, extra),
+                                                cfg.CHECK_TIMEOUT_S))
         except asyncio.TimeoutError:
             return Capture(url=url, error="timeout", error_detail="The page took over %ds." % cfg.CHECK_TIMEOUT_S)
 
 
-async def _browse(url, area, screenshots, mutate=None):
+async def _browse(url, area, screenshots, mutate=None, viewport=None, control=True, extra=None):
+    viewport = viewport or cfg.VIEWPORT
     try:
         from playwright.async_api import async_playwright
     except ImportError as exc:
@@ -405,7 +413,7 @@ async def _browse(url, area, screenshots, mutate=None):
         ctx = None
         try:
             ctx = await browser.new_context(
-                viewport=cfg.VIEWPORT, device_scale_factor=1, locale=cfg.LOCALE, timezone_id=cfg.TIMEZONE,
+                viewport=viewport, device_scale_factor=1, locale=cfg.LOCALE, timezone_id=cfg.TIMEZONE,
                 user_agent=cfg.USER_AGENT, reduced_motion="reduce", color_scheme="light",
                 service_workers="block", accept_downloads=False, ignore_https_errors=False,
                 java_script_enabled=True, extra_http_headers={"Accept-Language": "en-US,en;q=0.9"})
@@ -449,15 +457,18 @@ async def _browse(url, area, screenshots, mutate=None):
             if area:
                 cap.area_box = await page.evaluate(_AREA_JS, area)
                 cap.area_found = cap.area_box is not None and cap.area_box[2] > 0 and cap.area_box[3] > 0
+            if extra:
+                cap.extra = await extra(page)
             if screenshots:
-                height = max(1, min(cap.page_height or cfg.VIEWPORT["height"], cfg.MAX_PAGE_HEIGHT))
-                clip = {"x": 0, "y": 0, "width": cfg.VIEWPORT["width"], "height": height}
+                height = max(1, min(cap.page_height or viewport["height"], cfg.MAX_PAGE_HEIGHT))
+                clip = {"x": 0, "y": 0, "width": viewport["width"], "height": height}
                 cap.screenshot = await page.screenshot(full_page=True, clip=clip, type="png",
                                                        animations="disabled", caret="hide")
-                await page.wait_for_timeout(cfg.CONTROL_GAP_MS)
-                cap.control = await page.screenshot(full_page=True, clip=clip, type="png",
-                                                    animations="disabled", caret="hide")
-                cap.width, cap.height = cfg.VIEWPORT["width"], height
+                if control:
+                    await page.wait_for_timeout(cfg.CONTROL_GAP_MS)
+                    cap.control = await page.screenshot(full_page=True, clip=clip, type="png",
+                                                        animations="disabled", caret="hide")
+                cap.width, cap.height = viewport["width"], height
             cap.requests = counter["n"]
         finally:
             # Requests still in flight when the page closes would otherwise

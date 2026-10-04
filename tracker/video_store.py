@@ -12,8 +12,16 @@ Tables
                   composition files, the change asked for, the finished MP4
                   and its cover, what it cost and how long each step took.
   video_jobs      the queue: one row per piece of work for the worker
-                  (Phase 1: "render"). A worker claims a job with a lease,
-                  renews it while it works, and finishes it or hands it back.
+                  ("plan": read the sources and write the plan; "render").
+                  A worker claims a job with a lease, renews it while it
+                  works, and finishes it or hands it back.
+  video_assets    what a project is made from: uploaded images, text and
+                  numbers, and what was read from a website (screenshots,
+                  crops, the logo, the page text). Image bytes live here.
+  video_brands    one saved brand per person and client: colours, fonts,
+                  logo, used again for that client's next video.
+  video_ai_calls  one row per Claude call, with its tokens and cost, for the
+                  monthly cap (VIDEO_CLAUDE_MONTHLY_USD).
 
 Composition files are kept as {path: {"text": str}} or {path: {"b64": str}}.
 
@@ -39,7 +47,8 @@ VERSION_FIELDS = ("plan", "files", "change_request", "status", "error", "shape",
                   "cost_usd", "timings", "mp4", "cover", "mp4_bytes", "finished_at")
 VERSION_JSON = ("plan", "files", "timings")
 VERSION_STATES = ("draft", "queued", "making", "ready", "failed")
-JOB_KINDS = ("render",)
+JOB_KINDS = ("plan", "render")
+ASSET_KINDS = ("image", "logo", "screenshot", "crop", "text", "numbers", "site")
 JOB_STATES = ("queued", "running", "done", "failed")
 # A worker row's job log is cut to this many entries.
 MAX_LOG = 60
@@ -151,6 +160,42 @@ def _ensure(conn):
             cur.execute("CREATE INDEX IF NOT EXISTS video_jobs_open ON video_jobs (id) "
                         "WHERE status IN ('queued', 'running')")
             cur.execute("CREATE INDEX IF NOT EXISTS video_jobs_version ON video_jobs (version_id, id DESC)")
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS video_assets (
+                    id SERIAL PRIMARY KEY,
+                    project_id INTEGER NOT NULL REFERENCES video_projects(id) ON DELETE CASCADE,
+                    kind TEXT NOT NULL,
+                    name TEXT NOT NULL DEFAULT '',
+                    mime TEXT NOT NULL DEFAULT '',
+                    width INTEGER, height INTEGER,
+                    data JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    bytes BYTEA,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT now())""")
+            cur.execute("CREATE INDEX IF NOT EXISTS video_assets_project ON video_assets (project_id, id)")
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS video_brands (
+                    email TEXT NOT NULL,
+                    client TEXT NOT NULL,
+                    brand JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    logo BYTEA,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    PRIMARY KEY (email, client))""")
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS video_ai_calls (
+                    id BIGSERIAL PRIMARY KEY,
+                    email TEXT NOT NULL DEFAULT '',
+                    project_id INTEGER,
+                    version_id INTEGER,
+                    purpose TEXT NOT NULL,
+                    model TEXT NOT NULL DEFAULT '',
+                    ok BOOLEAN NOT NULL DEFAULT TRUE,
+                    input_tokens INTEGER NOT NULL DEFAULT 0,
+                    output_tokens INTEGER NOT NULL DEFAULT 0,
+                    cache_read_tokens INTEGER NOT NULL DEFAULT 0,
+                    cost_usd REAL NOT NULL DEFAULT 0,
+                    detail TEXT NOT NULL DEFAULT '',
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT now())""")
+            cur.execute("CREATE INDEX IF NOT EXISTS video_ai_calls_at ON video_ai_calls (created_at)")
         conn.commit()
         _READY = True
 
@@ -178,7 +223,8 @@ def reset_memory():
     """Empty the in-process store (tests)."""
     with _MEM_LOCK:
         _MEM.clear()
-        _MEM.update(projects={}, versions={}, jobs={}, ids={"projects": 0, "versions": 0, "jobs": 0})
+        _MEM.update(projects={}, versions={}, jobs={}, assets={}, brands={}, ai_calls={},
+                    ids={"projects": 0, "versions": 0, "jobs": 0, "assets": 0, "ai_calls": 0})
 
 
 reset_memory()
@@ -573,3 +619,170 @@ def queue_stats(*, now=None):
             FROM video_jobs WHERE status IN ('queued', 'running')""", {"now": now})
         q, r, s = cur.fetchone()
         return {"queued": q, "running": r, "stalled": s}
+
+
+# ── Assets ───────────────────────────────────────────────────────────────────
+_ASSET_LIST_COLS = "a.id, a.project_id, a.kind, a.name, a.mime, a.width, a.height, a.data, a.created_at"
+
+
+def add_asset(project_id, kind, *, name="", mime="", width=None, height=None, data=None, blob=None):
+    """Store one source of a project. Returns its id."""
+    if kind not in ASSET_KINDS:
+        raise ValueError(kind)
+    rec = {"kind": kind, "name": str(name or "")[:200], "mime": mime, "width": width, "height": height,
+           "data": data or {}, "bytes": blob}
+    if backend() == "memory":
+        with _MEM_LOCK:
+            if project_id not in _MEM["projects"]:
+                raise KeyError(project_id)
+            aid = _mem_id("assets")
+            _MEM["assets"][aid] = dict(copy.deepcopy(rec), id=aid, project_id=project_id,
+                                       created_at=_now().isoformat())
+            return aid
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("INSERT INTO video_assets (project_id, kind, name, mime, width, height, data, bytes) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                    (project_id, kind, rec["name"], mime, width, height, _j(rec["data"]), blob))
+        return cur.fetchone()[0]
+
+
+def list_assets(project_id, email=None, kinds=None):
+    """A project's assets without their bytes, oldest first."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            if not _mem_project(project_id, email):
+                return []
+            rows = [{k: copy.deepcopy(v) for k, v in a.items() if k != "bytes"}
+                    for a in _MEM["assets"].values() if a["project_id"] == project_id
+                    and (kinds is None or a["kind"] in kinds)]
+        return sorted(rows, key=lambda a: a["id"])
+    q, args = ("SELECT %s FROM video_assets a JOIN video_projects p ON p.id = a.project_id WHERE a.project_id = %%s"
+               % _ASSET_LIST_COLS, [project_id])
+    if email is not None:
+        q += " AND p.email = %s"
+        args.append(_norm_email(email))
+    if kinds is not None:
+        q += " AND a.kind = ANY(%s)"
+        args.append(list(kinds))
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute(q + " ORDER BY a.id", args)
+        return _rows(cur)
+
+
+def get_asset(asset_id, email=None, blob=False):
+    if backend() == "memory":
+        with _MEM_LOCK:
+            a = _MEM["assets"].get(asset_id)
+            if not a or not _mem_project(a["project_id"], email):
+                return None
+            return {k: copy.deepcopy(v) for k, v in a.items() if blob or k != "bytes"}
+    cols = _ASSET_LIST_COLS + (", a.bytes" if blob else "")
+    q, args = ("SELECT %s FROM video_assets a JOIN video_projects p ON p.id = a.project_id WHERE a.id = %%s" % cols,
+               [asset_id])
+    if email is not None:
+        q += " AND p.email = %s"
+        args.append(_norm_email(email))
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute(q, args)
+        rows = _rows(cur)
+        return rows[0] if rows else None
+
+
+def delete_asset(asset_id):
+    if backend() == "memory":
+        with _MEM_LOCK:
+            return _MEM["assets"].pop(asset_id, None) is not None
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM video_assets WHERE id = %s", (asset_id,))
+        return cur.rowcount > 0
+
+
+def delete_assets(project_id, kinds):
+    """Remove a project's assets of these kinds (a website read again)."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            gone = [k for k, a in _MEM["assets"].items() if a["project_id"] == project_id and a["kind"] in kinds]
+            for k in gone:
+                del _MEM["assets"][k]
+            return len(gone)
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM video_assets WHERE project_id = %s AND kind = ANY(%s)", (project_id, list(kinds)))
+        return cur.rowcount
+
+
+# ── Saved brands ─────────────────────────────────────────────────────────────
+def save_brand(email, client, brand, logo=None):
+    email, client = _norm_email(email), (client or "").strip()[:120]
+    if not client:
+        return False
+    if backend() == "memory":
+        with _MEM_LOCK:
+            _MEM["brands"][(email, client.lower())] = {"email": email, "client": client, "brand": copy.deepcopy(brand),
+                                                       "logo": logo, "updated_at": _now().isoformat()}
+            return True
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("INSERT INTO video_brands (email, client, brand, logo, updated_at) VALUES (%s, %s, %s, %s, now()) "
+                    "ON CONFLICT (email, client) DO UPDATE SET brand = EXCLUDED.brand, "
+                    "logo = COALESCE(EXCLUDED.logo, video_brands.logo), updated_at = now()",
+                    (email, client.lower(), _j(brand), logo))
+        return True
+
+
+def get_brand(email, client):
+    """{"brand", "logo", "updated_at"} saved for this person and client, or None."""
+    email, client = _norm_email(email), (client or "").strip().lower()
+    if not client:
+        return None
+    if backend() == "memory":
+        with _MEM_LOCK:
+            b = _MEM["brands"].get((email, client))
+            return copy.deepcopy(b) if b else None
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("SELECT * FROM video_brands WHERE email = %s AND client = %s", (email, client))
+        rows = _rows(cur)
+        return rows[0] if rows else None
+
+
+# ── Claude calls and their cost ──────────────────────────────────────────────
+AI_FIELDS = ("email", "project_id", "version_id", "model", "ok", "input_tokens", "output_tokens",
+             "cache_read_tokens", "cost_usd", "detail")
+
+
+def add_ai_call(purpose, *, now=None, **fields):
+    bad = set(fields) - set(AI_FIELDS)
+    if bad:
+        raise ValueError("unknown fields: %s" % ", ".join(sorted(bad)))
+    rec = {"email": "", "project_id": None, "version_id": None, "model": "", "ok": True, "input_tokens": 0,
+           "output_tokens": 0, "cache_read_tokens": 0, "cost_usd": 0.0, "detail": ""}
+    rec.update(fields)
+    rec.update(purpose=purpose, email=_norm_email(rec["email"]), detail=(rec["detail"] or "")[:300])
+    now = now or _now()
+    if backend() == "memory":
+        with _MEM_LOCK:
+            aid = _mem_id("ai_calls")
+            _MEM["ai_calls"][aid] = dict(rec, id=aid, created_at=now.isoformat())
+            return aid
+    cols = list(rec) + ["created_at"]
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("INSERT INTO video_ai_calls (%s) VALUES (%s) RETURNING id"
+                    % (", ".join(cols), ", ".join(["%s"] * len(cols))), [rec[k] for k in rec] + [now])
+        return cur.fetchone()[0]
+
+
+def ai_spend(since, until=None, version_id=None):
+    """{"calls", "cost_usd"} from `since` on (one version's when given)."""
+    until = until or _now() + timedelta(days=1)
+    if backend() == "memory":
+        with _MEM_LOCK:
+            rows = [r for r in _MEM["ai_calls"].values() if since <= _dt(r["created_at"]) < until
+                    and (version_id is None or r["version_id"] == version_id)]
+        return {"calls": len(rows), "cost_usd": round(sum(float(r["cost_usd"]) for r in rows), 5)}
+    q = "SELECT count(*), COALESCE(sum(cost_usd), 0) FROM video_ai_calls WHERE created_at >= %s AND created_at < %s"
+    args = [since, until]
+    if version_id is not None:
+        q += " AND version_id = %s"
+        args.append(version_id)
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute(q, args)
+        n, cost = cur.fetchone()
+        return {"calls": n, "cost_usd": round(float(cost), 5)}

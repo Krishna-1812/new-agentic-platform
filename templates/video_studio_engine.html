@@ -11,34 +11,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Video Studio engine", ["strategic-agents.css?v=2"]) }}
-<style>
-  .ve { display: grid; gap: 20px; padding-bottom: 64px; }
-  .ve-card { background: var(--card, #fff); border: 1px solid var(--line, #e5ded0); border-radius: 20px; padding: 24px; }
-  .ve-h2 { font-family: "Fraunces", serif; font-weight: 600; font-size: 24px; margin: 0 0 6px; }
-  .ve-sub { margin: 0 0 16px; color: var(--ink2, #5a554b); line-height: 1.5; }
-  .ve-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
-  .ve-stat { border: 1px solid var(--line, #e5ded0); border-radius: 14px; padding: 12px 14px; }
-  .ve-stat b { display: block; font-size: 18px; margin-top: 4px; }
-  .ve-stat span { font-size: 13px; color: var(--ink2, #5a554b); }
-  .ve-ok { color: #1f6b43; } .ve-bad { color: #a2332a; } .ve-wait { color: #93601a; }
-  .ve-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-  .ve-actions .sa-btn { min-height: 44px; }
-  .ve-msg { margin: 12px 0 0; min-height: 1.4em; }
-  .ve-runs { display: grid; gap: 14px; }
-  .ve-run { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 18px; border: 1px solid var(--line, #e5ded0); border-radius: 16px; padding: 14px; }
-  .ve-thumb { width: 180px; aspect-ratio: 16 / 10; border-radius: 10px; background: #eae4d6; object-fit: contain; }
-  .ve-run h3 { margin: 0 0 4px; font-size: 17px; }
-  .ve-meta { font-size: 14px; color: var(--ink2, #5a554b); margin: 0 0 8px; overflow-wrap: anywhere; }
-  .ve-log { margin: 8px 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--ink2, #5a554b); }
-  .ve-log li { padding: 2px 0; overflow-wrap: anywhere; }
-  .ve-log b { color: var(--ink, #1c1a16); font-weight: 600; }
-  .ve-links { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; font-weight: 600; }
-  @media (max-width: 640px) {
-    .ve-run { grid-template-columns: 1fr; }
-    .ve-thumb { width: 100%; }
-  }
-</style>
+{{ head("Video Studio engine", ["strategic-agents.css?v=2", "video-studio.css?v=1"]) }}
 </head>
 <body class="sa">
 

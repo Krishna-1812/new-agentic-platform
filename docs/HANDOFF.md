@@ -309,7 +309,14 @@ Watches any web page and reports, in plain words and with a before-and-after pic
   - The sandbox gives the render browser no network: a refusing proxy inside the worker records every outside address it was asked for. Programs get no secrets, and every program has a time limit that stops its whole process group.
   - Staff page: `/strategic-agents/video-studio/engine` runs the two test videos and the two drills.
   - Tests never render: `conftest.py` sets `VIDEO_STUDIO=off`; `VIDEO_LIVE=1` runs the one live render test.
-- **Env:** `VIDEO_STUDIO=off` (worker) stops rendering; `VIDEO_ENGINE_DIR`, `VIDEO_WORK_DIR`, `VIDEO_BROWSER_PATH` override the defaults.
+- **Phase 2 (built):** sources, brand and the plan.
+  - Websites are read on the worker (`video_site`, on `watch_capture`). Uploads are checked and re-encoded (`video_uploads`).
+  - Brand fonts map onto 21 bundled fonts (`video_fonts`). The brand is saved per client (`video_brands`).
+  - The plan is one structured Claude call with server checks: seconds, sources, word limits, nothing invented, exact script. It gets one retry (`video_plan`), and runs as a "plan" job on the worker (`video_planner`).
+  - Calls and costs go to `video_ai_calls`.
+  - Staff page `/strategic-agents/video-studio/plans` runs the 15 test briefs (`video_briefs`) with the real Claude.
+  - Tests use a stand-in Claude (`tests/video_fakes.py`).
+- **Env:** `VIDEO_STUDIO=off` (worker) stops video jobs; `VIDEO_CLAUDE_MODEL` (default claude-sonnet-5-5), `VIDEO_CLAUDE_EFFORT` (medium), `VIDEO_CLAUDE_MONTHLY_USD` (10); `VIDEO_ENGINE_DIR`, `VIDEO_WORK_DIR`, `VIDEO_BROWSER_PATH` override the defaults.
 
 ## 10. Environment variables (Railway → web → Variables)
 

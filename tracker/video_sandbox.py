@@ -224,16 +224,25 @@ class Sandbox:
                    CI="1", NO_COLOR="1")
         return env
 
-    def _hf(self, *args, timeout):
+    def _hf(self, *args, timeout, stdout_path=None):
         program = self._hyperframes or video_engine.ensure_installed()
         return video_engine.run([program] + list(args), cwd=self.project, env=self.env(), timeout=timeout,
-                                stop=self.stop)
+                                stop=self.stop, stdout_path=stdout_path)
 
     # ── The steps ───────────────────────────────────────────────────────────
-    def check(self, timeout=cfg.CHECK_TIMEOUT_S):
-        """hyperframes check: {"ok", "errors": [...], "warnings": [...]}."""
-        code, out = self._hf("check", "--json", timeout=timeout)
+    def check(self, timeout=cfg.CHECK_TIMEOUT_S, at=None):
+        """hyperframes check: {"ok", "errors": [...], "warnings": [...]}.
+
+        `at` (seconds) adds those moments to the samples, e.g. each scene once settled."""
+        args = ["check", "--json"]
+        if at:
+            args += ["--at", ",".join("%.2f" % float(t) for t in at)]
+        report_path = os.path.join(self.root, "check.json")
+        code, err = self._hf(*args, timeout=timeout, stdout_path=report_path)
+        with open(report_path, "r", encoding="utf-8", errors="replace") as fh:
+            out = fh.read()
         report = parse_check(out)
+        out = out or err
         if report is None:
             return {"ok": False, "errors": [{"code": "check_failed", "message": out.strip()[-600:] or
                                              "hyperframes check exited with %s" % code}], "warnings": []}
@@ -290,16 +299,20 @@ class Sandbox:
 
 def parse_check(output):
     """The JSON report in hyperframes check's output, cut down to what we use."""
-    start = output.find("{")
+    # The output also carries progress lines, some of them JSON: the report is
+    # the object that has the sections (lint, layout, ...).
+    data, start = None, output.find("{")
     while start != -1:
         try:
-            data, _ = json.JSONDecoder().raw_decode(output[start:])
-            if isinstance(data, dict) and "ok" in data:
-                break
+            obj, end = json.JSONDecoder().raw_decode(output[start:])
         except ValueError:
-            pass
-        start = output.find("{", start + 1)
-    else:
+            start = output.find("{", start + 1)
+            continue
+        if isinstance(obj, dict) and "ok" in obj and any(k in obj for k in ("lint", "layout", "runtime")):
+            data = obj
+            break
+        start = output.find("{", start + max(1, end))
+    if data is None:
         return None
     errors, warnings = [], []
     for section in ("lint", "runtime", "layout", "motion", "contrast"):

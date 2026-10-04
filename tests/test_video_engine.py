@@ -178,7 +178,8 @@ def test_the_sandbox_hides_secrets_points_the_browser_at_the_trap_and_cleans_up(
     fake_browser.write_text("")
     with video_sandbox.Sandbox(7, browser=str(fake_browser), hyperframes="/bin/true") as box:
         assert os.path.exists(os.path.join(box.project, "kit", "gsap.min.js"))
-        assert os.path.exists(os.path.join(box.project, "kit", "fonts", "dmsans.woff2"))
+        assert os.path.exists(os.path.join(box.project, "kit", "fonts.json"))
+        assert len(os.listdir(os.path.join(box.project, "kit", "fonts"))) >= 40
         box.write({"index.html": b"<html></html>", "media/a.png": b"x"})
         assert open(os.path.join(box.project, "media", "a.png"), "rb").read() == b"x"
         env = box.env()
@@ -203,7 +204,8 @@ def test_the_check_report_is_read_from_the_programs_output():
     assert r["ok"] is False and r["errors"][0]["code"] == "placeholder_media_url"
     assert r["warnings"][0]["time"] == 4.5
     assert video_sandbox.parse_check("no json here") is None
-    assert video_sandbox.parse_check(json.dumps({"ok": True}))["ok"] is True
+    assert video_sandbox.parse_check(json.dumps({"ok": True}))  is None             # a progress line, not the report
+    assert video_sandbox.parse_check(json.dumps({"ok": True, "lint": {}}))["ok"] is True
 
 
 # ── The engine's programs ────────────────────────────────────────────────────
@@ -445,8 +447,10 @@ def test_each_test_composition_is_complete_and_loads_only_its_own_files(name):
     assert 0 <= s["cover_at"] < s["duration_s"]
     expected = sorted(video_samples.OUTSIDE_HOSTS) if name == "outside_drill" else []
     assert video_sandbox.outside_addresses(files) == expected
-    for ref in ("kit/fonts/fraunces-600.woff2", "kit/fonts/dmsans.woff2"):
-        assert ref in html and os.path.exists(os.path.join(video_config.kit_dir(), ref[4:]))
+    import re
+    refs = re.findall(r'url\("kit/(fonts/[^"]+)"\)', html)
+    assert refs and all(os.path.exists(os.path.join(video_config.kit_dir(), r)) for r in refs)
+    assert 'font-family: "Fraunces"' in html and 'font-family: "DM Sans"' in html
 
 
 def test_the_two_test_videos_match_the_plan():
@@ -532,8 +536,11 @@ def test_the_build_adds_node_22_and_keeps_ffmpeg():
 def test_the_kit_holds_gsap_and_the_fonts_with_their_licences():
     kit = video_config.kit_dir()
     assert open(os.path.join(kit, "gsap.min.js")).read(200).find("GSAP 3.") != -1
-    for f in ("fraunces-600.woff2", "fraunces-600-italic.woff2", "dmsans.woff2"):
-        assert open(os.path.join(kit, "fonts", f), "rb").read(4) == b"wOF2"
+    manifest = json.load(open(os.path.join(kit, "fonts.json")))
+    assert len(manifest["families"]) == 21 and manifest["licence"] == "SIL Open Font License 1.1"
+    for fam in manifest["families"]:
+        for face in fam["faces"]:
+            assert open(os.path.join(kit, face["file"]), "rb").read(4) == b"wOF2"
     text = open(os.path.join(kit, "LICENSES.md")).read()
     assert "Open Font License" in text and "No Charge" in text
 
@@ -547,3 +554,19 @@ def test_the_browser_is_found_where_playwright_puts_it(monkeypatch, tmp_path):
     assert video_config.browser_path() == str(shell)
     monkeypatch.setenv("VIDEO_BROWSER_PATH", str(tmp_path / "missing"))
     assert video_config.browser_path() is None
+
+
+def test_a_large_report_goes_to_a_file_whole(tmp_path):
+    """hyperframes check prints a report far larger than the output kept in
+    memory; read from the kept tail it was cut off and misread."""
+    big = json.dumps({"ok": False, "lint": {"findings": [{"severity": "warning", "code": "w", "message": "x" * 200}] * 3000},
+                      "layout": {"findings": [{"severity": "error", "code": "text_overflow", "message": "cut off"}]}})
+    src = tmp_path / "big.json"
+    src.write_text(big)
+    out = tmp_path / "report.json"
+    code, err = video_engine.run([sys.executable, "-c", "import sys; sys.stderr.write('progress'); "
+                                  "sys.stdout.write(open(%r).read())" % str(src)], timeout=30, stdout_path=str(out))
+    assert code == 0 and err == "progress" and len(big) > 256 * 1024
+    report = video_sandbox.parse_check(out.read_text())
+    assert report["ok"] is False and report["errors"][0]["code"] == "text_overflow"
+    assert video_sandbox.parse_check(big[-200000:]) is None          # what the old tail-only reading saw

@@ -1,8 +1,9 @@
-"""Video Studio: the render thread on the Page Watch worker.
+"""Video Studio: the job thread on the Page Watch worker.
 
 The worker service (python -m tracker.watch_worker) runs one VideoRunner next
-to its page checks: one render at a time per worker, so Page Watch keeps its
-own threads. The pattern is Page Watch's:
+to its page checks: one job at a time per worker ("plan": read the sources
+and write the plan; "render"), so Page Watch keeps its own threads.
+The pattern is Page Watch's:
 
   * claim_job takes the oldest open job with a lease; a side thread renews
     the lease every JOB_LEASE_S/3 seconds while the job runs, so a worker
@@ -31,11 +32,19 @@ log = logging.getLogger("video_studio.worker")
 ENGINE_META = "video_engine"
 
 
+def run_any(job, stop=None):
+    """Run a job by its kind: "plan" (read the sources, write the plan) or "render"."""
+    if job.get("kind") == "plan":
+        from tracker import video_planner
+        return video_planner.run_job(job, stop=stop)
+    return video_render.run_job(job, stop=stop)
+
+
 class VideoRunner:
     def __init__(self, owner, *, stopping=None, run=None, poll_s=cfg.POLL_S, lease_s=cfg.JOB_LEASE_S):
         self.owner = owner
         self.stopping = stopping or threading.Event()
-        self.run = run or video_render.run_job
+        self.run = run or run_any
         self.poll_s, self.lease_s = poll_s, lease_s
         self.current = None
         self.jobs = 0

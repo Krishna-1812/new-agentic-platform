@@ -17945,6 +17945,66 @@ def video_studio_media(version_id, ext):
     return resp
 
 
+# Phase 2: the plan tests. The 15 test briefs (tracker/video_briefs.py) are
+# planned by the worker with the real Claude; staff review each plan here.
+@app.route(VS_BASE + "/plans")
+@position2_required
+def video_studio_plans_page():
+    from tracker import video_web
+    return render_template("video_studio_plans.html", user=_get_user(), data=video_web.plan_tests_page(_pw_email()))
+
+
+@app.route(VS_BASE + "/api/plan-tests", methods=["GET", "POST"])
+@position2_required
+def video_studio_plan_tests():
+    from tracker import video_briefs, video_web
+    if request.method == "POST":
+        if _pw_body() is None:
+            return jsonify(ok=False, error="Send JSON."), 400
+        video_briefs.run_all(_pw_email())
+    return jsonify(ok=True, page=video_web.plan_tests_page(_pw_email()))
+
+
+@app.route(VS_BASE + "/api/plan-tests/<int:version_id>/review", methods=["POST"])
+@position2_required
+def video_studio_plan_review(version_id):
+    from tracker import video_web
+    body = _pw_body()
+    if body is None:
+        return jsonify(ok=False, error="Send JSON."), 400
+    try:
+        ok = video_web.review_plan(_pw_email(), version_id, body.get("verdict"), body.get("note", ""))
+    except ValueError as exc:
+        return jsonify(ok=False, error=str(exc)), 400
+    if not ok:
+        abort(404)
+    return jsonify(ok=True, page=video_web.plan_tests_page(_pw_email()))
+
+
+@app.route(VS_BASE + "/api/plan-tests/export")
+@position2_required
+def video_studio_plan_export():
+    from tracker import video_web
+    resp = make_response(json.dumps(video_web.export_plan_tests(_pw_email()), indent=1, ensure_ascii=False))
+    resp.headers["Content-Type"] = "application/json; charset=utf-8"
+    resp.headers["Content-Disposition"] = 'attachment; filename="video-plan-tests.json"'
+    return resp
+
+
+@app.route(VS_BASE + "/asset/<int:asset_id>.img")
+@position2_required
+def video_studio_asset(asset_id):
+    from tracker import video_store
+    a = video_store.get_asset(asset_id, _pw_email(), blob=True)
+    if not a or not a.get("bytes") or a.get("mime") not in ("image/png", "image/jpeg", "image/webp"):
+        abort(404)
+    resp = make_response(a["bytes"])
+    resp.headers["Content-Type"] = a["mime"]
+    resp.headers["Cache-Control"] = "private, max-age=86400, immutable"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    return resp
+
+
 # ── Account picker moved to templates/accounts.html ─────────────────────────────
 _ACCOUNTS_HTML_UNUSED = """
 <html lang="en">
