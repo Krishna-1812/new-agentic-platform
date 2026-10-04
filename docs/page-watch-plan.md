@@ -261,9 +261,9 @@ The heart of the agent, proven on real sites before anything is built on it.
   up to 4 candidate links. Each is checked like a pasted link. A link typed
   directly is used as it is, without Claude.
 - **Settings:**
-  - `WATCH_CLAUDE_MODEL` (default `claude-opus-5-5`);
+  - `WATCH_CLAUDE_MODEL` (default `claude-sonnet-5-5`);
   - `WATCH_CLAUDE_EFFORT` (default `medium`);
-  - `WATCH_CLAUDE_MONTHLY_USD` (default 25, all watches together);
+  - `WATCH_CLAUDE_MONTHLY_USD` (default 5, all watches together);
   - `WATCH_JUDGE=off`;
   - the worker needs `ANTHROPIC_API_KEY` in its own Variables.
 

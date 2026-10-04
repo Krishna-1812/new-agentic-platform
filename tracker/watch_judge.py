@@ -26,9 +26,9 @@ never alerted (Phase 5).
 Every call is recorded in watch_ai_calls with its tokens and cost.
 
 Environment:
-  WATCH_CLAUDE_MODEL        default claude-opus-5-5
+  WATCH_CLAUDE_MODEL        default claude-sonnet-5-5
   WATCH_CLAUDE_EFFORT       default medium
-  WATCH_CLAUDE_MONTHLY_USD  default 25 (all watches together)
+  WATCH_CLAUDE_MONTHLY_USD  default 5 (all watches together)
   WATCH_JUDGE               "off" uses the rules only
 """
 
@@ -45,16 +45,18 @@ from tracker import watch_store
 
 log = logging.getLogger(__name__)
 
-DEFAULT_MODEL = "claude-opus-5-5"
+DEFAULT_MODEL = "claude-sonnet-5-5"
+DEFAULT_MONTHLY_USD = 5.0
 CATEGORIES = ("price", "product", "messaging", "legal", "design", "availability", "hiring", "content", "other")
 IMPORTANCE = ("important", "worth_a_look", "minor")
 CONFIDENCE = ("high", "medium", "low")
 FEEDBACK = ("useful", "not_useful", "mute")
 # Per million tokens: (input, output, cache read). Unknown models are priced
-# as Opus, so the cap errs on the side of stopping early.
+# at the dearest Opus rate, so the cap errs on the side of stopping early.
 RATES = {"claude-opus-5-5": (4.0, 20.0, 0.20), "claude-opus-5": (5.0, 25.0, 0.50),
          "claude-opus-4-8": (5.0, 25.0, 0.50), "claude-sonnet-5-5": (2.0, 10.0, 0.20),
          "claude-sonnet-5": (2.0, 10.0, 0.20), "claude-haiku-4-5": (1.0, 5.0, 0.10)}
+UNKNOWN_RATES = (5.0, 25.0, 0.50)
 USD_PER_SEARCH = 0.01
 MAX_CROPS = 3
 CROP_WIDTH = 1000         # px; a crop is scaled down to this width at most
@@ -123,9 +125,9 @@ def effort():
 
 def monthly_cap():
     try:
-        return max(0.0, float(os.environ.get("WATCH_CLAUDE_MONTHLY_USD") or 25))
+        return max(0.0, float(os.environ.get("WATCH_CLAUDE_MONTHLY_USD") or DEFAULT_MONTHLY_USD))
     except ValueError:
-        return 25.0
+        return DEFAULT_MONTHLY_USD
 
 
 def _key():
@@ -147,7 +149,7 @@ def spent_this_month(now=None):
 
 def cost_usd(model_id, usage, searches=0):
     rin, rout, rcache = RATES.get(model_id) or next(
-        (v for k, v in RATES.items() if str(model_id).startswith(k)), RATES[DEFAULT_MODEL])
+        (v for k, v in RATES.items() if str(model_id).startswith(k)), UNKNOWN_RATES)
     u = usage or {}
     return round(((u.get("input_tokens") or 0) * rin + (u.get("output_tokens") or 0) * rout
                   + (u.get("cache_read_input_tokens") or 0) * rcache
