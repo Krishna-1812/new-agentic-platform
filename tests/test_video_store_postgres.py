@@ -102,9 +102,33 @@ def test_assets_brands_and_claude_calls_round_trip(email):
     assert video_store.save_brand(email, "Acme", {"accent": "#ff0000"}, b"PNGLOGO")
     assert video_store.save_brand(email, "acme", {"accent": "#00ff00"})              # logo kept
     b = video_store.get_brand(email, " ACME ")
-    assert b["brand"] == {"accent": "#00ff00"} and b["logo"] == b"PNGLOGO"
+    assert b["brand"] == {"accent": "#00ff00", "name": "acme"} and b["logo"] == b"PNGLOGO"
     assert video_store.get_brand("other@markifydigital.com", "acme") is None
     since = datetime.now(timezone.utc) - timedelta(seconds=5)
     video_store.add_ai_call("plan", email=email, project_id=pid, version_id=None, model="m", cost_usd=0.25,
                             input_tokens=10, output_tokens=5)
     assert video_store.ai_spend(since)["cost_usd"] >= 0.25
+
+
+def test_the_library_drafts_and_brands_for_the_pages(email):
+    """Phase 4's store: the library in one query, drafts, and the brands list."""
+    a = video_store.create_project(email, client="Acme", brief="First", kind="results", status="draft")
+    b = video_store.create_project(email, brief="Second", kind="hiring")
+    hidden = video_store.create_project(email, brief="Engine", kind="engine_test")
+    v1 = video_store.create_version(b, plan={"idea": "Plan one"}, status="ready", duration_s=20, shape="vertical")
+    v2 = video_store.create_version(b, plan={"idea": "Plan two"}, status="queued", duration_s=20)
+    video_store.create_version(hidden, status="ready")
+    rows = video_store.library(email, exclude_kinds=("engine_test", "plan_test"))
+    assert [r["id"] for r in rows] == [b, a]
+    assert rows[0]["versions"] == 2 and rows[0]["latest"]["id"] == v2 and rows[0]["latest"]["idea"] == "Plan two"
+    assert rows[0]["ready"]["id"] == v1 and rows[0]["ready"]["shape"] == "vertical"
+    assert rows[1]["latest"] is None and rows[1]["ready"] is None and rows[1]["status"] == "draft"
+    assert video_store.library("other@markifydigital.com") == []
+    assert video_store.update_project(a, status="active") and video_store.get_project(a)["status"] == "active"
+    assert not video_store.delete_project(a, "other@markifydigital.com")
+    assert video_store.delete_project(b, email) and video_store.get_version(v1) is None
+    assert video_store.save_brand(email, "Acme  Co", {"accent": "#ff0000"}, b"PNGLOGO")
+    assert video_store.save_brand(email, "acme co", {"accent": "#00ff00"}, clear_logo=True)
+    rows = video_store.list_brands(email)
+    assert len(rows) == 1 and rows[0]["brand"]["name"] == "acme co" and rows[0]["has_logo"] is False
+    assert video_store.delete_brand(email, "ACME CO") and video_store.list_brands(email) == []

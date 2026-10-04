@@ -18020,7 +18020,7 @@ def video_studio_build_tests():
 @app.route(VS_BASE + "/api/versions/<int:version_id>/<action>", methods=["POST"])
 @position2_required
 def video_studio_version_action(version_id, action):
-    from tracker import video_builder, video_web
+    from tracker import video_app, video_builder, video_store, video_web
     body = _pw_body()
     if body is None:
         return jsonify(ok=False, error="Send JSON."), 400
@@ -18034,13 +18034,173 @@ def video_studio_version_action(version_id, action):
             out = video_builder.another_shape(email, version_id, body.get("shape"))
         elif action == "score":
             out = video_web.score_video(email, version_id, body.get("scores"), body.get("note", "")) or None
+        elif action == "idea":
+            out = video_app.another_idea(email, version_id)
+        elif action == "retry":
+            out = video_app.retry(email, version_id)
         else:
             abort(404)
     except video_builder.Refused as exc:
         return jsonify(ok=False, error=str(exc)), 400
     if not out:
         abort(404)
+    if body.get("view") == "video":
+        # The video page shows the version the action made, or the one it acted on.
+        shown = out if action in ("change", "shape", "idea", "retry") else version_id
+        v = video_store.get_version(shown, email)
+        return jsonify(ok=True, version=v["id"], video=video_app.project_view(email, v["project_id"], v["id"]))
     return jsonify(ok=True, page=video_web.plan_tests_page(email))
+
+
+# Phase 4: the experience. The start page and the library, one video's page
+# (reading, the plan to edit, making, the result, its versions) and the saved
+# brands. Drawn by static/js/video-studio.js; every write takes JSON only.
+def _vs_invalid(exc):
+    return jsonify(ok=False, field=getattr(exc, "field", None), error=str(exc)), 400
+
+
+@app.route(VS_BASE)
+@position2_required
+def video_studio_page():
+    from tracker import video_app
+    return render_template("video_studio.html", user=_get_user(), data=video_app.home(_pw_email()))
+
+
+@app.route(VS_BASE + "/videos/<int:project_id>")
+@position2_required
+def video_studio_video_page(project_id):
+    from tracker import video_app, video_fonts
+    view = video_app.project_view(_pw_email(), project_id, request.args.get("v", type=int))
+    if not view:
+        abort(404)
+    return render_template("video_studio_video.html", user=_get_user(), data=view,
+                           menu=[{"type": k, "label": lab, "hint": h} for k, lab, h in video_app.SCENE_MENU],
+                           fields=video_app.scene_fields(), fonts=video_fonts.families())
+
+
+@app.route(VS_BASE + "/brands")
+@position2_required
+def video_studio_brands_page():
+    from tracker import video_app, video_fonts
+    return render_template("video_studio_brands.html", user=_get_user(), brands=video_app.brands_view(_pw_email()),
+                           fonts=video_fonts.families())
+
+
+@app.route(VS_BASE + "/api/library")
+@position2_required
+def video_studio_library():
+    from tracker import video_app
+    return jsonify(ok=True, library=video_app.library_view(_pw_email()))
+
+
+@app.route(VS_BASE + "/api/videos", methods=["POST"])
+@position2_required
+def video_studio_new_video():
+    from tracker import video_app, video_builder, video_starts, video_uploads
+    body = _pw_body()
+    if body is None:
+        return jsonify(ok=False, error="Send JSON."), 400
+    try:
+        pid = video_app.start_draft(_pw_email(), body)
+    except (video_starts.Bad, video_uploads.Bad) as exc:
+        return _vs_invalid(exc)
+    except video_builder.Refused as exc:
+        return jsonify(ok=False, error=str(exc)), 400
+    return jsonify(ok=True, project=pid)
+
+
+@app.route(VS_BASE + "/api/videos/<int:project_id>", methods=["GET"])
+@position2_required
+def video_studio_video(project_id):
+    from tracker import video_app
+    view = video_app.project_view(_pw_email(), project_id, request.args.get("v", type=int))
+    if not view:
+        abort(404)
+    return jsonify(ok=True, video=view)
+
+
+@app.route(VS_BASE + "/api/videos/<int:project_id>/<action>", methods=["POST"])
+@position2_required
+def video_studio_video_action(project_id, action):
+    from tracker import video_app, video_builder, video_uploads
+    body = _pw_body()
+    if body is None:
+        return jsonify(ok=False, error="Send JSON."), 400
+    email = _pw_email()
+    try:
+        if action == "images":
+            pic = video_app.add_image(email, project_id, body.get("name"), body.get("data"),
+                                      str(body.get("kind") or "image"))
+            if not pic:
+                abort(404)
+            return jsonify(ok=True, picture=pic)
+        if action == "start":
+            vid = video_app.start(email, project_id)
+        elif action == "discard":
+            if not video_app.discard_draft(email, project_id):
+                abort(404)
+            return jsonify(ok=True)
+        elif action == "duplicate":
+            made = video_app.duplicate(email, project_id)
+            if not made:
+                abort(404)
+            project_id, vid = made
+        else:
+            abort(404)
+    except video_uploads.Bad as exc:
+        return _vs_invalid(exc)
+    except video_builder.Refused as exc:
+        return jsonify(ok=False, error=str(exc)), 400
+    if not vid:
+        abort(404)
+    return jsonify(ok=True, project=project_id, version=vid,
+                   url="%s/videos/%d" % (VS_BASE, project_id))
+
+
+@app.route(VS_BASE + "/api/versions/<int:version_id>/plan", methods=["POST"])
+@position2_required
+def video_studio_save_plan(version_id):
+    from tracker import video_app, video_builder
+    body = _pw_body()
+    if body is None:
+        return jsonify(ok=False, error="Send JSON."), 400
+    try:
+        plan = video_app.save_plan(_pw_email(), version_id, body)
+    except video_builder.Refused as exc:
+        return jsonify(ok=False, error=str(exc)), 400
+    if plan is None:
+        abort(404)
+    return jsonify(ok=True, plan=plan)
+
+
+@app.route(VS_BASE + "/api/brands", methods=["POST"])
+@position2_required
+def video_studio_save_brand():
+    from tracker import video_app, video_starts, video_uploads
+    body = _pw_body()
+    if body is None:
+        return jsonify(ok=False, error="Send JSON."), 400
+    try:
+        if body.get("delete"):
+            video_app.delete_brand(_pw_email(), str(body.get("client") or ""))
+            return jsonify(ok=True, brands=video_app.brands_view(_pw_email()))
+        return jsonify(ok=True, brands=video_app.save_brand(_pw_email(), body))
+    except (video_starts.Bad, video_uploads.Bad) as exc:
+        return _vs_invalid(exc)
+
+
+@app.route(VS_BASE + "/brands/logo")
+@position2_required
+def video_studio_brand_logo():
+    from tracker import video_app
+    data = video_app.brand_logo(_pw_email(), request.args.get("client", ""))
+    if not data:
+        abort(404)
+    resp = make_response(data)
+    resp.headers["Content-Type"] = "image/png"
+    resp.headers["Cache-Control"] = "private, no-cache"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    return resp
 
 
 # ── Account picker moved to templates/accounts.html ─────────────────────────────

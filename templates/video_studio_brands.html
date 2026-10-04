@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    VIDEO STUDIO · SAVED BRANDS (/strategic-agents/video-studio/brands)
+
+    One brand per client: colours, fonts and logo, used for that client's
+    next video. A brand is saved when a video for the client is planned from
+    a website or a brand set by hand, and when a plan's brand is edited; here
+    each can be changed, added or removed. Drawn by static/js/video-studio.js.
+-#}
+<html lang="en">
+<head>
+{{ head("Video Studio brands", ["strategic-agents.css?v=2", "page-watch.css?v=1", "video-studio-app.css?v=1"]) }}
+</head>
+<body class="sa pw vs">
+
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Video Studio", "/strategic-agents/video-studio"), ("Brands", none)]) }}
+
+<main class="sa-shell" id="vs-brands">
+  <section class="vs-head">
+    <div class="vs-head-main">
+      <span class="sa-lbl">Video Studio</span>
+      <h1 class="vs-brief">Saved brands</h1>
+      <p class="vs-small">Each client's colours, fonts and logo, used for their next video. A video can still change them in its plan.</p>
+    </div>
+  </section>
+  <p class="pw-error vs-error" id="vs-error" role="alert" hidden></p>
+  <div class="vs-brand-grid" id="vs-brand-grid"></div>
+  <noscript><ul>{% for b in brands %}<li>{{ b.client }}</li>{% endfor %}</ul></noscript>
+</main>
+
+<script type="application/json" id="vs-data">{{ {"brands": brands, "fonts": fonts}|tojson }}</script>
+{{ topbar_script() }}
+<script defer src="{{ url_for('static', filename='js/video-studio.js') }}?v=1"></script>
+</body>
+</html>

@@ -402,8 +402,12 @@ def scene_text(s):
     return [b for b in bits if b and str(b).strip()]
 
 
-def check(plan, choices, sources, brief):
-    """Problems with a plan, as sentences ([] when it passes)."""
+def check(plan, choices, sources, brief, typed=()):
+    """Problems with a plan, as sentences ([] when it passes).
+
+    typed: words the person wrote into the plan themselves (plan["typed"]).
+    They count as facts: the person stands behind what they type.
+    """
     problems = []
     scenes = plan.get("scenes") or []
     if not (MIN_SCENES <= len(scenes) <= MAX_SCENES):
@@ -412,7 +416,7 @@ def check(plan, choices, sources, brief):
     if abs(total - float(choices["seconds"])) > SECONDS_SLACK:
         problems.append("The scenes add up to %s seconds, not %s." % (_num(total), _num(choices["seconds"])))
     assets = {a["id"]: a for a in sources["assets"]}
-    facts = corpus(brief, choices, sources)
+    facts = corpus(brief, choices, sources) + "\n" + "\n".join(str(t) for t in typed or ())
     fact_numbers = set(numbers_in(facts))
     fact_norm = _norm(facts)
     for i, s in enumerate(scenes, 1):
@@ -603,8 +607,14 @@ def _ask(client, messages, record):
     return plan, text, cost
 
 
+AVOID_NOTE = """The person saw an earlier plan and asked for another idea. Make a clearly \
+different one: a different angle, hook and order of scenes, not the same plan reworded. \
+The earlier idea(s):
+- %s"""
+
+
 def make_plan(brief, choices, brand, sources, *, client=None, load_blob=None, email="", project_id=None,
-              version_id=None):
+              version_id=None, avoid=()):
     """{"plan", "problems", "attempts", "cost_usd", "model"}; raises PlanError when no plan can be made."""
     if client is None and not _key():
         raise PlanError("Claude is not set up: add ANTHROPIC_API_KEY to the worker service in Railway.")
@@ -614,6 +624,8 @@ def make_plan(brief, choices, brand, sources, *, client=None, load_blob=None, em
     client = client or _client()
     record = {"email": email, "project_id": project_id, "version_id": version_id}
     content = request_content(brief, choices, brand, sources, load_blob=load_blob or (lambda aid: None))
+    if avoid:
+        content.insert(len(content) - 1, {"type": "text", "text": AVOID_NOTE % "\n- ".join(avoid)})
     messages = [{"role": "user", "content": content}]
     plan, raw, cost = _ask(client, messages, record)
     problems = check(plan, choices, sources, brief)
@@ -643,6 +655,7 @@ the rules and say so in notes."""
 
 def edit_plan(plan, request, brief, choices, brand, sources, *, client=None, load_blob=None, email="",
               project_id=None, version_id=None):
+    typed = plan.get("typed") or ()
     """The plan with a person's change made: {"plan", "problems", "attempts", "cost_usd", "model"}."""
     if client is None and not _key():
         raise PlanError("Claude is not set up: add ANTHROPIC_API_KEY to the worker service in Railway.")
@@ -657,7 +670,7 @@ def edit_plan(plan, request, brief, choices, brand, sources, *, client=None, loa
         EDIT_NOTE % _num(choices["seconds"]))}
     messages = [{"role": "user", "content": content}]
     new, raw, cost = _ask(client, messages, record)
-    problems = check(new, choices, sources, brief)
+    problems = check(new, choices, sources, brief, typed)
     attempts = 1
     if problems and spent_this_month() < monthly_cap():
         messages += [{"role": "assistant", "content": raw},
@@ -666,7 +679,7 @@ def edit_plan(plan, request, brief, choices, brand, sources, *, client=None, loa
         new2, _, cost2 = _ask(client, messages, record)
         cost += cost2
         attempts = 2
-        problems2 = check(new2, choices, sources, brief)
+        problems2 = check(new2, choices, sources, brief, typed)
         if len(problems2) <= len(problems):
             new, problems = new2, problems2
     return {"plan": new, "problems": problems, "attempts": attempts, "cost_usd": round(cost, 5), "model": model()}

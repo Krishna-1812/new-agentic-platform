@@ -321,6 +321,11 @@ Watches any web page and reports, in plain words and with a before-and-after pic
   - Claude's review loop is `video_agent`: tools `read_file`, `write_file`, `check`, `snapshot` and `done`, with a 30-call limit, 2 fix rounds, 15 minutes and the budget. The program's final check is the gate.
   - Jobs `build` and `change` (`video_builder`) cover Approve, Make changes and Make another shape.
   - `scripts/check_video_scenes.py` checks the library with the real engine.
+- **Phase 4 (built):** the pages.
+  - `/strategic-agents/video-studio` is the start page and library; `/videos/<id>` is one video (reading, plan editor, making, result, versions); `/brands` holds the saved brands.
+  - The logic is in `video_app`; the pages are drawn by `static/js/video-studio.js`. Writes are JSON only, and pictures are uploaded one per request.
+  - Edits are checked by `video_plan.check`; words the person types count as facts (`plan["typed"]`). Key frames are stored as assets of kind `frame`.
+  - `scripts/drive_video_studio.py` drives the whole journey in a real browser with stand-ins for the worker's outside world.
 - **Env:** `VIDEO_STUDIO=off` (worker) stops video jobs; `VIDEO_CLAUDE_MODEL` (default claude-sonnet-5-5), `VIDEO_CLAUDE_EFFORT` (medium), `VIDEO_CLAUDE_MONTHLY_USD` (10); `VIDEO_ENGINE_DIR`, `VIDEO_WORK_DIR`, `VIDEO_BROWSER_PATH` override the defaults.
 
 ## 10. Environment variables (Railway → web → Variables)

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    VIDEO STUDIO · ONE VIDEO (/strategic-agents/video-studio/videos/<id>)
+
+    One video and its versions. For the version shown: the live reading
+    steps, the plan to edit and approve, the live making steps with the key
+    frames, or the result (player, download, share text, Make changes, Make
+    another shape). Drawn by static/js/video-studio.js from the JSON below,
+    and kept up to date while something is being made.
+    Plan: docs/video-studio-plan.md, sections 2.2 to 2.5.
+-#}
+<html lang="en">
+<head>
+{{ head("Video Studio", ["strategic-agents.css?v=2", "page-watch.css?v=1", "video-studio-app.css?v=1"]) }}
+</head>
+<body class="sa pw vs">
+
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Video Studio", "/strategic-agents/video-studio"), ("Video", none)]) }}
+
+<main class="sa-shell" id="vs-video">
+  <section class="vs-head" aria-labelledby="vs-brief-h">
+    <div class="vs-head-main">
+      <span class="sa-lbl">{{ data.choices.kind_label }}{% if data.client %} &middot; {{ data.client }}{% endif %}</span>
+      <h1 class="vs-brief" id="vs-brief-h">{{ data.brief }}</h1>
+      <ul class="pw-facts vs-facts" id="vs-facts"></ul>
+    </div>
+    <div class="vs-head-side">
+      <button type="button" class="sa-btn sa-btn--line" id="vs-dup">Duplicate</button>
+      <a class="sa-btn sa-btn--line" href="/strategic-agents/video-studio">New video</a>
+    </div>
+  </section>
+
+  <nav class="vs-versions" id="vs-versions" aria-label="Versions"></nav>
+  <p class="pw-error vs-error" id="vs-error" role="alert" hidden></p>
+  <section class="vs-stage" id="vs-stage" aria-live="polite"></section>
+  <noscript><p>This page needs JavaScript to show the video.</p></noscript>
+</main>
+
+<div class="vs-modal" id="vs-modal" hidden>
+  <div class="vs-modal-box" role="dialog" aria-modal="true" aria-labelledby="vs-modal-h">
+    <div class="vs-modal-head"><h2 id="vs-modal-h"></h2><button type="button" class="vs-x" data-close aria-label="Close">&times;</button></div>
+    <div class="vs-modal-body" id="vs-modal-body"></div>
+  </div>
+</div>
+
+<script type="application/json" id="vs-data">{{ {"video": data, "menu": menu, "fields": fields, "fonts": fonts}|tojson }}</script>
+{{ topbar_script() }}
+<script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
+<script defer src="{{ url_for('static', filename='js/video-studio.js') }}?v=1"></script>
+</body>
+</html>

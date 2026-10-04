@@ -291,10 +291,14 @@ def _result(use, text, error=False):
     return out
 
 
-def build(plan, brand, shape, *, assets, tables, box, client=None, review=True, record=None, step=None):
+def build(plan, brand, shape, *, assets, tables, box, client=None, review=True, record=None, step=None,
+          on_frames=None):
     """Build and check a composition in `box`. Returns
     {"files", "duration", "cover_at", "review": {...} | None, "warnings", "cost_usd"}.
-    Raises BuildError when it cannot be made to pass its check."""
+    Raises BuildError when it cannot be made to pass its check.
+
+    on_frames(pngs, times) is called with the key frames Claude is shown,
+    as soon as they are taken (the making screen shows them)."""
     step = step or (lambda *a: None)
     out = video_build.compose(plan, brand, shape, assets=assets, tables=tables)
     box.write(out["files"])
@@ -307,6 +311,11 @@ def build(plan, brand, shape, *, assets, tables, box, client=None, review=True, 
         video_plan.spent_this_month() < video_plan.monthly_cap()
     if use_claude:
         frames = box.snapshot(times[:12])
+        if on_frames:
+            try:
+                on_frames(frames, times[:12])
+            except Exception:
+                log.exception("keeping the key frames")
         step("build_look", "%d frames" % len(frames))
         review_out = run_loop(box, client or video_plan._client(), plan=plan, spans=out["scenes"], report=report,
                               frames=frames, record=record or {}, step=step,

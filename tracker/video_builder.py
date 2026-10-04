@@ -93,6 +93,32 @@ def another_shape(email, version_id, shape):
     return new
 
 
+# ── Key frames, for the making screen ────────────────────────────────────────
+FRAME_WIDTH = 480
+
+
+def keep_frames(project_id, version_id, pngs, times):
+    """Store the frames a build looked at as small JPEGs (assets of kind "frame")."""
+    import io
+    from PIL import Image
+    drop_frames(project_id, version_id)
+    for png, at in zip(pngs, times):
+        im = Image.open(io.BytesIO(png)).convert("RGB")
+        if im.width > FRAME_WIDTH:
+            im = im.resize((FRAME_WIDTH, max(1, round(im.height * FRAME_WIDTH / im.width))), Image.LANCZOS)
+        buf = io.BytesIO()
+        im.save(buf, "JPEG", quality=78)
+        video_store.add_asset(project_id, "frame", name="Frame at %.1f s" % at, mime="image/jpeg", width=im.width,
+                              height=im.height, data={"version_id": version_id, "at": round(float(at), 2)},
+                              blob=buf.getvalue())
+
+
+def drop_frames(project_id, version_id):
+    for a in video_store.list_assets(project_id, kinds=("frame",)):
+        if (a.get("data") or {}).get("version_id") == version_id:
+            video_store.delete_asset(a["id"])
+
+
 # ── Running the jobs ─────────────────────────────────────────────────────────
 def _inputs(project_id, plan):
     """The pictures the plan uses and every numbers table of the project."""
@@ -136,7 +162,7 @@ def run_job(job, *, stop=None, client=None, sandbox=video_sandbox.Sandbox):
     if job["kind"] == "change":
         step("change", version.get("change_request") or "")
         choices = dict(project.get("choices") or {}, shape=version["shape"])
-        sources = {"assets": video_store.list_assets(project["id"])}
+        sources = {"assets": [a for a in video_store.list_assets(project["id"]) if a["kind"] != "frame"]}
         try:
             out = video_plan.edit_plan(plan, version.get("change_request"), project.get("brief") or "", choices,
                                        plan["brand"], sources, client=client, **record,
@@ -145,7 +171,7 @@ def run_job(job, *, stop=None, client=None, sandbox=video_sandbox.Sandbox):
             return fail(str(exc))
         cost += out["cost_usd"]
         new_plan = dict(out["plan"], brand=plan["brand"], problems=out["problems"], attempts=out["attempts"],
-                        model=out["model"])
+                        model=out["model"], typed=plan.get("typed") or [])
         if out["problems"]:
             video_store.update_version(vid, plan=new_plan, cost_usd=cost)
             return fail("The change could not be made within the rules: " + "; ".join(out["problems"][:4]))
@@ -155,18 +181,21 @@ def run_job(job, *, stop=None, client=None, sandbox=video_sandbox.Sandbox):
         video_store.update_version(vid, plan=plan, cost_usd=cost)
     timings["plan_change_s" if job["kind"] == "change" else "prepare_s"] = round(time.monotonic() - started, 1)
     assets, tables = _inputs(project["id"], plan)
+    drop_frames(project["id"], vid)
     t = time.monotonic()
     try:
         with sandbox(jid, stop=stop) as box:
             try:
                 built = video_agent.build(plan, plan["brand"], version["shape"], assets=assets, tables=tables,
-                                          box=box, client=client, review=review, record=record, step=step)
+                                          box=box, client=client, review=review, record=record, step=step,
+                                          on_frames=lambda pngs, times: keep_frames(project["id"], vid, pngs, times))
             except video_agent.BuildError:
                 if review:
                     raise
                 step("build_retry", "The quick build failed its check; building in full.")
                 built = video_agent.build(plan, plan["brand"], version["shape"], assets=assets, tables=tables,
-                                          box=box, client=client, review=True, record=record, step=step)
+                                          box=box, client=client, review=True, record=record, step=step,
+                                          on_frames=lambda pngs, times: keep_frames(project["id"], vid, pngs, times))
     except video_agent.BuildError as exc:
         timings["build_s"] = round(time.monotonic() - t, 1)
         return fail(str(exc))
