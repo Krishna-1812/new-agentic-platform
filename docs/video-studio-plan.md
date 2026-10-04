@@ -1,8 +1,8 @@
 # Video Studio: plan
 
 Working name: **Video Studio**.
-Status: **planned**. Nothing is built yet; Phase 1 starts after this plan is
-agreed.
+Status: **being built**. Phase 1 (the render engine) is built; progress and
+the live checks are in section 7.
 
 Tell it what video you want: a launch, an explainer, a product demo, an ad, a
 hiring post, a set of results, or anything else. Give it what it should use: a
@@ -505,13 +505,77 @@ begins.
 
 ---
 
-## 6. Decisions for you before Phase 1
+## 6. Decisions
 
-1. **Name.** "Video Studio" is a working name.
-2. **Monthly Claude budget.** Suggested `VIDEO_CLAUDE_MONTHLY_USD = 10`,
-   which is about 8–20 videos a month on Sonnet 5.5, depending on length.
-3. **Who can use it.** Staff only, like the other agents, or also client
-   logins later.
-4. **Music.** Leave it out (the default), or license a library first.
-5. **Starting points.** Is the list in section 2.1 right for your clients?
-   Add or remove any; Custom is always there.
+The build started on 2026-10-04 with these defaults. Each can be changed at
+any time without rework:
+
+1. **Name:** "Video Studio".
+2. **Monthly Claude budget:** `VIDEO_CLAUDE_MONTHLY_USD = 10`, which is about
+   8–20 videos a month on Sonnet 5.5, depending on length.
+3. **Who can use it:** staff only, like the other agents.
+4. **Music:** left out (section 5).
+5. **Starting points:** the list in section 2.1, with Custom always there.
+
+---
+
+## 7. Progress
+
+### Phase 1 is built
+
+| Part | Where |
+|---|---|
+| Settings: shapes, lengths, time limits, the pinned engine version | `tracker/video_config.py` |
+| Projects, versions (with the MP4 and cover) and the job queue, in Postgres | `tracker/video_store.py` |
+| Installing and running HyperFrames; time limits that stop a program and everything it started | `tracker/video_engine.py` |
+| The sandbox: job folder, checked file paths, bundled kit, no-network browser, no secrets passed on | `tracker/video_sandbox.py` |
+| One render job: check, render, cover, store, with a step log | `tracker/video_render.py` |
+| The render thread on the Page Watch worker: one at a time, lease and heartbeat, hand-back on a deploy | `tracker/video_worker.py` |
+| GSAP and the fonts, bundled, with their licences | `tracker/video_kit/` |
+| The two test videos and the two sandbox drills | `tracker/video_samples.py` |
+| The staff engine page | `/strategic-agents/video-studio/engine` |
+| Node 22 in the build | `railpack.json` (`"packages"`) |
+
+**How "no network" works.** HyperFrames starts the browser through a small
+script that sends every request that is not to the machine itself to a
+proxy inside the worker. The proxy refuses it and records the address. The
+job's own files load (HyperFrames serves them locally); nothing else does.
+The files are also scanned for outside addresses before the render, and
+both lists go in the job's log.
+
+**Measured in the cloud container before merging** (real HyperFrames
+0.8.111, Chromium headless shell):
+
+| Test | Result |
+|---|---|
+| 10 s landscape: title, image, end card | passed check; rendered in 22 s; 0.8 MB |
+| 45 s vertical with a chart | passed check; rendered in 79 s; 2.0 MB |
+| Outside-address drill | rendered; both addresses refused and logged |
+| Time-limit drill | stopped at its 60 s limit; no process or folder left behind |
+
+Railway's CPU is slower, so expect renders there to take two to three times
+as long.
+
+**Checking it on Railway after the merge** (both services redeploy from
+`main` on their own):
+
+1. In Railway, open the **page-watch-worker** service → **Deployments** →
+   the newest deployment → **View logs**. Within a minute or two of the start
+   you should see `video renderer started (HyperFrames 0.8.111)`. The first
+   start also installs HyperFrames with npm, which takes about a minute.
+2. Open `/strategic-agents/video-studio/engine` on the website. Under **What
+   the worker has**, Node, ffmpeg, Browser and HyperFrames should all be
+   green.
+3. Click **Render the test videos**. Both should reach **Ready** within
+   about 5 minutes. Click **Watch** on each.
+4. Click **Outside-address drill**. It should reach **Ready**, and its log
+   should have a **blocked** line naming `images.unsplash.com` and
+   `api.ipify.org`.
+5. Click **Time-limit drill**. After about a minute it should show
+   **Failed** with "The render was stopped at its time limit".
+
+If Node shows **Missing**, open the worker's newest build log and search
+for `node`. Railpack installs it from the `packages` entry in
+`railpack.json`. Without a browser, check that
+`RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1` is still set on the worker, as Page
+Watch needs. `VIDEO_STUDIO=off` on the worker stops it taking render jobs.

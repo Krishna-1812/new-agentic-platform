@@ -3,6 +3,8 @@
 # the test suite runs on) and railpack.json for extra system packages: ffmpeg,
 # which Social Media Intelligence's video-frame extraction (tracker/sci_video.py)
 # shells out to. The "..." there keeps the packages Railpack adds on its own.
+# "packages" adds Node 22 (installed with mise, beside Python), which Video
+# Studio's renderer on the worker needs for HyperFrames (tracker/video_engine.py).
 [build]
 builder = "RAILPACK"
 

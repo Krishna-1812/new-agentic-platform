@@ -30,6 +30,9 @@ os.environ.setdefault("WATCH_JUDGE", "off")
 # ...and never posts to Slack unless a test switches alerts on with a fake
 # Slack (tests/test_watch_alerts.py).
 os.environ.setdefault("WATCH_ALERTS", "off")
+# The Page Watch worker starts no Video Studio renderer (which would install
+# HyperFrames with npm) unless a test switches it on (tests/test_video_*.py).
+os.environ.setdefault("VIDEO_STUDIO", "off")
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

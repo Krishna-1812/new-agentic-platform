@@ -24,6 +24,9 @@ How it works:
     past its keeping time (watch_store.prune).
   * SIGTERM (a deploy) stops new claims, lets running checks finish for up
     to GRACE_S, and hands back anything unfinished to be checked at once.
+  * Video Studio's renders run in one more thread here (tracker/video_worker.py),
+    one at a time, unless VIDEO_STUDIO=off. A deploy stops a render at once
+    and hands its job back.
 """
 
 from __future__ import annotations
@@ -196,6 +199,12 @@ class Worker:
             t.start()
         self._keeper = threading.Thread(target=self._housekeeping, name="heartbeat", daemon=True)
         self._keeper.start()
+        self.video = None
+        from tracker import video_config
+        if video_config.switched_on():
+            from tracker import video_worker
+            self.video = video_worker.VideoRunner(self.id, stopping=self.stopping)
+            self.video.start()
         log.info("%s started: %d threads, version %s", self.id, self.threads, version())
 
     def stop(self):
@@ -204,6 +213,9 @@ class Worker:
         deadline = time.monotonic() + self.grace_s
         for t in getattr(self, "_workers", []):
             t.join(timeout=max(0.0, deadline - time.monotonic()))
+        if getattr(self, "video", None):
+            # The render was stopped when `stopping` was set; this waits for its hand-back.
+            self.video.join(timeout=max(5.0, deadline - time.monotonic()))
         with self._lock:
             left = sorted(self.current.values())
         now = datetime.now(timezone.utc)
