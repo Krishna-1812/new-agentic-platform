@@ -75,7 +75,7 @@ def test_the_request_names_the_model_fallback_schema_and_caches_the_rules(store)
     fake = FakeClient()
     v = watch_judge.judge(t, report, before_png=a, after_png=b, change_id=7, client=fake)
     kw = fake.calls[0]
-    assert kw["model"] == "claude-opus-5-5"
+    assert kw["model"] == "claude-sonnet-5-5"
     assert kw["fallbacks"] == "default" and kw["betas"] == ["server-side-fallback-2026-07-01"]
     assert kw["output_config"]["effort"] == "medium"
     assert kw["output_config"]["format"]["schema"]["required"] == list(watch_judge.SCHEMA["required"])
@@ -88,7 +88,7 @@ def test_the_request_names_the_model_fallback_schema_and_caches_the_rules(store)
     images = [c for c in content if c["type"] == "image"]
     assert len(images) == 2                                       # one close-up, before and after
     assert v["summary"] == VERDICT["summary"] and v["judged_by"] == "claude" and v["muted"] is False
-    assert v["cost_usd"] == pytest.approx((3000 * 4.0 + 400 * 20.0) / 1e6)
+    assert v["cost_usd"] == pytest.approx((3000 * 2.0 + 400 * 10.0) / 1e6)
 
 
 def test_page_text_is_fenced_off_and_clipped():
@@ -123,7 +123,7 @@ def test_every_call_is_recorded_with_its_cost(store):
     report, a, b = price_change()
     watch_judge.judge(t, report, before_png=a, after_png=b, change_id=9, client=FakeClient())
     spend = store.ai_spend(watch_judge.month_start())
-    assert spend["calls"] == 1 and spend["cost_usd"] == pytest.approx(0.02)
+    assert spend["calls"] == 1 and spend["cost_usd"] == pytest.approx(0.01)
     row = list(store._MEM["ai_calls"].values())[0]
     assert row["purpose"] == "judge" and row["change_id"] == 9 and row["email"] == EMAIL and row["ok"]
 
@@ -255,10 +255,10 @@ def test_a_name_is_searched_and_only_safe_distinct_links_come_back(store, monkey
             "usage": {"input_tokens": 2000, "output_tokens": 300}, "search_count": 2, "error": None}
     r = watch_judge.find_pages("HubSpot marketing pricing", email=EMAIL, ask=ask)
     assert [c["url"] for c in r["candidates"]] == ["https://www.hubspot.com/pricing/marketing"] and r["error"] is None
-    assert seen["max_uses"] == 4 and seen["model"] == "claude-opus-5-5" and "HubSpot" in seen["user"]
+    assert seen["max_uses"] == 4 and seen["model"] == "claude-sonnet-5-5" and "HubSpot" in seen["user"]
     row = list(store._MEM["ai_calls"].values())[0]
     assert row["purpose"] == "find" and row["searches"] == 2
-    assert row["cost_usd"] == pytest.approx((2000 * 4 + 300 * 20) / 1e6 + 0.02)
+    assert row["cost_usd"] == pytest.approx((2000 * 2 + 300 * 10) / 1e6 + 0.02)  # Sonnet 5.5: $2 in, $10 out
 
 
 def test_finding_fails_politely(store, monkeypatch):
@@ -273,7 +273,7 @@ def test_finding_fails_politely(store, monkeypatch):
 
 def test_status_says_what_is_judging(store):
     s = watch_judge.status()
-    assert s["state"] == "on" and s["model"] == "claude-opus-5-5" and s["cap_usd"] == 25.0
+    assert s["state"] == "on" and s["model"] == "claude-sonnet-5-5" and s["cap_usd"] == 5.0
 
 
 # ── The real SDK, against a stand-in server ──────────────────────────────────
@@ -291,7 +291,7 @@ def test_the_real_sdk_sends_what_the_api_expects(store, monkeypatch):
             got["path"] = self.path
             got["headers"] = {k.lower(): v for k, v in self.headers.items()}
             got["body"] = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
-            reply = {"id": "msg_test", "type": "message", "role": "assistant", "model": "claude-opus-5-5",
+            reply = {"id": "msg_test", "type": "message", "role": "assistant", "model": "claude-sonnet-5-5",
                      "content": [{"type": "text", "text": json.dumps(VERDICT)}],
                      "stop_reason": "end_turn", "stop_sequence": None,
                      "usage": {"input_tokens": 1000, "output_tokens": 100}}
@@ -319,7 +319,19 @@ def test_the_real_sdk_sends_what_the_api_expects(store, monkeypatch):
     assert got["path"].startswith("/v1/messages")
     assert "server-side-fallback-2026-07-01" in got["headers"]["anthropic-beta"]
     body = got["body"]
-    assert body["model"] == "claude-opus-5-5" and body["fallbacks"] == "default"
+    assert body["model"] == "claude-sonnet-5-5" and body["fallbacks"] == "default"
     assert body["output_config"]["format"]["type"] == "json_schema" and body["output_config"]["effort"] == "medium"
     assert "betas" not in body and "thinking" not in body
     assert [c["type"] for c in body["messages"][0]["content"]].count("image") == 2
+
+
+def test_sonnet_by_default_with_a_five_dollar_month_and_unknown_models_priced_high(monkeypatch):
+    monkeypatch.delenv("WATCH_CLAUDE_MODEL", raising=False)
+    monkeypatch.delenv("WATCH_CLAUDE_MONTHLY_USD", raising=False)
+    assert watch_judge.model() == "claude-sonnet-5-5" and watch_judge.monthly_cap() == 5.0
+    monkeypatch.setenv("WATCH_CLAUDE_MONTHLY_USD", "not a number")
+    assert watch_judge.monthly_cap() == 5.0
+    usage = {"input_tokens": 1_000_000, "output_tokens": 0}
+    assert watch_judge.cost_usd("claude-sonnet-5-5", usage) == pytest.approx(2.0)
+    # A model the table does not know is priced at the dearest rate, so the cap stops early, not late.
+    assert watch_judge.cost_usd("claude-something-new", usage) == pytest.approx(5.0)
