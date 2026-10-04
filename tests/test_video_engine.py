@@ -204,7 +204,8 @@ def test_the_check_report_is_read_from_the_programs_output():
     assert r["ok"] is False and r["errors"][0]["code"] == "placeholder_media_url"
     assert r["warnings"][0]["time"] == 4.5
     assert video_sandbox.parse_check("no json here") is None
-    assert video_sandbox.parse_check(json.dumps({"ok": True}))["ok"] is True
+    assert video_sandbox.parse_check(json.dumps({"ok": True}))  is None             # a progress line, not the report
+    assert video_sandbox.parse_check(json.dumps({"ok": True, "lint": {}}))["ok"] is True
 
 
 # ── The engine's programs ────────────────────────────────────────────────────
@@ -553,3 +554,19 @@ def test_the_browser_is_found_where_playwright_puts_it(monkeypatch, tmp_path):
     assert video_config.browser_path() == str(shell)
     monkeypatch.setenv("VIDEO_BROWSER_PATH", str(tmp_path / "missing"))
     assert video_config.browser_path() is None
+
+
+def test_a_large_report_goes_to_a_file_whole(tmp_path):
+    """hyperframes check prints a report far larger than the output kept in
+    memory; read from the kept tail it was cut off and misread."""
+    big = json.dumps({"ok": False, "lint": {"findings": [{"severity": "warning", "code": "w", "message": "x" * 200}] * 3000},
+                      "layout": {"findings": [{"severity": "error", "code": "text_overflow", "message": "cut off"}]}})
+    src = tmp_path / "big.json"
+    src.write_text(big)
+    out = tmp_path / "report.json"
+    code, err = video_engine.run([sys.executable, "-c", "import sys; sys.stderr.write('progress'); "
+                                  "sys.stdout.write(open(%r).read())" % str(src)], timeout=30, stdout_path=str(out))
+    assert code == 0 and err == "progress" and len(big) > 256 * 1024
+    report = video_sandbox.parse_check(out.read_text())
+    assert report["ok"] is False and report["errors"][0]["code"] == "text_overflow"
+    assert video_sandbox.parse_check(big[-200000:]) is None          # what the old tail-only reading saw

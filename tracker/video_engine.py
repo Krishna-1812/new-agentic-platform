@@ -37,14 +37,23 @@ class Stopped(RuntimeError):
     """The worker is stopping; the program was stopped with it."""
 
 
-def run(args, *, cwd=None, env=None, timeout, stop=None):
+def run(args, *, cwd=None, env=None, timeout, stop=None, stdout_path=None):
     """Run a program; return (exit code, output). Output is stdout and stderr
-    together, the last 20,000 characters. Raises TimedOut past `timeout`
-    seconds, or Stopped when the `stop` event is set first."""
-    proc = subprocess.Popen(args, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            stdin=subprocess.DEVNULL, start_new_session=True)
+    together, the last 20,000 characters; with `stdout_path`, stdout goes to
+    that file whole (a large JSON report) and output is stderr only. Raises
+    TimedOut past `timeout` seconds, or Stopped when the `stop` event is set
+    first."""
+    out_file = open(stdout_path, "wb") if stdout_path else None
+    try:
+        proc = subprocess.Popen(args, cwd=cwd, env=env, stdout=out_file or subprocess.PIPE,
+                                stderr=subprocess.PIPE if out_file else subprocess.STDOUT,
+                                stdin=subprocess.DEVNULL, start_new_session=True)
+    finally:
+        if out_file:
+            out_file.close()
+    stream = proc.stderr if out_file else proc.stdout
     chunks = collections.deque(maxlen=64)          # the last ~256 KB is plenty
-    reader = threading.Thread(target=lambda: chunks.extend(iter(lambda: proc.stdout.read(4096), b"")),
+    reader = threading.Thread(target=lambda: chunks.extend(iter(lambda: stream.read(4096), b"")),
                               daemon=True)
     reader.start()
     deadline = time.monotonic() + timeout
