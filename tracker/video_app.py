@@ -31,7 +31,8 @@ import binascii
 import io
 import re
 
-from tracker import video_brand, video_builder, video_fonts, video_plan, video_starts, video_store, video_uploads
+from tracker import (video_brand, video_builder, video_fonts, video_music, video_plan, video_starts, video_store,
+                     video_uploads)
 from tracker import video_config as cfg
 from tracker import video_web
 
@@ -360,6 +361,7 @@ def _plan_view(plan, shape):
             "share_suits": list(SHARE_SUITS.get(shape, ("x",))),
             "notes": [public_error(n) for n in plan.get("notes") or [] if public_error(n)],
             "problems": plan.get("problems") or [], "brand": _brand_view(plan.get("brand")),
+            "music": plan.get("music") or video_music.NONE, "music_menu": video_music.menu(),
             "edited": bool(plan.get("edited"))}
 
 
@@ -429,7 +431,8 @@ def project_view(email, project_id, version_id=None):
     if phase == "result":
         share = plan.get("share_copy") or {}
         expired = not current.get("mp4_bytes")
-        v["result"] = {"mp4": "%s/media/%d.mp4" % (BASE, current["id"]),
+        v["result"] = {"music": video_music.view(plan.get("music")),
+                       "mp4": "%s/media/%d.mp4" % (BASE, current["id"]),
                        "download": "%s/media/%d.mp4?download=1" % (BASE, current["id"]),
                        "cover": "%s/media/%d.jpg" % (BASE, current["id"]) if current.get("has_cover") else None,
                        "mb": round((current.get("mp4_bytes") or 0) / 1e6, 1), "expired": expired,
@@ -468,7 +471,8 @@ def save_plan(email, version_id, body):
         raise Refused("A video can have at most %d scenes." % video_plan.MAX_SCENES)
     raw = {k: old.get(k) for k in ("idea", "audience", "hook", "ending", "notes")}
     raw.update(scenes=scenes, share_copy=body.get("share_copy") if isinstance(body.get("share_copy"), dict)
-               else old.get("share_copy"), cover_scene=body.get("cover_scene", old.get("cover_scene")))
+               else old.get("share_copy"), cover_scene=body.get("cover_scene", old.get("cover_scene")),
+               music=body.get("music", old.get("music")))
     try:
         new = video_plan.clean(raw)
     except (ValueError, TypeError):

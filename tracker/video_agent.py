@@ -96,7 +96,8 @@ Rules:
 - Never change the words, numbers, names or order of the scenes: the person approved them. \
 Fix how they are shown, not what they say.
 - Keep each <section>'s data-start, data-duration and data-track-index unless a timing \
-error requires otherwise. Keep `window.__timelines["main"] = tl`.
+error requires otherwise. Keep `window.__timelines["main"] = tl`. Keep the <audio id="music"> \
+element as it is: the person chose that music.
 - Words are built as <span class="w"><span class="wi" data-layout-allow-overlap>word</span></span>: \
 the outer span is the mask, the inner one rises. Keep that structure for any words you add.
 - Motion must be seek-safe: only tweens on the one paused timeline `tl`; no setTimeout, \

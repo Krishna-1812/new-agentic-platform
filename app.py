@@ -18103,6 +18103,17 @@ def video_studio_page():
     return render_template("video_studio.html", user=_get_user(), data=video_app.home(_pw_email()))
 
 
+@app.route(VS_BASE + "/music/<key>.mp3")
+@position2_required
+def video_studio_music(key):
+    """A music bed, to listen to while choosing one."""
+    from tracker import video_config, video_music
+    t = video_music.track(key)
+    if not t:
+        abort(404)
+    return send_file(os.path.join(video_config.kit_dir(), t["file"]), mimetype="audio/mpeg", max_age=86400)
+
+
 @app.route(VS_BASE + "/videos/<int:project_id>")
 @position2_required
 def video_studio_video_page(project_id):

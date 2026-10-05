@@ -380,7 +380,7 @@ def library_plan(length="short"):
            items=[("Five-day close", "")] + ([("No card needed", ""), ("Cancel any time", "")] if long else []),
            asset_ids=[1, 4, 5] if long else []),
     ]
-    return {"idea": "Library test", "hook": "", "scenes": scenes, "cover_scene": 0,
+    return {"idea": "Library test", "hook": "", "scenes": scenes, "cover_scene": 0, "music": "upbeat" if long else "none",
             "share_copy": {"linkedin": "", "x": "", "instagram": ""}, "notes": []}
 
 
