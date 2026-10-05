@@ -25,7 +25,10 @@
   var P = JSON.parse(holder.textContent || "{}");
   var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var ALL = P.businesses || [];
-  var LEADS = ALL.filter(function (b) { return b.researched && b.score; });
+  // Researched businesses; SCORED are those the score stage reached (a run that
+  // stopped early has researched businesses with no score yet).
+  var LEADS = ALL.filter(function (b) { return b.researched; });
+  var SCORED = LEADS.filter(function (b) { return b.score; });
   var FOUND_ONLY = ALL.filter(function (b) { return !b.researched; });
   var BY_ID = {};
   ALL.forEach(function (b) { BY_ID[b.id] = b; });
@@ -94,11 +97,11 @@
   /* ── Ticker ──────────────────────────────────────────────────────────── */
   (function ticker() {
     var track = $("lbrr-tick");
-    var top = LEADS.filter(function (b) { return b.score.tier !== "C"; }).slice(0, 14);
+    var top = SCORED.filter(function (b) { return b.score.tier !== "C"; }).slice(0, 14);
     if (!top.length) top = LEADS.slice(0, 10);
     if (!top.length) { track.parentNode.hidden = true; return; }
     function add(b, hidden) {
-      var a = el("a", "sa-tick-i sa-tick-i--" + ({ A: "a", B: "b" }[b.score.tier] || "c"), b.name);
+      var a = el("a", "sa-tick-i sa-tick-i--" + ({ A: "a", B: "b" }[(b.score || {}).tier] || "c"), b.name);
       a.href = "#b-" + b.id;
       if (hidden) { a.setAttribute("aria-hidden", "true"); a.tabIndex = -1; }
       a.addEventListener("click", function (e) { e.preventDefault(); openDrawer(b.id); });
@@ -124,17 +127,19 @@
   /* ── Shortlist ───────────────────────────────────────────────────────── */
   (function shortlist() {
     var box = $("lbrr-short");
-    var top = LEADS.filter(function (b) { return b.score.tier !== "C"; }).slice(0, 3);
+    var top = SCORED.filter(function (b) { return b.score.tier !== "C"; }).slice(0, 3);
     if (!top.length) {
-      box.appendChild(el("p", "lbrr-empty", LEADS.length ? "No tier A or B leads in this run: every business researched is in good shape or small."
-                                                        : "No businesses were researched in this run."));
+      box.appendChild(el("p", "lbrr-empty", !LEADS.length ? "No businesses were researched in this run."
+        : !SCORED.length ? "Not ranked yet: the run stopped before scoring, so there is no shortlist. " +
+                           (P.resumable ? "Resume it from the top of the page to finish; what it already gathered is not paid for again." : "")
+        : "No tier A or B leads in this run: every business researched is in good shape or small."));
       return;
     }
     top.forEach(function (b, i) {
       var card = el("button", "lbrr-sc lbrr-sc--" + (i + 1));
       card.type = "button";
       var t = el("span", "lbrr-sc-top");
-      t.appendChild(el("span", "lbrr-sc-n", "#" + b.rank));
+      if (b.rank != null) t.appendChild(el("span", "lbrr-sc-n", "#" + b.rank));
       t.appendChild(ring(b.score.total, 76));
       card.appendChild(t);
       card.appendChild(el("span", "lbrr-sc-name", b.name));
@@ -214,7 +219,7 @@
     box.textContent = "";
     var n = LEADS.length || 1, max = 0, counts = {};
     Object.keys(SVC).forEach(function (k) {
-      counts[k] = LEADS.filter(function (b) { return (b.score.need[k] || 0) >= 60; }).length;
+      counts[k] = LEADS.filter(function (b) { return ((b.score || {}).need || {})[k] >= 60; }).length;
       max = Math.max(max, counts[k]);
     });
     Object.keys(SVC).sort(function (a, b) { return counts[b] - counts[a]; }).forEach(function (k) {
@@ -279,7 +284,7 @@
   function drawScatter() {
     var host = $("lbrr-scatter");
     host.textContent = "";
-    var pts = LEADS.filter(function (b) { return b.rating != null; });
+    var pts = SCORED.filter(function (b) { return b.rating != null; });
     if (!pts.length) { host.appendChild(el("p", "lbrr-muted", "No ratings to plot.")); return; }
     var W = Math.max(320, host.clientWidth), H = 320, m = { l: 40, r: 16, t: 14, b: 34 };
     var maxRev = Math.max(10, Math.max.apply(null, pts.map(function (b) { return b.reviews || 0; })));
@@ -319,9 +324,9 @@
   function drawHist() {
     var host = $("lbrr-hist");
     host.textContent = "";
-    if (!LEADS.length) { host.appendChild(el("p", "lbrr-muted", "Nothing scored yet.")); return; }
+    if (!SCORED.length) { host.appendChild(el("p", "lbrr-muted", "Nothing scored yet.")); return; }
     var bins = []; for (var i = 0; i < 10; i++) bins.push(0);
-    LEADS.forEach(function (b) { bins[Math.min(9, Math.floor((b.score.total || 0) / 10))]++; });
+    SCORED.forEach(function (b) { bins[Math.min(9, Math.floor((b.score.total || 0) / 10))]++; });
     var W = Math.max(260, host.clientWidth), H = W > 700 ? 220 : 300, m = { l: 8, r: 8, t: 40, b: 28 };
     var max = Math.max.apply(null, bins) || 1, bw = (W - m.l - m.r) / 10;
     var s = sv("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "How opportunity scores spread" });
@@ -366,7 +371,7 @@
     var t = $("lbrr-f-tier"); t.textContent = "";
     t.appendChild(chip("All", LEADS.length, filt.tier === "all", function () { filt.tier = "all"; refresh(); }));
     ["A", "B", "C"].forEach(function (k) {
-      t.appendChild(chip("Tier " + k, LEADS.filter(function (b) { return b.score.tier === k; }).length, filt.tier === k,
+      t.appendChild(chip("Tier " + k, SCORED.filter(function (b) { return b.score.tier === k; }).length, filt.tier === k,
         function () { filt.tier = filt.tier === k ? "all" : k; refresh(); }, TIER[k]));
     });
     var n = $("lbrr-f-need"); n.textContent = "";
@@ -403,8 +408,8 @@
   };
   function current() {
     var list = LEADS.filter(function (b) {
-      if (filt.tier !== "all" && b.score.tier !== filt.tier) return false;
-      if (filt.need && (b.score.need[filt.need] || 0) < 60) return false;
+      if (filt.tier !== "all" && (b.score || {}).tier !== filt.tier) return false;
+      if (filt.need && (((b.score || {}).need || {})[filt.need] || 0) < 60) return false;
       if (filt.flag) { var fl = FLAGS.filter(function (x) { return x[0] === filt.flag; })[0]; if (fl && !fl[2](b)) return false; }
       if (filt.web && (WEB_GROUP[webKind(b)] || webKind(b)) !== filt.web) return false;
       if (filt.q && haystack(b).indexOf(filt.q) < 0) return false;
@@ -439,7 +444,7 @@
         var bar = el("i"); bar.style.setProperty("--w", b.score.total + "%"); bar.style.setProperty("--c", TIER[b.score.tier]);
         sc.appendChild(bar);
         cell(tr, sc);
-      } else cell(tr, el("span", "lbrr-muted", b.chain ? "Chain" : "Not researched"));
+      } else cell(tr, el("span", "lbrr-muted", b.researched ? "Not scored" : b.chain ? "Chain" : "Not researched"));
       var k = webKind(b);
       if (k) { var w = el("span", "lbrr-web"); var sw = el("i"); sw.style.background = WEB[k] || "#A8A39C"; w.appendChild(sw); w.appendChild(doc.createTextNode(webLabel(k))); cell(tr, w); }
       else cell(tr, b.website ? "Linked" : "None");
@@ -509,8 +514,8 @@
 
   function renderDrawer(b) {
     dbody.textContent = "";
-    $("lbrr-dr-kicker").textContent = b.rank != null ? "Lead #" + b.rank + " of " + LEADS.length :
-      (b.chain ? "Chain, set aside" : b.set_aside ? "Set aside: " + b.set_aside : "Found, not researched");
+    $("lbrr-dr-kicker").textContent = b.rank != null ? "Lead #" + b.rank + " of " + SCORED.length :
+      b.researched && !b.score ? "Researched, not scored yet" : (b.chain ? "Chain, set aside" : b.set_aside ? "Set aside: " + b.set_aside : "Found, not researched");
     var hero = el("div", "lbrr-d-hero");
     var left = el("div");
     var h = el("h2", "", b.name); h.id = "lbrr-dr-title"; left.appendChild(h);
@@ -549,6 +554,7 @@
     ev.appendChild(ul);
     dbody.appendChild(ev);
 
+    if (b.score) {
     var nd = card("What it needs, 0 to 100");
     var needs = el("div", "lbrr-needs");
     (b.score.ranked || []).concat(Object.keys(SVC).filter(function (k) { return b.score.need[k] == null; })).forEach(function (k) {
@@ -562,6 +568,7 @@
     nd.appendChild(needs);
     nd.appendChild(el("p", "lbrr-src", "Ability to pay: " + (b.score.ability == null ? "n/a" : b.score.ability) + "/100 (review volume, price level, ticket size, locations, existing ad spend)."));
     dbody.appendChild(nd);
+    }
 
     if (b.gbp) {
       var g = card("Google Business Profile" + (b.gbp.score != null ? " · " + b.gbp.score + "/100" : ""));
@@ -760,4 +767,25 @@
     rt = setTimeout(function () { drawMap(); drawScatter(); drawHist(); }, 200);
   });
   if (location.hash && location.hash.indexOf("#b-") === 0) openDrawer(location.hash.slice(3));
+
+  /* ── Resume a run that stopped ───────────────────────────────────────── */
+  var resumeBtn = doc.getElementById("lbrr-resume");       // only on a run that can be resumed
+  if (resumeBtn) resumeBtn.addEventListener("click", function () {
+    var msg = $("lbrr-resume-msg");
+    resumeBtn.disabled = true;
+    msg.hidden = true;
+    fetch("/strategic-agents/local-business-radar/runs/" + resumeBtn.getAttribute("data-run") + "/resume", {
+      method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: "{}"
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok) throw new Error(d.error || "The run could not be resumed.");
+        // The agent's page picks a live run straight back up and shows its progress.
+        location.href = "/strategic-agents/local-business-radar";
+      });
+    }).catch(function (e) {
+      resumeBtn.disabled = false;
+      msg.textContent = e.message;
+      msg.hidden = false;
+    });
+  });
 })();

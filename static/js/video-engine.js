@@ -48,6 +48,7 @@
       box.appendChild(stat("ffmpeg", e.ffmpeg ? "Installed" : "Missing", !!e.ffmpeg));
       box.appendChild(stat("Browser", e.browser ? "Found" : "Missing", !!e.browser));
       var hf = e.hyperframes ? e.hyperframes : "Installs on first render";
+      if (e.problem) box.appendChild(el("p", { cls: "ve-meta ve-bad", text: "Not ready: " + e.problem }));
       box.appendChild(stat("HyperFrames", hf + (e.hyperframes && e.hyperframes !== window.VE_PINNED ? " (pinned " + window.VE_PINNED + ")" : ""),
         e.hyperframes ? e.hyperframes === window.VE_PINNED : undefined));
     }

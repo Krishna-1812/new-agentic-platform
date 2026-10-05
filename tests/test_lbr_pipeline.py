@@ -213,3 +213,78 @@ def test_the_agent_is_on_the_directory_and_in_the_palette(env):
     assert 'data-agent="c-lbr"' in body and "Local Business Radar" in body
     hub = _client().get("/hub").get_data(as_text=True)
     assert "/strategic-agents/local-business-radar" in hub
+
+
+# ── A restarted run is checked against its own source; Resume; unscored reports ─
+
+def test_a_run_is_checked_against_the_source_it_was_planned_with(env, monkeypatch):
+    """The California run: planned with Apify, restarted when the website saw Places
+    as the source, and failed asking for Places and SerpAPI keys it never needed."""
+    from tracker import lbr_config
+    plan = _plan()
+    plan["estimate"]["source"] = "apify"
+    monkeypatch.setenv("APIFY_API_TOKEN", "apify")
+    monkeypatch.delenv("GOOGLE_MAPS_API_KEY")
+    monkeypatch.delenv("SERPAPI_KEY")
+    monkeypatch.setenv("LBR_SOURCE", "places")              # what a new run would pick now
+    assert lbr_config.missing_required() == ["Google Places API (New)", "SerpAPI"]
+    assert lbr_config.missing_message(lbr_pipeline.run_source(plan)) == ""
+    monkeypatch.delenv("APIFY_API_TOKEN")                     # the token really is gone: say so
+    why = lbr_config.missing_message(lbr_pipeline.run_source(plan))
+    assert "searches with Apify" in why and "APIFY_API_TOKEN" in why and "SerpAPI" not in why
+
+
+def test_a_stopped_run_resumes_from_its_saved_stages(env, monkeypatch):
+    real = lbr_pipeline.STAGE_FUNCS["score"]
+    monkeypatch.setitem(lbr_pipeline.STAGE_FUNCS, "score", lambda *a: (_ for _ in ()).throw(
+        lbr_http.ToolError("config", "Not configured: something.")))
+    rid = lbr_pipeline.start("p@markifydigital.com", _plan())
+    run = lbr_store.get_run(rid)
+    assert run["status"] == "failed" and lbr_pipeline.resumable(run) == (True, "")
+    paid = len(lbr_store.get_calls(rid))
+    assert lbr_pipeline.resume(rid, "other@markifydigital.com") is False
+    monkeypatch.setitem(lbr_pipeline.STAGE_FUNCS, "score", real)
+    assert lbr_pipeline.resume(rid, "p@markifydigital.com") is True
+    run = lbr_store.get_run(rid)
+    assert run["status"] == "complete" and run["error"] is None and run["summary"]["tiers"]
+    new_calls = lbr_store.get_calls(rid)[paid:]
+    assert not [c for c in new_calls if c["provider"] in ("places", "serpapi")], "nothing gathered is bought again"
+    with pytest.raises(ValueError, match="Only a run that stopped"):
+        lbr_pipeline.resume(rid, "p@markifydigital.com")
+
+
+def test_some_runs_cannot_be_resumed(env, monkeypatch):
+    base = {"status": "failed", "plan": {"estimate": {}}, "error": "x"}
+    assert lbr_pipeline.resumable(dict(base, status="complete"))[0] is False
+    assert lbr_pipeline.resumable(dict(base, error="Stopped at the cost ceiling ($9 of $8)."))[0] is False
+    assert lbr_pipeline.resumable(dict(base, purged_at="2026-10-01"))[0] is False
+    assert lbr_pipeline.resumable(dict(base, status="cancelled")) == (True, "")
+    monkeypatch.setitem(lbr_pipeline.STAGE_FUNCS, "reviews", lambda *a: (_ for _ in ()).throw(RuntimeError("x")))
+    rid = lbr_pipeline.start("p@markifydigital.com", _plan())
+    monkeypatch.delenv("SERPAPI_KEY")
+    with pytest.raises(ValueError, match="SERPAPI_KEY"):
+        lbr_pipeline.resume(rid, "p@markifydigital.com")
+    assert lbr_store.get_run(rid)["status"] == "failed"                # not started without its keys
+
+
+def test_a_report_that_stopped_before_scoring_says_so(env, monkeypatch):
+    import json
+    from tracker import lbr_report
+    monkeypatch.setitem(lbr_pipeline.STAGE_FUNCS, "score", lambda *a: (_ for _ in ()).throw(
+        lbr_http.ToolError("config", "Not configured: Google Places API (New), SerpAPI.")))
+    rid = lbr_pipeline.start("p@markifydigital.com", _plan())
+    c = _client()
+    r = c.get("/strategic-agents/local-business-radar/runs/%d/report" % rid)
+    body = r.get_data(as_text=True)
+    assert r.status_code == 200 and "not yet ranked" in body and "worth a call" not in body
+    assert 'id="lbrr-resume"' in body and "nothing already gathered is paid for again" in body
+    payload = json.loads(body.split('id="lbr-data" type="application/json">', 1)[1].split("</script>", 1)[0])
+    assert payload["scored"] is False and payload["resumable"] is True and payload["researched"] == 5
+    assert all(b.get("score") is None for b in payload["businesses"])        # no {"total": null}
+    assert c.get("/strategic-agents/local-business-radar/runs/%d/status" % rid).get_json()["resumable"] is True
+    monkeypatch.setitem(lbr_pipeline.STAGE_FUNCS, "score", lbr_pipeline._stage_score)
+    r = c.post("/strategic-agents/local-business-radar/runs/%d/resume" % rid, json={})
+    assert r.status_code == 200 and lbr_store.get_run(rid)["status"] == "complete"
+    body = c.get("/strategic-agents/local-business-radar/runs/%d/report" % rid).get_data(as_text=True)
+    assert "worth a call" in body and 'id="lbrr-resume"' not in body
+    assert c.post("/strategic-agents/local-business-radar/runs/%d/resume" % rid, json={}).status_code == 400

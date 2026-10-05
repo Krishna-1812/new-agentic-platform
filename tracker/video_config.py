@@ -15,7 +15,9 @@ Environment:
                             of the one Playwright installed.
 """
 
+import functools
 import glob
+import re
 import os
 
 NAME = "Video Studio"
@@ -129,13 +131,36 @@ def browser_path():
     own = (os.environ.get("VIDEO_BROWSER_PATH") or "").strip()
     if own:
         return own if os.path.exists(own) else None
-    roots = [os.environ.get("PLAYWRIGHT_BROWSERS_PATH") or "",
-             os.path.join(os.path.expanduser("~"), ".cache", "ms-playwright"),
-             "/opt/pw-browsers"]
+    roots = [os.environ.get("PLAYWRIGHT_BROWSERS_PATH") or "", _playwright_root(),
+             os.path.join(os.path.expanduser("~"), ".cache", "ms-playwright"), "/opt/pw-browsers"]
     for root in roots:
         if not root:
             continue
-        found = sorted(glob.glob(os.path.join(root, "chromium_headless_shell-*", "chrome-*", "*headless_shell")))
+        found = []
+        # Older Playwright: chrome-linux/headless_shell. Newer (1.5x on):
+        # chrome-headless-shell-linux64/chrome-headless-shell.
+        for name in ("headless_shell", "chrome-headless-shell"):
+            found += glob.glob(os.path.join(root, "chromium_headless_shell-*", "chrome-*", name))
+        found = [f for f in found if os.access(f, os.X_OK)]
         if found:
-            return found[-1]
+            return max(found, key=_build_number)
     return None
+
+
+def _build_number(path):
+    m = re.search(r"chromium_headless_shell-(\d+)", path)
+    return int(m.group(1)) if m else 0
+
+
+@functools.lru_cache(maxsize=1)
+def _playwright_root():
+    """Where the installed Playwright keeps its browsers (asked of Playwright itself), or ""."""
+    import subprocess
+    import sys
+    try:
+        out = subprocess.run([sys.executable, "-m", "playwright", "install", "--dry-run", "chromium-headless-shell"],
+                             capture_output=True, text=True, timeout=30).stdout
+    except Exception:
+        return ""
+    m = re.search(r"Install location:\s*(\S+)", out or "")
+    return os.path.dirname(m.group(1)) if m else ""

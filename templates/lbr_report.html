@@ -15,7 +15,7 @@
 {%- set area = payload.area or {} -%}
 <html lang="en">
 <head>
-{{ head("Local Business Radar report", ["strategic-agents.css?v=2", "local-business-radar.css?v=2", "lbr-report.css?v=2"]) }}
+{{ head("Local Business Radar report", ["strategic-agents.css?v=2", "local-business-radar.css?v=2", "lbr-report.css?v=3"]) }}
 </head>
 <body class="sa lbr lbrr">
 
@@ -34,9 +34,15 @@
       <div class="lbr-radar" aria-hidden="true"><i></i><i class="lbr-r2"></i><i class="lbr-r3"></i><b></b></div>
     </div>
 
+    {%- set unscored = run.status != 'complete' and not payload.scored and payload.researched %}
     <h1 class="sa-h1 lbrr-h1" data-sa-springy>
+      {%- if unscored %}
+      <span class="sa-ln"><span><span class="sa-mk">{{ payload.researched }}</span> {{ (run.label or 'businesses')|lower }}</span></span>
+      <span class="sa-ln"><span>researched, <em class="sa-it">not yet ranked.</em></span></span>
+      {%- else %}
       <span class="sa-ln"><span><span class="sa-mk">{{ hot }}</span> {{ (run.label or 'businesses')|lower }}</span></span>
       <span class="sa-ln"><span>worth a call <em class="sa-it">in {{ area.name or run.area }}.</em></span></span>
+      {%- endif %}
     </h1>
 
     <div class="sa-hero-foot">
@@ -47,19 +53,25 @@
         {% elif run.status in ('running', 'queued') %}
         Still searching. This report fills in as the run finishes; the agent's page shows it live.
         {% else %}
-        This run stopped{% if run.error %}: {{ run.error }}{% endif %}. Whatever it had gathered is below.
+        This run stopped{% if run.error %}: {{ run.error.rstrip('.') }}{% endif %}.
+        {% if unscored %}It stopped before scoring, so nothing is ranked yet; what it gathered is below.{% else %}Whatever it had gathered is below.{% endif %}
+        {% if payload.resumable %}Resume it to finish: every finished step is kept, so nothing already gathered is paid for again.{% endif %}
         {% endif %}
       </p>
+      <p class="lbrr-resume-msg" id="lbrr-resume-msg" role="alert" hidden></p>
       <div class="sa-hero-actions">
+        {% if payload.resumable %}
+        <button type="button" class="sa-btn sa-btn--hero lbrr-resume" id="lbrr-resume" data-run="{{ run.id }}">Resume the run</button>
+        {% endif %}
         <a class="sa-btn sa-btn--ghost" href="/strategic-agents/local-business-radar/runs/{{ run.id }}/export.xlsx">Excel</a>
         <a class="sa-btn sa-btn--ghost" href="/strategic-agents/local-business-radar/runs/{{ run.id }}/export.csv">CSV</a>
-        <a class="sa-btn sa-btn--hero lbrr-new" href="/strategic-agents/local-business-radar">New search</a>
+        <a class="sa-btn {{ 'sa-btn--ghost' if payload.resumable else 'sa-btn--hero' }} lbrr-new" href="/strategic-agents/local-business-radar">New search</a>
       </div>
     </div>
 
     <div class="sa-figs lbrr-figs">
-      <div class="sa-fig"><b data-sa-odo>{{ s.found or 0 }}</b><span>found</span></div>
-      <div class="sa-fig"><b data-sa-odo>{{ s.researched or 0 }}</b><span>researched</span></div>
+      <div class="sa-fig"><b data-sa-odo>{{ s.found or (run.counts or {}).found or 0 }}</b><span>found</span></div>
+      <div class="sa-fig"><b data-sa-odo>{{ s.researched or payload.researched or 0 }}</b><span>researched</span></div>
       <div class="sa-fig"><b data-sa-odo>{{ tiers.A or 0 }}</b><span>tier A leads</span></div>
       <div class="sa-fig"><b data-sa-odo>{{ s.needs_site or 0 }}</b><span>need a website</span></div>
       <div class="sa-fig"><b data-sa-odo>{{ s.unclaimed or 0 }}</b><span>unclaimed profiles</span></div>
@@ -205,6 +217,6 @@
 
 {{ topbar_script() }}
 <script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
-<script defer src="{{ url_for('static', filename='js/lbr-report.js') }}?v=5"></script>
+<script defer src="{{ url_for('static', filename='js/lbr-report.js') }}?v=6"></script>
 </body>
 </html>
