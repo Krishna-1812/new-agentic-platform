@@ -518,3 +518,127 @@ def test_the_worker_installs_the_browser_and_reports_what_is_missing(store, monk
     assert "installing one failed" in r.prepare() and calls == ["hf", "browser"]
     r.record_engine()
     assert "installing one failed" in video_worker.engine_status()["problem"]
+
+
+# ── The render on Railway (ffmpeg's "frame= 0 …" instead of a reason) ────────
+# What the failed render printed, cut to its last 600 characters: ffmpeg's
+# progress lines. The reason was further up, in HyperFrames' "✗" block.
+RAILWAY_TAIL = (
+    "Output #0, mp4:\n  Stream #0:0: Video: h264, yuv420p, 1080x1920 [SAR 1:1 DAR 9:16], q=2-31, 30 fps, 90k tbn\n"
+    "      Metadata:\n        encoder         : Lavc61.19.101 libx264\n      Side data:\n        ICC Profile\n"
+    "        cpb: bitrate max/min/avg: 0/0/0 buffer size: 0 vbv_delay: N/A\n"
+    + "frame=    0 fps=0.0 q=0.0 size=       0KiB time=N/A bitrate=N/A speed=N/A    \r" * 4)
+RAILWAY_OUTPUT = (
+    "Lint: 0 error(s), 5 warning(s) — run with --lint-verbose for full output.\n"
+    "Continuing render despite lint issues. Use --strict to block errors.\n"
+    "[INFO] [Render] Parallel capture worker phase {\"workerId\":0,\"phase\":\"frame_capture\"}\n"
+    "\x1b[31m✗\x1b[0m  \x1b[1mRender failed\x1b[0m\n\n"
+    "   Worker 3: Protocol error (HeadlessExperimental.beginFrame): Target closed\n"
+    "   ffmpeg stderr (tail):\n" + RAILWAY_TAIL +
+    "\n   Try --docker for containerized rendering\n")
+
+
+def test_a_failed_render_names_the_reason_not_ffmpegs_progress():
+    reason = video_sandbox.render_reason(RAILWAY_OUTPUT)
+    assert reason == "Render failed: Worker 3: Protocol error (HeadlessExperimental.beginFrame): Target closed"
+    log = video_sandbox.render_log(RAILWAY_OUTPUT)
+    assert "Target closed" in log and "frame=" not in log and "Lint" not in log and "docker" not in log
+    assert video_sandbox.render_reason(RAILWAY_TAIL) == "it ended without a video"
+    assert video_sandbox.render_reason("[Render] Chrome crashed: out of memory\n") == \
+        "[Render] Chrome crashed: out of memory"
+
+
+def test_the_render_is_sized_for_this_container_not_the_host(monkeypatch):
+    """HyperFrames counts the host's CPUs (dozens on Railway), so the render is sized here."""
+    monkeypatch.delenv("VIDEO_RENDER_WORKERS", raising=False)
+    assert video_config.render_workers(cpus=48, memory_mb=4096) == 2       # capped
+    assert video_config.render_workers(cpus=2, memory_mb=8192) == 1        # one CPU left for the rest
+    assert video_config.render_workers(cpus=8, memory_mb=2048) == 1        # little memory: one browser
+    monkeypatch.setenv("VIDEO_RENDER_WORKERS", "3")
+    assert video_config.render_workers(cpus=1, memory_mb=1024) == 3        # staff can set it
+    files = {"/sys/fs/cgroup/cpu.max": "200000 100000", "/sys/fs/cgroup/memory.max": str(3 * 1024 ** 3)}
+    monkeypatch.setattr(video_config, "_read", lambda p: files.get(p, ""))
+    assert video_config.container_cpus() == 2 and video_config.container_memory_mb() == 3072
+    files["/sys/fs/cgroup/cpu.max"], files["/sys/fs/cgroup/memory.max"] = "max 100000", "max"
+    assert video_config.container_cpus() >= 1 and video_config.container_memory_mb() > 0
+
+
+def test_the_render_asks_for_its_workers_and_the_safe_mode(tmp_path, monkeypatch):
+    monkeypatch.setenv("VIDEO_RENDER_WORKERS", "2")
+    args_file = tmp_path / "args.txt"
+    hf = tmp_path / "hyperframes"
+    # A stand-in HyperFrames: notes its arguments; the safe render makes a video, the other fails.
+    hf.write_text("#!/bin/sh\necho \"$@\" >> %s\ncase \"$*\" in *low-memory-mode*)\n"
+                  "  while [ \"$1\" != --output ]; do shift; done; printf MP4 > \"$2\"; exit 0;; esac\n"
+                  "printf '\\342\\234\\227  Render failed\\n\\n   Worker 1: Target closed\\n' >&2\nexit 1\n" % args_file)
+    hf.chmod(0o755)
+    browser = tmp_path / "browser"
+    browser.write_text("#!/bin/sh\n")
+    browser.chmod(0o755)
+    with video_sandbox.Sandbox(9, browser=str(browser), hyperframes=str(hf)) as box:
+        with pytest.raises(video_sandbox.RenderFailed) as failed:
+            box.render(5, timeout=30)
+        assert failed.value.reason == "Render failed: Worker 1: Target closed"
+        assert box.render(5, timeout=30, safe=True) == b"MP4"
+    first, second = args_file.read_text().splitlines()
+    assert "--workers 2" in first and "low-memory-mode" not in first
+    assert "--workers 1 --low-memory-mode" in second
+
+
+def test_a_failed_render_is_tried_again_in_safe_mode(store):
+    pid, vid = _results_video(store)
+    _plan_next(store)
+    video_builder.approve(ANA, vid)
+    _build_next(store)
+    calls = []
+
+    class FailsOnce(RenderBox):
+        def render(self, seconds, quality="high", timeout=None, safe=False):
+            calls.append((safe, timeout))
+            if not safe:
+                raise video_sandbox.RenderFailed("Render failed: Worker 3: Target closed", "Worker 3: Target closed")
+            return super().render(seconds, quality, timeout)
+    job = store.claim_job("w")
+    out = video_render.run_job(job, sandbox=FailsOnce)
+    assert out["outcome"] == "done" and [c[0] for c in calls] == [False, True]
+    assert calls[1][1] <= calls[0][1]                               # within the same time limit
+    steps = [e["step"] for e in store.get_job(job["id"])["log"]]
+    assert steps.index("render_failed") < steps.index("render_log") < steps.index("render_retry") < steps.index("done")
+    store.finish_job(job["id"], "w", "done")
+    assert store.get_version(vid)["status"] == "ready"
+    making = video_app.making_steps(store.jobs_for_version(vid, ANA), False, True, False)
+    assert next(s for s in making if s["key"] == "render")["detail"] == "Tried a second time, more slowly"
+
+
+def test_a_render_that_fails_twice_says_why_in_plain_words(store):
+    pid, vid = _results_video(store)
+    _plan_next(store)
+    video_builder.approve(ANA, vid)
+    _build_next(store)
+
+    class AlwaysFails(RenderBox):
+        def render(self, seconds, quality="high", timeout=None, safe=False):
+            raise video_sandbox.RenderFailed("Render failed: Worker 3: Target closed", RAILWAY_OUTPUT)
+    job = store.claim_job("w")
+    out = video_render.run_job(job, sandbox=AlwaysFails)
+    store.finish_job(job["id"], "w", "failed", out["error"])
+    assert out["outcome"] == "failed" and "even on a second, slower try" in out["error"]
+    assert out["error"].endswith("What went wrong: Render failed: Worker 3: Target closed.")
+    view = video_app.project_view(ANA, pid)["version"]
+    assert view["error"].startswith("The video could not be rendered") and "frame=" not in view["error"]
+    assert video_app.retry(ANA, vid) == vid and store.claim_job("w")["kind"] == "render"
+
+
+def test_no_second_try_when_the_time_is_nearly_used(store):
+    vid = _results_video(store)[1]
+    job = {"id": video_store.enqueue(vid, kind="render")}
+    calls = []
+
+    class Box:
+        def render(self, seconds, timeout=None, safe=False):
+            calls.append(safe)
+            raise video_sandbox.RenderFailed("Render failed: Target closed")
+    with pytest.raises(video_sandbox.RenderFailed) as failed:
+        video_render._render(job, Box(), 15, video_render.MIN_RETRY_S - 30)
+    assert calls == [False] and not getattr(failed.value, "retried", False)
+    assert [e["step"] for e in store.get_job(job["id"])["log"]][-1] == "render_failed"

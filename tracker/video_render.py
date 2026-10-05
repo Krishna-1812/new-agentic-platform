@@ -6,7 +6,10 @@ run_job(job) takes a claimed "render" job and its version's composition:
   2. Notes any outside address the files name (it will not load).
   3. Runs `hyperframes check`. A composition that fails it is never
      rendered: the job fails with the reasons.
-  4. Renders the MP4 at high quality, within its time limit.
+  4. Renders the MP4 at high quality, within its time limit. A render that
+     ends without a video is tried once more in the safe mode (one browser,
+     plain screenshots) with the time that is left; what went wrong the
+     first time is in the log.
   5. Takes the cover frame with ffmpeg.
   6. Stores the MP4, the cover and the step timings on the version.
 
@@ -28,6 +31,10 @@ from tracker import video_engine, video_sandbox, video_store
 log = logging.getLogger("video_studio.render")
 
 MAX_REASONS = 6
+# A safe-mode second try needs at least this long to be worth starting.
+MIN_RETRY_S = 90
+RENDER_FAILED = ("The video could not be rendered%s, so nothing was made. Use Try again; if it fails again, "
+                 "the platform team can see why in this video's log. What went wrong: %s.")
 
 
 def _failed(job, version_id, message, timings):
@@ -47,6 +54,32 @@ def check_reasons(report):
     if more > 0:
         lines.append("and %d more" % more)
     return lines
+
+
+def _log_lines(job, step, text, size=480, most=4):
+    """A long text in the log as a few entries (each entry holds 500 characters)."""
+    for i in range(0, min(len(text), size * most), size):
+        video_store.add_log(job["id"], step, text[i:i + size])
+
+
+def _render(job, box, duration, limit):
+    """Render; when the render ends without a video, try once more in safe mode."""
+    started = time.monotonic()
+    try:
+        return box.render(duration, timeout=limit)
+    except video_sandbox.RenderFailed as exc:
+        video_store.add_log(job["id"], "render_failed", exc.reason)
+        _log_lines(job, "render_log", exc.log)
+        left = int(limit - (time.monotonic() - started))
+        if left < MIN_RETRY_S:
+            raise
+        video_store.add_log(job["id"], "render_retry", "safe mode: one browser, plain screenshots; %d s left" % left)
+        try:
+            return box.render(duration, timeout=left, safe=True)
+        except video_sandbox.RenderFailed as again:
+            _log_lines(job, "render_log", again.log)
+            again.retried = True
+            raise
 
 
 def run_job(job, *, stop=None, sandbox=video_sandbox.Sandbox):
@@ -84,7 +117,7 @@ def run_job(job, *, stop=None, sandbox=video_sandbox.Sandbox):
             limit = int(settings.get("render_timeout_s") or cfg.render_timeout(duration))
             t = time.monotonic()
             video_store.add_log(job["id"], "render", "time limit %d s" % limit)
-            mp4 = box.render(duration, timeout=limit)
+            mp4 = _render(job, box, duration, limit)
             timings["render_s"] = round(time.monotonic() - t, 1)
             cover_at = version.get("cover_at")
             cover_at = float(cover_at) if cover_at is not None else min(duration * 0.4, 3.0)
@@ -112,6 +145,10 @@ def run_job(job, *, stop=None, sandbox=video_sandbox.Sandbox):
                        "happens again, make the video shorter or simpler.", timings)
     except video_sandbox.BadFile as exc:
         return _failed(job, vid, "A file of the video cannot be used: %s." % exc, timings)
+    except video_sandbox.RenderFailed as exc:
+        _log_blocked(job, box)
+        again = ", even on a second, slower try" if getattr(exc, "retried", False) else ""
+        return _failed(job, vid, RENDER_FAILED % (again, exc.reason.rstrip(".")), timings)
     except Exception as exc:
         log.exception("render job %s", job["id"])
         _log_blocked(job, box)

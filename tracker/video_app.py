@@ -286,7 +286,7 @@ MAKE_STEPS = (("change", "Making your change"), ("build", "Building the scenes")
 def making_steps(jobs, is_change, finished, failed):
     """The making steps from the build (or change) and render jobs' logs."""
     keys = [k for k, _ in MAKE_STEPS if is_change or k != "change"]
-    seen, writes, current = set(), 0, None
+    seen, writes, current, retried = set(), 0, None, False
     for j in reversed(jobs):              # oldest job first
         for e in j.get("log") or []:
             name = e.get("step")
@@ -305,8 +305,11 @@ def making_steps(jobs, is_change, finished, failed):
                 key = "fix" if writes else "look"
             elif name == "done" and j["kind"] in ("build", "change"):
                 key = "render"
-            elif j["kind"] == "render" and name in ("start", "check", "render", "stopped"):
+            elif j["kind"] == "render" and name in ("start", "check", "render", "stopped", "render_failed",
+                                                    "render_log"):
                 key = "render"
+            elif name == "render_retry":
+                key, retried = "render", True
             elif name == "cover":
                 key = "cover"
             if key in keys:
@@ -330,6 +333,8 @@ def making_steps(jobs, is_change, finished, failed):
             detail = "%d fix%s" % (writes, "es" if writes != 1 else "")
         elif k in ("look", "fix") and state == "skipped":
             detail = "Not needed"
+        elif k == "render" and retried:
+            detail = "Tried a second time, more slowly"
         out.append({"key": k, "label": dict(MAKE_STEPS)[k], "state": state, "detail": detail})
     return out
 
