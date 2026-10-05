@@ -28,7 +28,7 @@ from tracker.video_site import contrast
 TEMPLATES = ("title", "words", "screenshot", "image", "list", "steps", "big_number", "chart", "comparison",
              "quote", "timeline", "people", "phone", "logo_wall", "event_card", "end_card")
 # Scenes drawn on the brand's text colour (an inverse), for punch.
-INVERSE = ("title", "big_number", "end_card")
+INVERSE = ("big_number",)
 CHAR_W = {"serif": 0.56, "sans": 0.54}
 
 
@@ -65,6 +65,15 @@ class Ctx:
         self.tables = tables or {}          # id -> numbers data
         self.hl = c["accent"] if contrast(c["accent"], c["background"]) >= 3 else c["text"]
         self.hl_inv = c["accent"] if contrast(c["accent"], c["text"]) >= 3 else c["background"]
+        # The dark surface photos and hooks sit on: the brand's accent, deepened (a tinted
+        # near-black reads richer than plain black), and the accent made light enough to read on it.
+        self.deep = deep_colour(c["accent"], c["text"])
+        self.hl_dark = light_accent(c["accent"], self.deep)
+        from tracker import video_fonts
+        self.em_italic = video_fonts.has_italic(brand["fonts"]["heading"])
+        self.logo_w = brand.get("logo_w") or 0
+        self.logo_h = brand.get("logo_h") or 0
+        self.logo_light = bool(brand.get("logo_light"))
 
     def px(self, v):
         return "%dpx" % round(v)
@@ -102,11 +111,85 @@ def _lines(text, per_line):
     return n
 
 
-def words(text, cls=""):
+def _hex(rgb_):
+    return "#" + "".join("%02x" % max(0, min(255, round(x))) for x in rgb_)
+
+
+def mix(a, b, t):
+    """a moved t of the way to b."""
+    from tracker.video_site import rgb
+    ra, rb = rgb(a), rgb(b)
+    return _hex(x + (y - x) * t for x, y in zip(ra, rb))
+
+
+def deep_colour(accent, text):
+    """A dark, brand-tinted surface: the accent deepened, unless it is too light to tint with."""
+    base = accent if contrast(accent, "#ffffff") >= 2.2 else text
+    for t in (0.62, 0.7, 0.78, 0.86):
+        d = mix(base, "#000000", t)
+        if contrast("#ffffff", d) >= 12:
+            return d
+    return mix(base, "#000000", 0.9)
+
+
+def light_accent(accent, deep):
+    """The accent, made lighter (keeping its hue and colour, not washing it out) until it
+    reads clearly on the deep surface (5:1)."""
+    import colorsys
+    from tracker.video_site import rgb
+    if contrast(accent, deep) >= 5:
+        return accent
+    h, l, sat = colorsys.rgb_to_hls(*[x / 255.0 for x in rgb(accent)])
+    sat = max(sat, 0.45) if sat > 0.08 else sat
+    for step in range(1, 30):
+        light = min(0.95, l + step * 0.025)
+        c = _hex(x * 255 for x in colorsys.hls_to_rgb(h, light, sat))
+        if contrast(c, deep) >= 5:
+            return c
+    return "#ffffff"
+
+
+def rgba(colour, alpha):
+    from tracker.video_site import rgb
+    r, g, b = rgb(colour)
+    return "rgba(%d,%d,%d,%.2f)" % (r, g, b, alpha)
+
+
+_TOKEN = re.compile(r"[^\w%$€£₹¥]+", re.U)
+
+
+def _bare(word):
+    return _TOKEN.sub("", word.lower())
+
+
+def _emphasised(tokens, emphasis):
+    """Indexes of the words of `emphasis` where they first appear, in order, in `tokens`."""
+    want = [_bare(w) for w in str(emphasis or "").split() if _bare(w)]
+    have = [_bare(w) for w in tokens]
+    if not want:
+        return set()
+    for i in range(len(have) - len(want) + 1):
+        if have[i:i + len(want)] == want:
+            return set(range(i, i + len(want)))
+    return set()
+
+
+def words(text, cls="", emphasis=""):
+    """The words as masked spans (each rises into view); `emphasis` words are marked .em."""
+    tokens = str(text or "").split()
+    em = _emphasised(tokens, emphasis)
     out = []
-    for w in str(text or "").split():
-        out.append('<span class="w%s">%s</span>' % (" " + cls if cls else "", esc(w)))
+    for i, w in enumerate(tokens):
+        classes = "w" + (" " + cls if cls else "") + (" em" if i in em else "")
+        # The word moves inside its own mask while it rises, so it never shows over its neighbours;
+        # the check would count the hidden travel as an overlap.
+        out.append('<span class="%s"><span class="wi" data-layout-allow-overlap>%s</span></span>' % (classes, esc(w)))
     return " ".join(out)
+
+
+def head(s):
+    """A scene's headline as words, with its emphasis."""
+    return words(s.get("headline"), emphasis=s.get("emphasis"))
 
 
 def _img(ctx, aid, cls="", style="", moving=False):
@@ -119,9 +202,50 @@ def _img(ctx, aid, cls="", style="", moving=False):
 
 
 def _words_in(sel, at, n):
-    stagger = min(0.08, 0.7 / max(1, n))
-    return ('tl.fromTo("%s", { opacity: 0, y: U * 26 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out", '
-            'stagger: %.3f }, %.3f);' % (sel, stagger, at))
+    """Words rise into view from behind their own mask, one after another."""
+    stagger = min(0.07, 0.75 / max(1, n))
+    target = sel + " > .wi" if sel.endswith(".w") else sel
+    return ('tl.fromTo("%s", { yPercent: 115 }, { yPercent: 0, duration: 0.72, ease: "power4.out", '
+            'stagger: %.3f }, %.3f);' % (target, stagger, at))
+
+
+def _dark(ctx, sid):
+    """CSS that puts a scene on the deep brand surface, with light words."""
+    return ("#%s { --bgc: %s; --fg: #ffffff; --hl: %s; --muted: rgba(255,255,255,0.84); --card: %s; "
+            "background: var(--bgc); color: var(--fg); }" % (sid, ctx.deep, ctx.hl_dark, mix(ctx.deep, "#ffffff", 0.1)))
+
+
+def _backdrop(ctx, aid, sid, t0, dur, scrim="bottom"):
+    """A full-bleed photo with a slow push-in and a brand-tinted scrim so words read on it."""
+    if aid not in ctx.assets:
+        return "", "", []
+    d = ctx.deep
+    grad = {"bottom": "linear-gradient(180deg, %s 0%%, %s 38%%, %s 70%%, %s 100%%)" % (
+                rgba(d, 0.38), rgba(d, 0.22), rgba(d, 0.78), rgba(d, 0.94)),
+            "left": "linear-gradient(90deg, %s 0%%, %s 44%%, %s 68%%, %s 100%%)" % (
+                rgba(d, 0.9), rgba(d, 0.74), rgba(d, 0.2), rgba(d, 0.0)),
+            "even": "linear-gradient(180deg, %s 0%%, %s 100%%)" % (rgba(d, 0.62), rgba(d, 0.8))}[scrim]
+    html = '<div class="bd">%s</div><i class="scrim"></i>' % _img(ctx, aid, "bdi", moving=True)
+    css = """
+#%(id)s .bd { position: absolute; inset: 0; overflow: hidden; }
+#%(id)s .bdi { position: absolute; inset: 0; width: 100%%; height: 100%%; object-fit: cover; }
+#%(id)s .scrim { position: absolute; inset: 0; background: %(g)s; }""" % {"id": sid, "g": grad}
+    js = ['tl.fromTo("#%s .bdi", { scale: 1.14 }, { scale: 1.0, duration: %.2f, ease: "none" }, %.3f);'
+          % (sid, dur + 0.4, t0)]
+    return html, css, js
+
+
+def logo(ctx, on_dark, cls="logo"):
+    """The logo, tinted to read on its surface: a light logo on a light page is drawn in the
+    brand's text colour, a dark one on a dark surface in white."""
+    if not ctx.logo:
+        return ""
+    if ctx.logo_light != on_dark and ctx.logo_w and ctx.logo_h:
+        colour = "#ffffff" if on_dark else ctx.colors["text"]
+        return ('<div class="%s mask" style="aspect-ratio: %d / %d; background: %s; -webkit-mask: url(\'%s\') '
+                'center / contain no-repeat; mask: url(\'%s\') center / contain no-repeat;"></div>'
+                % (cls, ctx.logo_w, ctx.logo_h, colour, esc(ctx.logo), esc(ctx.logo)))
+    return '<img class="%s" src="%s" alt="" />' % (cls, esc(ctx.logo))
 
 
 def _fade_in(sel, at, dy=24, dur=0.5, stagger=0.0):
@@ -135,50 +259,63 @@ def _count(text):
 
 # ── The templates ────────────────────────────────────────────────────────────
 def title(ctx, s, sid, t0, dur):
+    """The hook: big words on the deep brand surface, over a photo when the plan gives one."""
     u = ctx.u
     hk = ctx.font_kind(ctx.fonts["heading"])
-    head_px = fit(s.get("headline"), ctx.box_w * (0.82 if ctx.wide else 1), 3, 150 * u, 56 * u, hk,
-                  height=ctx.box_h * 0.55)
-    sub_px = fit(s.get("subline"), ctx.box_w * (0.7 if ctx.wide else 1), 3, 46 * u, 30 * u)
-    logo = ('<img class="logo" src="%s" alt="" />' % esc(ctx.logo)) if ctx.logo else ""
-    html = """<div class="col">%s<i class="bar"></i><h1 class="head">%s</h1>%s</div>""" % (
-        logo, words(s.get("headline")), '<p class="sub">%s</p>' % esc(s["subline"]) if s.get("subline") else "")
+    aid = next((a for a in (s.get("asset_ids") or []) if a in ctx.assets), None)
+    width = ctx.box_w * (0.78 if ctx.wide else 1)
+    head_px = fit(s.get("headline"), width, 4, (170 if ctx.tall else 150) * u, 64 * u, hk,
+                  height=ctx.box_h * 0.6, line_height=1.04)
+    sub_px = fit(s.get("subline"), ctx.box_w * (0.6 if ctx.wide else 0.92), 3, 44 * u, 30 * u)
+    bd_html, bd_css, bd_js = _backdrop(ctx, aid, sid, t0, dur, "left" if ctx.wide else "bottom")
+    html = """%s%s<div class="col"><i class="bar"></i><h1 class="head">%s</h1>%s</div>""" % (
+        bd_html, logo(ctx, True), head(s), '<p class="sub">%s</p>' % esc(s["subline"]) if s.get("subline") else "")
+    # Over a photo the words sit low, under the subject; on the plain surface, centred.
+    if aid and not ctx.wide:
+        place = "bottom: %s;" % ctx.px(ctx.pad_bottom + 20 * u)
+    else:
+        place = "top: 50%; transform: translateY(-50%);"
     css = """
-#%(id)s .col { position: absolute; left: %(x)s; right: %(x)s; top: 50%%; transform: translateY(-50%%); }
-#%(id)s .logo { display: block; max-height: %(lh)s; max-width: %(lw)s; margin-bottom: %(g)s; object-fit: contain; object-position: left center; }
+%(dark)s%(bd)s
+#%(id)s .logo { position: absolute; left: %(x)s; top: %(lt)s; height: %(lh)s; max-width: %(lw)s; width: auto; object-fit: contain; object-position: left center; }
+#%(id)s .col { position: absolute; left: %(x)s; right: %(x)s; %(place)s }
 #%(id)s .bar { display: block; width: %(bw)s; height: %(bh)s; background: var(--hl); border-radius: 99px; margin-bottom: %(g2)s; transform-origin: left center; }
 #%(id)s .head { font-size: %(hp)s; line-height: 1.04; max-width: %(mw)s; }
-#%(id)s .sub { margin-top: %(g2)s; font-size: %(sp)s; line-height: 1.35; max-width: %(sw)s; opacity: 0.86; }
-""" % {"id": sid, "x": ctx.px(ctx.pad_x), "lh": ctx.px(96 * u), "lw": ctx.px(380 * u), "g": ctx.px(48 * u),
-       "bw": ctx.px(90 * u), "bh": ctx.px(10 * u), "g2": ctx.px(30 * u), "hp": ctx.px(head_px),
-       "mw": ctx.px(ctx.box_w * (0.82 if ctx.wide else 1)), "sp": ctx.px(sub_px),
-       "sw": ctx.px(ctx.box_w * (0.7 if ctx.wide else 1))}
-    js = [_fade_in("#%s .logo" % sid, t0 + 0.1) if ctx.logo else "",
-          'tl.fromTo("#%s .bar", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "power3.out" }, %.3f);' % (sid, t0 + 0.2),
-          _words_in("#%s .head .w" % sid, t0 + 0.3, _count(s.get("headline"))),
-          _fade_in("#%s .sub" % sid, t0 + 0.9) if s.get("subline") else ""]
+#%(id)s .sub { margin-top: %(g2)s; font-size: %(sp)s; line-height: 1.35; max-width: %(sw)s; color: var(--muted); }
+""" % {"dark": _dark(ctx, sid), "bd": bd_css, "id": sid, "x": ctx.px(ctx.pad_x),
+       "lt": ctx.px(max(40 * u, ctx.pad_top * 0.5 - 40 * u)), "lh": ctx.px(84 * u), "lw": ctx.px(340 * u),
+       "place": place, "bw": ctx.px(96 * u), "bh": ctx.px(9 * u), "g2": ctx.px(34 * u), "hp": ctx.px(head_px),
+       "mw": ctx.px(width), "sp": ctx.px(sub_px), "sw": ctx.px(ctx.box_w * (0.6 if ctx.wide else 0.92))}
+    n = _count(s.get("headline"))
+    js = bd_js + [_fade_in("#%s .logo" % sid, t0 + 0.1, dy=12) if ctx.logo else "",
+                  'tl.fromTo("#%s .bar", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "power3.out" }, %.3f);'
+                  % (sid, t0 + 0.15),
+                  _words_in("#%s .head .w" % sid, t0 + 0.25, n),
+                  _fade_in("#%s .sub" % sid, t0 + 0.55 + min(0.07, 0.75 / max(1, n)) * n) if s.get("subline") else ""]
     return html, css, js
 
-
 def words_scene(ctx, s, sid, t0, dur):
+    """Kinetic words: big and centred, over a photo when the plan gives one."""
     u = ctx.u
     hk = ctx.font_kind(ctx.fonts["heading"])
-    head_px = fit(s.get("headline"), ctx.box_w * (0.86 if ctx.wide else 1), 4, 140 * u, 52 * u, hk,
-                  height=ctx.box_h * 0.62)
+    aid = next((a for a in (s.get("asset_ids") or []) if a in ctx.assets), None)
+    head_px = fit(s.get("headline"), ctx.box_w * (0.84 if ctx.wide else 1), 4, (160 if ctx.tall else 140) * u,
+                  56 * u, hk, height=ctx.box_h * 0.62, line_height=1.06)
     sub_px = fit(s.get("subline"), ctx.box_w * 0.8, 3, 44 * u, 30 * u)
-    html = '<div class="col"><h2 class="head">%s</h2>%s</div>' % (
-        words(s.get("headline")), '<p class="sub">%s</p>' % esc(s["subline"]) if s.get("subline") else "")
+    bd_html, bd_css, bd_js = _backdrop(ctx, aid, sid, t0, dur, "even")
+    html = '%s<div class="col"><h2 class="head">%s</h2>%s</div>' % (
+        bd_html, head(s), '<p class="sub">%s</p>' % esc(s["subline"]) if s.get("subline") else "")
     css = """
+%(dark)s%(bd)s
 #%(id)s .col { position: absolute; left: %(x)s; right: %(x)s; top: 50%%; transform: translateY(-50%%); text-align: center; }
 #%(id)s .head { font-size: %(hp)s; line-height: 1.06; }
 #%(id)s .sub { margin: %(g)s auto 0; font-size: %(sp)s; line-height: 1.35; max-width: %(sw)s; color: var(--muted); }
-""" % {"id": sid, "x": ctx.px(ctx.pad_x), "hp": ctx.px(head_px), "g": ctx.px(32 * u), "sp": ctx.px(sub_px),
-       "sw": ctx.px(ctx.box_w * 0.8)}
+""" % {"dark": _dark(ctx, sid) if aid else "", "bd": bd_css, "id": sid, "x": ctx.px(ctx.pad_x),
+       "hp": ctx.px(head_px), "g": ctx.px(32 * u), "sp": ctx.px(sub_px), "sw": ctx.px(ctx.box_w * 0.8)}
     n = _count(s.get("headline"))
-    js = [_words_in("#%s .head .w" % sid, t0 + 0.3, n),
-          _fade_in("#%s .sub" % sid, t0 + 0.4 + min(0.08, 0.7 / max(1, n)) * n + 0.2) if s.get("subline") else ""]
+    js = bd_js + [_words_in("#%s .head .w" % sid, t0 + 0.25, n),
+                  _fade_in("#%s .sub" % sid, t0 + 0.5 + min(0.07, 0.75 / max(1, n)) * n) if s.get("subline") else ""]
     return html, css, js
-
 
 def _caption(ctx, s, width, lines=3, max_px=None):
     hk = ctx.font_kind(ctx.fonts["heading"])
@@ -228,7 +365,7 @@ def screenshot(ctx, s, sid, t0, dur):
     img_h = view_w * a["h"] / max(1, a["w"])
     travel = max(0.0, min(img_h - view_h, view_h * 1.6))
     html = """<div class="frame"><div class="chrome"><i></i><i></i><i></i></div><div class="view">%s</div></div>
-<div class="cap"><h2>%s</h2>%s</div>""" % (_img(ctx, aid, "shot", moving=True), words(s.get("headline")),
+<div class="cap"><h2>%s</h2>%s</div>""" % (_img(ctx, aid, "shot", moving=True), head(s),
                                            "<p>%s</p>" % esc(s["subline"]) if s.get("subline") else "")
     css = """
 %(frame)s
@@ -251,25 +388,59 @@ def screenshot(ctx, s, sid, t0, dur):
 
 
 def image(ctx, s, sid, t0, dur):
+    """A photo, big. Tall shapes: a large rounded photo with the words under it, on the deep
+    surface. Wide and square ones: the photo full-bleed, the words over a scrim."""
     u = ctx.u
-    media, cap = _media_layout(ctx, 0.38)
-    px, sub = _caption(ctx, s, cap[2], 3 if ctx.wide else 2)
+    hk = ctx.font_kind(ctx.fonts["heading"])
     aid = (s.get("asset_ids") or [None])[0]
-    html = '<div class="photo">%s</div><div class="cap"><h2>%s</h2>%s</div>' % (
-        _img(ctx, aid, "pic", moving=True), words(s.get("headline")), "<p>%s</p>" % esc(s["subline"]) if s.get("subline") else "")
-    css = """
-%(photo)s
-#%(id)s .photo { border-radius: %(r)s; overflow: hidden; background: var(--muted); }
+    sub_html = "<p>%s</p>" % esc(s["subline"]) if s.get("subline") else ""
+    n = _count(s.get("headline"))
+    if ctx.H / ctx.W > 1.15:
+        # Tall: photo from just under the top safe area, words below it.
+        r = 32 * u
+        top = ctx.pad_top * 0.6
+        cap_h = ctx.H * (0.24 if ctx.tall else 0.26)
+        photo_h = ctx.H - top - ctx.pad_bottom * 0.62 - cap_h - 40 * u
+        px = fit(s.get("headline"), ctx.box_w, 3, 112 * u, 52 * u, hk, height=cap_h * (0.74 if s.get("subline") else 1),
+                 line_height=1.06)
+        sub = fit(s.get("subline"), ctx.box_w, 2, 38 * u, 28 * u)
+        html = '<div class="photo">%s</div><div class="cap"><h2>%s</h2>%s</div>' % (
+            _img(ctx, aid, "pic", moving=True), head(s), sub_html)
+        css = """
+%(dark)s
+#%(id)s .photo { position: absolute; left: %(px)s; right: %(px)s; top: %(top)s; height: %(ph)s; border-radius: %(r)s; overflow: hidden; background: var(--card); }
 #%(id)s .pic { width: 100%%; height: 100%%; object-fit: cover; }
-%(cap)s""" % {"photo": _box_css("#%s .photo" % sid, media, ctx), "id": sid, "r": ctx.px(28 * u),
-              "cap": _caption_css(sid, ctx, cap, px, sub)}
-    js = ['tl.fromTo("#%s .photo", { clipPath: "inset(100%% 0%% 0%% 0%% round %dpx)" }, { clipPath: "inset(0%% 0%% 0%% 0%% '
-          'round %dpx)", duration: 0.7, ease: "power3.inOut" }, %.3f);' % (sid, 28 * u, 28 * u, t0 + 0.05),
-          'tl.fromTo("#%s .pic", { scale: 1.14 }, { scale: 1.02, duration: %.2f, ease: "none" }, %.3f);' % (sid, dur, t0),
-          _words_in("#%s .cap .w" % sid, t0 + 0.45, _count(s.get("headline"))),
-          _fade_in("#%s .cap p" % sid, t0 + 1.0) if s.get("subline") else ""]
+#%(id)s .cap { position: absolute; left: %(x)s; right: %(x)s; top: %(ct)s; height: %(ch)s; display: flex; flex-direction: column; justify-content: center; }
+#%(id)s .cap h2 { font-size: %(hp)s; line-height: 1.06; }
+#%(id)s .cap p { margin-top: %(g)s; font-size: %(sp)s; line-height: 1.35; color: var(--muted); }
+""" % {"dark": _dark(ctx, sid), "id": sid, "px": ctx.px(ctx.pad_x * 0.62), "top": ctx.px(top), "ph": ctx.px(photo_h),
+       "r": ctx.px(r), "x": ctx.px(ctx.pad_x), "ct": ctx.px(top + photo_h + 30 * u), "ch": ctx.px(cap_h),
+       "hp": ctx.px(px), "g": ctx.px(18 * u), "sp": ctx.px(sub)}
+        js = ['tl.fromTo("#%s .photo", { clipPath: "inset(100%% 0%% 0%% 0%% round %dpx)" }, { clipPath: "inset(0%% 0%% '
+              '0%% 0%% round %dpx)", duration: 0.75, ease: "power3.inOut" }, %.3f);' % (sid, r, r, t0 + 0.05),
+              'tl.fromTo("#%s .pic", { scale: 1.16 }, { scale: 1.02, duration: %.2f, ease: "none" }, %.3f);'
+              % (sid, dur + 0.3, t0),
+              _words_in("#%s .cap .w" % sid, t0 + 0.4, n),
+              _fade_in("#%s .cap p" % sid, t0 + 0.65 + min(0.07, 0.75 / max(1, n)) * n) if s.get("subline") else ""]
+        return html, css, js
+    # Wide and square: full-bleed.
+    width = ctx.box_w * (0.56 if ctx.wide else 1)
+    px = fit(s.get("headline"), width, 3, 120 * u, 52 * u, hk, height=ctx.box_h * 0.5, line_height=1.06)
+    sub = fit(s.get("subline"), width, 2, 40 * u, 28 * u)
+    bd_html, bd_css, bd_js = _backdrop(ctx, aid, sid, t0, dur, "left" if ctx.wide else "bottom")
+    html = '%s<div class="cap"><h2>%s</h2>%s</div>' % (bd_html, head(s), sub_html)
+    place = ("top: 50%%; transform: translateY(-50%%); width: %s;" % ctx.px(width)) if ctx.wide else \
+        "right: %s; bottom: %s;" % (ctx.px(ctx.pad_x), ctx.px(ctx.pad_bottom))
+    css = """
+%(dark)s%(bd)s
+#%(id)s .cap { position: absolute; left: %(x)s; %(place)s }
+#%(id)s .cap h2 { font-size: %(hp)s; line-height: 1.06; }
+#%(id)s .cap p { margin-top: %(g)s; font-size: %(sp)s; line-height: 1.35; color: var(--muted); }
+""" % {"dark": _dark(ctx, sid), "bd": bd_css, "id": sid, "x": ctx.px(ctx.pad_x), "place": place,
+       "hp": ctx.px(px), "g": ctx.px(18 * u), "sp": ctx.px(sub)}
+    js = bd_js + [_words_in("#%s .cap .w" % sid, t0 + 0.35, n),
+                  _fade_in("#%s .cap p" % sid, t0 + 0.6 + min(0.07, 0.75 / max(1, n)) * n) if s.get("subline") else ""]
     return html, css, js
-
 
 def _rows(ctx, s, sid, t0, dur, marker):
     """list and steps: a headline and rows that build one by one."""
@@ -293,7 +464,7 @@ def _rows(ctx, s, sid, t0, dur, marker):
         rows.append('<li><b>%s</b><div><span class="l">%s</span>%s</div></li>' % (
             mark, esc(it.get("label")), '<span class="d">%s</span>' % esc(it["detail"]) if it.get("detail") else ""))
     html = '<div class="col">%s<ol>%s</ol></div>' % (
-        '<h2 class="head">%s</h2>' % words(s["headline"]) if s.get("headline") else "", "".join(rows))
+        '<h2 class="head">%s</h2>' % head(s) if s.get("headline") else "", "".join(rows))
     css = """
 #%(id)s .col { position: absolute; left: %(x)s; right: %(x)s; top: %(t)s; bottom: %(bt)s; display: flex; flex-direction: column; justify-content: center; }
 #%(id)s .head { font-size: %(hp)s; line-height: 1.08; margin-bottom: %(hg)s; }
@@ -463,7 +634,7 @@ def chart(ctx, s, sid, t0, dur):
                       'ease: "power3.out", stagger: %.3f }, %.3f);' % (sid, step, t0 + 0.6))
             js.append(_fade_in("#%s .val" % sid, t0 + 1.0, 10, 0.35, step))
     html = '<div class="col">%s<svg class="plot" viewBox="0 0 %d %d" width="%d" height="%d">%s</svg></div>' % (
-        '<h2 class="head">%s</h2>' % words(s["headline"]) if s.get("headline") else "", cw, ch, cw, ch, "".join(svg))
+        '<h2 class="head">%s</h2>' % head(s) if s.get("headline") else "", cw, ch, cw, ch, "".join(svg))
     css = """
 #%(id)s .col { position: absolute; left: %(x)s; top: %(t)s; width: %(w)s; }
 #%(id)s .head { font-size: %(hp)s; line-height: 1.08; margin-bottom: %(g)s; }
@@ -497,7 +668,7 @@ def comparison(ctx, s, sid, t0, dur):
         pic = '<div class="pic">%s</div>' % _img(ctx, pics[k]) if len(pics) == 2 else ""
         cards.append('<div class="card c%d">%s<h3>%s</h3><p>%s</p></div>' % (k, pic, esc(it["label"]), esc(it["detail"])))
     html = '<div class="col">%s<div class="pair">%s</div></div>' % (
-        '<h2 class="head">%s</h2>' % words(s["headline"]) if s.get("headline") else "", "".join(cards))
+        '<h2 class="head">%s</h2>' % head(s) if s.get("headline") else "", "".join(cards))
     css = """
 #%(id)s .col { position: absolute; left: %(x)s; top: %(t)s; width: %(w)s; height: %(h)s; display: flex; flex-direction: column; }
 #%(id)s .head { font-size: %(hp)s; line-height: 1.08; margin-bottom: %(hg)s; }
@@ -528,7 +699,7 @@ def quote(ctx, s, sid, t0, dur):
     att_px = fit(s.get("attribution"), ctx.box_w - photo - 30 * u, 2, 38 * u, 26 * u)
     html = """<div class="col"><blockquote>%s</blockquote>
 <div class="who">%s<span>%s</span></div></div>""" % (
-        words(s.get("headline")), '<div class="face">%s</div>' % _img(ctx, aid) if aid else "", esc(s.get("attribution")))
+        head(s), '<div class="face">%s</div>' % _img(ctx, aid) if aid else "", esc(s.get("attribution")))
     css = """
 #%(id)s .col { position: absolute; left: %(x)s; right: %(x)s; top: 50%%; transform: translateY(-50%%); }
 #%(id)s .col { padding-top: %(mh)s; }
@@ -565,7 +736,7 @@ def timeline(ctx, s, sid, t0, dur):
                      height=row - lab_px * 1.3 - 20 * u, line_height=1.3)
     li = "".join('<li><i></i><b>%s</b><span>%s</span></li>' % (esc(i.get("label")), esc(i.get("detail"))) for i in items)
     html = '<div class="col">%s<div class="track"><div class="rail"></div><ol>%s</ol></div></div>' % (
-        '<h2 class="head">%s</h2>' % words(s["headline"]) if s.get("headline") else "", li)
+        '<h2 class="head">%s</h2>' % head(s) if s.get("headline") else "", li)
     base = """
 #%(id)s .col { position: absolute; left: %(x)s; top: %(t)s; width: %(w)s; height: %(h)s; display: flex; flex-direction: column; }
 #%(id)s .head { font-size: %(hp)s; line-height: 1.08; margin-bottom: %(hg)s; }
@@ -629,7 +800,7 @@ def people(ctx, s, sid, t0, dur):
         cards.append('<div class="p"><div class="face">%s</div><b>%s</b><span>%s</span></div>' % (
             inner, esc(it.get("label")), esc(it.get("detail"))))
     html = '<div class="col">%s<div class="grid">%s</div></div>' % (
-        '<h2 class="head">%s</h2>' % words(s["headline"]) if s.get("headline") else "", "".join(cards))
+        '<h2 class="head">%s</h2>' % head(s) if s.get("headline") else "", "".join(cards))
     css = """
 #%(id)s .col { position: absolute; left: %(x)s; top: %(t)s; width: %(w)s; height: %(h)s; display: flex; flex-direction: column; }
 #%(id)s .head { font-size: %(hp)s; line-height: 1.08; margin-bottom: %(hg)s; }
@@ -672,7 +843,7 @@ def phone(ctx, s, sid, t0, dur):
     img_h = screen_w * a["h"] / max(1, a["w"])
     travel = max(0.0, img_h - screen_h)
     html = '<div class="phone"><div class="screen">%s</div></div><div class="cap"><h2>%s</h2>%s</div>' % (
-        _img(ctx, aid, "shot", moving=True), words(s.get("headline")), "<p>%s</p>" % esc(s["subline"]) if s.get("subline") else "")
+        _img(ctx, aid, "shot", moving=True), head(s), "<p>%s</p>" % esc(s["subline"]) if s.get("subline") else "")
     css = """
 %(frame)s
 #%(id)s .phone { background: #121316; border-radius: %(r)s; padding: %(b)s; box-shadow: 0 %(sh)s %(sh2)s rgba(0,0,0,.25); }
@@ -703,7 +874,7 @@ def logo_wall(ctx, s, sid, t0, dur):
     cell_h = min(220 * u, (ctx.box_h - head_h - gap * (rows - 1)) / rows)
     cards = "".join('<div class="lg">%s</div>' % _img(ctx, a) for a in logos)
     html = '<div class="col">%s<div class="grid">%s</div></div>' % (
-        '<h2 class="head">%s</h2>' % words(s["headline"]) if s.get("headline") else "", cards)
+        '<h2 class="head">%s</h2>' % head(s) if s.get("headline") else "", cards)
     css = """
 #%(id)s .col { position: absolute; left: %(x)s; top: %(t)s; width: %(w)s; height: %(h)s; display: flex; flex-direction: column; justify-content: center; }
 #%(id)s .head { font-size: %(hp)s; line-height: 1.08; margin-bottom: %(hg)s; text-align: center; }
@@ -730,7 +901,7 @@ def event_card(ctx, s, sid, t0, dur):
     det_px = fit(max((i.get("detail") or "" for i in items), key=len) if items else "", text_w, 2, 60 * u, 26 * u)
     rows = "".join('<div class="row"><b>%s</b><span>%s</span></div>' % (esc(i.get("label")), esc(i.get("detail"))) for i in items)
     html = '<div class="col"><h2 class="head">%s</h2><div class="card">%s<div class="rows">%s</div></div></div>' % (
-        words(s.get("headline")), '<div class="face">%s</div>' % _img(ctx, aid) if aid else "", rows)
+        head(s), '<div class="face">%s</div>' % _img(ctx, aid) if aid else "", rows)
     css = """
 #%(id)s .col { position: absolute; left: %(x)s; right: %(x)s; top: 50%%; transform: translateY(-50%%); }
 #%(id)s .head { font-size: %(hp)s; line-height: 1.06; margin-bottom: %(hg)s; }
@@ -749,30 +920,88 @@ def event_card(ctx, s, sid, t0, dur):
     return html, css, js
 
 
+def _pack_rows(widths, width, gap):
+    """How many rows chips of these widths take, wrapped into `width`."""
+    rows, cur = 0, None
+    for w in widths:
+        if cur is None or cur + gap + w > width:
+            rows, cur = rows + 1, w
+        else:
+            cur += gap + w
+    return rows
+
+
 def end_card(ctx, s, sid, t0, dur):
+    """The close: logo, the offer, up to three facts as chips, up to three product photos and the
+    action as a button, on the brand's own page colour."""
     u = ctx.u
     hk = ctx.font_kind(ctx.fonts["heading"])
-    head_px = fit(s.get("headline"), ctx.box_w * 0.9, 2, 140 * u, 56 * u, hk)
-    sub_px = fit(s.get("subline"), ctx.box_w * 0.8 - 80 * u, 1, 44 * u, 26 * u)
-    logo = ('<img class="logo" src="%s" alt="" />' % esc(ctx.logo)) if ctx.logo else ""
-    html = '<div class="col">%s<h2 class="head">%s</h2>%s</div>' % (
-        logo, words(s.get("headline")), '<div><span class="pill">%s</span></div>' % esc(s["subline"]) if s.get("subline") else "")
-    css = """
-#%(id)s .col { position: absolute; left: %(x)s; right: %(x)s; top: 50%%; transform: translateY(-50%%); text-align: center; }
-#%(id)s .logo { display: block; margin: 0 auto %(g)s; max-height: %(lh)s; max-width: %(lw)s; object-fit: contain; }
-#%(id)s .head { font-size: %(hp)s; line-height: 1.04; }
-#%(id)s .pill { display: inline-flex; align-items: center; margin-top: %(g)s; min-height: %(ph)s; padding: %(pp)s %(px2)s; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: %(sp)s; font-weight: 700; max-width: %(pw)s; }
-""" % {"id": sid, "x": ctx.px(ctx.pad_x), "g": ctx.px(48 * u), "lh": ctx.px(110 * u), "lw": ctx.px(420 * u),
-       "hp": ctx.px(head_px), "ph": ctx.px(sub_px * 2.1), "pp": ctx.px(10 * u), "px2": ctx.px(40 * u),
-       "sp": ctx.px(sub_px), "pw": ctx.px(ctx.box_w * 0.9)}
-    js = [_fade_in("#%s .logo" % sid, t0 + 0.15) if ctx.logo else "",
-          _words_in("#%s .head .w" % sid, t0 + 0.3, _count(s.get("headline"))),
-          'tl.fromTo("#%s .pill", { opacity: 0, scale: 0.88 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.8)" }, %.3f);'
-          % (sid, t0 + 0.9) if s.get("subline") else "",
-          'tl.to("#%s .pill", { scale: 1.04, duration: 0.3, yoyo: true, repeat: 1, ease: "sine.inOut" }, %.3f);'
-          % (sid, t0 + min(dur - 0.8, 2.2)) if s.get("subline") and dur > 2.5 else ""]
-    return html, css, js
+    chips = [it.get("label") for it in (s.get("items") or []) if it.get("label")][:3]
+    thumbs = [a for a in (s.get("asset_ids") or []) if a in ctx.assets][:3]
+    wide = ctx.wide and bool(thumbs)
+    col_w = ctx.box_w * (0.52 if wide else 1)
+    btn_px = fit(s.get("subline"), col_w - 170 * u, 1, 48 * u, 28 * u)
+    btn_h = btn_px * 2.7 if s.get("subline") else 0
+    chip_px = 34 * u
+    chip_rows = _pack_rows([len(c) * chip_px * 0.6 + 66 * u for c in chips], col_w, 18 * u)
+    thumb_w = (col_w - 2 * 22 * u) / 3
+    logo_h = 100 * u if ctx.logo else 0
 
+    def need(with_thumbs, logo_px):
+        # Height the other parts take; the headline gets what is left.
+        th = thumb_w if (with_thumbs and thumbs and not wide) else 0
+        return logo_px + (70 * u if logo_px else 0) + chip_rows * (chip_px * 2.3 + 18 * u) + (50 * u if chips else 0) \
+            + (th + 56 * u if th else 0) + (btn_h + 56 * u if btn_h else 0)
+    # Short canvases drop the product photos, then shrink the logo, rather than crowd the words.
+    min_head = 52 * u * 1.04 * 2
+    if not wide and thumbs and need(True, logo_h) + min_head > ctx.box_h:
+        thumbs = []
+    if need(False, logo_h) + min_head > ctx.box_h:
+        logo_h = 70 * u if ctx.logo else 0
+    used = need(True, logo_h)
+    head_px = fit(s.get("headline"), col_w, 3, (124 if ctx.tall else 110) * u, 52 * u, hk,
+                  height=max(140 * u, ctx.box_h - used), line_height=1.04)
+    chip_html = "".join('<span class="chip">%s</span>' % esc(c) for c in chips)
+    thumb_html = "".join('<div class="th">%s</div>' % _img(ctx, a, moving=True) for a in thumbs)
+    html = """<div class="col">%(logo)s<h2 class="head">%(head)s</h2>%(chips)s%(thumbs_in)s%(btn)s</div>%(thumbs_out)s""" % {
+        "logo": logo(ctx, False), "head": head(s),
+        "chips": '<div class="chips">%s</div>' % chip_html if chips else "",
+        "thumbs_in": '<div class="thumbs">%s</div>' % thumb_html if thumbs and not wide else "",
+        "btn": '<div class="btnrow"><span class="btn">%s<b>&rarr;</b></span></div>' % esc(s["subline"])
+               if s.get("subline") else "",
+        "thumbs_out": '<div class="thumbs side">%s</div>' % thumb_html if wide else ""}
+    css = """
+#%(id)s { --line: %(line)s; }
+#%(id)s .col { position: absolute; left: %(x)s; width: %(cw)s; top: 50%%; transform: translateY(-50%%); }
+#%(id)s .logo { display: block; height: %(lh)s; width: auto; max-width: %(lw)s; object-fit: contain; object-position: left center; margin-bottom: %(lg)s; }
+#%(id)s .head { font-size: %(hp)s; line-height: 1.04; }
+#%(id)s .chips { display: flex; flex-wrap: wrap; gap: %(cg)s; margin-top: %(g)s; }
+#%(id)s .chip { display: inline-flex; align-items: center; min-height: %(chh)s; padding: 0 %(chp)s; border-radius: 999px; border: %(bw)s solid var(--line); background: var(--card); font-size: %(cp)s; font-weight: 600; color: var(--fg); }
+#%(id)s .thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: %(tg)s; margin-top: %(g)s; }
+#%(id)s .thumbs.side { position: absolute; right: %(x)s; top: 50%%; transform: translateY(-50%%); width: %(sw)s; margin: 0; grid-template-columns: repeat(2, 1fr); }
+#%(id)s .th { aspect-ratio: 1 / 1; border-radius: %(tr)s; overflow: hidden; background: var(--card); }
+#%(id)s .th img { width: 100%%; height: 100%%; object-fit: cover; }
+#%(id)s .btnrow { margin-top: %(g)s; }
+#%(id)s .btn { display: inline-flex; align-items: center; gap: %(bg)s; min-height: %(bh)s; padding: 0 %(bp)s; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: %(btp)s; font-weight: 700; }
+#%(id)s .btn b { font-weight: 700; }
+""" % {"id": sid, "line": mix(ctx.colors["background"], ctx.colors["text"], 0.16), "x": ctx.px(ctx.pad_x),
+       "cw": ctx.px(col_w), "lh": ctx.px(logo_h or 1), "lw": ctx.px(360 * u),
+       "lg": ctx.px(70 * u), "hp": ctx.px(head_px), "cg": ctx.px(18 * u), "g": ctx.px(50 * u),
+       "chh": ctx.px(chip_px * 2.3), "chp": ctx.px(30 * u), "bw": ctx.px(3 * u), "cp": ctx.px(chip_px),
+       "tg": ctx.px(22 * u), "sw": ctx.px(ctx.box_w * 0.42), "tr": ctx.px(26 * u), "bg": ctx.px(20 * u),
+       "bh": ctx.px(btn_h or 1), "bp": ctx.px(56 * u), "btp": ctx.px(btn_px)}
+    n = _count(s.get("headline"))
+    at = t0 + 0.3 + min(0.07, 0.75 / max(1, n)) * n
+    js = [_fade_in("#%s .logo" % sid, t0 + 0.15, dy=14) if ctx.logo else "",
+          _words_in("#%s .head .w" % sid, t0 + 0.25, n),
+          _fade_in("#%s .chip" % sid, at + 0.1, stagger=0.18) if chips else "",
+          'tl.fromTo("#%s .th", { opacity: 0, y: U * 40 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out", '
+          'stagger: 0.12 }, %.3f);' % (sid, at + 0.25) if thumbs else "",
+          'tl.fromTo("#%s .btn", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.8)" }, %.3f);'
+          % (sid, at + 0.55) if s.get("subline") else "",
+          'tl.to("#%s .btn", { scale: 1.04, duration: 0.3, yoyo: true, repeat: 1, ease: "sine.inOut" }, %.3f);'
+          % (sid, min(t0 + dur - 0.75, at + 1.6)) if s.get("subline") and dur > 2.6 else ""]
+    return html, css, js
 
 RENDER = {"title": title, "words": words_scene, "screenshot": screenshot, "image": image, "list": list_scene,
           "steps": steps, "big_number": big_number, "chart": chart, "comparison": comparison, "quote": quote,

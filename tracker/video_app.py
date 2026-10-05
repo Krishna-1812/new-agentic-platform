@@ -47,10 +47,10 @@ Refused = video_builder.Refused
 
 # ── The scene menu, in the person's words ────────────────────────────────────
 SCENE_MENU = (
-    ("title", "Title", "Logo and headline"),
+    ("title", "Title", "The hook: big words, over a photo"),
     ("words", "Words", "A line or two, word by word"),
     ("screenshot", "Screenshot", "A website screen with a slow zoom"),
-    ("image", "Picture", "A photo with gentle motion"),
+    ("image", "Picture", "A photo, big, with its line"),
     ("list", "List", "Points that build one by one"),
     ("steps", "Steps", "Numbered steps 1, 2, 3"),
     ("big_number", "Big number", "One figure counting up"),
@@ -62,7 +62,7 @@ SCENE_MENU = (
     ("phone", "Phone", "A phone screen scrolling"),
     ("logo_wall", "Logo wall", "Client or partner logos"),
     ("event_card", "Event card", "When, where and who"),
-    ("end_card", "End card", "The action and the address"),
+    ("end_card", "End card", "The offer, facts, products and a button"),
 )
 SCENE_LABELS = dict((k, label) for k, label, _ in SCENE_MENU)
 SCENE_LABELS["custom"] = "Custom"
@@ -70,11 +70,13 @@ SCENE_LABELS["custom"] = "Custom"
 # (min, max, kinds) of pictures a scene type takes.
 PICTURES = {"screenshot": (1, 1, ("screenshot", "crop")), "image": (1, 1, ("image", "crop", "screenshot", "logo")),
             "phone": (1, 1, ("screenshot",)), "logo_wall": (2, 12, ("image", "logo")),
-            "quote": (0, 1, ("image", "crop")), "comparison": (0, 2, IMAGE_KINDS), "people": (0, 6, ("image", "crop"))}
+            "quote": (0, 1, ("image", "crop")), "comparison": (0, 2, IMAGE_KINDS), "people": (0, 6, ("image", "crop")),
+            "title": (0, 1, ("image", "crop")), "words": (0, 1, ("image", "crop")), "end_card": (0, 3, ("image", "crop"))}
 ITEM_WORDS = {"timeline": ("Date", "What happened"), "people": ("Name", "Role"), "event_card": ("Label", "Detail"),
-              "comparison": ("Side", "What it shows"), "steps": ("Step", "Detail"), "list": ("Point", "Detail")}
+              "comparison": ("Side", "What it shows"), "steps": ("Step", "Detail"), "list": ("Point", "Detail"),
+              "end_card": ("Fact", "")}
 HEAD_WORDS = {"quote": ("The quote, word for word", ""), "big_number": ("Headline", "What the number is"),
-              "end_card": ("The action", "Address or detail"), "title": ("Headline", "Subline")}
+              "end_card": ("The offer", "Button (the action)"), "title": ("Headline", "Subline")}
 
 SHARE_SUITS = {"landscape": ("linkedin", "x"), "square": ("linkedin", "instagram", "x"),
                "vertical": ("instagram", "x"), "portrait": ("instagram", "x")}
@@ -90,6 +92,7 @@ def scene_fields():
         out[kind] = {"label": SCENE_LABELS.get(kind, kind), "headline": h, "subline": sub, "items": n,
                      "item_words": ITEM_WORDS.get(kind, ("Label", "Detail")), "head_words": heads,
                      "number": kind == "big_number", "attribution": kind == "quote", "chart": kind == "chart",
+                     "emphasis": video_plan.MAX_EMPHASIS if h and kind not in ("quote", "big_number") else 0,
                      "pictures": {"min": lo, "max": hi, "kinds": list(kinds)}}
     return out
 
