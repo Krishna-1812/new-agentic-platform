@@ -69,8 +69,43 @@ def engine_page(email, limit=12):
     from tracker import video_drills
     drills = video_drills.runs(email)
     return {"engine": engine, "queue": video_store.queue_stats(), "runs": runs, "drills": drills,
+            "failures": failed_videos(email),
             "busy": any(r["status"] in ("queued", "making") for r in runs) or
             any(d["status"] not in ("ready", "failed", "planned", "draft") for d in drills)}
+
+
+# ── Why videos failed (for the platform team; the video page never shows internals) ──
+DETAIL_STEPS = ("render_failed", "render_log", "render_retry", "timed_out", "engine_missing", "failed",
+                "outside", "blocked")
+MAX_DETAILS = 4000
+NOT_PEOPLES = ("engine_test", "plan_test")
+
+
+def failure_details(jobs):
+    """The newest job's log lines that say why it failed, unfiltered."""
+    for j in jobs:                        # newest first
+        lines = ["%s: %s" % (e.get("step"), e.get("detail") or "") for e in j.get("log") or []
+                 if e.get("step") in DETAIL_STEPS and e.get("detail")]
+        if lines:
+            return "\n".join(lines)[-MAX_DETAILS:]
+    return ""
+
+
+def failed_videos(email, limit=6, projects=30):
+    """The person's newest failed videos, each with why, for the engine page."""
+    out = []
+    for p in video_store.list_projects(email, limit=projects):
+        if p["kind"] in NOT_PEOPLES:
+            continue
+        for v in video_store.list_versions(p["id"], email):
+            if v["status"] != "failed":
+                continue
+            out.append({"title": p.get("title") or p.get("brief") or "Video", "version": v["number"],
+                        "url": "/strategic-agents/video-studio/videos/%d?v=%d" % (p["id"], v["id"]),
+                        "error": v.get("error") or "", "finished_at": v.get("finished_at"),
+                        "details": failure_details(video_store.jobs_for_version(v["id"], email))})
+    out.sort(key=lambda f: str(f["finished_at"] or ""), reverse=True)
+    return out[:limit]
 
 
 # ── New projects (Phase 2: used by the plan tests; Phase 4: by the start page) ──

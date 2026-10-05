@@ -11,7 +11,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Video Studio engine", ["strategic-agents.css?v=2", "video-studio.css?v=1"]) }}
+{{ head("Video Studio engine", ["strategic-agents.css?v=2", "video-studio.css?v=2"]) }}
 </head>
 <body class="sa">
 
@@ -30,6 +30,12 @@
     <h2 class="ve-h2" id="ve-engine-h">What the worker has</h2>
     <p class="ve-sub" id="ve-engine-when">&nbsp;</p>
     <div class="ve-grid" id="ve-engine"></div>
+  </section>
+
+  <section class="ve-card" aria-labelledby="ve-failures-h">
+    <h2 class="ve-h2" id="ve-failures-h">Recent failed videos</h2>
+    <p class="ve-sub">Your newest videos that could not be made, with what the worker logged about why.</p>
+    <div class="ve-runs" id="ve-failures"></div>
   </section>
 
   <section class="ve-card" aria-labelledby="ve-tests-h">
@@ -74,7 +80,7 @@
 
 <script type="application/json" id="ve-data">{{ data|tojson }}</script>
 <script>window.VE_PINNED = {{ pinned|tojson }};</script>
-<script src="{{ url_for('static', filename='js/video-engine.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/video-engine.js') }}?v=4"></script>
 {{ topbar_script() }}
 </body>
 </html>

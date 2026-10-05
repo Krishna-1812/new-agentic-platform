@@ -34,7 +34,8 @@ MAX_REASONS = 6
 # A safe-mode second try needs at least this long to be worth starting.
 MIN_RETRY_S = 90
 RENDER_FAILED = ("The video could not be rendered%s, so nothing was made. Use Try again; if it fails again, "
-                 "the platform team can see why in this video's log. What went wrong: %s.")
+                 "the platform team can see why on the Video Studio engine page, under Recent failed videos. "
+                 "What went wrong: %s.")
 
 
 def _failed(job, version_id, message, timings):
