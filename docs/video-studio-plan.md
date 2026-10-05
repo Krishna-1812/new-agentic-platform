@@ -946,3 +946,18 @@ client videos are made.
   `timed_out`, `engine_missing`). The video's message points there. Videos that
   failed before this change show their reason there too, since it was already
   logged.
+
+**Found and fixed: "Streaming encoder exited before frame 102 was written".**
+- **What the engine page showed:** on both tries ffmpeg's encoder (libx264)
+  stopped at frame 102 of 450, while it still had not written a frame.
+- **Cause:** libx264 also sizes itself by the host's CPU count. On Railway's
+  large machines it runs about 100 threads and holds about 100 frames of
+  1080x1920 before writing one. Measured here: 532 MB at 4 threads, 1.9 GB at 64,
+  3.4 GB at 128. The worker's memory limit kills it, in safe mode too, because
+  safe mode limits the browsers, not the encoder.
+- **Fix:** the render runs ffmpeg through a small script that adds `-threads N`
+  after the software encoder. N is this container's CPUs, at most 4
+  (`VIDEO_ENCODER_THREADS` overrides it). HyperFrames is pointed at it with
+  `HYPERFRAMES_FFMPEG_PATH`. Checked here: a real render runs
+  `-c:v libx264 -threads 4 -preset slow`.
+- **After deploying:** use **Try again** on the video.

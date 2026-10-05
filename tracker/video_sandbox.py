@@ -174,6 +174,23 @@ class ProxyTrap:
         self._thread.join(timeout=2)
 
 
+# Runs ffmpeg with "-threads N" after each software video encoder it is asked for.
+FFMPEG_SCRIPT = """#!/bin/sh
+# The video encoder would size itself by the host's CPUs; it uses %(threads)d threads.
+prev=""
+first=1
+for a in "$@"; do
+  if [ "$first" = 1 ]; then set --; first=0; fi
+  set -- "$@" "$a"
+  if [ "$prev" = "-c:v" ]; then
+    case "$a" in libx264|libx265) set -- "$@" -threads %(threads)d;; esac
+  fi
+  prev="$a"
+done
+exec %(ffmpeg)s "$@"
+"""
+
+
 class Sandbox:
     """with Sandbox(job_id) as box: box.write(files); box.check(); box.render(...)"""
 
@@ -232,8 +249,23 @@ class Sandbox:
         os.chmod(path, 0o700)
         return path
 
+    def _ffmpeg_script(self):
+        """ffmpeg with the encoder's threads fixed (it would count the host's CPUs); None without ffmpeg."""
+        ffmpeg = video_engine.ffmpeg_path()
+        if not ffmpeg:
+            return None
+        path = os.path.join(self.root, "ffmpeg.sh")
+        if not os.path.exists(path):
+            with open(path, "w") as fh:
+                fh.write(FFMPEG_SCRIPT % {"threads": cfg.encoder_threads(), "ffmpeg": shlex.quote(ffmpeg)})
+            os.chmod(path, 0o700)
+        return path
+
     def env(self):
         env = {k: os.environ[k] for k in ENV_KEEP if k in os.environ}
+        ffmpeg = self._ffmpeg_script()
+        if ffmpeg:
+            env["HYPERFRAMES_FFMPEG_PATH"] = ffmpeg
         env.update(HYPERFRAMES_BROWSER_PATH=self._browser_script(), HYPERFRAMES_NO_TELEMETRY="1",
                    HYPERFRAMES_NO_UPDATE_CHECK="1", HYPERFRAMES_NO_AUTO_INSTALL="1", HYPERFRAMES_NO_FEEDBACK="1",
                    CI="1", NO_COLOR="1")
