@@ -279,13 +279,19 @@ class Sandbox:
                 frames.append(fh.read())
         return frames
 
-    def render(self, seconds, *, quality="high", timeout=None):
-        """Render the project to MP4; return its bytes."""
+    def render(self, seconds, *, quality="high", timeout=None, safe=False):
+        """Render the project to MP4; return its bytes. Raises RenderFailed.
+
+        safe: one browser, plain screenshots, nothing tuned (HyperFrames'
+        low-memory profile); slower, but it works where the fast path stalls."""
         out = os.path.join(self.root, "out.mp4")
-        code, text = self._hf("render", "--quality", quality, "--output", out,
-                              timeout=timeout or cfg.render_timeout(seconds))
+        if os.path.exists(out):
+            os.remove(out)
+        args = ["render", "--quality", quality, "--output", out]
+        args += ["--workers", "1", "--low-memory-mode"] if safe else ["--workers", str(cfg.render_workers())]
+        code, text = self._hf(*args, timeout=timeout or cfg.render_timeout(seconds))
         if code != 0 or not os.path.exists(out) or os.path.getsize(out) == 0:
-            raise RuntimeError("render failed: " + text[-600:])
+            raise RenderFailed(render_reason(text), render_log(text))
         if os.path.getsize(out) > cfg.MAX_MP4_BYTES:
             raise RuntimeError("the video is too large (%d MB)" % (os.path.getsize(out) // 1_000_000))
         with open(out, "rb") as fh:
@@ -310,6 +316,56 @@ class Sandbox:
 
     def env_plain(self):
         return {k: os.environ[k] for k in ENV_KEEP if k in os.environ}
+
+
+class RenderFailed(RuntimeError):
+    """A render that ended without a video: .reason in a sentence, .log the lines that matter."""
+
+    def __init__(self, reason, log=""):
+        super().__init__(reason)
+        self.reason, self.log = reason, log
+
+
+_ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
+# ffmpeg's progress and stream lines: they say nothing about why a render failed.
+_FFMPEG_NOISE = re.compile(r"^\s*(frame=|size=|Stream #|Metadata:|encoder\s*:|Side data:|cpb:|Input #|Output #|"
+                           r"Duration:|Press \[q\]|configuration:|lib[a-z]+\s+\d|built with|"
+                           r"\[(libx264|mp4|image2pipe|png_pipe|mjpeg|out#|vost#|in#)[^\]]*\])|"
+                           r"\d+x\d+ \[SAR|bitrate=|q=-?\d", re.I)
+_NOT_A_FAILURE = re.compile(r"^Lint:|despite lint|\b0 error\(s\)", re.I)
+_HINT = re.compile(r"Try --docker|--docker for", re.I)
+_ERRORISH = re.compile(r"error|fail|could not|cannot|crash|timed? ?out|pending|killed|no frames|exited|"
+                       r"out of memory|ENOMEM|SIGKILL|SIGSEGV", re.I)
+
+
+def _lines(text):
+    out = []
+    for raw in _ANSI.sub("", text or "").replace("\r", "\n").split("\n"):
+        line = raw.strip(" \t│╭╮╰╯─|")
+        if line and not _FFMPEG_NOISE.search(line) and not _HINT.search(line):
+            out.append(line)
+    return out
+
+
+def render_log(text, limit=2000):
+    """The lines of a failed render that say what went wrong, oldest first."""
+    keep = [line for line in _lines(text) if _ERRORISH.search(line) and not _NOT_A_FAILURE.search(line)]
+    joined = "\n".join(keep[-40:])
+    return joined[-limit:]
+
+
+def render_reason(text):
+    """Why a render failed, in one line. HyperFrames marks it "✗ <title>" with
+    the message on the next line; otherwise the last line that sounds like one."""
+    lines = [line for line in _lines(text) if not _NOT_A_FAILURE.search(line)]
+    marks = [i for i, line in enumerate(lines) if line.startswith("\u2717")]
+    if marks:
+        i = marks[-1]
+        title = lines[i].lstrip("\u2717 ").strip()
+        detail = lines[i + 1] if i + 1 < len(lines) and not lines[i + 1].startswith("\u2717") else ""
+        return ("%s: %s" % (title, detail) if detail else title)[:300]
+    errorish = [line for line in lines if _ERRORISH.search(line)]
+    return errorish[-1][:300] if errorish else "it ended without a video"
 
 
 def parse_check(output):

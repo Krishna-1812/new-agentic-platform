@@ -280,10 +280,11 @@ class FakeBox:
         self.calls.append("check")
         return self._check
 
-    def render(self, seconds, timeout=None):
-        self.calls.append(("render", timeout))
-        if isinstance(self._render, Exception):
-            raise self._render
+    def render(self, seconds, timeout=None, safe=False):
+        self.calls.append(("render_safe" if safe else "render", timeout))
+        outcome = self._render.pop(0) if isinstance(self._render, list) else self._render
+        if isinstance(outcome, Exception):
+            raise outcome
         return b"MP4DATA"
 
     def cover(self, mp4, at):

@@ -13,6 +13,8 @@ Environment:
                             system's temporary folder).
   VIDEO_BROWSER_PATH        A Chromium headless shell to render with, instead
                             of the one Playwright installed.
+  VIDEO_RENDER_WORKERS      Browsers one render uses at once (default: from
+                            this container's own CPU and memory limits, 1-2).
 """
 
 import functools
@@ -106,6 +108,63 @@ def switched_on():
 
 def render_timeout(seconds):
     return int(RENDER_BASE_S + RENDER_PER_SECOND_S * max(1.0, float(seconds or 0)))
+
+
+# HyperFrames sizes a render by the host's CPU count, which in a container is
+# the whole machine's (dozens), not this service's share. Too many browsers on
+# a few CPUs stall and the encoder gets no frames, so the render is sized here.
+MAX_RENDER_WORKERS = 2
+MB_PER_RENDER_WORKER = 768
+MB_KEPT_FREE = 1536          # Page Watch's browser, Node, ffmpeg and Python
+
+
+def _read(path):
+    try:
+        with open(path) as fh:
+            return fh.read().strip()
+    except OSError:
+        return ""
+
+
+def container_cpus():
+    """CPUs this container may use: its cgroup quota, else the ones it may run on."""
+    quota = _read("/sys/fs/cgroup/cpu.max").split()
+    if len(quota) == 2 and quota[0] != "max":
+        try:
+            return max(1, int(int(quota[0]) / int(quota[1])))
+        except (ValueError, ZeroDivisionError):
+            pass
+    q, period = _read("/sys/fs/cgroup/cpu/cpu.cfs_quota_us"), _read("/sys/fs/cgroup/cpu/cpu.cfs_period_us")
+    try:
+        if int(q) > 0 and int(period) > 0:
+            return max(1, int(int(q) / int(period)))
+    except ValueError:
+        pass
+    try:
+        return len(os.sched_getaffinity(0)) or 1
+    except (AttributeError, OSError):
+        return os.cpu_count() or 1
+
+
+def container_memory_mb():
+    """Memory this container may use, in MB (its cgroup limit, else the machine's)."""
+    for path in ("/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory/memory.limit_in_bytes"):
+        v = _read(path)
+        if v.isdigit() and int(v) < 1 << 50:
+            return int(v) // (1024 * 1024)
+    try:
+        return os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") // (1024 * 1024)
+    except (ValueError, OSError, AttributeError):
+        return 4096
+
+
+def render_workers(cpus=None, memory_mb=None):
+    """Browsers one render uses: VIDEO_RENDER_WORKERS, else what this container can carry."""
+    if (os.environ.get("VIDEO_RENDER_WORKERS") or "").strip():
+        return min(8, _int_env("VIDEO_RENDER_WORKERS", 1, low=1))
+    cpus = container_cpus() if cpus is None else cpus
+    memory_mb = container_memory_mb() if memory_mb is None else memory_mb
+    return max(1, min(MAX_RENDER_WORKERS, cpus - 1, (memory_mb - MB_KEPT_FREE) // MB_PER_RENDER_WORKER))
 
 
 def engine_dir():

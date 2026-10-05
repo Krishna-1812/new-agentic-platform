@@ -918,3 +918,24 @@ client videos are made.
   should show the browser as **Found**. Then use **Try again** on the failed
   video.
 
+
+**Fixed next: the render failed at "Rendering the video" with ffmpeg's progress lines.**
+- **What was seen:** "The render failed: …1080x1920 … frame= 0 fps=0.0 …". These
+  are the last 600 characters of the render's output: ffmpeg waiting for frames
+  that never came. HyperFrames' own reason was further up and was cut off.
+- **Likely cause:** HyperFrames picks how many browsers to run from the host's CPU
+  count. In a Railway container that is the whole machine (dozens of CPUs), not
+  the service's share. Too many browsers for the CPUs and memory the worker has
+  stall or are killed, so no frame reaches ffmpeg. The same composition renders
+  here with Chrome 153 (Railway's browser), with 2 browsers, with 8 browsers on
+  one CPU, and in safe mode, so the cause could not be reproduced exactly.
+- **Fix:**
+  - the render is sized here: at most 2 browsers, fewer when the container's own
+    CPU quota or memory limit is small (`VIDEO_RENDER_WORKERS` overrides it);
+  - a render that ends without a video is tried once more, within the same time
+    limit, in HyperFrames' safe mode (one browser, plain screenshots); the video's
+    steps then say "Tried a second time, more slowly";
+  - the reason is read from HyperFrames' "✗" block, not ffmpeg's progress, and
+    the error lines go to the job's log (`render_failed`, `render_log`).
+- **After deploying:** use **Try again** on the failed video. If it fails again,
+  the message ends with "What went wrong: …"; send that line.
