@@ -550,6 +550,7 @@ def test_the_browser_is_found_where_playwright_puts_it(monkeypatch, tmp_path):
     shell = tmp_path / "chromium_headless_shell-1194" / "chrome-linux" / "headless_shell"
     shell.parent.mkdir(parents=True)
     shell.write_text("")
+    shell.chmod(0o755)
     monkeypatch.setenv("PLAYWRIGHT_BROWSERS_PATH", str(tmp_path))
     assert video_config.browser_path() == str(shell)
     monkeypatch.setenv("VIDEO_BROWSER_PATH", str(tmp_path / "missing"))

@@ -107,8 +107,10 @@ def source():
     return "apify" if key_for("apify") else "places"
 
 
-def is_required(tool):
-    return tool.get("required_apify", tool["required"]) if source() == "apify" else tool["required"]
+def is_required(tool, src=None):
+    """Whether a run needs the tool. src is the run's own source ("apify" or "places"),
+    from its plan; without one, the source a new run would use now."""
+    return tool.get("required_apify", tool["required"]) if (src or source()) == "apify" else tool["required"]
 
 
 def readiness():
@@ -125,8 +127,20 @@ def readiness():
     return rows
 
 
-def missing_required():
-    return [t["name"] for t in TOOLS if is_required(t) and not key_for(t["key"])]
+def missing_required(src=None):
+    return [t["name"] for t in TOOLS if is_required(t, src) and not key_for(t["key"])]
+
+
+def missing_message(src):
+    """Why a run with this source cannot go on, naming each missing tool and its variable; "" when ready."""
+    missing = [t for t in TOOLS if is_required(t, src) and not key_for(t["key"])]
+    if not missing:
+        return ""
+    how = "Apify" if src == "apify" else "Google Places and SerpAPI"
+    return ("This run searches with %s, and the website's service is missing: %s. Set %s in Railway "
+            "(web service, Variables), then resume the run." % (
+                how, "; ".join("%s (%s)" % (t["name"], " or ".join(t["env"])) for t in missing),
+                "it" if len(missing) == 1 else "them"))
 
 
 def ready():

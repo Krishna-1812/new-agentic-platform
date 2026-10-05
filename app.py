@@ -10250,7 +10250,8 @@ def _lbr_status(run):
             "area": (plan.get("area") or {}).get("formatted") or run["location"],
             "label": (plan.get("business") or {}).get("label") or run["business_type"],
             "focus": run.get("focus"), "cap": run.get("cap"), "created_at": run.get("created_at"),
-            "finished_at": run.get("finished_at"), "purged": bool(run.get("purged_at"))}
+            "finished_at": run.get("finished_at"), "purged": bool(run.get("purged_at")),
+            "resumable": lbr_pipeline.resumable(run)[0]}
 
 
 @app.route(LBR_BASE)
@@ -10330,6 +10331,20 @@ def local_business_radar_status(run_id):
     resp = jsonify(_lbr_status(run))
     resp.headers["Cache-Control"] = "no-store"
     return resp
+
+
+@app.route(LBR_BASE + "/runs/<int:run_id>/resume", methods=["POST"])
+@position2_required
+def local_business_radar_resume(run_id):
+    """Carry a stopped run on from the stage it reached (nothing gathered is paid for again)."""
+    from tracker import lbr_pipeline
+    try:
+        ok = lbr_pipeline.resume(run_id, _lbr_email())
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    if not ok:
+        abort(404)
+    return jsonify(resumed=True, run_id=run_id)
 
 
 @app.route(LBR_BASE + "/runs/<int:run_id>/cancel", methods=["POST"])

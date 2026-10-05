@@ -101,6 +101,10 @@ def run_job(job, *, stop=None, sandbox=video_sandbox.Sandbox):
         video_store.add_log(job["id"], "stopped", "The worker is restarting; the job goes back to the queue.")
         video_store.update_version(vid, status="queued")
         raise
+    except video_engine.EngineMissing as exc:
+        video_store.add_log(job["id"], "engine_missing", str(exc)[:500])
+        from tracker import video_builder
+        return _failed(job, vid, video_builder.ENGINE_MISSING, timings)
     except video_engine.TimedOut as exc:
         _log_blocked(job, box)
         video_store.add_log(job["id"], "timed_out", str(exc))

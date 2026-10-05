@@ -32,9 +32,10 @@ def _slim_business(pid, rank, d):
     if not out["researched"]:
         return out
     sc = d.get("score") or {}
+    # No score until the score stage has run (a run that stopped early): None, not empty fields.
     out["score"] = {"total": sc.get("total"), "tier": sc.get("tier"), "need": sc.get("need") or {},
                     "ability": sc.get("ability"), "top": sc.get("top_service"),
-                    "ranked": sc.get("services_ranked") or []}
+                    "ranked": sc.get("services_ranked") or []} if sc.get("total") is not None else None
     g = d.get("gbp") or {}
     out["gbp"] = {"score": g.get("score"), "claimed": g.get("claimed"), "photos": g.get("photos"),
                   "checks": [{k: c.get(k) for k in ("key", "label", "status", "detail")} for c in g.get("checks") or []],
@@ -66,6 +67,9 @@ def build(status, rows):
     plan = status.get("plan") or {}
     return {"run": {k: status.get(k) for k in ("id", "status", "label", "area", "focus", "cap", "cost", "summary",
                                                "created_at", "finished_at", "purged", "counts", "error")},
+            "scored": any(b.get("score") for b in businesses),
+            "researched": sum(1 for b in businesses if b["researched"]),
+            "resumable": bool(status.get("resumable")),
             "area": plan.get("area") or {}, "business": plan.get("business") or {},
             "focus_label": plan.get("focus_label") or "", "estimate": plan.get("estimate") or {},
             "services": SERVICE_LABELS, "web_labels": WEB_LABELS, "businesses": businesses}

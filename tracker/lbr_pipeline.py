@@ -116,6 +116,45 @@ def _spawn(run_id):
     return t
 
 
+def run_source(plan):
+    """The source a run was planned with ("apify" or "places")."""
+    return ((plan or {}).get("estimate") or {}).get("source") or lbr_config.source()
+
+
+RESUMABLE = ("failed", "cancelled")
+
+
+def resumable(run):
+    """(True, "") when a stopped run can carry on from its saved stages, else (False, why)."""
+    if run.get("status") not in RESUMABLE:
+        return False, "Only a run that stopped can be resumed."
+    if run.get("purged_at"):
+        return False, "This run is past its retention window; start a new search."
+    if not run.get("plan"):
+        return False, "This run has no plan to resume."
+    if str(run.get("error") or "").startswith("Stopped at the cost ceiling"):
+        return False, "This run stopped at its cost ceiling; start a new search to spend more."
+    return True, ""
+
+
+def resume(run_id, email):
+    """Carry a stopped run on from the stage it reached: every finished stage is kept,
+    so nothing already gathered is paid for again. Returns True, or raises ValueError."""
+    run = lbr_store.get_run(run_id, email)
+    if not run:
+        return False
+    ok, why = resumable(run)
+    if not ok:
+        raise ValueError(why)
+    why = lbr_config.missing_message(run_source(run["plan"]))
+    if why:
+        raise ValueError(why)
+    lbr_store.update_run(run_id, status="queued", error=None, finished_at=None, heartbeat_at=_now())
+    lbr_store.merge_run(run_id, "progress", {"cancel": False})
+    _spawn(run_id)
+    return True
+
+
 def cancel(run_id, email):
     run = lbr_store.get_run(run_id, email)
     if not run or run["status"] not in ("queued", "running"):
@@ -173,9 +212,11 @@ def _flush(run_id, ledger):
 def _execute(run_id, ledger):
     run = lbr_store.get_run(run_id)
     plan = run["plan"]
-    missing = lbr_config.missing_required()
-    if missing:
-        raise lbr_http.ToolError("config", "Not configured: %s." % ", ".join(missing))
+    # Checked against the source this run was planned with, not the one a new
+    # run would pick now: a restarted Apify run must not ask for Places keys.
+    why = lbr_config.missing_message(run_source(plan))
+    if why:
+        raise lbr_http.ToolError("config", why)
     lbr_store.update_run(run_id, status="running", heartbeat_at=_now())
     state = {"checked": 0.0, "cancel": False}
 

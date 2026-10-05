@@ -264,6 +264,7 @@ The page is `/dashboards/google-ads/ai-review`, linked from the dashboard and ke
 It then scores and tiers the businesses worth pitching (website build, local SEO, paid media, reputation, creatives), with a pitch for each.
 
 - **Pipeline:** `discover → profile → website → reviews → visibility → score`. Each stage is saved as it finishes, so a run interrupted by a deploy resumes and pays only for what is left. One worker thread per run, a heartbeat, and a Postgres advisory lock. Runs can be cancelled.
+- **Restarts and Resume.** A restarted run is checked against the source it was planned with (`plan.estimate.source`), not the one a new run would pick. An Apify run is never stopped for want of Places or SerpAPI keys, and a key that really is gone is named with its variable. A failed or cancelled run has **Resume the run** on its report (`POST /runs/<id>/resume`), which carries on from the saved stages. It is not offered past the cost ceiling or the retention window. A report that stopped before scoring says "not yet ranked", with no ranks or scores.
 - **Cost ceiling.** `lbr_intake.estimate()` is the most a run may spend, enforced by construction and re-checked after each stage. Every request goes to a cost ledger.
 - **Two discovery sources:** Google Places API (New) with SerpAPI, or **Apify's Google Maps Scraper** (`LBR_SOURCE`), priced at the account's own Apify tier.
 - **Report:** a dashboard with CSV and XLSX export (formula-neutralised), plus a self-test page at `/strategic-agents/local-business-radar/selftest`.
@@ -332,6 +333,8 @@ Watches any web page and reports, in plain words and with a before-and-after pic
   - The optional Slack message is `video_notify`.
   - `scripts/check_video_sandbox.py` attacks the sandbox; `scripts/load_video_studio.py` is the load run (peak 2.06 GB, so the worker needs 4 GB).
   - The launch checklist is in `docs/video-studio-plan.md` section 7. The badge stays "building" until it has been followed.
+  - The render browser is Playwright's headless shell. `video_config.browser_path()` finds both its old layout (`chrome-linux/headless_shell`) and the one Playwright 1.5x installs on Railway (`chrome-headless-shell-linux64/chrome-headless-shell`). It also asks Playwright where its browsers are, and the worker installs the shell at start if it is missing.
+  - A missing engine part fails a video with a plain message, and the reason appears on the engine page and in the job log.
 - **Env:** `VIDEO_STUDIO=off` (worker) stops video jobs; `VIDEO_CLAUDE_MODEL` (default claude-sonnet-5-5), `VIDEO_CLAUDE_EFFORT` (medium), `VIDEO_CLAUDE_MONTHLY_USD` (10); `VIDEO_ENGINE_DIR`, `VIDEO_WORK_DIR`, `VIDEO_BROWSER_PATH` override the defaults; `VIDEO_DAILY_VIDEOS` (20), `VIDEO_DAILY_PLANS` (40), `VIDEO_KEEP_DAYS` (90), `VIDEO_SLACK_CHANNEL`, `VIDEO_SLACK=off`.
 
 ## 10. Environment variables (Railway → web → Variables)

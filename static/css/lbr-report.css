@@ -279,3 +279,8 @@
 @media (prefers-reduced-motion: reduce) {
   .lbrr *, .lbrr *::before, .lbrr *::after { animation: none !important; transition: none !important; }
 }
+
+/* Resuming a run that stopped (before scoring, say). */
+.lbrr-resume::after { content: '\21BB' !important; }
+.lbrr-resume:disabled { opacity: .5; cursor: wait; }
+.lbrr-resume-msg { margin: var(--sp-3) 0 0; color: #FF8B7F; font-size: 14px; flex-basis: 100%; }

@@ -29,6 +29,11 @@ log = logging.getLogger("video_studio.engine")
 _INSTALL_LOCK = threading.Lock()
 
 
+class EngineMissing(RuntimeError):
+    """A part of the video engine is missing on this service (Node, HyperFrames, the browser,
+    ffmpeg). The message says which, for the staff engine page and the job's log."""
+
+
 class TimedOut(RuntimeError):
     """A program ran past its time limit and was stopped."""
 
@@ -118,7 +123,7 @@ def ensure_installed(timeout=cfg.INSTALL_TIMEOUT_S):
             return _bin()
         npm = shutil.which("npm")
         if not npm or not node_path():
-            raise RuntimeError("Node is not installed on this service (railpack.json adds Node 22 to the build).")
+            raise EngineMissing("Node is not installed on this service (railpack.json adds Node 22 to the build).")
         root = cfg.engine_dir()
         os.makedirs(root, exist_ok=True)
         with open(os.path.join(root, "package.json"), "w") as fh:
@@ -127,8 +132,24 @@ def ensure_installed(timeout=cfg.INSTALL_TIMEOUT_S):
         code, out = run([npm, "install", "--no-audit", "--no-fund", "--save-exact", "--prefix", root,
                          "hyperframes@" + cfg.HYPERFRAMES_VERSION], cwd=root, env=dict(os.environ), timeout=timeout)
         if code != 0 or installed_version() != cfg.HYPERFRAMES_VERSION:
-            raise RuntimeError("npm could not install hyperframes: " + out[-600:])
+            raise EngineMissing("npm could not install hyperframes: " + out[-600:])
         return _bin()
+
+
+def ensure_browser(timeout=cfg.INSTALL_TIMEOUT_S):
+    """The headless browser to render with, installing Playwright's if it is missing."""
+    found = cfg.browser_path()
+    if found:
+        return found
+    import sys
+    log.info("no headless browser found; installing Playwright's chromium-headless-shell")
+    code, out = run([sys.executable, "-m", "playwright", "install", "chromium-headless-shell"],
+                    env=dict(os.environ), timeout=timeout)
+    cfg._playwright_root.cache_clear()
+    found = cfg.browser_path()
+    if not found:
+        raise EngineMissing("No Chromium headless shell was found, and installing one failed: " + out[-400:])
+    return found
 
 
 def status():

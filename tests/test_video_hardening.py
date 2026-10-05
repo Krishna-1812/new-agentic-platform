@@ -452,3 +452,69 @@ def test_the_engine_page_starts_drills_and_lists_them(client, store):
     body = client.get(BASE + "/engine").get_data(as_text=True)
     assert 'data-drill="render_fails"' in body and 'data-test="load"' in body
     assert client.get(r.get_json()["url"]).status_code == 200            # a drill opens on the video page
+
+
+# ── The browser on Railway (the "RuntimeError" at "Checking every frame") ───
+def _fake_browser(root, build, folder, name):
+    path = root / ("chromium_headless_shell-%d" % build) / folder / name
+    path.parent.mkdir(parents=True)
+    path.write_text("#!/bin/sh\n")
+    path.chmod(0o755)
+    return str(path)
+
+
+def test_the_newer_playwright_headless_shell_is_found(tmp_path, monkeypatch):
+    """Playwright 1.5x names it chrome-headless-shell in chrome-headless-shell-linux64; the
+    worker looked only for the older headless_shell, found nothing and could not check a video."""
+    monkeypatch.delenv("VIDEO_BROWSER_PATH", raising=False)
+    monkeypatch.setenv("PLAYWRIGHT_BROWSERS_PATH", str(tmp_path))
+    monkeypatch.setattr(video_config, "_playwright_root", lambda: "")
+    monkeypatch.setattr(video_config.os.path, "expanduser", lambda p: str(tmp_path / "nohome"))
+    new = _fake_browser(tmp_path, 1243, "chrome-headless-shell-linux64", "chrome-headless-shell")
+    assert video_config.browser_path() == new
+    old = _fake_browser(tmp_path, 1194, "chrome-linux", "headless_shell")
+    assert video_config.browser_path() == new                       # the newest build wins
+    import shutil
+    shutil.rmtree(tmp_path / "chromium_headless_shell-1243")
+    assert video_config.browser_path() == old
+
+
+def test_the_browser_is_found_where_playwright_says_it_is(tmp_path, monkeypatch):
+    monkeypatch.delenv("VIDEO_BROWSER_PATH", raising=False)
+    monkeypatch.setenv("PLAYWRIGHT_BROWSERS_PATH", str(tmp_path / "empty"))
+    monkeypatch.setattr(video_config.os.path, "expanduser", lambda p: str(tmp_path / "nohome"))
+    elsewhere = tmp_path / "railpack-browsers"
+    new = _fake_browser(elsewhere, 1243, "chrome-headless-shell-linux64", "chrome-headless-shell")
+    monkeypatch.setattr(video_config, "_playwright_root", lambda: str(elsewhere))
+    assert video_config.browser_path() == new
+
+
+def test_a_missing_engine_is_explained_not_a_runtimeerror(store, monkeypatch):
+    pid, vid = _results_video(store)
+    _plan_next(store)
+    video_builder.approve(ANA, vid)
+
+    class NoBrowser(JobBox):
+        def check(self, at=None, timeout=None):
+            raise video_engine.EngineMissing("No Chromium headless shell was found")
+    job = store.claim_job("w")
+    out = video_builder.run_job(job, client=ToolClaude([]), sandbox=NoBrowser)
+    assert out["outcome"] == "failed" and out["error"] == video_builder.ENGINE_MISSING
+    view = video_app.project_view(ANA, pid)["version"]
+    assert view["error"].startswith("The video maker is not ready") and "RuntimeError" not in view["error"]
+    log = [e for e in store.get_job(job["id"])["log"] if e["step"] == "engine_missing"]
+    assert log and "headless shell" in log[0]["detail"]                 # the reason, for staff
+
+
+def test_the_worker_installs_the_browser_and_reports_what_is_missing(store, monkeypatch):
+    calls = []
+    monkeypatch.setattr(video_engine, "ensure_installed", lambda: calls.append("hf"))
+
+    def no_browser():
+        calls.append("browser")
+        raise video_engine.EngineMissing("No Chromium headless shell was found, and installing one failed")
+    monkeypatch.setattr(video_engine, "ensure_browser", no_browser)
+    r = video_worker.VideoRunner("w")
+    assert "installing one failed" in r.prepare() and calls == ["hf", "browser"]
+    r.record_engine()
+    assert "installing one failed" in video_worker.engine_status()["problem"]

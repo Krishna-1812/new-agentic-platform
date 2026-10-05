@@ -198,7 +198,8 @@ def test_mondays_bring_the_week(slack):
     t, cid, v = recorded_change()
     watch_alerts.alert_change(t, cid, v)
     monday = datetime.now(UTC).astimezone(watch_schedule.IST)
-    monday = (monday + timedelta(days=(7 - monday.weekday()) % 7)).replace(hour=10, minute=0)
+    # The next Monday, never today: on a Monday, today at 10:00 can be before the change above.
+    monday = (monday + timedelta(days=(7 - monday.weekday()) % 7 or 7)).replace(hour=10, minute=0)
     out = watch_alerts.run_digest(monday)
     assert out["weekly"] is True
     week = slack.sent[-1]

@@ -130,11 +130,8 @@ class VideoRunner:
                 log.exception("video job %s: lease renewal failed", job_id)
 
     def loop(self):
-        # Install the pinned engine now, so the first video does not wait for npm.
-        try:
-            video_engine.ensure_installed()
-        except Exception as exc:
-            log.warning("the video engine is not ready: %s", str(exc)[:300])
+        # Set up the pinned engine and the browser now, so the first video does not wait.
+        self.prepare()
         self.record_engine()
         while not self.stopping.is_set():
             self.housekeeping()
@@ -156,10 +153,22 @@ class VideoRunner:
         if self._thread:
             self._thread.join(timeout=timeout)
 
+    def prepare(self):
+        """Install what the engine needs; keep what is missing for the engine page."""
+        self.problem = ""
+        for step in (video_engine.ensure_installed, video_engine.ensure_browser):
+            try:
+                step()
+            except Exception as exc:
+                self.problem = str(exc)[:500]
+                log.warning("the video engine is not ready: %s", self.problem)
+        return self.problem
+
     def record_engine(self):
         from tracker import watch_store
         try:
             watch_store.set_meta(ENGINE_META, dict(video_engine.status(), worker=self.owner,
+                                                   problem=getattr(self, "problem", ""),
                                                    host=socket.gethostname()[:60], jobs=self.jobs,
                                                    at=datetime.now(timezone.utc).isoformat()))
         except Exception:

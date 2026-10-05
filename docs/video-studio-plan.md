@@ -902,3 +902,19 @@ Do these on Railway, in order.
 **Done when:** every step above has been followed and the first two real
 client videos are made.
 
+**Fixed after Phase 5: videos failed at "Checking every frame" with "RuntimeError".**
+- **Cause:** Railway installs the newest Playwright. Its headless browser is
+  `chrome-headless-shell-linux64/chrome-headless-shell`, but the worker looked
+  only for the older `chrome-linux/headless_shell`. It found no browser, so
+  every check failed. The container here had the older layout, which is why
+  the earlier checks passed.
+- **Fix:**
+  - both layouts are found;
+  - Playwright is asked where its browsers are;
+  - the worker installs the headless shell at start if it is missing;
+  - a missing engine part now gives a plain message on the video, and the
+    reason on the engine page ("Not ready: …").
+- **After deploying:** open the engine page; the "What the worker has" box
+  should show the browser as **Found**. Then use **Try again** on the failed
+  video.
+

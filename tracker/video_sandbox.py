@@ -218,7 +218,7 @@ class Sandbox:
     def _browser_script(self):
         browser = self._browser or cfg.browser_path()
         if not browser:
-            raise RuntimeError("No Chromium headless shell was found (on Railway set "
+            raise video_engine.EngineMissing("No Chromium headless shell was found (on Railway set "
                                "RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1, as Page Watch does).")
         path = os.path.join(self.root, "browser.sh")
         with open(path, "w") as fh:
@@ -295,7 +295,7 @@ class Sandbox:
         """A JPEG of the frame at `at` seconds."""
         ffmpeg = video_engine.ffmpeg_path()
         if not ffmpeg:
-            raise RuntimeError("ffmpeg is not installed on this service")
+            raise video_engine.EngineMissing("ffmpeg is not installed on this service")
         src = os.path.join(self.root, "cover-src.mp4")
         dst = os.path.join(self.root, "cover.jpg")
         with open(src, "wb") as fh:

@@ -25,9 +25,13 @@ import logging
 import time
 from datetime import datetime, timezone
 
-from tracker import video_agent, video_build, video_config as cfg, video_plan, video_sandbox, video_store
+from tracker import video_agent, video_build, video_config as cfg, video_engine, video_plan, video_sandbox, video_store
 
 log = logging.getLogger("video_studio.builder")
+
+
+ENGINE_MISSING = ("The video maker is not ready on the server yet, so nothing was made. The platform team can "
+                  "see what is missing on the Video Studio engine page; once it is fixed, use Try again.")
 
 
 class Refused(ValueError):
@@ -232,6 +236,9 @@ def run_job(job, *, stop=None, client=None, sandbox=video_sandbox.Sandbox):
     except video_agent.BuildError as exc:
         timings["build_s"] = round(time.monotonic() - t, 1)
         return fail(str(exc))
+    except video_engine.EngineMissing as exc:
+        step("engine_missing", str(exc)[:500])
+        return fail(ENGINE_MISSING)
     timings["build_s"] = round(time.monotonic() - t, 1)
     cost += built["cost_usd"]
     plan = dict(plan, build=built["review"] or {"ended": "templates", "summary": "Built from the templates."})
