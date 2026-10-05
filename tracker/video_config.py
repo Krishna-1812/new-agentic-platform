@@ -15,6 +15,8 @@ Environment:
                             of the one Playwright installed.
   VIDEO_RENDER_WORKERS      Browsers one render uses at once (default: from
                             this container's own CPU and memory limits, 1-2).
+  VIDEO_ENCODER_THREADS     Threads the video encoder uses (default: this
+                            container's CPUs, at most 4).
 """
 
 import functools
@@ -156,6 +158,21 @@ def container_memory_mb():
         return os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") // (1024 * 1024)
     except (ValueError, OSError, AttributeError):
         return 4096
+
+
+# The encoder (libx264) also counts the host's CPUs: on a large machine it runs
+# ~100 threads and holds ~100 frames of 1080x1920 before writing one, several GB,
+# and the container's memory limit kills it ("Streaming encoder exited before
+# frame 102 was written"). 4 threads hold ~0.5 GB.
+MAX_ENCODER_THREADS = 4
+
+
+def encoder_threads(cpus=None):
+    """Threads the video encoder uses: VIDEO_ENCODER_THREADS, else this container's CPUs, at most 4."""
+    if (os.environ.get("VIDEO_ENCODER_THREADS") or "").strip():
+        return min(16, _int_env("VIDEO_ENCODER_THREADS", 2, low=1))
+    cpus = container_cpus() if cpus is None else cpus
+    return max(1, min(MAX_ENCODER_THREADS, cpus))
 
 
 def render_workers(cpus=None, memory_mb=None):

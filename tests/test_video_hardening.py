@@ -660,3 +660,40 @@ def test_the_engine_page_lists_only_failed_videos_of_people(store):
     store.update_version(tid, status="failed", error="a test run")
     assert video_web.engine_page(ANA)["failures"] == []                  # engine tests are listed with the runs
     assert video_web.failure_details([{"log": [{"step": "render", "detail": "time limit 435 s"}]}]) == ""
+
+
+# ── The encoder on Railway ("Streaming encoder exited before frame 102") ──────
+def test_the_encoder_is_sized_for_this_container(monkeypatch):
+    """libx264 counts the host's CPUs: at 128 threads it held 3.4 GB before writing a frame."""
+    monkeypatch.delenv("VIDEO_ENCODER_THREADS", raising=False)
+    assert video_config.encoder_threads(cpus=64) == 4
+    assert video_config.encoder_threads(cpus=2) == 2
+    assert video_config.encoder_threads(cpus=1) == 1
+    monkeypatch.setenv("VIDEO_ENCODER_THREADS", "6")
+    assert video_config.encoder_threads(cpus=64) == 6
+
+
+def test_the_render_runs_ffmpeg_with_the_encoders_threads_fixed(tmp_path, monkeypatch):
+    monkeypatch.setenv("VIDEO_ENCODER_THREADS", "3")
+    seen = tmp_path / "args.txt"
+    real = tmp_path / "ffmpeg"
+    real.write_text("#!/bin/sh\nfor a in \"$@\"; do printf '%%s\\n' \"$a\"; done > %s\n" % seen)
+    real.chmod(0o755)
+    monkeypatch.setattr(video_engine, "ffmpeg_path", lambda: str(real))
+    browser = tmp_path / "browser"
+    browser.write_text("#!/bin/sh\n")
+    browser.chmod(0o755)
+    import subprocess
+    with video_sandbox.Sandbox(9, browser=str(browser), hyperframes="/bin/true") as box:
+        wrapper = box.env()["HYPERFRAMES_FFMPEG_PATH"]
+        args = ["-f", "image2pipe", "-i", "-", "-c:v", "libx264", "-preset", "slow", "-crf", "16",
+                "-x264-params", "a b:c", "-y", "out file.mp4"]
+        subprocess.run([wrapper] + args, check=True)
+        assert seen.read_text().splitlines() == args[:6] + ["-threads", "3"] + args[6:]
+        subprocess.run([wrapper, "-version"], check=True)                    # other calls pass through
+        assert seen.read_text().splitlines() == ["-version"]
+        subprocess.run([wrapper], check=True)
+        assert seen.read_text() == ""
+    monkeypatch.setattr(video_engine, "ffmpeg_path", lambda: None)
+    with video_sandbox.Sandbox(9, browser=str(browser), hyperframes="/bin/true") as box:
+        assert "HYPERFRAMES_FFMPEG_PATH" not in box.env()                   # HyperFrames says it is missing
