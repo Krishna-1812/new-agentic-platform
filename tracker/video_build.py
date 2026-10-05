@@ -55,11 +55,15 @@ def theme_css(brand):
       .scene.inv { --bgc: %(fg)s; --fg: %(bg)s; --hl: %(hl_inv)s; --muted: %(muted_inv)s; --card: %(card_inv)s; }
       .scene { background: var(--bgc); color: var(--fg); }
       .scene .head, .scene h2, .scene h1, .scene h3 { font-family: var(--head); font-weight: 600; letter-spacing: -0.015em; }
-      .w { display: inline-block; }
+      /* Each word rises from behind its own mask; the padding keeps descenders and italics whole. */
+      .w { display: inline-block; overflow: hidden; vertical-align: top; padding: 0.1em 0.06em 0.18em; margin: -0.1em -0.06em -0.18em; }
+      .wi { display: inline-block; }
+      .em { color: var(--hl); }%(em_it)s
 """ % {"accent": accent, "on": c["on_accent"], "head": video_fonts.stack(brand["fonts"]["heading"]),
        "body": video_fonts.stack(brand["fonts"]["body"]), "bg": bg, "fg": fg, "hl": hl, "hl_inv": hl_inv,
        "muted": _readable_mix(fg, bg), "card": _mix(fg, bg, 0.93), "muted_inv": _readable_mix(bg, fg),
-       "card_inv": _mix(bg, fg, 0.86)}
+       "card_inv": _mix(bg, fg, 0.86),
+       "em_it": "\n      .em { font-style: italic; }" if video_fonts.has_italic(brand["fonts"]["heading"]) else ""}
 
 
 def _readable_mix(fg, bg):
@@ -69,6 +73,24 @@ def _readable_mix(fg, bg):
         if contrast(m, bg) >= 4.6:
             return m
     return fg
+
+
+def logo_is_light(data):
+    """Whether a logo is drawn in light ink (white on transparent, say), so it needs a dark
+    surface or a tint. Judged from its visible pixels; a logo on an opaque box counts as dark."""
+    import io
+    try:
+        from PIL import Image
+        im = Image.open(io.BytesIO(data)).convert("RGBA")
+        im.thumbnail((200, 200))
+        raw = im.tobytes()
+        px = [tuple(raw[i:i + 4]) for i in range(0, len(raw), 4) if raw[i + 3] > 128]
+        if not px or len(px) > 0.97 * im.width * im.height:
+            return False
+        lum = sum(0.2126 * r + 0.7152 * g + 0.0722 * b for r, g, b, a in px) / len(px)
+        return lum > 170
+    except Exception:
+        return False
 
 
 def scene_assets(plan, brand):
@@ -99,6 +121,9 @@ def compose(plan, brand, shape, *, assets, tables):
     b = dict(brand)
     logo = amap.get(brand.get("logo_asset"))
     b["logo_path"] = logo["path"] if logo else None
+    if logo:
+        b["logo_w"], b["logo_h"] = logo["w"], logo["h"]
+        b["logo_light"] = logo_is_light(assets[brand["logo_asset"]].get("bytes"))
     ctx = video_scenes.Ctx(shape, size, b, amap, tables)
     sections, css, js, spans = [], [], [], []
     scenes = plan.get("scenes") or []

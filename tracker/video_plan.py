@@ -46,7 +46,7 @@ log = logging.getLogger("video_studio.plan")
 
 DEFAULT_MODEL = "claude-sonnet-5-5"
 DEFAULT_MONTHLY_USD = 10.0
-MAX_IMAGES = 8
+MAX_IMAGES = 16
 IMAGE_WIDTH = 1000
 IMAGE_HEIGHT = 1400
 MAX_SITE_CHARS = 9000
@@ -56,11 +56,15 @@ MIN_SCENE_S, MAX_SCENE_S = 1.5, 15.0
 SECONDS_SLACK = 0.5
 
 SCENES = {
-    "title": "Logo and headline, with brand-colour motion. headline (the title), subline (optional).",
-    "words": "Kinetic text: a line or two building word by word. headline, subline (optional).",
+    "title": "The hook: big words rising line by line, with the logo. headline, subline (optional); asset_ids: "
+             "optional, one strong photo shown full-bleed behind the words (use one whenever the sources have a "
+             "good photo: it makes the first second).",
+    "words": "Kinetic text: a line or two building word by word. headline, subline (optional); asset_ids: optional, "
+             "one photo behind the words.",
     "screenshot": "A real website screenshot or crop with a slow zoom or pan to the part that matters. "
                   "asset_ids: one screenshot or crop. headline: a short caption.",
-    "image": "A photo with gentle motion and an optional caption. asset_ids: one image. headline: caption.",
+    "image": "A photo shown big (full-bleed, or a large panel on tall shapes) with a slow push-in, and its words "
+             "large beside or under it. asset_ids: one image. headline: the line it proves.",
     "list": "3 to 5 points building one by one, each with an icon. headline, items (label, detail optional).",
     "steps": "Numbered steps 1-2-3 for how-tos and processes. headline, items (3 to 5).",
     "big_number": "One figure counting up, with its label. number (the figure as shown, e.g. 42%), subline (label).",
@@ -76,8 +80,9 @@ SCENES = {
     "logo_wall": "Client or partner logos. headline; asset_ids: 2 to 12 logo images.",
     "event_card": "Date, time, place or link, and speakers. headline (event name), items (label/detail pairs: "
                   "When, Where, Speaker).",
-    "end_card": "The action, the address, and the logo at the end. headline (the action), subline (address or "
-                "detail).",
+    "end_card": "The close, with the logo. headline: the offer or promise; subline: the action, shown as a button "
+                "(a few words, e.g. 'Get a bulk quote'); items: up to 3 short facts shown as chips (label only, "
+                "detail empty); asset_ids: up to 3 product photos.",
     "custom": "Only when nothing above fits what the brief asks for. Describe it in motion; headline/items as needed.",
 }
 SCENE_TYPES = tuple(SCENES)
@@ -87,9 +92,14 @@ LIMITS = {"title": (10, 14, 0, 0, 0), "words": (16, 16, 0, 0, 0), "screenshot": 
           "big_number": (10, 12, 0, 0, 0), "chart": (12, 14, 0, 0, 0), "comparison": (10, 12, 2, 8, 16),
           "quote": (45, 12, 0, 0, 0), "timeline": (10, 12, 6, 4, 12), "people": (10, 12, 6, 5, 8),
           "phone": (10, 14, 0, 0, 0), "logo_wall": (10, 12, 0, 0, 0), "event_card": (12, 14, 4, 4, 12),
-          "end_card": (8, 14, 0, 0, 0), "custom": (16, 16, 6, 8, 14)}
+          "end_card": (10, 8, 3, 5, 0), "custom": (16, 16, 6, 8, 14)}
 NEEDS_ASSET = {"screenshot": ("screenshot", "crop"), "image": ("image", "crop", "screenshot", "logo"),
                "phone": ("screenshot",), "logo_wall": ("image", "logo")}
+# Scenes that may show photos without needing them: behind the words, or as product photos.
+MAY_SHOW = {"title": ("image", "crop"), "words": ("image", "crop"), "end_card": ("image", "crop"),
+            "quote": ("image", "crop")}
+MAX_PHOTOS = {"title": 1, "words": 1, "end_card": 3, "quote": 1}
+MAX_EMPHASIS = 4
 IMAGE_KINDS = ("image", "logo", "screenshot", "crop")
 
 ITEM = {"type": "object", "additionalProperties": False, "required": ["label", "detail"],
@@ -103,8 +113,8 @@ SCHEMA = {
         "hook": {"type": "string"},
         "scenes": {"type": "array", "items": {
             "type": "object", "additionalProperties": False,
-            "required": ["type", "seconds", "purpose", "headline", "subline", "items", "number", "attribution",
-                         "asset_ids", "chart", "motion"],
+            "required": ["type", "seconds", "purpose", "headline", "emphasis", "subline", "items", "number",
+                         "attribution", "asset_ids", "chart", "motion"],
             "properties": {
                 "type": {"type": "string", "enum": list(SCENE_TYPES)},
                 "seconds": {"type": "number"},
@@ -112,6 +122,7 @@ SCHEMA = {
                 "headline": {"type": "string"},
                 "subline": {"type": "string"},
                 "items": {"type": "array", "items": ITEM},
+                "emphasis": {"type": "string"},
                 "number": {"type": "string"},
                 "attribution": {"type": "string"},
                 "asset_ids": {"type": "array", "items": {"type": "integer"}},
@@ -154,8 +165,21 @@ never a logo on its own and never "Introducing...". Most viewers decide here.
 4. Specific, never generic: real names, real numbers, real screens and pictures from the \
 sources. "Leads up 42%% in six months" beats "Great results". Use the brand's own words \
 where they are good.
-5. End on one clear action (end_card), with the address or detail the sources give.
+5. End on one clear action (end_card): the offer as its headline, the action as its button \
+(subline), up to three short facts as chips and up to three product photos.
 6. Most people watch without sound: every key point must be in words on screen.
+
+How it should look (the program draws it; you choose what goes where):
+- It is a paid ad or a premium brand film, not a slide deck. Use the person's own photos \
+generously: put the strongest photo behind the hook (title), give proof scenes their photos \
+(image), and put product photos on the end card. Prefer real pictures over words alone.
+- Short, punchy headlines: 3 to 8 words, one thought each. A scene with a photo needs fewer \
+words, not more.
+- emphasis: the 1 to 3 words of the headline that carry the idea, copied exactly from it \
+("three shares", "from ₹999", "42%%"). They are drawn in the accent colour. Leave it empty \
+for a headline that has no single key phrase. Never emphasise a whole headline.
+- Vary the rhythm: a hook, then two to four proof scenes, then the close. Do not use the same \
+scene type more than three times in a row.
 
 Scene types (choose from these; custom only when none fits what the brief asks for):
 %(scenes)s
@@ -174,7 +198,8 @@ fits the scene. A chart names a numbers source by asset_id and two of its column
 exactly; otherwise set chart to {"asset_id": 0, "label_column": "", "value_column": "", \
 "kind": "none"}.
 - Unused fields are empty strings or empty lists. number is used only by big_number.
-- Keep words short: headlines under 10 words where you can.
+- Keep words short: headlines under 10 words where you can; emphasis at most %(emax)d words, \
+taken from the headline.
 - When the person gave a script to use exactly, the words on screen (headline, subline, \
 items, number, attribution, in scene order) must be the script's words, all of them, in \
 order, with nothing added: split it into scenes, do not rewrite it.
@@ -454,6 +479,13 @@ def check(plan, choices, sources, brief, typed=()):
                 problems.append("%s: picture id %s is not in the sources." % (name, aid))
             elif kind in NEEDS_ASSET and a["kind"] not in NEEDS_ASSET[kind]:
                 problems.append("%s: picture id %s is a %s, which this scene cannot show." % (name, aid, a["kind"]))
+            elif kind in MAY_SHOW and a["kind"] not in MAY_SHOW[kind]:
+                problems.append("%s: picture id %s is a %s; this scene shows photos only." % (name, aid, a["kind"]))
+        if kind in MAX_PHOTOS and len(s.get("asset_ids") or []) > MAX_PHOTOS[kind]:
+            problems.append("%s: at most %d picture(s)." % (name, MAX_PHOTOS[kind]))
+        if len(_words(s.get("emphasis"))) > MAX_EMPHASIS:
+            problems.append("%s: the emphasis has %d words; at most %d." % (name, len(_words(s.get("emphasis"))),
+                                                                       MAX_EMPHASIS))
         if kind in NEEDS_ASSET and not s.get("asset_ids"):
             problems.append("%s: needs a picture from the sources." % name)
         if kind == "logo_wall" and len(s.get("asset_ids") or []) < 2:
@@ -539,6 +571,7 @@ def clean(raw):
             "type": s.get("type") if s.get("type") in SCENES else "custom",
             "seconds": round(float(s.get("seconds") or 0), 2),
             "purpose": t(s.get("purpose"), 200), "headline": t(s.get("headline"), 400),
+            "emphasis": t(s.get("emphasis"), 120),
             "subline": t(s.get("subline"), 300),
             "items": [{"label": t(i.get("label"), 120), "detail": t(i.get("detail"), 200)}
                       for i in (s.get("items") or [])[:8] if isinstance(i, dict)],
@@ -571,7 +604,7 @@ def _usage(resp):
 def _system():
     scenes = "\n".join("- %s: %s" % (k, v) for k, v in SCENES.items())
     return SYSTEM % {"scenes": scenes, "min": _num(MIN_SCENE_S), "max": _num(MAX_SCENE_S), "nmin": MIN_SCENES,
-                     "nmax": MAX_SCENES}
+                     "nmax": MAX_SCENES, "emax": MAX_EMPHASIS}
 
 
 def _ask(client, messages, record):

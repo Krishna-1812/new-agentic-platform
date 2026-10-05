@@ -607,6 +607,7 @@
         var body = el("div", "vs-scene-body");
         var fields = el("div", "vs-scene-fields");
         if (F.headline) fields.appendChild(textField(F.head_words[0], s.headline, F.headline, function (x) { s.headline = x; }, s.type === "quote"));
+        if (F.emphasis) fields.appendChild(textField("Words to highlight (copied from the headline)", s.emphasis, F.emphasis, function (x) { s.emphasis = x; }));
         if (F.number) fields.appendChild(textField("The number, as shown", s.number, 0, function (x) { s.number = x; }));
         if (F.subline) fields.appendChild(textField(F.head_words[1] || "Subline", s.subline, F.subline, function (x) { s.subline = x; }));
         if (F.attribution) fields.appendChild(textField("Who said it (name, role)", s.attribution, 0, function (x) { s.attribution = x; }));
@@ -624,10 +625,13 @@
         s.items.forEach(function (it, j) {
           var row = el("div", "vs-item");
           var a = el("input"); a.value = it.label || ""; a.placeholder = F.item_words[0]; a.setAttribute("aria-label", F.item_words[0] + " " + (j + 1));
-          var b = el("input"); b.value = it.detail || ""; b.placeholder = F.item_words[1]; b.setAttribute("aria-label", F.item_words[1] + " " + (j + 1));
           a.addEventListener("input", function () { it.label = a.value; changed(); });
-          b.addEventListener("input", function () { it.detail = b.value; changed(); });
-          row.appendChild(a); row.appendChild(b);
+          row.appendChild(a);
+          if (F.item_words[1]) {
+            var b = el("input"); b.value = it.detail || ""; b.placeholder = F.item_words[1]; b.setAttribute("aria-label", F.item_words[1] + " " + (j + 1));
+            b.addEventListener("input", function () { it.detail = b.value; changed(); });
+            row.appendChild(b);
+          }
           row.appendChild(btn("×", "vs-x", function () { s.items.splice(j, 1); drawScenes(); changed(); }));
           box.appendChild(row);
         });
@@ -721,7 +725,7 @@
             var b = btn("", "vs-menu-i", function () {
               closeModal();
               var F = FIELDS[m.type];
-              var s = { type: m.type, seconds: 3, purpose: "", headline: "", subline: "", items: [], number: "", attribution: "",
+              var s = { type: m.type, seconds: 3, purpose: "", headline: "", emphasis: "", subline: "", items: [], number: "", attribution: "",
                 asset_ids: [], chart: { asset_id: 0, label_column: "", value_column: "", kind: "none" }, motion: "" };
               if (F.items) { for (var k = 0; k < Math.min(F.items, m.type === "comparison" ? 2 : 3); k++) s.items.push({ label: "", detail: "" }); }
               var end = plan.scenes.length && plan.scenes[plan.scenes.length - 1].type === "end_card" ? plan.scenes.length - 1 : plan.scenes.length;

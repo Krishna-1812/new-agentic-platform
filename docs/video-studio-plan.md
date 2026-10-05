@@ -961,3 +961,32 @@ client videos are made.
   `HYPERFRAMES_FFMPEG_PATH`. Checked here: a real render runs
   `-c:v libx264 -threads 4 -preset slow`.
 - **After deploying:** use **Try again** on the video.
+
+**Quality pass: from slides to ads.** The first real video worked but looked like a
+slide deck: small words on flat colour, photos as small squares under a caption,
+and a bare end card. The /brag ads made by hand for the same brand did not. The
+difference was the scene designs, not Claude, so the library now follows the brag
+ads:
+- **Words** rise from behind their own masks (`.w` is the mask, `.wi` rises), and
+  the plan's new `emphasis` (1 to 3 words of the headline) is drawn in the accent
+  colour, in italics when the heading font has them.
+- **Hook (title)** sits over a full-bleed photo with a slow push-in and a
+  brand-tinted scrim, or on the deep brand surface (the accent, deepened). The
+  accent is lightened, keeping its hue, until it reads on that surface.
+- **Words** may have a photo behind them too.
+- **Picture** is a large rounded panel with the words under it on tall shapes, and
+  full-bleed with the words over a scrim on wide and square ones.
+- **End card** has the logo, the offer, up to 3 facts as chips, up to 3 product
+  photos and the action as a button. A light logo on the light page is drawn
+  through a mask in the text colour. On a short canvas the photos go first, then
+  the logo shrinks, rather than crowd the words.
+- **The planner** sees up to 16 pictures (was 8), is told to make an ad, not
+  slides, to use photos behind the hook and as proof, and fills `emphasis`, the
+  chips and the button. The plan check holds photo kinds and counts and the
+  emphasis length; an emphasis that no longer matches its headline after an edit
+  is simply not drawn. The editor has a "Words to highlight" field.
+- **Claude's review** is an art-director pass to that bar (big type, big photos, a
+  strong first frame), with 3 fix rounds, still never changing the words.
+- Moving words carry `data-layout-allow-overlap`: their travel is hidden by their
+  mask, but the check would count it. Every other text block is still checked.
+  `scripts/check_video_scenes.py` passes in all 16 combinations.

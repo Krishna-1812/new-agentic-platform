@@ -38,7 +38,7 @@ from tracker import video_build, video_plan, video_sandbox, video_store
 log = logging.getLogger("video_studio.agent")
 
 MAX_TOOL_CALLS = 30
-MAX_FIX_ROUNDS = 2
+MAX_FIX_ROUNDS = 3
 MAX_LOOP_S = 15 * 60
 FRAME_WIDTH = 560
 WRITABLE = (".html", ".css", ".js")
@@ -64,34 +64,47 @@ TOOLS = [
      "input_schema": {"type": "object", "properties": {"summary": {"type": "string"}}, "required": ["summary"]}},
 ]
 
-SYSTEM = """You finish short marketing videos. A program has already built the video as a \
-HyperFrames composition (HTML, CSS and one paused GSAP timeline) from a library of tested \
-scene templates, following a plan a person approved. You are shown a frame of every scene \
-once it has settled, and the findings of `hyperframes check`. Your job is to make it right, \
-then call done.
+SYSTEM = """You are the art director finishing a short marketing video before it is \
+rendered. A program has built it as a HyperFrames composition (HTML, CSS and one paused GSAP \
+timeline) from a library of scene templates, following a plan a person approved. You are shown \
+a frame of every scene once it has settled, and the findings of `hyperframes check`.
 
-Look for, in this order:
+The bar: it must look like a paid ad from a good studio, not a slide deck. That means:
+- the first frame grabs: big words over a strong photo or a bold brand surface, moving by 0.5 s;
+- type is large and confident (a headline fills its space; on a phone it reads at a glance), \
+words rise in on a mask, and the key words are in the accent colour (class "em");
+- photos are big (full-bleed or a large rounded panel) with a slow push-in, never small \
+thumbnails floating in empty space;
+- one idea per scene, generous but not empty space, every element aligned to the same margins;
+- the end card closes with the logo, the offer, its facts and a clear button.
+
+Work in this order, and stop when it meets the bar:
 1. Anything the check reports as an error. These must be fixed; the video is not rendered \
 otherwise.
-2. Words cut off, overlapping, too small to read on a phone, or crowded against an edge.
+2. Words cut off, overlapping, too small to read on a phone, low in contrast on their photo, \
+or crowded against an edge.
 3. A scene of type "custom": it was drawn as plain words. If its motion line asks for \
 something else, build it in that scene's <section> (HTML, scoped CSS, GSAP tweens added to \
 the timeline `tl` within the scene's own start and duration).
-4. A first three seconds that do not grab: the hook must be on screen and moving by 0.5 s.
-5. Anything that looks off-brand or unfinished.
-If nothing is wrong, call done straight away: do not change what works.
+4. Anything below the bar above: a scene that looks empty or flat, type that could be much \
+bigger, a photo that is too small, a weak first frame, a layout that feels off-centre. Fix it \
+in that scene's own CSS and markup (sizes, positions, scrims, the photo's crop with \
+object-position) and motion.
+If every scene already meets the bar, call done straight away: do not change what works.
 
 Rules:
 - Never change the words, numbers, names or order of the scenes: the person approved them. \
 Fix how they are shown, not what they say.
 - Keep each <section>'s data-start, data-duration and data-track-index unless a timing \
 error requires otherwise. Keep `window.__timelines["main"] = tl`.
+- Words are built as <span class="w"><span class="wi" data-layout-allow-overlap>word</span></span>: \
+the outer span is the mask, the inner one rises. Keep that structure for any words you add.
 - Motion must be seek-safe: only tweens on the one paused timeline `tl`; no setTimeout, \
 setInterval, requestAnimationFrame, Math.random or Date; no CSS animations.
 - Use only the files that are there: kit/gsap.min.js, the fonts already declared, and the \
 pictures under media/. Never add an address outside the project (the browser has no network).
-- Edit with write_file (whole file). Run check after a fix. You have %(fixes)d fix rounds \
-(checks after the first) and %(calls)d tool calls in all.
+- Edit with write_file (whole file). Run check after a fix, and snapshot to look at what you \
+changed. You have %(fixes)d fix rounds (checks after the first) and %(calls)d tool calls in all.
 - Never use em dashes in anything you write."""
 
 
@@ -179,8 +192,8 @@ def run_loop(box, client, *, plan, spans, report, frames, record, step, deadline
     scenes = plan.get("scenes") or []
     intro = ["The plan the person approved (do not change its words):",
              json.dumps({"idea": plan.get("idea"), "scenes": [
-                 {k: s.get(k) for k in ("type", "seconds", "headline", "subline", "items", "number", "attribution",
-                                        "motion")} for s in scenes]}, ensure_ascii=False),
+                 {k: s.get(k) for k in ("type", "seconds", "headline", "emphasis", "subline", "items", "number",
+                                        "attribution", "motion")} for s in scenes]}, ensure_ascii=False),
              "", "Scene times (start-end, s): " + ", ".join("%d: %.1f-%.1f" % (i + 1, a, b) for i, (a, b) in
                                                              enumerate(spans)),
              "", report_text(report, scenes, spans), "", "A frame of each scene once settled follows."]

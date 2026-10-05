@@ -331,13 +331,15 @@ def library_plan(length="short"):
     L = lambda short, longer: longer if long else short          # noqa: E731
     scenes = [
         sc("title", 3, headline=L("Books closed fast", "Close your books in five days, not twelve, every month"),
+           emphasis=L("fast", "five days,"), asset_ids=[1] if long else [],
            subline=L("Ledgerly for finance teams", "The month-end close tool built for finance teams who are tired of spreadsheets")),
         sc("words", 3, headline=L("Month-end, without dread", "Month-end used to mean late nights, missed weekends and a lot of copy and paste"),
+           emphasis=L("without dread", "late nights,"), asset_ids=[] if long else [1],
            subline=L("", "Here is what changed for one finance team in a single quarter")),
         sc("screenshot", 4, headline=L("Every report in one place", "Every report your board asks for, in one place"),
            subline=L("", "Built from the ledger, updated as entries post"), asset_ids=[2]),
         sc("image", 3, headline=L("Made in the hills", "Grown and packed by the people who live in these hills"),
-           subline=L("", "Every box says where it came from"), asset_ids=[1]),
+           emphasis=L("hills", "these hills"), subline=L("", "Every box says where it came from"), asset_ids=[1]),
         sc("list", 4, headline=L("What you get", "What every plan includes from the very first day"),
            items=[("Bank feeds", L("", "Every account, synced each morning")), ("Auto-matching", L("", "Most entries matched before you log in")),
                   ("Close checklist", L("", "Every task with an owner and a due date"))] + ([("Audit trail", "Every change recorded, with who and when"),
@@ -373,8 +375,10 @@ def library_plan(length="short"):
         sc("event_card", 4, headline=L("Budgeting for AI", "Webinar: Budgeting for AI in 2027, what finance teams need to know"),
            items=[("When", L("12 Nov, 4 pm", "Thursday 12 November 2026, 4 pm IST")), ("Where", L("Online", "Online on Zoom, free"))]
            + ([("Speaker", "Priya Raman, CFO of Ledgerly")] if long else []), asset_ids=[4] if long else []),
-        sc("end_card", 3, headline=L("Start free", "Start your free trial today"),
-           subline=L("ledgerly.example", "ledgerly.example/start, no card needed")),
+        sc("end_card", 3, headline=L("Start free", "Start your free trial of Ledgerly today"), emphasis=L("free", "free trial"),
+           subline=L("ledgerly.example", "Start at ledgerly.example, no card"),
+           items=[("Five-day close", "")] + ([("No card needed", ""), ("Cancel any time", "")] if long else []),
+           asset_ids=[1, 4, 5] if long else []),
     ]
     return {"idea": "Library test", "hook": "", "scenes": scenes, "cover_scene": 0,
             "share_copy": {"linkedin": "", "x": "", "instagram": ""}, "notes": []}

@@ -119,6 +119,12 @@ def resolve(stack, role="body"):
     return {"family": fallback, "asked": asked, "swapped": bool(asked)}
 
 
+def has_italic(family):
+    """Whether a bundled family has an italic face (for emphasised words)."""
+    f = manifest().get(family)
+    return bool(f) and any(face["style"] == "italic" for face in f["faces"])
+
+
 def font_css(fams, prefix="kit/"):
     """@font-face rules for the given bundled families (others are skipped)."""
     out = []
