@@ -16,6 +16,8 @@
 .ve-thumb { width: 180px; aspect-ratio: 16 / 10; border-radius: 10px; background: #eae4d6; object-fit: contain; }
 .ve-run h3 { margin: 0 0 4px; font-size: 17px; }
 .ve-meta { font-size: 14px; color: var(--ink2, #5a554b); margin: 0 0 8px; overflow-wrap: anywhere; }
+.ve-fail { border: 1px solid var(--line, #e5ded0); border-radius: 16px; padding: 14px; }
+.ve-why { margin: 8px 0 0; padding: 10px 12px; max-height: 300px; overflow: auto; background: var(--paper2, #f5f1e8); border-radius: 10px; font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink, #1c1a16); }
 .ve-log { margin: 8px 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--ink2, #5a554b); }
 .ve-log li { padding: 2px 0; overflow-wrap: anywhere; }
 .ve-log b { color: var(--ink, #1c1a16); font-weight: 600; }

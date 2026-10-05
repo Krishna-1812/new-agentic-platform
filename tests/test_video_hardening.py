@@ -618,7 +618,8 @@ def test_a_render_that_fails_twice_says_why_in_plain_words(store):
 
     class AlwaysFails(RenderBox):
         def render(self, seconds, quality="high", timeout=None, safe=False):
-            raise video_sandbox.RenderFailed("Render failed: Worker 3: Target closed", RAILWAY_OUTPUT)
+            raise video_sandbox.RenderFailed("Render failed: Worker 3: Target closed",
+                                             video_sandbox.render_log(RAILWAY_OUTPUT))
     job = store.claim_job("w")
     out = video_render.run_job(job, sandbox=AlwaysFails)
     store.finish_job(job["id"], "w", "failed", out["error"])
@@ -626,6 +627,11 @@ def test_a_render_that_fails_twice_says_why_in_plain_words(store):
     assert out["error"].endswith("What went wrong: Render failed: Worker 3: Target closed.")
     view = video_app.project_view(ANA, pid)["version"]
     assert view["error"].startswith("The video could not be rendered") and "frame=" not in view["error"]
+    assert "engine page" in view["error"] and "Worker 3" not in json.dumps(view)    # the video page: no internals
+    failures = video_web.engine_page(ANA)["failures"]                              # the engine page: why
+    assert len(failures) == 1 and failures[0]["url"].endswith("/videos/%d?v=%d" % (pid, vid))
+    assert "render_failed: Render failed: Worker 3: Target closed" in failures[0]["details"]
+    assert "render_retry: safe mode" in failures[0]["details"] and "frame=" not in failures[0]["details"]
     assert video_app.retry(ANA, vid) == vid and store.claim_job("w")["kind"] == "render"
 
 
@@ -642,3 +648,15 @@ def test_no_second_try_when_the_time_is_nearly_used(store):
         video_render._render(job, Box(), 15, video_render.MIN_RETRY_S - 30)
     assert calls == [False] and not getattr(failed.value, "retried", False)
     assert [e["step"] for e in store.get_job(job["id"])["log"]][-1] == "render_failed"
+
+
+def test_the_engine_page_lists_only_failed_videos_of_people(store):
+    pid, vid = _results_video(store)
+    _plan_next(store)
+    video_builder.approve(ANA, vid)
+    _build_next(store)
+    _render_next(store)
+    tid = video_web.start_test(ANA, "outside_drill")[0]
+    store.update_version(tid, status="failed", error="a test run")
+    assert video_web.engine_page(ANA)["failures"] == []                  # engine tests are listed with the runs
+    assert video_web.failure_details([{"log": [{"step": "render", "detail": "time limit 435 s"}]}]) == ""

@@ -112,8 +112,27 @@
     });
   }
 
+  function drawFailures() {
+    var box = document.getElementById("ve-failures");
+    if (!box) return;
+    box.textContent = "";
+    if (!(data.failures || []).length) {
+      box.appendChild(el("p", { cls: "ve-sub", text: "No failed videos." }));
+      return;
+    }
+    data.failures.forEach(function (f) {
+      box.appendChild(el("article", { cls: "ve-fail" }, [
+        el("p", { cls: "ve-meta" }, [el("a", { href: f.url, text: f.title }),
+          document.createTextNode(" · version " + f.version + " · " + ago(f.finished_at))]),
+        f.error ? el("p", { cls: "ve-meta ve-bad", text: f.error }) : null,
+        el("pre", { cls: "ve-why", text: f.details || "No details were logged." })
+      ]));
+    });
+  }
+
   function draw() {
     drawEngine();
+    drawFailures();
     drawRuns();
     drawDrills();
     clearTimeout(timer);

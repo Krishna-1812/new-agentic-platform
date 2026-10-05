@@ -939,3 +939,10 @@ client videos are made.
     the error lines go to the job's log (`render_failed`, `render_log`).
 - **After deploying:** use **Try again** on the failed video. If it fails again,
   the message ends with "What went wrong: …"; send that line.
+- **Then:** the second try failed too, and the reason was hidden: it names a
+  program, and the video page never shows internals. The engine page now has
+  **Recent failed videos**: each of your failed videos with the lines the
+  worker logged about why (`render_failed`, `render_log`, `render_retry`,
+  `timed_out`, `engine_missing`). The video's message points there. Videos that
+  failed before this change show their reason there too, since it was already
+  logged.
