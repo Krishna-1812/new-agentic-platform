@@ -1,0 +1,130 @@
+{
+ "source": "Sascha Ende, ende.app",
+ "licence": "CC BY 4.0 (creativecommons.org/licenses/by/4.0)",
+ "loudness": "-16 LUFS, -1.5 dBTP",
+ "seconds": 62,
+ "tracks": [
+  {
+   "key": "warm",
+   "label": "Warm and calm",
+   "suits": "Brand stories, crafts, food, places: steady acoustic guitars",
+   "styles": [
+    "Calm"
+   ],
+   "file": "music/warm.mp3",
+   "title": "Ambient Acoustic Guitars Vol. 6",
+   "by": "Sascha Ende",
+   "url": "https://ende.app/en/song/13338",
+   "credit": "Music: \"Ambient Acoustic Guitars Vol. 6\" by Sascha Ende (ende.app), CC BY 4.0",
+   "bytes": 1241383
+  },
+  {
+   "key": "uplifting",
+   "label": "Uplifting",
+   "suits": "Launches, offers and good news: bright, positive pop",
+   "styles": [
+    "Polished"
+   ],
+   "file": "music/uplifting.mp3",
+   "title": "Insert More Positive Emotion Here",
+   "by": "Sascha Ende",
+   "url": "https://ende.app/en/song/13599",
+   "credit": "Music: \"Insert More Positive Emotion Here\" by Sascha Ende (ende.app), CC BY 4.0",
+   "bytes": 1241383
+  },
+  {
+   "key": "corporate",
+   "label": "Corporate",
+   "suits": "Company films, results, B2B: confident and measured",
+   "styles": [
+    "Corporate"
+   ],
+   "file": "music/corporate.mp3",
+   "title": "Imagefilm 046",
+   "by": "Sascha Ende",
+   "url": "https://ende.app/en/song/12239",
+   "credit": "Music: \"Imagefilm 046\" by Sascha Ende (ende.app), CC BY 4.0",
+   "bytes": 1241417
+  },
+  {
+   "key": "upbeat",
+   "label": "Upbeat business",
+   "suits": "Short ads and promos: driving, cheerful beat",
+   "styles": [],
+   "file": "music/upbeat.mp3",
+   "title": "Happy Beats & Business Moves Vol. 1",
+   "by": "Sascha Ende",
+   "url": "https://ende.app/en/song/12866",
+   "credit": "Music: \"Happy Beats & Business Moves Vol. 1\" by Sascha Ende (ende.app), CC BY 4.0",
+   "bytes": 1241383
+  },
+  {
+   "key": "bold",
+   "label": "Bold and energetic",
+   "suits": "Hard-cut, high-energy ads: tropical house",
+   "styles": [
+    "Bold"
+   ],
+   "file": "music/bold.mp3",
+   "title": "Tropical Island House 2026",
+   "by": "Sascha Ende",
+   "url": "https://ende.app/en/song/13785",
+   "credit": "Music: \"Tropical Island House 2026\" by Sascha Ende (ende.app), CC BY 4.0",
+   "bytes": 1241383
+  },
+  {
+   "key": "playful",
+   "label": "Playful",
+   "suits": "Light, fun and friendly: sunny and bouncy",
+   "styles": [
+    "Playful"
+   ],
+   "file": "music/playful.mp3",
+   "title": "Total Happy Up And Sunny",
+   "by": "Sascha Ende",
+   "url": "https://ende.app/en/song/555",
+   "credit": "Music: \"Total Happy Up And Sunny\" by Sascha Ende (ende.app), CC BY 4.0",
+   "bytes": 1245352
+  },
+  {
+   "key": "cinematic",
+   "label": "Cinematic",
+   "suits": "Big moments, full-bleed pictures: rising orchestral",
+   "styles": [
+    "Cinematic"
+   ],
+   "file": "music/cinematic.mp3",
+   "title": "Journey Of The Brave",
+   "by": "Sascha Ende",
+   "url": "https://ende.app/en/song/12233",
+   "credit": "Music: \"Journey Of The Brave\" by Sascha Ende (ende.app), CC BY 4.0",
+   "bytes": 1241417
+  },
+  {
+   "key": "documentary",
+   "label": "Documentary",
+   "suits": "Impact, people and causes: thoughtful and hopeful",
+   "styles": [],
+   "file": "music/documentary.mp3",
+   "title": "Documentary Music - Small Signs of Change",
+   "by": "Sascha Ende",
+   "url": "https://ende.app/en/song/13867",
+   "credit": "Music: \"Documentary Music - Small Signs of Change\" by Sascha Ende (ende.app), CC BY 4.0",
+   "bytes": 1241383
+  },
+  {
+   "key": "minimal",
+   "label": "Minimal",
+   "suits": "Quiet product and how-to videos: soft and spacious",
+   "styles": [
+    "Minimal"
+   ],
+   "file": "music/minimal.mp3",
+   "title": "Podcast Music Vol. 24 [Morning Light]",
+   "by": "Sascha Ende",
+   "url": "https://ende.app/en/song/13188",
+   "credit": "Music: \"Podcast Music Vol. 24 [Morning Light]\" by Sascha Ende (ende.app), CC BY 4.0",
+   "bytes": 1241383
+  }
+ ]
+}

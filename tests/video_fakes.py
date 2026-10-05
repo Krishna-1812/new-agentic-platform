@@ -97,6 +97,6 @@ def plan_from_request(text):
         s["seconds"] = each
     scenes[-1]["seconds"] = round(seconds - each * (len(scenes) - 1), 2)
     return {"idea": "A clear short video", "audience": "buyers", "hook": scenes[0]["headline"], "scenes": scenes,
-            "ending": "The action", "cover_scene": 0,
+            "ending": "The action", "music": "uplifting", "cover_scene": 0,
             "share_copy": {"linkedin": "A short video for you.", "x": "Watch this.", "instagram": ""},
             "notes": []}

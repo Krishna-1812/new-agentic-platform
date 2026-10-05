@@ -13,7 +13,7 @@ never flash the background. Scenes alternate between two tracks.
 from __future__ import annotations
 
 from tracker import video_config as cfg
-from tracker import video_fonts, video_scenes
+from tracker import video_fonts, video_music, video_scenes
 from tracker.video_site import contrast
 
 OVERLAP = 0.35
@@ -170,6 +170,7 @@ def compose(plan, brand, shape, *, assets, tables):
   <body>
     <div id="root" data-composition-id="main" data-start="0" data-duration="%(d)s" data-width="%(W)d" data-height="%(H)d">
 %(sections)s
+%(music)s
     </div>
     <script>
       window.__timelines = window.__timelines || {};
@@ -183,6 +184,7 @@ def compose(plan, brand, shape, *, assets, tables):
 </html>
 """ % {"W": W, "H": H, "fonts": fonts, "bg": brand["colors"]["background"], "theme": theme_css(brand),
        "css": "\n".join(css), "d": _n(duration), "sections": "\n".join("      " + x for x in sections),
+       "music": "      " + video_music.audio_html(plan.get("music"), duration),
        "u": ctx.u, "countup": COUNT_UP_JS, "js": "\n".join("      " + x for x in js)}
     files["index.html"] = page.encode("utf-8")
     return {"files": files, "duration": duration, "cover_at": cover_at, "scenes": spans}

@@ -102,11 +102,17 @@ MAX_PHOTOS = {"title": 1, "words": 1, "end_card": 3, "quote": 1}
 MAX_EMPHASIS = 4
 IMAGE_KINDS = ("image", "logo", "screenshot", "crop")
 
+def _music_choices():
+    from tracker import video_music
+    return video_music.keys() + [video_music.NONE]
+
+
+MUSIC_CHOICES = _music_choices()
 ITEM = {"type": "object", "additionalProperties": False, "required": ["label", "detail"],
         "properties": {"label": {"type": "string"}, "detail": {"type": "string"}}}
 SCHEMA = {
     "type": "object", "additionalProperties": False,
-    "required": ["idea", "audience", "hook", "scenes", "ending", "cover_scene", "share_copy", "notes"],
+    "required": ["idea", "audience", "hook", "scenes", "ending", "music", "cover_scene", "share_copy", "notes"],
     "properties": {
         "idea": {"type": "string"},
         "audience": {"type": "string"},
@@ -133,6 +139,7 @@ SCHEMA = {
                                          "kind": {"type": "string", "enum": ["none", "bar", "line", "donut"]}}},
                 "motion": {"type": "string"}}}},
         "ending": {"type": "string"},
+        "music": {"type": "string", "enum": MUSIC_CHOICES},
         "cover_scene": {"type": "integer"},
         "share_copy": {"type": "object", "additionalProperties": False, "required": ["linkedin", "x", "instagram"],
                        "properties": {"linkedin": {"type": "string"}, "x": {"type": "string"},
@@ -204,6 +211,10 @@ taken from the headline.
 items, number, attribution, in scene order) must be the script's words, all of them, in \
 order, with nothing added: split it into scenes, do not rewrite it.
 - cover_scene is the 0-based index of the scene whose settled frame makes the best cover.
+- music: the mood of the music bed under the whole video, from this list, to suit the brief, \
+the brand and the style (%(music_hint)s). Choose "none" only when the brief asks for no \
+music. Most people watch with the sound off, so the words still carry everything.
+%(music)s
 - share_copy: a post for each platform that suits the shape (LinkedIn for landscape and \
 square, Instagram for vertical, square and portrait, X for any); an empty string for a \
 platform that does not suit. Plain, specific, no hashtag walls, at most 3 hashtags.
@@ -584,6 +595,7 @@ def clean(raw):
     share = obj.get("share_copy") or {}
     return {"idea": t(obj.get("idea"), 300), "audience": t(obj.get("audience"), 200), "hook": t(obj.get("hook"), 300),
             "scenes": scenes, "ending": t(obj.get("ending"), 300),
+            "music": _clean_music(obj.get("music")),
             "cover_scene": int(obj.get("cover_scene") or 0) if str(obj.get("cover_scene") or "0").lstrip("-").isdigit() else 0,
             "share_copy": {k: str(share.get(k) or "").replace("—", ",")[:2200] for k in ("linkedin", "x", "instagram")},
             "notes": [t(n, 300) for n in (obj.get("notes") or [])[:8]]}
@@ -601,9 +613,27 @@ def _usage(resp):
             ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")} if u else {}
 
 
+def _clean_music(value):
+    """A music choice from the list; anything else is no music. Absent stays absent (an older plan)."""
+    if value is None:
+        return None
+    return value if value in MUSIC_CHOICES else "none"
+
+
+def _music_lines():
+    from tracker import video_music
+    return "\n".join("  - %s: %s" % (t["key"], t["suits"]) for t in video_music.tracks()) + \
+        "\n  - none: no music"
+
+
+def _music_hint():
+    from tracker import video_music
+    return "; ".join("%s suits %s" % (", ".join(t["styles"]), t["key"]) for t in video_music.tracks() if t["styles"])
+
+
 def _system():
     scenes = "\n".join("- %s: %s" % (k, v) for k, v in SCENES.items())
-    return SYSTEM % {"scenes": scenes, "min": _num(MIN_SCENE_S), "max": _num(MAX_SCENE_S), "nmin": MIN_SCENES,
+    return SYSTEM % {"scenes": scenes, "music": _music_lines(), "music_hint": _music_hint(), "min": _num(MIN_SCENE_S), "max": _num(MAX_SCENE_S), "nmin": MIN_SCENES,
                      "nmax": MAX_SCENES, "emax": MAX_EMPHASIS}
 
 
@@ -700,7 +730,8 @@ def edit_plan(plan, request, brief, choices, brand, sources, *, client=None, loa
     client = client or _client()
     record = {"email": email, "project_id": project_id, "version_id": version_id}
     content = request_content(brief, choices, brand, sources, load_blob=load_blob or (lambda aid: None))
-    keep = {k: plan.get(k) for k in ("idea", "audience", "hook", "scenes", "ending", "cover_scene", "share_copy", "notes")}
+    keep = {k: plan.get(k) for k in ("idea", "audience", "hook", "scenes", "ending", "music", "cover_scene",
+                                     "share_copy", "notes")}
     content[-1] = {"type": "text", "text": "The approved plan:\n%s\n\nThe change asked for: %s\n\n%s" % (
         json.dumps(keep, ensure_ascii=False), " ".join(str(request).split())[:1000],
         EDIT_NOTE % _num(choices["seconds"]))}

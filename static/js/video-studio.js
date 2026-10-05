@@ -783,6 +783,25 @@
           if (V.client) p.appendChild(el("p", "vs-small", "Changes are saved for " + V.client + "'s next video too."));
           side.appendChild(p);
         }
+        var mp = panel("Music", "vs-music");
+        var mf = el("label", "pw-field"); mf.appendChild(el("span", null, "Music bed"));
+        var ms = el("select"); ms.setAttribute("aria-label", "Music");
+        (plan.music_menu || []).concat([{ key: "none", label: "No music", suits: "" }]).forEach(function (m) {
+          var o = el("option", null, m.label); o.value = m.key; ms.appendChild(o);
+        });
+        ms.value = plan.music || "none";
+        var hint = el("p", "vs-small");
+        var player = el("audio"); player.controls = true; player.preload = "none"; player.className = "vs-music-play";
+        function showMusic() {
+          var m = (plan.music_menu || []).filter(function (x) { return x.key === ms.value; })[0];
+          hint.textContent = m ? m.suits : "The video will be silent.";
+          player.hidden = !m;
+          if (m) player.src = BASE + "/music/" + m.key + ".mp3";
+        }
+        ms.addEventListener("change", function () { plan.music = ms.value; showMusic(); changed(); });
+        mf.appendChild(ms); mp.appendChild(mf); mp.appendChild(hint); mp.appendChild(player);
+        showMusic();
+        side.appendChild(mp);
         var sp = panel("Share copy", "vs-share");
         (plan.share_suits || []).forEach(function (k) {
           var label = { linkedin: "LinkedIn", x: "X", instagram: "Instagram" }[k];
@@ -810,7 +829,7 @@
       stage.appendChild(el("p", "vs-small vs-approve-note", "Approving starts the video: about 3 to 8 minutes. Try another idea makes a new plan, as a new version."));
 
       function payload() {
-        var body = { scenes: plan.scenes, share_copy: plan.share_copy, cover_scene: plan.cover_scene };
+        var body = { scenes: plan.scenes, share_copy: plan.share_copy, cover_scene: plan.cover_scene, music: plan.music || "none" };
         if (brand) body.brand = brand;
         return body;
       }
@@ -885,6 +904,13 @@
       var acts = el("div", "vs-result-acts"); acts.appendChild(dl);
       acts.appendChild(el("span", "vs-small", [v.shape_label, secs(v.seconds), r.mb + " MB", v.minutes ? v.minutes + " min to make" : "", money(v.cost_usd)].filter(Boolean).join(" · ")));
       right.appendChild(acts);
+      if (r.music) {
+        var credit = el("p", "vs-small vs-music-credit");
+        credit.appendChild(document.createTextNode("Music: " + r.music.label + ". Credit line, optional to add to your post: "));
+        var ml = el("a", null, r.music.credit); ml.href = r.music.url; ml.target = "_blank"; ml.rel = "noopener";
+        credit.appendChild(ml);
+        right.appendChild(credit);
+      }
       if (r.share.length) {
         var sp = panel("Share text", "vs-share-out");
         r.share.forEach(function (s) {

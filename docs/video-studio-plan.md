@@ -990,3 +990,22 @@ ads:
 - Moving words carry `data-layout-allow-overlap`: their travel is hidden by their
   mask, but the check would count it. Every other text block is still checked.
   `scripts/check_video_scenes.py` passes in all 16 combinations.
+
+**Music.** Videos now have a music bed, chosen by mood:
+- **The tracks:** nine bundled tracks by Sascha Ende (ende.app), CC BY 4.0, which
+  allows commercial use including ads. His FAQ makes the credit voluntary; the
+  video page still shows the credit line. They live in `tracker/video_kit/music/`
+  with `music.json` (moods: warm, uplifting, corporate, upbeat, bold, playful,
+  cinematic, documentary, minimal), are fetched by `scripts/fetch_video_music.py`,
+  cut to 62-second beds after any quiet intro, and evened out to -16 LUFS.
+- **Choosing:** the planner picks the mood (`plan.music`: a mood or "none"; each
+  style has a default mood). The plan editor has a Music panel with a player
+  (`/music/<mood>.mp3`) and "No music". "Make changes" can change it too ("no
+  music", "something calmer").
+- **In the video:** one `<audio id="music">` from the kit, fading in over 0.3 s and
+  out over the last 1.2 s on HyperFrames' volume lane. Plans made before music
+  existed stay silent. Claude's review keeps the audio as it is.
+- **Checked:** a rendered 15 s video carries an AAC track at -16.6 LUFS, near
+  silence at 0 s and at the end. The library check passes with music on.
+- **YouTube:** Content ID sometimes claims these tracks; the licence covers the
+  use, so dispute the claim and cite CC BY 4.0.
