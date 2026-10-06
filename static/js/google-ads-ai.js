@@ -265,7 +265,9 @@
     var box = $("gar-review");
     clear(box);
     box.appendChild(el("div", "gar-empty", "Loading…"));
-    try { history.replaceState(null, "", "?account=" + encodeURIComponent(account)); } catch (e) { /* not essential */ }
+    if (!document.body.hasAttribute("data-acct-single")) {   // one client's page: its URL already names it
+      try { history.replaceState(null, "", "?account=" + encodeURIComponent(account)); } catch (e) { /* not essential */ }
+    }
     $("gar-doc").textContent = "Reading the Google Doc…";
     Promise.all([send(API + "/brief?account=" + encodeURIComponent(account)),
                  send(API + "/reviews?account=" + encodeURIComponent(account)),

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    AN ACCOUNT'S HOME (/<account>) — one client, everything for it
+
+    The headline is the account switch, as on the hub: the account's name in
+    the marker, the chevron opening the picker. Under it the account's last 30
+    days in Google Ads (four blocks, the one you came for filled orange), its
+    pages (each reads only this account's data), and its profile from the
+    master doc. The name and mark carry across from the picker or the hub's
+    card (view-transition-name: acct-name, acct-av).
+-#}
+<html lang="en">
+<head>
+{{ head(acct.name, ["account-space.css?v=1"]) }}
+</head>
+<body class="as-page">
+
+{{ topbar([]) }}
+
+<main class="as-shell">
+
+  <section class="as-hero" aria-labelledby="as-name">
+    <div class="as-hero-top">
+      <span class="ap-av as-av-xl" data-vt-name
+            style="--av-bg:{{ card.avatar.bg }};--av-fg:{{ card.avatar.fg }};view-transition-name: acct-av">{{ card.avatar.initials }}</span>
+      <div class="as-tags">
+        <span class="as-tag as-tag--lbl">Client account</span>
+        {%- for c in cids %}<span class="as-tag" title="Google Ads customer ID">Google Ads {{ c }}</span>{% endfor %}
+        {%- if st %}<span class="as-tag as-tag--live"><i></i>Data through {{ nice_day(st.to) }}</span>{% endif %}
+        {%- if acct.hidden %}<span class="as-tag">Hidden from the lists</span>{% endif %}
+      </div>
+      <div class="as-hero-actions">
+        {%- if doc_url %}
+        <a class="as-btn as-btn--line" href="{{ doc_url }}" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+          Master doc
+        </a>
+        {%- endif %}
+        {%- if acct.ads_names %}
+        <a class="as-btn as-btn--ink" href="/{{ acct.slug }}/google-ads">
+          Google Ads
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        {%- endif %}
+      </div>
+    </div>
+
+    <span class="as-pre" aria-hidden="true">Working on</span>
+    <h1 class="as-title" id="as-name">
+      <button type="button" class="as-switch" data-acct-picker data-acct-page=""
+              aria-haspopup="dialog" aria-expanded="false" aria-label="Working on {{ acct.name }}. Switch account">
+        <span class="as-mk" data-vt-name style="view-transition-name: acct-name">{{ acct.name }}</span>
+        <span class="as-chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
+      </button>
+    </h1>
+
+    <p class="as-facts">
+      {%- if profile.website %}
+      <a class="as-fact as-fact--link" href="{{ profile.website }}" target="_blank" rel="noopener nofollow">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>{{ profile.domain }}</a>
+      {%- endif %}
+      {%- if profile.industry %}<span class="as-fact">{{ profile.industry }}</span>{% endif %}
+      {%- if profile.locations %}<span class="as-fact">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>{{ profile.locations|join(", ") }}</span>{% endif %}
+      {%- if profile.manager %}<span class="as-fact">Account manager: {{ profile.manager }}</span>{% endif %}
+      {%- if not (profile.website or profile.industry or profile.locations) %}
+      <span class="as-fact as-fact--quiet">{{ "Google Ads account" if acct.ads_names else "From the master doc" }}{% if acct.ads_names|length > 1 %}s: {{ acct.ads_names|join(", ") }}{% endif %}</span>
+      {%- endif %}
+    </p>
+  </section>
+
+  {# ── The last 30 days in Google Ads ───────────────────────────────── #}
+  {%- if st %}
+  <section class="as-kpis" aria-label="Google Ads, last 30 days">
+    {%- set d = st.delta %}
+    <a class="as-kpi as-kpi--acc" href="/{{ acct.slug }}/google-ads">
+      <span class="as-kpi-l">Spend <small>last 30 days</small></span>
+      <b class="as-kpi-v" data-count="{{ st.cost }}" data-fmt="money" data-cur="{{ st.currency }}">{{ money(st.cost, st.currency) }}</b>
+      <span class="as-kpi-d">{{ delta_text(d.cost) }}</span>
+      <svg class="as-kpi-spark" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true" data-spark="{{ st.daily|map(attribute='cost')|join(',') }}"></svg>
+    </a>
+    <a class="as-kpi as-kpi--ink" href="/{{ acct.slug }}/google-ads">
+      <span class="as-kpi-l">Conversions</span>
+      <b class="as-kpi-v" data-count="{{ st.conv }}" data-fmt="num1">{{ number(st.conv, 1) }}</b>
+      <span class="as-kpi-d">{{ delta_text(d.conv) }}</span>
+      <svg class="as-kpi-spark" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true" data-spark="{{ st.daily|map(attribute='conv')|join(',') }}"></svg>
+    </a>
+    <a class="as-kpi as-kpi--sky" href="/{{ acct.slug }}/google-ads">
+      <span class="as-kpi-l">Cost / conversion</span>
+      <b class="as-kpi-v"{% if st.cpa is not none %} data-count="{{ st.cpa }}" data-fmt="money" data-cur="{{ st.currency }}"{% endif %}>{{ money(st.cpa, st.currency) if st.cpa is not none else "—" }}</b>
+      <span class="as-kpi-d">{{ delta_text(d.cpa) }}</span>
+      {%- set cpas = st.daily|map(attribute='cpa7')|reject('none')|list %}
+      {%- if cpas|length > 1 %}
+      <svg class="as-kpi-spark" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true" data-spark="{{ cpas|join(',') }}"></svg>
+      {%- endif %}
+    </a>
+    <a class="as-kpi as-kpi--amber" href="/{{ acct.slug }}/google-ads">
+      <span class="as-kpi-l">Clicks</span>
+      <b class="as-kpi-v" data-count="{{ st.clicks }}" data-fmt="num">{{ number(st.clicks) }}</b>
+      <span class="as-kpi-d">{{ delta_text(d.clicks) }}</span>
+      <svg class="as-kpi-spark" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true" data-spark="{{ st.daily|map(attribute='clicks')|join(',') }}"></svg>
+    </a>
+  </section>
+  {%- endif %}
+
+  {# ── Its pages ──────────────────────────────────────────────────────── #}
+  <section class="as-mods" aria-labelledby="as-mods-h">
+    <h2 class="as-h2" id="as-mods-h">Everything for {{ acct.name }}</h2>
+    <div class="as-mod-grid">
+      {%- if acct.ads_names %}
+      <a class="as-mod as-mod--wide" href="/{{ acct.slug }}/google-ads">
+        <span class="as-mod-top">
+          <span class="as-mod-ic as-mod-ic--acc"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="10" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="6" rx="1.6"/><rect x="13.5" y="11" width="7.5" height="10" rx="1.6"/><rect x="3" y="15" width="7.5" height="6" rx="1.6"/></svg></span>
+          <span class="as-mod-state"><i></i>Live</span>
+        </span>
+        <span class="as-mod-cat">Client reporting</span>
+        <span class="as-mod-name">Google Ads performance</span>
+        {%- if st and st.campaigns %}
+        <span class="as-camps">
+          {%- for c in st.campaigns[:5] %}
+          <span class="as-camp">
+            <span class="as-camp-n"><b>{{ c.name }}</b><small>{{ c.type }}{% if acct.ads_names|length > 1 %} · {{ c.account }}{% endif %}</small></span>
+            <span class="as-camp-bar"><i style="width:{{ '%.1f'|format([c.share * 100, 2]|max) }}%"></i></span>
+            <span class="as-camp-v">{{ money(c.cost, st.currency) }}</span>
+          </span>
+          {%- endfor %}
+        </span>
+        <span class="as-mod-foot">{{ st.campaigns|length }} campaign{{ 's' if st.campaigns|length != 1 }} in 30 days<span class="as-go">Open the dashboard &rarr;</span></span>
+        {%- else %}
+        <span class="as-mod-desc">No campaign has had impressions in the last 30 days.</span>
+        <span class="as-mod-foot"><span class="as-go">Open the dashboard &rarr;</span></span>
+        {%- endif %}
+      </a>
+
+      <a class="as-mod" href="/{{ acct.slug }}/google-ads/ai-review">
+        <span class="as-mod-top">
+          <span class="as-mod-ic as-mod-ic--sky"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg></span>
+          {%- if review %}<span class="as-mod-state as-mod-state--{{ review.status }}"><i></i>{{ review.status|capitalize }}</span>{% endif %}
+        </span>
+        <span class="as-mod-cat">Claude</span>
+        <span class="as-mod-name">AI review</span>
+        {%- if review %}
+        <span class="as-mod-desc">Last review {{ nice_day(review.created_at) }}{% if acct.ads_names|length > 1 %} ({{ review.account }}){% endif %}: every campaign judged against the account's notes in the master doc.</span>
+        <span class="as-mod-foot"><span class="as-go">Open the review &rarr;</span></span>
+        {%- else %}
+        <span class="as-mod-desc">Claude reads every campaign against this account's notes in the master doc: what works, what does not, and what to do next.</span>
+        <span class="as-mod-foot"><span class="as-go">Run the first review &rarr;</span></span>
+        {%- endif %}
+      </a>
+      {%- else %}
+      <div class="as-mod as-mod--note">
+        <span class="as-mod-cat">Google Ads</span>
+        <span class="as-mod-name">No Google Ads account linked</span>
+        <span class="as-mod-desc">This account comes from the master doc. Add its Google Ads ID to the profile (&ldquo;Google Ads ID: 123-456-7890&rdquo;) and its campaigns, dashboard and AI review appear here.</span>
+      </div>
+      {%- endif %}
+    </div>
+  </section>
+
+  {# ── The profile, from the master doc ──────────────────────────────── #}
+  <section class="as-prof" aria-labelledby="as-prof-h">
+    <div class="as-prof-head">
+      <h2 class="as-h2" id="as-prof-h">From the master doc</h2>
+      {%- if doc_url and profile.fields %}
+      <a class="as-link" href="{{ doc_url }}" target="_blank" rel="noopener">Edit in the doc &nearr;</a>
+      {%- endif %}
+    </div>
+    {%- if doc_error %}
+    <p class="as-warn" role="alert">{{ doc_error }}</p>
+    {%- endif %}
+
+    {%- if profile.fields %}
+    <div class="as-prof-grid">
+      {%- if profile.goals %}
+      <div class="as-fact-t as-fact-t--goals"><span class="as-fact-l">Goals &amp; KPIs</span><p>{{ profile.goals }}</p></div>
+      {%- endif %}
+      {%- if profile.audience %}
+      <div class="as-fact-t"><span class="as-fact-l">Audience</span><p>{{ profile.audience }}</p></div>
+      {%- endif %}
+      {%- if profile.services %}
+      <div class="as-fact-t"><span class="as-fact-l">Services</span>
+        <span class="as-chips">{% for x in profile.services %}<span class="as-chip">{{ x }}</span>{% endfor %}</span></div>
+      {%- endif %}
+      {%- if profile.competitors %}
+      <div class="as-fact-t"><span class="as-fact-l">Competitors</span>
+        <span class="as-chips">
+          {%- for c in profile.competitors %}
+          {%- if c.website %}<a class="as-chip as-chip--link" href="{{ c.website }}" target="_blank" rel="noopener nofollow">{{ c.name }}</a>
+          {%- else %}<span class="as-chip">{{ c.name }}</span>{% endif %}
+          {%- endfor %}
+        </span></div>
+      {%- endif %}
+      {%- if profile.locations %}
+      <div class="as-fact-t"><span class="as-fact-l">Locations</span>
+        <span class="as-chips">{% for x in profile.locations %}<span class="as-chip">{{ x }}</span>{% endfor %}</span></div>
+      {%- endif %}
+      {%- if profile.colours or profile.fonts %}
+      <div class="as-fact-t"><span class="as-fact-l">Brand</span>
+        {%- if profile.colours %}
+        <span class="as-swatches">{% for c in profile.colours %}<span class="as-sw"><i style="background:{{ c }}"></i>{{ c|upper }}</span>{% endfor %}</span>
+        {%- endif %}
+        {%- if profile.fonts %}<p class="as-fonts">{{ profile.fonts|join(", ") }}</p>{% endif %}
+      </div>
+      {%- endif %}
+      {%- if profile.tone %}
+      <div class="as-fact-t"><span class="as-fact-l">Tone of voice</span><p>{{ profile.tone }}</p></div>
+      {%- endif %}
+      {%- if profile.social %}
+      <div class="as-fact-t"><span class="as-fact-l">Social</span>
+        <span class="as-chips">
+          {%- for platform, link in profile.social|dictsort %}
+          <a class="as-chip as-chip--link" href="{{ link }}" target="_blank" rel="noopener nofollow">{{ social_label(platform) }}</a>
+          {%- endfor %}
+        </span></div>
+      {%- endif %}
+    </div>
+    <p class="as-src">From {% if acct.tab %}the tab &ldquo;{{ acct.tab }}&rdquo;{% else %}this account's part{% endif %} of the master doc. Change it there; this page follows within a minute.</p>
+    {%- else %}
+    <div class="as-empty">
+      <div class="as-empty-t">
+        <b>No profile for {{ acct.name }} yet.</b>
+        <p>Give the account a tab in the master doc, named as it is in Google Ads, and paste this at the top.
+           Every agent then knows its website, locations, competitors and brand; the notes under it are what the AI review reads.</p>
+        <div class="as-empty-actions">
+          <button type="button" class="as-btn as-btn--ink" data-copy="#as-template">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            <span>Copy the profile</span>
+          </button>
+          {%- if doc_url %}
+          <a class="as-btn as-btn--line" href="{{ doc_url }}" target="_blank" rel="noopener">Open the master doc &nearr;</a>
+          {%- else %}
+          <a class="as-btn as-btn--line" href="/dashboards/google-ads/ai-review">Link the master doc</a>
+          {%- endif %}
+        </div>
+      </div>
+      <pre class="as-template" id="as-template">{{ template }}</pre>
+    </div>
+    {%- endif %}
+  </section>
+
+  <p class="as-foot">{{ brand.name }} &middot; {{ acct.name }} &middot; Internal use only</p>
+</main>
+
+<script id="acct-data" type="application/json">{{ accounts|tojson }}</script>
+<script defer src="{{ url_for('static', filename='js/account-space.js') }}?v=1"></script>
+{{ topbar_script() }}
+<script>
+(function(){
+  var _start = Date.now(), _sent = false;
+  function _send(){
+    if(_sent) return; _sent = true;
+    fetch('/api/track', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({page: window.location.pathname, title: 'Account', seconds: Math.round((Date.now()-_start)/1000),
+      email: '{{ user.email if user else "" }}'}), keepalive: true}).catch(function(){});
+  }
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') _send(); });
+  window.addEventListener('beforeunload', _send);
+})();
+</script>
+</body>
+</html>

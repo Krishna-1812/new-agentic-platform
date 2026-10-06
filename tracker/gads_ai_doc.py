@@ -7,7 +7,10 @@ Each account has its own part of it, found by name:
   - a heading (Heading 1-6, or Title) naming the account, up to the next heading of
     the same or a higher level, or
   - a short line on its own naming the account (for docs written without heading
-    styles), up to the next such line or heading.
+    styles), up to the next such line or heading;
+  - a tab whose profile gives the account's Google Ads ID ("Google Ads ID: 123-456-7890"),
+    for a tab titled with the client's own name (the master doc's profile block,
+    tracker/client_profile.py).
 
 A tab or heading called "General", "All accounts", "Agency", "Common" or "Overall"
 is shared: it goes with every account's part (house rules, reporting cadence...).
@@ -188,11 +191,24 @@ def _md(lines):
     return "\n".join(("#" * max(lv, 1) + " " + tx) if lv is not None else tx for lv, tx in lines)
 
 
+def _profile_owner(lines, cids):
+    """The account a tab's profile names by its Google Ads ID ("Google Ads ID: 123-456-7890"), for a tab
+    titled with the client's own name rather than the Google Ads account's (tracker/client_profile.py)."""
+    if not cids:
+        return None
+    from tracker import client_profile
+    ids = client_profile.parse(_md(lines)).get("google_ads_ids") or []
+    by_cid = {re.sub(r"\D", "", c or ""): a for a, c in cids.items()}
+    return next((by_cid[i] for i in ids if i in by_cid), None)
+
+
 def parts(doc, accounts, cids=None):
     """{"accounts": {account: [(where, text)]}, "shared": [(where, text)]} for the whole doc."""
     found, shared = {}, []
     for title, lines in tabs(doc):
         who = owner(title, accounts, cids, shortened=True) if title else None
+        if not who and title and not _shared(title):
+            who = _profile_owner(lines, cids)
         if who:
             found.setdefault(who, []).append(("tab “%s”" % title, _md(lines)))
             continue

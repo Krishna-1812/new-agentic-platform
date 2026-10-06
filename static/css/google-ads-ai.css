@@ -9,7 +9,7 @@
    ──────────────────────────────────────────────────────────────────────── */
 
 .gar-hero .gad-hero-title { margin-top: var(--sp-5); }
-.gar-pick { position: relative; max-width: 100%; }
+.gar-pick { position: relative; display: inline-block; max-width: 100%; }
 .gar-select {
   appearance: none; -webkit-appearance: none; max-width: 100%;
   font-family: var(--font-display); font-weight: 600; font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
@@ -25,6 +25,9 @@
 }
 .gar-select:focus-visible { outline: 3px solid var(--ink-paper); outline-offset: 3px; }
 .gar-select option { font-family: var(--font-body); font-size: 16px; color: #121213; background: #fff; }
+.gar-select[hidden] { display: none; }
+.gar-switch { text-align: left; display: inline-block; }
+.gar-switch:hover { filter: brightness(1.04); }
 
 .gar-top { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: var(--gap); margin-top: var(--gap); }
 .gar-top > .gad-panel { margin-top: 0; }

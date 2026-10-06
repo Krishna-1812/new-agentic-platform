@@ -1,0 +1,186 @@
+/* ════════════════════════════════════════════════════════════════════════
+   ACCOUNT PICKER — the switch in the top bar, and the panel it opens
+   Behaviour in account-picker.js. Loaded on every page by _bento.html's
+   head(), because the switch is in every page's top bar.
+
+   The panel is the command palette's sibling (same white card, same fill for
+   the active row, same keys in the footer) but anchored to whatever opened
+   it, so it reads as that control's own dropdown rather than a modal.
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* ── The mark: an account's initials on its colour ───────────────────── */
+.ap-av {
+  --av-bg: var(--s2); --av-fg: var(--tx);
+  width: 28px; height: 28px; border-radius: 9px; flex: none;
+  display: inline-grid; place-items: center;
+  background: var(--av-bg); color: var(--av-fg);
+  font-family: var(--font-body); font-size: 11.5px; font-weight: var(--fw-bold);
+  letter-spacing: .02em; line-height: 1; user-select: none;
+}
+.ap-av svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linejoin: round; }
+.ap-av--all { background: var(--ink); color: var(--tx-on-ink); }
+
+/* ── The switch in the top bar ───────────────────────────────────────── */
+.ap-pill {
+  display: inline-flex; align-items: center; gap: 9px; min-width: 0; max-width: min(320px, 46vw);
+  height: 40px; padding: 0 12px 0 6px; border-radius: var(--r-pill);
+  background: var(--s1); color: var(--tx); cursor: pointer;
+  font-family: var(--font-body); font-size: var(--fs-sm); font-weight: var(--fw-semi);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: box-shadow var(--dur) var(--ease), background var(--dur) var(--ease);
+  view-transition-name: acct-pill;
+}
+.ap-pill .ap-av { width: 28px; height: 28px; border-radius: var(--r-pill); }
+.ap-pill:hover, .ap-pill[aria-expanded="true"] { box-shadow: inset 0 0 0 1px var(--tx); }
+.ap-pill-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.ap-pill-chev {
+  width: 16px; height: 16px; flex: none; fill: none; stroke: var(--tx2); stroke-width: 2.2;
+  stroke-linecap: round; stroke-linejoin: round; transition: transform 260ms cubic-bezier(.34, 1.56, .64, 1);
+}
+.ap-pill[aria-expanded="true"] .ap-pill-chev { transform: rotate(180deg); }
+.bn-top-left .ap-pill + .bn-crumbs { margin-left: calc(var(--sp-2) - var(--sp-5)); }
+.bn-top-left .ap-pill + .bn-crumbs::before { content: "/"; color: var(--tx3); margin-right: var(--sp-1); }
+
+/* ── The panel ───────────────────────────────────────────────────────── */
+.ap-layer { position: fixed; inset: 0; z-index: 8800; }
+.ap-layer[hidden] { display: none; }
+.ap-panel {
+  position: absolute; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--s1); border-radius: 18px;
+  box-shadow: 0 0 0 1px rgba(18, 18, 19, .06), var(--shadow-overlay);
+  opacity: 0; transform: translateY(-6px) scale(.97);
+  transition: opacity 140ms var(--ease), transform 140ms var(--ease);
+}
+.ap-layer.is-on .ap-panel {
+  opacity: 1; transform: none;
+  transition: opacity 180ms var(--ease), transform 280ms cubic-bezier(.16, 1, .3, 1);
+}
+
+.ap-head {
+  display: flex; align-items: center; gap: var(--sp-3); flex: none;
+  padding: 14px 14px 12px 18px; border-bottom: 1px solid var(--line);
+}
+.ap-head-ic { width: 17px; height: 17px; flex: none; fill: none; stroke: var(--tx3); stroke-width: 1.9; stroke-linecap: round; }
+.ap-input {
+  flex: 1; min-width: 0; height: 30px; outline: none;
+  font-family: var(--font-body); font-size: var(--fs-md); color: var(--tx);
+}
+.ap-input::placeholder { color: var(--tx3); }
+.ap-esc {
+  flex: none; cursor: pointer; font-family: var(--font-body); font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  color: var(--tx3); background: var(--s2); border-radius: var(--r-sm); padding: 4px 8px;
+}
+.ap-esc:hover { color: var(--tx); }
+
+/* Where you are: the current account's own pages, one tap away. */
+.ap-here {
+  display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; flex: none;
+  padding: 10px 18px; background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.ap-here[hidden] { display: none; }
+.ap-here-l { font-size: var(--fs-xs); font-weight: var(--fw-semi); color: var(--tx2); }
+.ap-here-pages { display: flex; gap: 6px; flex-wrap: wrap; }
+.ap-chip {
+  font-size: 12.5px; font-weight: var(--fw-semi); color: var(--tx2);
+  padding: 4px 11px; border-radius: var(--r-pill); background: var(--s1);
+  box-shadow: inset 0 0 0 1px var(--line); transition: background var(--dur-fast) var(--ease);
+}
+.ap-chip:hover { color: var(--tx); box-shadow: inset 0 0 0 1px var(--tx); }
+.ap-chip.is-on { background: var(--ink); color: var(--tx-on-ink); box-shadow: none; }
+
+.ap-list { overflow-y: auto; overscroll-behavior: contain; padding: 6px 8px 8px; flex: 1; min-height: 0; }
+.ap-group {
+  padding: 12px 10px 6px; font-size: 11px; font-weight: var(--fw-semi); letter-spacing: var(--ls-label);
+  text-transform: uppercase; color: var(--tx3);
+}
+.ap-opt {
+  display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 12px;
+  color: var(--tx); text-decoration: none; cursor: pointer; position: relative;
+}
+.ap-opt .ap-av { width: 34px; height: 34px; border-radius: 10px; font-size: 12.5px; }
+.ap-opt.is-active { background: var(--s2); }
+.ap-opt.is-current::after {
+  content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; border-radius: 3px; background: var(--acc);
+}
+.ap-opt.is-going { background: var(--s3); }
+.ap-opt-t { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 1px; }
+.ap-opt-name { font-size: var(--fs-sm); font-weight: var(--fw-semi); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-opt-name mark { background: var(--acc-dim); color: var(--acc-tx); border-radius: 3px; padding: 0 1px; }
+.ap-opt-sub { font-size: 12px; color: var(--tx3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ap-fig { display: flex; align-items: center; gap: 10px; flex: none; }
+.ap-spark { width: 64px; height: 22px; overflow: visible; }
+.ap-spark path { fill: none; stroke: var(--tx3); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.ap-opt.is-active .ap-spark path { stroke: var(--acc); }
+.ap-fig-v { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.15; min-width: 74px; }
+.ap-fig-v b { font-size: 13px; font-weight: var(--fw-semi); }
+.ap-fig-v small { font-size: 11px; color: var(--tx3); }
+.ap-fig-none { font-size: 12px; color: var(--tx3); }
+
+.ap-empty { padding: 22px 12px; display: flex; flex-direction: column; gap: 4px; color: var(--tx2); font-size: var(--fs-sm); }
+.ap-empty b { color: var(--tx); }
+.ap-skel {
+  height: 42px; margin: 6px 10px; border-radius: 10px;
+  background: linear-gradient(90deg, var(--s2) 0%, var(--bg) 50%, var(--s2) 100%) 0 0 / 200% 100%;
+  animation: ap-shimmer 1.2s linear infinite;
+}
+@keyframes ap-shimmer { to { background-position: -200% 0; } }
+
+.ap-foot {
+  display: flex; gap: var(--sp-5); flex: none; padding: 10px 18px; border-top: 1px solid var(--line);
+  font-size: 11.5px; color: var(--tx3);
+}
+.ap-foot kbd {
+  font-family: var(--font-body); font-size: 11px; font-weight: var(--fw-semi); color: var(--tx2);
+  background: var(--s2); border-radius: 5px; padding: 1px 6px;
+}
+
+/* ── Phones: a sheet from the bottom ─────────────────────────────────── */
+.ap-panel.is-sheet {
+  left: 0; right: 0; bottom: 0; top: auto; width: auto; max-height: min(82vh, 640px);
+  border-radius: 22px 22px 0 0; transform: translateY(24px); transform-origin: 50% 100%;
+}
+.ap-layer:has(.is-sheet) { background: rgba(18, 18, 19, 0); transition: background 200ms var(--ease); }
+.ap-layer.is-on:has(.is-sheet) { background: rgba(18, 18, 19, .42); }
+.ap-panel.is-sheet .ap-foot { display: none; }
+.ap-panel.is-sheet .ap-list { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+.ap-panel.is-sheet::before {
+  content: ""; width: 40px; height: 4px; border-radius: 4px; background: var(--s3); margin: 8px auto 0; flex: none;
+}
+
+/* Phones: the brand and the controls share the first row, and the switch takes the whole second
+   row, so a long account name has room and nothing wraps by accident. */
+@media (max-width: 720px) {
+  .bn-top:has(.ap-pill) .bn-top-left { display: contents; }
+  .bn-top:has(.ap-pill) .bn-brand { order: 1; }
+  .bn-top:has(.ap-pill) .bn-top-right { order: 2; margin-left: auto; }
+  .bn-top .ap-pill { order: 3; flex: 1 0 100%; max-width: none; height: 42px; }
+  .ap-pill .ap-pill-t { flex: 1; }
+}
+@media (max-width: 420px) {
+  .ap-fig .ap-spark { display: none; }
+}
+
+/* ── Between pages ───────────────────────────────────────────────────────
+   Every page with the switch opts in to the browser's own transition between
+   pages: the top bar holds still, the switch morphs into the next account's,
+   the account's name and mark travel from the row or card you picked to the
+   next page's title (acct-name, acct-av), and the rest cross-fades in 180ms,
+   the system's one motion. Browsers without view transitions just navigate. */
+@view-transition { navigation: auto; }
+.bn-top { view-transition-name: bn-top; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 180ms; animation-timing-function: var(--ease); }
+::view-transition-group(acct-name), ::view-transition-group(acct-av) {
+  animation-duration: 560ms; animation-timing-function: cubic-bezier(.16, 1, .3, 1);
+}
+::view-transition-old(acct-name) { animation: 180ms ease-out both ap-vt-out; }
+::view-transition-new(acct-name) { animation: 560ms cubic-bezier(.16, 1, .3, 1) both ap-vt-in; }
+::view-transition-group(acct-pill) { animation-duration: 380ms; animation-timing-function: cubic-bezier(.16, 1, .3, 1); }
+@keyframes ap-vt-out { to { opacity: 0; } }
+@keyframes ap-vt-in { from { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+  .ap-panel, .ap-layer.is-on .ap-panel { transition: none; transform: none; }
+  .ap-skel { animation: none; }
+}

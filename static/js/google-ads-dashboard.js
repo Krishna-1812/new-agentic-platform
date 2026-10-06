@@ -381,9 +381,13 @@
   }
 
   /* ── Hero, ticker ───────────────────────────────────────────────────── */
+  /* On a client account's own page (/<account>/google-ads) the rows are that account's alone, "all"
+     means the account, and the data comes from its own scoped endpoints (app.py). */
+  var ALL_LABEL = document.body.getAttribute("data-all-label") || "All accounts";
+  var API_BASE = document.body.getAttribute("data-api-base") || "/api/dashboards/google-ads";
   var lastTitle = null;
   function renderHero(cur) {
-    var name = state.account === "__all__" ? "All accounts" : state.account;
+    var name = state.account === "__all__" ? ALL_LABEL : state.account;
     var h1 = $("gad-account-title"), ln = h1.querySelector(".gad-ln");
     if (lastTitle !== name) {
       var first = lastTitle === null;
@@ -407,7 +411,7 @@
     $("gad-hero-sub").innerHTML =
       "<b>" + fmtDay(state.from) + " – " + fmtDay(state.to, true) + "</b> &middot; " +
       periodLen() + (periodLen() === 1 ? " day" : " days") + " &middot; " +
-      (state.account === "__all__" ? nAcc + (nAcc === 1 ? " account" : " accounts") + " &middot; " : "") +
+      (state.account === "__all__" && nAcc > 1 ? nAcc + " accounts &middot; " : "") +
       nCamp + (nCamp === 1 ? " campaign" : " campaigns") +
       " &middot; data through " + fmtDay(MAX_DAY, true);
   }
@@ -1382,7 +1386,7 @@
 
   function initControls() {
     var accSel = $("gad-account-select");
-    populate(accSel, ACCOUNTS, "All accounts");
+    populate(accSel, ACCOUNTS, ALL_LABEL);
     accSel.addEventListener("change", function () { setAccount(accSel.value); });
 
     var typeSel = $("gad-type-select");
@@ -1457,13 +1461,13 @@
     refresh.addEventListener("click", function () {
       var label = refresh.querySelector("span");
       refresh.disabled = true; refresh.classList.add("is-busy"); label.textContent = "Refreshing";
-      fetch("/api/dashboards/google-ads/refresh", { method: "POST", headers: { "X-Requested-With": "fetch" } })
+      fetch(API_BASE + "/refresh", { method: "POST", headers: { "X-Requested-With": "fetch" } })
         .then(function (r) { return r.json(); })
         .then(function (d) {
           if (d && d.ok && d.rows && d.rows.length) {
             ALL_ROWS = d.rows; CURRENCY = d.currency_symbol || CURRENCY;
             if (d.insights && d.insights.ok) doc.dispatchEvent(new CustomEvent("gad:insights", { detail: d.insights }));
-            derive(); populate(accSel, ACCOUNTS, "All accounts"); populate(typeSel, uniq("type"), "All campaign types"); populate(stSel, uniq("state"), "Any status");
+            derive(); populate(accSel, ACCOUNTS, ALL_LABEL); populate(typeSel, uniq("type"), "All campaign types"); populate(stSel, uniq("state"), "Any status");
             if (ACCOUNTS.indexOf(state.account) < 0) state.account = "__all__";
             if (state.preset !== "custom") applyPreset(state.preset);
             // Every value re-rolls from its current digits.

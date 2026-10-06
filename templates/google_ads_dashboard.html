@@ -17,9 +17,10 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=10"]) }}
+{{ head("Google Ads Performance", ["google-ads-dashboard.css?v=11"]) }}
 </head>
-<body class="gad" data-currency-symbol="{{ currency_symbol }}">
+<body class="gad" data-currency-symbol="{{ currency_symbol }}"
+      {%- if acct %} data-api-base="{{ api_base }}" data-all-label="{{ acct.name }}"{% endif %}>
 
 {{ topbar([("Google Ads", none)]) }}
 
@@ -65,18 +66,27 @@
     <div class="gad-hero-title">
       <label class="gad-hero-pre" for="gad-account-select">Performance for</label>
       <div class="gad-switch">
-        <h1 class="gad-h1" id="gad-account-title"><span class="gad-ln"><span><span class="gad-mk">All accounts</span></span></span></h1>
+        <h1 class="gad-h1" id="gad-account-title"{% if acct %} data-vt-name style="view-transition-name: acct-name"{% endif %}><span class="gad-ln"><span><span class="gad-mk">{{ acct.name if acct else "All accounts" }}</span></span></span></h1>
         <span class="gad-switch-chev" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
         </span>
+        {%- if acct %}
+        {#- One client's page: the title switches CLIENT (the account picker, to the same page for
+            another account), so the native list of Google Ads accounts stays out of sight. The page
+            script still reads it. #}
+        <select id="gad-account-select" class="gad-switch-select" aria-label="Account" hidden tabindex="-1"></select>
+        <button type="button" class="gad-switch-select" data-acct-picker data-acct-page="google-ads"
+                aria-haspopup="dialog" aria-expanded="false" aria-label="Performance for {{ acct.name }}. Switch account"></button>
+        {%- else %}
         <select id="gad-account-select" class="gad-switch-select" aria-label="Account"></select>
+        {%- endif %}
       </div>
     </div>
 
     <div class="gad-hero-foot">
       <p class="gad-hero-sub" id="gad-hero-sub">&nbsp;</p>
       <div class="gad-hero-actions">
-        <a class="gad-btn gad-btn--ghost" id="gad-ai-link" href="/dashboards/google-ads/ai-review">
+        <a class="gad-btn gad-btn--ghost" id="gad-ai-link" href="{{ '/' ~ acct.slug ~ '/google-ads/ai-review' if acct else '/dashboards/google-ads/ai-review' }}"{% if acct %} data-fixed{% endif %}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3"/><path d="M12 18v3"/><path d="M3 12h3"/><path d="M18 12h3"/><path d="m6 6 2 2"/><path d="m16 16 2 2"/><path d="m18 6-2 2"/><path d="m8 16-2 2"/></svg>
           AI review
         </a>
@@ -93,7 +103,7 @@
   </section>
 
   {# ── Ticker: every account at a glance, click one to open it ─────────── #}
-  <div class="gad-tick" aria-label="Accounts at a glance">
+  <div class="gad-tick" aria-label="Accounts at a glance"{% if acct and acct.ads_names|length < 2 %} hidden{% endif %}>
     <div class="gad-tick-track" id="gad-tick-track"></div>
   </div>
 
@@ -708,6 +718,7 @@
 </div>
 {% endif %}
 
+{% if accounts %}<script id="acct-data" type="application/json">{{ accounts|tojson }}</script>{% endif %}
 {% if ok %}
 <script id="gad-data" type="application/json">{{ rows|tojson }}</script>
 {% if insights and insights.ok %}<script id="gad-insights" type="application/json">{{ insights|tojson }}</script>{% endif %}
@@ -718,7 +729,7 @@
 /* The AI review opens on the account picked here (all accounts: the first one there). */
 (function () {
   var sel = document.getElementById("gad-account-select"), link = document.getElementById("gad-ai-link");
-  if (!sel || !link) return;
+  if (!sel || !link || link.hasAttribute("data-fixed")) return;
   function sync() {
     var v = sel.value;
     link.href = "/dashboards/google-ads/ai-review" + (v && v !== "__all__" ? "?account=" + encodeURIComponent(v) : "");
@@ -728,8 +739,8 @@
   sync();
 })();
 </script>
-{% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=8"></script>{% endif %}
-<script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=7"></script>
+{% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=9"></script>{% endif %}
+<script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=8"></script>
 <script>
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */
 (function(){

@@ -13,6 +13,9 @@
      window.__KP_BASE__   the platform-wide destinations (from _bento.html, so
                           the brand strings resolve server-side)
      window.__KP_ITEMS__  page-specific entries, listed first
+   and one added later: window.bentoPaletteAdd(items) appends entries (the
+   client accounts, from account-picker.js, which loads them when the palette
+   first opens: "bn:palette-open").
    ──────────────────────────────────────────────────────────────────────── */
 (function () {
   "use strict";
@@ -90,7 +93,15 @@
     inp.value = "";
     filter("");
     setTimeout(function () { inp.focus(); }, 30);
+    document.dispatchEvent(new CustomEvent("bn:palette-open"));
   }
+
+  window.bentoPaletteAdd = function (xs) {
+    var have = {};
+    ITEMS.forEach(function (x) { have[x.u] = 1; });
+    ITEMS = ITEMS.concat((xs || []).filter(function (x) { return x && x.u && !have[x.u]; }));
+    if (ov.classList.contains("on")) { var keep = sel; filter(inp.value); sel = Math.min(keep, cur.length - 1); render(); }
+  };
 
   function close() {
     ov.classList.remove("on");
