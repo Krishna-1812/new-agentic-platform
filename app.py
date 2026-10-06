@@ -1277,6 +1277,10 @@ def _is_staff(email):
     return email.endswith(STAFF_EMAIL_SUFFIX) or email in ADMIN_EMAILS
 
 
+def _is_admin(email):
+    return (email or "").strip().lower() in ADMIN_EMAILS
+
+
 # Staff domains from before the move to Markify Digital on 2026-09-24. Every
 # login, page view and agent run the team recorded before then is under one of
 # these addresses, and the analytics sheets keep the address a row was written
@@ -1315,6 +1319,26 @@ def _is_internal_path(path):
 def _get_user():
     """Return current user dict or None."""
     return session.get("google_user")
+
+
+def _remember_person():
+    """Keep the signed-in person's name by email (tracker/people_store.py), once a session, so shared
+    work can say who ran it."""
+    user = session.get("google_user") or {}
+    if not user.get("email") or session.get("people_seen"):
+        return
+    session["people_seen"] = True       # tried once a session, so a database outage costs one request
+    try:
+        from tracker import people_store
+        people_store.remember(user["email"], user.get("name", ""))
+    except Exception:
+        app.logger.warning("people: the name could not be saved", exc_info=True)
+
+
+@app.before_request
+def _remember_person_once():
+    if session.get("google_user") and not session.get("people_seen"):
+        _remember_person()
 
 def _login_redirect():
     """Send an unauthenticated visitor to the login page, remembering where they
@@ -1422,6 +1446,7 @@ def auth_google():
         "picture":    idinfo.get("picture", ""),
     }
     session.permanent = True
+    _remember_person()
     nxt = session.pop("next_url", None)
     if not (isinstance(nxt, str) and nxt.startswith("/") and not nxt.startswith("//")):
         # No deep link: @markifydigital.com staff land on the internal hub (/hub);
@@ -5597,7 +5622,7 @@ def google_ads_ai_review_start():
 # to another client. An account's pages read only that account's data: its Google Ads rows are
 # cut down here, and its insights are scoped in google_ads_insights.view (only=).
 from werkzeug.routing import BaseConverter as _BaseConverter, ValidationError as _RouteMiss
-from tracker import client_access, client_accounts, client_accounts_store, client_profile
+from tracker import client_access, client_accounts, client_accounts_store, client_profile, workspace
 
 ACCT_TTL = 60                  # seconds a listing is fresh; a stale one is served while it refreshes
 _ACCT = {"listing": None, "refreshing": False, "reserved": None}
@@ -5676,13 +5701,19 @@ def _acct_build():
     doc, doc_url, doc_error = _acct_doc()
     accounts = client_accounts.build(_gads_ai_accounts(rows), doc)
     stored = client_accounts_store.sync(accounts, _acct_reserved())
-    by_slug, by_key = {}, {}
+    by_slug, by_key, by_space = {}, {}, {}
     for a in accounts:
         a["slug"] = stored["rows"][a["key"]]
+        a["id"] = stored["ids"][a["key"]]
+        a["space"] = workspace.account(a["id"])
         a["stats"] = client_accounts.stats(rows, a["ads_names"])
-        by_slug[a["slug"]], by_key[a["key"]] = a, a
+        by_slug[a["slug"]], by_key[a["key"]], by_space[a["space"]] = a, a, a
     retired = {s: by_key[k]["slug"] for s, k in stored["retired"].items() if k in by_key}
-    return {"accounts": accounts, "by_slug": by_slug, "retired": retired, "at": time.time(),
+    try:
+        workspace.claim_legacy(accounts)
+    except Exception:
+        app.logger.exception("client accounts: earlier work could not be moved to its account")
+    return {"accounts": accounts, "by_slug": by_slug, "by_space": by_space, "retired": retired, "at": time.time(),
             "doc_url": doc_url, "doc_error": doc_error, "doc_read": doc is not None}
 
 
@@ -5950,6 +5981,7 @@ def account_home(acct):
     show_profile = not client or shares["profile"]
     tools = None if client else _acct_tools(acct, email)
     runs = None if client else _acct_runs(acct)
+    history = None if client else _acct_history(acct)
     return render_template(
         "account_home.html", user=_get_user(), acct=acct, st=st, profile=p if show_profile else {"fields": 0},
         card=client_accounts.card(acct, st), pages=_acct_pages(acct, shares if client else None),
@@ -5959,12 +5991,25 @@ def account_home(acct):
         money=client_accounts.money, number=client_accounts.number,
         template=client_profile.template(acct["name"], acct["slug"], acct["customer_ids"], p),
         doc_url=None if client else listing["doc_url"], doc_error=None if client else listing["doc_error"],
-        doc_read=listing["doc_read"], accounts=_acct_nav(), tools=tools, runs=runs)
+        doc_read=listing["doc_read"], accounts=_acct_nav(), tools=tools, runs=runs, history=history)
+
+
+def _acct_history(acct):
+    """The account's History (tracker/account_history.py), with each entry's person named."""
+    from tracker import account_history
+    rows = []
+    try:
+        rows = _people(account_history.entries(acct, library=_acct_library(acct)), key="who")
+    except Exception:
+        app.logger.exception("client accounts: history unreadable")
+    for r in rows:
+        if not r["who"]:
+            r["by"] = ""
+    return {"rows": rows, "filter": account_history.summary(rows)}
 
 
 def _acct_tools(acct, email):
-    """What the account's Page Watch and Video Studio hold for this person, for its home's cards."""
-    from tracker import video_app
+    """What the account's Page Watch and Video Studio hold (the whole team's), for its home's cards."""
     out = {"watches": 0, "changed": 0, "last_change": None, "videos": 0, "ready": 0, "cover": None}
     try:
         board = _acct_pw_board(acct, email)
@@ -5975,8 +6020,7 @@ def _acct_tools(acct, email):
     except Exception:
         app.logger.exception("client accounts: Page Watch unreadable")
     try:
-        names = _acct_names(acct)
-        vids = [v for v in video_app.library_view(email) if (v.get("client") or "").lower() in names]
+        vids = _acct_library(acct)
         out["videos"] = len(vids)
         out["ready"] = sum(1 for v in vids if v.get("cover"))
         out["cover"] = next((v["cover"] for v in vids if v.get("cover")), None)
@@ -6188,9 +6232,9 @@ def account_ai_review_get(acct, review_id):
 
 
 # ── Page Watch inside an account (staff) ─────────────────────────────────────
-# The same Page Watch, showing only the watches filed under this account (their "client" is the
-# account's name or one of its Google Ads names) and filing new ones there. Its website and its
-# competitors from the master doc are offered as one-tap watches.
+# The same Page Watch, showing the account's watches (its space, tracker/workspace.py: everyone's,
+# each with who added it) and filing new ones there. Its website and its competitors from the master
+# doc are offered as one-tap watches.
 def _acct_names(acct):
     return {n.lower() for n in [acct["name"]] + list(acct["ads_names"]) if n}
 
@@ -6207,15 +6251,27 @@ def _acct_rewrite(obj, slug):
     return obj
 
 
+def _people(rows, key="owner"):
+    """Each row's `by`: the name of whoever made it (tracker/people_store.py), "You" for the viewer."""
+    from tracker import people_store
+    me = _pw_email().lower()
+    try:
+        known = people_store.names(r.get(key) for r in rows)
+    except Exception:
+        app.logger.warning("people: names unreadable", exc_info=True)
+        known = {}
+    for r in rows:
+        who = (r.get(key) or "").lower()
+        r["by"] = "You" if who and who == me else people_store.display(who, known)
+    return rows
+
+
 def _acct_pw_board(acct, email):
     from tracker import watch_web
-    board = watch_web.dashboard(email)
-    names = _acct_names(acct)
-    watches = [w for w in board["watches"] if (w.get("client") or "").lower() in names]
-    counts = {"all": len(watches)}
-    for w in watches:
-        counts[w["state"]] = counts.get(w["state"], 0) + 1
-    return _acct_rewrite({"watches": watches, "counts": counts, "clients": []}, acct["slug"])
+    board = watch_web.dashboard(email, space=acct["space"])
+    _people(board["watches"])
+    board["clients"] = []
+    return _acct_rewrite(board, acct["slug"])
 
 
 def _acct_pw_suggest(acct, board):
@@ -6232,7 +6288,25 @@ def _acct_pw_suggest(acct, board):
 
 
 def _acct_watch_ok(acct, view):
-    return (((view or {}).get("client") or "").lower() in _acct_names(acct))
+    return (view or {}).get("space") == acct["space"]
+
+
+def _space_home(space, page):
+    """The account page a piece of work in an account's space lives on, or None."""
+    acct = (_acct_listing().get("by_space") or {}).get(space) if workspace.is_account(space) else None
+    return "/%s/%s" % (acct["slug"], page) if acct else None
+
+
+def _elsewhere(counts, page, noun):
+    """The viewer's own work in accounts, for a line on the General page: [{name, href, n, label}]."""
+    out = []
+    by_space = _acct_listing().get("by_space") or {}
+    for space, n in sorted(counts.items(), key=lambda kv: -kv[1]):
+        a = by_space.get(space)
+        if a:
+            out.append({"name": a["name"], "href": "/%s/%s" % (a["slug"], page), "n": n,
+                        "label": "%d %s%s" % (n, noun, "" if n == 1 else "s")})
+    return out
 
 
 @app.route("/<acct:slug>/page-watch")
@@ -6253,7 +6327,9 @@ def account_page_watch_watch(acct, target_id):
     if not view:
         abort(404)
     if not _acct_watch_ok(acct, view):
-        return redirect("%s/watches/%d" % (PW_BASE, target_id))
+        return redirect(_space_home(view.get("space"), "page-watch/watches/%d" % target_id)
+                        or "%s/watches/%d" % (PW_BASE, target_id))
+    _people([view])
     return render_template("page_watch_watch.html", user=_get_user(), w=_acct_rewrite(view, acct["slug"]), acct=acct,
                            days=watch_schedule.DAYS, day_names=watch_schedule.DAY_NAMES,
                            categories=watch_judge.CATEGORIES)
@@ -6267,8 +6343,28 @@ def account_page_watch_change(acct, change_id):
     if not view:
         abort(404)
     if not _acct_watch_ok(acct, view.get("watch")):
-        return redirect("%s/changes/%d" % (PW_BASE, change_id))
+        return redirect(_space_home(view["watch"].get("space"), "page-watch/changes/%d" % change_id)
+                        or "%s/changes/%d" % (PW_BASE, change_id))
     return render_template("page_watch_change.html", user=_get_user(), c=_acct_rewrite(view, acct["slug"]), acct=acct)
+
+
+@app.route("/<acct:slug>/api/page-watch/watches", methods=["GET", "POST"])
+@_acct_view("page-watch", api=True, staff_only=True)
+def account_page_watch_api(acct):
+    """The account's board (GET) and a new watch filed in its space (POST); every other watch call is
+    Page Watch's own, which lets staff into an account's watches."""
+    from tracker import watch_web
+    if request.method == "GET":
+        return jsonify(_acct_pw_board(acct, _pw_email()))
+    body = _pw_body()
+    if body is None:
+        return jsonify(ok=False, error="Send JSON."), 415
+    body = dict(body, client=acct["name"])
+    try:
+        tid = watch_web.create(_pw_email(), body, space=acct["space"])
+    except watch_web.Invalid as exc:
+        return _pw_invalid(exc)
+    return jsonify(ok=True, id=tid, page="/%s/page-watch/watches/%d" % (acct["slug"], tid)), 201
 
 
 # ── Video Studio inside an account (staff) ───────────────────────────────────
@@ -6298,11 +6394,20 @@ def _acct_video_brand(acct):
 @app.route("/<acct:slug>/video-studio")
 @_acct_view("video-studio", staff_only=True)
 def account_video_studio(acct):
+    """The account's videos (everyone's, each with its maker) and its saved brand; new videos are saved
+    to the account."""
     from tracker import video_app
     data = video_app.home(_pw_email())
-    data["account"] = {"name": acct["name"], "home": "/%s/video-studio" % acct["slug"],
+    data["library"] = _acct_library(acct)
+    data["brands"] = video_app.brands_view(acct["space"], account=acct["slug"])
+    data["account"] = {"name": acct["name"], "home": "/%s/video-studio" % acct["slug"], "slug": acct["slug"],
                        "website": acct["profile"].get("website", ""), "brand": _acct_video_brand(acct)}
     return render_template("video_studio.html", user=_get_user(), data=data, acct=acct)
+
+
+def _acct_library(acct):
+    from tracker import video_app
+    return _people(video_app.library_view(_pw_email(), space=acct["space"], base="/%s/video-studio" % acct["slug"]))
 
 
 @app.route("/<acct:slug>/video-studio/videos/<int:project_id>")
@@ -6312,8 +6417,10 @@ def account_video_studio_video(acct, project_id):
     view = video_app.project_view(_pw_email(), project_id, request.args.get("v", type=int))
     if not view:
         abort(404)
-    if (view.get("client") or "").lower() not in _acct_names(acct):
-        return redirect("%s/videos/%d" % (VS_BASE, project_id))
+    if view.get("space") != acct["space"]:
+        return redirect(_space_home(view.get("space"), "video-studio/videos/%d" % project_id)
+                        or "%s/videos/%d" % (VS_BASE, project_id))
+    _people([view])
     return render_template("video_studio_video.html", user=_get_user(), data=view, acct=acct,
                            menu=[{"type": k, "label": lab, "hint": h} for k, lab, h in video_app.SCENE_MENU],
                            fields=video_app.scene_fields(), fonts=video_fonts.families())
@@ -18507,10 +18614,16 @@ def _pw_invalid(exc):
 @app.route(PW_BASE)
 @position2_required
 def page_watch_page():
-    from tracker import watch_schedule, watch_web
+    """Your General watches: the ones not for a client account. An account's are on its own page."""
+    from tracker import watch_schedule, watch_store, watch_web
+    try:
+        elsewhere = _elsewhere(watch_store.account_counts(_pw_email()), "page-watch", "watch")
+    except Exception:
+        app.logger.warning("page watch: account counts unreadable", exc_info=True)
+        elsewhere = []
     return render_template("page_watch.html", user=_get_user(), board=watch_web.dashboard(_pw_email()),
                            status=watch_web.agent_status(), days=watch_schedule.DAYS,
-                           day_names=watch_schedule.DAY_NAMES)
+                           day_names=watch_schedule.DAY_NAMES, elsewhere=elsewhere)
 
 
 @app.route(PW_BASE + "/watches/<int:target_id>")
@@ -18520,6 +18633,9 @@ def page_watch_watch_page(target_id):
     view = watch_web.timeline(target_id, _pw_email())
     if not view:
         abort(404)
+    home = _space_home(view.get("space"), "page-watch/watches/%d" % target_id)
+    if home:
+        return redirect(home)
     return render_template("page_watch_watch.html", user=_get_user(), w=view, days=watch_schedule.DAYS,
                            day_names=watch_schedule.DAY_NAMES, categories=watch_judge.CATEGORIES)
 
@@ -18531,6 +18647,9 @@ def page_watch_change_page(change_id):
     view = watch_web.change_view(change_id, _pw_email())
     if not view:
         abort(404)
+    home = _space_home(view["watch"].get("space"), "page-watch/changes/%d" % change_id)
+    if home:
+        return redirect(home)
     return render_template("page_watch_change.html", user=_get_user(), c=view)
 
 
@@ -18623,7 +18742,13 @@ def page_watch_api_watch(target_id):
     if request.method == "DELETE":
         if not request.is_json:
             return jsonify(ok=False, error="Send JSON."), 415
-        return (jsonify(ok=True), 200) if watch_store.delete_target(target_id, email) else (
+        t = watch_store.get_target(target_id, email)
+        if not t:
+            return jsonify(ok=False, error="Not found."), 404
+        if not workspace.can_delete(email, t["email"], admin=_is_admin(email)):
+            return jsonify(ok=False, error="Only %s or an admin can remove this watch. You can pause it."
+                           % _people([{"owner": t["email"]}])[0]["by"]), 403
+        return (jsonify(ok=True), 200) if watch_store.delete_target(target_id, t["email"]) else (
             jsonify(ok=False, error="Not found."), 404)
     body = _pw_body()
     if body is None:
@@ -18916,8 +19041,15 @@ def _vs_invalid(exc):
 @app.route(VS_BASE)
 @position2_required
 def video_studio_page():
-    from tracker import video_app
-    return render_template("video_studio.html", user=_get_user(), data=video_app.home(_pw_email()))
+    """Your General videos: the ones not for a client account. An account's are on its own page."""
+    from tracker import video_app, video_store
+    try:
+        elsewhere = _elsewhere(video_store.account_counts(_pw_email()), "video-studio", "video")
+    except Exception:
+        app.logger.warning("video studio: account counts unreadable", exc_info=True)
+        elsewhere = []
+    return render_template("video_studio.html", user=_get_user(), data=video_app.home(_pw_email()),
+                           elsewhere=elsewhere)
 
 
 @app.route(VS_BASE + "/music/<key>.mp3")
@@ -18938,6 +19070,9 @@ def video_studio_video_page(project_id):
     view = video_app.project_view(_pw_email(), project_id, request.args.get("v", type=int))
     if not view:
         abort(404)
+    home = _space_home(view.get("space"), "video-studio/videos/%d" % project_id)
+    if home:
+        return redirect(home + ("?v=%d" % request.args["v"] if request.args.get("v", type=int) else ""))
     return render_template("video_studio_video.html", user=_get_user(), data=view,
                            menu=[{"type": k, "label": lab, "hint": h} for k, lab, h in video_app.SCENE_MENU],
                            fields=video_app.scene_fields(), fonts=video_fonts.families())
@@ -18954,7 +19089,13 @@ def video_studio_brands_page():
 @app.route(VS_BASE + "/api/library")
 @position2_required
 def video_studio_library():
+    """The library: yours, or with ?account=<URL name> that client account's."""
     from tracker import video_app
+    if request.args.get("account"):
+        acct = _acct_listing()["by_slug"].get(request.args["account"])
+        if not acct:
+            return jsonify(ok=False, error="No such account."), 404
+        return jsonify(ok=True, library=_acct_library(acct))
     return jsonify(ok=True, library=video_app.library_view(_pw_email()))
 
 
@@ -18965,8 +19106,14 @@ def video_studio_new_video():
     body = _pw_body()
     if body is None:
         return jsonify(ok=False, error="Send JSON."), 400
+    space = None
+    if body.get("account"):                   # made on a client account's own Video Studio
+        acct = _acct_listing()["by_slug"].get(str(body["account"]))
+        if not acct:
+            return jsonify(ok=False, error="That client account is not listed any more."), 400
+        space, body = acct["space"], dict(body, client=acct["name"])
     try:
-        pid = video_app.start_draft(_pw_email(), body)
+        pid = video_app.start_draft(_pw_email(), body, space=space)
     except (video_starts.Bad, video_uploads.Bad) as exc:
         return _vs_invalid(exc)
     except video_builder.Refused as exc:
@@ -19058,7 +19205,13 @@ def video_studio_save_brand():
 @position2_required
 def video_studio_brand_logo():
     from tracker import video_app
-    data = video_app.brand_logo(_pw_email(), request.args.get("client", ""))
+    owner = _pw_email()
+    if request.args.get("account"):
+        acct = _acct_listing()["by_slug"].get(request.args["account"])
+        if not acct:
+            abort(404)
+        owner = acct["space"]
+    data = video_app.brand_logo(owner, request.args.get("client", ""))
     if not data:
         abort(404)
     resp = make_response(data)

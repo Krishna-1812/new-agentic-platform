@@ -112,13 +112,16 @@ def clean(data, *, partial=False):
 
 
 # ── Watches ──────────────────────────────────────────────────────────────────
-def create(email, data):
-    """A new watch from a request body. Returns its id. Raises Invalid."""
+def create(email, data, space=None):
+    """A new watch from a request body, saved to `space` (a client account's) or to the person's own
+    General work. Returns its id. Raises Invalid."""
+    from tracker import workspace
     fields = clean(data)
     if len(watch_store.list_targets(email)) >= cfg.MAX_WATCHES_PER_USER:
         raise Invalid("url", "You are watching %d pages, the most allowed. Remove one first."
                       % cfg.MAX_WATCHES_PER_USER)
     url = fields.pop("url")
+    fields["space"] = space if workspace.is_account(space) else workspace.personal(email)
     return watch_store.create_target(email, url, **fields)
 
 
@@ -212,11 +215,13 @@ def card(t):
             "latest": _verdict_view(t.get("latest")),
             "problem": (last_error or {}).get("error") if state in ("error", "blocked") else None,
             "pending": bool(t.get("pending_id")), "fail_count": t.get("fail_count") or 0,
+            "owner": t.get("email") or "", "space": t.get("space") or "",
             "url_page": "%s/watches/%d" % (BASE, t["id"])}
 
 
-def dashboard(email):
-    cards = [card(t) for t in watch_store.dashboard(email)]
+def dashboard(email, space=None):
+    """A client account's board (everyone's watches for it), or with no space the person's own."""
+    cards = [card(t) for t in watch_store.dashboard(email, space=space)]
     counts = {"all": len(cards)}
     for c in cards:
         counts[c["state"]] = counts.get(c["state"], 0) + 1
@@ -295,7 +300,8 @@ def timeline(target_id, email, limit=60):
     t = watch_store.get_target(target_id, email)
     if not t:
         return None
-    rows = watch_store.dashboard(email)
+    from tracker import workspace
+    rows = watch_store.dashboard(email, space=t["space"] if workspace.is_account(t.get("space")) else None)
     row = next((r for r in rows if r["id"] == target_id), None) or dict(t, checks=[], latest=None, thumb_id=None)
     view = card(row)
     view["checks"] = [{"id": c["id"], "outcome": c.get("outcome"),
@@ -331,6 +337,7 @@ def change_view(change_id, email):
              model=(c.get("verdict") or {}).get("model"))
     return {"id": c["id"], "watch": {"id": t["id"], "name": t.get("name") or default_name(t["url"]),
                                       "url": t["url"], "client": t.get("client") or "",
+                                      "space": t.get("space") or "", "owner": t.get("email") or "",
                                       "page": "%s/watches/%d" % (BASE, t["id"])},
             "verdict": v, "created_at": c.get("created_at"),
             "before": {"shot": image_url((before or {}).get("shot_id")),

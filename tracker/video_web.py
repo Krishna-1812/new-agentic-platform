@@ -115,7 +115,7 @@ MAX_TABLES = 3
 
 def new_project(email, *, brief, kind=None, shape=None, seconds=None, style=None, words="write", script="",
                 website="", brand=None, client="", texts=(), tables=(), images=(), logo=None, title="",
-                project_kind=None, hold=False):
+                project_kind=None, hold=False, space=""):
     """Check a request, store it with its sources, and queue its plan.
 
     texts:  [(name, text)]; tables: [(name, csv or pasted text)];
@@ -159,7 +159,7 @@ def new_project(email, *, brief, kind=None, shape=None, seconds=None, style=None
     pid = video_store.create_project(email, client=" ".join((client or "").split())[:120],
                                      title=(title or brief)[:120], brief=brief,
                                      kind=project_kind or choices["kind"], choices=choices,
-                                     status="draft" if hold else "active")
+                                     status="draft" if hold else "active", space=space or "")
     for n, t in ready_texts:
         video_store.add_asset(pid, "text", name=n, data={"text": t})
     for n, t in ready_tables:

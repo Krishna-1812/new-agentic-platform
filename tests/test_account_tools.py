@@ -1,9 +1,9 @@
 """Page Watch and Video Studio inside a client account (/<account>/page-watch, /<account>/video-studio).
 
-The same tools, set up for the account: Page Watch shows only the watches filed under it, files new
-ones there and offers its site and competitors from the master doc; Video Studio fixes the client,
-fills in the website and takes the brand from the profile. Staff only; an invited client is sent to
-the account's home.
+The same tools, set up for the account: Page Watch shows the watches in the account's space (the whole
+team's), files new ones there and offers its site and competitors from the master doc; Video Studio
+fixes the client, fills in the website and takes the brand from the profile. Staff only; an invited
+client is sent to the account's home. (Spaces themselves: tests/test_account_memory.py.)
 """
 
 import json
@@ -60,18 +60,24 @@ def _client(email=STAFF):
     return c
 
 
+def _space(slug="lumina"):
+    return appmod._acct_listing()["by_slug"][slug]["space"]
+
+
 def _data(html, sid):
     return json.loads(re.search(r'<script type="application/json" id="%s">(.*?)</script>' % sid, html, re.S).group(1))
 
 
 def test_the_accounts_page_watch_shows_its_watches_and_offers_its_sites():
-    mine = watch_web.create(STAFF, {"url": "https://smilecare.in/pricing", "client": "Lumina Smiles Dental"})
+    mine = watch_web.create(STAFF, {"url": "https://smilecare.in/pricing", "client": "Lumina Smiles Dental"}, space=_space())
     other = watch_web.create(STAFF, {"url": "https://example.com", "client": "Someone Else"})
     html = _client().get("/lumina/page-watch").get_data(as_text=True)
     board = _data(html, "pw-data")
     assert [w["id"] for w in board["board"]["watches"]] == [mine], "only the watches filed under the account"
     assert board["board"]["watches"][0]["url_page"] == "/lumina/page-watch/watches/%d" % mine
-    assert board["account"] == {"name": "Lumina Smiles Dental", "home": "/lumina/page-watch"}
+    assert board["account"] == {"name": "Lumina Smiles Dental", "home": "/lumina/page-watch",
+                                "api": "/lumina/api/page-watch/watches"}
+    assert board["board"]["watches"][0]["by"] == "You"
     assert 'data-pw-url="https://luminasmiles.in"' in html and 'data-pw-url="https://clovedental.in"' in html
     assert 'data-pw-url="https://smilecare.in"' not in html, "a site already watched is not offered again"
     assert "example.com" not in html
@@ -90,7 +96,7 @@ def test_the_accounts_video_studio_is_set_up_for_it():
     assert d["account"]["brand"]["heading_font"] == "Poppins" and d["account"]["brand"]["body_font"] == "Lora"
     assert 'value="Lumina Smiles Dental" readonly' in html
     assert "A 20-second ad for Lumina Smiles Dental's implants, warm, ending" in html, "the example brief is theirs"
-    pid = video_store.create_project(STAFF, client="Lumina Smiles Dental", brief="Implants ad")
+    pid = video_store.create_project(STAFF, client="Lumina Smiles Dental", brief="Implants ad", space=_space())
     other = video_store.create_project(STAFF, client="Someone Else", brief="x")
     assert _client().get("/lumina/video-studio/videos/%d" % pid).status_code == 200
     r = _client().get("/lumina/video-studio/videos/%d" % other)
@@ -106,8 +112,8 @@ def test_a_brand_font_video_studio_does_not_have_is_left_to_it():
 
 
 def test_the_home_lists_the_tools_for_staff_only():
-    watch_web.create(STAFF, {"url": "https://smilecare.in/pricing", "client": "lumina smiles dental"})
-    video_store.create_project(STAFF, client="Lumina Smiles Dental", brief="x")
+    watch_web.create(STAFF, {"url": "https://smilecare.in/pricing", "client": "lumina smiles dental"}, space=_space())
+    video_store.create_project(STAFF, client="Lumina Smiles Dental", brief="x", space=_space())
     html = _client().get("/lumina").get_data(as_text=True)
     assert 'href="/lumina/page-watch"' in html and "1 page watched for Lumina Smiles Dental" in html
     assert 'href="/lumina/video-studio"' in html and "1 video for Lumina Smiles Dental" in html

@@ -160,9 +160,74 @@
     });
   }
 
+  /* ── History (account home): grouped by day in the viewer's own time, each time said plainly
+     ("3 h ago" today, "14:05" yesterday, the date before), filtered by tool and person. ── */
+  function dayKey(d) { return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+  function dayLabel(d, now) {
+    var y = new Date(now); y.setDate(now.getDate() - 1);
+    if (dayKey(d) === dayKey(now)) return "Today";
+    if (dayKey(d) === dayKey(y)) return "Yesterday";
+    var opts = { weekday: "long", day: "numeric", month: "long" };
+    if (d.getFullYear() !== now.getFullYear()) opts.year = "numeric";
+    return d.toLocaleDateString(undefined, opts);
+  }
+  function timeLabel(d, now) {
+    var mins = Math.round((now - d) / 60000);
+    if (dayKey(d) === dayKey(now)) {
+      if (mins < 1) return "Just now";
+      if (mins < 60) return mins + " min ago";
+      return Math.round(mins / 60) + " h ago";
+    }
+    return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  }
+  function history() {
+    var sec = document.querySelector("[data-hist]");
+    var list = sec && sec.querySelector(".as-hist-list");
+    if (!list) return;
+    var now = new Date(), last = "";
+    Array.prototype.slice.call(list.children).forEach(function (li) {
+      var d = new Date(li.getAttribute("data-at"));
+      if (isNaN(d)) return;
+      var t = li.querySelector(".as-ev-at");
+      if (t) { t.textContent = timeLabel(d, now); t.title = d.toLocaleString(); }
+      var k = dayKey(d);
+      if (k !== last) {
+        var h = el("li", "as-hist-day", dayLabel(d, now));
+        h.setAttribute("aria-hidden", "true");
+        h.setAttribute("data-day", k);
+        list.insertBefore(h, li);
+        last = k;
+      }
+      li.setAttribute("data-day", k);
+    });
+    var tool = "", who = "", none = sec.querySelector(".as-hist-none");
+    function apply() {
+      var shown = {};
+      list.querySelectorAll(".as-ev").forEach(function (li) {
+        var on = (!tool || li.getAttribute("data-tool") === tool) && (!who || li.getAttribute("data-by") === who);
+        li.hidden = !on;
+        if (on) shown[li.getAttribute("data-day")] = true;
+      });
+      list.querySelectorAll(".as-hist-day").forEach(function (h) { h.hidden = !shown[h.getAttribute("data-day")]; });
+      if (none) none.hidden = Object.keys(shown).length > 0;
+    }
+    sec.querySelectorAll("[data-hist-tool]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        tool = b.getAttribute("data-hist-tool");
+        sec.querySelectorAll("[data-hist-tool]").forEach(function (x) {
+          x.classList.toggle("is-on", x === b); x.setAttribute("aria-checked", String(x === b));
+        });
+        apply();
+      });
+    });
+    var sel = sec.querySelector("[data-hist-who]");
+    if (sel) sel.addEventListener("change", function () { who = sel.value; apply(); });
+  }
+
   function init() {
     document.querySelectorAll("svg[data-spark]").forEach(drawSpark);
     document.querySelectorAll("[data-count]").forEach(countUp);
+    history();
     if (window.acctPicker) fillHub(); else window.addEventListener("load", fillHub);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();

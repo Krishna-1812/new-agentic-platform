@@ -156,8 +156,10 @@ def home(email):
             "brands": brands_view(email), "library": library_view(email), "claude": _claude_state()}
 
 
-def start_draft(email, body):
-    """Store the brief, choices, texts and tables as a draft. Returns the project id."""
+def start_draft(email, body, space=None):
+    """Store the brief, choices, texts and tables as a draft, in `space` (a client account's) or in the
+    person's own General work. Returns the project id."""
+    from tracker import workspace
     texts = [(str(t.get("name") or "Text")[:80], t.get("text")) for t in (body.get("texts") or [])
              if isinstance(t, dict)]
     tables = [(str(t.get("name") or "Numbers")[:80], t.get("text")) for t in (body.get("tables") or [])
@@ -169,7 +171,8 @@ def start_draft(email, body):
             email, brief=body.get("brief"), kind=body.get("kind") or None, shape=body.get("shape") or None,
             seconds=body.get("seconds"), style=body.get("style"), words=body.get("words") or "write",
             script=body.get("script") or "", website=str(body.get("website") or "").strip(), brand=brand,
-            client=str(body.get("client") or ""), texts=texts, tables=tables, hold=True)
+            client=str(body.get("client") or ""), texts=texts, tables=tables, hold=True,
+            space=space if workspace.is_account(space) else workspace.personal(email))
     except video_uploads.Bad as exc:                  # a text or a table that cannot be used
         raise video_starts.Bad(str(exc), "sources")
     return pid
@@ -389,6 +392,7 @@ def project_view(email, project_id, version_id=None):
     start = video_starts.STARTS.get(choices.get("kind") or "custom", video_starts.STARTS["custom"])
     assets = video_store.list_assets(project_id, email)
     view = {"id": p["id"], "brief": p["brief"], "client": p.get("client") or "", "draft": p.get("status") == "draft",
+            "space": p.get("space") or "", "owner": p.get("email") or "",
             "choices": {"kind": choices.get("kind"), "kind_label": start[0], "shape": choices.get("shape"),
                         "shape_label": cfg.SHAPE_LABELS.get(choices.get("shape")), "seconds": choices.get("seconds"),
                         "style": choices.get("style") or "", "words": choices.get("words"),
@@ -523,8 +527,8 @@ def _edited_brand(email, project, old, edits, assets):
         logo_bytes = None
         if logo:
             logo_bytes = _png((video_store.get_asset(logo, email, blob=True) or {}).get("bytes"))
-        video_store.save_brand(email, project["client"], video_brand.to_saved(brand), logo_bytes,
-                               clear_logo=not logo)
+        video_store.save_brand(video_store.brand_owner(project), project["client"], video_brand.to_saved(brand),
+                               logo_bytes, clear_logo=not logo)
     return brand
 
 
@@ -588,9 +592,11 @@ def retry(email, version_id):
 
 
 # ── The library ──────────────────────────────────────────────────────────────
-def library_view(email, limit=200):
+def library_view(email, limit=200, space=None, base=None):
+    """The library: a client account's videos (everyone's, each with its maker), or the person's own
+    General ones. `base` is where the video pages are (an account's own Video Studio)."""
     out = []
-    for r in video_store.library(email, limit=limit, exclude_kinds=LIBRARY_HIDDEN):
+    for r in video_store.library(email, limit=limit, exclude_kinds=LIBRARY_HIDDEN, space=space):
         latest, ready = r.get("latest") or {}, r.get("ready") or {}
         start = video_starts.STARTS.get(r["kind"], video_starts.STARTS["custom"])
         if r.get("status") == "draft":
@@ -600,7 +606,8 @@ def library_view(email, limit=200):
         else:
             phase, label = "draft", "Not started"
         shown = ready or latest
-        out.append({"id": r["id"], "url": "%s/videos/%d" % (BASE, r["id"]), "brief": r["brief"],
+        out.append({"id": r["id"], "url": "%s/videos/%d" % (base or BASE, r["id"]), "brief": r["brief"],
+                    "owner": r.get("email") or "",
                     "client": r.get("client") or "", "kind": r["kind"], "kind_label": start[0],
                     "shape_label": cfg.SHAPE_LABELS.get((shown or {}).get("shape") or (r.get("choices") or {}).get("shape")),
                     "seconds": (shown or {}).get("duration_s") or (r.get("choices") or {}).get("seconds"),
@@ -617,8 +624,10 @@ def duplicate(email, project_id):
     if not p or p["kind"] in HIDDEN_KINDS:
         return None
     _can_plan(email)
+    from tracker import workspace
     pid = video_store.create_project(email, client=p.get("client") or "", title=p.get("title") or "",
-                                     brief=p["brief"], kind=p["kind"], choices=p.get("choices") or {})
+                                     brief=p["brief"], kind=p["kind"], choices=p.get("choices") or {},
+                                     space=p["space"] if workspace.is_account(p.get("space")) else workspace.personal(email))
     for a in video_store.list_assets(project_id, email):
         if (a.get("data") or {}).get("from") == "upload" or a["kind"] in ("text", "numbers"):
             full = video_store.get_asset(a["id"], email, blob=True)
@@ -629,12 +638,14 @@ def duplicate(email, project_id):
 
 
 # ── Saved brands ─────────────────────────────────────────────────────────────
-def brand_logo_url(client):
+def brand_logo_url(client, account=None):
     from urllib.parse import quote
-    return "%s/brands/logo?client=%s" % (BASE, quote(client))
+    return "%s/brands/logo?client=%s" % (BASE, quote(client)) + ("&account=%s" % quote(account) if account else "")
 
 
-def brands_view(email):
+def brands_view(email, account=None):
+    """Saved brands by client: a person's own, or with `account` (its URL name; `email` is then the
+    account's space) the client account's, which the whole team shares."""
     out = []
     for r in video_store.list_brands(email):
         b = r.get("brand") or {}
@@ -642,7 +653,7 @@ def brands_view(email):
         out.append({"client": name, "key": r["client"],
                     "colors": {k: b.get(k) for k in video_brand.COLOR_KEYS},
                     "fonts": {"heading": b.get("heading_font"), "body": b.get("body_font")},
-                    "logo": brand_logo_url(r["client"]) if r.get("has_logo") else None,
+                    "logo": brand_logo_url(r["client"], account) if r.get("has_logo") else None,
                     "slack_channel": b.get("slack_channel") or "",
                     "updated_at": r.get("updated_at")})
     return out

@@ -213,8 +213,23 @@ def test_the_memory_store_keeps_slugs_between_lists():
         out = store.sync([_acct("cid:1", "Lumina")], set())
         assert out["rows"] == {"cid:1": "lumina"}
         out = store.sync([_acct("cid:1", "Lumina", "lum")], set())
-        assert out == {"rows": {"cid:1": "lum"}, "retired": {"lumina": "cid:1"}}
+        assert out == {"rows": {"cid:1": "lum"}, "retired": {"lumina": "cid:1"}, "ids": {"cid:1": 1}}
         assert store.load() == out
+    finally:
+        store.reset_memory()
+
+
+def test_an_accounts_id_survives_renames_and_gaining_google_ads():
+    """Work is filed under the id (tracker/workspace.py), so it must never change, even with the key."""
+    store.reset_memory()
+    try:
+        first = store.sync([_acct("doc:bloom", "Bloom"), _acct("cid:5", "Lumina")], set())["ids"]
+        assert first["doc:bloom"] != first["cid:5"]
+        out = store.sync([_acct("cid:9", "Bloom Skin", "bloom-skin", alt=["doc:bloom"]), _acct("cid:5", "Lumina")], set())
+        assert out["ids"]["cid:9"] == first["doc:bloom"] and out["ids"]["cid:5"] == first["cid:5"]
+        assert "doc:bloom" not in out["ids"]
+        out = store.sync([_acct("cid:9", "Bloom Skin"), _acct("cid:5", "Lumina"), _acct("cid:7", "New")], set())
+        assert out["ids"]["cid:7"] not in (first["doc:bloom"], first["cid:5"]), "a new account gets a new id"
     finally:
         store.reset_memory()
 

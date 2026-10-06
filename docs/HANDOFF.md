@@ -308,7 +308,7 @@ Watches any web page and reports, in plain words and with a before-and-after pic
 ### Client accounts (phases A–D built; plan and progress: `docs/account-workspaces-plan.md`)
 
 - **What it is:** one space per client at `/<account>`. The switch is in every page's top bar
-  (where "Workspace" was) and is the hub's headline ("Working on / All accounts"); the hub also
+  (where "Workspace" was) and is the hub's headline ("Working on / General"); the hub also
   lists every account as a card. Picking an account opens its home, or the same page for it
   (the Google Ads dashboard, the AI review).
 - **The list:** the Google Ads campaign report's accounts plus the master doc's tabs. The master
@@ -344,6 +344,29 @@ Watches any web page and reports, in plain words and with a before-and-after pic
     (`static/js/account-prefill.js`). It covers Social Media Intelligence, Local Business Radar,
     Event & Conference Intelligence, Contact Finder and Thought Leader Intelligence.
   - The account's home lists them all under "Run for <account>".
+
+### Account memory (phase 1 of 5 built; plan and progress: `docs/account-memory-plan.md`)
+
+- **Spaces** (`tracker/workspace.py`): every saved piece of work is in one.
+  - `acct:<id>` is a client account's. The whole team sees it, with who made each piece, and anyone
+    can carry it on. Only its maker or an admin deletes it.
+  - `me:<email>` is a person's own **General** work (the picker's "General", which was "All
+    accounts"). Only they see it, admins included.
+  - `""` is work saved before spaces. It counts as its owner's General work until the account list
+    is rebuilt, which moves it to the account its client name names (`workspace.claim_legacy`). A
+    name that two accounts answer to moves nowhere.
+- **The id:** `client_accounts.id` never changes, even when an account's key does (it gains Google
+  Ads). Spaces use it, so renames and new URL names never orphan work.
+- **Where work goes:** made on an account's pages, it is saved to the account; made on the global
+  pages, to the maker's General. The global Page Watch and Video Studio list only General work, with
+  a line linking to the maker's work in accounts, and open account work inside its account.
+- **Built so far:** Page Watch (`watch_targets.space`), Video Studio (`video_projects.space`; an
+  account's saved brand is filed under its space, `video_store.brand_owner`), and the account home's
+  **History** (`tracker/account_history.py`): watches, page changes, videos and AI reviews, newest
+  first, with who and when. Staff only.
+- **Names:** `tracker/people_store.py` keeps each person's name from Google sign-in, once a session.
+- **Tests:** `tests/test_account_memory.py`, and `tests/test_account_memory_postgres.py` in the CI
+  Postgres job.
 
 ### Video Studio (being built; plan and progress: `docs/video-studio-plan.md`)
 

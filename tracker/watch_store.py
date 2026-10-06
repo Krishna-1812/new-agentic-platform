@@ -28,7 +28,9 @@ take the same watch, and never two watches of the same site at once.
 
 Every read a user can reach takes their email and scopes the query to it in
 SQL (a row of another table is reached through its watch_targets row), never
-"fetch, then check in Python". The worker passes email=None.
+"fetch, then check in Python". The worker passes email=None. A watch in a
+client account's space (tracker/workspace.py) is the whole team's: any staff
+email reaches it (_seen); deleting stays with its owner.
 """
 
 from __future__ import annotations
@@ -43,7 +45,7 @@ from datetime import datetime, timezone
 TARGET_FIELDS = ("name", "client", "url", "area_selector", "area_label", "ignore", "watch_text",
                  "watch_visual", "instructions", "schedule", "channel", "status", "state",
                  "next_check_at", "last_check_at", "last_change_at", "baseline_id", "fail_count",
-                 "archived_at", "lease_until", "lease_owner", "settings", "site", "pending_id")
+                 "archived_at", "lease_until", "lease_owner", "settings", "site", "pending_id", "space")
 TARGET_JSON = ("ignore", "schedule", "settings")
 STATES = ("pending", "ok", "changed", "error", "blocked")
 # suspected: a change seen once, waiting for its confirming re-check.
@@ -131,6 +133,8 @@ def _ensure(conn):
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                     archived_at TIMESTAMPTZ)""")
             cur.execute("CREATE INDEX IF NOT EXISTS watch_targets_email ON watch_targets (email, created_at DESC)")
+            cur.execute("ALTER TABLE watch_targets ADD COLUMN IF NOT EXISTS space TEXT NOT NULL DEFAULT ''")
+            cur.execute("CREATE INDEX IF NOT EXISTS watch_targets_space ON watch_targets (space, created_at DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS watch_targets_due ON watch_targets (next_check_at) "
                         "WHERE status = 'active' AND archived_at IS NULL")
             cur.execute("""
@@ -265,11 +269,23 @@ def _mem_id(table):
     return _MEM["ids"][table]
 
 
-def _mem_target(target_id, email):
+def _mem_target(target_id, email, strict=False):
     t = _MEM["targets"].get(target_id)
-    if not t or (email is not None and t["email"] != _norm_email(email)):
+    if not t or (email is not None and t["email"] != _norm_email(email)
+                 and (strict or not _shared(t.get("space")))):
         return None
     return t
+
+
+def _shared(space):
+    from tracker import workspace
+    return workspace.is_account(space)
+
+
+def _seen(alias=""):
+    """The SQL test that `email` may reach a watch: theirs, or in a client account's space."""
+    p = alias + "." if alias else ""
+    return "(%semail = %%s OR %sspace ~ '^acct:[0-9]+$')" % (p, p)
 
 
 # ── Targets ──────────────────────────────────────────────────────────────────
@@ -278,7 +294,7 @@ TARGET_DEFAULTS = {"name": "", "client": "", "area_selector": None, "area_label"
                    "channel": "", "status": "active", "state": "pending", "settings": {},
                    "next_check_at": None, "last_check_at": None, "last_change_at": None,
                    "baseline_id": None, "fail_count": 0, "lease_until": None, "lease_owner": None,
-                   "archived_at": None, "site": "", "pending_id": None}
+                   "archived_at": None, "site": "", "pending_id": None, "space": ""}
 
 
 def _site(url):
@@ -321,7 +337,7 @@ def get_target(target_id, email=None):
     q = "SELECT * FROM watch_targets WHERE id = %s"
     args = [target_id]
     if email is not None:
-        q += " AND email = %s"
+        q += " AND " + _seen()
         args.append(_norm_email(email))
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q, args)
@@ -367,7 +383,7 @@ def update_target(target_id, email=None, **fields):
     q = "UPDATE watch_targets SET %s WHERE id = %%s" % sets
     vals.append(target_id)
     if email is not None:
-        q += " AND email = %s"
+        q += " AND " + _seen()
         vals.append(_norm_email(email))
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q, vals)
@@ -378,7 +394,7 @@ def delete_target(target_id, email):
     """Delete a watch and everything it recorded (images, snapshots, changes, checks)."""
     if backend() == "memory":
         with _MEM_LOCK:
-            if not _mem_target(target_id, email):
+            if not _mem_target(target_id, email, strict=True):
                 return False
             del _MEM["targets"][target_id]
             for table in ("images", "snapshots", "changes", "checks"):
@@ -420,7 +436,7 @@ def get_image(image_id, email=None):
     q = ("SELECT i.* FROM watch_images i JOIN watch_targets t ON t.id = i.target_id WHERE i.id = %s")
     args = [image_id]
     if email is not None:
-        q += " AND t.email = %s"
+        q += " AND " + _seen("t")
         args.append(_norm_email(email))
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q, args)
@@ -469,7 +485,7 @@ def get_snapshot(snapshot_id, email=None):
     q = "SELECT s.* FROM watch_snapshots s JOIN watch_targets t ON t.id = s.target_id WHERE s.id = %s"
     args = [snapshot_id]
     if email is not None:
-        q += " AND t.email = %s"
+        q += " AND " + _seen("t")
         args.append(_norm_email(email))
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q, args)
@@ -533,7 +549,7 @@ def get_change(change_id, email=None):
     q = "SELECT c.* FROM watch_changes c JOIN watch_targets t ON t.id = c.target_id WHERE c.id = %s"
     args = [change_id]
     if email is not None:
-        q += " AND t.email = %s"
+        q += " AND " + _seen("t")
         args.append(_norm_email(email))
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q, args)
@@ -552,7 +568,7 @@ def list_changes(target_id, email=None, limit=50):
          "WHERE c.target_id = %s")
     args = [target_id]
     if email is not None:
-        q += " AND t.email = %s"
+        q += " AND " + _seen("t")
         args.append(_norm_email(email))
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q + " ORDER BY c.id DESC LIMIT %s", args + [limit])
@@ -576,7 +592,7 @@ def update_change(change_id, email=None, **fields):
     q = "UPDATE watch_changes c SET %s FROM watch_targets t WHERE c.id = %%s AND t.id = c.target_id" % sets
     vals.append(change_id)
     if email is not None:
-        q += " AND t.email = %s"
+        q += " AND " + _seen("t")
         vals.append(_norm_email(email))
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q, vals)
@@ -628,7 +644,7 @@ def list_checks(target_id, email=None, limit=30):
     q = ("SELECT k.* FROM watch_checks k JOIN watch_targets t ON t.id = k.target_id WHERE k.target_id = %s")
     args = [target_id]
     if email is not None:
-        q += " AND t.email = %s"
+        q += " AND " + _seen("t")
         args.append(_norm_email(email))
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q + " ORDER BY k.id DESC LIMIT %s", args + [limit])
@@ -1018,17 +1034,25 @@ def list_feedback(target_id, limit=10):
 
 
 # ── The dashboard, in a fixed number of queries ──────────────────────────────
-def dashboard(email, strip=30):
-    """Every watch of `email` (archived ones left out), each with:
+def dashboard(email, strip=30, space=None):
+    """The watches of a space (archived ones left out): a client account's ("acct:<id>", everyone's),
+    or with no space `email`'s own General ones. Each with:
        checks   its last `strip` checks, newest first [{outcome, started_at, error}]
        latest   its newest change {id, headline, level, verdict, feedback, created_at} or None
        thumb_id the thumbnail of its baseline, or None
     Four queries however many watches there are."""
+    from tracker import workspace
     email = _norm_email(email)
+    if space is not None and not workspace.is_account(space):
+        raise ValueError("not an account's space: %r" % space)
+    mine = workspace.personal_spaces(email)
+
+    def wanted(t):
+        return t.get("space") == space if space is not None else (t["email"] == email and t.get("space", "") in mine)
     if backend() == "memory":
         with _MEM_LOCK:
             out = []
-            for t in sorted((t for t in _MEM["targets"].values() if t["email"] == email and not t["archived_at"]),
+            for t in sorted((t for t in _MEM["targets"].values() if wanted(t) and not t["archived_at"]),
                             key=lambda t: t["created_at"], reverse=True):
                 rec = copy.deepcopy(t)
                 checks = sorted((c for c in _MEM["checks"].values() if c["target_id"] == t["id"]),
@@ -1045,8 +1069,12 @@ def dashboard(email, strip=30):
                 out.append(rec)
             return out
     with _pg() as conn, conn.cursor() as cur:
-        cur.execute("SELECT * FROM watch_targets WHERE email = %s AND archived_at IS NULL ORDER BY created_at DESC",
-                    [email])
+        if space is not None:
+            cur.execute("SELECT * FROM watch_targets WHERE space = %s AND archived_at IS NULL "
+                        "ORDER BY created_at DESC", [space])
+        else:
+            cur.execute("SELECT * FROM watch_targets WHERE email = %s AND space = ANY(%s) AND archived_at IS NULL "
+                        "ORDER BY created_at DESC", [email, list(mine)])
         targets = _rows(cur)
         if not targets:
             return []
@@ -1072,6 +1100,71 @@ def dashboard(email, strip=30):
         t["latest"] = latest.get(t["id"])
         t["thumb_id"] = thumbs.get(t["id"])
     return targets
+
+
+# ── Spaces ───────────────────────────────────────────────────────────────────
+def claim_legacy(names):
+    """Watches saved before spaces whose client is one of `names` ({lower-case name: space}) move to
+    that space. Only rows with no space move. Returns how many."""
+    if not names:
+        return 0
+    if backend() == "memory":
+        n = 0
+        with _MEM_LOCK:
+            for t in _MEM["targets"].values():
+                to = names.get((t.get("client") or "").strip().lower())
+                if not t.get("space") and to:
+                    t["space"], n = to, n + 1
+        return n
+    with _pg() as conn, conn.cursor() as cur:   # one statement, however many names
+        cur.execute("UPDATE watch_targets t SET space = m.sp FROM unnest(%s::text[], %s::text[]) AS m(name, sp) "
+                    "WHERE t.space = '' AND lower(btrim(t.client)) = m.name", (list(names), list(names.values())))
+        return cur.rowcount
+
+
+def account_counts(email):
+    """{space: n} of `email`'s own live watches in client accounts' spaces."""
+    from tracker import workspace
+    email = _norm_email(email)
+    if backend() == "memory":
+        out = {}
+        with _MEM_LOCK:
+            for t in _MEM["targets"].values():
+                if t["email"] == email and not t["archived_at"] and workspace.is_account(t.get("space")):
+                    out[t["space"]] = out.get(t["space"], 0) + 1
+        return out
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("SELECT space, count(*) FROM watch_targets WHERE email = %s AND archived_at IS NULL "
+                    "AND space ~ '^acct:[0-9]+$' GROUP BY space", (email,))
+        return {k: int(v) for k, v in cur.fetchall()}
+
+
+def space_targets(space, limit=200):
+    """A client account's watches, archived ones too, newest first (its history)."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            rows = [copy.deepcopy(t) for t in _MEM["targets"].values() if t.get("space") == space]
+        return sorted(rows, key=lambda t: t["created_at"], reverse=True)[:limit]
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("SELECT * FROM watch_targets WHERE space = %s ORDER BY created_at DESC LIMIT %s", (space, limit))
+        return _rows(cur)
+
+
+def space_changes(space, limit=100):
+    """A client account's recent page changes, newest first, with their watch's name, url and owner."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            out = []
+            for c in _MEM["changes"].values():
+                t = _MEM["targets"].get(c["target_id"])
+                if t and t.get("space") == space:
+                    out.append(dict(copy.deepcopy(c), name=t.get("name"), url=t["url"], email=t["email"]))
+        return sorted(out, key=lambda c: c["id"], reverse=True)[:limit]
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("SELECT c.id, c.target_id, c.level, c.headline, c.verdict, c.created_at, t.name, t.url, t.email "
+                    "FROM watch_changes c JOIN watch_targets t ON t.id = c.target_id WHERE t.space = %s "
+                    "ORDER BY c.id DESC LIMIT %s", (space, limit))
+        return _rows(cur)
 
 
 # ── Shared values and the alert queue ────────────────────────────────────────

@@ -43,7 +43,7 @@ from datetime import datetime, timedelta, timezone
 
 from tracker import video_config as cfg
 
-PROJECT_FIELDS = ("client", "title", "brief", "kind", "choices", "status")
+PROJECT_FIELDS = ("client", "title", "brief", "kind", "choices", "status", "space")
 PROJECT_JSON = ("choices",)
 VERSION_FIELDS = ("plan", "files", "change_request", "status", "error", "shape", "duration_s", "cover_at",
                   "cost_usd", "timings", "mp4", "cover", "mp4_bytes", "finished_at")
@@ -123,6 +123,8 @@ def _ensure(conn):
                     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT now())""")
             cur.execute("CREATE INDEX IF NOT EXISTS video_projects_email ON video_projects (email, created_at DESC)")
+            cur.execute("ALTER TABLE video_projects ADD COLUMN IF NOT EXISTS space TEXT NOT NULL DEFAULT ''")
+            cur.execute("CREATE INDEX IF NOT EXISTS video_projects_space ON video_projects (space, created_at DESC)")
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS video_versions (
                     id SERIAL PRIMARY KEY,
@@ -237,9 +239,26 @@ def _mem_id(table):
     return _MEM["ids"][table]
 
 
-def _mem_project(project_id, email):
+def _shared(space):
+    from tracker import workspace
+    return workspace.is_account(space)
+
+
+def _seen(alias=""):
+    """The SQL test that `email` may reach a project: theirs, or in a client account's space
+    (tracker/workspace.py), which is the whole team's."""
+    p = alias + "." if alias else ""
+    return "(%semail = %%s OR %sspace ~ '^acct:[0-9]+$')" % (p, p)
+
+
+def brand_owner(project):
+    """Whose saved brands a project uses: its client account's (shared by the team), else its maker's."""
+    return project["space"] if _shared(project.get("space")) else project["email"]
+
+
+def _mem_project(project_id, email, strict=False):
     p = _MEM["projects"].get(project_id)
-    if not p or (email is not None and p["email"] != _norm_email(email)):
+    if not p or (email is not None and p["email"] != _norm_email(email) and (strict or not _shared(p.get("space")))):
         return None
     return p
 
@@ -265,7 +284,8 @@ def _public_version(v, files=False):
 
 
 # ── Projects ─────────────────────────────────────────────────────────────────
-PROJECT_DEFAULTS = {"client": "", "title": "", "brief": "", "kind": "custom", "choices": {}, "status": "active"}
+PROJECT_DEFAULTS = {"client": "", "title": "", "brief": "", "kind": "custom", "choices": {}, "status": "active",
+                    "space": ""}
 
 
 def create_project(email, **fields):
@@ -295,7 +315,7 @@ def get_project(project_id, email=None):
             return copy.deepcopy(p) if p else None
     q, args = "SELECT * FROM video_projects WHERE id = %s", [project_id]
     if email is not None:
-        q += " AND email = %s"
+        q += " AND " + _seen()
         args.append(_norm_email(email))
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q, args)
@@ -343,7 +363,7 @@ def delete_project(project_id, email):
     email None is the worker's clean-up)."""
     if backend() == "memory":
         with _MEM_LOCK:
-            if not _mem_project(project_id, email):
+            if not _mem_project(project_id, email, strict=True):
                 return False
             del _MEM["projects"][project_id]
             vids = [k for k, v in _MEM["versions"].items() if v["project_id"] == project_id]
@@ -361,15 +381,24 @@ def delete_project(project_id, email):
         return cur.rowcount > 0
 
 
-def library(email, limit=200, exclude_kinds=()):
-    """A person's projects, newest first, each with its newest version and its
-    newest finished one: {project fields, "versions", "latest": {...} | None,
-    "ready": {"id", "shape", "duration_s"} | None}. One query on Postgres."""
+def library(email, limit=200, exclude_kinds=(), space=None):
+    """A client account's projects ("acct:<id>", everyone's), or with no space a person's own General
+    ones, newest first, each with its newest version and its newest finished one: {project fields,
+    "versions", "latest": {...} | None, "ready": {"id", "shape", "duration_s"} | None}. One query on
+    Postgres."""
+    from tracker import workspace
+    if space is not None and not workspace.is_account(space):
+        raise ValueError("not an account's space: %r" % space)
+    mine = workspace.personal_spaces(email)
+
+    def wanted(p):
+        return p.get("space") == space if space is not None else (
+            p["email"] == _norm_email(email) and p.get("space", "") in mine)
     if backend() == "memory":
         with _MEM_LOCK:
             out = []
             for p in sorted(_MEM["projects"].values(), key=lambda p: p["id"], reverse=True):
-                if p["email"] != _norm_email(email) or p["kind"] in exclude_kinds:
+                if not wanted(p) or p["kind"] in exclude_kinds:
                     continue
                 vs = sorted((v for v in _MEM["versions"].values() if v["project_id"] == p["id"]),
                             key=lambda v: v["number"], reverse=True)
@@ -389,11 +418,66 @@ def library(email, limit=200, exclude_kinds=()):
                                     'duration_s', v.duration_s, 'idea', v.plan->>'idea', 'cost_usd', v.cost_usd)
              FROM video_versions v WHERE v.project_id = p.id AND v.status = 'ready'
              ORDER BY v.number DESC LIMIT 1) AS ready
-        FROM video_projects p WHERE p.email = %s AND NOT (p.kind = ANY(%s))
+        FROM video_projects p WHERE {where} AND NOT (p.kind = ANY(%s))
         ORDER BY p.id DESC LIMIT %s"""
+    if space is not None:
+        where, args = "p.space = %s", [space]
+    else:
+        where, args = "p.email = %s AND p.space = ANY(%s)", [_norm_email(email), list(mine)]
     with _pg() as conn, conn.cursor() as cur:
-        cur.execute(q, (_norm_email(email), list(exclude_kinds) or [""], int(limit)))
+        cur.execute(q.replace("{where}", where), args + [list(exclude_kinds) or [""], int(limit)])
         return _rows(cur)
+
+
+# ── Spaces ───────────────────────────────────────────────────────────────────
+def claim_legacy(names):
+    """Projects saved before spaces whose client is one of `names` ({lower-case name: space}) move to
+    that space, and so do their makers' saved brands for that client, so the account keeps them. Only
+    rows with no space move. Returns how many projects."""
+    if not names:
+        return 0
+    n = 0
+    if backend() == "memory":
+        with _MEM_LOCK:
+            moved = set()
+            for p in _MEM["projects"].values():
+                to = names.get((p.get("client") or "").strip().lower())
+                if not p.get("space") and to:
+                    p["space"], n = to, n + 1
+                    moved.add((p["email"], (p.get("client") or "").strip().lower(), to))
+            for email, client, to in moved:
+                b = _MEM["brands"].get((email, client))
+                if b and (to, client) not in _MEM["brands"]:
+                    _MEM["brands"][(to, client)] = dict(copy.deepcopy(b), email=to)
+        return n
+    with _pg() as conn, conn.cursor() as cur:   # one statement for the projects, however many names
+        cur.execute("UPDATE video_projects p SET space = m.sp FROM unnest(%s::text[], %s::text[]) AS m(name, sp) "
+                    "WHERE p.space = '' AND lower(btrim(p.client)) = m.name RETURNING p.email, m.name, m.sp",
+                    (list(names), list(names.values())))
+        rows = cur.fetchall()
+        for email, name, to in sorted(set(rows)):
+            cur.execute("INSERT INTO video_brands (email, client, brand, logo, updated_at) "
+                        "SELECT %s, client, brand, logo, updated_at FROM video_brands "
+                        "WHERE email = %s AND client = %s ON CONFLICT (email, client) DO NOTHING",
+                        (to, email, name))
+    return len(rows)
+
+
+def account_counts(email):
+    """{space: n} of `email`'s own videos in client accounts' spaces."""
+    from tracker import workspace
+    email = _norm_email(email)
+    if backend() == "memory":
+        out = {}
+        with _MEM_LOCK:
+            for p in _MEM["projects"].values():
+                if p["email"] == email and workspace.is_account(p.get("space")) and p.get("status") != "draft":
+                    out[p["space"]] = out.get(p["space"], 0) + 1
+        return out
+    with _pg() as conn, conn.cursor() as cur:
+        cur.execute("SELECT space, count(*) FROM video_projects WHERE email = %s AND status <> 'draft' "
+                    "AND space ~ '^acct:[0-9]+$' GROUP BY space", (email,))
+        return {k: int(v) for k, v in cur.fetchall()}
 
 
 def _library_version(v):
@@ -446,7 +530,7 @@ def get_version(version_id, email=None, files=False):
     q, args = ("SELECT %s FROM video_versions v JOIN video_projects p ON p.id = v.project_id WHERE v.id = %%s"
                % cols, [version_id])
     if email is not None:
-        q += " AND p.email = %s"
+        q += " AND " + _seen("p")
         args.append(_norm_email(email))
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q, args)
@@ -464,7 +548,7 @@ def list_versions(project_id, email=None):
     q, args = ("SELECT %s FROM video_versions v JOIN video_projects p ON p.id = v.project_id "
                "WHERE v.project_id = %%s" % _VERSION_LIST_COLS, [project_id])
     if email is not None:
-        q += " AND p.email = %s"
+        q += " AND " + _seen("p")
         args.append(_norm_email(email))
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q + " ORDER BY v.number DESC", args)
@@ -503,7 +587,7 @@ def get_media(version_id, kind, email=None):
     q, args = ("SELECT v.%s FROM video_versions v JOIN video_projects p ON p.id = v.project_id WHERE v.id = %%s"
                % kind, [version_id])
     if email is not None:
-        q += " AND p.email = %s"
+        q += " AND " + _seen("p")
         args.append(_norm_email(email))
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q, args)
@@ -661,7 +745,7 @@ def get_job(job_id, email=None):
     q, args = ("SELECT j.* FROM video_jobs j JOIN video_versions v ON v.id = j.version_id "
                "JOIN video_projects p ON p.id = v.project_id WHERE j.id = %s", [job_id])
     if email is not None:
-        q += " AND p.email = %s"
+        q += " AND " + _seen("p")
         args.append(_norm_email(email))
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q, args)
@@ -679,7 +763,7 @@ def jobs_for_version(version_id, email=None):
     q, args = ("SELECT j.* FROM video_jobs j JOIN video_versions v ON v.id = j.version_id "
                "JOIN video_projects p ON p.id = v.project_id WHERE j.version_id = %s", [version_id])
     if email is not None:
-        q += " AND p.email = %s"
+        q += " AND " + _seen("p")
         args.append(_norm_email(email))
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q + " ORDER BY j.id DESC", args)
@@ -798,7 +882,7 @@ def list_assets(project_id, email=None, kinds=None):
     q, args = ("SELECT %s FROM video_assets a JOIN video_projects p ON p.id = a.project_id WHERE a.project_id = %%s"
                % _ASSET_LIST_COLS, [project_id])
     if email is not None:
-        q += " AND p.email = %s"
+        q += " AND " + _seen("p")
         args.append(_norm_email(email))
     if kinds is not None:
         q += " AND a.kind = ANY(%s)"
@@ -819,7 +903,7 @@ def get_asset(asset_id, email=None, blob=False):
     q, args = ("SELECT %s FROM video_assets a JOIN video_projects p ON p.id = a.project_id WHERE a.id = %%s" % cols,
                [asset_id])
     if email is not None:
-        q += " AND p.email = %s"
+        q += " AND " + _seen("p")
         args.append(_norm_email(email))
     with _pg() as conn, conn.cursor() as cur:
         cur.execute(q, args)
