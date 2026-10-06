@@ -14,14 +14,14 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Page Watch", ["strategic-agents.css?v=2", "page-watch.css?v=1"]) }}
+{{ head("Page Watch", ["strategic-agents.css?v=2", "page-watch.css?v=2"]) }}
 </head>
 <body class="sa pw">
 
-{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Page Watch", none)]) }}
+{{ topbar([("Page Watch", none)] if acct else [(brand.agents_plural, "/strategic-agents"), ("Page Watch", none)]) }}
 <div class="sa-prog" aria-hidden="true"><i></i></div>
 
-<main class="sa-shell" id="pw">
+<main class="sa-shell" id="pw"{% if acct %} data-home="/{{ acct.slug }}/page-watch"{% endif %}>
 
   {# ── Hero: the ask ────────────────────────────────────────────────────── #}
   <section class="sa-hero pw-hero" data-sa-settle>
@@ -44,7 +44,11 @@
     </div>
 
     <h1 class="sa-h1" data-sa-springy>
+      {%- if acct %}
+      <span class="sa-ln"><span>Their site and their rivals&rsquo;,</span></span>
+      {%- else %}
       <span class="sa-ln"><span>Any page on the web,</span></span>
+      {%- endif %}
       <span class="sa-ln"><span><span class="sa-mk">watched</span> <em class="sa-it">for you.</em></span></span>
     </h1>
 
@@ -55,6 +59,17 @@
     </form>
     <p class="pw-hint">Paste a link, or type a name and pick the page. It reads the page now and shows you what it sees;
       after that it checks on your schedule and says <b>what changed</b>, with a before-and-after picture.</p>
+    {%- if suggest %}
+    {#- One tap to watch the account's own site and its competitors', from the master doc's profile. #}
+    <div class="pw-suggest" id="pw-suggest">
+      <span class="pw-suggest-l">From the profile</span>
+      {%- for x in suggest %}
+      <button type="button" class="pw-sug" data-pw-url="{{ x.url }}" data-pw-name="{{ x.name }}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{ x.label }}<small>{{ x.kind }}</small>
+      </button>
+      {%- endfor %}
+    </div>
+    {%- endif %}
     <p class="pw-error" id="pw-error" role="alert" hidden></p>
 
     <div class="sa-figs" aria-live="polite">
@@ -127,7 +142,7 @@
         <button type="button" class="sa-chip" role="radio" aria-checked="false" data-pw-filter="paused">Paused <em data-n="paused">{{ board.counts.paused or 0 }}</em></button>
       </div>
       <div class="pw-search">
-        <select id="pw-client" aria-label="Client or group"><option value="">Every client</option>
+        <select id="pw-client" aria-label="Client or group"{% if acct %} hidden{% endif %}><option value="">Every client</option>
           {% for c in board.clients %}<option>{{ c }}</option>{% endfor %}</select>
         <input id="pw-find" type="search" placeholder="Search" aria-label="Search watches">
       </div>
@@ -187,9 +202,10 @@
   </div>
 </footer>
 
-<script type="application/json" id="pw-data">{{ {"board": board, "status": {"worker": status.worker}, "days": days, "dayNames": day_names}|tojson }}</script>
+<script type="application/json" id="pw-data">{{ {"board": board, "status": {"worker": status.worker}, "days": days, "dayNames": day_names,
+                                                     "account": ({"name": acct.name, "home": "/" ~ acct.slug ~ "/page-watch"} if acct else none)}|tojson }}</script>
 {{ topbar_script() }}
 <script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
-<script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=1"></script>
+<script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=2"></script>
 </body>
 </html>

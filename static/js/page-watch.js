@@ -63,6 +63,7 @@
     function field(label, input) { var f = el("label", "pw-field"); f.appendChild(el("span", null, label)); f.appendChild(input); root.appendChild(f); return input; }
     var name = field("Name", el("input")); name.value = v.name || ""; name.maxLength = 120; name.placeholder = "Vercel pricing";
     var client = field("Client or group", el("input")); client.value = v.client || ""; client.maxLength = 80; client.placeholder = "Optional";
+    if (!v.client && d.account) client.value = d.account.name;   // a client account's own Page Watch files it there
 
     var sched = el("div", "pw-field"); sched.appendChild(el("span", null, "How often"));
     var seg = el("div", "pw-seg"); seg.setAttribute("role", "group");
@@ -220,6 +221,9 @@
     var root = $("#pw"); if (!root) return;
     var D = data(), board = D.board || { watches: [], counts: {} }, status = D.status || {};
     var filter = "all", grid = $("#pw-grid"), empty = $("#pw-empty");
+    /* On a client account's own Page Watch (/<account>/page-watch, app.py) the board is that account's
+       watches alone, every new watch is filed under it, and the cards open inside the account. */
+    var ACCT = D.account || null;
 
     // ── Dashboard ──
     var CLASS = { ok: "ok", changed: "changed", error: "error", blocked: "blocked", pending: "pending", paused: "paused" };
@@ -267,6 +271,12 @@
       if (q && (w.name + " " + w.url + " " + w.client + " " + (w.latest ? w.latest.summary : "")).toLowerCase().indexOf(q) < 0) return false;
       return true;
     }
+    function mine(b) {
+      var name = ACCT.name.toLowerCase(), ws = b.watches.filter(function (w) { return (w.client || "").toLowerCase() === name; });
+      var counts = { all: ws.length };
+      ws.forEach(function (w) { counts[w.state] = (counts[w.state] || 0) + 1; w.url_page = ACCT.home + "/watches/" + w.id; });
+      return { watches: ws, counts: counts, clients: [] };
+    }
     function render(highlight) {
       grid.textContent = "";
       var shown = board.watches.filter(matches);
@@ -293,7 +303,7 @@
     $("#pw-find").addEventListener("input", function () { render(); });
     $("#pw-client").addEventListener("change", function () { render(); });
     function refresh(highlight) {
-      return api("GET", BASE + "/api/watches").then(function (b) { board = b; render(highlight); }).catch(function () {});
+      return api("GET", BASE + "/api/watches").then(function (b) { board = ACCT ? mine(b) : b; render(highlight); }).catch(function () {});
     }
     render();
     // Keep the cards current: faster while something is being read.
@@ -337,7 +347,14 @@
       }).catch(function (x) { done(); add.hidden = true; fail(x.message); });
     });
 
+    $$("[data-pw-url]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        fail(""); b.disabled = true;
+        create({ url: b.dataset.pwUrl, name: b.dataset.pwName || "" }).then(function () { b.remove(); }, function () { b.disabled = false; });
+      });
+    });
     function create(body) {
+      if (ACCT && !body.client) body.client = ACCT.name;
       return api("POST", BASE + "/api/watches", body).then(function (r) {
         current = r.id; $("#pw-q").value = "";
         reading(r.id); refresh(r.id);
@@ -445,7 +462,7 @@
         },
         onDelete: function () {
           if (!window.confirm("Stop watching this page and delete its history?")) return;
-          api("DELETE", BASE + "/api/watches/" + id, {}).then(function () { location.href = BASE; });
+          api("DELETE", BASE + "/api/watches/" + id, {}).then(function () { location.href = root.dataset.home || BASE; });
         }
       });
       var open = $("#pw-open-picker");

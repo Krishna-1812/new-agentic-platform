@@ -14,7 +14,8 @@
 </head>
 <body class="sa pw">
 
-{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Page Watch", "/strategic-agents/page-watch"),
+{%- set pw_home = ("/" ~ acct.slug ~ "/page-watch") if acct else "/strategic-agents/page-watch" %}
+{{ topbar(([] if acct else [(brand.agents_plural, "/strategic-agents")]) + [("Page Watch", pw_home),
            (c.watch.name, c.watch.page), ("Change", none)]) }}
 
 <main class="sa-shell" id="pw-change">
@@ -128,6 +129,6 @@
 <script type="application/json" id="pw-data">{{ {"change": {"id": c.id, "before": c.before, "after": c.after,
   "boxes_before": c.boxes_before, "boxes_after": c.boxes_after}}|tojson }}</script>
 {{ topbar_script() }}
-<script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=1"></script>
+<script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=2"></script>
 </body>
 </html>

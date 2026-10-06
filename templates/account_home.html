@@ -12,7 +12,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head(acct.name, ["account-space.css?v=3"]) }}
+{{ head(acct.name, ["account-space.css?v=4"]) }}
 </head>
 <body class="as-page">
 
@@ -115,7 +115,7 @@
   {%- endif %}
 
   {# ── Its pages ──────────────────────────────────────────────────────── #}
-  {%- set any_mod = show_ads or (show_review and (review or not client_view)) or (not acct.ads_names and not client_view) %}
+  {%- set any_mod = show_ads or (show_review and (review or not client_view)) or (not acct.ads_names and not client_view) or tools %}
   {%- if any_mod %}
   <section class="as-mods" aria-labelledby="as-mods-h">
     <h2 class="as-h2" id="as-mods-h">Everything for {{ acct.name }}</h2>
@@ -162,6 +162,36 @@
         <span class="as-mod-desc">Claude reads every campaign against this account's notes in the master doc: what works, what does not, and what to do next.</span>
         <span class="as-mod-foot"><span class="as-go">Run the first review &rarr;</span></span>
         {%- endif %}
+      </a>
+      {%- endif %}
+      {%- if tools %}
+      <a class="as-mod as-mod--half" href="/{{ acct.slug }}/page-watch">
+        <span class="as-mod-top">
+          <span class="as-mod-ic as-mod-ic--ink"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span>
+          {%- if tools.changed %}<span class="as-mod-state"><i></i>{{ tools.changed }} changed</span>{% endif %}
+        </span>
+        <span class="as-mod-cat">Go-to-market</span>
+        <span class="as-mod-name">Page Watch</span>
+        {%- if tools.watches %}
+        <span class="as-mod-desc">{{ tools.watches }} page{{ 's' if tools.watches != 1 }} watched for {{ acct.name }}{% if tools.last_change %}; the last change {{ nice_day(tools.last_change) }}{% endif %}.</span>
+        {%- else %}
+        <span class="as-mod-desc">Know the moment {{ profile.domain or "their site" }}{% if profile.competitors %} or a competitor{% endif %} changes a page: prices, offers, headlines.</span>
+        {%- endif %}
+        <span class="as-mod-foot"><span class="as-go">{{ "Open" if tools.watches else "Start watching" }} &rarr;</span></span>
+      </a>
+      <a class="as-mod as-mod--half" href="/{{ acct.slug }}/video-studio">
+        <span class="as-mod-top">
+          <span class="as-mod-ic as-mod-ic--amber"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/></svg></span>
+          {%- if tools.ready %}<span class="as-mod-state as-mod-state--complete"><i></i>{{ tools.ready }} ready</span>{% endif %}
+        </span>
+        <span class="as-mod-cat">Content</span>
+        <span class="as-mod-name">Video Studio</span>
+        {%- if tools.videos %}
+        <span class="as-mod-desc">{{ tools.videos }} video{{ 's' if tools.videos != 1 }} for {{ acct.name }}, in its own brand.</span>
+        {%- else %}
+        <span class="as-mod-desc">A short video from a brief, in {{ acct.name }}'s colours and fonts from the master doc.</span>
+        {%- endif %}
+        <span class="as-mod-foot"><span class="as-go">{{ "Open" if tools.videos else "Make the first" }} &rarr;</span></span>
       </a>
       {%- endif %}
       {%- if not acct.ads_names and not client_view %}

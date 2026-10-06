@@ -381,3 +381,18 @@
   .pw-card:hover { transform: none; }
   .pw-card:hover .pw-thumb img { transform: none; }
 }
+
+
+/* A client account's Page Watch: its site and competitors from the master doc, one tap to watch. */
+.pw-suggest { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 0; }
+.pw-suggest-l { font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3, #9A968F); margin-right: 4px; }
+.pw-sug {
+  display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px 0 10px; border-radius: 999px; cursor: pointer;
+  background: #1F1F21; color: var(--ink-paper, #F6F4F0); font: 600 13.5px/1 var(--font-body);
+  transition: background 200ms ease, color 200ms ease, transform 160ms cubic-bezier(.34, 1.56, .64, 1);
+}
+.pw-sug svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+.pw-sug small { font-weight: 500; opacity: .6; }
+.pw-sug:hover { background: var(--acc); color: #121213; }
+.pw-sug:active { transform: scale(.95); }
+.pw-sug:disabled { opacity: .5; cursor: progress; }
