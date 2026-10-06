@@ -12,7 +12,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head(acct.name, ["account-space.css?v=10"]) }}
+{{ head(acct.name, ["account-space.css?v=12"]) }}
 </head>
 <body class="as-page">
 
@@ -218,7 +218,8 @@
         <ul class="as-run-list">
           {%- for t in runs.seo %}
           <li><a class="as-run" href="{{ t.href }}">
-            <span class="as-run-t"><b>{{ t.name }}</b><small>{{ t.about }}</small></span>
+            <span class="as-run-t"><b>{{ t.name }}</b><small>{{ t.about }}</small>
+              {%- if t.last %}<small class="as-run-last">Last run {{ nice_day(t.last.at) }}{% if t.last.by %} by {{ t.last.by }}{% endif %}</small>{% endif %}</span>
             {%- if t.given %}<span class="as-run-g">{{ t.given }}</span>{% endif %}
             <svg class="as-run-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </a></li>
@@ -278,6 +279,7 @@
           {%- if r.tool == "page-watch" and r.kind == "change" %}<svg viewBox="0 0 24 24"><path d="M4 12h3l2-6 4 12 2-6h5"/></svg>
           {%- elif r.tool == "page-watch" %}<svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
           {%- elif r.tool == "video-studio" %}<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg>
+          {%- elif r.tool == "seo" %}<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2M8.5 11.5l1.8 1.8 3.4-3.6"/></svg>
           {%- elif r.tool == "agents" %}<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 19a10 10 0 0 1 0-14M19 5a10 10 0 0 1 0 14"/></svg>
           {%- else %}<svg viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>{% endif %}
         </span>
@@ -297,7 +299,7 @@
     {%- else %}
     <div class="as-hist-empty">
       <span class="as-ev-ico as-ev-ico--ai-review" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg></span>
-      <p><b>Nothing yet.</b> A watch, a video, an AI review or an agent run made for {{ acct.name }} appears here, with who made it, so whoever picks the account up next starts where the last person stopped.</p>
+      <p><b>Nothing yet.</b> A watch, a video, an AI review, an SEO audit or an agent run made for {{ acct.name }} appears here, with who made it, so whoever picks the account up next starts where the last person stopped.</p>
     </div>
     {%- endif %}
   </section>

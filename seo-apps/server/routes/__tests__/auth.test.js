@@ -79,7 +79,7 @@ test('staff pass via header reaches any tool', () => {
   const t = auth.mintStudioToken('sudheer@markifydigital.com', 'staff');
   const { passed: ok, req } = gate(auth.requireAuth, fakeReq({ token: t, url: '/api/competitor-tracker/clients' }));
   assert.strictEqual(ok, true);
-  assert.deepStrictEqual(req.user, { username: 'sudheer@markifydigital.com', role: 'staff' });
+  assert.deepStrictEqual(req.user, { username: 'sudheer@markifydigital.com', role: 'staff', space: 'me:sudheer@markifydigital.com' });
 });
 
 test('the pass is also accepted as ?st= (EventSource, downloads)', () => {

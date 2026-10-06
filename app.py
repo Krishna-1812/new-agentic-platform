@@ -4271,10 +4271,12 @@ SEO_STUDIO_SECRET = os.environ.get("SEO_STUDIO_SECRET", "")
 _STUDIO_PASS_TTL = 12 * 3600
 
 
-def _studio_pass(email, role):
+def _studio_pass(email, role, space=None):
     """A signed, short-lived pass that lets this user into SEO Studio.
 
-    base64url(JSON {e, r, x}) + "." + base64url(HMAC-SHA256). role "staff"
+    base64url(JSON {e, r, x[, s]}) + "." + base64url(HMAC-SHA256). `s` is the client account's space
+    (tracker/workspace.py) when the studio is opened inside an account: what the studio saves is
+    filed there, and its lists show only that account's (without it, the person's own). role "staff"
     reaches every tool; "app" (a public /app or client-portal user) only the
     tools /app offers. The studio iframe is cross-site to this app, so a
     cookie would be a third-party cookie; the pass travels in the iframe URL
@@ -4283,19 +4285,21 @@ def _studio_pass(email, role):
     def b64(raw):
         return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
     payload = {"e": (email or "").lower(), "r": role, "x": int(time.time()) + _STUDIO_PASS_TTL}
+    if space:
+        payload["s"] = space
     body = b64(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
     sig = b64(hmac.new(SEO_STUDIO_SECRET.encode("utf-8"), body.encode("ascii"), hashlib.sha256).digest())
     return body + "." + sig
 
 
-def _studio_auth_params(role=None):
+def _studio_auth_params(role=None, space=None):
     """Query parameters that authenticate the current user to SEO Studio:
     a signed pass when SEO_STUDIO_SECRET is set, else the legacy shared
     SERP_PLATFORM_TOKEN (what the original seo-apps deployment reads)."""
     user = _get_user() or {}
     email = user.get("email", "")
     if SEO_STUDIO_SECRET and email:
-        return [("st", _studio_pass(email, role or ("staff" if _is_staff(email) else "app")))]
+        return [("st", _studio_pass(email, role or ("staff" if _is_staff(email) else "app"), space=space))]
     pt = os.environ.get("SERP_PLATFORM_TOKEN", "")
     return [("pt", pt)] if pt else []
 
@@ -5983,9 +5987,12 @@ def account_home(acct):
     runs = None if client else _acct_runs(acct)
     history = None if client else _acct_history(acct)
     if runs:
-        for t in runs["agents"]:     # each agent's last run for the account, and who ran it
+        for t in runs["agents"]:     # each agent's and tool's last run for the account, and who ran it
             slug = t["href"].rsplit("/", 1)[-1]
             t["last"] = next((r for r in history["rows"] if r.get("agent") == slug), None)
+        for t in runs["seo"]:
+            slug = t["href"].rsplit("/", 1)[-1]
+            t["last"] = next((r for r in history["rows"] if r.get("seo_tool") == slug), None)
     return render_template(
         "account_home.html", user=_get_user(), acct=acct, st=st, profile=p if show_profile else {"fields": 0},
         card=client_accounts.card(acct, st), pages=_acct_pages(acct, shares if client else None),
@@ -6500,12 +6507,125 @@ def account_seo_tool(acct, tool_slug):
         pf.append(("pf_" + key, f[key]))
     if tool_slug == "market-potential" and f["domain"]:
         pf.append(("pf_domain", f["domain"]))
-    qs = _studio_auth_params("staff") + pf
+    qs = _studio_auth_params("staff", space=acct["space"]) + pf
     path = tool["path"]
     embed_url = f"{_SERP_BASE}{path}" + (("?" + urlencode(qs)) if qs else "")
     return render_template("embed.html", user=_get_user(), title=tool["name"], embed_url=embed_url,
                            breadcrumb=[], current=tool["name"], accent="#34d399", acct=acct,
                            seo_base="/%s/seo-aeo" % acct["slug"])
+
+
+# ── SEO & AEO runs (account memory, phase 3) ─────────────────────────────────
+# A studio tool that finishes tells the page around it (templates/embed.html), which hands the result
+# here. It is saved to its space: the account's when the tool was opened inside one (X-Account), else
+# the person's General work. tracker/seo_runs.py makes the few readable facts every view shows.
+def _seo_run_home(r):
+    """Where a run's page is: inside its account, or the General one."""
+    return (_space_home(r["space"], "seo-aeo/runs/%d" % r["id"])
+            or "/seo-aeo/runs/%d" % r["id"])
+
+
+@app.route("/api/seo-runs", methods=["POST"])
+@position2_required
+def seo_runs_save():
+    from tracker import seo_runs, seo_runs_store
+    if request.headers.get("X-Requested-With") != "fetch":
+        return jsonify(ok=False, error="Bad request."), 400
+    body = _pw_body()
+    if body is None or not isinstance(body.get("payload"), dict):
+        return jsonify(ok=False, error="Send the run as JSON."), 415
+    tool = str(body.get("tool") or "")
+    if tool not in seo_runs.TOOLS:
+        return jsonify(ok=False, error="Not an SEO & AEO tool."), 400
+    email = _pw_email()
+    title, summary, inp, output = seo_runs.prepare(tool, body["payload"])
+    acct = _work_acct()
+    try:
+        rid = seo_runs_store.add(email, _work_space(email), tool, title, summary, inp, output)
+    except Exception:
+        app.logger.exception("seo runs: the run could not be saved")
+        return jsonify(ok=False, error="The run could not be saved."), 503
+    page = ("/%s/seo-aeo/runs/%d" % (acct["slug"], rid)) if acct else "/seo-aeo/runs/%d" % rid
+    return jsonify(ok=True, id=rid, page=page, where=(acct["name"] if acct else "General")), 201
+
+
+def _seo_run_page(r, acct=None):
+    from tracker import seo_runs
+    _people([r], key="email")
+    tool = next((t for t in _seo_tools() if t.get("slug") == r["tool"]), None)
+    again = ("/%s/seo-aeo/%s" % (acct["slug"], r["tool"])) if acct else "/seo-aeo/%s" % r["tool"]
+    return render_template("seo_run.html", user=_get_user(), r=r, acct=acct, tool_name=seo_runs.TOOLS.get(r["tool"], r["tool"]),
+                           again=again if tool else None,
+                           download=(("/%s" % acct["slug"]) if acct else "") + "/seo-aeo/runs/%d.json" % r["id"],
+                           mine=r["email"] == _pw_email().lower())
+
+
+@app.route("/seo-aeo/runs/<int:run_id>")
+@position2_required
+def seo_run_page(run_id):
+    from tracker import seo_runs_store
+    r = seo_runs_store.get(run_id, _pw_email())
+    if not r:
+        abort(404)
+    if workspace.is_account(r["space"]):
+        return redirect(_seo_run_home(r))
+    return _seo_run_page(r)
+
+
+@app.route("/<acct:slug>/seo-aeo/runs/<int:run_id>")
+@_acct_view("seo-aeo", staff_only=True)
+def account_seo_run_page(acct, run_id):
+    from tracker import seo_runs_store
+    r = seo_runs_store.get(run_id, _pw_email())
+    if not r:
+        abort(404)
+    if r["space"] != acct["space"]:
+        return redirect(_seo_run_home(r))
+    g.acct_page = "seo-aeo/" + r["tool"]
+    return _seo_run_page(r, acct)
+
+
+def _seo_run_json(r):
+    resp = make_response(json.dumps({"tool": r["tool"], "title": r["title"], "input": r.get("input") or {},
+                                     "output": r.get("output")}, default=str, indent=1))
+    resp.headers["Content-Type"] = "application/json; charset=utf-8"
+    resp.headers["Content-Disposition"] = 'attachment; filename="%s-%d.json"' % (r["tool"], r["id"])
+    resp.headers["Cache-Control"] = "private, no-store"
+    return resp
+
+
+@app.route("/seo-aeo/runs/<int:run_id>.json")
+@position2_required
+def seo_run_json(run_id):
+    from tracker import seo_runs_store
+    r = seo_runs_store.get(run_id, _pw_email(), with_output=True)
+    if not r or workspace.is_account(r["space"]):
+        abort(404)
+    return _seo_run_json(r)
+
+
+@app.route("/<acct:slug>/seo-aeo/runs/<int:run_id>.json")
+@_acct_view("seo-aeo", staff_only=True)
+def account_seo_run_json(acct, run_id):
+    from tracker import seo_runs_store
+    r = seo_runs_store.get(run_id, _pw_email(), with_output=True)
+    if not r or r["space"] != acct["space"]:
+        abort(404)
+    return _seo_run_json(r)
+
+
+@app.route("/api/seo-runs/<int:run_id>", methods=["DELETE"])
+@position2_required
+def seo_run_delete(run_id):
+    from tracker import seo_runs_store
+    if request.headers.get("X-Requested-With") != "fetch":
+        return jsonify(ok=False, error="Bad request."), 400
+    r = seo_runs_store.get(run_id, _pw_email())
+    if not r:
+        return jsonify(ok=False, error="Not found."), 404
+    if not seo_runs_store.delete(run_id, _pw_email()):
+        return jsonify(ok=False, error="Only whoever ran it can delete it."), 403
+    return jsonify(ok=True)
 
 
 @app.route("/<acct:slug>/agents/<agent_slug>")

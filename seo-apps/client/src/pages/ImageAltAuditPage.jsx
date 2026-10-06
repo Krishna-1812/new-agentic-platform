@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { withStudioToken } from '../lib/studioToken';
 import { prefill } from '../lib/prefill';
+import { notifyAgentRunStarted, notifyAgentRunFinished } from '../lib/agentRunSignal';
 
 const STEPS = [
   { id: 'scrape', label: 'Scraping Pages',      icon: '🔍' },
@@ -161,6 +162,8 @@ export default function ImageAltAuditPage() {
         throw new Error(err.error || 'Failed to start audit');
       }
       const { token } = await initRes.json();
+      notifyAgentRunStarted('image-alt-audit');
+      const collected = [];   // each page's outcome, for the run the platform keeps
 
       const es = new EventSource(`/api/image-alt-audit/stream/${token}`);
       esRef.current = es;
@@ -177,6 +180,8 @@ export default function ImageAltAuditPage() {
 
       es.addEventListener('url_done', e => {
         const d = JSON.parse(e.data);
+        collected.push({ url: d.url, ok: !!d.success, locationName: d.locationName || null,
+                         contentCount: d.contentCount || 0, decorativeCount: d.decorativeCount || 0 });
         setUrlStatuses(prev => ({
           ...prev,
           [d.index]: {
@@ -203,6 +208,7 @@ export default function ImageAltAuditPage() {
         es.close();
         esRef.current = null;
         setRunning(false);
+        if (collected.length) notifyAgentRunFinished('image-alt-audit', { input: { urls: parsedUrls }, pages: collected });
       });
 
       es.onerror = () => {

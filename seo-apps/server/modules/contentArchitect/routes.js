@@ -3,6 +3,7 @@ const router = express.Router();
 const crypto = require('crypto');
 
 const store = require('./store');
+const space = require('../../utils/space');
 const { resolveDomain, UnreachableDomainError } = require('./domainResolver');
 const { discoverUrls, crawlFallback } = require('./sitemapDiscovery');
 const { buildPatternTable, refineWithAI, detectVertical, extractTemplates } = require('./patternClassifier');
@@ -27,8 +28,20 @@ function generateToken() {
   return crypto.randomBytes(16).toString('hex');
 }
 
+// Every /projects/:id route reaches only a project this request may open (../../utils/space.js):
+// a client account's, your own, or one from before spaces. Anything else is "not found".
+router.param('id', async (req, res, next, id) => {
+  try {
+    const project = await store.getProject(id);
+    if (project && !space.reachable(project, req)) return res.status(404).json({ error: 'Project not found' });
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/projects', async (req, res) => {
-  res.json(await store.listProjects());
+  res.json((await store.listProjects()).filter((p) => space.listed(p, req)));
 });
 
 router.post('/projects', async (req, res) => {
@@ -36,7 +49,7 @@ router.post('/projects', async (req, res) => {
   if (!domain || !String(domain).trim()) return res.status(400).json({ error: 'Domain is required.' });
   try {
     const { canonicalOrigin, host } = await resolveDomain(domain);
-    const project = await store.createProject({ domain: canonicalOrigin, host });
+    const project = await store.createProject({ domain: canonicalOrigin, host, ...space.stamp(req) });
     res.json(project);
   } catch (err) {
     if (err instanceof UnreachableDomainError || err instanceof UnsafeUrlError) {
@@ -67,6 +80,10 @@ router.put('/projects/:id/competitors', async (req, res) => {
 });
 
 router.delete('/projects/:id', async (req, res) => {
+  const project = await store.getProject(req.params.id);
+  if (project && project.owner && project.owner !== space.stamp(req).owner) {
+    return res.status(403).json({ error: 'Only whoever started this project can delete it.' });
+  }
   await store.deleteProject(req.params.id);
   res.json({ ok: true });
 });

@@ -1462,12 +1462,15 @@ function collectManualItems(sections) {
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
-async function runAudit(url, primaryKeywords, onProgress) {
+// `owner` is { space, owner } (../../utils/space.js stamp): where the saved audit is listed.
+async function runAudit(url, primaryKeywords, onProgress, owner = {}) {
   const id = genId();
   const kws = (Array.isArray(primaryKeywords) ? primaryKeywords : [primaryKeywords]).filter(Boolean);
 
   const audit = {
     id,
+    space: owner.space || null,
+    owner: owner.owner || null,
     url,
     primaryKeywords: kws,
     auditDate: new Date().toISOString(),

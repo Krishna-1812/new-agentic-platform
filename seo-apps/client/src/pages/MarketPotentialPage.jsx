@@ -5,6 +5,7 @@ import { Badge } from '../ui/Badge';
 import { Field } from '../ui/Field';
 import { useToast } from '../ui/Toast';
 import { mp } from '../lib/marketPotentialApi';
+import { notifyAgentRunStarted, notifyAgentRunFinished } from '../lib/agentRunSignal';
 import { refreshSemrushBalance } from '../lib/semrushBalanceStore';
 import USMetroMap from '../components/USMetroMap';
 import DecisionBoard, { topMarket } from '../components/marketPotential/DecisionBoard';
@@ -275,9 +276,14 @@ export default function MarketPotentialPage() {
   // Run a comparison for explicit ids (used by the wizard and scenario reload).
   const runCompareWith = async (svcId, homeIds, comparedIds) => {
     setBusy(true);
+    notifyAgentRunStarted('market-potential');
     try {
       const r = await mp.compare({ serviceId: svcId, homeGeoIds: homeIds, comparedGeoIds: comparedIds });
       setResult(r);
+      // The platform keeps the run for the account (or the person's General work) it was run for.
+      notifyAgentRunFinished('market-potential', {
+        input: { service: service?.name || '', homeGeoIds: homeIds, comparedGeoIds: comparedIds }, ...r,
+      });
       if (r.usage) setMeta((m) => (m ? { ...m, units: { ...m.units, ...r.usage } } : m));
       setStep('results');
       refreshSemrushBalance();

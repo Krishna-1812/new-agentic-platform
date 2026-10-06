@@ -241,11 +241,12 @@ async function getScenario(id) {
   return (await readJson(SCENARIOS_PATH, [])).find((s) => s.id === id) || null;
 }
 
-async function saveScenario({ userId, name, serviceId, serviceName, basketVersion, homeGeoIds, comparedGeoIds, weightsUsed, assumptions, yearMonth }) {
+async function saveScenario({ userId, name, serviceId, serviceName, basketVersion, homeGeoIds, comparedGeoIds, weightsUsed, assumptions, yearMonth, space = null }) {
   const scenarios = await readJson(SCENARIOS_PATH, []);
   const scenario = {
     id: genId('scn'),
     userId: userId || 'anon',
+    space,                              // where it is listed (../../utils/space.js)
     name: name || 'Untitled scenario',
     serviceId,
     serviceName: serviceName || null,   // convenience for the list/reload (Phase 4)

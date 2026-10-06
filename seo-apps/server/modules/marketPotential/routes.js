@@ -10,6 +10,7 @@ const crypto = require('crypto');
 const router = express.Router();
 
 const store = require('./store');
+const space = require('../../utils/space');
 const geo = require('./geoData');
 const { proposeBasket } = require('./basketAgent');
 const { suggestAdjacent, buildComparison } = require('./ranking');
@@ -385,9 +386,16 @@ router.post('/summary', async (req, res) => {
 
 // ── Scenarios (Section 7, M5) — save/version for reproducibility ──────────────
 
+// Scenarios are listed by space (../../utils/space.js): inside a client account, the account's (the
+// whole team's); otherwise your own, including the ones you saved before spaces.
+function scenarioListed(s, req) {
+  const here = space.stamp(req).space;
+  if (space.isAccount(here)) return s.space === here;
+  return s.userId === (req.user?.username || 'anon') && (!s.space || s.space === here);
+}
+
 router.get('/scenarios', async (req, res) => {
-  const userId = req.user?.username || 'anon';
-  res.json({ scenarios: await store.getScenarios(userId) });
+  res.json({ scenarios: (await store.getScenarios()).filter((s) => scenarioListed(s, req)) });
 });
 
 router.post('/scenarios', async (req, res) => {
@@ -397,6 +405,7 @@ router.post('/scenarios', async (req, res) => {
     if (!serviceId) return res.status(400).json({ error: 'serviceId is required' });
     const scenario = await store.saveScenario({
       userId, name, serviceId, serviceName, basketVersion, homeGeoIds, comparedGeoIds, weightsUsed, assumptions, yearMonth,
+      space: space.stamp(req).space,
     });
     res.json({ scenario });
   } catch (err) {
@@ -405,6 +414,11 @@ router.post('/scenarios', async (req, res) => {
 });
 
 router.delete('/scenarios/:id', async (req, res) => {
+  const scenario = await store.getScenario(req.params.id);
+  if (!scenario || !scenarioListed(scenario, req)) return res.status(404).json({ error: 'Scenario not found' });
+  if (scenario.userId !== (req.user?.username || 'anon')) {
+    return res.status(403).json({ error: 'Only whoever saved this scenario can delete it.' });
+  }
   const ok = await store.deleteScenario(req.params.id);
   if (!ok) return res.status(404).json({ error: 'Scenario not found' });
   res.json({ ok: true });

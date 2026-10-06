@@ -64,8 +64,8 @@ function verifyStudioToken(token) {
 }
 
 // Only used by tests and local scripts; the platform (app.py) mints the real ones.
-function mintStudioToken(email, role, ttlSeconds = 3600) {
-  const body = b64url(JSON.stringify({ e: email, r: role, x: Math.floor(Date.now() / 1000) + ttlSeconds }));
+function mintStudioToken(email, role, ttlSeconds = 3600, extra = {}) {
+  const body = b64url(JSON.stringify({ e: email, r: role, x: Math.floor(Date.now() / 1000) + ttlSeconds, ...extra }));
   return `${body}.${sign(body)}`;
 }
 
@@ -80,16 +80,24 @@ function appMayUse(req) {
   return req.method === 'GET' && APP_READ_ONLY_PREFIXES.some(under);
 }
 
+// Where the user's work is filed (the platform's tracker/workspace.py): the client account's space
+// ("acct:<id>") when the platform opened the studio inside an account, else their own ("me:<email>").
+// Only the signed pass can name an account.
+function spaceFor(payload) {
+  if (typeof payload.s === 'string' && /^acct:[0-9]+$/.test(payload.s)) return payload.s;
+  return `me:${String(payload.e || '').toLowerCase()}`;
+}
+
 function requireAuth(req, res, next) {
   if (OPEN_FOR_DEV) {
-    req.user = { username: 'local-dev', role: 'staff' };
+    req.user = { username: 'local-dev', role: 'staff', space: 'me:local-dev' };
     return next();
   }
   const payload = verifyStudioToken(tokenFrom(req));
   if (!payload) {
     return res.status(401).json({ error: 'Your session has expired. Reload the page to continue.' });
   }
-  req.user = { username: payload.e, role: payload.r };
+  req.user = { username: payload.e, role: payload.r, space: spaceFor(payload) };
   if (payload.r === 'app' && !appMayUse(req)) {
     return res.status(403).json({ error: 'This tool is not part of your plan.' });
   }
@@ -116,4 +124,4 @@ router.get('/verify', (req, res) => {
   res.json({ valid: true, role: payload.r });
 });
 
-module.exports = { router, requireAuth, requireSeo, verifyStudioToken, mintStudioToken, APP_PREFIXES };
+module.exports = { router, requireAuth, requireSeo, verifyStudioToken, mintStudioToken, spaceFor, APP_PREFIXES };

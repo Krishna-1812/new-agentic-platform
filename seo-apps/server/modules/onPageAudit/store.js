@@ -29,7 +29,8 @@ async function getAudit(id) {
   } catch { return null; }
 }
 
-async function listAudits() {
+// `keep(audit)` chooses which are listed (../../utils/space.js listed).
+async function listAudits(keep = () => true) {
   await ensureDir();
   try {
     const files = await fs.readdir(DATA_ROOT);
@@ -38,8 +39,10 @@ async function listAudits() {
       try {
         const raw = await fs.readFile(path.join(DATA_ROOT, f), 'utf8');
         const a = JSON.parse(raw);
+        if (!keep(a)) continue;
         results.push({
           id: a.id,
+          owner: a.owner || null,
           url: a.url,
           primaryKeywords: a.primaryKeywords,
           pageType: a.pageType,

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { prefill } from '../lib/prefill';
+import { notifyAgentRunStarted, notifyAgentRunFinished } from '../lib/agentRunSignal';
 
 // All of the SEO & GEO audit run plumbing: inputs and the SSE reader. Shared
 // by SeoGeoAuditPage (full report) and SeoGeoSnapshotPage (score dashboard
@@ -43,6 +44,9 @@ export function useSeoGeoAudit(persistKey, { onRestored, onResult } = {}) {
     const body = inputType === 'url'
       ? { url: urlInput.trim(), keywords, pageIntent }
       : { html: htmlInput.trim(), keywords, pageIntent };
+    // The platform keeps each run for the account (or the person's General work) it was run for.
+    const input = { url: inputType === 'url' ? body.url : '(pasted HTML)', keywords, pageIntent };
+    if (persistKey) notifyAgentRunStarted(persistKey);
 
     try {
       const resp = await fetch('/api/seo-geo-audit/run', {
@@ -80,6 +84,7 @@ export function useSeoGeoAudit(persistKey, { onRestored, onResult } = {}) {
                 setFindings(data.findings);
                 setAi(data.ai);
                 setRunning(false);
+                if (persistKey) notifyAgentRunFinished(persistKey, { input, findings: data.findings, ai: data.ai });
                 onResult?.();
               } else if (currentEvent === 'error') {
                 setError(data.message);
