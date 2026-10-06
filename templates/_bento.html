@@ -50,7 +50,7 @@
    every page that has one. Hovering an account's link lets the browser prerender it, so picking an
    account opens it at once (speculation rules; browsers without them just navigate). #}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/account-picker.css') }}?v=3">
-<script defer src="{{ url_for('static', filename='js/account-picker.js') }}?v=3"></script>
+<script defer src="{{ url_for('static', filename='js/account-picker.js') }}?v=4"></script>
 <script type="speculationrules">{"prerender": [{"where": {"selector_matches": "a[data-acct-go='home'], a[data-acct-card]"}, "eagerness": "moderate"}], "prefetch": [{"where": {"selector_matches": "a[data-acct-go='page']"}, "eagerness": "moderate"}]}</script>
 {%- endif %}
 {%- for sheet in sheets %}

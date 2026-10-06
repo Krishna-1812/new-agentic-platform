@@ -5,6 +5,7 @@ import SerpUrls from '../components/SerpUrls';
 import ResultsTable from '../components/ResultsTable';
 import ExportButtons from '../components/ExportButtons';
 import KBContextSelector from '../components/KBContextSelector';
+import { prefill } from '../lib/prefill';
 
 const CONFIDENCE_STYLES = {
   HIGH:   { bg: 'var(--success-soft)', text: 'var(--success)', label: 'KB: HIGH' },
@@ -13,7 +14,7 @@ const CONFIDENCE_STYLES = {
 };
 
 export default function ContentResearchPage() {
-  const [keyword, setKeyword] = useState('');
+  const [keyword, setKeyword] = useState(() => prefill('keyword'));
   const [client, setClient] = useState('');
   const [feedbackKbIds, setFeedbackKbIds] = useState([]);
   const [step, setStep] = useState('idle');

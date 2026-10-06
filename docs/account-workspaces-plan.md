@@ -21,8 +21,8 @@ Decisions the owner made (2026-10-06):
 |---|---|---|
 | A | The list, URL names, the switch in every top bar and on the hub, each account's home, Google Ads and the AI review scoped to the account | built (PR #74) |
 | B | Client access: invites, what a client sees, the client's chrome, sign-in landing | built (PR #75) |
-| C | Video Studio and Page Watch inside an account | built |
-| D | The SEO & AEO tools and the other agents, filled in from the profile | |
+| C | Video Studio and Page Watch inside an account | built (PR #76) |
+| D | The SEO & AEO tools and the other agents, filled in from the profile | built |
 
 ## Phase A: how it works
 
@@ -206,7 +206,38 @@ An account with no profile shows this block on its home, filled in with what is 
 - The picker knows both pages. On the global Page Watch or Video Studio, picking an account opens
   that account's.
 
-## Phase D (next): the SEO & AEO tools and the other agents
+## Phase D: the SEO & AEO tools and the agents, filled in from the profile (staff)
 
-Each tool and agent opens with the account's website, city, competitors and handles filled in from
-the profile.
+- **The account's home** has a "Run for <account>" section listing every tool and agent below, each
+  with what it will be given (for example "dental implants pune" or "Dental clinic · Pune"). Nothing
+  runs until the person presses the tool's own button.
+- **`/<account>/seo-aeo/<tool>`** embeds the SEO Studio tool with the account's details in its address:
+
+  | Tool | Given |
+  |---|---|
+  | SEO & GEO Audit, SEO & GEO Snapshot, On-Page SEO Audit, Agent Readiness Audit, Image Alt Tag Audit | `pf_url`: the website |
+  | Keyword Research, Content Research | `pf_keyword`: the first service and the first city ("dental implants pune"), else the industry |
+  | Content Architect | `pf_domain` |
+  | Market Potential | `pf_service`, `pf_domain` |
+
+  `seo-apps/client/src/lib/prefill.js` reads them once, when a form first draws, and the person can
+  change them. The studio's pass handling removes only `st` from the address, so they survive.
+  Every other tool opens inside the account without values. As the studio moves between tools,
+  the address stays under `/<account>/seo-aeo`.
+- **`/<account>/agents/<agent>`** renders the agent's own page, unchanged, with the account in the
+  top bar. `static/js/account-prefill.js` then fills its empty fields from the profile (as if
+  typed, so the page's own checks run) and says so:
+
+  | Agent | Fields |
+  |---|---|
+  | Social Media Intelligence | company name, website |
+  | Local Business Radar | business type (industry), place (first city) |
+  | Event & Conference Intelligence | client name, website, verticals (industry), geography (cities) |
+  | Contact Finder | company domain |
+  | Thought Leader Intelligence | company |
+
+  The profile's values reach the page as JSON with `</` escaped, so a value cannot close the script.
+- **From a global tool or agent page**, picking an account opens the same tool or agent for it.
+- **Not prefilled:** the dashboards that are not per client (ABM Signal Tracker, Job Change Alert,
+  LinkedIn Intelligence, Anonymous Visitors, Slot Checker) and Competitor Ad Intelligence (its own
+  React app). They still open from the switch and work across accounts as before.

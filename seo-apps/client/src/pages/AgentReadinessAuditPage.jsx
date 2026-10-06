@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { prefill } from '../lib/prefill';
 
 const SC = {
   pass: { label: 'Pass', bg: 'var(--success-soft)', color: 'var(--success)', icon: '✓' },
@@ -303,7 +304,7 @@ function SkeletonLine({ w = '100%' }) {
 
 // ─── Main page component ──────────────────────────────────────────────────────
 export default function AgentReadinessAuditPage() {
-  const [urlHomepage, setUrlHomepage] = useState('');
+  const [urlHomepage, setUrlHomepage] = useState(() => prefill('url'));
   const [urlAction, setUrlAction]     = useState('');
   const [urlForm, setUrlForm]         = useState('');
   const [loading, setLoading]         = useState(false);

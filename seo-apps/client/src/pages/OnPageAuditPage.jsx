@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { startAudit, pollStatus, getResult, listAudits, deleteAudit } from '../lib/onPageAuditApi';
 import OnPageReport from '../components/onPageAudit/OnPageReport';
+import { prefill } from '../lib/prefill';
 
 const POLL_MS = 3500;
 
@@ -160,7 +161,7 @@ function HistoryList({ audits, onSelect, onDelete }) {
 // ── Input form ────────────────────────────────────────────────────────────────
 
 function InputForm({ onSubmit, loading }) {
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState(() => prefill('url'));
   const [keywords, setKeywords] = useState('');
   const [error, setError] = useState('');
 

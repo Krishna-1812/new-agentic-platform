@@ -11,6 +11,7 @@ import DecisionBoard, { topMarket } from '../components/marketPotential/Decision
 import ScenarioDiff from '../components/marketPotential/ScenarioDiff';
 import { scoreRows, WEIGHT_PRESETS } from '../components/marketPotential/scoring';
 import { loadAssumptions, saveAssumptions } from '../components/marketPotential/assumptions';
+import { prefill } from '../lib/prefill';
 
 /* ── Step machine: setup → signals → regions → results ── */
 const STEPS = [
@@ -140,9 +141,9 @@ export default function MarketPotentialPage() {
   const [meta, setMeta] = useState(null);
 
   // setup
-  const [serviceName, setServiceName] = useState('');
+  const [serviceName, setServiceName] = useState(() => prefill('service'));
   const [homeRegions, setHomeRegions] = useState([]);
-  const [ownDomain, setOwnDomain] = useState(''); // optional "your domain" (Phase 2)
+  const [ownDomain, setOwnDomain] = useState(() => prefill('domain')); // optional "your domain" (Phase 2)
 
   // basket / signals
   const [service, setService] = useState(null);

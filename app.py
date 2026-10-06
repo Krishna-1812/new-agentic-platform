@@ -5606,9 +5606,33 @@ _ACCT_LOCK = threading.Lock()
 # "All accounts" leads from it, and where the picker opens that page for another account.
 ACCT_PAGES = (("", "Overview"), ("google-ads", "Google Ads"), ("google-ads/ai-review", "AI review"),
               ("page-watch", "Page Watch"), ("video-studio", "Video Studio"))
+# The SEO & AEO tools and the agents that take an account's details, and what each is given from the
+# profile: the tools as ?pf_* in the studio's address (seo-apps/client/src/lib/prefill.js); the agents
+# by filling their own page's fields (static/js/account-prefill.js). field -> profile value, below.
+ACCT_SEO = (("seo-geo-audit", "url"), ("on-page-audit", "url"), ("agent-readiness-audit", "url"),
+            ("seo-geo-snapshot", "url"), ("image-alt-audit", "url"), ("keyword-research", "keyword"),
+            ("content-research", "keyword"), ("content-architect", "domain"), ("market-potential", "service"))
+ACCT_AGENTS = (
+    ("social-media-intelligence", "social_media_intelligence", "/strategic-agents/social-media-intelligence",
+     "Social Media Intelligence", "Their social presence, set against their competitors'",
+     (("#companyName", "name"), ("#companyUrl", "domain"))),
+    ("local-business-radar", "local_business_radar", "/strategic-agents/local-business-radar",
+     "Local Business Radar", "Every business like theirs in their city, scored and ranked",
+     (("#lbr-type", "industry"), ("#lbr-where", "location"))),
+    ("event-conference-intelligence", "event_conference_intelligence",
+     "/strategic-agents/event-conference-intelligence", "Event & Conference Intelligence",
+     "The events worth their time and budget",
+     (("#clientName", "name"), ("#clientSite", "website"), ("#verticals", "industry"), ("#geoScope", "locations"))),
+    ("company-people-intelligence", "cpi_home", "/strategic-agents/company-people-intelligence", "Contact Finder",
+     "Decision-makers at the company", (("#fpCompanyDomain", "domain"),)),
+    ("thought-leader-pr", "thought_leader_pr", "/strategic-agents/thought-leader-pr", "Thought Leader Intelligence",
+     "Their leaders' presence and PR openings", (("#tlprCompany", "name"),)),
+)
 ACCT_GLOBAL = {"": "/hub", "google-ads": "/dashboards/google-ads",
                "google-ads/ai-review": "/dashboards/google-ads/ai-review",
                "page-watch": "/strategic-agents/page-watch", "video-studio": "/strategic-agents/video-studio"}
+ACCT_GLOBAL.update({"seo-aeo/" + t: "/seo-aeo/" + t for t, _ in ACCT_SEO})
+ACCT_GLOBAL.update({"agents/" + a[0]: a[2] for a in ACCT_AGENTS})
 _ACCT_FROM_GLOBAL = {v: k for k, v in ACCT_GLOBAL.items()}
 
 
@@ -5925,6 +5949,7 @@ def account_home(acct):
     p = acct["profile"]
     show_profile = not client or shares["profile"]
     tools = None if client else _acct_tools(acct, email)
+    runs = None if client else _acct_runs(acct)
     return render_template(
         "account_home.html", user=_get_user(), acct=acct, st=st, profile=p if show_profile else {"fields": 0},
         card=client_accounts.card(acct, st), pages=_acct_pages(acct, shares if client else None),
@@ -5934,7 +5959,7 @@ def account_home(acct):
         money=client_accounts.money, number=client_accounts.number,
         template=client_profile.template(acct["name"], acct["slug"], acct["customer_ids"], p),
         doc_url=None if client else listing["doc_url"], doc_error=None if client else listing["doc_error"],
-        doc_read=listing["doc_read"], accounts=_acct_nav(), tools=tools)
+        doc_read=listing["doc_read"], accounts=_acct_nav(), tools=tools, runs=runs)
 
 
 def _acct_tools(acct, email):
@@ -6292,6 +6317,84 @@ def account_video_studio_video(acct, project_id):
     return render_template("video_studio_video.html", user=_get_user(), data=view, acct=acct,
                            menu=[{"type": k, "label": lab, "hint": h} for k, lab, h in video_app.SCENE_MENU],
                            fields=video_app.scene_fields(), fonts=video_fonts.families())
+
+
+# ── The SEO & AEO tools and the agents, for one account (staff) ──────────────
+def _acct_facts(acct):
+    """The profile values the tools and agents are given, by name."""
+    p = acct["profile"]
+    services, places = p.get("services") or [], p.get("locations") or []
+    keyword = " ".join(x for x in ((services or [p.get("industry", "")])[0], (places or [""])[0]) if x).lower()
+    return {"name": acct["name"], "website": p.get("website", ""), "url": p.get("website", ""),
+            "domain": p.get("domain", ""), "industry": p.get("industry", ""), "location": (places or [""])[0],
+            "locations": ", ".join(places), "keyword": keyword, "service": (services or [""])[0]}
+
+
+def _acct_runs(acct):
+    """What the account's home offers to run for it: each tool and agent, with what it is given."""
+    f = _acct_facts(acct)
+    tools = {t["slug"]: t for t in _seo_tools()}
+    seo = [{"href": "/%s/seo-aeo/%s" % (acct["slug"], slug), "name": tools[slug]["name"],
+            "given": f[key] if key != "url" else f["domain"], "about": tools[slug]["desc"]}
+           for slug, key in ACCT_SEO if slug in tools]
+    def given(fields):   # what is distinctive: not the account's own name, a website as its domain
+        vals = [f["domain"] if k in ("website", "url") else f[k] for _, k in fields if k != "name"]
+        vals = [v for v in dict.fromkeys(vals) if v]
+        return " · ".join(vals) or f["name"]
+    agents = [{"href": "/%s/agents/%s" % (acct["slug"], slug), "name": label, "about": about, "given": given(fields)}
+              for slug, _, _, label, about, fields in ACCT_AGENTS]
+    return {"seo": seo, "agents": agents, "website": f["domain"]}
+
+
+@app.route("/<acct:slug>/seo-aeo/<tool_slug>")
+@_acct_view("seo-aeo", staff_only=True)
+def account_seo_tool(acct, tool_slug):
+    """An SEO Studio tool opened for the account: its website, keyword or service filled in."""
+    tool = next((t for t in _seo_tools() if t.get("slug") == tool_slug), None)
+    if not tool or tool.get("url"):
+        return redirect("/seo-aeo/" + tool_slug)
+    g.acct_page = "seo-aeo/" + tool_slug
+    f = _acct_facts(acct)
+    key = dict(ACCT_SEO).get(tool_slug)
+    pf = []
+    if key and f.get(key):
+        pf.append(("pf_" + key, f[key]))
+    if tool_slug == "market-potential" and f["domain"]:
+        pf.append(("pf_domain", f["domain"]))
+    qs = _studio_auth_params("staff") + pf
+    path = tool["path"]
+    embed_url = f"{_SERP_BASE}{path}" + (("?" + urlencode(qs)) if qs else "")
+    return render_template("embed.html", user=_get_user(), title=tool["name"], embed_url=embed_url,
+                           breadcrumb=[], current=tool["name"], accent="#34d399", acct=acct,
+                           seo_base="/%s/seo-aeo" % acct["slug"])
+
+
+@app.route("/<acct:slug>/agents/<agent_slug>")
+@_acct_view("agents", staff_only=True)
+def account_agent(acct, agent_slug):
+    """An agent's own page, opened for the account: its fields filled in from the profile (they can be
+    changed), the account in the top bar."""
+    agent = next((a for a in ACCT_AGENTS if a[0] == agent_slug), None)
+    if not agent:
+        abort(404)
+    slug, endpoint, path, label, _, fields = agent
+    view = app.view_functions.get(endpoint)
+    if view is None:
+        return redirect(path)
+    g.acct_page = "agents/" + slug
+    resp = make_response(view())
+    if resp.status_code != 200 or resp.mimetype != "text/html":
+        return resp
+    f = _acct_facts(acct)
+    fill = {sel: f[key] for sel, key in fields if f.get(key)}
+    payload = json.dumps({"fields": fill, "name": acct["name"]}).replace("</", "<\\/")
+    html = resp.get_data(as_text=True)
+    tag = ('<script>window.__ACCT_PREFILL__=%s;</script>\n<script defer src="%s?v=1"></script>\n'
+           % (payload, url_for("static", filename="js/account-prefill.js")))
+    at = html.rfind("</body>")
+    html = html[:at] + tag + html[at:] if at >= 0 else html + tag
+    resp.set_data(html)
+    return resp
 
 
 # (Static JS/CSS/image/font caching is set at the top of this file via

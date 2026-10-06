@@ -8,6 +8,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { Field } from '../ui/Field';
 import { useToast } from '../ui/Toast';
 import { ca } from '../lib/contentArchitectApi';
+import { prefill } from '../lib/prefill';
 
 const STATE_LABELS = {
   created: 'Input',
@@ -27,7 +28,7 @@ const STATE_VARIANTS = {
 };
 
 function CreateProjectCard({ onCreate, creating }) {
-  const [domain, setDomain] = useState('');
+  const [domain, setDomain] = useState(() => prefill('domain'));
   const [error, setError] = useState(null);
 
   async function submit() {
