@@ -137,7 +137,7 @@ def run_job(job, *, stop=None, read_site=video_site.read, client=None):
     if kept and kept.get("colors") and kept.get("fonts"):
         brand = kept
     else:
-        saved = video_store.get_brand(email, project.get("client"))
+        saved = video_store.get_brand(video_store.brand_owner(project), project.get("client"))
         manual_logo = next((a["id"] for a in video_store.list_assets(pid, kinds=("logo",))
                             if (a.get("data") or {}).get("from") == "upload"), None)
         brand = video_brand.resolve(choices.get("brand") or {}, (saved or {}).get("brand"), website_brand,
@@ -147,7 +147,8 @@ def run_job(job, *, stop=None, read_site=video_site.read, client=None):
         logo_bytes = None
         if brand.get("logo_asset"):
             logo_bytes = (video_store.get_asset(brand["logo_asset"], blob=True) or {}).get("bytes")
-        video_store.save_brand(email, project["client"], video_brand.to_saved(brand), logo_bytes)
+        video_store.save_brand(video_store.brand_owner(project), project["client"], video_brand.to_saved(brand),
+                               logo_bytes)
 
     # 3. The plan.
     sources = {"assets": [a for a in video_store.list_assets(pid) if a["kind"] != "frame"]}

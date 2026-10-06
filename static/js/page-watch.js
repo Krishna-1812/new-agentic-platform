@@ -239,9 +239,10 @@
       var body = el("div", "pw-card-body");
       body.appendChild(el("div", "pw-card-name", w.name));
       var site = el("div", "pw-card-site");
-      if (w.client) site.appendChild(el("span", "pw-client", w.client));
+      if (w.client && !ACCT) site.appendChild(el("span", "pw-client", w.client));
       site.appendChild(el("span", null, w.site));
       if (w.area) site.appendChild(el("span", null, "· " + w.area));
+      if (ACCT && w.by) site.appendChild(el("span", "pw-by", "· by " + w.by));
       body.appendChild(site);
       if (w.problem) body.appendChild(el("p", "pw-problem", w.state === "blocked" ? "The site shows a bot check." : "The page could not be read (" + w.problem + ")."));
       if (w.latest) {
@@ -271,12 +272,6 @@
       if (q && (w.name + " " + w.url + " " + w.client + " " + (w.latest ? w.latest.summary : "")).toLowerCase().indexOf(q) < 0) return false;
       return true;
     }
-    function mine(b) {
-      var name = ACCT.name.toLowerCase(), ws = b.watches.filter(function (w) { return (w.client || "").toLowerCase() === name; });
-      var counts = { all: ws.length };
-      ws.forEach(function (w) { counts[w.state] = (counts[w.state] || 0) + 1; w.url_page = ACCT.home + "/watches/" + w.id; });
-      return { watches: ws, counts: counts, clients: [] };
-    }
     function render(highlight) {
       grid.textContent = "";
       var shown = board.watches.filter(matches);
@@ -303,7 +298,7 @@
     $("#pw-find").addEventListener("input", function () { render(); });
     $("#pw-client").addEventListener("change", function () { render(); });
     function refresh(highlight) {
-      return api("GET", BASE + "/api/watches").then(function (b) { board = ACCT ? mine(b) : b; render(highlight); }).catch(function () {});
+      return api("GET", ACCT ? ACCT.api : BASE + "/api/watches").then(function (b) { board = b; render(highlight); }).catch(function () {});
     }
     render();
     // Keep the cards current: faster while something is being read.
@@ -354,8 +349,7 @@
       });
     });
     function create(body) {
-      if (ACCT && !body.client) body.client = ACCT.name;
-      return api("POST", BASE + "/api/watches", body).then(function (r) {
+      return api("POST", ACCT ? ACCT.api : BASE + "/api/watches", body).then(function (r) {
         current = r.id; $("#pw-q").value = "";
         reading(r.id); refresh(r.id);
       }).catch(function (x) { add.hidden = true; fail(x.message); });

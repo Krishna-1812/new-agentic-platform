@@ -12,7 +12,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head(acct.name, ["account-space.css?v=5"]) }}
+{{ head(acct.name, ["account-space.css?v=9"]) }}
 </head>
 <body class="as-page">
 
@@ -241,6 +241,66 @@
   </section>
   {%- endif %}
 
+  {# ── History: everything the team has done for the account ────────────
+     tracker/account_history.py, read from each tool's own records. Staff only: a client sees none of
+     it. account-space.js groups it by day and filters it by tool and person. #}
+  {%- if history %}
+  <section class="as-hist" id="history" aria-labelledby="as-hist-h" data-hist>
+    <div class="as-prof-head">
+      <h2 class="as-h2" id="as-hist-h">History</h2>
+      {%- if history.rows %}<span class="as-hist-n">{{ history.rows|length }}{% if history.rows|length >= 60 %}+{% endif %} for {{ acct.name }}</span>{% endif %}
+    </div>
+    <p class="as-runs-sub">Everything the team has done for {{ acct.name }}, newest first, with who did it. Everyone at {{ brand.name }} sees it; the client does not.</p>
+    {%- if history.rows %}
+    {%- if history.filter.tools|length > 1 or history.filter.people|length > 1 %}
+    <div class="as-hist-bar">
+      <div class="as-hist-chips" role="radiogroup" aria-label="Show">
+        <button type="button" class="as-hist-chip is-on" role="radio" aria-checked="true" data-hist-tool="">All <em>{{ history.rows|length }}</em></button>
+        {%- for t in history.filter.tools %}
+        <button type="button" class="as-hist-chip" role="radio" aria-checked="false" data-hist-tool="{{ t.key }}"><i class="as-ev-dot as-ev-dot--{{ t.key }}"></i>{{ t.label }} <em>{{ t.n }}</em></button>
+        {%- endfor %}
+      </div>
+      {%- if history.filter.people|length > 1 %}
+      <label class="as-hist-who">
+        <select data-hist-who aria-label="By whom">
+          <option value="">Everyone</option>
+          {%- for p in history.filter.people %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+        </select>
+      </label>
+      {%- endif %}
+    </div>
+    {%- endif %}
+    <ol class="as-hist-list">
+      {%- for r in history.rows %}
+      <li class="as-ev" data-tool="{{ r.tool }}" data-by="{{ r.by }}" data-at="{{ r.at }}">
+        <span class="as-ev-ico as-ev-ico--{{ r.tool }}" aria-hidden="true">
+          {%- if r.tool == "page-watch" and r.kind == "change" %}<svg viewBox="0 0 24 24"><path d="M4 12h3l2-6 4 12 2-6h5"/></svg>
+          {%- elif r.tool == "page-watch" %}<svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          {%- elif r.tool == "video-studio" %}<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg>
+          {%- else %}<svg viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>{% endif %}
+        </span>
+        {%- if r.href %}<a class="as-ev-main" href="{{ r.href }}">{% else %}<div class="as-ev-main">{% endif %}
+          <span class="as-ev-t">{{ r.title }}</span>
+          <span class="as-ev-m">{{ r.tool_label }}{% if r.detail %} &middot; {{ r.detail }}{% endif %}</span>
+        {%- if r.href %}</a>{% else %}</div>{% endif %}
+        <span class="as-ev-side">
+          {%- if r.state_label %}<span class="as-ev-st as-ev-st--{{ r.state or 'plain' }}">{{ r.state_label }}</span>{% endif %}
+          <span class="as-ev-who">{% if r.by %}<span class="as-ev-av" aria-hidden="true">{{ r.by[:1] }}</span>{{ r.by }}{% else %}<span class="as-ev-av as-ev-av--auto" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span>Automatic{% endif %}</span>
+          <time class="as-ev-at" datetime="{{ r.at }}">{{ nice_day(r.at) }}</time>
+        </span>
+      </li>
+      {%- endfor %}
+    </ol>
+    <p class="as-hist-none" hidden>Nothing of that kind yet.</p>
+    {%- else %}
+    <div class="as-hist-empty">
+      <span class="as-ev-ico as-ev-ico--ai-review" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg></span>
+      <p><b>Nothing yet.</b> A watch, a video or an AI review made for {{ acct.name }} appears here, with who made it, so whoever picks the account up next starts where the last person stopped.</p>
+    </div>
+    {%- endif %}
+  </section>
+  {%- endif %}
+
   {# ── The profile, from the master doc ──────────────────────────────── #}
   {%- if not client_view or profile.fields %}
   <section class="as-prof" aria-labelledby="as-prof-h">
@@ -375,7 +435,7 @@
 {%- endif %}
 
 <script id="acct-data" type="application/json">{{ accounts|tojson }}</script>
-<script defer src="{{ url_for('static', filename='js/account-space.js') }}?v=1"></script>
+<script defer src="{{ url_for('static', filename='js/account-space.js') }}?v=2"></script>
 {{ topbar_script() }}
 <script>
 (function(){

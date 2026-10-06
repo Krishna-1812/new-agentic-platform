@@ -6,8 +6,10 @@ functions and return the same shapes.
 
 Tables:
   client_accounts           one row per account ever listed: its key (stable across renames), its
-                            slug and the name it last had. Rows are never deleted, so a slug is
-                            never handed to a different client.
+                            slug, the name it last had, and its id. Rows are never deleted, so a slug
+                            is never handed to a different client. The id never changes, even when
+                            the key does (an account that gains Google Ads): work saved for the
+                            account is filed under it (tracker/workspace.py).
   client_account_old_slugs  slugs an account used before; they redirect to its current one.
   client_account_access     who outside the agency may open an account: an email, or "@domain"
                             (tracker/client_access.py). Follows the account's key when it changes.
@@ -36,7 +38,7 @@ def backend():
 
 
 # ── Memory ───────────────────────────────────────────────────────────────────
-_MEM = {"rows": {}, "names": {}, "retired": {}, "access": {}, "shares": {}, "audit": []}
+_MEM = {"rows": {}, "names": {}, "retired": {}, "access": {}, "shares": {}, "audit": [], "ids": {}}
 _MEM_LOCK = threading.Lock()
 
 
@@ -80,6 +82,8 @@ def _ensure(conn):
                     name TEXT NOT NULL DEFAULT '',
                     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT now())""")
+            cur.execute("ALTER TABLE client_accounts ADD COLUMN IF NOT EXISTS id BIGSERIAL")
+            cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS client_accounts_id ON client_accounts (id)")
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS client_account_old_slugs (
                     slug TEXT PRIMARY KEY,
@@ -121,20 +125,26 @@ def _read(cur):
     return rows, names, dict(cur.fetchall())
 
 
+def _ids(cur):
+    cur.execute("SELECT key, id FROM client_accounts")
+    return {k: int(i) for k, i in cur.fetchall()}
+
+
 def load():
-    """{"rows": {key: slug}, "retired": {old slug: key}} as stored."""
+    """{"rows": {key: slug}, "retired": {old slug: key}, "ids": {key: id}} as stored."""
     if backend() == "memory":
         with _MEM_LOCK:
-            return {"rows": dict(_MEM["rows"]), "retired": dict(_MEM["retired"])}
+            return {"rows": dict(_MEM["rows"]), "retired": dict(_MEM["retired"]), "ids": dict(_MEM["ids"])}
     with _pg() as conn:
         _ensure(conn)
         with conn.cursor() as cur:
             rows, _, retired = _read(cur)
-    return {"rows": rows, "retired": retired}
+            ids = _ids(cur)
+    return {"rows": rows, "retired": retired, "ids": ids}
 
 
 def sync(accounts, reserved):
-    """Give every account its slug, store what changed, and return {"rows", "retired"} as stored."""
+    """Give every account its slug, store what changed, and return {"rows", "retired", "ids"} as stored."""
     if backend() == "memory":
         with _MEM_LOCK:
             rows, retired, rekeys = client_accounts.plan_slugs(accounts, _MEM["rows"], _MEM["retired"], reserved)
@@ -146,9 +156,14 @@ def sync(accounts, reserved):
                 for a in _MEM["audit"]:
                     if a["key"] == old:
                         a["key"] = new
+                if old in _MEM["ids"]:
+                    _MEM["ids"][new] = _MEM["ids"].pop(old)
+            for k in rows:
+                if k not in _MEM["ids"]:
+                    _MEM["ids"][k] = max(_MEM["ids"].values(), default=0) + 1
             for a in accounts:
                 _MEM["names"][a["key"]] = a["name"]
-            return {"rows": dict(rows), "retired": dict(retired)}
+            return {"rows": dict(rows), "retired": dict(retired), "ids": dict(_MEM["ids"])}
     with _pg() as conn:
         _ensure(conn)
         with conn.cursor() as cur:
@@ -183,7 +198,8 @@ def sync(accounts, reserved):
                 elif k in names and names[k] != old_names.get(k) and k not in moved:
                     cur.execute("UPDATE client_accounts SET name = %s, updated_at = now() WHERE key = %s",
                                 (names[k], k))
-    return {"rows": rows, "retired": retired}
+            ids = _ids(cur)
+    return {"rows": rows, "retired": retired, "ids": ids}
 
 
 # ── Who may open an account, and what they see ──────────────────────────────

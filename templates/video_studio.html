@@ -13,7 +13,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Video Studio", ["strategic-agents.css?v=2", "page-watch.css?v=1", "video-studio-app.css?v=1"]) }}
+{{ head("Video Studio", ["strategic-agents.css?v=2", "page-watch.css?v=4", "video-studio-app.css?v=1"]) }}
 </head>
 <body class="sa pw vs">
 
@@ -139,10 +139,18 @@
     <div class="sa-sec-head">
       <span class="sa-idx">01</span>
       <div>
-        <span class="sa-lbl" data-sa-decode>{{ ("Your videos for " ~ acct.name) if acct else "Your videos" }}</span>
+        <span class="sa-lbl" data-sa-decode>{{ ("The team's videos for " ~ acct.name) if acct else "Your General videos" }}</span>
         <h2 class="sa-h2" id="vs-lib-t">Every video, <span class="sa-mk sa-mk--sm">every version.</span></h2>
       </div>
     </div>
+    {%- if elsewhere %}
+    {#- General is the viewer's own videos; the ones they made for client accounts live there. #}
+    <p class="ws-elsewhere"><span>Your videos for client accounts are in each account:</span>
+      {%- for e in elsewhere[:4] %}
+      <a href="{{ e.href }}">{{ e.name }} <small>{{ e.label }}</small></a>
+      {%- endfor %}
+    </p>
+    {%- endif %}
     <div class="pw-bar">
       <div class="sa-chips" id="vs-kinds" role="radiogroup" aria-label="Kind"></div>
       <div class="pw-search">
@@ -181,6 +189,6 @@
 <script type="application/json" id="vs-data">{{ data|tojson }}</script>
 {{ topbar_script() }}
 <script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
-<script defer src="{{ url_for('static', filename='js/video-studio.js') }}?v=4"></script>
+<script defer src="{{ url_for('static', filename='js/video-studio.js') }}?v=6"></script>
 </body>
 </html>

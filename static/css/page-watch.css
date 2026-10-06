@@ -396,3 +396,29 @@
 .pw-sug:hover { background: var(--acc); color: #121213; }
 .pw-sug:active { transform: scale(.95); }
 .pw-sug:disabled { opacity: .5; cursor: progress; }
+
+/* ── Spaces (docs/account-memory-plan.md) ─────────────────────────────────
+   On an account's own board each card says who added it; on General, a line points to the viewer's
+   own work kept in client accounts. */
+.pw-card-site .pw-by { color: var(--tx2); }
+.ws-elsewhere {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: var(--sp-4) 0 0;
+  font-size: var(--fs-sm); color: var(--tx2);
+}
+.ws-elsewhere > span { margin-right: 2px; }
+.ws-elsewhere a {
+  display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 12px; border-radius: var(--r-pill);
+  background: var(--s1); color: var(--tx); font-weight: var(--fw-semi); text-decoration: none;
+  transition: background 200ms ease, color 200ms ease;
+}
+.ws-elsewhere a small { font-weight: var(--fw-regular); color: var(--tx3); transition: color 200ms ease; }
+.ws-elsewhere a:hover { background: var(--ink); color: var(--tx-on-ink); }
+.ws-elsewhere a:hover small { color: rgba(246, 244, 240, .7); }
+.ws-elsewhere a:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+/* On Page Watch's dark hero. */
+.ws-elsewhere--dark { margin-left: var(--sp-6); color: var(--ink-3, #9A968F); font-size: 13px; }
+.ws-elsewhere--dark a { background: #1F1F21; color: var(--ink-paper, #F6F4F0); }
+.ws-elsewhere--dark a small { color: var(--ink-3, #9A968F); }
+.ws-elsewhere--dark a:hover { background: var(--ink-paper, #F6F4F0); color: var(--ink, #121213); }
+.ws-elsewhere--dark a:hover small { color: #6F6B66; }
+@media (max-width: 760px) { .ws-elsewhere--dark { margin-left: 0; } }

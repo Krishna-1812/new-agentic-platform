@@ -281,6 +281,7 @@
       if (logoIn.files[0]) uploads.push({ file: logoIn.files[0], kind: "logo" });
       go.disabled = true; progress.textContent = "Saving the brief…";
       var pid = null;
+      if (ACCT) body.account = ACCT.slug;   // saved to the client account, for the whole team
       api("POST", BASE + "/api/videos", body).then(function (r) {
         pid = r.project;
         var chain = Promise.resolve();
@@ -310,13 +311,9 @@
 
   function Library(items, acct) {
     var grid = $("#vs-lib"), empty = $("#vs-lib-empty"), kinds = $("#vs-kinds"), clientSel = $("#vs-lib-client"), find = $("#vs-lib-find");
-    function mine(list) {   // inside a client account: its videos, opened inside the account
-      if (!acct) return list;
-      var name = acct.name.toLowerCase();
-      return list.filter(function (v) { return (v.client || "").toLowerCase() === name; })
-        .map(function (v) { return Object.assign({}, v, { url: acct.home + "/videos/" + v.id }); });
-    }
-    items = mine(items);
+    /* Inside a client account the library is the account's (app.py: everyone's videos for it, each
+       with its maker, opened inside the account); elsewhere it is your own General videos. */
+    var LIB = BASE + "/api/library" + (acct ? "?account=" + encodeURIComponent(acct.slug) : "");
     var filter = { kind: "", client: "", q: "" };
     function chips() {
       kinds.textContent = "";
@@ -347,11 +344,11 @@
       var body = el("div", "pw-card-body");
       var t = el("a", "vs-card-brief", v.brief); t.href = v.url; body.appendChild(t);
       var meta = el("div", "pw-card-site");
-      if (v.client) meta.appendChild(el("span", "pw-client", v.client));
+      if (v.client && !acct) meta.appendChild(el("span", "pw-client", v.client));
       meta.appendChild(el("span", null, [v.kind_label, v.shape_label, v.seconds ? secs(v.seconds) : "", v.versions + (v.versions === 1 ? " version" : " versions")].filter(Boolean).join(" · ")));
       body.appendChild(meta);
       var foot = el("div", "pw-card-foot");
-      foot.appendChild(el("span", null, stamp(v.created_at)));
+      foot.appendChild(el("span", null, stamp(v.created_at) + (acct && v.by ? " · by " + v.by : "")));
       foot.appendChild(btn("Duplicate", "pw-link-btn vs-dup", function () { duplicate(v.id); }));
       body.appendChild(foot);
       c.appendChild(body);
@@ -375,7 +372,7 @@
     (function poll() {
       if (!busy()) return setTimeout(poll, 15000);
       setTimeout(function () {
-        api("GET", BASE + "/api/library").then(function (r) { items = mine(r.library || []); chips(); draw(); }).catch(function () {}).then(poll);
+        api("GET", LIB).then(function (r) { items = r.library || []; chips(); draw(); }).catch(function () {}).then(poll);
       }, 5000);
     })();
   }
@@ -422,7 +419,7 @@
     }
     function set(view, force) {
       V = view;
-      if (V.version && window.history.replaceState) window.history.replaceState(null, "", BASE + "/videos/" + V.id + "?v=" + V.version.id);
+      if (V.version && window.history.replaceState) window.history.replaceState(null, "", window.location.pathname + "?v=" + V.version.id);   // stays inside the account
       facts(); versions();
       var v = V.version;
       var key = v ? v.id + ":" + v.phase : "none";

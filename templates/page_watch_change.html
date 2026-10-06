@@ -10,7 +10,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Change · " ~ c.watch.name, ["strategic-agents.css?v=2", "page-watch.css?v=1"]) }}
+{{ head("Change · " ~ c.watch.name, ["strategic-agents.css?v=2", "page-watch.css?v=4"]) }}
 </head>
 <body class="sa pw">
 
@@ -129,6 +129,6 @@
 <script type="application/json" id="pw-data">{{ {"change": {"id": c.id, "before": c.before, "after": c.after,
   "boxes_before": c.boxes_before, "boxes_after": c.boxes_after}}|tojson }}</script>
 {{ topbar_script() }}
-<script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=2"></script>
+<script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=3"></script>
 </body>
 </html>

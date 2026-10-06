@@ -12,7 +12,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Video Studio", ["strategic-agents.css?v=2", "page-watch.css?v=1", "video-studio-app.css?v=1"]) }}
+{{ head("Video Studio", ["strategic-agents.css?v=2", "page-watch.css?v=4", "video-studio-app.css?v=1"]) }}
 </head>
 <body class="sa pw vs">
 
@@ -21,7 +21,7 @@
 <main class="sa-shell" id="vs-video">
   <section class="vs-head" aria-labelledby="vs-brief-h">
     <div class="vs-head-main">
-      <span class="sa-lbl">{{ data.choices.kind_label }}{% if data.client %} &middot; {{ data.client }}{% endif %}</span>
+      <span class="sa-lbl">{{ data.choices.kind_label }}{% if data.client %} &middot; {{ data.client }}{% endif %}{% if acct and data.by %} &middot; made by {{ data.by }}{% endif %}</span>
       <h1 class="vs-brief" id="vs-brief-h">{{ data.brief }}</h1>
       <ul class="pw-facts vs-facts" id="vs-facts"></ul>
     </div>
@@ -47,6 +47,6 @@
 <script type="application/json" id="vs-data">{{ {"video": data, "menu": menu, "fields": fields, "fonts": fonts}|tojson }}</script>
 {{ topbar_script() }}
 <script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
-<script defer src="{{ url_for('static', filename='js/video-studio.js') }}?v=4"></script>
+<script defer src="{{ url_for('static', filename='js/video-studio.js') }}?v=6"></script>
 </body>
 </html>

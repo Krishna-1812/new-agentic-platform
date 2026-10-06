@@ -81,7 +81,7 @@ def version_finished(version_id, ok, *, session=None):
     p = video_store.get_project(v["project_id"]) if v else None
     if not p or p["kind"] in ("engine_test", "plan_test", "drill"):
         return False, "not_a_person's_video"
-    channel = channel_for(p["email"], p.get("client"))
+    channel = channel_for(video_store.brand_owner(p), p.get("client"))
     if not channel:
         return False, "no_channel"
     tok = watch_alerts.token()

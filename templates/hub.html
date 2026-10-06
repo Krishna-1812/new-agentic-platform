@@ -2,7 +2,7 @@
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
 <html lang="en">
 <head>
-{{ head(brand.hub, ["hub.css?v=1", "account-space.css?v=5"]) }}
+{{ head(brand.hub, ["hub.css?v=1", "account-space.css?v=9"]) }}
 </head>
 <body>
 
@@ -13,8 +13,9 @@
 <div class="hb-shell">
 
   {# The headline is the account switch, the same one the Google Ads dashboard
-     has: "All accounts" here, an account's name on its own page. Picking one
-     goes to /<account>, where every dashboard and agent follows it. The name
+     has: "General" here (your own work, for no account), an account's name on
+     its own page. Picking one goes to /<account>, where every dashboard and
+     agent follows it and everything run is saved to it. The name
      carries across (view-transition-name), so the row you pick becomes the
      next page's title. #}
   <div class="hb-lead as-lead bn-reveal">
@@ -22,16 +23,16 @@
     <span class="as-pre" aria-hidden="true">Working on</span>
     <h1 class="as-title">
       <button type="button" class="as-switch" data-acct-picker data-acct-page=""
-              aria-haspopup="dialog" aria-expanded="false" aria-label="Working on all accounts. Switch account">
-        <span class="as-mk" data-vt-name style="view-transition-name: acct-name">All accounts</span>
+              aria-haspopup="dialog" aria-expanded="false" aria-label="Working on General, your own work. Switch account">
+        <span class="as-mk" data-vt-name style="view-transition-name: acct-name">General</span>
         <span class="as-chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
       </button>
     </h1>
     <p class="hb-sub as-sub">
       {%- if accounts and accounts.accounts %}
-      <b>{{ accounts.accounts|length }} accounts</b> from Google Ads and the master doc. Pick one and every dashboard and agent follows it.
+      Your own work, which only you see. Pick one of <b>{{ accounts.accounts|length }} client accounts</b> and every dashboard and agent follows it; what you run there is saved to it, for the whole team.
       {%- else %}
-      Pick an account and every dashboard and agent follows it.
+      Your own work, which only you see. Pick a client account and every dashboard and agent follows it; what you run there is saved to it, for the whole team.
       {%- endif %}
     </p>
   </div>
@@ -237,7 +238,7 @@
 </div>
 
 {% if accounts %}<script id="acct-data" type="application/json">{{ accounts|tojson }}</script>{% endif %}
-<script defer src="{{ url_for('static', filename='js/account-space.js') }}?v=1"></script>
+<script defer src="{{ url_for('static', filename='js/account-space.js') }}?v=2"></script>
 {{ topbar_script() }}
 <script>
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */

@@ -9,7 +9,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head(w.name ~ " · Page Watch", ["strategic-agents.css?v=2", "page-watch.css?v=1"]) }}
+{{ head(w.name ~ " · Page Watch", ["strategic-agents.css?v=2", "page-watch.css?v=4"]) }}
 </head>
 <body class="sa pw">
 
@@ -19,7 +19,7 @@
 <main class="sa-shell" id="pw-watch" data-home="{{ pw_home }}">
   <section class="pw-watch-head">
     <div>
-      <span class="sa-lbl">{{ w.client or 'Watched page' }}</span>
+      <span class="sa-lbl">{{ w.client or 'Watched page' }}{% if acct and w.by %} &middot; added by {{ w.by }}{% endif %}</span>
       <h1 class="sa-h2">{{ w.name }}</h1>
       <div class="pw-watch-meta">
         <span class="pw-state pw-state--{{ w.state }}" style="position:static;box-shadow:none"><i></i>{{ w.state_label }}</span>
@@ -122,6 +122,6 @@
   "instructions": w.instructions, "channel": w.channel, "watch_text": w.watch_text, "watch_visual": w.watch_visual,
   "status": w.status, "ignore": w.ignore, "area_selector": w.area_selector, "area": w.area}, "days": days, "dayNames": day_names}|tojson }}</script>
 {{ topbar_script() }}
-<script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=2"></script>
+<script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=3"></script>
 </body>
 </html>

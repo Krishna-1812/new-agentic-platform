@@ -5,8 +5,9 @@
    bar, the hub's headline, an account's own title. Picking an account goes to
    /<account>/<page>, where <page> is the trigger's data-acct-page: the same
    page for the other account ("google-ads" on the Google Ads dashboard), or
-   the account's home (""). "All accounts" goes to the global page that
-   mirrors it (data from the server: ACCT_GLOBAL in app.py).
+   the account's home (""). "General" (your own work, for no account: see
+   docs/account-memory-plan.md) goes to the global page that mirrors it (data
+   from the server: ACCT_GLOBAL in app.py).
 
    The list is the page's own (#acct-data, embedded by the hub and the
    account pages) or /api/accounts, fetched the first time the picker or the
@@ -81,7 +82,7 @@
     });
     return s;
   }
-  var ICON_ALL = ["M4 4h7v7H4z", "M13 4h7v7h-7z", "M4 13h7v7H4z", "M13 13h7v7h-7z"];
+  var ICON_ALL = ["M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M4.5 20c1.4-3.3 4.2-5 7.5-5s6.1 1.7 7.5 5"];
   var ICON_SEARCH = ["M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14z", "m20 20-3.5-3.5"];
 
   function avatar(a, cls) {
@@ -220,7 +221,7 @@
     o.appendChild(avatar(a));
     var t = el("span", "ap-opt-t");
     var name = el("span", "ap-opt-name");
-    name.appendChild(marked(a ? a.name : "All accounts", input.value.trim().toLowerCase()));
+    name.appendChild(marked(a ? a.name : "General", input.value.trim().toLowerCase()));
     t.appendChild(name);
     if (sub) t.appendChild(el("span", "ap-opt-sub", sub));
     o.appendChild(t);
@@ -260,9 +261,9 @@
     var accts = (DATA && DATA.accounts) || [], cur = currentSlug();
     var global = (DATA && DATA.global) || {};
 
-    if (!q && !(DATA && DATA.client)) {   // a client has no "all accounts": only their own
+    if (!q && !(DATA && DATA.client)) {   // a client has no General: only their own accounts
       var allHref = global[page] || "/hub";
-      list.appendChild(option(allHref, null, "Every client, across the workspace"));
+      list.appendChild(option(allHref, null, "Your own work, for no client. Only you see it"));
     }
     var seen = {};
     var rec = q ? [] : recent().map(function (s) {

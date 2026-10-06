@@ -14,7 +14,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Page Watch", ["strategic-agents.css?v=2", "page-watch.css?v=2"]) }}
+{{ head("Page Watch", ["strategic-agents.css?v=2", "page-watch.css?v=4"]) }}
 </head>
 <body class="sa pw">
 
@@ -69,6 +69,14 @@
       </button>
       {%- endfor %}
     </div>
+    {%- endif %}
+    {%- if elsewhere %}
+    {#- General is the viewer's own watches; the ones they added for client accounts live there. #}
+    <p class="ws-elsewhere ws-elsewhere--dark"><span>Your watches for client accounts are in each account:</span>
+      {%- for e in elsewhere[:4] %}
+      <a href="{{ e.href }}">{{ e.name }} <small>{{ e.label }}</small></a>
+      {%- endfor %}
+    </p>
     {%- endif %}
     <p class="pw-error" id="pw-error" role="alert" hidden></p>
 
@@ -203,9 +211,10 @@
 </footer>
 
 <script type="application/json" id="pw-data">{{ {"board": board, "status": {"worker": status.worker}, "days": days, "dayNames": day_names,
-                                                     "account": ({"name": acct.name, "home": "/" ~ acct.slug ~ "/page-watch"} if acct else none)}|tojson }}</script>
+                                                     "account": ({"name": acct.name, "home": "/" ~ acct.slug ~ "/page-watch",
+                                                                  "api": "/" ~ acct.slug ~ "/api/page-watch/watches"} if acct else none)}|tojson }}</script>
 {{ topbar_script() }}
 <script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
-<script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=2"></script>
+<script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=3"></script>
 </body>
 </html>
