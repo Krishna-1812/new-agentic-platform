@@ -17,6 +17,7 @@ tracking exists from day one even though enforcement is a later phase.
 from __future__ import annotations
 
 import logging
+from tracker import workspace
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -97,6 +98,10 @@ def _ensure_tables(conn) -> None:
         # companies that have no Reddit account at all) has no home in
         # sci_posts, so it lives on the run the way `synthesis` does.
         cur.execute("ALTER TABLE sci_runs ADD COLUMN IF NOT EXISTS reddit_pulse JSONB")
+        # The run's space (tracker/workspace.py): a client account's, which the whole team sees, or
+        # its maker's General work. Runs from before are '' (their maker's).
+        cur.execute("ALTER TABLE sci_runs ADD COLUMN IF NOT EXISTS space TEXT NOT NULL DEFAULT ''")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_sci_runs_space ON sci_runs (space, created_at DESC)")
         cur.execute("""
             CREATE TABLE IF NOT EXISTS sci_platform_runs (
                 id SERIAL PRIMARY KEY,
@@ -194,11 +199,11 @@ def _ts(d: dict, *keys: str) -> None:
 # ── Runs ───────────────────────────────────────────────────────────────────
 
 _RUN_COLUMNS = ["id", "email", "company_name", "company_url", "company_logo", "status", "error",
-                "identify_result", "synthesis", "reddit_pulse", "created_at", "updated_at"]
+                "identify_result", "synthesis", "reddit_pulse", "created_at", "updated_at", "space"]
 
 
 def save_run(email: str, company_name: str, company_url: str | None = None,
-            company_logo: str | None = None) -> int | None:
+            company_logo: str | None = None, space: str = "") -> int | None:
     """Create a new run row with status='running'. Returns the new row's id,
     or None on any failure. `company_logo` is the logo URL from whichever
     picker candidate (see tracker/sci_company_search.py) the user selected,
@@ -211,9 +216,9 @@ def save_run(email: str, company_name: str, company_url: str | None = None,
         _ensure_tables(conn)
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO sci_runs (email, company_name, company_url, company_logo) "
-                "VALUES (%s, %s, %s, %s) RETURNING id",
-                (email.lower(), company_name, company_url, company_logo),
+                "INSERT INTO sci_runs (email, company_name, company_url, company_logo, space) "
+                "VALUES (%s, %s, %s, %s, %s) RETURNING id",
+                (email.lower(), company_name, company_url, company_logo, space or ""),
             )
             new_id = cur.fetchone()[0]
         conn.commit()
@@ -342,18 +347,20 @@ def resolve_stale_run(run: dict) -> dict:
     return run
 
 
-def list_runs(email: str, limit: int = 100) -> list[dict]:
-    """This user's own runs, newest first. [] on any failure."""
+def list_runs(email: str, limit: int = 100, space: str | None = None) -> list[dict]:
+    """A client account's runs (everyone's), or with no space this user's own General ones, newest
+    first. [] on any failure."""
     conn = _pg_conn()
-    if not conn or not email:
+    if not conn or not (email or space):
         return []
     try:
         _ensure_tables(conn)
+        where, args = workspace.list_sql(email, space)
         with conn.cursor() as cur:
             cur.execute(
                 f"SELECT {', '.join(_RUN_COLUMNS)} FROM sci_runs "
-                "WHERE email = %s ORDER BY created_at DESC LIMIT %s",
-                (email.lower(), limit),
+                f"WHERE {where} ORDER BY created_at DESC LIMIT %s",
+                args + [limit],
             )
             rows = cur.fetchall()
         out = []
@@ -419,9 +426,9 @@ def search_known_companies(email: str, query: str, limit: int = 8) -> list[dict]
 
 
 def get_run(run_id: int, email: str) -> dict | None:
-    """One run, ownership-scoped in the query itself. Returns None for a run
-    that doesn't exist AND for one that belongs to a different email,
-    identically -- callers must 404 either way, never reveal which."""
+    """One run, scoped in the query itself: the user's own, or a client account's (the whole team's,
+    tracker/workspace.py). Returns None for a run that doesn't exist AND for one that belongs to
+    someone else's General work, identically -- callers must 404 either way, never reveal which."""
     conn = _pg_conn()
     if not conn or not email:
         return None
@@ -430,7 +437,7 @@ def get_run(run_id: int, email: str) -> dict | None:
         with conn.cursor() as cur:
             cur.execute(
                 f"SELECT {', '.join(_RUN_COLUMNS)} FROM sci_runs "
-                "WHERE id = %s AND email = %s",
+                f"WHERE id = %s AND {workspace.seen_sql()}",
                 (run_id, email.lower()),
             )
             row = cur.fetchone()

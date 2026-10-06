@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 
 log = logging.getLogger(__name__)
 
-TOOLS = {"page-watch": "Page Watch", "video-studio": "Video Studio", "ai-review": "AI review"}
+TOOLS = {"page-watch": "Page Watch", "video-studio": "Video Studio", "ai-review": "AI review", "agents": "Agents"}
 LIMIT = 60
 
 
@@ -78,19 +78,96 @@ def _reviews(acct):
     return out
 
 
-def entries(acct, library=None, limit=LIMIT):
+# ── The agents (phase 2) ─────────────────────────────────────────────────────
+STATE = {"complete": ("ready", "Done"), "done": ("ready", "Done"), "confirmed": ("ready", "Done"),
+         "failed": ("failed", "Failed"), "error": ("failed", "Failed"), "cancelled": ("", "Stopped"),
+         "needs_review": ("changed", "Needs a look")}
+
+
+def _state(status):
+    return STATE.get(status or "", ("running", "Running"))
+
+
+AGENT_NAMES = {"local-business-radar": "Local Business Radar", "social-media-intelligence": "Social Media Intelligence",
+               "event-conference-intelligence": "Event & Conference Intelligence",
+               "thought-leader-pr": "Thought Leader Intelligence", "company-people-intelligence": "Contact Finder"}
+
+
+def agent_entry(acct, agent, title, detail, who, at, status, href=None):
+    """One agent run as a History row (also used for Contact Finder's, read in app.py)."""
+    st, label = _state(status)
+    return {"tool": "agents", "kind": "run", "agent": agent, "who": who or "", "at": _iso(at), "title": title,
+            "detail": detail, "href": href or "/%s/agents/%s" % (acct["slug"], agent), "state": st,
+            "state_label": label, "tool_label": AGENT_NAMES[agent]}
+
+
+_agent = agent_entry
+
+
+def _lbr(acct):
+    from tracker import lbr_store
+    out = []
+    for r in lbr_store.list_runs("", limit=LIMIT, space=acct["space"]):
+        plan = r.get("plan") or {}
+        label = (plan.get("business") or {}).get("label") or r.get("business_type") or "Businesses"
+        area = (plan.get("area") or {}).get("formatted") or r.get("location") or ""
+        found = (r.get("summary") or {}).get("found")
+        out.append(_agent(acct, "local-business-radar", "%s in %s" % (label, area),
+                          ("%d businesses found" % found) if found else "", r.get("email"), r.get("created_at"),
+                          r.get("status"), "/strategic-agents/local-business-radar/runs/%d/report" % r["id"]))
+    return out
+
+
+def _smi(acct):
+    from tracker import sci_store
+    return [_agent(acct, "social-media-intelligence", r.get("company_name") or "A company",
+                   r.get("company_url") or "", r.get("email"), r.get("created_at"), r.get("status"))
+            for r in sci_store.list_runs("", limit=LIMIT, space=acct["space"])]
+
+
+EVI_KINDS = {"recommend": "Scored calendar", "lookup": "Event roster", "workroom": "Room worked",
+             "discover": "Audience search"}
+
+
+def _evi(acct):
+    from tracker import event_intel_store
+    return [_agent(acct, "event-conference-intelligence",
+                   "%s: %s" % (EVI_KINDS.get(r.get("mode"), "Event run"), r.get("event_name") or r.get("query") or ""),
+                   ("%d listed" % r["participant_count"]) if r.get("participant_count") else "",
+                   r.get("email"), r.get("created_at"), r.get("status"))
+            for r in event_intel_store.list_runs("", limit=LIMIT, space=acct["space"])]
+
+
+def _tlpr(acct):
+    from tracker import thought_leader_pr
+    out = []
+    for r in thought_leader_pr.list_runs("", limit=LIMIT, space=acct["space"]):
+        who = r.get("identity") or {}
+        out.append(_agent(acct, "thought-leader-pr", r.get("input_name") or "A person",
+                          " · ".join(x for x in (who.get("title"), who.get("company")) if x) if isinstance(who, dict) else "",
+                          r.get("email"), r.get("created_at"), r.get("status")))
+    return out
+
+
+AGENT_READS = (("local-business-radar", _lbr), ("social-media-intelligence", _smi),
+               ("event-conference-intelligence", _evi), ("thought-leader-pr", _tlpr))
+
+
+def entries(acct, library=None, limit=LIMIT, extra=()):
     """The account's History, newest first. A tool whose records cannot be read is left out (and
-    logged) rather than failing the page."""
-    rows = []
-    for name, read in (("page-watch", lambda: _watches(acct)), ("video-studio", lambda: _videos(acct, library or [])),
-                       ("ai-review", lambda: _reviews(acct))):
+    logged) rather than failing the page. `extra` is rows read elsewhere (Contact Finder's, in
+    app.py), in the same shape."""
+    rows = list(extra)
+    reads = [("page-watch", lambda: _watches(acct)), ("video-studio", lambda: _videos(acct, library or [])),
+             ("ai-review", lambda: _reviews(acct))] + [(n, (lambda f=f: f(acct))) for n, f in AGENT_READS]
+    for name, read in reads:
         try:
             rows += read()
         except Exception:
             log.exception("account history: %s unreadable", name)
     rows.sort(key=lambda r: r["at"], reverse=True)
     for r in rows:
-        r["tool_label"] = TOOLS[r["tool"]]
+        r["tool_label"] = r.get("tool_label") or TOOLS[r["tool"]]
     return rows[:limit]
 
 

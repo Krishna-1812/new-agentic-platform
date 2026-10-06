@@ -131,7 +131,7 @@
     <div class="sa-sec-head">
       <span class="sa-idx">01</span>
       <div>
-        <span class="sa-lbl" data-sa-decode>Your searches</span>
+        <span class="sa-lbl" data-sa-decode>{{ ("The team's searches for " ~ acct_ctx.name) if acct_ctx else "Your General searches" }}</span>
         <h2 class="sa-h2" id="lbr-hist-t">Every radar sweep, <span class="sa-mk sa-mk--sm">kept.</span></h2>
       </div>
     </div>
@@ -151,7 +151,7 @@
         </span>
         {% endif %}
         <span class="lbr-rc-foot">{{ r.summary.found or 0 }} found &middot; ${{ '%.2f' % ((r.cost or {}).usd or 0) }}
-          {% if r.purged %}&middot; details expired{% endif %}</span>
+          {% if r.purged %}&middot; details expired{% endif %}{% if acct_ctx and r.by %} &middot; by {{ r.by }}{% endif %}</span>
       </a>
       {% else %}
       <p class="lbr-empty" id="lbr-empty">No searches yet. Your first one will appear here.</p>
@@ -230,6 +230,6 @@
 
 {{ topbar_script() }}
 <script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
-<script defer src="{{ url_for('static', filename='js/local-business-radar.js') }}?v=4"></script>
+<script defer src="{{ url_for('static', filename='js/local-business-radar.js') }}?v=5"></script>
 </body>
 </html>

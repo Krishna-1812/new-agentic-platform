@@ -387,7 +387,7 @@ def test_only_this_users_own_entry_can_be_refreshed(fake_pg):
     conn = fake_pg()
     appmod._cpi_history_save("a@b.com", "contact", "Binal", [], dedupe="p1")
     sql, params = _stmts(conn, "UPDATE")[0]
-    assert "WHERE email = %s AND entity = %s AND filters->>'dedupe' = %s" in sql
+    assert "WHERE email = %s AND entity = %s AND space = %s AND filters->>'dedupe' = %s" in sql
     assert "a@b.com" in params
 
 

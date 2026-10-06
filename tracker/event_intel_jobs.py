@@ -80,8 +80,9 @@ def schema(cur):
         cur.execute('CREATE TRIGGER evi_worker_guard BEFORE INSERT OR UPDATE OR DELETE ON ' + table + ' FOR EACH ROW EXECUTE FUNCTION evi_fence_worker()')
 
 
-def start(email, mode, query, kwargs, request_key):
-    """Atomic run+job creation. One client-generated key identifies a retry."""
+def start(email, mode, query, kwargs, request_key, space=''):
+    """Atomic run+job creation. One client-generated key identifies a retry. The run is saved to
+    `space` (tracker/workspace.py): a client account's, or its maker's General work."""
     request_key = str(request_key or '')
     if not request_key or len(request_key) > 128:
         raise ValueError('A request key of 1–128 characters is required')
@@ -98,9 +99,10 @@ def start(email, mode, query, kwargs, request_key):
         cur.execute("SELECT count(*) FROM evi_jobs WHERE email=%s AND state IN ('queued','running')", (email,))
         if cur.fetchone()[0] >= int(os.getenv('EVI_MAX_ACTIVE_PER_ACCOUNT','2')):
             raise ValueError('This account already has the maximum number of active event runs')
-        cur.execute('''INSERT INTO evi_runs(email,mode,query,profile_id,source_run_id,icp_note,status,stage)
-            VALUES (%s,%s,%s,%s,%s,%s,'running','queued') RETURNING id''',
-            (email,mode,query,(kwargs.get('profile') or {}).get('id'),kwargs.get('source_run_id'),kwargs.get('icp_note')))
+        cur.execute('''INSERT INTO evi_runs(email,mode,query,profile_id,source_run_id,icp_note,status,stage,space)
+            VALUES (%s,%s,%s,%s,%s,%s,'running','queued',%s) RETURNING id''',
+            (email,mode,query,(kwargs.get('profile') or {}).get('id'),kwargs.get('source_run_id'),kwargs.get('icp_note'),
+             space or ''))
         run_id = cur.fetchone()[0]
         cur.execute('INSERT INTO evi_jobs(run_id,email,request_key,payload) VALUES (%s,%s,%s,%s::jsonb)',
                     (run_id,email,request_key,json.dumps(payload)))

@@ -471,7 +471,7 @@
         <div class="evi-card" id="eviHistoryCard">
           <div class="evi-card-pad">
             <div class="evi-sec">
-              <h3>Your runs</h3>
+              <h3>{{ ("The team's runs for " ~ acct_ctx.name) if acct_ctx else "Your General runs" }}</h3>
               <div class="evi-runs" id="runsList">
                 {% if runs %}
                   {% for r in runs %}
@@ -496,6 +496,7 @@
                         <span class="k">{{ kinds.get(r.mode, r.mode) }}</span>
                         {%- if r.participant_count %} · {{ r.participant_count }} listed{% endif %}
                         {%- if r.credits_spent %} · {{ r.credits_spent }} Apollo credit{{ '' if r.credits_spent == 1 else 's' }}{% endif %}
+                        {%- if acct_ctx and r.by %} · by {{ r.by }}{% endif %}
                       </span>
                     </span>
                     <span class="evi-badge {{ r.status }}">{{ r.status }}</span>

@@ -38,6 +38,7 @@ from urllib.parse import urlparse
 
 from datetime import datetime, timedelta, timezone
 
+from tracker import workspace
 from tracker import (apify_transport, apify_x_replies, apollo_client, claude_websearch,
                      sci_name_match, sci_source_linkedin_unipile, sci_source_x, sci_youtube_client,
                      tlpr_facebook_pulse, tlpr_instagram_pulse, tlpr_linkedin_pulse,
@@ -126,6 +127,10 @@ def _ensure_tables(conn) -> None:
             CREATE INDEX IF NOT EXISTS idx_tlpr_runs_email_created
             ON thought_leader_pr_runs (email, created_at DESC)
         """)
+        # The run's space (tracker/workspace.py): a client account's, which the whole team sees and
+        # carries on, or its maker's General work. Runs from before are '' (their maker's).
+        cur.execute("ALTER TABLE thought_leader_pr_runs ADD COLUMN IF NOT EXISTS space TEXT NOT NULL DEFAULT ''")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_tlpr_runs_space ON thought_leader_pr_runs (space, created_at DESC)")
         # Added for Phase 1 (owned-platform posts) after the table shipped
         # with Phase 0 only -- see sci_store.py's own company_logo/
         # reddit_pulse columns for the same "already in CREATE TABLE above,
@@ -156,7 +161,7 @@ def _ensure_tables(conn) -> None:
 
 def create_run(*, email: str, input_name: str, company_hint: str | None = None,
                title_hint: str | None = None, linkedin_url_hint: str | None = None,
-               x_handle_hint: str | None = None) -> int | None:
+               x_handle_hint: str | None = None, space: str = "") -> int | None:
     """Insert a new run row in 'resolving' status. Returns its id, or None on
     any failure -- the caller can still run resolve_identity() and show the
     result even if it could not be persisted."""
@@ -168,10 +173,10 @@ def create_run(*, email: str, input_name: str, company_hint: str | None = None,
         with conn.cursor() as cur:
             cur.execute("""
                 INSERT INTO thought_leader_pr_runs
-                    (email, input_name, company_hint, title_hint, linkedin_url_hint, x_handle_hint)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                    (email, input_name, company_hint, title_hint, linkedin_url_hint, x_handle_hint, space)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
-            """, (email, input_name, company_hint, title_hint, linkedin_url_hint, x_handle_hint))
+            """, (email, input_name, company_hint, title_hint, linkedin_url_hint, x_handle_hint, space or ""))
             new_id = cur.fetchone()[0]
         conn.commit()
         return new_id
@@ -198,7 +203,7 @@ def _run_status_for(result: dict) -> str:
 
 def save_result(run_id: int, email: str, result: dict) -> bool:
     """Write a resolve_identity() result onto its run row. Ownership-scoped
-    in the SQL itself (WHERE id = %s AND email = %s), never fetched-then-
+    in the SQL itself (the run is theirs, or a client account's), never fetched-then-
     checked in Python."""
     if not run_id:
         return False
@@ -213,7 +218,7 @@ def save_result(run_id: int, email: str, result: dict) -> bool:
                 UPDATE thought_leader_pr_runs
                 SET status = %s, confidence = %s, reasoning = %s, identity = %s,
                     error = %s, updated_at = now()
-                WHERE id = %s AND email = %s
+                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
             """, (status, result.get("confidence"), result.get("reasoning"),
                   json.dumps(result.get("identity")) if result.get("identity") else None,
                   (result.get("error") or {}).get("detail") if result.get("error") else None,
@@ -240,7 +245,7 @@ def confirm_run(run_id: int, email: str) -> bool:
             cur.execute("""
                 UPDATE thought_leader_pr_runs
                 SET status = 'confirmed', updated_at = now()
-                WHERE id = %s AND email = %s AND status = 'needs_review'
+                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$') AND status = 'needs_review'
             """, (run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -257,7 +262,7 @@ _RUN_COLUMNS = ("id, input_name, company_hint, title_hint, status, confidence, "
                "posts_updated_at, reaction_status, reaction, reaction_errors, "
                "reaction_updated_at, press_status, press, press_errors, "
                "press_updated_at, synthesis_status, synthesis, synthesis_errors, "
-               "synthesis_updated_at, created_at, updated_at")
+               "synthesis_updated_at, created_at, updated_at, email, space")
 
 
 def get_run(run_id: int, email: str) -> dict | None:
@@ -269,7 +274,7 @@ def get_run(run_id: int, email: str) -> dict | None:
         with conn.cursor() as cur:
             cur.execute(f"""
                 SELECT {_RUN_COLUMNS}
-                FROM thought_leader_pr_runs WHERE id = %s AND email = %s
+                FROM thought_leader_pr_runs WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
             """, (run_id, email))
             row = cur.fetchone()
             if not row:
@@ -285,18 +290,20 @@ def get_run(run_id: int, email: str) -> dict | None:
         conn.close()
 
 
-def list_runs(email: str, limit: int = 25) -> list[dict]:
+def list_runs(email: str, limit: int = 25, space: str | None = None) -> list[dict]:
+    """A client account's runs (everyone's), or with no space this user's own General ones."""
     conn = _pg_conn()
     if not conn:
         return []
     try:
         _ensure_tables(conn)
+        where, args = workspace.list_sql(email, space)
         with conn.cursor() as cur:
             cur.execute(f"""
                 SELECT {_RUN_COLUMNS}
-                FROM thought_leader_pr_runs WHERE email = %s
+                FROM thought_leader_pr_runs WHERE {where}
                 ORDER BY created_at DESC LIMIT %s
-            """, (email, limit))
+            """, args + [limit])
             runs = []
             for row in cur.fetchall():
                 run = _resolve_stale_reaction(_resolve_stale_posts(_row_to_dict(row), email), email)
@@ -316,7 +323,7 @@ def _row_to_dict(row) -> dict:
      reaction_status, reaction, reaction_errors, reaction_updated_at,
      press_status, press, press_errors, press_updated_at,
      synthesis_status, synthesis, synthesis_errors, synthesis_updated_at,
-     created_at, updated_at) = row
+     created_at, updated_at, owner, space) = row
     return {
         "id": rid, "input_name": input_name, "company_hint": company_hint,
         "title_hint": title_hint, "status": status, "confidence": confidence,
@@ -333,6 +340,7 @@ def _row_to_dict(row) -> dict:
         "synthesis_updated_at": synthesis_updated_at.isoformat() if synthesis_updated_at else None,
         "created_at": created_at.isoformat() if created_at else None,
         "updated_at": updated_at.isoformat() if updated_at else None,
+        "email": owner, "space": space or "",
     }
 
 
@@ -442,7 +450,7 @@ def start_collecting(run_id: int, email: str) -> bool:
             cur.execute("""
                 UPDATE thought_leader_pr_runs
                 SET posts_status = 'collecting', posts_errors = NULL, updated_at = now()
-                WHERE id = %s AND email = %s AND status = 'confirmed'
+                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$') AND status = 'confirmed'
                       AND posts_status IS DISTINCT FROM 'collecting'
             """, (run_id, email))
             updated = cur.rowcount > 0
@@ -472,7 +480,7 @@ def save_posts(run_id: int, email: str, posts: dict, errors: dict) -> bool:
                 UPDATE thought_leader_pr_runs
                 SET posts_status = 'ready', posts = %s, posts_errors = %s,
                     posts_updated_at = now(), updated_at = now()
-                WHERE id = %s AND email = %s
+                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
             """, (json.dumps(posts), json.dumps(errors) if errors else None, run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -498,7 +506,7 @@ def save_posts_failed(run_id: int, email: str, message: str) -> bool:
                 UPDATE thought_leader_pr_runs
                 SET posts_status = 'failed', posts_errors = %s, posts_updated_at = now(),
                     updated_at = now()
-                WHERE id = %s AND email = %s
+                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
             """, (json.dumps({"_run": message}), run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -526,7 +534,7 @@ def start_reacting(run_id: int, email: str) -> bool:
             cur.execute("""
                 UPDATE thought_leader_pr_runs
                 SET reaction_status = 'collecting', reaction_errors = NULL, updated_at = now()
-                WHERE id = %s AND email = %s AND status = 'confirmed'
+                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$') AND status = 'confirmed'
                       AND reaction_status IS DISTINCT FROM 'collecting'
             """, (run_id, email))
             updated = cur.rowcount > 0
@@ -553,7 +561,7 @@ def save_reaction(run_id: int, email: str, reaction: dict, errors: dict) -> bool
                 UPDATE thought_leader_pr_runs
                 SET reaction_status = 'ready', reaction = %s, reaction_errors = %s,
                     reaction_updated_at = now(), updated_at = now()
-                WHERE id = %s AND email = %s
+                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
             """, (json.dumps(reaction), json.dumps(errors) if errors else None, run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -578,7 +586,7 @@ def save_reaction_failed(run_id: int, email: str, message: str) -> bool:
                 UPDATE thought_leader_pr_runs
                 SET reaction_status = 'failed', reaction_errors = %s, reaction_updated_at = now(),
                     updated_at = now()
-                WHERE id = %s AND email = %s
+                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
             """, (json.dumps({"_run": message}), run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -606,7 +614,7 @@ def start_press(run_id: int, email: str) -> bool:
             cur.execute("""
                 UPDATE thought_leader_pr_runs
                 SET press_status = 'collecting', press_errors = NULL, updated_at = now()
-                WHERE id = %s AND email = %s AND status = 'confirmed'
+                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$') AND status = 'confirmed'
                       AND press_status IS DISTINCT FROM 'collecting'
             """, (run_id, email))
             updated = cur.rowcount > 0
@@ -633,7 +641,7 @@ def save_press(run_id: int, email: str, press: dict, errors: dict) -> bool:
                 UPDATE thought_leader_pr_runs
                 SET press_status = 'ready', press = %s, press_errors = %s,
                     press_updated_at = now(), updated_at = now()
-                WHERE id = %s AND email = %s
+                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
             """, (json.dumps(press), json.dumps(errors) if errors else None, run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -659,7 +667,7 @@ def save_press_failed(run_id: int, email: str, message: str) -> bool:
                 UPDATE thought_leader_pr_runs
                 SET press_status = 'failed', press_errors = %s, press_updated_at = now(),
                     updated_at = now()
-                WHERE id = %s AND email = %s
+                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
             """, (json.dumps({"_run": message}), run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -688,7 +696,7 @@ def start_synthesizing(run_id: int, email: str) -> bool:
             cur.execute("""
                 UPDATE thought_leader_pr_runs
                 SET synthesis_status = 'collecting', synthesis_errors = NULL, updated_at = now()
-                WHERE id = %s AND email = %s AND status = 'confirmed'
+                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$') AND status = 'confirmed'
                       AND synthesis_status IS DISTINCT FROM 'collecting'
             """, (run_id, email))
             updated = cur.rowcount > 0
@@ -717,7 +725,7 @@ def save_synthesis(run_id: int, email: str, synthesis: dict, errors: dict) -> bo
                 UPDATE thought_leader_pr_runs
                 SET synthesis_status = 'ready', synthesis = %s, synthesis_errors = %s,
                     synthesis_updated_at = now(), updated_at = now()
-                WHERE id = %s AND email = %s
+                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
             """, (json.dumps(synthesis), json.dumps(errors) if errors else None, run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -742,7 +750,7 @@ def save_synthesis_failed(run_id: int, email: str, message: str) -> bool:
                 UPDATE thought_leader_pr_runs
                 SET synthesis_status = 'failed', synthesis_errors = %s, synthesis_updated_at = now(),
                     updated_at = now()
-                WHERE id = %s AND email = %s
+                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
             """, (json.dumps({"_run": message}), run_id, email))
             updated = cur.rowcount > 0
         conn.commit()

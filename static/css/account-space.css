@@ -493,3 +493,9 @@ a.as-ev-main::after { content: ""; position: absolute; inset: 0; border-radius: 
 }
 .as-ev-av--auto { background: var(--sky-dim); }
 .as-ev-av--auto svg { width: 13px; height: 13px; fill: none; stroke: var(--sky-tx); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.as-ev-ico--agents { background: var(--clay-dim); }
+.as-ev-ico--agents svg { stroke: var(--clay-tx); }
+.as-ev-dot--agents { background: var(--clay); }
+.as-run-t .as-run-last { color: var(--tx2); font-weight: var(--fw-medium); }
+.as-run-t .as-run-last::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--clay); margin-right: 6px; vertical-align: 1px; }

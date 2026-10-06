@@ -345,7 +345,7 @@ Watches any web page and reports, in plain words and with a before-and-after pic
     Event & Conference Intelligence, Contact Finder and Thought Leader Intelligence.
   - The account's home lists them all under "Run for <account>".
 
-### Account memory (phase 1 of 5 built; plan and progress: `docs/account-memory-plan.md`)
+### Account memory (phases 1 and 2 of 5 built; plan and progress: `docs/account-memory-plan.md`)
 
 - **Spaces** (`tracker/workspace.py`): every saved piece of work is in one.
   - `acct:<id>` is a client account's. The whole team sees it, with who made each piece, and anyone
@@ -364,6 +364,15 @@ Watches any web page and reports, in plain words and with a before-and-after pic
   account's saved brand is filed under its space, `video_store.brand_owner`), and the account home's
   **History** (`tracker/account_history.py`): watches, page changes, videos and AI reviews, newest
   first, with who and when. Staff only.
+- **The agents (phase 2):**
+  - **Which agents:** Local Business Radar, Social Media Intelligence, Event & Conference
+    Intelligence, Thought Leader Intelligence and Contact Finder each have a `space` column on their
+    runs.
+  - **How a run knows its account:** inside an account, the agent's page loads
+    `static/js/account-context.js` in its head, so every call carries `X-Account`; `_work_acct` reads
+    it, for staff only.
+  - **One rule for the stores:** they all use `workspace.seen_sql` and `workspace.list_sql`.
+    Thought Leader's plain-string queries spell the same rule out, and a test holds them to it.
 - **Names:** `tracker/people_store.py` keeps each person's name from Google sign-in, once a session.
 - **Tests:** `tests/test_account_memory.py`, and `tests/test_account_memory_postgres.py` in the CI
   Postgres job.

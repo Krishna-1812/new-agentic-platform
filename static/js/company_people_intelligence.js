@@ -1797,14 +1797,19 @@ window.cpiOpenHistory = function(){
         var exportBtn = (isChat||isContact) ? "" :
           '<button class="cpi-hist-act exp" onclick="event.stopPropagation();cpiExportHistoryEntry('+e.id+',this)" aria-label="Export" title="Export this search">'+IC_DL+'</button>';
         var opener = isChat ? "cpiReopenChat" : (isContact ? "cpiReopenContact" : "cpiRestoreHistory");
-        return '<div class="cpi-hist" '+style+' onclick="'+opener+'('+e.id+')">'+
+        var mine = !(window.__acctContext&&e.by&&e.by!=="You");
+        return '<div class="cpi-hist"'+(mine?' data-mine="1"':'')+' '+style+' onclick="'+opener+'('+e.id+')">'+
           '<div class="cpi-hist-ic '+cls+'">'+ic+'</div>'+
           '<div class="cpi-hist-b"><div class="cpi-hist-l">'+esc(e.label||"Saved search")+'</div>'+
           '<div class="cpi-hist-m">'+esc(meta)+
             (e.credits?' &middot; '+esc(String(e.credits))+" credit"+(e.credits===1?"":"s"):"")+
+            /* Inside a client account the drawer is the whole team's (account-context.js);
+               each entry says whose it is, and only your own can be deleted. */
+            (window.__acctContext&&e.by?' &middot; by '+esc(e.by):"")+
           '</div></div>'+
           '<div class="cpi-hist-actions">'+exportBtn+
-            '<button class="cpi-hist-act del" onclick="event.stopPropagation();cpiDeleteHistory('+e.id+')" aria-label="Delete" title="Delete">&#10005;</button>'+
+            (!mine ? "" :
+            '<button class="cpi-hist-act del" onclick="event.stopPropagation();cpiDeleteHistory('+e.id+')" aria-label="Delete" title="Delete">&#10005;</button>')+
           '</div>'+
         '</div>';
       }).join("");
@@ -1832,7 +1837,8 @@ window.cpiExportHistoryEntry = function(id, btn){
 };
 window.cpiClearAllHistory = function(){
   var body=document.getElementById("cpiDrawerBody");
-  var ids=Array.prototype.map.call(body.querySelectorAll(".cpi-hist"), function(el){
+  /* Your own entries only: in a client account's drawer the others are the team's. */
+  var ids=Array.prototype.map.call(body.querySelectorAll(".cpi-hist[data-mine]"), function(el){
     var m=String(el.getAttribute("onclick")||"").match(/\d+/);
     return m?m[0]:null;
   }).filter(Boolean);

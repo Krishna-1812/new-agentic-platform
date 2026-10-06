@@ -302,7 +302,7 @@ def test_a_stored_run_of_the_retired_play_is_still_a_usable_roster(monkeypatch):
              "status": "complete", "created_at": "2026-08-31T10:00:00",
              "credits_spent": 0, "participant_count": 12,
              "event_name": "Fintech Summit"}]
-    monkeypatch.setattr(store, "list_runs", lambda email, limit=60: runs)
+    monkeypatch.setattr(store, "list_runs", lambda email, limit=60, **kw: runs)
     monkeypatch.setattr(store, "list_profiles", lambda email: [])
     c = _client("harness@markifydigital.com")
     html = c.get(BASE).get_data(as_text=True)

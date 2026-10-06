@@ -56,7 +56,7 @@ def _owner_scoped_get_run(monkeypatch, run=None):
 # ── Login / access ───────────────────────────────────────────────────────────
 
 def test_page_renders_for_any_position2_staff(monkeypatch):
-    monkeypatch.setattr(sci_store, "list_runs", lambda email: [])
+    monkeypatch.setattr(sci_store, "list_runs", lambda email, **kw: [])
     resp = _client("someone@markifydigital.com").get("/strategic-agents/social-media-intelligence")
     assert resp.status_code == 200
     assert b"Social Media Intelligence" in resp.data
@@ -320,7 +320,7 @@ def test_run_detail_route_applies_stale_run_resolution(monkeypatch):
 def test_history_page_applies_stale_run_resolution(monkeypatch):
     """A run abandoned days ago must not sit in History as 'running' forever
     just because nobody happened to reopen its own status/detail routes."""
-    monkeypatch.setattr(sci_store, "list_runs", lambda email: [_run(run_id=7, status="running")])
+    monkeypatch.setattr(sci_store, "list_runs", lambda email, **kw: [_run(run_id=7, status="running")])
     _always_resolves_to_error(monkeypatch)
     resp = _client(_OWNER).get("/strategic-agents/social-media-intelligence")
     assert resp.status_code == 200
@@ -333,7 +333,7 @@ def test_history_page_applies_stale_run_resolution(monkeypatch):
 
 
 def test_history_page_leaves_a_genuinely_active_run_alone(monkeypatch):
-    monkeypatch.setattr(sci_store, "list_runs", lambda email: [_run(run_id=7, status="running")])
+    monkeypatch.setattr(sci_store, "list_runs", lambda email, **kw: [_run(run_id=7, status="running")])
     monkeypatch.setattr(sci_store, "resolve_stale_run", lambda run: run)
     resp = _client(_OWNER).get("/strategic-agents/social-media-intelligence")
     assert resp.status_code == 200

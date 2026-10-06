@@ -55,8 +55,8 @@
 
     <div class="sci-card">
       <div class="sci-card-head">
-        <h2>History</h2>
-        <span class="cnt">{{ runs|length }} run{{ '' if runs|length == 1 else 's' }}</span>
+        <h2>{{ ("History for " ~ acct_ctx.name) if acct_ctx else "History" }}</h2>
+        <span class="cnt">{{ runs|length }} run{{ '' if runs|length == 1 else 's' }}{% if acct_ctx %} &middot; the whole team's{% endif %}</span>
       </div>
       <div class="sci-run-list" id="historyList">
         {% if runs %}
@@ -84,6 +84,7 @@
             <div class="sci-run-info">
               <div class="r-name">{{ r.company_name }}</div>
               <div class="r-meta" data-created="{{ r.created_at }}">{{ r.created_at }}</div>
+              {%- if acct_ctx and r.by %}<div class="r-meta r-by">by {{ r.by }}</div>{% endif %}
             </div>
             <span class="status-pill {{ st }}"><span class="d"></span>{{ r.status }}</span>
  <span class="sci-run-arrow"></span>

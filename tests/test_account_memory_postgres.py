@@ -99,3 +99,63 @@ def test_peoples_names_are_kept(who):
     people_store.remember(who["a"].upper(), "Ana Mehta")
     people_store.remember(who["a"], "")
     assert people_store.names([who["a"], who["b"]]) == {who["a"]: "Ana Mehta"}, "a blank name keeps the one stored"
+
+
+# ── Phase 2: the agents' runs ────────────────────────────────────────────────
+def test_social_media_intelligence_runs_by_space(who):
+    from tracker import sci_store
+    a, b, sp = who["a"], who["b"], who["space"]
+    shared = sci_store.save_run(a, "Shared Co", space=sp)
+    own = sci_store.save_run(a, "Own Co", space=workspace.personal(a))
+    assert sci_store.get_run(shared, b)["space"] == sp and sci_store.get_run(own, b) is None
+    assert [r["id"] for r in sci_store.list_runs(b, space=sp)] == [shared]
+    assert [r["id"] for r in sci_store.list_runs(a)] == [own]
+    assert sci_store.list_runs("", space=sp)[0]["email"] == a
+
+
+def test_thought_leader_runs_by_space_and_the_team_carries_them_on(who):
+    from tracker import thought_leader_pr as tlpr
+    a, b, sp = who["a"], who["b"], who["space"]
+    shared = tlpr.create_run(email=a, input_name="Dr Shared", space=sp)
+    own = tlpr.create_run(email=a, input_name="Dr Own", space=workspace.personal(a))
+    assert tlpr.get_run(shared, b)["email"] == a and tlpr.get_run(own, b) is None
+    assert tlpr.save_result(shared, b, {"status": "failed", "error": {"detail": "x"}}) is True, "a teammate carries it on"
+    assert tlpr.save_result(own, b, {"status": "failed", "error": {"detail": "x"}}) is False
+    assert [r["id"] for r in tlpr.list_runs(b, space=sp)] == [shared]
+    assert [r["id"] for r in tlpr.list_runs(a)] == [own]
+
+
+def test_event_intelligence_runs_by_space(who):
+    from tracker import event_intel_store
+    a, b, sp = who["a"], who["b"], who["space"]
+    shared = event_intel_store.save_run(a, "lookup", "Shared Expo", space=sp)
+    own = event_intel_store.save_run(a, "lookup", "Own Expo", space=workspace.personal(a))
+    assert event_intel_store.get_run(shared, b)["space"] == sp and event_intel_store.get_run(own, b) is None
+    assert [r["id"] for r in event_intel_store.list_runs(b, space=sp)] == [shared]
+    assert [r["id"] for r in event_intel_store.list_runs(a)] == [own]
+
+
+def test_contact_finder_history_by_space(who, monkeypatch):
+    import app as appmod
+    a, b = who["a"], who["b"]
+    monkeypatch.setattr(appmod, "_acct_listing", lambda force=False: {"by_slug": {"memco": {"space": who["space"]}}})
+
+    def client(email):
+        c = appmod.app.test_client()
+        with c.session_transaction() as s:
+            s["google_user"], s["people_seen"] = {"email": email, "name": "X"}, True
+        return c
+    row = [{"name": "Someone"}]
+    r = client(a).post("/strategic-agents/company-people-intelligence/history", json={"rows": row, "entity": "people"},
+                       headers={"X-Account": "memco"})
+    shared = r.get_json()["id"]
+    own = client(a).post("/strategic-agents/company-people-intelligence/history",
+                         json={"rows": row, "entity": "people"}).get_json()["id"]
+    team = client(b).get("/strategic-agents/company-people-intelligence/history", headers={"X-Account": "memco"})
+    assert [(e["id"], e["owner"]) for e in team.get_json()["entries"]] == [(shared, a)]
+    assert client(b).get("/strategic-agents/company-people-intelligence/history/%d" % shared).status_code == 200
+    assert client(b).get("/strategic-agents/company-people-intelligence/history/%d" % own).status_code == 404
+    assert client(b).delete("/strategic-agents/company-people-intelligence/history/%d" % shared).get_json() == \
+        {"deleted": False}, "only its maker deletes it"
+    for i in (shared, own):
+        client(a).delete("/strategic-agents/company-people-intelligence/history/%d" % i)
