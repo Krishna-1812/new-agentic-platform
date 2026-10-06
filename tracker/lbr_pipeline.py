@@ -100,10 +100,11 @@ class _RunLock:
 
 
 # ── Starting, stopping, resuming ─────────────────────────────────────────────
-def start(email, plan):
-    """Create a run for a resolved plan and start it. Returns the run id."""
+def start(email, plan, space=""):
+    """Create a run for a resolved plan, in `space` (tracker/workspace.py), and start it. Returns the
+    run id."""
     run_id = lbr_store.create_run(email, plan["business"]["input"], plan["area"]["input"],
-                                  plan["focus"], plan["cap"])
+                                  plan["focus"], plan["cap"], space=space)
     lbr_store.update_run(run_id, plan=plan, progress={"stage": None, "cancel": False},
                          heartbeat_at=_now())
     _spawn(run_id)

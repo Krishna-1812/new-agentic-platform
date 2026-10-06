@@ -53,7 +53,7 @@ class TestAuthGate:
 
 class TestPageRenders:
     def test_page_loads_for_a_position2_user(self, monkeypatch):
-        monkeypatch.setattr(T, "list_runs", lambda email: [])
+        monkeypatch.setattr(T, "list_runs", lambda email, **kw: [])
         resp = _client().get("/strategic-agents/thought-leader-pr")
         assert resp.status_code == 200
         assert b"Thought Leader Intelligence" in resp.data
@@ -61,7 +61,7 @@ class TestPageRenders:
     def test_page_never_calls_resolve_identity_itself(self, monkeypatch):
         """The billed lookup must only ever run from an explicit POST -- same
         rule Contact Finder and Event & Conference Intelligence both follow."""
-        monkeypatch.setattr(T, "list_runs", lambda email: [])
+        monkeypatch.setattr(T, "list_runs", lambda email, **kw: [])
         monkeypatch.setattr(T, "resolve_identity",
                             lambda *a, **kw: pytest.fail("GET must never resolve an identity"))
         resp = _client().get("/strategic-agents/thought-leader-pr")

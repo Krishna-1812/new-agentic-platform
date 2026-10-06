@@ -57,7 +57,7 @@
     <div class="tlpr-result" id="tlprResult"></div>
 
     <div class="tlpr-history">
-      <div class="tlpr-history-head">Recent lookups</div>
+      <div class="tlpr-history-head">{{ ("The team's lookups for " ~ acct_ctx.name) if acct_ctx else "Your recent lookups" }}</div>
       <div class="tlpr-history-list" id="tlprHistoryList"></div>
     </div>
   </div>
@@ -1059,7 +1059,7 @@
         return `<div class="tlpr-history-row" data-run-id="${r.id}" tabindex="0">
                   <div class="tlpr-history-avatar">${avatar}</div>
                   <div class="tlpr-history-name">${esc(r.input_name)}</div>
-                  <div class="tlpr-history-status">${esc(statusLabel(r.status))}</div>
+                  <div class="tlpr-history-status">${esc(statusLabel(r.status))}${window.__acctContext && r.by ? ' · by ' + esc(r.by) : ''}</div>
                 </div>`;
       }).join('');
     }

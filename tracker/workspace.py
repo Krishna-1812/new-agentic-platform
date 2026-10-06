@@ -78,3 +78,38 @@ def claim_legacy(accounts):
     if not names:
         return {"watches": 0, "videos": 0}
     return {"watches": watch_store.claim_legacy(names), "videos": video_store.claim_legacy(names)}
+
+
+# ── SQL, for the stores ──────────────────────────────────────────────────────
+# One definition of who reaches a row, used by every store that keeps work in spaces. A row's
+# `space` column holds the space; its `email` column its maker. Literal SQL, no % signs, so it can be
+# formatted into a psycopg2 query that also takes parameters.
+ACCOUNT_SQL = "^acct:[0-9]+$"
+
+
+def seen_sql(alias=""):
+    """"Theirs, or a client account's": `email` (one %s parameter) may reach the row."""
+    p = alias + "." if alias else ""
+    return "(%semail = %%s OR %sspace ~ '%s')" % (p, p, ACCOUNT_SQL)
+
+
+def list_sql(email, space=None, alias=""):
+    """(where, args) for a list: a client account's rows (everyone's), or `email`'s own General ones."""
+    p = alias + "." if alias else ""
+    if space is not None:
+        if not is_account(space):
+            raise ValueError("not an account's space: %r" % space)
+        return "%sspace = %%s" % p, [space]
+    return "%semail = %%s AND %sspace = ANY(%%s)" % (p, p), [_norm(email), list(personal_spaces(email))]
+
+
+def mem_seen(row, email):
+    """The in-process stores' form of seen_sql."""
+    return email is None or row.get("email") == _norm(email) or is_account(row.get("space"))
+
+
+def mem_listed(row, email, space=None):
+    """The in-process stores' form of list_sql."""
+    if space is not None:
+        return row.get("space") == space
+    return row.get("email") == _norm(email) and row.get("space", "") in personal_spaces(email)

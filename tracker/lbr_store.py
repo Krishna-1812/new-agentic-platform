@@ -34,6 +34,8 @@ import threading
 import time
 from datetime import datetime, timedelta, timezone
 
+from tracker import workspace
+
 log = logging.getLogger(__name__)
 
 RUN_FIELDS = ("status", "stage", "progress", "plan", "summary", "cost", "error",
@@ -104,6 +106,10 @@ def _ensure(conn):
                     finished_at TIMESTAMPTZ,
                     purged_at TIMESTAMPTZ)""")
             cur.execute("CREATE INDEX IF NOT EXISTS lbr_runs_email ON lbr_runs (email, created_at DESC)")
+            # The run's space (tracker/workspace.py): a client account's, which the team shares, or its
+            # maker's General work. Added after the table shipped; older runs are '' (their maker's).
+            cur.execute("ALTER TABLE lbr_runs ADD COLUMN IF NOT EXISTS space TEXT NOT NULL DEFAULT ''")
+            cur.execute("CREATE INDEX IF NOT EXISTS lbr_runs_space ON lbr_runs (space, created_at DESC)")
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS lbr_stages (
                     run_id INTEGER NOT NULL REFERENCES lbr_runs(id) ON DELETE CASCADE,
@@ -146,7 +152,7 @@ def _run_row(cur, row):
 
 
 _RUN_COLS = ("id, email, business_type, location, focus, cap, status, stage, progress, plan, "
-             "summary, cost, error, created_at, updated_at, heartbeat_at, finished_at, purged_at")
+             "summary, cost, error, created_at, updated_at, heartbeat_at, finished_at, purged_at, space")
 
 
 # ── In-process ───────────────────────────────────────────────────────────────
@@ -168,7 +174,7 @@ def _merge(base, extra):
 
 
 # ── Runs ─────────────────────────────────────────────────────────────────────
-def create_run(email, business_type, location, focus, cap):
+def create_run(email, business_type, location, focus, cap, space=""):
     email = (email or "").strip().lower()
     if backend() == "memory":
         with _MEM_LOCK:
@@ -179,23 +185,25 @@ def create_run(email, business_type, location, focus, cap):
                 "id": rid, "email": email, "business_type": business_type, "location": location,
                 "focus": focus, "cap": cap, "status": "queued", "stage": None, "progress": {},
                 "plan": {}, "summary": {}, "cost": {}, "error": None, "created_at": now,
-                "updated_at": now, "heartbeat_at": None, "finished_at": None, "purged_at": None}
+                "updated_at": now, "heartbeat_at": None, "finished_at": None, "purged_at": None,
+                "space": space or ""}
             return rid
     with _pg() as conn:
         _ensure(conn)
         with conn.cursor() as cur:
-            cur.execute("INSERT INTO lbr_runs (email, business_type, location, focus, cap) "
-                        "VALUES (%s, %s, %s, %s, %s) RETURNING id",
-                        (email, business_type, location, focus, cap))
+            cur.execute("INSERT INTO lbr_runs (email, business_type, location, focus, cap, space) "
+                        "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+                        (email, business_type, location, focus, cap, space or ""))
             return cur.fetchone()[0]
 
 
 def get_run(run_id, email=None):
-    """One run. With `email`, only if that user owns it; the worker passes None."""
+    """One run. With `email`, only if that user may reach it (theirs, or a client account's: the
+    team's); the worker passes None."""
     if backend() == "memory":
         with _MEM_LOCK:
             run = _MEM["runs"].get(run_id)
-            if not run or (email is not None and run["email"] != email.strip().lower()):
+            if not run or not workspace.mem_seen(run, email):
                 return None
             return copy.deepcopy(run)
     with _pg() as conn:
@@ -204,24 +212,26 @@ def get_run(run_id, email=None):
             if email is None:
                 cur.execute("SELECT %s FROM lbr_runs WHERE id = %%s" % _RUN_COLS, (run_id,))
             else:
-                cur.execute("SELECT %s FROM lbr_runs WHERE id = %%s AND email = %%s" % _RUN_COLS,
+                cur.execute("SELECT %s FROM lbr_runs WHERE id = %%s AND %s" % (_RUN_COLS, workspace.seen_sql()),
                             (run_id, email.strip().lower()))
             row = cur.fetchone()
             return _run_row(cur, row) if row else None
 
 
-def list_runs(email, limit=30):
+def list_runs(email, limit=30, space=None):
+    """A client account's runs (everyone's), or with no space `email`'s own General ones."""
     email = (email or "").strip().lower()
+    where, args = workspace.list_sql(email, space)
     if backend() == "memory":
         with _MEM_LOCK:
-            runs = [copy.deepcopy(r) for r in _MEM["runs"].values() if r["email"] == email]
+            runs = [copy.deepcopy(r) for r in _MEM["runs"].values() if workspace.mem_listed(r, email, space)]
         runs.sort(key=lambda r: r["id"], reverse=True)
         return runs[:limit]
     with _pg() as conn:
         _ensure(conn)
         with conn.cursor() as cur:
-            cur.execute("SELECT %s FROM lbr_runs WHERE email = %%s ORDER BY id DESC LIMIT %%s"
-                        % _RUN_COLS, (email, limit))
+            cur.execute("SELECT %s FROM lbr_runs WHERE %s ORDER BY id DESC LIMIT %%s"
+                        % (_RUN_COLS, where), args + [limit])
             return [_run_row(cur, r) for r in cur.fetchall()]
 
 
@@ -346,7 +356,7 @@ def get_businesses(run_id, email=None):
     if backend() == "memory":
         with _MEM_LOCK:
             run = _MEM["runs"].get(run_id)
-            if not run or (email is not None and run["email"] != email.strip().lower()):
+            if not run or not workspace.mem_seen(run, email):
                 return []
             rows = [copy.deepcopy(b) for (rid, _), b in _MEM["businesses"].items() if rid == run_id]
     else:
@@ -357,7 +367,7 @@ def get_businesses(run_id, email=None):
                        "JOIN lbr_runs r ON r.id = b.run_id WHERE b.run_id = %s")
                 args = [run_id]
                 if email is not None:
-                    sql += " AND r.email = %s"
+                    sql += " AND " + workspace.seen_sql("r")
                     args.append(email.strip().lower())
                 cur.execute(sql, args)
                 rows = [{"run_id": run_id, "place_id": p, "rank": rk, "data": d}

@@ -42,6 +42,8 @@ import os
 import re
 from typing import Any
 
+from tracker import workspace
+
 logger = logging.getLogger(__name__)
 
 _TABLES_READY = False
@@ -385,6 +387,10 @@ def _ensure_tables(conn) -> None:
                     "profile_id INTEGER REFERENCES evi_profiles(id)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_evi_runs_profile "
                     "ON evi_runs (profile_id)")
+        # The run's space (tracker/workspace.py): a client account's, which the whole team sees, or
+        # its maker's General work. Runs from before are '' (their maker's).
+        cur.execute("ALTER TABLE evi_runs ADD COLUMN IF NOT EXISTS space TEXT NOT NULL DEFAULT ''")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_evi_runs_space ON evi_runs (space, created_at DESC)")
         # A client this account manages under an arrangement where even the
         # AGGREGATE fact of their interest in an event must not be shared.
         # Defaults FALSE, so this ships at zero behaviour change until it is
@@ -437,7 +443,7 @@ def _ts(d: dict, *keys: str) -> None:
 
 def save_run(email: str, mode: str, query: str, icp_note: str | None = None,
              profile_id: int | None = None,
-             source_run_id: int | None = None) -> int | None:
+             source_run_id: int | None = None, space: str = "") -> int | None:
     conn = _pg_conn()
     if conn is None:
         return None
@@ -446,8 +452,8 @@ def save_run(email: str, mode: str, query: str, icp_note: str | None = None,
         with conn.cursor() as cur:
             cur.execute(
                 "INSERT INTO evi_runs (email, mode, query, icp_note, profile_id, "
-                "source_run_id) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
-                (email, mode, query, icp_note, profile_id, source_run_id))
+                "source_run_id, space) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                (email, mode, query, icp_note, profile_id, source_run_id, space or ""))
             run_id = cur.fetchone()[0]
         conn.commit()
         return run_id
@@ -511,7 +517,8 @@ def add_credits(run_id: int, n: int) -> None:
 
 
 def get_run(run_id: int, email: str) -> dict | None:
-    """Ownership scoped in the SQL, never fetched-then-checked."""
+    """Scoped in the SQL, never fetched-then-checked: the user's own run, or a client account's (the
+    whole team's, tracker/workspace.py)."""
     conn = _pg_conn()
     if conn is None:
         return None
@@ -521,8 +528,8 @@ def get_run(run_id: int, email: str) -> dict | None:
             cur.execute(
                 "SELECT id, email, mode, query, icp_note, status, stage, error, "
                 "summary, credits_spent, profile_id, source_run_id, "
-                "created_at, updated_at "
-                "FROM evi_runs WHERE id = %s AND email = %s", (run_id, email))
+                "created_at, updated_at, space "
+                "FROM evi_runs WHERE id = %s AND " + workspace.seen_sql(), (run_id, email))
             row = cur.fetchone()
             if not row:
                 return None
@@ -537,7 +544,9 @@ def get_run(run_id: int, email: str) -> dict | None:
         conn.close()
 
 
-def list_runs(email: str, limit: int = 60) -> list[dict]:
+def list_runs(email: str, limit: int = 60, space: str | None = None) -> list[dict]:
+    """A client account's runs (everyone's), or with no space this user's own General ones."""
+    where, args = workspace.list_sql(email, space, alias="r")
     conn = _pg_conn()
     if conn is None:
         return []
@@ -550,9 +559,9 @@ def list_runs(email: str, limit: int = 60) -> list[dict]:
                 "  (SELECT e.name FROM evi_events e "
                 "   WHERE e.run_id = COALESCE(r.source_run_id, r.id) "
                 "   ORDER BY e.id LIMIT 1) AS event_name, "
-                "  r.source_run_id "
-                "FROM evi_runs r WHERE r.email = %s "
-                "ORDER BY r.created_at DESC LIMIT %s", (email, limit))
+                "  r.source_run_id, r.email, r.space "
+                "FROM evi_runs r WHERE " + where + " "
+                "ORDER BY r.created_at DESC LIMIT %s", (*args, limit))
             cols = [c[0] for c in cur.description]
             rows = [dict(zip(cols, r)) for r in cur.fetchall()]
         for r in rows:

@@ -26,16 +26,29 @@ def _unwrap(v):
 
 
 def _where_conditions(sql):
+    """Each %s's test, in order. Besides "col = %s" and ILIKE, the two space forms
+    (tracker/workspace.py): "(email = %s OR space ~ '<account>')" -- the row's own, or a client
+    account's -- and "space = ANY(%s)"."""
     m = re.search(r"WHERE (.+?)(?: ORDER BY| LIMIT|$)", sql)
     if not m:
         return []
-    return [(c, op.upper()) for c, op in re.findall(r"(\w+)\s*(=|ILIKE)\s*%s", m.group(1))]
+    out = []
+    for seen, col, op, any_ in re.findall(r"(\(\w+ = %s OR space ~ '[^']*'\))|(\w+)\s*(=|ILIKE)\s*(ANY\()?%s",
+                                          m.group(1)):
+        out.append(("email", "SEEN") if seen else (col, "ANY" if any_ else op.upper()))
+    return out
 
 
 def _row_matches(row, conds, params):
     for (col, op), val in zip(conds, params):
         actual = row.get(col)
-        if op == "ILIKE":
+        if op == "SEEN":
+            if actual != val and not re.match(r"^acct:[0-9]+$", row.get("space") or ""):
+                return False
+        elif op == "ANY":
+            if actual not in val:
+                return False
+        elif op == "ILIKE":
             if str(val).strip("%").lower() not in str(actual or "").lower():
                 return False
         elif actual != val:
@@ -86,7 +99,8 @@ class _FakeCursor:
             row = {"id": self.db.next_run_id, "email": params[0], "company_name": params[1],
                   "company_url": params[2], "company_logo": params[3], "status": "running",
                   "error": None, "identify_result": None, "synthesis": None, "reddit_pulse": None,
-                  "created_at": _FIXED_TS, "updated_at": _FIXED_TS}
+                  "created_at": _FIXED_TS, "updated_at": _FIXED_TS,
+                  "space": params[4] if len(params) > 4 else ""}
             self.db.runs.append(row)
             self.db.next_run_id += 1
             self._result = [(row["id"],)]

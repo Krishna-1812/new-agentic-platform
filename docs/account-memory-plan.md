@@ -57,7 +57,34 @@ and a merge.
   below. Checked in Chromium at 1440 and 390 wide, with work by three people in one account and
   General work beside it: no script errors and no sideways scrolling. Fixed on the way: a video page
   inside an account rewrote its address to the global Video Studio once a version loaded.
-- **Phases 2 to 5:** not started.
+- **Phase 2: built.** The five agents save every run to its space:
+  - Local Business Radar (`lbr_runs.space`);
+  - Social Media Intelligence (`sci_runs.space`);
+  - Event & Conference Intelligence (`evi_runs.space`, set in `event_intel_jobs.start`);
+  - Thought Leader Intelligence (`thought_leader_pr_runs.space`);
+  - Contact Finder's saved searches, answers and enriched contacts (`cpi_search_history.space`).
+
+  How it works:
+  - **Which account.** An agent opened inside an account (`/<account>/agents/<agent>`) loads
+    `static/js/account-context.js` first, in the head. Every call the page makes then carries
+    `X-Account: <account>`, and `app.py` `_work_acct` turns that into the account's space. Only staff
+    count.
+  - **The lists.** On each agent's page they are the account's runs (the whole team's, each with who
+    ran it), or on the agent's own page your General ones.
+  - **Opening and carrying on.** Any staff member can open an account's run and carry it on. Only its
+    maker deletes it (Contact Finder's drawer shows a delete button only on your own entries).
+  - **History and the home.** The runs join the account's History under "Agents", and "Run for" on
+    the account's home says when each agent last ran and who ran it.
+
+  What stays as it was:
+  - Agent runs from before stay their maker's General work. They hold no client name to match safely.
+  - Event Intelligence's client profiles and outcome learning stay per person.
+
+  Checks:
+  - The CI Postgres job's 327 tests pass on a fresh database.
+  - In Chromium, the radar inside an account sent the account with every call, showed two people's
+    runs with their names, and General showed only the viewer's own.
+- **Phases 3 to 5:** not started.
 
 ## Phase 1 in detail
 

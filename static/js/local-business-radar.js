@@ -263,7 +263,8 @@
       });
       a.appendChild(tiers);
     }
-    a.appendChild(el("span", "lbr-rc-foot", ((r.summary || {}).found || 0) + " found · " + money((r.cost || {}).usd)));
+    a.appendChild(el("span", "lbr-rc-foot", ((r.summary || {}).found || 0) + " found · " + money((r.cost || {}).usd) +
+      (window.__acctContext && r.by ? " · by " + r.by : "")));
     return a;
   }
   function refreshHistory() {

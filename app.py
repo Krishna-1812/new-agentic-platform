@@ -5982,6 +5982,10 @@ def account_home(acct):
     tools = None if client else _acct_tools(acct, email)
     runs = None if client else _acct_runs(acct)
     history = None if client else _acct_history(acct)
+    if runs:
+        for t in runs["agents"]:     # each agent's last run for the account, and who ran it
+            slug = t["href"].rsplit("/", 1)[-1]
+            t["last"] = next((r for r in history["rows"] if r.get("agent") == slug), None)
     return render_template(
         "account_home.html", user=_get_user(), acct=acct, st=st, profile=p if show_profile else {"fields": 0},
         card=client_accounts.card(acct, st), pages=_acct_pages(acct, shares if client else None),
@@ -5999,7 +6003,8 @@ def _acct_history(acct):
     from tracker import account_history
     rows = []
     try:
-        rows = _people(account_history.entries(acct, library=_acct_library(acct)), key="who")
+        rows = _people(account_history.entries(acct, library=_acct_library(acct), extra=_cpi_history_rows(acct)),
+                       key="who")
     except Exception:
         app.logger.exception("client accounts: history unreadable")
     for r in rows:
@@ -6235,6 +6240,33 @@ def account_ai_review_get(acct, review_id):
 # The same Page Watch, showing the account's watches (its space, tracker/workspace.py: everyone's,
 # each with who added it) and filing new ones there. Its website and its competitors from the master
 # doc are offered as one-tap watches.
+def _work_acct():
+    """The client account the current request's work is for, or None (the person's General work).
+    An account's own pages set it (g.acct, _acct_view); an agent's page opened inside an account sends
+    its calls with an X-Account header (static/js/account-prefill.js). Staff only: the agents' routes
+    are, and a header from anyone else counts for nothing."""
+    acct = getattr(g, "acct", None)
+    if acct is None:
+        slug = request.headers.get("X-Account", "").strip()
+        if slug:
+            acct = (_acct_listing().get("by_slug") or {}).get(slug)
+    if acct is None or not _is_staff((_get_user() or {}).get("email", "")):
+        return None
+    return acct
+
+
+def _work_space(email):
+    """Where work started by the current request is saved (tracker/workspace.py)."""
+    acct = _work_acct()
+    return acct["space"] if acct else workspace.personal(email)
+
+
+def _list_space():
+    """The space a list on the current request shows: the account's, or None for the viewer's General."""
+    acct = _work_acct()
+    return acct["space"] if acct else None
+
+
 def _acct_names(acct):
     return {n.lower() for n in [acct["name"]] + list(acct["ads_names"]) if n}
 
@@ -6500,6 +6532,13 @@ def account_agent(acct, agent_slug):
            % (payload, url_for("static", filename="js/account-prefill.js")))
     at = html.rfind("</body>")
     html = html[:at] + tag + html[at:] if at >= 0 else html + tag
+    # Before any of the page's own scripts: every call it makes says which account it is for, so a run
+    # it starts is saved to the account and its lists show the account's runs (_work_acct).
+    from markupsafe import escape
+    ctx = '<script src="%s?v=1" data-acct="%s"></script>\n' % (
+        url_for("static", filename="js/account-context.js"), escape(acct["slug"]))
+    head = re.search(r"<head[^>]*>", html, re.I)
+    html = html[:head.end()] + "\n" + ctx + html[head.end():] if head else ctx + html
     resp.set_data(html)
     return resp
 
@@ -10972,7 +11011,8 @@ def social_media_intelligence():
     # resolve_stale_run) would otherwise show "running" in History forever,
     # since nothing else ever visits it again to notice. Only 'running' rows
     # cost the extra query -- a done/errored run passes through unchanged.
-    runs = [sci_store.resolve_stale_run(r) for r in sci_store.list_runs(email)]
+    runs = _people([sci_store.resolve_stale_run(r) for r in sci_store.list_runs(email, space=_list_space())],
+                   key="email")
     return render_template("social_media_intelligence.html", user=user, runs=runs)
 
 
@@ -11033,7 +11073,7 @@ def social_media_intelligence_analyze():
         return jsonify({"error": "A company name is required."}), 400
 
     email = (_get_user() or {}).get("email", "").lower()
-    run_id = sci_store.save_run(email, company_name, company_url, company_logo)
+    run_id = sci_store.save_run(email, company_name, company_url, company_logo, space=_work_space(email))
     if run_id is None:
         return jsonify({"error": "Could not start the analysis."}), 500
 
@@ -11175,7 +11215,8 @@ def _lbr_status(run):
             "label": (plan.get("business") or {}).get("label") or run["business_type"],
             "focus": run.get("focus"), "cap": run.get("cap"), "created_at": run.get("created_at"),
             "finished_at": run.get("finished_at"), "purged": bool(run.get("purged_at")),
-            "resumable": lbr_pipeline.resumable(run)[0]}
+            "resumable": lbr_pipeline.resumable(run)[0], "owner": run.get("email") or "",
+            "space": run.get("space") or ""}
 
 
 @app.route(LBR_BASE)
@@ -11188,7 +11229,7 @@ def local_business_radar():
     except Exception:
         app.logger.exception("lbr: retention purge failed")
     try:
-        runs = [_lbr_status(r) for r in lbr_store.list_runs(email, limit=12)]
+        runs = _people([_lbr_status(r) for r in lbr_store.list_runs(email, limit=12, space=_list_space())])
     except Exception:
         app.logger.exception("lbr: could not list runs")
         runs = []
@@ -11226,7 +11267,7 @@ def local_business_radar_run():
     try:
         plan = lbr_intake.cached_plan(email, str(p.get("business_type") or ""), str(p.get("location") or ""),
                                       str(p.get("focus") or "all"), p.get("cap"))
-        run_id = lbr_pipeline.start(email, plan)
+        run_id = lbr_pipeline.start(email, plan, space=_work_space(email))
     except lbr_intake.IntakeError as e:
         return jsonify(error=str(e)), 400
     except lbr_http.ToolError as e:
@@ -11241,7 +11282,8 @@ def local_business_radar_run():
 @position2_required
 def local_business_radar_runs():
     from tracker import lbr_store
-    return jsonify(runs=[_lbr_status(r) for r in lbr_store.list_runs(_lbr_email(), limit=30)])
+    return jsonify(runs=_people([_lbr_status(r) for r in lbr_store.list_runs(_lbr_email(), limit=30,
+                                                                               space=_list_space())]))
 
 
 @app.route(LBR_BASE + "/runs/<int:run_id>/status")
@@ -11364,7 +11406,7 @@ def event_conference_intelligence():
                 "orientation": event_intel_rubric.orientation_for(k)}
                for k in event_intel_rubric.CLASSIFICATIONS]
     return render_template("event_conference_intelligence.html", user=user,
-                           runs=event_intel_store.list_runs(email),
+                           runs=_people(event_intel_store.list_runs(email, space=_list_space()), key="email"),
                            profiles=event_intel_store.list_profiles(email),
                            classifications=classes,
                            categories=[
@@ -11629,7 +11671,7 @@ def event_conference_intelligence_run():
             "event_class": event_class if mode == "workroom" else None,
             "booth_notes": str(payload.get("booth_notes") or "")[:8000] if mode == "workroom" else None,
             "ends_on": str(payload.get("ends_on") or "").strip()[:10] or None,
-        }, payload.get('request_key') or str(uuid.uuid4()))
+        }, payload.get('request_key') or str(uuid.uuid4()), space=_work_space(email))
     except ValueError as exc:
         return jsonify(error=str(exc)), 400
     except Exception:
@@ -12031,7 +12073,7 @@ def thought_leader_pr():
     user = _get_user() or {}
     email = (user.get("email") or "").lower()
     return render_template("thought_leader_pr.html", user=user,
-                          runs=tlpr.list_runs(email))
+                          runs=_people(tlpr.list_runs(email, space=_list_space()), key="email"))
 
 
 @app.route("/strategic-agents/thought-leader-pr/search")
@@ -12085,7 +12127,7 @@ def thought_leader_pr_resolve():
 
     run_id = tlpr.create_run(email=email, input_name=name, company_hint=company_hint,
                              title_hint=title_hint, linkedin_url_hint=linkedin_url,
-                             x_handle_hint=x_handle)
+                             x_handle_hint=x_handle, space=_work_space(email))
     result = tlpr.resolve_identity(name, company_hint=company_hint, title_hint=title_hint,
                                    linkedin_url=linkedin_url, x_handle=x_handle)
     if run_id:
@@ -14324,6 +14366,10 @@ def _ensure_cpi_history_table(conn) -> None:
         # the CREATE: chat entries carry prose (the question and the answer given)
         # where a saved search carries only rows.
         cur.execute("ALTER TABLE cpi_search_history ADD COLUMN IF NOT EXISTS answer TEXT")
+        # The entry's space (tracker/workspace.py): a client account's, which the whole team sees, or
+        # its maker's General work. Entries from before are '' (their maker's).
+        cur.execute("ALTER TABLE cpi_search_history ADD COLUMN IF NOT EXISTS space TEXT NOT NULL DEFAULT ''")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_cpi_history_space ON cpi_search_history (space, created_at DESC)")
     conn.commit()
     _CPI_HISTORY_TABLE_READY = True
 
@@ -14344,6 +14390,32 @@ def _cpi_history_expire(cur) -> None:
         "DELETE FROM cpi_search_history "
         "WHERE created_at < now() - make_interval(days => %s)",
         (_CPI_HISTORY_TTL_DAYS,))
+
+
+def _cpi_history_rows(acct):
+    """A client account's Contact Finder entries, as History rows (tracker/account_history.py)."""
+    from tracker import account_history
+    conn = _pg_conn()
+    if not conn:
+        return []
+    try:
+        _ensure_cpi_history_table(conn)
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, entity, label, COALESCE(jsonb_array_length(rows), 0), email, created_at "
+                        "FROM cpi_search_history WHERE space = %s ORDER BY created_at DESC LIMIT %s",
+                        (acct["space"], account_history.LIMIT))
+            rows = cur.fetchall()
+    except Exception:
+        app.logger.warning("cpi history: account rows unreadable", exc_info=True)
+        return []
+    finally:
+        conn.close()
+    kinds = {"companies": "Company search", "people": "People search", "chat": "Question answered",
+             "contact": "Contact enriched", "company_profile": "Company enriched", "revealed": "Contacts revealed"}
+    return [account_history.agent_entry(acct, "company-people-intelligence", label or kinds.get(entity, "Search"),
+                                        "%s · %d row%s" % (kinds.get(entity, "Search"), n, "" if n == 1 else "s"),
+                                        email, at, "done")
+            for _id, entity, label, n, email, at in rows]
 
 
 def _cpi_history_prune(cur, email: str) -> None:
@@ -14386,6 +14458,8 @@ def _cpi_history_save(email: str, entity: str, label: str, rows: list,
     email = (email or "").lower()
     if not email or not label:
         return None
+    from flask import has_request_context
+    space = _work_space(email) if has_request_context() else workspace.personal(email)
     conn = _pg_conn()
     if not conn:
         return None
@@ -14411,21 +14485,21 @@ def _cpi_history_save(email: str, entity: str, label: str, rows: list,
                     "    COALESCE((filters->>'credits')::numeric, 0) + %s), "
                     "  total = %s, rows = %s, answer = %s, created_at = now() "
                     "WHERE id = (SELECT id FROM cpi_search_history "
-                    "            WHERE email = %s AND entity = %s "
+                    "            WHERE email = %s AND entity = %s AND space = %s "
                     "              AND filters->>'dedupe' = %s "
                     "            ORDER BY created_at DESC LIMIT 1) "
                     "RETURNING id",
                     (label, Json(filters), filters.get("credits") or 0, total, rows,
-                     answer, email, entity, str(dedupe)))
+                     answer, email, entity, space, str(dedupe)))
                 got = cur.fetchone()
                 if got:
                     new_id = got[0]
             if new_id is None:
                 cur.execute(
                     "INSERT INTO cpi_search_history "
-                    "  (email, entity, label, filters, total, rows, answer) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id",
-                    (email, entity, label, Json(filters), total, rows, answer))
+                    "  (email, entity, label, filters, total, rows, answer, space) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+                    (email, entity, label, Json(filters), total, rows, answer, space))
                 new_id = (cur.fetchone() or [None])[0]
             _cpi_history_prune(cur, email)
         conn.commit()
@@ -14562,13 +14636,15 @@ def cpi_history():
                 # once and swept later.
                 _cpi_history_expire(cur)
                 conn.commit()
+                # A client account's entries (the whole team's), or this user's own General ones.
+                where, args = workspace.list_sql(email, _list_space())
                 cur.execute(
                     "SELECT id, entity, label, total, "
                     "       COALESCE(jsonb_array_length(rows), 0), created_at, "
-                    "       LEFT(COALESCE(answer, ''), 240), filters "
-                    "FROM cpi_search_history WHERE email = %s "
+                    "       LEFT(COALESCE(answer, ''), 240), filters, email "
+                    "FROM cpi_search_history WHERE " + where + " "
                     "ORDER BY created_at DESC LIMIT %s",
-                    (email, _CPI_HISTORY_KEEP))
+                    (*args, _CPI_HISTORY_KEEP))
                 # The answer preview is truncated in SQL rather than shipping the
                 # whole thing: the drawer shows a snippet, and a list of sixty
                 # full answers is a payload nobody reads.
@@ -14576,9 +14652,9 @@ def cpi_history():
                             "count": r[4],
                             "created_at": r[5].isoformat() if r[5] else None,
                             "preview": r[6] or "",
-                            "credits": (r[7] or {}).get("credits") or 0}
+                            "credits": (r[7] or {}).get("credits") or 0, "owner": r[8]}
                            for r in cur.fetchall()]
-            return jsonify({"entries": entries, "available": True})
+            return jsonify({"entries": _people(entries), "available": True})
 
         body = request.get_json(silent=True) or {}
         rows = [r for r in (body.get("rows") or []) if isinstance(r, dict)]
@@ -14621,10 +14697,10 @@ def cpi_history():
                     new_id, created = got
             if new_id is None:
                 cur.execute(
-                    "INSERT INTO cpi_search_history (email, entity, label, filters, total, rows) "
-                    "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id, created_at",
+                    "INSERT INTO cpi_search_history (email, entity, label, filters, total, rows, space) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id, created_at",
                     (email, entity, _cpi_history_label(entity, filters), Json(filters),
-                     body.get("total"), Json(kept_rows)))
+                     body.get("total"), Json(kept_rows), _work_space(email)))
                 new_id, created = cur.fetchone()
             _cpi_history_prune(cur, email)
         conn.commit()
@@ -14653,7 +14729,8 @@ def cpi_history():
            methods=["GET", "DELETE"])
 @position2_required
 def cpi_history_entry(entry_id: int):
-    """Reopen or delete one saved search. Scoped to the signed-in user's own rows."""
+    """Reopen or delete one saved search: the user's own, or a client account's (the team's) to reopen;
+    only the user's own to delete."""
     email = ((_get_user() or {}).get("email") or "").lower()
     conn = _pg_conn()
     if not conn:
@@ -14672,7 +14749,7 @@ def cpi_history_entry(entry_id: int):
             cur.execute("SELECT entity, label, filters, total, rows, "
                         "       COALESCE(answer, '') "
                         "FROM cpi_search_history "
-                        "WHERE id = %s AND email = %s", (entry_id, email))
+                        "WHERE id = %s AND " + workspace.seen_sql(), (entry_id, email))
             row = cur.fetchone()
         if not row:
             return jsonify({"error": "Not found"}), 404

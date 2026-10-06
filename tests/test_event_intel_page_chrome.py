@@ -383,7 +383,7 @@ def test_a_saved_profile_is_listed_by_its_readable_classification(monkeypatch):
     monkeypatch.setattr(event_intel_store, "list_profiles",
                         lambda email: [{"id": 5, "client_name": "Northwind",
                                         "classification": key}])
-    monkeypatch.setattr(event_intel_store, "list_runs", lambda email, limit=60: [])
+    monkeypatch.setattr(event_intel_store, "list_runs", lambda email, limit=60, **kw: [])
     html = _page()
     opt = re.search(r'<option value="5">(.*?)</option>', html, re.S)
     assert opt, "the saved profile is not in the picker"
@@ -399,7 +399,7 @@ def test_a_profile_whose_classification_is_unknown_still_lists(monkeypatch):
     monkeypatch.setattr(event_intel_store, "list_profiles",
                         lambda email: [{"id": 6, "client_name": "Harborline",
                                         "classification": "retired_key"}])
-    monkeypatch.setattr(event_intel_store, "list_runs", lambda email, limit=60: [])
+    monkeypatch.setattr(event_intel_store, "list_runs", lambda email, limit=60, **kw: [])
     html = _page()
     opt = re.search(r'<option value="6">(.*?)</option>', html, re.S)
     assert opt and "Harborline" in opt.group(1)
@@ -417,7 +417,7 @@ def test_each_kind_of_run_is_named_for_the_play_that_made_it(monkeypatch):
              "created_at": "2026-08-31T10:00:00", "credits_spent": 0,
              "participant_count": 0, "event_name": "Run %d" % i}
             for i, m in enumerate(("recommend", "lookup", "discover", "workroom"))]
-    monkeypatch.setattr(event_intel_store, "list_runs", lambda email, limit=60: runs)
+    monkeypatch.setattr(event_intel_store, "list_runs", lambda email, limit=60, **kw: runs)
     monkeypatch.setattr(event_intel_store, "list_profiles", lambda email: [])
     html = _page()
     rows = re.findall(r'<button class="evi-run m-(\w+)".*?</button>', html, re.S)
@@ -435,7 +435,7 @@ def test_each_kind_of_run_is_named_for_the_play_that_made_it(monkeypatch):
 def test_a_run_with_nothing_listed_does_not_claim_a_count(monkeypatch):
     """A scored-calendar run has no participants. Printing "0 listed" beside
     it reads as a roster that came back empty."""
-    monkeypatch.setattr(event_intel_store, "list_runs", lambda email, limit=60: [
+    monkeypatch.setattr(event_intel_store, "list_runs", lambda email, limit=60, **kw: [
         {"id": 1, "mode": "recommend", "query": "q", "status": "complete",
          "created_at": "2026-08-31T10:00:00", "credits_spent": 0,
          "participant_count": 0, "event_name": "Northwind"}])
