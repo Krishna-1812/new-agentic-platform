@@ -305,7 +305,7 @@ Watches any web page and reports, in plain words and with a before-and-after pic
 - **Health:** `/strategic-agents/page-watch/health` (staff only) returns JSON with `ok`, `behind`, `no_worker`, `no_browser` or `idle`.
 - **Env:** `WATCH_BROWSER=off` turns the browser off; `WATCH_CHROMIUM_PATH` points at a Chromium to use; `WATCH_WORKER_THREADS` (default 2); `RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1` and `ANTHROPIC_API_KEY` on the worker service; `WATCH_CLAUDE_MODEL`, `WATCH_CLAUDE_EFFORT`, `WATCH_CLAUDE_MONTHLY_USD`, `WATCH_JUDGE`; `WATCH_SLACK_CHANNEL`, `WATCH_SLACK_BOT_TOKEN` (falls back to `GOOGLE_ADS_SLACK_BOT_TOKEN`), `WATCH_DIGEST_AT`, `WATCH_ALERTS`, `WATCH_CRON_TOKEN` (web, and the GitHub secret for the watchdog), `PUBLIC_BASE_URL` and `SECRET_KEY` (also on the worker).
 
-### Client accounts (phases A and B built; plan and progress: `docs/account-workspaces-plan.md`)
+### Client accounts (phases A–C built; plan and progress: `docs/account-workspaces-plan.md`)
 
 - **What it is:** one space per client at `/<account>`. The switch is in every page's top bar
   (where "Workspace" was) and is the hub's headline ("Working on / All accounts"); the hub also
@@ -332,8 +332,12 @@ Watches any web page and reports, in plain words and with a before-and-after pic
     on it after sign-in.
   - Tables: `client_account_access`, `client_account_shares`, `client_account_audit`.
   - Tests: `tests/test_account_clients.py`.
-- **Next:** Video Studio / Page Watch inside an account, then the SEO tools and the other agents
-  filled in from the profile.
+- **Page Watch and Video Studio inside an account** (staff):
+  - `/<account>/page-watch` shows and files watches under the account. Its site and competitors
+    from the profile are one-tap watches.
+  - `/<account>/video-studio` fixes the client, fills in the website and takes the brand from the
+    profile.
+- **Next:** the SEO tools and the other agents, filled in from the profile.
 
 ### Video Studio (being built; plan and progress: `docs/video-studio-plan.md`)
 

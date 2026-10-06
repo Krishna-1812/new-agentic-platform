@@ -17,7 +17,7 @@
 </head>
 <body class="sa pw vs">
 
-{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Video Studio", none)]) }}
+{{ topbar([("Video Studio", none)] if acct else [(brand.agents_plural, "/strategic-agents"), ("Video Studio", none)]) }}
 
 <main class="sa-shell" id="vs-home">
 
@@ -43,7 +43,12 @@
     <form class="vs-ask" id="vs-form" autocomplete="off" novalidate>
       <label class="vs-ask-l" for="vs-brief">What video do you want?</label>
       <textarea id="vs-brief" name="brief" rows="3" maxlength="{{ data.limits.brief }}"
+        {%- if acct %}
+        {%- set p = acct.profile %}
+        placeholder="A 20-second ad for {{ acct.name }}{% if p.services %}'s {{ p.services[0]|lower }}{% endif %}{% if p.locations %} in {{ p.locations[0] }}{% endif %}{% if p.tone %}, {{ p.tone|lower }}{% endif %}, ending on a clear call to action."></textarea>
+        {%- else %}
         placeholder="A 30-second explainer of our month-end close service for CFOs, calm and clear, ending on 'Book a call'."></textarea>
+        {%- endif %}
       <p class="vs-field-err" data-err="brief" hidden></p>
       <div class="vs-starts" id="vs-starts" role="radiogroup" aria-label="Starting point"></div>
       <p class="vs-start-hint" id="vs-start-hint"></p>
@@ -102,7 +107,8 @@
       <div class="vs-col">
         <h2 class="vs-h3">Client and brand</h2>
         <label class="pw-field"><span>Client</span>
-          <input id="vs-client" list="vs-clients" maxlength="120" placeholder="Optional; its brand is remembered">
+          <input id="vs-client" list="vs-clients" maxlength="120" placeholder="Optional; its brand is remembered"
+                 {%- if acct %} value="{{ acct.name }}" readonly{% endif %}>
           <datalist id="vs-clients"></datalist>
         </label>
         <p class="vs-brand-note" id="vs-brand-note">The brand comes from the website when there is one. Set it here to choose it yourself.</p>
@@ -133,14 +139,14 @@
     <div class="sa-sec-head">
       <span class="sa-idx">01</span>
       <div>
-        <span class="sa-lbl" data-sa-decode>Your videos</span>
+        <span class="sa-lbl" data-sa-decode>{{ ("Your videos for " ~ acct.name) if acct else "Your videos" }}</span>
         <h2 class="sa-h2" id="vs-lib-t">Every video, <span class="sa-mk sa-mk--sm">every version.</span></h2>
       </div>
     </div>
     <div class="pw-bar">
       <div class="sa-chips" id="vs-kinds" role="radiogroup" aria-label="Kind"></div>
       <div class="pw-search">
-        <select id="vs-lib-client" aria-label="Client"><option value="">Every client</option></select>
+        <select id="vs-lib-client" aria-label="Client"{% if acct %} hidden{% endif %}><option value="">Every client</option></select>
         <input id="vs-lib-find" type="search" placeholder="Search" aria-label="Search videos">
       </div>
     </div>
@@ -175,6 +181,6 @@
 <script type="application/json" id="vs-data">{{ data|tojson }}</script>
 {{ topbar_script() }}
 <script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
-<script defer src="{{ url_for('static', filename='js/video-studio.js') }}?v=3"></script>
+<script defer src="{{ url_for('static', filename='js/video-studio.js') }}?v=4"></script>
 </body>
 </html>

@@ -13,9 +13,10 @@
 </head>
 <body class="sa pw">
 
-{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Page Watch", "/strategic-agents/page-watch"), (w.name, none)]) }}
+{%- set pw_home = ("/" ~ acct.slug ~ "/page-watch") if acct else "/strategic-agents/page-watch" %}
+{{ topbar([("Page Watch", pw_home), (w.name, none)] if acct else [(brand.agents_plural, "/strategic-agents"), ("Page Watch", pw_home), (w.name, none)]) }}
 
-<main class="sa-shell" id="pw-watch">
+<main class="sa-shell" id="pw-watch" data-home="{{ pw_home }}">
   <section class="pw-watch-head">
     <div>
       <span class="sa-lbl">{{ w.client or 'Watched page' }}</span>
@@ -121,6 +122,6 @@
   "instructions": w.instructions, "channel": w.channel, "watch_text": w.watch_text, "watch_visual": w.watch_visual,
   "status": w.status, "ignore": w.ignore, "area_selector": w.area_selector, "area": w.area}, "days": days, "dayNames": day_names}|tojson }}</script>
 {{ topbar_script() }}
-<script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=1"></script>
+<script defer src="{{ url_for('static', filename='js/page-watch.js') }}?v=2"></script>
 </body>
 </html>

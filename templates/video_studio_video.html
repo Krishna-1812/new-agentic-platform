@@ -16,7 +16,7 @@
 </head>
 <body class="sa pw vs">
 
-{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Video Studio", "/strategic-agents/video-studio"), ("Video", none)]) }}
+{{ topbar([("Video Studio", "/" ~ acct.slug ~ "/video-studio"), ("Video", none)] if acct else [(brand.agents_plural, "/strategic-agents"), ("Video Studio", "/strategic-agents/video-studio"), ("Video", none)]) }}
 
 <main class="sa-shell" id="vs-video">
   <section class="vs-head" aria-labelledby="vs-brief-h">
@@ -47,6 +47,6 @@
 <script type="application/json" id="vs-data">{{ {"video": data, "menu": menu, "fields": fields, "fonts": fonts}|tojson }}</script>
 {{ topbar_script() }}
 <script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
-<script defer src="{{ url_for('static', filename='js/video-studio.js') }}?v=3"></script>
+<script defer src="{{ url_for('static', filename='js/video-studio.js') }}?v=4"></script>
 </body>
 </html>

@@ -5604,9 +5604,11 @@ _ACCT = {"listing": None, "refreshing": False, "reserved": None}
 _ACCT_LOCK = threading.Lock()
 # An account's pages, as (page, label). "" is its home. The global page each one mirrors is where
 # "All accounts" leads from it, and where the picker opens that page for another account.
-ACCT_PAGES = (("", "Overview"), ("google-ads", "Google Ads"), ("google-ads/ai-review", "AI review"))
+ACCT_PAGES = (("", "Overview"), ("google-ads", "Google Ads"), ("google-ads/ai-review", "AI review"),
+              ("page-watch", "Page Watch"), ("video-studio", "Video Studio"))
 ACCT_GLOBAL = {"": "/hub", "google-ads": "/dashboards/google-ads",
-               "google-ads/ai-review": "/dashboards/google-ads/ai-review"}
+               "google-ads/ai-review": "/dashboards/google-ads/ai-review",
+               "page-watch": "/strategic-agents/page-watch", "video-studio": "/strategic-agents/video-studio"}
 _ACCT_FROM_GLOBAL = {v: k for k, v in ACCT_GLOBAL.items()}
 
 
@@ -5922,6 +5924,7 @@ def account_home(acct):
         reviews.sort(key=lambda r: str(r.get("created_at") or ""), reverse=True)
     p = acct["profile"]
     show_profile = not client or shares["profile"]
+    tools = None if client else _acct_tools(acct, email)
     return render_template(
         "account_home.html", user=_get_user(), acct=acct, st=st, profile=p if show_profile else {"fields": 0},
         card=client_accounts.card(acct, st), pages=_acct_pages(acct, shares if client else None),
@@ -5931,7 +5934,30 @@ def account_home(acct):
         money=client_accounts.money, number=client_accounts.number,
         template=client_profile.template(acct["name"], acct["slug"], acct["customer_ids"], p),
         doc_url=None if client else listing["doc_url"], doc_error=None if client else listing["doc_error"],
-        doc_read=listing["doc_read"], accounts=_acct_nav())
+        doc_read=listing["doc_read"], accounts=_acct_nav(), tools=tools)
+
+
+def _acct_tools(acct, email):
+    """What the account's Page Watch and Video Studio hold for this person, for its home's cards."""
+    from tracker import video_app
+    out = {"watches": 0, "changed": 0, "last_change": None, "videos": 0, "ready": 0, "cover": None}
+    try:
+        board = _acct_pw_board(acct, email)
+        out["watches"] = len(board["watches"])
+        out["changed"] = board["counts"].get("changed", 0)
+        out["last_change"] = max((w["last_change_at"] for w in board["watches"] if w.get("last_change_at")),
+                                 default=None)
+    except Exception:
+        app.logger.exception("client accounts: Page Watch unreadable")
+    try:
+        names = _acct_names(acct)
+        vids = [v for v in video_app.library_view(email) if (v.get("client") or "").lower() in names]
+        out["videos"] = len(vids)
+        out["ready"] = sum(1 for v in vids if v.get("cover"))
+        out["cover"] = next((v["cover"] for v in vids if v.get("cover")), None)
+    except Exception:
+        app.logger.exception("client accounts: Video Studio unreadable")
+    return out
 
 
 # ── Sharing an account with its client (admins) ──────────────────────────────
@@ -6134,6 +6160,138 @@ def account_ai_review_get(acct, review_id):
     keep = _acct_review_out(dict(r, report=out.get("report")), full=True)
     keep["stats"] = out.get("stats") or {}
     return jsonify({"ok": True, "review": keep})
+
+
+# ── Page Watch inside an account (staff) ─────────────────────────────────────
+# The same Page Watch, showing only the watches filed under this account (their "client" is the
+# account's name or one of its Google Ads names) and filing new ones there. Its website and its
+# competitors from the master doc are offered as one-tap watches.
+def _acct_names(acct):
+    return {n.lower() for n in [acct["name"]] + list(acct["ads_names"]) if n}
+
+
+def _acct_rewrite(obj, slug):
+    """A Page Watch view with its watch and change links moved inside the account."""
+    base = "/strategic-agents/page-watch/"
+    if isinstance(obj, dict):
+        return {k: _acct_rewrite(v, slug) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_acct_rewrite(v, slug) for v in obj]
+    if isinstance(obj, str) and obj.startswith((base + "watches/", base + "changes/")):
+        return "/%s/page-watch/%s" % (slug, obj[len(base):])
+    return obj
+
+
+def _acct_pw_board(acct, email):
+    from tracker import watch_web
+    board = watch_web.dashboard(email)
+    names = _acct_names(acct)
+    watches = [w for w in board["watches"] if (w.get("client") or "").lower() in names]
+    counts = {"all": len(watches)}
+    for w in watches:
+        counts[w["state"]] = counts.get(w["state"], 0) + 1
+    return _acct_rewrite({"watches": watches, "counts": counts, "clients": []}, acct["slug"])
+
+
+def _acct_pw_suggest(acct, board):
+    """The account's own site and its competitors' sites, unless already watched."""
+    p = acct["profile"]
+    watched = {client_profile.domain(w["url"]) for w in board["watches"]}
+    out = []
+    if p.get("website") and p.get("domain") not in watched:
+        out.append({"url": p["website"], "name": acct["name"] + " website", "label": p["domain"], "kind": "their site"})
+    for c in p.get("competitors") or []:
+        if c.get("website") and c["domain"] not in watched and len(out) < 6:
+            out.append({"url": c["website"], "name": c["name"], "label": c["domain"], "kind": "competitor"})
+    return out
+
+
+def _acct_watch_ok(acct, view):
+    return (((view or {}).get("client") or "").lower() in _acct_names(acct))
+
+
+@app.route("/<acct:slug>/page-watch")
+@_acct_view("page-watch", staff_only=True)
+def account_page_watch(acct):
+    from tracker import watch_schedule, watch_web
+    board = _acct_pw_board(acct, _pw_email())
+    return render_template("page_watch.html", user=_get_user(), board=board, acct=acct,
+                           suggest=_acct_pw_suggest(acct, board), status=watch_web.agent_status(),
+                           days=watch_schedule.DAYS, day_names=watch_schedule.DAY_NAMES)
+
+
+@app.route("/<acct:slug>/page-watch/watches/<int:target_id>")
+@_acct_view("page-watch", staff_only=True)
+def account_page_watch_watch(acct, target_id):
+    from tracker import watch_judge, watch_schedule, watch_web
+    view = watch_web.timeline(target_id, _pw_email())
+    if not view:
+        abort(404)
+    if not _acct_watch_ok(acct, view):
+        return redirect("%s/watches/%d" % (PW_BASE, target_id))
+    return render_template("page_watch_watch.html", user=_get_user(), w=_acct_rewrite(view, acct["slug"]), acct=acct,
+                           days=watch_schedule.DAYS, day_names=watch_schedule.DAY_NAMES,
+                           categories=watch_judge.CATEGORIES)
+
+
+@app.route("/<acct:slug>/page-watch/changes/<int:change_id>")
+@_acct_view("page-watch", staff_only=True)
+def account_page_watch_change(acct, change_id):
+    from tracker import watch_web
+    view = watch_web.change_view(change_id, _pw_email())
+    if not view:
+        abort(404)
+    if not _acct_watch_ok(acct, view.get("watch")):
+        return redirect("%s/changes/%d" % (PW_BASE, change_id))
+    return render_template("page_watch_change.html", user=_get_user(), c=_acct_rewrite(view, acct["slug"]), acct=acct)
+
+
+# ── Video Studio inside an account (staff) ───────────────────────────────────
+# The same Video Studio, with the client fixed to the account, its website filled in and its brand
+# taken from the master doc's profile (until a brand is saved for it); the library shows the
+# account's videos. Videos stay their maker's own, as everywhere in Video Studio.
+def _acct_video_brand(acct):
+    """The profile's brand as Video Studio's hand-set brand: the first colour is the accent, the
+    darkest that reads on white the text; fonts only when Video Studio bundles them."""
+    from tracker import video_fonts
+    p = acct["profile"]
+    out = {}
+    cols = p.get("colours") or []
+    if cols:
+        out["accent"] = cols[0]
+        dark = [c for c in cols if client_accounts.contrast(c, "#ffffff") >= 7]
+        if dark:
+            out["text"] = dark[0]
+    have = {f.lower(): f for f in video_fonts.families()}
+    fonts = [have[f.lower()] for f in (p.get("fonts") or []) if f.lower() in have]
+    if fonts:
+        out["heading_font"] = fonts[0]
+        out["body_font"] = fonts[1] if len(fonts) > 1 else fonts[0]
+    return out
+
+
+@app.route("/<acct:slug>/video-studio")
+@_acct_view("video-studio", staff_only=True)
+def account_video_studio(acct):
+    from tracker import video_app
+    data = video_app.home(_pw_email())
+    data["account"] = {"name": acct["name"], "home": "/%s/video-studio" % acct["slug"],
+                       "website": acct["profile"].get("website", ""), "brand": _acct_video_brand(acct)}
+    return render_template("video_studio.html", user=_get_user(), data=data, acct=acct)
+
+
+@app.route("/<acct:slug>/video-studio/videos/<int:project_id>")
+@_acct_view("video-studio", staff_only=True)
+def account_video_studio_video(acct, project_id):
+    from tracker import video_app, video_fonts
+    view = video_app.project_view(_pw_email(), project_id, request.args.get("v", type=int))
+    if not view:
+        abort(404)
+    if (view.get("client") or "").lower() not in _acct_names(acct):
+        return redirect("%s/videos/%d" % (VS_BASE, project_id))
+    return render_template("video_studio_video.html", user=_get_user(), data=view, acct=acct,
+                           menu=[{"type": k, "label": lab, "hint": h} for k, lab, h in video_app.SCENE_MENU],
+                           fields=video_app.scene_fields(), fonts=video_fonts.families())
 
 
 # (Static JS/CSS/image/font caching is set at the top of this file via

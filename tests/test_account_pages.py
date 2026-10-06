@@ -81,8 +81,9 @@ def test_staff_get_every_account_for_the_picker():
     lum = d["accounts"][1]
     assert lum["name"] == "Lumina Smiles Dental" and lum["domain"] == "luminasmiles.in"
     assert lum["spend_fmt"] == "₹9,000" and len(lum["spark"]) == 30
-    assert [p["page"] for p in lum["pages"]] == ["", "google-ads", "google-ads/ai-review"]
-    assert [p["page"] for p in d["accounts"][2]["pages"]] == [""], "no Google Ads, no Google Ads pages"
+    assert [p["page"] for p in lum["pages"]] == ["", "google-ads", "google-ads/ai-review", "page-watch", "video-studio"]
+    assert [p["page"] for p in d["accounts"][2]["pages"]] == ["", "page-watch", "video-studio"], \
+        "no Google Ads, no Google Ads pages"
     assert d["global"]["google-ads"] == "/dashboards/google-ads"
 
 

@@ -207,7 +207,11 @@
     $("#vs-add-text").addEventListener("click", function () { addBlock("text"); });
     $("#vs-add-table").addEventListener("click", function () { addBlock("table"); });
 
-    // Client and brand
+    // Client and brand. On a client account's own Video Studio (/<account>/video-studio, app.py) the
+    // client is the account, the website is its own, and its brand comes from the master doc's profile
+    // unless a brand was saved for it already.
+    var ACCT = D.account || null;
+    if (ACCT && ACCT.website && !$("#vs-website").value) $("#vs-website").value = ACCT.website;
     var client = $("#vs-client"), dl = $("#vs-clients"), note = $("#vs-brand-note");
     (D.brands || []).forEach(function (b) { var o = el("option"); o.value = b.client; dl.appendChild(o); });
     function brandFor(name) {
@@ -221,6 +225,8 @@
         note.appendChild(document.createTextNode("Uses the saved brand for " + b.client + " "));
         ["background", "text", "accent"].forEach(function (k) { var i = el("i", "vs-sw"); i.style.background = b.colors[k] || "#fff"; i.title = k; note.appendChild(i); });
         note.appendChild(document.createTextNode(" " + (b.fonts.heading || "") + ". Set it by hand to change it."));
+      } else if (ACCT && ACCT.brand && (ACCT.brand.accent || ACCT.brand.heading_font)) {
+        note.textContent = "Uses " + ACCT.name + "'s brand from the master doc. Set it by hand to change it.";
       } else {
         note.textContent = client.value.trim() ? "A new client: the brand found for this video is saved for next time."
           : "The brand comes from the website when there is one. Set it here to choose it yourself.";
@@ -245,6 +251,13 @@
       hand[p[1]] = s;
     });
     var logoIn = $("#vs-logo");
+    if (ACCT && ACCT.brand && !brandFor(ACCT.name)) {
+      ["background", "text", "accent", "heading_font", "body_font"].forEach(function (k) {
+        if (ACCT.brand[k]) hand[k].value = ACCT.brand[k];
+      });
+      ["background", "text", "accent"].forEach(function (k) { if (ACCT.brand[k]) hand[k].dispatchEvent(new Event("input")); });
+    }
+    syncBrandNote();
 
     // Make a plan
     var go = $("#vs-go"), progress = $("#vs-progress");
@@ -292,11 +305,18 @@
       });
     });
 
-    Library(D.library || []);
+    Library(D.library || [], ACCT);
   }
 
-  function Library(items) {
+  function Library(items, acct) {
     var grid = $("#vs-lib"), empty = $("#vs-lib-empty"), kinds = $("#vs-kinds"), clientSel = $("#vs-lib-client"), find = $("#vs-lib-find");
+    function mine(list) {   // inside a client account: its videos, opened inside the account
+      if (!acct) return list;
+      var name = acct.name.toLowerCase();
+      return list.filter(function (v) { return (v.client || "").toLowerCase() === name; })
+        .map(function (v) { return Object.assign({}, v, { url: acct.home + "/videos/" + v.id }); });
+    }
+    items = mine(items);
     var filter = { kind: "", client: "", q: "" };
     function chips() {
       kinds.textContent = "";
@@ -355,7 +375,7 @@
     (function poll() {
       if (!busy()) return setTimeout(poll, 15000);
       setTimeout(function () {
-        api("GET", BASE + "/api/library").then(function (r) { items = r.library || []; chips(); draw(); }).catch(function () {}).then(poll);
+        api("GET", BASE + "/api/library").then(function (r) { items = mine(r.library || []); chips(); draw(); }).catch(function () {}).then(poll);
       }, 5000);
     })();
   }

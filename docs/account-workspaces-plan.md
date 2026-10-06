@@ -20,8 +20,8 @@ Decisions the owner made (2026-10-06):
 | Phase | What | State |
 |---|---|---|
 | A | The list, URL names, the switch in every top bar and on the hub, each account's home, Google Ads and the AI review scoped to the account | built (PR #74) |
-| B | Client access: invites, what a client sees, the client's chrome, sign-in landing | built |
-| C | Video Studio and Page Watch inside an account | |
+| B | Client access: invites, what a client sees, the client's chrome, sign-in landing | built (PR #75) |
+| C | Video Studio and Page Watch inside an account | built |
 | D | The SEO & AEO tools and the other agents, filled in from the profile | |
 
 ## Phase A: how it works
@@ -182,8 +182,31 @@ An account with no profile shows this block on its home, filled in with what is 
 - `tests/test_account_clients.py` covers each of these: by URL, by API, through the picker data,
   through the insights filters, after removal, and by domain.
 
-## Phase C (next): Video Studio and Page Watch inside an account
+## Phase C: Page Watch and Video Studio inside an account (staff)
 
-Both already store a `client` on each video and watch. Inside an account they list that account's
-videos and watches, file new ones under it, and Video Studio starts from the account's brand
-(colours and fonts from the profile).
+- **`/<account>/page-watch`** is Page Watch for the account:
+  - It shows only the watches filed under it (their "client" is the account's name or one of its
+    Google Ads names), and files new ones there.
+  - It offers the account's own site and its competitors' sites from the master doc as one-tap
+    watches. A site already watched is not offered again.
+  - A watch and its changes open inside the account (`/<account>/page-watch/watches/<id>`,
+    `/changes/<id>`). One filed under another client opens on the global page.
+- **`/<account>/video-studio`** is Video Studio for the account:
+  - The client is fixed to the account and the website is filled in from the profile.
+  - The brand comes from the profile, until a brand is saved for the client:
+    - the first brand colour is the accent;
+    - the darkest colour that reads on white is the text;
+    - the fonts are used when Video Studio bundles them.
+  - The example brief is written from the profile's services, city and tone.
+  - The library shows the account's videos, which open inside the account. Videos stay their
+    maker's own, as everywhere in Video Studio.
+- **The account's home** shows both tools as cards (pages watched, the last change; videos made and
+  ready). They are staff only: an invited client never sees them, and their URLs lead a client back
+  to the home.
+- The picker knows both pages. On the global Page Watch or Video Studio, picking an account opens
+  that account's.
+
+## Phase D (next): the SEO & AEO tools and the other agents
+
+Each tool and agent opens with the account's website, city, competitors and handles filled in from
+the profile.
