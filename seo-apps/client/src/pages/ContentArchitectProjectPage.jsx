@@ -10,6 +10,7 @@ import { ProgressSteps } from '../ui/ProgressSteps';
 import { useToast } from '../ui/Toast';
 import HubSpokeReport, { healthVariant } from '../components/contentArchitect/HubSpokeReport';
 import { ca } from '../lib/contentArchitectApi';
+import { notifyAgentRunStarted, notifyAgentRunFinished } from '../lib/agentRunSignal';
 
 const DISCOVER_STEPS = [
   { id: 'sitemap', label: 'Find sitemap' },
@@ -175,6 +176,7 @@ export default function ContentArchitectProjectPage() {
     setScreen('analyzing');
     setError(null);
     setAnalyzeSteps({});
+    notifyAgentRunStarted('content-architect');
     try {
       const { token } = await ca.analyzeInit(id);
       const es = new EventSource(ca.analyzeStreamUrl(id, token));
@@ -188,6 +190,8 @@ export default function ContentArchitectProjectPage() {
           const full = await ca.getFullAnalysis(id);
           setAnalysis(full);
           setScreen('results');
+          // The platform keeps the run for the account (or the person's General work) it was run for.
+          notifyAgentRunFinished('content-architect', { input: { domain: project?.domain || '', project: id }, ...full });
         } catch (e) {
           setError(e.message);
           setScreen('patterns');

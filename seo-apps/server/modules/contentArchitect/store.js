@@ -47,10 +47,13 @@ async function getProject(id) {
   return all.find((p) => p.id === id) || null;
 }
 
-async function createProject({ domain, host }) {
+// `space` and `owner` say where the project is listed (../../utils/space.js).
+async function createProject({ domain, host, space = null, owner = null }) {
   const all = await listProjects();
   const project = {
     id: genId('proj'),
+    space,
+    owner,
     domain, // canonical origin, e.g. "https://www.example.com"
     name: host,
     createdAt: new Date().toISOString(),

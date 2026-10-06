@@ -6,6 +6,7 @@ import ResultsTable from '../components/ResultsTable';
 import ExportButtons from '../components/ExportButtons';
 import KBContextSelector from '../components/KBContextSelector';
 import { prefill } from '../lib/prefill';
+import { notifyAgentRunStarted, notifyAgentRunFinished } from '../lib/agentRunSignal';
 
 const CONFIDENCE_STYLES = {
   HIGH:   { bg: 'var(--success-soft)', text: 'var(--success)', label: 'KB: HIGH' },
@@ -31,6 +32,7 @@ export default function ContentResearchPage() {
   async function handleResearch() {
     if (!keyword.trim() || isLoading) return;
 
+    notifyAgentRunStarted('content-research');
     setStep('searching');
     setSerpResults(null);
     setScrapeResults(null);
@@ -77,6 +79,11 @@ export default function ContentResearchPage() {
       setKbConfidence(analyzeData.kbConfidence || null);
       setWarnings(allWarnings);
       setStep('done');
+      // The platform keeps the run for the account (or the person's General work) it was run for.
+      notifyAgentRunFinished('content-research', {
+        input: { keyword: keyword.trim() }, analysis: analyzeData.analysis,
+        serp: (searchData.results || []).map(r => ({ url: r.url, title: r.title })),
+      });
     } catch (err) {
       setError(err.message);
       setStep('error');

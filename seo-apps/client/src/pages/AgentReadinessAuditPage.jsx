@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { prefill } from '../lib/prefill';
+import { notifyAgentRunStarted, notifyAgentRunFinished } from '../lib/agentRunSignal';
 
 const SC = {
   pass: { label: 'Pass', bg: 'var(--success-soft)', color: 'var(--success)', icon: '✓' },
@@ -346,6 +347,8 @@ export default function AgentReadinessAuditPage() {
   function finishAudit(data) {
     setResult(data);
     setLoading(false);
+    // The platform keeps the run for the account (or the person's General work) it was run for.
+    notifyAgentRunFinished('agent-readiness-audit', { input: { url: urlHomepage.trim() }, ...data });
     // Store delta
     try {
       const domain = new URL(data.site.full).hostname;
@@ -366,6 +369,7 @@ export default function AgentReadinessAuditPage() {
 
   // ── handleAudit (with SSE streaming + fallback) ───────────────────────────
   async function handleAudit(e) {
+    notifyAgentRunStarted('agent-readiness-audit');
     e.preventDefault();
     if (!urlHomepage.trim()) return;
     setLoading(true);

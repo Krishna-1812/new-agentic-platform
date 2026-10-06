@@ -1,6 +1,7 @@
 const express = require('express');
 const { runAudit } = require('./auditor');
 const { getAudit, listAudits, deleteAudit } = require('./store');
+const space = require('../../utils/space');
 
 const router = express.Router();
 
@@ -29,7 +30,7 @@ router.post('/run', async (req, res) => {
       const audit = await runAudit(url, kws, (msg) => {
         const job = jobs.get(jobId);
         if (job) job.progress = msg;
-      });
+      }, space.stamp(req));
       jobs.set(jobId, { status: 'complete', auditId: audit.id, progress: 'Done', error: audit.errorMessage || null });
     } catch (err) {
       jobs.set(jobId, { status: 'failed', auditId: null, progress: 'Failed', error: err.message });
@@ -49,18 +50,23 @@ router.get('/status/:jobId', (req, res) => {
 // GET /api/on-page-audit/result/:auditId
 router.get('/result/:auditId', async (req, res) => {
   const audit = await getAudit(req.params.auditId);
-  if (!audit) return res.status(404).json({ error: 'Audit not found' });
+  if (!space.reachable(audit, req)) return res.status(404).json({ error: 'Audit not found' });
   res.json(audit);
 });
 
-// GET /api/on-page-audit/list
+// GET /api/on-page-audit/list — this request's space only (a client account's, or your own General)
 router.get('/list', async (req, res) => {
-  const audits = await listAudits();
+  const audits = await listAudits(a => space.listed(a, req));
   res.json(audits);
 });
 
-// DELETE /api/on-page-audit/:auditId
+// DELETE /api/on-page-audit/:auditId — only by whoever ran it (an audit from before spaces: anyone)
 router.delete('/:auditId', async (req, res) => {
+  const audit = await getAudit(req.params.auditId);
+  if (!space.reachable(audit, req)) return res.status(404).json({ error: 'Audit not found' });
+  if (audit.owner && audit.owner !== space.stamp(req).owner) {
+    return res.status(403).json({ error: 'Only whoever ran this audit can delete it.' });
+  }
   await deleteAudit(req.params.auditId);
   res.json({ ok: true });
 });

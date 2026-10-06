@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- One SEO & AEO tool run, as the platform kept it (tracker/seo_runs.py): what it was given, a few
+    readable facts from the result, who ran it and when, and the full result to download. Inside a
+    client account it is the team's; otherwise the viewer's own General work. -#}
+<html lang="en">
+<head>
+{{ head(tool_name ~ " · " ~ r.title, ["account-space.css?v=12"]) }}
+</head>
+<body class="as-page">
+{{ topbar([("SEO + AEO", "/" ~ acct.slug if acct else "/seo-aeo"), (tool_name, none)]) }}
+<main class="as-shell sr-shell">
+  <section class="sr-head" aria-labelledby="sr-title">
+    <span class="as-pre">{{ tool_name }}{% if acct %} &middot; for {{ acct.name }}{% else %} &middot; General, only you see it{% endif %}</span>
+    <h1 class="sr-title" id="sr-title">{{ r.title }}</h1>
+    <p class="sr-meta">
+      <span class="as-ev-av" aria-hidden="true">{{ (r.by or "?")[:1] }}</span>
+      <span>Run by <b>{{ r.by }}</b></span>
+      <span aria-hidden="true">&middot;</span>
+      <time datetime="{{ r.created_at }}" data-sr-at>{{ nice_day(r.created_at) }}</time>
+    </p>
+    <div class="sr-actions">
+      {%- if again %}<a class="as-btn as-btn--ink" href="{{ again }}">Run it again <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>{% endif %}
+      {%- if not r.summary.truncated %}<a class="as-btn as-btn--line" href="{{ download }}" download>Download the full result</a>{% endif %}
+      {%- if mine %}<button type="button" class="as-btn as-btn--line sr-del" data-sr-del="{{ r.id }}" data-sr-back="{{ ('/' ~ acct.slug) if acct else '/seo-aeo' }}">Delete</button>{% endif %}
+    </div>
+  </section>
+
+  {%- if r.summary.facts %}
+  <section class="sr-facts" aria-label="What it found">
+    {%- for k, v in r.summary.facts %}
+    <div class="sr-fact"><span class="sr-fact-l">{{ k }}</span><b class="sr-fact-v">{{ v }}</b></div>
+    {%- endfor %}
+  </section>
+  {%- endif %}
+
+  <div class="sr-grid">
+    {%- if r.summary.highlights %}
+    <section class="sr-card" aria-labelledby="sr-h-top">
+      <h2 class="sr-card-h" id="sr-h-top">At the top</h2>
+      <ol class="sr-list">
+        {%- for h in r.summary.highlights %}<li>{{ h }}</li>{% endfor %}
+      </ol>
+    </section>
+    {%- endif %}
+    {%- if r.input %}
+    <section class="sr-card" aria-labelledby="sr-h-in">
+      <h2 class="sr-card-h" id="sr-h-in">What it was given</h2>
+      <dl class="sr-dl">
+        {%- for k, v in r.input.items() if v not in (none, "", []) %}
+        {%- set labels = {"url": "Page", "urls": "Pages", "keywords": "Keywords", "primaryKeywords": "Keywords",
+                          "keyword": "Keyword", "domain": "Site", "service": "Service", "pageIntent": "Page intent",
+                          "homeGeoIds": "Home markets", "comparedGeoIds": "Markets compared"} %}
+        <dt>{{ labels.get(k) or k|replace("_", " ")|capitalize }}</dt>
+        <dd>{% if v is iterable and v is not string %}{{ v|join(", ") }}{% else %}{{ v }}{% endif %}</dd>
+        {%- endfor %}
+      </dl>
+    </section>
+    {%- endif %}
+  </div>
+  {%- if r.summary.truncated %}
+  <p class="sr-note">The full result was too large to keep; the facts above are what was kept.</p>
+  {%- endif %}
+</main>
+<script>
+(function () {
+  var t = document.querySelector("[data-sr-at]");
+  if (t) { var d = new Date(t.getAttribute("datetime")); if (!isNaN(d)) t.textContent = d.toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
+  var del = document.querySelector("[data-sr-del]");
+  if (del) del.addEventListener("click", function () {
+    if (!window.confirm("Delete this run? This cannot be undone.")) return;
+    del.disabled = true;
+    fetch("/api/seo-runs/" + del.getAttribute("data-sr-del"), { method: "DELETE", headers: { "X-Requested-With": "fetch" } })
+      .then(function (r) { if (r.ok) window.location.href = del.getAttribute("data-sr-back"); else del.disabled = false; })
+      .catch(function () { del.disabled = false; });
+  });
+})();
+</script>
+{{ topbar_script() }}
+</body>
+</html>

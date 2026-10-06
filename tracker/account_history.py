@@ -16,7 +16,8 @@ from datetime import datetime, timezone
 
 log = logging.getLogger(__name__)
 
-TOOLS = {"page-watch": "Page Watch", "video-studio": "Video Studio", "ai-review": "AI review", "agents": "Agents"}
+TOOLS = {"page-watch": "Page Watch", "video-studio": "Video Studio", "ai-review": "AI review", "agents": "Agents",
+         "seo": "SEO & AEO"}
 LIMIT = 60
 
 
@@ -149,7 +150,21 @@ def _tlpr(acct):
     return out
 
 
-AGENT_READS = (("local-business-radar", _lbr), ("social-media-intelligence", _smi),
+# ── The SEO & AEO tools (phase 3) ────────────────────────────────────────────
+def _seo(acct):
+    from tracker import seo_runs, seo_runs_store
+    out = []
+    for r in seo_runs_store.list_runs("", space=acct["space"], limit=LIMIT):
+        facts = (r.get("summary") or {}).get("facts") or []
+        out.append({"tool": "seo", "kind": "run", "seo_tool": r["tool"], "who": r.get("email") or "",
+                    "at": _iso(r.get("created_at")), "title": r.get("title") or seo_runs.TOOLS.get(r["tool"], ""),
+                    "detail": " · ".join("%s %s" % (k, v) for k, v in facts[:2]),
+                    "href": "/%s/seo-aeo/runs/%d" % (acct["slug"], r["id"]), "state": "ready", "state_label": "Done",
+                    "tool_label": seo_runs.TOOLS.get(r["tool"], "SEO & AEO")})
+    return out
+
+
+AGENT_READS = (("seo", _seo), ("local-business-radar", _lbr), ("social-media-intelligence", _smi),
                ("event-conference-intelligence", _evi), ("thought-leader-pr", _tlpr))
 
 

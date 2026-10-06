@@ -345,7 +345,7 @@ Watches any web page and reports, in plain words and with a before-and-after pic
     Event & Conference Intelligence, Contact Finder and Thought Leader Intelligence.
   - The account's home lists them all under "Run for <account>".
 
-### Account memory (phases 1 and 2 of 5 built; plan and progress: `docs/account-memory-plan.md`)
+### Account memory (phases 1 to 3 of 5 built; plan and progress: `docs/account-memory-plan.md`)
 
 - **Spaces** (`tracker/workspace.py`): every saved piece of work is in one.
   - `acct:<id>` is a client account's. The whole team sees it, with who made each piece, and anyone
@@ -373,6 +373,12 @@ Watches any web page and reports, in plain words and with a before-and-after pic
     it, for staff only.
   - **One rule for the stores:** they all use `workspace.seen_sql` and `workspace.list_sql`.
     Thought Leader's plain-string queries spell the same rule out, and a test holds them to it.
+- **SEO & AEO (phase 3):**
+  - **Inside the studio:** inside an account, the studio pass carries the account's space (`s`). The
+    studio's own lists (On-Page audits, Content Architect projects, Market Potential scenarios)
+    follow it (`seo-apps/server/utils/space.js`).
+  - **On the platform:** every tool reports its finished run to `templates/embed.html`, which saves
+    it to `seo_runs` (`tracker/seo_runs_store.py`). Each run has its own page and a download.
 - **Names:** `tracker/people_store.py` keeps each person's name from Google sign-in, once a session.
 - **Tests:** `tests/test_account_memory.py`, and `tests/test_account_memory_postgres.py` in the CI
   Postgres job.

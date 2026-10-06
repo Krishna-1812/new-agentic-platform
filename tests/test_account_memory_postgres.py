@@ -159,3 +159,21 @@ def test_contact_finder_history_by_space(who, monkeypatch):
         {"deleted": False}, "only its maker deletes it"
     for i in (shared, own):
         client(a).delete("/strategic-agents/company-people-intelligence/history/%d" % i)
+
+
+# ── Phase 3: SEO & AEO runs ──────────────────────────────────────────────────
+def test_seo_runs_by_space(who):
+    from tracker import seo_runs_store
+    a, b, sp = who["a"], who["b"], who["space"]
+    shared = seo_runs_store.add(a, sp, "seo-geo-audit", "https://x.in", {"facts": [["Score", 70]]}, {"url": "x"},
+                                {"big": [1, 2]})
+    own = seo_runs_store.add(a, workspace.personal(a), "keyword-research", "kw", {}, {}, None)
+    assert seo_runs_store.get(shared, b)["summary"]["facts"] == [["Score", 70]]
+    assert "output" not in seo_runs_store.get(shared, b)
+    assert seo_runs_store.get(shared, b, with_output=True)["output"] == {"big": [1, 2]}
+    assert seo_runs_store.get(own, b) is None
+    assert [r["id"] for r in seo_runs_store.list_runs(b, space=sp)] == [shared]
+    assert [r["id"] for r in seo_runs_store.list_runs(b, space=sp, tool="keyword-research")] == []
+    assert [r["id"] for r in seo_runs_store.list_runs(a)] == [own]
+    assert seo_runs_store.delete(shared, b) is False and seo_runs_store.delete(shared, a) is True
+    seo_runs_store.delete(own, a)

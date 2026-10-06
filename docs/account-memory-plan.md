@@ -84,7 +84,28 @@ and a merge.
   - The CI Postgres job's 327 tests pass on a fresh database.
   - In Chromium, the radar inside an account sent the account with every call, showed two people's
     runs with their names, and General showed only the viewer's own.
-- **Phases 3 to 5:** not started.
+- **Phase 3: built.** The SEO & AEO tools.
+  - **The pass names the account.** SEO Studio is opened with a signed pass. Inside an account the
+    pass carries the account's space (`s`, `app.py` `_studio_pass`), and the studio reads it into
+    `req.user.space` (`seo-apps/server/routes/auth.js`). A pass can name only a real account space,
+    never someone else's General work.
+  - **The studio's own lists follow it** (`seo-apps/server/utils/space.js`): On-Page audits, Content
+    Architect projects and Market Potential scenarios.
+    - Inside an account, a list is that account's (the whole team's).
+    - Elsewhere, a list is your own, plus On-Page audits and Content Architect projects from before
+      spaces, which everyone saw before and still does.
+    - Only the maker deletes.
+  - **Every tool hands its finished run to the platform.** Each of the nine account tools posts
+    `agent-run-finished` with its input and result. `templates/embed.html` sends it to `POST
+    /api/seo-runs` (with `X-Account` inside an account) and says where it was saved.
+  - **The platform keeps the run** (`tracker/seo_runs_store.py`, table `seo_runs`), with a few
+    readable facts (`tracker/seo_runs.py`). A result over 2 MB keeps its facts only.
+  - **Where runs show:**
+    - Each run has a page (`/<account>/seo-aeo/runs/<id>`, or `/seo-aeo/runs/<id>` for General) with
+      a download of the full result.
+    - Runs join the account's History under "SEO & AEO".
+    - "Run for" on the account home gives each tool's last run.
+- **Phases 4 and 5:** not started.
 
 ## Phase 1 in detail
 

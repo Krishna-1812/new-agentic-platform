@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { startAudit, pollStatus, getResult, listAudits, deleteAudit } from '../lib/onPageAuditApi';
 import OnPageReport from '../components/onPageAudit/OnPageReport';
 import { prefill } from '../lib/prefill';
+import { notifyAgentRunStarted, notifyAgentRunFinished } from '../lib/agentRunSignal';
 
 const POLL_MS = 3500;
 
@@ -255,6 +256,7 @@ export default function OnPageAuditPage() {
   }, []);
 
   async function handleSubmit(url, kws) {
+    notifyAgentRunStarted('on-page-audit');
     setLoading(true);
     setView('progress');
     setProgress('Starting…');
@@ -270,6 +272,8 @@ export default function OnPageAuditPage() {
             const result = await getResult(job.auditId);
             setAudit(result);
             setView('report');
+            // The platform keeps the run for the account (or the person's General work) it was run for.
+            if (result) notifyAgentRunFinished('on-page-audit', { input: { url, primaryKeywords: kws }, ...result });
             setLoading(false);
             listAudits().then(setHistory).catch(() => {});
           } else if (job.status === 'failed') {
