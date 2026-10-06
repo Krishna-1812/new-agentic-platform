@@ -1498,6 +1498,11 @@ def parse_about(values):
     return out
 
 
+# The About rows that describe the export itself rather than the accounts it read.
+ABOUT_GENERAL = ("Exported at", "Daily detail", "Search terms", "Keywords", "Locations, landing pages", "Ads",
+                 "Budgets", "Changes range", "Optimization score, recommendations")
+
+
 def empty():
     return {"ok": False, "is": [], "weekly": [], "weekly_grain": "day", "budgets": [], "budget_campaigns": [],
             "budget_limited": {},
@@ -1567,10 +1572,15 @@ class Filters:
     (google-ads-dashboard.js, matches()): account, campaign type, campaign status, one campaign, and
     search text that matches the campaign or account name. Type and status come from the campaign
     report itself (`camps`: {(account, campaign): {"types": set, "states": set}}), so a campaign
-    the report does not know is left out while either filter is on."""
+    the report does not know is left out while either filter is on.
 
-    def __init__(self, account="", type_="", status="", search="", focus="", camps=None):
+    `scope` is the set of Google Ads accounts the page may show at all (a client account's own page,
+    app.py's /<account>/google-ads): every row of any other account is left out, whatever the other
+    filters say."""
+
+    def __init__(self, account="", type_="", status="", search="", focus="", camps=None, scope=None):
         self.account = "" if account in (None, "", "__all__") else account
+        self.scope = frozenset(scope) if scope else None
         self.type = "" if type_ in (None, "", "__all__") else type_
         self.status = "" if status in (None, "", "__all__") else status
         self.search = (search or "").strip().lower()
@@ -1583,7 +1593,10 @@ class Filters:
         return bool(self.type or self.status or self.search or self.focus)
 
     def in_account(self, x):
-        return not self.account or x.get("account") == self.account
+        a = x.get("account")
+        if self.scope is not None and a not in self.scope:
+            return False
+        return not self.account or a == self.account
 
     def campaign(self, x):
         """A row that belongs to one campaign."""
@@ -1658,7 +1671,7 @@ _NO_DAY = "0000-00-00"   # a range no day falls in
 
 
 def view(st, start=None, end=None, account="", type_="", status="", search="", focus="", camps=None, fx=None,
-         spend=None):
+         spend=None, only=None):
     """The page's insights for one date range and set of filters, money in fx.to where the campaign
     report gives Google's rate for an account (see FX), each panel over the days all of its accounts
     were exported for (see common_window), with how much of the campaign report's spend the panels
@@ -1671,7 +1684,7 @@ def view(st, start=None, end=None, account="", type_="", status="", search="", f
         out["about"] = (st or {}).get("about", [])
         return out
     lo, hi = start or None, end or None
-    f = Filters(account, type_, status, search, focus, camps)
+    f = Filters(account, type_, status, search, focus, camps, scope=only)
     meta = {}
     windows, latest = {}, {}
 
@@ -1710,7 +1723,7 @@ def view(st, start=None, end=None, account="", type_="", status="", search="", f
         last = _dt.date.fromisoformat(win[1])
         since = (last - _dt.timedelta(days=LIMITED_DAYS - 1)).isoformat()
         for x in is_rows(st["is"], since, win[1]):
-            if (x.get("lb") or 0) >= 0.1:
+            if (x.get("lb") or 0) >= 0.1 and f.in_account(x):
                 out["budget_limited"][x["account"] + "\u0001" + x["campaign"]] = x["lb"]
     meta["budgets"] = {"scope": "current", "dated": False, "from": None, "to": None, "cover": None,
                        "limited_from": since if win else None, "limited_to": win[1] if win else None}
@@ -1824,7 +1837,9 @@ def view(st, start=None, end=None, account="", type_="", status="", search="", f
             coverage[key] = {"shown": (total or {}).get("cost") or 0.0, "spent": spent, "cur": ref.cur, "scope": scope}
     out["coverage"] = coverage
 
-    out["about"] = st["about"]
+    # One account's page shows how the export works, not what it read for other accounts (how many,
+    # which failed).
+    out["about"] = [r for r in st["about"] if r[0] in ABOUT_GENERAL] if f.scope is not None else st["about"]
     out["as_of"] = st["as_of"]
     # Which accounts were converted, and which could not be (their money stays in their own currency
     # and is never added to another currency's).

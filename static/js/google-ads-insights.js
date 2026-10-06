@@ -1777,6 +1777,9 @@
 
   /* ── Asking the server for the page's filters ───────────────────────── */
   var PARAMS = ["from", "to", "account", "type", "status", "search", "focus"];
+  /* One client account's page asks its own scoped endpoint (data-api-base, app.py); every other page
+     the dashboard's. */
+  function endpoint(u) { var b = doc.body.getAttribute("data-api-base"); return b ? b + "/insights?" : u; }
   function keyOf(p) { return PARAMS.map(function (k) { return p[k] || ""; }).join("\u0002"); }
   var panels = Array.prototype.slice.call(doc.querySelectorAll("[id^='gai-'].gad-panel, .gai-chapter"));
   function busy(on) { panels.forEach(function (p) { p.classList.toggle("is-updating", on); }); }
@@ -1786,7 +1789,7 @@
     timer = setTimeout(function () {
       var my = ++seq, q = PARAMS.map(function (k) { return k + "=" + encodeURIComponent(p[k] || ""); }).join("&");
       busy(true);
-      fetch("/api/dashboards/google-ads/insights?" + q, { credentials: "same-origin", headers: { "X-Requested-With": "fetch" } })
+      fetch(endpoint("/api/dashboards/google-ads/insights?") + q, { credentials: "same-origin", headers: { "X-Requested-With": "fetch" } })
         .then(function (res) { if (!res.ok) throw new Error(res.status); return res.json(); })
         .then(function (d) {
           if (my !== seq) return;                  // a newer request is on its way

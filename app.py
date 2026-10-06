@@ -4013,10 +4013,17 @@ def hub():
     # rather than a hand-typed constant that goes stale the next time an
     # account list is added.
     account_live = sum(1 for cfg in ACCOUNTS.values() if cfg["dashboard"].exists())
+    # The client accounts for the headline's switch and the account cards (the list is cached, so
+    # this is instant after the first build; if it cannot be built the page fetches it instead).
+    try:
+        accounts = _acct_payload(_acct_listing())
+    except Exception:
+        app.logger.exception("hub: client accounts unavailable")
+        accounts = None
     return render_template("hub.html", user=_get_user(),
                            tracked_companies=_tracked_company_floor(),
                            seo_tool_count=len(_seo_tools()),
-                           account_live_count=account_live)
+                           account_live_count=account_live, accounts=accounts)
 
 CX_CHAPTERS = [
     # Presentation-only keys were dropped when this page was rebuilt: each
@@ -5528,6 +5535,7 @@ def google_ads_ai_context_doc():
     except Exception:
         app.logger.exception("gads_ai: setting save failed")
         return jsonify({"ok": False, "error": "The link could not be saved."}), 503
+    _acct_reset()   # the same doc is the client accounts' master doc: list them again from the new one
     return jsonify(_gads_ai_context_out(str(p.get("account") or "")[:300]))
 
 
@@ -5578,6 +5586,331 @@ def google_ads_ai_review_start():
     rid = gads_ai_store.create_review(account, email, brief_id=(brief or {}).get("id"))
     _gads_ai_spawn(gads_ai.run_review, rid, account, _gads_ai_load, gads_ai_store, context=_gads_ai_context)
     return jsonify({"ok": True, "review": _gads_ai_review_out(gads_ai_store.get_review(rid))}), 202
+
+
+# ── Client accounts: one space per client, at /<url name> ───────────────────
+# The account picker (the hub's headline and every page's top bar) and each account's own pages.
+# The list is the Google Ads campaign report's accounts plus the master doc's tabs, which is the
+# AI review's context doc (tracker/client_accounts.py, tracker/client_profile.py); each account
+# gets a URL name kept in tracker/client_accounts_store.py, so a link to it never breaks or moves
+# to another client. An account's pages read only that account's data: its Google Ads rows are
+# cut down here, and its insights are scoped in google_ads_insights.view (only=).
+from werkzeug.routing import BaseConverter as _BaseConverter, ValidationError as _RouteMiss
+from tracker import client_accounts, client_accounts_store, client_profile
+
+ACCT_TTL = 60                  # seconds a listing is fresh; a stale one is served while it refreshes
+_ACCT = {"listing": None, "refreshing": False, "reserved": None}
+_ACCT_LOCK = threading.Lock()
+# An account's pages, as (page, label). "" is its home. The global page each one mirrors is where
+# "All accounts" leads from it, and where the picker opens that page for another account.
+ACCT_PAGES = (("", "Overview"), ("google-ads", "Google Ads"), ("google-ads/ai-review", "AI review"))
+ACCT_GLOBAL = {"": "/hub", "google-ads": "/dashboards/google-ads",
+               "google-ads/ai-review": "/dashboards/google-ads/ai-review"}
+_ACCT_FROM_GLOBAL = {v: k for k, v in ACCT_GLOBAL.items()}
+
+
+def _acct_reserved():
+    """First path segments no account may take: every route's, the client portals', and a few more."""
+    r = _ACCT["reserved"]
+    if r is None:
+        r = set(client_accounts.RESERVED_WORDS) | {c.lower() for c in CLIENTS}
+        for rule in app.url_map.iter_rules():
+            first = rule.rule.split("/")[1] if rule.rule.startswith("/") else ""
+            if first and not first.startswith("<"):
+                r.add(first.lower())
+        _ACCT["reserved"] = r
+    return r
+
+
+def _acct_doc():
+    """(the master doc, its link, an error to show) -- the AI review's context doc, linked there or with
+    GOOGLE_ADS_CONTEXT_DOC. (None, "", None) when no doc is linked."""
+    from tracker import gads_ai_doc
+    did = _gads_ai_doc_setting()[0]
+    if not did:
+        return None, "", None
+    try:
+        doc = gads_ai_doc.fetch(_gads_ai_docs_service, did,
+                                sa_email=(_gads_ai_sa_info() or {}).get("client_email", ""))
+        return doc, gads_ai_doc.doc_url(did), None
+    except gads_ai_doc.DocError as e:
+        return None, gads_ai_doc.doc_url(did), str(e)
+    except Exception:
+        app.logger.exception("client accounts: master doc unreadable")
+        return None, gads_ai_doc.doc_url(did), "The master doc could not be read just now."
+
+
+def _acct_build():
+    try:
+        rows = _fetch_google_ads_rows()
+    except Exception:
+        app.logger.warning("client accounts: campaign report unreadable", exc_info=True)
+        rows = []
+    doc, doc_url, doc_error = _acct_doc()
+    accounts = client_accounts.build(_gads_ai_accounts(rows), doc)
+    stored = client_accounts_store.sync(accounts, _acct_reserved())
+    by_slug, by_key = {}, {}
+    for a in accounts:
+        a["slug"] = stored["rows"][a["key"]]
+        a["stats"] = client_accounts.stats(rows, a["ads_names"])
+        by_slug[a["slug"]], by_key[a["key"]] = a, a
+    retired = {s: by_key[k]["slug"] for s, k in stored["retired"].items() if k in by_key}
+    return {"accounts": accounts, "by_slug": by_slug, "retired": retired, "at": time.time(),
+            "doc_url": doc_url, "doc_error": doc_error, "doc_read": doc is not None}
+
+
+def _acct_refresh():
+    try:
+        listing = _acct_build()
+        with _ACCT_LOCK:
+            _ACCT["listing"] = listing
+    except Exception:
+        app.logger.exception("client accounts: the list could not be refreshed")
+    finally:
+        _ACCT["refreshing"] = False
+
+
+def _acct_listing(force=False):
+    """Every account, by URL name. The first call builds it; after that a stale list is served at once
+    and refreshed in the background, so no page waits on Google for it."""
+    listing = _ACCT["listing"]
+    if listing is not None and not force:
+        if time.time() - listing["at"] > ACCT_TTL and not _ACCT["refreshing"]:
+            _ACCT["refreshing"] = True
+            threading.Thread(target=_acct_refresh, name="client-accounts", daemon=True).start()
+        return listing
+    with _ACCT_LOCK:
+        if _ACCT["listing"] is not None and not force:
+            return _ACCT["listing"]
+        _ACCT["listing"] = _acct_build()
+        return _ACCT["listing"]
+
+
+def _acct_reset():
+    """Forget the cached list (tests, and after the master doc is relinked)."""
+    with _ACCT_LOCK:
+        _ACCT["listing"] = None
+        _ACCT["reserved"] = None
+
+
+class _AcctSlug(_BaseConverter):
+    """/<acct:slug>: matches only a listed account's URL name, or one it had before. Anything else
+    falls through, so a mistyped address is the same 404 it always was."""
+    regex = r"[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?"
+
+    def to_python(self, value):
+        if value in _acct_reserved():
+            raise _RouteMiss()
+        try:
+            listing = _acct_listing()
+        except Exception:
+            app.logger.exception("client accounts: the list could not be built")
+            raise _RouteMiss()
+        if value in listing["by_slug"] or value in listing["retired"]:
+            return value
+        raise _RouteMiss()
+
+
+app.url_map.converters["acct"] = _AcctSlug
+app.add_template_global(client_accounts.nice_day, "nice_day")
+app.add_template_global(client_accounts.delta_text, "delta_text")
+app.add_template_global(client_accounts.social_label, "social_label")
+
+
+def _acct_allowed(email, acct, page):
+    """Who may open an account's page. Staff: every account."""
+    return _is_staff(email)
+
+
+def _acct_view(page, api=False):
+    """An account's page: an old URL name redirects to the current one, the visitor must be allowed,
+    and the account goes on g for the top bar (and to the view as its first argument)."""
+    def deco(f):
+        @wraps(f)
+        def inner(slug, *args, **kwargs):
+            listing = _acct_listing()
+            acct = listing["by_slug"].get(slug)
+            if acct is None:
+                new = listing["retired"].get(slug)
+                if not new:
+                    abort(404)
+                target = "/" + new + request.path[len(slug) + 1:]
+                if request.query_string:
+                    target += "?" + request.query_string.decode("utf-8", "ignore")
+                return redirect(target, code=301 if request.method == "GET" else 308)
+            user = _get_user()
+            if not user:
+                if api:
+                    return jsonify({"ok": False, "error": "Sign in again."}), 401
+                return _login_redirect()
+            if not _acct_allowed(user.get("email", ""), acct, page):
+                if api:
+                    return jsonify({"ok": False, "error": "Not allowed."}), 403
+                return redirect("/app")
+            g.acct, g.acct_page = acct, page
+            return f(acct, *args, **kwargs)
+        return inner
+    return deco
+
+
+def _acct_pages(acct):
+    return [{"page": p, "label": label, "href": "/%s%s" % (acct["slug"], "/" + p if p else "")}
+            for p, label in ACCT_PAGES if acct["ads_names"] or not p.startswith("google-ads")]
+
+
+def _acct_cards(listing, include_hidden=False):
+    out = []
+    for a in listing["accounts"]:
+        if a["hidden"] and not include_hidden:
+            continue
+        c = client_accounts.card(a, a["stats"])
+        c["pages"] = [{"page": p["page"], "label": p["label"]} for p in _acct_pages(a)]
+        out.append(c)
+    return out
+
+
+def _acct_payload(listing):
+    """The picker's data: every account (hidden ones aside) and where "All accounts" leads."""
+    cards = _acct_cards(listing)
+    return {"ok": True, "accounts": cards, "global": ACCT_GLOBAL, "as_of": max((c.get("to") or "" for c in cards),
+                                                                                 default="")}
+
+
+@app.context_processor
+def _inject_account_switch():
+    """The top bar's account switch (templates/_bento.html): staff only. On an account's page it names
+    the account; on a global page it reads "All accounts" and knows which account page mirrors it."""
+    u = _get_user() or {}
+    if not _is_staff(u.get("email", "")):
+        return {"acct_switch": False, "acct_ctx": None, "acct_page": ""}
+    acct = getattr(g, "acct", None)
+    if acct is not None:
+        page = getattr(g, "acct_page", "")
+        return {"acct_switch": True, "acct_page": page,
+                "acct_ctx": {"slug": acct["slug"], "name": acct["name"],
+                             "avatar": client_accounts.avatar(acct["name"], acct["profile"].get("colours")),
+                             "home": "/" + acct["slug"]}}
+    try:
+        path = request.path
+    except RuntimeError:
+        path = ""
+    return {"acct_switch": True, "acct_ctx": None, "acct_page": _ACCT_FROM_GLOBAL.get(path, "")}
+
+
+@app.route("/api/accounts")
+@position2_required
+def api_accounts():
+    try:
+        return jsonify(_acct_payload(_acct_listing()))
+    except Exception:
+        app.logger.exception("client accounts: list failed")
+        return jsonify({"ok": False, "error": "The accounts could not be read just now.", "accounts": []}), 503
+
+
+@app.route("/<acct:slug>")
+@_acct_view("")
+def account_home(acct):
+    from tracker import gads_ai_store
+    listing = _acct_listing()
+    st = acct["stats"]
+    reviews = []
+    for name in acct["ads_names"]:
+        try:
+            reviews += [dict(r, account=name) for r in gads_ai_store.list_reviews(name, limit=3)]
+        except Exception:
+            app.logger.exception("client accounts: reviews unreadable")
+    reviews.sort(key=lambda r: str(r.get("created_at") or ""), reverse=True)
+    p = acct["profile"]
+    return render_template(
+        "account_home.html", user=_get_user(), acct=acct, st=st, profile=p,
+        card=client_accounts.card(acct, st), pages=_acct_pages(acct), review=reviews[0] if reviews else None,
+        cids=[client_profile.format_cid(c) for c in acct["customer_ids"]],
+        money=client_accounts.money, number=client_accounts.number,
+        template=client_profile.template(acct["name"], acct["slug"], acct["customer_ids"], p),
+        doc_url=listing["doc_url"], doc_error=listing["doc_error"], doc_read=listing["doc_read"],
+        accounts=_acct_payload(listing))
+
+
+def _acct_rows(acct):
+    """The campaign report cut down to this account's Google Ads accounts."""
+    names = set(acct["ads_names"])
+    return [r for r in _fetch_google_ads_rows() if r.get("account") in names]
+
+
+@app.route("/<acct:slug>/google-ads")
+@_acct_view("google-ads")
+def account_google_ads(acct):
+    if not acct["ads_names"]:
+        return redirect("/" + acct["slug"])
+    try:
+        rows = _acct_rows(acct)
+    except Exception:
+        log.warning("account_google_ads: campaign report unreadable", exc_info=True)
+        rows = []
+    start, end = _google_ads_default_range(rows)
+    insights = _google_ads_insights(rows, start=start or None, end=end or None,
+                                    only=tuple(sorted(acct["ads_names"])))
+    return render_template("google_ads_dashboard.html", user=_get_user(), rows=rows, ok=bool(rows),
+                           insights=insights, currency_symbol=_google_ads_currency_symbol(rows),
+                           mixed_currencies=_google_ads_mixed_currencies(rows), acct=acct,
+                           api_base="/%s/api/google-ads" % acct["slug"], accounts=_acct_payload(_acct_listing()))
+
+
+@app.route("/<acct:slug>/api/google-ads/insights")
+@_acct_view("google-ads", api=True)
+def account_google_ads_insights(acct):
+    """The insights panels for this account only: the page's filters, inside the account."""
+    a = request.args
+    start, end = a.get("from", ""), a.get("to", "")
+    if (start and not _ISO_DAY.match(start)) or (end and not _ISO_DAY.match(end)):
+        return jsonify({"ok": False, "error": "dates must be yyyy-mm-dd"}), 400
+    try:
+        rows = _acct_rows(acct)
+    except Exception:
+        rows = []
+    ins = _google_ads_insights(rows, start=start or None, end=end or None, only=tuple(sorted(acct["ads_names"])),
+                               account=a.get("account", "")[:300], type_=a.get("type", "")[:100],
+                               status=a.get("status", "")[:100], search=a.get("search", "")[:200],
+                               focus=a.get("focus", "")[:600])
+    return jsonify(ins)
+
+
+@app.route("/<acct:slug>/api/google-ads/refresh", methods=["POST"])
+@_acct_view("google-ads", api=True)
+def account_google_ads_refresh(acct):
+    try:
+        _fetch_google_ads_rows(force=True)
+        rows = _acct_rows(acct)
+        start, end = _google_ads_default_range(rows)
+        return jsonify({"ok": bool(rows), "rows": rows,
+                        "insights": _google_ads_insights(rows, force=True, start=start or None, end=end or None,
+                                                         only=tuple(sorted(acct["ads_names"]))),
+                        "currency_symbol": _google_ads_currency_symbol(rows)})
+    except Exception:
+        log.warning("account_google_ads_refresh: %s", "failed", exc_info=True)
+        return jsonify({"ok": False, "rows": []}), 502
+
+
+@app.route("/<acct:slug>/google-ads/ai-review")
+@_acct_view("google-ads/ai-review")
+def account_ai_review(acct):
+    from tracker import gads_ai, gads_ai_store
+    if not acct["ads_names"]:
+        return redirect("/" + acct["slug"])
+    try:
+        briefed = gads_ai_store.briefed_accounts()
+    except Exception:
+        app.logger.exception("gads_ai: could not read briefs")
+        briefed = {}
+    cids = dict(_gads_ai_accounts(_acct_rows(acct)))
+    want = request.args.get("account", "")
+    current = want if want in acct["ads_names"] else acct["ads_names"][0]
+    return render_template("google_ads_ai_review.html", user=_get_user(), acct=acct,
+                           accounts=[{"name": a, "cid": cids.get(a, ""), "briefed": a in briefed}
+                                     for a in acct["ads_names"]],
+                           current=current, configured=gads_ai.configured(), storage=gads_ai_store.backend(),
+                           template=gads_ai.BRIEF_TEMPLATE, model=gads_ai.MODEL,
+                           accounts_nav=_acct_payload(_acct_listing()))
 
 
 # (Static JS/CSS/image/font caching is set at the top of this file via

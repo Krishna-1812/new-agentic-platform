@@ -10,11 +10,12 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Google Ads AI review", ["google-ads-dashboard.css?v=10", "google-ads-ai.css?v=2"]) }}
+{{ head("Google Ads AI review", ["google-ads-dashboard.css?v=11", "google-ads-ai.css?v=4"]) }}
 </head>
-<body class="gad gar">
+{%- set dash = ("/" ~ acct.slug ~ "/google-ads") if acct else "/dashboards/google-ads" %}
+<body class="gad gar"{% if acct and accounts|length == 1 %} data-acct-single{% endif %}>
 
-{{ topbar([("Google Ads", "/dashboards/google-ads"), ("AI review", none)]) }}
+{{ topbar([("Google Ads", dash), ("AI review", none)]) }}
 
 <main class="gad-shell">
 
@@ -24,17 +25,30 @@
     </div>
     <div class="gad-hero-title">
       <label class="gad-hero-pre" for="gar-account">Review of</label>
+      {%- if acct and accounts|length == 1 %}
+      {#- One client's page: the name switches client (the account picker, to this page for another
+          account). The script still reads the account from the hidden list. #}
+      <div class="gar-pick">
+        <select id="gar-account" class="gar-select" aria-label="Account" hidden tabindex="-1">
+          <option value="{{ current }}" selected>{{ current }}</option>
+        </select>
+        <button type="button" class="gar-select gar-switch" data-acct-picker data-acct-page="google-ads/ai-review"
+                aria-haspopup="dialog" aria-expanded="false" aria-label="Review of {{ acct.name }}. Switch account">
+          <span data-vt-name style="view-transition-name: acct-name">{{ acct.name }}</span></button>
+      </div>
+      {%- else %}
       <div class="gar-pick">
         <select id="gar-account" class="gar-select" aria-label="Account">
           {% for a in accounts %}<option value="{{ a.name }}"{% if a.name == current %} selected{% endif %}>{{ a.name }}{% if not a.briefed %} (no brief){% endif %}</option>{% endfor %}
         </select>
       </div>
+      {%- endif %}
     </div>
     <div class="gad-hero-foot">
       <p class="gad-hero-sub">Claude reads every campaign in the account against its brief: what is working, what is not,
         where the account does not follow the brief, and what to do about it.</p>
       <div class="gad-hero-actions">
-        <a class="gad-btn gad-btn--ghost" href="/dashboards/google-ads" aria-label="Back to the dashboard">
+        <a class="gad-btn gad-btn--ghost" href="{{ dash }}" aria-label="Back to the dashboard">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg>
           Dashboard
         </a>
@@ -106,8 +120,9 @@
 
 </main>
 
+{% if accounts_nav %}<script id="acct-data" type="application/json">{{ accounts_nav|tojson }}</script>{% endif %}
 <script type="application/json" id="gar-data">{{ {"template": template, "configured": configured}|tojson }}</script>
 {{ topbar_script() }}
-<script defer src="{{ url_for('static', filename='js/google-ads-ai.js') }}?v=2"></script>
+<script defer src="{{ url_for('static', filename='js/google-ads-ai.js') }}?v=3"></script>
 </body>
 </html>

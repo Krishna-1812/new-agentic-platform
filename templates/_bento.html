@@ -45,6 +45,14 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bento-tokens.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bento-components.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/bento-motion.css') }}">
+{%- if acct_switch %}
+{# The account switch is in every page's top bar (topbar() below), so its sheet and script load on
+   every page that has one. Hovering an account's link lets the browser prerender it, so picking an
+   account opens it at once (speculation rules; browsers without them just navigate). #}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/account-picker.css') }}?v=2">
+<script defer src="{{ url_for('static', filename='js/account-picker.js') }}?v=2"></script>
+<script type="speculationrules">{"prerender": [{"where": {"selector_matches": "a[data-acct-go='home'], a[data-acct-card]"}, "eagerness": "moderate"}], "prefetch": [{"where": {"selector_matches": "a[data-acct-go='page']"}, "eagerness": "moderate"}]}</script>
+{%- endif %}
 {%- for sheet in sheets %}
 {%- set name, _, ver = sheet.partition('?') %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/' + name) }}{% if ver %}?{{ ver }}{% endif %}">
@@ -67,7 +75,7 @@
 <script defer src="{{ url_for('static', filename='js/bento-motion.js') }}"></script>
 {%- if palette %}
 <script>window.__KP_BASE__ = {{ palette_items()|safe }};</script>
-<script defer src="{{ url_for('static', filename='js/bento-palette.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/bento-palette.js') }}?v=2"></script>
 {%- endif %}
 {%- endmacro %}
 
@@ -87,6 +95,35 @@
       <span class="bn-mark"></span>
       <span class="bn-word">{{ brand.name }}</span>
     </a>
+    {%- if acct_switch %}
+    {#- The account switch (staff only): the account this page is for, or "All accounts". It is the
+        root of the breadcrumb, so it stands where "Workspace" stood, and it stays visible on phones,
+        where the rest of the breadcrumb is hidden. account-picker.js opens it. -#}
+    <button type="button" class="ap-pill" data-acct-picker data-acct-page="{{ acct_page }}"
+            {%- if acct_ctx %} data-acct-current="{{ acct_ctx.slug }}"{% endif %}
+            aria-haspopup="dialog" aria-expanded="false"
+            aria-label="Switch account{% if acct_ctx %}, now {{ acct_ctx.name }}{% else %}, now all accounts{% endif %}">
+      {%- if acct_ctx %}
+      <span class="ap-av" style="--av-bg:{{ acct_ctx.avatar.bg }};--av-fg:{{ acct_ctx.avatar.fg }}">{{ acct_ctx.avatar.initials }}</span>
+      {%- else %}
+      <span class="ap-av ap-av--all"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4z"/><path d="M13 4h7v7h-7z"/><path d="M4 13h7v7H4z"/><path d="M13 13h7v7h-7z"/></svg></span>
+      {%- endif %}
+      <span class="ap-pill-t">{{ acct_ctx.name if acct_ctx else "All accounts" }}</span>
+      <svg class="ap-pill-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+    {%- if crumbs %}
+    <nav class="bn-crumbs" aria-label="Breadcrumb">
+      {%- for label, href in crumbs %}
+      {%- if not loop.first %}<span class="bn-crumb-sep">/</span>{% endif %}
+      {%- if href %}
+      <a href="{{ href }}" class="bn-crumb">{{ label }}</a>
+      {%- else %}
+      <span class="bn-crumb-cur" aria-current="page">{{ label }}</span>
+      {%- endif %}
+      {%- endfor %}
+    </nav>
+    {%- endif %}
+    {%- else %}
     <nav class="bn-crumbs" aria-label="Breadcrumb">
       {#- With no crumbs the hub IS the current page, so it must not link to
           itself: a breadcrumb that navigates nowhere is a dead control, and on
@@ -105,6 +142,7 @@
       {%- endif %}
       {%- endfor %}
     </nav>
+    {%- endif %}
   </div>
   <div class="bn-top-right">
     {#- The palette's permanent entry point. It cannot rely on a keyboard

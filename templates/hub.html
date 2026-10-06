@@ -2,7 +2,7 @@
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
 <html lang="en">
 <head>
-{{ head(brand.hub, ["hub.css?v=1"]) }}
+{{ head(brand.hub, ["hub.css?v=1", "account-space.css?v=1"]) }}
 </head>
 <body>
 
@@ -12,13 +12,28 @@
 
 <div class="hb-shell">
 
-  {# Orientation, not a hero. The old page spent a full viewport asking
-     "What are you working on today?" -- a rhetorical question with two
-     possible answers, both of which were below the fold. #}
-  <div class="hb-lead bn-reveal">
+  {# The headline is the account switch, the same one the Google Ads dashboard
+     has: "All accounts" here, an account's name on its own page. Picking one
+     goes to /<account>, where every dashboard and agent follows it. The name
+     carries across (view-transition-name), so the row you pick becomes the
+     next page's title. #}
+  <div class="hb-lead as-lead bn-reveal">
     <div class="hb-kicker">{{ brand.product }}</div>
-    <h1 class="hb-h1">{{ brand.tagline }}</h1>
-    <p class="hb-sub">Three workspaces, one signal layer. Pick where you are working.</p>
+    <span class="as-pre" aria-hidden="true">Working on</span>
+    <h1 class="as-title">
+      <button type="button" class="as-switch" data-acct-picker data-acct-page=""
+              aria-haspopup="dialog" aria-expanded="false" aria-label="Working on all accounts. Switch account">
+        <span class="as-mk" data-vt-name style="view-transition-name: acct-name">All accounts</span>
+        <span class="as-chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
+      </button>
+    </h1>
+    <p class="hb-sub as-sub">
+      {%- if accounts and accounts.accounts %}
+      <b>{{ accounts.accounts|length }} accounts</b> from Google Ads and the master doc. Pick one and every dashboard and agent follows it.
+      {%- else %}
+      Pick an account and every dashboard and agent follows it.
+      {%- endif %}
+    </p>
   </div>
 
   {# ── The three hero workspaces ───────────────────────────────────────────
@@ -120,6 +135,46 @@
 
   </div>
 
+  {# ── Accounts: every client at a glance, by spend ─────────────────────
+     Each card opens that account's space (/<account>). The figures are the
+     campaign report's last 30 days; an account with no Google Ads shows
+     what the master doc says about it instead. #}
+  <section class="as-accts bn-reveal" aria-labelledby="as-accts-h"{% if not (accounts and accounts.accounts) %} data-acct-fill{% endif %}>
+    <div class="as-accts-head">
+      <h2 class="as-h2" id="as-accts-h">Accounts</h2>
+      <span class="as-accts-meta" id="as-accts-meta">
+        {%- if accounts and accounts.accounts %}{{ accounts.accounts|length }} accounts &middot; spend in the last 30 days{% endif -%}
+      </span>
+    </div>
+    <div class="as-grid" id="as-grid">
+      {%- if accounts and accounts.accounts %}
+      {%- for a in accounts.accounts %}
+      <a class="as-card" href="/{{ a.slug }}" data-acct-card="{{ a.slug }}">
+        <span class="as-card-top">
+          <span class="ap-av as-card-av" style="--av-bg:{{ a.avatar.bg }};--av-fg:{{ a.avatar.fg }}">{{ a.avatar.initials }}</span>
+          {%- if a.delta is not none %}
+          <span class="as-delta {{ 'is-up' if a.delta >= 0 else 'is-down' }}" title="Spend, last 7 days against the 7 before">
+            {{- '▲' if a.delta >= 0 else '▼' }} {{ '%.0f'|format(a.delta|abs) }}%</span>
+          {%- endif %}
+        </span>
+        <span class="as-card-name" data-card-name>{{ a.name }}</span>
+        <span class="as-card-sub">{{ [a.domain, a.industry]|select|join(' · ') or ('Google Ads' if a.has_ads else 'From the master doc') }}</span>
+        <span class="as-card-foot">
+          {%- if a.spend_fmt %}
+          <span class="as-card-fig"><b>{{ a.spend_fmt }}</b><small>{{ a.conv_fmt }} conv.</small></span>
+          <svg class="as-spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true" data-spark="{{ a.spark|join(',') }}"></svg>
+          {%- else %}
+          <span class="as-card-none">{{ 'No spend in 30 days' if a.has_ads else 'No Google Ads' }}</span>
+          {%- endif %}
+        </span>
+      </a>
+      {%- endfor %}
+      {%- else %}
+      {%- for i in range(4) %}<span class="as-card as-card--skel" aria-hidden="true"></span>{% endfor %}
+      {%- endif %}
+    </div>
+  </section>
+
   <div class="hb-grid">
 
     {# ── The figures ──────────────────────────────────────────────────
@@ -181,6 +236,8 @@
   <p class="hb-foot">{{ brand.name }} &middot; Internal use only</p>
 </div>
 
+{% if accounts %}<script id="acct-data" type="application/json">{{ accounts|tojson }}</script>{% endif %}
+<script defer src="{{ url_for('static', filename='js/account-space.js') }}?v=1"></script>
 {{ topbar_script() }}
 <script>
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */

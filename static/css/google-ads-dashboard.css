@@ -1073,3 +1073,7 @@ html.gad-locked { overflow: hidden; }
 .gad-fx-warn { margin: 0 0 var(--sp-4); padding: 14px 18px; border-radius: 14px; background: #FFF4D6; color: #5A4300;
   font-size: 14px; line-height: 1.5; box-shadow: inset 3px 0 0 #E0A100; }
 .gad-fx-warn b { color: #3D2E00; }
+
+/* The title opens the account picker on one client's page (/<account>/google-ads): the chevron turns
+   while it is open, as it does for the native list. */
+.gad-switch:has([aria-expanded="true"]) .gad-switch-chev { transform: rotate(180deg); background: var(--acc); }

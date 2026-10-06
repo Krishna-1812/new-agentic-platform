@@ -107,6 +107,9 @@ tracker/               Domain logic, one module family per agent:
   gads_ai.py               AI review: data pack, targets, computed checks, Claude analysis
   gads_ai_doc.py           reads the context Google Doc, finds each account's part
   gads_ai_store.py         briefs, reviews, settings (Postgres or in-memory)
+  client_accounts.py       client accounts: the list (Google Ads + master doc), URL names, numbers
+  client_profile.py        the profile block at the top of an account's tab in the master doc
+  client_accounts_store.py URL names kept for good, old ones redirect (Postgres or in-memory)
   lbr_*.py                 Local Business Radar (config, intake, discover, profile, website,
                            reviews, visibility, score, pipeline, store, report, apify, render)
   event_intel_*.py         Event & Conference Intelligence
@@ -147,6 +150,7 @@ Google Sign-In is open to any Google account, so access is split into surfaces:
 | Internal staff app | `@markifydigital.com` and the admins | `@position2_required` (the decorator's name is historical) | `/hub`, `/strategic-agents/*`, `/seo-aeo/*`, `/dashboards/*`, `/abm-signal-tracker/*`, `/playbook/*` |
 | Admin | `ADMIN_EMAILS` only | `@admin_required` | `/admin/*` |
 | Client portals | per-client gate `_client_gate()` | | `/<client-slug>/*` (`CLIENTS` registry in `app.py`; currently `northstaranesthesia`) |
+| Client accounts | staff (client invites: next phase) | `_acct_view()` | `/<account>`, `/<account>/google-ads`, `/<account>/google-ads/ai-review` (see "Client accounts" below and `docs/account-workspaces-plan.md`) |
 
 Old `/p2/*` URLs 301 to the new paths (PR #3). The hub (`/hub`) has three hero workspaces:
 
@@ -300,6 +304,27 @@ Watches any web page and reports, in plain words and with a before-and-after pic
   - Tests never call Claude: `conftest.py` sets `WATCH_JUDGE=off`, and `tests/test_watch_judge.py` uses a fake client plus the real SDK against a local stand-in server.
 - **Health:** `/strategic-agents/page-watch/health` (staff only) returns JSON with `ok`, `behind`, `no_worker`, `no_browser` or `idle`.
 - **Env:** `WATCH_BROWSER=off` turns the browser off; `WATCH_CHROMIUM_PATH` points at a Chromium to use; `WATCH_WORKER_THREADS` (default 2); `RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1` and `ANTHROPIC_API_KEY` on the worker service; `WATCH_CLAUDE_MODEL`, `WATCH_CLAUDE_EFFORT`, `WATCH_CLAUDE_MONTHLY_USD`, `WATCH_JUDGE`; `WATCH_SLACK_CHANNEL`, `WATCH_SLACK_BOT_TOKEN` (falls back to `GOOGLE_ADS_SLACK_BOT_TOKEN`), `WATCH_DIGEST_AT`, `WATCH_ALERTS`, `WATCH_CRON_TOKEN` (web, and the GitHub secret for the watchdog), `PUBLIC_BASE_URL` and `SECRET_KEY` (also on the worker).
+
+### Client accounts (phase A built; plan and progress: `docs/account-workspaces-plan.md`)
+
+- **What it is:** one space per client at `/<account>`. The switch is in every page's top bar
+  (where "Workspace" was) and is the hub's headline ("Working on / All accounts"); the hub also
+  lists every account as a card. Picking an account opens its home, or the same page for it
+  (the Google Ads dashboard, the AI review).
+- **The list:** the Google Ads campaign report's accounts plus the master doc's tabs. The master
+  doc **is** the AI review's context doc: each account's tab opens with a profile block (website,
+  industry, locations, competitors, brand, goals...; `tracker/client_profile.py`), and the notes
+  under it are what the AI review reads. A tab may link to its Google Ads account by a
+  `Google Ads ID:` line, and to several for a client with more than one.
+- **URL names:** the profile's `URL name`, else the name. Kept in `client_accounts` /
+  `client_account_old_slugs`; a renamed account's old address redirects, and a slug is never given
+  to a different client. `/<acct:slug>` matches only listed accounts, so nothing else changes.
+- **Scoping:** an account's pages embed only its rows; its insights go through
+  `google_ads_insights.view(only=...)`.
+- **Smoothness:** speculation rules prerender an account on hover; cross-document view transitions
+  carry its name from the picker into the page title. Respects reduced motion.
+- **Next:** client invites and what a client sees, then Video Studio / Page Watch, then the SEO
+  tools and the other agents filled in from the profile.
 
 ### Video Studio (being built; plan and progress: `docs/video-studio-plan.md`)
 
