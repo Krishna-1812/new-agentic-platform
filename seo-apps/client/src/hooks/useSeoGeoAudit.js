@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { prefill } from '../lib/prefill';
 
 // All of the SEO & GEO audit run plumbing: inputs and the SSE reader. Shared
 // by SeoGeoAuditPage (full report) and SeoGeoSnapshotPage (score dashboard
@@ -14,7 +15,7 @@ import { useState } from 'react';
 // lands, rather than carrying an unreviewed dependency in the meantime.
 export function useSeoGeoAudit(persistKey, { onRestored, onResult } = {}) {
   const [inputType, setInputType] = useState('url');
-  const [urlInput, setUrlInput] = useState('');
+  const [urlInput, setUrlInput] = useState(() => prefill('url'));
   const [htmlInput, setHtmlInput] = useState('');
   const [keyword1, setKeyword1] = useState('');
   const [keyword2, setKeyword2] = useState('');

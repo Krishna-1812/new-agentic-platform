@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { withStudioToken } from '../lib/studioToken';
+import { prefill } from '../lib/prefill';
 
 const STEPS = [
   { id: 'scrape', label: 'Scraping Pages',      icon: '🔍' },
@@ -85,7 +86,7 @@ export default function ImageAltAuditPage() {
   const fileInputRef = useRef(null);
   const esRef = useRef(null);
 
-  const [urlInput, setUrlInput] = useState('');
+  const [urlInput, setUrlInput] = useState(() => prefill('url'));
   const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [showConfig, setShowConfig] = useState(false);
 

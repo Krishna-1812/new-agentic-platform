@@ -305,7 +305,7 @@ Watches any web page and reports, in plain words and with a before-and-after pic
 - **Health:** `/strategic-agents/page-watch/health` (staff only) returns JSON with `ok`, `behind`, `no_worker`, `no_browser` or `idle`.
 - **Env:** `WATCH_BROWSER=off` turns the browser off; `WATCH_CHROMIUM_PATH` points at a Chromium to use; `WATCH_WORKER_THREADS` (default 2); `RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1` and `ANTHROPIC_API_KEY` on the worker service; `WATCH_CLAUDE_MODEL`, `WATCH_CLAUDE_EFFORT`, `WATCH_CLAUDE_MONTHLY_USD`, `WATCH_JUDGE`; `WATCH_SLACK_CHANNEL`, `WATCH_SLACK_BOT_TOKEN` (falls back to `GOOGLE_ADS_SLACK_BOT_TOKEN`), `WATCH_DIGEST_AT`, `WATCH_ALERTS`, `WATCH_CRON_TOKEN` (web, and the GitHub secret for the watchdog), `PUBLIC_BASE_URL` and `SECRET_KEY` (also on the worker).
 
-### Client accounts (phases A–C built; plan and progress: `docs/account-workspaces-plan.md`)
+### Client accounts (phases A–D built; plan and progress: `docs/account-workspaces-plan.md`)
 
 - **What it is:** one space per client at `/<account>`. The switch is in every page's top bar
   (where "Workspace" was) and is the hub's headline ("Working on / All accounts"); the hub also
@@ -337,7 +337,13 @@ Watches any web page and reports, in plain words and with a before-and-after pic
     from the profile are one-tap watches.
   - `/<account>/video-studio` fixes the client, fills in the website and takes the brand from the
     profile.
-- **Next:** the SEO tools and the other agents, filled in from the profile.
+- **SEO & AEO tools and agents inside an account** (staff):
+  - `/<account>/seo-aeo/<tool>` hands SEO Studio `?pf_url|pf_keyword|pf_domain|pf_service`, read by
+    `seo-apps/client/src/lib/prefill.js`.
+  - `/<account>/agents/<agent>` renders the agent's own page and fills its fields from the profile
+    (`static/js/account-prefill.js`). It covers Social Media Intelligence, Local Business Radar,
+    Event & Conference Intelligence, Contact Finder and Thought Leader Intelligence.
+  - The account's home lists them all under "Run for <account>".
 
 ### Video Studio (being built; plan and progress: `docs/video-studio-plan.md`)
 

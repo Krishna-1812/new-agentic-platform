@@ -213,6 +213,34 @@ a.as-mod:hover .as-go { background: var(--ink); color: var(--tx-on-ink); }
 @keyframes as-grow { from { transform: scaleX(0); } }
 .as-camp-v { font-size: 14px; font-weight: var(--fw-semi); text-align: right; min-width: 84px; }
 
+/* ── Run for the account: every tool and agent, with what it is given ─── */
+.as-runs { margin-bottom: var(--sp-8); }
+.as-runs-sub { margin: calc(var(--sp-3) * -1) 0 var(--sp-4); color: var(--tx2); font-size: var(--fs-sm); }
+.as-runs-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
+.as-run-col { background: var(--s1); border-radius: var(--r-lg); padding: var(--sp-5) var(--sp-4) var(--sp-3); min-width: 0; }
+.as-run-h { display: flex; align-items: center; gap: 8px; padding: 0 var(--sp-3) var(--sp-3);
+  font-size: 12px; font-weight: var(--fw-semi); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--tx3); }
+.as-run-h em { font-style: normal; text-transform: none; letter-spacing: 0; color: var(--tx2); font-weight: var(--fw-medium); }
+.as-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--acc); flex: none; }
+.as-dot--sky { background: var(--sky); }
+.as-run-list { list-style: none; margin: 0; padding: 0; }
+.as-run {
+  display: flex; align-items: center; gap: var(--sp-3); padding: 11px var(--sp-3); border-radius: 12px;
+  color: var(--tx); text-decoration: none; transition: background 160ms var(--ease);
+}
+.as-run:hover { background: var(--bg); }
+.as-run-t { display: flex; flex-direction: column; min-width: 0; flex: 1; line-height: 1.3; }
+.as-run-t b { font-size: 14.5px; font-weight: var(--fw-semi); }
+.as-run-t small { font-size: 12.5px; color: var(--tx3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.as-run-g {
+  flex: none; max-width: 42%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font: 12.5px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--tx2);
+  background: var(--s2); border-radius: 7px; padding: 5px 8px;
+}
+.as-run-go { width: 16px; height: 16px; flex: none; fill: none; stroke: var(--tx3); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  transition: transform 260ms var(--as-spring), stroke 160ms ease; }
+.as-run:hover .as-run-go { transform: translateX(3px); stroke: var(--tx); }
+
 /* ── The profile ─────────────────────────────────────────────────────── */
 .as-prof { margin-bottom: var(--sp-8); }
 .as-prof-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-4); }
@@ -348,7 +376,8 @@ a.as-mod:hover .as-go { background: var(--ink); color: var(--tx-on-ink); }
 
 /* ── Arriving ────────────────────────────────────────────────────────── */
 @keyframes as-rise { from { opacity: 0; transform: translateY(14px); } }
-.as-page .as-kpis, .as-page .as-mods, .as-page .as-prof { animation: as-rise 640ms var(--as-glide) both; }
+.as-page .as-kpis, .as-page .as-mods, .as-page .as-runs, .as-page .as-prof { animation: as-rise 640ms var(--as-glide) both; }
+.as-page .as-runs { animation-delay: 110ms; }
 .as-page .as-mods { animation-delay: 70ms; }
 .as-page .as-prof { animation-delay: 140ms; }
 
@@ -363,6 +392,8 @@ a.as-mod:hover .as-go { background: var(--ink); color: var(--tx-on-ink); }
 }
 @media (max-width: 760px) {
   .as-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .as-runs-grid { grid-template-columns: minmax(0, 1fr); }
+  .as-run-t small { white-space: normal; }
   .as-empty { grid-template-columns: minmax(0, 1fr); }
   .as-hero-actions { margin-left: 0; width: 100%; }
 }

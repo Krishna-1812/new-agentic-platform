@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { refreshSemrushBalance } from '../lib/semrushBalanceStore';
 import { notifyAgentRunStarted, notifyAgentRunFinished } from '../lib/agentRunSignal';
+import { prefill } from '../lib/prefill';
 
 const STEP_CONFIG = [
   { id: 'variants',    label: 'Query Variants',   desc: 'Expanding across intent variants' },
@@ -73,7 +74,7 @@ const PAGE_TYPE_STYLES = {
 const cardShadow = '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)';
 
 export default function KeywordResearchPage() {
-  const [keyword, setKeyword] = useState('');
+  const [keyword, setKeyword] = useState(() => prefill('keyword'));
   const [intent, setIntent] = useState('commercial');
   const [client, setClient] = useState('');
   const [feedbackKbIds, setFeedbackKbIds] = useState([]);

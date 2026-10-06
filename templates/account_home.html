@@ -12,7 +12,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head(acct.name, ["account-space.css?v=4"]) }}
+{{ head(acct.name, ["account-space.css?v=5"]) }}
 </head>
 <body class="as-page">
 
@@ -201,6 +201,42 @@
         <span class="as-mod-desc">This account comes from the master doc. Add its Google Ads ID to the profile (&ldquo;Google Ads ID: 123-456-7890&rdquo;) and its campaigns, dashboard and AI review appear here.</span>
       </div>
       {%- endif %}
+    </div>
+  </section>
+  {%- endif %}
+
+  {# ── Run anything for the account ──────────────────────────────────── #}
+  {%- if runs %}
+  <section class="as-runs" aria-labelledby="as-runs-h">
+    <div class="as-prof-head">
+      <h2 class="as-h2" id="as-runs-h">Run for {{ acct.name }}</h2>
+    </div>
+    <p class="as-runs-sub">Each opens with {{ acct.name }}&rsquo;s details from the master doc already filled in. Nothing runs until you press its own button.</p>
+    <div class="as-runs-grid">
+      <div class="as-run-col">
+        <span class="as-run-h"><i class="as-dot as-dot--sky"></i>SEO &amp; AEO{% if runs.website %} <em>on {{ runs.website }}</em>{% endif %}</span>
+        <ul class="as-run-list">
+          {%- for t in runs.seo %}
+          <li><a class="as-run" href="{{ t.href }}">
+            <span class="as-run-t"><b>{{ t.name }}</b><small>{{ t.about }}</small></span>
+            {%- if t.given %}<span class="as-run-g">{{ t.given }}</span>{% endif %}
+            <svg class="as-run-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a></li>
+          {%- endfor %}
+        </ul>
+      </div>
+      <div class="as-run-col">
+        <span class="as-run-h"><i class="as-dot"></i>Agents</span>
+        <ul class="as-run-list">
+          {%- for t in runs.agents %}
+          <li><a class="as-run" href="{{ t.href }}">
+            <span class="as-run-t"><b>{{ t.name }}</b><small>{{ t.about }}</small></span>
+            {%- if t.given %}<span class="as-run-g">{{ t.given }}</span>{% endif %}
+            <svg class="as-run-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a></li>
+          {%- endfor %}
+        </ul>
+      </div>
     </div>
   </section>
   {%- endif %}

@@ -6,7 +6,7 @@
 </head>
 <body>
 
-{{ topbar([(brand.agents_plural, "/strategic-agents"), (title, none)]) }}
+{{ topbar([(title, none)] if acct else [(brand.agents_plural, "/strategic-agents"), (title, none)]) }}
   <div class="topbar-accent"></div>
 
   <!-- Iframe -->
@@ -55,6 +55,7 @@
        message on every navigation (see seo-apps' RouteBridge). We reflect that
        into /seo-aeo/<slug> via pushState so the URL always names the current
        agent and the browser's back/forward works across agents. */
+    var SEO_BASE = {{ (seo_base or none)|tojson }};   /* inside a client account: /<account>/seo-aeo */
     (function(){
       var frame = document.getElementById('embed-frame');
       var expectedOrigin = '';
@@ -63,7 +64,7 @@
         if(expectedOrigin && e.origin !== expectedOrigin) return;
         var d = e.data;
         if(!d || d.source !== 'p2-seo-tool' || d.type !== 'route-change' || !d.tool) return;
-        var target = '/seo-aeo/' + d.tool;
+        var target = SEO_BASE ? SEO_BASE + '/' + d.tool : '/seo-aeo/' + d.tool;
         if(location.pathname === target) return;
         history.pushState({seoTool:d.tool}, '', target);
         var cur = document.querySelector('.bc-cur');
@@ -74,7 +75,7 @@
          won't follow on its own, so reload to let the server render the tool
          that the (now-current) URL points at. */
       window.addEventListener('popstate', function(){
-        if(/^\/seo-aeo\/[^/]+/.test(location.pathname)) window.location.reload();
+        if(location.pathname.indexOf((SEO_BASE || '/seo-aeo') + '/') === 0) window.location.reload();
       });
     })();
   </script>
