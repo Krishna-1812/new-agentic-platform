@@ -55,7 +55,7 @@
   var TONE = {
     met: "good", followed: "good", scale: "good", keep: "good", on_track: "good", complete: "good",
     at_risk: "warn", partly: "warn", watch: "warn", fix: "warn", restructure: "warn", needs_attention: "warn",
-    off_track: "bad", not_followed: "bad", pause: "bad", failed: "bad",
+    off_track: "bad", not_followed: "bad", pause: "bad", failed: "bad", done: "good", not_done: "bad",
     running: "run", queued: "run"
   };
   var WORD = {
@@ -63,7 +63,7 @@
     followed: "Followed", partly: "Partly", not_followed: "Not followed",
     scale: "Scale", keep: "Keep", fix: "Fix", restructure: "Restructure", pause: "Pause", watch: "Watch",
     on_track: "On track", needs_attention: "Needs attention", complete: "Done", failed: "Failed",
-    running: "Running", queued: "Queued"
+    running: "Running", queued: "Queued", done: "Done", not_done: "Not done"
   };
   function pill(key) {
     var p = el("span", "gar-pill" + (TONE[key] ? " is-" + TONE[key] : ""), WORD[key] || key || "");
@@ -416,6 +416,24 @@
       "Requested by " + r.email + (r.cost_usd != null ? " · Claude usage US$" + r.cost_usd.toFixed(2) : "") + "."));
     box.appendChild(meta);
 
+    var F = R.follow_up || {};
+    if (F.summary || (F.earlier_actions || []).length) {
+      var s0 = section(box, "Since the last review", "The earlier review's actions, and whether they were done.");
+      if (F.summary) s0.appendChild(el("p", "gar-follow", F.summary));
+      if ((F.earlier_actions || []).length) {
+        var fl = el("ul", "gar-items");
+        F.earlier_actions.forEach(function (x) {
+          var li = el("li", "gar-item"), hh = el("div", "gar-item-h");
+          hh.appendChild(pill(x.status));
+          hh.appendChild(el("span", "", x.action));
+          li.appendChild(hh);
+          para(li, "", x.evidence);
+          fl.appendChild(li);
+        });
+        s0.appendChild(fl);
+      }
+    }
+
     if ((R.scorecard || []).length) {
       var s1 = section(box, "Against the brief's targets", "Each target the brief sets, with what the account actually did.");
       var wrap = el("div", "gar-table-wrap"), t = el("table", "gar-table"), th = el("thead"), tr = el("tr");
@@ -541,6 +559,27 @@
       var cl = el("ul", "gar-plain");
       R.data_caveats.forEach(function (x) { cl.appendChild(el("li", "", x)); });
       s8.appendChild(cl);
+    }
+
+    var M = R.memory;
+    if (M && (M.sections || []).length) {
+      var s9 = section(box, "What the AI was given about earlier work",
+        "Built from this client account's own work only, when the review ran. Nothing from other accounts or anyone's General work.");
+      var det = el("details", "gar-mem"), sum = el("summary");
+      sum.textContent = M.sections.map(function (x) { return x.label + " (" + x.items.length + ")"; }).join(" · ");
+      det.appendChild(sum);
+      M.sections.forEach(function (x) {
+        det.appendChild(el("h4", "", x.label));
+        var ml = el("ul", "gar-plain");
+        x.items.forEach(function (i) {
+          var li = el("li");
+          li.appendChild(el("span", "gar-dim", day((i.at || "").slice(0, 10)) + (i.by ? ", " + i.by : "") + ": "));
+          li.appendChild(document.createTextNode(i.text));
+          ml.appendChild(li);
+        });
+        det.appendChild(ml);
+      });
+      s9.appendChild(det);
     }
   }
 

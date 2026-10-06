@@ -362,3 +362,6 @@ body.vs-locked { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .vs-reel i, .vs-steps li.is-on::before, .vs-frames figure { animation: none; }
 }
+/* Account memory (phase 4): the videos already made for the client, which the plan was told about. */
+.vs-note--earlier > summary { cursor: pointer; font-weight: 600; }
+.vs-note--earlier li { overflow-wrap: anywhere; }

@@ -105,7 +105,31 @@ and a merge.
       a download of the full result.
     - Runs join the account's History under "SEO & AEO".
     - "Run for" on the account home gives each tool's last run.
-- **Phases 4 and 5:** not started.
+- **Phase 4: built.** The AI's memory of an account (`tracker/account_brief.py`).
+  - **The brief.** `account_brief.build(space, ads_names)` puts the account's earlier work into a short
+    text, newest first, with dates and who did it:
+    - the last three finished AI reviews of its Google Ads accounts: verdict, headline, missed
+      objectives and actions;
+    - the page changes Page Watch saw (muted and noise left out);
+    - SEO & AEO runs with their facts and highlights;
+    - the agents' runs;
+    - the videos made.
+
+    It is capped at 12,000 characters (the oldest items go first). It reads only that account's space
+    and its own Google Ads accounts' reviews. It refuses anything that is not an account's space, so
+    General work can never reach it. A part that cannot be read is left out; the run goes ahead.
+  - **The Google Ads AI review** is given it as `<earlier_work>`, after the data pack
+    (`app.py` `_gads_ai_memory` finds the client account the Google Ads account belongs to; one owned
+    by no account, or by two, gets none). The review is asked to go through the last review's actions
+    and say which were done, partly done or not done, and to build on them. Its answer has a new
+    `follow_up` part, shown as **Since the last review**. The review page also shows **What the AI was
+    given about earlier work**. Clients see the follow-up, never what the AI was given (it names staff).
+  - **Video Studio** is told the videos already made for the account (`video_planner._earlier`), as
+    history it may not quote words or numbers from, so a new video does not repeat an earlier idea. The
+    plan page says so and lists them. General videos get nothing.
+  - **Not given the brief, by design:** the agents and the SEO & AEO tools. They gather data (places,
+    posts, rankings, page audits) rather than judge the account, and their results feed the brief.
+- **Phase 5:** not started.
 
 ## Phase 1 in detail
 

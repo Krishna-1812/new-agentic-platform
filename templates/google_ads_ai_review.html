@@ -10,7 +10,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Google Ads AI review", ["google-ads-dashboard.css?v=11", "google-ads-ai.css?v=5"]) }}
+{{ head("Google Ads AI review", ["google-ads-dashboard.css?v=11", "google-ads-ai.css?v=6"]) }}
 </head>
 {%- set dash = ("/" ~ acct.slug ~ "/google-ads") if acct else "/dashboards/google-ads" %}
 <body class="gad gar"{% if acct and accounts|length == 1 %} data-acct-single{% endif %}
@@ -135,6 +135,6 @@
 {% if accounts_nav %}<script id="acct-data" type="application/json">{{ accounts_nav|tojson }}</script>{% endif %}
 <script type="application/json" id="gar-data">{{ {"template": template, "configured": configured}|tojson }}</script>
 {{ topbar_script() }}
-<script defer src="{{ url_for('static', filename='js/google-ads-ai.js') }}?v=4"></script>
+<script defer src="{{ url_for('static', filename='js/google-ads-ai.js') }}?v=5"></script>
 </body>
 </html>

@@ -70,6 +70,22 @@ def _saved_logo_asset(project_id, saved):
                                  height=im.height, data={"from": "saved"}, blob=saved["logo"])
 
 
+def _earlier(project):
+    """The videos already made for the project's client account (tracker/account_brief.py), as
+    (text for Claude, what the page shows); nothing for General work, or when they cannot be read."""
+    from tracker import account_brief, workspace
+    if not workspace.is_account(project.get("space") or ""):
+        return "", None
+    try:
+        b = account_brief.build(project["space"], parts=("videos",), exclude_project=project["id"])
+    except Exception:
+        log.exception("video planner: earlier videos unreadable")
+        return "", None
+    if not b["sections"]:
+        return "", None
+    return "\n".join("- [%s] %s" % (i["at"][:10], i["text"]) for i in b["sections"][0]["items"]), account_brief.shown(b)
+
+
 def run_job(job, *, stop=None, read_site=video_site.read, client=None):
     vid = job["version_id"]
     jid = job["id"]
@@ -158,9 +174,11 @@ def run_job(job, *, stop=None, read_site=video_site.read, client=None):
         sum(a["kind"] == "numbers" for a in mine)))
     step("plan", "Writing the plan")
     avoid = [str(x)[:300] for x in (settings.get("avoid") or []) if x][:6]
+    earlier, given = _earlier(project)
     try:
         result = video_plan.make_plan(brief, choices, brand, sources, client=client, email=email, project_id=pid,
                                       version_id=vid, avoid=avoid, cap=0.0 if drill == "budget" else None,
+                                      earlier=earlier,
                                       load_blob=lambda aid: (video_store.get_asset(aid, blob=True) or {}).get("bytes"))
     except video_plan.PlanError as exc:
         step("failed", str(exc))
@@ -169,6 +187,8 @@ def run_job(job, *, stop=None, read_site=video_site.read, client=None):
     plan = dict(result["plan"], brand=brand, problems=result["problems"], attempts=result["attempts"],
                 model=result["model"], notes=(result["plan"].get("notes") or []) + notes,
                 seconds_taken=round((datetime.now(timezone.utc) - started).total_seconds(), 1))
+    if given:
+        plan["memory"] = given
     if any(f["asked"] for f in brand["font_swaps"]):
         plan["notes"].append("Fonts swapped for ones the video can use: " + "; ".join(
             "%s became %s" % (f["asked"], f["used"]) for f in brand["font_swaps"] if f["asked"]))

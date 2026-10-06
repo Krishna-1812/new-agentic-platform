@@ -12,7 +12,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Video Studio", ["strategic-agents.css?v=2", "page-watch.css?v=4", "video-studio-app.css?v=1"]) }}
+{{ head("Video Studio", ["strategic-agents.css?v=2", "page-watch.css?v=4", "video-studio-app.css?v=2"]) }}
 </head>
 <body class="sa pw vs">
 
@@ -47,6 +47,6 @@
 <script type="application/json" id="vs-data">{{ {"video": data, "menu": menu, "fields": fields, "fonts": fonts}|tojson }}</script>
 {{ topbar_script() }}
 <script defer src="{{ url_for('static', filename='js/strategic-agents.js') }}?v=2"></script>
-<script defer src="{{ url_for('static', filename='js/video-studio.js') }}?v=6"></script>
+<script defer src="{{ url_for('static', filename='js/video-studio.js') }}?v=7"></script>
 </body>
 </html>
