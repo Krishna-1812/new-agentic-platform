@@ -177,3 +177,34 @@ def test_seo_runs_by_space(who):
     assert [r["id"] for r in seo_runs_store.list_runs(a)] == [own]
     assert seo_runs_store.delete(shared, b) is False and seo_runs_store.delete(shared, a) is True
     seo_runs_store.delete(own, a)
+
+
+# ── Phase 4: the AI's brief ──────────────────────────────────────────────────
+def test_the_brief_is_built_from_one_accounts_space_only(who):
+    from tracker import account_brief, gads_ai_store, lbr_store, seo_runs_store
+    a, b, sp, tag = who["a"], who["b"], who["space"], who["tag"]
+    other = workspace.account(random.randint(10 ** 8, 10 ** 9))
+    ids = []
+    for space, word, email in ((sp, "ours", a), (other, "theirs", b), (workspace.personal(a), "mine", a)):
+        ids.append(("seo", seo_runs_store.add(email, space, "seo-geo-audit", "%s-%s.in" % (word, tag),
+                                              {"facts": [["Overall score", 70]]}, {}, None), email))
+        lbr_store.create_run(email, "%s %s dentists" % (word, tag), "Pune", "all", 40, space=space)
+        ids.append(("video", video_store.create_project(email, brief="%s %s reel" % (word, tag), kind="promo",
+                                                        space=space), email))
+        t = watch_store.create_target(email, "https://%s-%s.in" % (word, tag), space=space)
+        c = watch_store.add_change(t, None, None, "major", "%s %s moved" % (word, tag), {})
+        watch_store.update_change(c, verdict={"summary": "%s %s changed prices" % (word, tag), "importance": "important"})
+    ads = "Ads %s" % tag
+    rid = gads_ai_store.create_review(ads, a)
+    gads_ai_store.update_review(rid, status="complete", report={"headline": "h", "overall": "on_track",
+                                                                "actions": [{"priority": "P1", "title": "ours %s act" % tag}]})
+    text = account_brief.build(sp, [ads])["text"]
+    for want in ("ours-%s.in" % tag, "ours %s dentists" % tag, "ours %s reel" % tag, "ours %s changed prices" % tag,
+                 "ours %s act" % tag):
+        assert want in text, want
+    assert "theirs" not in text and "mine " not in text
+    for kind, i, email in ids:
+        if kind == "seo":
+            seo_runs_store.delete(i, email)
+        else:
+            video_store.delete_project(i, email)

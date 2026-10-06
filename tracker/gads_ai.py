@@ -666,7 +666,12 @@ REVIEW_SCHEMA = _obj({
         "verdict": {"type": "string", "enum": ["scale", "keep", "fix", "restructure", "pause", "watch"]},
         "summary": _STR, "issues": _STRS, "opportunities": _STRS})},
     "brief_gaps": _STRS,
-    "data_caveats": _STRS})
+    "data_caveats": _STRS,
+    "follow_up": _obj({
+        "summary": _STR,
+        "earlier_actions": {"type": "array", "items": _obj({
+            "action": _STR, "status": {"type": "string", "enum": ["done", "partly", "not_done", "cannot_verify"]},
+            "evidence": _STR})}})})
 
 REVIEW_SYSTEM = """You are the senior paid-search strategist at a performance marketing agency. You review one \
 Google Ads account for the agency's leadership and its account manager, and they will act on what you write.
@@ -680,7 +685,10 @@ use older entries as history, for example to judge whether something agreed was 
 - the account's data pack: every campaign for the last 30 days against the 30 before, month-to-date budgets and \
 pacing, bidding and targets, impression share, search terms, keywords and Quality Score, ads, devices, age and \
 gender, conversions by action and their setup, locations, hours, landing pages, change history and Google's \
-recommendations.
+recommendations;
+- sometimes, the account's earlier work (earlier_work): the team's earlier AI reviews of this account with their \
+verdicts and actions, the changes Page Watch saw on the client's pages, SEO and agent runs, and the videos made. \
+It is history, not data for the last 30 days: never quote a figure from it as a current one.
 
 How to review:
 - The brief is the yardstick. Check the account against every target and requirement in it: budget and pacing, \
@@ -703,23 +711,33 @@ limits that affect your conclusions as data caveats.
 - Actions say exactly what to change, where, and to what, with the expected effect, in priority order: P1 for \
 what is costing money or breaking the brief now, P2 for clear gains, P3 for the rest. Nothing vague such as \
 "optimise bids" or "improve ad copy" without saying which, how and why.
+- Pick up where the last review left off. When earlier_work has an earlier AI review, go through its actions in \
+follow_up: for each, say from the change history and the numbers whether it was done, partly done or not done \
+(cannot_verify when the data cannot show it), and what changed since. Then build on it: do not repeat an action \
+that was done, say plainly when one that was not done is still costing money, and point out what moved since that \
+review. Use the rest of earlier_work where it bears on the account (a landing page that changed, an SEO finding \
+about a page the ads send people to). With no earlier review, leave follow_up's summary empty and its list empty.
 - Money is in the pack's currency; write amounts with it. Write plainly: short sentences, no jargon a client \
 director would not know, no filler."""
 
 
-def review_prompt(account, brief, targets, checks, pack):
-    return ("Account: %s\n\n<brief>\n%s\n</brief>\n\n<targets_from_brief>\n%s\n</targets_from_brief>\n\n"
-            "<measured_checks>\n%s\n</measured_checks>\n\n<data_pack>\n%s\n</data_pack>\n\n"
-            "Write the review of %s." %
+def review_prompt(account, brief, targets, checks, pack, earlier=""):
+    """What the review is asked; `earlier` (the account's earlier work, tracker/account_brief.py) goes after
+    the data pack, when there is any."""
+    body = ("Account: %s\n\n<brief>\n%s\n</brief>\n\n<targets_from_brief>\n%s\n</targets_from_brief>\n\n"
+            "<measured_checks>\n%s\n</measured_checks>\n\n<data_pack>\n%s\n</data_pack>\n\n" %
             (account, brief.strip() or "(There are no notes on this account yet. Review the account on its own "
                                        "numbers, and say in brief_gaps what a brief needs to state.)",
              json.dumps(targets, ensure_ascii=False, separators=(",", ":")),
              json.dumps(checks, ensure_ascii=False, separators=(",", ":")),
-             json.dumps(pack, ensure_ascii=False, separators=(",", ":"), default=str), account))
+             json.dumps(pack, ensure_ascii=False, separators=(",", ":"), default=str)))
+    if (earlier or "").strip():
+        body += "<earlier_work>\n" + earlier.strip() + "\n</earlier_work>\n\n"
+    return body + "Write the review of " + account + "."
 
 
-def analyse(account, brief, targets, checks, pack, client=None):
-    text, usage = _call(client, REVIEW_SYSTEM, review_prompt(account, brief, targets, checks, pack),
+def analyse(account, brief, targets, checks, pack, client=None, earlier=""):
+    text, usage = _call(client, REVIEW_SYSTEM, review_prompt(account, brief, targets, checks, pack, earlier),
                         REVIEW_SCHEMA, effort="high", max_tokens=64000)
     return json.loads(text), usage
 
@@ -790,10 +808,12 @@ def cost_usd(usages):
 
 
 # ── The whole run ────────────────────────────────────────────────────────────
-def run_review(review_id, account, load, store, client=None, beat_every=30.0, context=None):
+def run_review(review_id, account, load, store, client=None, beat_every=30.0, context=None, memory=None):
     """Run one review end to end, saving each stage. `load()` returns (g, st, rows, fx, spend, camps).
     `context(account)`, when given, reads the account's part of the linked Google Doc
     (tracker/gads_ai_doc.context_for), or returns None when no doc is linked.
+    `memory(account, review_id)`, when given, returns the client account's brief of earlier work
+    (tracker/account_brief.build), or None when the Google Ads account belongs to no client account.
     A heartbeat is saved every `beat_every` seconds while it runs, so a review cut off by a restart is
     recognised as stopped (gads_ai_store._expire) rather than left running."""
     import threading
@@ -807,7 +827,7 @@ def run_review(review_id, account, load, store, client=None, beat_every=30.0, co
                 pass
     threading.Thread(target=pulse, name="gads-ai-beat", daemon=True).start()
     try:
-        _run(review_id, account, load, store, client, context)
+        _run(review_id, account, load, store, client, context, memory)
     finally:
         done.set()
 
@@ -837,7 +857,18 @@ def _brief_for(review_id, account, store, context):
 DOC_AUTHOR = "google-doc"
 
 
-def _run(review_id, account, load, store, client, context=None):
+def _earlier(review_id, account, memory):
+    """The account's brief of earlier work, or None; a brief that cannot be built never stops the review."""
+    if not memory:
+        return None
+    try:
+        return memory(account, review_id)
+    except Exception:
+        log.exception("gads_ai review %s: earlier work unreadable", review_id)
+        return None
+
+
+def _run(review_id, account, load, store, client, context=None, memory=None):
     usages = []
     try:
         store.update_review(review_id, status="running", stage="context")
@@ -861,7 +892,8 @@ def _run(review_id, account, load, store, client, context=None):
         store.beat(review_id, "checks")
         checks = compute_checks(targets, pack, fx, account)
         store.beat(review_id, "analysis")
-        report, u = analyse(account, brief, targets, checks, pack, client)
+        earlier = _earlier(review_id, account, memory)
+        report, u = analyse(account, brief, targets, checks, pack, client, (earlier or {}).get("text", ""))
         usages.append(u)
         report["targets"] = targets
         report["checks"] = checks
@@ -869,6 +901,9 @@ def _run(review_id, account, load, store, client, context=None):
         report["currency"] = pack["currency"]
         report["has_brief"] = bool(brief)
         report["context"] = source
+        if earlier and earlier.get("text"):
+            from tracker import account_brief
+            report["memory"] = account_brief.shown(earlier)
         store.update_review(review_id, status="complete", stage="done", report=report,
                             cost={"usd": cost_usd(usages), "calls": usages},
                             finished_at=_dt.datetime.now(_dt.timezone.utc))

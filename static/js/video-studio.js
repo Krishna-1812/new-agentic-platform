@@ -546,6 +546,14 @@
           var ul2 = el("ul"); plan.notes.forEach(function (x) { ul2.appendChild(el("li", null, x)); }); n.appendChild(ul2);
           notes.appendChild(n);
         }
+        if (plan.earlier && plan.earlier.length) {
+          var m = el("details", "vs-note vs-note--earlier");
+          m.appendChild(el("summary", null, "Planned knowing the " + plan.earlier.length + " video" +
+                                            (plan.earlier.length === 1 ? " already made for this client, so it does not repeat it"
+                                                                              : "s already made for this client, so it does not repeat them")));
+          var ul3 = el("ul"); plan.earlier.forEach(function (x) { ul3.appendChild(el("li", null, x)); }); m.appendChild(ul3);
+          notes.appendChild(m);
+        }
       }
 
       // The timeline: every scene as a block as wide as its seconds.

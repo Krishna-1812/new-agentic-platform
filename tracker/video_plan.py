@@ -676,8 +676,14 @@ The earlier idea(s):
 - %s"""
 
 
+EARLIER_NOTE = """Videos the team already made for this client, newest first (tracker/account_brief.py). \
+Make this one fresh: do not reuse their idea, hook or order of scenes unless the brief asks for it. They are \
+history, not sources: take no words or numbers from them.
+%s"""
+
+
 def make_plan(brief, choices, brand, sources, *, client=None, load_blob=None, email="", project_id=None,
-              version_id=None, avoid=(), cap=None):
+              version_id=None, avoid=(), cap=None, earlier=""):
     """{"plan", "problems", "attempts", "cost_usd", "model"}; raises PlanError when no plan can be made.
 
     cap: the monthly budget to hold to (the budget drill passes 0)."""
@@ -692,6 +698,8 @@ def make_plan(brief, choices, brand, sources, *, client=None, load_blob=None, em
     content = request_content(brief, choices, brand, sources, load_blob=load_blob or (lambda aid: None))
     if avoid:
         content.insert(len(content) - 1, {"type": "text", "text": AVOID_NOTE % "\n- ".join(avoid)})
+    if (earlier or "").strip():
+        content.insert(len(content) - 1, {"type": "text", "text": EARLIER_NOTE % earlier.strip()})
     messages = [{"role": "user", "content": content}]
     plan, raw, cost = _ask(client, messages, record)
     problems = check(plan, choices, sources, brief)

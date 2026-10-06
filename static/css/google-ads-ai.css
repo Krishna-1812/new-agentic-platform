@@ -162,3 +162,10 @@
   .gad-panel { box-shadow: none; padding: 0; }
   .gar-item, .gar-camp { break-inside: avoid; }
 }
+
+/* Account memory (phase 4): what changed since the last review, and the earlier work the AI was given. */
+.gar-follow { margin: 0 0 var(--sp-3); font-size: 15px; line-height: 1.55; color: var(--tx); }
+.gar-mem { border: 1px solid var(--s3); border-radius: 12px; padding: 12px 16px; }
+.gar-mem > summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--tx2); }
+.gar-mem h4 { margin: 14px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--tx3); }
+.gar-mem li { white-space: pre-line; overflow-wrap: anywhere; }

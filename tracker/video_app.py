@@ -365,7 +365,8 @@ def _plan_view(plan, shape):
             "notes": [public_error(n) for n in plan.get("notes") or [] if public_error(n)],
             "problems": plan.get("problems") or [], "brand": _brand_view(plan.get("brand")),
             "music": plan.get("music") or video_music.NONE, "music_menu": video_music.menu(),
-            "edited": bool(plan.get("edited"))}
+            "edited": bool(plan.get("edited")),
+            "earlier": [i["text"] for s in (plan.get("memory") or {}).get("sections") or [] for i in s["items"]]}
 
 
 def _minutes(timings):

@@ -5423,6 +5423,18 @@ def _gads_ai_context(account, force=True):
     return ctx
 
 
+def _gads_ai_memory(account, review_id):
+    """The brief of earlier work for the client account this Google Ads account belongs to
+    (tracker/account_brief.py), or None when it belongs to none, or to more than one."""
+    from tracker import account_brief
+    owners = {a["space"]: a for a in (_acct_listing().get("by_slug") or {}).values()
+              if account in (a.get("ads_names") or ()) and a.get("space")}
+    if len(owners) != 1:
+        return None
+    acct = next(iter(owners.values()))
+    return account_brief.build(acct["space"], acct["ads_names"], exclude=review_id)
+
+
 def _gads_ai_context_out(account, force=False):
     """What the page shows about the linked doc and this account's part of it."""
     from tracker import gads_ai_doc
@@ -5614,7 +5626,8 @@ def google_ads_ai_review_start():
     brief = gads_ai_store.get_brief(account)
     email = (_get_user() or {}).get("email", "").lower()
     rid = gads_ai_store.create_review(account, email, brief_id=(brief or {}).get("id"))
-    _gads_ai_spawn(gads_ai.run_review, rid, account, _gads_ai_load, gads_ai_store, context=_gads_ai_context)
+    _gads_ai_spawn(gads_ai.run_review, rid, account, _gads_ai_load, gads_ai_store, context=_gads_ai_context,
+                   memory=_gads_ai_memory)
     return jsonify({"ok": True, "review": _gads_ai_review_out(gads_ai_store.get_review(rid))}), 202
 
 
@@ -6210,6 +6223,7 @@ def _acct_review_out(r, full=False):
         report = dict(r.get("report") or {})
         ctx = report.get("context") or {}
         report["context"] = {"kind": ctx.get("kind"), "found": bool(ctx.get("found"))}
+        report.pop("memory", None)          # the team's earlier work, with who did it: staff only
         out["report"] = report
     return out
 
