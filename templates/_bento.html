@@ -49,8 +49,8 @@
 {# The account switch is in every page's top bar (topbar() below), so its sheet and script load on
    every page that has one. Hovering an account's link lets the browser prerender it, so picking an
    account opens it at once (speculation rules; browsers without them just navigate). #}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/account-picker.css') }}?v=2">
-<script defer src="{{ url_for('static', filename='js/account-picker.js') }}?v=2"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/account-picker.css') }}?v=3">
+<script defer src="{{ url_for('static', filename='js/account-picker.js') }}?v=3"></script>
 <script type="speculationrules">{"prerender": [{"where": {"selector_matches": "a[data-acct-go='home'], a[data-acct-card]"}, "eagerness": "moderate"}], "prefetch": [{"where": {"selector_matches": "a[data-acct-go='page']"}, "eagerness": "moderate"}]}</script>
 {%- endif %}
 {%- for sheet in sheets %}
@@ -73,7 +73,8 @@
 {%- endfor %}
 {# Deferred so they never block paint, and because both only need the DOM. #}
 <script defer src="{{ url_for('static', filename='js/bento-motion.js') }}"></script>
-{%- if palette %}
+{#- A client (someone invited to one account) is never offered the platform's own tools. #}
+{%- if palette and not acct_client %}
 <script>window.__KP_BASE__ = {{ palette_items()|safe }};</script>
 <script defer src="{{ url_for('static', filename='js/bento-palette.js') }}?v=2"></script>
 {%- endif %}
@@ -91,11 +92,26 @@
 {% macro topbar(crumbs=[]) -%}
 <header class="bn-top">
   <div class="bn-top-left">
-    <a href="/hub" class="bn-brand">
+    <a href="{{ acct_ctx.home if acct_client and acct_ctx else '/hub' }}" class="bn-brand">
       <span class="bn-mark"></span>
       <span class="bn-word">{{ brand.name }}</span>
     </a>
-    {%- if acct_switch %}
+    {%- if acct_client and acct_ctx and acct_count <= 1 %}
+    {#- A client with one account: its name, leading to its home. Nothing to switch to. -#}
+    <a class="ap-pill ap-pill--static" href="{{ acct_ctx.home }}">
+      <span class="ap-av" style="--av-bg:{{ acct_ctx.avatar.bg }};--av-fg:{{ acct_ctx.avatar.fg }}">{{ acct_ctx.avatar.initials }}</span>
+      <span class="ap-pill-t">{{ acct_ctx.name }}</span>
+    </a>
+    {%- if crumbs %}
+    <nav class="bn-crumbs" aria-label="Breadcrumb">
+      {%- for label, href in crumbs %}
+      {%- if not loop.first %}<span class="bn-crumb-sep">/</span>{% endif %}
+      {%- if href %}<a href="{{ href }}" class="bn-crumb">{{ label }}</a>
+      {%- else %}<span class="bn-crumb-cur" aria-current="page">{{ label }}</span>{% endif %}
+      {%- endfor %}
+    </nav>
+    {%- endif %}
+    {%- elif acct_switch %}
     {#- The account switch (staff only): the account this page is for, or "All accounts". It is the
         root of the breadcrumb, so it stands where "Workspace" stood, and it stays visible on phones,
         where the rest of the breadcrumb is hidden. account-picker.js opens it. -#}
@@ -149,11 +165,13 @@
         shortcut: Ctrl+K is already the assistant's on six pages, and the
         previous build's palette was undiscoverable precisely because a chord
         announced once by a toast was the only way in. -#}
+    {%- if not acct_client %}
     <button type="button" class="bn-top-jump" data-bn-palette aria-label="Jump to any tool or section">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-3.4-3.4"/></svg>
       <span class="bn-top-jump-t">Jump to</span>
       <span class="bn-kbd bn-top-k"><kbd>&#8984;</kbd><kbd>K</kbd></span>
     </button>
+    {%- endif %}
     <div id="tbUserMenu" style="position:relative">
       <button type="button" class="bn-btn" id="tbUserPill" onclick="toggleTbMenu()">
         <span class="bn-av" style="width:22px;height:22px">
@@ -168,7 +186,14 @@
           <div style="font-size:11px;color:var(--tx3)">{{ user.email }}</div>
         </div>
         <div class="bn-menu-sep"></div>
+        {%- if acct_client %}
+        <a href="/logout" class="dd-item danger">
+          <span class="dd-item-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
+          Sign out
+        </a>
+        {%- else %}
         {% include "_admin_menu.html" %}
+        {%- endif %}
       </div>
     </div>
   </div>

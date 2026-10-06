@@ -150,7 +150,7 @@ Google Sign-In is open to any Google account, so access is split into surfaces:
 | Internal staff app | `@markifydigital.com` and the admins | `@position2_required` (the decorator's name is historical) | `/hub`, `/strategic-agents/*`, `/seo-aeo/*`, `/dashboards/*`, `/abm-signal-tracker/*`, `/playbook/*` |
 | Admin | `ADMIN_EMAILS` only | `@admin_required` | `/admin/*` |
 | Client portals | per-client gate `_client_gate()` | | `/<client-slug>/*` (`CLIENTS` registry in `app.py`; currently `northstaranesthesia`) |
-| Client accounts | staff (client invites: next phase) | `_acct_view()` | `/<account>`, `/<account>/google-ads`, `/<account>/google-ads/ai-review` (see "Client accounts" below and `docs/account-workspaces-plan.md`) |
+| Client accounts | staff; invited clients (email or domain) see their own account's shared pages | `_acct_view()` | `/<account>`, `/<account>/google-ads`, `/<account>/google-ads/ai-review` (see "Client accounts" below and `docs/account-workspaces-plan.md`) |
 
 Old `/p2/*` URLs 301 to the new paths (PR #3). The hub (`/hub`) has three hero workspaces:
 
@@ -305,7 +305,7 @@ Watches any web page and reports, in plain words and with a before-and-after pic
 - **Health:** `/strategic-agents/page-watch/health` (staff only) returns JSON with `ok`, `behind`, `no_worker`, `no_browser` or `idle`.
 - **Env:** `WATCH_BROWSER=off` turns the browser off; `WATCH_CHROMIUM_PATH` points at a Chromium to use; `WATCH_WORKER_THREADS` (default 2); `RAILPACK_PYTHON_PLAYWRIGHT_INSTALL=1` and `ANTHROPIC_API_KEY` on the worker service; `WATCH_CLAUDE_MODEL`, `WATCH_CLAUDE_EFFORT`, `WATCH_CLAUDE_MONTHLY_USD`, `WATCH_JUDGE`; `WATCH_SLACK_CHANNEL`, `WATCH_SLACK_BOT_TOKEN` (falls back to `GOOGLE_ADS_SLACK_BOT_TOKEN`), `WATCH_DIGEST_AT`, `WATCH_ALERTS`, `WATCH_CRON_TOKEN` (web, and the GitHub secret for the watchdog), `PUBLIC_BASE_URL` and `SECRET_KEY` (also on the worker).
 
-### Client accounts (phase A built; plan and progress: `docs/account-workspaces-plan.md`)
+### Client accounts (phases A and B built; plan and progress: `docs/account-workspaces-plan.md`)
 
 - **What it is:** one space per client at `/<account>`. The switch is in every page's top bar
   (where "Workspace" was) and is the hub's headline ("Working on / All accounts"); the hub also
@@ -323,8 +323,17 @@ Watches any web page and reports, in plain words and with a before-and-after pic
   `google_ads_insights.view(only=...)`.
 - **Smoothness:** speculation rules prerender an account on hover; cross-document view transitions
   carry its name from the picker into the page title. Respects reduced motion.
-- **Next:** client invites and what a client sees, then Video Studio / Page Watch, then the SEO
-  tools and the other agents filled in from the profile.
+- **Client access:**
+  - Admins invite an email or a company domain from **Share** on the account's home. Public mail
+    domains and the staff domain are refused.
+  - The account shares the Google Ads dashboard (on by default), the AI review (off; read-only,
+    finished reviews only) and the profile (off).
+  - A client sees only their own account, with no internal tools, notes, costs or links, and lands
+    on it after sign-in.
+  - Tables: `client_account_access`, `client_account_shares`, `client_account_audit`.
+  - Tests: `tests/test_account_clients.py`.
+- **Next:** Video Studio / Page Watch inside an account, then the SEO tools and the other agents
+  filled in from the profile.
 
 ### Video Studio (being built; plan and progress: `docs/video-studio-plan.md`)
 

@@ -1457,8 +1457,8 @@
 
     doc.querySelector("[data-gad-export]").addEventListener("click", exportCsv);
 
-    var refresh = doc.querySelector("[data-gad-refresh]");
-    refresh.addEventListener("click", function () {
+    var refresh = doc.querySelector("[data-gad-refresh]");   // not on a client's view of an account
+    if (refresh) refresh.addEventListener("click", function () {
       var label = refresh.querySelector("span");
       refresh.disabled = true; refresh.classList.add("is-busy"); label.textContent = "Refreshing";
       fetch(API_BASE + "/refresh", { method: "POST", headers: { "X-Requested-With": "fetch" } })

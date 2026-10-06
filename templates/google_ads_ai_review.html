@@ -10,12 +10,13 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Google Ads AI review", ["google-ads-dashboard.css?v=11", "google-ads-ai.css?v=4"]) }}
+{{ head("Google Ads AI review", ["google-ads-dashboard.css?v=11", "google-ads-ai.css?v=5"]) }}
 </head>
 {%- set dash = ("/" ~ acct.slug ~ "/google-ads") if acct else "/dashboards/google-ads" %}
-<body class="gad gar"{% if acct and accounts|length == 1 %} data-acct-single{% endif %}>
+<body class="gad gar"{% if acct and accounts|length == 1 %} data-acct-single{% endif %}
+      {%- if client_view %} data-review-readonly data-review-api="{{ review_api }}"{% endif %}>
 
-{{ topbar([("Google Ads", dash), ("AI review", none)]) }}
+{{ topbar([("Google Ads", dash), ("AI review", none)] if (not client_view or acct_dash) else [("AI review", none)]) }}
 
 <main class="gad-shell">
 
@@ -45,21 +46,27 @@
       {%- endif %}
     </div>
     <div class="gad-hero-foot">
-      <p class="gad-hero-sub">Claude reads every campaign in the account against its brief: what is working, what is not,
-        where the account does not follow the brief, and what to do about it.</p>
+      <p class="gad-hero-sub">{% if client_view %}Every campaign in the account, read against its goals: what is working, what is
+        not, and what to do next.{% else %}Claude reads every campaign in the account against its brief: what is working, what is not,
+        where the account does not follow the brief, and what to do about it.{% endif %}</p>
       <div class="gad-hero-actions">
-        <a class="gad-btn gad-btn--ghost" href="{{ dash }}" aria-label="Back to the dashboard">
+{%- if not client_view or acct_dash %}
+                <a class="gad-btn gad-btn--ghost" href="{{ dash }}" aria-label="Back to the dashboard">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg>
           Dashboard
         </a>
-        <button type="button" class="gad-btn gad-btn--acc" id="gar-run"{% if not configured or not accounts %} disabled{% endif %}>
+        {%- endif %}
+{%- if not client_view %}
+                <button type="button" class="gad-btn gad-btn--acc" id="gar-run"{% if not configured or not accounts %} disabled{% endif %}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
           <span>Run the review</span>
         </button>
+        {%- endif %}
       </div>
     </div>
   </section>
 
+  {% if not client_view %}
   {% if not accounts %}
   <p class="gad-fx-warn" role="alert">No accounts yet: the campaign report has no rows. Check the Google Ads dashboard first.</p>
   {% endif %}
@@ -71,8 +78,10 @@
   <p class="gad-fx-warn" role="alert"><b>Briefs and reviews are kept in memory only.</b> Set <code>DATABASE_URL</code> so they
     survive a restart or deploy.</p>
   {% endif %}
+  {% endif %}
 
-  <div class="gar-top">
+  <div class="gar-top{% if client_view %} gar-top--one{% endif %}">
+    {%- if not client_view %}
     <section class="gad-panel gar-brief" id="gar-brief-panel">
       <div class="gad-panel-head"><div>
         <span class="gad-lbl">What the account is for</span>
@@ -102,6 +111,7 @@
         </details>
       </details>
     </section>
+    {%- endif %}
 
     <section class="gad-panel gar-history">
       <div class="gad-panel-head"><div>
@@ -109,13 +119,15 @@
         <h2 class="gad-h2">Reviews</h2>
       </div></div>
       <ol class="gar-list" id="gar-list"></ol>
+      {%- if not client_view %}
       <p class="gad-note">A review takes a few minutes. Each costs roughly US$0.50–2 of Claude usage, depending on the size of
         the account, and uses {{ model }} thinking at high effort.</p>
+      {%- endif %}
     </section>
   </div>
 
   <section class="gad-panel gar-review" id="gar-review" aria-live="polite">
-    <div class="gar-empty" id="gar-empty">No review yet for this account. Save a brief, then run the review.</div>
+    <div class="gar-empty" id="gar-empty">{{ "Loading…" if client_view else "No review yet for this account. Save a brief, then run the review." }}</div>
   </section>
 
 </main>
@@ -123,6 +135,6 @@
 {% if accounts_nav %}<script id="acct-data" type="application/json">{{ accounts_nav|tojson }}</script>{% endif %}
 <script type="application/json" id="gar-data">{{ {"template": template, "configured": configured}|tojson }}</script>
 {{ topbar_script() }}
-<script defer src="{{ url_for('static', filename='js/google-ads-ai.js') }}?v=3"></script>
+<script defer src="{{ url_for('static', filename='js/google-ads-ai.js') }}?v=4"></script>
 </body>
 </html>

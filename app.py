@@ -1425,9 +1425,10 @@ def auth_google():
     nxt = session.pop("next_url", None)
     if not (isinstance(nxt, str) and nxt.startswith("/") and not nxt.startswith("//")):
         # No deep link: @markifydigital.com staff land on the internal hub (/hub);
-        # everyone else lands on the public signed-in home (/app). An explicit
-        # next_url (e.g. a shared /admin/... link) still takes precedence.
-        nxt = "/hub" if _is_staff(email) else "/app"
+        # a client invited to an account lands on it (/<account>); everyone else
+        # lands on the public signed-in home (/app). An explicit next_url (e.g. a
+        # shared /admin/... or /<account> link) still takes precedence.
+        nxt = "/hub" if _is_staff(email) else _acct_landing(email)
     # Route sign-in logging: @markifydigital.com -> always Internal Usage,
     # PLUS Public Page Analytics too when landing on the public /app surface (not
     # deep-linking straight into the internal app). Everyone else -> Public Page
@@ -1477,8 +1478,8 @@ def favicon():
 def index():
     u = _get_user()
     if u:
-        # Staff go straight to the internal hub; everyone else to the public home.
-        return redirect("/hub" if _is_staff(u.get("email", "")) else "/app")
+        # Staff go straight to the internal hub; a client to their account; everyone else to the public home.
+        return redirect("/hub" if _is_staff(u.get("email", "")) else _acct_landing(u.get("email", "")))
     return render_template("agents.html", page="home", agents=AGENTS, agent=None,
                            related=[], signals_list=SIGNALS)
 
@@ -4016,7 +4017,7 @@ def hub():
     # The client accounts for the headline's switch and the account cards (the list is cached, so
     # this is instant after the first build; if it cannot be built the page fetches it instead).
     try:
-        accounts = _acct_payload(_acct_listing())
+        accounts = _acct_nav()
     except Exception:
         app.logger.exception("hub: client accounts unavailable")
         accounts = None
@@ -5596,7 +5597,7 @@ def google_ads_ai_review_start():
 # to another client. An account's pages read only that account's data: its Google Ads rows are
 # cut down here, and its insights are scoped in google_ads_insights.view (only=).
 from werkzeug.routing import BaseConverter as _BaseConverter, ValidationError as _RouteMiss
-from tracker import client_accounts, client_accounts_store, client_profile
+from tracker import client_access, client_accounts, client_accounts_store, client_profile
 
 ACCT_TTL = 60                  # seconds a listing is fresh; a stale one is served while it refreshes
 _ACCT = {"listing": None, "refreshing": False, "reserved": None}
@@ -5717,12 +5718,66 @@ app.add_template_global(client_accounts.delta_text, "delta_text")
 app.add_template_global(client_accounts.social_label, "social_label")
 
 
+def _acct_client_keys(email):
+    """The accounts a non-staff address is invited to (once per request)."""
+    from flask import has_app_context
+    cache = g.setdefault("_acct_keys", {}) if has_app_context() else {}
+    if email not in cache:
+        try:
+            cache[email] = client_accounts_store.keys_for(email)
+        except Exception:
+            app.logger.exception("client accounts: invites unreadable")
+            cache[email] = set()
+    return cache[email]
+
+
+def _acct_shares(acct):
+    """What this account shows its clients ({share: on}, defaults filled in)."""
+    from flask import has_app_context
+    cache = g.setdefault("_acct_shares", {}) if has_app_context() else {}
+    if acct["key"] not in cache:
+        try:
+            stored = client_accounts_store.shares(acct["key"])
+        except Exception:
+            app.logger.exception("client accounts: shares unreadable")
+            stored = {}
+        cache[acct["key"]] = client_access.shared(stored)
+    return cache[acct["key"]]
+
+
+def _acct_is_client(email):
+    return not _is_staff(email)
+
+
 def _acct_allowed(email, acct, page):
-    """Who may open an account's page. Staff: every account."""
-    return _is_staff(email)
+    """Who may open an account's page. Staff: every account, every page. Anyone else: the accounts
+    they were invited to (by address or by their company's domain), and of those only the pages the
+    account shares (tracker/client_access.py). "" (the home) is always open to an invited client."""
+    if _is_staff(email):
+        return True
+    if acct["key"] not in _acct_client_keys(email):
+        return False
+    return client_access.page_open(page, _acct_shares(acct))
 
 
-def _acct_view(page, api=False):
+def _acct_mine(email, listing=None):
+    """The accounts a client may open, in the list's order."""
+    listing = listing or _acct_listing()
+    keys = _acct_client_keys(email)
+    return [a for a in listing["accounts"] if a["key"] in keys]
+
+
+def _acct_landing(email):
+    """Where a client lands after signing in: their first account, else the public home."""
+    try:
+        mine = _acct_mine(email)
+    except Exception:
+        app.logger.exception("client accounts: landing unknown")
+        mine = []
+    return "/" + mine[0]["slug"] if mine else "/app"
+
+
+def _acct_view(page, api=False, staff_only=False):
     """An account's page: an old URL name redirects to the current one, the visitor must be allowed,
     and the account goes on g for the top bar (and to the view as its first argument)."""
     def deco(f):
@@ -5743,35 +5798,52 @@ def _acct_view(page, api=False):
                 if api:
                     return jsonify({"ok": False, "error": "Sign in again."}), 401
                 return _login_redirect()
-            if not _acct_allowed(user.get("email", ""), acct, page):
+            email = user.get("email", "")
+            if (staff_only and not _is_staff(email)) or not _acct_allowed(email, acct, page):
                 if api:
                     return jsonify({"ok": False, "error": "Not allowed."}), 403
-                return redirect("/app")
+                if acct["key"] in _acct_client_keys(email):   # invited, but this page is not shared
+                    return redirect("/" + acct["slug"])
+                mine = _acct_mine(email, listing)
+                return render_template("account_denied.html", user=user, mine=mine[:6]), 403
             g.acct, g.acct_page = acct, page
             return f(acct, *args, **kwargs)
         return inner
     return deco
 
 
-def _acct_pages(acct):
-    return [{"page": p, "label": label, "href": "/%s%s" % (acct["slug"], "/" + p if p else "")}
-            for p, label in ACCT_PAGES if acct["ads_names"] or not p.startswith("google-ads")]
-
-
-def _acct_cards(listing, include_hidden=False):
+def _acct_pages(acct, shares=None):
+    """The account's pages as links; with `shares` (a client), only those it shares."""
     out = []
-    for a in listing["accounts"]:
-        if a["hidden"] and not include_hidden:
+    for p, label in ACCT_PAGES:
+        if p.startswith("google-ads") and not acct["ads_names"]:
             continue
-        c = client_accounts.card(a, a["stats"])
-        c["pages"] = [{"page": p["page"], "label": p["label"]} for p in _acct_pages(a)]
+        if shares is not None and not client_access.page_open(p, shares):
+            continue
+        out.append({"page": p, "label": label, "href": "/%s%s" % (acct["slug"], "/" + p if p else "")})
+    return out
+
+
+def _acct_cards(accounts, client=False):
+    """Picker rows and hub cards. A client's carry Google Ads figures only where the account shares
+    them, and list only the pages it shares."""
+    out = []
+    for a in accounts:
+        shares = _acct_shares(a) if client else None
+        figures = a["stats"] if (not client or shares.get("google-ads")) else None
+        c = client_accounts.card(a, figures)
+        c["pages"] = [{"page": p["page"], "label": p["label"]} for p in _acct_pages(a, shares)]
         out.append(c)
     return out
 
 
-def _acct_payload(listing):
-    """The picker's data: every account (hidden ones aside) and where "All accounts" leads."""
-    cards = _acct_cards(listing)
+def _acct_payload(listing, email=None):
+    """The picker's data. Staff: every account (hidden ones aside) and where "All accounts" leads from
+    each page. A client: the accounts they were invited to, and nothing else."""
+    if email is not None and _acct_is_client(email):
+        cards = _acct_cards(_acct_mine(email, listing), client=True)
+        return {"ok": True, "client": True, "accounts": cards, "global": {}}
+    cards = _acct_cards([a for a in listing["accounts"] if not a["hidden"]])
     return {"ok": True, "accounts": cards, "global": ACCT_GLOBAL, "as_of": max((c.get("to") or "" for c in cards),
                                                                                  default="")}
 
@@ -5781,27 +5853,46 @@ def _inject_account_switch():
     """The top bar's account switch (templates/_bento.html): staff only. On an account's page it names
     the account; on a global page it reads "All accounts" and knows which account page mirrors it."""
     u = _get_user() or {}
-    if not _is_staff(u.get("email", "")):
-        return {"acct_switch": False, "acct_ctx": None, "acct_page": ""}
+    email = u.get("email", "")
     acct = getattr(g, "acct", None)
+    ctx = None
     if acct is not None:
-        page = getattr(g, "acct_page", "")
-        return {"acct_switch": True, "acct_page": page,
-                "acct_ctx": {"slug": acct["slug"], "name": acct["name"],
-                             "avatar": client_accounts.avatar(acct["name"], acct["profile"].get("colours")),
-                             "home": "/" + acct["slug"]}}
+        ctx = {"slug": acct["slug"], "name": acct["name"], "home": "/" + acct["slug"],
+               "avatar": client_accounts.avatar(acct["name"], acct["profile"].get("colours"))}
+    if not _is_staff(email):
+        # A client on one of their accounts' pages: the switch lists only their accounts (a plain label
+        # when there is one), the brand leads to their account, and nothing internal is offered.
+        if ctx is None or not u:
+            return {"acct_switch": False, "acct_client": False, "acct_ctx": None, "acct_page": ""}
+        try:
+            count = len(_acct_mine(email))
+        except Exception:
+            count = 1
+        return {"acct_switch": True, "acct_client": True, "acct_ctx": ctx, "acct_count": count,
+                "acct_page": getattr(g, "acct_page", "")}
+    if ctx is not None:
+        return {"acct_switch": True, "acct_client": False, "acct_page": getattr(g, "acct_page", ""), "acct_ctx": ctx}
     try:
         path = request.path
     except RuntimeError:
         path = ""
-    return {"acct_switch": True, "acct_ctx": None, "acct_page": _ACCT_FROM_GLOBAL.get(path, "")}
+    return {"acct_switch": True, "acct_client": False, "acct_ctx": None, "acct_page": _ACCT_FROM_GLOBAL.get(path, "")}
+
+
+def _acct_nav():
+    """The picker's data for whoever is looking: every account for staff, a client's own for a client."""
+    return _acct_payload(_acct_listing(), (_get_user() or {}).get("email", ""))
 
 
 @app.route("/api/accounts")
-@position2_required
+@login_required
 def api_accounts():
+    email = (_get_user() or {}).get("email", "")
     try:
-        return jsonify(_acct_payload(_acct_listing()))
+        out = _acct_payload(_acct_listing(), email)
+        if out.get("client") and not out["accounts"]:
+            return jsonify({"ok": False, "error": "Not allowed.", "accounts": []}), 403
+        return jsonify(out)
     except Exception:
         app.logger.exception("client accounts: list failed")
         return jsonify({"ok": False, "error": "The accounts could not be read just now.", "accounts": []}), 503
@@ -5812,23 +5903,109 @@ def api_accounts():
 def account_home(acct):
     from tracker import gads_ai_store
     listing = _acct_listing()
-    st = acct["stats"]
+    email = (_get_user() or {}).get("email", "")
+    client = _acct_is_client(email)
+    shares = _acct_shares(acct)
+    # A client sees what the account shares, and nothing about how the agency runs it (the master doc,
+    # the template, who reviewed what, what it cost).
+    show_ads = bool(acct["ads_names"]) and (not client or shares["google-ads"])
+    show_review = bool(acct["ads_names"]) and (not client or shares["ai-review"])
+    st = acct["stats"] if show_ads else None
     reviews = []
-    for name in acct["ads_names"]:
-        try:
-            reviews += [dict(r, account=name) for r in gads_ai_store.list_reviews(name, limit=3)]
-        except Exception:
-            app.logger.exception("client accounts: reviews unreadable")
-    reviews.sort(key=lambda r: str(r.get("created_at") or ""), reverse=True)
+    if show_review:
+        for name in acct["ads_names"]:
+            try:
+                reviews += [dict(r, account=name) for r in gads_ai_store.list_reviews(name, limit=3)
+                            if not client or r.get("status") == "complete"]
+            except Exception:
+                app.logger.exception("client accounts: reviews unreadable")
+        reviews.sort(key=lambda r: str(r.get("created_at") or ""), reverse=True)
     p = acct["profile"]
+    show_profile = not client or shares["profile"]
     return render_template(
-        "account_home.html", user=_get_user(), acct=acct, st=st, profile=p,
-        card=client_accounts.card(acct, st), pages=_acct_pages(acct), review=reviews[0] if reviews else None,
-        cids=[client_profile.format_cid(c) for c in acct["customer_ids"]],
+        "account_home.html", user=_get_user(), acct=acct, st=st, profile=p if show_profile else {"fields": 0},
+        card=client_accounts.card(acct, st), pages=_acct_pages(acct, shares if client else None),
+        review=reviews[0] if reviews else None, client_view=client, show_ads=show_ads, show_review=show_review,
+        show_profile=show_profile, can_share=email.lower() in ADMIN_EMAILS,
+        cids=[client_profile.format_cid(c) for c in acct["customer_ids"]] if not client else [],
         money=client_accounts.money, number=client_accounts.number,
         template=client_profile.template(acct["name"], acct["slug"], acct["customer_ids"], p),
-        doc_url=listing["doc_url"], doc_error=listing["doc_error"], doc_read=listing["doc_read"],
-        accounts=_acct_payload(listing))
+        doc_url=None if client else listing["doc_url"], doc_error=None if client else listing["doc_error"],
+        doc_read=listing["doc_read"], accounts=_acct_nav())
+
+
+# ── Sharing an account with its client (admins) ──────────────────────────────
+def _acct_admin_guard():
+    """Changes to who sees an account: admins only, and only from the page's own script (the custom
+    header a cross-site form cannot send), as the AI review's POSTs are guarded."""
+    if (_get_user() or {}).get("email", "").lower() not in ADMIN_EMAILS:
+        return jsonify({"ok": False, "error": "Only an admin can change who sees an account."}), 403
+    if request.headers.get("X-Requested-With") != "fetch":
+        return jsonify({"ok": False, "error": "Bad request."}), 400
+    return None
+
+
+def _acct_access_out(acct):
+    try:
+        entries, audit = client_accounts_store.access(acct["key"]), client_accounts_store.audit(acct["key"])
+    except Exception:
+        app.logger.exception("client accounts: access unreadable")
+        return {"ok": False, "error": "Who can see this account could not be read just now."}
+    out = client_access.view(entries, _acct_shares(acct), audit)
+    out.update(ok=True, link=_gads_digest_base_url() + "/" + acct["slug"], name=acct["name"],
+               can_change=(_get_user() or {}).get("email", "").lower() in ADMIN_EMAILS)
+    for a in out["audit"]:
+        a["at"] = a["at"].isoformat() if hasattr(a["at"], "isoformat") else a["at"]
+    for x in out["people"]:
+        x["added_at"] = x["added_at"].isoformat() if hasattr(x["added_at"], "isoformat") else x["added_at"]
+    return out
+
+
+@app.route("/<acct:slug>/api/access")
+@_acct_view("", api=True, staff_only=True)
+def account_access(acct):
+    out = _acct_access_out(acct)
+    return jsonify(out), (200 if out["ok"] else 503)
+
+
+@app.route("/<acct:slug>/api/access", methods=["POST"])
+@_acct_view("", api=True, staff_only=True)
+def account_access_add(acct):
+    bad = _acct_admin_guard()
+    if bad:
+        return bad
+    try:
+        who = client_access.normalise((request.get_json(silent=True) or {}).get("who"), BRAND["staff_domain"])
+    except client_access.Bad as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
+    client_accounts_store.add_access(acct["key"], who, (_get_user() or {}).get("email", "").lower())
+    return jsonify(_acct_access_out(acct))
+
+
+@app.route("/<acct:slug>/api/access/remove", methods=["POST"])
+@_acct_view("", api=True, staff_only=True)
+def account_access_remove(acct):
+    bad = _acct_admin_guard()
+    if bad:
+        return bad
+    who = str((request.get_json(silent=True) or {}).get("who") or "").strip().lower()[:320]
+    client_accounts_store.remove_access(acct["key"], who, (_get_user() or {}).get("email", "").lower())
+    return jsonify(_acct_access_out(acct))
+
+
+@app.route("/<acct:slug>/api/access/share", methods=["POST"])
+@_acct_view("", api=True, staff_only=True)
+def account_access_share(acct):
+    bad = _acct_admin_guard()
+    if bad:
+        return bad
+    p = request.get_json(silent=True) or {}
+    share = str(p.get("share") or "")
+    if share not in client_access.SHARE_KEYS:
+        return jsonify({"ok": False, "error": "No such part of the account."}), 400
+    client_accounts_store.set_share(acct["key"], share, bool(p.get("on")), (_get_user() or {}).get("email", "").lower())
+    g.pop("_acct_shares", None)
+    return jsonify(_acct_access_out(acct))
 
 
 def _acct_rows(acct):
@@ -5850,10 +6027,12 @@ def account_google_ads(acct):
     start, end = _google_ads_default_range(rows)
     insights = _google_ads_insights(rows, start=start or None, end=end or None,
                                     only=tuple(sorted(acct["ads_names"])))
+    client = _acct_is_client((_get_user() or {}).get("email", ""))
     return render_template("google_ads_dashboard.html", user=_get_user(), rows=rows, ok=bool(rows),
                            insights=insights, currency_symbol=_google_ads_currency_symbol(rows),
                            mixed_currencies=_google_ads_mixed_currencies(rows), acct=acct,
-                           api_base="/%s/api/google-ads" % acct["slug"], accounts=_acct_payload(_acct_listing()))
+                           api_base="/%s/api/google-ads" % acct["slug"], accounts=_acct_nav(),
+                           client_view=client, review_shared=not client or _acct_shares(acct)["ai-review"])
 
 
 @app.route("/<acct:slug>/api/google-ads/insights")
@@ -5876,7 +6055,7 @@ def account_google_ads_insights(acct):
 
 
 @app.route("/<acct:slug>/api/google-ads/refresh", methods=["POST"])
-@_acct_view("google-ads", api=True)
+@_acct_view("google-ads", api=True, staff_only=True)
 def account_google_ads_refresh(acct):
     try:
         _fetch_google_ads_rows(force=True)
@@ -5897,8 +6076,9 @@ def account_ai_review(acct):
     from tracker import gads_ai, gads_ai_store
     if not acct["ads_names"]:
         return redirect("/" + acct["slug"])
+    client = _acct_is_client((_get_user() or {}).get("email", ""))
     try:
-        briefed = gads_ai_store.briefed_accounts()
+        briefed = {} if client else gads_ai_store.briefed_accounts()
     except Exception:
         app.logger.exception("gads_ai: could not read briefs")
         briefed = {}
@@ -5906,11 +6086,54 @@ def account_ai_review(acct):
     want = request.args.get("account", "")
     current = want if want in acct["ads_names"] else acct["ads_names"][0]
     return render_template("google_ads_ai_review.html", user=_get_user(), acct=acct,
-                           accounts=[{"name": a, "cid": cids.get(a, ""), "briefed": a in briefed}
+                           accounts=[{"name": a, "cid": cids.get(a, ""), "briefed": a in briefed or client}
                                      for a in acct["ads_names"]],
                            current=current, configured=gads_ai.configured(), storage=gads_ai_store.backend(),
-                           template=gads_ai.BRIEF_TEMPLATE, model=gads_ai.MODEL,
-                           accounts_nav=_acct_payload(_acct_listing()))
+                           template="" if client else gads_ai.BRIEF_TEMPLATE, model=gads_ai.MODEL,
+                           accounts_nav=_acct_nav(), client_view=client,
+                           acct_dash=not client or _acct_shares(acct)["google-ads"],
+                           review_api="/%s/api/ai-review" % acct["slug"])
+
+
+def _acct_review_out(r, full=False):
+    """A finished review as its client sees it: the report, without who asked, what it cost or what the
+    agency's notes said."""
+    out = {k: r.get(k) for k in ("id", "account", "status", "created_at", "finished_at", "period_from", "period_to")}
+    if full:
+        report = dict(r.get("report") or {})
+        ctx = report.get("context") or {}
+        report["context"] = {"kind": ctx.get("kind"), "found": bool(ctx.get("found"))}
+        out["report"] = report
+    return out
+
+
+@app.route("/<acct:slug>/api/ai-review/reviews")
+@_acct_view("google-ads/ai-review", api=True)
+def account_ai_reviews(acct):
+    """The account's finished reviews, for its own AI review page (a client's view reads these)."""
+    from tracker import gads_ai_store
+    account = request.args.get("account", "")
+    if account not in acct["ads_names"]:
+        return jsonify({"ok": False, "error": "Pick one of this account's Google Ads accounts."}), 400
+    try:
+        rows = [r for r in gads_ai_store.list_reviews(account) if r.get("status") == "complete"]
+    except Exception:
+        app.logger.exception("client accounts: reviews unreadable")
+        return jsonify({"ok": False, "error": "The reviews could not be read."}), 503
+    return jsonify({"ok": True, "reviews": [_acct_review_out(r) for r in rows]})
+
+
+@app.route("/<acct:slug>/api/ai-review/reviews/<int:review_id>")
+@_acct_view("google-ads/ai-review", api=True)
+def account_ai_review_get(acct, review_id):
+    from tracker import gads_ai_store
+    r = gads_ai_store.get_review(review_id)
+    if not r or r.get("account") not in acct["ads_names"] or r.get("status") != "complete":
+        return jsonify({"ok": False, "error": "No such review."}), 404
+    out = _gads_ai_review_out(r, full=True)
+    keep = _acct_review_out(dict(r, report=out.get("report")), full=True)
+    keep["stats"] = out.get("stats") or {}
+    return jsonify({"ok": True, "review": keep})
 
 
 # (Static JS/CSS/image/font caching is set at the top of this file via

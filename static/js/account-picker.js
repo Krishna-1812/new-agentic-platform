@@ -258,7 +258,7 @@
     var accts = (DATA && DATA.accounts) || [], cur = currentSlug();
     var global = (DATA && DATA.global) || {};
 
-    if (!q) {
+    if (!q && !(DATA && DATA.client)) {   // a client has no "all accounts": only their own
       var allHref = global[page] || "/hub";
       list.appendChild(option(allHref, null, "Every client, across the workspace"));
     }

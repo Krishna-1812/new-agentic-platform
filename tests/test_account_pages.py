@@ -86,8 +86,9 @@ def test_staff_get_every_account_for_the_picker():
     assert d["global"]["google-ads"] == "/dashboards/google-ads"
 
 
-def test_only_staff_get_the_list():
-    assert _client("someone@gmail.com").get("/api/accounts").status_code == 302
+def test_only_staff_get_the_list_and_no_one_else_gets_anything():
+    r = _client("someone@gmail.com").get("/api/accounts")
+    assert r.status_code == 403 and r.get_json()["accounts"] == [], "not invited anywhere: nothing"
     assert _client(None).get("/api/accounts").status_code == 302
 
 
@@ -131,7 +132,9 @@ def test_signing_in_is_needed_and_only_staff_get_in():
     r = _client(None).get("/lumina")
     assert r.status_code == 302 and "/login" in r.headers["Location"]
     r = _client("someone@gmail.com").get("/lumina/google-ads")
-    assert r.status_code == 302 and r.headers["Location"].endswith("/app")
+    html = r.get_data(as_text=True)
+    assert r.status_code == 403 and "have access to it." in html and "someone@gmail.com" in html
+    assert "Lumina" not in html and "₹" not in html, "nothing about the account"
     r = _client("someone@gmail.com").get("/lumina/api/google-ads/insights")
     assert r.status_code == 403 and r.get_json()["ok"] is False
 

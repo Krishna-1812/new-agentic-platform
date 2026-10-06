@@ -12,7 +12,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head(acct.name, ["account-space.css?v=1"]) }}
+{{ head(acct.name, ["account-space.css?v=3"]) }}
 </head>
 <body class="as-page">
 
@@ -25,19 +25,25 @@
       <span class="ap-av as-av-xl" data-vt-name
             style="--av-bg:{{ card.avatar.bg }};--av-fg:{{ card.avatar.fg }};view-transition-name: acct-av">{{ card.avatar.initials }}</span>
       <div class="as-tags">
-        <span class="as-tag as-tag--lbl">Client account</span>
+        {%- if not client_view %}<span class="as-tag as-tag--lbl">Client account</span>{% endif %}
         {%- for c in cids %}<span class="as-tag" title="Google Ads customer ID">Google Ads {{ c }}</span>{% endfor %}
         {%- if st %}<span class="as-tag as-tag--live"><i></i>Data through {{ nice_day(st.to) }}</span>{% endif %}
-        {%- if acct.hidden %}<span class="as-tag">Hidden from the lists</span>{% endif %}
+        {%- if acct.hidden and not client_view %}<span class="as-tag">Hidden from the lists</span>{% endif %}
       </div>
       <div class="as-hero-actions">
+        {%- if not client_view %}
+        <button type="button" class="as-btn as-btn--line" data-share-open aria-haspopup="dialog">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M17 8v6M14 11h6"/></svg>
+          {{ "Share" if can_share else "Who can see this" }}
+        </button>
+        {%- endif %}
         {%- if doc_url %}
         <a class="as-btn as-btn--line" href="{{ doc_url }}" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg>
           Master doc
         </a>
         {%- endif %}
-        {%- if acct.ads_names %}
+        {%- if show_ads %}
         <a class="as-btn as-btn--ink" href="/{{ acct.slug }}/google-ads">
           Google Ads
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -46,13 +52,17 @@
       </div>
     </div>
 
-    <span class="as-pre" aria-hidden="true">Working on</span>
+    <span class="as-pre" aria-hidden="true">{{ "Your account" if client_view else "Working on" }}</span>
     <h1 class="as-title" id="as-name">
+      {%- if client_view and (acct_count is not defined or acct_count <= 1) %}
+      <span class="as-mk" data-vt-name style="view-transition-name: acct-name">{{ acct.name }}</span>
+      {%- else %}
       <button type="button" class="as-switch" data-acct-picker data-acct-page=""
               aria-haspopup="dialog" aria-expanded="false" aria-label="Working on {{ acct.name }}. Switch account">
         <span class="as-mk" data-vt-name style="view-transition-name: acct-name">{{ acct.name }}</span>
         <span class="as-chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
       </button>
+      {%- endif %}
     </h1>
 
     <p class="as-facts">
@@ -105,11 +115,14 @@
   {%- endif %}
 
   {# ── Its pages ──────────────────────────────────────────────────────── #}
+  {%- set any_mod = show_ads or (show_review and (review or not client_view)) or (not acct.ads_names and not client_view) %}
+  {%- if any_mod %}
   <section class="as-mods" aria-labelledby="as-mods-h">
     <h2 class="as-h2" id="as-mods-h">Everything for {{ acct.name }}</h2>
     <div class="as-mod-grid">
-      {%- if acct.ads_names %}
-      <a class="as-mod as-mod--wide" href="/{{ acct.slug }}/google-ads">
+      {%- set review_card = show_review and (review or not client_view) %}
+      {%- if show_ads %}
+      <a class="as-mod as-mod--wide{% if not review_card %} as-mod--full{% endif %}" href="/{{ acct.slug }}/google-ads">
         <span class="as-mod-top">
           <span class="as-mod-ic as-mod-ic--acc"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="10" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="6" rx="1.6"/><rect x="13.5" y="11" width="7.5" height="10" rx="1.6"/><rect x="3" y="15" width="7.5" height="6" rx="1.6"/></svg></span>
           <span class="as-mod-state"><i></i>Live</span>
@@ -133,6 +146,8 @@
         {%- endif %}
       </a>
 
+      {%- endif %}
+      {%- if review_card %}
       <a class="as-mod" href="/{{ acct.slug }}/google-ads/ai-review">
         <span class="as-mod-top">
           <span class="as-mod-ic as-mod-ic--sky"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg></span>
@@ -141,14 +156,15 @@
         <span class="as-mod-cat">Claude</span>
         <span class="as-mod-name">AI review</span>
         {%- if review %}
-        <span class="as-mod-desc">Last review {{ nice_day(review.created_at) }}{% if acct.ads_names|length > 1 %} ({{ review.account }}){% endif %}: every campaign judged against the account's notes in the master doc.</span>
+        <span class="as-mod-desc">Last review {{ nice_day(review.finished_at or review.created_at) }}{% if acct.ads_names|length > 1 %} ({{ review.account }}){% endif %}: every campaign judged against {{ "the account's goals" if client_view else "the account's notes in the master doc" }}.</span>
         <span class="as-mod-foot"><span class="as-go">Open the review &rarr;</span></span>
         {%- else %}
         <span class="as-mod-desc">Claude reads every campaign against this account's notes in the master doc: what works, what does not, and what to do next.</span>
         <span class="as-mod-foot"><span class="as-go">Run the first review &rarr;</span></span>
         {%- endif %}
       </a>
-      {%- else %}
+      {%- endif %}
+      {%- if not acct.ads_names and not client_view %}
       <div class="as-mod as-mod--note">
         <span class="as-mod-cat">Google Ads</span>
         <span class="as-mod-name">No Google Ads account linked</span>
@@ -157,11 +173,13 @@
       {%- endif %}
     </div>
   </section>
+  {%- endif %}
 
   {# ── The profile, from the master doc ──────────────────────────────── #}
+  {%- if not client_view or profile.fields %}
   <section class="as-prof" aria-labelledby="as-prof-h">
     <div class="as-prof-head">
-      <h2 class="as-h2" id="as-prof-h">From the master doc</h2>
+      <h2 class="as-h2" id="as-prof-h">{{ "About the account" if client_view else "From the master doc" }}</h2>
       {%- if doc_url and profile.fields %}
       <a class="as-link" href="{{ doc_url }}" target="_blank" rel="noopener">Edit in the doc &nearr;</a>
       {%- endif %}
@@ -215,7 +233,9 @@
         </span></div>
       {%- endif %}
     </div>
+    {%- if not client_view %}
     <p class="as-src">From {% if acct.tab %}the tab &ldquo;{{ acct.tab }}&rdquo;{% else %}this account's part{% endif %} of the master doc. Change it there; this page follows within a minute.</p>
+    {%- endif %}
     {%- else %}
     <div class="as-empty">
       <div class="as-empty-t">
@@ -238,9 +258,55 @@
     </div>
     {%- endif %}
   </section>
+  {%- endif %}
 
-  <p class="as-foot">{{ brand.name }} &middot; {{ acct.name }} &middot; Internal use only</p>
+  {%- if client_view and not any_mod and not profile.fields %}
+  <div class="as-quiet">
+    <b>Nothing is shared here yet.</b>
+    <p>Your account manager will add your reports to this page. The link stays the same, so keep it.</p>
+  </div>
+  {%- endif %}
+
+  <p class="as-foot">{{ brand.name }} &middot; {{ acct.name }} &middot; {{ "Prepared for you" if client_view else "Internal use only" }}</p>
 </main>
+
+{%- if not client_view %}
+{# ── Who can see this account (admins change it; other staff see it) ──── #}
+<dialog class="sh-dlg" id="sh-dlg" aria-labelledby="sh-h" data-slug="{{ acct.slug }}">
+ <div class="sh-in">
+  <div class="sh-head">
+    <div>
+      <span class="sh-kicker">Share</span>
+      <h2 class="sh-h" id="sh-h">{{ acct.name }}</h2>
+    </div>
+    <button type="button" class="sh-x" data-share-close aria-label="Close">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <p class="sh-sub">People you add sign in with Google as that address and see this account only: no other
+    account, nothing internal. Nothing is emailed; send them the link.</p>
+  <form class="sh-add" id="sh-add" autocomplete="off">
+    <label class="sh-sr" for="sh-who">Email address or company domain</label>
+    <input id="sh-who" class="sh-input" type="text" inputmode="email" spellcheck="false"
+           placeholder="name@company.com or @company.com">
+    <button type="submit" class="as-btn as-btn--ink sh-invite">Invite</button>
+  </form>
+  <p class="sh-msg" id="sh-msg" role="status" aria-live="polite"></p>
+  <ul class="sh-people" id="sh-people" aria-label="People who can see this account"></ul>
+  <div class="sh-sec">What they see</div>
+  <ul class="sh-shares" id="sh-shares"></ul>
+  <div class="sh-link">
+    <span class="sh-link-u" id="sh-link"></span>
+    <button type="button" class="as-btn as-btn--line sh-copy" id="sh-copy"><span>Copy link</span></button>
+  </div>
+  <details class="sh-log" id="sh-log-box" hidden>
+    <summary>History</summary>
+    <ol class="sh-log-l" id="sh-log"></ol>
+  </details>
+ </div>
+</dialog>
+<script defer src="{{ url_for('static', filename='js/account-share.js') }}?v=1"></script>
+{%- endif %}
 
 <script id="acct-data" type="application/json">{{ accounts|tojson }}</script>
 <script defer src="{{ url_for('static', filename='js/account-space.js') }}?v=1"></script>
