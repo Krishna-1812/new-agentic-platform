@@ -33,7 +33,7 @@ import app as appmod  # noqa: E402
 # nothing ever confirmed. On moving the platform to Markify Digital
 # (2026-09-24) admin access was given to exactly these two, and no one else;
 # the second is a personal Google account, not a company one.
-_GRANTED_ADMINS = ("sudheer@markifydigital.com", "ladhakrishna2022@gmail.com")
+_GRANTED_ADMINS = ("sudheer@markifydigital.com", "kris@markifydigital.com", "ladhakrishna2022@gmail.com")
 _STAFF = "not-an-admin@markifydigital.com"          # a staff login, no admin rights
 _EXTERNAL = "someone@example.com"              # a public /app member
 _APP_PY = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "app.py")
@@ -94,11 +94,11 @@ def test_each_granted_admin_is_on_the_roster(email):
         "%s was granted admin access but is not in ADMIN_EMAILS" % email)
 
 
-def test_the_roster_is_exactly_the_two_admins_in_lowercase():
+def test_the_roster_is_exactly_the_granted_admins_in_lowercase():
     """Every gate lowercases the session email before the membership test, so
     an entry carrying a capital letter would be an admin who is never an
     admin -- silently, and only for that one person. And the roster is these
-    two and nobody else: a leftover entry would be a live admin login."""
+    and nobody else: a leftover entry would be a live admin login."""
     assert all(e == e.lower() for e in appmod.ADMIN_EMAILS), sorted(appmod.ADMIN_EMAILS)
     assert appmod.ADMIN_EMAILS == set(_GRANTED_ADMINS)
 
@@ -293,7 +293,7 @@ def test_an_admin_on_a_personal_domain_counts_as_staff_and_no_one_else_does():
 
 @pytest.mark.parametrize("email", _GRANTED_ADMINS)
 def test_each_admin_reaches_the_internal_hub(email):
-    """position2_required (the /p2 staff gate) must admit both admins, the
+    """position2_required (the /p2 staff gate) must admit every admin, the
     gmail.com one included; before, it checked the company domain alone and
     would have bounced that admin to /app."""
     r = _client(email).get("/hub")

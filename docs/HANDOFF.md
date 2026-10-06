@@ -53,7 +53,7 @@ The user-facing product name is a placeholder. `brand.py` holds the name "Northa
 | Database | Railway Postgres (`DATABASE_URL`). Several features fall back to in-memory or SQLite when it is unset. |
 | Hosting | Railway, **auto-deploys every push to `main`**. Railpack builder, gunicorn (`railway.toml`, `Procfile`), Python 3.11, ffmpeg via `railpack.json`. Health check `/health`. |
 | Public marketing site | Also published as a static build to GitHub Pages from `/docs` (`index.html`, `agents/`, `platform/` …). |
-| Admins | `ADMIN_EMAILS` in `app.py`: `sudheer@markifydigital.com`, `ladhakrishna2022@gmail.com`. Admins count as staff on any domain. |
+| Admins | `ADMIN_EMAILS` in `app.py`: `sudheer@markifydigital.com`, `kris@markifydigital.com`, `ladhakrishna2022@gmail.com`. Admins count as staff on any domain. |
 | Staff gate | Any `@markifydigital.com` account (`brand.py` `staff_domain`, override with `STAFF_EMAIL_DOMAIN`), plus the admins. |
 | Size | `app.py` ≈ 19,900 lines, 256 `@app.route`. `tracker/` ≈ 130 modules. 223 test files. |
 | Tests | `PYTHONDONTWRITEBYTECODE=1 python3 -B -m pytest tests/ -q`. Last full run: **5,378 passed, 87 skipped, 0 failed**. CI (`run-tests.yml`) runs on every PR and push to `main`. |

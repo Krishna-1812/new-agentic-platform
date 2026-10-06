@@ -1262,10 +1262,10 @@ ACCOUNTS = {
 }
 
 # ── Auth helpers ────────────────────────────────────────────────────────────────
-# The only two admins. Anyone on this list is also treated as staff, whatever
+# The only admins. Anyone on this list is also treated as staff, whatever
 # their email domain (see _is_staff): ladhakrishna2022@gmail.com is a personal
 # Google account, not a @markifydigital.com one.
-ADMIN_EMAILS = {"sudheer@markifydigital.com", "ladhakrishna2022@gmail.com"}
+ADMIN_EMAILS = {"sudheer@markifydigital.com", "kris@markifydigital.com", "ladhakrishna2022@gmail.com"}
 
 
 def _is_staff(email):
