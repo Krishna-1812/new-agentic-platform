@@ -31,6 +31,7 @@
 
 .gar-top { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: var(--gap); margin-top: var(--gap); }
 .gar-top > .gad-panel { margin-top: 0; }
+.gar-top--one { grid-template-columns: minmax(0, 1fr); }
 .gar-help { margin: 0 0 var(--sp-4); font-size: 14px; line-height: 1.55; color: var(--tx2); max-width: 70ch; }
 .gar-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .gar-text {

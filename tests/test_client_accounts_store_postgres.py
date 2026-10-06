@@ -71,3 +71,26 @@ def test_syncs_at_the_same_moment_give_one_slug_once(tag):
     rows = store.load()["rows"]
     slugs = [rows[a["key"]] for a in accts]
     assert len(set(slugs)) == 4 and "same-name-%s" % tag in slugs
+
+
+def test_invites_shares_and_the_history_are_stored_and_follow_the_account(tag):
+    doc = _acct("doc:co %s" % tag, "Co %s" % tag)
+    store.sync([doc], set())
+    assert store.add_access(doc["key"], "ana@co-%s.in" % tag, "admin@x") is True
+    assert store.add_access(doc["key"], "ana@co-%s.in" % tag, "admin@x") is False, "once"
+    assert store.add_access(doc["key"], "@co-%s.in" % tag, "admin@x") is True
+    assert store.keys_for("ANA@co-%s.in" % tag) == {doc["key"]}
+    assert store.keys_for("raj@co-%s.in" % tag) == {doc["key"]}, "by domain"
+    assert store.keys_for("raj@other-%s.in" % tag) == set()
+    store.set_share(doc["key"], "ai-review", True, "admin@x")
+    store.set_share(doc["key"], "profile", True, "admin@x")
+    store.set_share(doc["key"], "profile", False, "admin@x")
+    assert store.shares(doc["key"]) == {"ai-review": True, "profile": False}
+    gained = _acct("cid:%s7" % tag, "Co %s" % tag, alt=[doc["key"]])
+    store.sync([gained], set())
+    assert store.keys_for("ana@co-%s.in" % tag) == {gained["key"]}, "invites follow the new key"
+    assert store.shares(gained["key"])["ai-review"] is True
+    assert store.remove_access(gained["key"], "ana@co-%s.in" % tag, "admin@x") is True
+    assert [e["who"] for e in store.access(gained["key"])] == ["@co-%s.in" % tag]
+    log = store.audit(gained["key"])
+    assert [a["action"] for a in log][:2] == ["removed", "unshared"] and len(log) == 6

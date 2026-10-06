@@ -19,8 +19,8 @@ Decisions the owner made (2026-10-06):
 
 | Phase | What | State |
 |---|---|---|
-| A | The list, URL names, the switch in every top bar and on the hub, each account's home, Google Ads and the AI review scoped to the account | built |
-| B | Client access: invites, what a client sees, the client's chrome, sign-in landing | next |
+| A | The list, URL names, the switch in every top bar and on the hub, each account's home, Google Ads and the AI review scoped to the account | built (PR #74) |
+| B | Client access: invites, what a client sees, the client's chrome, sign-in landing | built |
 | C | Video Studio and Page Watch inside an account | |
 | D | The SEO & AEO tools and the other agents, filled in from the profile | |
 
@@ -129,12 +129,61 @@ An account with no profile shows this block on its home, filled in with what is 
   name and mark travel from the row or card into the next page's title (cross-document view
   transitions; browsers without them just navigate). Everything respects reduced motion.
 
-## Phase B: client access (next)
+## Phase B: client access
 
-- Per account: invited emails and email domains, managed by admins on the account's home.
-- A signed-in client sees only the accounts they were invited to: no switch to other accounts,
-  no internal links, costs or notes. Admins choose which parts each account shares (Google Ads on
-  by default; the AI review off by default).
-- Every account route and API checks the same rule; tests prove a client cannot read another
-  account by URL, by API or through the insights filters.
-- After sign-in, a client with one account lands on it.
+### Inviting (`tracker/client_access.py`, `tracker/client_accounts_store.py`)
+
+- On an account's home, **Share** (admins; other staff see the same panel read-only as "Who can
+  see this") opens a dialog:
+  - **invite** an email (`ana@lumina.in`) or a whole company domain (`@lumina.in`);
+  - **remove** someone, effective on their next click;
+  - choose **what they see**;
+  - **copy the link**;
+  - see the **history** (who invited, removed or changed a share, and when).
+- Nothing is emailed: the admin sends the link. The client signs in with Google as the invited
+  address.
+- Refused:
+  - a domain anyone can sign up to (gmail.com, outlook.com, yahoo.com and about 40 more), since
+    inviting it would let anyone in;
+  - the agency's own domain, whose people are staff already;
+  - anything that is not an email or a domain.
+- Every change is a POST that needs an admin and the page's own `X-Requested-With: fetch` header.
+- Tables (Postgres; in memory without `DATABASE_URL`):
+  - `client_account_access` (key, who);
+  - `client_account_shares` (key, shares);
+  - `client_account_audit`.
+- Invites follow the account's key, so they survive a rename or the account gaining Google Ads.
+
+### What a client sees
+
+| Share | Default | Opens |
+|---|---|---|
+| Google Ads dashboard | on | the four blocks on the home, the campaign card, `/<account>/google-ads` and its insights |
+| AI review | off | the latest **finished** review, read-only (`/<account>/google-ads/ai-review`): no brief, no doc, no run button, no cost, no names |
+| Profile from the master doc | off | the profile on the home (website, goals, audience, competitors, brand); never the notes |
+
+- The account's **home** is always open to an invited client. A page that is not shared leads back
+  to it.
+- **Only their own account.** Any other account's page is a 403 that names nothing about it and
+  links to the accounts they do have. Its APIs answer 403. The all-accounts pages and the hub stay
+  staff-only. The picker data and `/api/accounts` hold only their accounts. Insights are scoped on
+  the server whatever the page asks for.
+- **Nothing internal:**
+  - The top bar has no "Jump to" (the command palette is not even loaded) and no internal menu
+    (only Sign out). The brand leads to their account.
+  - With one account, the switch is just its name. With several, the switch lists only theirs,
+    with no "All accounts".
+  - The home has no master doc link, no customer ID, no profile template, no Share button and no
+    "Internal use only".
+  - The dashboard has no Refresh (re-reading the sheet is staff only), no link to an unshared AI
+    review, and no setup notes.
+- **Landing:** after signing in, or opening `/`, an invited client goes to their first account. A
+  shared link takes them straight to that page.
+- `tests/test_account_clients.py` covers each of these: by URL, by API, through the picker data,
+  through the insights filters, after removal, and by domain.
+
+## Phase C (next): Video Studio and Page Watch inside an account
+
+Both already store a `client` on each video and watch. Inside an account they list that account's
+videos and watches, file new ones under it, and Video Studio starts from the account's brand
+(colours and fonts from the profile).

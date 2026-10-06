@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head with context %}
+{#- An account's address opened by someone signed in who was not invited to it. It says nothing about
+    the account, only what to do: ask for an invite for this address, or sign in as the invited one. -#}
+<html lang="en">
+<head>
+{{ head("No access", ["account-space.css?v=3"], palette=False) }}
+</head>
+<body class="as-page">
+<main class="as-shell as-denied">
+  <a class="bn-brand" href="/"><span class="bn-mark"></span><span class="bn-word">{{ brand.name }}</span></a>
+  <div class="as-denied-card">
+    <span class="as-pre">This page is private</span>
+    <h1 class="as-denied-h">You don&rsquo;t have access to it.</h1>
+    <p>You are signed in as <b>{{ user.email }}</b>. If this is your account, ask your account manager to invite
+       this address, or sign in with the address they invited.</p>
+    <div class="as-empty-actions">
+      <a class="as-btn as-btn--ink" href="/logout">Sign in with another address</a>
+      {%- if not mine %}<a class="as-btn as-btn--line" href="/app">Go to your home</a>{% endif %}
+    </div>
+    {%- if mine %}
+    <div class="as-denied-mine">
+      <span class="as-fact-l">Your accounts</span>
+      {%- for a in mine %}
+      <a class="as-denied-a" href="/{{ a.slug }}">{{ a.name }} <span aria-hidden="true">&rarr;</span></a>
+      {%- endfor %}
+    </div>
+    {%- endif %}
+  </div>
+</main>
+</body>
+</html>

@@ -6,7 +6,10 @@
  */
 (function () {
   "use strict";
-  var API = "/api/dashboards/google-ads/ai";
+  /* A client's view of the account (/<account>/google-ads/ai-review, app.py) is read-only: its finished
+     reviews from the account's own endpoint, with no brief, no doc and no run button. */
+  var READONLY = document.body.hasAttribute("data-review-readonly");
+  var API = document.body.getAttribute("data-review-api") || "/api/dashboards/google-ads/ai";
   var DATA = JSON.parse(document.getElementById("gar-data").textContent || "{}");
   var STAGES = [["context", "Reading the account's notes in the Google Doc"],
                 ["pack", "Reading every campaign in the account"], ["targets", "Listing the targets in the notes"],
@@ -98,7 +101,7 @@
       list.appendChild(li);
     });
   }
-  function dirty() { return $("gar-brief").value.trim() !== (state.saved || "").trim(); }
+  function dirty() { var t = $("gar-brief"); return !!t && t.value.trim() !== (state.saved || "").trim(); }
 
   function saveBrief() {
     var text = $("gar-brief").value;
@@ -268,6 +271,16 @@
     if (!document.body.hasAttribute("data-acct-single")) {   // one client's page: its URL already names it
       try { history.replaceState(null, "", "?account=" + encodeURIComponent(account)); } catch (e) { /* not essential */ }
     }
+    if (READONLY) {
+      send(API + "/reviews?account=" + encodeURIComponent(account)).then(function (r) {
+        if (my !== state.seq) return;
+        state.reviews = r.ok ? r.reviews : [];
+        showList();
+        if (state.reviews[0]) openReview(state.reviews[0].id);
+        else { clear(box); box.appendChild(el("div", "gar-empty", "No review has been shared yet.")); }
+      });
+      return;
+    }
     $("gar-doc").textContent = "Reading the Google Doc…";
     Promise.all([send(API + "/brief?account=" + encodeURIComponent(account)),
                  send(API + "/reviews?account=" + encodeURIComponent(account)),
@@ -367,6 +380,7 @@
 
   function contextLine(R) {
     var c = R.context || {};
+    if (READONLY) return c.found || R.has_brief ? "Judged against the account's goals. " : "Judged on the account's own numbers. ";
     if (c.kind === "doc") {
       if (c.found) return "Judged against the account's notes in the Google Doc “" + (c.title || "") + "” (" + (c.where || []).join(", ") + "), as they read at the time. ";
       if (c.page_notes) return "The Google Doc had no part for this account: judged against the notes written on this page. ";
@@ -558,6 +572,7 @@
     if (dirty() && !window.confirm("The brief has unsaved changes. Leave them?")) { e.target.value = state.account; return; }
     loadAccount(e.target.value);
   });
+  if (READONLY) { if (state.account) loadAccount(state.account); return; }
   $("gar-save").addEventListener("click", saveBrief);
   $("gar-file").addEventListener("change", function (e) { upload(e.target.files[0]); });
   $("gar-template").addEventListener("click", function () {

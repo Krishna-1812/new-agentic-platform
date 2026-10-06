@@ -67,16 +67,21 @@
       <label class="gad-hero-pre" for="gad-account-select">Performance for</label>
       <div class="gad-switch">
         <h1 class="gad-h1" id="gad-account-title"{% if acct %} data-vt-name style="view-transition-name: acct-name"{% endif %}><span class="gad-ln"><span><span class="gad-mk">{{ acct.name if acct else "All accounts" }}</span></span></span></h1>
+        {%- set fixed = client_view and acct_count is defined and acct_count <= 1 %}
+        {%- if not fixed %}
         <span class="gad-switch-chev" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
         </span>
+        {%- endif %}
         {%- if acct %}
         {#- One client's page: the title switches CLIENT (the account picker, to the same page for
             another account), so the native list of Google Ads accounts stays out of sight. The page
             script still reads it. #}
         <select id="gad-account-select" class="gad-switch-select" aria-label="Account" hidden tabindex="-1"></select>
+        {%- if not fixed %}
         <button type="button" class="gad-switch-select" data-acct-picker data-acct-page="google-ads"
                 aria-haspopup="dialog" aria-expanded="false" aria-label="Performance for {{ acct.name }}. Switch account"></button>
+        {%- endif %}
         {%- else %}
         <select id="gad-account-select" class="gad-switch-select" aria-label="Account"></select>
         {%- endif %}
@@ -86,18 +91,22 @@
     <div class="gad-hero-foot">
       <p class="gad-hero-sub" id="gad-hero-sub">&nbsp;</p>
       <div class="gad-hero-actions">
-        <a class="gad-btn gad-btn--ghost" id="gad-ai-link" href="{{ '/' ~ acct.slug ~ '/google-ads/ai-review' if acct else '/dashboards/google-ads/ai-review' }}"{% if acct %} data-fixed{% endif %}>
+{%- if review_shared is not defined or review_shared %}
+                <a class="gad-btn gad-btn--ghost" id="gad-ai-link" href="{{ '/' ~ acct.slug ~ '/google-ads/ai-review' if acct else '/dashboards/google-ads/ai-review' }}"{% if acct %} data-fixed{% endif %}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3"/><path d="M12 18v3"/><path d="M3 12h3"/><path d="M18 12h3"/><path d="m6 6 2 2"/><path d="m16 16 2 2"/><path d="m18 6-2 2"/><path d="m8 16-2 2"/></svg>
           AI review
         </a>
+        {%- endif %}
         <button type="button" class="gad-btn gad-btn--ghost" data-gad-export>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
           Export CSV
         </button>
-        <button type="button" class="gad-btn gad-btn--acc" data-gad-refresh>
+{%- if not client_view %}
+                <button type="button" class="gad-btn gad-btn--acc" data-gad-refresh>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
           <span>Refresh</span>
         </button>
+        {%- endif %}
       </div>
     </div>
   </section>
@@ -652,7 +661,7 @@
     <div class="gad-more"><button type="button" class="gad-btn gad-btn--line" id="gai-lp-more" hidden>Show more</button></div>
     <p class="gad-note">Spend, clicks and conversions are for the dates shown, from Google Ads&rsquo; landing page report (account-level: it follows the dates and the account, not campaign filters). The mobile speed score and mobile-friendly clicks are Google&rsquo;s readings for the last 30 days. The speed score is Google&rsquo;s: &ldquo;a 10-point scale, 1 being very slow and 10 being extremely fast&rdquo;, based partly on how speed relates to conversion rate (Google, &ldquo;Speed matters when providing assistive experiences&rdquo;, 2018). The bands 1&ndash;3, 4&ndash;6 and 7&ndash;10 are this dashboard&rsquo;s. Mobile-friendly clicks is the share of mobile clicks that reached a mobile-friendly page; across pages it is weighted by clicks, so it is approximate.</p>
   </section>
-  {% elif insights %}
+  {% elif insights and not client_view %}
   <section class="gad-panel gai-setup bn-reveal" data-panel="insights-setup">
     <span class="gad-lbl">More data, ready to switch on</span>
     <h2 class="gad-h2">Impression share, budgets, search terms, Quality Score, devices, hours, locations, conversions, ads, change history, recommendations, audiences and landing pages</h2>
@@ -693,7 +702,7 @@
 
   {% endif %}
 
-  <p class="gad-foot">{{ brand.name }} &middot; Internal use only</p>
+  <p class="gad-foot">{{ brand.name }} &middot; {{ ("Prepared for " ~ acct.name) if client_view else "Internal use only" }}</p>
 </main>
 
 {% if ok %}
@@ -725,6 +734,7 @@
 {% endif %}
 
 {{ topbar_script() }}
+{% if not acct %}
 <script>
 /* The AI review opens on the account picked here (all accounts: the first one there). */
 (function () {
@@ -739,8 +749,9 @@
   sync();
 })();
 </script>
+{% endif %}
 {% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=9"></script>{% endif %}
-<script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=8"></script>
+<script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=9"></script>
 <script>
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */
 (function(){
