@@ -207,7 +207,7 @@ def test_insights_scoped_to_an_account_leave_every_other_account_out():
 def test_the_top_bar_names_the_account_or_all_accounts():
     c = _client()
     html = c.get("/dashboards/google-ads").get_data(as_text=True)
-    assert 'class="ap-pill" data-acct-picker data-acct-page="google-ads"' in html and ">General<" in html
+    assert 'class="ap-pill" data-acct-picker data-acct-page="google-ads"' in html and "&#39;s Workspace<" in html
     assert "account-picker.js" in html and 'type="speculationrules"' in html
     html = c.get("/lumina/google-ads").get_data(as_text=True)
     assert 'data-acct-current="lumina"' in html and "Lumina Smiles Dental</span>" in html
@@ -217,7 +217,7 @@ def test_the_top_bar_names_the_account_or_all_accounts():
 
 def test_the_hub_leads_with_the_switch_and_lists_every_account():
     html = _client().get("/hub").get_data(as_text=True)
-    assert 'class="as-switch" data-acct-picker' in html and ">General<" in html
+    assert 'class="as-switch" data-acct-picker' in html and "&#39;s Workspace<" in html
     assert html.count('class="as-card"') == 3 and 'href="/lumina" data-acct-card="lumina"' in html
     assert [a["slug"] for a in _json_script(html, "acct-data")["accounts"]] == \
         ["harbourline-realty", "lumina", "bloom-skin-clinic"]

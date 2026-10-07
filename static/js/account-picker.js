@@ -5,7 +5,7 @@
    bar, the hub's headline, an account's own title. Picking an account goes to
    /<account>/<page>, where <page> is the trigger's data-acct-page: the same
    page for the other account ("google-ads" on the Google Ads dashboard), or
-   the account's home (""). "General" (your own work, for no account: see
+   the account's home (""). Your own workspace ("Kris's Workspace": your own work, for no client: see
    docs/account-memory-plan.md) goes to the global page that mirrors it (data
    from the server: ACCT_GLOBAL in app.py).
 
@@ -159,19 +159,19 @@
     panel = el("div", "ap-panel");
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "true");
-    panel.setAttribute("aria-label", "Switch account");
+    panel.setAttribute("aria-label", "Switch workspace");
     var head = el("div", "ap-head");
     head.appendChild(svg(ICON_SEARCH, "ap-head-ic"));
     input = el("input", "ap-input");
     input.type = "text";
-    input.placeholder = "Find an account";
+    input.placeholder = "Find a workspace";
     input.autocomplete = "off";
     input.spellcheck = false;
     input.setAttribute("role", "combobox");
     input.setAttribute("aria-expanded", "true");
     input.setAttribute("aria-controls", "ap-list");
     input.setAttribute("aria-autocomplete", "list");
-    input.setAttribute("aria-label", "Find an account");
+    input.setAttribute("aria-label", "Find a workspace");
     head.appendChild(input);
     var close = el("button", "ap-esc", "esc");
     close.type = "button";
@@ -182,7 +182,7 @@
     list = el("div", "ap-list");
     list.id = "ap-list";
     list.setAttribute("role", "listbox");
-    list.setAttribute("aria-label", "Accounts");
+    list.setAttribute("aria-label", "Workspaces");
     var foot = el("div", "ap-foot");
     [["↑↓", "move"], ["↵", "open"], ["esc", "close"]].forEach(function (k) {
       var s = el("span");
@@ -221,7 +221,7 @@
     o.appendChild(avatar(a));
     var t = el("span", "ap-opt-t");
     var name = el("span", "ap-opt-name");
-    name.appendChild(marked(a ? a.name : "General", input.value.trim().toLowerCase()));
+    name.appendChild(marked(a ? a.name : ((DATA && DATA.me) || "Your Workspace"), input.value.trim().toLowerCase()));
     t.appendChild(name);
     if (sub) t.appendChild(el("span", "ap-opt-sub", sub));
     o.appendChild(t);
@@ -274,7 +274,7 @@
       rec.forEach(function (a) { seen[a.slug] = 1; list.appendChild(option(hrefFor(a, page), a, subline(a), figure(a))); });
     }
     var rest = accts.filter(function (a) { return !seen[a.slug] && matches(a, q); });
-    if (accts.length && (!q || rest.length)) group(q ? rest.length + (rest.length === 1 ? " match" : " matches") : "Accounts · " + accts.length);
+    if (accts.length && (!q || rest.length)) group(q ? rest.length + (rest.length === 1 ? " match" : " matches") : "Client workspaces · " + accts.length);
     rest.forEach(function (a) {
       var o = option(hrefFor(a, page), a, subline(a), figure(a));
       if (a.slug === cur) { o.classList.add("is-current"); o.setAttribute("aria-current", "page"); }
@@ -282,8 +282,8 @@
     });
     if (q && !rest.length) {
       var empty = el("div", "ap-empty");
-      empty.appendChild(el("b", "", "No account matches “" + input.value.trim() + "”"));
-      empty.appendChild(el("span", "", "Accounts come from Google Ads and the master doc's tabs."));
+      empty.appendChild(el("b", "", "No workspace matches “" + input.value.trim() + "”"));
+      empty.appendChild(el("span", "", "Client workspaces come from Google Ads and the master doc's tabs."));
       list.appendChild(empty);
     }
     if (DATA && DATA.error) list.appendChild(el("div", "ap-empty", DATA.error));

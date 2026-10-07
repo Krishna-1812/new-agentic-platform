@@ -135,6 +135,6 @@
 {% if accounts_nav %}<script id="acct-data" type="application/json">{{ accounts_nav|tojson }}</script>{% endif %}
 <script type="application/json" id="gar-data">{{ {"template": template, "configured": configured}|tojson }}</script>
 {{ topbar_script() }}
-<script defer src="{{ url_for('static', filename='js/google-ads-ai.js') }}?v=5"></script>
+<script defer src="{{ url_for('static', filename='js/google-ads-ai.js') }}?v=6"></script>
 </body>
 </html>

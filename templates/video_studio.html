@@ -139,13 +139,13 @@
     <div class="sa-sec-head">
       <span class="sa-idx">01</span>
       <div>
-        <span class="sa-lbl" data-sa-decode>{{ ("The team's videos for " ~ acct.name) if acct else "Your General videos" }}</span>
+        <span class="sa-lbl" data-sa-decode>{{ ("The team's videos for " ~ acct.name) if acct else "Your videos, in " ~ my_workspace_name() }}</span>
         <h2 class="sa-h2" id="vs-lib-t">Every video, <span class="sa-mk sa-mk--sm">every version.</span></h2>
       </div>
     </div>
     {%- if elsewhere %}
     {#- General is the viewer's own videos; the ones they made for client accounts live there. #}
-    <p class="ws-elsewhere"><span>Your videos for client accounts are in each account:</span>
+    <p class="ws-elsewhere"><span>Your videos for clients are in each client's workspace:</span>
       {%- for e in elsewhere[:4] %}
       <a href="{{ e.href }}">{{ e.name }} <small>{{ e.label }}</small></a>
       {%- endfor %}

@@ -79,7 +79,7 @@
     clear(ul);
     if (!d.people.length) {
       var empty = el("li", "sh-empty");
-      empty.appendChild(el("b", "", "Only your team can see this account."));
+      empty.appendChild(el("b", "", "Only your team can see this workspace."));
       empty.appendChild(el("span", "", can ? "Invite someone from the client to give them their own view." :
                                               "An admin can invite the client."));
       ul.appendChild(empty);

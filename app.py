@@ -6182,6 +6182,21 @@ def _acct_cards(accounts, client=False):
     return out
 
 
+def my_workspace_name(user=None):
+    """The viewer's own workspace (their own work, for no client): "Kris's Workspace", by their first name
+    from Google, else their address's name part. Client accounts are workspaces too: "AA_New Workspace"
+    is the client's (docs/account-memory-plan.md)."""
+    u = user if user is not None else (_get_user() or {})
+    first = (u.get("given_name") or (u.get("name") or "").strip().split(" ")[0]).strip()
+    if not first:
+        local = (u.get("email") or "").split("@")[0].replace(".", " ").replace("_", " ").replace("-", " ").split()
+        first = local[0].title() if local else ""
+    return "%s's Workspace" % first if first else "Your Workspace"
+
+
+app.add_template_global(my_workspace_name, "my_workspace_name")
+
+
 def _acct_payload(listing, email=None):
     """The picker's data. Staff: every account (hidden ones aside) and where "All accounts" leads from
     each page. A client: the accounts they were invited to, and nothing else."""
@@ -6189,7 +6204,7 @@ def _acct_payload(listing, email=None):
         cards = _acct_cards(_acct_mine(email, listing), client=True)
         return {"ok": True, "client": True, "accounts": cards, "global": {}}
     cards = _acct_cards([a for a in listing["accounts"] if not a["hidden"]])
-    return {"ok": True, "accounts": cards, "global": ACCT_GLOBAL, "as_of": max((c.get("to") or "" for c in cards),
+    return {"ok": True, "accounts": cards, "global": ACCT_GLOBAL, "me": my_workspace_name(), "as_of": max((c.get("to") or "" for c in cards),
                                                                                  default="")}
 
 
@@ -6928,7 +6943,7 @@ def seo_runs_save():
         app.logger.exception("seo runs: the run could not be saved")
         return jsonify(ok=False, error="The run could not be saved."), 503
     page = ("/%s/seo-aeo/runs/%d" % (acct["slug"], rid)) if acct else "/seo-aeo/runs/%d" % rid
-    return jsonify(ok=True, id=rid, page=page, where=(acct["name"] if acct else "General")), 201
+    return jsonify(ok=True, id=rid, page=page, where=(acct["name"] + " Workspace" if acct else my_workspace_name())), 201
 
 
 def _seo_run_page(r, acct=None):

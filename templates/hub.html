@@ -13,7 +13,7 @@
 <div class="hb-shell">
 
   {# The headline is the account switch, the same one the Google Ads dashboard
-     has: "General" here (your own work, for no account), an account's name on
+     has: your own workspace here ("Kris's Workspace": your own work, for no client), a client's name on
      its own page. Picking one goes to /<account>, where every dashboard and
      agent follows it and everything run is saved to it. The name
      carries across (view-transition-name), so the row you pick becomes the
@@ -23,16 +23,16 @@
     <span class="as-pre" aria-hidden="true">Working on</span>
     <h1 class="as-title">
       <button type="button" class="as-switch" data-acct-picker data-acct-page=""
-              aria-haspopup="dialog" aria-expanded="false" aria-label="Working on General, your own work. Switch account">
-        <span class="as-mk" data-vt-name style="view-transition-name: acct-name">General</span>
+              aria-haspopup="dialog" aria-expanded="false" aria-label="Working on {{ my_workspace_name() }}, your own work. Switch workspace">
+        <span class="as-mk" data-vt-name style="view-transition-name: acct-name">{{ my_workspace_name() }}</span>
         <span class="as-chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
       </button>
     </h1>
     <p class="hb-sub as-sub">
       {%- if accounts and accounts.accounts %}
-      Your own work, which only you see. Pick one of <b>{{ accounts.accounts|length }} client accounts</b> and every dashboard and agent follows it; what you run there is saved to it, for the whole team.
+      Your own workspace, which only you see. Pick one of <b>{{ accounts.accounts|length }} client workspaces</b> and every dashboard and agent follows it; what you run there is saved to it, for the whole team.
       {%- else %}
-      Your own work, which only you see. Pick a client account and every dashboard and agent follows it; what you run there is saved to it, for the whole team.
+      Your own workspace, which only you see. Pick a client workspace and every dashboard and agent follows it; what you run there is saved to it, for the whole team.
       {%- endif %}
     </p>
   </div>

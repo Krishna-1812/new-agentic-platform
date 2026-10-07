@@ -268,8 +268,12 @@ def test_a_signed_in_persons_name_is_kept_once_a_session():
     assert people_store.display("sam.k@x.com", {}) == "Sam", "no name stored: the address's name part"
 
 
-def test_the_picker_calls_your_own_work_general():
+def test_the_picker_calls_your_own_work_your_workspace():
     html = _client(ANA).get("/strategic-agents/page-watch").get_data(as_text=True)
-    assert '<span class="ap-pill-t">General</span>' in html
+    assert '<span class="ap-pill-t">Ana&#39;s Workspace</span>' in html
     js = open("static/js/account-picker.js", encoding="utf-8").read()
-    assert '"General"' in js and "Only you see it" in js
+    assert "DATA.me" in js and "Only you see it" in js and '"General"' not in js
+    assert appmod.my_workspace_name({"name": "Kris Ladha"}) == "Kris's Workspace"
+    assert appmod.my_workspace_name({"given_name": "Krishna", "name": "Krishna L"}) == "Krishna's Workspace"
+    assert appmod.my_workspace_name({"email": "sam.k@x.com"}) == "Sam's Workspace"
+    assert appmod.my_workspace_name({}) == "Your Workspace"

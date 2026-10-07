@@ -471,7 +471,7 @@
         <div class="evi-card" id="eviHistoryCard">
           <div class="evi-card-pad">
             <div class="evi-sec">
-              <h3>{{ ("The team's runs for " ~ acct_ctx.name) if acct_ctx else "Your General runs" }}</h3>
+              <h3>{{ ("The team's runs for " ~ acct_ctx.name) if acct_ctx else "Your runs, in " ~ my_workspace_name() }}</h3>
               <div class="evi-runs" id="runsList">
                 {% if runs %}
                   {% for r in runs %}

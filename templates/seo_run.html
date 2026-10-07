@@ -11,7 +11,7 @@
 {{ topbar([("SEO + AEO", "/" ~ acct.slug if acct else "/seo-aeo"), (tool_name, none)]) }}
 <main class="as-shell sr-shell">
   <section class="sr-head" aria-labelledby="sr-title">
-    <span class="as-pre">{{ tool_name }}{% if acct %} &middot; for {{ acct.name }}{% else %} &middot; General, only you see it{% endif %}</span>
+    <span class="as-pre">{{ tool_name }}{% if acct %} &middot; for {{ acct.name }}{% else %} &middot; {{ my_workspace_name() }}, only you see it{% endif %}</span>
     <h1 class="sr-title" id="sr-title">{{ r.title }}</h1>
     <p class="sr-meta">
       <span class="as-ev-av" aria-hidden="true">{{ (r.by or "?")[:1] }}</span>

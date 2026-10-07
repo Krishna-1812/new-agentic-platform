@@ -106,7 +106,7 @@ def test_each_page_a_client_opens_is_recorded_and_staff_are_not(seeded):
 def test_sharing_an_account_gives_it_a_card_in_client_usage(seeded):
     admin = T._client(KRIS)
     html = admin.get("/admin/client-usage").get_data(as_text=True)
-    assert "Shared client accounts" in html and 'href="/admin/client-usage/accounts/lumina"' not in html
+    assert "Shared client workspaces" in html and 'href="/admin/client-usage/accounts/lumina"' not in html
     _api(admin, "", {"who": T.CLIENT})
     _api(admin, "/share", {"shares": {"tool:page-watch": True, "tool:local-business-radar": True}})
     T._client(T.CLIENT).get("/lumina")
