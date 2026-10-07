@@ -5805,6 +5805,50 @@ def _acct_client_keys(email):
     return cache[email]
 
 
+# ── A client stays inside their account ──────────────────────────────────────
+# An invited client signs in with Google like anyone else. Without this, taking the account's name off
+# the address (or following a bookmark) would land them on the agency's own pages: those staff-only
+# pages already turn them away, to the public /app. Instead, every page outside their account sends them
+# back to it (their first account, if they have several): "/" already does, and so do these.
+CLIENT_FENCE = ("/hub", "/app", "/dashboards", "/strategic-agents", "/seo-aeo", "/admin", "/page-watch",
+                "/video-studio", "/b2b-agents")
+
+
+@app.before_request
+def _acct_client_fence():
+    if request.method != "GET" or request.headers.get("X-Account"):
+        return None
+    path = request.path.rstrip("/") or "/"
+    if not any(path == p or path.startswith(p + "/") for p in CLIENT_FENCE):
+        return None
+    user = _get_user()
+    email = (user or {}).get("email", "")
+    if not email or _is_staff(email) or not _acct_client_keys(email):
+        return None
+    return redirect(_acct_landing(email))
+
+
+@app.after_request
+def _acct_client_fence_after(resp):
+    """Any other staff page turns a signed-in outsider away to /app; a client goes to their account."""
+    if resp.status_code in (301, 302, 303, 307, 308) and request.method == "GET" and not request.headers.get("X-Account"):
+        loc = (resp.headers.get("Location") or "").split("?")[0]
+        if loc.endswith("/app") and not request.path.startswith("/" + "app"):
+            user = _get_user()
+            email = (user or {}).get("email", "")
+            if email and not _is_staff(email) and _acct_client_keys(email):
+                resp.headers["Location"] = _acct_landing(email)
+    return resp
+
+
+def _acct_record_visit(acct, email, page):
+    """A client opened one of the account's pages (for Client Usage)."""
+    try:
+        client_accounts_store.record(acct["key"], email, "visit", tool=page, path=request.path)
+    except Exception:
+        app.logger.exception("client accounts: visit not recorded")
+
+
 def _acct_shares(acct):
     """What this account shows its clients ({share: on}, defaults filled in)."""
     from flask import has_app_context
@@ -5815,8 +5859,41 @@ def _acct_shares(acct):
         except Exception:
             app.logger.exception("client accounts: shares unreadable")
             stored = {}
-        cache[acct["key"]] = client_access.shared(stored)
+        cache[acct["key"]] = dict(client_access.shared(stored, [t["slug"] for t in _acct_tool_catalog()]),
+                                  **{client_access.RUN_LIMIT: client_access.run_limit(stored)})
     return cache[acct["key"]]
+
+
+# The tools an account can share with its clients, in the order the Share panel lists them:
+# [{"slug", "label", "about", "group"}]. Page Watch and Video Studio, the agents, the SEO & AEO tools.
+ACCT_TOOL_GROUPS = (("watch", "Page Watch & Video Studio"), ("agents", "Agents"), ("seo", "SEO & AEO"))
+
+
+def _acct_tool_catalog():
+    tools = [{"slug": "page-watch", "label": "Page Watch", "about": "Watches pages and says what changed", "group": "watch"},
+             {"slug": "video-studio", "label": "Video Studio", "about": "Short brand videos, planned and made by AI",
+              "group": "watch"}]
+    tools += [{"slug": slug, "label": label, "about": about, "group": "agents"}
+              for slug, _, _, label, about, _ in ACCT_AGENTS]
+    seo = {t["slug"]: t for t in _seo_tools()}
+    tools += [{"slug": slug, "label": seo[slug]["name"], "about": seo[slug]["desc"], "group": "seo"}
+              for slug, _ in ACCT_SEO if slug in seo]
+    for t in tools:
+        t["colour"] = ACCT_TOOL_COLOURS.get(t["slug"], "#FF6022")
+    return tools
+
+
+# Each tool's colour, as its Run for card has it (static/css/account-space.css, .rx-ag--<slug>).
+ACCT_TOOL_COLOURS = {
+    "page-watch": "#8CCBFF", "video-studio": "#FF6022", "social-media-intelligence": "#8CCBFF",
+    "local-business-radar": "#FF6022", "event-conference-intelligence": "#FFB500",
+    "company-people-intelligence": "#121213", "thought-leader-pr": "#FF3B30", "seo-geo-audit": "#34D399",
+    "on-page-audit": "#8CCBFF", "agent-readiness-audit": "#B79CFF", "seo-geo-snapshot": "#2DD4BF",
+    "image-alt-audit": "#FF6022", "keyword-research": "#FFB500", "content-research": "#FF3B30",
+    "content-architect": "#121213", "market-potential": "#C6F432"}
+
+
+
 
 
 def _acct_is_client(email):
@@ -5881,6 +5958,8 @@ def _acct_view(page, api=False, staff_only=False):
                 mine = _acct_mine(email, listing)
                 return render_template("account_denied.html", user=user, mine=mine[:6]), 403
             g.acct, g.acct_page = acct, page
+            if not api and request.method == "GET" and not _is_staff(email):
+                _acct_record_visit(acct, email, page)
             return f(acct, *args, **kwargs)
         return inner
     return deco
@@ -6016,7 +6095,8 @@ def account_home(acct):
         template=client_profile.template(acct["name"], acct["slug"], acct["customer_ids"], p),
         doc_url=None if client else listing["doc_url"], doc_error=None if client else listing["doc_error"],
         doc_read=listing["doc_read"], accounts=_acct_nav(), tools=tools, runs=runs, history=history,
-        shares_history=shares.get("history"), history_limit=_acct_history_limit())
+        shares_history=bool(client_access.tools_on(shares)), history_limit=_acct_history_limit(),
+        tool_catalog=None if client else _acct_tool_catalog())
 
 
 def _acct_history(acct):
@@ -6040,17 +6120,21 @@ def _acct_history_limit():
 
 
 def _acct_client_history(acct, shares):
-    """The account's History as its client sees it, when the account shares it ("history"): finished
-    work, no names, no links into the agency's tools (account_history.for_client)."""
+    """The account's History as its client sees it: the finished work of the tools the account shares
+    with them (and its AI reviews, when it shares the AI review), no names, no links into the agency's
+    tools (account_history.for_client). None when it shares neither."""
     from tracker import account_history
-    if not shares.get("history"):
+    tools = client_access.tools_on(shares)
+    review = bool(acct["ads_names"]) and shares["ai-review"]
+    if not tools and not review:
         return None
     try:
-        rows = account_history.entries(acct, library=_acct_library(acct))
+        extra = _cpi_history_rows(acct) if "company-people-intelligence" in tools else ()
+        rows = account_history.entries(acct, library=_acct_library(acct), extra=extra)
     except Exception:
         app.logger.exception("client accounts: history unreadable")
         rows = []
-    rows = account_history.for_client(rows, acct["slug"], review_shared=bool(acct["ads_names"]) and shares["ai-review"])
+    rows = account_history.for_client(rows, acct["slug"], tools=tools, review_shared=review)
     return {"rows": rows, "filter": account_history.summary(rows)}
 
 
@@ -6092,7 +6176,15 @@ def _acct_access_out(acct):
     except Exception:
         app.logger.exception("client accounts: access unreadable")
         return {"ok": False, "error": "Who can see this account could not be read just now."}
-    out = client_access.view(entries, _acct_shares(acct), audit)
+    shares = _acct_shares(acct)
+    try:
+        used = client_accounts_store.runs_this_month(acct["key"])
+    except Exception:
+        app.logger.exception("client accounts: runs unreadable")
+        used = 0
+    out = client_access.view(entries, shares, audit, tools=_acct_tool_catalog(),
+                             limit=shares[client_access.RUN_LIMIT], used=used)
+    out["groups"] = [{"key": k, "label": label} for k, label in ACCT_TOOL_GROUPS]
     out.update(ok=True, link=_gads_digest_base_url() + "/" + acct["slug"], name=acct["name"],
                can_change=(_get_user() or {}).get("email", "").lower() in ADMIN_EMAILS)
     for a in out["audit"]:
@@ -6141,10 +6233,34 @@ def account_access_share(acct):
     if bad:
         return bad
     p = request.get_json(silent=True) or {}
-    share = str(p.get("share") or "")
-    if share not in client_access.SHARE_KEYS:
+    known = set(client_access.SHARE_KEYS) | {client_access.tool_key(t["slug"]) for t in _acct_tool_catalog()}
+    # One share ({"share", "on"}), or several at once ({"shares": {share: on}}: a group's All / None).
+    changes = p.get("shares") if isinstance(p.get("shares"), dict) else {str(p.get("share") or ""): p.get("on")}
+    if not changes or any(k not in known for k in changes):
         return jsonify({"ok": False, "error": "No such part of the account."}), 400
-    client_accounts_store.set_share(acct["key"], share, bool(p.get("on")), (_get_user() or {}).get("email", "").lower())
+    actor = (_get_user() or {}).get("email", "").lower()
+    current = _acct_shares(acct)
+    for share, on in changes.items():
+        if bool(current.get(share)) != bool(on):
+            client_accounts_store.set_share(acct["key"], share, bool(on), actor)
+    g.pop("_acct_shares", None)
+    return jsonify(_acct_access_out(acct))
+
+
+@app.route("/<acct:slug>/api/access/limit", methods=["POST"])
+@_acct_view("", api=True, staff_only=True)
+def account_access_limit(acct):
+    """How many runs the account's clients may start each month."""
+    bad = _acct_admin_guard()
+    if bad:
+        return bad
+    try:
+        n = int((request.get_json(silent=True) or {}).get("limit"))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "Type a number of runs."}), 400
+    if not 0 <= n <= client_access.RUN_LIMIT_MAX:
+        return jsonify({"ok": False, "error": "Pick between 0 and %d runs a month." % client_access.RUN_LIMIT_MAX}), 400
+    client_accounts_store.set_setting(acct["key"], client_access.RUN_LIMIT, n, (_get_user() or {}).get("email", "").lower())
     g.pop("_acct_shares", None)
     return jsonify(_acct_access_out(acct))
 
@@ -9718,13 +9834,111 @@ def _fetch_all_client_summaries(force=False):
     return out
 
 
+# ── Client Usage: the client accounts shared with their clients ─────────────
+# Every account an admin has invited someone to, or changed what it shares, gets a card here on its own
+# (client_accounts_store.shared_keys): who it is shared with, which pages and tools, how much its people
+# use it (each page they open, each run they start: client_account_events) and every change, by whom.
+def _cu_account(acct, key=None, events_limit=500):
+    from datetime import datetime, timedelta, timezone
+    from tracker import people_store
+    key = key or acct["key"]
+    people = client_accounts_store.access(key)
+    shares = _acct_shares(acct)
+    catalog = _acct_tool_catalog()
+    ev = client_accounts_store.events(key, limit=events_limit)
+    since = datetime.now(timezone.utc) - timedelta(days=30)
+    visits = [e for e in ev if e["kind"] == "visit"]
+    recent = [e for e in visits if e["at"] >= since]
+    names = people_store.names([e["email"] for e in ev] + [a["actor"] for a in client_accounts_store.audit(key, limit=50)])
+    by_person = {}
+    for e in ev:
+        p = by_person.setdefault(e["email"], {"email": e["email"], "name": people_store.display(e["email"], names),
+                                              "visits": 0, "runs": 0, "last": None})
+        p["visits" if e["kind"] == "visit" else "runs"] += 1
+        p["last"] = max(p["last"] or e["at"], e["at"])
+    audit = client_accounts_store.audit(key, limit=50)
+    out = {
+        "slug": acct["slug"], "name": acct["name"], "key": key,
+        "avatar": client_accounts.avatar(acct["name"], acct["profile"].get("colours")),
+        "people": [dict(p, kind="domain" if p["who"].startswith("@") else "email") for p in people],
+        "pages": [label for k, label, _, _ in client_access.SHARES if shares.get(k)],
+        "tools": [t for t in catalog if shares.get(client_access.tool_key(t["slug"]))],
+        "tools_total": len(catalog),
+        "visits_30": len(recent), "visitors_30": len({e["email"] for e in recent}),
+        "runs": client_accounts_store.runs_this_month(key), "limit": shares[client_access.RUN_LIMIT],
+        "last_visit": visits[0]["at"] if visits else None,
+        "audit": audit, "events": ev,
+        "by_person": sorted(by_person.values(), key=lambda p: p["last"], reverse=True),
+        "actor_names": names,
+    }
+    labels = {t["slug"]: t["label"] for t in catalog}
+    for a in audit:
+        a["text"] = _cu_change_text(a, names, labels)
+    out["last_change"] = audit[0] if audit else None
+    return out
+
+
+def _cu_change_text(a, names, tools):
+    """An audit row as a sentence: "Kris Ladha shared Page Watch"."""
+    from tracker import people_store
+    pages = {k: label for k, label, _, _ in client_access.SHARES}
+    who = people_store.display(a["actor"], names) if a.get("actor") else "Someone"
+    detail = a.get("detail") or ""
+    thing = pages.get(detail) or tools.get(detail[len(client_access.TOOL_PREFIX):] if
+                                           detail.startswith(client_access.TOOL_PREFIX) else "", detail)
+    if a["action"] == "set":
+        return "%s set the runs a month to %s" % (who, detail.split("=", 1)[-1])
+    verb = {"invited": "invited", "removed": "removed", "shared": "shared", "unshared": "stopped sharing"}
+    return "%s %s %s" % (who, verb.get(a["action"], a["action"]), thing)
+
+
+def _cu_shared_accounts():
+    """The Client Usage cards for shared accounts, the latest change first."""
+    try:
+        changed = client_accounts_store.shared_keys()
+        by_key = {a["key"]: a for a in _acct_listing()["accounts"]}
+    except Exception:
+        app.logger.exception("client usage: shared accounts unreadable")
+        return []
+    out = []
+    for key, at in sorted(changed.items(), key=lambda kv: kv[1], reverse=True):
+        acct = by_key.get(key)
+        if acct is None:
+            continue
+        try:
+            out.append(_cu_account(acct, events_limit=500))
+        except Exception:
+            app.logger.exception("client usage: %s unreadable", key)
+    return out
+
+
 @app.route("/admin/client-usage")
 @admin_required
 def admin_client_usage():
-    """Landing page: one card per client portal we run."""
+    """Landing page: a card per client account shared with its client, then one per portal we run."""
     force = request.args.get("fresh") in ("1", "true", "yes")
     clients = _fetch_all_client_summaries(force=force)
-    return render_template("admin_client_usage.html", user=_get_user(), clients=clients)
+    return render_template("admin_client_usage.html", user=_get_user(), clients=clients,
+                           shared=_cu_shared_accounts(), nice_day=client_accounts.nice_day)
+
+
+@app.route("/admin/client-usage/accounts/<slug>")
+@admin_required
+def admin_client_account(slug):
+    """One shared client account: who it is shared with, what, how they use it, every change."""
+    acct = _acct_listing()["by_slug"].get(slug)
+    if acct is None:
+        abort(404)
+    from tracker import people_store
+    data = _cu_account(acct, events_limit=1000)
+    tools = {t["slug"]: t["label"] for t in _acct_tool_catalog()}
+    pages = dict(ACCT_PAGES)
+    for e in data["events"]:
+        t = e["tool"] or ""
+        e["where"] = "the home page" if t == "" else (tools.get(t.split("/", 1)[-1]) or pages.get(t) or t)
+        e["who"] = people_store.display(e["email"], data["actor_names"])
+    return render_template("admin_client_account.html", user=_get_user(), a=data, tool_labels=tools,
+                           nice_day=client_accounts.nice_day)
 
 
 @app.route("/admin/client-usage/<client_slug>")

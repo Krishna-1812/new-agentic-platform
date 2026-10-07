@@ -12,7 +12,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head(acct.name, ["account-space.css?v=15"]) }}
+{{ head(acct.name, ["account-space.css?v=17"]) }}
 </head>
 <body class="as-page">
 
@@ -236,6 +236,10 @@
   <svg viewBox="0 0 24 24"><rect class="rx-hub" x="9" y="3" width="6" height="5" rx="1.5"/><rect x="2.5" y="16" width="6" height="5" rx="1.5"/><rect x="15.5" y="16" width="6" height="5" rx="1.5"/><path d="M12 8v4M5.5 16v-2h13v2"/></svg>
   {%- elif slug == "market-potential" -%}
   <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 17v-4M11 17V9M16 17v-7M21 17V5"/><path class="rx-trend" d="m3 11 6-5 4 3 7-6"/></svg>
+  {%- elif slug == "page-watch" -%}
+  <svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+  {%- elif slug == "video-studio" -%}
+  <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg>
   {%- else -%}
   <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
   {%- endif -%}
@@ -276,7 +280,7 @@
     </div>
     <ul class="rx-agents" role="list">
       {%- for t in runs.agents %}
-      <li class="rx-cell" style="--i: {{ loop.index0 }}">{{ run_card(t, loop.index) }}</li>
+      <li class="rx-cell">{{ run_card(t, loop.index) }}</li>
       {%- endfor %}
     </ul>
 
@@ -286,7 +290,7 @@
     </div>
     <ul class="rx-tools" role="list">
       {%- for t in runs.seo %}
-      <li class="rx-cell" style="--i: {{ loop.index0 + runs.agents|length }}">{{ run_card(t, loop.index, "rx-ag--tool") }}</li>
+      <li class="rx-cell">{{ run_card(t, loop.index, "rx-ag--tool") }}</li>
       {%- endfor %}
     </ul>
   </section>
@@ -306,13 +310,13 @@
     {%- if client_view %}
     <p class="as-runs-sub">The work {{ brand.name }} has finished for {{ acct.name }}, newest first.</p>
     {%- else %}
-    <p class="as-runs-sub">Everything the team has done for {{ acct.name }}, newest first, with who did it. Everyone at {{ brand.name }} sees it; the client {{ "sees the finished work, without names" if shares_history else "does not" }}.</p>
+    <p class="as-runs-sub">Everything the team has done for {{ acct.name }}, newest first, with who did it. Everyone at {{ brand.name }} sees it; the client {{ "sees the finished work of the tools shared with them, without names" if shares_history else "does not" }}.</p>
     {%- endif %}
     {%- if history.rows %}
     {#- The mix: what the work has been, by tool, as one bar; and who has worked on the account. #}
     <div class="hx-sum">
       <div class="hx-mix" role="img" aria-label="{% for t in history.filter.tools %}{{ t.label }} {{ t.n }}{% if not loop.last %}, {% endif %}{% endfor %}">
-        {%- for t in history.filter.tools %}<span class="hx-seg hx-seg--{{ t.key }}" style="--n: {{ t.n }}; --i: {{ loop.index0 }}"></span>{% endfor %}
+        {%- for t in history.filter.tools %}<span class="hx-seg hx-seg--{{ t.key }}" style="--n: {{ t.n }}"></span>{% endfor %}
       </div>
       {%- if not client_view and history.filter.people %}
       <div class="hx-team">
@@ -488,37 +492,71 @@
 <dialog class="sh-dlg" id="sh-dlg" aria-labelledby="sh-h" data-slug="{{ acct.slug }}">
  <div class="sh-in">
   <div class="sh-head">
-    <div>
-      <span class="sh-kicker">Share</span>
+    <span class="sh-badge" aria-hidden="true" style="--av-bg:{{ card.avatar.bg }};--av-fg:{{ card.avatar.fg }}">{{ card.avatar.initials }}</span>
+    <div class="sh-head-t">
+      <span class="sh-kicker">Share with the client</span>
       <h2 class="sh-h" id="sh-h">{{ acct.name }}</h2>
     </div>
     <button type="button" class="sh-x" data-share-close aria-label="Close">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
     </button>
   </div>
-  <p class="sh-sub">People you add sign in with Google as that address and see this account only: no other
-    account, nothing internal. Nothing is emailed; send them the link.</p>
-  <form class="sh-add" id="sh-add" autocomplete="off">
-    <label class="sh-sr" for="sh-who">Email address or company domain</label>
-    <input id="sh-who" class="sh-input" type="text" inputmode="email" spellcheck="false"
-           placeholder="name@company.com or @company.com">
-    <button type="submit" class="as-btn as-btn--ink sh-invite">Invite</button>
-  </form>
-  <p class="sh-msg" id="sh-msg" role="status" aria-live="polite"></p>
-  <ul class="sh-people" id="sh-people" aria-label="People who can see this account"></ul>
-  <div class="sh-sec">What they see</div>
-  <ul class="sh-shares" id="sh-shares"></ul>
-  <div class="sh-link">
-    <span class="sh-link-u" id="sh-link"></span>
-    <button type="button" class="as-btn as-btn--line sh-copy" id="sh-copy"><span>Copy link</span></button>
-  </div>
+
+  <section class="sh-card" aria-labelledby="sh-people-h">
+    <div class="sh-card-h"><h3 id="sh-people-h">People</h3><span class="sh-count" id="sh-people-n"></span></div>
+    <p class="sh-sub">They sign in with Google as that address and see this account only: no other account, nothing
+      internal. Nothing is emailed; send them the link below.</p>
+    <form class="sh-add" id="sh-add" autocomplete="off">
+      <label class="sh-sr" for="sh-who">Email address or company domain</label>
+      <input id="sh-who" class="sh-input" type="text" inputmode="email" spellcheck="false"
+             placeholder="name@company.com or @company.com">
+      <button type="submit" class="as-btn as-btn--ink sh-invite">Invite</button>
+    </form>
+    <p class="sh-msg" id="sh-msg" role="status" aria-live="polite"></p>
+    <ul class="sh-people" id="sh-people" aria-label="People who can see this account"></ul>
+    <div class="sh-link">
+      <svg class="sh-link-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+      <span class="sh-link-u" id="sh-link"></span>
+      <button type="button" class="as-btn as-btn--line sh-copy" id="sh-copy"><span>Copy link</span></button>
+    </div>
+  </section>
+
+  <section class="sh-card" aria-labelledby="sh-pages-h">
+    <div class="sh-card-h"><h3 id="sh-pages-h">Pages they see</h3></div>
+    <ul class="sh-shares" id="sh-shares"></ul>
+  </section>
+
+  <section class="sh-card sh-card--tools" aria-labelledby="sh-tools-h">
+    <div class="sh-card-h"><h3 id="sh-tools-h">Agents &amp; tools they can use</h3><span class="sh-count" id="sh-tools-n"></span></div>
+    <p class="sh-sub">Each one ticked opens inside their account, ready to run, and what it finds joins the History
+      they see. Anything not ticked, and its history, stays hidden from them.</p>
+    <div id="sh-tools"></div>
+  </section>
+
+  <section class="sh-card sh-limit" aria-labelledby="sh-limit-h">
+    <div class="sh-limit-row">
+      <div class="sh-limit-t">
+        <h3 id="sh-limit-h">Runs a month</h3>
+        <p class="sh-sub">Every run they start counts. When it is reached, they are asked to contact you.</p>
+      </div>
+      <div class="sh-step" role="group" aria-label="Runs a month">
+        <button type="button" class="sh-step-b" id="sh-limit-dn" aria-label="Fewer runs">&minus;</button>
+        <input class="sh-step-v" id="sh-limit" type="number" inputmode="numeric" min="0" aria-label="Runs a month">
+        <button type="button" class="sh-step-b" id="sh-limit-up" aria-label="More runs">+</button>
+      </div>
+    </div>
+    <div class="sh-meter" aria-hidden="true"><i id="sh-meter"></i></div>
+    <p class="sh-used" id="sh-used"></p>
+  </section>
+
   <details class="sh-log" id="sh-log-box" hidden>
-    <summary>History</summary>
+    <summary>Activity</summary>
     <ol class="sh-log-l" id="sh-log"></ol>
   </details>
  </div>
+ <template id="sh-icons">{% for t in tool_catalog or [] %}<span data-icon="{{ t.slug }}">{{ run_icon(t.slug) }}</span>{% endfor %}</template>
 </dialog>
-<script defer src="{{ url_for('static', filename='js/account-share.js') }}?v=1"></script>
+<script defer src="{{ url_for('static', filename='js/account-share.js') }}?v=3"></script>
 {%- endif %}
 
 <script id="acct-data" type="application/json">{{ accounts|tojson }}</script>

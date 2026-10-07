@@ -1,0 +1,112 @@
+{% from "_bento.html" import head, topbar, topbar_script with context %}
+<!DOCTYPE html>
+<html lang="en">
+{#- Client Usage for one client account shared with its client (app.py admin_client_account): who it is
+    shared with, which pages and tools, how its people use it, and every change, by whom. Admins only. -#}
+<head>
+{{ head("Client Usage · " ~ a.name, ["admin.css?v=7", "admin_client_accounts.css?v=1"], compat=True) }}
+</head>
+<body>
+{{ topbar([("Admin", "/admin/internal-usage"), ("Client Usage", "/admin/client-usage"), (a.name, none)]) }}
+<div class="main ca-page">
+  <header class="ca-hero">
+    <span class="ca-av ca-av--xl" style="--av-bg:{{ a.avatar.bg }};--av-fg:{{ a.avatar.fg }}">{{ a.avatar.initials }}</span>
+    <div class="ca-hero-t">
+      <span class="eyebrow">Client Usage &middot; shared account</span>
+      <h1>{{ a.name }}</h1>
+      <p>{% if a.people %}Shared with {{ a.people|length }} {{ "person" if a.people|length == 1 else "people" }}{% else %}Nobody invited yet{% endif %}
+        &middot; {{ a.tools|length }} of {{ a.tools_total }} tools &middot; {{ a.runs }} of {{ a.limit }} runs used this month</p>
+    </div>
+    <a class="ca-btn" href="/{{ a.slug }}">Open the account <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+  </header>
+
+  <div class="ca-kpis">
+    <div class="ca-kpi ca-kpi--a"><small>Visits, 30 days</small><b>{{ a.visits_30 }}</b></div>
+    <div class="ca-kpi ca-kpi--b"><small>People active, 30 days</small><b>{{ a.visitors_30 }}</b></div>
+    <div class="ca-kpi ca-kpi--c"><small>Runs this month</small><b>{{ a.runs }}<em>/{{ a.limit }}</em></b>
+      <span class="ca-meter"><i style="width: {{ [100, (100 * a.runs / a.limit)|round|int]|min if a.limit else (100 if a.runs else 0) }}%"></i></span></div>
+    <div class="ca-kpi ca-kpi--d"><small>Last visit</small><b class="ca-kpi-d">{{ nice_day(a.last_visit) or "Not yet" }}</b></div>
+  </div>
+
+  <div class="ca-cols">
+    <section class="ca-box" aria-labelledby="ca-people-h">
+      <h2 id="ca-people-h">People</h2>
+      {%- if a.people %}
+      <ul class="ca-people">
+        {%- for p in a.people %}
+        {%- set use = (a.by_person | selectattr("email", "equalto", p.who) | list) %}
+        <li>
+          <span class="ca-pav{% if p.kind == 'domain' %} is-domain{% endif %}">{{ "@" if p.kind == "domain" else p.who[:1]|upper }}</span>
+          <span class="ca-pt"><b>{{ "Everyone at " ~ p.who[1:] if p.kind == "domain" else p.who }}</b>
+            <small>Added{% if p.added_by %} by {{ p.added_by }}{% endif %} &middot; {{ nice_day(p.created_at) }}</small></span>
+          <span class="ca-pu">{% if use %}{{ use[0].visits }} visit{{ "" if use[0].visits == 1 else "s" }}{% if use[0].runs %} &middot; {{ use[0].runs }} run{{ "" if use[0].runs == 1 else "s" }}{% endif %}{% elif p.kind == "domain" %}See who below{% else %}Not opened yet{% endif %}</span>
+        </li>
+        {%- endfor %}
+      </ul>
+      {%- else %}
+      <p class="ca-none">Nobody is invited. Open the account and press Share.</p>
+      {%- endif %}
+      {%- if a.by_person %}
+      <h3>Who has used it</h3>
+      <ul class="ca-people ca-people--use">
+        {%- for p in a.by_person %}
+        <li><span class="ca-pav">{{ p.name[:1] }}</span>
+          <span class="ca-pt"><b>{{ p.name }}</b><small>{{ p.email }}</small></span>
+          <span class="ca-pu">{{ p.visits }} visit{{ "" if p.visits == 1 else "s" }}{% if p.runs %} &middot; {{ p.runs }} run{{ "" if p.runs == 1 else "s" }}{% endif %}<br><small>Last {{ nice_day(p.last) }}</small></span></li>
+        {%- endfor %}
+      </ul>
+      {%- endif %}
+    </section>
+
+    <section class="ca-box" aria-labelledby="ca-shared-h">
+      <h2 id="ca-shared-h">What they can open</h2>
+      <h3>Pages</h3>
+      <div class="ca-chips">
+        {%- for p in a.pages %}<span class="ca-chip ca-chip--page">{{ p }}</span>{% else %}<span class="ca-chip ca-chip--none">None</span>{% endfor %}
+      </div>
+      <h3>Agents &amp; tools</h3>
+      <div class="ca-chips">
+        {%- for t in a.tools %}<span class="ca-chip"><i style="background: {{ t.colour }}"></i>{{ t.label }}</span>{% else %}<span class="ca-chip ca-chip--none">None</span>{% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <div class="ca-cols">
+    <section class="ca-box" aria-labelledby="ca-ev-h">
+      <h2 id="ca-ev-h">What they did</h2>
+      {%- if a.events %}
+      <ol class="ca-feed">
+        {%- for e in a.events[:80] %}
+        <li class="ca-ev ca-ev--{{ e.kind }}">
+          <span class="ca-ev-dot" aria-hidden="true"></span>
+          <span class="ca-ev-t"><b>{{ e.who }}</b> {{ "opened" if e.kind == "visit" else "ran" }} {{ e.where }}</span>
+          <time datetime="{{ e.at.isoformat() if e.at.isoformat is defined else e.at }}">{{ nice_day(e.at) }} {{ e.at.strftime("%H:%M") if e.at.strftime is defined else "" }}</time>
+        </li>
+        {%- endfor %}
+      </ol>
+      {%- else %}
+      <p class="ca-none">Nothing yet. Each page they open and each run they start appears here.</p>
+      {%- endif %}
+    </section>
+
+    <section class="ca-box" aria-labelledby="ca-log-h">
+      <h2 id="ca-log-h">Sharing changes</h2>
+      {%- if a.audit %}
+      <ol class="ca-feed">
+        {%- for x in a.audit %}
+        <li class="ca-ev ca-ev--{{ x.action }}">
+          <span class="ca-ev-dot" aria-hidden="true"></span>
+          <span class="ca-ev-t">{{ x.text }}</span>
+          <time>{{ nice_day(x.at) }}</time>
+        </li>
+        {%- endfor %}
+      </ol>
+      {%- else %}
+      <p class="ca-none">No changes yet.</p>
+      {%- endif %}
+    </section>
+  </div>
+</div>
+{{ topbar_script() }}
+</body>
+</html>

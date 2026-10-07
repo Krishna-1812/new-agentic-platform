@@ -150,5 +150,5 @@ def test_each_agent_is_a_card_in_its_own_colour_and_each_tool_a_card():
     assert "Starts with" in html and "Not run for Lumina Smiles Dental yet" in html
     css = open("static/css/account-space.css", encoding="utf-8").read()
     for slug in [a[0] for a in appmod.ACCT_AGENTS] + [s for s, _ in appmod.ACCT_SEO]:
-        assert ".rx-ag--%s {" % slug in css, "every agent and tool has its colour: %s" % slug
+        assert re.search(r"\.rx-ag--%s[ ,]" % re.escape(slug), css), "every agent and tool has its colour: %s" % slug
     assert "prefers-reduced-motion" in css[css.index(".rx-group-h"):]

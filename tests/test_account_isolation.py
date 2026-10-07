@@ -202,6 +202,10 @@ def test_each_accounts_brief_holds_its_own_work_only(seeded, slug, mark):
 
 
 # ── What a client sees ───────────────────────────────────────────────────────
+ALL_TOOLS = {"tool:page-watch": True, "tool:video-studio": True, "tool:local-business-radar": True,
+             "tool:seo-geo-audit": True}
+
+
 def _invite(slug, who=CLIENT, **shares):
     key = _acct(slug)["key"]
     client_accounts_store.add_access(key, who, "kris@markifydigital.com")
@@ -217,7 +221,7 @@ def test_a_client_sees_no_history_unless_the_account_shares_it(seeded):
 
 def test_a_shared_history_is_finished_work_without_names_or_links(seeded):
     unfinished = lbr_store.create_run(ANA, "lumina-mark running", "Pune", "all", 40, space=_acct("lumina")["space"])
-    _invite("lumina", history=True)
+    _invite("lumina", **ALL_TOOLS)
     c = _client(CLIENT)
     html = c.get("/lumina").get_data(as_text=True)
     hist = html[html.index('id="history"'):]
@@ -234,24 +238,41 @@ def test_a_shared_history_is_finished_work_without_names_or_links(seeded):
     _invite("lumina", **{"ai-review": True})
     hist = c.get("/lumina").get_data(as_text=True)
     assert "AI review of Lumina Smiles Dental" in hist and 'href="/lumina/google-ads/ai-review"' in hist
-    assert c.get("/lumina/page-watch").status_code in (302, 403), "the client still cannot open the tools"
 
 
-def test_contact_finder_rows_are_never_a_clients():
+
+def test_a_client_sees_only_the_history_of_the_tools_shared_with_them(seeded):
+    _invite("lumina", **{"tool:page-watch": True})
+    hist = _client(CLIENT).get("/lumina").get_data(as_text=True)
+    hist = hist[hist.index('id="history"'):]
+    hist = hist[:hist.index("</section>")]
+    assert "lumina-mark pricing" in hist and "lumina-mark raised prices" in hist, "Page Watch is shared"
+    for hidden in ("lumina-mark launch video", "lumina-mark dentists", "https://lumina-mark.example"):
+        assert hidden not in hist, "%s: its tool is not shared" % hidden
+    assert 'data-hist-tool="agents"' not in hist and 'data-hist-tool="seo"' not in hist
+    _invite("lumina", **{"tool:page-watch": False, "tool:local-business-radar": True})
+    hist = _client(CLIENT).get("/lumina").get_data(as_text=True)
+    assert "lumina-mark dentists" in hist and "lumina-mark raised prices" not in hist
+
+
+def test_contact_finder_rows_are_a_clients_only_when_it_is_shared():
     acct = {"slug": "lumina", "space": workspace.account(1)}
     row = account_history.agent_entry(acct, "company-people-intelligence", "Priya Shah, CMO", "", ANA,
                                       "2026-10-01T00:00:00+00:00", "complete")
     smi = account_history.agent_entry(acct, "social-media-intelligence", "Lumina", "", ANA,
                                       "2026-10-01T00:00:00+00:00", "complete")
-    assert [r["title"] for r in account_history.for_client([row, smi], "lumina")] == ["Lumina"]
+    assert [r["title"] for r in account_history.for_client([row, smi], "lumina", tools={"social-media-intelligence"})] \
+        == ["Lumina"]
+    assert len(account_history.for_client([row, smi], "lumina", tools={"company-people-intelligence",
+                                                                       "social-media-intelligence"})) == 2
 
 
 def test_the_staff_history_says_whether_the_client_sees_it(seeded):
     staff = _client(RAJ)
     assert "the client does not" in staff.get("/lumina").get_data(as_text=True)
-    _invite("lumina", history=True)
+    _invite("lumina", **{"tool:page-watch": True})
     appmod._acct_reset()
-    assert "the client sees the finished work, without names" in staff.get("/lumina").get_data(as_text=True)
+    assert "the client sees the finished work of the tools shared with them, without names" in staff.get("/lumina").get_data(as_text=True)
 
 
 def test_the_history_filter_offers_search_people_and_automatic(seeded):
@@ -271,6 +292,6 @@ def test_the_history_is_a_coloured_timeline_with_the_mix_and_the_team(seeded):
     css = open("static/css/account-space.css", encoding="utf-8").read()
     for tool in account_history.TOOLS:
         assert '.as-ev[data-tool="%s"]' % tool in css, "every tool has its colour on the timeline: %s" % tool
-    _invite("lumina", history=True)
+    _invite("lumina", **ALL_TOOLS)
     client = _client(CLIENT).get("/lumina").get_data(as_text=True)
     assert 'class="hx-mix"' in client and 'class="hx-team"' not in client, "the client sees the mix, never the team"

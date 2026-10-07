@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-{{ head("Client Usage", ["admin_client_usage.css?v=1", "admin.css?v=7"], compat=True) }}
+{{ head("Client Usage", ["admin_client_usage.css?v=1", "admin.css?v=7", "admin_client_accounts.css?v=1"], compat=True) }}
 </head>
 <body>
 {{ topbar([("Admin", "/admin/internal-usage"), ("Client Usage", none)]) }}
@@ -13,11 +13,58 @@
       <div class="ph-left">
         <div class="eyebrow">Admin · Platform Intelligence</div>
         <h1>Client Usage</h1>
-        <p style="margin:8px 0 0;max-width:640px;font-size:13px;line-height:1.55;color:var(--tx2)">Every co-branded client portal we run. Open one to see how its two audiences, the {{ brand.name }} team and the client's own people, are using their workspace.</p>
+        <p style="margin:8px 0 0;max-width:640px;font-size:13px;line-height:1.55;color:var(--tx2)">Every client account shared with its client, and every co-branded client portal we run. Open one to see who it is shared with, what they can use, and how they use it.</p>
       </div>
       <a class="refresh-btn" href="/admin/client-usage?fresh=1"><span class="refresh-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg></span> Refresh</a>
     </div>
 
+    {#- Every client account shared with its client: a card each, made when an admin first shares it. -#}
+    <section class="ca-sec" aria-labelledby="ca-h">
+      <div class="ca-sec-h">
+        <h2 id="ca-h">Shared client accounts</h2>
+        <span class="ca-sec-n">{{ shared|length }} account{{ "" if shared|length == 1 else "s" }}</span>
+      </div>
+      <p class="ca-sec-sub">Each account an admin has shared with its client: who can open it, which pages and tools, how
+        they use it, and every change. A card appears here the moment someone shares an account.</p>
+      {%- if shared %}
+      <div class="ca-grid">
+        {%- for a in shared %}
+        <a class="ca-card" href="/admin/client-usage/accounts/{{ a.slug }}">
+          <div class="ca-top">
+            <span class="ca-av" style="--av-bg:{{ a.avatar.bg }};--av-fg:{{ a.avatar.fg }}">{{ a.avatar.initials }}</span>
+            <div class="ca-id">
+              <b>{{ a.name }}</b>
+              <small>{% if a.people %}Shared with {{ a.people|length }} {{ "person" if a.people|length == 1 else "people" }}{% else %}Nobody invited yet{% endif %}</small>
+            </div>
+            <span class="ca-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </div>
+          <div class="ca-chips">
+            {%- for p in a.pages %}<span class="ca-chip ca-chip--page">{{ p }}</span>{% endfor %}
+            {%- for t in a.tools[:6] %}<span class="ca-chip"><i style="background: {{ t.colour }}"></i>{{ t.label }}</span>{% endfor %}
+            {%- if a.tools|length > 6 %}<span class="ca-chip ca-chip--more">+{{ a.tools|length - 6 }} more</span>{% endif %}
+            {%- if not a.pages and not a.tools %}<span class="ca-chip ca-chip--none">Nothing shared yet</span>{% endif %}
+          </div>
+          <div class="ca-stats">
+            <div class="ca-stat"><b>{{ a.visits_30 }}</b><small>Visits, 30 days</small></div>
+            <div class="ca-stat"><b>{{ a.visitors_30 }}</b><small>People active</small></div>
+            <div class="ca-stat"><b>{{ a.runs }}<em>/{{ a.limit }}</em></b><small>Runs this month</small>
+              <span class="ca-meter"><i style="width: {{ [100, (100 * a.runs / a.limit)|round|int]|min if a.limit else (100 if a.runs else 0) }}%"></i></span></div>
+          </div>
+          <div class="ca-foot">
+            {%- if a.last_change %}
+            <span class="ca-change">{{ a.last_change.text }} &middot; {{ nice_day(a.last_change.at) }}</span>
+            {%- endif %}
+            <span class="ca-last">{% if a.last_visit %}Last visit {{ nice_day(a.last_visit) }}{% else %}Not opened yet{% endif %}</span>
+          </div>
+        </a>
+        {%- endfor %}
+      </div>
+      {%- else %}
+      <div class="cu-empty">No account is shared yet. Open an account, press Share and invite someone from the client: its card appears here.</div>
+      {%- endif %}
+    </section>
+
+    <div class="ca-sec-h ca-sec-h--portals"><h2>Client portals</h2></div>
     {% if clients %}
     <div class="cu-grid">
       {% for c in clients %}

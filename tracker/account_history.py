@@ -187,22 +187,33 @@ def entries(acct, library=None, limit=SHOWN, extra=()):
     return rows[:limit]
 
 
-# ── What a client sees (the "history" share, tracker/client_access.py) ─────────
-# Finished work only, without who did it or links into the agency's tools. Contact Finder's rows are
-# never shown (they are people's names and contact details, found for the agency's own outreach), and
-# AI reviews only when the account shares its AI review, whose page is then the link.
-CLIENT_HIDDEN_AGENTS = {"company-people-intelligence"}
+# ── What a client sees ───────────────────────────────────────────────────────
+# Only the tools the account shares with its clients (tracker/client_access.py: each tool's own switch),
+# and AI reviews only when it shares its AI review, whose page is then the link. Finished work only,
+# without who did it or links into the agency's tools.
 CLIENT_KEEP_STATES = {"page-watch": {"", "paused", "changed"}, "video-studio": {"ready"}, "ai-review": {"complete"},
                       "agents": {"ready"}, "seo": {"ready"}}
 CLIENT_KEYS = ("tool", "kind", "title", "detail", "at", "state", "state_label", "tool_label")
 
 
-def for_client(rows, slug, review_shared=False):
+def tool_slug(row):
+    """The tool a row belongs to, as the Share panel names it: page-watch, video-studio, an agent's slug
+    or an SEO & AEO tool's slug ("" for an AI review)."""
+    if row["tool"] in ("page-watch", "video-studio"):
+        return row["tool"]
+    return row.get("agent") or row.get("seo_tool") or ""
+
+
+def for_client(rows, slug, tools=(), review_shared=False):
+    tools = set(tools)
     out = []
     for r in rows:
-        if r["tool"] == "ai-review" and not review_shared:
+        if r["tool"] == "ai-review":
+            if not review_shared:
+                continue
+        elif tool_slug(r) not in tools:
             continue
-        if r.get("agent") in CLIENT_HIDDEN_AGENTS or r.get("state") not in CLIENT_KEEP_STATES.get(r["tool"], ()):
+        if r.get("state") not in CLIENT_KEEP_STATES.get(r["tool"], ()):
             continue
         row = {k: r.get(k) for k in CLIENT_KEYS}
         row.update(who="", by="", href="/%s/google-ads/ai-review" % slug if r["tool"] == "ai-review" else None)

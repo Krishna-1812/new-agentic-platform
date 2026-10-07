@@ -13,8 +13,12 @@ Tables:
   client_account_old_slugs  slugs an account used before; they redirect to its current one.
   client_account_access     who outside the agency may open an account: an email, or "@domain"
                             (tracker/client_access.py). Follows the account's key when it changes.
-  client_account_shares     which of an account's pages its clients see.
-  client_account_audit      every invite, removal and share change: who, what, when.
+  client_account_shares     which of an account's pages and tools its clients see, and its settings
+                            (the monthly run limit), as one JSON object.
+  client_account_audit      every invite, removal, share and setting change: who, what, when.
+  client_account_events     what invited clients do: each page they open ("visit") and each run they
+                            start ("run"), with the tool, for the admins' Client Usage cards and the
+                            run limit.
 
 sync() works out the slugs (client_accounts.plan_slugs) under an advisory lock, so two web workers
 listing the accounts at the same moment cannot give one slug twice, and writes only what changed.
@@ -38,7 +42,7 @@ def backend():
 
 
 # ── Memory ───────────────────────────────────────────────────────────────────
-_MEM = {"rows": {}, "names": {}, "retired": {}, "access": {}, "shares": {}, "audit": [], "ids": {}}
+_MEM = {"rows": {}, "names": {}, "retired": {}, "access": {}, "shares": {}, "audit": [], "ids": {}, "events": []}
 _MEM_LOCK = threading.Lock()
 
 
@@ -112,6 +116,16 @@ def _ensure(conn):
                     detail TEXT NOT NULL DEFAULT '',
                     at TIMESTAMPTZ NOT NULL DEFAULT now())""")
             cur.execute("CREATE INDEX IF NOT EXISTS client_account_audit_key ON client_account_audit (key, id DESC)")
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS client_account_events (
+                    id BIGSERIAL PRIMARY KEY,
+                    key TEXT NOT NULL,
+                    email TEXT NOT NULL,
+                    kind TEXT NOT NULL,
+                    tool TEXT NOT NULL DEFAULT '',
+                    path TEXT NOT NULL DEFAULT '',
+                    at TIMESTAMPTZ NOT NULL DEFAULT now())""")
+            cur.execute("CREATE INDEX IF NOT EXISTS client_account_events_key ON client_account_events (key, at DESC)")
         conn.commit()
         _READY = True
 
@@ -325,3 +339,91 @@ def audit(key, limit=20):
             cur.execute("SELECT actor, action, detail, at FROM client_account_audit WHERE key = %s "
                         "ORDER BY id DESC LIMIT %s", (key, limit))
             return [{"actor": a, "action": b, "detail": c, "at": d} for a, b, c, d in cur.fetchall()]
+
+
+def set_setting(key, name, value, actor):
+    """One of the account's settings (client_access.RUN_LIMIT), kept beside its shares."""
+    import json
+    if backend() == "memory":
+        with _MEM_LOCK:
+            _MEM["shares"].setdefault(key, {})[name] = value
+            _audit(None, key, actor, "set", "%s=%s" % (name, value))
+            return
+    with _pg() as conn:
+        _ensure(conn)
+        with conn.cursor() as cur:
+            cur.execute("""INSERT INTO client_account_shares (key, shares, updated_by) VALUES (%s, %s::jsonb, %s)
+                           ON CONFLICT (key) DO UPDATE SET shares = client_account_shares.shares || EXCLUDED.shares,
+                           updated_by = EXCLUDED.updated_by, updated_at = now()""",
+                        (key, json.dumps({name: value}), actor))
+            _audit(cur, key, actor, "set", "%s=%s" % (name, value))
+
+
+# ── What clients do ──────────────────────────────────────────────────────────
+def record(key, email, kind, tool="", path=""):
+    """A client opened a page ("visit") or started a run ("run")."""
+    email = (email or "").strip().lower()
+    if backend() == "memory":
+        with _MEM_LOCK:
+            _MEM["events"].append({"key": key, "email": email, "kind": kind, "tool": tool, "path": path[:300],
+                                   "at": _now()})
+            return
+    with _pg() as conn:
+        _ensure(conn)
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO client_account_events (key, email, kind, tool, path) VALUES (%s, %s, %s, %s, %s)",
+                        (key, email, kind, tool, path[:300]))
+
+
+def _month_start():
+    n = _now()
+    return n.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+
+def runs_this_month(key):
+    """How many runs the account's clients started since the 1st (UTC)."""
+    since = _month_start()
+    if backend() == "memory":
+        with _MEM_LOCK:
+            return sum(1 for e in _MEM["events"] if e["key"] == key and e["kind"] == "run" and e["at"] >= since)
+    with _pg() as conn:
+        _ensure(conn)
+        with conn.cursor() as cur:
+            cur.execute("SELECT count(*) FROM client_account_events WHERE key = %s AND kind = 'run' AND at >= %s",
+                        (key, since))
+            return cur.fetchone()[0]
+
+
+def events(key, limit=200):
+    """The account's latest client events, newest first."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            rows = [dict(e) for e in _MEM["events"] if e["key"] == key]
+        return sorted(rows, key=lambda e: e["at"], reverse=True)[:limit]
+    with _pg() as conn:
+        _ensure(conn)
+        with conn.cursor() as cur:
+            cur.execute("SELECT key, email, kind, tool, path, at FROM client_account_events WHERE key = %s "
+                        "ORDER BY at DESC LIMIT %s", (key, limit))
+            return [dict(zip(("key", "email", "kind", "tool", "path", "at"), r)) for r in cur.fetchall()]
+
+
+def shared_keys():
+    """Every account an admin has shared, or changed the sharing of, with when that last happened:
+    {key: latest change}. These are the accounts the Client Usage tab has a card for."""
+    if backend() == "memory":
+        with _MEM_LOCK:
+            out = {}
+            for a in _MEM["audit"]:
+                out[a["key"]] = max(out.get(a["key"], a["at"]), a["at"])
+            for k, entries in _MEM["access"].items():
+                for e in entries.values():
+                    out[k] = max(out.get(k, e["created_at"]), e["created_at"])
+            return out
+    with _pg() as conn:
+        _ensure(conn)
+        with conn.cursor() as cur:
+            cur.execute("""SELECT key, max(at) FROM (
+                               SELECT key, at FROM client_account_audit
+                               UNION ALL SELECT key, created_at FROM client_account_access) x GROUP BY key""")
+            return dict(cur.fetchall())
