@@ -12,7 +12,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head(acct.name, ["account-space.css?v=14"]) }}
+{{ head(acct.name, ["account-space.css?v=15"]) }}
 </head>
 <body class="as-page">
 
@@ -309,11 +309,26 @@
     <p class="as-runs-sub">Everything the team has done for {{ acct.name }}, newest first, with who did it. Everyone at {{ brand.name }} sees it; the client {{ "sees the finished work, without names" if shares_history else "does not" }}.</p>
     {%- endif %}
     {%- if history.rows %}
+    {#- The mix: what the work has been, by tool, as one bar; and who has worked on the account. #}
+    <div class="hx-sum">
+      <div class="hx-mix" role="img" aria-label="{% for t in history.filter.tools %}{{ t.label }} {{ t.n }}{% if not loop.last %}, {% endif %}{% endfor %}">
+        {%- for t in history.filter.tools %}<span class="hx-seg hx-seg--{{ t.key }}" style="--n: {{ t.n }}; --i: {{ loop.index0 }}"></span>{% endfor %}
+      </div>
+      {%- if not client_view and history.filter.people %}
+      <div class="hx-team">
+        <span class="hx-avs" aria-hidden="true">
+          {%- for p in history.filter.people[:5] %}<span class="hx-av" style="--i: {{ loop.index0 }}">{{ p[:1] }}</span>{% endfor %}
+          {%- if history.filter.people|length > 5 %}<span class="hx-av hx-av--more" style="--i: 5">+{{ history.filter.people|length - 5 }}</span>{% endif %}
+        </span>
+        <span class="hx-team-t">{{ history.filter.people[:2]|join(", ") }}{% if history.filter.people|length > 2 %} and {{ history.filter.people|length - 2 }} more{% endif %} worked on it</span>
+      </div>
+      {%- endif %}
+    </div>
     <div class="as-hist-bar">
       <div class="as-hist-chips" role="radiogroup" aria-label="Show">
         <button type="button" class="as-hist-chip is-on" role="radio" aria-checked="true" data-hist-tool="">All <em>{{ history.rows|length }}</em></button>
         {%- for t in history.filter.tools %}
-        <button type="button" class="as-hist-chip" role="radio" aria-checked="false" data-hist-tool="{{ t.key }}"><i class="as-ev-dot as-ev-dot--{{ t.key }}"></i>{{ t.label }} <em>{{ t.n }}</em></button>
+        <button type="button" class="as-hist-chip as-hist-chip--{{ t.key }}" role="radio" aria-checked="false" data-hist-tool="{{ t.key }}"><i class="as-ev-dot as-ev-dot--{{ t.key }}"></i>{{ t.label }} <em>{{ t.n }}</em></button>
         {%- endfor %}
       </div>
       <div class="as-hist-tools">
@@ -353,6 +368,7 @@
           <span class="as-ev-who">{% if r.by %}<span class="as-ev-av" aria-hidden="true">{{ r.by[:1] }}</span>{{ r.by }}{% else %}<span class="as-ev-av as-ev-av--auto" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span>Automatic{% endif %}</span>
           {%- endif %}
           <time class="as-ev-at" datetime="{{ r.at }}">{{ nice_day(r.at) }}</time>
+          {%- if r.href %}<span class="hx-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>{% endif %}
         </span>
       </li>
       {%- endfor %}
