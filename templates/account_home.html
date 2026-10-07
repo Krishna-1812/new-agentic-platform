@@ -208,7 +208,7 @@
   {# ── Run anything for the account ──────────────────────────────────────
      The agents as cards, each in its own colour: what it does, what it starts with from the master
      doc, and its last run for the account. On hover the card fills with its colour from the icon.
-     The SEO & AEO tools below as smaller cards. Staff only. #}
+     The SEO & AEO tools below as the same cards, a size smaller. Staff only. #}
   {%- macro run_icon(slug) -%}
   {%- if slug == "social-media-intelligence" -%}
   <svg viewBox="0 0 24 24"><path d="M4 5.5h11a2 2 0 0 1 2 2V13a2 2 0 0 1-2 2H9l-4 3v-3H4a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2z"/><path d="M17 9h3a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1v3l-3.5-3H12"/><circle class="rx-pulse" cx="6.5" cy="10.2" r=".6"/><circle class="rx-pulse" cx="9.5" cy="10.2" r=".6"/><circle class="rx-pulse" cx="12.5" cy="10.2" r=".6"/></svg>
@@ -221,45 +221,32 @@
   {%- elif slug == "thought-leader-pr" -%}
   <svg viewBox="0 0 24 24"><path d="M3 10v4a1 1 0 0 0 1 1h3l6 4V5L7 9H4a1 1 0 0 0-1 1z"/><path d="M8 15.2 9.3 20h2.4"/><path class="rx-wave" d="M16.5 9a4 4 0 0 1 0 6"/><path class="rx-wave rx-wave--2" d="M19 6.5a7.5 7.5 0 0 1 0 11"/></svg>
   {%- elif slug in ("seo-geo-audit", "seo-geo-snapshot") -%}
-  <svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1.3"/>{% if slug == "seo-geo-snapshot" %}<path d="M3 21h18"/>{% endif %}</svg>
+  <svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0"/><path class="rx-needle" d="M12 18l4-6"/><circle cx="12" cy="18" r="1.3"/>{% if slug == "seo-geo-snapshot" %}<path d="M3 21h18"/>{% endif %}</svg>
   {%- elif slug == "on-page-audit" -%}
-  <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="m9 13 2 2 4-4"/></svg>
+  <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path class="rx-tick" d="m9 13 2 2 4-4"/></svg>
   {%- elif slug == "agent-readiness-audit" -%}
-  <svg viewBox="0 0 24 24"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M10 16.5h4"/><circle cx="12" cy="3.5" r="1"/></svg>
+  <svg viewBox="0 0 24 24"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M10 16.5h4"/><path class="rx-eyes" d="M9 13h.01M15 13h.01"/><circle cx="12" cy="3.5" r="1"/></svg>
   {%- elif slug == "image-alt-audit" -%}
-  <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
+  <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle class="rx-sun" cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
   {%- elif slug == "keyword-research" -%}
-  <svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8M16 7l2 2M14 9l1.5 1.5"/></svg>
+  <svg viewBox="0 0 24 24"><g class="rx-key"><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8M16 7l2 2M14 9l1.5 1.5"/></g></svg>
   {%- elif slug == "content-research" -%}
-  <svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12v15H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 0 2 2h12v-4"/><path d="M8 8h6M8 11h4"/></svg>
+  <svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12v15H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 0 2 2h12v-4"/><path class="rx-lines" d="M8 8h6M8 11h4"/></svg>
   {%- elif slug == "content-architect" -%}
-  <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="5" rx="1.5"/><rect x="2.5" y="16" width="6" height="5" rx="1.5"/><rect x="15.5" y="16" width="6" height="5" rx="1.5"/><path d="M12 8v4M5.5 16v-2h13v2"/></svg>
+  <svg viewBox="0 0 24 24"><rect class="rx-hub" x="9" y="3" width="6" height="5" rx="1.5"/><rect x="2.5" y="16" width="6" height="5" rx="1.5"/><rect x="15.5" y="16" width="6" height="5" rx="1.5"/><path d="M12 8v4M5.5 16v-2h13v2"/></svg>
   {%- elif slug == "market-potential" -%}
-  <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 17v-4M11 17V9M16 17v-7M21 17V5"/><path d="m3 11 6-5 4 3 7-6"/></svg>
+  <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 17v-4M11 17V9M16 17v-7M21 17V5"/><path class="rx-trend" d="m3 11 6-5 4 3 7-6"/></svg>
   {%- else -%}
   <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
   {%- endif -%}
   {%- endmacro %}
-  {%- if runs %}
-  <section class="as-runs rx" aria-labelledby="as-runs-h">
-    <div class="as-prof-head">
-      <h2 class="as-h2" id="as-runs-h">Run for {{ acct.name }}</h2>
-    </div>
-    <p class="as-runs-sub">Each opens with {{ acct.name }}&rsquo;s details from the master doc already filled in. Nothing runs until you press its own button.</p>
-
-    <div class="rx-group-h">
-      <span class="rx-label"><i class="as-dot"></i>Agents <em>{{ runs.agents|length }}</em></span>
-      <span class="rx-hint">Research that goes out and finds things</span>
-    </div>
-    <ul class="rx-agents" role="list">
-      {%- for t in runs.agents %}
-      <li class="rx-cell" style="--i: {{ loop.index0 }}">
-        <a class="rx-ag rx-ag--{{ t.slug }}" href="{{ t.href }}">
+  {%- macro run_card(t, n, kind="") -%}
+        <a class="rx-ag rx-ag--{{ t.slug }}{% if kind %} {{ kind }}{% endif %}" href="{{ t.href }}">
           <span class="rx-flood" aria-hidden="true"></span>
           <span class="rx-mark" aria-hidden="true">{{ run_icon(t.slug) }}</span>
           <span class="rx-top">
             <span class="rx-ico" aria-hidden="true">{{ run_icon(t.slug) }}</span>
-            <span class="rx-no" aria-hidden="true">{{ "%02d"|format(loop.index) }}</span>
+            <span class="rx-no" aria-hidden="true">{{ "%02d"|format(n) }}</span>
           </span>
           <span class="rx-name">{{ t.name }}</span>
           <span class="rx-about">{{ t.about }}</span>
@@ -275,25 +262,31 @@
             <span class="rx-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
           </span>
         </a>
-      </li>
+  {%- endmacro %}
+  {%- if runs %}
+  <section class="as-runs rx" aria-labelledby="as-runs-h">
+    <div class="as-prof-head">
+      <h2 class="as-h2" id="as-runs-h">Run for {{ acct.name }}</h2>
+    </div>
+    <p class="as-runs-sub">Each opens with {{ acct.name }}&rsquo;s details from the master doc already filled in. Nothing runs until you press its own button.</p>
+
+    <div class="rx-group-h">
+      <span class="rx-label"><i class="as-dot"></i>Agents <em>{{ runs.agents|length }}</em></span>
+      <span class="rx-hint">Research that goes out and finds things</span>
+    </div>
+    <ul class="rx-agents" role="list">
+      {%- for t in runs.agents %}
+      <li class="rx-cell" style="--i: {{ loop.index0 }}">{{ run_card(t, loop.index) }}</li>
       {%- endfor %}
     </ul>
 
     <div class="rx-group-h">
       <span class="rx-label"><i class="as-dot as-dot--sky"></i>SEO &amp; AEO <em>{{ runs.seo|length }}</em></span>
-      <span class="rx-hint">{% if runs.website %}Audits and research on <b>{{ runs.website }}</b>{% else %}Audits and research{% endif %}</span>
+      <span class="rx-hint">{% if runs.website %}Audits and research that read the site, on <b>{{ runs.website }}</b>{% else %}Audits and research that read the site{% endif %}</span>
     </div>
     <ul class="rx-tools" role="list">
       {%- for t in runs.seo %}
-      <li class="rx-cell" style="--i: {{ loop.index0 + runs.agents|length }}">
-        <a class="rx-tool" href="{{ t.href }}">
-          <span class="rx-tool-ico" aria-hidden="true">{{ run_icon(t.slug) }}</span>
-          <span class="rx-tool-t"><b>{{ t.name }}</b><small>{{ t.about }}</small>
-            {%- if t.last %}<small class="rx-tool-last">Last run {{ nice_day(t.last.at) }}{% if t.last.by %} by {{ t.last.by }}{% endif %}</small>{% endif %}</span>
-          <span class="rx-tool-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-          {%- if t.given %}<span class="rx-tool-g">{{ t.given }}</span>{% endif %}
-        </a>
-      </li>
+      <li class="rx-cell" style="--i: {{ loop.index0 + runs.agents|length }}">{{ run_card(t, loop.index, "rx-ag--tool") }}</li>
       {%- endfor %}
     </ul>
   </section>

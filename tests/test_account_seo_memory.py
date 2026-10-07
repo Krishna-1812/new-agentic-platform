@@ -199,4 +199,4 @@ def test_the_accounts_history_and_home_show_its_seo_runs():
     assert 'data-tool="seo"' in html and "https://luminasmiles.in" in html and "SEO &amp; GEO Audit" in html
     assert "skin care" not in html and "my own" not in html
     assert "Overall score 78 · Band Good" in html
-    assert re.search(r"SEO &amp; GEO Audit</b>.*?Last run [^<]* by Ana Mehta", html, re.S)
+    assert re.search(r"SEO &amp; GEO Audit</span>.*?Last run [^<]* by Ana Mehta", html, re.S)
