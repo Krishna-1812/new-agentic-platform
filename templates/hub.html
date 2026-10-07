@@ -2,7 +2,7 @@
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
 <html lang="en">
 <head>
-{{ head(brand.hub, ["hub.css?v=1", "account-space.css?v=12"]) }}
+{{ head(brand.hub, ["hub.css?v=1", "account-space.css?v=13"]) }}
 </head>
 <body>
 
@@ -238,7 +238,7 @@
 </div>
 
 {% if accounts %}<script id="acct-data" type="application/json">{{ accounts|tojson }}</script>{% endif %}
-<script defer src="{{ url_for('static', filename='js/account-space.js') }}?v=2"></script>
+<script defer src="{{ url_for('static', filename='js/account-space.js') }}?v=3"></script>
 {{ topbar_script() }}
 <script>
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */

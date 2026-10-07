@@ -535,3 +535,19 @@ a.as-ev-main::after { content: ""; position: absolute; inset: 0; border-radius: 
   .sr-fact:first-child { grid-column: 1 / -1; }
   .sr-fact { padding: var(--sp-4); }
 }
+/* History filter (account memory, phase 5): words, the person, and more at a time. */
+.as-hist-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.as-hist-q { position: relative; display: inline-flex; align-items: center; }
+.as-hist-q svg { position: absolute; left: 12px; width: 15px; height: 15px; fill: none; stroke: var(--tx3); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+.as-hist-q input {
+  font: inherit; font-size: 13.5px; width: 210px; max-width: 100%; padding: 7px 13px 7px 34px; border-radius: var(--r-pill);
+  border: 0; background: var(--s1); color: var(--tx);
+}
+.as-hist-q input::placeholder { color: var(--tx3); }
+.as-hist-q input:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.as-hist-more { margin-top: var(--sp-3); }
+.as-hist-more[hidden] { display: none; }
+@media (max-width: 560px) {
+  .as-hist-tools, .as-hist-q, .as-hist-q input { width: 100%; }
+  .as-hist-who, .as-hist-who select { width: 100%; }
+}

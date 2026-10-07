@@ -5998,7 +5998,7 @@ def account_home(acct):
     show_profile = not client or shares["profile"]
     tools = None if client else _acct_tools(acct, email)
     runs = None if client else _acct_runs(acct)
-    history = None if client else _acct_history(acct)
+    history = _acct_client_history(acct, shares) if client else _acct_history(acct)
     if runs:
         for t in runs["agents"]:     # each agent's and tool's last run for the account, and who ran it
             slug = t["href"].rsplit("/", 1)[-1]
@@ -6015,7 +6015,8 @@ def account_home(acct):
         money=client_accounts.money, number=client_accounts.number,
         template=client_profile.template(acct["name"], acct["slug"], acct["customer_ids"], p),
         doc_url=None if client else listing["doc_url"], doc_error=None if client else listing["doc_error"],
-        doc_read=listing["doc_read"], accounts=_acct_nav(), tools=tools, runs=runs, history=history)
+        doc_read=listing["doc_read"], accounts=_acct_nav(), tools=tools, runs=runs, history=history,
+        shares_history=shares.get("history"), history_limit=_acct_history_limit())
 
 
 def _acct_history(acct):
@@ -6030,6 +6031,26 @@ def _acct_history(acct):
     for r in rows:
         if not r["who"]:
             r["by"] = ""
+    return {"rows": rows, "filter": account_history.summary(rows)}
+
+
+def _acct_history_limit():
+    from tracker import account_history
+    return account_history.SHOWN
+
+
+def _acct_client_history(acct, shares):
+    """The account's History as its client sees it, when the account shares it ("history"): finished
+    work, no names, no links into the agency's tools (account_history.for_client)."""
+    from tracker import account_history
+    if not shares.get("history"):
+        return None
+    try:
+        rows = account_history.entries(acct, library=_acct_library(acct))
+    except Exception:
+        app.logger.exception("client accounts: history unreadable")
+        rows = []
+    rows = account_history.for_client(rows, acct["slug"], review_shared=bool(acct["ads_names"]) and shares["ai-review"])
     return {"rows": rows, "filter": account_history.summary(rows)}
 
 
