@@ -6515,14 +6515,15 @@ def _acct_runs(acct):
     """What the account's home offers to run for it: each tool and agent, with what it is given."""
     f = _acct_facts(acct)
     tools = {t["slug"]: t for t in _seo_tools()}
-    seo = [{"href": "/%s/seo-aeo/%s" % (acct["slug"], slug), "name": tools[slug]["name"],
+    seo = [{"href": "/%s/seo-aeo/%s" % (acct["slug"], slug), "slug": slug, "name": tools[slug]["name"],
             "given": f[key] if key != "url" else f["domain"], "about": tools[slug]["desc"]}
            for slug, key in ACCT_SEO if slug in tools]
     def given(fields):   # what is distinctive: not the account's own name, a website as its domain
         vals = [f["domain"] if k in ("website", "url") else f[k] for _, k in fields if k != "name"]
         vals = [v for v in dict.fromkeys(vals) if v]
         return " · ".join(vals) or f["name"]
-    agents = [{"href": "/%s/agents/%s" % (acct["slug"], slug), "name": label, "about": about, "given": given(fields)}
+    agents = [{"href": "/%s/agents/%s" % (acct["slug"], slug), "slug": slug, "name": label, "about": about,
+               "given": given(fields)}
               for slug, _, _, label, about, fields in ACCT_AGENTS]
     return {"seo": seo, "agents": agents, "website": f["domain"]}
 

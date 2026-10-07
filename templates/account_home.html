@@ -12,7 +12,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head(acct.name, ["account-space.css?v=13"]) }}
+{{ head(acct.name, ["account-space.css?v=15"]) }}
 </head>
 <body class="as-page">
 
@@ -205,41 +205,90 @@
   </section>
   {%- endif %}
 
-  {# ── Run anything for the account ──────────────────────────────────── #}
+  {# ── Run anything for the account ──────────────────────────────────────
+     The agents as cards, each in its own colour: what it does, what it starts with from the master
+     doc, and its last run for the account. On hover the card fills with its colour from the icon.
+     The SEO & AEO tools below as the same cards, a size smaller. Staff only. #}
+  {%- macro run_icon(slug) -%}
+  {%- if slug == "social-media-intelligence" -%}
+  <svg viewBox="0 0 24 24"><path d="M4 5.5h11a2 2 0 0 1 2 2V13a2 2 0 0 1-2 2H9l-4 3v-3H4a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2z"/><path d="M17 9h3a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1v3l-3.5-3H12"/><circle class="rx-pulse" cx="6.5" cy="10.2" r=".6"/><circle class="rx-pulse" cx="9.5" cy="10.2" r=".6"/><circle class="rx-pulse" cx="12.5" cy="10.2" r=".6"/></svg>
+  {%- elif slug == "local-business-radar" -%}
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><g class="rx-sweep"><path d="M12 12 18.4 5.6"/></g><circle cx="15.6" cy="8.6" r="1.2" class="rx-blip"/><circle cx="12" cy="12" r="1"/></svg>
+  {%- elif slug == "event-conference-intelligence" -%}
+  <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/><path class="rx-star" d="m12 12.6.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z"/></svg>
+  {%- elif slug == "company-people-intelligence" -%}
+  <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><g class="rx-lens"><circle cx="17.5" cy="13.5" r="3"/><path d="m19.7 15.7 2.3 2.3"/></g></svg>
+  {%- elif slug == "thought-leader-pr" -%}
+  <svg viewBox="0 0 24 24"><path d="M3 10v4a1 1 0 0 0 1 1h3l6 4V5L7 9H4a1 1 0 0 0-1 1z"/><path d="M8 15.2 9.3 20h2.4"/><path class="rx-wave" d="M16.5 9a4 4 0 0 1 0 6"/><path class="rx-wave rx-wave--2" d="M19 6.5a7.5 7.5 0 0 1 0 11"/></svg>
+  {%- elif slug in ("seo-geo-audit", "seo-geo-snapshot") -%}
+  <svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0"/><path class="rx-needle" d="M12 18l4-6"/><circle cx="12" cy="18" r="1.3"/>{% if slug == "seo-geo-snapshot" %}<path d="M3 21h18"/>{% endif %}</svg>
+  {%- elif slug == "on-page-audit" -%}
+  <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path class="rx-tick" d="m9 13 2 2 4-4"/></svg>
+  {%- elif slug == "agent-readiness-audit" -%}
+  <svg viewBox="0 0 24 24"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M10 16.5h4"/><path class="rx-eyes" d="M9 13h.01M15 13h.01"/><circle cx="12" cy="3.5" r="1"/></svg>
+  {%- elif slug == "image-alt-audit" -%}
+  <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle class="rx-sun" cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
+  {%- elif slug == "keyword-research" -%}
+  <svg viewBox="0 0 24 24"><g class="rx-key"><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8M16 7l2 2M14 9l1.5 1.5"/></g></svg>
+  {%- elif slug == "content-research" -%}
+  <svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12v15H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 0 2 2h12v-4"/><path class="rx-lines" d="M8 8h6M8 11h4"/></svg>
+  {%- elif slug == "content-architect" -%}
+  <svg viewBox="0 0 24 24"><rect class="rx-hub" x="9" y="3" width="6" height="5" rx="1.5"/><rect x="2.5" y="16" width="6" height="5" rx="1.5"/><rect x="15.5" y="16" width="6" height="5" rx="1.5"/><path d="M12 8v4M5.5 16v-2h13v2"/></svg>
+  {%- elif slug == "market-potential" -%}
+  <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 17v-4M11 17V9M16 17v-7M21 17V5"/><path class="rx-trend" d="m3 11 6-5 4 3 7-6"/></svg>
+  {%- else -%}
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+  {%- endif -%}
+  {%- endmacro %}
+  {%- macro run_card(t, n, kind="") -%}
+        <a class="rx-ag rx-ag--{{ t.slug }}{% if kind %} {{ kind }}{% endif %}" href="{{ t.href }}">
+          <span class="rx-flood" aria-hidden="true"></span>
+          <span class="rx-mark" aria-hidden="true">{{ run_icon(t.slug) }}</span>
+          <span class="rx-top">
+            <span class="rx-ico" aria-hidden="true">{{ run_icon(t.slug) }}</span>
+            <span class="rx-no" aria-hidden="true">{{ "%02d"|format(n) }}</span>
+          </span>
+          <span class="rx-name">{{ t.name }}</span>
+          <span class="rx-about">{{ t.about }}</span>
+          {%- if t.given %}
+          <span class="rx-given"><span class="rx-given-l">Starts with</span><span class="rx-given-v">{{ t.given }}</span></span>
+          {%- endif %}
+          <span class="rx-foot">
+            {%- if t.last %}
+            <span class="rx-last"><i aria-hidden="true"></i>Last run {{ nice_day(t.last.at) }}{% if t.last.by %} by {{ t.last.by }}{% endif %}</span>
+            {%- else %}
+            <span class="rx-last rx-last--none">Not run for {{ acct.name }} yet</span>
+            {%- endif %}
+            <span class="rx-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </span>
+        </a>
+  {%- endmacro %}
   {%- if runs %}
-  <section class="as-runs" aria-labelledby="as-runs-h">
+  <section class="as-runs rx" aria-labelledby="as-runs-h">
     <div class="as-prof-head">
       <h2 class="as-h2" id="as-runs-h">Run for {{ acct.name }}</h2>
     </div>
     <p class="as-runs-sub">Each opens with {{ acct.name }}&rsquo;s details from the master doc already filled in. Nothing runs until you press its own button.</p>
-    <div class="as-runs-grid">
-      <div class="as-run-col">
-        <span class="as-run-h"><i class="as-dot as-dot--sky"></i>SEO &amp; AEO{% if runs.website %} <em>on {{ runs.website }}</em>{% endif %}</span>
-        <ul class="as-run-list">
-          {%- for t in runs.seo %}
-          <li><a class="as-run" href="{{ t.href }}">
-            <span class="as-run-t"><b>{{ t.name }}</b><small>{{ t.about }}</small>
-              {%- if t.last %}<small class="as-run-last">Last run {{ nice_day(t.last.at) }}{% if t.last.by %} by {{ t.last.by }}{% endif %}</small>{% endif %}</span>
-            {%- if t.given %}<span class="as-run-g">{{ t.given }}</span>{% endif %}
-            <svg class="as-run-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </a></li>
-          {%- endfor %}
-        </ul>
-      </div>
-      <div class="as-run-col">
-        <span class="as-run-h"><i class="as-dot"></i>Agents</span>
-        <ul class="as-run-list">
-          {%- for t in runs.agents %}
-          <li><a class="as-run" href="{{ t.href }}">
-            <span class="as-run-t"><b>{{ t.name }}</b><small>{{ t.about }}</small>
-              {%- if t.last %}<small class="as-run-last">Last run {{ nice_day(t.last.at) }}{% if t.last.by %} by {{ t.last.by }}{% endif %}</small>{% endif %}</span>
-            {%- if t.given %}<span class="as-run-g">{{ t.given }}</span>{% endif %}
-            <svg class="as-run-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </a></li>
-          {%- endfor %}
-        </ul>
-      </div>
+
+    <div class="rx-group-h">
+      <span class="rx-label"><i class="as-dot"></i>Agents <em>{{ runs.agents|length }}</em></span>
+      <span class="rx-hint">Research that goes out and finds things</span>
     </div>
+    <ul class="rx-agents" role="list">
+      {%- for t in runs.agents %}
+      <li class="rx-cell" style="--i: {{ loop.index0 }}">{{ run_card(t, loop.index) }}</li>
+      {%- endfor %}
+    </ul>
+
+    <div class="rx-group-h">
+      <span class="rx-label"><i class="as-dot as-dot--sky"></i>SEO &amp; AEO <em>{{ runs.seo|length }}</em></span>
+      <span class="rx-hint">{% if runs.website %}Audits and research that read the site, on <b>{{ runs.website }}</b>{% else %}Audits and research that read the site{% endif %}</span>
+    </div>
+    <ul class="rx-tools" role="list">
+      {%- for t in runs.seo %}
+      <li class="rx-cell" style="--i: {{ loop.index0 + runs.agents|length }}">{{ run_card(t, loop.index, "rx-ag--tool") }}</li>
+      {%- endfor %}
+    </ul>
   </section>
   {%- endif %}
 
@@ -260,11 +309,26 @@
     <p class="as-runs-sub">Everything the team has done for {{ acct.name }}, newest first, with who did it. Everyone at {{ brand.name }} sees it; the client {{ "sees the finished work, without names" if shares_history else "does not" }}.</p>
     {%- endif %}
     {%- if history.rows %}
+    {#- The mix: what the work has been, by tool, as one bar; and who has worked on the account. #}
+    <div class="hx-sum">
+      <div class="hx-mix" role="img" aria-label="{% for t in history.filter.tools %}{{ t.label }} {{ t.n }}{% if not loop.last %}, {% endif %}{% endfor %}">
+        {%- for t in history.filter.tools %}<span class="hx-seg hx-seg--{{ t.key }}" style="--n: {{ t.n }}; --i: {{ loop.index0 }}"></span>{% endfor %}
+      </div>
+      {%- if not client_view and history.filter.people %}
+      <div class="hx-team">
+        <span class="hx-avs" aria-hidden="true">
+          {%- for p in history.filter.people[:5] %}<span class="hx-av" style="--i: {{ loop.index0 }}">{{ p[:1] }}</span>{% endfor %}
+          {%- if history.filter.people|length > 5 %}<span class="hx-av hx-av--more" style="--i: 5">+{{ history.filter.people|length - 5 }}</span>{% endif %}
+        </span>
+        <span class="hx-team-t">{{ history.filter.people[:2]|join(", ") }}{% if history.filter.people|length > 2 %} and {{ history.filter.people|length - 2 }} more{% endif %} worked on it</span>
+      </div>
+      {%- endif %}
+    </div>
     <div class="as-hist-bar">
       <div class="as-hist-chips" role="radiogroup" aria-label="Show">
         <button type="button" class="as-hist-chip is-on" role="radio" aria-checked="true" data-hist-tool="">All <em>{{ history.rows|length }}</em></button>
         {%- for t in history.filter.tools %}
-        <button type="button" class="as-hist-chip" role="radio" aria-checked="false" data-hist-tool="{{ t.key }}"><i class="as-ev-dot as-ev-dot--{{ t.key }}"></i>{{ t.label }} <em>{{ t.n }}</em></button>
+        <button type="button" class="as-hist-chip as-hist-chip--{{ t.key }}" role="radio" aria-checked="false" data-hist-tool="{{ t.key }}"><i class="as-ev-dot as-ev-dot--{{ t.key }}"></i>{{ t.label }} <em>{{ t.n }}</em></button>
         {%- endfor %}
       </div>
       <div class="as-hist-tools">
@@ -304,6 +368,7 @@
           <span class="as-ev-who">{% if r.by %}<span class="as-ev-av" aria-hidden="true">{{ r.by[:1] }}</span>{{ r.by }}{% else %}<span class="as-ev-av as-ev-av--auto" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span>Automatic{% endif %}</span>
           {%- endif %}
           <time class="as-ev-at" datetime="{{ r.at }}">{{ nice_day(r.at) }}</time>
+          {%- if r.href %}<span class="hx-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>{% endif %}
         </span>
       </li>
       {%- endfor %}

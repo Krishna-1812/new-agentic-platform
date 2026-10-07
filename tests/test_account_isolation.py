@@ -260,3 +260,17 @@ def test_the_history_filter_offers_search_people_and_automatic(seeded):
     assert '<option value="Ana Mehta">' in html and '<option value="~auto">Automatic</option>' in html
     js = open("static/js/account-space.js", encoding="utf-8").read()
     assert "h_tool" in js and "h_by" in js and "h_q" in js and "~auto" in js and "innerHTML" not in js
+
+
+def test_the_history_is_a_coloured_timeline_with_the_mix_and_the_team(seeded):
+    html = _client(RAJ).get("/lumina").get_data(as_text=True)
+    hist = html[html.index('id="history"'):]
+    assert 'class="hx-mix"' in hist and "hx-seg--seo" in hist and "hx-seg--page-watch" in hist
+    assert 'class="hx-team"' in hist and "worked on it" in hist
+    assert 'class="hx-go"' in hist, "an entry that opens somewhere shows its arrow"
+    css = open("static/css/account-space.css", encoding="utf-8").read()
+    for tool in account_history.TOOLS:
+        assert '.as-ev[data-tool="%s"]' % tool in css, "every tool has its colour on the timeline: %s" % tool
+    _invite("lumina", history=True)
+    client = _client(CLIENT).get("/lumina").get_data(as_text=True)
+    assert 'class="hx-mix"' in client and 'class="hx-team"' not in client, "the client sees the mix, never the team"
