@@ -18,7 +18,8 @@ log = logging.getLogger(__name__)
 
 TOOLS = {"page-watch": "Page Watch", "video-studio": "Video Studio", "ai-review": "AI review", "agents": "Agents",
          "seo": "SEO & AEO"}
-LIMIT = 60
+LIMIT = 60                # each tool's records read
+SHOWN = 200               # the History's rows, all tools together (the page shows 40 at a time)
 
 
 def _iso(v):
@@ -168,7 +169,7 @@ AGENT_READS = (("seo", _seo), ("local-business-radar", _lbr), ("social-media-int
                ("event-conference-intelligence", _evi), ("thought-leader-pr", _tlpr))
 
 
-def entries(acct, library=None, limit=LIMIT, extra=()):
+def entries(acct, library=None, limit=SHOWN, extra=()):
     """The account's History, newest first. A tool whose records cannot be read is left out (and
     logged) rather than failing the page. `extra` is rows read elsewhere (Contact Finder's, in
     app.py), in the same shape."""
@@ -186,8 +187,35 @@ def entries(acct, library=None, limit=LIMIT, extra=()):
     return rows[:limit]
 
 
+# ── What a client sees (the "history" share, tracker/client_access.py) ─────────
+# Finished work only, without who did it or links into the agency's tools. Contact Finder's rows are
+# never shown (they are people's names and contact details, found for the agency's own outreach), and
+# AI reviews only when the account shares its AI review, whose page is then the link.
+CLIENT_HIDDEN_AGENTS = {"company-people-intelligence"}
+CLIENT_KEEP_STATES = {"page-watch": {"", "paused", "changed"}, "video-studio": {"ready"}, "ai-review": {"complete"},
+                      "agents": {"ready"}, "seo": {"ready"}}
+CLIENT_KEYS = ("tool", "kind", "title", "detail", "at", "state", "state_label", "tool_label")
+
+
+def for_client(rows, slug, review_shared=False):
+    out = []
+    for r in rows:
+        if r["tool"] == "ai-review" and not review_shared:
+            continue
+        if r.get("agent") in CLIENT_HIDDEN_AGENTS or r.get("state") not in CLIENT_KEEP_STATES.get(r["tool"], ()):
+            continue
+        row = {k: r.get(k) for k in CLIENT_KEYS}
+        row.update(who="", by="", href="/%s/google-ads/ai-review" % slug if r["tool"] == "ai-review" else None)
+        if r["tool"] == "ai-review":
+            row["state"], row["state_label"] = "", ""
+        out.append(row)
+    return out
+
+
 def summary(rows):
-    """What the History's filter offers: [{"key", "label", "n"}] per tool, and the people in it."""
+    """What the History's filter offers: [{"key", "label", "n"}] per tool, the people in it, and whether
+    any of it is automatic (found by Page Watch on its own, with nobody's name)."""
     tools = [{"key": k, "label": lab, "n": sum(1 for r in rows if r["tool"] == k)} for k, lab in TOOLS.items()]
     people = sorted({r["by"] for r in rows if r.get("by")})
-    return {"tools": [t for t in tools if t["n"]], "people": people}
+    return {"tools": [t for t in tools if t["n"]], "people": people,
+            "automatic": any(not r.get("by") for r in rows)}

@@ -12,7 +12,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head(acct.name, ["account-space.css?v=12"]) }}
+{{ head(acct.name, ["account-space.css?v=13"]) }}
 </head>
 <body class="as-page">
 
@@ -244,17 +244,22 @@
   {%- endif %}
 
   {# ── History: everything the team has done for the account ────────────
-     tracker/account_history.py, read from each tool's own records. Staff only: a client sees none of
-     it. account-space.js groups it by day and filters it by tool and person. #}
+     tracker/account_history.py, read from each tool's own records. A client sees it only when the
+     account shares its work history, and then only finished work, without names or links into the
+     agency's tools (account_history.for_client). account-space.js groups it by day and filters it by
+     tool and person. #}
   {%- if history %}
   <section class="as-hist" id="history" aria-labelledby="as-hist-h" data-hist>
     <div class="as-prof-head">
-      <h2 class="as-h2" id="as-hist-h">History</h2>
-      {%- if history.rows %}<span class="as-hist-n">{{ history.rows|length }}{% if history.rows|length >= 60 %}+{% endif %} for {{ acct.name }}</span>{% endif %}
+      <h2 class="as-h2" id="as-hist-h">{{ "What we have done" if client_view else "History" }}</h2>
+      {%- if history.rows %}<span class="as-hist-n">{{ history.rows|length }}{% if history.rows|length >= history_limit %}+{% endif %} for {{ acct.name }}</span>{% endif %}
     </div>
-    <p class="as-runs-sub">Everything the team has done for {{ acct.name }}, newest first, with who did it. Everyone at {{ brand.name }} sees it; the client does not.</p>
+    {%- if client_view %}
+    <p class="as-runs-sub">The work {{ brand.name }} has finished for {{ acct.name }}, newest first.</p>
+    {%- else %}
+    <p class="as-runs-sub">Everything the team has done for {{ acct.name }}, newest first, with who did it. Everyone at {{ brand.name }} sees it; the client {{ "sees the finished work, without names" if shares_history else "does not" }}.</p>
+    {%- endif %}
     {%- if history.rows %}
-    {%- if history.filter.tools|length > 1 or history.filter.people|length > 1 %}
     <div class="as-hist-bar">
       <div class="as-hist-chips" role="radiogroup" aria-label="Show">
         <button type="button" class="as-hist-chip is-on" role="radio" aria-checked="true" data-hist-tool="">All <em>{{ history.rows|length }}</em></button>
@@ -262,16 +267,22 @@
         <button type="button" class="as-hist-chip" role="radio" aria-checked="false" data-hist-tool="{{ t.key }}"><i class="as-ev-dot as-ev-dot--{{ t.key }}"></i>{{ t.label }} <em>{{ t.n }}</em></button>
         {%- endfor %}
       </div>
-      {%- if history.filter.people|length > 1 %}
-      <label class="as-hist-who">
-        <select data-hist-who aria-label="By whom">
-          <option value="">Everyone</option>
-          {%- for p in history.filter.people %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
-        </select>
-      </label>
-      {%- endif %}
+      <div class="as-hist-tools">
+        <label class="as-hist-q">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+          <input type="search" data-hist-q placeholder="Search the history" aria-label="Search the history" autocomplete="off">
+        </label>
+        {%- if not client_view and (history.filter.people|length > 1 or (history.filter.people and history.filter.automatic)) %}
+        <label class="as-hist-who">
+          <select data-hist-who aria-label="By whom">
+            <option value="">Everyone</option>
+            {%- for p in history.filter.people %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+            {%- if history.filter.automatic %}<option value="~auto">Automatic</option>{% endif %}
+          </select>
+        </label>
+        {%- endif %}
+      </div>
     </div>
-    {%- endif %}
     <ol class="as-hist-list">
       {%- for r in history.rows %}
       <li class="as-ev" data-tool="{{ r.tool }}" data-by="{{ r.by }}" data-at="{{ r.at }}">
@@ -289,17 +300,24 @@
         {%- if r.href %}</a>{% else %}</div>{% endif %}
         <span class="as-ev-side">
           {%- if r.state_label %}<span class="as-ev-st as-ev-st--{{ r.state or 'plain' }}">{{ r.state_label }}</span>{% endif %}
+          {%- if not client_view %}
           <span class="as-ev-who">{% if r.by %}<span class="as-ev-av" aria-hidden="true">{{ r.by[:1] }}</span>{{ r.by }}{% else %}<span class="as-ev-av as-ev-av--auto" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span>Automatic{% endif %}</span>
+          {%- endif %}
           <time class="as-ev-at" datetime="{{ r.at }}">{{ nice_day(r.at) }}</time>
         </span>
       </li>
       {%- endfor %}
     </ol>
-    <p class="as-hist-none" hidden>Nothing of that kind yet.</p>
+    <p class="as-hist-none" hidden>Nothing matches.</p>
+    <button type="button" class="as-btn as-btn--line as-hist-more" data-hist-more hidden>Show more</button>
     {%- else %}
     <div class="as-hist-empty">
       <span class="as-ev-ico as-ev-ico--ai-review" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg></span>
+      {%- if client_view %}
+      <p><b>Nothing yet.</b> Finished work for {{ acct.name }} appears here.</p>
+      {%- else %}
       <p><b>Nothing yet.</b> A watch, a video, an AI review, an SEO audit or an agent run made for {{ acct.name }} appears here, with who made it, so whoever picks the account up next starts where the last person stopped.</p>
+      {%- endif %}
     </div>
     {%- endif %}
   </section>
@@ -439,7 +457,7 @@
 {%- endif %}
 
 <script id="acct-data" type="application/json">{{ accounts|tojson }}</script>
-<script defer src="{{ url_for('static', filename='js/account-space.js') }}?v=2"></script>
+<script defer src="{{ url_for('static', filename='js/account-space.js') }}?v=3"></script>
 {{ topbar_script() }}
 <script>
 (function(){

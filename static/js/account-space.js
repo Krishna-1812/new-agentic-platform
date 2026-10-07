@@ -200,28 +200,68 @@
       }
       li.setAttribute("data-day", k);
     });
-    var tool = "", who = "", none = sec.querySelector(".as-hist-none");
+    // The filter: by tool, by person ("Automatic" is what Page Watch found on its own) and by words,
+    // kept in the address (?h_tool=&h_by=&h_q=) so a filtered History can be linked to. PAGE at a
+    // time, with "Show more" for the rest.
+    var PAGE = 40, cap = PAGE;
+    var none = sec.querySelector(".as-hist-none"), more = sec.querySelector("[data-hist-more]");
+    var sel = sec.querySelector("[data-hist-who]"), q = sec.querySelector("[data-hist-q]");
+    var params = new URLSearchParams(window.location.search);
+    var tool = params.get("h_tool") || "", who = params.get("h_by") || "", words = params.get("h_q") || "";
+    function norm(s) { return (s || "").toLowerCase().replace(/\s+/g, " ").trim(); }
+    function keep() {
+      try {
+        var p = new URLSearchParams(window.location.search);
+        [["h_tool", tool], ["h_by", who], ["h_q", words]].forEach(function (kv) {
+          if (kv[1]) p.set(kv[0], kv[1]); else p.delete(kv[0]);
+        });
+        var s = p.toString();
+        window.history.replaceState(null, "", window.location.pathname + (s ? "?" + s : "") + window.location.hash);
+      } catch (e) { /* the address is a convenience */ }
+    }
     function apply() {
-      var shown = {};
+      var shown = {}, n = 0, want = norm(words);
       list.querySelectorAll(".as-ev").forEach(function (li) {
-        var on = (!tool || li.getAttribute("data-tool") === tool) && (!who || li.getAttribute("data-by") === who);
+        var match = (!tool || li.getAttribute("data-tool") === tool) &&
+                    (!who || (li.getAttribute("data-by") || "~auto") === who) &&
+                    (!want || norm(li.textContent).indexOf(want) !== -1);
+        var on = match && n < cap;
+        if (match) n += 1;
         li.hidden = !on;
         if (on) shown[li.getAttribute("data-day")] = true;
       });
       list.querySelectorAll(".as-hist-day").forEach(function (h) { h.hidden = !shown[h.getAttribute("data-day")]; });
-      if (none) none.hidden = Object.keys(shown).length > 0;
+      if (none) none.hidden = n > 0;
+      if (more) {
+        more.hidden = n <= cap;
+        more.textContent = "Show " + Math.min(PAGE, n - cap) + " more";
+      }
+    }
+    function setTool(t) {
+      var hit = false;
+      sec.querySelectorAll("[data-hist-tool]").forEach(function (x) {
+        var on = x.getAttribute("data-hist-tool") === t;
+        hit = hit || on;
+        x.classList.toggle("is-on", on); x.setAttribute("aria-checked", String(on));
+      });
+      tool = hit ? t : "";
+      if (!hit) setTool("");
     }
     sec.querySelectorAll("[data-hist-tool]").forEach(function (b) {
-      b.addEventListener("click", function () {
-        tool = b.getAttribute("data-hist-tool");
-        sec.querySelectorAll("[data-hist-tool]").forEach(function (x) {
-          x.classList.toggle("is-on", x === b); x.setAttribute("aria-checked", String(x === b));
-        });
-        apply();
-      });
+      b.addEventListener("click", function () { setTool(b.getAttribute("data-hist-tool")); cap = PAGE; keep(); apply(); });
     });
-    var sel = sec.querySelector("[data-hist-who]");
-    if (sel) sel.addEventListener("change", function () { who = sel.value; apply(); });
+    if (sel) {
+      if (who && !Array.prototype.some.call(sel.options, function (o) { return o.value === who; })) who = "";
+      sel.value = who;
+      sel.addEventListener("change", function () { who = sel.value; cap = PAGE; keep(); apply(); });
+    } else who = "";
+    if (q) {
+      q.value = words;
+      q.addEventListener("input", function () { words = q.value; cap = PAGE; keep(); apply(); });
+    } else words = "";
+    if (more) more.addEventListener("click", function () { cap += PAGE; apply(); });
+    setTool(tool);
+    apply();
   }
 
   function init() {

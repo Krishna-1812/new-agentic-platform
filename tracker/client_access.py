@@ -6,7 +6,8 @@ whichever of its pages the account shares. Nothing is emailed; the admin sends t
 
 What an account shares (SHARES): the Google Ads dashboard, on unless turned off; the AI review and
 the profile from the master doc, off unless turned on (the review is the agency's own critique of
-the account, including whether it follows its brief, so sharing it is a choice).
+the account, including whether it follows its brief, so sharing it is a choice). The work history,
+off unless turned on, is the account's History as a client sees it (account_history.for_client).
 
 A domain that anyone can sign up to (gmail.com and the like) can never be invited as a whole, and
 neither can the agency's own domain, whose people are staff and see every account anyway.
@@ -22,6 +23,8 @@ SHARES = (
     ("ai-review", "AI review", "Claude's latest finished review, including where the account does not follow its brief",
      False),
     ("profile", "Profile from the master doc", "Website, goals, audience, competitors and brand", False),
+    ("history", "Work history", "The finished work done for the account: pages watched and the changes seen, videos, "
+                "SEO and agent runs. Without who did it", False),
 )
 SHARE_KEYS = tuple(k for k, *_ in SHARES)
 # An account's page -> the share that opens it to clients ("" is the account's home, always open).

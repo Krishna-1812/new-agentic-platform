@@ -129,7 +129,47 @@ and a merge.
     plan page says so and lists them. General videos get nothing.
   - **Not given the brief, by design:** the agents and the SEO & AEO tools. They gather data (places,
     posts, rankings, page audits) rather than judge the account, and their results feed the brief.
-- **Phase 5:** not started.
+- **Phase 5: built.** Isolation audit and polish.
+  - **The sweep** (`tests/test_account_isolation.py`).
+    - What it seeds: every tool's work, in two accounts, in two people's General spaces and as older
+      unassigned work, each with its own marker.
+    - What it opens: every page and API an account has, for one account, as a staff member who made
+      the other account's work. Each id route is opened with the account's own id and with every
+      other one.
+    - Nothing from elsewhere may show. The route list is read from the app itself, so a new account
+      route fails the test until it is added to the sweep.
+    - It also checks each account's AI brief, the agents' lists, General privacy and what a client
+      sees.
+    - Breaking one store's space check on purpose fails it.
+  - **What clients see of History.** A new share, **Work history** (off by default), set in the
+    account's Share dialog. When it is on, the client's home shows **What we have done**
+    (`account_history.for_client`):
+    - finished work only (no running, failed or removed items);
+    - no names and no links into the agency's tools;
+    - AI reviews only when the account also shares its AI review, linking to that page;
+    - never Contact Finder's rows (people's names and contact details found for the agency's own
+      outreach).
+
+    The staff History says whether the client sees it.
+  - **History filters.** Alongside the tool chips and the person picker:
+    - a search box;
+    - "Automatic" in the person picker, for what Page Watch found on its own;
+    - up to 200 entries, 40 at a time, with **Show more**;
+    - the chosen filter kept in the address (`?h_tool=`, `?h_by=`, `?h_q=`), so a filtered History
+      can be linked to.
+
+## How it works, in short
+
+- **Where work is saved:** an account's pages save to the account (everyone at the agency sees it,
+  with who did it); the global pages save to your General space (only you see it).
+- **Who removes it:** only whoever made it (or an admin, for watches).
+- **What the AI knows:** before the Google Ads AI review or a Video Studio plan for an account, the AI
+  is given that account's earlier work (`tracker/account_brief.py`), and the run's page shows what it
+  was given.
+- **What a client sees:** only what the account shares: the Google Ads dashboard, the AI review, the
+  profile and, if turned on, the finished work history without names.
+- **What keeps accounts apart:** every read names its space; `tests/test_account_isolation.py` proves
+  it across every account route.
 
 ## Phase 1 in detail
 
