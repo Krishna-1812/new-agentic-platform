@@ -184,3 +184,31 @@ and a merge.
 | Global Page Watch and Video Studio: your General work only, with a line pointing to your account work | `app.py`, templates |
 | History on the account home | `tracker/account_history.py`, `templates/account_home.html` |
 | "General" in the picker | `templates/_bento.html`, `static/js/account-picker.js`, `templates/hub.html` |
+
+## Clients using an account's tools
+
+An admin opens an account's **Share** panel, invites the client and ticks the agents and tools they may
+use, and sets **Runs a month**. Then:
+
+- **What the client sees.** Their account home shows **Your tools**: a card for each ticked tool, with
+  the runs left this month. Their History shows only those tools' finished work (and AI reviews when
+  the AI review is shared), with no staff names, linking into their own account's pages.
+- **What they can do.** Each ticked tool opens inside their account and runs as it does for staff. What
+  they run is saved to the account, so the team sees it in the account's History, with the client's
+  name. Every other tool, and the platform's own pages (tests, drills, admin), stays closed to them.
+- **Only their account.** While a client's request is served, `tracker/workspace.py` holds their
+  account's space as the scope: every store reads, lists and files that space alone, and nothing can be
+  filed as General work. No id, header or address reaches another account or anyone's General work.
+  `tests/test_client_tools.py` sweeps every tool route with every other account's ids.
+- **The limit.** Each run they start counts (a new watch or a manual check, a new video or a plan
+  change, a radar, social or event run, a Contact Finder search, a Thought Leader lookup, a finished
+  SEO & AEO run). At the limit, starting another is refused with a note to ask the agency; looking at
+  what is there is not. Staff are never limited.
+- **No costs.** A client never sees what a run cost the agency or its Apollo credits: those figures are
+  removed from every answer they receive and every page they open.
+- **SEO & AEO.** The studio gets a "client" pass naming the account and the shared tools, and its server
+  lets that pass reach only those tools' APIs.
+- **Staying inside.** A client who takes the account's name off the address (or opens any of our other
+  pages) is sent back to their account; with two accounts, to the first.
+- **Client Usage.** Every shared account has a card in Admin → Client Usage, made the moment an admin
+  shares it: who it is shared with, what, their visits and runs against the limit, and every change.

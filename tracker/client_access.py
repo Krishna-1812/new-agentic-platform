@@ -30,7 +30,8 @@ SHARES = (
 )
 SHARE_KEYS = tuple(k for k, *_ in SHARES)
 # An account's page -> the share that opens it to clients ("" is the account's home, always open).
-PAGE_SHARE = {"": None, "google-ads": "google-ads", "google-ads/ai-review": "ai-review"}
+PAGE_SHARE = {"": None, "google-ads": "google-ads", "google-ads/ai-review": "ai-review",
+              "page-watch": "tool:page-watch", "video-studio": "tool:video-studio"}
 
 PUBLIC_DOMAINS = {
     "gmail.com", "googlemail.com", "outlook.com", "outlook.in", "hotmail.com", "hotmail.co.uk", "hotmail.in",

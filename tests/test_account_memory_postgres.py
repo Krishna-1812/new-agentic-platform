@@ -208,3 +208,31 @@ def test_the_brief_is_built_from_one_accounts_space_only(who):
             seo_runs_store.delete(i, email)
         else:
             video_store.delete_project(i, email)
+
+
+# ── A client's scope, in SQL ─────────────────────────────────────────────────
+def test_a_clients_scope_reaches_only_their_account(who):
+    from tracker import lbr_store, seo_runs_store
+    a, b, sp = who["a"], who["b"], who["space"]
+    other = workspace.account(random.randint(10 ** 8, 10 ** 9))
+    mine = watch_store.create_target(a, "https://example.com/m", space=sp)
+    theirs = watch_store.create_target(a, "https://example.com/t", space=other)
+    own = watch_store.create_target(b, "https://example.com/o", space=workspace.personal(b))
+    v_mine = video_store.create_project(a, brief="m", space=sp)
+    v_theirs = video_store.create_project(a, brief="t", space=other)
+    r_mine = lbr_store.create_run(a, "m", "Pune", "all", 40, space=sp)
+    r_theirs = lbr_store.create_run(a, "t", "Pune", "all", 40, space=other)
+    s_theirs = seo_runs_store.add(a, other, "seo-geo-audit", "t", {}, {}, None)
+    with workspace.client_scope(sp):
+        assert watch_store.get_target(mine, b) is not None
+        assert watch_store.get_target(theirs, b) is None and watch_store.get_target(own, b) is None
+        assert video_store.get_project(v_mine, b) is not None and video_store.get_project(v_theirs, b) is None
+        assert lbr_store.get_run(r_mine, b) is not None and lbr_store.get_run(r_theirs, b) is None
+        assert seo_runs_store.get(s_theirs, b) is None
+        assert [r["id"] for r in lbr_store.list_runs(b)] == [r_mine], "a client's list is their account's"
+    assert watch_store.get_target(theirs, b) is not None, "staff reach every account again once the scope ends"
+    for t, e in ((mine, a), (theirs, a), (own, b)):
+        watch_store.delete_target(t, e)
+    for p in (v_mine, v_theirs):
+        video_store.delete_project(p, a)
+    seo_runs_store.delete(s_theirs, a)

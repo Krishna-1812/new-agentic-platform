@@ -1393,7 +1393,7 @@ def position2_required(f):
         user = _get_user()
         if not user:
             return _login_redirect()
-        if not _is_staff(user.get("email", "")):
+        if not _is_staff(user.get("email", "")) and not g.get("client_tool"):
             return redirect("/app")
         return f(*args, **kwargs)
     return decorated
@@ -4271,7 +4271,7 @@ SEO_STUDIO_SECRET = os.environ.get("SEO_STUDIO_SECRET", "")
 _STUDIO_PASS_TTL = 12 * 3600
 
 
-def _studio_pass(email, role, space=None):
+def _studio_pass(email, role, space=None, tools=None):
     """A signed, short-lived pass that lets this user into SEO Studio.
 
     base64url(JSON {e, r, x[, s]}) + "." + base64url(HMAC-SHA256). `s` is the client account's space
@@ -4287,19 +4287,21 @@ def _studio_pass(email, role, space=None):
     payload = {"e": (email or "").lower(), "r": role, "x": int(time.time()) + _STUDIO_PASS_TTL}
     if space:
         payload["s"] = space
+    if tools is not None:
+        payload["t"] = sorted(tools)
     body = b64(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
     sig = b64(hmac.new(SEO_STUDIO_SECRET.encode("utf-8"), body.encode("ascii"), hashlib.sha256).digest())
     return body + "." + sig
 
 
-def _studio_auth_params(role=None, space=None):
+def _studio_auth_params(role=None, space=None, tools=None):
     """Query parameters that authenticate the current user to SEO Studio:
     a signed pass when SEO_STUDIO_SECRET is set, else the legacy shared
     SERP_PLATFORM_TOKEN (what the original seo-apps deployment reads)."""
     user = _get_user() or {}
     email = user.get("email", "")
     if SEO_STUDIO_SECRET and email:
-        return [("st", _studio_pass(email, role or ("staff" if _is_staff(email) else "app"), space=space))]
+        return [("st", _studio_pass(email, role or ("staff" if _is_staff(email) else "app"), space=space, tools=tools))]
     pt = os.environ.get("SERP_PLATFORM_TOKEN", "")
     return [("pt", pt)] if pt else []
 
@@ -5814,9 +5816,183 @@ CLIENT_FENCE = ("/hub", "/app", "/dashboards", "/strategic-agents", "/seo-aeo", 
                 "/video-studio", "/b2b-agents")
 
 
+# ── A client using the tools their account shares with them ─────────────────
+# An invited client may use each tool the account shares (the Share panel's tiles), from inside the
+# account. Their requests reach only that tool's own routes (CLIENT_TOOL_ROUTES), never an admin's or
+# a test's, and are served under the account's scope (workspace.client_scope): every store then reads,
+# lists and files that account's work alone. Each run they start (CLIENT_RUN_ROUTES) counts against
+# the account's monthly limit, set in the same panel, and shows in Client Usage.
+_SA = "/strategic-agents/"
+CLIENT_TOOL_ROUTES = {
+    "page-watch": (r"page-watch/api/(watches/\d+(/(preview|check|area|mute))?|find|changes/\d+/feedback)",
+                   r"page-watch/images/\d+"),
+    "video-studio": (r"video-studio/api/(library|videos|videos/\d+(/[a-z-]+)?|versions/\d+/[a-z-]+)",
+                     r"video-studio/(asset/\d+\.img|media/\d+\.[a-z0-9]+|music/[a-z0-9_-]+\.mp3|brands/logo)"),
+    "local-business-radar": (r"local-business-radar/(plan|run|runs|runs/\d+/(cancel|data|export\.csv|export\.xlsx|report|resume|status))",),
+    "social-media-intelligence": (r"social-media-intelligence/(search|analyze|runs/\d+(/status)?)",),
+    "event-conference-intelligence": (
+        r"event-conference-intelligence/(outcomes|profiles(/\d+|/draft)?|run|search|"
+        r"runs/\d+(/(cancel|candidates\.csv|export\.csv|outreach\.csv|plan|resolve|status))?)",),
+    "company-people-intelligence": (
+        r"company-people-intelligence/(chat|count|credits|enrich|enrich-bulk|export|history(/\d+)?|industries|list|"
+        r"parse-query|search|vocab)",),
+    "thought-leader-pr": (
+        r"thought-leader-pr/(resolve|search|runs/\d+(/(collect|collect-press|collect-reaction|collect-synthesis|confirm))?)",),
+}
+CLIENT_RUN_ROUTES = {          # (method, path): what counts as a run started
+    "page-watch": (r"/[^/]+/api/page-watch/watches", r"page-watch/api/watches/\d+/check"),
+    "video-studio": (r"video-studio/api/videos", r"video-studio/api/versions/\d+/(approve|change|idea|retry|shape)"),
+    "local-business-radar": (r"local-business-radar/(run|runs/\d+/resume)",),
+    "social-media-intelligence": (r"social-media-intelligence/analyze",),
+    "event-conference-intelligence": (r"event-conference-intelligence/run",),
+    "company-people-intelligence": (r"company-people-intelligence/(search|enrich|enrich-bulk|chat)",),
+    "thought-leader-pr": (r"thought-leader-pr/resolve",),
+}
+_CLIENT_TOOL_RX = {t: re.compile("^%s(%s)$" % (re.escape(_SA), "|".join(ps))) for t, ps in CLIENT_TOOL_ROUTES.items()}
+_CLIENT_RUN_RX = {t: re.compile("^(%s)$" % "|".join(p if p.startswith("/") else re.escape(_SA) + p for p in ps))
+                  for t, ps in CLIENT_RUN_ROUTES.items()}
+
+
+_CLIENT_ACCT_API_RX = {"page-watch": re.compile(r"^/[^/]+/api/page-watch/watches$")}
+
+
+def _client_route_tool(path):
+    for tool, rx in _CLIENT_ACCT_API_RX.items():
+        if rx.match(path):
+            return tool
+    for tool, rx in _CLIENT_TOOL_RX.items():
+        if rx.match(path):
+            return tool
+    return None
+
+
+def _client_req_acct(email):
+    """The account a client's request is for: the one in the address (/<account>/...), else the one
+    the page that made it was (X-Account, or the page it came from), else their only one. None when
+    none of these is an account they are invited to."""
+    listing = _acct_listing()
+    keys = _acct_client_keys(email)
+    by_slug = listing.get("by_slug") or {}
+    candidates = [request.path.strip("/").split("/", 1)[0], request.headers.get("X-Account", "").strip()]
+    ref = request.headers.get("Referer", "")
+    if ref:
+        from urllib.parse import urlsplit
+        r = urlsplit(ref)
+        if not r.netloc or r.netloc == request.host:
+            candidates.append(r.path.strip("/").split("/", 1)[0])
+    for slug in candidates:
+        acct = by_slug.get(slug)
+        if acct is not None and acct["key"] in keys:
+            return acct
+    mine = [a for a in listing.get("accounts") or [] if a["key"] in keys]
+    return mine[0] if len(mine) == 1 else None
+
+
+@app.before_request
+def _acct_client_grant():
+    """For an invited client: the account their request is for, its scope, and the tool it may use."""
+    if request.path.startswith("/static/"):
+        return None
+    user = _get_user()
+    email = (user or {}).get("email", "")
+    if not email or _is_staff(email) or not _acct_client_keys(email):
+        return None
+    acct = _client_req_acct(email)
+    if acct is None:
+        return None
+    g.client_acct = acct
+    g._client_scope = workspace.set_scope(acct["space"])
+    tool = _client_route_tool(request.path)
+    if tool is None and request.path == "/api/seo-runs" and request.method == "POST":
+        tool = str((request.get_json(silent=True) or {}).get("tool") or "")
+        if tool not in dict(ACCT_SEO):
+            return jsonify({"ok": False, "error": "This tool is not shared with you."}), 403
+        if not _acct_shares(acct).get(client_access.tool_key(tool)):
+            return jsonify({"ok": False, "error": "This tool is not shared with you."}), 403
+        g.client_tool, g.client_run = tool, tool             # a finished run: it counts, whatever the month
+        return None
+    if tool is None:
+        return None
+    shares = _acct_shares(acct)
+    if not shares.get(client_access.tool_key(tool)):
+        return jsonify({"ok": False, "error": "This tool is not shared with you."}), 403
+    g.client_tool = tool
+    if request.method == "POST" and _CLIENT_RUN_RX[tool].match(request.path):
+        if _acct_runs_left(acct) <= 0:
+            return jsonify({"ok": False, "error": "This month's runs for %s are used up. Ask %s for more."
+                            % (acct["name"], BRAND["name"])}), 429
+        g.client_run = tool
+    return None
+
+
+def _acct_runs_left(acct):
+    try:
+        used = client_accounts_store.runs_this_month(acct["key"])
+    except Exception:
+        app.logger.exception("client accounts: runs unreadable")
+        return 0
+    return _acct_shares(acct)[client_access.RUN_LIMIT] - used
+
+
+# What a client is never shown: what a run cost the agency (Claude, Apify, SERP), or its Apollo credits.
+CLIENT_HIDDEN_KEYS = frozenset({"cost", "costs", "cost_usd", "usd", "usd_max", "usd_min", "ceiling", "spent_usd",
+                                "spend", "budget_usd", "credits", "credits_spent", "credits_left", "balance"})
+
+
+def _client_scrub(obj):
+    if isinstance(obj, dict):
+        return {k: _client_scrub(v) for k, v in obj.items() if k not in CLIENT_HIDDEN_KEYS}
+    if isinstance(obj, list):
+        return [_client_scrub(v) for v in obj]
+    return obj
+
+
+def viewer_is_client():
+    """True when the signed-in viewer is an invited client, not staff (for templates that show costs)."""
+    email = (_get_user() or {}).get("email", "")
+    return bool(email) and not _is_staff(email)
+
+
+app.add_template_global(viewer_is_client, "viewer_is_client")
+
+
+@app.after_request
+def _acct_client_scrub(resp):
+    """A client's JSON answers lose every cost and credit figure, whatever route they came from."""
+    if g.get("client_acct") is not None and resp.mimetype == "application/json" and not resp.direct_passthrough:
+        try:
+            data = json.loads(resp.get_data(as_text=True) or "null")
+        except ValueError:
+            return resp
+        resp.set_data(json.dumps(_client_scrub(data)))
+    return resp
+
+
+@app.after_request
+def _acct_client_run_done(resp):
+    tool = g.get("client_run")
+    if tool and resp.status_code < 400:
+        try:
+            client_accounts_store.record(g.client_acct["key"], (_get_user() or {}).get("email", ""), "run",
+                                         tool=tool, path=request.path)
+        except Exception:
+            app.logger.exception("client accounts: run not recorded")
+    return resp
+
+
+@app.teardown_request
+def _acct_client_scope_end(_exc=None):
+    token = g.pop("_client_scope", None)
+    if token is not None:
+        try:
+            workspace.reset_scope(token)
+        except ValueError:          # set in another context (never expected): leave it to the context's end
+            pass
+
+
 @app.before_request
 def _acct_client_fence():
-    if request.method != "GET" or request.headers.get("X-Account"):
+    if request.method != "GET" or request.headers.get("X-Account") or g.get("client_tool"):
         return None
     path = request.path.rstrip("/") or "/"
     if not any(path == p or path.startswith(p + "/") for p in CLIENT_FENCE):
@@ -5831,7 +6007,7 @@ def _acct_client_fence():
 @app.after_request
 def _acct_client_fence_after(resp):
     """Any other staff page turns a signed-in outsider away to /app; a client goes to their account."""
-    if resp.status_code in (301, 302, 303, 307, 308) and request.method == "GET" and not request.headers.get("X-Account"):
+    if resp.status_code in (301, 302, 303, 307, 308):
         loc = (resp.headers.get("Location") or "").split("?")[0]
         if loc.endswith("/app") and not request.path.startswith("/" + "app"):
             user = _get_user()
@@ -5928,9 +6104,11 @@ def _acct_landing(email):
     return "/" + mine[0]["slug"] if mine else "/app"
 
 
-def _acct_view(page, api=False, staff_only=False):
+def _acct_view(page, api=False, staff_only=False, tool=None):
     """An account's page: an old URL name redirects to the current one, the visitor must be allowed,
-    and the account goes on g for the top bar (and to the view as its first argument)."""
+    and the account goes on g for the top bar (and to the view as its first argument). `tool` (a slug,
+    or a function of the view's arguments giving one) is the tool the page is: staff always, and a
+    client the account shares that tool with."""
     def deco(f):
         @wraps(f)
         def inner(slug, *args, **kwargs):
@@ -5950,6 +6128,20 @@ def _acct_view(page, api=False, staff_only=False):
                     return jsonify({"ok": False, "error": "Sign in again."}), 401
                 return _login_redirect()
             email = user.get("email", "")
+            if tool is not None and not _is_staff(email):
+                slug_ = tool(kwargs) if callable(tool) else tool
+                ok = acct["key"] in _acct_client_keys(email) and bool(_acct_shares(acct).get(client_access.tool_key(slug_ or "")))
+                if ok:
+                    g.client_tool = slug_
+                    g.client_acct = acct
+                    g.acct, g.acct_page = acct, page
+                    if not api and request.method == "GET":
+                        _acct_record_visit(acct, email, page + ("/" + slug_ if page in ("agents", "seo-aeo") else ""))
+                    return f(acct, *args, **kwargs)
+                if api:
+                    return jsonify({"ok": False, "error": "This tool is not shared with you."}), 403
+                return redirect("/" + acct["slug"]) if acct["key"] in _acct_client_keys(email) else (
+                    render_template("account_denied.html", user=user, mine=_acct_mine(email, listing)[:6]), 403)
             if (staff_only and not _is_staff(email)) or not _acct_allowed(email, acct, page):
                 if api:
                     return jsonify({"ok": False, "error": "Not allowed."}), 403
@@ -6076,15 +6268,21 @@ def account_home(acct):
     p = acct["profile"]
     show_profile = not client or shares["profile"]
     tools = None if client else _acct_tools(acct, email)
-    runs = None if client else _acct_runs(acct)
+    runs = _acct_runs(acct)
+    if client:      # a client's own tools: only those the account shares with them
+        on = set(client_access.tools_on(shares))
+        runs = {"seo": [t for t in runs["seo"] if t["slug"] in on], "agents": [t for t in runs["agents"] if t["slug"] in on],
+                "website": runs["website"]}
+        runs = runs if runs["seo"] or runs["agents"] else None
     history = _acct_client_history(acct, shares) if client else _acct_history(acct)
     if runs:
+        rows_ = history["rows"] if history else []
         for t in runs["agents"]:     # each agent's and tool's last run for the account, and who ran it
             slug = t["href"].rsplit("/", 1)[-1]
-            t["last"] = next((r for r in history["rows"] if r.get("agent") == slug), None)
+            t["last"] = next((r for r in rows_ if r.get("agent") == slug), None)
         for t in runs["seo"]:
             slug = t["href"].rsplit("/", 1)[-1]
-            t["last"] = next((r for r in history["rows"] if r.get("seo_tool") == slug), None)
+            t["last"] = next((r for r in rows_ if r.get("seo_tool") == slug), None)
     return render_template(
         "account_home.html", user=_get_user(), acct=acct, st=st, profile=p if show_profile else {"fields": 0},
         card=client_accounts.card(acct, st), pages=_acct_pages(acct, shares if client else None),
@@ -6096,7 +6294,8 @@ def account_home(acct):
         doc_url=None if client else listing["doc_url"], doc_error=None if client else listing["doc_error"],
         doc_read=listing["doc_read"], accounts=_acct_nav(), tools=tools, runs=runs, history=history,
         shares_history=bool(client_access.tools_on(shares)), history_limit=_acct_history_limit(),
-        tool_catalog=None if client else _acct_tool_catalog())
+        tool_catalog=None if client else _acct_tool_catalog(),
+        runs_left=max(0, _acct_runs_left(acct)) if client and runs else None)
 
 
 def _acct_history(acct):
@@ -6408,8 +6607,12 @@ def _work_acct():
         slug = request.headers.get("X-Account", "").strip()
         if slug:
             acct = (_acct_listing().get("by_slug") or {}).get(slug)
-    if acct is None or not _is_staff((_get_user() or {}).get("email", "")):
+    if acct is None:
         return None
+    if not _is_staff((_get_user() or {}).get("email", "")):
+        # A client's work is their account's, and only while they use a tool it shares with them.
+        mine = g.get("client_acct")
+        return mine if g.get("client_tool") and mine is not None and mine["key"] == acct["key"] else None
     return acct
 
 
@@ -6500,17 +6703,19 @@ def _elsewhere(counts, page, noun):
 
 
 @app.route("/<acct:slug>/page-watch")
-@_acct_view("page-watch", staff_only=True)
+@_acct_view("page-watch", tool="page-watch")
 def account_page_watch(acct):
     from tracker import watch_schedule, watch_web
     board = _acct_pw_board(acct, _pw_email())
+    client = not _is_staff(_pw_email())
     return render_template("page_watch.html", user=_get_user(), board=board, acct=acct,
                            suggest=_acct_pw_suggest(acct, board), status=watch_web.agent_status(),
-                           days=watch_schedule.DAYS, day_names=watch_schedule.DAY_NAMES)
+                           days=watch_schedule.DAYS, day_names=watch_schedule.DAY_NAMES,
+                           client_runs_left=max(0, _acct_runs_left(acct)) if client else None)
 
 
 @app.route("/<acct:slug>/page-watch/watches/<int:target_id>")
-@_acct_view("page-watch", staff_only=True)
+@_acct_view("page-watch", tool="page-watch")
 def account_page_watch_watch(acct, target_id):
     from tracker import watch_judge, watch_schedule, watch_web
     view = watch_web.timeline(target_id, _pw_email())
@@ -6526,7 +6731,7 @@ def account_page_watch_watch(acct, target_id):
 
 
 @app.route("/<acct:slug>/page-watch/changes/<int:change_id>")
-@_acct_view("page-watch", staff_only=True)
+@_acct_view("page-watch", tool="page-watch")
 def account_page_watch_change(acct, change_id):
     from tracker import watch_web
     view = watch_web.change_view(change_id, _pw_email())
@@ -6539,7 +6744,7 @@ def account_page_watch_change(acct, change_id):
 
 
 @app.route("/<acct:slug>/api/page-watch/watches", methods=["GET", "POST"])
-@_acct_view("page-watch", api=True, staff_only=True)
+@_acct_view("page-watch", api=True, tool="page-watch")
 def account_page_watch_api(acct):
     """The account's board (GET) and a new watch filed in its space (POST); every other watch call is
     Page Watch's own, which lets staff into an account's watches."""
@@ -6582,7 +6787,7 @@ def _acct_video_brand(acct):
 
 
 @app.route("/<acct:slug>/video-studio")
-@_acct_view("video-studio", staff_only=True)
+@_acct_view("video-studio", tool="video-studio")
 def account_video_studio(acct):
     """The account's videos (everyone's, each with its maker) and its saved brand; new videos are saved
     to the account."""
@@ -6592,6 +6797,8 @@ def account_video_studio(acct):
     data["brands"] = video_app.brands_view(acct["space"], account=acct["slug"])
     data["account"] = {"name": acct["name"], "home": "/%s/video-studio" % acct["slug"], "slug": acct["slug"],
                        "website": acct["profile"].get("website", ""), "brand": _acct_video_brand(acct)}
+    if viewer_is_client():
+        data = _client_scrub(data)          # no Claude spend or video costs for a client
     return render_template("video_studio.html", user=_get_user(), data=data, acct=acct)
 
 
@@ -6601,7 +6808,7 @@ def _acct_library(acct):
 
 
 @app.route("/<acct:slug>/video-studio/videos/<int:project_id>")
-@_acct_view("video-studio", staff_only=True)
+@_acct_view("video-studio", tool="video-studio")
 def account_video_studio_video(acct, project_id):
     from tracker import video_app, video_fonts
     view = video_app.project_view(_pw_email(), project_id, request.args.get("v", type=int))
@@ -6611,6 +6818,8 @@ def account_video_studio_video(acct, project_id):
         return redirect(_space_home(view.get("space"), "video-studio/videos/%d" % project_id)
                         or "%s/videos/%d" % (VS_BASE, project_id))
     _people([view])
+    if viewer_is_client():
+        view = _client_scrub(view)
     return render_template("video_studio_video.html", user=_get_user(), data=view, acct=acct,
                            menu=[{"type": k, "label": lab, "hint": h} for k, lab, h in video_app.SCENE_MENU],
                            fields=video_app.scene_fields(), fonts=video_fonts.families())
@@ -6645,7 +6854,7 @@ def _acct_runs(acct):
 
 
 @app.route("/<acct:slug>/seo-aeo/<tool_slug>")
-@_acct_view("seo-aeo", staff_only=True)
+@_acct_view("seo-aeo", tool=lambda kw: kw.get("tool_slug"))
 def account_seo_tool(acct, tool_slug):
     """An SEO Studio tool opened for the account: its website, keyword or service filled in."""
     tool = next((t for t in _seo_tools() if t.get("slug") == tool_slug), None)
@@ -6659,7 +6868,18 @@ def account_seo_tool(acct, tool_slug):
         pf.append(("pf_" + key, f[key]))
     if tool_slug == "market-potential" and f["domain"]:
         pf.append(("pf_domain", f["domain"]))
-    qs = _studio_auth_params("staff", space=acct["space"]) + pf
+    email = (_get_user() or {}).get("email", "")
+    if _is_staff(email):
+        qs = _studio_auth_params("staff", space=acct["space"]) + pf
+    else:
+        # A client: a pass that names their account and the SEO & AEO tools it shares with them, and
+        # nothing else (seo-apps/server/routes/auth.js, role "client"). A run each time a tool opens is
+        # not known here; the finished run counts (POST /api/seo-runs), and a used-up month stops it here.
+        if _acct_runs_left(acct) <= 0:
+            return render_template("account_limit.html", user=_get_user(), acct=acct,
+                                   limit=_acct_shares(acct)[client_access.RUN_LIMIT]), 429
+        shared = [t for t in client_access.tools_on(_acct_shares(acct)) if t in dict(ACCT_SEO)]
+        qs = _studio_auth_params("client", space=acct["space"], tools=shared) + pf
     path = tool["path"]
     embed_url = f"{_SERP_BASE}{path}" + (("?" + urlencode(qs)) if qs else "")
     return render_template("embed.html", user=_get_user(), title=tool["name"], embed_url=embed_url,
@@ -6671,6 +6891,16 @@ def account_seo_tool(acct, tool_slug):
 # A studio tool that finishes tells the page around it (templates/embed.html), which hands the result
 # here. It is saved to its space: the account's when the tool was opened inside one (X-Account), else
 # the person's General work. tracker/seo_runs.py makes the few readable facts every view shows.
+def _seo_run_tool(run_id):
+    """The tool an SEO & AEO run is from (for whether a client may open it), or None."""
+    from tracker import seo_runs_store
+    try:
+        r = seo_runs_store.get(int(run_id or 0), (_get_user() or {}).get("email", ""))
+    except Exception:
+        return None
+    return r["tool"] if r else None
+
+
 def _seo_run_home(r):
     """Where a run's page is: inside its account, or the General one."""
     return (_space_home(r["space"], "seo-aeo/runs/%d" % r["id"])
@@ -6725,7 +6955,7 @@ def seo_run_page(run_id):
 
 
 @app.route("/<acct:slug>/seo-aeo/runs/<int:run_id>")
-@_acct_view("seo-aeo", staff_only=True)
+@_acct_view("seo-aeo", tool=lambda kw: _seo_run_tool(kw.get("run_id")))
 def account_seo_run_page(acct, run_id):
     from tracker import seo_runs_store
     r = seo_runs_store.get(run_id, _pw_email())
@@ -6757,7 +6987,7 @@ def seo_run_json(run_id):
 
 
 @app.route("/<acct:slug>/seo-aeo/runs/<int:run_id>.json")
-@_acct_view("seo-aeo", staff_only=True)
+@_acct_view("seo-aeo", tool=lambda kw: _seo_run_tool(kw.get("run_id")))
 def account_seo_run_json(acct, run_id):
     from tracker import seo_runs_store
     r = seo_runs_store.get(run_id, _pw_email(), with_output=True)
@@ -6781,7 +7011,7 @@ def seo_run_delete(run_id):
 
 
 @app.route("/<acct:slug>/agents/<agent_slug>")
-@_acct_view("agents", staff_only=True)
+@_acct_view("agents", tool=lambda kw: kw.get("agent_slug"))
 def account_agent(acct, agent_slug):
     """An agent's own page, opened for the account: its fields filled in from the profile (they can be
     changed), the account in the top bar."""
@@ -6809,6 +7039,11 @@ def account_agent(acct, agent_slug):
     from markupsafe import escape
     ctx = '<script src="%s?v=1" data-acct="%s"></script>\n' % (
         url_for("static", filename="js/account-context.js"), escape(acct["slug"]))
+    if viewer_is_client():
+        # The agency's costs are not the client's: the radar's cost panel (all but its Start button) and
+        # spend meter. Their figures are taken out of every answer the page fetches (_client_scrub).
+        ctx += ('<style>.lbr-plan-cost > :not(.lbr-start), .lbr-meter--spend { display: none !important; }'
+                '.lbr-plan-cost { background: none !important; padding: 0 !important; }</style>\n')
     head = re.search(r"<head[^>]*>", html, re.I)
     html = html[:head.end()] + "\n" + ctx + html[head.end():] if head else ctx + html
     resp.set_data(html)

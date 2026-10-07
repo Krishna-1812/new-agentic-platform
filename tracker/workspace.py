@@ -9,11 +9,18 @@ Every saved piece of work (a watch, a video, and from phase 2 an agent's run) ha
   ""            work saved before spaces existed. It counts as its owner's General work until
                 claim_legacy() moves it to the account its client name names.
 
-The pages that read these are staff-only (/strategic-agents/*, and an account's tools); clients reach
-an account's work only through the account's sharing settings, never through these reads.
+Staff reach every account's work through these reads. A client (someone invited to an account, who
+uses the tools it shares with them) reaches only that one account's: while the platform serves their
+request it sets the client's scope (client_scope), and every rule below then reads and lists that
+space alone. No id, header or query can reach past it, and none of their work can be filed as anyone's
+General work: personal() refuses while a client scope is set.
 """
 
 from __future__ import annotations
+
+import contextlib
+import contextvars
+import re
 
 ACCOUNT = "acct:"
 PERSONAL = "me:"
@@ -27,7 +34,42 @@ def account(account_id):
     return "%s%d" % (ACCOUNT, int(account_id))
 
 
+# ── A client's scope ─────────────────────────────────────────────────────────
+_SCOPE = contextvars.ContextVar("workspace_client_scope", default=None)
+
+
+class OutOfScope(PermissionError):
+    """A client's request tried to file or read work outside their account."""
+
+
+def set_scope(space):
+    """Narrow every read to one account's space, for a client's request. Returns a token for reset."""
+    if not is_account(space):
+        raise ValueError("a client's scope is an account's space: %r" % (space,))
+    return _SCOPE.set(space)
+
+
+def reset_scope(token):
+    _SCOPE.reset(token)
+
+
+def scope():
+    """The client's account space while one is set, else None (staff, and the platform's own jobs)."""
+    return _SCOPE.get()
+
+
+@contextlib.contextmanager
+def client_scope(space):
+    token = set_scope(space)
+    try:
+        yield space
+    finally:
+        reset_scope(token)
+
+
 def personal(email):
+    if _SCOPE.get() is not None:
+        raise OutOfScope("a client's work is filed in their account, never as General work")
     return PERSONAL + _norm(email)
 
 
@@ -40,12 +82,17 @@ def account_id(space):
 
 
 def personal_spaces(email):
-    """The spaces that are `email`'s General work: their own, and work saved before spaces."""
+    """The spaces that are `email`'s General work: their own, and work saved before spaces. A client
+    has none."""
+    if _SCOPE.get() is not None:
+        return ()
     return ("", personal(email))
 
 
 def can_see(viewer, space, owner):
-    """A staff member sees every account's work, and their own General work."""
+    """A staff member sees every account's work, and their own General work; a client, their account's."""
+    if _SCOPE.get() is not None:
+        return space == _SCOPE.get()
     return is_account(space) or (_norm(viewer) == _norm(owner) and space in personal_spaces(owner))
 
 
@@ -87,15 +134,29 @@ def claim_legacy(accounts):
 ACCOUNT_SQL = "^acct:[0-9]+$"
 
 
+def _scope_literal():
+    sp = _SCOPE.get()
+    if not (is_account(sp) and re.fullmatch(r"acct:[0-9]+", sp)):      # digits only: safe as a literal
+        raise OutOfScope("no valid client scope")
+    return sp
+
+
 def seen_sql(alias=""):
-    """"Theirs, or a client account's": `email` (one %s parameter) may reach the row."""
+    """"Theirs, or a client account's": `email` (one %s parameter) may reach the row. For a client:
+    their account's rows only (the parameter is still taken, and must be given)."""
     p = alias + "." if alias else ""
+    if _SCOPE.get() is not None:
+        return "(%%s IS NOT NULL AND %sspace = '%s')" % (p, _scope_literal())
     return "(%semail = %%s OR %sspace ~ '%s')" % (p, p, ACCOUNT_SQL)
 
 
 def list_sql(email, space=None, alias=""):
     """(where, args) for a list: a client account's rows (everyone's), or `email`'s own General ones."""
     p = alias + "." if alias else ""
+    if _SCOPE.get() is not None:
+        if space is not None and space != _SCOPE.get():
+            raise OutOfScope("a client lists their own account only")
+        return "%sspace = %%s" % p, [_SCOPE.get()]
     if space is not None:
         if not is_account(space):
             raise ValueError("not an account's space: %r" % space)
@@ -105,11 +166,17 @@ def list_sql(email, space=None, alias=""):
 
 def mem_seen(row, email):
     """The in-process stores' form of seen_sql."""
+    if _SCOPE.get() is not None:
+        return row.get("space") == _SCOPE.get()
     return email is None or row.get("email") == _norm(email) or is_account(row.get("space"))
 
 
 def mem_listed(row, email, space=None):
     """The in-process stores' form of list_sql."""
+    if _SCOPE.get() is not None:
+        if space is not None and space != _SCOPE.get():
+            raise OutOfScope("a client lists their own account only")
+        return row.get("space") == _SCOPE.get()
     if space is not None:
         return row.get("space") == space
     return row.get("email") == _norm(email) and row.get("space", "") in personal_spaces(email)

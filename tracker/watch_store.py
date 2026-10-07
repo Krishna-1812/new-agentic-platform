@@ -271,6 +271,9 @@ def _mem_id(table):
 
 def _mem_target(target_id, email, strict=False):
     t = _MEM["targets"].get(target_id)
+    from tracker import workspace
+    if t and email is not None and workspace.scope() is not None:      # a client: their account's only
+        return t if t.get("space") == workspace.scope() and (not strict or t["email"] == _norm_email(email)) else None
     if not t or (email is not None and t["email"] != _norm_email(email)
                  and (strict or not _shared(t.get("space")))):
         return None
@@ -284,8 +287,8 @@ def _shared(space):
 
 def _seen(alias=""):
     """The SQL test that `email` may reach a watch: theirs, or in a client account's space."""
-    p = alias + "." if alias else ""
-    return "(%semail = %%s OR %sspace ~ '^acct:[0-9]+$')" % (p, p)
+    from tracker import workspace
+    return workspace.seen_sql(alias)
 
 
 # ── Targets ──────────────────────────────────────────────────────────────────

@@ -270,10 +270,15 @@
   {%- if runs %}
   <section class="as-runs rx" aria-labelledby="as-runs-h">
     <div class="as-prof-head">
-      <h2 class="as-h2" id="as-runs-h">Run for {{ acct.name }}</h2>
+      <h2 class="as-h2" id="as-runs-h">{{ "Your tools" if client_view else "Run for " ~ acct.name }}</h2>
     </div>
+    {%- if client_view %}
+    <p class="as-runs-sub">The tools {{ brand.name }} has shared with you. Each opens with {{ acct.name }}&rsquo;s details filled in, and what you run is kept here in your account.{% if runs_left is not none %} <b>{{ runs_left }} run{{ "" if runs_left == 1 else "s" }} left this month.</b>{% endif %}</p>
+    {%- else %}
     <p class="as-runs-sub">Each opens with {{ acct.name }}&rsquo;s details from the master doc already filled in. Nothing runs until you press its own button.</p>
+    {%- endif %}
 
+    {%- if runs.agents %}
     <div class="rx-group-h">
       <span class="rx-label"><i class="as-dot"></i>Agents <em>{{ runs.agents|length }}</em></span>
       <span class="rx-hint">Research that goes out and finds things</span>
@@ -283,7 +288,9 @@
       <li class="rx-cell">{{ run_card(t, loop.index) }}</li>
       {%- endfor %}
     </ul>
+    {%- endif %}
 
+    {%- if runs.seo %}
     <div class="rx-group-h">
       <span class="rx-label"><i class="as-dot as-dot--sky"></i>SEO &amp; AEO <em>{{ runs.seo|length }}</em></span>
       <span class="rx-hint">{% if runs.website %}Audits and research that read the site, on <b>{{ runs.website }}</b>{% else %}Audits and research that read the site{% endif %}</span>
@@ -293,6 +300,7 @@
       <li class="rx-cell">{{ run_card(t, loop.index, "rx-ag--tool") }}</li>
       {%- endfor %}
     </ul>
+    {%- endif %}
   </section>
   {%- endif %}
 
