@@ -1,0 +1,52 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Dashboard vs reality</title>
+<link rel="stylesheet" href="../../composition/base.css">
+<link rel="stylesheet" href="statics.css">
+<style>
+#stage { background: var(--ink); color: var(--bone); }
+.hook { font-size: 62px; }
+.hook .dim { color: oklch(70% .01 285); }
+.pos { color: oklch(80% .01 285); }
+.free { color: oklch(70% .01 285); }
+.pane { position: absolute; top: 470px; height: 440px; width: 462px; overflow: hidden; }
+#dash { left: 64px; background: var(--ink-2); border: 1px solid oklch(100% 0 0 / .1); box-shadow: 0 0 80px oklch(68.5% .223 39.5 / .35); padding: 22px; }
+#reg { left: 554px; background: var(--card); color: var(--ink); }
+.ph { font-family: var(--mono); font-size: 14px; letter-spacing: .2em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+.live { width: 10px; height: 10px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 12px var(--orange); }
+.tiles { display: flex; gap: 10px; margin-top: 16px; }
+.tile { flex: 1; background: oklch(100% 0 0 / .05); padding: 10px 12px; }
+.tile .k { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; color: oklch(70% .01 285); text-transform: uppercase; }
+.tile .v { font-family: var(--display); font-weight: 600; font-size: 22px; margin-top: 4px; } .tile .v b { color: var(--orange); }
+.lead { height: 34px; display: flex; align-items: center; gap: 10px; font-size: 15px; color: oklch(88% .01 285); border-bottom: 1px solid oklch(100% 0 0 / .06); }
+.lead i { width: 8px; height: 8px; background: var(--orange); }
+.rbar { height: 50px; display: flex; align-items: center; padding: 0 20px; border-bottom: 2px solid var(--ink); font-family: var(--mono); font-size: 14px; letter-spacing: .2em; text-transform: uppercase; }
+.rr { height: 42px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 1.3fr 1fr; align-items: center; padding: 0 20px; font-size: 17px; color: oklch(80% .008 60); }
+.rr.hit { color: var(--ink); background: oklch(92% .045 40 / .35); }
+.rr .st { font-family: var(--mono); font-size: 12px; letter-spacing: .16em; color: var(--orange); border: 2px solid var(--orange); padding: 3px 8px; justify-self: start; font-weight: 600; }
+.seam { position: absolute; left: 538px; top: 450px; width: 4px; height: 480px; margin-left: -2px; background: var(--orange); box-shadow: 0 0 30px var(--orange); }
+.cap { position: absolute; top: 924px; font-family: var(--mono); font-size: 14px; letter-spacing: .2em; color: oklch(70% .01 285); text-transform: uppercase; }
+</style></head>
+<body><div id="stage">
+  <div class="logo"><span id="lg"></span><div><div class="name">Outcomes</div><div class="sub">Digital</div></div></div>
+  <div class="url">edu.outcomes.digital</div>
+  <div class="hook">Your ad dashboard says hundreds of leads.<br><span class="dim">Your admissions office says a handful enrolled.</span></div>
+  <div class="pane" id="dash"><div class="ph"><span class="live"></span>Ad dashboard · Live</div>
+    <div class="tiles"><div class="tile"><div class="k">Leads</div><div class="v"><b>▲</b> Climbing</div></div><div class="tile"><div class="k">Clicks</div><div class="v"><b>▲</b> Climbing</div></div></div>
+    <svg width="418" height="110" viewBox="0 0 418 110" style="margin-top:14px"><defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="oklch(68.5% .223 39.5)" stop-opacity=".6"/><stop offset="1" stop-color="oklch(68.5% .223 39.5)" stop-opacity="0"/></linearGradient></defs>
+      <path d="M0 100 C60 96 90 88 140 80 S220 70 260 52 S340 34 418 8 L418 110 L0 110Z" fill="url(#g)"/><path d="M0 100 C60 96 90 88 140 80 S220 70 260 52 S340 34 418 8" fill="none" stroke="oklch(80% .15 45)" stroke-width="3"/></svg>
+    <div class="lead"><i></i>New lead · Instagram form</div><div class="lead"><i></i>New lead · Search ad</div><div class="lead"><i></i>New lead · Facebook form</div><div class="lead"><i></i>New lead · YouTube</div><div class="lead"><i></i>New lead · Landing page</div></div>
+  <div class="pane" id="reg"><div class="rbar">Admissions register</div>
+    <div class="rr"><span>—</span><span>—</span></div><div class="rr hit"><span>Applicant A.</span><span class="st">Enrolled</span></div><div class="rr"><span>—</span><span>—</span></div><div class="rr"><span>—</span><span>—</span></div><div class="rr"><span>—</span><span>—</span></div><div class="rr hit"><span>Applicant R.</span><span class="st">Enrolled</span></div><div class="rr"><span>—</span><span>—</span></div><div class="rr"><span>—</span><span>—</span></div><div class="rr"><span>—</span><span>—</span></div></div>
+  <div class="seam"></div>
+  <div class="cap" style="left:64px">What the dashboard counts</div><div class="cap" style="left:554px">What admissions counts</div>
+  <div class="bottom">
+    <div class="reveal">That gap comes from campaigns optimised for clicks, not seats.</div>
+    <div class="pos">We feed admissions data back into Google and Meta, so they learn which students actually enrol.</div>
+    <div class="row"><div class="cta">See Where Your Gap Is <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M4 12h15M13 6l6 6-6 6"/></svg></div><div class="free">Free strategy call<br>No pitch. No obligation.</div></div>
+  </div>
+  
+</div>
+<script src="../../composition/gsap.min.js"></script>
+<script src="../../composition/lib.js"></script>
+<script>window.__size = [1080, 1350]; document.getElementById('lg').innerHTML = LOGO(40);  boot(gsap.timeline(), 0.1);</script>
+</body></html>

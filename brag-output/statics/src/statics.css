@@ -1,0 +1,24 @@
+/* Shared layout for the six Meta feed statics (1080x1350).
+   Logo, URL, CTA and the text stack sit in the same place on every concept
+   so the set reads as one campaign; each concept swaps its theme. */
+html, body, #stage { width: 1080px; height: 1350px; }
+#stage { position: relative; overflow: hidden; }
+
+.logo { position: absolute; left: 64px; top: 58px; display: flex; align-items: center; gap: 14px; z-index: 10; }
+.logo .name { font-family: var(--display); font-weight: 700; font-size: 21px; letter-spacing: .16em; text-transform: uppercase; line-height: 1; }
+.logo .sub { font-family: var(--mono); font-size: 10px; letter-spacing: .42em; text-transform: uppercase; opacity: .7; margin-top: 6px; }
+.url { position: absolute; right: 64px; top: 70px; font-family: var(--mono); font-size: 16px; letter-spacing: .2em; text-transform: uppercase; z-index: 10; }
+
+.hook { position: absolute; left: 64px; top: 150px; width: 952px; font-family: var(--display); font-weight: 600; letter-spacing: -.035em; line-height: 1.04; z-index: 5; }
+.vis { position: absolute; left: 64px; width: 952px; }
+
+.bottom { position: absolute; left: 64px; right: 64px; bottom: 60px; display: flex; flex-direction: column; gap: 22px; z-index: 5; }
+.reveal { font-family: var(--display); font-weight: 600; font-size: 42px; letter-spacing: -.025em; line-height: 1.1; color: var(--orange); }
+.pos { font-family: var(--body); font-size: 27px; line-height: 1.35; max-width: 900px; }
+.row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+.cta { font-family: var(--mono); font-weight: 600; text-transform: uppercase; letter-spacing: .1em; font-size: 21px; padding: 24px 30px;
+  background: var(--orange); color: white; display: inline-flex; align-items: center; gap: 16px; }
+.free { font-family: var(--mono); font-size: 15px; letter-spacing: .2em; text-transform: uppercase; text-align: right; line-height: 1.6; }
+
+.chip { display: inline-block; font-family: var(--mono); font-size: 20px; letter-spacing: .2em; text-transform: uppercase; padding: 8px 14px; vertical-align: middle; }
+.blur { filter: blur(9px); }

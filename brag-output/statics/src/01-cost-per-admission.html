@@ -1,0 +1,40 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Cost per admission</title>
+<link rel="stylesheet" href="../../composition/base.css">
+<link rel="stylesheet" href="statics.css">
+<style>
+#stage { background: var(--bone); color: var(--ink); }
+.glow { position: absolute; width: 1100px; height: 1100px; right: -380px; top: 240px; border-radius: 50%; background: radial-gradient(closest-side, oklch(92% .045 40 / .95), transparent); }
+.hook { font-size: 72px; }
+.pos { color: var(--muted); }
+.tag { position: absolute; width: 470px; height: 230px; padding: 40px 40px 0 104px; clip-path: polygon(64px 0, 100% 0, 100% 100%, 64px 100%, 0 50%); }
+.tag::before { content: ""; position: absolute; left: 38px; top: 98px; width: 34px; height: 34px; border-radius: 50%; background: var(--bone); box-shadow: inset 0 2px 4px oklch(0% 0 0 / .25); }
+.tw { position: absolute; filter: drop-shadow(0 26px 34px oklch(14% .005 285 / .18)); }
+.lab { font-family: var(--mono); font-size: 18px; letter-spacing: .22em; text-transform: uppercase; }
+.val { font-family: var(--display); font-weight: 600; font-size: 66px; letter-spacing: -.03em; margin-top: 26px; display: flex; align-items: center; gap: 18px; }
+#t1 { background: var(--card); } #t1 .lab { color: var(--muted); }
+#t1 .ck { width: 58px; height: 58px; background: var(--ink); color: white; display: grid; place-items: center; }
+#t2 { background: var(--ink); color: var(--bone); } #t2 .lab { color: oklch(75% .01 285); }
+.red b { display: inline-block; height: 50px; background: var(--bone); margin-right: 14px; }
+.qm { position: absolute; width: 130px; height: 130px; border-radius: 50%; background: var(--orange); color: white; font-family: var(--display); font-weight: 700; font-size: 92px; display: grid; place-items: center; box-shadow: 0 18px 40px oklch(68.5% .223 39.5 / .45); }
+.rk { background: var(--orange); color: white; margin-right: 14px; position: relative; top: -4px; }
+</style></head>
+<body><div id="stage">
+  <div class="logo"><span id="lg"></span><div><div class="name">Outcomes</div><div class="sub">Digital</div></div></div>
+  <div class="url">edu.outcomes.digital</div>
+  <div class="hook">You know what a lead costs.<br>Do you know what an<br>admission costs?</div>
+  <div class="glow"></div>
+  <div class="tw" style="left:64px;top:520px;transform:rotate(-4deg)"><div class="tag" id="t1"><div class="lab">Cost per lead</div><div class="val"><span class="ck"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="3.2"/></svg></span>Tracked</div></div></div>
+  <div class="tw" style="left:530px;top:560px;transform:rotate(3deg)"><div class="tag" id="t2"><div class="lab">Cost per admission</div><div class="val red blur"><span style="font-size:66px">₹</span><b style="width:90px"></b><b style="width:140px"></b><b style="width:60px"></b></div></div></div>
+  <div class="qm" style="left:900px;top:500px">?</div>
+  <div class="bottom">
+    <div class="reveal"><span class="chip rk">Cost per admission</span>Most track the first. The second one pays the bills.</div>
+    <div class="pos">We run campaigns to cost per admission, not cost per form fill.</div>
+    <div class="row"><div class="cta">Get Your Free Enrolment Review <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M4 12h15M13 6l6 6-6 6"/></svg></div><div class="free">Free strategy call<br>No pitch. No obligation.</div></div>
+  </div>
+  
+</div>
+<script src="../../composition/gsap.min.js"></script>
+<script src="../../composition/lib.js"></script>
+<script>window.__size = [1080, 1350]; document.getElementById('lg').innerHTML = LOGO(40);  boot(gsap.timeline(), 0.1);</script>
+</body></html>

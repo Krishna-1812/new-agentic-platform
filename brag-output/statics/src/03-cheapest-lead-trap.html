@@ -1,0 +1,41 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>The cheapest-lead trap</title>
+<link rel="stylesheet" href="../../composition/base.css">
+<link rel="stylesheet" href="statics.css">
+<style>
+#stage { background: var(--peach); color: var(--ink); }
+.hook { font-size: 86px; }
+.pos { color: oklch(40% .02 40); }
+.card { position: absolute; width: 230px; height: 96px; background: var(--card); padding: 16px 18px; box-shadow: 0 12px 24px oklch(40% .1 40 / .12); }
+.card .n { font-weight: 700; font-size: 19px; } .card .m { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; color: var(--muted); margin-top: 8px; text-transform: uppercase; }
+.card.fade { opacity: .45; filter: grayscale(1) blur(1.5px); }
+.card.lit { background: var(--orange); color: white; box-shadow: 0 16px 36px oklch(68.5% .223 39.5 / .45); } .card.lit .m { color: oklch(100% 0 0 / .85); }
+.filter { position: absolute; left: 652px; top: 470px; width: 3px; height: 440px; background: var(--ink); }
+.filter::before { content: ""; position: absolute; left: -9px; top: -10px; width: 21px; height: 21px; border: 3px solid var(--ink); border-radius: 50%; background: var(--peach); }
+.flab { position: absolute; left: 680px; top: 460px; font-family: var(--mono); font-size: 14px; letter-spacing: .2em; text-transform: uppercase; }
+</style></head>
+<body><div id="stage">
+  <div class="logo"><span id="lg"></span><div><div class="name">Outcomes</div><div class="sub">Digital</div></div></div>
+  <div class="url">edu.outcomes.digital</div>
+  <div class="hook">Your cheapest leads are probably your emptiest seats.</div>
+  <div class="card fade" style="left:70px;top:520px;transform:rotate(-8deg)"><div class="n">New lead</div><div class="m">Low-cost · Broad targeting</div></div>
+<div class="card fade" style="left:250px;top:500px;transform:rotate(6deg)"><div class="n">New lead</div><div class="m">Low-cost · Broad targeting</div></div>
+<div class="card fade" style="left:120px;top:610px;transform:rotate(4deg)"><div class="n">New lead</div><div class="m">Low-cost · Broad targeting</div></div>
+<div class="card fade" style="left:330px;top:600px;transform:rotate(-5deg)"><div class="n">New lead</div><div class="m">Low-cost · Broad targeting</div></div>
+<div class="card fade" style="left:60px;top:700px;transform:rotate(7deg)"><div class="n">New lead</div><div class="m">Low-cost · Broad targeting</div></div>
+<div class="card fade" style="left:260px;top:700px;transform:rotate(-3deg)"><div class="n">New lead</div><div class="m">Low-cost · Broad targeting</div></div>
+<div class="card fade" style="left:400px;top:690px;transform:rotate(9deg)"><div class="n">New lead</div><div class="m">Low-cost · Broad targeting</div></div>
+<div class="card fade" style="left:150px;top:800px;transform:rotate(-6deg)"><div class="n">New lead</div><div class="m">Low-cost · Broad targeting</div></div>
+<div class="card fade" style="left:340px;top:790px;transform:rotate(4deg)"><div class="n">New lead</div><div class="m">Low-cost · Broad targeting</div></div><div class="filter"></div><div class="flab">Can realistically enrol</div><div class="card lit" style="left:700px;top:560px"><div class="n">Serious enquiry</div><div class="m">Near campus · Right program</div></div>
+<div class="card lit" style="left:760px;top:700px"><div class="n">Serious enquiry</div><div class="m">Near campus · Right program</div></div>
+  <div class="bottom">
+    <div class="reveal">Low-cost leads usually mean broad targeting that never visits your campus.</div>
+    <div class="pos">We target families who can realistically enrol, and pay for the right ones.</div>
+    <div class="row"><div class="cta">Get Your Free Enrolment Review <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M4 12h15M13 6l6 6-6 6"/></svg></div><div class="free">Free strategy call<br>No pitch. No obligation.</div></div>
+  </div>
+  
+</div>
+<script src="../../composition/gsap.min.js"></script>
+<script src="../../composition/lib.js"></script>
+<script>window.__size = [1080, 1350]; document.getElementById('lg').innerHTML = LOGO(40);  boot(gsap.timeline(), 0.1);</script>
+</body></html>

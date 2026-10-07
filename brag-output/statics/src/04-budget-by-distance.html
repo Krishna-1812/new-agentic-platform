@@ -1,0 +1,42 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Budget by distance</title>
+<link rel="stylesheet" href="../../composition/base.css">
+<link rel="stylesheet" href="statics.css">
+<style>
+#stage { background: var(--orange); color: white; }
+.logo { color: var(--ink); } .logo .lg-head, .logo .lg-shaft { stroke: white; }
+.url { color: var(--ink); }
+.hook { font-size: 70px; }
+.streets { position: absolute; inset: 0; opacity: .18; }
+.ring { position: absolute; left: 540px; top: 700px; border-radius: 50%; transform: translate(-50%, -50%); }
+.r1 { width: 160px; height: 160px; background: white; box-shadow: 0 0 60px oklch(100% 0 0 / .7); }
+.r2 { width: 330px; height: 330px; border: 5px solid white; background: oklch(100% 0 0 / .14); }
+.r3 { width: 520px; height: 520px; border: 3px dashed oklch(100% 0 0 / .45); filter: blur(2px); }
+.r4 { width: 740px; height: 740px; border: 2px dashed oklch(100% 0 0 / .25); filter: blur(4px); }
+.pin { position: absolute; left: 540px; top: 700px; transform: translate(-50%, -50%); color: var(--orange); }
+.rl { position: absolute; font-family: var(--mono); font-size: 16px; letter-spacing: .2em; text-transform: uppercase; white-space: nowrap; }
+.base { position: absolute; left: 0; right: 0; bottom: 0; height: 430px; background: var(--ink); }
+.pos { color: oklch(80% .01 285); } .free { color: oklch(70% .01 285); }
+</style></head>
+<body><div id="stage">
+  <div class="logo"><span id="lg"></span><div><div class="name">Outcomes</div><div class="sub">Digital</div></div></div>
+  <div class="url">edu.outcomes.digital</div>
+  <div class="hook">A family near your campus and one across the city are not the same lead.</div>
+  <svg class="streets" width="1080" height="1350"><g stroke="white" stroke-width="2" fill="none">
+    <path d="M0 520 L1080 600"/><path d="M0 760 L1080 690"/><path d="M200 400 L320 920"/><path d="M760 400 L700 920"/><path d="M0 640 C300 600 600 820 1080 780"/><path d="M460 400 L560 920"/><path d="M900 420 L1000 900"/></g></svg>
+  <div class="ring r4"></div><div class="ring r3"></div><div class="ring r2"></div><div class="ring r1"></div>
+  <svg class="pin" width="70" height="70" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22s-7-6.4-7-12a7 7 0 0 1 14 0c0 5.6-7 12-7 12z"/><circle cx="12" cy="10" r="2.6" fill="white"/></svg>
+  <div class="rl" style="left:600px;top:500px;color:white">Near campus</div>
+  <div class="rl" style="left:790px;top:470px;color:oklch(100% 0 0 / .7);filter:blur(1.5px)">Across the city</div>
+  <div class="base"></div>
+  <div class="bottom">
+    <div class="reveal">Most campaigns spend on both as if they were.</div>
+    <div class="pos">We split budget by how far families realistically travel, so spend goes where admissions happen.</div>
+    <div class="row"><div class="cta">Book A Free Enrolment Review <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M4 12h15M13 6l6 6-6 6"/></svg></div><div class="free">Free strategy call<br>No pitch. No obligation.</div></div>
+  </div>
+  
+</div>
+<script src="../../composition/gsap.min.js"></script>
+<script src="../../composition/lib.js"></script>
+<script>window.__size = [1080, 1350]; document.getElementById('lg').innerHTML = LOGO(40);  boot(gsap.timeline(), 0.1);</script>
+</body></html>

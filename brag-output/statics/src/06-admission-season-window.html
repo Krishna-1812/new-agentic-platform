@@ -1,0 +1,37 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>The admission-season window</title>
+<link rel="stylesheet" href="../../composition/base.css">
+<link rel="stylesheet" href="statics.css">
+<style>
+#stage { background: oklch(11% .006 285); color: var(--bone); }
+.glow { position: absolute; width: 1200px; height: 900px; left: -60px; top: 380px; border-radius: 50%; background: radial-gradient(closest-side, oklch(68.5% .223 39.5 / .3), transparent 72%); }
+.grain { position: absolute; inset: 0; opacity: .16; mix-blend-mode: screen; pointer-events: none; z-index: 20;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='300' height='300' filter='url(%23n)'/></svg>"); }
+.vig { position: absolute; inset: 0; background: radial-gradient(110% 80% at 50% 45%, transparent 55%, oklch(0% 0 0 / .55)); z-index: 19; pointer-events: none; }
+.hook { font-size: 68px; }
+.hook .dim { color: oklch(70% .01 285); }
+.pos { color: oklch(80% .01 285); } .free { color: oklch(70% .01 285); }
+.bar { position: absolute; bottom: 440px; width: 16px; background: oklch(96% .006 60 / .2); }
+.bar.pre { background: oklch(85% .1 50 / .65); }
+.bar.s { background: linear-gradient(to top, var(--orange), oklch(80% .15 50)); box-shadow: 0 0 20px oklch(68.5% .223 39.5 / .7); }
+.hatch { position: absolute; bottom: 440px; left: 222px; width: 396px; height: 200px; background: repeating-linear-gradient(135deg, oklch(68.5% .223 39.5 / .25) 0 6px, transparent 6px 15px); border-top: 2px solid var(--orange); }
+.band { position: absolute; bottom: 440px; left: 616px; width: 162px; height: 360px; background: linear-gradient(to top, oklch(68.5% .223 39.5 / .2), transparent); border-left: 1px dashed oklch(68.5% .223 39.5 / .6); border-right: 1px dashed oklch(68.5% .223 39.5 / .6); }
+.note { position: absolute; font-family: var(--mono); font-size: 15px; letter-spacing: .18em; text-transform: uppercase; white-space: nowrap; line-height: 1.5; }
+.base { position: absolute; left: 64px; width: 952px; bottom: 438px; height: 2px; background: oklch(100% 0 0 / .25); }
+</style></head>
+<body><div id="stage">
+  <div class="logo"><span id="lg"></span><div><div class="name">Outcomes</div><div class="sub">Digital</div></div></div>
+  <div class="url">edu.outcomes.digital</div>
+  <div class="hook">Admissions season is only a few weeks long.<br><span class="dim">Is your campaign built for it?</span></div>
+  <div class="glow"></div><div class="hatch"></div><div class="band"></div><div class="bar " style="left:69.0px;height:23px"></div><div class="bar " style="left:95.4px;height:26px"></div><div class="bar " style="left:121.8px;height:30px"></div><div class="bar " style="left:148.2px;height:33px"></div><div class="bar " style="left:174.6px;height:36px"></div><div class="bar " style="left:201.0px;height:40px"></div><div class="bar pre" style="left:227.4px;height:33px"></div><div class="bar pre" style="left:253.8px;height:34px"></div><div class="bar pre" style="left:280.2px;height:37px"></div><div class="bar pre" style="left:306.6px;height:40px"></div><div class="bar pre" style="left:333.0px;height:44px"></div><div class="bar pre" style="left:359.4px;height:48px"></div><div class="bar pre" style="left:385.8px;height:54px"></div><div class="bar pre" style="left:412.2px;height:59px"></div><div class="bar pre" style="left:438.6px;height:66px"></div><div class="bar pre" style="left:465.0px;height:72px"></div><div class="bar pre" style="left:491.4px;height:80px"></div><div class="bar pre" style="left:517.8px;height:87px"></div><div class="bar pre" style="left:544.2px;height:95px"></div><div class="bar pre" style="left:570.6px;height:104px"></div><div class="bar pre" style="left:597.0px;height:113px"></div><div class="bar s" style="left:623.4px;height:238px"></div><div class="bar s" style="left:649.8px;height:330px"></div><div class="bar s" style="left:676.2px;height:304px"></div><div class="bar s" style="left:702.6px;height:264px"></div><div class="bar s" style="left:729.0px;height:198px"></div><div class="bar s" style="left:755.4px;height:145px"></div><div class="bar " style="left:781.8px;height:119px"></div><div class="bar " style="left:808.2px;height:94px"></div><div class="bar " style="left:834.6px;height:76px"></div><div class="bar " style="left:861.0px;height:62px"></div><div class="bar " style="left:887.4px;height:51px"></div><div class="bar " style="left:913.8px;height:44px"></div><div class="bar " style="left:940.2px;height:38px"></div><div class="bar " style="left:966.6px;height:33px"></div><div class="bar " style="left:993.0px;height:30px"></div><div class="base"></div><div class="note" style="left:232px;top:618px;color:var(--orange)">The quiet build-up<br><span style="color:oklch(80% .01 285)">The part most institutions miss</span></div><div class="note" style="left:620px;top:532px;color:var(--orange)">Admissions season</div><div class="note" style="left:64px;top:924px;color:oklch(70% .01 285)">Pre-season</div><div class="note" style="left:890px;top:924px;color:oklch(70% .01 285)">After</div>
+  <div class="bottom">
+    <div class="reveal">Most start late, spend evenly and stop when applications close.</div>
+    <div class="pos">We ramp up before the season and stay in front of undecided families after.</div>
+    <div class="row"><div class="cta">Get Your Free Enrolment Review <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M4 12h15M13 6l6 6-6 6"/></svg></div><div class="free">Free strategy call<br>No pitch. No obligation.</div></div>
+  </div>
+  <div class="vig"></div><div class="grain"></div>
+</div>
+<script src="../../composition/gsap.min.js"></script>
+<script src="../../composition/lib.js"></script>
+<script>window.__size = [1080, 1350]; document.getElementById('lg').innerHTML = LOGO(40);  boot(gsap.timeline(), 0.1);</script>
+</body></html>
