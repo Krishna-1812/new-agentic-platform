@@ -25,7 +25,7 @@
       <span class="ap-av as-av-xl" data-vt-name
             style="--av-bg:{{ card.avatar.bg }};--av-fg:{{ card.avatar.fg }};view-transition-name: acct-av">{{ card.avatar.initials }}</span>
       <div class="as-tags">
-        {%- if not client_view %}<span class="as-tag as-tag--lbl">Client account</span>{% endif %}
+        {%- if not client_view %}<span class="as-tag as-tag--lbl">Client workspace</span>{% endif %}
         {%- for c in cids %}<span class="as-tag" title="Google Ads customer ID">Google Ads {{ c }}</span>{% endfor %}
         {%- if st %}<span class="as-tag as-tag--live"><i></i>Data through {{ nice_day(st.to) }}</span>{% endif %}
         {%- if acct.hidden and not client_view %}<span class="as-tag">Hidden from the lists</span>{% endif %}
@@ -58,7 +58,7 @@
       <span class="as-mk" data-vt-name style="view-transition-name: acct-name">{{ acct.name }}</span>
       {%- else %}
       <button type="button" class="as-switch" data-acct-picker data-acct-page=""
-              aria-haspopup="dialog" aria-expanded="false" aria-label="Working on {{ acct.name }}. Switch account">
+              aria-haspopup="dialog" aria-expanded="false" aria-label="Working on {{ acct.name }} Workspace. Switch workspace">
         <span class="as-mk" data-vt-name style="view-transition-name: acct-name">{{ acct.name }}</span>
         <span class="as-chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
       </button>
@@ -512,7 +512,7 @@
 
   <section class="sh-card" aria-labelledby="sh-people-h">
     <div class="sh-card-h"><h3 id="sh-people-h">People</h3><span class="sh-count" id="sh-people-n"></span></div>
-    <p class="sh-sub">They sign in with Google as that address and see this account only: no other account, nothing
+    <p class="sh-sub">They sign in with Google as that address and see this workspace only: no other workspace, nothing
       internal. Nothing is emailed; send them the link below.</p>
     <form class="sh-add" id="sh-add" autocomplete="off">
       <label class="sh-sr" for="sh-who">Email address or company domain</label>
@@ -521,7 +521,7 @@
       <button type="submit" class="as-btn as-btn--ink sh-invite">Invite</button>
     </form>
     <p class="sh-msg" id="sh-msg" role="status" aria-live="polite"></p>
-    <ul class="sh-people" id="sh-people" aria-label="People who can see this account"></ul>
+    <ul class="sh-people" id="sh-people" aria-label="People who can see this workspace"></ul>
     <div class="sh-link">
       <svg class="sh-link-i" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
       <span class="sh-link-u" id="sh-link"></span>
@@ -564,7 +564,7 @@
  </div>
  <template id="sh-icons">{% for t in tool_catalog or [] %}<span data-icon="{{ t.slug }}">{{ run_icon(t.slug) }}</span>{% endfor %}</template>
 </dialog>
-<script defer src="{{ url_for('static', filename='js/account-share.js') }}?v=3"></script>
+<script defer src="{{ url_for('static', filename='js/account-share.js') }}?v=4"></script>
 {%- endif %}
 
 <script id="acct-data" type="application/json">{{ accounts|tojson }}</script>

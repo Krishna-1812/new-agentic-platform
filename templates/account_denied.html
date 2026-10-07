@@ -20,7 +20,7 @@
     </div>
     {%- if mine %}
     <div class="as-denied-mine">
-      <span class="as-fact-l">Your accounts</span>
+      <span class="as-fact-l">Your workspaces</span>
       {%- for a in mine %}
       <a class="as-denied-a" href="/{{ a.slug }}">{{ a.name }} <span aria-hidden="true">&rarr;</span></a>
       {%- endfor %}

@@ -119,7 +119,7 @@ def test_a_run_inside_an_account_is_the_teams():
     r = _save(_client(ANA), account="lumina")
     assert r.status_code == 201, r.get_json()
     j = r.get_json()
-    assert j["page"] == "/lumina/seo-aeo/runs/%d" % j["id"] and j["where"] == "Lumina Smiles Dental"
+    assert j["page"] == "/lumina/seo-aeo/runs/%d" % j["id"] and j["where"] == "Lumina Smiles Dental Workspace"
     run = seo_runs_store.get(j["id"], RAJ)
     assert run["space"] == _space("lumina") and run["title"] == "https://luminasmiles.in"
     assert run["summary"]["facts"][:2] == [["Overall score", 78], ["Band", "Good"]]
@@ -140,7 +140,7 @@ def test_a_run_inside_an_account_is_the_teams():
 
 def test_a_general_run_is_private():
     j = _save(_client(ANA)).get_json()
-    assert j["page"] == "/seo-aeo/runs/%d" % j["id"] and j["where"] == "General"
+    assert j["page"] == "/seo-aeo/runs/%d" % j["id"] and j["where"] == "Ana's Workspace"
     assert _client(ANA).get(j["page"]).status_code == 200
     assert _client(RAJ).get(j["page"]).status_code == 404
     assert _client(RAJ).get("/seo-aeo/runs/%d.json" % j["id"]).status_code == 404

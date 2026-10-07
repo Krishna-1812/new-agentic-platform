@@ -564,7 +564,7 @@
     var M = R.memory;
     if (M && (M.sections || []).length) {
       var s9 = section(box, "What the AI was given about earlier work",
-        "Built from this client account's own work only, when the review ran. Nothing from other accounts or anyone's General work.");
+        "Built from this client workspace's own work only, when the review ran. Nothing from other workspaces or anyone's own workspace.");
       var det = el("details", "gar-mem"), sum = el("summary");
       sum.textContent = M.sections.map(function (x) { return x.label + " (" + x.items.length + ")"; }).join(" · ");
       det.appendChild(sum);

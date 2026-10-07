@@ -50,7 +50,7 @@
    every page that has one. Hovering an account's link lets the browser prerender it, so picking an
    account opens it at once (speculation rules; browsers without them just navigate). #}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/account-picker.css') }}?v=3">
-<script defer src="{{ url_for('static', filename='js/account-picker.js') }}?v=4"></script>
+<script defer src="{{ url_for('static', filename='js/account-picker.js') }}?v=5"></script>
 <script type="speculationrules">{"prerender": [{"where": {"selector_matches": "a[data-acct-go='home'], a[data-acct-card]"}, "eagerness": "moderate"}], "prefetch": [{"where": {"selector_matches": "a[data-acct-go='page']"}, "eagerness": "moderate"}]}</script>
 {%- endif %}
 {%- for sheet in sheets %}
@@ -119,13 +119,13 @@
     <button type="button" class="ap-pill" data-acct-picker data-acct-page="{{ acct_page }}"
             {%- if acct_ctx %} data-acct-current="{{ acct_ctx.slug }}"{% endif %}
             aria-haspopup="dialog" aria-expanded="false"
-            aria-label="Switch account{% if acct_ctx %}, now {{ acct_ctx.name }}{% else %}, now General, your own work{% endif %}">
+            aria-label="Switch workspace{% if acct_ctx %}, now {{ acct_ctx.name }} Workspace{% else %}, now {{ my_workspace_name() }}, your own work{% endif %}">
       {%- if acct_ctx %}
       <span class="ap-av" style="--av-bg:{{ acct_ctx.avatar.bg }};--av-fg:{{ acct_ctx.avatar.fg }}">{{ acct_ctx.avatar.initials }}</span>
       {%- else %}
       <span class="ap-av ap-av--all"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M4.5 20c1.4-3.3 4.2-5 7.5-5s6.1 1.7 7.5 5"/></svg></span>
       {%- endif %}
-      <span class="ap-pill-t">{{ acct_ctx.name if acct_ctx else "General" }}</span>
+      <span class="ap-pill-t">{{ acct_ctx.name if acct_ctx else my_workspace_name() }}</span>
       <svg class="ap-pill-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
     </button>
     {%- if crumbs %}

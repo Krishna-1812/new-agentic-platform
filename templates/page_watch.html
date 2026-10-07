@@ -72,7 +72,7 @@
     {%- endif %}
     {%- if elsewhere %}
     {#- General is the viewer's own watches; the ones they added for client accounts live there. #}
-    <p class="ws-elsewhere ws-elsewhere--dark"><span>Your watches for client accounts are in each account:</span>
+    <p class="ws-elsewhere ws-elsewhere--dark"><span>Your watches for clients are in each client's workspace:</span>
       {%- for e in elsewhere[:4] %}
       <a href="{{ e.href }}">{{ e.name }} <small>{{ e.label }}</small></a>
       {%- endfor %}
