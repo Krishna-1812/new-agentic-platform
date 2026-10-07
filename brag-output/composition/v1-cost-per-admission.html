@@ -1,0 +1,294 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>What does an admission cost?</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  /* ---------- tags scene ---------- */
+  #sTags .glow { position: absolute; width: 1300px; height: 1300px; right: -380px; top: -160px; border-radius: 50%;
+    background: radial-gradient(closest-side, oklch(92% .045 40 / .9), oklch(92% .045 40 / 0)); }
+  #eyeA { position: absolute; left: 120px; top: 288px; }
+  .hl { position: absolute; left: 120px; width: 920px; }
+  #l1 { top: 360px; font-size: 104px; transform-origin: 0 0; }
+  #l2 { top: 540px; font-size: 104px; }
+  #r1 { top: 390px; font-size: 72px; color: var(--muted); }
+  #r2 { top: 490px; font-size: 112px; }
+  #r2 .ul { position: absolute; height: 12px; background: var(--orange); left: 0; bottom: -18px; width: 610px; transform-origin: 0 50%; }
+
+  .tag { position: absolute; width: 640px; height: 280px; padding: 46px 56px 0 116px;
+    clip-path: polygon(70px 0, 100% 0, 100% 100%, 70px 100%, 0 50%); }
+  .tag::before { content: ""; position: absolute; left: 44px; top: 122px; width: 36px; height: 36px; border-radius: 50%;
+    background: var(--bone); box-shadow: inset 0 2px 4px oklch(0% 0 0 / .25); }
+  .tag .lab { font-family: var(--mono); font-size: 22px; letter-spacing: .22em; text-transform: uppercase; }
+  .tag .val { font-family: var(--display); font-weight: 600; font-size: 84px; letter-spacing: -.03em; margin-top: 30px; display: flex; align-items: center; gap: 22px; position: relative; height: 100px; }
+  .tagwrap { position: absolute; filter: drop-shadow(0 30px 40px oklch(14% .005 285 / .18)); transform-origin: 30% 50%; }
+  #t1w { left: 1080px; top: 290px; }
+  #t2w { left: 1110px; top: 610px; }
+  #t2 { width: 720px; }
+  #t1 { background: var(--card); color: var(--ink); }
+  #t1 .lab { color: var(--muted); }
+  #t1 .chk { width: 70px; height: 70px; background: var(--ink); display: grid; place-items: center; }
+  #t1 svg.spark { position: absolute; right: 56px; top: 44px; }
+  #t2 { background: var(--ink); color: var(--bone); }
+  #t2 .lab { color: var(--orange); }
+  #t2 .redact { position: absolute; left: 0; top: 0; display: flex; gap: 18px; align-items: center; filter: blur(14px); }
+  #t2 .redact b { display: inline-block; height: 62px; background: var(--bone); }
+  #t2 .shimmer { position: absolute; left: -200px; top: -10px; width: 140px; height: 130px; background: linear-gradient(90deg, transparent, oklch(100% 0 0 / .35), transparent); transform: skewX(-20deg); }
+  #t2 .answer { position: absolute; left: 0; top: 0; color: var(--orange); display: flex; align-items: center; gap: 22px; white-space: nowrap; font-size: 70px; }
+  #t2ring { position: absolute; inset: -4px; border: 4px solid var(--orange); clip-path: polygon(70px 0, 100% 0, 100% 100%, 70px 100%, 0 50%); opacity: 0; }
+  #qm { position: absolute; left: 1670px; top: 550px; width: 170px; height: 170px; border-radius: 50%; background: var(--orange); color: white;
+    font-family: var(--display); font-weight: 700; font-size: 120px; display: grid; place-items: center; line-height: 1; box-shadow: 0 20px 50px oklch(68.5% .223 39.5 / .45); }
+
+  /* ---------- funnel scene ---------- */
+  #sFun .glow { position: absolute; width: 1400px; height: 900px; left: 900px; top: 360px; border-radius: 50%;
+    background: radial-gradient(closest-side, oklch(68.5% .223 39.5 / .22), transparent); }
+  #eyeD { position: absolute; left: 120px; top: 200px; }
+  #d1 { position: absolute; left: 120px; top: 262px; font-size: 84px; width: 1700px; }
+  #d1 .strike { position: relative; color: oklch(70% .01 285); }
+  #d1 .strike::after { content: ""; position: absolute; left: 0; right: 0; top: 54%; height: 6px; background: var(--orange); transform: scaleX(var(--s, 0)); transform-origin: 0 50%; }
+  .rail { position: absolute; left: 240px; top: 760px; width: 1440px; height: 2px; background: oklch(100% 0 0 / .18); transform-origin: 0 50%; }
+  .node { position: absolute; top: 712px; width: 96px; height: 96px; margin-left: -48px; border: 2px solid oklch(100% 0 0 / .3); background: var(--ink-2);
+    display: grid; place-items: center; color: var(--bone); }
+  .node.last { border-color: var(--orange); }
+  .node .fill { position: absolute; inset: -2px; background: var(--orange); opacity: 0; }
+  .node svg { position: relative; }
+  .nlab { position: absolute; top: 838px; width: 300px; margin-left: -150px; text-align: center; font-family: var(--mono); font-size: 22px; letter-spacing: .22em; text-transform: uppercase; color: oklch(80% .01 285); }
+  .pulse { position: absolute; left: 1680px; top: 760px; width: 96px; height: 96px; margin: -48px 0 0 -48px; border: 3px solid var(--orange); opacity: 0; }
+  #parts { position: absolute; left: 0; top: 0; }
+
+  /* ---------- goal scene ---------- */
+  #sGoal { clip-path: inset(100% 0 0 0); }
+  .ctr { position: absolute; left: 0; width: 1920px; text-align: center; }
+  #g1 { top: 248px; font-size: 76px; color: var(--muted); }
+  #g2 { top: 380px; font-size: 128px; }
+  #slot { position: absolute; left: 0; width: 1920px; top: 540px; height: 210px; overflow: hidden; }
+  #slot .sw { position: absolute; left: 0; width: 1920px; text-align: center; font-size: 176px; color: var(--orange); }
+  #slotline { position: absolute; left: 560px; width: 800px; top: 770px; height: 4px; background: var(--ink); transform-origin: 50% 50%; }
+
+  /* ---------- end card ---------- */
+  #sEnd .glow { position: absolute; width: 1600px; height: 1600px; left: 160px; top: -300px; border-radius: 50%;
+    background: radial-gradient(closest-side, oklch(92% .045 40 / .95), oklch(92% .045 40 / 0)); }
+  #endLogo { position: absolute; left: 0; width: 1920px; top: 170px; display: flex; justify-content: center; align-items: center; gap: 28px; color: var(--ink); }
+  #endLogo .name { font-family: var(--display); font-weight: 700; font-size: 44px; letter-spacing: .16em; text-transform: uppercase; line-height: 1; }
+  #endLogo .sub { font-family: var(--mono); font-size: 18px; letter-spacing: .5em; text-transform: uppercase; opacity: .7; margin-top: 10px; }
+  #e1 { top: 360px; font-size: 128px; }
+  #cta { position: absolute; left: 0; width: 1920px; top: 650px; display: flex; justify-content: center; }
+  #cta .btn { box-shadow: 0 24px 50px oklch(68.5% .223 39.5 / .35); }
+  #cta .ripple { position: absolute; width: 60px; height: 60px; border-radius: 50%; background: oklch(100% 0 0 / .45); left: 50%; top: 50%; margin: -30px; transform: scale(0); }
+  #e2 { position: absolute; left: 0; width: 1920px; top: 830px; text-align: center; font-family: var(--mono); font-size: 22px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
+  #cursor { position: absolute; left: 0; top: 0; z-index: 60; filter: drop-shadow(0 6px 10px oklch(0% 0 0 / .3)); }
+
+  #wipe { position: absolute; inset: 0; background: var(--orange); z-index: 40; transform: scaleX(0); transform-origin: 0 50%; }
+</style></head>
+<body>
+<div id="stage">
+
+  <!-- A-C: price tags -->
+  <section class="scene light" id="sTags">
+    <div class="grid"></div><div class="glow"></div>
+    <div class="eyebrow" id="eyeA"><span class="chip">For education institutions</span><span>Schools · Colleges · PG</span></div>
+    <div class="h hl" id="l1" data-split>You know what a <span class="accent">lead</span> costs.</div>
+    <div class="h hl" id="l2" data-split>Do you know what an <span class="accent">admission</span> costs?</div>
+    <div class="h hl" id="r1" data-split>Most track the first.</div>
+    <div class="h hl" id="r2"><span data-split>The second one <span class="accent">pays the bills.</span></span><div class="ul"></div></div>
+
+    <div class="tagwrap" id="t1w"><div class="tag" id="t1">
+      <div class="lab">Cost per lead</div>
+      <svg class="spark" width="150" height="60" viewBox="0 0 150 60"><polyline points="0,50 25,42 50,46 75,30 100,34 125,16 150,10" fill="none" stroke="currentColor" stroke-width="4" opacity=".35"/></svg>
+      <div class="val"><span class="chk"><svg width="40" height="40" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="white" stroke-width="3.2"/></svg></span>Tracked</div>
+    </div></div>
+
+    <div class="tagwrap" id="t2w"><div class="tag" id="t2">
+      <div class="lab">Cost per admission</div>
+      <div class="val">
+        <div class="redact"><span style="font-size:84px">₹</span><b style="width:110px"></b><b style="width:170px"></b><b style="width:70px"></b></div>
+        <div class="shimmer"></div>
+        <div class="answer"><svg width="62" height="62" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="3.4"/></svg>Pays the bills</div>
+      </div>
+    </div><div id="t2ring"></div></div>
+    <div id="qm">?</div>
+  </section>
+
+  <!-- D: enquiry to enrolment -->
+  <section class="scene dark" id="sFun" style="visibility:hidden">
+    <div class="grid"></div><div class="glow"></div>
+    <div class="eyebrow" id="eyeD"><span class="num">01</span><span>Enquiry to enrolment</span></div>
+    <div class="h" id="d1" data-split>We run campaigns to <span class="accent">cost per admission,</span><br>not cost per <span class="strike">form fill.</span></div>
+    <div class="rail"></div>
+    <div class="node" style="left:240px"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/></svg></div>
+    <div class="node" style="left:720px"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></div>
+    <div class="node" style="left:1200px"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h7"/></svg></div>
+    <div class="node last" style="left:1680px"><div class="fill"></div><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13"/><path d="M3 10h18"/></svg></div>
+    <div class="pulse" id="p1"></div><div class="pulse" id="p2"></div>
+    <div class="nlab" style="left:240px">Enquiry</div><div class="nlab" style="left:720px">Campus visit</div>
+    <div class="nlab" style="left:1200px">Application</div><div class="nlab" style="left:1680px;color:var(--orange)">Fee payment</div>
+    <canvas id="parts" width="1920" height="1080"></canvas>
+  </section>
+
+  <!-- E: the goal -->
+  <section class="scene light" id="sGoal">
+    <div class="grid"></div>
+    <div class="h ctr" id="g1" data-split>More enquiries isn't the goal.</div>
+    <div class="h ctr" id="g2" data-split>The goal is more</div>
+    <div id="slot">
+      <div class="h sw" id="sw1">Campus Visits</div>
+      <div class="h sw" id="sw2">Applications</div>
+      <div class="h sw" id="sw3">Enrolments.</div>
+    </div>
+    <div id="slotline"></div>
+  </section>
+
+  <!-- F: end card -->
+  <section class="scene light" id="sEnd" style="visibility:hidden">
+    <div class="grid"></div><div class="glow"></div>
+    <div id="endLogo"><span id="bigLogo"></span><div><div class="name" data-split>Outcomes</div><div class="sub">Digital</div></div></div>
+    <div class="h ctr" id="e1" data-split>Enrolments, <span class="accent">not just enquiries.</span></div>
+    <div id="cta"><div class="btn" id="btn">Get your free enrolment review
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6"><path d="M4 12h15M13 6l6 6-6 6"/></svg><span class="ripple"></span></div></div>
+    <div id="e2">Free strategy call · No pitch. No obligation. · edu.outcomes.digital</div>
+    <svg id="cursor" width="46" height="46" viewBox="0 0 24 24"><path d="M5 3l14 8-6 1.6L10 19z" fill="var(--ink)" stroke="white" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  </section>
+
+  <div id="wipe"></div>
+
+  <div id="chrome" class="chrome-ink">
+    <div class="brand" id="brand"><span id="smallLogo"></span><div><div class="name">Outcomes</div><div class="sub">Digital</div></div></div>
+    <div class="url" id="url">edu.outcomes.digital</div>
+    <div class="progress" id="prog"></div>
+  </div>
+</div>
+
+<script src="gsap.min.js"></script>
+<script src="lib.js"></script>
+<script>
+document.getElementById('smallLogo').innerHTML = LOGO(38);
+document.getElementById('bigLogo').innerHTML = LOGO(120);
+splitWords();
+
+const D = 23.5;
+gsap.set('#t1w', { rotation: -4 }); gsap.set('#t2w', { rotation: 3 });
+const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+const rev = (sel, at, stagger = 0.06, dur = 0.8) => tl.from(words(sel), { yPercent: 110, duration: dur, stagger }, at);
+const out = (sel, at, stagger = 0.025) => tl.to(words(sel), { yPercent: -110, duration: 0.45, ease: 'power3.in', stagger }, at);
+
+tl.set('#sGoal', { visibility: 'hidden' }, 0);
+tl.fromTo('#sTags', { scale: 1 }, { scale: 1.045, duration: 11.3, ease: 'none' }, 0);
+tl.fromTo('#sFun', { scale: 1.04 }, { scale: 1, duration: 5, ease: 'none' }, 11.25);
+tl.fromTo('#sEnd', { scale: 1.03 }, { scale: 1, duration: 3.2, ease: 'power1.out' }, 20.35);
+tl.fromTo('#prog', { scaleX: 0 }, { scaleX: 1, duration: D, ease: 'none' }, 0);
+
+// ---- A: you know what a lead costs (0 - 3.5)
+tl.from('#eyeA', { y: 30, opacity: 0, duration: 0.6 }, 0.05);
+rev('#l1', 0.12);
+tl.from('#t1w', { x: 520, rotation: 26, opacity: 0, duration: 1.1, ease: 'back.out(1.4)' }, 0.35);
+tl.from('#t1 .spark polyline', { attr: { points: '0,60 25,60 50,60 75,60 100,60 125,60 150,60' }, duration: 1.2 }, 0.9);
+
+// ---- B: do you know what an admission costs? (3.5 - 7.0)
+tl.to('#l1', { scale: 0.5, y: 10, color: 'oklch(62% .01 285)', duration: 0.7, ease: 'expo.inOut' }, 3.5);
+tl.to('#l1 .accent', { color: 'oklch(62% .01 285)', duration: 0.5 }, 3.5);
+rev('#l2', 3.75);
+tl.to('#t1w', { y: -40, duration: 0.8, ease: 'expo.inOut' }, 3.6);
+tl.from('#t2w', { x: 560, rotation: -24, opacity: 0, duration: 1.1, ease: 'back.out(1.3)' }, 3.95);
+tl.fromTo('#t2 .shimmer', { x: 0 }, { x: 760, duration: 1.1, ease: 'power2.inOut', repeat: 2, repeatDelay: 0.25 }, 4.6);
+tl.from('#qm', { scale: 0, rotation: -90, duration: 0.7, ease: 'back.out(2.2)' }, 4.7);
+tl.to('#qm', { y: -14, duration: 0.5, ease: 'sine.inOut', yoyo: true, repeat: 3 }, 5.4);
+tl.set('#t2 .answer', { opacity: 0 }, 0);
+
+// ---- C: the reveal (7.0 - 11.0)
+out('#l1', 7.0); out('#l2', 7.0);
+tl.to('#t2 .shimmer', { opacity: 0, duration: 0.2 }, 7.0);
+tl.to('#qm', { scale: 0, rotation: 90, duration: 0.4, ease: 'back.in(2)' }, 7.0);
+tl.to('#t2 .redact', { filter: 'blur(0px)', opacity: 0, duration: 0.5, ease: 'power2.in' }, 7.1);
+tl.fromTo('#t2 .answer', { opacity: 0, y: 30, filter: 'blur(10px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.6 }, 7.45);
+tl.to('#t2ring', { opacity: 1, duration: 0.3 }, 7.45);
+tl.to('#t2w', { scale: 1.04, y: -150, x: -140, rotation: 0, duration: 0.9, ease: 'expo.inOut' }, 7.2);
+tl.to('#t1w', { opacity: 0.32, scale: 0.86, y: -70, x: -40, filter: 'grayscale(1) drop-shadow(0 0 0 transparent)', duration: 0.9, ease: 'expo.inOut' }, 7.2);
+tl.to('#t2w', { filter: 'drop-shadow(0 30px 60px oklch(68.5% .223 39.5 / .45))', duration: 0.8 }, 7.5);
+rev('#r1', 7.6); rev('#r2', 7.9);
+tl.from('#r2 .ul', { scaleX: 0, duration: 0.9, ease: 'expo.inOut' }, 8.5);
+
+// ---- C -> D: orange wipe (11.0)
+tl.to('#wipe', { scaleX: 1, duration: 0.4, ease: 'expo.in' }, 10.85);
+tl.set('#sTags', { visibility: 'hidden' }, 11.25).set('#sFun', { visibility: 'visible' }, 11.25)
+  .set('#chrome', { attr: { class: 'chrome-bone' } }, 11.25)
+  .set('#wipe', { transformOrigin: '100% 50%' }, 11.25)
+  .to('#wipe', { scaleX: 0, duration: 0.5, ease: 'expo.out' }, 11.25);
+
+// ---- D: enquiry -> enrolment (11.25 - 16.0)
+tl.from('#eyeD', { y: 20, opacity: 0, duration: 0.6 }, 11.4);
+rev('#d1', 11.45, 0.05);
+tl.from('.rail', { scaleX: 0, duration: 1.0, ease: 'expo.inOut' }, 11.4);
+tl.from('#sFun .node', { y: 40, opacity: 0, duration: 0.7, stagger: 0.1, ease: 'back.out(1.6)' }, 11.6);
+tl.from('#sFun .nlab', { y: 20, opacity: 0, duration: 0.6, stagger: 0.1 }, 11.75);
+tl.fromTo('#d1 .strike', { '--s': 0 }, { '--s': 1, duration: 0.6, ease: 'expo.inOut' }, 13.2);
+tl.to('.node.last .fill', { opacity: 1, duration: 0.3 }, 13.95);
+tl.fromTo('#p1', { scale: 1, opacity: 1 }, { scale: 2.6, opacity: 0, duration: 1.0, ease: 'expo.out' }, 13.95);
+tl.fromTo('#p2', { scale: 1, opacity: 1 }, { scale: 2.6, opacity: 0, duration: 1.0, ease: 'expo.out' }, 14.9);
+
+// ---- E: the goal (16.0 - 19.5), panel rises on the music lift
+tl.set('#sGoal', { visibility: 'visible' }, 15.6);
+tl.to('#sGoal', { clipPath: 'inset(0% 0 0 0)', duration: 0.55, ease: 'expo.inOut' }, 15.65);
+tl.set('#chrome', { attr: { class: 'chrome-ink' } }, 15.95).set('#sFun', { visibility: 'hidden' }, 16.25);
+rev('#g1', 16.0); rev('#g2', 16.55);
+tl.from('#slotline', { scaleX: 0, duration: 0.7, ease: 'expo.inOut' }, 16.7);
+tl.from('#sw1', { yPercent: 110, duration: 0.6 }, 16.9);
+tl.to('#sw1', { yPercent: -110, duration: 0.45, ease: 'expo.in' }, 17.75);
+tl.fromTo('#sw2', { yPercent: 110 }, { yPercent: 0, duration: 0.6 }, 18.15);
+tl.to('#sw2', { yPercent: -110, duration: 0.45, ease: 'expo.in' }, 18.75);
+tl.fromTo('#sw3', { yPercent: 110 }, { yPercent: 0, duration: 0.6 }, 19.15);
+tl.set(['#sw2', '#sw3'], { yPercent: 110 }, 0);
+
+// ---- F: end card (19.9 - 23.5)
+out('#g1', 19.9, 0.02); out('#g2', 19.9, 0.02);
+tl.to(['#sw3', '#slotline'], { yPercent: -110, opacity: 0, duration: 0.45, ease: 'power3.in' }, 19.95);
+tl.to('#brand', { opacity: 0, duration: 0.3 }, 19.9);
+tl.set('#sEnd', { visibility: 'visible' }, 20.35).set('#sGoal', { visibility: 'hidden' }, 20.35);
+tl.from('#sEnd .glow', { scale: 0.6, opacity: 0, duration: 1.2 }, 20.35);
+tl.fromTo('#bigLogo .lg-arc', { strokeDasharray: 80, strokeDashoffset: 80 }, { strokeDashoffset: 0, duration: 0.7, ease: 'power2.inOut' }, 20.35);
+tl.from(['#bigLogo .lg-shaft', '#bigLogo .lg-head'], { x: -10, y: 10, opacity: 0, duration: 0.5, ease: 'back.out(3)', stagger: 0.05 }, 20.8);
+rev('#endLogo', 20.55); tl.from('#endLogo .sub', { opacity: 0, x: -20, duration: 0.6 }, 20.7);
+rev('#e1', 20.65, 0.05);
+tl.from('#cta .btn', { y: 50, opacity: 0, duration: 0.8, ease: 'back.out(1.5)' }, 21.0);
+tl.from('#e2', { opacity: 0, y: 20, duration: 0.6 }, 21.2);
+tl.fromTo('#cursor', { x: 1500, y: 1000 }, { x: 1130, y: 712, duration: 0.8, ease: 'power3.inOut' }, 21.25);
+tl.to('#btn', { scale: 0.95, duration: 0.1, ease: 'power2.in' }, 22.1).to('#btn', { scale: 1, duration: 0.5, ease: 'back.out(3)' }, 22.2);
+tl.to('#cursor', { scale: 0.85, duration: 0.1 }, 22.1).to('#cursor', { scale: 1, duration: 0.3 }, 22.2);
+tl.fromTo('#cta .ripple', { scale: 0, opacity: 1, x: 220 }, { scale: 18, opacity: 0, duration: 0.9, ease: 'expo.out' }, 22.12);
+tl.set('#cursor', { x: 1500, y: 1000 }, 0);
+tl.to({}, { duration: 0.01 }, D);
+
+// ---- particles: leads leaking out between stages (pure function of t)
+const cv = document.getElementById('parts'), cx = cv.getContext('2d');
+const R = rand(7), P = [];
+const NODES = [240, 720, 1200, 1680], KEEP = [0.6, 0.48, 0.55];
+for (let i = 0; i < 110; i++) {
+  const t0 = 11.7 + i * 0.033, lane = (R() - 0.5) * 70, spd = 560 + R() * 160;
+  let dies = 99; for (let k = 0; k < 3; k++) { if (R() > KEEP[k]) { dies = k + 1; break; } }
+  P.push({ t0, lane, spd, dies, r: 4 + R() * 4, drift: (R() - 0.3) * 120 });
+}
+function drawParts(t) {
+  cx.clearRect(0, 0, 1920, 1080);
+  if (t < 11.6 || t > 16.3) return;
+  for (const p of P) {
+    const dt = t - p.t0; if (dt < 0) continue;
+    let x = 60 + dt * p.spd, y = 760 + p.lane * Math.max(0, 1 - Math.abs(x - 240) / 1600);
+    const stopX = p.dies < 99 ? NODES[p.dies] - 70 : 99999;
+    if (x > stopX) { // leaked: falls away and greys out
+      const ft = (x - stopX) / p.spd;
+      const a = Math.max(0, 1 - ft / 0.9); if (a <= 0) continue;
+      x = stopX + ft * 140 + p.drift * ft; y = y + 420 * ft * ft + 60 * ft;
+      cx.fillStyle = `oklch(55% .01 285 / ${a * 0.7})`;
+      cx.beginPath(); cx.arc(x, y, p.r, 0, 7); cx.fill(); continue;
+    }
+    if (x > 1680) { // arrived: fold into the node
+      const ft = (x - 1680) / p.spd; if (ft > 0.25) continue;
+      x = 1680; y = 760; cx.fillStyle = `oklch(68.5% .223 39.5 / ${1 - ft * 4})`;
+      cx.beginPath(); cx.arc(x, y, p.r * (1 + ft * 6), 0, 7); cx.fill(); continue;
+    }
+    const hot = x > 1200 && p.dies === 99;
+    cx.shadowBlur = hot ? 24 : 0; cx.shadowColor = 'oklch(68.5% .223 39.5)';
+    cx.fillStyle = hot ? 'oklch(68.5% .223 39.5)' : 'oklch(92% .045 40 / .9)';
+    cx.beginPath(); cx.arc(x, y, p.r, 0, 7); cx.fill(); cx.shadowBlur = 0;
+  }
+}
+boot(tl, D, [drawParts]);
+</script>
+</body></html>

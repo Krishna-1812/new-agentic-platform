@@ -1,0 +1,299 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Dashboard vs. reality</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  #sMain .glow { position: absolute; width: 1500px; height: 1000px; left: -200px; top: 300px; border-radius: 50%;
+    background: radial-gradient(closest-side, oklch(68.5% .223 39.5 / .26), transparent); }
+  .hd { position: absolute; left: 120px; top: 176px; width: 1700px; font-size: 92px; }
+  #hb, #hc { color: var(--bone); }
+
+  /* dashboard */
+  #dash { position: absolute; left: 120px; top: 430px; width: 1680px; height: 560px; background: var(--ink-2);
+    border: 1px solid oklch(100% 0 0 / .1); display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 0 0 1px oklch(68.5% .223 39.5 / .15), 0 40px 120px oklch(68.5% .223 39.5 / .22); }
+  .dbar { height: 64px; border-bottom: 1px solid oklch(100% 0 0 / .08); display: flex; align-items: center; padding: 0 28px; gap: 18px;
+    font-family: var(--mono); font-size: 18px; letter-spacing: .2em; text-transform: uppercase; color: oklch(80% .01 285); flex: none; white-space: nowrap; }
+  .live { width: 12px; height: 12px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 14px var(--orange); }
+  .dtab { margin-left: auto; display: flex; gap: 10px; }
+  .dtab span { padding: 6px 12px; border: 1px solid oklch(100% 0 0 / .15); font-size: 15px; }
+  .dtab span.on { background: oklch(100% 0 0 / .1); color: white; }
+  .dbody { flex: 1; display: flex; min-height: 0; }
+  .dmain { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 24px 28px; gap: 20px; }
+  .tiles { display: flex; gap: 16px; flex: none; }
+  .tile { flex: 1; min-width: 0; background: oklch(100% 0 0 / .04); border: 1px solid oklch(100% 0 0 / .07); padding: 16px 18px; white-space: nowrap; overflow: hidden; }
+  .tile .k { font-family: var(--mono); font-size: 15px; letter-spacing: .18em; text-transform: uppercase; color: oklch(70% .01 285); }
+  .tile .v { font-family: var(--display); font-weight: 600; font-size: 34px; color: white; margin-top: 8px; letter-spacing: -.02em; }
+  .tile .v b { color: var(--orange); font-weight: 600; }
+  .chart { flex: 1; position: relative; min-height: 0; }
+  .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #feed { width: 440px; flex: none; border-left: 1px solid oklch(100% 0 0 / .08); position: relative; overflow: hidden; }
+  #feedList { position: absolute; left: 0; right: 0; top: 0; }
+  .row { height: 66px; display: flex; align-items: center; gap: 14px; padding: 0 24px; border-bottom: 1px solid oklch(100% 0 0 / .06);
+    font-size: 21px; color: oklch(88% .01 285); white-space: nowrap; }
+  .row .dot { width: 10px; height: 10px; background: var(--orange); flex: none; }
+  .row em { font-style: normal; color: oklch(62% .01 285); font-family: var(--mono); font-size: 15px; margin-left: auto; letter-spacing: .1em; }
+
+  /* register */
+  #reg { position: absolute; left: 990px; top: 430px; width: 810px; height: 560px; background: var(--card); color: var(--ink);
+    box-shadow: 0 40px 100px oklch(0% 0 0 / .4); padding: 0; overflow: hidden; }
+  .rbar { height: 64px; border-bottom: 2px solid var(--ink); display: flex; align-items: center; padding: 0 28px;
+    font-family: var(--mono); font-size: 18px; letter-spacing: .2em; text-transform: uppercase; justify-content: space-between; }
+  .rhead, .rrow { display: grid; grid-template-columns: 1.2fr 1fr 1fr; padding: 0 28px; align-items: center; }
+  .rhead { height: 46px; font-family: var(--mono); font-size: 14px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .rrow { height: 50px; border-bottom: 1px solid var(--border); font-size: 22px; position: relative; }
+  .rrow .em { color: oklch(82% .008 60); }
+  .rrow .stamp { justify-self: start; font-family: var(--mono); font-size: 16px; letter-spacing: .18em; text-transform: uppercase; color: var(--orange);
+    border: 2px solid var(--orange); padding: 4px 10px; display: inline-flex; gap: 8px; align-items: center; font-weight: 600; }
+  .rrow .fillin { position: absolute; inset: 0; display: grid; grid-template-columns: 1.2fr 1fr 1fr; padding: 0 28px; align-items: center; background: var(--card); }
+  .rrow.hit .fillin { background: oklch(92% .045 40 / .35); }
+
+  #gap { position: absolute; left: 960px; top: 400px; width: 6px; height: 575px; margin-left: -3px; background: var(--orange); transform-origin: 50% 0;
+    box-shadow: 0 0 40px var(--orange), 0 0 120px oklch(68.5% .223 39.5 / .6); }
+  #gapLab { position: absolute; left: 960px; top: 996px; transform: translateX(-50%); font-family: var(--mono); font-size: 20px; letter-spacing: .3em; color: var(--orange); white-space: nowrap; }
+  #hc .strike { position: relative; color: oklch(62% .01 285); }
+  #hc .strike::after { content: ""; position: absolute; left: -4px; right: -4px; top: 55%; height: 7px; background: var(--orange); transform: scaleX(var(--s, 0)); transform-origin: 0 50%; }
+
+  /* loop scene */
+  #sLoop { clip-path: circle(0px at 1200px 640px); }
+  #hd1 { position: absolute; left: 120px; top: 170px; width: 1700px; font-size: 72px; }
+  #reg2 { position: absolute; left: 1050px; top: 430px; width: 810px; height: 560px; transform-origin: 0 0; }
+  .plat { position: absolute; left: 1360px; width: 440px; height: 200px; background: var(--ink); color: var(--bone); padding: 26px 30px; }
+  .plat .pn { font-family: var(--display); font-weight: 600; font-size: 48px; letter-spacing: -.02em; }
+  .plat .pl { font-family: var(--mono); font-size: 15px; letter-spacing: .2em; text-transform: uppercase; color: oklch(75% .01 285); margin-top: 10px; }
+  .plat .bar { height: 8px; background: oklch(100% 0 0 / .12); margin-top: 22px; }
+  .plat .bar i { display: block; height: 100%; background: var(--orange); transform-origin: 0 50%; transform: scaleX(0); }
+  #pG { top: 480px; } #pM { top: 760px; }
+  #loopSvg { position: absolute; inset: 0; }
+
+  /* pillars */
+  #pillars { position: absolute; left: 120px; top: 470px; width: 1680px; display: flex; gap: 20px; perspective: 1400px; }
+  .pc { flex: 1; height: 420px; background: var(--card); border: 1px solid var(--border); padding: 30px 28px; display: flex; flex-direction: column; transform-origin: 50% 100%; }
+  .pc .ic { width: 64px; height: 64px; border: 1.5px solid var(--border); display: grid; place-items: center; color: var(--orange); }
+  .pc .k { font-family: var(--mono); font-size: 15px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-top: auto; }
+  .pc .t { font-family: var(--display); font-weight: 600; font-size: 36px; letter-spacing: -.02em; line-height: 1.08; margin-top: 12px; }
+  .pc.on { background: var(--orange); color: white; border-color: var(--orange); }
+  .pc.on .k { color: oklch(100% 0 0 / .8); } .pc.on .ic { border-color: oklch(100% 0 0 / .5); color: white; }
+  #hd2 { position: absolute; left: 120px; top: 230px; width: 1700px; font-size: 88px; }
+  #eyeE { position: absolute; left: 120px; top: 176px; }
+
+  /* end */
+  #sEnd { clip-path: inset(0 0 100% 0); }
+  #sEnd .glow2 { position: absolute; width: 1700px; height: 1300px; left: 110px; top: 60px; border-radius: 50%;
+    background: radial-gradient(closest-side, oklch(68.5% .223 39.5 / .3), transparent); }
+  #endLogo { position: absolute; left: 0; width: 1920px; top: 170px; display: flex; justify-content: center; align-items: center; gap: 28px; color: var(--bone); }
+  #endLogo .name { font-family: var(--display); font-weight: 700; font-size: 44px; letter-spacing: .16em; text-transform: uppercase; line-height: 1; }
+  #endLogo .sub { font-family: var(--mono); font-size: 18px; letter-spacing: .5em; text-transform: uppercase; opacity: .7; margin-top: 10px; }
+  .ctr { position: absolute; left: 0; width: 1920px; text-align: center; }
+  #e1 { top: 360px; font-size: 128px; }
+  #cta { position: absolute; left: 0; width: 1920px; top: 650px; display: flex; justify-content: center; }
+  #cta .btn { box-shadow: 0 24px 60px oklch(68.5% .223 39.5 / .45); }
+  #cta .ripple { position: absolute; width: 60px; height: 60px; border-radius: 50%; background: oklch(100% 0 0 / .45); left: 50%; top: 50%; margin: -30px; transform: scale(0); }
+  #e2 { position: absolute; left: 0; width: 1920px; top: 830px; text-align: center; font-family: var(--mono); font-size: 22px; letter-spacing: .22em; text-transform: uppercase; color: oklch(75% .01 285); }
+  #cursor { position: absolute; left: 0; top: 0; z-index: 60; filter: drop-shadow(0 6px 10px oklch(0% 0 0 / .4)); }
+</style></head>
+<body>
+<div id="stage">
+
+  <!-- A-C: dashboard vs register -->
+  <section class="scene dark" id="sMain">
+    <div class="grid"></div><div class="glow"></div>
+    <div class="h hd" id="ha" data-split>Your ad dashboard says<br><span class="accent">hundreds of leads.</span></div>
+    <div class="h hd" id="hb" data-split>Your admissions office says<br><span class="accent">a handful enrolled.</span></div>
+    <div class="h hd" id="hc" data-split>That gap comes from campaigns<br>optimised for <span class="strike">clicks,</span> not <span class="accent">seats.</span></div>
+
+    <div id="dash">
+      <div class="dbar"><span class="live"></span>Ad dashboard · Live<div class="dtab"><span class="on">Meta</span><span>Google</span><span>All</span></div></div>
+      <div class="dbody">
+        <div class="dmain">
+          <div class="tiles">
+            <div class="tile"><div class="k">Leads</div><div class="v"><b>▲</b> Climbing</div></div>
+            <div class="tile"><div class="k">Cost per lead</div><div class="v"><b>▼</b> Falling</div></div>
+            <div class="tile t3"><div class="k">Clicks</div><div class="v"><b>▲</b> All-time high</div></div>
+          </div>
+          <div class="chart"><svg viewBox="0 0 1000 300" preserveAspectRatio="none">
+            <defs><linearGradient id="ag" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="oklch(68.5% .223 39.5)" stop-opacity=".55"/><stop offset="1" stop-color="oklch(68.5% .223 39.5)" stop-opacity="0"/></linearGradient>
+              <clipPath id="cclip"><rect id="crect" x="0" y="0" width="1000" height="300"/></clipPath></defs>
+            <g stroke="oklch(100% 0 0 / .07)"><line x1="0" x2="1000" y1="75" y2="75"/><line x1="0" x2="1000" y1="150" y2="150"/><line x1="0" x2="1000" y1="225" y2="225"/></g>
+            <g clip-path="url(#cclip)">
+              <path d="M0 270 C80 262 120 250 180 240 S300 230 350 200 S470 190 520 160 S640 150 700 110 S830 90 880 60 S960 30 1000 18 L1000 300 L0 300Z" fill="url(#ag)"/>
+              <path d="M0 270 C80 262 120 250 180 240 S300 230 350 200 S470 190 520 160 S640 150 700 110 S830 90 880 60 S960 30 1000 18" fill="none" stroke="oklch(80% .15 45)" stroke-width="4" vector-effect="non-scaling-stroke" style="filter: drop-shadow(0 0 8px oklch(68.5% .223 39.5))"/>
+            </g>
+          </svg></div>
+        </div>
+        <div id="feed"><div id="feedList"></div></div>
+      </div>
+    </div>
+
+    <div id="reg">
+      <div class="rbar"><span>Admissions register</span><span style="color:var(--muted)">This intake</span></div>
+      <div class="rhead"><span>Applicant</span><span>Programme</span><span>Status</span></div>
+      <div id="regRows"></div>
+    </div>
+    <div id="gap"></div><div id="gapLab">THE GAP</div>
+  </section>
+
+  <!-- D: the loop -->
+  <section class="scene light" id="sLoop" style="visibility:hidden">
+    <div class="grid"></div>
+    <div class="h" id="hd1" data-split>We feed admissions data back into<br>Google and Meta, so they learn which<br>students <span class="accent">actually enrol.</span></div>
+    <svg id="loopSvg" width="1920" height="1080"><path id="loopPath" d="" fill="none" stroke="var(--orange)" stroke-width="4" stroke-dasharray="10 12"/></svg>
+    <div id="reg2"></div>
+    <div class="plat" id="pG"><div class="pn">Google</div><div class="pl">Learning who enrols</div><div class="bar"><i></i></div></div>
+    <div class="plat" id="pM"><div class="pn">Meta</div><div class="pl">Learning who enrols</div><div class="bar"><i></i></div></div>
+    <canvas id="pulses" width="1920" height="1080" style="position:absolute;inset:0"></canvas>
+
+    <div class="eyebrow" id="eyeE"><span class="num">04</span><span>How we work</span></div>
+    <div class="h" id="hd2" data-split>One connected system, <span class="accent">from discovery to enrolment.</span></div>
+    <div id="pillars">
+      <div class="pc"><div class="ic"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div><div class="k">Stay visible</div><div class="t">Be everywhere they look</div></div>
+      <div class="pc"><div class="ic"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/></svg></div><div class="k">Follow up fast</div><div class="t">Warm them up before you call</div></div>
+      <div class="pc on"><div class="ic"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13"/><path d="M8 21h8M12 17v4"/></svg></div><div class="k">One shared view</div><div class="t">One shared screen</div></div>
+      <div class="pc"><div class="ic"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></div><div class="k">Only serious enquiries</div><div class="t">Serious enquiries reach your team</div></div>
+      <div class="pc"><div class="ic"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20h18M6 16l4-5 3 3 5-7"/></svg></div><div class="k">Learn &amp; improve</div><div class="t">We track what happened</div></div>
+    </div>
+  </section>
+
+  <!-- F: end card -->
+  <section class="scene dark" id="sEnd">
+    <div class="grid"></div><div class="glow2"></div>
+    <div id="endLogo"><span id="bigLogo"></span><div><div class="name" data-split>Outcomes</div><div class="sub">Digital</div></div></div>
+    <div class="h ctr" id="e1" data-split>Enrolments, <span class="accent">not just enquiries.</span></div>
+    <div id="cta"><div class="btn" id="btn">See where your gap is
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6"><path d="M4 12h15M13 6l6 6-6 6"/></svg><span class="ripple"></span></div></div>
+    <div id="e2">Free strategy call · No pitch. No obligation. · edu.outcomes.digital</div>
+    <svg id="cursor" width="46" height="46" viewBox="0 0 24 24"><path d="M5 3l14 8-6 1.6L10 19z" fill="var(--bone)" stroke="var(--ink)" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  </section>
+
+  <div id="chrome" class="chrome-bone">
+    <div class="brand" id="brand"><span id="smallLogo"></span><div><div class="name">Outcomes</div><div class="sub">Digital</div></div></div>
+    <div class="url">edu.outcomes.digital</div>
+    <div class="progress" id="prog"></div>
+  </div>
+</div>
+
+<script src="gsap.min.js"></script>
+<script src="lib.js"></script>
+<script>
+document.getElementById('smallLogo').innerHTML = LOGO(38);
+document.getElementById('bigLogo').innerHTML = LOGO(120);
+
+// register rows: mostly empty, three enrolled
+const ROWS = [null, ['Applicant A.', 'MBA'], null, null, ['Applicant R.', 'Nursing'], null, null, ['Applicant S.', 'Nursery'], null];
+const STAMP = '<span class="stamp"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="3.4"/></svg>Enrolled</span>';
+const regHTML = ROWS.map((r, i) => `<div class="rrow ${r ? 'hit' : ''}" data-i="${i}"><span class="em">—</span><span class="em">—</span><span class="em">—</span>${r ? `<div class="fillin"><span>${r[0]}</span><span>${r[1]}</span>${STAMP}</div>` : ''}</div>`).join('');
+document.getElementById('regRows').innerHTML = regHTML;
+document.getElementById('reg2').innerHTML = document.getElementById('reg').innerHTML;
+document.getElementById('reg2').style.cssText += ';background:var(--card);box-shadow:0 30px 80px oklch(14% .005 285 / .18);overflow:hidden';
+
+// lead feed: long list scrolled as a pure function of time
+const SRC = ['Instagram form', 'Search ad', 'Facebook form', 'YouTube', 'Gmail ad', 'Landing page'];
+document.getElementById('feedList').innerHTML = Array.from({ length: 70 }, (_, i) =>
+  `<div class="row"><span class="dot"></span>New lead · ${SRC[(i * 5) % 6]}<em>NOW</em></div>`).reverse().join('');
+
+splitWords();
+const D = 24.8;
+const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+const rev = (sel, at, stagger = 0.05, dur = 0.8) => tl.from(words(sel), { yPercent: 110, duration: dur, stagger }, at);
+const out = (sel, at, stagger = 0.02) => tl.to(words(sel), { yPercent: -110, duration: 0.45, ease: 'power3.in', stagger }, at);
+
+tl.fromTo('#prog', { scaleX: 0 }, { scaleX: 1, duration: D, ease: 'none' }, 0);
+tl.set(['#reg'], { xPercent: 0 }, 0);
+
+// ---- A (0 - 4.0): the dashboard is already live at frame 0
+tl.fromTo('#dash', { y: 60, scale: 0.97 }, { y: 0, scale: 1, duration: 1.4 }, 0);
+tl.fromTo('#crect', { attr: { width: 380 } }, { attr: { width: 1000 }, duration: 3.6, ease: 'power2.out' }, 0);
+tl.from('.tile', { y: 30, opacity: 0, duration: 0.7, stagger: 0.08 }, 0.1);
+rev('#ha', 0.15);
+tl.set('#reg', { x: 1000 }, 0);
+
+// ---- B (4.0 - 8.2): dashboard squeezes left, the register arrives
+out('#ha', 4.0);
+tl.to('#dash', { width: 810, duration: 0.9, ease: 'expo.inOut' }, 4.0);
+tl.to('#feed', { width: 0, opacity: 0, duration: 0.7, ease: 'expo.inOut' }, 4.0);
+tl.to('.tile.t3', { width: 0, flex: 0, padding: 0, opacity: 0, duration: 0.7, ease: 'expo.inOut' }, 4.0);
+tl.to('#reg', { x: 0, duration: 1.0, ease: 'expo.out' }, 4.35);
+rev('#hb', 4.62);
+const hits = document.querySelectorAll('#reg .rrow.hit .fillin');
+hits.forEach((h, i) => {
+  tl.from(h, { opacity: 0, x: -30, duration: 0.5 }, 5.4 + i * 0.6);
+  tl.from(h.querySelector('.stamp'), { scale: 1.8, rotation: -12, opacity: 0, duration: 0.45, ease: 'back.out(2.5)' }, 5.5 + i * 0.6);
+});
+
+// ---- C (8.2 - 12.0): the gap
+out('#hb', 8.05);
+tl.to('#dash', { x: -60, opacity: 0.55, filter: 'saturate(.4)', duration: 0.9, ease: 'expo.inOut' }, 8.25);
+tl.to('#reg', { x: 60, duration: 0.9, ease: 'expo.inOut' }, 8.25);
+tl.from('#gap', { scaleY: 0, duration: 0.9, ease: 'expo.inOut' }, 8.4);
+tl.from('#gapLab', { opacity: 0, y: 20, duration: 0.5 }, 8.9);
+rev('#hc', 8.62);
+tl.fromTo('#hc .strike', { '--s': 0 }, { '--s': 1, duration: 0.5, ease: 'expo.inOut' }, 9.7);
+tl.to('#sMain .glow', { opacity: 0.3, duration: 1 }, 8.3);
+
+// ---- D (12.0 - 18.4): circle wipe opens from the register, the loop
+tl.set('#sLoop', { visibility: 'visible' }, 11.9);
+tl.to('#sLoop', { clipPath: 'circle(2300px at 1200px 640px)', duration: 0.9, ease: 'expo.in' }, 11.75);
+tl.set('#chrome', { attr: { class: 'chrome-ink' } }, 12.3).set('#sMain', { visibility: 'hidden' }, 12.7);
+tl.to('#reg2', { x: -930, y: 40, scale: 0.86, duration: 1.0, ease: 'expo.inOut' }, 12.55);
+rev('#hd1', 12.7, 0.04);
+tl.from('.plat', { x: 300, opacity: 0, duration: 0.9, stagger: 0.12 }, 13.2);
+tl.fromTo('#loopPath', { strokeDashoffset: 0, opacity: 0 }, { opacity: 1, duration: 0.3 }, 13.5);
+tl.fromTo('#loopPath', { strokeDashoffset: 0 }, { strokeDashoffset: -220, duration: 5, ease: 'none' }, 13.5);
+tl.to('#pG .bar i', { scaleX: 1, duration: 3.2, ease: 'power2.inOut' }, 14.2);
+tl.to('#pM .bar i', { scaleX: 1, duration: 3.2, ease: 'power2.inOut' }, 14.5);
+
+// ---- E (18.4 - 21.2): five pillars
+out('#hd1', 18.15, 0.012);
+tl.to(['#reg2', '.plat', '#loopPath', '#pulses'], { y: -80, opacity: 0, duration: 0.5, ease: 'power3.in', stagger: 0.03 }, 18.25);
+tl.from('#eyeE', { opacity: 0, y: 20, duration: 0.5 }, 18.85);
+rev('#hd2', 18.9, 0.05);
+tl.from('.pc', { rotationX: -80, y: 120, opacity: 0, duration: 0.9, stagger: 0.08, ease: 'expo.out' }, 18.75);
+tl.from('.pc.on', { scale: 0.9, duration: 0.6, ease: 'back.out(3)' }, 19.6);
+
+// ---- F (21.2 - 24.8): end card on ink
+tl.to('#sEnd', { clipPath: 'inset(0 0 0% 0)', duration: 0.6, ease: 'expo.inOut' }, 21.05);
+tl.set('#chrome', { attr: { class: 'chrome-bone' } }, 21.35).to('#brand', { opacity: 0, duration: 0.3 }, 21.2);
+tl.from('#sEnd .glow2', { scale: 0.5, opacity: 0, duration: 1.4 }, 21.4);
+tl.fromTo('#bigLogo .lg-arc', { strokeDasharray: 80, strokeDashoffset: 80 }, { strokeDashoffset: 0, duration: 0.7, ease: 'power2.inOut' }, 21.45);
+tl.from(['#bigLogo .lg-shaft', '#bigLogo .lg-head'], { x: -10, y: 10, opacity: 0, duration: 0.5, ease: 'back.out(3)', stagger: 0.05 }, 21.9);
+rev('#endLogo', 21.6); tl.from('#endLogo .sub', { opacity: 0, x: -20, duration: 0.6 }, 21.75);
+rev('#e1', 21.75);
+tl.from('#cta .btn', { y: 50, opacity: 0, duration: 0.8, ease: 'back.out(1.5)' }, 22.1);
+tl.from('#e2', { opacity: 0, y: 20, duration: 0.6 }, 22.3);
+tl.fromTo('#cursor', { x: 1500, y: 1000 }, { x: 1080, y: 712, duration: 0.8, ease: 'power3.inOut' }, 22.4);
+tl.to('#btn', { scale: 0.95, duration: 0.1, ease: 'power2.in' }, 23.3).to('#btn', { scale: 1, duration: 0.5, ease: 'back.out(3)' }, 23.4);
+tl.to('#cursor', { scale: 0.85, duration: 0.1 }, 23.3).to('#cursor', { scale: 1, duration: 0.3 }, 23.4);
+tl.fromTo('#cta .ripple', { scale: 0, opacity: 1, x: 140 }, { scale: 16, opacity: 0, duration: 0.9, ease: 'expo.out' }, 23.32);
+tl.set('#cursor', { x: 1500, y: 1000 }, 0);
+tl.to({}, { duration: 0.01 }, D);
+
+// ---- procedural: feed scroll, live dot, loop path + pulses
+const feed = document.getElementById('feedList'), ROWH = 66, NROWS = 70;
+const live = document.querySelector('.live');
+function drawFeed(t) {
+  const rate = 4.2; // rows per second: the dashboard never stops
+  const n = Math.min(NROWS - 9, 2 + t * rate);
+  feed.style.transform = `translateY(${-(NROWS - 9 - n) * ROWH + (n % 1) * 0}px)`;
+  live.style.opacity = 0.45 + 0.55 * Math.abs(Math.sin(t * 4));
+}
+const lp = document.getElementById('loopPath'), cv = document.getElementById('pulses'), cx = cv.getContext('2d');
+let built = false;
+function drawLoop(t) {
+  cx.clearRect(0, 0, 1920, 1080);
+  if (t < 13.4 || t > 18.6) return;
+  if (!built) { // from the register's enrolled rows to Google, Meta, and back round
+    lp.setAttribute('d', 'M 830 640 C 1050 640, 1150 580, 1360 580 M 830 640 C 1050 640, 1150 860, 1360 860');
+    built = true;
+  }
+  const len = lp.getTotalLength();
+  for (let k = 0; k < 6; k++) {
+    const ph = ((t - 13.6) * 0.55 + k / 6) % 1; if (t - 13.6 < k / 6 / 0.55) continue;
+    const half = k % 2; // alternate branches
+    const p = lp.getPointAtLength((half ? 0.5 : 0) * len + ph * len * 0.5);
+    cx.shadowBlur = 24; cx.shadowColor = 'oklch(68.5% .223 39.5)'; cx.fillStyle = 'oklch(68.5% .223 39.5)';
+    cx.beginPath(); cx.arc(p.x, p.y, 9, 0, 7); cx.fill();
+  }
+  cx.shadowBlur = 0;
+}
+boot(tl, D, [drawFeed, drawLoop]);
+</script>
+</body></html>

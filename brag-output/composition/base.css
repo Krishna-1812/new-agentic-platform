@@ -1,0 +1,66 @@
+@font-face { font-family: "Space Grotesk"; src: url(fonts/space-grotesk-normal-400-700-latin.woff2) format("woff2"); font-weight: 400 700; }
+@font-face { font-family: "DM Sans"; src: url(fonts/dm-sans-normal-400-700-latin.woff2) format("woff2"); font-weight: 400 700; }
+@font-face { font-family: "JetBrains Mono"; src: url(fonts/jetbrains-mono-normal-400-700-latin.woff2) format("woff2"); font-weight: 400 700; }
+
+:root {
+  --bone: oklch(96.5% .006 60);
+  --ink: oklch(14% .005 285);
+  --ink-2: oklch(19% .006 285);
+  --ink-3: oklch(25% .008 285);
+  --peach: oklch(92% .045 40);
+  --orange: oklch(68.5% .223 39.5);
+  --orange-soft: oklch(68.5% .223 39.5 / .16);
+  --card: oklch(99% .004 60);
+  --muted: oklch(48% .012 285);
+  --faint: oklch(70% .01 285);
+  --border: oklch(88% .008 60);
+  --line-dark: oklch(100% 0 0 / .08);
+  --display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--ink); }
+body { font-family: var(--body); color: var(--ink); -webkit-font-smoothing: antialiased; }
+
+#stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--bone); }
+.scene { position: absolute; inset: 0; overflow: hidden; }
+.dark { background: var(--ink); color: var(--bone); }
+.light { background: var(--bone); color: var(--ink); }
+
+/* hairline grid, as on the site's "How we work" section */
+.grid { position: absolute; inset: -2px; pointer-events: none;
+  background-image: linear-gradient(to right, oklch(14% .005 285 / .055) 1px, transparent 1px),
+                    linear-gradient(to bottom, oklch(14% .005 285 / .055) 1px, transparent 1px);
+  background-size: 96px 96px; }
+.dark .grid { background-image: linear-gradient(to right, var(--line-dark) 1px, transparent 1px),
+                                 linear-gradient(to bottom, var(--line-dark) 1px, transparent 1px); }
+
+.eyebrow { font-family: var(--mono); font-size: 22px; letter-spacing: .22em; text-transform: uppercase;
+  display: inline-flex; align-items: center; gap: 18px; color: var(--muted); }
+.dark .eyebrow { color: oklch(80% .01 285); }
+.eyebrow .num { background: var(--ink); color: var(--bone); padding: 6px 10px; letter-spacing: .08em; font-weight: 600; }
+.dark .eyebrow .num { background: var(--bone); color: var(--ink); }
+.eyebrow .chip { background: var(--orange); color: white; padding: 6px 12px; }
+
+.h { font-family: var(--display); font-weight: 600; letter-spacing: -0.035em; line-height: 1.02; }
+.accent { color: var(--orange); }
+
+/* masked word reveal */
+.w { display: inline-block; overflow: hidden; vertical-align: top; padding: 0 .02em .08em; margin-bottom: -.08em; }
+.w > i { display: inline-block; font-style: normal; will-change: transform; }
+
+.btn { font-family: var(--mono); font-weight: 600; text-transform: uppercase; letter-spacing: .12em;
+  background: var(--orange); color: white; display: inline-flex; align-items: center; gap: 22px;
+  padding: 30px 44px; font-size: 26px; position: relative; overflow: hidden; }
+
+/* persistent chrome */
+#chrome { position: absolute; inset: 0; pointer-events: none; z-index: 50; }
+.brand { position: absolute; left: 64px; top: 52px; display: flex; align-items: center; gap: 16px; }
+.brand .name { font-family: var(--display); font-weight: 700; font-size: 22px; letter-spacing: .16em; text-transform: uppercase; line-height: 1; }
+.brand .sub { font-family: var(--mono); font-size: 11px; letter-spacing: .42em; text-transform: uppercase; opacity: .7; margin-top: 6px; }
+.url { position: absolute; right: 64px; top: 58px; font-family: var(--mono); font-size: 18px; letter-spacing: .2em; text-transform: uppercase; }
+.progress { position: absolute; left: 0; bottom: 0; height: 6px; width: 1920px; background: var(--orange); transform-origin: 0 50%; }
+.chrome-ink { color: var(--ink); }
+.chrome-bone { color: var(--bone); }
