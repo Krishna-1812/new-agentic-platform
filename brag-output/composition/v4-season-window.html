@@ -1,0 +1,223 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>The season window</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  html, body, #stage { width: 1080px; height: 1920px; }
+  #stage { background: oklch(11% .006 285); }
+  #sMain { background: oklch(11% .006 285); color: var(--bone); }
+  .dark .grid { background-size: 90px 90px; opacity: .7; }
+  #glowA { position: absolute; width: 1400px; height: 1400px; left: -160px; top: 520px; border-radius: 50%;
+    background: radial-gradient(closest-side, oklch(68.5% .223 39.5 / .28), transparent 70%); }
+  #sweep { position: absolute; width: 500px; height: 2600px; left: -700px; top: -300px; transform: rotate(18deg);
+    background: linear-gradient(90deg, transparent, oklch(80% .12 50 / .10), transparent); }
+  #vig { position: absolute; inset: 0; pointer-events: none; z-index: 45; background: radial-gradient(120% 80% at 50% 45%, transparent 55%, oklch(0% 0 0 / .55)); }
+  #grain { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; z-index: 46; opacity: .09; mix-blend-mode: screen; pointer-events: none; }
+
+  .brand { left: 70px; top: 110px; }
+  .progress { width: 1080px; top: 0; bottom: auto; height: 8px; }
+  #eye { position: absolute; left: 70px; top: 240px; }
+
+  .hd { position: absolute; left: 70px; top: 300px; width: 960px; }
+  #h1 { font-size: 104px; }
+  #h2 { font-size: 150px; letter-spacing: -.045em; }
+  #h3 { font-size: 78px; }
+  #h4 { font-size: 74px; }
+  #h5 { font-size: 96px; }
+  #h3 .dim { color: oklch(62% .01 285); }
+
+  /* chart */
+  #chart { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+  .bar { position: absolute; width: 15px; bottom: 500px; transform-origin: 50% 100%; background: oklch(96% .006 60 / .22); }
+  .bar.s { background: linear-gradient(to top, var(--orange), oklch(80% .15 50)); box-shadow: 0 0 22px oklch(68.5% .223 39.5 / .7); }
+  .tbar { position: absolute; width: 7px; bottom: 500px; transform-origin: 50% 100%; background: oklch(80% .01 285); }
+  #band { position: absolute; bottom: 500px; height: 520px; background: linear-gradient(to top, oklch(68.5% .223 39.5 / .16), oklch(68.5% .223 39.5 / 0)); border-left: 1px dashed oklch(68.5% .223 39.5 / .6); border-right: 1px dashed oklch(68.5% .223 39.5 / .6); transform-origin: 50% 100%; }
+  #bandLab { position: absolute; top: 868px; font-family: var(--mono); font-size: 18px; letter-spacing: .2em; color: var(--orange); white-space: nowrap; transform: translateX(-50%); }
+  #base { position: absolute; left: 70px; width: 940px; top: 1420px; height: 2px; background: oklch(100% 0 0 / .25); transform-origin: 0 50%; }
+  .ph { position: absolute; top: 1446px; font-family: var(--mono); font-size: 18px; letter-spacing: .2em; color: oklch(70% .01 285); transform: translateX(-50%); white-space: nowrap; }
+  .note { position: absolute; font-family: var(--mono); font-size: 19px; letter-spacing: .16em; color: oklch(85% .01 285); white-space: nowrap; line-height: 1.5; }
+  .note b { color: var(--orange); font-weight: 600; }
+  #hatch { position: absolute; bottom: 500px; height: 330px; background: repeating-linear-gradient(135deg, oklch(68.5% .223 39.5 / .22) 0 6px, transparent 6px 16px);
+    border-top: 2px solid var(--orange); transform-origin: 50% 100%; }
+  #ours { position: absolute; left: 0; top: 0; overflow: visible; }
+  .legend { position: absolute; left: 70px; top: 1500px; display: flex; gap: 34px; font-family: var(--mono); font-size: 17px; letter-spacing: .16em; color: oklch(75% .01 285); }
+  .legend span { display: inline-flex; gap: 10px; align-items: center; }
+  .legend i { width: 14px; height: 14px; display: inline-block; }
+
+  /* end */
+  #sEnd { background: oklch(11% .006 285); color: var(--bone); clip-path: inset(100% 0 0 0); }
+  #sEnd .g2 { position: absolute; width: 1500px; height: 1500px; left: -210px; top: 260px; border-radius: 50%; background: radial-gradient(closest-side, oklch(68.5% .223 39.5 / .38), transparent); }
+  #endLogo { position: absolute; left: 0; width: 1080px; top: 470px; display: flex; justify-content: center; align-items: center; gap: 24px; }
+  #endLogo .name { font-family: var(--display); font-weight: 700; font-size: 44px; letter-spacing: .16em; text-transform: uppercase; line-height: 1; }
+  #endLogo .sub { font-family: var(--mono); font-size: 18px; letter-spacing: .5em; text-transform: uppercase; opacity: .7; margin-top: 10px; }
+  .ctr { position: absolute; left: 0; width: 1080px; text-align: center; }
+  #e1 { top: 660px; font-size: 96px; padding: 0 30px; }
+  #cta { position: absolute; left: 0; width: 1080px; top: 1010px; display: flex; justify-content: center; }
+  #cta .btn { box-shadow: 0 24px 70px oklch(68.5% .223 39.5 / .5); font-size: 27px; padding: 34px 40px; }
+  #cta .ripple { position: absolute; width: 60px; height: 60px; border-radius: 50%; background: oklch(100% 0 0 / .4); left: 50%; top: 50%; margin: -30px; transform: scale(0); }
+  #e2 { position: absolute; left: 0; width: 1080px; top: 1190px; text-align: center; font-family: var(--mono); font-size: 24px; letter-spacing: .2em; text-transform: uppercase; color: oklch(78% .01 285); line-height: 1.8; }
+  #cursor { position: absolute; left: 0; top: 0; z-index: 60; filter: drop-shadow(0 6px 10px oklch(0% 0 0 / .5)); }
+</style></head>
+<body>
+<div id="stage">
+  <section class="scene dark" id="sMain">
+    <div class="grid"></div><div id="glowA"></div><div id="sweep"></div>
+    <div class="eyebrow" id="eye"><span class="num">06</span><span>The admission-season window</span></div>
+    <div class="h hd" id="h1" data-split>Admissions<br>season is only<br><span class="accent">a few weeks long.</span></div>
+    <div class="h hd" id="h2" data-split>Is your<br>campaign<br><span class="accent">built for it?</span></div>
+    <div class="h hd" id="h3" data-split>Most start <span class="accent">late,</span><br>spend <span class="accent">evenly</span> and stop<br>when applications <span class="accent">close.</span></div>
+    <div class="h hd" id="h4" data-split>We ramp up <span class="accent">before</span><br>the season and stay in<br>front of undecided<br>families <span class="accent">after.</span></div>
+    <div class="h hd" id="h5" data-split>Admissions season<br>coming up?<br><span class="accent">See where enquiries<br>are leaking.</span></div>
+
+    <div id="chart">
+      <div id="hatch"></div>
+      <div id="band"></div><div id="bandLab">ADMISSIONS SEASON</div>
+      <div id="bars"></div><div id="tbars"></div>
+      <svg id="ours" width="1080" height="1920"><defs><linearGradient id="og" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="oklch(68.5% .223 39.5)" stop-opacity=".45"/><stop offset="1" stop-color="oklch(68.5% .223 39.5)" stop-opacity="0"/></linearGradient>
+        <clipPath id="oclip"><rect id="orect" x="0" y="0" width="0" height="1920"/></clipPath></defs>
+        <g clip-path="url(#oclip)"><path id="oArea" fill="url(#og)"/><path id="oLine" fill="none" stroke="oklch(78% .17 48)" stroke-width="6" style="filter: drop-shadow(0 0 10px oklch(68.5% .223 39.5))"/></g></svg>
+      <div id="base"></div>
+      <div class="ph" id="phPre">PRE-SEASON</div><div class="ph" id="phAft">AFTER</div>
+      <div class="note" id="nLate" style="text-align:right">LATE START <b>→</b></div>
+      <div class="note" id="nStop"><b>←</b> STOPS AT CLOSE</div>
+      <div class="note" id="nQuiet"><b>THE QUIET BUILD-UP</b><br>FAMILIES ALREADY COMPARING</div>
+      <div class="note" id="nAfter"><b>UNDECIDED</b><br><b>FAMILIES</b></div>
+      <div class="legend"><span id="lgI"><i style="background:oklch(96% .006 60 / .35)"></i>FAMILY INTEREST</span><span id="lgT"><i style="background:oklch(80% .01 285)"></i>TYPICAL SPEND</span><span id="lgO"><i style="background:var(--orange)"></i>OUR RAMP</span></div>
+    </div>
+  </section>
+
+  <section class="scene" id="sEnd">
+    <div class="grid" style="background-image:linear-gradient(to right, var(--line-dark) 1px, transparent 1px),linear-gradient(to bottom, var(--line-dark) 1px, transparent 1px);background-size:90px 90px"></div><div class="g2"></div>
+    <div id="endLogo"><span id="bigLogo"></span><div><div class="name" data-split>Outcomes</div><div class="sub">Digital</div></div></div>
+    <div class="h ctr" id="e1" data-split>Enrolments,<br><span class="accent">not just enquiries.</span></div>
+    <div id="cta"><div class="btn" id="btn">Get your free enrolment review
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6"><path d="M4 12h15M13 6l6 6-6 6"/></svg><span class="ripple"></span></div></div>
+    <div id="e2">Free strategy call<br>No pitch. No obligation.<br><span style="color:var(--orange)">edu.outcomes.digital</span></div>
+    <svg id="cursor" width="52" height="52" viewBox="0 0 24 24"><path d="M5 3l14 8-6 1.6L10 19z" fill="var(--bone)" stroke="var(--ink)" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  </section>
+
+  <div id="vig"></div><canvas id="grain" width="540" height="960"></canvas>
+  <div id="chrome" class="chrome-bone">
+    <div class="brand" id="brand"><span id="smallLogo"></span><div><div class="name">Outcomes</div><div class="sub">Digital</div></div></div>
+    <div class="progress" id="prog"></div>
+  </div>
+</div>
+
+<script src="gsap.min.js"></script>
+<script src="lib.js"></script>
+<script>
+window.__size = [1080, 1920];
+document.getElementById('smallLogo').innerHTML = LOGO(38);
+document.getElementById('bigLogo').innerHTML = LOGO(110);
+
+// ---- chart geometry: 40 weeks, baseline y = 1420, max bar height 460
+const N = 40, X0 = 70, STEP = 23.5, BW = 15, BASE = 1420, HMAX = 460, S0 = 24, S1 = 29;
+const bx = i => X0 + i * STEP + (STEP - BW) / 2;
+const interest = i => i < 8 ? 0.07 + 0.01 * i : i < S0 ? 0.1 + 0.25 * Math.pow((i - 8) / 15, 1.6)
+  : i <= S1 ? [0.72, 1.0, 0.92, 0.82, 0.62, 0.45][i - S0] : 0.3 * Math.exp(-(i - 30) / 4) + 0.06;
+const ours = i => i < 6 ? 0.03 : i < S0 ? 0.05 + 0.47 * Math.pow((i - 6) / 18, 1.25) : i <= S1 ? 0.6 : 0.5 * Math.exp(-(i - 30) / 5.5) + 0.04;
+let html = '', thtml = '';
+for (let i = 0; i < N; i++) {
+  html += `<div class="bar ${i >= S0 && i <= S1 ? 's' : ''} ${i >= 8 && i < S0 ? 'pre' : ''}" style="left:${bx(i)}px;height:${interest(i) * HMAX}px"></div>`;
+  if (i >= S0 && i <= S1) thtml += `<div class="tbar" style="left:${bx(i) + 4}px;height:${0.3 * HMAX}px"></div>`;
+}
+document.getElementById('bars').innerHTML = html;
+document.getElementById('tbars').innerHTML = thtml;
+const sx0 = X0 + S0 * STEP - 3, sx1 = X0 + (S1 + 1) * STEP + 3;
+Object.assign(document.getElementById('band').style, { left: sx0 + 'px', width: (sx1 - sx0) + 'px' });
+document.getElementById('bandLab').style.left = (sx0 + sx1) / 2 + 'px';
+Object.assign(document.getElementById('hatch').style, { left: X0 + 8 * STEP + 'px', width: (S0 - 8) * STEP + 'px' });
+document.getElementById('phPre').style.left = X0 + 16 * STEP + 'px';
+document.getElementById('phAft').style.left = X0 + 35 * STEP + 'px';
+Object.assign(document.getElementById('nLate').style, { left: (sx0 - 250) + 'px', top: '1170px', width: '238px' });
+Object.assign(document.getElementById('nStop').style, { left: (sx1 + 12) + 'px', top: '1170px' });
+Object.assign(document.getElementById('nQuiet').style, { left: X0 + 8 * STEP + 6 + 'px', top: '1018px' });
+Object.assign(document.getElementById('nAfter').style, { left: X0 + 31 * STEP + 'px', top: '1070px' });
+// smooth path through our ramp
+const pts = Array.from({ length: N }, (_, i) => [X0 + i * STEP + STEP / 2, BASE - ours(i) * HMAX]);
+let d = `M ${pts[0][0]} ${pts[0][1]}`;
+for (let i = 0; i < N - 1; i++) {
+  const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(N - 1, i + 2)];
+  d += ` C ${p1[0] + (p2[0] - p0[0]) / 6} ${p1[1] + (p2[1] - p0[1]) / 6}, ${p2[0] - (p3[0] - p1[0]) / 6} ${p2[1] - (p3[1] - p1[1]) / 6}, ${p2[0]} ${p2[1]}`;
+}
+document.getElementById('oLine').setAttribute('d', d);
+document.getElementById('oArea').setAttribute('d', d + ` L ${pts[N - 1][0]} ${BASE} L ${pts[0][0]} ${BASE} Z`);
+
+splitWords();
+const D = 23.8;
+const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+const rev = (sel, at, stagger = 0.05, dur = 0.8) => tl.from(words(sel), { yPercent: 110, duration: dur, stagger }, at);
+const out = (sel, at, stagger = 0.02) => tl.to(words(sel), { yPercent: -110, duration: 0.45, ease: 'power3.in', stagger }, at);
+const fade = (sel, at, to = 0, dur = 0.4) => tl.to(sel, { opacity: to, duration: dur, ease: 'power2.out' }, at);
+
+tl.fromTo('#prog', { scaleX: 0 }, { scaleX: 1, duration: D, ease: 'none' }, 0);
+tl.fromTo('#sMain', { scale: 1.06 }, { scale: 1, duration: 20, ease: 'power1.out' }, 0);
+tl.fromTo('#sweep', { x: 0 }, { x: 2400, duration: 2.6, ease: 'power2.inOut' }, 0.2);
+tl.set(['.tbar', '#nLate', '#nStop', '#hatch', '#nQuiet', '#nAfter', '#lgT', '#lgO'], { opacity: 0 }, 0);
+
+// ---- A (0 - 4.0): a few weeks long
+tl.from('#eye', { opacity: 0, y: 20, duration: 0.6 }, 0.05);
+rev('#h1', 0.1, 0.06);
+tl.from('#base', { scaleX: 0, duration: 1.2, ease: 'expo.inOut' }, 0);
+tl.from('.bar', { scaleY: 0, duration: 0.8, stagger: 0.018 }, 0.0);
+tl.from('#band', { scaleY: 0, duration: 1.0 }, 0.7);
+tl.from('#bandLab', { opacity: 0, y: 20, duration: 0.6 }, 1.3);
+tl.from(['.ph', '.legend'], { opacity: 0, duration: 0.6 }, 1.4);
+tl.to('.bar.s', { scaleY: 1.06, duration: 0.3, yoyo: true, repeat: 5, ease: 'sine.inOut', stagger: 0.04 }, 2.0);
+
+// ---- B (4.0 - 7.4): is your campaign built for it?
+out('#h1', 3.9); fade('#eye', 3.9);
+rev('#h2', 4.3, 0.08, 0.9);
+tl.fromTo('#band', { boxShadow: '0 0 0 transparent' }, { boxShadow: '0 0 80px oklch(68.5% .223 39.5 / .5)', duration: 0.6, yoyo: true, repeat: 3 }, 4.5);
+
+// ---- C (7.4 - 11.4): late, even, stopped
+out('#h2', 7.3);
+rev('#h3', 7.75);
+tl.to('#lgT', { opacity: 1, duration: 0.4 }, 7.9);
+tl.to('.tbar', { opacity: 1, duration: 0.01 }, 8.0).from('.tbar', { scaleY: 0, duration: 0.6, stagger: 0.06 }, 8.0);
+tl.to('#nLate', { opacity: 1, duration: 0.4 }, 8.6).from('#nLate', { x: -30, duration: 0.6 }, 8.6);
+tl.to('#nStop', { opacity: 1, duration: 0.4 }, 9.3).from('#nStop', { x: 30, duration: 0.6 }, 9.3);
+tl.to('.bar.pre', { backgroundColor: 'oklch(96% .006 60 / .12)', duration: 0.6 }, 8.4);
+
+// ---- D (11.4 - 16.6): ramp before, stay after
+out('#h3', 11.3);
+fade(['.tbar', '#nLate', '#nStop', '#lgT'], 11.3, 0.0);
+rev('#h4', 11.75, 0.045);
+tl.to('#lgO', { opacity: 1, duration: 0.4 }, 11.9);
+tl.to('#hatch', { opacity: 1, duration: 0.01 }, 11.9).from('#hatch', { scaleY: 0, duration: 0.9 }, 11.9);
+tl.to('.bar.pre', { backgroundColor: 'oklch(85% .1 50 / .7)', duration: 0.8, stagger: 0.03 }, 12.0);
+tl.to('#nQuiet', { opacity: 1, duration: 0.5 }, 12.5).from('#nQuiet', { y: 20, duration: 0.6 }, 12.5);
+tl.fromTo('#orect', { attr: { width: 0 } }, { attr: { width: 1080 }, duration: 2.6, ease: 'power2.inOut' }, 12.2);
+tl.to('#nAfter', { opacity: 1, duration: 0.5 }, 14.4).from('#nAfter', { y: 20, duration: 0.6 }, 14.4);
+
+// ---- E (16.6 - 19.8): banner line from the site
+out('#h4', 16.5, 0.015);
+tl.to('#chart', { opacity: 0.18, y: 120, filter: 'blur(6px)', duration: 0.9, ease: 'expo.inOut' }, 16.5);
+rev('#h5', 16.95, 0.06);
+
+// ---- F (19.8 - 23.8): end card rises
+tl.to('#sEnd', { clipPath: 'inset(0% 0 0 0)', duration: 0.7, ease: 'expo.inOut' }, 19.65);
+tl.to('#brand', { opacity: 0, duration: 0.3 }, 19.9);
+tl.from('#sEnd .g2', { scale: 0.5, opacity: 0, duration: 1.4 }, 20.0);
+tl.fromTo('#bigLogo .lg-arc', { strokeDasharray: 80, strokeDashoffset: 80 }, { strokeDashoffset: 0, duration: 0.7, ease: 'power2.inOut' }, 20.15);
+tl.from(['#bigLogo .lg-shaft', '#bigLogo .lg-head'], { x: -10, y: 10, opacity: 0, duration: 0.5, ease: 'back.out(3)', stagger: 0.05 }, 20.6);
+rev('#endLogo', 20.3); tl.from('#endLogo .sub', { opacity: 0, x: -20, duration: 0.6 }, 20.45);
+rev('#e1', 20.4, 0.06);
+tl.from('#cta .btn', { y: 60, opacity: 0, duration: 0.8, ease: 'back.out(1.5)' }, 20.8);
+tl.from('#e2', { opacity: 0, y: 20, duration: 0.6 }, 21.0);
+tl.fromTo('#cursor', { x: 900, y: 1700 }, { x: 700, y: 1062, duration: 0.8, ease: 'power3.inOut' }, 21.3);
+tl.to('#btn', { scale: 0.95, duration: 0.1, ease: 'power2.in' }, 22.15).to('#btn', { scale: 1, duration: 0.5, ease: 'back.out(3)' }, 22.25);
+tl.to('#cursor', { scale: 0.85, duration: 0.1 }, 22.15).to('#cursor', { scale: 1, duration: 0.3 }, 22.25);
+tl.fromTo('#cta .ripple', { scale: 0, opacity: 1, x: 160 }, { scale: 16, opacity: 0, duration: 0.9, ease: 'expo.out' }, 22.17);
+tl.set('#cursor', { x: 900, y: 1700 }, 0);
+tl.to({}, { duration: 0.01 }, D);
+
+// ---- film grain: seeded per frame, so every frame is reproducible
+const gc = document.getElementById('grain'), gx = gc.getContext('2d'), img = gx.createImageData(540, 960);
+function drawGrain(t) {
+  const r = rand(Math.floor(t * 30) + 11), a = img.data;
+  for (let i = 0; i < a.length; i += 4) { const v = r() * 255; a[i] = a[i + 1] = a[i + 2] = v; a[i + 3] = 255; }
+  gx.putImageData(img, 0, 0);
+}
+boot(tl, D, [drawGrain]);
+</script>
+</body></html>

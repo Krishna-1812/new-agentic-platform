@@ -1,0 +1,197 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Not the same ad</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  html, body, #stage { width: 1080px; height: 1920px; }
+  #stage { background: var(--peach); }
+  .peach { background: var(--peach); color: var(--ink); }
+  .peach .grid { background-image: linear-gradient(to right, oklch(14% .005 285 / .06) 1px, transparent 1px),
+                                    linear-gradient(to bottom, oklch(14% .005 285 / .06) 1px, transparent 1px); background-size: 90px 90px; }
+  .blob { position: absolute; border-radius: 50%; }
+  #b1 { width: 900px; height: 900px; right: -420px; top: 980px; background: radial-gradient(closest-side, oklch(68.5% .223 39.5 / .35), transparent); }
+  #b2 { width: 800px; height: 800px; left: -380px; top: 120px; background: radial-gradient(closest-side, oklch(99% .004 60 / .9), transparent); }
+
+  .brand { left: 70px; top: 110px; }
+  .progress { width: 1080px; top: 0; bottom: auto; height: 8px; }
+
+  .hd { position: absolute; left: 70px; top: 270px; width: 960px; }
+  #h1 { font-size: 92px; }
+  #h2 { font-size: 84px; }
+  #h3 { font-size: 64px; }
+  #h3 .k { color: var(--orange); }
+
+  /* phones */
+  .who { position: absolute; top: 700px; font-family: var(--mono); font-size: 22px; letter-spacing: .18em; text-transform: uppercase;
+    background: var(--ink); color: var(--bone); padding: 10px 16px; display: flex; gap: 12px; align-items: center; }
+  .who i { width: 10px; height: 10px; background: var(--orange); display: inline-block; }
+  #whoL { left: 90px; } #whoR { left: 570px; }
+  .phone { position: absolute; top: 770px; width: 420px; height: 820px; border-radius: 58px; background: var(--ink); padding: 14px;
+    box-shadow: 0 50px 90px oklch(40% .1 40 / .35); }
+  #phL { left: 90px; } #phR { left: 570px; }
+  .scr { position: relative; width: 100%; height: 100%; border-radius: 46px; background: var(--card); overflow: hidden; }
+  .notch { position: absolute; left: 50%; top: 14px; width: 120px; height: 32px; margin-left: -60px; border-radius: 20px; background: var(--ink); z-index: 3; }
+  .appbar { height: 96px; padding: 50px 24px 0; font-family: var(--display); font-weight: 700; font-size: 26px; letter-spacing: -.01em; border-bottom: 1px solid var(--border); background: var(--card); position: relative; z-index: 2; }
+  .feed { position: absolute; left: 0; right: 0; top: 96px; }
+  .post { padding: 18px 20px 26px; border-bottom: 8px solid oklch(94% .006 60); }
+  .ph { display: flex; align-items: center; gap: 12px; }
+  .av { width: 44px; height: 44px; border-radius: 50%; background: oklch(85% .01 285); }
+  .pn { font-weight: 700; font-size: 19px; }
+  .ps { font-size: 15px; color: var(--muted); }
+  .img { margin-top: 14px; height: 300px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 22px; }
+  .img .lab { font-family: var(--mono); font-size: 14px; letter-spacing: .18em; text-transform: uppercase; }
+  .img .big { font-family: var(--display); font-weight: 700; font-size: 40px; line-height: 1.02; letter-spacing: -.02em; margin-top: 8px; }
+  .gen .img { background: linear-gradient(160deg, oklch(86% .01 285), oklch(74% .01 285)); color: oklch(98% 0 0); }
+  .ctab { margin-top: 14px; height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-weight: 700; font-size: 19px; }
+  .gen .ctab { background: oklch(93% .006 285); color: oklch(45% .01 285); }
+  .skel { padding: 18px 20px; }
+  .skel b { display: block; height: 16px; background: oklch(92% .006 60); margin-bottom: 12px; }
+
+  .tail { position: absolute; inset: 96px 0 0 0; background: var(--card); z-index: 1; }
+  .tail .post { border: 0; }
+  .tA .img { background: linear-gradient(150deg, oklch(80% .12 50), var(--orange)); color: white; }
+  .tA .av, .tB .av { background: var(--orange); }
+  .tA .ctab { background: var(--orange); color: white; }
+  .tB .img { background: radial-gradient(120% 90% at 80% 10%, oklch(30% .03 40), var(--ink)); color: white; }
+  .tB .img .big { color: var(--orange); }
+  .tB .ctab { background: var(--ink); color: white; }
+
+  .stamp { position: absolute; top: 330px; left: 50%; transform: translateX(-50%) rotate(-10deg); z-index: 5; border: 5px solid var(--orange); color: var(--orange);
+    font-family: var(--mono); font-weight: 700; font-size: 34px; letter-spacing: .14em; padding: 10px 18px; background: oklch(99% .004 60 / .85); white-space: nowrap; }
+
+  /* journey cards */
+  #h4 { font-size: 92px; }
+  .jc { position: absolute; left: 70px; width: 940px; height: 250px; background: var(--card); padding: 34px 40px; display: flex; gap: 32px; align-items: flex-start; }
+  .jc .ic { width: 84px; height: 84px; flex: none; border: 2px solid var(--border); display: grid; place-items: center; color: var(--orange); }
+  .jc .t { font-family: var(--display); font-weight: 600; font-size: 50px; letter-spacing: -.02em; line-height: 1.05; }
+  .jc .s { font-family: var(--mono); font-size: 22px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-top: 14px; line-height: 1.4; }
+  .jc.on { background: var(--orange); color: white; } .jc.on .s { color: oklch(100% 0 0 / .85); } .jc.on .ic { border-color: oklch(100% 0 0 / .5); color: white; }
+  #j1 { top: 700px; } #j2 { top: 975px; } #j3 { top: 1250px; }
+
+  /* end card on orange */
+  #sEnd { background: var(--orange); color: white; clip-path: circle(0px at 540px 1200px); }
+  #sEnd .grid { background-image: linear-gradient(to right, oklch(100% 0 0 / .12) 1px, transparent 1px), linear-gradient(to bottom, oklch(100% 0 0 / .12) 1px, transparent 1px); background-size: 90px 90px; }
+  #endLogo { position: absolute; left: 0; width: 1080px; top: 420px; display: flex; justify-content: center; align-items: center; gap: 24px; color: var(--ink); }
+  #endLogo .name { font-family: var(--display); font-weight: 700; font-size: 44px; letter-spacing: .16em; text-transform: uppercase; line-height: 1; }
+  #endLogo .sub { font-family: var(--mono); font-size: 18px; letter-spacing: .5em; text-transform: uppercase; opacity: .7; margin-top: 10px; }
+  #sEnd .lg-head, #sEnd .lg-shaft { stroke: white; }
+  .ctr { position: absolute; left: 0; width: 1080px; text-align: center; }
+  #e1 { top: 610px; font-size: 96px; padding: 0 30px; }
+  #e1 .ink { color: var(--ink); }
+  #cta { position: absolute; left: 0; width: 1080px; top: 1060px; display: flex; justify-content: center; }
+  #cta .btn { background: var(--ink); box-shadow: 0 24px 50px oklch(30% .1 40 / .4); font-size: 30px; padding: 34px 48px; }
+  #cta .ripple { position: absolute; width: 60px; height: 60px; border-radius: 50%; background: oklch(100% 0 0 / .35); left: 50%; top: 50%; margin: -30px; transform: scale(0); }
+  #e2 { position: absolute; left: 0; width: 1080px; top: 1240px; text-align: center; font-family: var(--mono); font-size: 24px; letter-spacing: .2em; text-transform: uppercase; color: oklch(100% 0 0 / .9); line-height: 1.8; }
+  #cursor { position: absolute; left: 0; top: 0; z-index: 60; filter: drop-shadow(0 6px 10px oklch(0% 0 0 / .3)); }
+</style></head>
+<body>
+<div id="stage">
+  <section class="scene peach" id="sMain">
+    <div class="grid"></div><div class="blob" id="b1"></div><div class="blob" id="b2"></div>
+    <div class="h hd" id="h1" data-split>Nursery parents<br>and MBA applicants<br>shouldn't see<br><span class="accent">the same ad.</span></div>
+    <div class="h hd" id="h2" data-split>Most institutions<br>run <span class="accent">one campaign</span> for<br>everything they offer.</div>
+    <div class="h hd" id="h3" data-split>We build campaigns by<br><span class="k">program,</span> <span class="k">audience</span> and <span class="k">intent,</span><br>so every course gets the<br>message that fits.</div>
+
+    <div class="who" id="whoL"><i></i>Nursery parent</div>
+    <div class="who" id="whoR"><i></i>MBA applicant</div>
+    <div class="phone" id="phL"><div class="scr"><div class="notch"></div><div class="appbar">Feed</div><div class="feed"></div>
+      <div class="tail tA"><div class="post"><div class="ph"><div class="av"></div><div><div class="pn">Your School</div><div class="ps">Sponsored</div></div></div>
+        <div class="img"><div class="lab">For parents</div><div class="big">See the campus before you shortlist.</div></div>
+        <div class="ctab">Book a campus visit <span>→</span></div></div><div class="skel"><b style="width:80%"></b><b style="width:55%"></b></div></div>
+      <div class="stamp">SAME AD</div></div></div>
+    <div class="phone" id="phR"><div class="scr"><div class="notch"></div><div class="appbar">Feed</div><div class="feed"></div>
+      <div class="tail tB"><div class="post"><div class="ph"><div class="av"></div><div><div class="pn">Your College</div><div class="ps">Sponsored</div></div></div>
+        <div class="img"><div class="lab">For working professionals</div><div class="big">Comparing MBA programs?</div></div>
+        <div class="ctab">Book a counselling session <span>→</span></div></div><div class="skel"><b style="width:80%"></b><b style="width:55%"></b></div></div>
+      <div class="stamp">SAME AD</div></div></div>
+
+    <div class="h hd" id="h4" data-split>Built for every kind of <span class="accent">education journey.</span></div>
+    <div class="jc" id="j1"><div class="ic"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V10l7-5 7 5v11M10 21v-6h4v6"/></svg></div><div><div class="t">Schools</div><div class="s">Parents decide</div></div></div>
+    <div class="jc on" id="j2"><div class="ic"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/></svg></div><div><div class="t">Colleges &amp; Universities</div><div class="s">Students and parents<br>decide together</div></div></div>
+    <div class="jc" id="j3"><div class="ic"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13"/><path d="M9 7V4h6v3"/></svg></div><div><div class="t">PG &amp; Professional</div><div class="s">The professional decides,<br>mostly alone</div></div></div>
+  </section>
+
+  <section class="scene" id="sEnd">
+    <div class="grid"></div>
+    <div id="endLogo"><span id="bigLogo"></span><div><div class="name" data-split>Outcomes</div><div class="sub">Digital</div></div></div>
+    <div class="h ctr" id="e1" data-split>Enrolments,<br><span class="ink">not just enquiries.</span></div>
+    <div id="cta"><div class="btn" id="btn">Talk to us directly
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6"><path d="M4 12h15M13 6l6 6-6 6"/></svg><span class="ripple"></span></div></div>
+    <div id="e2">Free strategy call<br>No pitch. No obligation.<br><span style="color:var(--ink)">edu.outcomes.digital</span></div>
+    <svg id="cursor" width="52" height="52" viewBox="0 0 24 24"><path d="M5 3l14 8-6 1.6L10 19z" fill="white" stroke="var(--ink)" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  </section>
+
+  <div id="chrome" class="chrome-ink">
+    <div class="brand" id="brand"><span id="smallLogo"></span><div><div class="name">Outcomes</div><div class="sub">Digital</div></div></div>
+    <div class="progress" id="prog"></div>
+  </div>
+</div>
+
+<script src="gsap.min.js"></script>
+<script src="lib.js"></script>
+<script>
+window.__size = [1080, 1920];
+document.getElementById('smallLogo').innerHTML = LOGO(38);
+document.getElementById('bigLogo').innerHTML = LOGO(110);
+const GEN = `<div class="post gen"><div class="ph"><div class="av"></div><div><div class="pn">Your Institution</div><div class="ps">Sponsored</div></div></div>
+  <div class="img"><div class="lab">All programs</div><div class="big">Admissions open.</div></div>
+  <div class="ctab">Apply now <span>→</span></div></div>`;
+document.querySelectorAll('.feed').forEach(f => f.innerHTML = GEN + GEN + GEN + GEN);
+splitWords();
+
+const D = 21.5;
+const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+const rev = (sel, at, stagger = 0.05, dur = 0.8) => tl.from(words(sel), { yPercent: 110, duration: dur, stagger }, at);
+const out = (sel, at, stagger = 0.02) => tl.to(words(sel), { yPercent: -110, duration: 0.45, ease: 'power3.in', stagger }, at);
+const POSTH = () => document.querySelector('.feed .post').offsetHeight;
+
+tl.fromTo('#prog', { scaleX: 0 }, { scaleX: 1, duration: D, ease: 'none' }, 0);
+tl.fromTo('#sMain', { scale: 1.03 }, { scale: 1, duration: 17, ease: 'none' }, 0);
+tl.set('.tail', { clipPath: 'inset(0 0 100% 0)' }, 0).set('.stamp', { opacity: 0 }, 0);
+
+// ---- A (0 - 4.2): same generic ad on both phones
+rev('#h1', 0.1, 0.06);
+tl.from(['#phL', '#phR'], { y: 500, rotation: (i) => i ? 6 : -6, duration: 1.2, stagger: 0.1 }, 0.05);
+tl.from(['#whoL', '#whoR'], { y: 30, opacity: 0, duration: 0.6, stagger: 0.1 }, 0.7);
+
+// ---- B (4.2 - 7.8): it repeats, everywhere
+out('#h1', 4.1);
+rev('#h2', 4.55);
+tl.to('.feed', { y: () => -POSTH() * 2, duration: 1.8, ease: 'power2.inOut' }, 4.3);
+tl.fromTo('.stamp', { opacity: 0, scale: 2.2 }, { opacity: 1, scale: 1, duration: 0.45, ease: 'back.out(2)', stagger: 0.15 }, 5.6);
+
+// ---- C (7.8 - 13.2): tailored by program, audience, intent
+out('#h2', 7.75);
+tl.to('.stamp', { opacity: 0, scale: 0.6, duration: 0.3, ease: 'power2.in' }, 7.8);
+tl.to('.tail', { clipPath: 'inset(0 0 0% 0)', duration: 0.8, ease: 'expo.inOut', stagger: 0.15 }, 8.0);
+tl.from('.tail .post', { y: 60, duration: 0.9, stagger: 0.15 }, 8.1);
+tl.to('#phL', { rotation: -3, y: -10, duration: 0.8, ease: 'back.out(2)' }, 8.1);
+tl.to('#phR', { rotation: 3, y: -10, duration: 0.8, ease: 'back.out(2)' }, 8.25);
+tl.to('.who i', { scale: 1.6, duration: 0.3, yoyo: true, repeat: 1 }, 8.6);
+rev('#h3', 8.2, 0.04);
+tl.from('#h3 .k', { color: 'var(--ink)', duration: 0.4, stagger: 0.35 }, 9.3);
+
+// ---- D (13.2 - 17.4): every kind of journey
+out('#h3', 13.1, 0.012);
+tl.to(['#phL', '#whoL'], { x: -700, rotation: -12, duration: 0.7, ease: 'expo.in' }, 13.1);
+tl.to(['#phR', '#whoR'], { x: 700, rotation: 12, duration: 0.7, ease: 'expo.in' }, 13.1);
+rev('#h4', 13.6);
+tl.from(['#j1', '#j2', '#j3'], { y: 160, opacity: 0, rotationX: -40, duration: 0.9, stagger: 0.14 }, 13.85);
+
+// ---- E (17.4 - 21.5): orange end card opens from the middle
+tl.to('#sEnd', { clipPath: 'circle(1400px at 540px 1200px)', duration: 0.8, ease: 'expo.in' }, 17.1);
+tl.to('#brand', { opacity: 0, duration: 0.3 }, 17.5);
+tl.fromTo('#bigLogo .lg-arc', { strokeDasharray: 80, strokeDashoffset: 80 }, { strokeDashoffset: 0, duration: 0.7, ease: 'power2.inOut' }, 17.8);
+tl.from(['#bigLogo .lg-shaft', '#bigLogo .lg-head'], { x: -10, y: 10, opacity: 0, duration: 0.5, ease: 'back.out(3)', stagger: 0.05 }, 18.25);
+rev('#endLogo', 17.95); tl.from('#endLogo .sub', { opacity: 0, x: -20, duration: 0.6 }, 18.1);
+rev('#e1', 18.05, 0.06);
+tl.from('#cta .btn', { y: 60, opacity: 0, duration: 0.8, ease: 'back.out(1.5)' }, 18.5);
+tl.from('#e2', { opacity: 0, y: 20, duration: 0.6 }, 18.7);
+tl.fromTo('#cursor', { x: 900, y: 1700 }, { x: 640, y: 1110, duration: 0.8, ease: 'power3.inOut' }, 19.0);
+tl.to('#btn', { scale: 0.95, duration: 0.1, ease: 'power2.in' }, 19.85).to('#btn', { scale: 1, duration: 0.5, ease: 'back.out(3)' }, 19.95);
+tl.to('#cursor', { scale: 0.85, duration: 0.1 }, 19.85).to('#cursor', { scale: 1, duration: 0.3 }, 19.95);
+tl.fromTo('#cta .ripple', { scale: 0, opacity: 1, x: 100 }, { scale: 16, opacity: 0, duration: 0.9, ease: 'expo.out' }, 19.87);
+tl.set('#cursor', { x: 900, y: 1700 }, 0);
+tl.to({}, { duration: 0.01 }, D);
+boot(tl, D);
+</script>
+</body></html>

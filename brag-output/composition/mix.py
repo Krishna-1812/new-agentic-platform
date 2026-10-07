@@ -67,6 +67,26 @@ CUES = {
         (19.60, 'bong_001.ogg', 0.22),
         (20.95, 'W', 0.20), (21.90, 'impactSoft_heavy_001.ogg', 0.38), (23.30, 'mouseclick1.ogg', 0.40), (23.34, 'bong_001.ogg', 0.20),
     ]),
+    'v3': dict(music='uplifting.mp3', dur=21.5, cues=[
+        (0.15, 'W', 0.14), (0.75, 'impactSoft_medium_001.ogg', 0.30),
+        (4.20, 'W', 0.14), (5.62, 'impactWood_light_002.ogg', 0.34), (5.77, 'impactWood_light_002.ogg', 0.30),
+        (7.80, 'W', 0.14), (8.05, 'switch_002.ogg', 0.18), (8.20, 'switch_002.ogg', 0.16),
+        (9.30, 'click_003.ogg', 0.15), (9.65, 'click_003.ogg', 0.15), (10.00, 'click_003.ogg', 0.15),
+        (13.20, 'W', 0.18), (13.95, 'impactSoft_medium_003.ogg', 0.26), (14.09, 'impactSoft_medium_003.ogg', 0.24), (14.23, 'impactSoft_medium_003.ogg', 0.24),
+        (17.55, 'W', 0.22), (17.90, 'impactSoft_heavy_001.ogg', 0.40), (18.30, 'bong_001.ogg', 0.20),
+        (19.85, 'mouseclick1.ogg', 0.40), (19.89, 'bong_001.ogg', 0.20),
+    ]),
+    'v4': dict(music='cinematic.mp3', dur=23.8, cues=[
+        (0.04, 'impactSoft_heavy_001.ogg', 0.45), (0.90, 'W', 0.12),
+        (3.95, 'W', 0.14), (4.35, 'impactSoft_heavy_001.ogg', 0.42),
+        (7.35, 'W', 0.14), (8.00, 'click_003.ogg', 0.13), (8.06, 'click_003.ogg', 0.12), (8.12, 'click_003.ogg', 0.12),
+        (8.18, 'click_003.ogg', 0.12), (8.24, 'click_003.ogg', 0.12), (8.30, 'click_003.ogg', 0.12),
+        (8.60, 'switch_002.ogg', 0.16), (9.30, 'switch_002.ogg', 0.16),
+        (11.35, 'W', 0.15), (11.95, 'impactSoft_medium_003.ogg', 0.28), (14.40, 'bong_001.ogg', 0.20),
+        (16.55, 'W', 0.16), (17.00, 'impactSoft_medium_001.ogg', 0.28),
+        (20.00, 'W', 0.22), (20.60, 'impactSoft_heavy_001.ogg', 0.40),
+        (22.15, 'mouseclick1.ogg', 0.40), (22.19, 'bong_001.ogg', 0.20),
+    ]),
 }
 
 if __name__ == '__main__':

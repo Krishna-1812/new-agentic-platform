@@ -83,3 +83,40 @@ whooshes, mixed under the music. The master is at -14 LUFS for social.
 Credit to include where a credit fits (e.g. YouTube description):
 - Video 1: Music: "Happy Beats & Business Moves Vol. 1" by Sascha Ende (ende.app), CC BY 4.0
 - Video 2: Music: "Imagefilm 046" by Sascha Ende (ende.app), CC BY 4.0
+
+---
+
+# Vertical set (9:16, 1080×1920, 30fps) for Stories and Reels
+
+Two new concepts from the brief, each with its own visual theme and music. Key
+text stays between about y=260 and y=1560, clear of the platform UI at the top
+and bottom edges, as the brief asks.
+
+## Video 3: "Not the same ad" (concept 5), 21.5s, *peach pop* theme
+
+Peach background with orange accents, two phone feeds, and an orange end card.
+Music: "Insert More Positive Emotion Here" (uplifting).
+
+| # | Time | On screen |
+|---|---|---|
+| A | 0.0–4.2 | Two phones rise, labelled "Nursery parent" and "MBA applicant", both showing the same grey "Admissions open. · Apply now" ad. "Nursery parents and MBA applicants shouldn't see **the same ad.**" |
+| B | 4.2–7.8 | The feeds scroll and the same ad repeats; "SAME AD" stamps hit both screens. "Most institutions run **one campaign** for everything they offer." |
+| C | 7.8–13.2 | The ads re-skin: "For parents · See the campus before you shortlist · Book a campus visit" vs "For working professionals · Comparing MBA programs? · Book a counselling session". "We build campaigns by **program, audience and intent,** so every course gets the message that fits." |
+| D | 13.2–17.4 | The phones fly out; the site's three journey cards come in: Schools (Parents decide), Colleges & Universities (Students and parents decide together), PG & Professional (The professional decides, mostly alone). |
+| E | 17.4–21.5 | An orange circle opens: logo, "Enrolments, not just enquiries.", and a click on "Talk to us directly →". |
+
+## Video 4: "The season window" (concept 6), 23.8s, *midnight cinematic* theme
+
+Near-black with an orange glow, a light sweep, film grain, a vignette and big type.
+Music: "Journey Of The Brave" (cinematic).
+
+| # | Time | On screen |
+|---|---|---|
+| A | 0.0–4.0 | A weekly family-interest timeline sweeps up; the few-weeks "Admissions season" band glows. "Admissions season is only **a few weeks long.**" |
+| B | 4.0–7.4 | Huge type: "Is your campaign **built for it?**" The season band pulses. |
+| C | 7.4–11.4 | Grey "typical spend" bars appear only inside the window, labelled "Late start →" and "← Stops at close". "Most start **late**, spend **evenly** and stop when applications **close.**" |
+| D | 11.4–16.6 | The hidden pre-season area lights up, hatched: "The quiet build-up · Families already comparing". An orange ramp line draws across, before, during and after, toward "Undecided families". "We ramp up **before** the season and stay in front of undecided families **after.**" |
+| E | 16.6–19.8 | The chart blurs back, and the site's banner line plays: "Admissions season coming up? **See where enquiries are leaking.**" |
+| F | 19.8–23.8 | The end card rises: logo, "Enrolments, not just enquiries.", and a click on "Get your free enrolment review →". |
+
+The chart is illustrative: it has no axis values, numbers or results.

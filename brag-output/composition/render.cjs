@@ -13,6 +13,8 @@ const [page_, mode, out, arg] = process.argv.slice(3);
   await page.goto('file://' + path.resolve(page_));
   await page.evaluate(() => window.__ready);
   const D = await page.evaluate(() => window.__duration);
+  const size = await page.evaluate(() => window.__size || [1920, 1080]);
+  await page.setViewportSize({ width: size[0], height: size[1] });
   const shot = async t => { await page.evaluate(t => window.__seek(t), t); return page.screenshot({ type: 'png' }); };
 
   if (mode === 'stills') {
