@@ -204,6 +204,17 @@ def tool_slug(row):
     return row.get("agent") or row.get("seo_tool") or ""
 
 
+def _client_href(row, slug):
+    """Where a client opens one of their shared tools' rows: its page inside their account (its own
+    page for an SEO run, a watch or a change; the agent's page for an agent's run)."""
+    href = row.get("href") or ""
+    if href.startswith("/%s/" % slug):
+        return href
+    if row["tool"] == "agents" and row.get("agent"):
+        return "/%s/agents/%s" % (slug, row["agent"])
+    return None
+
+
 def for_client(rows, slug, tools=(), review_shared=False):
     tools = set(tools)
     out = []
@@ -216,7 +227,8 @@ def for_client(rows, slug, tools=(), review_shared=False):
         if r.get("state") not in CLIENT_KEEP_STATES.get(r["tool"], ()):
             continue
         row = {k: r.get(k) for k in CLIENT_KEYS}
-        row.update(who="", by="", href="/%s/google-ads/ai-review" % slug if r["tool"] == "ai-review" else None)
+        row.update(who="", by="", agent=r.get("agent"), seo_tool=r.get("seo_tool"),
+                   href="/%s/google-ads/ai-review" % slug if r["tool"] == "ai-review" else _client_href(r, slug))
         if r["tool"] == "ai-review":
             row["state"], row["state_label"] = "", ""
         out.append(row)

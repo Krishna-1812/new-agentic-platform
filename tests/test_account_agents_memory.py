@@ -84,10 +84,9 @@ def test_one_rule_for_who_reaches_a_row():
 
 
 def test_the_thought_leader_store_spells_the_same_rule():
-    """Its queries are plain strings, so the rule is written out; it must stay workspace's."""
+    """Every one of its reads goes through workspace's rule, so a client's scope narrows it too."""
     src = open("tracker/thought_leader_pr.py", encoding="utf-8").read()
-    assert src.count("AND (email = %s OR space ~ '^acct:[0-9]+$')") == 15
-    assert workspace.ACCOUNT_SQL == "^acct:[0-9]+$"
+    assert src.count("workspace.seen_sql()") == 15 and "space ~ '^acct" not in src
 
 
 # ── The page inside an account ───────────────────────────────────────────────

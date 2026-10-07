@@ -84,7 +84,11 @@
       <div class="sa-fig"><b id="pw-f-watching">{{ board.counts.all }}</b><span>Pages watched</span></div>
       <div class="sa-fig"><b id="pw-f-changed">{{ board.counts.changed or 0 }}</b><span>Changed</span></div>
       <div class="sa-fig"><b id="pw-f-errors">{{ (board.counts.error or 0) + (board.counts.blocked or 0) }}</b><span>Can't read</span></div>
+      {%- if client_runs_left is defined and client_runs_left is not none %}
+      <div class="sa-fig"><b>{{ client_runs_left }}</b><span>Runs left this month</span></div>
+      {%- else %}
       <div class="sa-fig"><b id="pw-f-spend">${{ '%.2f' % status.claude.spent_usd }}</b><span>Claude this month</span></div>
+      {%- endif %}
     </div>
   </section>
 

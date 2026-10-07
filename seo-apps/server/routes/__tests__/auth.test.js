@@ -120,5 +120,27 @@ test("requireSeo lets staff through and refuses an 'app' pass", () => {
   assert.strictEqual(gate(auth.requireSeo, fakeReq({ token: app, url: '/api/search' })).res.statusCode, 403);
 });
 
+test("a 'client' pass reaches only the tools shared with it, and only inside an account", () => {
+  const t = auth.mintStudioToken('owner@lumina.in', 'client', 3600, { s: 'acct:12', t: ['keyword-research', 'seo-geo-audit'] });
+  for (const url of ['/api/keyword-research/search', '/api/semrush/x', '/api/seo-geo-audit/run']) {
+    const g = gate(auth.requireAuth, fakeReq({ token: t, url, method: 'POST' }));
+    assert.strictEqual(g.passed, true, url);
+    assert.strictEqual(g.req.user.space, 'acct:12', 'filed in the account');
+  }
+  for (const url of ['/api/on-page-audit/run', '/api/content-architect/projects', '/api/location-page-builder/pages',
+    '/api/search', '/api/keyword-researchx']) {
+    const g = gate(auth.requireAuth, fakeReq({ token: t, url, method: 'POST' }));
+    assert.strictEqual(g.passed, false, url);
+    assert.strictEqual(g.res.statusCode, 403, url);
+  }
+  assert.strictEqual(gate(auth.requireAuth, fakeReq({ token: t, url: '/api/kb' })).passed, true, 'reads the KB list');
+  const noAcct = auth.mintStudioToken('owner@lumina.in', 'client', 3600, { s: 'me:owner@lumina.in', t: ['keyword-research'] });
+  assert.strictEqual(gate(auth.requireAuth, fakeReq({ token: noAcct, url: '/api/keyword-research/x' })).res.statusCode, 401,
+    'a client pass without an account is no pass');
+  const research = auth.mintStudioToken('owner@lumina.in', 'client', 3600, { s: 'acct:12', t: ['content-research'] });
+  assert.strictEqual(gate(auth.requireSeo, fakeReq({ token: research, url: '/api/search' })).passed, true);
+  assert.strictEqual(gate(auth.requireSeo, fakeReq({ token: t, url: '/api/search' })).res.statusCode, 403);
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

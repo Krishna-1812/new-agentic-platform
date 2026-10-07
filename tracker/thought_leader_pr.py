@@ -218,7 +218,7 @@ def save_result(run_id: int, email: str, result: dict) -> bool:
                 UPDATE thought_leader_pr_runs
                 SET status = %s, confidence = %s, reasoning = %s, identity = %s,
                     error = %s, updated_at = now()
-                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
+                WHERE id = %s AND """ + workspace.seen_sql() + """
             """, (status, result.get("confidence"), result.get("reasoning"),
                   json.dumps(result.get("identity")) if result.get("identity") else None,
                   (result.get("error") or {}).get("detail") if result.get("error") else None,
@@ -245,7 +245,7 @@ def confirm_run(run_id: int, email: str) -> bool:
             cur.execute("""
                 UPDATE thought_leader_pr_runs
                 SET status = 'confirmed', updated_at = now()
-                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$') AND status = 'needs_review'
+                WHERE id = %s AND """ + workspace.seen_sql() + """ AND status = 'needs_review'
             """, (run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -274,7 +274,7 @@ def get_run(run_id: int, email: str) -> dict | None:
         with conn.cursor() as cur:
             cur.execute(f"""
                 SELECT {_RUN_COLUMNS}
-                FROM thought_leader_pr_runs WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
+                FROM thought_leader_pr_runs WHERE id = %s AND """ + workspace.seen_sql() + """
             """, (run_id, email))
             row = cur.fetchone()
             if not row:
@@ -450,7 +450,7 @@ def start_collecting(run_id: int, email: str) -> bool:
             cur.execute("""
                 UPDATE thought_leader_pr_runs
                 SET posts_status = 'collecting', posts_errors = NULL, updated_at = now()
-                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$') AND status = 'confirmed'
+                WHERE id = %s AND """ + workspace.seen_sql() + """ AND status = 'confirmed'
                       AND posts_status IS DISTINCT FROM 'collecting'
             """, (run_id, email))
             updated = cur.rowcount > 0
@@ -480,7 +480,7 @@ def save_posts(run_id: int, email: str, posts: dict, errors: dict) -> bool:
                 UPDATE thought_leader_pr_runs
                 SET posts_status = 'ready', posts = %s, posts_errors = %s,
                     posts_updated_at = now(), updated_at = now()
-                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
+                WHERE id = %s AND """ + workspace.seen_sql() + """
             """, (json.dumps(posts), json.dumps(errors) if errors else None, run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -506,7 +506,7 @@ def save_posts_failed(run_id: int, email: str, message: str) -> bool:
                 UPDATE thought_leader_pr_runs
                 SET posts_status = 'failed', posts_errors = %s, posts_updated_at = now(),
                     updated_at = now()
-                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
+                WHERE id = %s AND """ + workspace.seen_sql() + """
             """, (json.dumps({"_run": message}), run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -534,7 +534,7 @@ def start_reacting(run_id: int, email: str) -> bool:
             cur.execute("""
                 UPDATE thought_leader_pr_runs
                 SET reaction_status = 'collecting', reaction_errors = NULL, updated_at = now()
-                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$') AND status = 'confirmed'
+                WHERE id = %s AND """ + workspace.seen_sql() + """ AND status = 'confirmed'
                       AND reaction_status IS DISTINCT FROM 'collecting'
             """, (run_id, email))
             updated = cur.rowcount > 0
@@ -561,7 +561,7 @@ def save_reaction(run_id: int, email: str, reaction: dict, errors: dict) -> bool
                 UPDATE thought_leader_pr_runs
                 SET reaction_status = 'ready', reaction = %s, reaction_errors = %s,
                     reaction_updated_at = now(), updated_at = now()
-                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
+                WHERE id = %s AND """ + workspace.seen_sql() + """
             """, (json.dumps(reaction), json.dumps(errors) if errors else None, run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -586,7 +586,7 @@ def save_reaction_failed(run_id: int, email: str, message: str) -> bool:
                 UPDATE thought_leader_pr_runs
                 SET reaction_status = 'failed', reaction_errors = %s, reaction_updated_at = now(),
                     updated_at = now()
-                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
+                WHERE id = %s AND """ + workspace.seen_sql() + """
             """, (json.dumps({"_run": message}), run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -614,7 +614,7 @@ def start_press(run_id: int, email: str) -> bool:
             cur.execute("""
                 UPDATE thought_leader_pr_runs
                 SET press_status = 'collecting', press_errors = NULL, updated_at = now()
-                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$') AND status = 'confirmed'
+                WHERE id = %s AND """ + workspace.seen_sql() + """ AND status = 'confirmed'
                       AND press_status IS DISTINCT FROM 'collecting'
             """, (run_id, email))
             updated = cur.rowcount > 0
@@ -641,7 +641,7 @@ def save_press(run_id: int, email: str, press: dict, errors: dict) -> bool:
                 UPDATE thought_leader_pr_runs
                 SET press_status = 'ready', press = %s, press_errors = %s,
                     press_updated_at = now(), updated_at = now()
-                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
+                WHERE id = %s AND """ + workspace.seen_sql() + """
             """, (json.dumps(press), json.dumps(errors) if errors else None, run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -667,7 +667,7 @@ def save_press_failed(run_id: int, email: str, message: str) -> bool:
                 UPDATE thought_leader_pr_runs
                 SET press_status = 'failed', press_errors = %s, press_updated_at = now(),
                     updated_at = now()
-                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
+                WHERE id = %s AND """ + workspace.seen_sql() + """
             """, (json.dumps({"_run": message}), run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -696,7 +696,7 @@ def start_synthesizing(run_id: int, email: str) -> bool:
             cur.execute("""
                 UPDATE thought_leader_pr_runs
                 SET synthesis_status = 'collecting', synthesis_errors = NULL, updated_at = now()
-                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$') AND status = 'confirmed'
+                WHERE id = %s AND """ + workspace.seen_sql() + """ AND status = 'confirmed'
                       AND synthesis_status IS DISTINCT FROM 'collecting'
             """, (run_id, email))
             updated = cur.rowcount > 0
@@ -725,7 +725,7 @@ def save_synthesis(run_id: int, email: str, synthesis: dict, errors: dict) -> bo
                 UPDATE thought_leader_pr_runs
                 SET synthesis_status = 'ready', synthesis = %s, synthesis_errors = %s,
                     synthesis_updated_at = now(), updated_at = now()
-                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
+                WHERE id = %s AND """ + workspace.seen_sql() + """
             """, (json.dumps(synthesis), json.dumps(errors) if errors else None, run_id, email))
             updated = cur.rowcount > 0
         conn.commit()
@@ -750,7 +750,7 @@ def save_synthesis_failed(run_id: int, email: str, message: str) -> bool:
                 UPDATE thought_leader_pr_runs
                 SET synthesis_status = 'failed', synthesis_errors = %s, synthesis_updated_at = now(),
                     updated_at = now()
-                WHERE id = %s AND (email = %s OR space ~ '^acct:[0-9]+$')
+                WHERE id = %s AND """ + workspace.seen_sql() + """
             """, (json.dumps({"_run": message}), run_id, email))
             updated = cur.rowcount > 0
         conn.commit()

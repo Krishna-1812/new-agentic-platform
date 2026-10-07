@@ -35,6 +35,28 @@ const APP_PREFIXES = [
 ];
 const APP_READ_ONLY_PREFIXES = ['/api/kb'];
 
+// A 'client' pass: someone the platform invited to a client account, opening one of the SEO & AEO
+// tools the account shares with them. The pass names the account (s) and the tools (t); each tool
+// reaches only its own API mounts. It is never valid without an account.
+const CLIENT_TOOL_PREFIXES = {
+  'seo-geo-audit': ['/api/seo-geo-audit'],
+  'seo-geo-snapshot': ['/api/seo-geo-audit'],
+  'on-page-audit': ['/api/on-page-audit'],
+  'agent-readiness-audit': ['/api/agent-readiness-audit'],
+  'image-alt-audit': ['/api/image-alt-audit'],
+  'keyword-research': ['/api/keyword-research', '/api/semrush'],
+  'content-research': ['/api/search', '/api/scrape', '/api/analyze'],
+  'content-architect': ['/api/content-architect'],
+  'market-potential': ['/api/market-potential'],
+};
+
+function clientMayUse(req, tools) {
+  const url = (req.originalUrl || '').split('?')[0];
+  const under = p => url === p || url.startsWith(p + '/');
+  if (req.method === 'GET' && APP_READ_ONLY_PREFIXES.some(under)) return true;
+  return (Array.isArray(tools) ? tools : []).some(t => (CLIENT_TOOL_PREFIXES[t] || []).some(under));
+}
+
 function b64url(buf) {
   return Buffer.from(buf).toString('base64').replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
 }
@@ -59,7 +81,8 @@ function verifyStudioToken(token) {
     return null;
   }
   if (!payload || typeof payload.x !== 'number' || payload.x * 1000 < Date.now()) return null;
-  if (payload.r !== 'staff' && payload.r !== 'app') return null;
+  if (payload.r !== 'staff' && payload.r !== 'app' && payload.r !== 'client') return null;
+  if (payload.r === 'client' && !(typeof payload.s === 'string' && /^acct:[0-9]+$/.test(payload.s))) return null;
   return payload;
 }
 
@@ -101,12 +124,16 @@ function requireAuth(req, res, next) {
   if (payload.r === 'app' && !appMayUse(req)) {
     return res.status(403).json({ error: 'This tool is not part of your plan.' });
   }
+  if (payload.r === 'client' && !clientMayUse(req, payload.t)) {
+    return res.status(403).json({ error: 'This tool is not shared with you.' });
+  }
   next();
 }
 
 function requireSeo(req, res, next) {
   requireAuth(req, res, () => {
-    if (req.user.role !== 'staff') return res.status(403).json({ error: 'SEO team only.' });
+    // A client reaches these only for a tool shared with them (requireAuth checked which).
+    if (req.user.role !== 'staff' && req.user.role !== 'client') return res.status(403).json({ error: 'SEO team only.' });
     next();
   });
 }
@@ -124,4 +151,5 @@ router.get('/verify', (req, res) => {
   res.json({ valid: true, role: payload.r });
 });
 
-module.exports = { router, requireAuth, requireSeo, verifyStudioToken, mintStudioToken, spaceFor, APP_PREFIXES };
+module.exports = { router, requireAuth, requireSeo, verifyStudioToken, mintStudioToken, spaceFor, APP_PREFIXES,
+  CLIENT_TOOL_PREFIXES };

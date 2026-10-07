@@ -232,7 +232,8 @@ def test_a_shared_history_is_finished_work_without_names_or_links(seeded):
         assert want in hist, want
     assert not _foreign(hist, "lumina-mark")
     assert "Ana Mehta" not in hist and "Raj Kulkarni" not in hist and "data-hist-who" not in hist, "no names"
-    assert "<a class=\"as-ev-main\"" not in hist, "no links into the agency's tools"
+    links = re.findall(r'<a class="as-ev-main" href="([^"]+)"', hist)
+    assert links and all(h.startswith("/lumina/") for h in links), "links only into their own account's tools"
     assert "lumina-mark running" not in hist and "AI review of" not in hist, "finished work; reviews only when shared"
     assert unfinished
     _invite("lumina", **{"ai-review": True})

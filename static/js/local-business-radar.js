@@ -263,7 +263,9 @@
       });
       a.appendChild(tiers);
     }
-    a.appendChild(el("span", "lbr-rc-foot", ((r.summary || {}).found || 0) + " found · " + money((r.cost || {}).usd) +
+    // A client's answers carry no cost (app.py _client_scrub): their footer leaves it out.
+    a.appendChild(el("span", "lbr-rc-foot", ((r.summary || {}).found || 0) + " found" +
+      (r.cost && r.cost.usd != null ? " · " + money(r.cost.usd) : "") +
       (window.__acctContext && r.by ? " · by " + r.by : "")));
     return a;
   }

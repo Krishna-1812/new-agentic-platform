@@ -246,9 +246,9 @@ def _shared(space):
 
 def _seen(alias=""):
     """The SQL test that `email` may reach a project: theirs, or in a client account's space
-    (tracker/workspace.py), which is the whole team's."""
-    p = alias + "." if alias else ""
-    return "(%semail = %%s OR %sspace ~ '^acct:[0-9]+$')" % (p, p)
+    (tracker/workspace.py), which is the whole team's; for a client, their account's only."""
+    from tracker import workspace
+    return workspace.seen_sql(alias)
 
 
 def brand_owner(project):
@@ -258,6 +258,9 @@ def brand_owner(project):
 
 def _mem_project(project_id, email, strict=False):
     p = _MEM["projects"].get(project_id)
+    from tracker import workspace
+    if p and email is not None and workspace.scope() is not None:      # a client: their account's only
+        return p if p.get("space") == workspace.scope() and (not strict or p["email"] == _norm_email(email)) else None
     if not p or (email is not None and p["email"] != _norm_email(email) and (strict or not _shared(p.get("space")))):
         return None
     return p

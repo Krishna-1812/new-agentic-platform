@@ -927,7 +927,7 @@
       var right = el("div", "vs-result-side");
       var dl = el("a", "sa-btn sa-btn--dark", "Download MP4"); dl.href = r.download; dl.setAttribute("download", "");
       var acts = el("div", "vs-result-acts"); acts.appendChild(dl);
-      acts.appendChild(el("span", "vs-small", [v.shape_label, secs(v.seconds), r.mb + " MB", v.minutes ? v.minutes + " min to make" : "", money(v.cost_usd)].filter(Boolean).join(" · ")));
+      acts.appendChild(el("span", "vs-small", [v.shape_label, secs(v.seconds), r.mb + " MB", v.minutes ? v.minutes + " min to make" : "", v.cost_usd != null ? money(v.cost_usd) : ""].filter(Boolean).join(" · ")));
       right.appendChild(acts);
       if (r.music) {
         var credit = el("p", "vs-small vs-music-credit");

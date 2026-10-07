@@ -495,7 +495,7 @@
                       <span class="sub">
                         <span class="k">{{ kinds.get(r.mode, r.mode) }}</span>
                         {%- if r.participant_count %} · {{ r.participant_count }} listed{% endif %}
-                        {%- if r.credits_spent %} · {{ r.credits_spent }} Apollo credit{{ '' if r.credits_spent == 1 else 's' }}{% endif %}
+                        {%- if r.credits_spent and not viewer_is_client() %} · {{ r.credits_spent }} Apollo credit{{ '' if r.credits_spent == 1 else 's' }}{% endif %}
                         {%- if acct_ctx and r.by %} · by {{ r.by }}{% endif %}
                       </span>
                     </span>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head with context %}
+{#- A client opened a tool after their account's runs for the month were used up (the Share panel's
+    Runs a month). It says so, and where to go: back to the account, or to their account manager. -#}
+<html lang="en">
+<head>
+{{ head("Runs used up", ["account-space.css?v=17"], palette=False) }}
+</head>
+<body class="as-page">
+<main class="as-shell as-denied">
+  <a class="bn-brand" href="/{{ acct.slug }}"><span class="bn-mark"></span><span class="bn-word">{{ brand.name }}</span></a>
+  <div class="as-denied-card">
+    <span class="as-pre">{{ acct.name }}</span>
+    <h1 class="as-denied-h">This month&rsquo;s runs are used up.</h1>
+    <p>{{ acct.name }} can start {{ limit }} run{{ "" if limit == 1 else "s" }} a month, and all of them are used. They come
+       back on the 1st; to run more before then, ask your account manager at {{ brand.name }}. Everything already
+       run is still in your account.</p>
+    <div class="as-empty-actions">
+      <a class="as-btn as-btn--ink" href="/{{ acct.slug }}">Back to {{ acct.name }}</a>
+    </div>
+  </div>
+</main>
+</body>
+</html>
