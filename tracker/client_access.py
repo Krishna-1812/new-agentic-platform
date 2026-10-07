@@ -6,8 +6,12 @@ whichever of its pages the account shares. Nothing is emailed; the admin sends t
 
 What an account shares (SHARES): the Google Ads dashboard, on unless turned off; the AI review and
 the profile from the master doc, off unless turned on (the review is the agency's own critique of
-the account, including whether it follows its brief, so sharing it is a choice). The work history,
-off unless turned on, is the account's History as a client sees it (account_history.for_client).
+the account, including whether it follows its brief, so sharing it is a choice).
+
+Tools (TOOL_PREFIX + slug): each of the account's tools and agents, off unless turned on. A tool
+that is on is the client's to open and run inside their account, and its finished work joins the
+History they see (account_history.for_client). Every run a client starts counts against the
+account's monthly limit (RUN_LIMIT, set in the same panel).
 
 A domain that anyone can sign up to (gmail.com and the like) can never be invited as a whole, and
 neither can the agency's own domain, whose people are staff and see every account anyway.
@@ -23,8 +27,6 @@ SHARES = (
     ("ai-review", "AI review", "Claude's latest finished review, including where the account does not follow its brief",
      False),
     ("profile", "Profile from the master doc", "Website, goals, audience, competitors and brand", False),
-    ("history", "Work history", "The finished work done for the account: pages watched and the changes seen, videos, "
-                "SEO and agent runs. Without who did it", False),
 )
 SHARE_KEYS = tuple(k for k, *_ in SHARES)
 # An account's page -> the share that opens it to clients ("" is the account's home, always open).
@@ -77,10 +79,37 @@ def matches(email, entries):
     return e in entries or ("@" + e.rsplit("@", 1)[1]) in entries
 
 
-def shared(stored):
-    """{share: on} with the defaults filled in."""
+TOOL_PREFIX = "tool:"
+RUN_LIMIT = "runs_per_month"
+RUN_LIMIT_DEFAULT = 20
+RUN_LIMIT_MAX = 500
+
+
+def tool_key(slug):
+    return TOOL_PREFIX + slug
+
+
+def shared(stored, tools=()):
+    """{share: on} with the defaults filled in: the pages, then each tool in `tools` (slugs), off
+    unless turned on. Anything stored that is neither (an old share) is left out."""
     stored = stored or {}
-    return {k: bool(stored.get(k, default)) for k, _, _, default in SHARES}
+    out = {k: bool(stored.get(k, default)) for k, _, _, default in SHARES}
+    out.update({tool_key(t): stored.get(tool_key(t)) is True for t in tools})
+    return out
+
+
+def tools_on(shares):
+    """The slugs of the tools these shares turn on."""
+    return [k[len(TOOL_PREFIX):] for k, on in (shares or {}).items() if on and k.startswith(TOOL_PREFIX)]
+
+
+def run_limit(stored):
+    """The account's monthly limit on runs its clients start."""
+    try:
+        n = int((stored or {}).get(RUN_LIMIT, RUN_LIMIT_DEFAULT))
+    except (TypeError, ValueError):
+        n = RUN_LIMIT_DEFAULT
+    return max(0, min(RUN_LIMIT_MAX, n))
 
 
 def page_open(page, shares):
@@ -91,10 +120,12 @@ def page_open(page, shares):
     return bool(shares.get(s))
 
 
-def view(entries, shares, audit=()):
-    """What the Share panel shows."""
+def view(entries, shares, audit=(), tools=(), limit=RUN_LIMIT_DEFAULT, used=0):
+    """What the Share panel shows. `tools` is [{"slug", "label", "about", "group"}], in order."""
     return {"people": [{"who": e["who"], "kind": "domain" if e["who"].startswith("@") else "email",
                         "added_by": e.get("added_by", ""), "added_at": e.get("created_at")} for e in entries],
             "shares": [{"key": k, "label": label, "about": about, "on": bool(shares.get(k))}
                        for k, label, about, _ in SHARES],
+            "tools": [dict(t, key=tool_key(t["slug"]), on=bool(shares.get(tool_key(t["slug"])))) for t in tools],
+            "limit": limit, "used": used, "limit_max": RUN_LIMIT_MAX,
             "audit": list(audit)}

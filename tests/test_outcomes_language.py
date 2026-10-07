@@ -118,7 +118,7 @@ def test_no_card_or_row_is_staggered_by_index():
         r"animation-delay:\$\{",                        # template literal
         r"transitionDelay\s*=\s*Math\.min\(i\s*\*",       # scroll reveal per index
         r"setTimeout\(function\(\)\{\s*c\.classList\.add\('visible'\);\s*\},\s*i\s*\*",
-        r"animation-delay:\s*calc\(var\(--i",             # CSS index variable
+        r"animation-delay:\s*calc\([^;]*var\(--i",        # CSS index variable, with or without an offset
     )
     offenders = []
     for f in _tracked("static/css/*.css", "static/js/*.js", "templates/*.html"):

@@ -94,3 +94,19 @@ def test_invites_shares_and_the_history_are_stored_and_follow_the_account(tag):
     assert [e["who"] for e in store.access(gained["key"])] == ["@co-%s.in" % tag]
     log = store.audit(gained["key"])
     assert [a["action"] for a in log][:2] == ["removed", "unshared"] and len(log) == 6
+
+
+def test_tool_shares_the_run_limit_and_what_clients_do_are_stored(tag):
+    a = _acct("doc:usage %s" % tag, "Usage %s" % tag)
+    store.sync([a], set())
+    k = a["key"]
+    store.set_share(k, "tool:page-watch", True, "kris@x.com")
+    store.set_setting(k, "runs_per_month", 35, "kris@x.com")
+    assert store.shares(k) == {"tool:page-watch": True, "runs_per_month": 35}
+    assert store.audit(k)[0]["action"] == "set" and store.audit(k)[0]["detail"] == "runs_per_month=35"
+    store.record(k, "Ana@Lumina.in", "visit", tool="", path="/usage")
+    store.record(k, "ana@lumina.in", "run", tool="page-watch", path="/x")
+    assert store.runs_this_month(k) == 1
+    ev = store.events(k)
+    assert [(e["email"], e["kind"]) for e in ev] == [("ana@lumina.in", "run"), ("ana@lumina.in", "visit")]
+    assert k in store.shared_keys()

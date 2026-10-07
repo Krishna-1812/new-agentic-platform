@@ -2,10 +2,13 @@
    SHARE AN ACCOUNT — who outside the agency can open it, and what they see
 
    The dialog on an account's home ([data-share-open]). Admins invite an email
-   or a whole company domain, remove people, and choose which of the account's
-   pages its clients see; other staff see the same panel read-only. Every change
-   is a POST to /<account>/api/access... with the X-Requested-With header the
-   server requires (app.py, _acct_admin_guard). textContent only.
+   or a whole company domain, remove people, choose which of the account's
+   pages its clients see and which agents and tools they may use (a tile each,
+   grouped, with All / None per group), and set the runs a month they may
+   start; other staff see the same panel read-only. Every change is a POST to
+   /<account>/api/access... with the X-Requested-With header the server
+   requires (app.py, _acct_admin_guard). textContent only; the tools' icons are
+   cloned from the <template> the page renders.
    ──────────────────────────────────────────────────────────────────────── */
 (function () {
   "use strict";
@@ -47,6 +50,23 @@
   /* ── Drawing ──────────────────────────────────────────────────────── */
   var VERB = { invited: "invited", removed: "removed", shared: "shared", unshared: "stopped sharing" };
   var SHARE_LABEL = { "google-ads": "the Google Ads dashboard", "ai-review": "the AI review", profile: "the profile" };
+  var ICONS = {};
+  (function () {
+    var t = document.getElementById("sh-icons");
+    if (!t || !t.content) return;
+    Array.prototype.forEach.call(t.content.querySelectorAll("[data-icon]"), function (n) {
+      ICONS[n.getAttribute("data-icon")] = n.querySelector("svg");
+    });
+  })();
+  function icon(slug) {
+    var src = ICONS[slug];
+    return src ? src.cloneNode(true) : null;
+  }
+  function label(key) {
+    if (SHARE_LABEL[key]) return SHARE_LABEL[key];
+    var t = state && (state.tools || []).filter(function (x) { return x.key === key; })[0];
+    return t ? t.label : key;
+  }
 
   function draw(d) {
     state = d;
@@ -54,6 +74,7 @@
     dlg.classList.toggle("is-readonly", !can);
     $("sh-add").hidden = !can;
 
+    $("sh-people-n").textContent = d.people.length ? d.people.length + (d.people.length === 1 ? " person" : " people") : "";
     var ul = $("sh-people");
     clear(ul);
     if (!d.people.length) {
@@ -101,14 +122,130 @@
       sh.appendChild(li);
     });
 
+    drawTools(d, can);
+    drawLimit(d, can);
+
     $("sh-link").textContent = d.link;
     var log = $("sh-log");
     clear(log);
     $("sh-log-box").hidden = !d.audit.length;
     d.audit.forEach(function (a) {
-      var what = a.action === "shared" || a.action === "unshared" ? (SHARE_LABEL[a.detail] || a.detail) : a.detail;
-      log.appendChild(el("li", "", when(a.at) + " · " + (a.actor || "someone") + " " + (VERB[a.action] || a.action) + " " + what));
+      var line;
+      if (a.action === "set") line = "set the runs a month to " + String(a.detail).split("=")[1];
+      else line = (VERB[a.action] || a.action) + " " +
+        (a.action === "shared" || a.action === "unshared" ? label(a.detail) : a.detail);
+      var li = el("li");
+      li.appendChild(el("span", "sh-log-at", when(a.at)));
+      li.appendChild(el("span", "", (a.actor || "someone") + " " + line));
+      log.appendChild(li);
     });
+  }
+
+  /* The tools, a tile each, grouped; a group's switch turns all of it on or off. */
+  function drawTools(d, can) {
+    var box = $("sh-tools");
+    clear(box);
+    var tools = d.tools || [];
+    var on = tools.filter(function (t) { return t.on; }).length;
+    $("sh-tools-n").textContent = on + " of " + tools.length + " on";
+    (d.groups || []).forEach(function (g) {
+      var mine = tools.filter(function (t) { return t.group === g.key; });
+      if (!mine.length) return;
+      var n = mine.filter(function (t) { return t.on; }).length;
+      var sec = el("div", "sh-grp");
+      var head = el("div", "sh-grp-h");
+      head.appendChild(el("span", "sh-grp-t", g.label));
+      head.appendChild(el("span", "sh-grp-n", n + " of " + mine.length));
+      if (can) {
+        var all = el("button", "sh-grp-all", n === mine.length ? "None" : "All");
+        all.type = "button";
+        all.setAttribute("aria-label", (n === mine.length ? "Turn off every " : "Turn on every ") + g.label + " tool");
+        all.addEventListener("click", function () {
+          var want = n !== mine.length, body = {};
+          mine.forEach(function (t) { body[t.key] = want; });
+          all.disabled = true;
+          sec.classList.add("is-busy");
+          send(API + "/share", { shares: body }).then(function (r) {
+            if (!r.ok) { all.disabled = false; sec.classList.remove("is-busy"); msg(r.error || "That could not be changed.", true); return; }
+            draw(r);
+          });
+        });
+        head.appendChild(all);
+      }
+      sec.appendChild(head);
+      var grid = el("ul", "sh-tiles");
+      mine.forEach(function (t) {
+        var li = el("li", "sh-tile-c");
+        var lab = el("label", "sh-tool sh-tool--" + t.slug + (t.on ? " is-on" : ""));
+        var chk = el("input", "sh-tool-in");
+        chk.type = "checkbox";
+        chk.checked = !!t.on;
+        chk.disabled = !can;
+        chk.setAttribute("aria-label", t.label);
+        var ico = el("span", "sh-tool-ico");
+        var svg = icon(t.slug);
+        if (svg) ico.appendChild(svg);
+        var tx = el("span", "sh-tool-t");
+        tx.appendChild(el("b", "", t.label));
+        tx.appendChild(el("small", "", t.about));
+        var tick = el("span", "sh-tool-tick");
+        tick.appendChild(svgTick());
+        lab.appendChild(chk);
+        lab.appendChild(ico);
+        lab.appendChild(tx);
+        lab.appendChild(tick);
+        chk.addEventListener("change", function () {
+          lab.classList.toggle("is-on", chk.checked);
+          chk.disabled = true;
+          send(API + "/share", { share: t.key, on: chk.checked }).then(function (r) {
+            if (!r.ok) { chk.checked = !chk.checked; lab.classList.toggle("is-on", chk.checked); chk.disabled = false;
+                         msg(r.error || "That could not be changed.", true); return; }
+            draw(r);
+          });
+        });
+        li.appendChild(lab);
+        grid.appendChild(li);
+      });
+      sec.appendChild(grid);
+      box.appendChild(sec);
+    });
+  }
+  function svgTick() {
+    var ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg"), p = document.createElementNS(ns, "path");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    p.setAttribute("d", "m5 12.5 4.5 4.5L19 7.5");
+    svg.appendChild(p);
+    return svg;
+  }
+
+  /* Runs a month: a stepper, saved a moment after the last change. */
+  var limitTimer = null;
+  function drawLimit(d, can) {
+    var inp = $("sh-limit");
+    if (document.activeElement !== inp) inp.value = d.limit;
+    inp.disabled = !can;
+    inp.max = d.limit_max;
+    $("sh-limit-dn").disabled = $("sh-limit-up").disabled = !can;
+    var pct = d.limit ? Math.min(100, Math.round(100 * d.used / d.limit)) : (d.used ? 100 : 0);
+    var bar = $("sh-meter");
+    bar.style.width = pct + "%";
+    bar.classList.toggle("is-full", d.limit > 0 ? d.used >= d.limit : true);
+    $("sh-used").textContent = d.limit === 0 ? "Running is off: they can look, not start anything." :
+      d.used + " of " + d.limit + " used this month" + (d.used >= d.limit ? ". They cannot start more until the 1st." : ".");
+  }
+  function setLimit(n) {
+    var inp = $("sh-limit"), max = (state && state.limit_max) || 500;
+    n = Math.max(0, Math.min(max, Math.round(Number(n) || 0)));
+    inp.value = n;
+    clearTimeout(limitTimer);
+    limitTimer = setTimeout(function () {
+      send(API + "/limit", { limit: n }).then(function (r) {
+        if (!r.ok) { msg(r.error || "That could not be saved.", true); return; }
+        draw(r);
+        msg("Saved: " + n + " runs a month.");
+      });
+    }, 450);
   }
 
   /* ── Changes ──────────────────────────────────────────────────────── */
@@ -180,4 +317,7 @@
   dlg.addEventListener("click", function (e) { if (e.target === dlg) close(); });   // the backdrop
   $("sh-add").addEventListener("submit", invite);
   $("sh-copy").addEventListener("click", copy);
+  $("sh-limit-dn").addEventListener("click", function () { setLimit(Number($("sh-limit").value) - 5); });
+  $("sh-limit-up").addEventListener("click", function () { setLimit(Number($("sh-limit").value) + 5); });
+  $("sh-limit").addEventListener("change", function () { setLimit($("sh-limit").value); });
 })();
