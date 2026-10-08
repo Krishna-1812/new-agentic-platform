@@ -35,6 +35,14 @@
   var ALL_ROWS = [];
   try { ALL_ROWS = JSON.parse(dataEl.textContent || "[]"); } catch (e) { ALL_ROWS = []; }
   var CURRENCY = doc.body.getAttribute("data-currency-symbol") || "";
+  /* Money. By default every figure is in the account's own currency, as Google Ads shows it, and
+     the page shows one currency's accounts at a time (amounts in different currencies cannot be
+     added up). The "convert" option shows every account in the campaign report's converted
+     currency (MONEY.to) instead. MONEY comes from app.py (_google_ads_money). */
+  var MONEY = {};
+  try { MONEY = JSON.parse((doc.getElementById("gad-money") || {}).textContent || "{}") || {}; } catch (e) { MONEY = {}; }
+  var MONEY_KEY = "gad-money-mode";
+  var CODE = "", LOCALE = "en-IN";
   var SVGNS = "http://www.w3.org/2000/svg";
 
   var SERIES = ["#FF6022", "#1D65A6", "#E0A100", "#0E9F6E", "#8C4FD9", "#E34970"];
@@ -73,16 +81,25 @@
   function isoRange(a, b) { var out = []; for (var d = a; d <= b; d = addDays(d, 1)) out.push(d); return out; }
 
   /* ── Formatting ─────────────────────────────────────────────────────── */
-  function fmtInt(n) { return Math.round(n).toLocaleString("en-IN"); }
-  function fmtMoney(n) { return CURRENCY + Math.round(n).toLocaleString("en-IN"); }
-  function fmtMoney2(n) { return CURRENCY + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  // Rupees group in lakhs and crores (1,23,45,678; 1.2Cr); every other currency in thousands (12,345,678; 12M).
+  function sym(code) { return (MONEY.symbols && MONEY.symbols[code]) || (code ? code + " " : ""); }
+  function fmtInt(n) { return Math.round(n).toLocaleString(LOCALE); }
+  function fmtMoney(n) { return CURRENCY + Math.round(n).toLocaleString(LOCALE); }
+  function fmtMoneyIn(n, code) { return sym(code) + Math.round(n).toLocaleString(code === "INR" ? "en-IN" : "en-US"); }
+  function fmtMoney2(n) { return CURRENCY + n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function fmtPct(n) { return n.toFixed(2) + "%"; }
   function fmtCompact(n, money) {
     var a = Math.abs(n), s;
-    if (a >= 1e7) s = (n / 1e7).toFixed(a >= 1e8 ? 0 : 1) + "Cr";
-    else if (a >= 1e5) s = (n / 1e5).toFixed(a >= 1e6 ? 0 : 1) + "L";
-    else if (a >= 1e3) s = (n / 1e3).toFixed(a >= 1e4 ? 0 : 1) + "K";
-    else s = a < 10 && a % 1 ? n.toFixed(1) : String(Math.round(n));
+    if (LOCALE === "en-IN") {
+      if (a >= 1e7) s = (n / 1e7).toFixed(a >= 1e8 ? 0 : 1) + "Cr";
+      else if (a >= 1e5) s = (n / 1e5).toFixed(a >= 1e6 ? 0 : 1) + "L";
+      else if (a >= 1e3) s = (n / 1e3).toFixed(a >= 1e4 ? 0 : 1) + "K";
+    } else {
+      if (a >= 1e9) s = (n / 1e9).toFixed(a >= 1e10 ? 0 : 1) + "B";
+      else if (a >= 1e6) s = (n / 1e6).toFixed(a >= 1e7 ? 0 : 1) + "M";
+      else if (a >= 1e3) s = (n / 1e3).toFixed(a >= 1e4 ? 0 : 1) + "K";
+    }
+    if (s == null) s = a < 10 && a % 1 ? n.toFixed(1) : String(Math.round(n));
     s = s.replace(".0", "");
     return (money ? CURRENCY : "") + s;
   }
@@ -101,7 +118,7 @@
     cost:         { label: "Spend",        v: function (s) { return s.cost; },                              fmt: fmtMoney,  short: function (n) { return fmtCompact(n, true); },  good: 0,  add: true },
     clicks:       { label: "Clicks",       v: function (s) { return s.clicks; },                            fmt: fmtInt,    short: function (n) { return fmtCompact(n); },        good: 1,  add: true },
     impressions:  { label: "Impressions",  v: function (s) { return s.impressions; },                       fmt: fmtInt,    short: function (n) { return fmtCompact(n); },        good: 1,  add: true },
-    conversions:  { label: "Conversions",  v: function (s) { return s.conversions; },                       fmt: function (n) { return n % 1 ? n.toLocaleString("en-IN", { maximumFractionDigits: 1 }) : fmtInt(n); }, short: function (n) { return fmtCompact(n); }, good: 1, add: true },
+    conversions:  { label: "Conversions",  v: function (s) { return s.conversions; },                       fmt: function (n) { return n % 1 ? n.toLocaleString(LOCALE, { maximumFractionDigits: 1 }) : fmtInt(n); }, short: function (n) { return fmtCompact(n); }, good: 1, add: true },
     ctr:          { label: "CTR",          v: function (s) { var x = div(s.clicks, s.impressions); return x == null ? null : x * 100; }, fmt: fmtPct, short: function (n) { return n.toFixed(1) + "%"; }, good: 1 },
     cpc:          { label: "Avg. CPC",     v: function (s) { return div(s.cost, s.clicks); },               fmt: fmtMoney2, short: function (n) { return fmtCompact(n, true); },  good: -1 },
     cpa:          { label: "Cost / conv.", v: function (s) { return div(s.cost, s.conversions); },          fmt: fmtMoney2, short: function (n) { return fmtCompact(n, true); },  good: -1 },
@@ -131,14 +148,29 @@
   var MIN_VOL = { ctr: ["impressions", 100], cpc: ["clicks", 10], cvr: ["clicks", 20], cpa: ["conversions", 1], top_pct: ["impressions", 100], abs_top_pct: ["impressions", 100] };
 
   /* ── Static facts about the full row set ────────────────────────────── */
-  var DAYS, MIN_DAY, MAX_DAY, ACCOUNTS, TYPE_COLOR;
+  var DAYS, MIN_DAY, MAX_DAY, ACCOUNTS, TYPE_COLOR, ACC_CUR, CURS;
+  /** Each row's money both ways, set once per row set: cost_fx in the converted currency (as the
+      server sends `cost`), cost_own and cur in the account's own currency. */
+  function prepRows(rows) {
+    rows.forEach(function (r) {
+      r.cost_fx = r.cost || 0;
+      r.cur = r.currency_native || r.currency || "";
+      r.cost_own = r.currency_native ? (r.cost_native || 0) : r.cost_fx;
+      r.fx_ok = !MONEY.to || r.currency === MONEY.to;   // converted (an account with no rate is not)
+    });
+  }
   function derive() {
     var dset = {}, accSpend = {}, typeSpend = {};
+    ACC_CUR = {};
     ALL_ROWS.forEach(function (r) {
       if (r.day) dset[r.day] = 1;
-      accSpend[r.account] = (accSpend[r.account] || 0) + (r.cost || 0);
-      typeSpend[r.type || "Other"] = (typeSpend[r.type || "Other"] || 0) + (r.cost || 0);
+      // Spend compared across currencies only to order and colour things, never shown: converted.
+      accSpend[r.account] = (accSpend[r.account] || 0) + (r.cost_fx || 0);
+      typeSpend[r.type || "Other"] = (typeSpend[r.type || "Other"] || 0) + (r.cost_fx || 0);
+      if (r.account && r.cur) ACC_CUR[r.account] = r.cur;
     });
+    CURS = (MONEY.currencies || []).filter(function (c) { return ALL_ROWS.some(function (r) { return r.cur === c; }); });
+    if (!CURS.length) CURS = Object.keys(ALL_ROWS.reduce(function (m, r) { if (r.cur) m[r.cur] = 1; return m; }, {})).sort();
     DAYS = Object.keys(dset).sort();
     MIN_DAY = DAYS[0] || toIso(new Date());
     MAX_DAY = DAYS[DAYS.length - 1] || MIN_DAY;
@@ -151,6 +183,7 @@
 
   /* ── State ──────────────────────────────────────────────────────────── */
   var state = {
+    money: "own", cur: "",
     account: "__all__", type: "__all__", status: "__all__", search: "", focus: null,
     preset: "all", from: null, to: null, compare: true,
     metric: "cost", grain: "day", sortKey: "cost", sortDir: -1, shown: 15
@@ -167,7 +200,44 @@
     return from >= MIN_DAY ? { from: from, to: to } : null;
   }
 
-  function matches(r, ignoreAccount) {
+  /* ── Money: which rows the page adds up, and in what ─────────────────── */
+  function canConvert() { return !!MONEY.to; }
+  function inMoney(r) { return state.money === "fx" ? r.fx_ok : (!state.cur || r.cur === state.cur); }
+  /** Puts every row's cost in the chosen currency and sets the symbol and number style to match. */
+  function applyMoney() {
+    if (state.money === "fx" && !canConvert()) state.money = "own";
+    if (state.cur && CURS.indexOf(state.cur) < 0) state.cur = "";
+    if (!state.cur) state.cur = MONEY["default"] && CURS.indexOf(MONEY["default"]) >= 0 ? MONEY["default"] : (CURS[0] || "");
+    var fx = state.money === "fx";
+    ALL_ROWS.forEach(function (r) { r.cost = fx ? r.cost_fx : r.cost_own; });
+    CODE = fx ? MONEY.to : state.cur;
+    CURRENCY = sym(CODE);
+    LOCALE = CODE && CODE !== "INR" ? "en-US" : "en-IN";
+    DEFS.cost = fx
+      ? "Sum of cost across every campaign-day in scope, every account converted to " + MONEY.to + " at the campaign report's daily rates."
+      : "Sum of cost across every campaign-day in scope, in " + (CODE || "the accounts' own currency") + ", the currency " +
+        (CURS.length > 1 ? "these accounts are" : "the account is") + " billed in.";
+  }
+  /** "all accounts", or "all USD accounts" while the page shows one currency's accounts. */
+  function allNoun() { return state.money === "own" && CURS.length > 1 ? "all " + state.cur + " accounts" : "all accounts"; }
+  function rememberMoney() { try { window.localStorage.setItem(MONEY_KEY, state.money); } catch (e) { /* private window: not kept */ } }
+  /** Own-currency view of one currency's accounts. Leaves an account or campaign in another currency. */
+  function setCur(code) {
+    state.money = "own"; state.cur = code;
+    if (state.account !== "__all__" && ACC_CUR[state.account] !== code) state.account = "__all__";
+    if (state.focus && ACC_CUR[state.focus.split("\u0001")[0]] !== code) state.focus = null;
+    state.shown = 15; applyMoney(); rememberMoney();
+  }
+  /** Opening an account (or one of its campaigns) in another currency switches the page to it. */
+  function followAccount(acc) {
+    if (state.money === "own" && acc && ACC_CUR[acc] && ACC_CUR[acc] !== state.cur) {
+      setCur(ACC_CUR[acc]); renderAll(); renderTicker();
+    }
+  }
+
+  // anyCur: every account whatever its currency (the ticker, where each shows in its own).
+  function matches(r, ignoreAccount, anyCur) {
+    if (anyCur ? state.money === "fx" && !r.fx_ok : !inMoney(r)) return false;
     if (!ignoreAccount && state.account !== "__all__" && r.account !== state.account) return false;
     if (state.type !== "__all__" && r.type !== state.type) return false;
     if (state.status !== "__all__" && r.state !== state.status) return false;
@@ -178,8 +248,8 @@
     }
     return true;
   }
-  function rowsIn(from, to, ignoreAccount) {
-    return ALL_ROWS.filter(function (r) { return r.day >= from && r.day <= to && matches(r, ignoreAccount); });
+  function rowsIn(from, to, ignoreAccount, anyCur) {
+    return ALL_ROWS.filter(function (r) { return r.day >= from && r.day <= to && matches(r, ignoreAccount, anyCur); });
   }
 
   function aggregate(rows) {
@@ -413,17 +483,30 @@
       periodLen() + (periodLen() === 1 ? " day" : " days") + " &middot; " +
       (state.account === "__all__" && nAcc > 1 ? nAcc + " accounts &middot; " : "") +
       nCamp + (nCamp === 1 ? " campaign" : " campaigns") +
-      " &middot; data through " + fmtDay(MAX_DAY, true);
+      " &middot; data through " + fmtDay(MAX_DAY, true) + moneyNote();
+  }
+  /** What currency the figures are in, for the hero line. */
+  function moneyNote() {
+    if (!CODE) return "";
+    if (state.money === "fx") {
+      var left = {};
+      ALL_ROWS.forEach(function (r) { if (!r.fx_ok) left[r.account] = 1; });
+      var n = Object.keys(left).length;
+      return " &middot; all converted to " + esc(CODE) + (n ? " (" + n + (n === 1 ? " account" : " accounts") + " with no rate left out)" : "");
+    }
+    return CURS.length > 1 && state.account === "__all__" ? " &middot; " + esc(CODE) + " accounts only" : " &middot; in " + esc(CODE);
   }
 
   function renderTicker() {
     var track = $("gad-tick-track");
-    var agg = aggregate(rowsIn(state.from, state.to, true));
-    var list = agg.accList.sort(function (a, b) { return b.s.cost - a.s.cost; });
+    // Every account, each in its own currency (or all converted); ordered by converted spend.
+    var rows = rowsIn(state.from, state.to, true, true), agg = aggregate(rows), fx = {};
+    rows.forEach(function (r) { fx[r.account] = (fx[r.account] || 0) + (r.cost_fx || 0); });
+    var list = agg.accList.sort(function (a, b) { return (fx[b.name] || 0) - (fx[a.name] || 0); });
     if (!list.length) { track.innerHTML = ""; return; }
     var html = list.map(function (a) {
       return '<button type="button" class="gad-tick-i' + (a.name === state.account ? " is-on" : "") + '" data-acc="' + esc(a.name) + '" data-go="account" data-id="' + esc(a.name) + '">' +
-        "<b>" + esc(a.name) + "</b>" + fmtMoney(a.s.cost) + " &middot; " + METRICS.conversions.fmt(a.s.conversions) + " conv.</button>";
+        "<b>" + esc(a.name) + "</b>" + (state.money === "fx" ? fmtMoney(a.s.cost) : fmtMoneyIn(a.s.cost, ACC_CUR[a.name])) + " &middot; " + METRICS.conversions.fmt(a.s.conversions) + " conv.</button>";
     }).join("");
     // Twice, so the loop is seamless.
     track.innerHTML = html + html.replace(/class="gad-tick-i/g, 'tabindex="-1" aria-hidden="true" class="gad-tick-i');
@@ -865,6 +948,7 @@
     var from = o.from || state.from, to = o.to || state.to;
     return ALL_ROWS.filter(function (r) {
       if (r.day < from || r.day > to) return false;
+      if (!inMoney(r)) return false;
       if (o.campaign) return keyOf(r) === o.campaign;
       if (o.account != null) { if (r.account !== o.account) return false; }
       else if (state.account !== "__all__" && r.account !== state.account) return false;
@@ -1075,7 +1159,7 @@
     var o = { account: name, ignoreSearch: true, ignoreFocus: true };
     var p = scopePair(o), cur = p.cur, prev = p.prev;
     // Share of all accounts: the same scope without the account restriction.
-    var everyone = aggregate(ALL_ROWS.filter(function (r) { return r.day >= state.from && r.day <= state.to && (state.type === "__all__" || r.type === state.type) && (state.status === "__all__" || r.state === state.status); }));
+    var everyone = aggregate(ALL_ROWS.filter(function (r) { return r.day >= state.from && r.day <= state.to && inMoney(r) && (state.type === "__all__" || r.type === state.type) && (state.status === "__all__" || r.state === state.status); }));
     var any = ALL_ROWS.filter(function (r) { return r.account === name; })[0] || {};
     var camps = campItems(cur, "cost").sort(sortFor("cost"));
     camps.forEach(function (x) { var c = cur.camps[x.id], cpa = METRICS.cpa.v(c.s); x.sub2 = METRICS.conversions.fmt(c.s.conversions) + " conv. &middot; " + (cpa == null ? "—" : fmtCompact(cpa, true) + "/conv."); x.sub = esc(c.type || "") + ' &middot; <span class="gad-state' + ((c.state || "").toLowerCase() === "paused" ? " is-paused" : "") + '">' + esc(c.state || "") + "</span>"; });
@@ -1085,7 +1169,7 @@
       dSection(METRICS[metric].label + " by day", '<div class="gad-dchart" data-line></div>', "pick a figure above to switch") +
       dSection("Spend by campaign type", typeStack(cur)) +
       dFacts([
-        { k: "Share of all spend", v: shareOf(cur.totals.cost, everyone.totals.cost), s: "of " + fmtMoney(everyone.totals.cost) + " across all accounts" },
+        { k: "Share of all spend", v: shareOf(cur.totals.cost, everyone.totals.cost), s: "of " + fmtMoney(everyone.totals.cost) + " across " + allNoun() },
         { k: "Share of all conversions", v: shareOf(cur.totals.conversions, everyone.totals.conversions) },
         { k: "Average daily spend", v: fmtMoney(cur.totals.cost / periodLen()) },
         bs && { k: "Highest-spend day", v: fmtDay(bs.d, true), s: fmtMoney(bs.v), go: "range", id: bs.d + "|" + bs.d },
@@ -1104,7 +1188,7 @@
   VIEWS.type = function (v) {
     var t = v.id, metric = v.metric || "cost", o = { type: t, ignoreFocus: true };
     var p = scopePair(o), cur = p.cur, prev = p.prev;
-    var everyType = aggregate(ALL_ROWS.filter(function (r) { return r.day >= state.from && r.day <= state.to && (state.account === "__all__" || r.account === state.account) && (state.status === "__all__" || r.state === state.status); }));
+    var everyType = aggregate(ALL_ROWS.filter(function (r) { return r.day >= state.from && r.day <= state.to && inMoney(r) && (state.account === "__all__" || r.account === state.account) && (state.status === "__all__" || r.state === state.status); }));
     var html = dHead("Campaign type", t, cur.campList.length + " campaigns in " + cur.accList.length + " accounts &middot; " + esc(rangeText()) + filterNote(o), typeColor(t)) +
       dKpis(cur, prev, ["cost", "clicks", "impressions", "conversions", "ctr", "cpc", "cpa", "cvr", "top_pct", "view_through"], metric) +
       dSection(METRICS[metric].label + " by day", '<div class="gad-dchart" data-line></div>', "pick a figure above to switch") +
@@ -1213,6 +1297,7 @@
   }
   function paint(swap, dir) {
     var d = drawer, v = d.stack[d.stack.length - 1];
+    if (v.t === "account" || v.t === "campaign") followAccount(String(v.id).split("\u0001")[0]);
     var crumbs = d.stack.map(function (x, i) {
       return i === d.stack.length - 1 ? '<span aria-current="page">' + esc(titleOf(x)) + "</span>" : '<button type="button" data-crumb="' + i + '">' + esc(titleOf(x)) + "</button>";
     }).join('<i aria-hidden="true">/</i>');
@@ -1322,7 +1407,8 @@
     // the same dates, account, campaign type, status, search text and focused campaign.
     doc.dispatchEvent(new CustomEvent("gad:render", { detail: {
       account: state.account, search: state.search, type: state.type, status: state.status,
-      focus: state.focus || "", from: state.from, to: state.to } }));
+      focus: state.focus || "", from: state.from, to: state.to,
+      money: state.money, currency: state.money === "own" ? state.cur : "" } }));
   }
 
   /* ── Controls ───────────────────────────────────────────────────────── */
@@ -1337,6 +1423,7 @@
     $("gad-state-select").value = state.status;
     $("gad-state-select").classList.toggle("is-set", state.status !== "__all__");
     $("gad-account-select").value = state.account;
+    $("gad-money-select").value = state.money === "fx" ? "fx" : "own:" + state.cur;
     var f = $("gad-focus");
     if (state.focus) {
       var parts = state.focus.split("\u0001");
@@ -1349,18 +1436,40 @@
     $$(".gad-tick-i").forEach(function (t) { t.classList.toggle("is-on", t.getAttribute("data-acc") === state.account); });
   }
 
-  function setAccount(a) { state.account = a; state.focus = null; state.shown = 15; renderAll(); renderTicker(); }
+  function setAccount(a) {
+    if (a !== "__all__" && state.money === "own" && ACC_CUR[a] && ACC_CUR[a] !== state.cur) setCur(ACC_CUR[a]);
+    state.account = a; state.focus = null; state.shown = 15; renderAll(); renderTicker();
+  }
   function setType(t) { state.type = t; state.shown = 15; renderAll(); }
   function setFocus(k) {
     state.focus = k; state.shown = 15;
     if (k && state.account !== "__all__" && k.split("\u0001")[0] !== state.account) state.account = k.split("\u0001")[0];
+    if (k && state.money === "own" && ACC_CUR[k.split("\u0001")[0]] !== state.cur) {
+      var acc = state.account; setCur(ACC_CUR[k.split("\u0001")[0]]); state.account = acc; state.focus = k;
+    }
     renderAll();
   }
 
-  function populate(sel, values, allLabel) {
+  function populate(sel, values, allLabel, label) {
     sel.innerHTML = "";
     var o = doc.createElement("option"); o.value = "__all__"; o.textContent = allLabel; sel.appendChild(o);
-    values.forEach(function (v) { var x = doc.createElement("option"); x.value = v; x.textContent = v; sel.appendChild(x); });
+    values.forEach(function (v) { var x = doc.createElement("option"); x.value = v; x.textContent = label ? label(v) : v; sel.appendChild(x); });
+  }
+  // With accounts in several currencies, each account says its own.
+  function accLabel(a) { return CURS.length > 1 && ACC_CUR[a] ? a + " \u00b7 " + ACC_CUR[a] : a; }
+  /** The currency choice: each currency's accounts in that currency, or everything converted. */
+  function populateMoney(sel) {
+    sel.innerHTML = "";
+    CURS.forEach(function (c) {
+      var n = ACCOUNTS.filter(function (a) { return ACC_CUR[a] === c; }).length;
+      var x = doc.createElement("option"); x.value = "own:" + c;
+      x.textContent = CURS.length > 1 ? c + " accounts (" + n + ")" : "Own currency (" + c + ")";
+      sel.appendChild(x);
+    });
+    if (canConvert()) {
+      var y = doc.createElement("option"); y.value = "fx"; y.textContent = "All converted to " + MONEY.to; sel.appendChild(y);
+    }
+    sel.hidden = sel.options.length < 2;
   }
   function uniq(key) {
     var m = {}; ALL_ROWS.forEach(function (r) { if (r[key]) m[r[key]] = 1; });
@@ -1369,11 +1478,11 @@
 
   function exportCsv() {
     if (!lastCur) return;
-    var head = ["Account", "Campaign", "Type", "Status", "Spend", "Clicks", "Impressions", "CTR %", "Avg CPC", "Conversions", "Conv rate %", "Cost per conv", "View-through conv"];
+    var head = ["Account", "Campaign", "Type", "Status", "Currency", "Spend", "Clicks", "Impressions", "CTR %", "Avg CPC", "Conversions", "Conv rate %", "Cost per conv", "View-through conv"];
     var lines = [head];
     lastCur.campList.sort(function (a, b) { return b.s.cost - a.s.cost; }).forEach(function (c) {
       var s = c.s, r = function (v, d) { return v == null ? "" : v.toFixed(d); };
-      lines.push([c.account, c.campaign, c.type, c.state, s.cost.toFixed(2), s.clicks, s.impressions,
+      lines.push([c.account, c.campaign, c.type, c.state, state.money === "fx" ? CODE : ACC_CUR[c.account] || CODE, s.cost.toFixed(2), s.clicks, s.impressions,
         r(METRICS.ctr.v(s), 2), r(METRICS.cpc.v(s), 2), s.conversions, r(METRICS.cvr.v(s), 2), r(METRICS.cpa.v(s), 2), s.view_through]);
     });
     var csv = lines.map(function (l) { return l.map(function (v) { v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(","); }).join("\n");
@@ -1386,8 +1495,16 @@
 
   function initControls() {
     var accSel = $("gad-account-select");
-    populate(accSel, ACCOUNTS, ALL_LABEL);
+    populate(accSel, ACCOUNTS, ALL_LABEL, accLabel);
     accSel.addEventListener("change", function () { setAccount(accSel.value); });
+
+    var monSel = $("gad-money-select");
+    populateMoney(monSel);
+    monSel.addEventListener("change", function () {
+      if (monSel.value === "fx") { state.money = "fx"; state.shown = 15; applyMoney(); rememberMoney(); }
+      else setCur(monSel.value.slice(4));
+      renderAll(); renderTicker();
+    });
 
     var typeSel = $("gad-type-select");
     populate(typeSel, uniq("type"), "All campaign types");
@@ -1465,9 +1582,11 @@
         .then(function (r) { return r.json(); })
         .then(function (d) {
           if (d && d.ok && d.rows && d.rows.length) {
-            ALL_ROWS = d.rows; CURRENCY = d.currency_symbol || CURRENCY;
+            ALL_ROWS = d.rows; MONEY = d.money || MONEY; prepRows(ALL_ROWS);
             if (d.insights && d.insights.ok) doc.dispatchEvent(new CustomEvent("gad:insights", { detail: d.insights }));
-            derive(); populate(accSel, ACCOUNTS, ALL_LABEL); populate(typeSel, uniq("type"), "All campaign types"); populate(stSel, uniq("state"), "Any status");
+            derive(); applyMoney();
+            populate(accSel, ACCOUNTS, ALL_LABEL, accLabel); populateMoney(monSel);
+            populate(typeSel, uniq("type"), "All campaign types"); populate(stSel, uniq("state"), "Any status");
             if (ACCOUNTS.indexOf(state.account) < 0) state.account = "__all__";
             if (state.preset !== "custom") applyPreset(state.preset);
             // Every value re-rolls from its current digits.
@@ -1522,12 +1641,19 @@
     });
   }
 
+  prepRows(ALL_ROWS);
   derive();
+  // Own currency unless this viewer chose to convert everything last time.
+  try { if (window.localStorage.getItem(MONEY_KEY) === "fx" && canConvert()) state.money = "fx"; } catch (e) { /* storage blocked: the default */ }
+  applyMoney();
   applyPreset("all");
-  // ?account= (the Slack digest's and the AI review's links) opens on that account.
+  // ?account= (the Slack digest's and the AI review's links) opens on that account, in its currency.
   try {
     var wanted = new URLSearchParams(window.location.search).get("account");
-    if (wanted && ACCOUNTS.indexOf(wanted) >= 0) state.account = wanted;
+    if (wanted && ACCOUNTS.indexOf(wanted) >= 0) {
+      state.account = wanted;
+      if (state.money === "own" && ACC_CUR[wanted]) { state.cur = ACC_CUR[wanted]; applyMoney(); }
+    }
   } catch (e) { /* an old browser without URLSearchParams opens on all accounts */ }
   initControls();
   initDrawer();

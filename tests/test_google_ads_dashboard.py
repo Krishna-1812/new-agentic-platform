@@ -202,7 +202,8 @@ def test_dominant_currency_falls_back_to_inr_with_nothing_to_vote_on():
 def test_currency_symbol_maps_known_codes_and_passes_through_unknown_ones():
     assert appmod._google_ads_currency_symbol([{"currency": "INR"}]) == "₹"
     assert appmod._google_ads_currency_symbol([{"currency": "USD"}]) == "$"
-    assert appmod._google_ads_currency_symbol([{"currency": "AUD"}]) == "AUD "
+    assert appmod._google_ads_currency_symbol([{"currency": "AUD"}]) == "A$"
+    assert appmod._google_ads_currency_symbol([{"currency": "XYZ"}]) == "XYZ "
 
 
 def test_fetch_rows_raises_past_the_route_when_sheet_id_is_unset(monkeypatch):
@@ -251,9 +252,16 @@ def test_every_headline_figure_opens_its_detail_panel(fake_sheet):
     assert 'role="dialog" aria-modal="true"' in body
 
 
-def test_route_sets_the_currency_symbol_for_js_to_read(fake_sheet):
-    r = _staff_client().get("/dashboards/google-ads")
-    assert 'data-currency-symbol="₹"' in r.get_data(as_text=True)
+def test_route_opens_in_the_accounts_own_currency_and_offers_the_conversion(fake_sheet):
+    """Both accounts are billed in US dollars and converted to rupees in the report: the page opens in
+    dollars, as Google Ads shows them, with "all converted to INR" as the option."""
+    body = _staff_client().get("/dashboards/google-ads").get_data(as_text=True)
+    assert 'data-currency-symbol="$"' in body
+    money = json.loads(re.search(r'<script id="gad-money" type="application/json">(.*?)</script>', body).group(1))
+    assert money["currencies"] == ["USD"] and money["default"] == "USD" and money["to"] == "INR"
+    assert money["accounts"] == {"Turquoise Institute": "USD", "Other Co": "USD"}
+    assert money["symbols"] == {"USD": "$", "INR": "₹"}
+    assert 'id="gad-money-select"' in body
 
 
 def test_route_shows_a_safe_empty_state_when_not_configured(monkeypatch):
@@ -273,4 +281,5 @@ def test_refresh_endpoint_returns_the_fresh_row_set(fake_sheet):
     data = r.get_json()
     assert data["ok"] is True
     assert len(data["rows"]) == 3
-    assert data["currency_symbol"] == "₹"
+    assert data["currency_symbol"] == "$"
+    assert data["money"]["default"] == "USD" and data["money"]["to"] == "INR"

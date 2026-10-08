@@ -4893,22 +4893,41 @@ def _google_ads_default_range(rows):
     return (days[0], days[-1]) if days else ("", "")
 
 
-def _google_ads_insights(rows=None, force: bool = False, **params):
+def _google_ads_insights(rows=None, force: bool = False, money: str = "own", currency: str = "", **params):
     """The insights for a date range and filters, or an empty set (panels stay hidden) until the
-    Google Ads Script has run."""
+    Google Ads Script has run. money="own" (the page's default) shows the accounts billed in one
+    currency (`currency`, else the one with the most spend), in that currency; money="fx" shows every
+    account converted into the campaign report's converted currency (see _google_ads_money)."""
     from tracker import google_ads_insights
     if not GOOGLE_ADS_SHEET_ID:
         return google_ads_insights.empty()
     rows = rows or []
+    mon = _google_ads_money(rows)
+    if money == "fx" and mon["to"]:
+        src, currency = rows, ""
+    else:
+        money = "own"
+        currency = currency if currency in mon["currencies"] else mon["default"]
+        src = [r for r in _google_ads_own_rows(rows) if r.get("currency") == currency] if currency else rows
     ins = google_ads_insights.fetch(_ads_sheet_service, GOOGLE_ADS_SHEET_ID,
                                     titles=_google_ads_cache.get("titles"), force=force,
                                     camps=_google_ads_campaigns(rows), camps_key=(id(rows), len(rows)),
-                                    fx=google_ads_insights.FX(rows), spend=google_ads_insights.Spend(rows),
-                                    **params)
+                                    fx=google_ads_insights.FX(src), spend=google_ads_insights.Spend(src),
+                                    money=money, currency=currency, **params)
     ins = dict(ins)
-    ins["symbols"] = {c: _CURRENCY_SYMBOLS.get(c, c + " ") for c in ins.get("currencies", [])}
+    ins["params"] = dict(ins.get("params") or {}, money=money)   # a copy: the view itself is cached
+    ins["money"] = money
+    ins["symbols"] = {c: _ads_symbol(c) for c in ins.get("currencies", [])}
     ins["rate_source"] = _google_ads_cache.get("rate_source") or "google"
     return ins
+
+
+def _google_ads_insights_args():
+    """The insights endpoints' money arguments: money (own | fx) and currency (a 3-letter code)."""
+    a = request.args
+    cur = (a.get("currency") or "").upper()
+    return {"money": "fx" if a.get("money") == "fx" else "own",
+            "currency": cur if re.match(r"^[A-Z]{3}$", cur) else ""}
 
 
 _ISO_DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -4928,7 +4947,7 @@ def google_ads_dashboard():
     return render_template("google_ads_dashboard.html", user=_get_user(),
                            rows=rows, ok=bool(rows), insights=insights,
                            currency_symbol=_google_ads_currency_symbol(rows),
-                           mixed_currencies=_google_ads_mixed_currencies(rows))
+                           money=_google_ads_money(rows))
 
 
 @app.route("/api/dashboards/google-ads/insights")
@@ -4947,7 +4966,7 @@ def google_ads_dashboard_insights():
     ins = _google_ads_insights(rows, start=start or None, end=end or None,
                                account=a.get("account", "")[:300], type_=a.get("type", "")[:100],
                                status=a.get("status", "")[:100], search=a.get("search", "")[:200],
-                               focus=a.get("focus", "")[:600])
+                               focus=a.get("focus", "")[:600], **_google_ads_insights_args())
     return jsonify(ins)
 
 
@@ -4962,7 +4981,7 @@ def google_ads_dashboard_refresh():
         start, end = _google_ads_default_range(rows)
         return jsonify({"ok": bool(rows), "rows": rows,
                         "insights": _google_ads_insights(rows, force=True, start=start or None, end=end or None),
-                        "currency_symbol": _google_ads_currency_symbol(rows)})
+                        "currency_symbol": _google_ads_currency_symbol(rows), "money": _google_ads_money(rows)})
     except Exception:
         import traceback
         log.warning("google_ads_dashboard_refresh: %s", traceback.format_exc())
@@ -6501,7 +6520,7 @@ def account_google_ads(acct):
     client = _acct_is_client((_get_user() or {}).get("email", ""))
     return render_template("google_ads_dashboard.html", user=_get_user(), rows=rows, ok=bool(rows),
                            insights=insights, currency_symbol=_google_ads_currency_symbol(rows),
-                           mixed_currencies=_google_ads_mixed_currencies(rows), acct=acct,
+                           money=_google_ads_money(rows), acct=acct,
                            api_base="/%s/api/google-ads" % acct["slug"], accounts=_acct_nav(),
                            client_view=client, review_shared=not client or _acct_shares(acct)["ai-review"])
 
@@ -6521,7 +6540,7 @@ def account_google_ads_insights(acct):
     ins = _google_ads_insights(rows, start=start or None, end=end or None, only=tuple(sorted(acct["ads_names"])),
                                account=a.get("account", "")[:300], type_=a.get("type", "")[:100],
                                status=a.get("status", "")[:100], search=a.get("search", "")[:200],
-                               focus=a.get("focus", "")[:600])
+                               focus=a.get("focus", "")[:600], **_google_ads_insights_args())
     return jsonify(ins)
 
 
@@ -6535,7 +6554,7 @@ def account_google_ads_refresh(acct):
         return jsonify({"ok": bool(rows), "rows": rows,
                         "insights": _google_ads_insights(rows, force=True, start=start or None, end=end or None,
                                                          only=tuple(sorted(acct["ads_names"]))),
-                        "currency_symbol": _google_ads_currency_symbol(rows)})
+                        "currency_symbol": _google_ads_currency_symbol(rows), "money": _google_ads_money(rows)})
     except Exception:
         log.warning("account_google_ads_refresh: %s", "failed", exc_info=True)
         return jsonify({"ok": False, "rows": []}), 502
@@ -20285,7 +20304,48 @@ def _fetch_google_ads_rows(force: bool = False):
     return rows
 
 
-_CURRENCY_SYMBOLS = {"INR": "₹", "USD": "$", "GBP": "£", "EUR": "€"}
+_CURRENCY_SYMBOLS = {"INR": "₹", "USD": "$", "GBP": "£", "EUR": "€", "AUD": "A$", "CAD": "C$", "NZD": "NZ$",
+                     "SGD": "S$", "HKD": "HK$", "JPY": "¥", "CNY": "CN¥", "AED": "AED ", "SAR": "SAR ",
+                     "ZAR": "R ", "CHF": "CHF ", "MYR": "RM ", "PHP": "₱", "THB": "฿", "KRW": "₩",
+                     "BRL": "R$", "MXN": "MX$", "IDR": "Rp ", "VND": "₫", "PKR": "Rs ", "LKR": "Rs ",
+                     "BDT": "৳", "NPR": "Rs ", "QAR": "QAR ", "KWD": "KWD ", "OMR": "OMR ", "BHD": "BHD "}
+
+
+def _ads_symbol(code) -> str:
+    return _CURRENCY_SYMBOLS.get(code, (code + " ") if code else "")
+
+
+def _google_ads_own_rows(rows):
+    """The campaign report with each row's money in its account's own currency ("Cost", "Currency
+    code"), the way Google Ads itself shows the account. A row without "Currency code" keeps the
+    cost and currency it has."""
+    return [dict(r, cost=r.get("cost_native") or 0.0, currency=r["currency_native"])
+            if r.get("currency_native") else r for r in rows]
+
+
+def _google_ads_money(rows) -> dict:
+    """How the dashboard can show money. By default each account in its own currency: the currencies
+    the accounts are billed in (`currencies`, most spend first, compared after conversion) and the one
+    the page opens on (`default`); the page shows one currency's accounts at a time, since amounts
+    in different currencies cannot be added up. `to` is the currency the campaign report converts
+    every account into ("Cost (Converted currency)"), the page's "convert everything" option, or ""
+    when there is nothing to convert (every account already in it, or no converted column).
+    `accounts` gives each account's own currency, `symbols` each currency's symbol."""
+    spend, accounts = {}, {}
+    for r in rows:
+        own = r.get("currency_native") or r.get("currency") or ""
+        if not own:
+            continue
+        spend[own] = spend.get(own, 0.0) + (r.get("cost") or 0.0)
+        if r.get("account"):
+            accounts[r["account"]] = own
+    currencies = sorted(spend, key=lambda c: (-spend[c], c))
+    to = _dominant_ads_currency(rows) if any(r.get("currency") for r in rows) else ""
+    converted = any(r.get("currency") == to and r.get("currency_native") and r["currency_native"] != to
+                    for r in rows)
+    to = to if converted else ""
+    return {"currencies": currencies, "default": currencies[0] if currencies else "", "to": to,
+            "accounts": accounts, "symbols": {c: _ads_symbol(c) for c in set(currencies) | ({to} - {""})}}
 
 
 def _dominant_ads_currency(rows) -> str:
@@ -20309,8 +20369,9 @@ def _google_ads_mixed_currencies(rows) -> list:
 
 
 def _google_ads_currency_symbol(rows) -> str:
-    currency = _dominant_ads_currency(rows)
-    return _CURRENCY_SYMBOLS.get(currency, currency + " ")
+    """The symbol the page opens with: the default currency's (see _google_ads_money)."""
+    currency = _google_ads_money(rows)["default"] or _dominant_ads_currency(rows)
+    return _ads_symbol(currency)
 
 
 # ── Chatbot data functions ────────────────────────────────────────────────────

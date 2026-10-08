@@ -74,12 +74,14 @@
   }
   function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
   function sym(cur) { return (INS.symbols && INS.symbols[cur]) || (cur ? cur + " " : ""); }
-  function money(n, cur) { return n == null ? "–" : sym(cur) + Math.round(n).toLocaleString("en-IN"); }
+  // Rupees group in lakhs (1,23,456); every other currency, and counts beside it, in thousands.
+  function loc(cur) { return (cur || (INS.fx || {}).to || "INR") === "INR" ? "en-IN" : "en-US"; }
+  function money(n, cur) { return n == null ? "–" : sym(cur) + Math.round(n).toLocaleString(loc(cur)); }
   function money2(n, cur) {
-    return n == null ? "–" : sym(cur) + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return n == null ? "–" : sym(cur) + n.toLocaleString(loc(cur), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-  function int(n) { return n == null ? "–" : Math.round(n).toLocaleString("en-IN"); }
-  function num1(n) { return n == null ? "–" : (n % 1 ? n.toLocaleString("en-IN", { maximumFractionDigits: 1 }) : int(n)); }
+  function int(n) { return n == null ? "–" : Math.round(n).toLocaleString(loc()); }
+  function num1(n) { return n == null ? "–" : (n % 1 ? n.toLocaleString(loc(), { maximumFractionDigits: 1 }) : int(n)); }
   function isLow(v) { return v != null && Math.abs(v - LOW) < 1e-6; }
   function isHigh(v) { return v != null && Math.abs(v - HIGH) < 1e-6; }
   /** A share as Google reports it: <10% and >90% where Google caps it. */
@@ -1741,6 +1743,8 @@
   /** One sentence on currencies: which accounts were converted, and which could not be. */
   function fxNote() {
     var f = INS.fx || {}, out = [];
+    // Each account in its own currency (the page's default): nothing is converted.
+    if (INS.money === "own" && f.to) out.push("Money is in " + f.to + ", the currency these accounts are billed in, as in Google Ads.");
     var conv = f.converted || {}, kept = f.kept || {};
     Object.keys(conv).forEach(function (c) {
       var n = conv[c].length;
@@ -1776,7 +1780,7 @@
   }
 
   /* ── Asking the server for the page's filters ───────────────────────── */
-  var PARAMS = ["from", "to", "account", "type", "status", "search", "focus"];
+  var PARAMS = ["from", "to", "account", "type", "status", "search", "focus", "money", "currency"];
   /* One client account's page asks its own scoped endpoint (data-api-base, app.py); every other page
      the dashboard's. */
   function endpoint(u) { var b = doc.body.getAttribute("data-api-base"); return b ? b + "/insights?" : u; }
@@ -1817,7 +1821,8 @@
     filters.focus = d.focus || "";
     filters.from = d.from || ""; filters.to = d.to || "";
     var want = { from: filters.from, to: filters.to, account: filters.account === "__all__" ? "" : filters.account,
-                 type: filters.type, status: filters.status, search: filters.search, focus: filters.focus };
+                 type: filters.type, status: filters.status, search: filters.search, focus: filters.focus,
+                 money: d.money === "fx" ? "fx" : "own", currency: d.money === "fx" ? "" : d.currency || "" };
     if (keyOf(want) === keyOf(INS.params || {}) && !failed) { resetShown(); renderAll(); return; }
     load(want);
   });

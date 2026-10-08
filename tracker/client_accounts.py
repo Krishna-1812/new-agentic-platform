@@ -267,11 +267,18 @@ def _pct(cur, prev):
 
 def stats(rows, ads_names, days=30):
     """The account's last `days` days in the campaign report: totals, a daily series, last 7 days
-    against the 7 before, and its campaigns by spend. None when it has no rows."""
+    against the 7 before, and its campaigns by spend. None when it has no rows.
+
+    Money is in the currency its Google Ads accounts are billed in ("Cost", "Currency code"), as
+    Google Ads shows it. Only when they are billed in different currencies, which cannot be added
+    up, is it in the report's converted currency ("Cost (Converted currency)")."""
     want = set(ads_names or ())
     mine = [r for r in rows if r.get("account") in want and r.get("day")]
     if not mine:
         return None
+    own = {r.get("currency_native") or "" for r in mine}
+    if len(own) == 1 and "" not in own:
+        mine = [dict(r, cost=r.get("cost_native") or 0.0, currency=r["currency_native"]) for r in mine]
     last = max(r["day"] for r in mine)
     end = date.fromisoformat(last)
     start = end - timedelta(days=days - 1)
