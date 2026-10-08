@@ -1,0 +1,10 @@
+{
+  "extraKnownMarketplaces": {
+    "markify-tools": {
+      "source": { "source": "github", "repo": "Krishna-1812/new-agentic-platform" }
+    }
+  },
+  "enabledPlugins": {
+    "video-studio@markify-tools": true
+  }
+}

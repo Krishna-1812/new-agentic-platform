@@ -66,14 +66,85 @@ def test_every_script_the_docs_name_ships():
         assert os.path.exists(os.path.join(SKILL, "scripts", name)), name
 
 
-def test_the_zip_unpacks_to_one_skill_folder(tmp_path):
+def test_the_zip_holds_the_installers_and_the_skill_in_one_folder(tmp_path):
     sys.path.insert(0, os.path.join(ROOT, "scripts"))
     import zip_video_studio_skill
-    out = tmp_path / "skill.zip"
+    out = tmp_path / "setup.zip"
     zip_video_studio_skill.build(str(out))
-    names = zipfile.ZipFile(out).namelist()
-    assert "video-studio/SKILL.md" in names and all(n.startswith("video-studio/") for n in names)
+    z = zipfile.ZipFile(out)
+    names = z.namelist()
+    top = "video-studio-setup/"
+    assert all(n.startswith(top) for n in names)
+    for f in ("START HERE.txt", "setup-video-studio.bat", "setup-video-studio.ps1", "setup-video-studio.sh",
+              "setup-video-studio.command", "video-studio/SKILL.md", "video-studio/scripts/doctor.py"):
+        assert top + f in names, f
     assert not any(".venv" in n or "__pycache__" in n for n in names)
+    for f in ("setup-video-studio.sh", "setup-video-studio.command"):
+        assert (z.getinfo(top + f).external_attr >> 16) & 0o111, "double-clickable scripts stay executable"
+
+
+# ── One-click setup ──────────────────────────────────────────────────────────
+INSTALL = os.path.join(PLUGIN, "install")
+
+
+def test_the_windows_launcher_has_windows_line_endings_and_runs_the_script_beside_it():
+    raw = open(os.path.join(INSTALL, "setup-video-studio.bat"), "rb").read()
+    assert b"\r\n" in raw and b"\n" not in raw.replace(b"\r\n", b"")
+    assert b'-ExecutionPolicy Bypass -File "%~dp0setup-video-studio.ps1"' in raw
+
+
+def test_the_powershell_installer_is_plain_ascii_and_covers_every_step():
+    ps = open(os.path.join(INSTALL, "setup-video-studio.ps1"), "rb").read()
+    assert all(b < 128 for b in ps), "Windows PowerShell 5.1 misreads non-ASCII in a BOM-less script"
+    text = ps.decode()
+    for needle in ("Git.Git", "OpenJS.NodeJS.LTS", "Gyan.FFmpeg", "Python.Python.3.12", "claude.ai/install.ps1",
+                   "hyperframes skills", "hyperframes browser ensure", ".claude\\skills\\video-studio", "doctor.py"):
+        assert needle in text, needle
+    assert "$env:Path" not in text, "use $env:PATH, which works on every OS"
+
+
+@pytest.mark.skipif(not shutil.which("bash"), reason="needs bash")
+def test_the_mac_and_linux_installers_parse():
+    for f in ("setup-video-studio.sh", "setup-video-studio.command"):
+        subprocess.run(["bash", "-n", os.path.join(INSTALL, f)], check=True)
+
+
+def test_the_repo_turns_the_plugin_on_for_everyone_who_trusts_it():
+    with open(os.path.join(ROOT, ".claude", "settings.json"), encoding="utf-8") as fh:
+        settings = json.load(fh)
+    src = settings["extraKnownMarketplaces"]["markify-tools"]["source"]
+    assert src == {"source": "github", "repo": "Krishna-1812/new-agentic-platform"}
+    assert settings["enabledPlugins"]["video-studio@markify-tools"] is True
+
+
+def test_the_plugin_version_moved_so_installed_copies_update():
+    with open(os.path.join(PLUGIN, ".claude-plugin", "plugin.json"), encoding="utf-8") as fh:
+        version = json.load(fh)["version"]
+    assert tuple(int(x) for x in version.split(".")) >= (1, 1, 0)
+
+
+def test_the_setup_check_knows_how_to_fix_everything_on_every_os():
+    sys.path.insert(0, os.path.join(SKILL, "scripts"))
+    import doctor
+    for key in ("node", "ffmpeg", "hyperframes", "skills", "browser", "uv"):
+        assert set(doctor.FIX[key]) == {"windows", "mac", "linux"}, key
+    assert "--quick" in open(os.path.join(SKILL, "SKILL.md"), encoding="utf-8").read()
+
+
+def test_the_quick_check_trusts_a_recent_pass_only(tmp_path, monkeypatch):
+    sys.path.insert(0, os.path.join(SKILL, "scripts"))
+    import doctor
+    monkeypatch.setattr(doctor, "READY", str(tmp_path / "ready.json"))
+    assert doctor.cached() is None
+    doctor.remember({"ready": True, "checkedAt": 10 ** 12, "items": []})
+    assert doctor.cached() is None, "a check stamped in the future (a wrong clock) is not trusted"
+    import time
+    doctor.remember({"ready": True, "checkedAt": int(time.time()) - 15 * 86400, "items": []})
+    assert doctor.cached() is None, "nor one older than 14 days"
+    doctor.remember({"ready": True, "checkedAt": int(time.time()), "items": []})
+    assert doctor.cached()["cached"] is True
+    doctor.remember({"ready": False, "checkedAt": int(time.time()), "items": []})
+    assert doctor.cached() is None, "a failing check forgets the old pass"
 
 
 # ── The music library ────────────────────────────────────────────────────────
