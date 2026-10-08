@@ -10,36 +10,28 @@ Built on /brag (github.com/latent-spaces/brag), with music-level editing added.
 
 ## Install
 
-You need, once per computer:
+**The easy way (anyone, Windows/Mac/Linux):** get `video-studio-setup.zip`, unzip it, and:
 
-1. **Claude Code**.
-2. **Node.js 22 or newer**: https://nodejs.org (LTS).
-3. **FFmpeg**: Windows `winget install Gyan.FFmpeg` · macOS `brew install ffmpeg` · Linux `sudo apt install ffmpeg`.
-4. **Python 3.10+** (Windows: from python.org, tick "Add to PATH").
-5. **HyperFrames skills and a render browser**, in any terminal:
-   ```
-   npx hyperframes skills
-   npx hyperframes browser ensure
-   ```
+- **Windows:** double-click `setup-video-studio.bat` (if Windows says "protected your PC", click
+  *More info* → *Run anyway*).
+- **Mac:** right-click `setup-video-studio.command` → *Open* (first time only).
+- **Linux:** `bash setup-video-studio.sh`
 
-Then install this skill, either way:
+It installs everything that is missing (Git, Node.js, FFmpeg, Python, Claude Code, the HyperFrames
+video engine and its render browser), copies the skill into your Claude skills folder, and checks
+it all. Takes 5-15 minutes the first time; safe to run again (it updates the skill). Then restart
+Claude Code.
 
-**A. From the team's GitHub repo (recommended, gets updates):** in Claude Code,
-```
-/plugin marketplace add Krishna-1812/new-agentic-platform
-/plugin install video-studio@markify-tools
-```
+**If you work in the new-agentic-platform repo:** nothing to do. Open the repo in Claude Code and
+accept the "trust this folder" prompt; the repo's `.claude/settings.json` turns the plugin on. On a
+new laptop, run the installer once anyway (or type `/video-studio help me finish setup`) so the
+video tools are installed.
 
-**B. From the zip:** unzip `video-studio-skill.zip` so the folder `video-studio` (with `SKILL.md`
-directly inside it) sits in your personal skills folder:
+**From GitHub, by hand:** in Claude Code, `/plugin marketplace add Krishna-1812/new-agentic-platform`
+then `/plugin install video-studio@markify-tools`.
 
-- Windows: `C:\Users\<you>\.claude\skills\video-studio\`
-- macOS / Linux: `~/.claude/skills/video-studio/`
-
-Restart Claude Code. Check everything with:
-```
-python ~/.claude/skills/video-studio/scripts/doctor.py      (Windows: py %USERPROFILE%\.claude\skills\video-studio\scripts\doctor.py)
-```
+**It fixes its own setup.** Every run starts with a one-second check. If something is missing,
+Claude says what in plain words and offers to install it.
 
 ## Use
 

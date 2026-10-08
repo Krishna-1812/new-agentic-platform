@@ -1,7 +1,7 @@
 {
   "name": "video-studio",
   "description": "Studio-quality short videos with HyperFrames: storyboard, music cut to the bar with real endings, art-director review, loudness mastering and platform exports.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": { "name": "Markify Digital" },
   "license": "MIT",
   "keywords": ["video", "hyperframes", "music", "launch", "ads", "skill"]

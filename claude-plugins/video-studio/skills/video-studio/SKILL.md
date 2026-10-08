@@ -1,6 +1,6 @@
 ---
 name: video-studio
-description: Make a professional, studio-quality short video (launch video, paid social ad, product demo, explainer, brand story, testimonial, event promo, recruiting or announcement video) with HyperFrames, scored to music the way a real editor would. Use when someone says "/video-studio", "make a video", "launch video", "promo", "ad video", "reel", "turn this into a video", "brag about this", or wants a video from a project, a website, a brief, photos or a script. Reads the project or sources directly, plans a storyboard, cuts a licensed music bed to the bar, builds, reviews like an art director, masters the sound and exports for each platform.
+description: Make a professional, studio-quality short video (launch video, paid social ad, product demo, explainer, brand story, testimonial, event promo, recruiting or announcement video) with HyperFrames, scored to music the way a real editor would. Use when someone says "/video-studio", "make a video", "launch video", "promo", "ad video", "reel", "turn this into a video", "brag about this", or wants a video from a project, a website, a brief, photos or a script. Prefer this over the generic hyperframes entry workflow for any launch, ad, promo, demo, explainer, story or social video. Also "/video-studio help me finish setup" to install what it needs. Reads the project or sources directly, plans a storyboard, cuts a licensed music bed to the bar, builds, reviews like an art director, masters the sound and exports for each platform.
 ---
 
 # /video-studio
@@ -51,6 +51,36 @@ or the person asks for narration in words.
 If the request names no subject and there is no project in the current folder, ask what the
 video is about. Ask nothing else up front: infer, state your assumptions in the plan, and let
 the person correct the plan.
+
+## 0b. Make sure this computer is ready (every run, takes a second)
+
+Run the setup check before anything else:
+
+```bash
+python3 <skill>/scripts/doctor.py --quick --json      # Windows: py -3 ... (or python ...)
+```
+
+- **`"ready": true`**: say nothing about setup and carry on. (`--quick` trusts a full check from
+  the last 14 days, so this costs nothing on a ready machine.)
+- **Not ready**: tell the person, in plain words and one line per item, what is missing (the
+  `name` of each item with `"ok": false` and `"required": true`), and offer to install it now:
+  "I can set this up for you, it takes about 5-10 minutes. Go ahead?" With a yes, run each
+  item's `fix` command in this order: node, ffmpeg, hyperframes, skills, browser. Then run
+  `doctor.py --json` again (without `--quick`).
+  - A fix that installs a program (Node.js, FFmpeg) often is not visible until Claude Code is
+    restarted, because the program's folder is added to PATH for new windows only. If the re-check
+    still misses it, say: "Installed. Please close and reopen Claude Code, then type /video-studio
+    again", and stop there.
+  - A fix that needs a password (sudo, Homebrew) or fails: say what happened in one line and offer
+    the one-click installer instead (`installer` in the JSON; it ships in the setup zip next to the
+    skill).
+  - If Python itself is missing, the check cannot run: tell the person to double-click the
+    installer (`setup-video-studio.bat` on Windows, `setup-video-studio.command` on Mac), or, on
+    Windows, offer to run `winget install -e --id Python.Python.3.12`.
+- If the person asks for help with setup ("help me finish setup", "it doesn't work"), run the full
+  check (`doctor.py --json`) and fix as above, even if `--quick` says ready.
+
+Never make the person read an error log: translate each problem into one sentence and one choice.
 
 ## Output
 

@@ -1,0 +1,26 @@
+video-studio: studio-quality videos in Claude Code
+===================================================
+
+1. Install (once per computer, 5-15 minutes)
+
+   Windows:  double-click  setup-video-studio.bat
+             (If Windows shows "Windows protected your PC", click "More info", then "Run anyway".)
+   Mac:      right-click  setup-video-studio.command  and choose Open (the first time only).
+   Linux:    in a terminal, run:  bash setup-video-studio.sh
+
+   It installs what is missing (Node.js, FFmpeg, Python, Git, Claude Code), sets up the video
+   engine, and copies the skill into your Claude skills folder. Run it again any time: it only
+   adds what is missing and updates the skill.
+
+2. Restart Claude Code.
+
+3. Make a video. In Claude Code, in any project folder, type for example:
+
+     /video-studio make a 20 second launch video for this
+     /video-studio make a 15 second vertical ad for https://example.com
+     /video-studio turn these photos into a 30 second brand story
+
+   Or just ask in plain words ("make a launch video for this"). Claude plans it, shows you a
+   preview, and renders it to video-output/video.mp4, with copies for each platform.
+
+Stuck? Open Claude Code and type:  /video-studio help me finish setup

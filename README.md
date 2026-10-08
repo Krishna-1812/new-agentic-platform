@@ -439,5 +439,7 @@ account JSON as `GOOGLE_SERVICE_ACCOUNT_JSON`.
 `claude-plugins/video-studio/` is a Claude Code skill for studio-quality short videos (HyperFrames,
 music cut to the bar, platform exports). Install it in Claude Code with
 `/plugin marketplace add Krishna-1812/new-agentic-platform` then `/plugin install video-studio@markify-tools`,
-or build a zip for manual install with `python scripts/zip_video_studio_skill.py`. See its
+or build `video-studio-setup.zip` (one-click installers for Windows, Mac and Linux, plus the skill) with
+`python scripts/zip_video_studio_skill.py`. Anyone who opens this repo in Claude Code and trusts it gets the
+plugin turned on by `.claude/settings.json`. See its
 `skills/video-studio/README.md`.
