@@ -45,12 +45,6 @@
      (so it can carry the marker and the mask reveal); a native <select> is
      laid over it, transparent, so clicking the name opens a real dropdown
      with keyboard and screen-reader support for free. #}
-  {% if mixed_currencies %}
-  <p class="gad-fx-warn" role="alert"><b>Currencies are mixed.</b> The campaign report&rsquo;s cost is in
-    {{ mixed_currencies|join(", ") }}, not converted to one currency, so totals across accounts add different
-    currencies together. Add &ldquo;Cost (Converted currency)&rdquo; and &ldquo;Converted currency code&rdquo; to the
-    scheduled Google Ads report, or look at one account at a time.</p>
-  {% endif %}
   <section class="gad-hero" data-gad-settle>
     <div class="gad-hero-top">
       <span class="gad-lbl" data-gad-decode>Client reporting &middot; Google Ads</span>
@@ -134,6 +128,10 @@
       <button type="button" class="gad-toggle" id="gad-compare" aria-pressed="true">
         <i aria-hidden="true"></i><span>vs previous period</span>
       </button>
+      {#- Money: each account in its own currency (one currency's accounts at a time, since amounts in
+          different currencies cannot be added up), or every account converted. Filled by the script;
+          hidden when there is only one way to show it. #}
+      <select id="gad-money-select" class="gad-select" aria-label="Currency" hidden></select>
       <select id="gad-type-select" class="gad-select" aria-label="Campaign type"></select>
       <select id="gad-state-select" class="gad-select" aria-label="Campaign status"></select>
       <label class="gad-search">
@@ -730,6 +728,7 @@
 {% if accounts %}<script id="acct-data" type="application/json">{{ accounts|tojson }}</script>{% endif %}
 {% if ok %}
 <script id="gad-data" type="application/json">{{ rows|tojson }}</script>
+<script id="gad-money" type="application/json">{{ money|tojson }}</script>
 {% if insights and insights.ok %}<script id="gad-insights" type="application/json">{{ insights|tojson }}</script>{% endif %}
 {% endif %}
 
@@ -750,8 +749,8 @@
 })();
 </script>
 {% endif %}
-{% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=9"></script>{% endif %}
-<script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=9"></script>
+{% if ok and insights and insights.ok %}<script defer src="{{ url_for('static', filename='js/google-ads-insights.js') }}?v=10"></script>{% endif %}
+<script defer src="{{ url_for('static', filename='js/google-ads-dashboard.js') }}?v=10"></script>
 <script>
 /* Page tracking. Unchanged behaviour: same endpoint, same payload shape. */
 (function(){

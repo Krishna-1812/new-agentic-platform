@@ -734,8 +734,13 @@ def test_the_insights_api_answers_for_the_pages_filters(monkeypatch):
               "&status=Enabled&search=brand&focus=")
     assert r.status_code == 200 and r.get_json()["ok"]
     assert seen == {"start": "2026-09-20", "end": "2026-09-26", "account": "A", "type_": "Search",
-                    "status": "Enabled", "search": "brand", "focus": ""}
+                    "status": "Enabled", "search": "brand", "focus": "", "money": "own", "currency": ""}
     assert c.get("/api/dashboards/google-ads/insights?from=20-09-2026").status_code == 400
+    # Which money: one currency's accounts in their own currency, or everything converted.
+    c.get("/api/dashboards/google-ads/insights?money=own&currency=usd")
+    assert (seen["money"], seen["currency"]) == ("own", "USD")
+    c.get("/api/dashboards/google-ads/insights?money=fx&currency=US%24")
+    assert (seen["money"], seen["currency"]) == ("fx", ""), "anything but a 3-letter code is dropped"
 
 
 def test_the_page_opens_on_the_reports_whole_range(monkeypatch):
@@ -803,13 +808,17 @@ def test_without_a_rate_other_currencies_are_never_added_to_the_main_one():
     assert t["totals"]["B"]["cost"] == 5.0 and t["totals"]["B"]["cur"] == "USD"
 
 
-def test_the_page_warns_when_the_campaign_report_mixes_currencies(monkeypatch):
-    rows = [dict(ROWS[0]), dict(ROWS[0], account="B", currency="USD")]
+def test_a_report_without_converted_columns_shows_each_currency_on_its_own(monkeypatch):
+    """No "Cost (Converted currency)": each account's cost is in its own currency. The page no longer
+    adds them up with a warning; it shows one currency's accounts at a time and offers no conversion."""
+    rows = [dict(ROWS[0], currency_native="INR", cost_native=5.0),
+            dict(ROWS[0], account="B", currency="USD", currency_native="USD", cost_native=5.0)]
     monkeypatch.setattr(appmod, "_fetch_google_ads_rows", lambda force=False: rows)
     monkeypatch.setattr(appmod, "_google_ads_insights", lambda *a, **k: gai.empty())
-    assert "Currencies are mixed" in _client().get("/dashboards/google-ads").get_data(as_text=True)
-    monkeypatch.setattr(appmod, "_fetch_google_ads_rows", lambda force=False: ROWS)
-    assert "Currencies are mixed" not in _client().get("/dashboards/google-ads").get_data(as_text=True)
+    body = _client().get("/dashboards/google-ads").get_data(as_text=True)
+    assert "Currencies are mixed" not in body
+    money = appmod._google_ads_money(rows)
+    assert sorted(money["currencies"]) == ["INR", "USD"] and money["to"] == ""
 
 
 def test_landing_speed_row_without_metrics_does_not_fail_the_query():

@@ -1576,11 +1576,18 @@ class Filters:
 
     `scope` is the set of Google Ads accounts the page may show at all (a client account's own page,
     app.py's /<account>/google-ads): every row of any other account is left out, whatever the other
-    filters say."""
+    filters say.
 
-    def __init__(self, account="", type_="", status="", search="", focus="", camps=None, scope=None):
+    `currency` keeps only the accounts billed in that currency (`cur_of`: {account: currency code}),
+    for the page showing money in each account's own currency: amounts in different currencies are
+    never added up, so the page shows one currency's accounts at a time."""
+
+    def __init__(self, account="", type_="", status="", search="", focus="", camps=None, scope=None,
+                 currency="", cur_of=None):
         self.account = "" if account in (None, "", "__all__") else account
         self.scope = frozenset(scope) if scope else None
+        self.currency = currency or ""
+        self.cur_of = cur_of or {}
         self.type = "" if type_ in (None, "", "__all__") else type_
         self.status = "" if status in (None, "", "__all__") else status
         self.search = (search or "").strip().lower()
@@ -1595,6 +1602,8 @@ class Filters:
     def in_account(self, x):
         a = x.get("account")
         if self.scope is not None and a not in self.scope:
+            return False
+        if self.currency and self.cur_of.get(a, "") != self.currency:
             return False
         return not self.account or a == self.account
 
@@ -1671,11 +1680,12 @@ _NO_DAY = "0000-00-00"   # a range no day falls in
 
 
 def view(st, start=None, end=None, account="", type_="", status="", search="", focus="", camps=None, fx=None,
-         spend=None, only=None):
+         spend=None, only=None, currency=""):
     """The page's insights for one date range and set of filters, money in fx.to where the campaign
     report gives Google's rate for an account (see FX), each panel over the days all of its accounts
     were exported for (see common_window), with how much of the campaign report's spend the panels
-    that come from narrower Google reports account for (see Spend)."""
+    that come from narrower Google reports account for (see Spend). With `currency`, only the
+    accounts billed in it (the page in each account's own currency; fx then converts nothing)."""
     fx = fx or NO_FX
     ref = spend or NO_SPEND
     ac = (st or {}).get("acct_cur", {})
@@ -1684,7 +1694,9 @@ def view(st, start=None, end=None, account="", type_="", status="", search="", f
         out["about"] = (st or {}).get("about", [])
         return out
     lo, hi = start or None, end or None
-    f = Filters(account, type_, status, search, focus, camps, scope=only)
+    cur_of = dict(fx.native)
+    cur_of.update(ac)
+    f = Filters(account, type_, status, search, focus, camps, scope=only, currency=currency, cur_of=cur_of)
     meta = {}
     windows, latest = {}, {}
 
@@ -1860,7 +1872,7 @@ def view(st, start=None, end=None, account="", type_="", status="", search="", f
     out["meta"] = meta
     out["range"] = {"from": lo, "to": hi}
     out["params"] = {"from": lo or "", "to": hi or "", "account": f.account, "type": f.type, "status": f.status,
-                     "search": f.search, "focus": f.focus}
+                     "search": f.search, "focus": f.focus, "currency": f.currency}
     out["has"] = {"is": bool(st["is"].items), "budgets": bool(budgets), "terms": bool(st["terms"].items),
                   "keywords": bool(st["keywords"].items), "devices": bool(st["devices"].items),
                   "hours": bool(st["hours"].items), "locations": bool(st["locations"].items),
@@ -1926,7 +1938,8 @@ def fetch(svc_factory, sheet_id, titles=None, force=False, **params):
     camps = params.pop("camps", None)
     fx = params.pop("fx", None)
     spend = params.pop("spend", None)
-    key = (id(st), tuple(sorted(params.items())), params.get("camps_key"))
+    money = params.pop("money", "")   # which fx the caller built: part of the key, not of view()'s arguments
+    key = (id(st), tuple(sorted(params.items())), params.get("camps_key"), money)
     params.pop("camps_key", None)
     with _LOCK:
         hit = _VIEWS.get(key)
