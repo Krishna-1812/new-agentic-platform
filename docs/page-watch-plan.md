@@ -472,7 +472,7 @@ token into chat; set it in Railway or GitHub yourself.
 | `ANTHROPIC_API_KEY` | reference the web service's (Claude's verdicts) |
 | `SECRET_KEY` | reference the web service's (signs the pictures in Slack) |
 | `GOOGLE_ADS_SLACK_BOT_TOKEN` | reference the web service's (the same Slack app posts the alerts) |
-| `PUBLIC_BASE_URL` | the site's address, for example `https://web-production-6748e.up.railway.app` |
+| `PUBLIC_BASE_URL` | the site's address, for example `https://northaxis.outcomes.digital` |
 | `WATCH_SLACK_CHANNEL` | the channel for alerts, digests and notices, for example `page-watch` |
 
 **B. The web service** (Railway → web → Variables → New Variable):

@@ -48,7 +48,7 @@ The user-facing product name is a placeholder. `brand.py` holds the name "Northa
 |---|---|
 | Repo | `Krishna-1812/new-agentic-platform` (GitHub). Default branch `main`. |
 | Working branch used so far | `claude/sharp-johnson-4i67y6`. A new session may be given a different branch name; use whatever it is told. |
-| Live web app | `https://web-production-6748e.up.railway.app` (Railway service **web**). No custom domain yet; `app.markifydigital.com` was suggested. |
+| Live web app | `https://northaxis.outcomes.digital` (custom domain on Railway service **web**). The old address, `https://web-production-6748e.up.railway.app`, still answers: page loads there redirect to the same path on the custom domain; API calls, webhooks, Slack and `/health` answer at both. `PUBLIC_BASE_URL` overrides the address (`SITE_URL` in `app.py`). |
 | SEO Studio | `https://seo-apps-production-37a6.up.railway.app` (Railway service built from `seo-apps/`) |
 | Database | Railway Postgres (`DATABASE_URL`). Several features fall back to in-memory or SQLite when it is unset. |
 | Hosting | Railway, **auto-deploys every push to `main`**. Railpack builder, gunicorn (`railway.toml`, `Procfile`), Python 3.11, ffmpeg via `railpack.json`. Health check `/health`. |
