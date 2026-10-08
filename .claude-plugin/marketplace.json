@@ -1,0 +1,12 @@
+{
+  "name": "markify-tools",
+  "description": "Markify Digital's Claude Code plugins.",
+  "owner": { "name": "Markify Digital" },
+  "plugins": [
+    {
+      "name": "video-studio",
+      "source": "./claude-plugins/video-studio",
+      "description": "Make studio-quality short videos (launch, ad, demo, explainer, story) with HyperFrames, scored to music cut to the bar."
+    }
+  ]
+}
