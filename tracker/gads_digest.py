@@ -110,6 +110,13 @@ def summarize(rows, account, st=None, fx=None, today=None):
     mine = [r for r in rows if (r.get("account") or "") == account and r.get("day")]
     if not mine:
         return None
+    # Money in the currency the account is billed in ("Cost", "Currency code"), as Google Ads shows it,
+    # and its insights unconverted to match. An account whose rows carry no currency code keeps the
+    # report's converted figures.
+    own = {r.get("currency_native") or "" for r in mine}
+    if len(own) == 1 and "" not in own:
+        mine = [dict(r, cost=r.get("cost_native") or 0.0, currency=r["currency_native"]) for r in mine]
+        fx = g.FX(mine)
     report_days = sorted({r["day"] for r in rows if r.get("day")})
     day = max(r["day"] for r in mine)
     cur = max(sorted({r.get("currency") or "" for r in mine}),
@@ -352,14 +359,21 @@ def overview(summaries, base_url="", today=None):
     card = [{"type": "context", "elements": [{"type": "mrkdwn", "text": "%s%s%d account%s%seach account's latest day against its 7-day average" % (
         day_label((today or today_ist()).isoformat()), DOT, len(ss), "" if len(ss) == 1 else "s", DOT)}]}]
     fields = []
+    # Each account is in its own currency; amounts in different currencies are never added together,
+    # so with several the total spend is one line per currency.
+    def spent(c):
+        group = [s for s in ss if s["cur"] == c]
+        return money(sum(s["now"]["cost"] for s in group), c), \
+            delta(sum(s["now"]["cost"] for s in group), sum((s["base"] or {}).get("cost", 0) for s in group))
+    conv = sum(s["now"]["conversions"] for s in ss)
+    bconv = sum((s["base"] or {}).get("conversions", 0) for s in ss)
     if len(curs) == 1:
-        cur = next(iter(curs))
-        spend = sum(s["now"]["cost"] for s in ss)
-        base = sum((s["base"] or {}).get("cost", 0) for s in ss)
-        conv = sum(s["now"]["conversions"] for s in ss)
-        bconv = sum((s["base"] or {}).get("conversions", 0) for s in ss)
-        fields += [{"type": "mrkdwn", "text": "Total spend\n*%s*   %s" % (money(spend, cur), delta(spend, base))},
-                   {"type": "mrkdwn", "text": "Conversions\n*%s*   %s" % (number(conv), delta(conv, bconv))}]
+        fields.append({"type": "mrkdwn", "text": "Total spend\n*%s*   %s" % spent(next(iter(curs)))})
+    elif curs:
+        by = sorted(curs, key=lambda c: (-sum(1 for s in ss if s["cur"] == c), c))
+        fields.append({"type": "mrkdwn", "text": "Total spend by currency\n" +
+                       "\n".join("*%s*   %s" % spent(c) for c in by)})
+    fields.append({"type": "mrkdwn", "text": "Conversions\n*%s*   %s" % (number(conv), delta(conv, bconv))})
     fields.append({"type": "mrkdwn", "text": "Accounts\n*%d* need action%s*%d* worth a look%s*%d* on track" % (
         counts[CRITICAL], DOT, counts[WARNING], DOT, counts["good"])})
     card.append({"type": "section", "fields": fields})

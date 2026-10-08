@@ -184,6 +184,7 @@ def periods(st, g, account, camps, fx):
 def build_pack(g, st, account, rows, fx, spend=None, camps=None):
     """Everything about one account the review reads, as a JSON-ready dict."""
     camps = camps if camps is not None else _campaigns(rows)
+    fx, spend, own = _own_money(g, rows, account, fx, spend)
     got = periods(st, g, account, camps, fx)
     if not got:
         raise ReviewError("The insights export has no daily figures for %s yet. Run the Google Ads "
@@ -376,7 +377,7 @@ def build_pack(g, st, account, rows, fx, spend=None, camps=None):
                                    for r in recs],
         "optimization_score_pct": _pct((now.get("health") or {}).get("overall")),
     }
-    pack["data_notes"] = _data_notes(now, cur, currency)
+    pack["data_notes"] = _data_notes(now, cur, currency, own)
     return pack
 
 
@@ -388,8 +389,21 @@ def _count(values):
     return dict(sorted(out.items(), key=lambda kv: -kv[1]))
 
 
-def _data_notes(now, cur, currency):
-    notes = ["Money is in %s. Accounts billed in another currency are converted at the same daily exchange "
+def _own_money(g, rows, account, fx, spend):
+    """(fx, spend, True) in the currency the account is billed in ("Cost", "Currency code"), as Google
+    Ads shows it, nothing converted; else the report's converted ones, unchanged, and False (an account
+    whose rows carry no currency code, or more than one)."""
+    mine = [r for r in rows if r.get("account") == account]
+    nat = {r.get("currency_native") or "" for r in mine}
+    if len(nat) != 1 or "" in nat:
+        return fx, spend, False
+    own = [dict(r, cost=r.get("cost_native") or 0.0, currency=r["currency_native"]) for r in mine]
+    return g.FX(own), (g.Spend(own) if spend is not None else None), True
+
+
+def _data_notes(now, cur, currency, own=False):
+    notes = ["Money is in %s, the currency the account is billed in, as Google Ads shows it." % currency if own else
+             "Money is in %s. Accounts billed in another currency are converted at the same daily exchange "
              "rates as the campaign report." % currency,
              "Conversions for the last few days can still rise as late conversions are recorded.",
              "Quality Score, ad strength and approval, optimization score and recommendations are current, not "
@@ -534,6 +548,10 @@ def compute_checks(targets, pack, fx=None, account=None):
         tc = (t.get("currency") or "").upper()
         if tc and tc != cur and m in ("monthly_spend", "daily_spend", "cpa", "cpc"):
             r = fx.latest(account) if fx is not None and account and (fx.native.get(account) == tc) else None
+            # The pack in the account's own currency, the target in the report's converted one (INR).
+            if not r and fx is not None and account and tc == fx.to and fx.native.get(account) == cur:
+                r = fx.latest(account)
+                r = 1.0 / r if r else None
             if not r:
                 check["detail"] = "The target is in %s and there is no Google rate to %s for it." % (tc, cur)
                 out.append(check)
