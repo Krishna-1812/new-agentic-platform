@@ -433,3 +433,11 @@ account JSON as `GOOGLE_SERVICE_ACCOUNT_JSON`.
 - **Google Sheets**: "Change Log" tab (one row per signal) + "Company List" tab
 - **HTML dashboard**: `reports/latest.html`, regenerated after each run
 - **SQLite**: `data/tracker.db`, full snapshot history and alert dedup log
+
+## Claude Code plugins
+
+`claude-plugins/video-studio/` is a Claude Code skill for studio-quality short videos (HyperFrames,
+music cut to the bar, platform exports). Install it in Claude Code with
+`/plugin marketplace add Krishna-1812/new-agentic-platform` then `/plugin install video-studio@markify-tools`,
+or build a zip for manual install with `python scripts/zip_video_studio_skill.py`. See its
+`skills/video-studio/README.md`.

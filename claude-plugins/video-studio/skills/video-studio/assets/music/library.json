@@ -1,0 +1,431 @@
+{
+ "artist": "Sascha Ende",
+ "source": "https://ende.app",
+ "license": "CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)",
+ "licenseNote": "Commercial use, ads included. Credit the track; see CREDITS.md.",
+ "loudness": "about -16 LUFS integrated, true peak below -1.5 dBTP (linear, dynamics kept)",
+ "tracks": [
+  {
+   "id": "upbeat-business-1",
+   "file": "assets/music/upbeat-business-1.mp3",
+   "map": "assets/music/analysis/upbeat-business-1.music.json",
+   "mapSummary": "assets/music/analysis/upbeat-business-1.music.md",
+   "title": "Happy Beats & Business Moves Vol. 1",
+   "moods": [
+    "upbeat",
+    "cheerful",
+    "driving"
+   ],
+   "energy": 4,
+   "goodUnderVoice": false,
+   "character": "Driving, cheerful pop-funk groove. Full energy from the first bar; a 4-bar breakdown at 0:32 drops back in at 0:40.",
+   "bestFor": "Launch videos, promos, product demos with energy, the /brag default.",
+   "tones": [
+    "default",
+    "app-store",
+    "chaotic"
+   ],
+   "credit": "Music: \"Happy Beats & Business Moves Vol. 1\" by Sascha Ende (ende.app), CC BY 4.0",
+   "tempo": 120.0,
+   "barSeconds": 2.0,
+   "duration": 163.96,
+   "intro": 0.0,
+   "lifts": [
+    40.0,
+    84.0,
+    120.0
+   ],
+   "ending": "fade",
+   "finalHit": 160.02,
+   "beatSource": "madmom",
+   "text": "120 BPM, bar 2.00s, lifts 0:40, 1:24, 2:00, ends with a fade-out at 2:40"
+  },
+  {
+   "id": "laidback-business-9",
+   "file": "assets/music/laidback-business-9.mp3",
+   "map": "assets/music/analysis/laidback-business-9.music.json",
+   "mapSummary": "assets/music/analysis/laidback-business-9.music.md",
+   "title": "Happy Beats & Business Moves Vol. 9",
+   "moods": [
+    "upbeat",
+    "laid-back",
+    "friendly"
+   ],
+   "energy": 3,
+   "goodUnderVoice": false,
+   "character": "Mid-energy, slightly laid-back groove. Relaxed confidence; ends on a clean final hit.",
+   "bestFor": "Friendly product tours, founder updates, deadpan startup parody.",
+   "tones": [
+    "default",
+    "yc-parody"
+   ],
+   "credit": "Music: \"Happy Beats & Business Moves Vol. 9\" by Sascha Ende (ende.app), CC BY 4.0",
+   "tempo": 114.0,
+   "barSeconds": 2.11,
+   "duration": 113.64,
+   "intro": 0.0,
+   "lifts": [
+    67.37
+   ],
+   "ending": "hit",
+   "finalHit": 109.656,
+   "beatSource": "madmom",
+   "text": "114 BPM, bar 2.11s, lifts 1:07, ends with a final hit at 1:50"
+  },
+  {
+   "id": "punchy-business-10",
+   "file": "assets/music/punchy-business-10.mp3",
+   "map": "assets/music/analysis/punchy-business-10.music.json",
+   "mapSummary": "assets/music/analysis/punchy-business-10.music.md",
+   "title": "Happy Beats & Business Moves Vol. 10",
+   "moods": [
+    "punchy",
+    "upbeat",
+    "compact"
+   ],
+   "energy": 4,
+   "goodUnderVoice": false,
+   "character": "A compact one-minute cue: punchy from bar one, with its own ending at 0:59. Built for short ads.",
+   "bestFor": "15-30s social ads and hype reels; back-time it and the ending is already there.",
+   "tones": [
+    "default",
+    "chaotic"
+   ],
+   "credit": "Music: \"Happy Beats & Business Moves Vol. 10\" by Sascha Ende (ende.app), CC BY 4.0",
+   "tempo": 110.0,
+   "barSeconds": 2.18,
+   "duration": 60.0,
+   "intro": 0.0,
+   "lifts": [],
+   "ending": "hit",
+   "finalHit": 58.932,
+   "beatSource": "madmom",
+   "text": "110 BPM, bar 2.18s, lifts none, ends with a final hit at 0:59"
+  },
+  {
+   "id": "warm-business-11",
+   "file": "assets/music/warm-business-11.mp3",
+   "map": "assets/music/analysis/warm-business-11.music.json",
+   "mapSummary": "assets/music/analysis/warm-business-11.music.md",
+   "title": "Happy Beats & Business Moves Vol. 11",
+   "moods": [
+    "warm",
+    "business",
+    "positive"
+   ],
+   "energy": 3,
+   "goodUnderVoice": false,
+   "character": "Warm, business-like, positive. Even energy throughout; a clean ending at 1:26.",
+   "bestFor": "B2B explainers, app-store style feature tours, parody launches played straight.",
+   "tones": [
+    "yc-parody",
+    "app-store"
+   ],
+   "credit": "Music: \"Happy Beats & Business Moves Vol. 11\" by Sascha Ende (ende.app), CC BY 4.0",
+   "tempo": 114.0,
+   "barSeconds": 2.1,
+   "duration": 87.6,
+   "intro": 0.0,
+   "lifts": [],
+   "ending": "hit",
+   "finalHit": 86.227,
+   "beatSource": "madmom",
+   "text": "114 BPM, bar 2.10s, lifts none, ends with a final hit at 1:26"
+  },
+  {
+   "id": "steady-business-12",
+   "file": "assets/music/steady-business-12.mp3",
+   "map": "assets/music/analysis/steady-business-12.music.json",
+   "mapSummary": "assets/music/analysis/steady-business-12.music.md",
+   "title": "Happy Beats & Business Moves Vol. 12",
+   "moods": [
+    "steady",
+    "clean",
+    "confident"
+   ],
+   "energy": 3,
+   "goodUnderVoice": true,
+   "character": "Steady and clean, with a 9-second intro before the groove arrives. Sits well under words.",
+   "bestFor": "Polished product films, calm launches, very low under deadpan pieces.",
+   "tones": [
+    "polished",
+    "deadpan",
+    "cinematic"
+   ],
+   "credit": "Music: \"Happy Beats & Business Moves Vol. 12\" by Sascha Ende (ende.app), CC BY 4.0",
+   "tempo": 110.0,
+   "barSeconds": 2.18,
+   "duration": 117.36,
+   "intro": 0.0,
+   "lifts": [
+    8.72
+   ],
+   "ending": "hit",
+   "finalHit": 113.476,
+   "beatSource": "madmom",
+   "text": "110 BPM, bar 2.18s, lifts 0:09, ends with a final hit at 1:53"
+  },
+  {
+   "id": "uplifting-pop",
+   "file": "assets/music/uplifting-pop.mp3",
+   "map": "assets/music/analysis/uplifting-pop.music.json",
+   "mapSummary": "assets/music/analysis/uplifting-pop.music.md",
+   "title": "Insert More Positive Emotion Here",
+   "moods": [
+    "uplifting",
+    "bright",
+    "positive"
+   ],
+   "energy": 4,
+   "goodUnderVoice": false,
+   "character": "Bright, positive pop. An 8-second intro, then a lift on the bar at 0:08 (a ready-made hook-to-reveal).",
+   "bestFor": "Launches, offers, good news, celebrations, recruiting.",
+   "tones": [
+    "default",
+    "app-store",
+    "polished"
+   ],
+   "credit": "Music: \"Insert More Positive Emotion Here\" by Sascha Ende (ende.app), CC BY 4.0",
+   "tempo": 120.12,
+   "barSeconds": 2.0,
+   "duration": 169.4,
+   "intro": 0.0,
+   "lifts": [
+    8.0,
+    55.98,
+    131.96
+   ],
+   "ending": "fade",
+   "finalHit": 162.969,
+   "beatSource": "madmom",
+   "text": "120 BPM, bar 2.00s, lifts 0:08, 0:56, 2:12, ends with a fade-out at 2:43"
+  },
+  {
+   "id": "corporate-imagefilm",
+   "file": "assets/music/corporate-imagefilm.mp3",
+   "map": "assets/music/analysis/corporate-imagefilm.music.json",
+   "mapSummary": "assets/music/analysis/corporate-imagefilm.music.md",
+   "title": "Imagefilm 046",
+   "moods": [
+    "corporate",
+    "confident",
+    "measured"
+   ],
+   "energy": 3,
+   "goodUnderVoice": true,
+   "character": "Confident, measured corporate score with clear 8-bar phrases and lifts at 1:34, 1:58 and 2:22.",
+   "bestFor": "Company films, results and case studies, B2B, investor updates.",
+   "tones": [
+    "polished",
+    "app-store",
+    "yc-parody"
+   ],
+   "credit": "Music: \"Imagefilm 046\" by Sascha Ende (ende.app), CC BY 4.0",
+   "tempo": 100.01,
+   "barSeconds": 2.4,
+   "duration": 209.216,
+   "intro": 1.602,
+   "lifts": [
+    93.59,
+    117.58,
+    141.58
+   ],
+   "ending": "hit",
+   "finalHit": 206.716,
+   "beatSource": "madmom",
+   "text": "100 BPM, bar 2.40s, lifts 1:34, 1:58, 2:22, ends with a final hit at 3:27"
+  },
+  {
+   "id": "bold-tropical-house",
+   "file": "assets/music/bold-tropical-house.mp3",
+   "map": "assets/music/analysis/bold-tropical-house.music.json",
+   "mapSummary": "assets/music/analysis/bold-tropical-house.music.md",
+   "title": "Tropical Island House 2026",
+   "moods": [
+    "bold",
+    "energetic",
+    "house"
+   ],
+   "energy": 5,
+   "goodUnderVoice": false,
+   "character": "Tropical house at 100 BPM. Quieter opening, then the drop at 0:36; hard-cut friendly.",
+   "bestFor": "High-energy ads, events, fashion, food and travel promos, fast social cuts.",
+   "tones": [
+    "chaotic",
+    "default"
+   ],
+   "credit": "Music: \"Tropical Island House 2026\" by Sascha Ende (ende.app), CC BY 4.0",
+   "tempo": 99.95,
+   "barSeconds": 2.4,
+   "duration": 147.8,
+   "intro": 0.0,
+   "lifts": [
+    35.99,
+    115.2
+   ],
+   "ending": "hit",
+   "finalHit": 146.692,
+   "beatSource": "madmom",
+   "text": "100 BPM, bar 2.40s, lifts 0:36, 1:55, ends with a final hit at 2:27"
+  },
+  {
+   "id": "playful-sunny",
+   "file": "assets/music/playful-sunny.mp3",
+   "map": "assets/music/analysis/playful-sunny.music.json",
+   "mapSummary": "assets/music/analysis/playful-sunny.music.md",
+   "title": "Total Happy Up And Sunny",
+   "moods": [
+    "playful",
+    "sunny",
+    "bouncy"
+   ],
+   "energy": 4,
+   "goodUnderVoice": false,
+   "character": "Sunny, bouncy and light. A short intro, then a lift at 0:13.",
+   "bestFor": "Consumer apps, kids and family, food, anything light and friendly.",
+   "tones": [
+    "default",
+    "app-store"
+   ],
+   "credit": "Music: \"Total Happy Up And Sunny\" by Sascha Ende (ende.app), CC BY 4.0",
+   "tempo": 120.0,
+   "barSeconds": 2.0,
+   "duration": 191.439,
+   "intro": 1.265,
+   "lifts": [
+    13.38
+   ],
+   "ending": "hit",
+   "finalHit": 187.42,
+   "beatSource": "madmom",
+   "text": "120 BPM, bar 2.00s, lifts 0:13, ends with a final hit at 3:07"
+  },
+  {
+   "id": "cinematic-brave",
+   "file": "assets/music/cinematic-brave.mp3",
+   "map": "assets/music/analysis/cinematic-brave.music.json",
+   "mapSummary": "assets/music/analysis/cinematic-brave.music.md",
+   "title": "Journey Of The Brave",
+   "moods": [
+    "cinematic",
+    "orchestral",
+    "rising"
+   ],
+   "energy": 4,
+   "goodUnderVoice": false,
+   "character": "Rising orchestral score at 75 BPM. It drops to almost nothing at 1:19 and rebuilds (lifts at 1:25 and 1:35) to a big final hit at 2:26.",
+   "bestFor": "Trailers, big claims, launches played epic, brand anthems.",
+   "tones": [
+    "cinematic",
+    "polished"
+   ],
+   "credit": "Music: \"Journey Of The Brave\" by Sascha Ende (ende.app), CC BY 4.0",
+   "tempo": 75.01,
+   "barSeconds": 3.2,
+   "duration": 149.388,
+   "intro": 0.801,
+   "lifts": [
+    85.65,
+    95.25
+   ],
+   "ending": "hit",
+   "finalHit": 146.077,
+   "beatSource": "madmom",
+   "text": "75 BPM, bar 3.20s, lifts 1:26, 1:35, ends with a final hit at 2:26"
+  },
+  {
+   "id": "documentary-hopeful",
+   "file": "assets/music/documentary-hopeful.mp3",
+   "map": "assets/music/analysis/documentary-hopeful.music.json",
+   "mapSummary": "assets/music/analysis/documentary-hopeful.music.md",
+   "title": "Documentary Music - Small Signs of Change",
+   "moods": [
+    "documentary",
+    "hopeful",
+    "thoughtful"
+   ],
+   "energy": 2,
+   "goodUnderVoice": true,
+   "character": "Thoughtful, hopeful documentary bed at 82 BPM. Gentle growth, no hard hits; fades out at the end.",
+   "bestFor": "Impact stories, people and causes, testimonials, case studies with a voice.",
+   "tones": [
+    "polished",
+    "deadpan"
+   ],
+   "credit": "Music: \"Documentary Music - Small Signs of Change\" by Sascha Ende (ende.app), CC BY 4.0",
+   "tempo": 81.99,
+   "barSeconds": 2.93,
+   "duration": 214.6,
+   "intro": 0.0,
+   "lifts": [
+    29.38
+   ],
+   "ending": "fade",
+   "finalHit": 208.19,
+   "beatSource": "madmom",
+   "text": "82 BPM, bar 2.93s, lifts 0:29, ends with a fade-out at 3:28"
+  },
+  {
+   "id": "minimal-morning-light",
+   "file": "assets/music/minimal-morning-light.mp3",
+   "map": "assets/music/analysis/minimal-morning-light.music.json",
+   "mapSummary": "assets/music/analysis/minimal-morning-light.music.md",
+   "title": "Podcast Music Vol. 24 [Morning Light]",
+   "moods": [
+    "minimal",
+    "soft",
+    "spacious"
+   ],
+   "energy": 2,
+   "goodUnderVoice": true,
+   "character": "Soft, spacious and unobtrusive. Leaves the middle of the spectrum free for a voice.",
+   "bestFor": "How-to and tutorial videos, narrated explainers, quiet product walkthroughs.",
+   "tones": [
+    "deadpan",
+    "polished"
+   ],
+   "credit": "Music: \"Podcast Music Vol. 24 [Morning Light]\" by Sascha Ende (ende.app), CC BY 4.0",
+   "tempo": 81.25,
+   "barSeconds": 3.2,
+   "duration": 173.64,
+   "intro": 0.0,
+   "lifts": [],
+   "ending": "hit",
+   "finalHit": 173.0,
+   "beatSource": "madmom",
+   "text": "81 BPM, bar 3.20s, lifts none, ends with a final hit at 2:53"
+  },
+  {
+   "id": "warm-acoustic",
+   "file": "assets/music/warm-acoustic.mp3",
+   "map": "assets/music/analysis/warm-acoustic.music.json",
+   "mapSummary": "assets/music/analysis/warm-acoustic.music.md",
+   "title": "Ambient Acoustic Guitars Vol. 6",
+   "moods": [
+    "warm",
+    "calm",
+    "acoustic"
+   ],
+   "energy": 2,
+   "goodUnderVoice": true,
+   "character": "Warm, steady acoustic guitars at 78 BPM. Human and unhurried; grows at 0:55.",
+   "bestFor": "Brand stories, craft, food, hospitality, places, founders talking.",
+   "tones": [
+    "polished",
+    "deadpan"
+   ],
+   "credit": "Music: \"Ambient Acoustic Guitars Vol. 6\" by Sascha Ende (ende.app), CC BY 4.0",
+   "tempo": 78.48,
+   "barSeconds": 3.06,
+   "duration": 165.013,
+   "intro": 0.952,
+   "lifts": [
+    55.6
+   ],
+   "ending": "fade",
+   "finalHit": 159.951,
+   "beatSource": "madmom",
+   "text": "78 BPM, bar 3.06s, lifts 0:56, ends with a fade-out at 2:40"
+  }
+ ]
+}
