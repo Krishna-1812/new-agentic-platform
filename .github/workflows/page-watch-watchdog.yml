@@ -9,7 +9,7 @@ name: Page Watch watchdog
 # Needs the repository secret WATCH_CRON_TOKEN (the same value as the Railway
 # variable on the web service). Until it is set this exits quietly, so it
 # does not fail every half hour before Page Watch is switched on. The site
-# address defaults to the Railway one; set the repository variable APP_URL
+# address defaults to the custom domain; set the repository variable APP_URL
 # to change it.
 
 on:
@@ -33,7 +33,7 @@ jobs:
       - name: Ask the site
         env:
           TOKEN: ${{ secrets.WATCH_CRON_TOKEN }}
-          APP_URL: ${{ vars.APP_URL || 'https://web-production-6748e.up.railway.app' }}
+          APP_URL: ${{ vars.APP_URL || 'https://northaxis.outcomes.digital' }}
         run: |
           if [ -z "$TOKEN" ]; then
             echo "::notice::WATCH_CRON_TOKEN is not set yet, so the watchdog is off (Settings > Secrets and variables > Actions)."

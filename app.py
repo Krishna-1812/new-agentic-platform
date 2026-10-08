@@ -54,6 +54,36 @@ if not _SECRET_KEY_ENV:
               "Set SECRET_KEY in the environment before this is reachable by "
               "anyone outside the team that already has this code.")
 app.permanent_session_lifetime = timedelta(days=7)
+
+# ── The site's address ────────────────────────────────────────────────────────
+# Everyone uses the custom domain. PUBLIC_BASE_URL (Railway → web → Variables) overrides it, and
+# also gives the links in Slack messages sent where there is no request to read the address from.
+SITE_URL = (os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/")
+            or "https://northaxis.outcomes.digital")
+_SITE_HOST = SITE_URL.split("://", 1)[-1].split("/", 1)[0].lower()
+
+# Railway ends TLS at its proxy and passes the original scheme in X-Forwarded-Proto: trust it (one
+# proxy), so request.url_root and every external link Flask builds are https, not http.
+from werkzeug.middleware.proxy_fix import ProxyFix  # noqa: E402
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=0, x_proto=1)
+
+
+@app.before_request
+def _to_the_sites_address():
+    """A page opened at the old Railway address (*.up.railway.app) moves to the custom domain, same
+    path and query, so old bookmarks and links keep working. Only page loads (GET/HEAD): API calls,
+    webhooks, Slack, sign-in and the health check answer at either address, so a scheduled job or
+    integration still pointed at the old one is never broken by a redirect it would not follow."""
+    host = (request.host or "").split(":")[0].lower()
+    if not host.endswith(".up.railway.app") or host == _SITE_HOST:
+        return None
+    if request.method not in ("GET", "HEAD") or request.path == "/health" or \
+            request.path.startswith(("/api/", "/auth/", "/slack/", "/static/")):
+        return None
+    target = SITE_URL + request.path
+    if request.query_string:
+        target += "?" + request.query_string.decode("utf-8", "ignore")
+    return redirect(target, code=301)
 # Flask's own default (no max_age configured) sends every static file with an
 # explicit "Cache-Control: no-cache" -- not merely no header -- so browsers were
 # re-validating JS/CSS/images/fonts on every navigation instead of serving them
@@ -5001,6 +5031,8 @@ def _gads_digest_base_url():
     base = os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/")
     if base:
         return base
+    if (request.host or "").split(":")[0].lower().endswith(".up.railway.app"):
+        return SITE_URL   # called at the old address: the links still go to the custom domain
     root = request.url_root.rstrip("/")
     # Railway ends TLS at its proxy, so Flask sees http; the links must be the https address.
     if root.startswith("http://") and not re.match(r"^http://(localhost|127\.0\.0\.1)(:|$)", root):

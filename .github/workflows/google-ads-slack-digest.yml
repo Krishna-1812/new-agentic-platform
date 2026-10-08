@@ -6,7 +6,7 @@ name: Google Ads Slack digest
 # The reply holds counts and Slack error codes only.
 #
 # Needs the repository secret GOOGLE_ADS_DIGEST_TOKEN (the same value as the Railway variable).
-# The site address defaults to the Railway one; set the repository variable APP_URL to change it.
+# The site address defaults to the custom domain; set the repository variable APP_URL to change it.
 
 on:
   workflow_dispatch:
@@ -34,7 +34,7 @@ jobs:
       - name: Post the digest
         env:
           TOKEN: ${{ secrets.GOOGLE_ADS_DIGEST_TOKEN }}
-          APP_URL: ${{ vars.APP_URL || 'https://web-production-6748e.up.railway.app' }}
+          APP_URL: ${{ vars.APP_URL || 'https://northaxis.outcomes.digital' }}
           FORCE: ${{ inputs.force && 'true' || 'false' }}
         run: |
           if [ -z "$TOKEN" ]; then
