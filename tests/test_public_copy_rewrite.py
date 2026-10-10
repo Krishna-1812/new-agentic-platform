@@ -63,8 +63,9 @@ def test_no_position2_copy_on_public_pages(client, path):
 
 def test_home_leads_with_the_new_headline(client):
     body = _text(client.get("/"))
-    assert "Buyers leave" in body and "tracks" in body and "long before" in body
-    assert "fill in a form." in body
+    assert "Every deal starts" in body and "weeks before" in body
+    assert "the first email." in body
+    assert "Buyers leave" not in body
     assert "One of those is a rumour. Three in a fortnight is a bearing." in body
 
 
