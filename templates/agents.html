@@ -43,11 +43,11 @@
 {%- elif page == 'iagent' %}{% set _tt = agent.name ~ ' · ' ~ industry.name %}
 {%- else %}{% set _tt = _t.get(page) %}{% endif -%}
 <title>{% if _tt %}{{ _tt }} · {{ brand.name }}{% else %}{{ brand.name }} · {{ brand.tagline }}{% endif %}</title>
-<meta name="description" content="{{ brand.product }} watches the open web, your site and your social for the moments that signal intent, then hands your team the account to reach and the reason why.">
+<meta name="description" content="{{ brand.product }} reads the tracks buyers leave before they ever fill in a form, and turns them into one ranked list: who to call, why now, and what to say first.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="{{ brand.name }}">
 <meta property="og:title" content="{{ brand.name }} · {{ brand.tagline }}">
-<meta property="og:description" content="The buying signals that show intent, turned into the next account for your team to reach.">
+<meta property="og:description" content="Buyers leave tracks long before they fill in a form. Northaxis reads them and points your team at the accounts already moving.">
 <meta property="og:image" content="https://{{ brand.domain }}/static/og-cover.png?v=7">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -140,20 +140,20 @@
       <div class="deck-card c-amber" data-pos="1"><span class="deck-k">C-suite join</span><b>Northwind</b><span class="deck-l">New VP Marketing</span><span class="deck-s">8.7</span></div>
       <div class="deck-card c-sky" data-pos="2"><span class="deck-k">Pricing-page visit</span><b>Vertex Labs</b><span class="deck-l">3 visits this week</span><span class="deck-s">8.1</span></div>
       <div class="deck-card c-ink" data-pos="3"><span class="deck-k">AI answer mention</span><b>Beacon AI</b><span class="deck-l">Cited in 4 answers</span><span class="deck-s">7.5</span></div>
-      <svg class="sticker" viewBox="0 0 120 120"><defs><path id="stk" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1 -88 0"/></defs><circle cx="60" cy="60" r="58"/><text><textPath href="#stk">LIVE BUYING SIGNALS &#8226; ALWAYS ON &#8226; </textPath></text><circle class="sticker-dot" cx="60" cy="60" r="13"/></svg>
+      <svg class="sticker" viewBox="0 0 120 120"><defs><path id="stk" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1 -88 0"/></defs><circle cx="60" cy="60" r="58"/><text><textPath href="#stk">READING THE MARKET &#8226; DAY AND NIGHT &#8226; </textPath></text><circle class="sticker-dot" cx="60" cy="60" r="13"/></svg>
     </div>
-    <span class="lbl rv fade">Agentic revenue intelligence</span>
+    <span class="lbl rv fade">Revenue intelligence with a compass</span>
     <h1 class="d1 rv">
-      <span class="ln"><span>Know who&rsquo;s ready</span></span>
-      <span class="ln"><span>to buy <span class="it">before</span></span></span>
-      <span class="ln"><span>they <span class="mk">raise a hand.</span></span></span>
+      <span class="ln"><span>Buyers leave</span></span>
+      <span class="ln"><span>tracks <span class="it">long before</span></span></span>
+      <span class="ln"><span>they <span class="mk">fill in a form.</span></span></span>
     </h1>
     <div class="hero-foot">
       <span class="idx rv fade">01 / Overview</span>
-      <p class="lead rv fade">{{ brand.product }} watches the open web, your own site and social for the moments that signal intent &mdash; then hands your team the exact account to reach, and the reason why.</p>
+      <p class="lead rv fade">A funding round. A new CRO. A third quiet look at your pricing page. {{ brand.name }} reads those tracks across the web, your site and social, and turns them into one ranked list: who to call, why now, and what to say first.</p>
       <div class="btns rv fade">
         <button class="btn btn-1" data-signup>Sign up</button>
-        <button class="btn btn-2" type="button" data-video>Watch the walkthrough</button>
+        <button class="btn btn-2" type="button" data-video>Take the two-minute tour</button>
       </div>
     </div>
   </header>
@@ -172,7 +172,7 @@
       colour blocks (press-play.js). Without the script it is simply set in
       ink with the blocks on. -#}
   <section class="wrap said">
-    <p class="said-t" id="said">Your next customer is already telling the internet. <span class="said-b c-orange">A funding round.</span> <span class="said-b c-amber">A new VP Marketing.</span> <span class="said-b c-sky">Three visits to your pricing&nbsp;page.</span> We read the signals, stack them, and hand you the account, with the reason&nbsp;why.</p>
+    <p class="said-t" id="said">Nobody announces they&rsquo;re shopping. They just start acting like it. <span class="said-b c-orange">A Series B lands.</span> <span class="said-b c-amber">A new VP Marketing starts Monday.</span> <span class="said-b c-sky">Someone reads your pricing page three&nbsp;times.</span> One of those is a rumour. Three in a fortnight is a bearing. We take the reading and point your team&nbsp;at&nbsp;it.</p>
   </section>
 
   <section class="wrap sec" id="how">
@@ -180,15 +180,15 @@
     <div class="shead" style="margin-bottom:var(--s8)">
       <div class="shead-l"><span class="idx">02</span><span class="lbl">How it works</span></div>
       <div class="shead-r">
-        <h2 class="d3 rv"><span class="ln"><span>Watch a signal become</span></span><span class="ln"><span><span class="it">a conversation.</span></span></span></h2>
+        <h2 class="d3 rv"><span class="ln"><span>From a faint signal</span></span><span class="ln"><span><span class="it">to a first call.</span></span></span></h2>
       </div>
     </div>
     <div class="story" id="story">
       <div class="story-steps">
-        <div class="story-step on"><span class="idx">01</span><div><h4>A signal fires</h4><p>Acme Cloud closes a funding round. We catch it the moment it reaches the open web.</p></div></div>
-        <div class="story-step"><span class="idx">02</span><div><h4>It is scored</h4><p>Type, severity and recency combine into one live intent score, instantly.</p></div></div>
-        <div class="story-step"><span class="idx">03</span><div><h4>The account rises</h4><p>It jumps to the top of your worklist, with the reason why in plain language.</p></div></div>
-        <div class="story-step"><span class="idx">04</span><div><h4>{{ brand.assistant }} drafts the outreach</h4><p>A ready-to-send intro to the right buyer. You reach out first.</p></div></div>
+        <div class="story-step on"><span class="idx">01</span><div><h4>Something moves</h4><p>Acme Cloud closes a Series B. {{ brand.name }} picks it up as soon as it surfaces on the open web, not in next month&rsquo;s report.</p></div></div>
+        <div class="story-step"><span class="idx">02</span><div><h4>It gets weighed</h4><p>What kind of signal, how strong, how fresh. All three roll into one 0&ndash;10 score, and signals that stack count for more.</p></div></div>
+        <div class="story-step"><span class="idx">03</span><div><h4>The account climbs</h4><p>It moves up your worklist with a one-line reason a rep could say out loud on the call.</p></div></div>
+        <div class="story-step"><span class="idx">04</span><div><h4>{{ brand.assistant }} writes the opener</h4><p>A short, specific first message to the right person. You arrive before the shortlist closes.</p></div></div>
       </div>
       <div class="story-fig">
         {#- Authored in the PRODUCT's tokens, not the site's. The dark
@@ -196,8 +196,8 @@
         <div class="rv"><div class="acct wipe">
           <div class="acct-top"><span class="acct-co"><i></i>Acme Cloud</span><span class="acct-tag">Funding round</span></div>
           <div class="acct-score"><b id="svScore">9.4</b><span>Intent score<br>Top account today</span></div>
-          <div class="acct-why"><span class="kl">Why it fired</span><p>Series B closed 4 days ago &middot; two pricing-page visits &middot; a new VP Marketing started this month. Three signals stacked inside a fortnight.</p></div>
-          <div class="acct-why" style="margin-top:var(--s5)"><span class="kl">{{ brand.assistant }}</span><p>&ldquo;Acme just raised a Series B. Here is a three-line intro to their new VP Marketing.&rdquo;</p></div>
+          <div class="acct-why"><span class="kl">Why now</span><p>Series B closed 4 days ago &middot; two pricing-page visits &middot; a new VP Marketing started this month. Three moves inside a fortnight: a pattern, not a coincidence.</p></div>
+          <div class="acct-why" style="margin-top:var(--s5)"><span class="kl">{{ brand.assistant }}</span><p>&ldquo;Acme raised and hired a VP Marketing in the same month. Here&rsquo;s a three-line opener for the new VP.&rdquo;</p></div>
           <button type="button" class="acct-draft" data-demo>Open the draft</button>
         </div></div>
       </div>
@@ -208,7 +208,7 @@
       directions as the page scrolls. Decorative: every word in it is said
       elsewhere on the page. -#}
   <div class="kin" aria-hidden="true">
-    {% for row in [['Signal','Score','Account','Conversation'], ['Funding round','New VP','Pricing page','AI answers']] %}
+    {% for row in [['Signal','Bearing','Account','Opener'], ['Series B','New CRO','Pricing page','AI answers']] %}
     <div class="kin-row" data-dir="{{ '-1' if loop.first else '1' }}">
       {% for _ in range(3) %}{% for w in row %}<span class="kin-w{{ ' o' if loop.index is even }}">{{ w }}</span><svg class="kin-s s{{ loop.index }}" viewBox="0 0 100 100"><path data-shape="{{ ['circle','square','half','star'][loop.index0] }}" d="{{ SHAPES[['circle','square','half','star'][loop.index0]] }}"/></svg>{% endfor %}{% endfor %}
     </div>
@@ -220,13 +220,13 @@
     <div class="shead" style="margin-bottom:var(--s7)">
       <div class="shead-l"><span class="idx">03</span><span class="lbl">Inside the product</span></div>
       <div class="shead-r">
-        <h2 class="d3 rv"><span class="ln"><span>See the intelligence</span></span><span class="ln"><span>layer <span class="it">at work.</span></span></span></h2>
+        <h2 class="d3 rv"><span class="ln"><span>Your whole market,</span></span><span class="ln"><span>on <span class="it">one screen.</span></span></span></h2>
       </div>
     </div>
     <div class="rv"><div class="wipe">
       {% include "_press_shot.html" %}
     </div></div>
-    <p class="shot-cap">Representative product view &middot; animated preview</p>
+    <p class="shot-cap">Illustrative product view &middot; sample data, animated</p>
     {#- THE TRACK. outcomes.digital's "How we drive outcomes": a row of colour
         blocks that slides sideways while the page scrolls down, with a tab
         rail marking where you are. press-play.js pins it and drives it from
@@ -235,16 +235,16 @@
     <div class="track" id="track" style="--n:4;margin-top:var(--s8)">
       <div class="track-pin">
         <div class="track-tabs" role="tablist" aria-label="What lands on your desk">
-          <button type="button" class="on" data-i="0"><b>01</b>Worklist</button>
-          <button type="button" data-i="1"><b>02</b>The reason</button>
-          <button type="button" data-i="2"><b>03</b>The draft</button>
-          <button type="button" data-i="3"><b>04</b>Your stack</button>
+          <button type="button" class="on" data-i="0"><b>01</b>Who</button>
+          <button type="button" data-i="1"><b>02</b>Why</button>
+          <button type="button" data-i="2"><b>03</b>What to say</button>
+          <button type="button" data-i="3"><b>04</b>Where it lands</button>
         </div>
         <div class="track-view"><div class="track-rail">
-          <article class="track-card c-orange"><span class="track-n">01</span><h4>A prioritised worklist</h4><p>Every in-market account ranked by one intent score, newest signals on top.</p></article>
-          <article class="track-card c-amber"><span class="track-n">02</span><h4>The reason, in plain language</h4><p>Each row shows the signal that fired and why it matters. Nothing to decode.</p></article>
-          <article class="track-card c-sky"><span class="track-n">03</span><h4>{{ brand.assistant }} drafts the next step</h4><p>An embedded analyst researches the account and writes the outreach for you to review and send.</p></article>
-          <article class="track-card c-ink"><span class="track-n">04</span><h4>It acts inside your stack</h4><p>Routes to HubSpot, Salesforce, Slack and Gmail, where your team already is.</p></article>
+          <article class="track-card c-orange"><span class="track-n">01</span><h4>Who to call today</h4><p>Every account that&rsquo;s moving, in one list, ranked by a single score. The hottest one is always on top.</p></article>
+          <article class="track-card c-amber"><span class="track-n">02</span><h4>Why, in one sentence</h4><p>Each row names what fired and why it matters, in words a rep can repeat on a call. No dashboard archaeology.</p></article>
+          <article class="track-card c-sky"><span class="track-n">03</span><h4>What to say first</h4><p>{{ brand.assistant }}, the analyst built into the product, researches the account and drafts the opener. You review it, tweak it, send it.</p></article>
+          <article class="track-card c-ink"><span class="track-n">04</span><h4>Where it lands</h4><p>HubSpot, Salesforce, Slack, Gmail. The signal shows up where your team already works, not in yet another tab.</p></article>
         </div></div>
       </div>
     </div>
@@ -257,9 +257,9 @@
       <div class="stats">
         <div class="stat rv fade"><b class="num" data-count="26">26</b><span>Buying-signal types</span></div>
         <div class="stat rv fade"><b class="num" data-count="{{ agents|length }}">{{ agents|length }}</b><span>Always-on {{ brand.agents_plural|lower }}</span></div>
-        <div class="stat rv fade"><b class="num">24/7</b><span>Real-time detection</span></div>
+        <div class="stat rv fade"><b class="num">24/7</b><span>Watching, while you sleep</span></div>
       </div>
-      <p class="lead" style="margin-top:var(--s8);max-width:var(--measure-wide)">Built by <b style="color:var(--ink-paper);font-weight:600">{{ brand.name }}</b>, running demand generation, paid media, SEO, content and RevOps for global brands.</p>
+      <p class="lead" style="margin-top:var(--s8);max-width:var(--measure-wide)">Built by <b style="color:var(--ink-paper);font-weight:600">{{ brand.name }}</b> for teams who carry a number and are done guessing which accounts deserve their week.</p>
     </div>
   </section>
 
@@ -267,7 +267,7 @@
     <div class="shead" style="margin-bottom:var(--s7)">
       <div class="shead-l"><span class="idx">04</span><span class="lbl">The {{ brand.agents_plural|lower }}</span></div>
       <div class="shead-r">
-        <h2 class="d3 rv"><span class="ln"><span>A team of {{ brand.agents_plural|lower }},</span></span><span class="ln"><span><span class="it">working your pipeline.</span></span></span></h2>
+        <h2 class="d3 rv"><span class="ln"><span>Specialists that</span></span><span class="ln"><span><span class="it">never clock off.</span></span></span></h2>
       </div>
     </div>
     <div class="cells cells-3">
@@ -288,12 +288,12 @@
     <div class="shead" style="margin-top:var(--s7)">
       <div class="shead-l"><span class="idx">05</span><span class="lbl">Privacy &amp; security</span></div>
       <div class="shead-r">
-        <h2 class="d3 rv"><span class="ln"><span>Built privacy-first,</span></span><span class="ln"><span><span class="it">by design.</span></span></span></h2>
-        <p class="lead rv fade">Intent intelligence only earns trust when it is handled responsibly, with your data staying yours.</p>
+        <h2 class="d3 rv"><span class="ln"><span>Intent data,</span></span><span class="ln"><span><span class="it">without the creepy part.</span></span></span></h2>
+        <p class="lead rv fade">Knowing who&rsquo;s in market is only worth something if people can trust how you found out. So the rules are short.</p>
         <div class="ledger" style="margin-top:var(--s7)">
-          <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>Privacy by design</h4><p>We aim to handle every data point lawfully, fairly and transparently, and work to support your obligations under applicable privacy laws.</p></div></div>
-          <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>Your data, your control</h4><p>We do not sell your data. Request an export or a deletion at any time.</p></div></div>
-          <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>Handled with care</h4><p>Encrypted connections, least-privilege access and reviewed data handling.</p></div></div>
+          <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>Lawful by default</h4><p>We aim to collect and use every data point lawfully, fairly and in the open, and to help you meet your own obligations under applicable privacy laws.</p></div></div>
+          <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>Yours, full stop</h4><p>We don&rsquo;t sell your data. Ask for an export or a deletion whenever you like.</p></div></div>
+          <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>Locked down</h4><p>Encrypted connections, least-privilege access, and data handling that gets reviewed rather than assumed.</p></div></div>
         </div>
       </div>
     </div>
@@ -307,15 +307,15 @@
   <header class="wrap hero">
     <span class="lbl rv fade">{{ brand.agents_plural }} directory</span>
     <h1 class="d1 rv">
-      <span class="ln"><span>Meet the {{ brand.agents_plural|lower }}</span></span>
-      <span class="ln"><span>that <span class="it">never sleep.</span></span></span>
+      <span class="ln"><span>A growth team</span></span>
+      <span class="ln"><span>that <span class="it">works nights.</span></span></span>
     </h1>
     <div class="hero-foot">
       <span class="idx rv fade">{{ '%02d'|format(agents|length) }} live</span>
-      <p class="lead rv fade">Always-on {{ brand.agents_plural|lower }} spanning intent, SEO, content, GEO and paid. They find the moment, name the buyer, and hand your team the next move. Browse what we have built &mdash; or have us build one for you.</p>
+      <p class="lead rv fade">Specialist {{ brand.agents_plural|lower }} for intent, SEO, AI search, content and paid. Each does one job unusually well: spot the moment, name the account, hand over the next move. Take one off the shelf, or have us build the one you&rsquo;re missing.</p>
       <div class="btns rv fade">
         <button class="btn btn-1" data-signup>Sign up</button>
-        <a class="btn btn-2" href="#dir">Explore the directory</a>
+        <a class="btn btn-2" href="#dir">Browse the line-up</a>
       </div>
     </div>
   </header>
@@ -328,17 +328,17 @@
 
   <section class="wrap sec-sm">
     <div class="shead">
-      <div class="shead-l"><span class="idx">01</span><span class="lbl">Better together</span></div>
+      <div class="shead-l"><span class="idx">01</span><span class="lbl">How they work together</span></div>
       <div class="shead-r">
-        <h2 class="d3 rv"><span class="ln"><span>{{ brand.agents_plural }} that work</span></span><span class="ln"><span>as <span class="it">one team.</span></span></span></h2>
-        <p class="lead rv fade">No agent works alone. A signal fires, the right {{ brand.agents_plural|lower }} pick it up, {{ brand.assistant }} drafts the move, and the work lands in your stack automatically.</p>
+        <h2 class="d3 rv"><span class="ln"><span>One signal,</span></span><span class="ln"><span><span class="it">many hands.</span></span></span></h2>
+        <p class="lead rv fade">A signal shouldn&rsquo;t die inside one tool. When something fires, the relevant {{ brand.agents_plural|lower }} pick it up together, {{ brand.assistant }} writes the move, and the result lands where your team already works.</p>
       </div>
     </div>
     <div class="ledger" style="margin-top:var(--s8)">
-      <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>A signal fires</h4><p>Funding, a pricing-page visit, an AI mention &mdash; detected the moment it happens.</p></div></div>
-      <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>The right {{ brand.agents_plural|lower }} act</h4><p>SEO, content, paid and intent {{ brand.agents_plural|lower }} respond to the same scored event.</p></div></div>
-      <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>{{ brand.assistant }} drafts the move</h4><p>The account is researched and a ready-to-send next step is written for you.</p></div></div>
-      <div class="ledger-row rv fade"><span class="idx">04</span><div><h4>It lands in your stack</h4><p>Routed into HubSpot, Salesforce, Slack and Gmail, where your team already works.</p></div></div>
+      <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>Something moves</h4><p>A funding round, a pricing-page visit, a mention in an AI answer. Caught as it happens.</p></div></div>
+      <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>The right specialists respond</h4><p>Intent, SEO, content and paid {{ brand.agents_plural|lower }} each act on the same scored event, in their own lane.</p></div></div>
+      <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>{{ brand.assistant }} writes the move</h4><p>The account gets researched and the next step gets written, ready for a human to approve.</p></div></div>
+      <div class="ledger-row rv fade"><span class="idx">04</span><div><h4>It lands in your stack</h4><p>HubSpot, Salesforce, Slack, Gmail. Nothing new to log in to, nothing new to remember.</p></div></div>
     </div>
   </section>
 
@@ -346,8 +346,8 @@
     <span class="rule rule-ink rv"></span>
     <div class="dir-bar" style="margin-top:var(--s7)">
       <div>
-        <span class="lbl">02 &mdash; The directory</span>
-        <h2 class="d3 rv" style="margin-top:var(--s3)"><span class="ln"><span>Your always-on <span class="it">growth team.</span></span></span></h2>
+        <span class="lbl">02 &mdash; The line-up</span>
+        <h2 class="d3 rv" style="margin-top:var(--s3)"><span class="ln"><span>Pick your <span class="it">specialists.</span></span></span></h2>
       </div>
       <div class="srch">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3" stroke-linecap="round"/></svg>
@@ -387,11 +387,11 @@
       </a>
       {% endfor %}
     </div>
-    <div class="empty" id="dirNo">No {{ brand.agents_plural|lower }} match that search. Try another term, or <a class="lk" href="#" data-demo>ask us to build one</a>.</div>
+    <div class="empty" id="dirNo">Nothing matches that yet. Try another word, or <a class="lk" href="#" data-demo>ask us to build it</a>.</div>
   </section>
 
-  {% set cta_h = 'Do not see the agent you need?' %}
-  {% set cta_p = 'We build bespoke agents around your signals, your data and your workflow, usually live within weeks.' %}
+  {% set cta_h = 'Missing the agent you need?' %}
+  {% set cta_p = "Describe the job. We'll scope an agent around your signals, your data and your workflow, and it's usually live within weeks." %}
   {% set cta_interest = 'Build a custom agent' %}
   {% include "_press_cta.html" %}
 
@@ -422,24 +422,24 @@
       <div>
         <p class="lead rv fade" style="max-width:var(--measure-wide)">{{ agent.summary }}</p>
         <div class="trips" style="margin-top:var(--s8)">
-          <div class="trip rv fade"><h4>Why you will love it</h4><p>{{ agent.benefit }}</p></div>
-          <div class="trip rv fade"><h4>How it works</h4><p>{{ agent.how }}</p></div>
-          <div class="trip rv fade"><h4>Who it helps</h4><p>{{ agent.who }}</p></div>
+          <div class="trip rv fade"><h4>What changes for you</h4><p>{{ agent.benefit }}</p></div>
+          <div class="trip rv fade"><h4>Under the hood</h4><p>{{ agent.how }}</p></div>
+          <div class="trip rv fade"><h4>Built for</h4><p>{{ agent.who }}</p></div>
         </div>
 
-        <h3 class="d4" style="margin-top:var(--s9)">Representative output</h3>
+        <h3 class="d4" style="margin-top:var(--s9)">What lands on your desk</h3>
         <div class="ledger" style="margin-top:var(--s5)">
           {% if page == 'iagent' and agent.out %}
             {% for o in agent.out %}
             <div class="ledger-row rv fade"><span class="idx">{{ '%02d'|format(loop.index) }}</span><div><h4>{{ o.t }}</h4><p>{{ o.d }}</p></div></div>
             {% endfor %}
           {% else %}
-            <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>The top opportunity, surfaced</h4><p>Ranked by impact, newest first, with no list-scrubbing.</p></div></div>
-            <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>The reason why, in plain language</h4><p>What fired and why it matters. Nothing to decode.</p></div></div>
-            <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>The next step, ready to action</h4><p>A recommended move routed into your stack.</p></div></div>
+            <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>The opportunity that matters most</h4><p>Ranked by impact, freshest first. No list-scrubbing.</p></div></div>
+            <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>The why, in one line</h4><p>What fired, and why it matters right now.</p></div></div>
+            <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>The next move, ready to go</h4><p>A recommended action, routed straight into your stack.</p></div></div>
           {% endif %}
         </div>
-        <p class="shot-cap">Representative preview of what {{ agent.name }} delivers.</p>
+        <p class="shot-cap">Illustrative preview of what {{ agent.name }} delivers.</p>
       </div>
 
       <aside class="agp-side">
@@ -458,8 +458,8 @@
           <div class="tags">{% for c in agent.connects %}<span class="tag">{{ c }}</span>{% endfor %}</div>
         </div>
         <div class="side-cta">
-          <b>Want this agent?</b>
-          <p>See it live on your accounts, or have us tailor it to your stack.</p>
+          <b>Put it to work</b>
+          <p>Run it on the accounts you care about, or have us tune it to your stack.</p>
           <button class="btn btn-1" data-signup>Sign up</button>
           <button class="btn btn-2" data-demo data-interest="Build a custom agent" data-prefill="I'd like a version of {{ agent.name }} customised for us.">Build a custom version</button>
         </div>
@@ -484,25 +484,25 @@
   </section>
   {% endif %}
 
-  {% set cta_h = 'See ' ~ agent.name ~ ' on your accounts.' %}
-  {% set cta_p = 'Sign up and watch it run against the companies you actually care about.' %}
+  {% set cta_h = agent.name ~ ', on your own accounts.' %}
+  {% set cta_p = 'Sign up and point it at real companies. Demo data was never the point.' %}
   {% include "_press_cta.html" %}
 
 {# ═══════════════════════════════ PLATFORM ════════════════════════════ #}
 {% elif page == 'platform' %}
 
   <header class="wrap hero">
-    <span class="lbl rv fade">The intelligence layer</span>
+    <span class="lbl rv fade">How it thinks</span>
     <h1 class="d1 rv">
-      <span class="ln"><span>Every buying signal.</span></span>
-      <span class="ln"><span>One <span class="mk">intelligence layer.</span></span></span>
+      <span class="ln"><span>A thousand signals.</span></span>
+      <span class="ln"><span><span class="mk">One clear heading.</span></span></span>
     </h1>
     <div class="hero-foot">
       <span class="idx rv fade">01 / Platform</span>
-      <p class="lead rv fade">{{ brand.product }} reads your market in real time &mdash; surfacing the accounts showing genuine momentum, scoring and explaining each one in plain language, then pointing your team at the conversations most likely to convert.</p>
+      <p class="lead rv fade">{{ brand.product }} reads your market continuously, separates momentum from noise, explains every account it ranks in plain language, and points your team at the conversations most likely to become pipeline.</p>
       <div class="btns rv fade">
         <button class="btn btn-1" data-signup>Sign up</button>
-        <button class="btn btn-2" type="button" data-video>Watch the walkthrough</button>
+        <button class="btn btn-2" type="button" data-video>Take the two-minute tour</button>
       </div>
     </div>
   </header>
@@ -512,7 +512,7 @@
       <div class="stats">
         <a class="stat rv fade" href="/signals"><b class="num" data-count="26">26</b><span>Signal types</span></a>
         <a class="stat rv fade" href="/agents"><b class="num" data-count="{{ agents|length }}">{{ agents|length }}</b><span>Always-on {{ brand.agents_plural|lower }}</span></a>
-        <div class="stat rv fade"><b class="num">24/7</b><span>Always on</span></div>
+        <div class="stat rv fade"><b class="num">24/7</b><span>Never off duty</span></div>
       </div>
     </div>
   </section>
@@ -520,22 +520,22 @@
   <section class="wrap sec">
     <div class="shead" style="margin-bottom:var(--s7)">
       <div class="shead-l"><span class="idx">02</span><span class="lbl">What it does</span></div>
-      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>Three moving parts,</span></span><span class="ln"><span><span class="it">one worklist.</span></span></span></h2></div>
+      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>Three moving parts.</span></span><span class="ln"><span><span class="it">One list worth working.</span></span></span></h2></div>
     </div>
     <div class="cells cells-3">
       <a class="cell" href="/signals">
         <span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></span>
-        <h3>Real-time signals</h3><p>Funding, leadership moves, M&amp;A, launches and more, detected across the open web as they happen.</p>
+        <h3>Live signals</h3><p>Funding, leadership changes, M&amp;A, launches, site visits, AI-answer mentions. Picked up as they surface, not in next quarter&rsquo;s report.</p>
         <span class="more">See signals <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </a>
       <a class="cell" href="/signals">
         <span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="4"/></svg></span>
-        <h3>Intent scoring</h3><p>Every account ranked by importance, severity, recency and multi-intent stacking &mdash; so you know who to call first.</p>
+        <h3>One honest score</h3><p>Signal type, strength and freshness, weighted and stacked into a single number. It decides who gets called first.</p>
         <span class="more">How it scores <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </a>
       <a class="cell" href="#" data-demo>
         <span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7v5l3 2"/></svg></span>
-        <h3>{{ brand.assistant }}, your analyst</h3><p>An embedded AI assistant that researches accounts, drafts outreach and explains why each one is hot.</p>
+        <h3>{{ brand.assistant }}, the analyst on call</h3><p>Researches the account, explains why it&rsquo;s hot and drafts the outreach. Never needs a coffee break.</p>
         <span class="more">See it in a demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </a>
     </div>
@@ -546,36 +546,36 @@
     <div class="shead" style="margin-top:var(--s7)">
       <div class="shead-l"><span class="idx">03</span><span class="lbl">Under the hood</span></div>
       <div class="shead-r">
-        <h2 class="d3 rv"><span class="ln"><span>One number you can</span></span><span class="ln"><span><span class="it">actually trust.</span></span></span></h2>
-        <p class="lead rv fade">Every event is weighted by type, severity and recency, and stacking signals compound. The result is a single 0&ndash;10 score that ranks your worklist honestly, every time.</p>
+        <h2 class="d3 rv"><span class="ln"><span>A score you can</span></span><span class="ln"><span><span class="it">say out loud.</span></span></span></h2>
+        <p class="lead rv fade">Every event is weighed by what kind of signal it is, how strong it is and how fresh it is. Signals on the same account compound, because a cluster of moves says more than any one of them alone. Out comes a single 0&ndash;10 score that ranks your worklist the same way every time.</p>
         {#- The formula, set as type rather than drawn as a diagram. -#}
-        <p class="pull rv fade" style="margin-top:var(--s7)">type type &times; severity &times; recency <span class="mk">= intent</span>times; severity type &times; severity &times; recency <span class="mk">= intent</span>times; recency<br>= <span class="mk">intent</span></p>
-        <p class="lead rv fade" style="margin-top:var(--s7)">No black box. Each score arrives with the reason it fired, so a rep acts in seconds instead of decoding a dashboard.</p>
+        <p class="pull rv fade" style="margin-top:var(--s7)">type &times; severity &times; recency<br>+ stacking = <span class="mk">intent</span></p>
+        <p class="lead rv fade" style="margin-top:var(--s7)">No black box. Every score arrives with the reason it fired, so a rep acts in seconds instead of reverse-engineering a dashboard.</p>
       </div>
     </div>
   </section>
 
   <section class="wrap sec-sm">
     <div class="rv"><div class="wipe">{% include "_press_shot.html" %}</div></div>
-    <p class="shot-cap">Representative product view &middot; animated preview</p>
+    <p class="shot-cap">Illustrative product view &middot; sample data, animated</p>
   </section>
 
-  {% set cta_h = 'See your market, live.' %}
-  {% set cta_p = 'Book a walkthrough on your own target accounts and watch the signal layer light up.' %}
+  {% set cta_h = 'Take a reading on your market.' %}
+  {% set cta_p = "Bring your target list. We'll run it live and show you who's moving, and why." %}
   {% include "_press_cta.html" %}
 
 {# ═══════════════════════════════ SIGNALS ═════════════════════════════ #}
 {% elif page == 'signals' %}
 
   <header class="wrap hero">
-    <span class="lbl rv fade">What we track</span>
+    <span class="lbl rv fade">The field guide to intent</span>
     <h1 class="d1 rv">
-      <span class="ln"><span>The signals</span></span>
-      <span class="ln"><span>that <span class="mk">move pipeline.</span></span></span>
+      <span class="ln"><span>Every tell,</span></span>
+      <span class="ln"><span><span class="mk">catalogued.</span></span></span>
     </h1>
     <div class="hero-foot">
       <span class="idx rv fade">{{ signals_list|length }} types</span>
-      <p class="lead rv fade">A live catalogue of every buying signal the platform watches for &mdash; company moves, website intent, social engagement, competitor activity. Each one is a reason to reach out at exactly the right moment.</p>
+      <p class="lead rv fade">These are the moves companies make just before they buy: changes at the top, money coming in, quiet research on your site, a competitor shifting position. One is a reason to reach out. Several together is a reason to reach out today.</p>
       <div class="btns rv fade"><button class="btn btn-1" data-signup>Sign up</button></div>
     </div>
   </header>
@@ -583,8 +583,8 @@
   <section class="wrap sec-sm">
     <div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">
       <div class="stat rv fade"><b class="num" data-count="{{ signals_list|length }}">{{ signals_list|length }}</b><span>Signal types</span></div>
-      <div class="stat rv fade"><b class="num">24/7</b><span>Detected in real time</span></div>
-      <div class="stat rv fade"><b class="num">1</b><span>Unified intent score</span></div>
+      <div class="stat rv fade"><b class="num">24/7</b><span>Watched around the clock</span></div>
+      <div class="stat rv fade"><b class="num">1</b><span>Score that ranks them all</span></div>
     </div>
 
     <div class="dir-bar" style="margin-top:var(--s9)">
@@ -617,26 +617,26 @@
       </section>
       {% endfor %}
     </div>
-    <div class="empty" id="sigNull">No signals match that search.</div>
+    <div class="empty" id="sigNull">No signal by that name. Yet.</div>
   </section>
 
-  {% set cta_h = 'Put every signal on your accounts.' %}
-  {% set cta_p = 'We will wire these into your target list and surface who is moving, all in one prioritised view.' %}
+  {% set cta_h = 'Run the whole catalogue on your accounts.' %}
+  {% set cta_p = "Give us your target list and we'll show you who is moving, ranked in one view." %}
   {% include "_press_cta.html" %}
 
 {# ══════════════════════════════ SOLUTIONS ════════════════════════════ #}
 {% elif page == 'solutions' %}
 
   <header class="wrap hero">
-    <span class="lbl rv fade">From signal to pipeline</span>
+    <span class="lbl rv fade">Signal in, revenue out</span>
     <h1 class="d1 rv">
-      <span class="ln"><span>We do not just</span></span>
-      <span class="ln"><span>find the moment.</span></span>
-      <span class="ln"><span>We help you <span class="it">win it.</span></span></span>
+      <span class="ln"><span>Spotting the moment</span></span>
+      <span class="ln"><span>is half the job.</span></span>
+      <span class="ln"><span>We do <span class="it">the other half.</span></span></span>
     </h1>
     <div class="hero-foot">
       <span class="idx rv fade">01 / Solutions</span>
-      <p class="lead rv fade">{{ brand.name }} is a full-service B2B growth practice. The intelligence layer tells you who is ready; our teams run the plays that turn that intent into pipeline and revenue.</p>
+      <p class="lead rv fade">{{ brand.name }} is a B2B growth practice as well as a platform. The platform tells you who&rsquo;s ready; our team runs the plays that turn that readiness into meetings, pipeline and revenue.</p>
       <div class="btns rv fade"><button class="btn btn-1" data-signup>Sign up</button><button class="btn btn-2" type="button" data-demo>Talk to us</button></div>
     </div>
   </header>
@@ -644,53 +644,53 @@
   <section class="wrap sec-sm">
     <span class="rule rv"></span>
     <div class="cells cells-3" style="margin-top:var(--s7);border-top:0">
-      <a class="cell" href="/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><h3>Demand generation</h3><p>Always-on programmes wired to live intent, so spend follows the accounts actually in market.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span><h3>Content &amp; GEO</h3><p>Content built to be cited by AI answer engines as well as ranked by search.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></span><h3>Paid media</h3><p>Budget pointed at the accounts showing momentum this week, not last quarter.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span><h3>SEO</h3><p>Technical, on-page and authority work, audited and shipped by the same {{ brand.agents_plural|lower }} that watch your market.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="/platform"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18M9 9v11"/></svg></span><h3>RevOps</h3><p>Signals, scores and next steps routed into the CRM your team already lives in.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="#" data-demo data-interest="Build a custom agent"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><h3>A bespoke agent</h3><p>Your signals, your data, your workflow. Scoped with you and usually live within weeks.</p><span class="more">Start a conversation <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><h3>Demand generation</h3><p>Always-on programmes that follow live intent, so budget chases the accounts that are moving rather than the ones on last year&rsquo;s list.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span><h3>Content &amp; AI search</h3><p>Content written to be quoted in AI answers as well as ranked by Google. The new first page has no ten blue links.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></span><h3>Paid media</h3><p>Spend aimed at the accounts heating up this week, not the ones that looked promising last quarter.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="/agents"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span><h3>SEO</h3><p>Technical, on-page and authority work: found by our {{ brand.agents_plural|lower }}, shipped by our people.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="/platform"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18M9 9v11"/></svg></span><h3>RevOps</h3><p>Signals, scores and next steps wired into the CRM your team already lives in, with routing rules that actually make sense.</p><span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="#" data-demo data-interest="Build a custom agent"><span class="cell-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><h3>A bespoke agent</h3><p>Got a signal nobody tracks? We&rsquo;ll build the agent that does, scoped with you and usually live within weeks.</p><span class="more">Start a conversation <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
     </div>
   </section>
 
   <section class="wrap sec-sm">
     <span class="rule rv"></span>
     <div class="shead" style="margin-top:var(--s7)">
-      <div class="shead-l"><span class="idx">02</span><span class="lbl">Who it is for</span></div>
+      <div class="shead-l"><span class="idx">02</span><span class="lbl">Who it&rsquo;s for</span></div>
       <div class="shead-r">
-        <h2 class="d3 rv"><span class="ln"><span>Built for the people</span></span><span class="ln"><span>who <span class="it">own the number.</span></span></span></h2>
-        <p class="lead rv fade">Different teams act on the same live signal in different ways. Here is where the intelligence layer earns its place &mdash; by role, and by market.</p>
+        <h2 class="d3 rv"><span class="ln"><span>For whoever has</span></span><span class="ln"><span>to <span class="it">hit the number.</span></span></span></h2>
+        <p class="lead rv fade">Same signal, different job. Here&rsquo;s how each team puts it to work, by role and by market.</p>
       </div>
     </div>
     <div class="ledger" style="margin-top:var(--s8)">
-      <div class="ledger-row rv fade"><span class="lbl">Sales</span><div><h4>VP Sales &amp; SDR leaders</h4><p>Point reps at accounts that are actually in market, not a cold, alphabetical list.</p></div></div>
-      <div class="ledger-row rv fade"><span class="lbl">Marketing</span><div><h4>Demand gen &amp; ABM</h4><p>Trigger campaigns the moment an account shows intent, while the moment is still live.</p></div></div>
-      <div class="ledger-row rv fade"><span class="lbl">RevOps</span><div><h4>RevOps &amp; enablement</h4><p>Route and score signals inside the CRM your team already uses.</p></div></div>
-      <div class="ledger-row rv fade"><span class="lbl">SaaS</span><div><h4>B2B software</h4><p>Catch funding, hiring and tech-change signals that precede a software buying cycle.</p></div></div>
-      <div class="ledger-row rv fade"><span class="lbl">Health</span><div><h4>Healthcare &amp; life sciences</h4><p>Track leadership moves, expansions and service-line launches across provider networks.</p></div></div>
-      <div class="ledger-row rv fade"><span class="lbl">Finance</span><div><h4>Financial &amp; professional services</h4><p>Spot M&amp;A, funding and regulatory moves that open a conversation.</p></div></div>
+      <div class="ledger-row rv fade"><span class="lbl">Sales</span><div><h4>Sales leaders &amp; SDR managers</h4><p>Hand reps a morning list of accounts that are actually moving, instead of working the alphabet.</p></div></div>
+      <div class="ledger-row rv fade"><span class="lbl">Marketing</span><div><h4>Demand gen &amp; ABM</h4><p>Launch the play while the account is still warm, not after the quarterly review.</p></div></div>
+      <div class="ledger-row rv fade"><span class="lbl">RevOps</span><div><h4>RevOps &amp; enablement</h4><p>One score, one source of truth, routed to the right owner without a spreadsheet in the middle.</p></div></div>
+      <div class="ledger-row rv fade"><span class="lbl">SaaS</span><div><h4>B2B software</h4><p>Funding, hiring surges and stack changes: the usual opening act of a software buying cycle.</p></div></div>
+      <div class="ledger-row rv fade"><span class="lbl">Health</span><div><h4>Healthcare &amp; life sciences</h4><p>New leaders, new facilities, new service lines. The signals that show up before a budget does.</p></div></div>
+      <div class="ledger-row rv fade"><span class="lbl">Finance</span><div><h4>Financial &amp; professional services</h4><p>M&amp;A, fresh funding and regulatory shifts: the moments when firms suddenly need outside help.</p></div></div>
     </div>
   </section>
 
-  {% set cta_h = 'Let us turn signal into pipeline.' %}
-  {% set cta_p = 'Tell us your goals and we will show you the plays, and the agents, to get there.' %}
+  {% set cta_h = "Let's turn signal into pipeline." %}
+  {% set cta_p = "Tell us the target. We'll map the plays, and the agents, that get you there." %}
   {% include "_press_cta.html" %}
 
 {# ══════════════════════════════ COMPARE ══════════════════════════════ #}
 {% elif page == 'why' %}
 
   <header class="wrap hero">
-    <span class="lbl rv fade">An honest comparison</span>
+    <span class="lbl rv fade">The honest comparison</span>
     <h1 class="d1 rv">
-      <span class="ln"><span>Know who is in market.</span></span>
-      <span class="ln"><span>Then go <span class="mk">close it.</span></span></span>
+      <span class="ln"><span>Plenty of tools can see.</span></span>
+      <span class="ln"><span>Few can <span class="mk">act.</span></span></span>
     </h1>
     <div class="hero-foot">
       <span class="idx rv fade">01 / Compare</span>
       <div class="prose rv fade">
-        <p>Most tools in this space do one slice well. They track your visibility in AI answers, or generate content, or audit a site. {{ brand.product }} connects the whole motion: it finds the account, explains the moment, and a team ships the work.</p>
-        <p>Underneath it is {{ brand.engine }}, our in-house agentic platform. {{ brand.engine }} reasons across the leading commercial and open-source models and picks whichever fits the task, rather than locking the whole platform to one vendor's roadmap.</p>
-        <p>Below is a fair, sourced look at how it compares &mdash; including where the incumbents are honestly ahead.</p>
+        <p>Most products in this space do one slice well: they track how you show up in AI answers, or churn out content, or audit a site. {{ brand.product }} joins the slices up. It finds the account, explains the moment, and a team ships the work.</p>
+        <p>Underneath sits {{ brand.engine }}, our in-house agentic platform. It reasons across the leading commercial and open-source models and uses whichever suits the task, instead of tying everything to one vendor&rsquo;s roadmap.</p>
+        <p>Below is a sourced, footnoted comparison, including the places where the incumbents are genuinely ahead.</p>
       </div>
     </div>
   </header>
@@ -699,34 +699,34 @@
     <span class="rule rv"></span>
     <div class="shead" style="margin-top:var(--s7)">
       <div class="shead-l"><span class="idx">02</span><span class="lbl">The alternatives</span></div>
-      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>Four ways teams do this</span></span><span class="ln"><span>now. Each stops <span class="it">short.</span></span></span></h2></div>
+      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>Four ways teams try this</span></span><span class="ln"><span>today. Each <span class="it">stops short.</span></span></span></h2></div>
     </div>
     <div class="cells cells-2" style="margin-top:var(--s7)">
       <div class="cell">
         <span class="lbl">AI visibility monitors</span>
-        <h3 style="margin-top:var(--s4)">They watch the AI answers. Few act on them.</h3>
-        <p>Purpose-built to track how your brand shows up in ChatGPT, Perplexity and AI Overviews. A couple can draft content, but none surface buying intent, de-anonymise visitors or execute.</p>
+        <h3 style="margin-top:var(--s4)">Great at watching AI answers. Quiet on what to do next.</h3>
+        <p>Built to track how your brand appears in ChatGPT, Perplexity and AI Overviews. A couple can draft content; none surface buying intent, identify visitors or do the work.</p>
         <p style="margin-top:var(--s4)"><b style="color:var(--ink)">Strength.</b> Track brand mentions and citations across AI answer engines.<br><b style="color:var(--ink)">Gap.</b> No account intent, no visitor data, no team to execute.</p>
         <div class="tags" style="margin-top:var(--s5)"><span class="tag">Profound</span><span class="tag">AthenaHQ</span><span class="tag">Otterly</span><span class="tag">Peec</span></div>
       </div>
       <div class="cell">
         <span class="lbl">AI content &amp; SEO agents</span>
-        <h3 style="margin-top:var(--s4)">They generate content. Mostly, that is where it stops.</h3>
-        <p>They draft, optimise and sometimes auto-publish at volume. Here the word agent means content production, plus some AI-answer tracking &mdash; not multi-channel go-to-market.</p>
+        <h3 style="margin-top:var(--s4)">Fast at producing content. That&rsquo;s usually where it ends.</h3>
+        <p>They draft, optimise and sometimes auto-publish at volume. Here, agent means content production plus some AI-answer tracking, not a multi-channel go-to-market motion.</p>
         <p style="margin-top:var(--s4)"><b style="color:var(--ink)">Strength.</b> Produce and publish SEO and AI-optimised content fast.<br><b style="color:var(--ink)">Gap.</b> No account intent, no visitor de-anonymisation, no human execution team.</p>
         <div class="tags" style="margin-top:var(--s5)"><span class="tag">Jasper</span><span class="tag">Writesonic</span><span class="tag">SEO.ai</span><span class="tag">Byword</span></div>
       </div>
       <div class="cell">
         <span class="lbl">SEO &amp; content suites</span>
-        <h3 style="margin-top:var(--s4)">The data is deep. The doing is yours.</h3>
-        <p>Rich keyword, backlink, audit and now AI-answer data. Semrush even adds a visitor pixel and ad research. You still turn all of it into work, and then do the work.</p>
+        <h3 style="margin-top:var(--s4)">Deep data. The doing is still on you.</h3>
+        <p>Rich keyword, backlink, audit and now AI-answer data. Semrush even adds a visitor pixel and ad research. Turning all of it into work, and then doing the work, stays with you.</p>
         <p style="margin-top:var(--s4)"><b style="color:var(--ink)">Strength.</b> Deep SEO data, audits and AI-answer tracking to inform decisions.<br><b style="color:var(--ink)">Gap.</b> No buying-signal feed, no unified worklist, no team that executes.</p>
         <div class="tags" style="margin-top:var(--s5)"><span class="tag">Semrush</span><span class="tag">Ahrefs</span><span class="tag">Surfer</span><span class="tag">Clearscope</span><span class="tag">MarketMuse</span></div>
       </div>
       <div class="cell">
-        <span class="lbl">Traditional agency / manual</span>
-        <h3 style="margin-top:var(--s4)">Real execution, but slow, costly and half blind.</h3>
-        <p>A team does the work, by the hour. Results usually take three to six months, and most engagements are not instrumented for AI answers or for who is already on your site.</p>
+        <span class="lbl">Agencies &amp; manual work</span>
+        <h3 style="margin-top:var(--s4)">Real people doing real work. Slowly, by the hour.</h3>
+        <p>A team executes and bills for time. Results usually take three to six months, and few engagements are instrumented for AI answers or for who is already on your site.</p>
         <p style="margin-top:var(--s4)"><b style="color:var(--ink)">Strength.</b> Real humans who actually execute strategy and content.<br><b style="color:var(--ink)">Gap.</b> Slow, priced by the hour, rarely wired to AI-answer or first-party signals.</p>
         <div class="tags" style="margin-top:var(--s5)"><span class="tag">A typical SEO retainer &middot; $2,500 to $5,000 / mo</span></div>
       </div>
@@ -738,26 +738,26 @@
     <div class="shead" style="margin-top:var(--s7);margin-bottom:var(--s7)">
       <div class="shead-l"><span class="idx">03</span><span class="lbl">Side by side</span></div>
       <div class="shead-r">
-        <h2 class="d3 rv"><span class="ln"><span>Find, decide and act,</span></span><span class="ln"><span>in <span class="it">one layer.</span></span></span></h2>
-        <p class="lead rv fade">The tools below are strong inside their lane. The real question is how much of the journey from AI-era signal to revenue each one actually covers.</p>
+        <h2 class="d3 rv"><span class="ln"><span>Find it, decide it, do it,</span></span><span class="ln"><span><span class="it">in one place.</span></span></span></h2>
+        <p class="lead rv fade">Every tool below is strong in its own lane. The useful question is how much of the trip from AI-era signal to revenue each one actually covers.</p>
       </div>
     </div>
     {%- set Y = '<span class="mk-y"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>' -%}
     {%- set P = '<span class="mk-p"><svg viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg></span>' -%}
     {%- set N = '<span class="mk-n"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-linecap="round"><path d="M6 12h12"/></svg></span>' -%}
     {%- set ROWS = [
-      ('AI answer engine (GEO) visibility tracking',        ['y','y','p1','y2','n']),
-      ('Account buying-signal &amp; intent detection',      ['y','n','n','n','p3']),
-      ('Website visitor de-anonymisation',                  ['y','n','n','p4','n']),
-      ('LinkedIn buying-committee engagement',              ['y','n','n','n','p3']),
-      ('Competitor ad intelligence',                        ['y','n','p5','y6','p3']),
-      ('Unified intent scoring &amp; prioritised worklist', ['y','n','n','n','n']),
-      ('Managed execution across channels',                 ['y','n','p7','p8','y']),
-      ('Keyword research &amp; search strategy',            ['y','n','p','y','y']),
-      ('Content briefs &amp; on-page optimisation',         ['y','n','y','y','y']),
-      ('AI content generation',                             ['y','p9','y','p10','y']),
-      ('Technical SEO &amp; site auditing',                 ['y','n','p','y','y']),
-      ('Everything above, in one connected platform',       ['y','n','n','n','n'])
+      ('Visibility tracking in AI answers (GEO)',        ['y','y','p1','y2','n']),
+      ('Buying signals &amp; intent, per account',      ['y','n','n','n','p3']),
+      ('Naming the companies on your website',                  ['y','n','n','p4','n']),
+      ('Buying-committee engagement on LinkedIn',              ['y','n','n','n','p3']),
+      ('Tracking competitor ads',                        ['y','n','p5','y6','p3']),
+      ('One intent score &amp; a ranked worklist', ['y','n','n','n','n']),
+      ('A team that executes across channels',                 ['y','n','p7','p8','y']),
+      ('Keyword research &amp; search planning',            ['y','n','p','y','y']),
+      ('Content briefs &amp; on-page work',         ['y','n','y','y','y']),
+      ('AI-written content',                             ['y','p9','y','p10','y']),
+      ('Technical SEO &amp; site audits',                 ['y','n','p','y','y']),
+      ('All of the above, connected in one platform',       ['y','n','n','n','n'])
     ] -%}
     <div class="cmp rv fade">
       <table>
@@ -787,16 +787,16 @@
       <span>{{ N|safe }} Not offered</span>
     </div>
     <div class="fnotes">
-      <p><b>1</b> Jasper and Writesonic track AI answer visibility. SEO.ai and Byword do not.</p>
-      <p><b>2</b> Native to Semrush, Ahrefs (Brand Radar), Surfer and Clearscope. MarketMuse does not offer it.</p>
-      <p><b>3</b> An agency can do this manually, account by account. That is human effort, not an always-on data feed.</p>
-      <p><b>4</b> Semrush offers a Website Visitor ID pixel app that identifies a share of visitors. The other suites do not.</p>
-      <p><b>5</b> Writesonic tracks ads shown inside AI answers only, not paid search, shopping or display.</p>
-      <p><b>6</b> Semrush (full ad research) and Ahrefs (paid-search reports, organic-first). Surfer, Clearscope and MarketMuse do not.</p>
-      <p><b>7</b> SEO.ai auto-publishes AI content and Writesonic Enterprise adds a strategist. Automated or advisory, not a team running the work.</p>
-      <p><b>8</b> MarketMuse sells human-made content briefs. Semrush and Ahrefs refer you to third-party agency partners.</p>
-      <p><b>9</b> Profound and AthenaHQ can draft content. Otterly and Peec do not.</p>
-      <p><b>10</b> Semrush includes AI content generation (ContentShake). The other suites optimise content you write.</p>
+      <p><b>1</b> Jasper and Writesonic track visibility in AI answers; SEO.ai and Byword don&rsquo;t.</p>
+      <p><b>2</b> Built into Semrush, Ahrefs (Brand Radar), Surfer and Clearscope. Not offered by MarketMuse.</p>
+      <p><b>3</b> An agency can do this by hand, one account at a time. That&rsquo;s human effort, not an always-on feed.</p>
+      <p><b>4</b> Semrush offers a Website Visitor ID pixel app that identifies some visitors. The other suites don&rsquo;t.</p>
+      <p><b>5</b> Writesonic tracks ads that appear inside AI answers only; paid search, shopping and display aren&rsquo;t covered.</p>
+      <p><b>6</b> Semrush has full ad research and Ahrefs has paid-search reports (organic-first). Surfer, Clearscope and MarketMuse don&rsquo;t.</p>
+      <p><b>7</b> SEO.ai auto-publishes AI content and Writesonic Enterprise adds a strategist. Either automated or advisory; neither is a team running the work.</p>
+      <p><b>8</b> MarketMuse sells human-written content briefs. Semrush and Ahrefs point you to third-party agency partners.</p>
+      <p><b>9</b> Profound and AthenaHQ can draft content; Otterly and Peec can&rsquo;t.</p>
+      <p><b>10</b> Semrush includes AI content generation (ContentShake). The other suites optimise content you&rsquo;ve written.</p>
     </div>
   </section>
 
@@ -804,13 +804,13 @@
     <div class="wrap">
       <div class="shead" style="margin-bottom:var(--s7)">
         <div class="shead-l"><span class="idx">04</span><span class="lbl">What only we do</span></div>
-        <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>The go-to-market work</span></span><span class="ln"><span>the tools <span class="it">leave on the table.</span></span></span></h2></div>
+        <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>The work the tools</span></span><span class="ln"><span><span class="it">leave on the table.</span></span></span></h2></div>
       </div>
       <div class="ledger">
-        <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>Buying signals, scored to one worklist</h4><p>Funding, leadership moves, M&amp;A and launches across 26 signal types, weighted into a single intent score. No tool on this page offers account-level buying signals.</p></div></div>
-        <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>AI answer visibility you act on</h4><p>Plenty of tools chart where you show up in ChatGPT, Gemini and Perplexity. We fix the content behind the gaps, and our team ships the changes.</p></div></div>
-        <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>Visitors, wired into the same engine</h4><p>See the companies on your site before they fill in a form &mdash; recovering 95%+ of lost visitors &mdash; then feed them straight into intent scoring. A pixel alone is not the point. The connection is.</p></div></div>
-        <div class="ledger-row rv fade"><span class="idx">04</span><div><h4>One platform, one team that executes</h4><p>Signals, visitors, AI visibility, SEO and content in one place, run by a full-service {{ brand.name }} team. Not five subscriptions and a to-do list.</p></div></div>
+        <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>Buying signals, scored into one worklist</h4><p>Funding, leadership moves, M&amp;A and launches across 26 signal types, weighed into a single intent score. None of the tools on this page offer account-level buying signals.</p></div></div>
+        <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>AI-answer visibility you can act on</h4><p>Lots of tools chart where you appear in ChatGPT, Gemini and Perplexity. We fix the content behind the gaps, and our team ships the changes.</p></div></div>
+        <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>Visitors, plugged into the same engine</h4><p>See which companies are on your site before anyone fills in a form, then feed them straight into intent scoring. The pixel isn&rsquo;t the point. The connection is.</p></div></div>
+        <div class="ledger-row rv fade"><span class="idx">04</span><div><h4>One platform, one team doing the work</h4><p>Signals, visitors, AI visibility, SEO and content in one place, run by a full-service {{ brand.name }} team. Not five logins and a to-do list.</p></div></div>
       </div>
     </div>
   </section>
@@ -818,12 +818,12 @@
   <section class="wrap sec-sm">
     <div class="shead" style="margin-bottom:var(--s7)">
       <div class="shead-l"><span class="idx">05</span><span class="lbl">What is underneath</span></div>
-      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>The platform, the context</span></span><span class="ln"><span>and the <span class="it">guardrails.</span></span></span></h2></div>
+      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>The engine, the context</span></span><span class="ln"><span>and the <span class="it">guardrails.</span></span></span></h2></div>
     </div>
     <div class="cells cells-3">
-      <div class="cell"><h3>One engine, every model</h3><p>{{ brand.product }} runs on {{ brand.engine }}, our in-house agentic platform. It reasons across the leading commercial and open-source models and picks whichever fits the task best, instead of locking your whole platform to one vendor's roadmap or blind spots.</p></div>
-      <div class="cell"><h3>It knows your brand, not a generic prompt</h3><p>Upload your knowledge base, brand guidelines, positioning docs, even whole folders. {{ brand.engine }} reads them once and carries that context into every signal, brief and draft it produces, so the output sounds like your team wrote it.</p></div>
-      <div class="cell"><h3>Private by default, compliant by design</h3><p>Built to meet the privacy and data-handling standards your legal and security teams expect. Every file and conversation you share stays secured, and none of it trains any AI model &mdash; ours or anyone else's.</p></div>
+      <div class="cell"><h3>One engine, every model</h3><p>{{ brand.product }} runs on {{ brand.engine }}, our in-house agentic platform. It reasons across the leading commercial and open-source models and picks the best fit for each task, so you&rsquo;re never stuck with one vendor&rsquo;s blind spots.</p></div>
+      <div class="cell"><h3>It knows your brand, not just your prompt</h3><p>Upload your knowledge base, brand guidelines and positioning docs, even whole folders. {{ brand.engine }} reads them once and carries that context into every signal, brief and draft, so the output sounds like your team wrote it.</p></div>
+      <div class="cell"><h3>Private by default, compliant from day one</h3><p>Built to the privacy and data-handling standards your legal and security teams expect. Your files and conversations stay secured, and none of it is used to train any AI model, ours or anyone else&rsquo;s.</p></div>
     </div>
   </section>
 
@@ -832,13 +832,13 @@
     <div class="shead" style="margin-top:var(--s7)">
       <div class="shead-l"><span class="idx">06</span><span class="lbl">Where they lead</span></div>
       <div class="shead-r">
-        <h2 class="d3 rv"><span class="ln"><span>The honest part: where</span></span><span class="ln"><span>the <span class="it">incumbents win.</span></span></span></h2>
+        <h2 class="d3 rv"><span class="ln"><span>The honest bit: where</span></span><span class="ln"><span><span class="it">others are ahead.</span></span></span></h2>
         <div class="ledger" style="margin-top:var(--s7)">
-          <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>AI answer visibility is a real, crowded category</h4><p>Dedicated monitors like Profound and AthenaHQ, plus modules inside Ahrefs and Semrush, track AI answer visibility well. We are an early mover here, not the only one. Our edge is connecting it to signals and execution, not the tracking alone.</p></div></div>
-          <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>The deepest SEO datasets are theirs</h4><p>Ahrefs and Semrush have spent over a decade building backlink and keyword indexes larger than anything we run. If your single need is raw index depth, that is genuinely their strength, and we will say so.</p></div></div>
-          <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>Some go broader than you would expect</h4><p>Semrush ships a visitor-ID pixel and full ad research. Profound and AthenaHQ can draft content. They are not one-trick tools. What none of them do is tie signals, visitors and AI visibility into one scored worklist that a team then acts on.</p></div></div>
+          <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>AI-answer tracking is a real, crowded category</h4><p>Dedicated monitors like Profound and AthenaHQ, plus modules inside Ahrefs and Semrush, track AI-answer visibility well. We&rsquo;re an early mover here, not the only one. Our edge is wiring it to signals and execution, not the tracking on its own.</p></div></div>
+          <div class="ledger-row rv fade"><span class="idx">02</span><div><h4>They own the deepest SEO data</h4><p>Ahrefs and Semrush have spent more than a decade building backlink and keyword indexes larger than anything we run. If raw index depth is your only need, that&rsquo;s genuinely their strength, and we&rsquo;ll tell you so.</p></div></div>
+          <div class="ledger-row rv fade"><span class="idx">03</span><div><h4>Some reach further than you&rsquo;d expect</h4><p>Semrush ships a visitor-ID pixel and full ad research. Profound and AthenaHQ can draft content. These aren&rsquo;t one-trick tools. What none of them do is tie signals, visitors and AI visibility into one scored worklist that a team then acts on.</p></div></div>
         </div>
-        <p class="pull rv fade" style="margin-top:var(--s8);max-width:30ch">None of them connect the finding, the deciding and the doing <span class="it">in one place.</span></p>
+        <p class="pull rv fade" style="margin-top:var(--s8);max-width:30ch">Nobody else joins the finding, the deciding and the doing <span class="it">in one place.</span></p>
       </div>
     </div>
   </section>
@@ -847,18 +847,18 @@
     <span class="rule rv"></span>
     <div class="shead" style="margin-top:var(--s7);margin-bottom:var(--s6)">
       <div class="shead-l"><span class="idx">07</span><span class="lbl">The cost picture</span></div>
-      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>What each model</span></span><span class="ln"><span>actually <span class="it">costs.</span></span></span></h2></div>
+      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>What each approach</span></span><span class="ln"><span><span class="it">really costs.</span></span></span></h2></div>
     </div>
     <div class="ledger">
-      <div class="ledger-row rv fade"><span class="lbl">Monitors</span><div><h4>AI visibility monitors</h4><p>Dashboards that watch AI answers, before enterprise tiers. <b style="color:var(--ink)">From $29 to $399 / mo</b><sup class="fnb">a</sup></p></div></div>
-      <div class="ledger-row rv fade"><span class="lbl">Agents</span><div><h4>AI content &amp; SEO agents</h4><p>AI drafts and publishes content. You still steer and act on it. <b style="color:var(--ink)">From $59 to $999 / mo</b><sup class="fnb">a</sup></p></div></div>
-      <div class="ledger-row rv fade"><span class="lbl">Suites</span><div><h4>SEO &amp; content suites</h4><p>Self-serve subscriptions you operate yourself. <b style="color:var(--ink)">From $29 to $550 / mo</b><sup class="fnb">a</sup></p></div></div>
-      <div class="ledger-row rv fade"><span class="lbl">Agency</span><div><h4>Traditional SEO agency</h4><p>A team executes, but by the hour and over months. <b style="color:var(--ink)">$2,500 to $5,000 / mo</b><sup class="fnb">b</sup></p></div></div>
-      <div class="ledger-row rv fade" style="background:var(--paper2)"><span class="lbl lbl-ink">Ours</span><div><h4>{{ brand.product }}</h4><p>The platform and the team that runs it, on your accounts. <b style="color:var(--ink)">Custom &mdash; talk to us</b></p></div></div>
+      <div class="ledger-row rv fade"><span class="lbl">Monitors</span><div><h4>AI visibility monitors</h4><p>Dashboards that watch AI answers, before you reach enterprise tiers. <b style="color:var(--ink)">From $29 to $399 / mo</b><sup class="fnb">a</sup></p></div></div>
+      <div class="ledger-row rv fade"><span class="lbl">Agents</span><div><h4>AI content &amp; SEO agents</h4><p>AI drafts and publishes content. Steering it, and acting on it, is still your job. <b style="color:var(--ink)">From $59 to $999 / mo</b><sup class="fnb">a</sup></p></div></div>
+      <div class="ledger-row rv fade"><span class="lbl">Suites</span><div><h4>SEO &amp; content suites</h4><p>Self-serve subscriptions you run yourself. <b style="color:var(--ink)">From $29 to $550 / mo</b><sup class="fnb">a</sup></p></div></div>
+      <div class="ledger-row rv fade"><span class="lbl">Agency</span><div><h4>Traditional SEO agency</h4><p>A team does the work, billed by the hour, over months. <b style="color:var(--ink)">$2,500 to $5,000 / mo</b><sup class="fnb">b</sup></p></div></div>
+      <div class="ledger-row rv fade" style="background:var(--paper2)"><span class="lbl lbl-ink">Ours</span><div><h4>{{ brand.product }}</h4><p>The platform, plus the team that runs it, on your accounts. <b style="color:var(--ink)">Custom &mdash; let&rsquo;s talk</b></p></div></div>
     </div>
     <div class="fnotes">
-      <p><b>a</b> Published starting prices from each vendor's own pricing page, verified July 2026. Prices in this category change often, so check the linked source for the current figure.</p>
-      <p><b>b</b> Typical US small and lower-mid-market SEO retainer per industry pricing surveys; larger programmes run higher.</p>
+      <p><b>a</b> Starting prices as published on each vendor&rsquo;s own pricing page, checked July 2026. Prices here move often, so check the linked source for today&rsquo;s figure.</p>
+      <p><b>b</b> A typical US small to lower-mid-market SEO retainer, per industry pricing surveys. Bigger programmes cost more.</p>
     </div>
   </section>
 
@@ -867,8 +867,8 @@
     <div class="shead" style="margin-top:var(--s7)">
       <div class="shead-l"><span class="idx">08</span><span class="lbl">Sources &amp; method</span></div>
       <div class="shead-r prose">
-        <p>Every claim here was checked against each vendor's own pricing, feature and documentation pages, then re-verified against independent sources (G2, Capterra, product docs and reputable reviews) in July 2026. AI answer visibility tracking is a fast-moving, competitive category, so we make no claim to be first or only. Where a competitor leads, or reaches beyond its lane, we say so above.</p>
-        <p style="font-size:var(--fs-xs);color:var(--ink3)">Vendor pricing and features:
+        <p>Every claim on this page was checked against each vendor&rsquo;s own pricing, feature and documentation pages, then re-checked against independent sources (G2, Capterra, product docs and reputable reviews) in July 2026. AI-answer tracking moves fast and is crowded, so we make no claim to be first or only. Where a competitor leads, or reaches beyond its lane, we say so above.</p>
+        <p style="font-size:var(--fs-xs);color:var(--ink3)">Pricing and feature sources:
           <a href="https://www.semrush.com/pricing/" rel="nofollow noopener" target="_blank">Semrush</a> &middot;
           <a href="https://ahrefs.com/pricing" rel="nofollow noopener" target="_blank">Ahrefs</a> &middot;
           <a href="https://surferseo.com/pricing/" rel="nofollow noopener" target="_blank">Surfer</a> &middot;
@@ -897,8 +897,8 @@
     </div>
   </section>
 
-  {% set cta_h = 'Judge it on your own accounts.' %}
-  {% set cta_p = 'The fastest way to test any of this is to point it at the companies you already care about.' %}
+  {% set cta_h = "Don't take our word for it." %}
+  {% set cta_p = 'Point it at the companies you already care about and judge the results yourself.' %}
   {% include "_press_cta.html" %}
 
 {# ════════════════════════════ INTEGRATIONS ═══════════════════════════ #}
@@ -907,12 +907,12 @@
   <header class="wrap hero">
     <span class="lbl rv fade">Integrations</span>
     <h1 class="d1 rv">
-      <span class="ln"><span>Works inside the stack</span></span>
-      <span class="ln"><span>you <span class="mk">already run.</span></span></span>
+      <span class="ln"><span>No new tab.</span></span>
+      <span class="ln"><span><span class="mk">No rip and replace.</span></span></span>
     </h1>
     <div class="hero-foot">
       <span class="idx rv fade">01 / Integrations</span>
-      <p class="lead rv fade">{{ brand.name }} plugs into your CRM, analytics, ad platforms and search tools &mdash; so signals, scores and the next move show up where your team already works.</p>
+      <p class="lead rv fade">{{ brand.name }} plugs into your CRM, analytics, ad platforms and search tools, so signals, scores and next moves show up where your team already spends its day.</p>
       <div class="btns rv fade"><button class="btn btn-1" data-signup>Sign up</button></div>
     </div>
   </header>
@@ -928,17 +928,17 @@
 
   <section class="wrap sec">
     <div class="cells cells-3">
-      <div class="cell"><span class="lbl">01</span><h3 style="margin-top:var(--s4)">CRM</h3><p>Two-way sync, so a scored account lands on the right owner's list.</p><div class="ig-list"><span>HubSpot</span><span>Salesforce</span><span>Pipedrive</span><span>Zoho</span><span>Close</span></div></div>
-      <div class="cell"><span class="lbl">02</span><h3 style="margin-top:var(--s4)">Messaging &amp; email</h3><p>The signal reaches the rep where they already are, not in another tab.</p><div class="ig-list"><span>Slack</span><span>Gmail</span><span>Outlook</span><span>Teams</span></div></div>
-      <div class="cell"><span class="lbl">03</span><h3 style="margin-top:var(--s4)">Paid media</h3><p>Audiences and budget follow live intent instead of a quarterly plan.</p><div class="ig-list"><span>Google Ads</span><span>LinkedIn Ads</span><span>Meta</span><span>Microsoft Ads</span></div></div>
-      <div class="cell"><span class="lbl">04</span><h3 style="margin-top:var(--s4)">Analytics</h3><p>Visits, conversions and de-anonymised companies feed the same score.</p><div class="ig-list"><span>Your website (GTM)</span><span>GA4</span><span>Search Console</span><span>Looker Studio</span><span>BigQuery</span></div></div>
-      <div class="cell"><span class="lbl">05</span><h3 style="margin-top:var(--s4)">Search &amp; content</h3><p>Rankings, AI answer citations and briefs in one pipeline.</p><div class="ig-list"><span>Semrush</span><span>Ahrefs</span><span>WordPress</span><span>Webflow</span></div></div>
-      <div class="cell"><span class="lbl">06</span><h3 style="margin-top:var(--s4)">Data &amp; automation</h3><p>Anything not on this list, wired through the plumbing you already use.</p><div class="ig-list"><span>Zapier</span><span>Make</span><span>Webhooks</span><span>REST API</span><span>Sheets</span></div></div>
+      <div class="cell"><span class="lbl">01</span><h3 style="margin-top:var(--s4)">CRM</h3><p>Two-way sync. A scored account lands on the right owner&rsquo;s list, not in a shared inbox.</p><div class="ig-list"><span>HubSpot</span><span>Salesforce</span><span>Pipedrive</span><span>Zoho</span><span>Close</span></div></div>
+      <div class="cell"><span class="lbl">02</span><h3 style="margin-top:var(--s4)">Messaging &amp; email</h3><p>The alert finds the rep inside the conversation they&rsquo;re already having.</p><div class="ig-list"><span>Slack</span><span>Gmail</span><span>Outlook</span><span>Teams</span></div></div>
+      <div class="cell"><span class="lbl">03</span><h3 style="margin-top:var(--s4)">Paid media</h3><p>Audiences and budget follow live intent, not last quarter&rsquo;s plan.</p><div class="ig-list"><span>Google Ads</span><span>LinkedIn Ads</span><span>Meta</span><span>Microsoft Ads</span></div></div>
+      <div class="cell"><span class="lbl">04</span><h3 style="margin-top:var(--s4)">Analytics</h3><p>Visits, conversions and identified companies all feed the same score.</p><div class="ig-list"><span>Your website (GTM)</span><span>GA4</span><span>Search Console</span><span>Looker Studio</span><span>BigQuery</span></div></div>
+      <div class="cell"><span class="lbl">05</span><h3 style="margin-top:var(--s4)">Search &amp; content</h3><p>Rankings, AI-answer citations and briefs, flowing through one pipeline.</p><div class="ig-list"><span>Semrush</span><span>Ahrefs</span><span>WordPress</span><span>Webflow</span></div></div>
+      <div class="cell"><span class="lbl">06</span><h3 style="margin-top:var(--s4)">Data &amp; automation</h3><p>Anything missing from this page, wired through plumbing you already trust.</p><div class="ig-list"><span>Zapier</span><span>Make</span><span>Webhooks</span><span>REST API</span><span>Sheets</span></div></div>
     </div>
   </section>
 
-  {% set cta_h = 'Do not see your tool?' %}
-  {% set cta_p = 'We wire bespoke connectors into your workflow. Tell us your stack and we will make it fit.' %}
+  {% set cta_h = 'Your tool not on the list?' %}
+  {% set cta_p = "We build custom connectors. Tell us your stack and we'll make it fit." %}
   {% include "_press_cta.html" %}
 
 {# ═════════════════════════════ RESOURCES ═════════════════════════════ #}
@@ -947,28 +947,28 @@
   <header class="wrap hero">
     <span class="lbl rv fade">Resources</span>
     <h1 class="d1 rv">
-      <span class="ln"><span>Get sharper on</span></span>
-      <span class="ln"><span><span class="mk">buying signals.</span></span></span>
+      <span class="ln"><span>Read the market</span></span>
+      <span class="ln"><span><span class="mk">the way we do.</span></span></span>
     </h1>
     <div class="hero-foot">
       <span class="idx rv fade">01 / Resources</span>
-      <p class="lead rv fade">The thinking behind intent-led growth, plus the live catalogue of everything we track and the {{ brand.agents_plural|lower }} that act on it. Start here.</p>
+      <p class="lead rv fade">The thinking behind intent-led growth, the full catalogue of what we watch, and the {{ brand.agents_plural|lower }} that act on it. Start anywhere.</p>
     </div>
   </header>
 
   <section class="wrap sec-sm">
     <span class="rule rv"></span>
     <div class="cells cells-3" style="margin-top:var(--s7);border-top:0">
-      <a class="cell" href="/signals"><span class="lbl">Catalogue</span><h3 style="margin-top:var(--s4)">Every signal we watch</h3><p>Twenty-six buying signals, grouped and explained, with what each one tells you.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="/agents"><span class="lbl">Directory</span><h3 style="margin-top:var(--s4)">The {{ brand.agents_plural|lower }}</h3><p>What each agent does, how it works, and who on your team it helps.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="/platform"><span class="lbl">Explainer</span><h3 style="margin-top:var(--s4)">How intent scoring works</h3><p>Type, severity, recency and stacking &mdash; and why one number beats five dashboards.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="/why-intelligence"><span class="lbl">Comparison</span><h3 style="margin-top:var(--s4)">How we compare</h3><p>A sourced, footnoted look at the alternatives, including where they are ahead.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-      <a class="cell" href="#" data-demo data-interest="The 2026 report" data-prefill="I'd like the State of Buying Signals 2026 report."><span class="lbl">Report</span><h3 style="margin-top:var(--s4)">State of buying signals 2026</h3><p>Ask us for a copy and we will send it over.</p><span class="more">Request it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="/signals"><span class="lbl">Catalogue</span><h3 style="margin-top:var(--s4)">The signal catalogue</h3><p>All twenty-six buying signals, grouped and explained, with what each one actually tells you.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="/agents"><span class="lbl">Directory</span><h3 style="margin-top:var(--s4)">The {{ brand.agents_plural|lower }} line-up</h3><p>What each one does, how it does it, and whose week it gives back.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="/platform"><span class="lbl">Explainer</span><h3 style="margin-top:var(--s4)">How the score works</h3><p>Type, strength, freshness and stacking, and why one number beats five dashboards.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="/why-intelligence"><span class="lbl">Comparison</span><h3 style="margin-top:var(--s4)">How we compare</h3><p>A sourced, footnoted look at the alternatives, including where they&rsquo;re ahead.</p><span class="more">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+      <a class="cell" href="#" data-demo data-interest="The 2026 report" data-prefill="I'd like the State of Buying Signals 2026 report."><span class="lbl">Report</span><h3 style="margin-top:var(--s4)">The State of Buying Signals 2026</h3><p>Ask for a copy and we&rsquo;ll send it your way.</p><span class="more">Request it <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
     </div>
   </section>
 
-  {% set cta_h = 'Want the playbooks first?' %}
-  {% set cta_p = 'Tell us where to send our latest guides on intent-led growth and GEO. No spam, just the good stuff.' %}
+  {% set cta_h = 'Get the playbooks first.' %}
+  {% set cta_p = 'Tell us where to send our guides on intent-led growth and AI search. Useful, or nothing at all.' %}
   {% include "_press_cta.html" %}
 
 {# ════════════════════════════ INDUSTRIES ═════════════════════════════ #}
@@ -977,12 +977,12 @@
   <header class="wrap hero">
     <span class="lbl rv fade">Industries</span>
     <h1 class="d1 rv">
-      <span class="ln"><span>Built for your</span></span>
-      <span class="ln"><span>industry&rsquo;s <span class="it">motion.</span></span></span>
+      <span class="ln"><span>Every market buys</span></span>
+      <span class="ln"><span><span class="it">differently.</span></span></span>
     </h1>
     <div class="hero-foot">
       <span class="idx rv fade">{{ '%02d'|format(industries|length) }} markets</span>
-      <p class="lead rv fade">One signal engine, tuned to the way your market actually buys. Pick an industry to see the buying signals we watch and the {{ brand.agents_plural|lower }} reframed in your vocabulary.</p>
+      <p class="lead rv fade">One signal engine, tuned to how your market actually buys. Pick an industry to see the signals we watch there and the {{ brand.agents_plural|lower }} retuned in your vocabulary.</p>
     </div>
   </header>
 
@@ -1013,8 +1013,8 @@
     </div>
   </section>
 
-  {% set cta_h = 'Do not see your industry?' %}
-  {% set cta_p = 'Tell us how your market buys and we will tune the signal engine and the agents to your exact motion.' %}
+  {% set cta_h = 'Your industry not listed?' %}
+  {% set cta_p = "Tell us how your market buys and we'll tune the signal engine, and the agents, to match." %}
   {% include "_press_cta.html" %}
 
 {# ═════════════════════════ INDUSTRY DETAIL ═══════════════════════════ #}
@@ -1031,7 +1031,7 @@
     <div class="hero-foot">
       <span class="idx rv fade">01 / {{ industry.short }}</span>
       <p class="lead rv fade">{{ industry.lead }}</p>
-      <div class="btns rv fade"><button class="btn btn-1" data-signup>Sign up</button><button class="btn btn-2" type="button" data-video>Watch the walkthrough</button></div>
+      <div class="btns rv fade"><button class="btn btn-1" data-signup>Sign up</button><button class="btn btn-2" type="button" data-video>Take the two-minute tour</button></div>
     </div>
   </header>
 
@@ -1045,7 +1045,7 @@
   <section class="wrap sec">
     <div class="shead" style="margin-bottom:var(--s7)">
       <div class="shead-l"><span class="idx">02</span><span class="lbl">The challenge</span></div>
-      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>What makes {{ industry.short|lower }}</span></span><span class="ln"><span><span class="it">hard.</span></span></span></h2></div>
+      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>Why selling into {{ industry.short|lower }}</span></span><span class="ln"><span><span class="it">is hard.</span></span></span></h2></div>
     </div>
     <div class="ledger">
       {% for p in industry.pains %}
@@ -1059,8 +1059,8 @@
     <div class="shead" style="margin-top:var(--s7);margin-bottom:var(--s7)">
       <div class="shead-l"><span class="idx">03</span><span class="lbl">The {{ brand.agents_plural|lower }}</span></div>
       <div class="shead-r">
-        <h2 class="d3 rv"><span class="ln"><span>{{ industry.agents|length }} {{ brand.agents_plural|lower }}, in</span></span><span class="ln"><span>your <span class="it">vocabulary.</span></span></span></h2>
-        <p class="lead rv fade">Same engine, your words. Each agent below is one of our core {{ brand.agents_plural|lower }}, tuned to the signals and language of {{ industry.short|lower }}.</p>
+        <h2 class="d3 rv"><span class="ln"><span>{{ industry.agents|length }} {{ brand.agents_plural|lower }}, speaking</span></span><span class="ln"><span><span class="it">your language.</span></span></span></h2>
+        <p class="lead rv fade">Same engine, your words. Each one below is a core {{ brand.agent_singular|lower }} retuned for the signals and language of {{ industry.short|lower }}.</p>
       </div>
     </div>
     <div class="dir">
@@ -1087,7 +1087,7 @@
   <section class="wrap sec-sm">
     <div class="shead" style="margin-bottom:var(--s7)">
       <div class="shead-l"><span class="idx">05</span><span class="lbl">The plays</span></div>
-      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>From signal to</span></span><span class="ln"><span><span class="it">pipeline.</span></span></span></h2></div>
+      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>From first signal</span></span><span class="ln"><span><span class="it">to signed deal.</span></span></span></h2></div>
     </div>
     <div class="ledger">
       {% for pl in industry.plays %}
@@ -1104,8 +1104,8 @@
   </section>
   {% endif %}
 
-  {% set cta_h = 'See it on your ' ~ industry.short|lower ~ ' accounts.' %}
-  {% set cta_p = 'Sign up and watch the signal layer light up on the organisations you already care about.' %}
+  {% set cta_h = 'Run it on your ' ~ industry.short|lower ~ ' accounts.' %}
+  {% set cta_p = 'Sign up and watch the signals light up on organisations you already know.' %}
   {% include "_press_cta.html" %}
 
 {# ═══════════════════════════════ LOGIN ═══════════════════════════════ #}
@@ -1113,14 +1113,14 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <div class="wrap login">
     <div class="login-in">
-      <span class="lbl">Secure login</span>
+      <span class="lbl">Sign in</span>
       <h1 class="d3">{% if returning %}Welcome <span class="it">back.</span>{% else %}<span class="it">Welcome.</span>{% endif %}</h1>
-      <p class="login-sub">{% if returning %}Log in with your Google account to continue.{% else %}Log in or sign up with Google &mdash; one click and you are in.{% endif %}</p>
-      {% if logged_out %}<div class="g-ok">You have been signed out. Log in with Google to continue.</div>{% endif %}
+      <p class="login-sub">{% if returning %}Pick up where you left off. Sign in with Google.{% else %}One click with Google and you&rsquo;re in. New here? The same click creates your account.{% endif %}</p>
+      {% if logged_out %}<div class="g-ok">You&rsquo;re signed out. Sign back in with Google whenever you&rsquo;re ready.</div>{% endif %}
       <div class="g-err" id="gerr" style="display:{% if error %}flex{% else %}none{% endif %}">{{ error or '' }}</div>
       <div class="gbtn"><div id="gsiBtn" data-cid="{{ google_client_id }}"></div></div>
-      <div class="g-secure"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Secure sign-in with Google</div>
-      <div class="login-foot">New to {{ brand.name }}? The button above creates your account automatically.</div>
+      <div class="g-secure"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Signed in securely through Google</div>
+      <div class="login-foot">New to {{ brand.name }}? Same button. We&rsquo;ll set you up automatically.</div>
     </div>
   </div>
   <script>
@@ -1206,8 +1206,8 @@
     <div id="leadBody">
       <div class="ov-h">
         <span class="lbl">{{ brand.name }}</span>
-        <h3>Get in touch</h3>
-        <p>Tell us what you are trying to do and we will come back to you.</p>
+        <h3>Let&rsquo;s talk</h3>
+        <p>Tell us what you&rsquo;re trying to move, and a real person will get back to you.</p>
       </div>
       <form id="leadForm" autocomplete="on" novalidate>
         <div class="f-pills">
@@ -1219,16 +1219,16 @@
           <div class="f" id="f-co"><label for="nvC">Company</label><input id="nvC" name="company" placeholder="Company Inc." maxlength="160" autocomplete="organization"></div>
         </div>
         <div class="f" id="f-email"><label for="nvE">Work email</label><input id="nvE" name="email" type="email" placeholder="jane@company.com" maxlength="160" autocomplete="email"></div>
-        <div class="f" id="f-msg"><label for="nvM">What are you hoping to do? <span class="opt">optional</span></label><textarea id="nvM" name="message" rows="3" placeholder="e.g. We want live funding signals on our target accounts." maxlength="2000"></textarea></div>
+        <div class="f" id="f-msg"><label for="nvM">What should we help you move? <span class="opt">optional</span></label><textarea id="nvM" name="message" rows="3" placeholder="e.g. Flag our target accounts the week they raise money." maxlength="2000"></textarea></div>
         <div class="f-err" id="leadErr" role="alert"></div>
         <button type="submit" class="btn btn-1 f-submit" id="leadSubmit"><span id="leadSubmitTx">Send message</span></button>
-        <p class="f-note">We will only use your details to reach out about {{ brand.product }}. No spam, ever.</p>
+        <p class="f-note">We&rsquo;ll only use this to reply about {{ brand.product }}. No newsletters you didn&rsquo;t ask for.</p>
       </form>
     </div>
     <div class="f-done" id="leadDone">
       <span class="mark"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span>
-      <h3>You are on the list.</h3>
-      <p id="leadDoneMsg">Thanks &mdash; our team will get in touch to get you set up.</p>
+      <h3>Got it.</h3>
+      <p id="leadDoneMsg">Thanks. Someone from our team will be in touch shortly.</p>
       <button type="button" class="btn btn-2" id="leadDoneClose">Done</button>
     </div>
   </div>
@@ -1243,13 +1243,13 @@
     <button class="ov-x" id="suClose" aria-label="Close"><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     <div class="ov-h">
       <span class="lbl">{{ brand.name }}</span>
-      <h3>Create your account</h3>
-      <p>Sign up in one click with your Google account. No forms, no waiting.</p>
+      <h3>Start in one click</h3>
+      <p>Sign up with your Google account. No forms, no waiting, no sales call required.</p>
     </div>
     <div class="g-err" id="suErr" style="display:none"></div>
     <div class="gbtn"><div id="suGsiBtn" data-cid="{{ google_client_id }}"></div></div>
     <a class="btn btn-2 g-alt" id="suFallback" href="/login" style="width:100%;justify-content:center">Continue with Google</a>
-    <div class="g-secure"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Secure sign-up with Google</div>
+    <div class="g-secure"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Signed up securely through Google</div>
     <div class="login-foot" style="text-align:center">Already have an account? <a class="lk" href="/login">Log in</a></div>
   </div>
 </div>
@@ -1258,7 +1258,7 @@
   <div class="ov-bg" data-vclose></div>
   <div class="ov-mid">
     <button class="ov-x" aria-label="Close" data-vclose><svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-    <div class="ov-h"><span class="lbl">Platform walkthrough</span><h3 id="v-t">Inside the platform &mdash; how it works, and how it is built</h3></div>
+    <div class="ov-h"><span class="lbl">Platform walkthrough</span><h3 id="v-t">The two-minute tour: what it sees, and what it does about it</h3></div>
     <div class="vframe" id="vframe">
       <div class="vph">
         <span class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
@@ -1514,8 +1514,8 @@
         submit.classList.remove('loading'); submit.disabled = false; tx.textContent = 'Send message';
         if (res.ok && res.d && res.d.ok){
           document.getElementById('leadDoneMsg').textContent = interest === 'Build a custom agent'
-            ? 'Thanks — our team will get in touch to scope your custom agent.'
-            : 'Thanks — our team will be in touch shortly.';
+            ? 'Thanks. We\u2019ll be in touch to scope your agent with you.'
+            : 'Thanks. Someone from our team will be in touch shortly.';
           document.getElementById('leadBody').style.display = 'none';
           document.getElementById('leadDone').classList.add('on');
           try { document.dispatchEvent(new CustomEvent('p2:lead_submit', {detail:{interest:interest}})); } catch(_){}

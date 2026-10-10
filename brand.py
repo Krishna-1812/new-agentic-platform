@@ -30,7 +30,7 @@ BRAND = {
     #   old "Platform Playbook"          ->  handbook
     #   old "VIMI"                       ->  assistant
     "product": "Northaxis Revenue Intelligence",
-    "tagline": "Know which accounts are ready to buy.",
+    "tagline": "Find the accounts already moving.",
     "hub": "Workspace",
     "agents_plural": "Agents",
     "agent_singular": "Agent",
