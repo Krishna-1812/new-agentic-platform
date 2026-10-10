@@ -46,6 +46,9 @@ def world(monkeypatch):
     appmod._acct_reset()
     monkeypatch.setattr(appmod, "_fetch_google_ads_rows", lambda force=False: ROWS)
     monkeypatch.setattr(appmod, "_acct_doc", lambda: (DOC, "https://docs.google.com/document/d/x/edit", None))
+    # No DNS in tests: a real domain can stop resolving (mine.in, 2026-10-10).
+    from tracker import watch_safety
+    monkeypatch.setattr(watch_safety, "check", lambda url: None)
     yield
     client_accounts_store.reset_memory()
     watch_store.reset_memory()
