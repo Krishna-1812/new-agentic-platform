@@ -51,6 +51,54 @@
   var doc = document, root = doc.documentElement;
   var RM = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var FINE = window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+  /* ── 0. Seat the hero deck in the room the headline leaves ────────────
+     Layout, not motion, so it runs with reduced motion too. The deck is
+     sized and placed from the headline's real right edge (whatever its
+     words are) to just inside the page edge, and centred on the headline
+     vertically, so it never touches the type and never floats in a gap.
+     The fallback in press.css applies until this runs, or without script. */
+  (function () {
+    var deck = doc.getElementById("deck"), hero = deck && deck.parentNode, h1 = hero && hero.querySelector("h1");
+    if (!h1) return;
+    // The deck's back cards and sticker reach past its box: left/right as a
+    // share of its width, up as a share of its height, down in pixels.
+    var GAP = 56, MIN = 250, MAX = 360, OUT_L = 0.11, OUT_R = 0.13, OUT_T = 0.22, OUT_B = 50;
+    function textRight() {
+      var right = 0, walk = doc.createTreeWalker(h1, 4), t, rg = doc.createRange(), rs, i;
+      while ((t = walk.nextNode())) {
+        if (!t.nodeValue.trim()) continue;
+        rg.selectNodeContents(t); rs = rg.getClientRects();
+        for (i = 0; i < rs.length; i++) if (rs[i].width) right = Math.max(right, rs[i].right);
+      }
+      Array.prototype.forEach.call(h1.querySelectorAll(".mk"), function (m) { right = Math.max(right, m.getBoundingClientRect().right); });
+      return right;
+    }
+    function seat() {
+      var s = deck.style;
+      s.left = s.top = s.width = s.right = ""; deck.classList.remove("unseated");
+      if (window.getComputedStyle(deck).display === "none") return;
+      var hr = hero.getBoundingClientRect(), pad = parseFloat(window.getComputedStyle(hero).paddingRight) || 0;
+      var limit = Math.min(root.clientWidth - pad, hr.right + 120);
+      var from = textRight() + GAP, room = limit - from, k = 1 + OUT_L + OUT_R;
+      if (room < MIN * k) { deck.classList.add("unseated"); return; }
+      var w = Math.min(MAX, room / k), h = w * 3.4 / 4;
+      var visLeft = from + (room - w * k) / 2;
+      var visH = h * (1 + OUT_T) + OUT_B, mid = h1.offsetTop + h1.offsetHeight / 2;
+      s.right = "auto";
+      s.width = w.toFixed(1) + "px";
+      s.left = (visLeft + w * OUT_L - hr.left).toFixed(1) + "px";
+      s.top = (mid - visH / 2 + h * OUT_T).toFixed(1) + "px";
+    }
+    var pend = false;
+    function later() { if (!pend) { pend = true; window.requestAnimationFrame(function () { pend = false; seat(); }); } }
+    seat(); later();
+    if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(later);
+    window.addEventListener("load", later);
+    window.addEventListener("resize", later);
+    setTimeout(later, 400);
+  })();
+
   if (RM) { root.classList.add("rm"); return; }
   root.classList.add("play");
 

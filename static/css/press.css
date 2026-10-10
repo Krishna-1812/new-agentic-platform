@@ -777,7 +777,7 @@ a.ledger-row:hover { background: var(--paper2); }
 .foot-tag { font-family: var(--face-display); font-size: var(--fs-h3); font-weight: var(--fw-book);
             font-style: italic; line-height: 1.12; letter-spacing: var(--ls-h); max-width: 18ch;
             font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 48; margin-block: var(--s5) var(--s6); }
-.foot-cols { display: flex; gap: var(--s9); }
+.foot-cols { display: flex; gap: clamp(var(--s6), 4vw, var(--s9)); }
 .foot-col { display: flex; flex-direction: column; gap: var(--s3); min-width: 120px; }
 .foot-col h5 { font-size: var(--fs-label); font-weight: var(--fw-semi); letter-spacing: var(--ls-label);
                text-transform: uppercase; color: var(--ink3); margin-bottom: var(--s2); }
@@ -786,7 +786,7 @@ a.ledger-row:hover { background: var(--paper2); }
 .foot-bottom { display: flex; flex-wrap: wrap; gap: var(--s5); justify-content: space-between;
                padding-block: var(--s5); border-top: 1px solid var(--rule); font-size: var(--fs-xs); color: var(--ink3); }
 .foot-links { display: flex; gap: var(--s5); }
-@media (max-width: 900px) { .foot-in { grid-template-columns: 1fr; } .foot-cols { flex-wrap: wrap; gap: var(--s7); } }
+@media (max-width: 1180px) { .foot-in { grid-template-columns: 1fr; } .foot-cols { flex-wrap: wrap; gap: var(--s7); } }
 
 /* ════════════════════════════════════════════════════════════════════════
    OVERLAYS
@@ -1429,13 +1429,15 @@ a.stat:hover { border-top-color: transparent; }
 @media (min-width: 1120px) {
   .deck {
     display: block; position: absolute; z-index: 0;
-    right: var(--mar); top: clamp(80px, 9vw, 140px);
+    right: calc(var(--mar) * 0.75); top: clamp(110px, 11vw, 170px);
     width: clamp(260px, 22vw, 330px); aspect-ratio: 4 / 3.4;
     transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0);
     transition: transform 700ms var(--glide);
     cursor: pointer;
   }
   .hero-play > :not(.deck) { position: relative; z-index: 1; }
+  /* press-play.js found no room beside the headline: leave the type alone. */
+  .deck.unseated { display: none; }
 }
 .deck-card {
   position: absolute; inset: 0;
