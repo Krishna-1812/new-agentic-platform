@@ -63,7 +63,7 @@
     is the site's single most recognisable mark. Zalando Sans is the text
     face outcomes.digital uses, and the product's too. -#}
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Zalando+Sans:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/press.css?v=4">
+<link rel="stylesheet" href="/static/css/press.css?v=5">
 {#- The no-JS contract, same as the product's: every hidden state in press.css
     is gated on html.js, so a page whose script never runs shows finished type
     instead of an empty column. Set here, before first paint, so the reveal
@@ -139,7 +139,7 @@
       <div class="deck-card c-amber" data-pos="1"><span class="deck-k">C-suite join</span><b>Northwind</b><span class="deck-l">New VP Marketing</span><span class="deck-s">8.7</span></div>
       <div class="deck-card c-sky" data-pos="2"><span class="deck-k">Pricing-page visit</span><b>Vertex Labs</b><span class="deck-l">3 visits this week</span><span class="deck-s">8.1</span></div>
       <div class="deck-card c-ink" data-pos="3"><span class="deck-k">AI answer mention</span><b>Beacon AI</b><span class="deck-l">Cited in 4 answers</span><span class="deck-s">7.5</span></div>
-      <svg class="sticker" viewBox="0 0 120 120"><defs><path id="stk" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1 -88 0"/></defs><circle cx="60" cy="60" r="58"/><text><textPath href="#stk">READING THE MARKET &#8226; DAY AND NIGHT &#8226; </textPath></text><circle class="sticker-dot" cx="60" cy="60" r="13"/></svg>
+      <svg class="sticker" viewBox="0 0 120 120"><defs><path id="stk" d="M60 60m-44 0a44 44 0 1 1 88 0a44 44 0 1 1 -88 0"/></defs><circle cx="60" cy="60" r="58"/><text><textPath href="#stk" textLength="272" lengthAdjust="spacing">READING THE MARKET &#8226; DAY AND NIGHT &#8226;</textPath></text><circle class="sticker-dot" cx="60" cy="60" r="13"/></svg>
     </div>
     <span class="lbl rv fade">Revenue intelligence with a compass</span>
     <h1 class="d1 rv">
@@ -1690,7 +1690,7 @@
     the signal path, the shape morphs and the deck's springs. press-play.js
     works without it; those three simply fall back or stay still. -#}
 <script src="{{ url_for('static', filename='vendor/anime/anime.nx.min.js') }}?v=4.5.0" defer></script>
-<script src="{{ url_for('static', filename='js/press-play.js') }}?v=3" defer></script>
+<script src="{{ url_for('static', filename='js/press-play.js') }}?v=4" defer></script>
 <script src="{{ url_for('static', filename='js/visitor_track.js') }}?v=5"></script>
 {% endif %}
 </body>
