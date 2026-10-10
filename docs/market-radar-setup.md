@@ -31,6 +31,9 @@ Give it a company's website and it:
    competes with other chains: one-site businesses are dropped, the map is not searched, and
    moves are scored without distance. Core Care Clinic, with three clinics in two states, is
    the case this was built for.
+   The company's own other domains (its email domain, or the same name under another ending,
+   such as corecareclinic.org for corecareclinic.com) are never treated as competitors or as
+   new businesses nearby.
 4. **Looks around it.**
    - *Nearby and new* (`market_radar_radar.py`): new businesses near each site, or new brands
      in the category.

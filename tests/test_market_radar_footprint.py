@@ -178,7 +178,9 @@ def test_the_map_is_searched_around_every_clinic_and_each_find_names_its_site():
     meta = rv.from_places(pool, CORE_CARE, PLAN, places=sp)
     assert {lat for lat, r in sp.calls if r != sp.SELF_RADIUS_KM} == {42.38, 42.7, 27.95}
     assert [s["site"] for s in meta["sites"]] == ["Waltham", "North Andover", "Tampa"]
-    assert all(s["added"] == rv.MIN_PLACES_PER_SITE for s in meta["sites"])
+    # Ten places with a website near each clinic, under the cap of 15 a site: all kept.
+    assert rv.MIN_PLACES_PER_SITE == 15
+    assert all(s["added"] == 10 for s in meta["sites"])
     assert meta["added"] == 30 and meta["categories"] == ["doctor", "psychiatrist"]
     via = pool.items["northandoverbh.com"]["via"][0]
     assert via["near"] == "North Andover" and via["distance_km"] == 1.1
@@ -451,3 +453,144 @@ def test_a_moves_scope_is_stored_and_read_back(pg):
     assert row["scope"] == "peripheral"
     with pytest.raises(ValueError):
         pg.set_event_scope(eid, "unrelated")
+
+
+# == what the first free run on real data found (2026-10-10) ===========================
+
+def test_the_map_query_sorts_nearest_first_before_its_limit():
+    seen = {}
+
+    def runner(sql, params):
+        seen["sql"], seen["params"] = sql, params
+        return []
+    from tracker import market_radar_places as places
+    places.query(42.3766, -71.2359, 5, categories=["psychiatry"], terms=["Mental!"],
+                 release="2026-09-23.1", runner=runner)
+    sql = seen["sql"]
+    assert sql.index("ORDER BY") < sql.index("LIMIT")
+    assert seen["params"][-4:] == [42.3766, 42.3766, -71.2359, -71.2359]
+    # A stem matches at the start of a word, cleaned of anything but [a-z0-9_].
+    assert "regexp_matches(basic_category, ?)" in sql and "(^|_)mental" in seen["params"]
+    assert "LIKE" not in sql
+
+
+@pytest.mark.parametrize("category, matches", [
+    ("behavioral_or_mental_health_clinic", True), ("mental_health_service", True),
+    ("environmental_conservation_organization", False), ("psychiatry", True),
+])
+def test_a_stem_matches_only_at_the_start_of_a_word(category, matches):
+    import re
+    stem = {"behavioral_or_mental_health_clinic": "mental", "mental_health_service": "mental",
+            "environmental_conservation_organization": "mental", "psychiatry": "psych"}[category]
+    assert bool(re.search("(^|_)" + stem, category)) is matches
+
+
+def test_the_public_map_is_read_unsigned_whatever_aws_keys_are_set():
+    import inspect
+    from tracker import market_radar_places as places
+    src = inspect.getsource(places._connection)
+    assert "CREATE OR REPLACE SECRET overture_public" in src and "KEY_ID ''" in src
+
+
+@pytest.mark.parametrize("domain, own, also, mine", [
+    ("corecareclinic.org", "corecareclinic.com", (), True),      # its .org map listing
+    ("www.corecareclinic.com", "corecareclinic.com", (), True),
+    ("book.corecareclinic.org", "corecareclinic.com", ("corecareclinic.org",), True),
+    ("acme.org", "acme.com", (), False),                          # too short a name to tell
+    ("acme.co.uk", "acme.com", (), False),
+    ("mailclinic.net", "corecareclinic.com", ("mailclinic.net",), True),
+    ("onemedical.com", "corecareclinic.com", ("corecareclinic.org",), False),
+])
+def test_the_clients_own_sites_are_never_its_competitors(domain, own, also, mine):
+    assert rv.is_own(domain, own, also) is mine
+
+
+def test_own_domains_come_from_the_website_and_its_email_but_not_free_mail():
+    p = {"facts": {"domain": "corecareclinic.com",
+                   "emails": ["appointments@corecareclinic.org", "drsmith@gmail.com", "junk"]}}
+    assert rv.own_domains(p) == {"corecareclinic.com", "corecareclinic.org"}
+    pool = rv.Pool("corecareclinic.com", rv.own_domains(p))
+    assert pool.add("https://www.corecareclinic.org/", "places") is None
+
+
+def test_the_own_listing_adds_only_its_specific_category_and_keeps_stems_in_its_branch():
+    own = dict(place("Core Care Clinic", "https://www.corecareclinic.org/", 0.01,
+                     cat="medical_service"), taxonomy="medical_service_organization",
+               hierarchy=["health_care", "medical_service", "medical_service_organization"])
+
+    def listed(name, web, km, cat, root):
+        return dict(place(name, web, km, cat=cat), hierarchy=[root, cat])
+    near = [listed("Psychic Reader", "https://psychic.example", 0.3, "psychic_advising",
+                   "arts_and_entertainment"),
+            listed("Trail Friends", "https://trail.example", 1.2,
+                   "environmental_conservation_organization", "public_service"),
+            listed("Real Psych", "https://realpsych.example", 0.8, "psychotherapy", "health_care"),
+            listed("Named Cat", "https://named.example", 0.9, "family_practice", "other_root")]
+
+    class P:
+        SELF_RADIUS_KM = 0.4
+
+        def __init__(self):
+            self.cats = []
+
+        def query(self, lat, lon, radius_km, categories=(), terms=()):
+            if radius_km == self.SELF_RADIUS_KM:
+                return [own]
+            self.cats.append(sorted(categories))
+            return near * 3
+    p = P()
+    pool = rv.Pool("corecareclinic.com", {"corecareclinic.org"})
+    one = dict(CORE_CARE, archetype="local_single", location_count=1, site_points=[])
+    meta = rv.from_places(pool, one, {"place_categories": ["family_practice"],
+                                      "place_terms": ["psych", "mental"], "radius_km": 5},
+                          places=p)
+    assert p.cats[0] == ["family_practice", "medical_service_organization"]   # not medical_service
+    assert meta["own_listing"]["taxonomy"] == "medical_service_organization"
+    assert set(pool.items) == {"realpsych.example", "named.example"}
+    assert meta["outside_own_category"] == 6
+
+
+def test_a_suite_number_does_not_stop_the_street_being_found(monkeypatch):
+    for street, bare in [("451 Andover Street, Suite 206A", "451 Andover Street"),
+                         ("100 Main St Ste 4", "100 Main St"), ("12 High St #3", "12 High St"),
+                         ("9 Elm St, Floor 2", "9 Elm St"), ("1 Unity Way", "1 Unity Way"),
+                         ("200 Building Rd", "200 Building Rd"), ("77 Suite Lane", "77 Suite Lane")]:
+        assert prof.street_only(street) == bare, street
+    asked = []
+
+    def geocode(q, conn=None):
+        asked.append(q)
+        return {"lat": 42.6732, "lon": -71.1267, "label": "451 Andover St"} \
+            if q == "451 Andover Street, 01845, North Andover, US" else None
+    monkeypatch.setattr(prof, "geocode", geocode)
+    loc = {"label": "North Andover", "street": "451 Andover Street, Suite 206A",
+           "postal_code": "01845", "city": "North Andover", "region": "MA", "country_code": "US"}
+    (site,) = prof.locate_sites(dict(CORE_CARE, locations=[loc]))
+    assert site["precision"] == "street" and asked[0].startswith("451 Andover Street, Suite 206A")
+    hq = prof.locate_hq({"hq": {"street": "451 Andover Street, Suite 206A", "postal_code": "01845",
+                                "city": "North Andover", "country_code": "US"}, "facts": {}})
+    assert hq["precision"] == "street"
+
+
+@pytest.mark.parametrize("text, city, other", [
+    ("24/7 community mental health hub to open in Waltham Forest in 2028 Waltham Forest Echo",
+     "Waltham", True),
+    ("New clinic opens in Waltham Wicked Local", "Waltham", False),
+    ("Waltham Forest firm opens a clinic in Waltham, MA", "Waltham", False),
+    ("Psychiatry practice opens in Tampa Bay Tampa Bay Times", "Tampa", False),
+    ("Clinic opens in North Andover Eagle-Tribune", "North Andover", False),
+])
+def test_a_town_named_only_inside_another_places_name_is_not_local_news(text, city, other):
+    assert radar.names_other_place(text, city) is other
+
+
+def test_the_clients_own_listing_under_another_ending_is_not_a_new_business_nearby():
+    cur = [dict(place("Core Care Clinic", "https://www.corecareclinic.org/", 0.0), id="a"),
+           dict(place("New Psych", "https://newpsych.example", 1.0), id="b")]
+    fresh = radar.new_listings(cur, [], own_domain="corecareclinic.com")
+    assert [p["id"] for p in fresh] == ["b"]
+
+
+def test_directories_of_therapists_are_never_candidates():
+    for d in ("psychologytoday.com", "www.psychologytoday.com", "webmd.com", "vitals.com"):
+        assert rv.skip_domain(d), d

@@ -110,6 +110,12 @@ def _connection():
                     % EXTENSION_DIR)
         con.execute("INSTALL httpfs; LOAD httpfs; SET s3_region='us-west-2'; "
                     "SET enable_object_cache=true; SET memory_limit='768MB'; SET threads=4;")
+        # Overture's bucket is public: read it unsigned. AWS keys in the
+        # environment, meant for something else, would otherwise sign the
+        # requests, and S3 answers 403 to a key it does not know (a host
+        # with placeholder AWS keys could not read the map, 2026-10-10).
+        con.execute("CREATE OR REPLACE SECRET overture_public (TYPE s3, PROVIDER config, "
+                    "KEY_ID '', SECRET '', REGION 'us-west-2', SCOPE 's3://%s')" % BUCKET)
         _state["con"] = con
     return _state["con"]
 
@@ -154,13 +160,24 @@ def query(lat, lon, radius_km, *, categories=(), terms=(), release=None, runner=
         match.append("taxonomy.primary IN (%s)" % ",".join("?" * len(cats)))
         match.append("list_has_any(taxonomy.hierarchy, [%s])" % ",".join("?" * len(cats)))
         params += cats * 3
-    for t in sorted({t.strip().lower() for t in terms if t and t.strip()}):
-        match.append("basic_category LIKE ? OR taxonomy.primary LIKE ?")
-        params += ["%" + t + "%"] * 2
+    # A term is a word stem: it matches at the start of a category's word
+    # ("mental" finds behavioral_or_mental_health_clinic, not
+    # environmental_conservation_organization, Core Care Clinic, 2026-10-10).
+    for t in sorted({re.sub(r"[^a-z0-9_]", "", t.strip().lower()) for t in terms if t}):
+        if not t:
+            continue
+        match.append("regexp_matches(basic_category, ?) OR regexp_matches(taxonomy.primary, ?)")
+        params += ["(^|_)" + t] * 2
     if match:
         where.append("(" + " OR ".join(match) + ")")
-    sql = "SELECT %s FROM read_parquet('%s', hive_partitioning=1) WHERE %s LIMIT %d" % (
-        COLUMNS, src, " AND ".join(where), MAX_ROWS)
+    # Nearest first BEFORE the limit: in a dense area more than MAX_ROWS
+    # places fill the box, and an unordered LIMIT kept an arbitrary 5000 of
+    # them, so the nearest could be cut (Waltham MA within 5 km, 2026-10-10).
+    k = math.cos(math.radians(lat)) ** 2
+    sql = ("SELECT %s FROM read_parquet('%s', hive_partitioning=1) WHERE %s "
+           "ORDER BY (bbox.ymin - ?) * (bbox.ymin - ?) + %.6f * (bbox.xmin - ?) * (bbox.xmin - ?) "
+           "LIMIT %d" % (COLUMNS, src, " AND ".join(where), k, MAX_ROWS))
+    params += [lat, lat, lon, lon]
     started = time.monotonic()
     if runner is None:
         with _lock:

@@ -305,7 +305,7 @@ def test_overture_sql_filters_by_box_and_category_and_trims_the_corners():
                         release="2026-09-23.1", runner=runner)
     assert "release/2026-09-23.1/theme=places" in seen["sql"]
     assert "basic_category IN (?)" in seen["sql"] and "dentist" in seen["params"]
-    assert "%dent%" in seen["params"]
+    assert "(^|_)dent" in seen["params"]
     assert [r["name"] for r in rows] == ["A"] and rows[0]["distance_km"] == 0.0
     assert rows[0]["websites"] == ["https://a.example"]
 
