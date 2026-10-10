@@ -55,7 +55,7 @@ class Store:
                               "type": type, "title": title, "status": status,
                               "event_date": event_date, "summary": summary, "location": location,
                               "sources": [source], "evidence_count": 1, "first_seen_at": NOW,
-                              "hidden_reason": None}
+                              "hidden_reason": None, "scope": None}
             self.next_id += 1
             return self.events[k]["id"], True
         e = self.events[k]
@@ -64,6 +64,11 @@ class Store:
         e["evidence_count"] = len({s["detector"] for s in e["sources"]})
         e["status"] = e["status"] if status == "unknown" else status
         return e["id"], False
+
+    def set_event_scope(self, event_id, scope):
+        for e in self.events.values():
+            if e["id"] == event_id:
+                e["scope"] = scope
 
     def hide_event(self, event_id, reason):
         for e in self.events.values():
@@ -90,10 +95,18 @@ class Store:
 
 
 class LLM:
+    """Answers the triage with `answer`. The scope check (one call per
+    company with moves not yet judged) is answered "core" for every move
+    and kept apart in scope_calls, so a test counts triage calls only."""
+
     def __init__(self, answer):
-        self.answer, self.calls = answer, []
+        self.answer, self.calls, self.scope_calls = answer, [], []
 
     def call_json(self, system, user, schema, *, model, max_tokens, run_id=None, stage, client=None):
+        if stage == "signals_scope":
+            self.scope_calls.append(user)
+            refs = [l.split(" | ")[0] for l in user.split("MOVES:\n", 1)[1].splitlines() if l]
+            return {"moves": [{"ref": r, "scope": "core"} for r in refs]}, {}
         self.calls.append({"user": user, "stage": stage, "max_tokens": max_tokens})
         if isinstance(self.answer, Exception):
             raise self.answer
@@ -225,8 +238,9 @@ def test_thirteen_headlines_of_one_move_are_one_event_and_posts_are_folded_or_le
     assert memo["a20"] == "left_out:review_or_deal" and len(memo) == 17
 
     # The next collection has nothing new to read and asks the model nothing.
+    assert len(llm.scope_calls) == 1 and all(e["scope"] == "core" for e in typed)
     row = S.triage_company({"id": 2, "domain": "lululemon.com"}, store=store, now=NOW, llm=llm)
-    assert row["note"] == "no new headlines" and len(llm.calls) == 1
+    assert row["note"] == "no new headlines" and len(llm.calls) == 1 and len(llm.scope_calls) == 1
 
 
 def test_a_headline_joins_the_location_page_event_and_the_place_was_already_served():

@@ -35,6 +35,8 @@ import os
 import re
 from datetime import datetime, timezone
 
+from . import market_radar_footprint as fp
+
 logger = logging.getLogger(__name__)
 
 WRITER_MODEL = os.environ.get("MR_REPORT_MODEL", "claude-sonnet-5-5")
@@ -126,8 +128,9 @@ def build_pack(client_id, owner_email, *, store, now, collection=None, run_id=No
         x = radar.get(part) or {}
         for i, f in enumerate((x.get("findings") or [])[:15]):
             pack[key].append({"ref": "%s%d" % (prefix, i + 1), **{k: f.get(k) for k in (
-                "name", "category", "distance_km", "address", "website", "status", "certain",
-                "evidence", "date", "lat", "lon", "location", "reason", "is_competitor")}})
+                "name", "category", "distance_km", "near", "address", "website", "status",
+                "certain", "evidence", "date", "lat", "lon", "location", "reason",
+                "is_competitor")}})
         if x.get("note"):
             pack["coverage"].append(("Nearby: " if part == "local" else "New brands: ") +
                                     _clean(x["note"], 300))
@@ -135,6 +138,10 @@ def build_pack(client_id, owner_email, *, store, now, collection=None, run_id=No
     if point.get("lat") is not None:
         pack["client"]["point"] = {"lat": point["lat"], "lon": point["lon"]}
         pack["client"]["radius_km"] = float(c.get("radius_km") or 0) or None
+    sites = fp.sites(profile) if fp.serves_locally(profile) else []
+    if len(sites) > 1:
+        pack["client"]["sites"] = [{"name": fp.short_label(s_) or s_.get("label"),
+                                    "lat": s_["lat"], "lon": s_["lon"]} for s_ in sites]
 
     # The industry pulse, per market.
     key = mp.industry_key(profile)
@@ -200,12 +207,16 @@ def evidence_text(item):
                                       s.get("headline") or "") for s in item["sources"])
         return "%s | %s | %s | %s | %s | %s%s%s | sources: %s" % (
             ref, item["company"], item["label"], item["status"], item["date"] or "undated",
-            item["title"], " | " + item["place"] if item.get("place") else "",
+            item["title"], (" | " + item["place"] if item.get("place") else "") + (
+                " | %s km from the client (its nearest site)" % item["distance_km"]
+                if item.get("distance_km") is not None else ""),
             " | " + summary if summary else "", src)
     if ref[0] == "N":
-        return "%s | %s, %s, %s km away | %s | %s" % (
+        return "%s | %s, %s, %s km %s | %s | %s" % (
             ref, item["name"], (item.get("category") or "").replace("_", " "),
-            item.get("distance_km"), "possibly new" if item.get("certain") is False else
+            item.get("distance_km"),
+            "from the client's %s site" % item["near"] if item.get("near") else "away",
+            "possibly new" if item.get("certain") is False else
             item.get("status"), "; ".join(item.get("evidence") or []))
     if ref[0] == "B":
         return "%s | new brand %s | %s | %s" % (ref, item["name"], item.get("reason") or "",

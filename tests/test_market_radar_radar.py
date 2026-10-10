@@ -311,7 +311,7 @@ def test_the_local_radar_needs_a_competitor_search_first(pg):
     _e, c = _client(pg, LOCAL_PROFILE)
     out = R.run_for_client(c, OWNER, store=pg, places=Places([], []), io={
         "get": net({}), "fetch": lambda u: {}, "fetch_home": lambda i: {}})
-    assert out["local"]["status"] == "skipped" and "competitor search first" in out["local"]["note"]
+    assert out["local"]["status"] == "skipped" and "run the competitor search again" in out["local"]["note"]
 
 
 def test_the_local_radar_stores_findings_once_and_reuses_a_fresh_scan(pg):

@@ -51,6 +51,7 @@ import os
 import re
 from datetime import date, datetime, timedelta, timezone
 
+from . import market_radar_footprint as fp
 from . import market_radar_news as news
 
 logger = logging.getLogger(__name__)
@@ -149,6 +150,7 @@ Be strict:
 - A different company with a similar or partly shared name that sells something else is not this company ("Alo Drink" is not Alo Yoga).
 - A company's own posts are mostly marketing. Exhibiting at a trade show, speaking at or hosting an event, a webinar or a customer workshop, publishing an article, a customer story or a how-to is routine, not a move. A post is a move only when it announces a decision: a launch, an opening, a deal, a hire at the top, a new market, a price change.
 - When the company a headline names carries a word this company's name does not ("Spur Intelligence" for Spur, "Alo Drink" for Alo), it is a different company: leave it out as not_about_company, unless the headline also names this company's domain or one of its own products.
+- funding only when the company itself raises money. A shareholder selling its own shares (a secondary offering) or a share buyback raises nothing for the company: other_move.
 - acquisition only when ownership changes. A franchisor running a franchisee's sites for a while is other_move.
 - leadership_change only for chief executives, board members and senior leaders, not one more dentist, trainer or manager.
 - partnership only when a partnership begins. A team or athlete leaving the company is other_move.
@@ -275,6 +277,58 @@ def triage(company, items, existing, *, now, run_id=None, client=None, llm=None)
             "note": "; ".join(notes) or None}
 
 
+# == scope: does the move touch what the company sells? ================================
+
+SCOPE_MODEL = MODEL
+SCOPE_MAX = 40
+SCOPE_SCHEMA = {
+    "type": "object", "additionalProperties": False, "required": ["moves"],
+    "properties": {"moves": {"type": "array", "items": {
+        "type": "object", "additionalProperties": False, "required": ["ref", "scope"],
+        "properties": {"ref": {"type": "string"},
+                       "scope": {"type": "string", "enum": ["core", "peripheral"]}}}}}}
+
+SCOPE_SYSTEM = """You sort one company's recorded moves into two kinds, for a business that competes with it and watches what it does.
+
+- core: the move changes what this company offers its customers, where, how or at what price, or who owns or runs it. A site opened, closed or moved; a service or product launched or dropped; a price, offer or membership change; an acquisition or merger; a new chief executive or senior leader; money raised for the business; layoffs or a hiring drive; a new market or kind of customer; a lawsuit, fine or regulator action about what it sells.
+- peripheral: a side of the company its competitors do not compete with. Research, clinical trials and studies; academic, teaching or training programmes and university arms; philanthropy and foundations; research or technology partnerships; internal IT; a shareholder selling its own shares (a secondary offering) or a buyback, which raises nothing for the company; quarterly results that announce no opening, closure or price change; and moves by a separate arm that does not sell what the company is watched for (for example a hospital system's insurance plan or its research institute).
+
+When unsure, answer core. Return every move by its ref."""
+
+
+def scope_moves(company, events, *, run_id=None, client=None, llm=None):
+    """{event_id: "core"|"peripheral"} for the company's moves not judged
+    yet, in one Haiku call. Mass General Brigham's 14 moves, most of them
+    research, teaching and research partnerships, and LifeStance's
+    shareholders' $280M share sale were 15 of Core Care Clinic's 21 moves
+    (2026-10-10); most are nothing a clinic competes with. A failed call
+    judges nothing, and every move then counts in full."""
+    if not events:
+        return {}
+    if llm is None:
+        from . import market_radar_llm as llm
+    refs = {"E%d" % (i + 1): e for i, e in enumerate(events[:SCOPE_MAX])}
+    user = "COMPANY: %s (%s).%s\n\nMOVES:\n%s" % (
+        company.get("name") or company["domain"], company["domain"],
+        (" Watched for what it sells: " + company["sells"] + ".") if company.get("sells") else "",
+        "\n".join("%s | %s | %s" % (ref, e["type"], e["title"]) for ref, e in refs.items()))
+    try:
+        data, _meta = llm.call_json(SCOPE_SYSTEM, user, SCOPE_SCHEMA, model=SCOPE_MODEL,
+                                    max_tokens=400 + 30 * len(refs), run_id=run_id,
+                                    stage="signals_scope", client=client)
+    except Exception as e:
+        logger.warning("market_radar_signals: scope of %s failed: %s", company["domain"], e)
+        return {}
+    out = {}
+    for m in (data or {}).get("moves") or []:
+        if not isinstance(m, dict):
+            continue
+        e = refs.get(m.get("ref"))
+        if e and m.get("scope") in ("core", "peripheral"):
+            out[e["id"]] = m["scope"]
+    return out
+
+
 def prior_presence(place, entity_id, event_day, *, store):
     """What the company's own location pages said about this place before
     the news: the difference between a new market and one more branch in a
@@ -309,8 +363,20 @@ def triage_company(entity, *, store, now, run_id=None, client=None, llm=None, se
     items, later = items_to_read(news_items, posts, triaged, now)
     row = {"entity_id": entity["id"], "domain": entity["domain"], "name": entity.get("name"),
            "read": 0, "events": 0, "new_events": 0, "left_out": 0, "later": later, "note": None}
+
+    def judge_scope():
+        moves = [e for e in store.recent_events([entity["id"]], days=WINDOW_DAYS + 30)
+                 if e["type"] != "announcement" and not e.get("hidden_reason")
+                 and e.get("scope") is None]
+        judged = scope_moves(dict(entity, sells=sells), moves, run_id=run_id, client=client,
+                             llm=llm)
+        for event_id, scope in judged.items():
+            store.set_event_scope(event_id, scope)
+        row["peripheral"] = sum(1 for v in judged.values() if v == "peripheral")
+
     if not items:
         row["note"] = "no new headlines"
+        judge_scope()
         return row
     existing = [{"key": e["dedupe_key"], "type": e["type"], "title": e["title"],
                  "date": _iso_day(e["event_date"]) or _iso_day(e["first_seen_at"])}
@@ -361,6 +427,7 @@ def triage_company(entity, *, store, now, run_id=None, client=None, llm=None, se
                         item_count=len(triaged), run_id=run_id)
     row.update(status="ok", read=len(items) - got["unanswered"], left_out=len(left),
                note=got["note"])
+    judge_scope()
     return row
 
 
@@ -392,6 +459,11 @@ CERTAINTY = {"rumored": 0.6}
 BRANCH_TYPES = {"new_location", "closed_location", "relocation"}
 BRANCH_WEIGHT_FOR_CHAINS = 0.6
 REPEAT_DECAY = 0.7           # the k-th event of one type by one company is worth 0.7^(k-1)
+# Each earlier event of one company, of another type, takes a further 0.85:
+# a health system with fourteen moves in the news must not fill the list
+# (Mass General Brigham, 14 of Core Care Clinic's 21, 2026-10-10).
+COMPANY_DECAY = 0.85
+PERIPHERAL_WEIGHT = 0.35     # a move on a side of the company nobody competes with
 
 
 def recency(day, now):
@@ -455,10 +527,15 @@ def feedback_factor(etype, feedback_by_type):
 
 
 def score_events(events, *, tiers, now, point=None, local=False, feedback=None, geocode=None,
-                 chain=False):
+                 chain=False, points=None):
     """[(event_id, score, severity, distance_km)] and the number of HIGH
-    events moved down. `tiers` maps entity_id -> (kind, status)."""
-    from .market_radar_places import distance_km as dist
+    events moved down. `tiers` maps entity_id -> (kind, status). Distance is
+    to the nearest of `points`, the client's sites (`point` alone: one)."""
+    points = list(points or ([point] if point else []))
+    point = points[0] if points else None
+
+    def dist(_lat, _lon, lat, lon):
+        return fp.nearest(points, lat, lon)[0]
     feedback = feedback or {}
     rows, geocoded = [], 0
     for e in events:
@@ -480,16 +557,21 @@ def score_events(events, *, tiers, now, point=None, local=False, feedback=None, 
         s = WEIGHTS.get(e["type"], 3) * recency(day, now) * distance_factor(km) * tier * \
             evidence_factor(e) * feedback_factor(e["type"], feedback) * \
             CERTAINTY.get(e.get("status"), 1.0) * \
-            (BRANCH_WEIGHT_FOR_CHAINS if chain and e["type"] in BRANCH_TYPES else 1.0)
+            (BRANCH_WEIGHT_FOR_CHAINS if chain and e["type"] in BRANCH_TYPES else 1.0) * \
+            (PERIPHERAL_WEIGHT if e.get("scope") == "peripheral" else 1.0)
         rows.append({"id": e["id"], "entity_id": e["entity_id"], "type": e["type"], "score": s,
                      "km": round(km, 1) if km is not None else None})
     # One company's many events of one type: each further one counts less.
     rows.sort(key=lambda r: -r["score"])
-    seen = {}
+    seen, per_company = {}, {}
     for r in rows:
         k = (r["entity_id"], r["type"])
-        r["score"] *= REPEAT_DECAY ** seen.get(k, 0)
+        # Earlier events of the same type already count in REPEAT_DECAY;
+        # COMPANY_DECAY counts the company's earlier events of other types.
+        r["score"] *= REPEAT_DECAY ** seen.get(k, 0) * \
+            COMPANY_DECAY ** (per_company.get(r["entity_id"], 0) - seen.get(k, 0))
         seen[k] = seen.get(k, 0) + 1
+        per_company[r["entity_id"]] = per_company.get(r["entity_id"], 0) + 1
     rows.sort(key=lambda r: -r["score"])
     for r in rows:
         r["severity"] = "HIGH" if r["score"] >= HIGH else "MEDIUM" if r["score"] >= MEDIUM else "LOW"
@@ -518,15 +600,17 @@ def score_client(client_id, owner_email, *, store, now, run_id=None, geocode=Non
         if v.get("feedback") and eid in by_id:
             up, down = fb.get(by_id[eid]["type"], (0, 0))
             fb[by_id[eid]["type"]] = (up + (v["feedback"] == "up"), down + (v["feedback"] == "down"))
-    # Distance means something only from the one place a local business
-    # serves. A chain's head office is not where its customers are
+    # Distance means something only from the places a local business
+    # serves: its site, or the nearest of its few sites (Amazon One
+    # Medical's new office 10 km from Core Care Clinic's Waltham clinic,
+    # 2026-10-10). A chain's head office is not where its customers are
     # (Orangetheory's HQ in Florida ranked a Florida franchise opening
     # first, 2026-10-10), so chains are scored without distance until the
     # report knows their branches.
-    point = profile.get("hq_point") if profile.get("archetype") == "local_single" else None
-    rows, demoted = score_events(events, tiers=tiers, now=now, point=point, local=True,
-                                 feedback=fb, geocode=geocode,
-                                 chain=profile.get("archetype") != "local_single")
+    local = fp.serves_locally(profile)
+    rows, demoted = score_events(events, tiers=tiers, now=now,
+                                 points=fp.sites(profile) if local else None, local=True,
+                                 feedback=fb, geocode=geocode, chain=not local)
     store.link_client_events(client_id, [(r["id"], round(r["score"], 3), r["severity"], r["km"])
                                          for r in rows], run_id=run_id)
     counts = {s: sum(1 for r in rows if r["severity"] == s) for s in ("HIGH", "MEDIUM", "LOW")}

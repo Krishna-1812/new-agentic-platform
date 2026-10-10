@@ -70,6 +70,14 @@ def job(run_id, url, owner_email, client_id, entity_id, reuse_profile, *, client
         if reuse_profile:
             profile = (store.get_entity(entity_id) or {}).get("profile")
             profile_note = "reused the stored profile" if profile else "no stored profile; built one"
+            # A profile read before sites were listed knows only the head
+            # office of a business with several sites, so the map would be
+            # searched around one clinic of three (corecareclinic.com,
+            # 2026-10-10). It is read again, once; corrections are kept.
+            if profile and profile.get("archetype") == "multi_location" \
+                    and "site_points" not in profile:
+                profile = None
+                profile_note = "the stored profile predates the list of sites; read the site again"
         if not profile:
             stage("profile")
             built = build_profile(url, run_id=run_id, client=client)
