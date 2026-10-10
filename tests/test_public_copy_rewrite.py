@@ -99,6 +99,9 @@ def test_login_pages_use_the_new_voice(client):
     preview = _text(client.get("/login-preview"))
     assert "Timing beats" in preview
     assert "Three is a bearing." in preview
+    # The preview's opening headline matches the home page's.
+    assert "Every deal starts" in preview and "weeks before" in preview and "the first email." in preview
+    assert "Buyers leave" not in preview
 
 
 def test_brand_tagline_is_new():
