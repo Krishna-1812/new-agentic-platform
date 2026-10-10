@@ -41,8 +41,9 @@
 .mr-scope i:nth-child(1) { inset: 0; }
 .mr-scope i:nth-child(2) { inset: 18px; }
 .mr-scope i:nth-child(3) { inset: 37px; }
-.mr-scope b { position: absolute; inset: 0; border-radius: 50%;
-  background: conic-gradient(from 0deg, rgba(255,96,34,0) 0 300deg, rgba(255,96,34,.55) 360deg);
+/* The sweep is a hand from the centre to the rim, turning; no gradient ring. */
+.mr-scope b { position: absolute; left: 50%; top: 4px; width: 2px; height: calc(50% - 4px); margin-left: -1px;
+  background: var(--acc); border-radius: 2px; transform-origin: 50% 100%;
   animation: mr-sweep 4.8s linear infinite; }
 .mr-blip { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%;
   background: var(--acc); opacity: .25; animation: mr-blip 4.8s linear infinite; }
