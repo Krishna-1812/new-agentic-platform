@@ -184,6 +184,7 @@ def new_listings(cur, prev, *, own_domain=None):
     """Places in `cur` with no counterpart in `prev`: not the same Overture
     id, not the same name within SAME_PLACE_KM, not the same website."""
     from .market_radar_places import distance_km
+    from .market_radar_rivals import is_own
     ids = {p.get("id") for p in prev if p.get("id")}
     # The website's full address, not its domain: every Chipotle branch is
     # on locations.chipotle.com, so a domain match hid "Coming Soon -
@@ -197,7 +198,9 @@ def new_listings(cur, prev, *, own_domain=None):
         if (p.get("status") or "open") == "permanently_closed" or p.get("id") in ids:
             continue
         d = _place_site(p)[0]
-        if d == own_domain or (_page(p) and _page(p) in sites):
+        # The client's own listing under another ending (corecareclinic.org
+        # for corecareclinic.com) is not a new business near it.
+        if (d and own_domain and is_own(d, own_domain)) or (_page(p) and _page(p) in sites):
             continue
         twins = by_name.get(fold(p.get("name")), [])
         if any(distance_km(p["lat"], p["lon"], t["lat"], t["lon"]) <= SAME_PLACE_KM for t in twins):
@@ -250,6 +253,7 @@ def local_news(entity_country, city, words, lang, *, get, breaker, stems=(), nam
             # opens in Cedar Park" never says "restaurant".
             if OPENING_HEADLINE.search(it["title"]) and \
                     fold(city) in fold(it["title"] + " " + it.get("publisher", "")) and \
+                    not names_other_place(it["title"] + " " + it.get("publisher", ""), city) and \
                     (not stems or any(st in text.replace(" ", "") for st in stems)
                      or any(_mentions(it["title"], n, city) for n in names)):
                 items.append(it)
@@ -260,6 +264,24 @@ def local_news(entity_country, city, words, lang, *, get, breaker, stems=(), nam
             seen.add(k)
             out.append(it)
     return out[:25], failures
+
+
+# Words that make a town's name into another place's: Waltham MA's local
+# news search returned "mental health hub to open in Waltham Forest", a
+# London borough, from the Waltham Forest Echo (2026-10-10). "Bay" is not
+# here: Tampa Bay is Tampa's own region.
+OTHER_PLACE_WORDS = ("forest", "abbey", "cross", "heath", "green", "common", "chase",
+                     "on thames", "upon thames", "st lawrence")
+
+
+def names_other_place(text, city):
+    """Does the text name the city only as part of another place's name?"""
+    c = fold(city)
+    t = fold(text)
+    if not c or c not in t:
+        return False
+    alone = re.sub(r"(^| )%s (%s)( |$)" % (re.escape(c), "|".join(OTHER_PLACE_WORDS)), " ", t)
+    return not re.search(r"(^| )%s( |$)" % re.escape(c), alone)
 
 
 def _mentions(headline, name, city=""):

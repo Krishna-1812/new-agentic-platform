@@ -382,6 +382,17 @@ def geocode(query, *, conn=None):
     return point
 
 
+_UNIT = re.compile(r"[,\s]+(?:(?:suite|ste|unit|apt|apartment|floor|fl|room|rm|bldg|building)\b\.?"
+                   r"\s*|#\s*)[\w-]*\d[\w-]*\b.*$", re.I)
+
+
+def street_only(street):
+    """The street address without its suite or unit: OpenStreetMap does
+    not know "451 Andover Street, Suite 206A" but does know 451 Andover
+    Street (Core Care Clinic, North Andover, 2026-10-10)."""
+    return _UNIT.sub("", street or "").strip(" ,")
+
+
 def _join(*parts):
     return ", ".join(" ".join(str(x).split()) for x in parts if x and str(x).strip())
 
@@ -418,6 +429,9 @@ def locate_hq(profile, *, conn=None):
     if hq.get("street"):
         tries.append((_join(hq.get("street"), hq.get("postal_code"), hq.get("city"),
                             hq.get("country_code")), "geocoded street address", "street"))
+        if street_only(hq["street"]) != hq["street"].strip(" ,"):
+            tries.append((_join(street_only(hq["street"]), hq.get("postal_code"), hq.get("city"),
+                                hq.get("country_code")), "geocoded street address", "street"))
     if hq.get("postal_code") and hq.get("city"):
         tries.append((_join(hq.get("postal_code"), hq.get("city"), hq.get("country_code")),
                       "geocoded postcode", "postcode"))
@@ -461,6 +475,9 @@ def locate_sites(profile, *, conn=None):
         if loc.get("street"):
             tries.append((_join(loc["street"], loc.get("postal_code"), loc.get("city"), country),
                           "street"))
+            if street_only(loc["street"]) != loc["street"].strip(" ,"):
+                tries.append((_join(street_only(loc["street"]), loc.get("postal_code"),
+                                    loc.get("city"), country), "street"))
         if loc.get("postal_code") and loc.get("city"):
             tries.append((_join(loc["postal_code"], loc["city"], country), "postcode"))
         if loc.get("city"):

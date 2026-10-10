@@ -53,8 +53,8 @@ MAX_QUERIES = 10
 SEARCH_GROUP = 4           # queries per Apify run; the runs go in parallel
 MAX_KNOWN = 15
 MAX_PLACES = 25            # nearest same-category places with a website
-MIN_PLACES_PER_SITE = 10   # with several sites, at least this many near each
-MAX_PLACES_ALL_SITES = 40
+MIN_PLACES_PER_SITE = 15   # with several sites, at least this many near each
+MAX_PLACES_ALL_SITES = 45
 MAX_VERIFY = 70            # candidates read and judged in the first round
 MAX_ARTICLES = 4           # "top 10" pages whose links are read
 MAX_FROM_ARTICLE = 15
@@ -84,7 +84,8 @@ SKIP_DOMAINS = (
     "flipkart.com", "mercadolivre.com.br", "zalando.de", "zalando.co.uk", "asos.com",
     "yelp.com", "yelp.co.uk", "tripadvisor.com", "trustpilot.com", "bbb.org", "yellowpages.com",
     "yell.com", "glassdoor.com", "indeed.com", "crunchbase.com", "zoominfo.com",
-    "zocdoc.com", "healthgrades.com", "nhs.uk", "practo.com", "justdial.com", "doctolib.de",
+    "zocdoc.com", "healthgrades.com", "psychologytoday.com", "webmd.com", "vitals.com",
+    "doximity.com", "goodtherapy.org", "therapyden.com", "nhs.uk", "practo.com", "justdial.com", "doctolib.de",
     "jameda.de", "sulekha.com", "mapquest.com", "foursquare.com", "nextdoor.com",
     "wa.me", "whatsapp.com", "linktr.ee", "bit.ly", "t.co",
     # affiliate and app-link redirectors, linked from "best of" articles
@@ -218,20 +219,65 @@ def plan_search(profile, *, run_id=None, client=None):
 
 # == candidates =========================================================================
 
+_SECOND_LEVEL = {"co", "com", "org", "net", "ac", "gov", "edu", "ltd", "plc", "nhs"}
+_MAIL_HOSTS = {"gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com", "aol.com",
+               "proton.me", "protonmail.com", "gmx.de", "web.de", "live.com", "msn.com"}
+MIN_OWN_LABEL = 6          # "corecareclinic" is distinctive; "ace" is not
+
+
+def _label(domain):
+    """The name part of a domain: "corecareclinic" for corecareclinic.org,
+    "acme" for acme.co.uk."""
+    parts = (domain or "").split(".")
+    if len(parts) >= 3 and parts[-2] in _SECOND_LEVEL:
+        return parts[-3]
+    return parts[-2] if len(parts) >= 2 else ""
+
+
+def own_domains(profile):
+    """The client's domains: its website, the domains of the addresses it
+    gives for email (not a free mail host), and nothing else."""
+    facts = profile.get("facts") or {}
+    out = {domain_of(facts.get("domain") or facts.get("website") or "")}
+    for e in facts.get("emails") or []:
+        d = domain_of(str(e).rsplit("@", 1)[-1]) if "@" in str(e) else None
+        if d and d not in _MAIL_HOSTS:
+            out.add(d)
+    return {d for d in out if d}
+
+
+def is_own(domain, own, also=()):
+    """Is this the client's own site? The same domain, a subdomain either
+    way, one of `also` (its email domains), or the same distinctive name
+    under another ending: Core Care Clinic's website is corecareclinic.com,
+    its email and its map listing corecareclinic.org (2026-10-10), and the
+    .org was about to be judged as a competitor."""
+    if not domain or not own:
+        return False
+    for o in {own, *also}:
+        if domain == o or domain.endswith("." + o) or o.endswith("." + domain):
+            return True
+    lab = _label(own)
+    return len(lab) >= MIN_OWN_LABEL and _label(domain) == lab
+
+
 class Pool:
     """Candidates keyed by domain, each remembering every way it was found."""
 
-    def __init__(self, own_domain):
+    def __init__(self, own_domain, also=()):
         self.own = own_domain
+        self.also = set(also) - {own_domain}
         self.items = {}
         self.skipped = {}           # domain -> why it was never fetched
+
+    def is_own(self, domain):
+        return is_own(domain, self.own, self.also)
 
     def add(self, url_or_domain, via, *, name=None, url=None, **extra):
         domain = domain_of(url_or_domain)
         if not domain:
             return None
-        if domain == self.own or (self.own and (domain.endswith("." + self.own)
-                                                or self.own.endswith("." + domain))):
+        if self.is_own(domain):
             return None
         if skip_domain(domain):
             self.skipped.setdefault(domain, "a social network, marketplace or directory")
@@ -319,6 +365,12 @@ def from_search(pool, plan, *, run_id=None, token=None, search=None):
     return meta, results
 
 
+def _named_category(place, categories):
+    """Is the place in one of these categories by name, not by a stem?"""
+    names = {place.get("category"), place.get("taxonomy"), *(place.get("hierarchy") or [])}
+    return bool(names & set(categories))
+
+
 def _place_domain(place):
     for w in place.get("websites") or []:
         d = domain_of(w)
@@ -339,7 +391,6 @@ def from_places(pool, profile, plan, *, places=None):
         return {"status": "skipped", "note": "the client's location is not known"}
     radius = plan.get("radius_km") or DEFAULT_RADIUS_KM
     by_user = bool(plan.get("radius_set_by_user"))
-    own = pool.own
     hq = points[0]
     meta = {"status": "ok", "radius_km": radius, "located_by": hq.get("source"),
             "location_precision": hq.get("precision") or "unknown"}
@@ -350,15 +401,24 @@ def from_places(pool, profile, plan, *, places=None):
     per_site = max(MIN_PLACES_PER_SITE, MAX_PLACES // len(points)) if many else MAX_PLACES
     try:
         # The client's own listing tells us exactly which category it is in.
+        # Only its most specific category: Core Care Clinic's listing is
+        # medical_service_organization under medical_service, and the broad
+        # medical_service brought in every home care agency and hospice
+        # (74 of 199 places near its Waltham clinic, 2026-10-10).
         categories = set(plan.get("place_categories") or [])
+        roots = set()
         for point in points:
             near_self = places.query(point["lat"], point["lon"], places.SELF_RADIUS_KM)
-            mine = [p for p in near_self if _place_domain(p)[0] == own]
+            mine = [p for p in near_self if pool.is_own(_place_domain(p)[0])]
             if mine:
                 meta.setdefault("own_listing", {"name": mine[0]["name"],
                                                 "category": mine[0]["category"],
                                                 "taxonomy": mine[0]["taxonomy"]})
-                categories.update(c for c in (mine[0]["category"], mine[0]["taxonomy"]) if c)
+                specific = mine[0]["taxonomy"] or mine[0]["category"]
+                if specific:
+                    categories.add(specific)
+                if mine[0].get("hierarchy"):
+                    roots.add(mine[0]["hierarchy"][0])
         terms = plan.get("place_terms") or []
         if not categories and not terms:
             return dict(meta, status="skipped", note="no place category to look for")
@@ -382,8 +442,18 @@ def from_places(pool, profile, plan, *, places=None):
     total = {"found": 0, "closed": 0, "without_website": 0, "website_is_social": 0}
     companies, added, site_rows = set(), 0, []
     cap = MAX_PLACES_ALL_SITES if many else MAX_PLACES
+    off_tree = 0
     for point, r, widened, found in per:
         open_places = [p for p in found if (p.get("status") or "open") != "permanently_closed"]
+        # A word stem is a catch-all that can land in another part of the
+        # category tree ("psych" finds psychic_advising). Once the client's
+        # own listing says which part it is in, a place found only by a stem
+        # must be in that part too.
+        if roots:
+            kept = [p for p in open_places if _named_category(p, categories)
+                    or (p.get("hierarchy") or [None])[0] in roots]
+            off_tree += len(open_places) - len(kept)
+            open_places = kept
         by_domain, no_site, social = {}, 0, 0
         for p in open_places:
             d, w = _place_domain(p)
@@ -393,7 +463,7 @@ def from_places(pool, profile, plan, *, places=None):
             if skip_domain(d):
                 social += 1
                 continue
-            if d == own:
+            if pool.is_own(d):
                 continue
             by_domain.setdefault(d, []).append((p, w))
         here = 0
@@ -418,6 +488,8 @@ def from_places(pool, profile, plan, *, places=None):
                           "found": len(found), "companies": len(by_domain), "added": here,
                           "widened": widened})
     meta.update(total, companies=len(companies), added=added)
+    if off_tree:
+        meta["outside_own_category"] = off_tree
     if many:
         meta["sites"] = site_rows
     return meta
@@ -854,7 +926,7 @@ def discover(profile, *, run_id=None, client=None, token=None, progress=None, se
     archetype = profile.get("archetype")
     own = domain_of((profile.get("facts") or {}).get("domain")
                     or (profile.get("facts") or {}).get("website") or "")
-    pool = Pool(own)
+    pool = Pool(own, own_domains(profile))
     coverage = {}
 
     say("rivals_plan")
@@ -928,7 +1000,7 @@ def discover(profile, *, run_id=None, client=None, token=None, progress=None, se
             else:
                 unread_other += 1
             continue
-        if b.get("final_domain") == own:
+        if pool.is_own(b.get("final_domain")):
             rejected.append({"domain": item["domain"], "why": "redirects to the client's own site"})
             continue
         if skip_domain(b.get("final_domain")):

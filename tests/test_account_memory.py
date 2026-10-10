@@ -50,6 +50,10 @@ def world(monkeypatch):
     appmod._acct_reset()
     monkeypatch.setattr(appmod, "_fetch_google_ads_rows", lambda force=False: [_row("2026-09-%02d" % d) for d in range(1, 31)])
     monkeypatch.setattr(appmod, "_acct_doc", lambda: (DOC, "https://docs.google.com/document/d/x/edit", None))
+    # Watches here are about whose account they belong to, not whether the
+    # site resolves: mine.in stopped resolving on 2026-10-10 and failed CI.
+    from tracker import watch_safety
+    monkeypatch.setattr(watch_safety, "check", lambda url: None)
     people_store.remember(KRIS, "Kris Ladha")
     people_store.remember(ANA, "Ana Mehta")
     yield
