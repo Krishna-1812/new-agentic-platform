@@ -39,6 +39,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urljoin, urlsplit
 
+from . import market_radar_footprint as fp
 from . import market_radar_llm as llm
 from . import market_radar_site as site_reader
 
@@ -52,6 +53,8 @@ MAX_QUERIES = 10
 SEARCH_GROUP = 4           # queries per Apify run; the runs go in parallel
 MAX_KNOWN = 15
 MAX_PLACES = 25            # nearest same-category places with a website
+MIN_PLACES_PER_SITE = 10   # with several sites, at least this many near each
+MAX_PLACES_ALL_SITES = 40
 MAX_VERIFY = 70            # candidates read and judged in the first round
 MAX_ARTICLES = 4           # "top 10" pages whose links are read
 MAX_FROM_ARTICLE = 15
@@ -129,6 +132,8 @@ def client_brief(profile):
         "locations": profile.get("location_count"),
         "headquarters": ", ".join(x for x in (hq.get("city"), hq.get("region"),
                                                hq.get("country_code")) if x),
+        "sites": site_names(profile),
+        "competes_locally": fp.serves_locally(profile),
         "markets": profile.get("markets") or [],
         "service_area": profile.get("service_area"),
         "price_positioning": profile.get("price_positioning"),
@@ -136,6 +141,17 @@ def client_brief(profile):
         "industry_keywords": (ind.get("keywords") or [])[:10],
         "languages": profile.get("languages") or [],
     }
+
+
+def site_names(profile):
+    """"Waltham, MA" for each site the profile states; empty when it states
+    none (the head office is in "headquarters")."""
+    out = []
+    for loc in profile.get("locations") or []:
+        name = ", ".join(x for x in (loc.get("city"), loc.get("region")) if x)
+        if name and name not in out:
+            out.append(name)
+    return out[:12]
 
 
 # == 1. the plan: searches to run, competitors already known =========================
@@ -167,7 +183,7 @@ PLAN_SCHEMA = {
 PLAN_SYSTEM = """You plan how to find a company's competitors, for a market-intelligence report. You are given the company's profile, read from its own website.
 
 Return:
-- queries: up to 10 Google web searches whose results would be competitors' OWN websites, or articles listing such companies ("best X in Y", "brands like Z", "alternatives to Z"). Write each in the language people in the company's main market search in. For a local business, name its city or neighbourhood. For a chain, search for the other chains in its country. For an online brand, search by product category and by "brands like / alternatives to" the brand. Do not search for the company's own name alone. Each under 12 words. purpose: one short phrase.
+- queries: up to 10 Google web searches whose results would be competitors' OWN websites, or articles listing such companies ("best X in Y", "brands like Z", "alternatives to Z"). Write each in the language people in the company's main market search in. For a local business, name its city or neighbourhood. For a business with a few sites in different towns (competes_locally is true and sites lists several), write searches for each town, not only the head office's. For a chain, search for the other chains in its country. For an online brand, search by product category and by "brands like / alternatives to" the brand. Do not search for the company's own name alone. Each under 12 words. purpose: one short phrase.
 - search_country: ISO 3166-1 alpha-2 code (lowercase) of the country whose Google to search, normally the headquarters' country or main market.
 - search_language: the language code of the queries (e.g. en, de, pt, es, ja).
 - known: competitors you already know of with confidence, as an analyst of this industry would name them, each with its main website domain (e.g. "rothys.com"). Only real companies you are sure exist and compete with THIS company in its market; it is fine to return none, and for a small local business you normally should, because you cannot know its neighbours. Every domain will be checked by fetching it, so a guessed domain is wasted. relation: direct (same offering, same customers, same market), indirect (a substitute), aspirational (a much larger player the company is measured against). why: one short sentence.
@@ -312,68 +328,98 @@ def _place_domain(place):
 
 
 def from_places(pool, profile, plan, *, places=None):
-    """Same-category places near the client, nearest first, from Overture."""
+    """Same-category places near the client, nearest first, from Overture.
+    A business with a few sites (market_radar_footprint) is searched around
+    each one: Core Care Clinic's rivals in North Andover and Tampa are not
+    near its Waltham head office (2026-10-10)."""
     if places is None:
         from . import market_radar_places as places
-    point = profile.get("hq_point")
-    if not point or point.get("lat") is None:
+    points = fp.sites(profile)
+    if not points:
         return {"status": "skipped", "note": "the client's location is not known"}
     radius = plan.get("radius_km") or DEFAULT_RADIUS_KM
     by_user = bool(plan.get("radius_set_by_user"))
     own = pool.own
-    meta = {"status": "ok", "radius_km": radius, "located_by": point.get("source"),
-            "location_precision": point.get("precision") or "unknown"}
-    if point.get("precision") == "city":
+    hq = points[0]
+    meta = {"status": "ok", "radius_km": radius, "located_by": hq.get("source"),
+            "location_precision": hq.get("precision") or "unknown"}
+    if hq.get("precision") == "city":
         meta["warning"] = ("the client was located only by its city, so distances are from the "
                            "city centre and nearby rivals may be missed")
+    many = len(points) > 1
+    per_site = max(MIN_PLACES_PER_SITE, MAX_PLACES // len(points)) if many else MAX_PLACES
     try:
         # The client's own listing tells us exactly which category it is in.
-        near_self = places.query(point["lat"], point["lon"], places.SELF_RADIUS_KM)
-        mine = [p for p in near_self if _place_domain(p)[0] == own]
         categories = set(plan.get("place_categories") or [])
-        if mine:
-            meta["own_listing"] = {"name": mine[0]["name"], "category": mine[0]["category"],
-                                   "taxonomy": mine[0]["taxonomy"]}
-            categories.update(c for c in (mine[0]["category"], mine[0]["taxonomy"]) if c)
+        for point in points:
+            near_self = places.query(point["lat"], point["lon"], places.SELF_RADIUS_KM)
+            mine = [p for p in near_self if _place_domain(p)[0] == own]
+            if mine:
+                meta.setdefault("own_listing", {"name": mine[0]["name"],
+                                                "category": mine[0]["category"],
+                                                "taxonomy": mine[0]["taxonomy"]})
+                categories.update(c for c in (mine[0]["category"], mine[0]["taxonomy"]) if c)
         terms = plan.get("place_terms") or []
         if not categories and not terms:
             return dict(meta, status="skipped", note="no place category to look for")
         meta["categories"], meta["terms"] = sorted(categories), terms
-        found = places.query(point["lat"], point["lon"], radius, categories=categories,
-                             terms=terms)
-        if len(found) < MIN_PLACES and radius < 25 and not by_user:
-            radius = min(25, radius * 3)
-            meta["radius_km"] = radius
-            meta["widened"] = "fewer than %d places nearby" % MIN_PLACES
-            found = places.query(point["lat"], point["lon"], radius, categories=categories,
+        per = []
+        for point in points:
+            r = radius
+            found = places.query(point["lat"], point["lon"], r, categories=categories,
                                  terms=terms)
+            widened = None
+            if len(found) < MIN_PLACES and r < 25 and not by_user:
+                r = min(25, r * 3)
+                widened = "fewer than %d places nearby" % MIN_PLACES
+                found = places.query(point["lat"], point["lon"], r, categories=categories,
+                                     terms=terms)
+            per.append((point, r, widened, found))
     except Exception as e:
         return {"status": "failed", "error": "%s: %s" % (type(e).__name__, str(e)[:300])}
-    open_places = [p for p in found if (p.get("status") or "open") != "permanently_closed"]
-    by_domain, no_site, social = {}, 0, 0
-    for p in open_places:
-        d, w = _place_domain(p)
-        if not d:
-            no_site += 1
-            continue
-        if skip_domain(d):
-            social += 1
-            continue
-        if d == own:
-            continue
-        by_domain.setdefault(d, []).append((p, w))
-    added = 0
-    for d, rows in sorted(by_domain.items(), key=lambda kv: kv[1][0][0]["distance_km"]):
-        if added >= MAX_PLACES:
-            break
-        p, w = rows[0]
-        pool.add(w, "places", name=p.get("name"), url=w, distance_km=p["distance_km"],
-                 category=p.get("taxonomy") or p.get("category"),
-                 address=", ".join(x for x in (p.get("street"), p.get("city")) if x),
-                 branches_nearby=len(rows))
-        added += 1
-    meta.update(found=len(found), closed=len(found) - len(open_places), without_website=no_site,
-                website_is_social=social, companies=len(by_domain), added=added)
+    if not many and per[0][2]:
+        meta["radius_km"], meta["widened"] = per[0][1], per[0][2]
+    total = {"found": 0, "closed": 0, "without_website": 0, "website_is_social": 0}
+    companies, added, site_rows = set(), 0, []
+    cap = MAX_PLACES_ALL_SITES if many else MAX_PLACES
+    for point, r, widened, found in per:
+        open_places = [p for p in found if (p.get("status") or "open") != "permanently_closed"]
+        by_domain, no_site, social = {}, 0, 0
+        for p in open_places:
+            d, w = _place_domain(p)
+            if not d:
+                no_site += 1
+                continue
+            if skip_domain(d):
+                social += 1
+                continue
+            if d == own:
+                continue
+            by_domain.setdefault(d, []).append((p, w))
+        here = 0
+        label = fp.short_label(point) if many else None
+        for d, rows in sorted(by_domain.items(), key=lambda kv: kv[1][0][0]["distance_km"]):
+            if here >= per_site or added >= cap:
+                break
+            p, w = rows[0]
+            extra = {"near": label} if label else {}
+            pool.add(w, "places", name=p.get("name"), url=w, distance_km=p["distance_km"],
+                     category=p.get("taxonomy") or p.get("category"),
+                     address=", ".join(x for x in (p.get("street"), p.get("city")) if x),
+                     branches_nearby=len(rows), **extra)
+            here += 1
+            added += 1
+        companies.update(by_domain)
+        total["found"] += len(found)
+        total["closed"] += len(found) - len(open_places)
+        total["without_website"] += no_site
+        total["website_is_social"] += social
+        site_rows.append({"site": fp.short_label(point) or point.get("label"), "radius_km": r,
+                          "found": len(found), "companies": len(by_domain), "added": here,
+                          "widened": widened})
+    meta.update(total, companies=len(companies), added=added)
+    if many:
+        meta["sites"] = site_rows
     return meta
 
 
@@ -498,7 +544,7 @@ Judge the business behind the site. A group, parent company or support organisat
 - sells: what it sells, in under 12 words.
 - same_offering: does it sell what the client sells (yes), something overlapping or a substitute (partly), or something else (no)?
 - same_customers: the same kind of customer (consumers vs businesses, similar segment)?
-- where: where it operates relative to the client's headquarters.
+- where: where it operates relative to the nearest of the client's sites (the client's "sites"; its headquarters when none are listed). A practice in one of those towns is same_city.
 - location: its city and country if the page says, else "".
 - scale: its size compared with the client, judged from the page (number of locations, countries, range).
 - locations: how many physical sites it has: one, few (2 to 9), many (10 or more), online_only, or unclear.
@@ -510,8 +556,9 @@ def _candidate_line(item, brief):
     via = []
     for v in item["via"][:4]:
         if v["kind"] == "places":
-            via.append("listed on a map %.1f km from the client as %s" % (v["distance_km"],
-                                                                         v.get("category")))
+            via.append("listed on a map %.1f km from the client%s as %s" % (
+                v["distance_km"], " (its %s site)" % v["near"] if v.get("near") else "",
+                v.get("category")))
         elif v["kind"] == "search":
             via.append("Google result for %r" % v.get("query"))
         elif v["kind"] == "model":
@@ -563,11 +610,15 @@ def verify(items, briefs, profile, *, run_id=None, client=None):
     return verdicts, errors
 
 
-def too_small_for(verdict, archetype):
+def too_small_for(verdict, profile):
     """A single office is not a rival to a chain at the chain's level (Aspen
     Dental's list had single practices in Richardson and Rancho Cucamonga,
-    2026-10-09). A chain's local rivals belong to the per-region radar."""
-    return archetype == "multi_location" and verdict.get("locations") == "one"
+    2026-10-09). A chain's local rivals belong to the per-region radar. A
+    business with a few sites is not a chain: a one-site practice next to
+    one of Core Care Clinic's three clinics is exactly its rival
+    (2026-10-10)."""
+    return (profile.get("archetype") == "multi_location" and not fp.serves_locally(profile)
+            and verdict.get("locations") == "one")
 
 
 def passes(verdict):
@@ -686,7 +737,8 @@ def map_only_verdict(item, plan):
     """A place the map lists in the client's category whose website refused
     this server is still a nearby competitor; it is kept, marked as known from
     the map only, rather than dropped for a reason that says nothing about it."""
-    near = [v for v in item["via"] if v["kind"] == "places"]
+    near = sorted((v for v in item["via"] if v["kind"] == "places"),
+                  key=lambda v: v["distance_km"])
     if not near:
         return None
     p = near[0]
@@ -696,8 +748,9 @@ def map_only_verdict(item, plan):
             "location": p.get("address") or "", "scale": "unclear", "locations": "unclear",
             "map_only": True,
             "reason": "Its website did not let us read it; the map lists it as %s, %.1f km "
-                      "from the client." % ((p.get("category") or "the same category")
-                                            .replace("_", " "), p["distance_km"])}
+                      "from the client%s." % ((p.get("category") or "the same category")
+                                              .replace("_", " "), p["distance_km"],
+                                              "'s %s site" % p["near"] if p.get("near") else "")}
 
 
 # == 3. the ranking =====================================================================
@@ -728,19 +781,21 @@ Choose at most {limit} competitors, only from the candidate list, most important
 - indirect: a substitute or a partial overlap that customers really compare.
 - local: a business of the same kind near the client (use only for candidates found on the map near the client, or verified to be in the same city).
 - aspirational: a much larger player in the same market the client is measured against.
-score: 0 to 100, how much the client should watch this company. A business near the client in the same category scores higher than a distant one; a national chain present in the client's city counts as local.
+score: 0 to 100, how much the client should watch this company. A business near the client in the same category scores higher than a distant one; a national chain present in the client's city counts as local. When the client has several sites, a business near any one of them is local to that site (near_site names it): a one-site practice next to one of the client's sites is a real rival, not too small to matter.
 reason: one plain sentence a business owner would accept, saying why (what they sell, where, how they were found). No em dashes or en dashes, no internal jargon.
 left_out: candidates you did not choose that a reader might expect, with a short why.
 gaps: what this list probably misses (for example, competitors whose websites could not be read), or empty."""
 
 
 def _rank_line(item, verdict, brief):
-    near = [v for v in item["via"] if v["kind"] == "places"]
+    near = sorted((v for v in item["via"] if v["kind"] == "places"),
+                  key=lambda v: v["distance_km"])
     return {"domain": item["domain"], "name": verdict.get("name") or (item["names"] or [""])[0],
             "sells": verdict.get("sells"), "same_offering": verdict.get("same_offering"),
             "same_customers": verdict.get("same_customers"), "where": verdict.get("where"),
             "location": verdict.get("location"), "scale": verdict.get("scale"),
             "distance_km": near[0]["distance_km"] if near else None,
+            "near_site": near[0].get("near") if near else None,
             "branches_nearby": near[0].get("branches_nearby") if near else None,
             "found_by": sorted({v["kind"] for v in item["via"]}),
             "found_count": len(item["via"]), "check": verdict.get("reason"),
@@ -776,7 +831,9 @@ def rank(profile, survivors, *, limit, run_id=None, client=None, again=False):
 def _via_label(v):
     k = v["kind"]
     if k == "places":
-        return "on the map %.1f km away (%s)" % (v["distance_km"], v.get("category") or "same category")
+        return "on the map %.1f km %s(%s)" % (
+            v["distance_km"], "from the %s site " % v["near"] if v.get("near") else "away ",
+            v.get("category") or "same category")
     if k == "search":
         return "Google #%s for \"%s\"" % (v.get("position"), v.get("query"))
     if k == "article":
@@ -813,15 +870,16 @@ def discover(profile, *, run_id=None, client=None, token=None, progress=None, se
     coverage["model"] = from_plan(pool, plan)
 
     say("rivals_search")
-    local = archetype in ("local_single",)
+    local = fp.serves_locally(profile)
     with ThreadPoolExecutor(max_workers=2) as ex:
         f_search = ex.submit(from_search, pool, plan, run_id=run_id, token=token, search=search)
         f_places = ex.submit(from_places, pool, profile, plan, places=places) if local else None
         search_meta, results = f_search.result()
         coverage["search"] = search_meta
         coverage["places"] = f_places.result() if f_places else {
-            "status": "not_run", "note": "map search runs for single-site local businesses; "
-                                         "chains get it per region in a later phase"}
+            "status": "not_run", "note": "map search runs for businesses with up to %d sites; "
+                                         "a chain's local rivals are not searched yet"
+                                         % fp.SMALL_CHAIN_MAX}
 
     say("rivals_verify")
     first = pool.ordered()[:MAX_VERIFY]
@@ -883,7 +941,7 @@ def discover(profile, *, run_id=None, client=None, token=None, progress=None, se
             unread.append({"domain": item["domain"], "why": "the check did not return a verdict",
                            "found": [_via_label(x) for x in item["via"][:3]]})
             continue
-        if too_small_for(v, archetype):
+        if too_small_for(v, profile):
             rejected.append({"domain": item["domain"], "site_type": v.get("site_type"),
                              "why": "a single site, not a rival to a chain at its level"})
         elif passes(v):
@@ -892,7 +950,7 @@ def discover(profile, *, run_id=None, client=None, token=None, progress=None, se
             rejected.append({"domain": item["domain"], "site_type": v.get("site_type"),
                              "why": v.get("reason")})
 
-    limit = LIMITS.get(archetype, DEFAULT_LIMIT)
+    limit = LIMITS["local_single"] if local else LIMITS.get(archetype, DEFAULT_LIMIT)
     lines = [_rank_line(i, verdicts[i["domain"]], briefs[i["domain"]]) for i in survivors]
     # What the ranking chose from, so a short list can be explained.
     coverage["rank_input"] = {"count": len(lines), "domains": [l["domain"] for l in lines][:80]}
@@ -943,6 +1001,7 @@ def discover(profile, *, run_id=None, client=None, token=None, progress=None, se
                 "score": score,
                 "reason": _clean(c.get("reason")), "sells": line_by[d]["sells"],
                 "location": line_by[d]["location"], "distance_km": line_by[d]["distance_km"],
+                "near_site": line_by[d]["near_site"],
                 "branches_nearby": line_by[d]["branches_nearby"],
                 "found": [_via_label(v) for v in item["via"][:4]],
                 "found_by": line_by[d]["found_by"], "checked_on": line_by[d]["checked_on"]})
@@ -978,7 +1037,7 @@ def save(result, *, client_id, owner_email, conn=None):
     for c in result.get("competitors") or []:
         entity = store.upsert_entity(c["domain"], name=c.get("name") or None, conn=conn)
         details = {k: c.get(k) for k in ("reason", "sells", "location", "distance_km",
-                                         "branches_nearby", "checked_on", "found_by", "score")}
+                                         "near_site", "branches_nearby", "checked_on", "found_by", "score")}
         details["run_id"] = result.get("run_id")
         store.propose_competitor(client_id, owner_email, entity, c["kind"],
                                  confidence=round(c["score"] / 100.0, 2),

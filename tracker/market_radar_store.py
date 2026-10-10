@@ -271,6 +271,10 @@ SCHEMA = [
     # move (a blog post about a charity day) or folded into a typed event
     # keeps its row, with the reason, and is left off the list.
     "ALTER TABLE mr_events ADD COLUMN IF NOT EXISTS hidden_reason TEXT",
+    # 2026-10-10: whether a move touches what the company sells (core) or a
+    # side of it a competitor does not compete with (peripheral: research,
+    # teaching, philanthropy, a shareholder's share sale). NULL: not judged.
+    "ALTER TABLE mr_events ADD COLUMN IF NOT EXISTS scope TEXT",
     # Phase 7 (2026-10-10): the written report for a client, with the
     # evidence it was written from and what the citation check removed.
     """CREATE TABLE IF NOT EXISTS mr_reports (
@@ -699,15 +703,27 @@ def recent_events(entity_ids, *, days=120, limit=400, conn=None):
     with _tx(conn) as cur:
         cur.execute("""
             SELECT id, entity_id, type, status, event_date, title, summary, location, sources,
-                   evidence_count, first_seen_at, dedupe_key, hidden_reason
+                   evidence_count, first_seen_at, dedupe_key, hidden_reason, scope
             FROM mr_events WHERE entity_id = ANY(%s)
               AND first_seen_at > now() - make_interval(days => %s)
             ORDER BY COALESCE(event_date, first_seen_at::date) DESC, first_seen_at DESC, id DESC
             LIMIT %s""", (ids, int(days), int(limit)))
         keys = ("id", "entity_id", "type", "status", "event_date", "title", "summary",
                 "location", "sources", "evidence_count", "first_seen_at", "dedupe_key",
-                "hidden_reason")
+                "hidden_reason", "scope")
         return [dict(zip(keys, r)) for r in cur.fetchall()]
+
+
+EVENT_SCOPES = ("core", "peripheral")
+
+
+def set_event_scope(event_id, scope, *, conn=None):
+    """Record whether a move touches what the company sells (signals)."""
+    if scope not in EVENT_SCOPES:
+        raise ValueError("unknown event scope %r" % scope)
+    with _tx(conn) as cur:
+        cur.execute("UPDATE mr_events SET scope=%s, updated_at=now() WHERE id=%s",
+                    (scope, event_id))
 
 
 def hide_event(event_id, reason, *, conn=None):

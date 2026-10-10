@@ -12,7 +12,7 @@
   var API = '/admin/market-radar/api';
 
   var ARCHETYPES = [
-    ['local_single', 'Local business, one site'], ['multi_location', 'Chain with many locations'],
+    ['local_single', 'Local business, one site'], ['multi_location', 'Several locations or a chain'],
     ['ecommerce', 'Online shop'], ['b2b_services', 'Business services'],
     ['b2b_product', 'Business software or products'], ['manufacturer', 'Manufacturer'], ['other', 'Other']];
   var CUSTOMERS = [['B2C', 'Consumers'], ['B2B', 'Businesses'], ['both', 'Both']];
@@ -205,8 +205,13 @@
       (pt.label ? ' (' + pt.label + ')' : '') : 'Not located on the map yet';
     var radius = view.client && view.client.radius_km;
     var precisionWarn = pt && pt.precision === 'city' && f.archetype === 'local_single';
+    // A business with a few sites is searched around each of them.
+    var sites = (p.sites || []).length > 1 ? '<div class="mr-k" style="margin-top:10px">Sites searched</div>' +
+      '<div class="mr-v">' + esc(p.sites.map(function (s) { return s.name; }).filter(Boolean).join(' · ')) + '</div>' : '';
+    var chain = f.archetype === 'multi_location' && p.competes_locally === false ?
+      '<div class="mr-hint" style="margin-top:6px">A chain: competitors are looked for among other chains, not around each branch.</div>' : '';
     return '<div class="mr-more" style="border-top:1px solid var(--mr-line)"><div class="mr-k">Map location</div>' +
-      '<div class="mr-v">' + esc(where) + '</div>' +
+      '<div class="mr-v">' + esc(where) + '</div>' + sites + chain +
       (precisionWarn ? '<div class="mr-callout" style="margin-top:8px">Add the street address so the map search looks in the right neighbourhood.</div>' : '') +
       (local ? '<form class="mr-addrow" id="mrRadiusForm" style="border:0;background:none;padding:10px 0 0">' +
         '<label class="mr-k" for="mrRadius" style="align-self:center">Search radius</label>' +

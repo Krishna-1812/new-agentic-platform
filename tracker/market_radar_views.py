@@ -18,6 +18,7 @@ import copy
 import re
 from datetime import datetime, timezone
 
+from . import market_radar_footprint as fp
 from . import market_radar_store as store
 
 ARCHETYPES = ("local_single", "multi_location", "ecommerce", "b2b_services", "b2b_product",
@@ -255,6 +256,9 @@ def profile_view(client):
         "archetype_reason": reading.get("archetype_reason"),
         "business_model": reading.get("business_model"),
         "hq_point": eff.get("hq_point"),
+        "sites": [{"name": fp.short_label(p), "precision": p.get("precision")}
+                  for p in fp.sites(eff)] if fp.serves_locally(eff) else [],
+        "competes_locally": fp.serves_locally(eff),
         "hq_country_source": reading.get("hq_country_source"),
         "evidence": reading.get("evidence") or [],
         "checks": reading.get("checks") or [],

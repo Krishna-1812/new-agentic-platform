@@ -52,7 +52,7 @@
 
   var COUNTRY = { US: 'United States', GB: 'United Kingdom', DE: 'Germany', IN: 'India', AU: 'Australia',
     CA: 'Canada', IE: 'Ireland', FR: 'France', ES: 'Spain', IT: 'Italy', NL: 'Netherlands', BR: 'Brazil' };
-  var ARCHETYPE = { local_single: 'Local business, one site', multi_location: 'Multi-location chain',
+  var ARCHETYPE = { local_single: 'Local business, one site', multi_location: 'Several locations',
     ecommerce: 'Online shop / D2C brand', b2b_services: 'B2B services', b2b_product: 'B2B product',
     manufacturer: 'Manufacturer', other: 'Other' };
   var KIND = { direct: 'Direct', indirect: 'Indirect', local: 'Local', aspirational: 'Aspirational' };
@@ -92,7 +92,7 @@
     }
     if (k === 'N') {
       return '<li><b>' + link(it.website, it.name) + '</b> <span class="rr-q">' +
-        esc([String(it.category || '').replace(/_/g, ' '), it.distance_km != null ? it.distance_km + ' km away' : '',
+        esc([String(it.category || '').replace(/_/g, ' '), kmText(it),
           it.certain === false ? 'possibly new' : STATUS[it.status]].filter(Boolean).join(' · ')) + '</span>' +
         '<ul class="rr-src">' + (it.evidence || []).map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul></li>';
     }
@@ -215,11 +215,29 @@
     return cards;
   }
 
+  // "1.2 km from Waltham" for a business with several sites, else "1.2 km away".
+  function kmText(n) {
+    if (n.distance_km == null) return '';
+    return n.distance_km + ' km ' + (n.near ? 'from ' + n.near : 'away');
+  }
+
   // A map of the client and the new businesses near it: an equirectangular
-  // projection is exact enough over a few kilometres.
+  // projection is exact enough over a few kilometres. A business with sites
+  // in several towns gets the map of the site with the most finds; the list
+  // names the site each find is near.
   function nearbyMap(pack) {
-    var c = pack.client || {}, p = c.point;
+    var c = pack.client || {}, p = c.point, where = '';
     var pts = (pack.nearby || []).filter(function (n) { return n.lat != null && n.lon != null; });
+    if ((c.sites || []).length > 1 && pts.length) {
+      var count = {};
+      pts.forEach(function (n) { if (n.near) count[n.near] = (count[n.near] || 0) + 1; });
+      var best = c.sites.slice().sort(function (a, b) { return (count[b.name] || 0) - (count[a.name] || 0); })[0];
+      if (best && count[best.name]) {
+        p = { lat: best.lat, lon: best.lon };
+        where = best.name;
+        pts = pts.filter(function (n) { return n.near === best.name; });
+      }
+    }
     if (!p || !pts.length) return '';
     var k = Math.cos(p.lat * Math.PI / 180);
     var xy = pts.map(function (n) {
@@ -236,18 +254,18 @@
       var x = C + q.x * scale, y = C - q.y * scale;
       return '<g><circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="9" class="rr-pin' + (q.n.certain === false ? ' weak' : '') + '"/>' +
         '<text x="' + x.toFixed(1) + '" y="' + (y + 3.5).toFixed(1) + '" class="rr-pint">' + esc(q.n.ref.slice(1)) + '</text>' +
-        '<title>' + esc(q.n.name) + ', ' + esc(q.n.distance_km) + ' km</title></g>';
+        '<title>' + esc(q.n.name) + ', ' + esc(kmText(q.n)) + '</title></g>';
     }).join('');
     return '<figure class="rr-map" data-noprint><svg viewBox="0 0 ' + S + ' ' + S + '" role="img" aria-label="Map of new businesses near ' + esc(c.name) + '">' +
-      rings + '<circle cx="' + C + '" cy="' + C + '" r="7" class="rr-you"/><text x="' + C + '" y="' + (C + 22) + '" class="rr-yout">You</text>' + dots +
-      '</svg><figcaption>North is up. Numbers match the list.</figcaption></figure>';
+      rings + '<circle cx="' + C + '" cy="' + C + '" r="7" class="rr-you"/><text x="' + C + '" y="' + (C + 22) + '" class="rr-yout">' + (where ? esc(where) : 'You') + '</text>' + dots +
+      '</svg><figcaption>' + (where ? 'Around your ' + esc(where) + ' site. ' : '') + 'North is up. Numbers match the list.</figcaption></figure>';
   }
 
   function renderNearby(brief, pack) {
     var local = (brief.local || []).map(function (l) { return '<p class="rr-lead2">' + esc(l.text) + '</p>' + based(l.cites); }).join('');
     var list = (pack.nearby || []).length ? '<ol class="rr-near">' + pack.nearby.map(function (n) {
       return '<li value="' + esc(n.ref.slice(1)) + '"><b>' + link(n.website, n.name) + '</b> <span class="rr-q">' +
-        esc([String(n.category || '').replace(/_/g, ' '), n.distance_km != null ? n.distance_km + ' km' : '',
+        esc([String(n.category || '').replace(/_/g, ' '), kmText(n),
           n.certain === false ? 'possibly new' : (STATUS[n.status] || '')].filter(Boolean).join(' · ')) + '</span>' +
         '<div class="rr-q">' + esc((n.evidence || []).join('; ')) + '</div></li>';
     }).join('') + '</ol>' : '';

@@ -46,7 +46,8 @@ PROFILE_SCHEMA = {
     "additionalProperties": False,
     "required": ["name", "one_liner", "offerings", "customer_type", "archetype",
                  "archetype_reason", "business_model", "sells_online", "location_count",
-                 "location_count_basis", "hq", "markets", "service_area", "price_positioning",
+                 "location_count_basis", "hq", "locations", "markets", "service_area",
+                 "price_positioning",
                  "industry", "competitors_named", "languages", "evidence", "confidence",
                  "unknowns"],
     "properties": {
@@ -65,6 +66,12 @@ PROFILE_SCHEMA = {
                "properties": {"street": {"type": "string"}, "postal_code": {"type": "string"},
                               "city": {"type": "string"}, "region": {"type": "string"},
                               "country_code": {"type": "string"}}},
+        "locations": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "required": ["label", "street", "postal_code", "city", "region", "country_code"],
+            "properties": {"label": {"type": "string"}, "street": {"type": "string"},
+                           "postal_code": {"type": "string"}, "city": {"type": "string"},
+                           "region": {"type": "string"}, "country_code": {"type": "string"}}}},
         "markets": {"type": "array", "items": {"type": "string"}},
         "service_area": {"type": "string"},
         "price_positioning": {"type": "string",
@@ -97,7 +104,7 @@ You are given (1) FACTS a program read from the site's code and sitemap, and (2)
 
 Archetypes, pick one:
 - local_single: one physical location (or a few in one town) serving people nearby, e.g. a dental practice, a restaurant, a gym.
-- multi_location: a chain or franchise with many physical locations in several towns.
+- multi_location: physical locations in more than one town: a practice with clinics in two or three towns, or a chain or franchise with many.
 - ecommerce: sells its own products online to consumers as its main channel (it may also have stores or stockists).
 - b2b_services: sells services to businesses (agency, consultancy, IT services).
 - b2b_product: sells software or products to businesses.
@@ -109,6 +116,7 @@ Rules:
 - hq.country_code: ISO 3166-1 alpha-2. Prefer a stated address (structured data, legal or contact page) over any other signal. A "shopify_store_info" fact is the registered address of the store's Shopify account, which is often a warehouse or an office other than the head office: use it only when the pages state no address, and say so in evidence or unknowns.
 - Pages marked as read from the Wayback Machine are dated copies of the site, because the live site refused our server. Treat them as the site's content as of that date. If the facts note that the site chose a version for our location, do not treat that version's country as the company's.
 - hq.street and hq.postal_code: the street address and postcode of the head office (for a local business, its premises), as the pages state them (contact page, Impressum, footer, structured data). Empty when not stated.
+- locations: when the business has at most 12 physical sites, each site the pages or the structured data state, head office included, with its address as stated (street, postcode, city, region, country code) and a short label ("Waltham clinic"). Empty for an online-only business, when no site is stated, or for a chain with more than 12. Never invent an address; leave a part empty when it is not stated.
 - markets: ISO alpha-2 codes of the countries the company actually serves or ships to, per the pages.
 - industry.naics_code: the best-matching 6-digit NAICS 2022 code, and its title.
 - competitors_named: only companies the site itself presents as competitors or alternatives (comparison pages, "vs" pages, "switch from"). Not partners, clients, insurers, suppliers or press outlets. Usually empty.
@@ -295,6 +303,10 @@ def assemble(site, parsed, meta):
         p["hq_country_source"] = "site signals (%s, %d%%)" % (
             ", ".join(sorted({e["signal"] for e in vote.get("evidence", [])})),
             round(vote["confidence"] * 100))
+    p["locations"] = [
+        {k: (str(loc.get(k) or "").upper() if k == "country_code" else _clean(str(loc.get(k) or "")))
+         for k in ("label", "street", "postal_code", "city", "region", "country_code")}
+        for loc in (p.get("locations") or [])[:12] if isinstance(loc, dict)]
     p["markets"] = sorted({m.strip().upper() for m in p.get("markets", []) if len(m.strip()) == 2})
     s = site.get("signals") or {}
     p["facts"] = {
@@ -423,6 +435,50 @@ def locate_hq(profile, *, conn=None):
     return None
 
 
+def locate_sites(profile, *, conn=None):
+    """Each site of a business with a few (market_radar_footprint), located:
+    the site's own geo tag when its structured data has one, else a geocode
+    of its address, most precise first. A chain gets none: its competition
+    is not the businesses next to each branch. Sites that cannot be located
+    are left out, and the head office is not repeated."""
+    from . import market_radar_footprint as fp
+    if profile.get("archetype") not in ("local_single", "multi_location"):
+        return []
+    facts = profile.get("facts") or {}
+    tagged = [o for o in facts.get("structured_locations", []) if o.get("geo")]
+    stated = profile.get("locations") or []
+    if len(stated) > fp.SMALL_CHAIN_MAX or len(tagged) > fp.SMALL_CHAIN_MAX:
+        return []
+    hq = profile.get("hq") or {}
+    out = []
+    for o in tagged:
+        a = o.get("address") or {}
+        out.append(dict(o["geo"], source="structured data", precision="exact",
+                        city=a.get("addressLocality") or "", label=o.get("name") or ""))
+    for loc in stated:
+        country = loc.get("country_code") or hq.get("country_code")
+        tries = []
+        if loc.get("street"):
+            tries.append((_join(loc["street"], loc.get("postal_code"), loc.get("city"), country),
+                          "street"))
+        if loc.get("postal_code") and loc.get("city"):
+            tries.append((_join(loc["postal_code"], loc["city"], country), "postcode"))
+        if loc.get("city"):
+            tries.append((_join(loc["city"], loc.get("region"), country), "city"))
+        for query, precision in tries:
+            point = geocode(query, conn=conn)
+            if point:
+                out.append(dict(point, source="geocoded site address", precision=precision,
+                                city=loc.get("city") or "", label=loc.get("label") or query))
+                break
+    kept = []
+    for p in out:
+        if any(fp.nearest([q], p["lat"], p["lon"])[0] <= fp.SAME_SITE_KM for q in kept):
+            continue
+        kept.append(p)
+    return kept
+
+
 # == the whole step =============================================================
 
 APOLLO_LABEL = "Apollo company record (the website refused our reader)"
@@ -510,6 +566,7 @@ def build_profile(url, *, run_id=None, client=None, save=True, conn=None, apollo
                 "error": {"kind": e.kind, "detail": e.detail}, "pages": site.get("pages")}
     profile = assemble(site, parsed, meta)
     profile["hq_point"] = locate_hq(profile, conn=conn)
+    profile["site_points"] = locate_sites(profile, conn=conn)
     entity_id = None
     if save:
         try:

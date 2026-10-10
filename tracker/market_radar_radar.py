@@ -48,6 +48,7 @@ from base64 import b64encode
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
 
+from . import market_radar_footprint as fp
 from . import market_radar_news as news
 
 logger = logging.getLogger(__name__)
@@ -793,14 +794,19 @@ def run_for_client(client_id, owner_email, *, run_id=None, store=None, io=None, 
             result["new_events"] = _record(store, c["entity_id"], detector, result, now)
         return result
 
-    if archetype in LOCAL_ARCHETYPES:
-        point = profile.get("hq_point") or {}
+    if archetype in LOCAL_ARCHETYPES and not fp.serves_locally(profile):
+        out["local"] = {"status": "skipped", "note": "new businesses are looked for around a "
+                        "business with up to %d sites; this is a chain with more"
+                        % fp.SMALL_CHAIN_MAX}
+    elif archetype in LOCAL_ARCHETYPES:
+        points = fp.sites(profile)
         settings = _search_settings(store, client_id, owner_email)
-        if point.get("lat") is None:
+        if not points:
             out["local"] = {"status": "skipped", "note": "the business's location is not known"}
         elif not settings:
-            out["local"] = {"status": "skipped", "note": "run a competitor search first: it "
-                            "decides which kinds of business count as like this one"}
+            out["local"] = {"status": "skipped", "note": "the latest competitor search did not "
+                            "search the map, which decides which kinds of business count as "
+                            "like this one: run the competitor search again"}
         else:
             hq = profile.get("hq") or {}
             radius = float(c.get("radius_km") or settings["radius_km"])
@@ -810,12 +816,16 @@ def run_for_client(client_id, owner_email, *, run_id=None, store=None, io=None, 
             # ("dentist Notting Hill"), which made every Notting Hill
             # opening headline look like dental news (2026-10-10).
             label = (profile.get("industry") or {}).get("plain_label")
-            out["local"] = stored("radar_local", lambda: scan_local(
-                point=point, categories=settings["categories"], terms=settings["terms"],
-                radius_km=radius, city=hq.get("city"), country=hq.get("country_code") or "US",
-                lang=profile.get("language") or "en", own_domain=c["domain"], places=places,
-                get=io["get"], fetch=io["fetch"], cache=cache, breaker=breaker, now=now,
-                industry_words=[label] if label else []))
+
+            def scan(point):
+                return scan_local(
+                    point=point, categories=settings["categories"], terms=settings["terms"],
+                    radius_km=radius, city=point.get("city") or hq.get("city"),
+                    country=hq.get("country_code") or "US",
+                    lang=profile.get("language") or "en", own_domain=c["domain"],
+                    places=places, get=io["get"], fetch=io["fetch"], cache=cache,
+                    breaker=breaker, now=now, industry_words=[label] if label else [])
+            out["local"] = stored("radar_local", lambda: scan_sites(points, scan))
             for f in out["local"].get("findings") or []:
                 f["is_competitor"] = f.get("domain") in competitors
     if archetype in ENTRANT_ARCHETYPES:
@@ -833,17 +843,50 @@ def run_for_client(client_id, owner_email, *, run_id=None, store=None, io=None, 
     return out
 
 
+def scan_sites(points, scan):
+    """The local scan around each of a business's sites, as one result. With
+    one site it is that site's scan. With several, each finding says which
+    site it is near, a place near two sites is kept once at its shorter
+    distance, and the note gives each site's count."""
+    if len(points) == 1:
+        return scan(points[0])
+    results = [(fp.short_label(p) or p.get("label") or "site %d" % (i + 1), scan(p))
+               for i, p in enumerate(points)]
+    ok = [(name, r) for name, r in results if r.get("status") == "ok"]
+    if not ok:
+        return {"status": "failed", "findings": [], "news": [], "coverage": {},
+                "note": "; ".join("%s: %s" % (name, r.get("note")) for name, r in results)}
+    findings, news_items, titles = {}, [], set()
+    for name, r in ok:
+        for f in r["findings"]:
+            f = dict(f, near=name)
+            had = findings.get(f["key"])
+            if had is None or f["distance_km"] < had["distance_km"]:
+                findings[f["key"]] = f
+        for h in r.get("news") or []:
+            if h.get("title") not in titles:
+                titles.add(h.get("title"))
+                news_items.append(h)
+    note = "; ".join("%s: %s" % (name, r.get("note")) for name, r in results)
+    return {"status": "ok", "note": note,
+            "findings": sorted(findings.values(), key=lambda f: f["distance_km"]),
+            "news": news_items,
+            "coverage": {"sites": [dict(r.get("coverage") or {}, site=name,
+                                        status=r.get("status")) for name, r in results]}}
+
+
 def _record(store, entity_id, detector, result, now):
     created = 0
     for f in result["findings"]:
         if detector == "radar_local":
             kind = "nearby_opening"
-            title = "%s: %s (%s, %.1f km away)" % (
+            title = "%s: %s (%s, %.1f km %s)" % (
                 "Possibly new nearby" if not f.get("certain", True) else
                 {"planned": "Coming soon nearby", "opened": "New nearby"}.get(f["status"],
                                                                               "New nearby"),
-                f["name"], (f.get("category") or "").replace("_", " "), f["distance_km"])
-            location = {k: f.get(k) for k in ("lat", "lon", "distance_km", "address")}
+                f["name"], (f.get("category") or "").replace("_", " "), f["distance_km"],
+                "from your %s site" % f["near"] if f.get("near") else "away")
+            location = {k: f.get(k) for k in ("lat", "lon", "distance_km", "address", "near")}
             location["label"] = f["name"]
         else:
             kind, title, location = "new_entrant", "New brand in your category: %s" % f["name"], \

@@ -676,7 +676,7 @@ def test_searches_go_in_parallel_groups_and_one_failed_group_makes_it_partial():
 
 def test_a_chain_does_not_get_single_offices_as_rivals():
     c = Scripted(verdicts={"rival.example": verdict("rival.example", locations="many")})
-    out = run_discover(c, profile=dict(PROFILE, archetype="multi_location"))
+    out = run_discover(c, profile=dict(PROFILE, archetype="multi_location", location_count=40))
     assert [x["domain"] for x in out["competitors"]] == ["rival.example"]
     assert {"domain": "named.example", "site_type": "business",
             "why": "a single site, not a rival to a chain at its level"} in out["rejected"]

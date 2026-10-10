@@ -23,14 +23,26 @@ Give it a company's website and it:
      register and LinkedIn posts (`market_radar_b2b.py`, `market_radar_linkedin.py`).
 
    Every read is stored as a snapshot. Next time, the difference is the news.
+   **Local or chain.** A business with one site, or up to five
+   (`market_radar_footprint.py`), competes with the businesses near each of its sites.
+   The profile lists every site the website states, and each one is located. The map is then
+   searched around each site, and one-site practices next to any site are kept as rivals.
+   Each move is scored by its distance to the nearest site. A chain with more than five sites
+   competes with other chains: one-site businesses are dropped, the map is not searched, and
+   moves are scored without distance. Core Care Clinic, with three clinics in two states, is
+   the case this was built for.
 4. **Looks around it.**
-   - *Nearby and new* (`market_radar_radar.py`): new businesses nearby, or new brands in the
-     category.
+   - *Nearby and new* (`market_radar_radar.py`): new businesses near each site, or new brands
+     in the category.
    - *Industry pulse* (`market_radar_pulse.py`): the industry's news this month, grouped into
      themes.
 5. **Turns headlines into moves** (`market_radar_signals.py`). Haiku sorts headlines into
    typed events (an opening, a price cut, a C-suite change), and each event is scored for
-   your company.
+   your company. A second small Haiku call marks each move *core* (it touches what the
+   competitor sells) or *peripheral* (research, teaching, philanthropy, a shareholder's share
+   sale, a side business). A peripheral move counts about a third as much, and each further
+   move by the same company counts a little less, so one big health system cannot fill the
+   list.
 6. **Writes a cited report** (`market_radar_report.py`). Sonnet writes it, and every
    statement must cite the evidence pack. Then Haiku checks each statement against its
    evidence, and removes any it doesn't support.
@@ -50,6 +62,8 @@ really cost.
 | Find competitors for a new company (profile, search, checks, ranking) | about $0.10 to $0.25 | Anthropic and Apify |
 | A collection plus the report (the first one) | most of the rest of a ~$0.15 to $0.30 first run | Anthropic |
 | Weekly refresh, per company | about $0.07 to $0.12 | Anthropic |
+| Core/peripheral check on new moves | well under $0.01 a collection (one Haiku call per competitor with new moves) | Anthropic |
+| Reading a company again whose stored profile has no site list (once) | about $0.03 | Anthropic |
 | Hard cap, any single run | $1.00 | the ledger refuses past it |
 | Google search, per query | about $0.003 ($0.0025 per results page on Apify Starter, $0.0045 on Free) | Apify |
 | Real browser for a site that blocks servers | compute units, booked at worst case first | Apify |
