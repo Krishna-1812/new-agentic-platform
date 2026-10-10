@@ -39,3 +39,6 @@ yt-dlp>=2024.8.6
 # it the agent reads sites without a browser, as before.
 crawl4ai==0.9.4
 playwright>=1.49.0
+# Market Radar reads Overture Maps places (tracker/market_radar_places.py) straight
+# from its public Parquet files on S3; DuckDB reads only the row groups it needs.
+duckdb>=1.5.0

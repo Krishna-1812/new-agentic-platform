@@ -8,6 +8,43 @@ import requests
 import urllib3
 
 
+# Address ranges that carry an IPv4 address inside an IPv6 one. `is_global`
+# judges the IPv6 wrapper, not the address a packet really reaches, so
+# 64:ff9b::7f00:1 (NAT64 for 127.0.0.1) and ::127.0.0.1 both read as global.
+_NAT64_WELL_KNOWN = ipaddress.ip_network('64:ff9b::/96')
+# Local-use NAT64 (RFC 8215): the embedding is operator-defined, so the IPv4
+# address it reaches cannot be read back out reliably. Refused outright.
+_NAT64_LOCAL_USE = ipaddress.ip_network('64:ff9b:1::/48')
+# Deprecated IPv4-compatible addresses (::a.b.c.d). :: and ::1 are inside this
+# range too and are already non-global, so refusing the whole range is safe.
+_IPV4_COMPATIBLE = ipaddress.ip_network('::/96')
+
+
+def is_public_address(ip):
+    """True only for a unicast address that is globally routable once any
+    IPv4 address embedded in it is unwrapped.
+
+    IPv4-mapped (::ffff:a.b.c.d) and well-known-prefix NAT64 (64:ff9b::/96)
+    are judged by the IPv4 address inside them, because that is where a
+    connection to them actually goes (a DNS64 resolver legitimately returns
+    NAT64 addresses for IPv4-only sites). 6to4 (2002::/16), Teredo
+    (2001::/32), local-use NAT64 and IPv4-compatible addresses are refused
+    outright: they are tunnel mechanisms no organiser page is served from,
+    and each can smuggle a private IPv4 destination past the check above.
+    """
+    if isinstance(ip, str):
+        ip = ipaddress.ip_address(ip)
+    if ip.version == 6:
+        if ip.ipv4_mapped is not None:
+            return is_public_address(ip.ipv4_mapped)
+        if ip in _NAT64_WELL_KNOWN:
+            return is_public_address(ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF))
+        if (ip in _NAT64_LOCAL_USE or ip.sixtofour is not None
+                or ip.teredo is not None or ip in _IPV4_COMPATIBLE):
+            return False
+    return ip.is_global and not ip.is_multicast
+
+
 def public_addresses(host, port):
     if not host:
         raise ValueError('A public host is required.')
@@ -17,13 +54,14 @@ def public_addresses(host, port):
     # destination either, so they get their own explicit check rather than
     # silently passing this "public" gate and failing downstream with a
     # confusing socket error instead of this function's own clear message.
-    if not addresses or any(not ipaddress.ip_address(a).is_global
-                            or ipaddress.ip_address(a).is_multicast for a in addresses):
+    # IPv6 scope ids (fe80::1%en0) are stripped before parsing; a scoped
+    # address is link-local and refused either way.
+    if not addresses or any(not is_public_address(a.split('%', 1)[0]) for a in addresses):
         raise ValueError('Private or reserved page destinations are not allowed.')
     return addresses
 
 
-def public_get(url, *, timeout=20, stream=True, headers=None):
+def public_get(url, *, timeout=20, stream=True, headers=None, ssl_context=None):
     """Connect to the validated IP, retaining the original TLS hostname.
 
     No environment proxy is used. Every redirect resolves and validates anew.
@@ -44,7 +82,8 @@ def public_get(url, *, timeout=20, stream=True, headers=None):
         address = public_addresses(host, port)[0]
         if target.scheme == 'https':
             pool = urllib3.HTTPSConnectionPool(address, port=port,
-                server_hostname=host, assert_hostname=host, ssl_context=ssl.create_default_context())
+                server_hostname=host, assert_hostname=host,
+                ssl_context=ssl_context or ssl.create_default_context())
         else:
             pool = urllib3.HTTPConnectionPool(address, port=port)
         req_headers = dict(headers or {}, Host=target.netloc)
@@ -76,3 +115,42 @@ def public_get(url, *, timeout=20, stream=True, headers=None):
         response.close = close
         return response
     raise ValueError('Too many page redirects.')
+
+
+def public_post(url, body, *, timeout=20, headers=None, ssl_context=None):
+    """POST `body` (bytes) to a public HTTP(S) address, with the same address
+    checks as public_get. Redirects are NOT followed: a POST that is
+    redirected comes back as the 3xx response, for the caller to treat as a
+    failure. Used for job boards whose public listing is a POST (Workday)."""
+    target = urlsplit(url)
+    if target.scheme not in ('http','https') or target.username or target.password:
+        raise ValueError('Only public HTTP(S) pages without URL credentials are allowed.')
+    port = target.port if target.port is not None else (443 if target.scheme == 'https' else 80)
+    if port not in (80,443):
+        raise ValueError('Only standard web ports are allowed.')
+    host = target.hostname
+    address = public_addresses(host, port)[0]
+    if target.scheme == 'https':
+        pool = urllib3.HTTPSConnectionPool(address, port=port, server_hostname=host,
+            assert_hostname=host, ssl_context=ssl_context or ssl.create_default_context())
+    else:
+        pool = urllib3.HTTPConnectionPool(address, port=port)
+    path = (target.path or '/') + ('?' + target.query if target.query else '')
+    try:
+        raw = pool.urlopen('POST', path, body=body, headers=dict(headers or {}, Host=target.netloc),
+            redirect=False, retries=False, preload_content=False, timeout=timeout)
+    except Exception:
+        pool.close()
+        raise
+    response = requests.Response()
+    response.status_code = raw.status
+    response.headers = requests.structures.CaseInsensitiveDict(raw.headers)
+    response.url = url
+    response.raw = raw
+    response.encoding = requests.utils.get_encoding_from_headers(response.headers) or 'utf-8'
+    original_close = response.close
+    def close(original_close=original_close, pool=pool):
+        original_close()
+        pool.close()
+    response.close = close
+    return response

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    MARKET RADAR REPORT (/admin/market-radar/report/<client_id>) — admin only
+
+    The written report (tracker/market_radar_report.py), drawn by
+    static/js/market_radar_report.js from /admin/market-radar/api/clients/<id>/report.
+    A reading page, not a dashboard: one column, read top to bottom.
+-#}
+<html lang="en">
+<head>
+{{ head("Market Radar report", ["market_radar.css?v=1", "market_radar_report.css?v=1"]) }}
+</head>
+<body class="sa">
+
+{{ topbar([("Admin", "/admin/internal-usage"), ("Market Radar", "/admin/market-radar#company-" ~ client_id), ("Report", none)]) }}
+
+<main class="mr rr" id="rr" data-client="{{ client_id }}">
+  <div id="rrBody" aria-live="polite"><div class="card"><div class="mr-empty">Loading the report&hellip;</div></div></div>
+</main>
+
+{{ topbar_script() }}
+<script src="{{ url_for('static', filename='js/market_radar_report.js') }}?v=1"></script>
+</body>
+</html>
