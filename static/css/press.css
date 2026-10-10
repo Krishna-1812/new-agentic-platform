@@ -1364,7 +1364,7 @@ a.stat:hover { border-top-color: transparent; }
 .foot-word {
   display: block; font-family: var(--face-display); font-weight: var(--fw-semi);
   font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
-  font-size: clamp(72px, 16.5vw, 250px); line-height: .9; letter-spacing: -0.035em;
+  font-size: clamp(72px, 15vw, 212px); line-height: .9; letter-spacing: -0.035em;
   padding-top: var(--s8); color: var(--ink);
 }
 .foot .bn-mark { background: var(--ink); }
@@ -1567,7 +1567,7 @@ a.stat:hover { border-top-color: transparent; }
 .play .inkband.settled, .play .limeband.settled { transform: none; border-radius: var(--r-lg); }
 
 /* ── The footer wordmark rises letter by letter ── */
-.play .foot-word { overflow: hidden; }
+.play .foot-word { overflow: hidden; padding-right: .08em; } /* room for the last glyph's overhang */
 .play .foot-word .ch { display: inline-block; transform: translateY(105%);
   transition: transform 800ms var(--spring) calc(var(--i) * 45ms), font-variation-settings 420ms var(--glide); }
 .play .foot-word.up .ch { transform: none; }
@@ -1742,7 +1742,7 @@ a.stat:hover { border-top-color: transparent; }
 .foot-top .foot-word { flex: 0 1 auto; }
 .toys { display: none; }
 @media (min-width: 1120px) {
-  .toys { display: grid; grid-template-columns: repeat(3, clamp(64px, 6vw, 96px)); gap: 10px; flex: 0 0 auto; margin-bottom: 18px; }
+  .toys { display: grid; grid-template-columns: repeat(3, clamp(60px, 5.2vw, 74px)); gap: 10px; flex: 0 0 auto; margin-bottom: 18px; }
 }
 .toy { aspect-ratio: 1; border-radius: var(--r); display: grid; place-items: center; cursor: pointer;
        transition: background-color 400ms ease, transform 500ms var(--spring); }

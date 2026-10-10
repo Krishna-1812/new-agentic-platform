@@ -47,4 +47,14 @@ def test_footer_columns_wrap_before_they_overflow():
 def test_asset_versions_bumped_together():
     for tpl in ("templates/agents.html", "templates/login_preview.html"):
         src = _read(tpl)
-        assert "press.css?v=5" in src and "press-play.js') }}?v=4" in src, tpl
+        assert "press.css?v=6" in src and "press-play.js') }}?v=4" in src, tpl
+
+
+def test_footer_wordmark_fits_beside_the_shape_tiles():
+    """At 250px the wordmark plus the tiles were wider than the footer, so the
+    last letters were clipped. Capped at 212px it fits with room to spare, and
+    the tiles are sized to the wordmark's height."""
+    css = _read("static/css/press.css")
+    assert "font-size: clamp(72px, 15vw, 212px); line-height: .9;" in css
+    assert "repeat(3, clamp(60px, 5.2vw, 74px))" in css
+    assert ".play .foot-word { overflow: hidden; padding-right: .08em; }" in css
