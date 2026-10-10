@@ -271,6 +271,57 @@ def fetch_page(url: str) -> dict:
     return out
 
 
+# Body helpers shared with Market Radar's site reader (tracker/market_radar_site.py).
+_META_CHARSET = re.compile(rb"""<meta[^>]+charset\s*=\s*["']?\s*([A-Za-z0-9_.:-]+)""", re.I)
+
+
+def _charset(r, raw: bytes) -> str:
+    """The body's encoding: the header's charset, else the page's own <meta>,
+    else UTF-8.
+
+    `requests` reads "Content-Type: text/html" with no charset as ISO-8859-1,
+    which turned "Société Générale" into "SociÃ©tÃ© GÃ©nÃ©rale" on a page that
+    declares <meta charset="utf-8"> (roster audit, 2026-10-01)."""
+    import codecs
+    ctype = (r.headers.get("Content-Type") or "").lower()
+    if "charset=" in ctype and r.encoding:
+        candidate = r.encoding
+    else:
+        m = _META_CHARSET.search(raw[:4096])
+        candidate = m.group(1).decode("ascii", "ignore") if m else "utf-8"
+    try:
+        return codecs.lookup(candidate).name
+    except LookupError:
+        return "utf-8"
+
+
+def _read_body(r, out) -> bytes:
+    """The response body, up to _MAX_BYTES. Marks `out` truncated at the cap."""
+    chunks, total = [], 0
+    for chunk in r.iter_content(65536):
+        chunks.append(chunk)
+        total += len(chunk)
+        if total >= _MAX_BYTES:
+            out["truncated"] = True
+            break
+    return b"".join(chunks)
+
+
+def _read_mislabelled(r, out):
+    """The body of a response whose Content-Encoding is wrong, or None."""
+    import gzip
+    import zlib
+    body = r.raw.read(_MAX_BYTES, decode_content=False) or b""
+    if len(body) >= _MAX_BYTES:
+        out["truncated"] = True
+    if body[:2] == b"\x1f\x8b":
+        try:
+            return gzip.decompress(body)
+        except (OSError, EOFError, zlib.error):
+            return None
+    return body
+
+
 def _same_page(a: str, b: str) -> bool:
     """Same host and same path, ignoring the fragment and the trailing slash.
 

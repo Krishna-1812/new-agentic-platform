@@ -725,6 +725,17 @@ AGENTS = [
         "connects": ["Paid social", "Search", "Brand"],
     },
     {
+        "slug": "market-radar", "name": "Market Radar", "role": "Competitor Watch",
+        "badge": "NEW", "cat": "Signals", "accent": "#ff6022",
+        "metric": "Every rival \u00b7 a cited report \u00b7 a weekly \u201cwhat changed\u201d",
+        "icon": _svg('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/><circle cx="12" cy="12" r="1"/>'),
+        "summary": "Give it one website. Market Radar works out what the company really sells, finds the rivals that compete for the same customers, and keeps watching them, so you hear about the new branch, the price cut or the hiring spree the week it happens.",
+        "benefit": "No more quarterly competitor decks that are stale by the time they ship. Every move lands in a short, cited report, and a weekly update says only what changed.",
+        "how": "It reads the company\u2019s own site, checks each suggested rival against that rival\u2019s homepage, then tracks their news, site and price changes, open roles, new locations, filings, headcount and LinkedIn posts. Every statement in the report cites its source, and a second pass removes any it cannot support.",
+        "who": "Founders, strategy and marketing leads, and agencies that report on a client\u2019s market.",
+        "connects": ["News", "Job boards", "Filings", "LinkedIn", "Slack", "Email"],
+    },
+    {
         "slug": "on-page-auditor", "name": "On-Page SEO Auditor", "role": "On-Page Optimisation",
         "badge": "NEW", "cat": "SEO", "accent": "#14b8a6", "metric": "23 audit sections \u00b7 live Core Web Vitals",
         "icon": _svg('<circle cx="11" cy="11" r="7"/><path d="m21 21-3.4-3.4"/><path d="M8.4 11l2 2 3.4-3.4"/>'),
@@ -10940,6 +10951,633 @@ def admin_external_usage_sci_reddit_check():
     """Run SCI's Reddit self-test. POST so no crawler or prefetch can
     trigger it, matching the checks next to it."""
     return jsonify(_sci_reddit_selftest())
+
+
+# ══ Market Radar (tracker/market_radar_*.py) ══════════════════════════════════
+# Ported from the source platform's Market Radar agent. Admin-only. The checks
+# below are free unless their docstring says they spend money; every spending
+# route needs {"confirm_spend": true} and is capped per run by the cost ledger.
+
+def _evi_same_origin() -> bool:
+    """True unless the browser says this request came from another site.
+
+    Browsers send Origin on every cross-origin POST (a form, or fetch in any
+    mode), and "null" from sandboxed frames and no-referrer pages, so a
+    present Origin must name this host exactly. With no Origin, a present
+    Referer must. With neither, the caller is not a browser acting on a
+    user's behalf (a test client, curl with a copied cookie), which is not a
+    cross-site request forgery. Hosts are compared without the scheme: behind
+    Railway's proxy the app sees http while the browser says https."""
+    from urllib.parse import urlsplit
+    host = (request.host or "").lower()
+    origin = request.headers.get("Origin")
+    if origin is not None:
+        return origin != "null" and urlsplit(origin).netloc.lower() == host
+    referer = request.headers.get("Referer")
+    if referer:
+        return urlsplit(referer).netloc.lower() == host
+    return True
+
+
+@app.route("/admin/external-usage/market-radar-sources-check", methods=["POST"])
+@admin_required
+def admin_external_usage_market_radar_sources_check():
+    """Market Radar Phase 0: which free sources answer from this server's IP,
+    Google News above all (see tracker/market_radar_probe). POST so no crawler
+    or prefetch can trigger it; refused when the browser says it came from
+    another site, since each run sends about 60 requests to outside hosts.
+    Takes up to about a minute."""
+    if not _evi_same_origin():
+        return jsonify(error="This request came from another site and was refused."), 403
+    from tracker import market_radar_probe
+    homepages = (request.get_json(silent=True) or {}).get("homepages")
+    try:
+        if homepages:
+            # Only the homepage access matrix, for the sites named (at most 8).
+            return jsonify(homepages=market_radar_probe.homepage_access(
+                [str(h) for h in homepages if h][:8]))
+        return jsonify(market_radar_probe.probe())
+    except Exception as e:
+        return jsonify(error="%s: %s" % (type(e).__name__, str(e)[:300])), 500
+
+
+@app.route("/admin/external-usage/market-radar-schema-check", methods=["POST"])
+@admin_required
+def admin_external_usage_market_radar_schema_check():
+    """Market Radar Phase 0: create the mr_ tables if missing, then prove them
+    and the cost ledger end to end on this database inside a transaction that
+    is rolled back (see tracker/market_radar_selftest). POST and same-origin
+    only, like the source check above it."""
+    if not _evi_same_origin():
+        return jsonify(error="This request came from another site and was refused."), 403
+    from tracker import market_radar_selftest
+    from tracker.market_radar_store import StoreUnavailable
+    try:
+        return jsonify(market_radar_selftest.run((_get_user() or {}).get("email", "")))
+    except StoreUnavailable as e:
+        return jsonify(error=str(e)), 503
+    except Exception as e:
+        return jsonify(error="%s: %s" % (type(e).__name__, str(e)[:300])), 500
+
+
+MR_APIFY_TEST_DOMAIN = "mr-phase0-test.example"   # .example is reserved: never a real company
+MR_APIFY_TEST_QUERY = "dentist Austin TX"
+
+
+@app.route("/admin/external-usage/market-radar-apify-check", methods=["POST"])
+@admin_required
+def admin_external_usage_market_radar_apify_check():
+    """Market Radar Phase 0: ONE real Google search (one query, one results
+    page) on the platform's own Apify account, to measure what it costs and
+    what comes back. This SPENDS MONEY (about $0.003 on the Starter plan), so
+    the body must carry {"confirm_spend": true}. The ledger books the worst
+    case (about half a cent), Apify's own backstop cap is its $0.50 minimum,
+    and the charge Apify reports is written to the Market Radar cost ledger
+    under a labelled test company."""
+    if not _evi_same_origin():
+        return jsonify(error="This request came from another site and was refused."), 403
+    if (request.get_json(silent=True) or {}).get("confirm_spend") is not True:
+        return jsonify(error='This check spends money. Send {"confirm_spend": true} to run it.'), 400
+    token = os.environ.get("APIFY_API_TOKEN", "")
+    if not token:
+        return jsonify(error="APIFY_API_TOKEN is not set on this service."), 503
+    from tracker import apify_transport, market_radar_ledger, market_radar_search
+    from tracker import market_radar_store as mr_store
+    account, account_error = apify_transport.probe_token(token)
+    if account_error:
+        return jsonify(error="Apify account check failed: " + account_error), 502
+    plan = account.get("plan") or {}
+    email = (_get_user() or {}).get("email", "")
+    try:
+        entity = mr_store.upsert_entity(MR_APIFY_TEST_DOMAIN, name="Phase 0 Apify test (not a company)")
+        client = mr_store.upsert_client(email, entity)
+        run_id = mr_store.create_run(client, email, "baseline", cost_cap_usd="0.10")
+        mr_store.update_run(run_id, status="running", stage="apify_test")
+    except mr_store.StoreUnavailable as e:
+        return jsonify(error="Not run: the cost ledger is unavailable (%s)." % e), 503
+    result = market_radar_search.search([MR_APIFY_TEST_QUERY], token=token, run_id=run_id,
+                                        stage="apify_test")
+    mr_store.update_run(run_id, status="failed" if result["error"] else "complete",
+                        error=result["error"],
+                        summary={"apify_run_id": result["apify_run_id"], "pages": result["pages"],
+                                 "results": len(result["results"])})
+    return jsonify(
+        account={"username": account.get("username"),
+                 "plan": {k: plan.get(k) for k in ("id", "description", "tier",
+                                                   "monthlyBasePriceUsd", "monthlyUsageCreditsUsd")
+                          if k in plan}},
+        search={k: v for k, v in result.items() if k != "results"},
+        top_results=result["results"][:10],
+        ledger=market_radar_ledger.summary(run_id))
+
+
+@app.route("/admin/external-usage/market-radar-profile-check", methods=["POST"])
+@admin_required
+def admin_external_usage_market_radar_profile_check():
+    """Market Radar Phase 1: profile ONE company from its URL, on this server
+    (tracker/market_radar_profile). One Sonnet call, about $0.05, so the body
+    must carry {"url": ..., "confirm_spend": true}. The call is booked in the
+    cost ledger under a run owned by the admin, and the profile is stored on
+    the company's shared record."""
+    import time as _time
+    if not _evi_same_origin():
+        return jsonify(error="This request came from another site and was refused."), 403
+    body = request.get_json(silent=True) or {}
+    if body.get("confirm_spend") is not True:
+        return jsonify(error='This check spends money. Send {"url": ..., "confirm_spend": true}.'), 400
+    from tracker import market_radar_ledger, market_radar_profile
+    from tracker import market_radar_store as mr_store
+    try:
+        domain = mr_store.normalize_domain(body.get("url") or "")
+    except ValueError as e:
+        return jsonify(error="Not a usable company URL: %s" % e), 400
+    email = (_get_user() or {}).get("email", "")
+    started = _time.monotonic()
+    try:
+        entity = mr_store.upsert_entity(domain)
+        client = mr_store.upsert_client(email, entity)
+        run_id = mr_store.create_run(client, email, "baseline")
+        mr_store.update_run(run_id, status="running", stage="profile")
+    except mr_store.StoreUnavailable as e:
+        return jsonify(error="Not run: the cost ledger is unavailable (%s)." % e), 503
+    try:
+        result = market_radar_profile.build_profile(body["url"], run_id=run_id)
+    except Exception as e:
+        mr_store.update_run(run_id, status="failed", error="%s: %s" % (type(e).__name__, str(e)[:300]))
+        return jsonify(error="%s: %s" % (type(e).__name__, str(e)[:300]), run_id=run_id), 500
+    failed = result["status"] != "ok"
+    mr_store.update_run(run_id, status="failed" if failed else "complete",
+                        error=json.dumps(result["error"]) if failed else None,
+                        summary={"status": result["status"], "entity_id": result["entity_id"]})
+    return jsonify(status=result["status"], error=result["error"], run_id=run_id,
+                   entity_id=result["entity_id"], profile=result["profile"],
+                   pages=result.get("pages"), seconds=round(_time.monotonic() - started, 1),
+                   ledger=market_radar_ledger.summary(run_id))
+
+
+@app.route("/admin/external-usage/market-radar-competitors-check", methods=["POST"])
+@admin_required
+def admin_external_usage_market_radar_competitors_check():
+    """Market Radar Phase 2: profile ONE company and find its competitors
+    (tracker/market_radar_run, tracker/market_radar_rivals). Spends money
+    (about $0.10 to $0.25, capped at the run's $1.00), so the body must carry
+    {"url": ..., "confirm_spend": true}; {"reuse_profile": true} skips the
+    profile when one is stored. It takes one to three minutes, so it runs in
+    the background: this returns the run id at once, and
+    market-radar-run-status reports progress and the result."""
+    if not _evi_same_origin():
+        return jsonify(error="This request came from another site and was refused."), 403
+    body = request.get_json(silent=True) or {}
+    if body.get("confirm_spend") is not True:
+        return jsonify(error='This check spends money. Send {"url": ..., "confirm_spend": true}.'), 400
+    from tracker import market_radar_run
+    from tracker import market_radar_store as mr_store
+    email = (_get_user() or {}).get("email", "")
+    try:
+        run_id = market_radar_run.start(body.get("url") or "", email,
+                                        reuse_profile=body.get("reuse_profile") is True)
+    except ValueError as e:
+        return jsonify(error="Not a usable company URL: %s" % e), 400
+    except mr_store.StoreUnavailable as e:
+        return jsonify(error="Not run: the database is unavailable (%s)." % e), 503
+    return jsonify(run_id=run_id, status="running"), 202
+
+
+@app.route("/admin/external-usage/market-radar-detectors-check", methods=["POST"])
+@admin_required
+def admin_external_usage_market_radar_detectors_check():
+    """Run every Phase 3 detector once against a public source known to have
+    what it reads (tracker/market_radar_detect_check). Free, writes nothing,
+    about 30 to 95 seconds. POST so no crawler or prefetch can trigger it."""
+    if not _evi_same_origin():
+        return jsonify(error="This request came from another site and was refused."), 403
+    from tracker import market_radar_detect_check
+    return jsonify(market_radar_detect_check.run())
+
+
+@app.route("/admin/external-usage/market-radar-run-status", methods=["POST"])
+@admin_required
+def admin_external_usage_market_radar_run_status():
+    """Progress and result of a Market Radar run started by this admin. Free."""
+    if not _evi_same_origin():
+        return jsonify(error="This request came from another site and was refused."), 403
+    body = request.get_json(silent=True) or {}
+    try:
+        run_id = int(body.get("run_id"))
+    except (TypeError, ValueError):
+        return jsonify(error='Send {"run_id": <number>}.'), 400
+    from tracker import market_radar_run
+    out = market_radar_run.status(run_id, (_get_user() or {}).get("email", ""))
+    if out is None:
+        return jsonify(error="No such run of yours."), 404
+    return jsonify(out)
+
+
+# == Market Radar: profile and competitor edit page (admin only for now) ==========
+
+def _mr_email():
+    return (_get_user() or {}).get("email", "")
+
+
+def _mr_guard_post():
+    if not _evi_same_origin():
+        return jsonify(error="This request came from another site and was refused."), 403
+    return None
+
+
+# Phase 8: weekly updates. One thread per worker; a Postgres lock lets one
+# act (tracker/market_radar_monitor.py). Off under tests, without a
+# database, or with MR_MONITOR_DISABLED=1.
+try:
+    from tracker import market_radar_monitor as _mr_monitor
+    _mr_monitor.start_scheduler()
+except Exception:
+    log.exception("market radar: the weekly-update scheduler did not start")
+
+
+@app.route("/admin/market-radar")
+@admin_required
+def admin_market_radar():
+    from tracker import market_radar_monitor as mr_monitor
+    return render_template("market_radar.html", user=_get_user(), weekly_on=mr_monitor.enabled())
+
+
+@app.route("/admin/market-radar/api/clients")
+@admin_required
+def admin_market_radar_clients():
+    from tracker import market_radar_store as mr_store, market_radar_views as views
+    try:
+        return jsonify(clients=views.client_list(_mr_email()))
+    except mr_store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+
+
+@app.route("/admin/market-radar/api/clients/<int:client_id>")
+@admin_required
+def admin_market_radar_client(client_id):
+    from tracker import market_radar_store as mr_store, market_radar_views as views
+    try:
+        view = views.client_view(client_id, _mr_email())
+    except mr_store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+    if view is None:
+        return jsonify(error="No such company of yours."), 404
+    return jsonify(view)
+
+
+@app.route("/admin/market-radar/api/clients/<int:client_id>/profile", methods=["POST"])
+@admin_required
+def admin_market_radar_profile_edit(client_id):
+    """Save profile corrections: {"changes": {field: value}, "reset": [field],
+    "radius_km": number or null}. Free (an address change is geocoded on
+    OpenStreetMap)."""
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    from tracker import market_radar_views as views
+    body = request.get_json(silent=True) or {}
+    try:
+        notes = views.save_edits(client_id, _mr_email(), changes=body.get("changes") or {},
+                                 reset=body.get("reset") or [],
+                                 radius_km=body["radius_km"] if "radius_km" in body else False)
+    except views.EditError as e:
+        return jsonify(error="Some fields were not saved.", fields=e.errors), 400
+    except (KeyError, PermissionError):
+        return jsonify(error="No such company of yours."), 404
+    return jsonify(notes=notes, view=views.client_view(client_id, _mr_email()))
+
+
+@app.route("/admin/market-radar/api/clients/<int:client_id>/competitors/<int:entity_id>",
+           methods=["POST"])
+@admin_required
+def admin_market_radar_competitor_edit(client_id, entity_id):
+    """Confirm, remove, restore or relabel one competitor: {"status", "kind"}."""
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    from tracker import market_radar_store as mr_store, market_radar_views as views
+    body = request.get_json(silent=True) or {}
+    status, kind = body.get("status"), body.get("kind")
+    try:
+        if status is None:
+            current = {r["entity_id"]: r for r in mr_store.competitors(client_id, _mr_email(),
+                                                                        include_removed=True)}
+            if entity_id not in current:
+                raise KeyError(entity_id)
+            status = current[entity_id]["status"]
+        mr_store.set_competitor_status(client_id, _mr_email(), entity_id, status, kind=kind)
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    except (KeyError, PermissionError):
+        return jsonify(error="That company is not on this list."), 404
+    return jsonify(competitors=views.competitor_rows(client_id, _mr_email()))
+
+
+@app.route("/admin/market-radar/api/clients/<int:client_id>/competitors", methods=["POST"])
+@admin_required
+def admin_market_radar_competitor_add(client_id):
+    """Add a competitor by its website: {"url", "kind"}. Free; it is not
+    checked, and is marked as added by the user."""
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    from tracker import market_radar_store as mr_store, market_radar_views as views
+    body = request.get_json(silent=True) or {}
+    email = _mr_email()
+    client = mr_store.get_client(client_id, email)
+    if client is None:
+        return jsonify(error="No such company of yours."), 404
+    try:
+        domain = mr_store.normalize_domain(body.get("url") or "")
+    except ValueError:
+        return jsonify(error="Enter a website address, such as rival.com."), 400
+    if domain == client["domain"]:
+        return jsonify(error="That is this company's own website."), 400
+    try:
+        entity = mr_store.upsert_entity(domain)
+        mr_store.add_competitor(client_id, email, entity, body.get("kind") or "direct")
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    return jsonify(competitors=views.competitor_rows(client_id, email))
+
+
+@app.route("/admin/market-radar/api/runs", methods=["POST"])
+@admin_required
+def admin_market_radar_run_start():
+    """Find competitors for a new company ({"url"}) or again for one of yours
+    ({"client_id", "refresh_profile"?}). Spends money (about $0.07 to $0.13,
+    capped at $1.00), so {"confirm_spend": true} is required. One run at a
+    time per company."""
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    body = request.get_json(silent=True) or {}
+    if body.get("confirm_spend") is not True:
+        return jsonify(error="This spends money; confirm to run it."), 400
+    from tracker import market_radar_run, market_radar_store as mr_store
+    email = _mr_email()
+    url = body.get("url") or ""
+    reuse = body.get("refresh_profile") is not True
+    try:
+        if body.get("client_id") is not None:
+            client = mr_store.get_client(int(body["client_id"]), email)
+            if client is None:
+                return jsonify(error="No such company of yours."), 404
+            url = ((client["profile"] or {}).get("facts") or {}).get("website") or \
+                "https://%s/" % client["domain"]
+        domain = mr_store.normalize_domain(url)
+        mine = [c for c in mr_store.list_clients(email) if c["domain"] == domain]
+        last = (mine[0].get("last_run") or {}) if mine else {}
+        if last.get("status") == "running":
+            status = market_radar_run.status(last["id"], email) or {}
+            if not status.get("stale"):
+                return jsonify(error="A run for this company is already going.",
+                               run_id=last["id"]), 409
+        run_id = market_radar_run.start(url, email, reuse_profile=reuse)
+    except ValueError as e:
+        return jsonify(error="Not a usable website address: %s" % e), 400
+    except mr_store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+    client_id = next((c["client_id"] for c in mr_store.list_clients(email)
+                      if c["domain"] == mr_store.normalize_domain(url)), None)
+    return jsonify(run_id=run_id, client_id=client_id), 202
+
+
+@app.route("/admin/market-radar/api/clients/<int:client_id>/collect", methods=["POST"])
+@admin_required
+def admin_market_radar_collect(client_id):
+    """Collect what this company's competitors did (Phase 3,
+    tracker/market_radar_collect): their sites, catalogs, job boards and news.
+    Free (no model, no paid search) and runs in the background, 2 to 6
+    minutes. One collection at a time per company."""
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    from tracker import market_radar_run, market_radar_store as mr_store
+    email = _mr_email()
+    try:
+        last = mr_store.latest_run(client_id, email, collect=True)
+        if last and last["status"] == "running":
+            status = market_radar_run.status(last["id"], email) or {}
+            if not status.get("stale"):
+                return jsonify(error="A collection for this company is already going.",
+                               run_id=last["id"]), 409
+        run_id = market_radar_run.start_collect(client_id, email)
+    except PermissionError:
+        return jsonify(error="No such company of yours."), 404
+    except mr_store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+    return jsonify(run_id=run_id), 202
+
+
+@app.route("/admin/market-radar/api/clients/<int:client_id>/moves")
+@admin_required
+def admin_market_radar_moves(client_id):
+    """What this company's competitors did, as the collections found it."""
+    from tracker import market_radar_store as mr_store, market_radar_views as views
+    try:
+        view = views.moves_view(client_id, _mr_email())
+    except mr_store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+    if view is None:
+        return jsonify(error="No such company of yours."), 404
+    return jsonify(view)
+
+
+@app.route("/admin/market-radar/report/<int:client_id>")
+@admin_required
+def admin_market_radar_report_page(client_id):
+    """The client report (tracker/market_radar_report), rendered by
+    static/js/market_radar_report.js from the JSON route below."""
+    return render_template("market_radar_report.html", user=_get_user(), client_id=client_id)
+
+
+@app.route("/admin/market-radar/api/clients/<int:client_id>/report")
+@admin_required
+def admin_market_radar_report(client_id):
+    from tracker import market_radar_store as mr_store, market_radar_views as views
+    try:
+        view = views.report_view(client_id, _mr_email())
+    except mr_store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+    if view is None:
+        return jsonify(error="No such company of yours."), 404
+    response = jsonify(view)
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
+
+
+@app.route("/admin/market-radar/api/clients/<int:client_id>/report/pdf", methods=["POST"])
+@admin_required
+def admin_market_radar_report_pdf(client_id):
+    """The report as the reader sees it, as a PDF: the page sends the HTML
+    it rendered with every folded part open, laid out by the same builder as
+    Event Intelligence's reports (tracker/event_intel_pdf.py)."""
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    from tracker import event_intel_pdf, market_radar_store as mr_store
+    try:
+        report = mr_store.latest_report(client_id, _mr_email())
+    except PermissionError:
+        return jsonify(error="No such company of yours."), 404
+    if not report or (report["payload"] or {}).get("status") != "ok":
+        return jsonify(error="There is no finished report to export yet."), 409
+    payload = request.get_json(silent=True) or {}
+    title = str(payload.get("title") or "Market Radar report")[:200]
+    subtitle = str(payload.get("subtitle") or "")[:400]
+    try:
+        data = event_intel_pdf.build(payload.get("html"), title, subtitle, product="Market Radar")
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    except Exception:
+        app.logger.exception("market radar: PDF export failed for client %s", client_id)
+        return jsonify(error="The PDF could not be built. Please try again."), 500
+    slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:60] or "report"
+    response = make_response(data)
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = 'attachment; filename="%s.pdf"' % slug
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
+
+
+@app.route("/admin/market-radar/api/clients/<int:client_id>/events/<int:event_id>/feedback",
+           methods=["POST"])
+@admin_required
+def admin_market_radar_event_feedback(client_id, event_id):
+    """Thumbs up or down on one move for one client. The next scoring of
+    that client weighs moves of the same type by it."""
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    from tracker import market_radar_store as mr_store
+    body = request.get_json(silent=True) or {}
+    feedback = body.get("feedback")
+    if feedback not in ("up", "down", None):
+        return jsonify(error="feedback must be up, down or null"), 400
+    reason = str(body.get("reason") or "")[:500] or None
+    try:
+        mr_store.set_feedback(client_id, _mr_email(), event_id, feedback, reason)
+    except PermissionError:
+        return jsonify(error="No such company of yours."), 404
+    except KeyError:
+        return jsonify(error="That move is not on this company's report."), 404
+    return jsonify(ok=True, feedback=feedback)
+
+
+@app.route("/admin/market-radar/api/clients/<int:client_id>/monitor", methods=["GET", "POST"])
+@admin_required
+def admin_market_radar_monitor(client_id):
+    """Weekly updates for one company: GET the settings and the latest
+    updates; POST new settings (tracker/market_radar_views.save_monitor)."""
+    from tracker import market_radar_store as mr_store, market_radar_views as views
+    try:
+        if request.method == "POST":
+            refused = _mr_guard_post()
+            if refused:
+                return refused
+            try:
+                view = views.save_monitor(client_id, _mr_email(), request.get_json(silent=True) or {})
+            except views.EditError as e:
+                return jsonify(error="Some settings need fixing.", errors=e.errors), 400
+            except PermissionError:
+                return jsonify(error="No such company of yours."), 404
+        else:
+            view = views.monitor_view(client_id, _mr_email())
+    except mr_store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+    if view is None:
+        return jsonify(error="No such company of yours."), 404
+    return jsonify(view)
+
+
+@app.route("/admin/market-radar/api/clients/<int:client_id>/update-now", methods=["POST"])
+@admin_required
+def admin_market_radar_update_now(client_id):
+    """Collect now and write the weekly update; send it to the company's
+    destinations unless {"send": false} (a preview, stored but not sent)."""
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    from tracker import market_radar_run, market_radar_store as mr_store
+    email = _mr_email()
+    send = (request.get_json(silent=True) or {}).get("send") is not False
+    try:
+        last = mr_store.latest_run(client_id, email, collect=True)
+        if last and last["status"] == "running":
+            status = market_radar_run.status(last["id"], email) or {}
+            if not status.get("stale"):
+                return jsonify(error="A collection is already running for this company.",
+                               run_id=last["id"]), 409
+        run_id = market_radar_run.start_collect(client_id, email, monitor="send" if send else "preview")
+    except PermissionError:
+        return jsonify(error="No such company of yours."), 404
+    except mr_store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+    return jsonify(run_id=run_id, send=send), 202
+
+
+@app.route("/admin/market-radar/api/tidy-events", methods=["POST"])
+@admin_required
+def admin_market_radar_tidy_events():
+    """One-off, free: remove product pages stored as announcements before the
+    newsroom learnt to skip shop product feeds (2026-10-09)."""
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    from tracker import market_radar_store as mr_store
+    body = request.get_json(silent=True) or {}
+    if body.get("signals"):
+        # 2026-10-10: forget the first signal-engine reads (made before its
+        # rules were tightened), and nothing else: the product-page tidy
+        # below would also drop newsroom snapshots read from .atom feeds.
+        return jsonify(signals=mr_store.drop_signal_reads())
+    events, snapshots = mr_store.drop_product_announcements()
+    out = {"events_deleted": events, "snapshots_deleted": snapshots}
+    if body.get("radar"):
+        # 2026-10-10: radar scans made under the loose entrant rule.
+        out["radar_events_deleted"], out["radar_snapshots_deleted"] = mr_store.drop_radar_scans()
+    return jsonify(out)
+
+
+@app.route("/admin/market-radar/api/tidy-suggestions", methods=["POST"])
+@admin_required
+def admin_market_radar_tidy():
+    """One-off, free: drop earlier suggestions that each company's latest full
+    search no longer makes (tracker/market_radar_views.tidy_suggestions)."""
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    from tracker import market_radar_views as views
+    return jsonify(dropped=views.tidy_suggestions(_mr_email()))
+
+
+@app.route("/admin/market-radar/api/cost-report")
+@admin_required
+def admin_market_radar_cost_report():
+    """Free and read-only: what this person's runs really cost, by kind of
+    run and by stage, against the plan's estimates
+    (tracker/market_radar_costreport)."""
+    from tracker import market_radar_costreport as cr, market_radar_store as mr_store
+    try:
+        return jsonify(cr.report(_mr_email()))
+    except mr_store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+
+
+@app.route("/admin/market-radar/api/runs/<int:run_id>")
+@admin_required
+def admin_market_radar_run(run_id):
+    from tracker import market_radar_run, market_radar_store as mr_store, market_radar_views as views
+    email = _mr_email()
+    status = market_radar_run.status(run_id, email)
+    if status is None:
+        return jsonify(error="No such run of yours."), 404
+    out = {k: status.get(k) for k in ("id", "status", "stage", "error", "idle_seconds", "stale")}
+    out["cost_usd"] = (status.get("ledger") or {}).get("total_usd")
+    if status["status"] != "running":
+        out["run"] = views.run_view(mr_store.get_run(run_id, email))
+    return jsonify(out)
 
 
 def _unipile_selftest() -> dict:

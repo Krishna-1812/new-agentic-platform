@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    MARKET RADAR (/admin/market-radar) — admin only
+
+    Give it a company's website: it reads what the company does, finds its
+    competitors, then watches them (news, site and price changes, jobs,
+    locations, filings, headcount, LinkedIn posts) and writes a cited report
+    and a weekly "what changed" update. The engine is tracker/market_radar_*.py.
+
+    Everything below the hero is drawn by static/js/market_radar.js from the
+    JSON routes in app.py; the ids it reads (mrAddForm, mrClients, mrDetail,
+    mrModal...) must stay as they are. Its look is static/css/market_radar.css,
+    written against the Bento tokens like every other page.
+-#}
+<html lang="en">
+<head>
+{{ head("Market Radar", ["strategic-agents.css?v=2", "market_radar.css?v=1"]) }}
+</head>
+<body class="sa">
+
+{{ topbar([("Admin", "/admin/internal-usage"), ("Market Radar", none)]) }}
+
+<main class="sa-shell">
+
+  {# ── Hero: the ask ────────────────────────────────────────────────────── #}
+  <section class="sa-hero mr-hero" data-sa-settle>
+    <div class="sa-hero-top">
+      <span class="sa-lbl">Admin &middot; Market Radar</span>
+      {% if weekly_on %}
+      <span class="sa-live" title="Weekly updates run on their schedule"><i></i>Weekly updates on</span>
+      {% else %}
+      <span class="sa-live mr-live--off" title="Set MR_MONITOR_ENABLED=1 on the service to allow scheduled weekly runs"><i></i>Weekly updates off</span>
+      {% endif %}
+      <div class="mr-scope" aria-hidden="true"><i></i><i></i><i></i><b></b><span class="mr-blip mr-blip--1"></span><span class="mr-blip mr-blip--2"></span><span class="mr-blip mr-blip--3"></span></div>
+    </div>
+
+    <h1 class="sa-h1 mr-h1">
+      <span class="sa-ln"><span>Every rival&rsquo;s move,</span></span>
+      <span class="sa-ln"><span><span class="sa-mk">on one</span> <em class="sa-it">radar.</em></span></span>
+    </h1>
+
+    <form class="mr-add" id="mrAddForm" autocomplete="off">
+      <label class="mr-sr" for="mrAddUrl">Company website</label>
+      <input type="text" id="mrAddUrl" placeholder="A company&rsquo;s website, such as acmedental.com" inputmode="url" />
+      <button type="submit" class="mr-btn primary" id="mrAddBtn">Find competitors</button>
+      <div class="mr-add-note">Reads the website, then searches for competitors. About $0.12 and 2 to 4 minutes; it runs in the background, and every run is capped at $1.00.</div>
+    </form>
+
+    <ol class="mr-flow" aria-label="How Market Radar works">
+      <li><b>01</b><span>Reads the site</span><small>What the company sells, to whom, where</small></li>
+      <li><b>02</b><span>Finds the rivals</span><small>Checked against each rival&rsquo;s own homepage</small></li>
+      <li><b>03</b><span>Watches their moves</span><small>News, prices, jobs, locations, filings</small></li>
+      <li><b>04</b><span>Writes it up</span><small>A cited report, then a weekly &ldquo;what changed&rdquo;</small></li>
+    </ol>
+  </section>
+
+  {# ── The workspace ────────────────────────────────────────────────────── #}
+  <div class="mr" id="mr">
+    <div class="mr-layout">
+      <aside class="mr-rail" id="mrRail" aria-label="Your companies">
+        <div class="mr-rail-h">Your companies</div>
+        <div id="mrClients"><div class="mr-empty">Loading&hellip;</div></div>
+      </aside>
+      <section class="mr-detail" id="mrDetail" aria-live="polite">
+        <div class="card"><div class="mr-empty">Loading&hellip;</div></div>
+      </section>
+    </div>
+  </div>
+
+</main>
+
+<div class="mr mr-modal-bg" id="mrModal" role="dialog" aria-modal="true" aria-labelledby="mrModalTitle">
+  <div class="mr-modal">
+    <h4 id="mrModalTitle"></h4>
+    <p id="mrModalText"></p>
+    <label id="mrModalOptWrap"><input type="checkbox" id="mrModalOpt" /> <span id="mrModalOptText"></span></label>
+    <div class="mr-modal-foot">
+      <button type="button" class="mr-btn ghost" id="mrModalNo">Cancel</button>
+      <button type="button" class="mr-btn primary" id="mrModalYes">Run</button>
+    </div>
+  </div>
+</div>
+
+<footer class="sa-foot">
+  <div class="sa-foot-top">
+    <span class="sa-foot-word" aria-label="{{ brand.name }}">{{ brand.name }}</span>
+    <div class="sa-toys" aria-hidden="true">
+      <span class="sa-toy sa-toy--ink"></span><span class="sa-toy sa-toy--paper"></span><span class="sa-toy sa-toy--sky"></span>
+      <span class="sa-toy sa-toy--red"></span><span class="sa-toy sa-toy--acc"></span><span class="sa-toy sa-toy--paper2"></span>
+    </div>
+  </div>
+  <div class="sa-foot-bottom">
+    <span>{{ brand.name }} &middot; Internal use only</span>
+    <a href="/admin/market-radar">Market Radar</a>
+  </div>
+</footer>
+
+{{ topbar_script() }}
+<script src="{{ url_for('static', filename='js/market_radar.js') }}?v=1"></script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+/* ════════════════════════════════════════════════════════════════════════
+   MARKET RADAR REPORT (templates/market_radar_report.html)
+
+   Drawn by static/js/market_radar_report.js; uses the .mr tokens from
+   market_radar.css. A reading page: one column, read top to bottom, with
+   the summary as the one filled block, Fraunces for every heading, and the
+   evidence folded under each claim it supports.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.rr { max-width: 940px; margin: 0 auto; padding: 8px var(--page-pad) 80px; }
+.rr a { color: var(--mr-accent); text-decoration: none; }
+.rr a:hover { text-decoration: underline; }
+.rr .mr-btn { color: var(--ink); }
+.rr .mr-btn.primary { color: var(--tx-on-ink); }
+.rr .mr-btn:hover { text-decoration: none; }
+.rr-q { color: var(--tx3); font-size: 13px; }
+
+/* ── Head ──────────────────────────────────────────────────────────────── */
+.rr-head { padding: 32px 0 8px; }
+.rr-head h1 { margin: 8px 0 10px; font-family: var(--font-display); font-variation-settings: var(--display-axes); font-weight: 600;
+  font-size: clamp(38px, 5.4vw, 68px); line-height: 1.04; letter-spacing: -0.025em; color: var(--tx); text-wrap: balance; }
+.rr-meta { margin: 2px 0; color: var(--tx2); font-size: 14px; }
+.rr-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.rr-summary { margin: 26px 0 8px; padding: 26px 30px; border-radius: var(--r-lg); background: var(--acc); box-shadow: var(--shadow-block); }
+.rr-summary p { margin: 0; font-family: var(--font-display); font-variation-settings: var(--display-axes); font-weight: 500;
+  font-size: clamp(19px, 1.8vw, 24px); line-height: 1.4; color: #121213; }
+.rr-summary .rr-q, .rr-summary a { color: #121213; }
+
+/* ── Sections ──────────────────────────────────────────────────────────── */
+.rr-sec { margin-top: 56px; }
+.rr-sec h2 { font-family: var(--font-display); font-variation-settings: var(--display-axes); font-weight: 600;
+  font-size: clamp(28px, 3vw, 38px); line-height: 1.08; letter-spacing: -0.02em; margin: 0 0 6px; color: var(--tx); }
+.rr-intro { margin: 0 0 18px; color: var(--tx3); font-size: 14px; line-height: 1.5; }
+.rr-h3 { font-size: 15.5px; font-weight: 600; margin: 24px 0 8px; }
+.rr-h3.ok { color: var(--mr-ok); }
+.rr-h3.bad { color: var(--mr-bad); }
+.rr-lead2 { font-size: 16px; line-height: 1.6; margin: 0 0 8px; }
+
+/* ── The top five ──────────────────────────────────────────────────────── */
+.rr-top { display: grid; gap: 14px; }
+.rr-pn { display: none; }  /* the number, for the printed report only */
+.rr-topi { display: grid; grid-template-columns: 48px 1fr; gap: 16px; padding: 22px 24px; border-radius: var(--r-lg);
+  background: var(--s1); box-shadow: var(--shadow-block); }
+.rr-n { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-variant-numeric: tabular-nums;
+  background: var(--ink); color: var(--tx-on-ink); }
+.rr-topi:first-child .rr-n { background: var(--acc); color: #121213; }
+.rr-toph { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rr-toph h3 { margin: 0; font-family: var(--font-display); font-variation-settings: var(--display-axes); font-weight: 600;
+  font-size: 21px; line-height: 1.25; flex: 1 1 280px; }
+.rr-what { margin: 10px 0 14px; line-height: 1.6; }
+.rr-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.rr-so, .rr-act { padding: 14px 16px; border-radius: var(--r); background: var(--s2); }
+.rr-act { box-shadow: inset 3px 0 0 var(--ok); }
+.rr-so { box-shadow: inset 3px 0 0 var(--acc); }
+.rr-so p, .rr-act p { margin: 5px 0 0; line-height: 1.55; }
+.rr-lab { font-size: 11.5px; letter-spacing: var(--ls-label, .08em); text-transform: uppercase; color: var(--tx3); font-weight: 600; }
+
+/* ── Evidence ──────────────────────────────────────────────────────────── */
+.rr-ev { margin-top: 12px; }
+.rr-ev > summary, .rr-more > summary { cursor: pointer; color: var(--tx2); font-size: 13px; font-weight: 600; }
+.rr-evl { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 13.5px; line-height: 1.5; }
+.rr-ev-sum { color: var(--tx2); margin-top: 2px; }
+.rr-src { margin: 4px 0 0; padding-left: 16px; font-size: 13px; line-height: 1.5; }
+.rr-more { margin-top: 16px; }
+
+/* ── Feedback thumbs ───────────────────────────────────────────────────── */
+.rr-fb { display: inline-flex; gap: 4px; margin-left: auto; }
+.rr-thumb { border: 0; box-shadow: inset 0 0 0 1px var(--line); background: transparent; border-radius: var(--r-pill); padding: 3px 10px;
+  cursor: pointer; font-size: 13px; line-height: 1.4; opacity: .6; filter: grayscale(1); transition: opacity 150ms ease, filter 150ms ease, background 150ms ease; }
+.rr-thumb:hover, .rr-thumb.on { opacity: 1; filter: none; }
+.rr-thumb.on { background: var(--acc-dim); box-shadow: inset 0 0 0 1px var(--acc); }
+.rr-thumb:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+
+/* ── The company as read ───────────────────────────────────────────────── */
+.rr-dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px 26px; margin: 0; }
+.rr-dl div { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.rr-dl dt { font-size: 11.5px; letter-spacing: var(--ls-label, .08em); text-transform: uppercase; color: var(--tx3); font-weight: 600; }
+.rr-dl dd { margin: 4px 0 0; line-height: 1.5; }
+
+/* ── Competitors ───────────────────────────────────────────────────────── */
+.rr-comp { padding: 20px 24px; border-radius: var(--r-lg); background: var(--s1); box-shadow: var(--shadow-block); margin-bottom: 14px; }
+.rr-comp header { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.rr-comp h3 { margin: 0; font-family: var(--font-display); font-variation-settings: var(--display-axes); font-weight: 600; font-size: 21px; }
+.rr-comp p { margin: 8px 0 0; line-height: 1.6; }
+.rr-comp-s { background: var(--s2); box-shadow: none; }
+.rr-mvs { list-style: none; margin: 10px 0 0; padding: 0; }
+.rr-mv { display: grid; grid-template-columns: 10px 96px 1fr; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); align-items: start; }
+.rr-mv:first-child { border-top: 0; }
+.rr-dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 6px; background: var(--s3); }
+.rr-dot.bad { background: var(--clay); }
+.rr-dot.warn { background: var(--cream); }
+.rr-mvd { font-size: 13px; color: var(--tx3); padding-top: 2px; font-variant-numeric: tabular-nums; }
+.rr-mvt { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; line-height: 1.45; }
+.rr-mvb .rr-q { margin-top: 2px; }
+
+/* ── Nearby: the map and its list ──────────────────────────────────────── */
+.rr-nearw { display: grid; grid-template-columns: minmax(220px, 340px) 1fr; gap: 22px; align-items: start; }
+.rr-map { margin: 0; }
+.rr-map svg { width: 100%; height: auto; display: block; border-radius: var(--r-lg); background: var(--s1); box-shadow: var(--shadow-block); }
+.rr-map figcaption { font-size: 12.5px; color: var(--tx3); margin-top: 8px; }
+.rr-ring { fill: none; stroke: var(--s3); stroke-dasharray: 3 4; }
+.rr-ringt { fill: var(--tx3); font-size: 10px; }
+.rr-you { fill: var(--acc); }
+.rr-yout { fill: var(--tx2); font-size: 11px; text-anchor: middle; font-weight: 600; }
+.rr-pin { fill: var(--ink); stroke: var(--s1); stroke-width: 1.5; }
+.rr-pin.weak { fill: var(--tx3); }
+.rr-pint { fill: #fff; font-size: 10px; font-weight: 700; text-anchor: middle; }
+.rr-near { margin: 0; padding-left: 22px; display: grid; gap: 10px; line-height: 1.5; }
+
+/* ── Industry themes ───────────────────────────────────────────────────── */
+.rr-ind { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.rr-ind > li { padding: 18px 22px; border-radius: var(--r-lg); background: var(--s1); box-shadow: var(--shadow-block); }
+.rr-ind > li:nth-child(3n+2) { background: var(--sky-dim); box-shadow: none; }
+.rr-ind h3 { margin: 0; font-family: var(--font-display); font-variation-settings: var(--display-axes); font-weight: 600; font-size: 19px; }
+.rr-ind p { margin: 6px 0 0; line-height: 1.55; }
+
+/* ── Hiring table ──────────────────────────────────────────────────────── */
+.rr-tablew { overflow-x: auto; background: var(--s1); border-radius: var(--r-lg); box-shadow: var(--shadow-block); padding: 6px 10px; }
+.rr-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.rr-table th { text-align: left; font-size: 11.5px; letter-spacing: var(--ls-label, .08em); text-transform: uppercase; color: var(--tx3);
+  font-weight: 600; padding: 10px 10px; border-bottom: 1px solid var(--s3); }
+.rr-table td { padding: 10px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.rr-table tr:last-child td { border-bottom: 0; }
+.rr-table td.num { font-variant-numeric: tabular-nums; text-align: right; }
+
+/* ── Opportunities, threats, what to watch ─────────────────────────────── */
+.rr-two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.rr-two .rr-h3 { margin-top: 0; }
+.rr-bul { margin: 0; padding-left: 18px; display: grid; gap: 8px; line-height: 1.55; }
+
+@media (max-width: 720px) {
+  .rr-topi { grid-template-columns: 1fr; padding: 18px; }
+  .rr-pair, .rr-two, .rr-nearw { grid-template-columns: 1fr; }
+  .rr-mv { grid-template-columns: 10px 1fr; }
+  .rr-mvd, .rr-mvb { grid-column: 2; }
+  .rr-summary { padding: 20px 22px; }
+}
+
+@media print {
+  .bn-top, .rr-actions, .rr-fb { display: none !important; }
+  .rr-summary, .rr-topi, .rr-comp, .rr-ind > li, .rr-tablew { box-shadow: none; border: 1px solid #ddd; }
+}
