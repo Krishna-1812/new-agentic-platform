@@ -1152,6 +1152,7 @@ a.ledger-row:hover { background: var(--paper2); }
             padding: var(--s6) 0 var(--s7); transition: background var(--dur-fast) var(--ease-io); }
 .ind-flag:hover { background: var(--paper2); }
 @media (max-width: 860px) { .ind-flag { grid-template-columns: 1fr; } }
+.ind-flag + .ind-flag { margin-top: var(--s5); }
 .ind-segs { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); font-size: var(--fs-xs); color: var(--ink3); }
 .ind-segs span { display: inline-flex; align-items: center; gap: var(--s2); }
 .ind-segs span::before { content: ''; width: 5px; height: 5px; background: var(--acc); flex: 0 0 auto; }
