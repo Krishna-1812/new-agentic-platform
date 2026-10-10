@@ -93,9 +93,7 @@
     <a class="nv-link {% if page=='agents' or page=='agent' %}active{% endif %}" href="/agents">{{ brand.agents_plural }}</a>
     <a class="nv-link {% if page=='solutions' %}active{% endif %}" href="/solutions">Solutions</a>
     <a class="nv-link {% if page=='why' %}active{% endif %}" href="/why-intelligence">Compare</a>
-    {#- Industries stays hidden site-wide; the routes are disabled in app.py.
-        Kept commented rather than deleted, as it was before. -#}
-    {# <a class="nv-link {% if page in ('industries','industry','iagent') %}active{% endif %}" href="/industries">Industries</a> #}
+    <a class="nv-link {% if page in ('industries','industry','iagent') %}active{% endif %}" href="/industries">Industries</a>
   </div>
   {% endif %}
   <div class="nv-cta">
@@ -117,6 +115,7 @@
   <a href="/agents"><span class="idx">03</span>{{ brand.agents_plural }}</a>
   <a href="/solutions"><span class="idx">04</span>Solutions</a>
   <a href="/why-intelligence"><span class="idx">05</span>Compare</a>
+  <a href="/industries"><span class="idx">06</span>Industries</a>
   <div class="nv-sheet-foot">
     <a class="btn btn-1" href="/login" style="background:#F6F4F0;color:#121213">Log in</a>
     <button class="btn btn-2" data-signup style="box-shadow:inset 0 0 0 1px #3A3A3D;color:#F6F4F0">Sign up</button>
@@ -431,7 +430,7 @@
         <div class="ledger" style="margin-top:var(--s5)">
           {% if page == 'iagent' and agent.out %}
             {% for o in agent.out %}
-            <div class="ledger-row rv fade"><span class="idx">{{ '%02d'|format(loop.index) }}</span><div><h4>{{ o.t }}</h4><p>{{ o.d }}</p></div></div>
+            <div class="ledger-row rv fade"><span class="idx">{{ '%02d'|format(loop.index) }}</span><div><h4>{{ o.t }}</h4><p>{{ o.s or o.d }}</p></div></div>
             {% endfor %}
           {% else %}
             <div class="ledger-row rv fade"><span class="idx">01</span><div><h4>The opportunity that matters most</h4><p>Ranked by impact, freshest first. No list-scrubbing.</p></div></div>
@@ -485,7 +484,7 @@
   {% endif %}
 
   {% set cta_h = agent.name ~ ', on your own accounts.' %}
-  {% set cta_p = 'Sign up and point it at real companies. Demo data was never the point.' %}
+  {% set cta_p = (industry.cta_p if page == 'iagent' and industry.cta_p else 'Sign up and point it at real companies. Demo data was never the point.') %}
   {% include "_press_cta.html" %}
 
 {# ═══════════════════════════════ PLATFORM ════════════════════════════ #}
@@ -977,12 +976,12 @@
   <header class="wrap hero">
     <span class="lbl rv fade">Industries</span>
     <h1 class="d1 rv">
-      <span class="ln"><span>Every market buys</span></span>
-      <span class="ln"><span><span class="it">differently.</span></span></span>
+      <span class="ln"><span>Same engine.</span></span>
+      <span class="ln"><span><span class="it">Your market&rsquo;s accent.</span></span></span>
     </h1>
     <div class="hero-foot">
       <span class="idx rv fade">{{ '%02d'|format(industries|length) }} markets</span>
-      <p class="lead rv fade">One signal engine, tuned to how your market actually buys. Pick an industry to see the signals we watch there and the {{ brand.agents_plural|lower }} retuned in your vocabulary.</p>
+      <p class="lead rv fade">A patient choosing a clinic, a family choosing a flat and a student choosing a course all leave different tracks. Pick your market to see the signals we read there, and the {{ brand.agents_plural|lower }} retuned to speak its language.</p>
     </div>
   </header>
 
@@ -991,8 +990,9 @@
       {% if ind.featured %}
       <a class="ind-flag" href="/industries/{{ ind.slug }}">
         <div>
-          <span class="lbl">Flagship industry</span>
+          <span class="lbl">Focus industry &middot; {{ ind.agents|length }} {{ brand.agents_plural|lower }}</span>
           <h2 class="d3" style="margin-top:var(--s4)">{{ ind.name }}</h2>
+          <p class="d4" style="margin-top:var(--s3)">{{ ind.headline }} <span class="it">{{ ind.headline_ital }}</span></p>
           <p class="lead" style="margin-top:var(--s4)">{{ ind.lead }}</p>
           <span class="btn btn-3 lk-d" style="margin-top:var(--s5)">Explore {{ ind.short|lower }} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
         </div>
@@ -1000,12 +1000,13 @@
       </a>
       {% endif %}
     {% endfor %}
-    <div class="cells cells-3" style="margin-top:var(--s8)">
+    <span class="lbl" style="display:block;margin:var(--s8) 0 var(--s5)">More markets</span>
+    <div class="cells cells-3">
       {% for ind in industries %}{% if not ind.featured %}
       <a class="cell" href="/industries/{{ ind.slug }}">
         <span class="cell-ic">{{ ind.icon|safe }}</span>
         <h3>{{ ind.name }}</h3>
-        <p>{{ ind.lead }}</p>
+        <p>{{ ind.headline }} {{ ind.headline_ital }}</p>
         <div class="tags" style="margin-top:var(--s4)">{% for s in ind.segments[:4] %}<span class="tag">{{ s }}</span>{% endfor %}</div>
         <span class="more">Explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
       </a>
@@ -1013,8 +1014,8 @@
     </div>
   </section>
 
-  {% set cta_h = 'Your industry not listed?' %}
-  {% set cta_p = "Tell us how your market buys and we'll tune the signal engine, and the agents, to match." %}
+  {% set cta_h = 'Don’t see your market?' %}
+  {% set cta_p = "Tell us how your customers decide, and we'll retune the signals and the agents to match." %}
   {% include "_press_cta.html" %}
 
 {# ═════════════════════════ INDUSTRY DETAIL ═══════════════════════════ #}
@@ -1045,7 +1046,8 @@
   <section class="wrap sec">
     <div class="shead" style="margin-bottom:var(--s7)">
       <div class="shead-l"><span class="idx">02</span><span class="lbl">The challenge</span></div>
-      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>Why selling into {{ industry.short|lower }}</span></span><span class="ln"><span><span class="it">is hard.</span></span></span></h2></div>
+      {% set _ch = industry.challenge or ('Why selling into ' ~ industry.short|lower, 'is hard.') %}
+      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>{{ _ch[0] }}</span></span><span class="ln"><span><span class="it">{{ _ch[1] }}</span></span></span></h2></div>
     </div>
     <div class="ledger">
       {% for p in industry.pains %}
@@ -1087,7 +1089,8 @@
   <section class="wrap sec-sm">
     <div class="shead" style="margin-bottom:var(--s7)">
       <div class="shead-l"><span class="idx">05</span><span class="lbl">The plays</span></div>
-      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>From first signal</span></span><span class="ln"><span><span class="it">to signed deal.</span></span></span></h2></div>
+      {% set _ph = industry.plays_h or ('From first signal', 'to signed deal.') %}
+      <div class="shead-r"><h2 class="d3 rv"><span class="ln"><span>{{ _ph[0] }}</span></span><span class="ln"><span><span class="it">{{ _ph[1] }}</span></span></span></h2></div>
     </div>
     <div class="ledger">
       {% for pl in industry.plays %}
@@ -1104,8 +1107,8 @@
   </section>
   {% endif %}
 
-  {% set cta_h = 'Run it on your ' ~ industry.short|lower ~ ' accounts.' %}
-  {% set cta_p = 'Sign up and watch the signals light up on organisations you already know.' %}
+  {% set cta_h = industry.cta_h or ('Run it on your ' ~ industry.short|lower ~ ' accounts.') %}
+  {% set cta_p = industry.cta_p or 'Sign up and watch the signals light up on organisations you already know.' %}
   {% include "_press_cta.html" %}
 
 {# ═══════════════════════════════ LOGIN ═══════════════════════════════ #}
@@ -1182,7 +1185,11 @@
         <a class="lk-d" href="/signals">Signals</a><a class="lk-d" href="/integrations">Integrations</a>
         <a class="lk-d" href="/why-intelligence">Compare</a>
       </div>
-      <div class="foot-col"><h5>Company</h5><a class="lk-d" href="/solutions">Solutions</a></div>
+      <div class="foot-col"><h5>Company</h5><a class="lk-d" href="/solutions">Solutions</a><a class="lk-d" href="/industries">Industries</a></div>
+      <div class="foot-col"><h5>Industries</h5>
+        <a class="lk-d" href="/industries/healthcare">Healthcare</a><a class="lk-d" href="/industries/real-estate">Real estate</a>
+        <a class="lk-d" href="/industries/education">Education</a>
+      </div>
       <div class="foot-col"><h5>Resources</h5>
         <a class="lk-d" href="/resources">Insights</a><a class="lk-d" href="/login">Log in</a>
       </div>
