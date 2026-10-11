@@ -141,6 +141,27 @@ KEYS = ("name", "category", "taxonomy", "hierarchy", "websites", "status", "conf
         "lon", "lat", "street", "city", "country", "brand", "id", "source", "source_updated")
 
 
+# Stems that name no kind of business: within 10 km of Waltham MA, "health"
+# matched 239 places (49 home care agencies, 94 generic health listings),
+# "care" 262 (day care preschools among them) and "service" 2,343, from
+# software firms to estate agents (Core Care Clinic's plan, 2026-10-10).
+GENERIC_TERMS = {"health", "care", "medical", "clinic", "service", "services", "center",
+                 "centre", "office", "store", "shop", "general", "professional", "business",
+                 "facility", "company", "agency"}
+MIN_TERM = 4
+
+
+def useful_terms(terms):
+    """The word stems worth matching, cleaned: lowercase [a-z0-9_], at
+    least MIN_TERM letters, none of GENERIC_TERMS."""
+    out = set()
+    for t in terms or ():
+        t = re.sub(r"[^a-z0-9_]", "", str(t).strip().lower())
+        if len(t) >= MIN_TERM and t not in GENERIC_TERMS:
+            out.add(t)
+    return sorted(out)
+
+
 def query(lat, lon, radius_km, *, categories=(), terms=(), release=None, runner=None):
     """Places within radius_km of (lat, lon), nearest first, each with its
     distance. `categories` are exact Overture category names (matched against
@@ -163,9 +184,7 @@ def query(lat, lon, radius_km, *, categories=(), terms=(), release=None, runner=
     # A term is a word stem: it matches at the start of a category's word
     # ("mental" finds behavioral_or_mental_health_clinic, not
     # environmental_conservation_organization, Core Care Clinic, 2026-10-10).
-    for t in sorted({re.sub(r"[^a-z0-9_]", "", t.strip().lower()) for t in terms if t}):
-        if not t:
-            continue
+    for t in useful_terms(terms):
         match.append("regexp_matches(basic_category, ?) OR regexp_matches(taxonomy.primary, ?)")
         params += ["(^|_)" + t] * 2
     if match:

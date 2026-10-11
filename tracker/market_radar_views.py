@@ -454,7 +454,7 @@ def moves_view(client_id, owner_email, *, conn=None):
             "articles": sum(1 for s in sources if s.get("detector") == "news"),
             "place": (e.get("location") or {}).get("label"),
             "score": sc.get("score"), "severity": sc.get("severity"),
-            "feedback": sc.get("feedback")})
+            "distance_km": sc.get("distance_km"), "feedback": sc.get("feedback")})
     tracked = {}
     for s in store.snapshot_summaries(ids, conn=conn):
         tracked.setdefault(s["entity_id"], {})[s["detector"]] = {
@@ -498,7 +498,7 @@ def moves_view(client_id, owner_email, *, conn=None):
                     radar[part] = {k: x.get(k) for k in ("status", "note", "reused")}
                     radar[part]["left_out"] = ((x.get("coverage") or {}).get("left_out") or [])[:40]
                     radar[part]["findings"] = [
-                        {k: f.get(k) for k in ("name", "category", "distance_km", "address",
+                        {k: f.get(k) for k in ("name", "category", "distance_km", "near", "address",
                                                "website", "status", "certain", "evidence", "date",
                                                "is_competitor", "reason", "location")}
                         for f in x.get("findings") or []][:40]
