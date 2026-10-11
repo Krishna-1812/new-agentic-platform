@@ -765,3 +765,93 @@ def test_a_market_radar_pdf_is_labelled_market_radar_on_every_page(monkeypatch):
     drawn.clear()
     event_intel_pdf.build("<p>x</p>", "Report")             # Event Intelligence keeps its label
     assert any(t.startswith("Event & Conference Intelligence · Report") for t in drawn)
+
+
+# == one section at a time (the company page's menu, tabs and radar) ==========================
+
+SECTION_VIEW = {"client": {"id": 7, "domain": "acme.example", "radius_km": None},
+                "profile": {"has_reading": True, "fields": {"name": "Acme", "archetype": "multi_location"},
+                            "sites": [{"name": "Waltham"}, {"name": "Tampa"}],
+                            "evidence": [{"field": "name", "quote": "q", "url": "https://acme.example/"}]},
+                "competitors": [
+                    {"entity_id": 1, "domain": "a.example", "name": "Alpha", "kind": "direct", "status": "confirmed", "score": 90},
+                    {"entity_id": 2, "domain": "b.example", "name": "Beta", "kind": "local", "status": "proposed", "score": 60},
+                    {"entity_id": 3, "domain": "c.example", "name": "Gone", "kind": "local", "status": "removed", "score": 99}],
+                "last_run": {"id": 3, "status": "complete", "cost_usd": 0.155, "sources": {}}}
+SECTION_MOVES = {"today": "2026-10-11", "top": [1], "competitors": [],
+                 "events": [{"id": 1, "name": "Alpha", "type": "new_location", "label": "New location", "title": "Opened",
+                             "date": "2026-10-06", "severity": "HIGH", "detectors": []},
+                            {"id": 2, "name": "Beta", "type": "promotion", "label": "New offer", "title": "Deal",
+                             "date": "2026-10-01", "severity": "LOW", "detectors": []}],
+                 "last_collect": {"status": "complete", "coverage": [{"text": "News read for 2 of 2."}]},
+                 "radar": {"local": {"status": "ok", "note": "n", "findings": [{"name": "Newco", "evidence": []}], "news": []},
+                           "entrants": {"status": "ok", "note": "n", "findings": [], "news": []}},
+                 "pulse": {"markets": [{"country": "US", "status": "ok", "themes": [{"title": "T", "summary": "s", "kind_label": "Market",
+                                                                                   "articles": [], "publishers": 2}]}]}}
+
+
+def test_the_company_page_shows_one_section_at_a_time_and_the_menu_says_whats_in_each():
+    import re
+    out = run_js("""const v = %s, m = %s; return {
+        moves: MR.renderDetail({view: v, moves: m, section: 'moves'}),
+        first: MR.renderDetail({view: v, moves: m}),
+        bogus: MR.renderDetail({view: v, section: 'nope'}),
+        nav: MR.renderNav({view: v, moves: m, monitor: {enabled: false}, section: 'moves'}),
+        none: MR.renderNav({view: null})};""" % (json.dumps(SECTION_VIEW), json.dumps(SECTION_MOVES)))
+    shown = lambda html: re.findall(r'<section class="mr-panel" data-panel="(\w+)" id="mr-p-\w+">', html)
+    panels = lambda html: re.findall(r'<section class="mr-panel" data-panel="(\w+)"', html)
+    assert shown(out["moves"]) == ["moves"]
+    assert panels(out["moves"]) == ["overview", "competitors", "moves", "nearby", "pulse", "profile", "monitor", "run"]
+    assert shown(out["first"]) == ["overview"] and shown(out["bogus"]) == ["overview"]
+    nav = out["nav"]
+    assert nav.count('data-act="section"') == 8 and 'aria-current="page"' in nav
+    assert re.search(r'class="mr-nav-i on" data-act="section" data-section="moves"', nav)
+    for badge in (">1 new<", ">1 high<", ">1<", ">Off<", ">$0.155<"):
+        assert badge in nav, badge
+    assert "Results" in nav and "Set-up" in nav and out["none"] == ""
+
+
+def test_the_overview_leads_with_what_needs_doing_and_draws_the_rivals_on_a_radar():
+    import re
+    out = run_js("""const v = %s, m = %s; return {
+        ov: MR.renderOverview({view: v, moves: m}),
+        loading: MR.renderOverview({view: v, moves: null}),
+        empty: MR.renderOverview({view: {client: {id: 1}, profile: {}, competitors: []}, moves: null})};"""
+                 % (json.dumps(SECTION_VIEW), json.dumps(SECTION_MOVES)))
+    ov = out["ov"]
+    assert "1 move needs your attention." in ov and "Watching 2 rivals around 2 sites" in ov
+    assert ov.count('class="mr-pl-dot"') == 2                       # the removed rival is not drawn
+    assert ov.count("mr-pl-b h-sky open") == 1 and "mr-pl-b h-acc\"" in ov
+    assert "Most important now" in ov and "Opened" in ov and "Rivals to watch" in ov
+    assert ov.index("Alpha</b>") < ov.index("Beta</b>")              # ranked by score
+    assert 'data-act="collect"' in ov and "Collect again" in ov and "/admin/market-radar/report/7" in ov
+    assert "Loading…" in out["loading"] and "No rivals on the radar yet." in out["empty"]
+
+
+def test_the_radar_puts_the_rivals_to_watch_nearest_and_escapes_their_names():
+    import re
+    rows = [{"domain": "d%d.example" % i, "name": EVIL if i == 0 else "R%d" % i, "kind": k, "status": "confirmed",
+             "score": 40 + i * 6} for i, k in enumerate(["direct", "local", "indirect", "aspirational"] * 2)]
+    svg = run_js("return MR.renderRadarPlot(%s);" % json.dumps(rows))
+    _no_markup_from(svg)
+    dots = [(float(x), float(y)) for x, y in re.findall(r'class="mr-pl-dot" cx="([\d.]+)" cy="([\d.]+)"', svg)]
+    dist = [((x - 180) ** 2 + (y - 180) ** 2) ** .5 for x, y in dots]
+    assert len(dots) == 8 and dist.index(min(dist)) == 7 and dist.index(max(dist)) == 0
+    # each kind keeps to its quarter: direct is up and to the right
+    x, y = dots[0]
+    assert x >= 180 and y <= 180
+    assert svg.count('class="mr-pl-lab"') <= 5
+
+
+def test_long_cards_are_split_into_tabs_with_one_open():
+    import re
+    out = run_js("""const v = %s, m = %s; return {
+        moves: MR.renderMoves(m, null), all: MR.renderMoves(m, null, 'all'),
+        near: MR.renderRadar(m.radar, 'entrants'), prof: MR.renderProfile(v, false, null, 'where'),
+        edit: MR.renderProfile(v, true, null)};""" % (json.dumps(SECTION_VIEW), json.dumps(SECTION_MOVES)))
+    open_tab = lambda html, g: re.findall(r'role="tabpanel" data-group="%s" data-tab="(\w+)">' % g, html)
+    assert open_tab(out["moves"], "moves") == ["top"] and open_tab(out["all"], "moves") == ["all"]
+    assert "Highlights" in out["moves"] and "What was read" in out["moves"]
+    assert open_tab(out["near"], "nearby") == ["entrants"] and "Near your sites" in out["near"]
+    assert open_tab(out["prof"], "profile") == ["where"] and "What the website says" in out["prof"]
+    assert "Waltham" in out["prof"] and 'data-act="tab"' not in out["edit"]

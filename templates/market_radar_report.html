@@ -5,11 +5,12 @@
 
     The written report (tracker/market_radar_report.py), drawn by
     static/js/market_radar_report.js from /admin/market-radar/api/clients/<id>/report.
-    A reading page, not a dashboard: one column, read top to bottom.
+    A reading page: a menu of sections on the left, one section shown at a
+    time (#rr-<section>); the PDF prints them all.
 -#}
 <html lang="en">
 <head>
-{{ head("Market Radar report", ["market_radar.css?v=1", "market_radar_report.css?v=1"]) }}
+{{ head("Market Radar report", ["market_radar.css?v=2", "market_radar_report.css?v=2"]) }}
 </head>
 <body class="sa">
 
@@ -20,6 +21,6 @@
 </main>
 
 {{ topbar_script() }}
-<script src="{{ url_for('static', filename='js/market_radar_report.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/market_radar_report.js') }}?v=3"></script>
 </body>
 </html>

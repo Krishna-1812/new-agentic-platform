@@ -100,6 +100,271 @@
       esc(label(KINDS, kind)) + '</span>';
   }
 
+  // A company's first letter on its kind's colour: a face for every rival.
+  var KIND_HUE = { direct: 'acc', local: 'sky', indirect: 'cream', aspirational: 'asp' };
+  function mono(name, kind, extra) {
+    var ch = (String(name || '').replace(/^(the|www\.)\s*/i, '').match(/[A-Za-z0-9]/) || ['?'])[0].toUpperCase();
+    return '<span class="mr-mono h-' + (KIND_HUE[kind] || 'ink') + (extra ? ' ' + extra : '') + '" aria-hidden="true">' + esc(ch) + '</span>';
+  }
+
+  // == sections and tabs ===============================================================
+  //
+  // The company's page is one short panel at a time, picked in the rail.
+  // Every panel is rendered and the others carry `hidden`, so a switch is
+  // instant and a half-typed form survives it.
+
+  var SECTIONS = [
+    ['overview', 'Overview', 'results'], ['competitors', 'Competitors', 'results'], ['moves', 'Moves', 'results'],
+    ['nearby', 'Nearby & new', 'results'], ['pulse', 'Industry pulse', 'results'],
+    ['profile', 'Profile', 'setup'], ['monitor', 'Weekly update', 'setup'], ['run', 'Last search', 'setup']];
+  var ICON = {
+    overview: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
+    competitors: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>',
+    moves: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+    nearby: '<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+    pulse: '<path d="M4 5h12v14H6a2 2 0 0 1-2-2V5z"/><path d="M16 9h3v8a2 2 0 0 1-2 2"/><path d="M7 9h6M7 13h6M7 16h4"/>',
+    profile: '<path d="M4 21V7l8-4 8 4v14"/><path d="M9 21v-5h6v5"/><path d="M8 10h.01M12 10h.01M16 10h.01"/>',
+    monitor: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    run: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>'
+  };
+  function icon(key) {
+    return '<svg class="mr-ico" viewBox="0 0 24 24" aria-hidden="true">' + (ICON[key] || '') + '</svg>';
+  }
+  function sectionOf(state) {
+    var s = state && state.section;
+    for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === s) return s;
+    return 'overview';
+  }
+
+  /** A row of tabs inside a card; `items` is [[key, label, count]]. */
+  function tabs(group, items, active) {
+    return '<div class="mr-seg mr-tabs" role="tablist">' + items.map(function (t) {
+      return '<button type="button" role="tab" class="' + (t[0] === active ? 'on' : '') + '" aria-selected="' + (t[0] === active) +
+        '" data-act="tab" data-group="' + esc(group) + '" data-tab="' + esc(t[0]) + '">' + esc(t[1]) +
+        (t[2] != null ? ' <span class="mr-tabn">' + esc(t[2]) + '</span>' : '') + '</button>';
+    }).join('') + '</div>';
+  }
+  function pane(group, key, active, html) {
+    return '<div class="mr-pane" role="tabpanel" data-group="' + esc(group) + '" data-tab="' + esc(key) + '"' +
+      (key === active ? '' : ' hidden') + '>' + html + '</div>';
+  }
+  function pick(wanted, keys) {
+    return keys.indexOf(wanted) >= 0 ? wanted : keys[0];
+  }
+
+  /** What each section holds, for the rail's badges and the overview. */
+  function facts(state) {
+    var v = state.view || {}, m = state.moves || {}, rows = v.competitors || [];
+    var c = counts(rows), events = m.events || [], radar = m.radar || {};
+    var high = events.filter(function (e) { return e.severity === 'HIGH'; }).length;
+    var near = ((radar.local || {}).findings || []).length, brands = ((radar.entrants || {}).findings || []).length;
+    var themes = 0;
+    ((m.pulse || {}).markets || []).forEach(function (mk) { themes += (mk.themes || []).length; });
+    var run = v.last_run || null;
+    return { confirmed: c.confirmed, proposed: c.proposed, removed: c.removed, moves: events.length, high: high,
+      near: near, brands: brands, themes: themes, collected: !!(m.last_collect && m.last_collect.status === 'complete'),
+      monitor: state.monitor ? !!state.monitor.enabled : null, cost: run ? run.cost_usd : null,
+      sites: ((v.profile || {}).sites || []).length };
+  }
+
+  function renderNav(state) {
+    if (!state || !state.view) return '';
+    var f = facts(state), active = sectionOf(state);
+    var badge = {
+      competitors: f.proposed ? [f.proposed + ' new', 'hot'] : f.confirmed ? [f.confirmed, ''] : null,
+      moves: f.high ? [f.high + ' high', 'bad'] : f.moves ? [f.moves, ''] : null,
+      nearby: f.near + f.brands ? [f.near + f.brands, 'sky'] : null,
+      pulse: f.themes ? [f.themes, ''] : null,
+      monitor: f.monitor == null ? null : [f.monitor ? 'On' : 'Off', f.monitor ? 'ok' : 'off'],
+      run: f.cost != null ? [money(f.cost), 'off'] : null
+    };
+    var group = '';
+    return SECTIONS.map(function (s) {
+      var head = '';
+      if (s[2] !== group) {
+        group = s[2];
+        head = '<div class="mr-nav-h">' + (group === 'results' ? 'Results' : 'Set-up') + '</div>';
+      }
+      var b = badge[s[0]];
+      return head + '<button type="button" class="mr-nav-i' + (s[0] === active ? ' on' : '') + '" data-act="section" data-section="' + s[0] +
+        '"' + (s[0] === active ? ' aria-current="page"' : '') + '>' + icon(s[0]) + '<span>' + esc(s[1]) + '</span>' +
+        (b ? '<em class="mr-badge ' + b[1] + '">' + esc(b[0]) + '</em>' : '') + '</button>';
+    }).join('');
+  }
+
+  // == the radar of rivals =============================================================
+  //
+  // Each rival is a blip: its quarter is its kind, its distance from the
+  // centre is how closely to watch it (the higher the score, the closer).
+  // The sweep passes every blip once a turn and it pings as it does.
+
+  var SWEEP_S = 6;
+  var QUARTER = { direct: 0, local: 90, indirect: 180, aspirational: 270 };
+  function hashOf(s) {
+    var h = 0;
+    s = String(s || '');
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return h;
+  }
+  function blips(rows) {
+    var pts = (rows || []).filter(function (r) { return r.status !== 'removed'; }).map(function (r) {
+      var score = r.score != null ? r.score : (r.confidence != null ? Math.round(r.confidence * 100) : 50);
+      return { r: r, score: Math.max(0, Math.min(100, Number(score) || 0)) };
+    });
+    // Distance is relative to this set, so a list scored 55 to 88 fills the
+    // scope instead of bunching at the centre.
+    var hi = Math.max.apply(null, pts.map(function (p) { return p.score; }).concat([0]));
+    var lo = Math.min.apply(null, pts.map(function (p) { return p.score; }).concat([100]));
+    var span = Math.max(hi - lo, 20);
+    // Each quarter's blips are spread evenly across it, the order fixed by
+    // domain so a blip keeps its place from one visit to the next.
+    var byQ = {};
+    pts.forEach(function (p) {
+      var q = QUARTER[p.r.kind] != null ? QUARTER[p.r.kind] : 0;
+      (byQ[q] = byQ[q] || []).push(p);
+    });
+    Object.keys(byQ).forEach(function (q) {
+      var list = byQ[q].sort(function (x, y) { return hashOf(x.r.domain || x.r.name) - hashOf(y.r.domain || y.r.name); });
+      list.forEach(function (p, i) {
+        p.a = Number(q) + 90 * (i + 0.5) / list.length + (hashOf(p.r.name) % 9) - 4;
+        p.d = 0.22 + (hi - p.score) / span * 0.68;
+      });
+    });
+    return pts;
+  }
+
+  function renderRadarPlot(rows, size) {
+    var S = size || 360, C = S / 2, R = C - 26;
+    var pts = blips(rows);
+    var rings = [1, 2, 3].map(function (i) {
+      return '<circle cx="' + C + '" cy="' + C + '" r="' + (R * i / 3).toFixed(1) + '" class="mr-pl-ring"/>';
+    }).join('');
+    var axes = '<path class="mr-pl-axis" d="M' + C + ' ' + (C - R) + 'V' + (C + R) + 'M' + (C - R) + ' ' + C + 'H' + (C + R) + '"/>';
+    var q = [['Direct', 'end', C + R * 0.74, C - R * 0.94], ['Nearby', 'end', C + R * 0.74, C + R * 0.99],
+      ['Indirect', 'start', C - R * 0.74, C + R * 0.99], ['Bigger players', 'start', C - R * 0.74, C - R * 0.94]];
+    var labels = q.map(function (l) {
+      return '<text class="mr-pl-q" text-anchor="' + l[1] + '" x="' + l[2].toFixed(1) + '" y="' + l[3].toFixed(1) + '">' + l[0] + '</text>';
+    }).join('');
+    // A wedge trailing the hand: flat, translucent, no gradient.
+    var w = 34 * Math.PI / 180;
+    var sweep = '<g class="mr-pl-sweep" style="animation-duration:' + SWEEP_S + 's;transform-origin:' + C + 'px ' + C + 'px">' +
+      '<path class="mr-pl-wedge" d="M' + C + ' ' + C + 'L' + (C - R * Math.sin(w)).toFixed(1) + ' ' + (C - R * Math.cos(w)).toFixed(1) +
+      'A' + R + ' ' + R + ' 0 0 1 ' + C + ' ' + (C - R) + 'Z"/><path class="mr-pl-hand" d="M' + C + ' ' + C + 'V' + (C - R) + '"/></g>';
+    pts.forEach(function (p) {
+      var rad = p.a * Math.PI / 180;
+      p.x = C + Math.sin(rad) * p.d * R; p.y = C - Math.cos(rad) * p.d * R;
+    });
+    // Names for the five to watch most, unless one would sit on another.
+    var named = [];
+    pts.slice().sort(function (a, b) { return b.score - a.score; }).forEach(function (p) {
+      if (named.length >= 5) return;
+      var right = p.x > C;
+      if (named.some(function (q) { return (q.x > C) === right && Math.abs(q.y - p.y) < 16 && Math.abs(q.x - p.x) < 130; })) return;
+      named.push(p);
+    });
+    var top = named;
+    var dots = pts.map(function (p) {
+      var x = p.x, y = p.y;
+      var hue = KIND_HUE[p.r.kind] || 'ink', delay = (((p.a % 360) + 360) % 360 / 360 * SWEEP_S).toFixed(2);
+      var name = p.r.name || p.r.domain || '';
+      var lab = top.indexOf(p) >= 0 ? '<text class="mr-pl-lab" x="' + (x + (x > C ? 11 : -11)).toFixed(1) + '" y="' + (y + 4).toFixed(1) +
+        '" text-anchor="' + (x > C ? 'start' : 'end') + '">' + esc(name.length > 18 ? name.slice(0, 17) + '…' : name) + '</text>' : '';
+      return '<g class="mr-pl-b h-' + hue + (p.r.status === 'proposed' ? ' open' : '') + '">' +
+        '<circle class="mr-pl-ping" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="7" style="--ping:' + delay + 's;animation-duration:' + SWEEP_S + 's"/>' +
+        '<circle class="mr-pl-dot" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="6"/>' + lab +
+        '<title>' + esc(name) + ' · ' + esc(label(KINDS, p.r.kind)) + ' · watch score ' + esc(p.score) + (p.r.status === 'proposed' ? ' · to review' : '') + '</title></g>';
+    }).join('');
+    return '<svg class="mr-plot" viewBox="0 0 ' + S + ' ' + S + '" role="img" aria-label="Radar of ' + esc(pts.length) +
+      ' competitors: the nearer the centre, the more closely to watch">' + rings + axes + labels + sweep + dots +
+      '<circle cx="' + C + '" cy="' + C + '" r="9" class="mr-pl-you"/><circle cx="' + C + '" cy="' + C + '" r="16" class="mr-pl-you2"/></svg>';
+  }
+
+  // == the overview ====================================================================
+
+  function renderOverview(state) {
+    var v = state.view || {}, p = v.profile || {}, pf = p.fields || {}, f = facts(state), m = state.moves || null;
+    var rows = (v.competitors || []).filter(function (r) { return r.status !== 'removed'; });
+    var running = state.collect && state.collect.status === 'running' && !state.collect.stale;
+    var watched = f.confirmed + f.proposed;
+    var headline = !watched ? 'No rivals on the radar yet.'
+      : f.proposed && !f.confirmed ? f.proposed + ' suggested rival' + (f.proposed > 1 ? 's are' : ' is') + ' waiting for your review.'
+      : f.high ? f.high + ' move' + (f.high > 1 ? 's need' : ' needs') + ' your attention.'
+      : f.collected ? 'No high-impact moves right now.' : 'Rivals found. Collect their moves next.';
+    var kpi = function (key, cls, n, lab, sub) {
+      return '<button type="button" class="mr-kpi ' + cls + '" data-act="section" data-section="' + key + '"><b>' + esc(n) + '</b><span>' +
+        esc(lab) + '</span>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</button>';
+    };
+    var cmd = '<div class="mr-cmd"><div class="mr-cmd-l"><div class="mr-cmd-eye"><i></i>' +
+      (watched ? 'Watching ' + esc(watched) + ' rival' + (watched > 1 ? 's' : '') : 'Radar idle') +
+      (f.sites > 1 ? ' around ' + esc(f.sites) + ' sites' : '') + '</div>' +
+      '<h3 class="mr-cmd-h">' + esc(headline) + '</h3>' +
+      (pf.one_liner ? '<p class="mr-cmd-p">' + esc(pf.one_liner) + '</p>' : '') +
+      '<div class="mr-kpis">' +
+      kpi('competitors', 'k-acc', watched, 'Rivals', f.proposed ? f.proposed + ' to review' : f.confirmed + ' confirmed') +
+      kpi('moves', 'k-paper', m ? f.high : '–', 'High-impact', m ? 'of ' + f.moves + ' moves' : 'loading') +
+      kpi('nearby', 'k-sky', m ? f.near + f.brands : '–', 'New nearby', f.brands ? f.brands + ' new brands' : 'openings') +
+      kpi('pulse', 'k-cream', m ? f.themes : '–', 'Industry themes', 'this month') +
+      '</div></div><div class="mr-cmd-r">' + renderRadarPlot(rows) +
+      '<div class="mr-legend">' + KINDS.map(function (k) {
+        return '<span class="h-' + KIND_HUE[k[0]] + '"><i></i>' + esc(k[1]) + '</span>';
+      }).join('') + '<span class="open"><i></i>To review</span></div></div></div>';
+
+    // The moves that matter most, at most three.
+    var top = [];
+    if (m) {
+      var byId = {};
+      (m.events || []).forEach(function (e) { byId[e.id] = e; });
+      top = (m.top || []).map(function (id) { return byId[id]; }).filter(Boolean).slice(0, 3);
+      if (!top.length) top = (m.events || []).filter(function (e) { return e.severity === 'HIGH' || e.severity === 'MEDIUM'; }).slice(0, 3);
+    }
+    var hot = '<div class="card mr-card mr-hot"><div class="mr-card-h"><div><h3>Most important now</h3><p>The moves that matter most to this business.</p></div>' +
+      '<button type="button" class="mr-btn small" data-act="section" data-section="moves">All moves</button></div><div class="mr-card-b">' +
+      (!m ? '<div class="mr-empty">Loading…</div>'
+        : top.length ? '<ol class="mr-hotl">' + top.map(function (e) {
+          var sev = SEVERITY[e.severity] || SEVERITY.LOW, href = safeUrl(e.url);
+          return '<li class="s-' + (sev[0] || 'low') + '"><div class="mr-hot-t"><span class="mr-chip mr-sev ' + sev[0] + '">' + sev[1] + '</span>' +
+            '<span class="mr-chip ' + esc(TONE[e.type] || '') + '">' + esc(e.label) + '</span><span class="mr-hint">' + esc(e.date || when(e.seen)) + '</span></div>' +
+            '<b>' + esc(e.name) + '</b><p>' + (href ? '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(e.title) + '</a>' : esc(e.title)) + '</p>' +
+            (e.place ? '<small>' + esc(e.place) + (e.distance_km != null ? ' · ' + esc(Number(e.distance_km).toFixed(1)) + ' km from your nearest site' : '') + '</small>' : '') + '</li>';
+        }).join('') + '</ol>'
+        : '<div class="mr-empty"><b>' + (f.collected ? 'All quiet' : 'Nothing collected yet') + '</b>' +
+          (f.collected ? 'No move stands out since the last collection.' : 'Collect the competitors\' moves to see what they are doing.') + '</div>') +
+      '</div></div>';
+
+    // The rivals to watch most closely.
+    var lead = rows.slice().sort(function (a, b) {
+      return (b.score != null ? b.score : -1) - (a.score != null ? a.score : -1);
+    }).slice(0, 6);
+    var board = '<div class="card mr-card mr-board"><div class="mr-card-h"><div><h3>Rivals to watch</h3><p>Ranked by how closely to watch them.</p></div>' +
+      '<button type="button" class="mr-btn small" data-act="section" data-section="competitors">All rivals</button></div>' +
+      (lead.length ? '<ol class="mr-boardl">' + lead.map(function (r) {
+        var score = r.score != null ? r.score : (r.confidence != null ? Math.round(r.confidence * 100) : null);
+        return '<li>' + mono(r.name || r.domain, r.kind) + '<div class="mr-board-m"><b>' + esc(r.name || r.domain) + '</b><small>' +
+          esc([label(KINDS, r.kind), r.distance_km != null ? Number(r.distance_km).toFixed(1) + ' km' + (r.near_site ? ' from ' + r.near_site : '') : r.location,
+            r.status === 'proposed' ? 'to review' : ''].filter(Boolean).join(' · ')) + '</small></div>' +
+          (score != null ? '<span class="mr-board-s"><i style="--w:' + esc(Math.max(0, Math.min(100, score))) + '%"></i><em>' + esc(score) + '</em></span>' : '') + '</li>';
+      }).join('') + '</ol>' : '<div class="mr-empty">No rivals yet. Press <b style="display:inline;font:inherit">Search again</b> above.</div>') + '</div>';
+
+    // What to do next, in order.
+    var steps = [
+      [!!p.has_reading, 'Read the website', 'What the company sells, to whom, and where.', 'profile', 'See the profile'],
+      [watched > 0 && !f.proposed, 'Review the suggested rivals', f.proposed ? f.proposed + ' waiting: confirm the ones you agree with.' : 'Confirmed rivals are the ones tracked.', 'competitors', 'Review'],
+      [f.collected, 'Collect their moves', 'Free. Reads their sites, shops, jobs and the news.', 'collect', running ? 'Collecting…' : f.collected ? 'Collect again' : 'Collect now'],
+      [false, 'Read the report', 'A cited brief: what matters, so what, and what to do.', 'report', 'Open the report'],
+      [!!f.monitor, 'Turn on the weekly update', 'A short "what changed" email once a week.', 'monitor', 'Set up']
+    ];
+    var next = '<div class="card mr-card mr-next"><div class="mr-card-h"><div><h3>Next steps</h3></div></div><ol class="mr-steps2">' +
+      steps.map(function (s, i) {
+        var btn = s[3] === 'collect' ? '<button type="button" class="mr-btn small" data-act="collect"' + (running ? ' disabled' : '') + '>' + esc(s[4]) + '</button>'
+          : s[3] === 'report' ? '<a class="mr-btn small" href="/admin/market-radar/report/' + encodeURIComponent((v.client || {}).id) + '">' + esc(s[4]) + '</a>'
+          : '<button type="button" class="mr-btn small" data-act="section" data-section="' + s[3] + '">' + esc(s[4]) + '</button>';
+        return '<li class="' + (s[0] ? 'done' : '') + '"><span class="mr-steps2-n">' + (s[0] ? '&#10003;' : i + 1) + '</span><div><b>' + esc(s[1]) +
+          '</b><small>' + esc(s[2]) + '</small></div>' + btn + '</li>';
+      }).join('') + '</ol></div>';
+
+    return '<div class="mr-ov">' + cmd + '<div class="mr-ov-grid">' + hot + board + '</div>' + next + '</div>';
+  }
+
   // == the rail ======================================================================
 
   function renderClientList(clients, selectedId) {
@@ -136,7 +401,7 @@
 
   // == the profile ===================================================================
 
-  function renderProfile(view, editing, errors) {
+  function renderProfile(view, editing, errors, tab) {
     var p = view.profile || {};
     var f = p.fields || {};
     var edited = p.edited || [];
@@ -193,8 +458,16 @@
       }).join('') + '</div>';
     }
 
-    return '<div class="card mr-card">' + head + '<div class="mr-card-b">' + checks + body +
-      renderLocation(view) + (editing ? '' : renderEvidence(p)) + '</div></div>';
+    if (editing) {
+      return '<div class="card mr-card">' + head + '<div class="mr-card-b">' + checks + body + renderLocation(view) + '</div></div>';
+    }
+    var ev = renderEvidence(p);
+    var keys = ev ? ['what', 'where', 'evidence'] : ['what', 'where'];
+    var on = pick(tab, keys);
+    return '<div class="card mr-card">' + head + '<div class="mr-card-b">' + checks +
+      tabs('profile', [['what', 'What they do'], ['where', 'Where'], ['evidence', 'What the website says']].slice(0, keys.length), on) +
+      pane('profile', 'what', on, body) + pane('profile', 'where', on, renderLocation(view)) +
+      (ev ? pane('profile', 'evidence', on, ev) : '') + '</div></div>';
   }
 
   function renderLocation(view) {
@@ -206,11 +479,13 @@
     var radius = view.client && view.client.radius_km;
     var precisionWarn = pt && pt.precision === 'city' && f.archetype === 'local_single';
     // A business with a few sites is searched around each of them.
-    var sites = (p.sites || []).length > 1 ? '<div class="mr-k" style="margin-top:10px">Sites searched</div>' +
-      '<div class="mr-v">' + esc(p.sites.map(function (s) { return s.name; }).filter(Boolean).join(' · ')) + '</div>' : '';
+    var sites = (p.sites || []).length > 1 ? '<div class="mr-k" style="margin-top:16px">Sites searched</div>' +
+      '<ul class="mr-sites">' + p.sites.map(function (s, i) {
+        return s.name ? '<li><span>' + (i + 1) + '</span>' + esc(s.name) + '</li>' : '';
+      }).join('') + '</ul>' : '';
     var chain = f.archetype === 'multi_location' && p.competes_locally === false ?
       '<div class="mr-hint" style="margin-top:6px">A chain: competitors are looked for among other chains, not around each branch.</div>' : '';
-    return '<div class="mr-more" style="border-top:1px solid var(--mr-line)"><div class="mr-k">Map location</div>' +
+    return '<div class="mr-where"><div class="mr-k">Map location</div>' +
       '<div class="mr-v">' + esc(where) + '</div>' + sites + chain +
       (precisionWarn ? '<div class="mr-callout" style="margin-top:8px">Add the street address so the map search looks in the right neighbourhood.</div>' : '') +
       (local ? '<form class="mr-addrow" id="mrRadiusForm" style="border:0;background:none;padding:10px 0 0">' +
@@ -231,10 +506,8 @@
     var unknowns = (p.unknowns || []).map(function (u) { return '<li>' + esc(u) + '</li>'; }).join('');
     var why = p.archetype_reason ? '<p class="mr-hint" style="font-size:13px">Why this type: ' + esc(p.archetype_reason) + '</p>' : '';
     if (!quotes && !unknowns && !why) return '';
-    return '<details class="mr-more"><summary>What the website says</summary>' + why +
-      (quotes ? '<ul class="mr-quotes">' + quotes + '</ul>' : '') +
-      (unknowns ? '<div class="mr-k" style="margin-top:14px">Not stated on the website</div><ul class="mr-list">' + unknowns + '</ul>' : '') +
-      '</details>';
+    return why + (quotes ? '<ul class="mr-quotes">' + quotes + '</ul>' : '') +
+      (unknowns ? '<div class="mr-k" style="margin-top:14px">Not stated on the website</div><ul class="mr-list">' + unknowns + '</ul>' : '');
   }
 
   // == competitors ===================================================================
@@ -297,7 +570,8 @@
           : '<span class="mr-chip ok">Confirmed</span>') +
         '<button type="button" class="mr-btn small bad" data-act="status" data-status="removed" data-id="' + esc(r.entity_id) + '" aria-label="Remove ' + esc(r.name) + '">Remove</button>';
     }
-    return '<div class="mr-row ' + esc(r.status) + '"><div class="mr-row-main"><div class="mr-row-top"><b>' + esc(r.name || r.domain) + '</b>' +
+    return '<div class="mr-row ' + esc(r.status) + '">' + mono(r.name || r.domain, r.kind, 'big') +
+      '<div class="mr-row-main"><div class="mr-row-top"><b>' + esc(r.name || r.domain) + '</b>' +
       (href ? '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(r.domain) + '</a>' : esc(r.domain)) +
       kindChip(r.kind) + '</div>' +
       (r.reason ? '<div class="mr-reason">' + esc(r.reason) + '</div>' : (r.sells ? '<div class="mr-reason">' + esc(r.sells) + '</div>' : '')) +
@@ -383,7 +657,7 @@
     return '<div class="mr-callout">' + esc(text) + '… This runs in the background; you can leave the page.</div>';
   }
 
-  function renderMoves(moves, collectRun) {
+  function renderMoves(moves, collectRun, tab) {
     if (!moves) return '';
     var running = collectRun && collectRun.status === 'running' && !collectRun.stale;
     var last = moves.last_collect;
@@ -409,25 +683,27 @@
     var ahead = events.filter(function (e) { return e.date && e.date > today; })
       .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
     events = events.filter(function (e) { return !(e.date && e.date > today); });
+    // Three tabs: the few that matter, every move, and what was read.
+    var hi = '', all = '', read = '';
     if (top.length) {
-      body += '<h4 class="mr-sub">Most important</h4><ul class="mr-moves mr-top">' + top.map(renderMoveRow).join('') + '</ul>';
+      hi += '<h4 class="mr-sub">Most important</h4><ul class="mr-moves mr-top">' + top.map(renderMoveRow).join('') + '</ul>';
     }
     if (ahead.length) {
-      body += '<h4 class="mr-sub">Coming up</h4><ul class="mr-moves">' + ahead.map(renderMoveRow).join('') + '</ul>';
+      hi += '<h4 class="mr-sub">Coming up</h4><ul class="mr-moves">' + ahead.map(renderMoveRow).join('') + '</ul>';
     }
-    if ((top.length || ahead.length) && events.length) body += '<h4 class="mr-sub">All moves, newest first</h4>';
+    if ((top.length || ahead.length) && events.length) all += '<h4 class="mr-sub">All moves, newest first</h4>';
     if (events.length) {
-      body += '<ul class="mr-moves">' + events.slice(0, MOVES_SHOWN).map(renderMoveRow).join('') + '</ul>';
+      all += '<ul class="mr-moves">' + events.slice(0, MOVES_SHOWN).map(renderMoveRow).join('') + '</ul>';
       if (events.length > MOVES_SHOWN) {
-        body += '<details class="mr-more"><summary>' + esc(events.length - MOVES_SHOWN) + ' earlier moves</summary>' +
+        all += '<details class="mr-more"><summary>' + esc(events.length - MOVES_SHOWN) + ' earlier moves</summary>' +
           '<ul class="mr-moves">' + events.slice(MOVES_SHOWN).map(renderMoveRow).join('') + '</ul></details>';
       }
     } else if (last && last.status === 'complete' && !ahead.length) {
-      body += '<div class="mr-empty"><b>No moves yet</b>' + (moves.competitors || []).length + ' competitors are tracked. ' +
+      all += '<div class="mr-empty"><b>No moves yet</b>' + (moves.competitors || []).length + ' competitors are tracked. ' +
         'A move appears when something differs from the previous collection, or when a source dates it in the last 90 days.</div>';
     }
     if (last && last.coverage && last.coverage.length) {
-      body += '<details class="mr-more"' + (events.length ? '' : ' open') + '><summary>What was read' +
+      read += '<details class="mr-more" open><summary>What was read' +
         (last.finished_at ? ' (' + esc(when(last.finished_at)) + ')' : '') + '</summary><ul class="mr-list">' +
         last.coverage.map(function (c) { return '<li>' + esc(c.text) + '</li>'; }).join('') + '</ul>' +
         (last.left_out ? '<p class="mr-hint">' + esc(last.left_out) + ' more competitors were not collected: at most 12 are, confirmed ones first.</p>' : '') +
@@ -437,7 +713,7 @@
         '</details>';
     }
     if (moves.hidden && moves.hidden.length) {
-      body += '<details class="mr-more"><summary>Left out as not moves (' + esc(moves.hidden_count || moves.hidden.length) + ')</summary><ul class="mr-list">' +
+      read += '<details class="mr-more"><summary>Left out as not moves (' + esc(moves.hidden_count || moves.hidden.length) + ')</summary><ul class="mr-list">' +
         moves.hidden.map(function (h) {
           var href = safeUrl(h.url);
           var t = href ? '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(h.title) + '</a>' : esc(h.title);
@@ -446,7 +722,7 @@
         }).join('') + '</ul></details>';
     }
     if (last && last.companies && last.companies.length) {
-      body += '<details class="mr-more"><summary>Per competitor</summary>' + last.companies.map(function (c) {
+      read += '<details class="mr-more"><summary>Per competitor</summary>' + last.companies.map(function (c) {
         var rows = (c.rows || []).map(function (r) {
           return '<tr><td>' + esc(r.label) + '</td><td class="mr-st ' + esc(r.status) + '">' + esc(STATUS_WORD[r.status] || r.status) +
             '</td><td>' + esc(r.note || '') + '</td></tr>';
@@ -455,6 +731,15 @@
         return '<div class="mr-trk"><h4>' + esc(c.name) + ' <span>' + esc(c.domain) + '</span></h4>' + site +
           '<table class="mr-src mr-trk-t"><tbody>' + rows + '</tbody></table></div>';
       }).join('') + '</details>';
+    }
+    var keys = [hi && 'top', all && 'all', read && 'read'].filter(Boolean);
+    var on = pick(tab, keys);
+    if (keys.length > 1) {
+      body += tabs('moves', [['top', 'Highlights', top.length + ahead.length], ['all', 'All moves', events.length], ['read', 'What was read']]
+        .filter(function (t) { return keys.indexOf(t[0]) >= 0; }), on) +
+        (hi ? pane('moves', 'top', on, hi) : '') + pane('moves', 'all', on, all) + (read ? pane('moves', 'read', on, read) : '');
+    } else {
+      body += hi + all + read;
     }
     return '<div class="card mr-card" id="mrMoves">' + head + '<div class="mr-card-b">' + body + '</div></div>';
   }
@@ -505,12 +790,20 @@
         }).join('') + '</ul></details>' : '');
   }
 
-  function renderRadar(radar) {
+  function renderRadar(radar, tab) {
     if (!radar) return '';
     var body = '';
     if (radar.error) body += '<div class="mr-callout bad">The radar failed: ' + esc(radar.error) + '</div>';
     if (radar.skipped) body += '<p class="mr-hint">' + esc(radar.skipped) + '</p>';
-    body += renderRadarPart(radar.local, true) + renderRadarPart(radar.entrants, false);
+    if (radar.local && radar.entrants) {
+      var on = pick(tab, ['local', 'entrants']);
+      body += tabs('nearby', [['local', 'Near your sites', (radar.local.findings || []).length],
+        ['entrants', 'New brands', (radar.entrants.findings || []).length]], on) +
+        pane('nearby', 'local', on, renderRadarPart(radar.local, true)) +
+        pane('nearby', 'entrants', on, renderRadarPart(radar.entrants, false));
+    } else {
+      body += renderRadarPart(radar.local, true) + renderRadarPart(radar.entrants, false);
+    }
     return '<div class="card mr-card" id="mrRadar"><div class="mr-card-h"><div><h3>Nearby and new</h3>' +
       '<p>Businesses like this one that opened or are about to open nearby, and new brands entering its category. ' +
       'Each is listed only with a sign that it is really new; the reasons are under each name.</p></div></div>' +
@@ -573,11 +866,20 @@
     return head + body;
   }
 
-  function renderPulse(pulse) {
+  function renderPulse(pulse, tab) {
     if (!pulse) return '';
     var body = '';
     if (pulse.skipped) body += '<p class="mr-hint">' + esc(pulse.skipped) + '</p>';
-    body += (pulse.markets || []).map(renderPulseMarket).join('');
+    var markets = pulse.markets || [];
+    if (markets.length > 1) {
+      var keys = markets.map(function (m) { return String(m.country); });
+      var on = pick(tab, keys);
+      body += tabs('pulse', markets.map(function (m) {
+        return [String(m.country), COUNTRY_NAME[m.country] || m.country, (m.themes || []).length];
+      }), on) + markets.map(function (m) { return pane('pulse', String(m.country), on, renderPulseMarket(m)); }).join('');
+    } else {
+      body += markets.map(renderPulseMarket).join('');
+    }
     return '<div class="card mr-card" id="mrPulse"><div class="mr-card-h"><div><h3>Industry pulse</h3>' +
       '<p>What the news says about this industry in each market this month, grouped into themes. ' +
       'Every theme rests on at least two articles, listed under it.</p></div></div>' +
@@ -640,24 +942,43 @@
   function renderHead(view, running) {
     var c = view.client || {}, p = view.profile || {}, f = p.fields || {};
     var href = siteUrl(c.domain);
-    return '<div class="mr-head"><div><h2>' + esc(f.name || c.name || c.domain) + '</h2><div class="mr-head-sub">' +
+    var where = (p.sites || []).length > 1 ? p.sites.length + ' sites'
+      : f['hq.city'] ? [f['hq.city'], f['hq.country_code']].filter(Boolean).join(', ') : '';
+    return '<div class="mr-head">' + mono(f.name || c.name || c.domain, 'direct', 'xl') + '<div class="mr-head-m"><div class="eyebrow">Market Radar</div><h2>' +
+      esc(f.name || c.name || c.domain) + '</h2><div class="mr-head-sub">' +
       (href ? '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(c.domain) + '</a>' : esc(c.domain)) +
       (f.archetype ? '<span class="mr-chip">' + esc(label(ARCHETYPES, f.archetype)) + '</span>' : '') +
-      (f['hq.city'] ? '<span>' + esc([f['hq.city'], f['hq.country_code']].filter(Boolean).join(', ')) + '</span>' : '') +
-      '</div></div><div class="mr-actions"><a class="mr-btn primary" href="/admin/market-radar/report/' + encodeURIComponent(c.id) + '">Open the report</a>' +
+      (where ? '<span class="mr-chip">' + esc(where) + '</span>' : '') +
+      '</div></div><div class="mr-actions"><a class="mr-btn primary hot" href="/admin/market-radar/report/' + encodeURIComponent(c.id) + '">Open the report' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true" class="mr-ico s"><path d="M7 17L17 7M9 7h8v8"/></svg></a>' +
       '<button type="button" class="mr-btn" data-act="run"' + (running ? ' disabled' : '') + '>' +
       (running ? 'Running…' : 'Search again') + '</button></div></div>';
+  }
+
+  function panel(key, active, html) {
+    return '<section class="mr-panel" data-panel="' + key + '" id="mr-p-' + key + '"' + (key === active ? '' : ' hidden') + '>' + html + '</section>';
+  }
+  function waiting(title, text) {
+    return '<div class="card mr-card"><div class="mr-card-h"><div><h3>' + esc(title) + '</h3></div></div><div class="mr-empty">' + text + '</div></div>';
   }
 
   function renderDetail(state) {
     var v = state.view;
     if (!v) return '<div class="card"><div class="mr-empty"><b>Pick a company</b>Or add one by its website above.</div></div>';
     var running = state.run && state.run.status === 'running';
-    return renderHead(v, running) + (running ? renderProgress(state.run) : '') +
-      renderProfile(v, state.editing, state.errors) + renderCompetitors(v.competitors, state.filter) +
-      renderMoves(state.moves, state.collect) + renderRadar(state.moves && state.moves.radar) +
-        renderPulse(state.moves && state.moves.pulse) + renderMonitor(state.monitor, state.collect) +
-      (running ? '' : renderRun(v.last_run));
+    var active = sectionOf(state), t = state.tabs || {}, m = state.moves;
+    var later = m ? '<b>Nothing yet</b>This fills in with the first collection. Open <i>Moves</i> and press Collect now.' : 'Loading…';
+    return renderHead(v, running) + (running ? renderProgress(state.run) : '') + '<div class="mr-panels">' +
+      panel('overview', active, renderOverview(state)) +
+      panel('competitors', active, renderCompetitors(v.competitors, state.filter)) +
+      panel('moves', active, m ? renderMoves(m, state.collect, t.moves) : waiting('Competitor moves', 'Loading…')) +
+      panel('nearby', active, renderRadar(m && m.radar, t.nearby) || waiting('Nearby and new', later)) +
+      panel('pulse', active, renderPulse(m && m.pulse, t.pulse) || waiting('Industry pulse', later)) +
+      panel('profile', active, renderProfile(v, state.editing, state.errors, t.profile)) +
+      panel('monitor', active, renderMonitor(state.monitor, state.collect) || waiting('Weekly update', 'Loading…')) +
+      panel('run', active, running ? waiting('Last search', 'A search is running; its summary appears here when it ends.')
+        : renderRun(v.last_run) || waiting('Last search', '<b>No search yet</b>Press Search again to find competitors.')) +
+      '</div>';
   }
 
   /** The edits a submitted form makes: only fields whose value changed. */
@@ -684,6 +1005,7 @@
     renderProgress: renderProgress, renderProfile: renderProfile, renderCompetitors: renderCompetitors,
     renderRow: renderRow, renderRun: renderRun, renderDetail: renderDetail, formChanges: formChanges,
     renderMoves: renderMoves, renderMoveRow: renderMoveRow, renderRadar: renderRadar, renderPulse: renderPulse, renderMonitor: renderMonitor,
+    renderNav: renderNav, renderOverview: renderOverview, renderRadarPlot: renderRadarPlot, SECTIONS: SECTIONS,
     FIELDS: FIELDS, STAGE_STEP: STAGE_STEP };
   root.MR = MR;
 
@@ -692,7 +1014,8 @@
   if (typeof document === 'undefined' || !document.getElementById('mr')) return;
 
   var state = { clients: [], selected: null, view: null, filter: null, editing: false, errors: null,
-    run: null, poll: null, moves: null, collect: null, collectPoll: null, monitor: null };
+    run: null, poll: null, moves: null, collect: null, collectPoll: null, monitor: null,
+    section: 'overview', tabs: {} };
   var $ = function (id) { return document.getElementById(id); };
 
   function api(path, body) {
@@ -729,16 +1052,57 @@
     });
   }
 
-  function paintRail() { $('mrClients').innerHTML = renderClientList(state.clients, state.selected); }
-  function paint() { $('mrDetail').innerHTML = renderDetail(state); }
+  function paintRail() {
+    $('mrClients').innerHTML = renderClientList(state.clients, state.selected);
+    var hero = document.querySelector('.mr-hero');
+    if (hero) hero.classList.toggle('mr-hero--compact', state.clients.length > 0);
+  }
+  function paintNav() {
+    var nav = $('mrNav');
+    if (!nav) return;
+    nav.innerHTML = renderNav(state);
+    nav.hidden = !state.view;
+    // On a phone the menu is one row: keep the open section in sight.
+    var on = nav.querySelector('.on');
+    if (on && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = Math.max(0, on.offsetLeft - 16);
+  }
+  function paint() { $('mrDetail').innerHTML = renderDetail(state); paintNav(); }
+  function setHash() {
+    var h = '#company-' + state.selected + (state.section !== 'overview' ? '/' + state.section : '');
+    try { history.replaceState(null, '', h); } catch (e) { /* ignore */ }
+  }
+  // A switch shows one panel and hides the rest without drawing again.
+  function showSection(key) {
+    state.section = sectionOf({ section: key });
+    Array.prototype.forEach.call(document.querySelectorAll('#mrDetail .mr-panel'), function (p) {
+      p.hidden = p.getAttribute('data-panel') !== state.section;
+    });
+    paintNav(); setHash();
+    var top = $('mrDetail').getBoundingClientRect().top + window.pageYOffset - 96;
+    if (window.pageYOffset > top) window.scrollTo({ top: top, behavior: 'smooth' });
+  }
+  function showTab(el) {
+    var group = el.getAttribute('data-group'), key = el.getAttribute('data-tab');
+    state.tabs[group] = key;
+    var card = el.closest('.mr-card') || document;
+    Array.prototype.forEach.call(card.querySelectorAll('[data-act="tab"][data-group="' + group + '"]'), function (b) {
+      var on = b.getAttribute('data-tab') === key;
+      b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    Array.prototype.forEach.call(card.querySelectorAll('.mr-pane[data-group="' + group + '"]'), function (p) {
+      p.hidden = p.getAttribute('data-tab') !== key;
+    });
+  }
 
   function loadClients() {
     return api('/clients').then(function (j) { state.clients = j.clients || []; paintRail(); })
       .catch(function (e) { $('mrClients').innerHTML = '<div class="mr-empty">' + esc(e.message) + '</div>'; });
   }
-  function select(id) {
+  function select(id, section) {
+    if (state.selected !== id) state.tabs = {};
     state.selected = id; state.filter = null; state.editing = false; state.errors = null;
-    try { history.replaceState(null, '', '#company-' + id); } catch (e) { /* ignore */ }
+    state.section = sectionOf({ section: section || 'overview' });
+    setHash();
     paintRail();
     $('mrDetail').innerHTML = '<div class="card"><div class="mr-empty">Loading…</div></div>';
     return loadView();
@@ -852,9 +1216,11 @@
     if (!el || !$('mr').parentNode.contains(el)) return;
     var act = el.getAttribute('data-act');
     if (act === 'select') select(Number(el.getAttribute('data-id')));
+    else if (act === 'section') showSection(el.getAttribute('data-section'));
+    else if (act === 'tab') showTab(el);
     else if (act === 'filter') { state.filter = el.getAttribute('data-filter'); paint(); }
     else if (act === 'status') setStatus(el.getAttribute('data-id'), el.getAttribute('data-status'));
-    else if (act === 'edit') { state.editing = true; state.errors = null; paint(); var first = document.querySelector('#mrProfileForm input'); if (first) first.focus(); }
+    else if (act === 'edit') { state.section = 'profile'; state.editing = true; state.errors = null; paint(); var first = document.querySelector('#mrProfileForm input'); if (first) first.focus(); }
     else if (act === 'cancel-edit') { state.editing = false; state.errors = null; paint(); }
     else if (act === 'reset') saveProfile({ reset: [el.getAttribute('data-field')] });
     else if (act === 'radius-auto') saveProfile({ radius_km: null });
@@ -928,9 +1294,15 @@
   });
 
   loadClients().then(function () {
-    var m = /#company-(\d+)/.exec(location.hash);
+    var m = /#company-(\d+)(?:\/([a-z]+))?/.exec(location.hash);
     var id = m ? Number(m[1]) : (state.clients[0] && state.clients[0].client_id);
-    if (id && state.clients.some(function (c) { return c.client_id === id; })) select(id);
+    if (id && state.clients.some(function (c) { return c.client_id === id; })) select(id, m && m[2]);
     else paint();
+  });
+  window.addEventListener('hashchange', function () {
+    var m = /#company-(\d+)(?:\/([a-z]+))?/.exec(location.hash);
+    if (!m) return;
+    if (Number(m[1]) !== state.selected) select(Number(m[1]), m[2]);
+    else if (sectionOf({ section: m[2] }) !== state.section) showSection(m[2]);
   });
 })(typeof window !== 'undefined' ? window : globalThis);
