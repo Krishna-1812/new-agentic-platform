@@ -278,7 +278,8 @@
     var meta = [];
     if (score != null) meta.push('<span class="mr-score" title="How closely to watch it, out of 100"><i style="--w:' +
       esc(Math.max(0, Math.min(100, score))) + '%"></i>' + esc(score) + '</span>');
-    if (r.distance_km != null) meta.push(esc(Number(r.distance_km).toFixed(1)) + ' km away' +
+    if (r.distance_km != null) meta.push(esc(Number(r.distance_km).toFixed(1)) + ' km ' +
+      (r.near_site ? 'from your ' + esc(r.near_site) + ' site' : 'away') +
       (r.branches_nearby > 1 ? ' (' + esc(r.branches_nearby) + ' branches nearby)' : ''));
     if (r.location) meta.push(esc(r.location));
     if (r.added_by_user) meta.push('Added by you, not checked');

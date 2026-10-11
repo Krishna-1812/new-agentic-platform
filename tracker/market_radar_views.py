@@ -288,7 +288,8 @@ def competitor_rows(client_id, owner_email, *, conn=None):
             "kind": r["kind"], "status": r["status"], "score": d.get("score"),
             "confidence": _num(r["confidence"]), "reason": d.get("reason"),
             "sells": d.get("sells"), "location": d.get("location"),
-            "distance_km": d.get("distance_km"), "branches_nearby": d.get("branches_nearby"),
+            "distance_km": d.get("distance_km"), "near_site": d.get("near_site"),
+            "branches_nearby": d.get("branches_nearby"),
             "checked_on": d.get("checked_on"), "found": r.get("found_via") or [],
             "added_by_user": bool(d.get("added_by_user")), "updated_at": _iso(r.get("updated_at"))})
     return out
@@ -328,6 +329,16 @@ def run_view(run):
             "error": c.get("error"), "note": c.get("note") or c.get("warning"),
             "results": c.get("results"), "radius_km": c.get("radius_km"),
             "location_precision": c.get("location_precision")}
+        if key == "places":
+            # What the map was asked for, so a list of the wrong kind of
+            # business can be traced to its cause.
+            out["sources"][key].update({k: c.get(k) for k in (
+                "categories", "terms", "own_listing", "sites", "outside_own_category", "added",
+                "companies") if c.get(k) is not None})
+    plan = result.get("plan") or {}
+    if plan:
+        out["plan"] = {k: plan.get(k) for k in ("queries", "place_categories", "place_terms",
+                                                 "radius_km", "radius_set_by_user", "notes")}
     checked = cov.get("checked") or {}
     out["checked"] = {k: checked.get(k) for k in ("candidates", "read", "judged",
                                                   "read_from_archive", "unread_minor")}

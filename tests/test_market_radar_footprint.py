@@ -594,3 +594,50 @@ def test_the_clients_own_listing_under_another_ending_is_not_a_new_business_near
 def test_directories_of_therapists_are_never_candidates():
     for d in ("psychologytoday.com", "www.psychologytoday.com", "webmd.com", "vitals.com"):
         assert rv.skip_domain(d), d
+
+
+# == the second paid run (2026-10-10): Waltham's places were home care ===================
+
+def test_the_closest_kind_of_business_fills_a_sites_places_before_a_broader_branch():
+    def listed(name, km, tax, basic, h):
+        return dict(place(name, "https://%s.example" % name.lower().replace(" ", ""), km, cat=basic),
+                    taxonomy=tax, hierarchy=h)
+    home = [listed("Home Care %d" % i, 0.1 + i / 100, "home_health_care", "medical_service",
+                   ["health_care", "medical_service", "home_health_care"]) for i in range(20)]
+    psych = [listed("Psych %d" % i, 3 + i / 10, "psychiatry", "behavioral_or_mental_health_clinic",
+                    ["health_care", "outpatient_care_facility", "behavioral_or_mental_health_clinic",
+                     "psychiatry_or_psychology_service", "psychiatry"]) for i in range(5)]
+    word = [listed("Mental Word", 0.05, "mental_wellness_coach", "health_care",
+                   ["health_care", "mental_wellness_coach"])]
+    assert rv.match_tier(psych[0], {"psychiatry", "medical_service"}) == 0
+    assert rv.match_tier(home[0], {"psychiatry", "medical_service"}) == 1
+    assert rv.match_tier(word[0], {"psychiatry", "medical_service"}) == 2
+
+    class P:
+        SELF_RADIUS_KM = 0.4
+
+        def query(self, lat, lon, radius_km, categories=(), terms=()):
+            return [] if radius_km == self.SELF_RADIUS_KM else home + psych + word
+    pool = rv.Pool("corecareclinic.com")
+    meta = rv.from_places(pool, CORE_CARE, {"place_categories": ["psychiatry", "medical_service"],
+                                            "place_terms": ["mental"], "radius_km": 5}, places=P())
+    waltham = meta["sites"][0]
+    # All five psychiatry practices first though 3 km away, then the nearest home care.
+    assert waltham["by_match"] == {"own_category": 5, "broader_branch": 10, "word_only": 0}
+    assert all(d in pool.items for d in ("psych0.example", "psych4.example"))
+
+
+def test_the_page_shows_what_the_map_was_asked_for_and_which_site_a_rival_is_near():
+    from tracker import market_radar_views as views
+    run = {"id": 1, "status": "complete", "stage": "done", "error": None, "summary": {"result": {
+        "coverage": {"places": {"status": "ok", "categories": ["psychiatry"], "terms": ["psych"],
+                                "own_listing": {"taxonomy": "medical_service_organization"},
+                                "sites": [{"site": "Waltham"}], "outside_own_category": 3}},
+        "plan": {"place_categories": ["psychiatry"], "radius_km": 10, "queries": []}}}}
+    v = views.run_view(run)
+    assert v["sources"]["places"]["categories"] == ["psychiatry"]
+    assert v["sources"]["places"]["own_listing"]["taxonomy"] == "medical_service_organization"
+    assert v["sources"]["places"]["outside_own_category"] == 3
+    assert v["plan"]["radius_km"] == 10
+    import inspect
+    assert '"near_site": d.get("near_site")' in inspect.getsource(views.competitor_rows)
