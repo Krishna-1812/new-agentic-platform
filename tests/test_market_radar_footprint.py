@@ -641,3 +641,38 @@ def test_the_page_shows_what_the_map_was_asked_for_and_which_site_a_rival_is_nea
     assert v["plan"]["radius_km"] == 10
     import inspect
     assert '"near_site": d.get("near_site")' in inspect.getsource(views.competitor_rows)
+
+
+# == the third paid run (2026-10-11): "health" as a search word ========================
+
+def test_generic_words_are_never_map_search_terms():
+    from tracker import market_radar_places as places
+    assert places.useful_terms(["doctor", "physician", "primary", "psychiat", "health"]) == [
+        "doctor", "physician", "primary", "psychiat"]
+    assert places.useful_terms(["Care", "medical", "clinic", "service", "dent", "gym!"]) == ["dent"]
+    seen = {}
+
+    def runner(sql, params):
+        seen["params"] = params
+        return []
+    places.query(42.3, -71.2, 5, terms=["health", "psychiat"], release="r", runner=runner)
+    assert "(^|_)psychiat" in seen["params"] and "(^|_)health" not in seen["params"]
+
+
+def test_the_planner_is_given_real_map_category_names_and_its_terms_are_cleaned():
+    assert "doctors_office" in rv.PLAN_SYSTEM and "behavioral_or_mental_health_clinic" in rv.PLAN_SYSTEM
+    assert "not health_care or medical_service" in rv.PLAN_SYSTEM
+    assert "Never a generic word such as health" in rv.PLAN_SYSTEM
+    plan = {"queries": [], "search_country": "us", "search_language": "en", "known": [],
+            "place_categories": ["psychiatry"], "place_terms": ["psychiat", "health"],
+            "radius_km": 10, "notes": ""}
+    out, _ = rv.plan_search(CORE_CARE, client=Scripted(plan=plan))
+    assert out["place_terms"] == ["psychiat"]
+
+
+def test_the_page_shows_a_moves_distance_and_the_site_a_nearby_find_is_near():
+    import inspect
+    from tracker import market_radar_views as views
+    src = inspect.getsource(views.moves_view)
+    assert '"distance_km": sc.get("distance_km")' in src
+    assert '"distance_km", "near", "address"' in src

@@ -362,7 +362,8 @@
       (sev ? '<span class="mr-chip mr-sev ' + sev[0] + '" title="How much this matters to this client">' + sev[1] + '</span>' : '') +
       '<span class="mr-chip ' + esc(TONE[e.type] || '') + '">' + esc(e.label) + '</span>' +
       (STATUS_SAYS[e.status] ? '<span class="mr-chip">' + STATUS_SAYS[e.status] + '</span>' : '') +
-      '<b>' + esc(e.name) + '</b>' + (e.place ? ' <span class="mr-hint">' + esc(e.place) + '</span>' : '') +
+      '<b>' + esc(e.name) + '</b>' + (e.place ? ' <span class="mr-hint">' + esc(e.place) +
+        (e.distance_km != null ? ', ' + esc(Number(e.distance_km).toFixed(1)) + ' km from your nearest site' : '') + '</span>' : '') +
       '</div><div class="mr-move-title">' + title + '</div>' +
       (e.summary ? '<div class="mr-move-sum">' + esc(e.summary) + '</div>' : '') +
       '<div class="mr-move-src">Seen in: ' + esc((e.detectors || []).join(', ') || 'unknown') +
@@ -470,7 +471,7 @@
     var href = safeUrl(f.website);
     var name = href ? '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(f.name) + '</a>' : esc(f.name);
     var where = local
-      ? [String(f.category || '').replace(/_/g, ' '), f.distance_km != null ? f.distance_km + ' km away' : '', f.address].filter(Boolean).join(' · ')
+      ? [String(f.category || '').replace(/_/g, ' '), f.distance_km != null ? f.distance_km + ' km ' + (f.near ? 'from your ' + f.near + ' site' : 'away') : '', f.address].filter(Boolean).join(' · ')
       : [f.location, f.reason].filter(Boolean).join(' · ');
     return '<li class="mr-move"><div class="mr-move-when">' + esc(f.date || '') + '</div><div class="mr-move-b">' +
       '<div class="mr-move-t">' + radarChip(f) + '<b>' + name + '</b>' +

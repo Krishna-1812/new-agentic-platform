@@ -188,8 +188,8 @@ Return:
 - search_country: ISO 3166-1 alpha-2 code (lowercase) of the country whose Google to search, normally the headquarters' country or main market.
 - search_language: the language code of the queries (e.g. en, de, pt, es, ja).
 - known: competitors you already know of with confidence, as an analyst of this industry would name them, each with its main website domain (e.g. "rothys.com"). Only real companies you are sure exist and compete with THIS company in its market; it is fine to return none, and for a small local business you normally should, because you cannot know its neighbours. Every domain will be checked by fetching it, so a guessed domain is wasted. relation: direct (same offering, same customers, same market), indirect (a substitute), aspirational (a much larger player the company is measured against). why: one short sentence.
-- place_categories: for a business serving customers at a physical location, the Overture Maps place categories its competitors would be listed under, in Overture's snake_case English vocabulary (examples: dentist, dental_clinic, orthodontist, gym, fitness_trainer, yoga_studio, restaurant, pizza_restaurant, hair_salon, beauty_salon, shoe_store, clothing_store, pharmacy, veterinarian, physical_therapist, accountant, lawyer, real_estate_agent). Empty for online-only businesses.
-- place_terms: 1 to 3 lowercase word stems that every such category contains (e.g. "dent", "orthodont"), used as a catch-all.
+- place_categories: for a business serving customers at a physical location, the Overture Maps place categories its competitors would be listed under, in Overture's snake_case English vocabulary. Use its own names (examples: dental_clinic, general_dentistry, orthodontics, doctors_office, family_practice, internal_medicine, psychiatry, psychology, counseling, behavioral_or_mental_health_clinic, physical_therapy, gym, fitness_studio, yoga_studio, restaurant, pizza_restaurant, hair_salon, nail_salon, shoe_store, clothing_store, pharmacy, veterinarian, accountant, lawyer, real_estate_agent). Name the specific kinds, not a broad group (not health_care or medical_service). Empty for online-only businesses.
+- place_terms: 1 to 3 lowercase word stems that every such category contains (e.g. "dent", "orthodont", "psychiat"), used as a catch-all. Never a generic word such as health, care, medical, clinic, service, center or office: those match unrelated kinds of business.
 - radius_km: for a local business, how far its customers usually travel (a city dentist: 3 to 5; a rural one: 15 to 25). 0 when not local.
 - notes: anything about this company that makes its competitors unusual, or "".
 Do not use em dashes or en dashes."""
@@ -214,6 +214,8 @@ def plan_search(profile, *, run_id=None, client=None):
     lang = (plan.get("search_language") or "").strip()
     plan["search_language"] = lang if lang in SEARCH_LANGUAGES else None
     plan["radius_km"] = max(0, min(int(plan.get("radius_km") or 0), 25))
+    from .market_radar_places import useful_terms
+    plan["place_terms"] = useful_terms(plan.get("place_terms"))
     return plan, meta
 
 
