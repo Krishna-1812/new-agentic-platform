@@ -365,6 +365,19 @@ def from_search(pool, plan, *, run_id=None, token=None, search=None):
     return meta, results
 
 
+def match_tier(place, categories):
+    """How closely a place's category matches the ones asked for: 0 when its
+    own specific category is one of them (psychiatry), 1 when one of them is
+    only a broader branch it sits under (medical_service, over home care),
+    2 when only a word stem found it."""
+    cats = set(categories)
+    if place.get("taxonomy") in cats or (not place.get("taxonomy") and place.get("category") in cats):
+        return 0
+    if place.get("category") in cats or cats & set(place.get("hierarchy") or []):
+        return 1
+    return 2
+
+
 def _named_category(place, categories):
     """Is the place in one of these categories by name, not by a stem?"""
     names = {place.get("category"), place.get("taxonomy"), *(place.get("hierarchy") or [])}
@@ -468,10 +481,18 @@ def from_places(pool, profile, plan, *, places=None):
             by_domain.setdefault(d, []).append((p, w))
         here = 0
         label = fp.short_label(point) if many else None
-        for d, rows in sorted(by_domain.items(), key=lambda kv: kv[1][0][0]["distance_km"]):
+        # The closest KIND first, then the nearest: each site's places are
+        # few, and a broad branch can fill them (home care and hospices sit
+        # beside Core Care Clinic's own listing under medical_service, and
+        # took most of its Waltham places, 2026-10-10).
+        ranked = sorted(by_domain.items(), key=lambda kv: (
+            min(match_tier(p, categories) for p, _w in kv[1]), kv[1][0][0]["distance_km"]))
+        tiers = {0: 0, 1: 0, 2: 0}
+        for d, rows in ranked:
             if here >= per_site or added >= cap:
                 break
             p, w = rows[0]
+            tiers[min(match_tier(x, categories) for x, _w in rows)] += 1
             extra = {"near": label} if label else {}
             pool.add(w, "places", name=p.get("name"), url=w, distance_km=p["distance_km"],
                      category=p.get("taxonomy") or p.get("category"),
@@ -485,6 +506,8 @@ def from_places(pool, profile, plan, *, places=None):
         total["without_website"] += no_site
         total["website_is_social"] += social
         site_rows.append({"site": fp.short_label(point) or point.get("label"), "radius_km": r,
+                          "by_match": {"own_category": tiers[0], "broader_branch": tiers[1],
+                                       "word_only": tiers[2]},
                           "found": len(found), "companies": len(by_domain), "added": here,
                           "widened": widened})
     meta.update(total, companies=len(companies), added=added)
