@@ -16,7 +16,8 @@
   var root = document.getElementById('rr');
   var body = document.getElementById('rrBody');
   var clientId = root ? root.getAttribute('data-client') : null;
-  var state = { view: null, refs: {} };
+  var hash = (typeof window !== 'undefined' && window.location && window.location.hash) || '';
+  var state = { view: null, refs: {}, section: /^#rr-[a-z]+$/.test(hash) ? hash.slice(1) : null };
 
   function esc(v) {
     return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
@@ -141,10 +142,18 @@
 
   // == sections ===========================================================================
 
-  function section(id, title, intro, inner) {
+  // The report is read one section at a time: every section is drawn and
+  // all but the open one carry `hidden` (the PDF drops that and prints all).
+  function section(id, title, intro, inner, n, active, prev, next) {
     if (!inner) return '';
-    return '<section class="rr-sec" id="' + id + '"><h2>' + esc(title) + '</h2>' +
-      (intro ? '<p class="rr-intro">' + esc(intro) + '</p>' : '') + inner + '</section>';
+    var step = function (to, dir) {
+      return to ? '<button type="button" class="rr-step ' + dir + '" data-sec="' + esc(to[0]) + '"><small>' + (dir === 'prev' ? 'Previous' : 'Next') +
+        '</small><span>' + esc(to[1]) + '</span></button>' : '<span></span>';
+    };
+    return '<section class="rr-sec" id="' + id + '"' + (id === active ? '' : ' hidden') + '>' +
+      '<header class="rr-sec-h"><span class="rr-sec-n" data-noprint>' + (n < 10 ? '0' : '') + n + '</span><div><h2>' + esc(title) + '</h2>' +
+      (intro ? '<p class="rr-intro">' + esc(intro) + '</p>' : '') + '</div></header>' + inner +
+      '<footer class="rr-sec-f" data-noprint>' + step(prev, 'prev') + step(next, 'next') + '</footer></section>';
   }
 
   function renderTop(top) {
@@ -353,27 +362,80 @@
     }
     var b = v.brief, c = pack.client || {};
     var meta = [c.domain, c.industry, [c.city, COUNTRY[c.country] || c.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
-    var html = '<div id="rrDoc"><header class="rr-head"><div class="eyebrow">Market Radar report</div>' +
+    var high = (pack.moves || []).filter(function (m) { return m.severity === 'HIGH'; }).length;
+    var fig = function (n, lab, cls) {
+      return '<div class="rr-fig ' + (cls || '') + '"><b>' + esc(n) + '</b><span>' + esc(lab) + '</span></div>';
+    };
+    var html = '<div id="rrDoc"><header class="rr-head"><div class="rr-head-l"><div class="eyebrow"><i data-noprint></i>Market Radar report</div>' +
       '<h1>' + esc(c.name || v.name) + '</h1><p class="rr-meta">' + esc(meta) + '</p>' +
       '<p class="rr-meta">Written ' + esc(day(v.created_at)) + (pack.collected_at ? ' from the collection of ' + esc(day(pack.collected_at)) : '') +
       '. ' + esc((pack.competitors || []).length) + ' competitors tracked.</p>' +
-      '<div class="rr-actions" data-noprint><button type="button" class="mr-btn primary" id="rrPdf">Download PDF</button>' + back + '</div></header>';
+      '<div class="rr-actions" data-noprint><button type="button" class="mr-btn primary" id="rrPdf">Download PDF</button>' + back + '</div></div>' +
+      '<div class="rr-figs" data-noprint>' + fig((pack.competitors || []).length, 'Competitors tracked', 'f-acc') +
+      fig((pack.moves || []).length, 'Moves read') + fig(high, 'High impact', high ? 'f-bad' : '') +
+      fig((pack.nearby || []).length + (pack.entrants || []).length, 'New nearby', 'f-sky') + '</div>' +
+      '<div class="rr-rings" aria-hidden="true" data-noprint><i></i><i></i><i></i><b></b></div></header>';
     var la = v.latest_attempt;
     if (la) {
       html += '<div class="mr-callout' + (la.status === 'failed' ? ' bad' : '') + '" data-noprint>A newer collection on ' + esc(day(la.created_at)) +
         ' produced no report: ' + esc(la.note || 'no reason was given') + ' This is the last report that was written.</div>';
     }
-    if (b.summary) html += '<div class="rr-summary"><p>' + esc(b.summary.text) + '</p>' + based(b.summary.cites) + '</div>';
-    html += section('rr-top', 'What matters most', 'The developments that matter most to this business, most important first.', renderTop(b.top));
-    html += section('rr-you', 'Your company, as we read it', 'From its own website. Corrections made on the edit page are used.', renderCompany(pack));
-    html += section('rr-comp', 'Competitor moves', 'What each competitor did, from its website, shop, jobs board and the news. A dot shows how much a move matters to you.', renderCompetitors(b, pack));
-    html += section('rr-near', 'Nearby and new', null, renderNearby(b, pack));
-    html += section('rr-ind', 'Industry pulse', 'This month\'s industry news, grouped into themes, and what each could mean for you.', renderIndustry(b, pack));
-    html += section('rr-hire', 'Hiring', null, renderHiring(pack));
-    html += section('rr-ot', 'Opportunities and threats', null, renderOT(b));
-    html += section('rr-watch', 'What to watch next', null, listOf(b.watch));
-    html += section('rr-cov', 'Coverage and confidence', 'What was checked, what could not be, and how this report was checked.', renderCoverage(v));
+    var parts = [
+      ['rr-top', 'What matters most', 'The developments that matter most to this business, most important first.', renderTop(b.top), (b.top || []).length],
+      ['rr-comp', 'Competitor moves', 'What each competitor did, from its website, shop, jobs board and the news. A dot shows how much a move matters to you.', renderCompetitors(b, pack), (pack.moves || []).length],
+      ['rr-near', 'Nearby and new', null, renderNearby(b, pack), (pack.nearby || []).length + (pack.entrants || []).length],
+      ['rr-ind', 'Industry pulse', 'This month\'s industry news, grouped into themes, and what each could mean for you.', renderIndustry(b, pack), (b.industry || []).length],
+      ['rr-hire', 'Hiring', null, renderHiring(pack), (pack.hiring || []).length],
+      ['rr-ot', 'Opportunities and threats', null, renderOT(b), (b.opportunities || []).length + (b.threats || []).length],
+      ['rr-watch', 'What to watch next', null, listOf(b.watch), (b.watch || []).length],
+      ['rr-you', 'Your company, as we read it', 'From its own website. Corrections made on the edit page are used.', renderCompany(pack), null],
+      ['rr-cov', 'Coverage and confidence', 'What was checked, what could not be, and how this report was checked.', renderCoverage(v), null]
+    ].filter(function (x) { return x[3]; });
+    // The first section: the summary, then a card for every section.
+    var cards = '<div class="rr-cards" data-noprint>' + parts.map(function (x, i) {
+      return '<button type="button" class="rr-card" data-sec="' + x[0] + '"><span class="rr-card-n">' + (i + 2 < 10 ? '0' : '') + (i + 2) + '</span><b>' + esc(x[1]) +
+        '</b>' + (x[4] ? '<em>' + esc(x[4]) + '</em>' : '') + '</button>';
+    }).join('') + '</div>';
+    var sum = (b.summary ? '<div class="rr-summary"><div class="rr-lab">The short version</div><p>' + esc(b.summary.text) + '</p>' + based(b.summary.cites) + '</div>' : '') + cards;
+    parts.unshift(['rr-sum', 'The brief', null, sum, null]);
+    var ids = parts.map(function (x) { return x[0]; });
+    var active = ids.indexOf(state.section) >= 0 ? state.section : 'rr-sum';
+    state.section = active;
+    var nav = '<nav class="rr-nav" data-noprint aria-label="Report sections"><div class="rr-nav-h">In this report</div>' + parts.map(function (x, i) {
+      return '<button type="button" class="rr-nav-i' + (x[0] === active ? ' on' : '') + '" data-sec="' + x[0] + '"' + (x[0] === active ? ' aria-current="true"' : '') +
+        '><span class="rr-nav-n">' + (i < 9 ? '0' : '') + (i + 1) + '</span><span class="rr-nav-t">' + esc(x[1]) + '</span>' +
+        (x[4] ? '<em>' + esc(x[4]) + '</em>' : '') + '</button>';
+    }).join('') + '<div class="rr-nav-p"><i style="--p:' + ((ids.indexOf(active) + 1) / ids.length * 100).toFixed(0) + '%"></i><span>' +
+      (ids.indexOf(active) + 1) + ' of ' + ids.length + '</span></div></nav>';
+    html += '<div class="rr-layout">' + nav + '<div class="rr-panels">' + parts.map(function (x, i) {
+      return section(x[0], x[1], x[2], x[3], i + 1, active, parts[i - 1], parts[i + 1]);
+    }).join('') + '</div></div>';
     body.innerHTML = html + '</div>';
+  }
+
+  // Open one section: the menu, the panels and the address follow.
+  function show(id) {
+    var secs = body.querySelectorAll('.rr-sec'), ids = [];
+    Array.prototype.forEach.call(secs, function (sct) { ids.push(sct.id); });
+    if (ids.indexOf(id) < 0) return;
+    state.section = id;
+    Array.prototype.forEach.call(secs, function (sct) { sct.hidden = sct.id !== id; });
+    Array.prototype.forEach.call(body.querySelectorAll('.rr-nav-i'), function (b) {
+      var on = b.getAttribute('data-sec') === id;
+      b.classList.toggle('on', on);
+      if (on) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
+    });
+    var bar = body.querySelector('.rr-nav-p');
+    if (bar) {
+      bar.querySelector('i').style.setProperty('--p', ((ids.indexOf(id) + 1) / ids.length * 100).toFixed(0) + '%');
+      bar.querySelector('span').textContent = (ids.indexOf(id) + 1) + ' of ' + ids.length;
+    }
+    try { history.replaceState(null, '', '#' + id); } catch (e) { /* ignore */ }
+    var lay = body.querySelector('.rr-layout');
+    if (lay) {
+      var top = lay.getBoundingClientRect().top + window.pageYOffset - 90;
+      if (window.pageYOffset > top) window.scrollTo({ top: top, behavior: 'smooth' });
+    }
   }
 
   function load() {
@@ -417,6 +479,7 @@
     var doc = document.getElementById('rrDoc').cloneNode(true);
     doc.querySelectorAll('[data-noprint]').forEach(function (n) { n.parentNode.removeChild(n); });
     doc.querySelectorAll('details').forEach(function (d) { d.setAttribute('open', ''); });
+    doc.querySelectorAll('[hidden]').forEach(function (n) { n.removeAttribute('hidden'); });
     doc.querySelectorAll('.rr-dl').forEach(function (dl) {
       var out = document.createElement('div');
       dl.querySelectorAll('div').forEach(function (row) {
@@ -464,9 +527,10 @@
       if (!t) return;
       if (t.classList.contains('rr-thumb')) sendFeedback(t);
       else if (t.id === 'rrPdf') downloadPdf(t);
+      else if (t.getAttribute('data-sec')) show(t.getAttribute('data-sec'));
     });
     if (clientId) load();
   }
 
-  window.MRR = { render: render, printable: printable, nearbyMap: nearbyMap, esc: esc, state: state };
+  window.MRR = { render: render, show: show, printable: printable, nearbyMap: nearbyMap, esc: esc, state: state };
 })();

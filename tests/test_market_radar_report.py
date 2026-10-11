@@ -408,3 +408,20 @@ def test_hiring_evidence_reads_the_same_after_a_trip_through_json():
          "senior": []}
     assert "by function: Clinical 30" in R.evidence_text(h)
     assert "by function: Clinical 30" in R.evidence_text(dict(h, functions=[("Clinical", 30)]))
+
+
+def test_the_report_opens_one_section_with_a_menu_and_the_hash_picks_it():
+    import re
+    out = run_js("""
+      MRR.render(%s); const a = document.getElementById('rrBody').innerHTML;
+      MRR.state.section = 'rr-near'; MRR.render(%s); const b = document.getElementById('rrBody').innerHTML;
+      MRR.state.section = 'rr-nope'; MRR.render(%s); const c = document.getElementById('rrBody').innerHTML;
+      return [a, b, c];""" % ((json.dumps(view()),) * 3))
+    shown = lambda html: re.findall(r'<section class="rr-sec" id="([\w-]+)">', html)
+    secs = re.findall(r'<section class="rr-sec" id="([\w-]+)"', out[0])
+    assert secs[0] == "rr-sum" and len(secs) == 10 and shown(out[0]) == ["rr-sum"]
+    assert shown(out[1]) == ["rr-near"] and shown(out[2]) == ["rr-sum"]
+    assert out[0].count('class="rr-nav-i') == 10 and 'class="rr-nav" data-noprint' in out[0]
+    assert "1 of 10" in out[0] and "4 of 10" in out[1]
+    assert 'data-sec="rr-top"' in out[0] and "Next</small><span>What matters most" in out[0]
+    assert "The short version" in out[0] and "Competitors tracked" in out[0]

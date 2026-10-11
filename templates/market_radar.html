@@ -15,7 +15,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Market Radar", ["strategic-agents.css?v=2", "market_radar.css?v=1"]) }}
+{{ head("Market Radar", ["strategic-agents.css?v=2", "market_radar.css?v=2"]) }}
 </head>
 <body class="sa">
 
@@ -58,9 +58,12 @@
   {# ── The workspace ────────────────────────────────────────────────────── #}
   <div class="mr" id="mr">
     <div class="mr-layout">
-      <aside class="mr-rail" id="mrRail" aria-label="Your companies">
-        <div class="mr-rail-h">Your companies</div>
-        <div id="mrClients"><div class="mr-empty">Loading&hellip;</div></div>
+      <aside class="mr-rail" id="mrRail" aria-label="Companies and sections">
+        <div class="mr-rail-card">
+          <div class="mr-rail-h">Companies</div>
+          <div id="mrClients" class="mr-cos"><div class="mr-empty">Loading&hellip;</div></div>
+        </div>
+        <nav class="mr-nav" id="mrNav" aria-label="Sections" hidden></nav>
       </aside>
       <section class="mr-detail" id="mrDetail" aria-live="polite">
         <div class="card"><div class="mr-empty">Loading&hellip;</div></div>
@@ -97,6 +100,6 @@
 </footer>
 
 {{ topbar_script() }}
-<script src="{{ url_for('static', filename='js/market_radar.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/market_radar.js') }}?v=4"></script>
 </body>
 </html>
