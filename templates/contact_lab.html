@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    CONTACT FINDER LAB (/admin/contact-lab) — admin only, Phase 0
+
+    Company names and job titles in; the people, their LinkedIn profiles and
+    their likely work emails out, found two ways side by side: our own
+    SearXNG search service (free) and Claude's web search (paid). The page
+    is drawn by static/js/contact_lab.js from the JSON routes in app.py; the
+    engine is tracker/contact_lab*.py; setup is docs/contact-lab-phase0.md.
+-#}
+<html lang="en">
+<head>
+{{ head("Contact Finder Lab", ["strategic-agents.css?v=2", "market_radar.css?v=2", "contact_lab.css?v=1"]) }}
+</head>
+<body class="sa">
+
+{{ topbar([("Admin", "/admin/internal-usage"), ("Contact Finder Lab", none)]) }}
+
+<main class="sa-shell">
+
+  <section class="sa-hero mr-hero mr-hero--compact cl-hero">
+    <div class="sa-hero-top">
+      <span class="sa-lbl">Admin &middot; Phase 0</span>
+      <span class="cl-ready" id="clReady"><span class="mr-chip">Checking&hellip;</span></span>
+    </div>
+    <h1 class="sa-h1 mr-h1">
+      <span class="sa-ln"><span>Names in.</span></span>
+      <span class="sa-ln"><span><span class="sa-mk">People</span> <em class="sa-it">out.</em></span></span>
+    </h1>
+    <p class="cl-lead">Give it companies and job titles. It finds the people through search results (never LinkedIn itself),
+      checks they still work there, and works out their likely work email, then shows which way of searching found them:
+      our own free search service, or Claude's paid web search.</p>
+  </section>
+
+  <div class="mr cl" id="cl">
+    <div class="cl-top">
+      <form class="card mr-card cl-form" id="clForm" autocomplete="off">
+        <div class="mr-card-h"><div><h3>New lab run</h3><p>At most 10 companies and 5 job titles. Every run is capped at $3.00.</p></div></div>
+        <div class="mr-card-b">
+          <label class="mr-k" for="clCompanies">Companies, one a line</label>
+          <textarea id="clCompanies" rows="6" placeholder="Stripe&#10;HubSpot&#10;Core Care Clinic | corecareclinic.com"></textarea>
+          <div class="mr-hint">Add &ldquo;| domain.com&rdquo; when you know the website; it saves a search.</div>
+          <label class="mr-k" for="clRoles" style="margin-top:16px">Job titles, one a line</label>
+          <textarea id="clRoles" rows="3" placeholder="Head of Marketing&#10;CFO"></textarea>
+          <div class="cl-row">
+            <fieldset class="cl-backends">
+              <legend class="mr-k">Search with</legend>
+              <label class="cl-tog"><input type="checkbox" id="clUseSearx" checked> <b>Our search service</b> <small>free</small></label>
+              <label class="cl-tog"><input type="checkbox" id="clUseClaude" checked> <b>Claude web search</b> <small>$10 per 1,000 + tokens</small></label>
+            </fieldset>
+            <div class="cl-model">
+              <label class="mr-k" for="clModel">Claude model</label>
+              <select id="clModel"></select>
+              <div class="mr-hint">Reads the results and checks each person.</div>
+            </div>
+          </div>
+          <div class="cl-est" id="clEstimate" aria-live="polite"></div>
+          <div class="mr-form-foot"><button type="submit" class="mr-btn primary hot" id="clRunBtn">Run the lab</button></div>
+        </div>
+      </form>
+      <aside class="card mr-card cl-runs">
+        <div class="mr-card-h"><div><h3>Runs</h3><p>Newest first.</p></div></div>
+        <div id="clRuns"><div class="mr-empty">Loading&hellip;</div></div>
+      </aside>
+    </div>
+    <section id="clDetail" aria-live="polite"></section>
+  </div>
+
+</main>
+
+<div class="mr mr-modal-bg" id="clModal" role="dialog" aria-modal="true" aria-labelledby="clModalTitle">
+  <div class="mr-modal">
+    <h4 id="clModalTitle"></h4>
+    <p id="clModalText"></p>
+    <div class="mr-modal-foot">
+      <button type="button" class="mr-btn ghost" id="clModalNo">Cancel</button>
+      <button type="button" class="mr-btn primary" id="clModalYes">Run</button>
+    </div>
+  </div>
+</div>
+
+{{ topbar_script() }}
+<script src="{{ url_for('static', filename='js/contact_lab.js') }}?v=1"></script>
+</body>
+</html>
