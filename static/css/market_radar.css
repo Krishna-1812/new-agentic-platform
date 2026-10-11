@@ -157,8 +157,7 @@
 .mr-nav-i.on .mr-badge { background: #121213; color: var(--tx-on-ink); }
 @media (max-width: 900px) {
   .mr-nav { flex-direction: row; overflow-x: auto; position: sticky; top: 64px; z-index: 5; border-radius: var(--r-pill); padding: 6px;
-    scrollbar-width: none; }
-  .mr-nav::-webkit-scrollbar { display: none; }
+    scrollbar-width: thin; }
   .mr-nav-h { display: none; }
   .mr-nav-i { width: auto; flex: 0 0 auto; border-radius: var(--r-pill); padding: 9px 14px; }
   .mr-cos { max-height: 168px; }
@@ -387,7 +386,7 @@
 .mr-tabn { display: inline-block; margin-left: 4px; font-size: 11px; padding: 0 7px; border-radius: var(--r-pill);
   background: rgba(18,18,19,.08); font-variant-numeric: tabular-nums; }
 .mr-seg button.on .mr-tabn { background: rgba(246,244,240,.2); }
-@media (max-width: 640px) { .mr-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; border-radius: 14px; } .mr-tabs button { flex: 0 0 auto; } }
+@media (max-width: 640px) { .mr-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; border-radius: 14px; } .mr-tabs button { flex: 0 0 auto; } }
 
 /* ── The overview ──────────────────────────────────────────────────────── */
 .mr-ov { display: grid; gap: 20px; }
@@ -434,7 +433,10 @@
 .mr-pl-dot { fill: var(--hue); stroke: #121213; stroke-width: 2; }
 .mr-pl-b.open .mr-pl-dot { fill: #121213; stroke: var(--hue); stroke-width: 2.4; }
 .mr-pl-ping { fill: none; stroke: var(--hue); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center;
-  animation-name: mr-ping; animation-timing-function: ease-out; animation-iteration-count: infinite; }
+  animation-name: mr-ping; animation-timing-function: ease-out; animation-iteration-count: infinite;
+  /* Not an entrance stagger: each blip pings when the sweep's hand reaches
+     its bearing, so its delay is its angle as a share of one turn. */
+  animation-delay: var(--ping, 0s); }
 @keyframes mr-ping { 0% { opacity: .95; transform: scale(1); } 22% { opacity: 0; transform: scale(3); } 100% { opacity: 0; transform: scale(3); } }
 .mr-pl-lab { fill: #E4E0D9; font-size: 11px; font-weight: 600; font-family: var(--font-body); paint-order: stroke; stroke: #121213; stroke-width: 4px; stroke-linejoin: round; }
 .mr-pl-you { fill: var(--acc); }

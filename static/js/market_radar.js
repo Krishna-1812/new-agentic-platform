@@ -270,7 +270,7 @@
       var lab = top.indexOf(p) >= 0 ? '<text class="mr-pl-lab" x="' + (x + (x > C ? 11 : -11)).toFixed(1) + '" y="' + (y + 4).toFixed(1) +
         '" text-anchor="' + (x > C ? 'start' : 'end') + '">' + esc(name.length > 18 ? name.slice(0, 17) + '…' : name) + '</text>' : '';
       return '<g class="mr-pl-b h-' + hue + (p.r.status === 'proposed' ? ' open' : '') + '">' +
-        '<circle class="mr-pl-ping" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="7" style="animation-delay:' + delay + 's;animation-duration:' + SWEEP_S + 's"/>' +
+        '<circle class="mr-pl-ping" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="7" style="--ping:' + delay + 's;animation-duration:' + SWEEP_S + 's"/>' +
         '<circle class="mr-pl-dot" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="6"/>' + lab +
         '<title>' + esc(name) + ' · ' + esc(label(KINDS, p.r.kind)) + ' · watch score ' + esc(p.score) + (p.r.status === 'proposed' ? ' · to review' : '') + '</title></g>';
     }).join('');

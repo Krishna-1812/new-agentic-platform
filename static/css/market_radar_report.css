@@ -59,7 +59,7 @@
 .rr-nav-i.on { background: var(--ink); color: var(--tx-on-ink); font-weight: 700; }
 .rr-nav-i:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 .rr-nav-n { font-size: 11.5px; font-weight: 800; color: var(--tx3); font-variant-numeric: tabular-nums; }
-.rr-nav-i.on .rr-nav-n { color: var(--acc); }
+.rr-nav-i.on .rr-nav-n { color: #FF8B5D; }
 .rr-nav-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rr-nav-i em { font-style: normal; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: var(--r-pill); background: var(--s2); color: var(--tx2); font-variant-numeric: tabular-nums; }
 .rr-nav-i.on em { background: var(--acc); color: #121213; }
@@ -68,8 +68,7 @@
 .rr-nav-p i::after { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--p, 0%); background: var(--acc); border-radius: 2px; transition: width 220ms ease; }
 @media (max-width: 960px) {
   .rr-layout { grid-template-columns: 1fr; gap: 16px; }
-  .rr-nav { flex-direction: row; overflow-x: auto; position: sticky; top: 64px; z-index: 5; border-radius: var(--r-pill); padding: 6px; scrollbar-width: none; max-height: none; }
-  .rr-nav::-webkit-scrollbar { display: none; }
+  .rr-nav { flex-direction: row; overflow-x: auto; position: sticky; top: 64px; z-index: 5; border-radius: var(--r-pill); padding: 6px; scrollbar-width: thin; max-height: none; }
   .rr-nav-h, .rr-nav-p { display: none; }
   .rr-nav-i { flex: 0 0 auto; border-radius: var(--r-pill); grid-template-columns: auto auto auto; padding: 8px 14px; }
 }
@@ -85,7 +84,7 @@
 .rr-card:hover { background: var(--ink); color: var(--tx-on-ink); }
 .rr-card:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 .rr-card-n { font-size: 12px; font-weight: 800; color: var(--acc-tx); font-variant-numeric: tabular-nums; }
-.rr-card:hover .rr-card-n { color: var(--acc); }
+.rr-card:hover .rr-card-n { color: #FF8B5D; }
 .rr-card b { font-family: var(--font-display); font-variation-settings: var(--display-axes); font-weight: 600; font-size: 19px; line-height: 1.15; }
 .rr-card em { position: absolute; right: 14px; top: 14px; font-style: normal; font-size: 12px; font-weight: 800; padding: 2px 9px; border-radius: var(--r-pill); background: var(--s1); color: var(--tx); }
 
@@ -95,7 +94,7 @@
 @media (prefers-reduced-motion: reduce) { .rr-sec { animation: none; } }
 .rr-sec-h { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 22px; }
 .rr-sec-n { font-family: var(--font-display); font-variation-settings: var(--display-axes); font-weight: 600; font-size: clamp(40px, 4vw, 60px);
-  line-height: .9; color: var(--acc); font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+  line-height: .9; color: var(--acc-tx); font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
 .rr-sec h2 { font-family: var(--font-display); font-variation-settings: var(--display-axes); font-weight: 600;
   font-size: clamp(28px, 3vw, 40px); line-height: 1.05; letter-spacing: -0.02em; margin: 2px 0 6px; color: var(--tx); }
 .rr-intro { margin: 0; color: var(--tx3); font-size: 14px; line-height: 1.5; max-width: 70ch; }
