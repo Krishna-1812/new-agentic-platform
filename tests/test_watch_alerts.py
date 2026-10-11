@@ -197,9 +197,13 @@ def test_the_digest_posts_once_a_day_per_channel_after_its_time(slack):
 def test_mondays_bring_the_week(slack):
     t, cid, v = recorded_change()
     watch_alerts.alert_change(t, cid, v)
-    monday = datetime.now(UTC).astimezone(watch_schedule.IST)
-    # The next Monday, never today: on a Monday, today at 10:00 can be before the change above.
-    monday = (monday + timedelta(days=(7 - monday.weekday()) % 7 or 7)).replace(hour=10, minute=0)
+    now = datetime.now(UTC).astimezone(watch_schedule.IST)
+    # The first Monday 10:00 still ahead: today's when it is Monday before
+    # 10:00 (the week then includes the change just made), else next week's.
+    # Always jumping a week failed every Monday before 10:00 IST.
+    monday = (now + timedelta(days=(7 - now.weekday()) % 7)).replace(hour=10, minute=0, second=0, microsecond=0)
+    if monday <= now:
+        monday += timedelta(days=7)
     out = watch_alerts.run_digest(monday)
     assert out["weekly"] is True
     week = slack.sent[-1]
