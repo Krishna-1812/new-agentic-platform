@@ -11580,6 +11580,104 @@ def admin_market_radar_run(run_id):
     return jsonify(out)
 
 
+# == Contact Finder Lab (Phase 0, admin only) ======================================
+# Company names and job titles in; people, LinkedIn profiles and likely work
+# emails out, through our own SearXNG service (free) and Claude's web search
+# (paid), side by side. tracker/contact_lab*.py; docs/contact-lab-phase0.md.
+
+@app.route("/admin/contact-lab")
+@admin_required
+def admin_contact_lab():
+    return render_template("contact_lab.html", user=_get_user())
+
+
+@app.route("/admin/contact-lab/api/status")
+@admin_required
+def admin_contact_lab_status():
+    """What a run could use right now. Free: SearXNG's health check only."""
+    from tracker import contact_lab as lab, contact_lab_search as search
+    return jsonify(searxng=search.searxng_health(), claude={"configured": search.claude_configured()},
+                   models=list(lab.MODELS), limits={"companies": lab.MAX_COMPANIES, "roles": lab.MAX_ROLES},
+                   cap_usd=float(lab.DEFAULT_CAP_USD))
+
+
+@app.route("/admin/contact-lab/api/estimate", methods=["POST"])
+@admin_required
+def admin_contact_lab_estimate():
+    from tracker import contact_lab as lab
+    body = request.get_json(silent=True) or {}
+    try:
+        companies = lab.parse_companies(body.get("companies") or "")
+        roles = lab.parse_roles(body.get("roles") or "")
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    backends = [b for b in body.get("backends") or [] if b in lab.BACKENDS]
+    model = body.get("model") if body.get("model") in lab.MODELS else lab.MODELS[0]
+    out = lab.estimate(len(companies), len(roles), backends, model,
+                       domains_given=sum(1 for c in companies if c["domain"]))
+    return jsonify(dict(out, companies=len(companies), roles=len(roles)))
+
+
+@app.route("/admin/contact-lab/api/runs", methods=["GET", "POST"])
+@admin_required
+def admin_contact_lab_runs():
+    from tracker import contact_lab as lab, contact_lab_search as search, contact_lab_store as store
+    email = _mr_email()
+    if request.method == "GET":
+        try:
+            return jsonify(runs=store.list_runs(email))
+        except store.StoreUnavailable as e:
+            return jsonify(error="The database is unavailable (%s)." % e), 503
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    body = request.get_json(silent=True) or {}
+    try:
+        companies = lab.parse_companies(body.get("companies") or "")
+        roles = lab.parse_roles(body.get("roles") or "")
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    backends = [b for b in body.get("backends") or [] if b in lab.BACKENDS]
+    if not backends:
+        return jsonify(error="Pick at least one way to search."), 400
+    model = body.get("model")
+    if model not in lab.MODELS:
+        return jsonify(error="Pick a model."), 400
+    if "claude" in backends:
+        if body.get("confirm_spend") is not True:
+            return jsonify(error="Claude's searches cost money; confirm to run them."), 400
+        if not search.claude_configured():
+            return jsonify(error="ANTHROPIC_API_KEY is not set on this service."), 400
+    if "searxng" in backends and not search.searxng_url():
+        return jsonify(error="SEARXNG_URL is not set on this service (docs/contact-lab-phase0.md)."), 400
+    try:
+        going = store.running_run(email)
+        if going:
+            return jsonify(error="A lab run of yours is already going.", run_id=going["id"]), 409
+        run_id = store.start({"companies": companies, "roles": roles, "backends": backends, "model": model,
+                              "engines": None}, email)
+    except store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+    return jsonify(run_id=run_id), 202
+
+
+@app.route("/admin/contact-lab/api/runs/<int:run_id>")
+@admin_required
+def admin_contact_lab_run(run_id):
+    from tracker import contact_lab_store as store
+    try:
+        run = store.get_run(run_id, _mr_email())
+    except store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+    if run is None:
+        return jsonify(error="No such run of yours."), 404
+    if request.args.get("download") == "1":
+        resp = jsonify(run)
+        resp.headers["Content-Disposition"] = "attachment; filename=contact-lab-run-%d.json" % run_id
+        return resp
+    return jsonify(run)
+
+
 def _unipile_selftest() -> dict:
     """Prove the Unipile integration end to end -- see
     tracker/unipile_client.probe. Free: list_accounts() needs no connected

@@ -1,0 +1,47 @@
+# SearXNG for the Contact Finder Lab (docs/contact-lab-phase0.md).
+#
+# A private search service: only the web service reaches it, over Railway's
+# private network, so the bot limiter is off and no page is public. JSON
+# output is switched on because the lab reads results as JSON (it is off in
+# SearXNG's defaults). The secret key comes from SEARXNG_SECRET on the
+# service; SearXNG refuses to start with the placeholder below.
+use_default_settings: true
+
+general:
+  instance_name: "contact-lab-search"
+
+server:
+  secret_key: "ultrasecretkey"   # overwritten by ${SEARXNG_SECRET}
+  limiter: false
+  public_instance: false
+  image_proxy: false
+
+search:
+  safe_search: 0
+  formats:
+    - html
+    - json
+
+outgoing:
+  request_timeout: 4.0
+  max_request_timeout: 8.0
+
+# Engines that SearXNG's defaults leave out or switch off, switched on so the
+# lab can measure every one a server might use (docs/contact-lab-phase0.md).
+# From a cloud container on 2026-10-11 only Bing answered; which engines
+# answer from Railway is what Phase 0 measures.
+engines:
+  - name: bing
+    disabled: false
+  - name: google
+    disabled: false
+  - name: yandex
+    disabled: false
+  - name: qwant
+    disabled: false
+  - name: mojeek
+    inactive: false
+    disabled: false
+  - name: startpage
+    inactive: false
+    disabled: false
