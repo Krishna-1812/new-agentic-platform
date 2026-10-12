@@ -206,6 +206,12 @@ def test_admin_emails_is_the_only_thing_granting_each_admin_every_route(email, m
         % (email, admitted_off_roster))
 
 
+# Agents that started admin-only and moved to the team on the agents page;
+# their old /admin addresses forward to the new ones.
+_MOVED_TO_TEAM = {"/admin/market-radar": "/strategic-agents/market-radar",
+                  "/admin/account-mapper": "/strategic-agents/people-signals"}
+
+
 def test_no_route_under_p2_admin_escapes_the_gate():
     """The sweep above can only test the routes it finds. A route that loses
     its @admin_required decorator disappears from that list rather than
@@ -228,10 +234,22 @@ def test_no_route_under_p2_admin_escapes_the_gate():
     leaks = []
     for rule in sorted(under_admin - gated):
         resp = _client(_EXTERNAL).get(rule)
+        target = resp.headers.get("Location", "").split("?")[0]
+        moved = next((new for old, new in _MOVED_TO_TEAM.items()
+                      if rule == old or rule.startswith(old + "/")), None)
+        if moved:
+            # An agent that left /admin for the team: its old address may only
+            # forward (308 keeps an API call's method) into its new home, and
+            # that home must still turn away anyone outside the team.
+            if resp.status_code != 308 or not target.startswith(moved):
+                leaks.append("%s should forward into %s, got %d %r" % (rule, moved, resp.status_code, target))
+            home = _client(_EXTERNAL).get(moved)
+            if home.status_code != 302 or not home.headers.get("Location", "").endswith("/app"):
+                leaks.append("%s is open to people outside the team (%d)" % (moved, home.status_code))
+            continue
         if resp.status_code not in (301, 302, 303):
             leaks.append("%s answered %d instead of redirecting" % (rule, resp.status_code))
             continue
-        target = resp.headers.get("Location", "").split("?")[0]
         if target not in gated:
             leaks.append("%s redirects to %r, which is not itself gated" % (rule, target))
         # A redirect is a header, not a page: it must carry no payload.

@@ -1,6 +1,6 @@
 # Market Radar on Northaxis: how it works and how to set it up
 
-Market Radar is a market-intelligence agent, admin-only, at **/admin/market-radar**.
+Market Radar is a market-intelligence agent for the whole team, at **/strategic-agents/market-radar**, listed on the agents page as Building. (It was admin-only at /admin/market-radar, which now redirects.)
 Give it a company's website and it:
 
 1. **Reads the site** (`market_radar_site.py`, no model): structured data, shop platform, jobs
@@ -55,7 +55,7 @@ Give it a company's website and it:
 **Cost control.** Every paid call goes through the cost ledger (`market_radar_ledger.py`).
 Each call is booked at its worst case before it is sent, and refused if it could take the run
 past its cap ($1.00 by default, `MR_RUN_COST_CAP_USD`). The measured cost replaces the
-booking afterwards. The cost report (`/admin/market-radar/api/cost-report`) shows what runs
+booking afterwards. The cost report (`/strategic-agents/market-radar/api/cost-report`) shows what runs
 really cost.
 
 ## What it costs
@@ -93,11 +93,11 @@ Every optional feature reports itself as skipped when its key is missing; nothin
 **Never commit keys.** Locally they go in `.env` (already ignored by git). On Railway they go
 in **web → Variables**.
 
-## Sign-in and admin
+## Sign-in and access
 
-- **Admins.** Market Radar is admin-only (`admin_required`). Northaxis's admins are the
-  `ADMIN_EMAILS` set in `app.py`. It already holds your own addresses, and nothing from the
-  source platform was carried over.
+- **The team.** Market Radar is open to the whole team (`position2_required`: @markifydigital.com
+  addresses and the admins in `ADMIN_EMAILS`), each person seeing only their own companies. The
+  self-checks below stay admin-only.
 - **Google sign-in** uses `GOOGLE_CLIENT_ID` and is already set up on the live site. To sign
   in on your own computer, add `http://localhost:8080` to that client's Authorised JavaScript
   origins:
@@ -138,7 +138,7 @@ in **web → Variables**.
    Get-Content .env | Where-Object { $_ -match '^[A-Z_]+=' } | ForEach-Object { $k, $v = $_ -split '=', 2; Set-Item "env:$k" $v }
    python app.py
    ```
-   Sign in, then open `http://localhost:8080/admin/market-radar`.
+   Sign in, then open `http://localhost:8080/strategic-agents/market-radar`.
 
 ## Before the first paid run: the free self-tests
 
@@ -160,8 +160,8 @@ fetch('/admin/external-usage/market-radar-detectors-check',{method:'POST'}).then
 
 ## Deploying (Railway)
 
-The code deploys with the rest of Northaxis. Nothing runs, and nothing is spent, until an
-admin starts a run.
+The code deploys with the rest of Northaxis. Nothing runs, and nothing is spent, until
+someone on the team starts a run.
 
 1. Railway → **web → Variables**. Add `ANTHROPIC_API_KEY`, `APIFY_API_TOKEN`,
    `MR_MONITOR_DISABLED=1`, and any optional keys. `DATABASE_URL`, `GOOGLE_CLIENT_ID` and

@@ -139,7 +139,7 @@ account cards · people table · CSV / JSON export · run history
   - every value says where it came from.
 - **Exports:** CSV, one row per person, ready to import into Saleshandy or a CRM; and JSON with everything.
 - **History:** run history kept per user.
-- **Where it lives:** an admin page first; it becomes a card among the agents once it has proved itself.
+- **Where it lives:** on the agents page (`/strategic-agents/people-signals`), open to the whole team, tagged Building until it has proved itself.
 - **Later, only on request:** "Add to a Saleshandy sequence" (`/leads/bulk-actions/add-to-sequence`). It's an outward action, so it always shows a preview and asks first.
 
 ### Phase 6: go-live with your key
@@ -168,14 +168,14 @@ account cards · people table · CSV / JSON export · run history
   - `tracker/account_mapper_reveal.py`;
   - `tracker/account_mapper_brief.py`;
   - `tracker/account_mapper_store.py` (runs in `am_runs`, CSV).
-- **Page:** Admin → **People & Signals** (`/admin/account-mapper`); admins only.
+- **Page:** Strategic Agents → **People & Signals** (`/strategic-agents/people-signals`), tagged Building. Open to the whole team; each person sees only their own runs. The old `/admin/account-mapper` address redirects.
 - **Phase 6 waits for the key.**
 
 ### Adding the key (Windows laptop)
 1. In Saleshandy, open **Settings → API Key → Create API Key**. Name it `northaxis-account-mapper` and click Create. Copy the key straight away, because Saleshandy shows it only once.
 2. Open **railway.com**, open the project, then click the **web** service and its **Variables** tab.
 3. Click **+ New Variable**. Name: `SALESHANDY_API_KEY`. Value: paste the key (Ctrl+V). Click **Add**, then **Deploy**.
-4. When the deployment shows **Active**, open `/admin/account-mapper` and press **Ctrl+F5**. The chip top right should read **Saleshandy: N credits**.
+4. When the deployment shows **Active**, open `/strategic-agents/people-signals` and press **Ctrl+F5**. The chip top right should read **Saleshandy: N credits**.
    - If it reads **no key**, the deployment hasn't finished.
    - If it shows an error, the key was copied wrong. Make a new key and replace the variable.
 

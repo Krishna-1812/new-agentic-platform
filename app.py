@@ -3820,6 +3820,23 @@ def b2b_agents():
 # as GET, which silently loses the body; 308 preserves both method and body.
 # That matters most in the minutes after this deploy, when a browser still
 # holding the previous JS bundle will POST to the old URLs.
+# ── Old admin addresses of Market Radar and People & Signals ───────────────
+# Both lived under /admin while they were admin-only; they are team agents on
+# /strategic-agents now. 308 keeps the method and body of API calls from a
+# page still holding the old script.
+@app.route("/admin/market-radar", methods=["GET", "POST"])
+@app.route("/admin/market-radar/<path:rest>", methods=["GET", "POST"])
+@app.route("/admin/account-mapper", methods=["GET", "POST"])
+@app.route("/admin/account-mapper/<path:rest>", methods=["GET", "POST"])
+def admin_moved_agents_redirect(rest=""):
+    base = "/strategic-agents/market-radar" if request.path.startswith("/admin/market-radar") \
+        else "/strategic-agents/people-signals"
+    target = base + (("/" + rest) if rest else "")
+    if request.query_string:
+        target += "?" + request.query_string.decode("utf-8", "ignore")
+    return redirect(target, code=308)
+
+
 @app.route("/gtm", methods=["GET", "POST", "DELETE"])
 @app.route("/gtm/", methods=["GET", "POST", "DELETE"])
 @app.route("/gtm/<path:rest>", methods=["GET", "POST", "DELETE"])
@@ -11173,7 +11190,7 @@ def admin_external_usage_market_radar_run_status():
     return jsonify(out)
 
 
-# == Market Radar: profile and competitor edit page (admin only for now) ==========
+# == Market Radar (the team; on the agents page, still Building) ===================
 
 def _mr_email():
     return (_get_user() or {}).get("email", "")
@@ -11195,15 +11212,15 @@ except Exception:
     log.exception("market radar: the weekly-update scheduler did not start")
 
 
-@app.route("/admin/market-radar")
-@admin_required
+@app.route("/strategic-agents/market-radar")
+@position2_required
 def admin_market_radar():
     from tracker import market_radar_monitor as mr_monitor
     return render_template("market_radar.html", user=_get_user(), weekly_on=mr_monitor.enabled())
 
 
-@app.route("/admin/market-radar/api/clients")
-@admin_required
+@app.route("/strategic-agents/market-radar/api/clients")
+@position2_required
 def admin_market_radar_clients():
     from tracker import market_radar_store as mr_store, market_radar_views as views
     try:
@@ -11212,8 +11229,8 @@ def admin_market_radar_clients():
         return jsonify(error="The database is unavailable (%s)." % e), 503
 
 
-@app.route("/admin/market-radar/api/clients/<int:client_id>")
-@admin_required
+@app.route("/strategic-agents/market-radar/api/clients/<int:client_id>")
+@position2_required
 def admin_market_radar_client(client_id):
     from tracker import market_radar_store as mr_store, market_radar_views as views
     try:
@@ -11225,8 +11242,8 @@ def admin_market_radar_client(client_id):
     return jsonify(view)
 
 
-@app.route("/admin/market-radar/api/clients/<int:client_id>/profile", methods=["POST"])
-@admin_required
+@app.route("/strategic-agents/market-radar/api/clients/<int:client_id>/profile", methods=["POST"])
+@position2_required
 def admin_market_radar_profile_edit(client_id):
     """Save profile corrections: {"changes": {field: value}, "reset": [field],
     "radius_km": number or null}. Free (an address change is geocoded on
@@ -11247,9 +11264,9 @@ def admin_market_radar_profile_edit(client_id):
     return jsonify(notes=notes, view=views.client_view(client_id, _mr_email()))
 
 
-@app.route("/admin/market-radar/api/clients/<int:client_id>/competitors/<int:entity_id>",
+@app.route("/strategic-agents/market-radar/api/clients/<int:client_id>/competitors/<int:entity_id>",
            methods=["POST"])
-@admin_required
+@position2_required
 def admin_market_radar_competitor_edit(client_id, entity_id):
     """Confirm, remove, restore or relabel one competitor: {"status", "kind"}."""
     refused = _mr_guard_post()
@@ -11273,8 +11290,8 @@ def admin_market_radar_competitor_edit(client_id, entity_id):
     return jsonify(competitors=views.competitor_rows(client_id, _mr_email()))
 
 
-@app.route("/admin/market-radar/api/clients/<int:client_id>/competitors", methods=["POST"])
-@admin_required
+@app.route("/strategic-agents/market-radar/api/clients/<int:client_id>/competitors", methods=["POST"])
+@position2_required
 def admin_market_radar_competitor_add(client_id):
     """Add a competitor by its website: {"url", "kind"}. Free; it is not
     checked, and is marked as added by the user."""
@@ -11301,8 +11318,8 @@ def admin_market_radar_competitor_add(client_id):
     return jsonify(competitors=views.competitor_rows(client_id, email))
 
 
-@app.route("/admin/market-radar/api/runs", methods=["POST"])
-@admin_required
+@app.route("/strategic-agents/market-radar/api/runs", methods=["POST"])
+@position2_required
 def admin_market_radar_run_start():
     """Find competitors for a new company ({"url"}) or again for one of yours
     ({"client_id", "refresh_profile"?}). Spends money (about $0.07 to $0.13,
@@ -11343,8 +11360,8 @@ def admin_market_radar_run_start():
     return jsonify(run_id=run_id, client_id=client_id), 202
 
 
-@app.route("/admin/market-radar/api/clients/<int:client_id>/collect", methods=["POST"])
-@admin_required
+@app.route("/strategic-agents/market-radar/api/clients/<int:client_id>/collect", methods=["POST"])
+@position2_required
 def admin_market_radar_collect(client_id):
     """Collect what this company's competitors did (Phase 3,
     tracker/market_radar_collect): their sites, catalogs, job boards and news.
@@ -11370,8 +11387,8 @@ def admin_market_radar_collect(client_id):
     return jsonify(run_id=run_id), 202
 
 
-@app.route("/admin/market-radar/api/clients/<int:client_id>/moves")
-@admin_required
+@app.route("/strategic-agents/market-radar/api/clients/<int:client_id>/moves")
+@position2_required
 def admin_market_radar_moves(client_id):
     """What this company's competitors did, as the collections found it."""
     from tracker import market_radar_store as mr_store, market_radar_views as views
@@ -11384,16 +11401,16 @@ def admin_market_radar_moves(client_id):
     return jsonify(view)
 
 
-@app.route("/admin/market-radar/report/<int:client_id>")
-@admin_required
+@app.route("/strategic-agents/market-radar/report/<int:client_id>")
+@position2_required
 def admin_market_radar_report_page(client_id):
     """The client report (tracker/market_radar_report), rendered by
     static/js/market_radar_report.js from the JSON route below."""
     return render_template("market_radar_report.html", user=_get_user(), client_id=client_id)
 
 
-@app.route("/admin/market-radar/api/clients/<int:client_id>/report")
-@admin_required
+@app.route("/strategic-agents/market-radar/api/clients/<int:client_id>/report")
+@position2_required
 def admin_market_radar_report(client_id):
     from tracker import market_radar_store as mr_store, market_radar_views as views
     try:
@@ -11407,8 +11424,8 @@ def admin_market_radar_report(client_id):
     return response
 
 
-@app.route("/admin/market-radar/api/clients/<int:client_id>/report/pdf", methods=["POST"])
-@admin_required
+@app.route("/strategic-agents/market-radar/api/clients/<int:client_id>/report/pdf", methods=["POST"])
+@position2_required
 def admin_market_radar_report_pdf(client_id):
     """The report as the reader sees it, as a PDF: the page sends the HTML
     it rendered with every folded part open, laid out by the same builder as
@@ -11441,9 +11458,9 @@ def admin_market_radar_report_pdf(client_id):
     return response
 
 
-@app.route("/admin/market-radar/api/clients/<int:client_id>/events/<int:event_id>/feedback",
+@app.route("/strategic-agents/market-radar/api/clients/<int:client_id>/events/<int:event_id>/feedback",
            methods=["POST"])
-@admin_required
+@position2_required
 def admin_market_radar_event_feedback(client_id, event_id):
     """Thumbs up or down on one move for one client. The next scoring of
     that client weighs moves of the same type by it."""
@@ -11465,8 +11482,8 @@ def admin_market_radar_event_feedback(client_id, event_id):
     return jsonify(ok=True, feedback=feedback)
 
 
-@app.route("/admin/market-radar/api/clients/<int:client_id>/monitor", methods=["GET", "POST"])
-@admin_required
+@app.route("/strategic-agents/market-radar/api/clients/<int:client_id>/monitor", methods=["GET", "POST"])
+@position2_required
 def admin_market_radar_monitor(client_id):
     """Weekly updates for one company: GET the settings and the latest
     updates; POST new settings (tracker/market_radar_views.save_monitor)."""
@@ -11491,8 +11508,8 @@ def admin_market_radar_monitor(client_id):
     return jsonify(view)
 
 
-@app.route("/admin/market-radar/api/clients/<int:client_id>/update-now", methods=["POST"])
-@admin_required
+@app.route("/strategic-agents/market-radar/api/clients/<int:client_id>/update-now", methods=["POST"])
+@position2_required
 def admin_market_radar_update_now(client_id):
     """Collect now and write the weekly update; send it to the company's
     destinations unless {"send": false} (a preview, stored but not sent)."""
@@ -11517,8 +11534,8 @@ def admin_market_radar_update_now(client_id):
     return jsonify(run_id=run_id, send=send), 202
 
 
-@app.route("/admin/market-radar/api/tidy-events", methods=["POST"])
-@admin_required
+@app.route("/strategic-agents/market-radar/api/tidy-events", methods=["POST"])
+@position2_required
 def admin_market_radar_tidy_events():
     """One-off, free: remove product pages stored as announcements before the
     newsroom learnt to skip shop product feeds (2026-10-09)."""
@@ -11540,8 +11557,8 @@ def admin_market_radar_tidy_events():
     return jsonify(out)
 
 
-@app.route("/admin/market-radar/api/tidy-suggestions", methods=["POST"])
-@admin_required
+@app.route("/strategic-agents/market-radar/api/tidy-suggestions", methods=["POST"])
+@position2_required
 def admin_market_radar_tidy():
     """One-off, free: drop earlier suggestions that each company's latest full
     search no longer makes (tracker/market_radar_views.tidy_suggestions)."""
@@ -11552,8 +11569,8 @@ def admin_market_radar_tidy():
     return jsonify(dropped=views.tidy_suggestions(_mr_email()))
 
 
-@app.route("/admin/market-radar/api/cost-report")
-@admin_required
+@app.route("/strategic-agents/market-radar/api/cost-report")
+@position2_required
 def admin_market_radar_cost_report():
     """Free and read-only: what this person's runs really cost, by kind of
     run and by stage, against the plan's estimates
@@ -11565,8 +11582,8 @@ def admin_market_radar_cost_report():
         return jsonify(error="The database is unavailable (%s)." % e), 503
 
 
-@app.route("/admin/market-radar/api/runs/<int:run_id>")
-@admin_required
+@app.route("/strategic-agents/market-radar/api/runs/<int:run_id>")
+@position2_required
 def admin_market_radar_run(run_id):
     from tracker import market_radar_run, market_radar_store as mr_store, market_radar_views as views
     email = _mr_email()
@@ -11678,7 +11695,7 @@ def admin_contact_lab_run(run_id):
     return jsonify(run)
 
 
-# == People & Signals (admin only) =====================================================
+# == People & Signals (the team; on the agents page, still Building) ==================
 # Company names and job titles in; the right people, their verified emails and
 # a picture of each account out, built on Saleshandy's Lead Finder. Mapping is
 # free; credits are spent only on a reveal confirmed on the page; Claude is
@@ -11687,14 +11704,14 @@ def admin_contact_lab_run(run_id):
 AM_MODELS = ("claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5")
 
 
-@app.route("/admin/account-mapper")
-@admin_required
+@app.route("/strategic-agents/people-signals")
+@position2_required
 def admin_account_mapper():
     return render_template("account_mapper.html", user=_get_user())
 
 
-@app.route("/admin/account-mapper/api/status")
-@admin_required
+@app.route("/strategic-agents/people-signals/api/status")
+@position2_required
 def admin_account_mapper_status():
     """Is Saleshandy connected, and what is left. Free: the credit balance
     and the rate limits cost nothing."""
@@ -11728,8 +11745,8 @@ def _am_settings(body):
             "briefs": body.get("briefs") is True, "model": model}
 
 
-@app.route("/admin/account-mapper/api/estimate", methods=["POST"])
-@admin_required
+@app.route("/strategic-agents/people-signals/api/estimate", methods=["POST"])
+@position2_required
 def admin_account_mapper_estimate():
     from tracker import account_mapper as am
     try:
@@ -11741,8 +11758,8 @@ def admin_account_mapper_estimate():
     return jsonify(dict(out, companies=len(st["companies"]), roles=len(st["roles"])))
 
 
-@app.route("/admin/account-mapper/api/runs", methods=["GET", "POST"])
-@admin_required
+@app.route("/strategic-agents/people-signals/api/runs", methods=["GET", "POST"])
+@position2_required
 def admin_account_mapper_runs():
     from tracker import account_mapper as am, account_mapper_store as store, contact_lab_search as search
     from tracker import saleshandy_client as sh
@@ -11787,8 +11804,8 @@ def _am_run(run_id):
         return None, (jsonify(error="The database is unavailable (%s)." % e), 503)
 
 
-@app.route("/admin/account-mapper/api/runs/<int:run_id>")
-@admin_required
+@app.route("/strategic-agents/people-signals/api/runs/<int:run_id>")
+@position2_required
 def admin_account_mapper_run(run_id):
     run, err = _am_run(run_id)
     if err:
@@ -11802,8 +11819,8 @@ def admin_account_mapper_run(run_id):
     return jsonify(run)
 
 
-@app.route("/admin/account-mapper/api/runs/<int:run_id>/export.csv")
-@admin_required
+@app.route("/strategic-agents/people-signals/api/runs/<int:run_id>/export.csv")
+@position2_required
 def admin_account_mapper_csv(run_id):
     from tracker import account_mapper_store as store
     run, err = _am_run(run_id)
@@ -11829,8 +11846,8 @@ def _am_reveal_args(body):
     return keys, cap, body.get("phone") is True
 
 
-@app.route("/admin/account-mapper/api/runs/<int:run_id>/reveal", methods=["POST"])
-@admin_required
+@app.route("/strategic-agents/people-signals/api/runs/<int:run_id>/reveal", methods=["POST"])
+@position2_required
 def admin_account_mapper_reveal(run_id):
     """dry_run: what the reveal would do (free). Otherwise, with confirm,
     the reveal itself: credits."""

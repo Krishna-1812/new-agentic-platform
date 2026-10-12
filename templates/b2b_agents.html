@@ -53,9 +53,10 @@
 
     <div class="sa-hero-foot">
       <p class="sa-lead">
-        Twelve agents, each watching a different signal: funding and leadership news,
+        Sixteen agents, each watching a different signal: funding and leadership news,
         website visitors, job moves, LinkedIn engagement, competitor ads and social,
-        local businesses worth pitching, calendars and events. Each one hands you
+        rivals' moves, the buying group at each account, local businesses worth
+        pitching, calendars and events. Each one hands you
         something you can act on today.
       </p>
       <div class="sa-hero-actions">
@@ -68,9 +69,9 @@
 
     {# Counted from the rows below; tests/test_hub_card_counts.py checks they agree. #}
     <div class="sa-figs">
-      <div class="sa-fig"><b data-sa-odo data-figure="agents">14</b><span>agents</span></div>
+      <div class="sa-fig"><b data-sa-odo data-figure="agents">16</b><span>agents</span></div>
       <div class="sa-fig"><b data-sa-odo data-figure="live">10</b><span>live</span></div>
-      <div class="sa-fig"><b data-sa-odo data-figure="building">4</b><span>in build</span></div>
+      <div class="sa-fig"><b data-sa-odo data-figure="building">6</b><span>in build</span></div>
       {% if tracked_companies %}
       <div class="sa-fig"><b data-sa-odo>{{ "{:,}".format(tracked_companies) }}+</b><span>companies tracked</span></div>
       {% endif %}
@@ -86,12 +87,14 @@
         ("c", "Job Change Alert", "/strategic-agents/job-change-alert"),
         ("c", "Page Watch", "/strategic-agents/page-watch"),
         ("c", "Video Studio", "/strategic-agents/video-studio"),
+        ("c", "Market Radar", "/strategic-agents/market-radar"),
         ("b", "LinkedIn Intelligence", "/strategic-agents/linkedin-intelligence"),
         ("b", "Contact Finder", "/strategic-agents/company-people-intelligence"),
         ("b", "LinkedIn Strategy Researcher", "/strategic-agents/linkedin-strategy-researcher"),
         ("b", "Social Media Intelligence", "/strategic-agents/social-media-intelligence"),
         ("b", "Thought Leader Intelligence", "/strategic-agents/thought-leader-pr"),
         ("b", "Local Business Radar", "/strategic-agents/local-business-radar"),
+        ("b", "People & Signals", "/strategic-agents/people-signals"),
         ("a", "Ad Intelligence", "/strategic-agents/ad-intelligence"),
         ("a", "42 North Dental Slot Checker", "/strategic-agents/42-north-dental-slot-checker"),
         ("a", "Event & Conference Intelligence", "/strategic-agents/event-conference-intelligence"),
@@ -127,6 +130,7 @@
           <li><a href="#a-c-signals">ABM Signal Tracker</a></li>
           <li><a href="#a-c-visitors">Anonymous Visitors</a></li>
           <li><a href="#a-c-job">Job Change Alert</a></li>
+          <li><a href="#a-c-mr">Market Radar</a></li>
         </ul>
       </div>
       <div class="sa-step sa-step--b" data-sa-settle>
@@ -140,6 +144,7 @@
           <li><a href="#a-c-sci">Social Media Intelligence</a></li>
           <li><a href="#a-c-tlpr">Thought Leader Intelligence</a></li>
           <li><a href="#a-c-lbr">Local Business Radar</a></li>
+          <li><a href="#a-c-ps">People &amp; Signals</a></li>
         </ul>
       </div>
       <div class="sa-step sa-step--a" data-sa-settle>
@@ -168,9 +173,9 @@
     <div class="sa-filters" id="sa-filters">
       <div class="sa-filters-in">
         <div class="sa-chips" role="group" aria-label="Group">
-          <button type="button" class="sa-chip is-on" data-sa-group="all">All <b>13</b></button>
-          <button type="button" class="sa-chip" data-sa-group="signals"><i class="sa-dot sa-dot--c"></i>Signals <b>4</b></button>
-          <button type="button" class="sa-chip" data-sa-group="people"><i class="sa-dot sa-dot--b"></i>People &amp; Research <b>6</b></button>
+          <button type="button" class="sa-chip is-on" data-sa-group="all">All <b>16</b></button>
+          <button type="button" class="sa-chip" data-sa-group="signals"><i class="sa-dot sa-dot--c"></i>Signals <b>6</b></button>
+          <button type="button" class="sa-chip" data-sa-group="people"><i class="sa-dot sa-dot--b"></i>People &amp; Research <b>7</b></button>
           <button type="button" class="sa-chip" data-sa-group="vertical"><i class="sa-dot sa-dot--a"></i>Vertical Tools <b>3</b></button>
         </div>
         <div class="sa-chips sa-chips--state" role="group" aria-label="Status">
@@ -183,7 +188,7 @@
           <input type="search" id="sa-q" placeholder="Search agents, signals, sources&hellip;" aria-label="Search agents">
           <kbd class="sa-slash" aria-hidden="true">/</kbd>
         </label>
-        <span class="sa-count" id="sa-count" aria-live="polite">Showing 13 of 13</span>
+        <span class="sa-count" id="sa-count" aria-live="polite">Showing 16 of 16</span>
       </div>
     </div>
 
@@ -195,7 +200,7 @@
           <h3 class="sa-group-name">Signals</h3>
           <p class="sa-group-sub">Things that fire on their own, so you hear about the moment instead of finding it later.</p>
         </div>
-        <span class="sa-group-count">5 agents</span>
+        <span class="sa-group-count">6 agents</span>
       </div>
       <div class="sa-grid">
 
@@ -278,6 +283,22 @@
           <span class="sa-tags dir-tags"><span class="sa-tag">Video</span><span class="sa-tag">Content</span><span class="sa-tag">Social</span></span>
           <span class="sa-go">Open agent <span aria-hidden="true">&rarr;</span></span>
         </a>
+
+        <a href="/strategic-agents/market-radar" id="a-c-mr" class="sa-card" data-agent="c-mr" data-state="active" data-badge="building" data-group="signals">
+          <span class="sa-card-top">
+            <span class="sa-ic"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/><circle cx="12" cy="12" r="1"/></svg></span>
+            <span class="sa-num">15</span>
+            <span class="sa-state sa-state--build"><i></i>Building</span>
+          </span>
+          <span class="sa-name" data-agent-name>Market Radar</span>
+          <span class="sa-desc">Give it one website. It works out what the company really sells, finds the rivals competing for the same customers, and watches them: new locations, price changes, hiring, news and filings, in a short report where every line cites its source.</span>
+          <span class="sa-dl">
+            <span><em>Watches</em>A client's rivals, near and far</span>
+            <span><em>Hands you</em>Their moves, ranked, in a cited report</span>
+          </span>
+          <span class="sa-tags dir-tags"><span class="sa-tag">Competitors</span><span class="sa-tag">News</span><span class="sa-tag">Report</span></span>
+          <span class="sa-go">Open agent <span aria-hidden="true">&rarr;</span></span>
+        </a>
       </div>
     </div>
 
@@ -289,7 +310,7 @@
           <h3 class="sa-group-name">People &amp; Research</h3>
           <p class="sa-group-sub">Finding the right people and businesses, and reading how they show up in public.</p>
         </div>
-        <span class="sa-group-count">6 agents</span>
+        <span class="sa-group-count">7 agents</span>
       </div>
       <div class="sa-grid">
 
@@ -386,6 +407,22 @@
             <span><em>Hands you</em>Ranked leads with their gaps and a pitch each</span>
           </span>
           <span class="sa-tags dir-tags"><span class="sa-tag">Google Maps</span><span class="sa-tag">Reviews</span><span class="sa-tag">Prospecting</span></span>
+          <span class="sa-go">Open agent <span aria-hidden="true">&rarr;</span></span>
+        </a>
+
+        <a href="/strategic-agents/people-signals" id="a-c-ps" class="sa-card" data-agent="c-ps" data-state="active" data-badge="building" data-group="people">
+          <span class="sa-card-top">
+            <span class="sa-ic"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><circle cx="17.5" cy="6.5" r="3"/><circle cx="6.5" cy="17.5" r="3"/><circle cx="17.5" cy="17.5" r="3"/><path d="M10 6.5h4.5M6.5 10v4.5M10 10l4.8 4.8"/></svg></span>
+            <span class="sa-num">16</span>
+            <span class="sa-state sa-state--build"><i></i>Building</span>
+          </span>
+          <span class="sa-name" data-agent-name>People &amp; Signals</span>
+          <span class="sa-desc">Give it company names and the titles you sell to. It finds the right people at each one, shows who is new in the role, which teams are growing and who is hiring, ranks the accounts, and reveals verified emails for the people you pick.</span>
+          <span class="sa-dl">
+            <span><em>Watches</em>The buying group at each target account</span>
+            <span><em>Hands you</em>Who to contact first, why now, and their email</span>
+          </span>
+          <span class="sa-tags dir-tags"><span class="sa-tag">Saleshandy</span><span class="sa-tag">ABM</span><span class="sa-tag">Emails</span></span>
           <span class="sa-go">Open agent <span aria-hidden="true">&rarr;</span></span>
         </a>
 

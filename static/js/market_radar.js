@@ -9,7 +9,7 @@
 (function (root) {
   'use strict';
 
-  var API = '/admin/market-radar/api';
+  var API = '/strategic-agents/market-radar/api';
 
   var ARCHETYPES = [
     ['local_single', 'Local business, one site'], ['multi_location', 'Several locations or a chain'],
@@ -356,7 +356,7 @@
     var next = '<div class="card mr-card mr-next"><div class="mr-card-h"><div><h3>Next steps</h3></div></div><ol class="mr-steps2">' +
       steps.map(function (s, i) {
         var btn = s[3] === 'collect' ? '<button type="button" class="mr-btn small" data-act="collect"' + (running ? ' disabled' : '') + '>' + esc(s[4]) + '</button>'
-          : s[3] === 'report' ? '<a class="mr-btn small" href="/admin/market-radar/report/' + encodeURIComponent((v.client || {}).id) + '">' + esc(s[4]) + '</a>'
+          : s[3] === 'report' ? '<a class="mr-btn small" href="/strategic-agents/market-radar/report/' + encodeURIComponent((v.client || {}).id) + '">' + esc(s[4]) + '</a>'
           : '<button type="button" class="mr-btn small" data-act="section" data-section="' + s[3] + '">' + esc(s[4]) + '</button>';
         return '<li class="' + (s[0] ? 'done' : '') + '"><span class="mr-steps2-n">' + (s[0] ? '&#10003;' : i + 1) + '</span><div><b>' + esc(s[1]) +
           '</b><small>' + esc(s[2]) + '</small></div>' + btn + '</li>';
@@ -949,7 +949,7 @@
       (href ? '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(c.domain) + '</a>' : esc(c.domain)) +
       (f.archetype ? '<span class="mr-chip">' + esc(label(ARCHETYPES, f.archetype)) + '</span>' : '') +
       (where ? '<span class="mr-chip">' + esc(where) + '</span>' : '') +
-      '</div></div><div class="mr-actions"><a class="mr-btn primary hot" href="/admin/market-radar/report/' + encodeURIComponent(c.id) + '">Open the report' +
+      '</div></div><div class="mr-actions"><a class="mr-btn primary hot" href="/strategic-agents/market-radar/report/' + encodeURIComponent(c.id) + '">Open the report' +
       '<svg viewBox="0 0 24 24" aria-hidden="true" class="mr-ico s"><path d="M7 17L17 7M9 7h8v8"/></svg></a>' +
       '<button type="button" class="mr-btn" data-act="run"' + (running ? ' disabled' : '') + '>' +
       (running ? 'Running…' : 'Search again') + '</button></div></div>';

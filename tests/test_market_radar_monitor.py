@@ -192,7 +192,7 @@ def test_the_email_escapes_everything_and_links_only_web_addresses():
     h = D.render_html(payload(WORDS, removed=[{"x": 1}]), 6)
     assert "<b>BigChain</b>" not in h and "&lt;b&gt;BigChain&lt;/b&gt;" in h and "Acme &lt;Dental&gt;" in h
     assert "javascript:" not in h and "BigChain: 60 open roles, was 42" in h
-    assert 'href="https://northaxis.outcomes.digital/admin/market-radar/report/6"' in h
+    assert 'href="https://northaxis.outcomes.digital/strategic-agents/market-radar/report/6"' in h
     assert "1 were removed" in h
     t = D.render_text(payload(WORDS), 6)
     assert "1. BigChain bought <Smile Co>" in t and "So what: Watch for ads & offers" in t
@@ -448,7 +448,7 @@ def test_the_weekly_update_routes(pg, world, monkeypatch):
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
         sess["google_user"] = {"email": OWNER, "name": "T"}
-    base = "/admin/market-radar/api/clients/%d" % world["client"]
+    base = "/strategic-agents/market-radar/api/clients/%d" % world["client"]
     r = c.get(base + "/monitor")
     assert r.status_code == 200 and r.get_json()["enabled"] is False
     r = c.post(base + "/monitor", json={"enabled": True, "weekday": 1, "hour": 8, "email": "bad"})
