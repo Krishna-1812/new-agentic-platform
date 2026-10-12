@@ -1,4 +1,4 @@
-/* Account Mapper page (templates/account_mapper.html).
+/* People & Signals page (templates/account_mapper.html).
  *
  * The render* functions are pure: data in, HTML out, every value escaped
  * (names, titles, photos and briefs come from Saleshandy, the web and a

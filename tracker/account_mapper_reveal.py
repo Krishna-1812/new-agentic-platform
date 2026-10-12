@@ -1,4 +1,4 @@
-"""Account Mapper, phase 3: revealing emails, only with approval.
+"""People & Signals, phase 3: revealing emails, only with approval.
 
     check = plan_reveal(summary, selection, balance=1480, cap=50)   # before asking
     report = reveal(summary, selection, client, cap=50)             # spends credits

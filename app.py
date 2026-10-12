@@ -11678,7 +11678,7 @@ def admin_contact_lab_run(run_id):
     return jsonify(run)
 
 
-# == Account Mapper (admin only) =====================================================
+# == People & Signals (admin only) =====================================================
 # Company names and job titles in; the right people, their verified emails and
 # a picture of each account out, built on Saleshandy's Lead Finder. Mapping is
 # free; credits are spent only on a reveal confirmed on the page; Claude is
