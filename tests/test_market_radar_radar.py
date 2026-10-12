@@ -343,11 +343,17 @@ def test_a_shop_gets_the_entrant_scan_and_other_kinds_get_neither(pg):
     out = R.run_for_client(c, OWNER, store=pg, places=Places([], []), io={
         "get": net({}), "fetch": lambda u: {}, "fetch_home": lambda i: {}})
     assert "entrants" in out and "local" not in out and out["entrants"]["status"] == "skipped"
-    b2b = dict(LOCAL_PROFILE, name="Soft Co", archetype="b2b_product")
-    _e, c = _client(pg, b2b, "softco.com")
+    maker = dict(LOCAL_PROFILE, name="Make Co", archetype="manufacturer")
+    _e, c = _client(pg, maker, "makeco.com")
     out = R.run_for_client(c, OWNER, store=pg, places=Places([], []), io={
         "get": net({}), "fetch": lambda u: {}, "fetch_home": lambda i: {}})
-    assert "b2b_product" in out["skipped"]
+    assert "manufacturer" in out["skipped"]
+    # Software, like a shop, gets the new-entrant scan from launch and funding news, without shop domains.
+    soft = dict(LOCAL_PROFILE, name="Soft Co", archetype="b2b_product", industry={"keywords": []})
+    _e, c = _client(pg, soft, "softco.com")
+    out = R.run_for_client(c, OWNER, store=pg, places=Places([], []), io={
+        "get": net({}), "fetch": lambda u: {}, "fetch_home": lambda i: {}})
+    assert "entrants" in out and "local" not in out
 
 
 def test_a_radar_that_breaks_does_not_lose_the_collection():

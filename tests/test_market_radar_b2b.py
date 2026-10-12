@@ -504,8 +504,8 @@ def test_a_b2b_clients_collection_runs_every_detector_and_stores_their_moves(pg,
     io2["get"] = get
     io2["crt_connect"] = lambda **kw: pytest.fail("certificate logs read for a dentist")
     out = mc.collect_client(dent, OWNER, io=io2, store=pg, now=now)
-    assert {r["detector"] for r in out["companies"][0]["rows"]} == set(mc.NAMES) - {"subdomains", "headcount", "linkedin"}
-    assert {l["detector"] for l in out["coverage"]} == set(mc.NAMES) - {"subdomains", "headcount", "linkedin"}
+    assert {r["detector"] for r in out["companies"][0]["rows"]} == set(mc.NAMES) - {"subdomains", "headcount", "linkedin", "apps", "buzz", "facts"}
+    assert {l["detector"] for l in out["coverage"]} == set(mc.NAMES) - {"subdomains", "headcount", "linkedin", "apps", "buzz", "facts"}
 
 
 def test_linkedin_is_read_for_a_few_companies_per_collection(pg, monkeypatch):
