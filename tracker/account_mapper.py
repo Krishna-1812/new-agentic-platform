@@ -39,7 +39,8 @@ MAX_PER_ROLE = 5
 MAX_ALSO = 8
 MAX_NEW_LEADERS = 8
 PICK_MIN_SCORE = 40
-DEFAULT_CLAUDE_CAP_USD = Decimal("0.50")
+DEFAULT_CLAUDE_CAP_USD = Decimal("0.50")    # the least a run's Claude cap is
+MAX_CLAUDE_CAP_USD = Decimal("3.00")
 
 # == input ===========================================================================
 
@@ -510,3 +511,36 @@ def totals(companies):
         "new_in_role": sum(1 for r in roles for p in r["picked"] if p.get("new_in_role")),
         "searches": sum(((c.get("insights") or {}).get("searches") or 0) for c in companies),
     }
+
+
+# == what a run could cost, before it runs ================================================
+
+def estimate(n_companies, n_roles, *, use_claude=False, web_fill=False, briefs=False, model=None):
+    """Mapping is free. Credits are spent only on a reveal you approve: by
+    default the best person per title, 1 credit each when an email is found.
+    Claude (optional) is capped per run."""
+    from . import account_mapper_brief as ab
+    from . import market_radar_costs as costs
+    usd = Decimal(0)
+    web_max = n_companies * n_roles if web_fill else 0
+    if use_claude or web_fill or briefs:
+        rates = costs._model_rates(model)[1]
+        if use_claude:
+            usd += (Decimal(600) * rates[0] + Decimal(1200) * rates[4]) / costs.M
+        if web_fill:
+            # About a third of titles go unfound; each search is $0.01 plus
+            # the results it reads.
+            per = Decimal("0.01") + Decimal(6000) * rates[0] / costs.M + Decimal(150) * rates[4] / costs.M
+            usd += per * Decimal(max(1, round(web_max / 3)))
+        if briefs:
+            usd += Decimal(str(ab.estimate_usd(n_companies, model)))
+    return {"free_searches": n_companies * (1 + 2 * n_roles + 8), "credits_default": n_companies * n_roles,
+            "credits_note": "at most 1 credit per person revealed, only when an email is found",
+            "usd_typical": round(float(usd), 4), "usd_cap": float(claude_cap(usd)),
+            "web_searches_max": web_max, "claude": bool(use_claude or web_fill or briefs)}
+
+
+def claude_cap(typical_usd):
+    """A run's Claude cap: twice its estimate, between $0.50 and $3.00."""
+    cap = max(DEFAULT_CLAUDE_CAP_USD, (Decimal(str(typical_usd)) * 2).quantize(Decimal("0.01")))
+    return min(cap, MAX_CLAUDE_CAP_USD)
