@@ -115,7 +115,7 @@ account cards · people table · CSV / JSON export · run history
   - with one verified email, it's labelled **likely**;
   - with none, there's no address.
 - **Titles nobody in Saleshandy holds:**
-  - optionally, search the web (the Contact Finder Lab's search: free SearXNG, or Claude's paid search) for the name and LinkedIn URL;
+  - optionally, search the web (Claude's paid web search) for the name and LinkedIn URL;
   - then ask Saleshandy for the email by LinkedIn URL;
   - this costs 1 credit, and only when an email is found.
 

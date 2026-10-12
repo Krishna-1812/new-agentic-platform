@@ -1,5 +1,7 @@
 # Contact Finder Lab: Phase 0
 
+> **Hidden (2026-10-12).** People & Signals (`/strategic-agents/people-signals`, built on Saleshandy) does this job now. The lab's page and API answer "not found" and it is off the admin menu. Its engine stays in the code because People & Signals uses its web search and email-pattern helpers. To bring it back, set `CONTACT_LAB_HIDDEN = False` in `app.py` and restore the menu entry.
+
 **What it answers:** can company names and job titles be turned into the right people, their LinkedIn profiles and their work emails without a data platform? And which way of searching should do it: our own free search service (SearXNG), or Claude's paid web search?
 
 **Where:** Admin → **Contact Finder Lab** (`/admin/contact-lab`). Admins only.

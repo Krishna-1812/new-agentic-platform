@@ -11597,7 +11597,14 @@ def admin_market_radar_run(run_id):
     return jsonify(out)
 
 
-# == Contact Finder Lab (Phase 0, admin only) ======================================
+# == Contact Finder Lab (Phase 0) -- HIDDEN ==========================================
+# Hidden 2026-10-12 at the owner's request: People & Signals does its job. Every
+# lab address answers 404, even to admins, and it is off the admin menu. The
+# engine (tracker/contact_lab*.py) stays: People & Signals uses its web search
+# and email-pattern helpers. To restore: set CONTACT_LAB_HIDDEN = False and put
+# the menu entry back in templates/_admin_menu.html.
+CONTACT_LAB_HIDDEN = True
+
 # Company names and job titles in; people, LinkedIn profiles and likely work
 # emails out, through our own SearXNG service (free) and Claude's web search
 # (paid), side by side. tracker/contact_lab*.py; docs/contact-lab-phase0.md.
@@ -11605,6 +11612,8 @@ def admin_market_radar_run(run_id):
 @app.route("/admin/contact-lab")
 @admin_required
 def admin_contact_lab():
+    if CONTACT_LAB_HIDDEN:
+        abort(404)
     return render_template("contact_lab.html", user=_get_user())
 
 
@@ -11612,6 +11621,8 @@ def admin_contact_lab():
 @admin_required
 def admin_contact_lab_status():
     """What a run could use right now. Free: SearXNG's health check only."""
+    if CONTACT_LAB_HIDDEN:
+        abort(404)
     from tracker import contact_lab as lab, contact_lab_search as search
     return jsonify(searxng=search.searxng_health(), claude={"configured": search.claude_configured()},
                    models=list(lab.MODELS), limits={"companies": lab.MAX_COMPANIES, "roles": lab.MAX_ROLES},
@@ -11621,6 +11632,8 @@ def admin_contact_lab_status():
 @app.route("/admin/contact-lab/api/estimate", methods=["POST"])
 @admin_required
 def admin_contact_lab_estimate():
+    if CONTACT_LAB_HIDDEN:
+        abort(404)
     from tracker import contact_lab as lab
     body = request.get_json(silent=True) or {}
     try:
@@ -11638,6 +11651,8 @@ def admin_contact_lab_estimate():
 @app.route("/admin/contact-lab/api/runs", methods=["GET", "POST"])
 @admin_required
 def admin_contact_lab_runs():
+    if CONTACT_LAB_HIDDEN:
+        abort(404)
     from tracker import contact_lab as lab, contact_lab_search as search, contact_lab_store as store
     email = _mr_email()
     if request.method == "GET":
@@ -11681,6 +11696,8 @@ def admin_contact_lab_runs():
 @app.route("/admin/contact-lab/api/runs/<int:run_id>")
 @admin_required
 def admin_contact_lab_run(run_id):
+    if CONTACT_LAB_HIDDEN:
+        abort(404)
     from tracker import contact_lab_store as store
     try:
         run = store.get_run(run_id, _mr_email())
