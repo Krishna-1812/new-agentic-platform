@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
 {#- ════════════════════════════════════════════════════════════════════════
-    PEOPLE & SIGNALS (/admin/account-mapper) — admin only
+    PEOPLE & SIGNALS (/strategic-agents/people-signals) — the team; listed as Building
 
     Company names and the job titles you sell to in; the right people, their
     verified emails and a picture of each account out, built on Saleshandy's
@@ -17,13 +17,13 @@
 </head>
 <body class="sa">
 
-{{ topbar([("Admin", "/admin/internal-usage"), ("People & Signals", none)]) }}
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("People & Signals", none)]) }}
 
 <main class="sa-shell">
 
   <section class="sa-hero mr-hero mr-hero--compact cl-hero">
     <div class="sa-hero-top">
-      <span class="sa-lbl">Admin &middot; built on Saleshandy</span>
+      <span class="sa-lbl">Building &middot; built on Saleshandy</span>
       <span class="cl-ready" id="amReady"><span class="mr-chip">Checking&hellip;</span></span>
     </div>
     <h1 class="sa-h1 mr-h1">

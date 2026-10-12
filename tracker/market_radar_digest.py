@@ -277,7 +277,7 @@ def _ref_line_raw(item):
 
 
 def report_url(client_id):
-    return "%s/admin/market-radar/report/%s" % (PUBLIC_BASE, client_id)
+    return "%s/strategic-agents/market-radar/report/%s" % (PUBLIC_BASE, client_id)
 
 
 def render_text(payload, client_id):

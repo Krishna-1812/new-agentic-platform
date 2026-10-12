@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
 {#- ════════════════════════════════════════════════════════════════════════
-    MARKET RADAR REPORT (/admin/market-radar/report/<client_id>) — admin only
+    MARKET RADAR REPORT (/strategic-agents/market-radar/report/<client_id>) — the team; listed as Building
 
     The written report (tracker/market_radar_report.py), drawn by
-    static/js/market_radar_report.js from /admin/market-radar/api/clients/<id>/report.
+    static/js/market_radar_report.js from /strategic-agents/market-radar/api/clients/<id>/report.
     A reading page: a menu of sections on the left, one section shown at a
     time (#rr-<section>); the PDF prints them all.
 -#}
@@ -14,7 +14,7 @@
 </head>
 <body class="sa">
 
-{{ topbar([("Admin", "/admin/internal-usage"), ("Market Radar", "/admin/market-radar#company-" ~ client_id), ("Report", none)]) }}
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Market Radar", "/strategic-agents/market-radar#company-" ~ client_id), ("Report", none)]) }}
 
 <main class="mr rr" id="rr" data-client="{{ client_id }}">
   <div id="rrBody" aria-live="polite"><div class="card"><div class="mr-empty">Loading the report&hellip;</div></div></div>

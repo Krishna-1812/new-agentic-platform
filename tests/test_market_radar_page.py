@@ -193,7 +193,7 @@ def test_a_users_radius_is_not_widened():
 # == routes ==================================================================================
 
 ADMIN = "kris@markifydigital.com"
-BASE = "/admin/market-radar"
+BASE = "/strategic-agents/market-radar"
 
 
 def _client(email):
@@ -210,13 +210,34 @@ def _client(email):
     ("post", BASE + "/api/clients/1/profile"), ("post", BASE + "/api/clients/1/competitors"),
     ("post", BASE + "/api/clients/1/competitors/2"), ("post", BASE + "/api/runs"),
     ("get", BASE + "/api/runs/1"), ("post", BASE + "/api/clients/1/collect"),
-    ("get", BASE + "/api/clients/1/moves"),
-    ("post", "/admin/external-usage/market-radar-detectors-check")])
-@pytest.mark.parametrize("email, status", [(None, 302), ("someone@markifydigital.com", 403)])
-def test_every_route_is_admin_only(method, path, email, status):
+    ("get", BASE + "/api/clients/1/moves")])
+@pytest.mark.parametrize("email", [None, "someone@gmail.example"])
+def test_every_route_is_for_the_team_only(method, path, email):
+    """Market Radar is a team agent now (listed on the agents page as
+    Building): signed-out visitors are sent to sign in, anyone outside the
+    team to their own home, and nobody outside reaches a route."""
     c = _client(email)
     resp = getattr(c, method)(path, json={}) if method == "post" else c.get(path)
-    assert resp.status_code == status
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/app") == bool(email)
+
+
+def test_a_team_member_who_is_not_an_admin_can_open_it():
+    html = _client("someone@markifydigital.com").get(BASE).get_data(as_text=True)
+    assert "js/market_radar.js" in html and 'href="/strategic-agents"' in html
+
+
+def test_the_self_checks_stay_admin_only():
+    resp = _client("someone@markifydigital.com").post("/admin/external-usage/market-radar-detectors-check", json={})
+    assert resp.status_code == 403
+
+
+@pytest.mark.parametrize("old, new", [
+    ("/admin/market-radar", BASE), ("/admin/market-radar/report/7", BASE + "/report/7"),
+    ("/admin/market-radar/api/clients?x=1", BASE + "/api/clients?x=1")])
+def test_the_old_admin_addresses_redirect_keeping_the_method(old, new):
+    resp = _client(None).post(old) if "api" in old else _client(None).get(old)
+    assert resp.status_code == 308 and resp.headers["Location"].endswith(new)
 
 
 @pytest.mark.parametrize("path", ["/api/clients/1/profile", "/api/clients/1/competitors",
@@ -280,7 +301,7 @@ def test_a_collection_starts_once_and_its_moves_are_read_back(client_with_readin
 def test_the_page_renders_with_its_script_and_menu_entry():
     html = _client(ADMIN).get(BASE).get_data(as_text=True)
     assert "js/market_radar.js" in html and "css/market_radar.css" in html
-    assert 'href="/admin/market-radar"' in html
+    assert 'href="/strategic-agents/market-radar"' in html
 
 
 def test_routes_edit_flow(client_with_reading, monkeypatch):
@@ -824,7 +845,7 @@ def test_the_overview_leads_with_what_needs_doing_and_draws_the_rivals_on_a_rada
     assert ov.count("mr-pl-b h-sky open") == 1 and "mr-pl-b h-acc\"" in ov
     assert "Most important now" in ov and "Opened" in ov and "Rivals to watch" in ov
     assert ov.index("Alpha</b>") < ov.index("Beta</b>")              # ranked by score
-    assert 'data-act="collect"' in ov and "Collect again" in ov and "/admin/market-radar/report/7" in ov
+    assert 'data-act="collect"' in ov and "Collect again" in ov and "/strategic-agents/market-radar/report/7" in ov
     assert "Loading…" in out["loading"] and "No rivals on the radar yet." in out["empty"]
 
 

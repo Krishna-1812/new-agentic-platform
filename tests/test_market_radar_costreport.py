@@ -113,5 +113,5 @@ def test_the_report_reads_the_real_ledger_and_only_this_persons_runs(pg, world, 
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
         sess["google_user"] = {"email": OWNER, "name": "T"}
-    r = c.get("/admin/market-radar/api/cost-report")
+    r = c.get("/strategic-agents/market-radar/api/cost-report")
     assert r.status_code == 200 and r.get_json()["first_run"]["runs"] == 1

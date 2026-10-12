@@ -12,7 +12,7 @@
 (function (root) {
   'use strict';
 
-  var API = '/admin/account-mapper/api';
+  var API = '/strategic-agents/people-signals/api';
   var EMAIL = {
     verified: ['ok', 'Verified', 'Saleshandy verified this address when it revealed it'],
     saleshandy: ['ok', 'From Saleshandy', 'Revealed by Saleshandy, which verifies on reveal; no status was returned'],

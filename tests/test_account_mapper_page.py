@@ -23,7 +23,7 @@ from tracker import saleshandy_client as sh  # noqa: E402
 
 EVIL = '<img src=x onerror=alert(1)>"\'&'
 ADMIN = "kris@markifydigital.com"
-BASE = "/admin/account-mapper"
+BASE = "/strategic-agents/people-signals"
 
 
 def _client(email):
@@ -51,17 +51,32 @@ def _summary():
     ("get", BASE), ("get", BASE + "/api/status"), ("get", BASE + "/api/runs"), ("post", BASE + "/api/runs"),
     ("get", BASE + "/api/runs/1"), ("get", BASE + "/api/runs/1/export.csv"), ("post", BASE + "/api/estimate"),
     ("post", BASE + "/api/runs/1/reveal")])
-@pytest.mark.parametrize("email, status", [(None, 302), ("someone@markifydigital.com", 403)])
-def test_every_route_is_admin_only(method, path, email, status):
+@pytest.mark.parametrize("email", [None, "someone@gmail.example"])
+def test_every_route_is_for_the_team_only(method, path, email):
+    """A team agent (on the agents page, Building): signed-out visitors are
+    sent to sign in, anyone outside the team to their own home."""
     c = _client(email)
     resp = getattr(c, method)(path, json={}) if method == "post" else c.get(path)
-    assert resp.status_code == status
+    assert resp.status_code == 302
+    assert resp.headers["Location"].endswith("/app") == bool(email)
+
+
+def test_a_team_member_who_is_not_an_admin_can_open_it():
+    html = _client("someone@markifydigital.com").get(BASE).get_data(as_text=True)
+    assert "js/account_mapper.js" in html and "<title>People &amp; Signals" in html
+
+
+def test_the_old_admin_address_redirects():
+    resp = _client(None).get("/admin/account-mapper/api/runs/3/export.csv")
+    assert resp.status_code == 308 and resp.headers["Location"].endswith(BASE + "/api/runs/3/export.csv")
 
 
 def test_the_page_renders_with_its_script_and_menu_entry():
     html = _client(ADMIN).get(BASE).get_data(as_text=True)
-    assert "js/account_mapper.js" in html and "css/account_mapper.css" in html and 'href="/admin/account-mapper"' in html
-    assert "<title>People &amp; Signals" in html and "People &amp; Signals" in html.split('href="/admin/account-mapper"', 1)[1][:2000]
+    assert "js/account_mapper.js" in html and "css/account_mapper.css" in html
+    assert '"u": "/strategic-agents/people-signals"' in html          # the command palette
+    assert 'href="/admin/account-mapper"' not in html and 'href="/admin/market-radar"' not in html   # off the admin menu
+    assert "<title>People &amp; Signals" in html
     assert "Account Mapper" not in html
 
 
@@ -308,3 +323,14 @@ def test_the_estimate_and_reveal_bar_say_what_costs_what():
     assert "$0" in out[1] and "No Claude steps ticked" in out[1]
     assert "2 people ticked" in out[2] and "Up to 14 credits" in out[2] and "7 each" in out[2]
     assert 'data-act="reveal" disabled' in out[3]
+
+
+@pytest.mark.parametrize("slug, name, group", [("people-signals", "People &amp; Signals", "people"),
+                                               ("market-radar", "Market Radar", "signals")])
+def test_both_are_on_the_agents_page_as_building_not_live(slug, name, group):
+    html = _client("someone@markifydigital.com").get("/strategic-agents").get_data(as_text=True)
+    card = html.split('href="/strategic-agents/%s" id=' % slug, 1)[1].split("</a>", 1)[0]
+    assert 'data-badge="building"' in card and 'data-group="%s"' % group in card
+    assert "sa-state--build" in card and ">Building<" in card.replace("<i></i>", "") and "sa-state--live" not in card
+    assert "data-agent-name>%s<" % name in card
+    assert 'href="/strategic-agents/%s"' % slug in html.split('class="sa-tick-track"', 1)[1].split("</div>", 1)[0]

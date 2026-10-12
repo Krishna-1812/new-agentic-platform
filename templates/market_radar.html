@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
 {#- ════════════════════════════════════════════════════════════════════════
-    MARKET RADAR (/admin/market-radar) — admin only
+    MARKET RADAR (/strategic-agents/market-radar) — the team; listed as Building
 
     Give it a company's website: it reads what the company does, finds its
     competitors, then watches them (news, site and price changes, jobs,
@@ -19,14 +19,14 @@
 </head>
 <body class="sa">
 
-{{ topbar([("Admin", "/admin/internal-usage"), ("Market Radar", none)]) }}
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Market Radar", none)]) }}
 
 <main class="sa-shell">
 
   {# ── Hero: the ask ────────────────────────────────────────────────────── #}
   <section class="sa-hero mr-hero" data-sa-settle>
     <div class="sa-hero-top">
-      <span class="sa-lbl">Admin &middot; Market Radar</span>
+      <span class="sa-lbl">Market Radar &middot; Building</span>
       {% if weekly_on %}
       <span class="sa-live" title="Weekly updates run on their schedule"><i></i>Weekly updates on</span>
       {% else %}
@@ -95,7 +95,7 @@
   </div>
   <div class="sa-foot-bottom">
     <span>{{ brand.name }} &middot; Internal use only</span>
-    <a href="/admin/market-radar">Market Radar</a>
+    <a href="/strategic-agents/market-radar">Market Radar</a>
   </div>
 </footer>
 
