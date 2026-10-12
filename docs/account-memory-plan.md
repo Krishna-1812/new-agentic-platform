@@ -247,3 +247,16 @@ Still to adapt, so not yet in the accounts: ABM Signal Tracker, Anonymous Visito
 LinkedIn Intelligence, LinkedIn Strategy Researcher, LinkedIn Social Researcher, Ad Intelligence and
 Sentiment Pulse. Their runs are not saved per account yet. The 42 North Dental Slot Checker is made for
 one client.
+
+**Sharing every tool reaches the client** (2026-10-12). `tests/test_client_tools.py` proves it for every tool
+in the Share panel:
+
+- An admin can switch each tool on from the panel, and the client then sees it on their home and can
+  open it.
+- Every route under a tool's address is open to the client, or is listed in `TEAM_ONLY` with the reason.
+  Those reasons are: tests and drills, worker health, every client's saved brands, the weekly email,
+  costs, and the Saleshandy reveal.
+- Every link on a shared page, and on the pages a shared tool opens, keeps the client inside their account.
+  In the top bar a page their account has becomes the account's own; any other page of ours is shown as
+  plain text (`crumb_href` in app.py). The team-only links ("Saved brands", "Check every connection") are
+  not shown to clients.

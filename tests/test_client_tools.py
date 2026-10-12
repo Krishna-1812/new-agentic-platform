@@ -8,6 +8,7 @@ counts against the account's monthly limit.
 """
 
 import json
+import re
 
 import pytest
 
@@ -318,3 +319,102 @@ def test_a_client_without_a_referer_still_reaches_the_shared_tools(seeded):
     assert c.get(PW + "/api/watches/%d" % seeded["lumina-mark"]["watch"], headers=XA).status_code == 200
     lib = c.get(VS + "/api/library?account=lumina", headers=XA)
     assert lib.status_code == 200 and "lumina-mark" in lib.get_data(as_text=True)
+
+
+# ── Every tool an admin can share, a client can open and use ──────────────────
+def _tool_page(slug):
+    return "/lumina/" + slug if slug in ("page-watch", "video-studio") else \
+        "/lumina/seo-aeo/" + slug if slug in dict(appmod.ACCT_SEO) else "/lumina/agents/" + slug
+
+
+def test_an_admin_shares_every_tool_from_the_share_panel_and_the_client_gets_each(seeded):
+    """Page Watch and Video Studio once looked shared in the panel and never reached the client."""
+    admin = T._client(sorted(appmod.ADMIN_EMAILS)[0])
+    assert admin.post("/lumina/api/access", json={"who": CLIENT}, headers=FETCH).status_code == 200
+    catalog = appmod._acct_tool_catalog()
+    for t in catalog:
+        r = admin.post("/lumina/api/access/share", json={"share": "tool:" + t["slug"], "on": True}, headers=FETCH)
+        assert r.status_code == 200, (t["slug"], r.get_json())
+        assert next(x for x in r.get_json()["tools"] if x["slug"] == t["slug"])["on"], t["slug"]
+    c = T._client(CLIENT)
+    home = c.get("/lumina").get_data(as_text=True)
+    for t in catalog:
+        assert 'href="%s"' % _tool_page(t["slug"]) in home, "%s is shared but not on the client's home" % t["slug"]
+        assert c.get(_tool_page(t["slug"])).status_code == 200, t["slug"]
+
+
+def test_every_link_on_a_shared_tools_page_stays_open_to_the_client(seeded):
+    """A link a client follows from a tool they were given must not send them back home (the agents
+    page in the breadcrumb, the team's saved brands, the radar's connection check did)."""
+    catalog = appmod._acct_tool_catalog()
+    _share(*[t["slug"] for t in catalog])
+    c = T._client(CLIENT)
+    bad = []
+    pages = ["/lumina"] + [_tool_page(t["slug"]) for t in catalog]
+    pages.append(LBR + "/runs/%d/report" % seeded["lumina-mark"]["lbr"])        # a page opened from a tool
+    pages.append("/lumina/agents/market-radar/report/4")
+    for page in pages:
+        r = c.get(page, headers={"Referer": "http://localhost/lumina/agents/local-business-radar"})
+        assert r.status_code == 200, (page, r.status_code)
+        html = r.get_data(as_text=True)
+        for href in sorted(set(re.findall(r'href="(/[^"#]*)', html))):
+            if href.startswith(("/static/", "/logout", "/auth")):
+                continue
+            r = c.get(href.replace("&amp;", "&"), headers={"Referer": "http://localhost" + page})
+            loc = r.headers.get("Location", "")
+            if r.status_code >= 400 or (300 <= r.status_code < 400 and loc.rstrip("/").endswith("/lumina")):
+                bad.append((page, href, r.status_code))
+    assert not bad, bad
+    staff = T._client(T.RAJ).get("/lumina/video-studio").get_data(as_text=True)
+    assert 'href="/strategic-agents/video-studio/brands"' in staff and 'href="/strategic-agents"' in staff, \
+        "staff keep their links"
+
+
+# Routes of a shareable tool that its clients never reach, and why. Every other route under a tool's
+# address must be open to the clients it is shared with, so a new route cannot be left out by mistake.
+TEAM_ONLY = {
+    "/strategic-agents/page-watch/api/status": "the workers' state, for the team",
+    "/strategic-agents/page-watch/health": "the workers' health, for the team",
+    "/strategic-agents/page-watch/api/watches": "inside an account it is /<account>/api/page-watch/watches",
+    "/strategic-agents/page-watch/changes/<int:change_id>": "inside an account it is /<account>/page-watch/changes/<id>",
+    "/strategic-agents/page-watch/watches/<int:target_id>": "inside an account it is /<account>/page-watch/watches/<id>",
+    "/strategic-agents/video-studio/videos/<int:project_id>": "inside an account it is /<account>/video-studio/videos/<id>",
+    "/strategic-agents/video-studio/brands": "every client's saved brands",
+    "/strategic-agents/video-studio/api/brands": "every client's saved brands",
+    "/strategic-agents/video-studio/engine": "the render engine's tests",
+    "/strategic-agents/video-studio/plans": "the planner's tests",
+    "/strategic-agents/video-studio/api/drills": "the team's drills",
+    "/strategic-agents/video-studio/api/engine-tests": "the render engine's tests",
+    "/strategic-agents/video-studio/api/plan-tests": "the planner's tests",
+    "/strategic-agents/video-studio/api/plan-tests/<int:version_id>/review": "the planner's tests",
+    "/strategic-agents/video-studio/api/plan-tests/build": "the planner's tests",
+    "/strategic-agents/video-studio/api/plan-tests/export": "the planner's tests",
+    "/strategic-agents/local-business-radar/readiness": "which paid services are connected",
+    "/strategic-agents/local-business-radar/selftest": "the connection check",
+    "/strategic-agents/market-radar/api/clients/<int:client_id>/update-now": "sends the weekly email",
+    "/strategic-agents/market-radar/api/cost-report": "what runs cost the agency",
+    "/strategic-agents/market-radar/api/tidy-events": "a one-off tidy for the team",
+    "/strategic-agents/market-radar/api/tidy-suggestions": "a one-off tidy for the team",
+    "/strategic-agents/market-radar/report/<int:client_id>": "inside an account it is /<account>/agents/market-radar/report/<id>",
+    "/strategic-agents/people-signals/api/runs/<int:run_id>/reveal": "spends the agency's Saleshandy credits",
+}
+
+
+def test_every_route_of_a_shareable_tool_is_open_to_its_clients_or_named_team_only():
+    seen = set()
+    for t in appmod._acct_tool_catalog():
+        if t["group"] == "seo":
+            continue
+        prefix = "/strategic-agents/%s/" % t["slug"]
+        for rule in appmod.app.url_map.iter_rules():
+            if not rule.rule.startswith(prefix):
+                continue
+            sample = re.sub(r"<[^>]+>", "x", re.sub(r"<int:[^>]+>", "7", rule.rule))
+            if rule.rule in TEAM_ONLY:
+                seen.add(rule.rule)
+                assert appmod._client_route_tool(sample) is None, "%s is team only but open to clients" % rule.rule
+            else:
+                assert appmod._client_route_tool(sample) == t["slug"], (
+                    "%s: a client the account shares %s with cannot reach it. Add it to CLIENT_TOOL_ROUTES "
+                    "(app.py), or to TEAM_ONLY here with why" % (rule.rule, t["slug"]))
+    assert seen == set(TEAM_ONLY), "a team-only route that no longer exists: %s" % sorted(set(TEAM_ONLY) - seen)

@@ -125,7 +125,10 @@
           <label class="pw-field"><span>Logo</span><input type="file" id="vs-logo" accept="image/png,image/jpeg,image/webp"></label>
           <p class="vs-field-err" data-err="brand" hidden></p>
         </details>
+        {#- Every client's saved brands: the team's page, not a client's. #}
+        {%- if not viewer_is_client() %}
         <a class="vs-link" href="/strategic-agents/video-studio/brands">Saved brands &rarr;</a>
+        {%- endif %}
       </div>
     </div>
 
@@ -185,7 +188,7 @@
   </div>
   <div class="sa-foot-bottom">
     <span>{{ brand.name }} &middot; Internal use only</span>
-    <a href="/strategic-agents">{{ brand.agents_plural }}</a>
+    {%- if crumb_href("/strategic-agents") %}<a href="/strategic-agents">{{ brand.agents_plural }}</a>{% endif %}
   </div>
 </footer>
 

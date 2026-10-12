@@ -105,8 +105,11 @@
     {%- if crumbs %}
     <nav class="bn-crumbs" aria-label="Breadcrumb">
       {%- for label, href in crumbs %}
+      {#- A client follows only links inside their account (app.py crumb_href). -#}
+      {%- set link = crumb_href(href) %}
       {%- if not loop.first %}<span class="bn-crumb-sep">/</span>{% endif %}
-      {%- if href %}<a href="{{ href }}" class="bn-crumb">{{ label }}</a>
+      {%- if link %}<a href="{{ link }}" class="bn-crumb">{{ label }}</a>
+      {%- elif href %}<span class="bn-crumb">{{ label }}</span>
       {%- else %}<span class="bn-crumb-cur" aria-current="page">{{ label }}</span>{% endif %}
       {%- endfor %}
     </nav>
@@ -131,9 +134,12 @@
     {%- if crumbs %}
     <nav class="bn-crumbs" aria-label="Breadcrumb">
       {%- for label, href in crumbs %}
+      {%- set link = crumb_href(href) if acct_client else href %}
       {%- if not loop.first %}<span class="bn-crumb-sep">/</span>{% endif %}
-      {%- if href %}
-      <a href="{{ href }}" class="bn-crumb">{{ label }}</a>
+      {%- if link %}
+      <a href="{{ link }}" class="bn-crumb">{{ label }}</a>
+      {%- elif href %}
+      <span class="bn-crumb">{{ label }}</span>
       {%- else %}
       <span class="bn-crumb-cur" aria-current="page">{{ label }}</span>
       {%- endif %}

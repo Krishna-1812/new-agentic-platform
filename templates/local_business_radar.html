@@ -170,7 +170,9 @@
           {%- set words = {1: 'one', 2: 'two', 3: 'three', 4: 'four'} -%}
           <h2 class="sa-h2" id="lbr-tools-t">Six tools, <em class="sa-it">{{ words.get(n_req, n_req) }}</em> of them essential.</h2>
           {% if source == 'apify' %}<p class="lbr-tools-src">Businesses come from Google Maps itself, read by Apify's Google Maps Scraper; the area's boundary comes from OpenStreetMap.</p>{% endif %}
+          {%- if not viewer_is_client() %}
           <p class="lbr-tools-src"><a class="lbr-tools-check" href="/strategic-agents/local-business-radar/selftest">Check every connection &rarr;</a> Free: nothing is searched or charged.</p>
+          {%- endif %}
         </div>
       </div>
       <div class="lbr-toolgrid">
@@ -224,7 +226,7 @@
   </div>
   <div class="sa-foot-bottom">
     <span>{{ brand.name }} &middot; Internal use only</span>
-    <a href="/strategic-agents">{{ brand.agents_plural }}</a>
+    {%- if crumb_href("/strategic-agents") %}<a href="/strategic-agents">{{ brand.agents_plural }}</a>{% endif %}
   </div>
 </footer>
 
