@@ -6011,8 +6011,8 @@ def account_home(acct):
     if client:      # a client's own tools: only those the account shares with them
         on = set(client_access.tools_on(shares))
         runs = {"seo": [t for t in runs["seo"] if t["slug"] in on], "agents": [t for t in runs["agents"] if t["slug"] in on],
-                "website": runs["website"]}
-        runs = runs if runs["seo"] or runs["agents"] else None
+                "watch": [t for t in _acct_client_watch(acct) if t["slug"] in on], "website": runs["website"]}
+        runs = runs if runs["seo"] or runs["agents"] or runs["watch"] else None
     history = _acct_client_history(acct, shares) if client else _acct_history(acct)
     if runs:
         rows_ = history["rows"] if history else []
@@ -6022,6 +6022,8 @@ def account_home(acct):
         for t in runs["seo"]:
             slug = t["href"].rsplit("/", 1)[-1]
             t["last"] = next((r for r in rows_ if r.get("seo_tool") == slug), None)
+        for t in runs.get("watch") or []:
+            t["last"] = next((r for r in rows_ if r.get("tool") == t["slug"]), None)
     return render_template(
         "account_home.html", user=_get_user(), acct=acct, st=st, profile=p if show_profile else {"fields": 0},
         card=client_accounts.card(acct, st), pages=_acct_pages(acct, shares if client else None),
@@ -6035,6 +6037,19 @@ def account_home(acct):
         shares_history=bool(client_access.tools_on(shares)), history_limit=_acct_history_limit(),
         tool_catalog=None if client else _acct_tool_catalog(),
         runs_left=max(0, _acct_runs_left(acct)) if client and runs else None)
+
+
+def _acct_client_watch(acct):
+    """Page Watch and Video Studio as cards in a client's "Your tools" (the agents' and SEO tools'
+    come from _acct_runs). Staff have their own cards for these two higher on the home."""
+    p = acct["profile"]
+    site = p.get("domain") or ""
+    return [{"href": "/%s/page-watch" % acct["slug"], "slug": "page-watch", "name": "Page Watch",
+             "about": "Know the moment a page changes: prices, offers, headlines, yours or a competitor's",
+             "given": site},
+            {"href": "/%s/video-studio" % acct["slug"], "slug": "video-studio", "name": "Video Studio",
+             "about": "A short video from a brief, in %s's own colours and fonts" % acct["name"],
+             "given": ""}]
 
 
 def _acct_history(acct):

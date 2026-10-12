@@ -270,3 +270,51 @@ def test_page_watch_shows_a_client_their_runs_left_not_our_spend(seeded):
     html = T._client(CLIENT).get("/lumina/page-watch").get_data(as_text=True)
     assert "Runs left this month" in html and "Claude this month" not in html
     assert "Claude this month" in T._client(T.RAJ).get("/lumina/page-watch").get_data(as_text=True)
+
+
+# ── Every tool the Share panel turns on reaches the client ─────────────────────
+def test_page_watch_and_video_studio_are_offered_as_tools_even_alone(seeded):
+    """Shared on their own, they used to leave the client's home with no "Your tools" at all: only
+    the agents' and SEO tools' cards were built for a client, so the two looked unshared."""
+    _share("page-watch", "video-studio")
+    html = T._client(CLIENT).get("/lumina").get_data(as_text=True)
+    assert "Your tools" in html and "Watch &amp; make" in html
+    assert 'class="rx-ag rx-ag--page-watch" href="/lumina/page-watch"' in html
+    assert 'class="rx-ag rx-ag--video-studio" href="/lumina/video-studio"' in html
+
+
+def test_page_watch_alone_is_offered_without_video_studio(seeded):
+    _share("page-watch")
+    html = T._client(CLIENT).get("/lumina").get_data(as_text=True)
+    assert 'href="/lumina/page-watch"' in html and "rx-ag--video-studio" not in html
+
+
+def test_every_tool_the_share_panel_can_turn_on_shows_on_the_home_and_opens(seeded):
+    catalog = appmod._acct_tool_catalog()
+    _share(*[t["slug"] for t in catalog])
+    c = T._client(CLIENT)
+    home = c.get("/lumina").get_data(as_text=True)
+    for t in catalog:
+        s = t["slug"]
+        path = "/lumina/" + s if s in ("page-watch", "video-studio") else \
+            "/lumina/seo-aeo/" + s if s in dict(appmod.ACCT_SEO) else "/lumina/agents/" + s
+        assert 'href="%s"' % path in home, "%s is shared but not offered" % s
+        assert c.get(path).status_code == 200, s
+
+
+def test_the_two_tools_pages_name_their_account_on_every_call(seeded):
+    _share("page-watch", "video-studio")
+    c = T._client(CLIENT)
+    for path in ("/lumina/page-watch", "/lumina/video-studio",
+                 "/lumina/page-watch/watches/%d" % seeded["lumina-mark"]["watch"]):
+        html = c.get(path).get_data(as_text=True)
+        assert 'js/account-context.js?v=1" data-acct="lumina"' in html, path
+
+
+def test_a_client_without_a_referer_still_reaches_the_shared_tools(seeded):
+    """Browsers that strip the Referer: the X-Account header the page now sends is enough."""
+    _share("page-watch", "video-studio")
+    c = T._client(CLIENT)
+    assert c.get(PW + "/api/watches/%d" % seeded["lumina-mark"]["watch"], headers=XA).status_code == 200
+    lib = c.get(VS + "/api/library?account=lumina", headers=XA)
+    assert lib.status_code == 200 and "lumina-mark" in lib.get_data(as_text=True)
