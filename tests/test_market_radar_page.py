@@ -918,3 +918,20 @@ def test_section_heads_say_so_when_there_is_nothing_yet():
     assert "No moves yet." in out["moves"] and "No moves yet" in out["moves"]
     assert "Nothing new nearby." in out["near"] and "mr-prox" not in out["near"]
     assert "No clear themes this month." in out["pulse"] and "Not read yet." in out["pulse"]
+
+
+def test_the_profile_says_how_much_of_the_company_it_could_see():
+    view = {"client": {"id": 1, "domain": "acme.example", "name": "Acme", "radius_km": None},
+            "profile": {"has_reading": True, "fields": {"name": "Acme", "archetype": "ecommerce"}, "edited": [],
+                        "site_reading": {}, "checks": [], "unknowns": [], "evidence": [],
+                        "facts": {"read_from_wikidata_and_wikipedia": True}, "read_at": "2026-10-12T10:00:00Z",
+                        "read_quality": {"grade": "outside", "why": "The website could not be read <b>x</b>."}}}
+    html = run_js("return MR.renderProfile(%s, false, null);" % json.dumps(view))
+    assert "mr-rq--bad" in html and "Website not read" in html and "built from Wikidata and Wikipedia" in html
+    assert "<b>x</b>" not in html, "the reason is escaped"
+    view["profile"]["read_quality"] = {"grade": "full", "why": "The website was read in full (2400 words)."}
+    view["profile"]["facts"] = {}
+    html = run_js("return MR.renderProfile(%s, false, null);" % json.dumps(view))
+    assert "mr-rq--ok" in html and "Read in full" in html
+    view["profile"]["read_quality"] = None
+    assert "mr-rq" not in run_js("return MR.renderProfile(%s, false, null);" % json.dumps(view)).replace("mr-rq-chip", "")

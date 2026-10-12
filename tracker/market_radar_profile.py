@@ -28,6 +28,7 @@ import time
 import requests
 
 from . import market_radar_llm as llm
+from . import market_radar_outside as outside
 from . import market_radar_site as site_reader
 
 logger = logging.getLogger(__name__)
@@ -188,6 +189,7 @@ def facts_for_model(site):
         "program_hints": site.get("hints", []),
         "shopify_store_info": site.get("shopify_store") or "not a Shopify store, or not readable",
         "read_from_archive": bool(site.get("via_archive")),
+        "read_from_wikidata_and_wikipedia": bool(site.get("via_outside")),
     }
 
 
@@ -326,8 +328,11 @@ def assemble(site, parsed, meta):
         "read_from_archive": bool(site.get("via_archive")),
         "read_in_browser": bool(site.get("via_browser")),
         "read_from_apollo": bool(site.get("via_apollo")),
+        "read_from_outside": bool(site.get("via_outside")),
+        "outside": site.get("outside"),
     }
     p["checks"] = checks(site, p)
+    p["read_quality"] = outside.read_quality(site)
     p["coverage"] = {
         "pages": [{k: pg.get(k) for k in ("kind", "url", "status", "note", "via")} for pg in site.get("pages", [])],
         "home_notes": site.get("home_notes", []),
@@ -558,7 +563,7 @@ BROWSER_PAGES = 4
 
 
 def build_profile(url, *, run_id=None, client=None, save=True, conn=None, apollo_enrich=None,
-                  browser=None):
+                  browser=None, outside_get_json=None):
     """Read the site, ask the model, check, locate, store. Returns
     {"status": "ok"|"unreadable"|"failed", "profile", "entity_id", "error"}."""
     from . import market_radar_store as store
@@ -570,11 +575,15 @@ def build_profile(url, *, run_id=None, client=None, save=True, conn=None, apollo
     site = (site_reader.read_site(url, browser=browser, browser_pages=BROWSER_PAGES)
             if browser else site_reader.read_site(url))
     if site["status"] != "ok" or not site.get("texts"):
-        stand_in = apollo_reading(site, run_id=run_id, enrich=apollo_enrich)
+        # Free sources first (Wikidata, Wikipedia); Apollo's paid record only if they have nothing.
+        stand_in = outside.outside_reading(site, get_json=outside_get_json) or \
+            apollo_reading(site, run_id=run_id, enrich=apollo_enrich)
         if stand_in is None:
             return {"status": "unreadable", "profile": None, "entity_id": None,
                     "error": "the homepage could not be read", "pages": site.get("pages")}
         site = stand_in
+    elif outside.thin(site):
+        site = outside.add_outside(site, get_json=outside_get_json)
     try:
         parsed, meta = ask_model(facts_for_model(site), build_corpus(site), run_id=run_id,
                                  client=client)

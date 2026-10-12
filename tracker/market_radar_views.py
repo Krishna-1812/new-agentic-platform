@@ -266,9 +266,12 @@ def profile_view(client):
         "confidence": reading.get("confidence") or {},
         "facts": {k: facts.get(k) for k in ("website", "platforms", "socials", "jobs_boards",
                                             "store_locator", "read_from_archive",
-                                            "read_in_browser", "read_from_apollo")},
+                                            "read_in_browser", "read_from_apollo",
+                                            "read_from_wikidata_and_wikipedia")},
         "read_at": reading.get("read_at"),
         "model": reading.get("model"),
+        "read_quality": reading.get("read_quality"),
+        "outside": facts.get("outside"),
     }
 
 
