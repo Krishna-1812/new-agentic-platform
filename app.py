@@ -67,6 +67,31 @@ _SITE_HOST = SITE_URL.split("://", 1)[-1].split("/", 1)[0].lower()
 from werkzeug.middleware.proxy_fix import ProxyFix  # noqa: E402
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=0, x_proto=1)
 
+# Where a slow page spends its time (tracker/request_timing.py): staff see it in the browser's Network tab
+# (Timing → Server Timing), and any request over SLOW_REQUEST_S seconds (default 1.5) is logged with how long
+# its database connections took.
+from flask import has_request_context as _has_request_context  # noqa: E402
+from tracker import request_timing as _request_timing  # noqa: E402
+_request_timing.install(g, _has_request_context)
+
+
+@app.before_request
+def _time_the_request():
+    _request_timing.begin(g)
+
+
+@app.after_request
+def _report_the_request_time(resp):
+    try:
+        email = ((session.get("google_user") or {}).get("email") or "").lower()
+        value = _request_timing.finish(g, request.method, request.path, resp.status_code,
+                                       staff=bool(email) and _is_staff(email), logger=app.logger)
+        if value:
+            resp.headers["Server-Timing"] = value
+    except Exception:
+        app.logger.debug("request timing failed", exc_info=True)
+    return resp
+
 
 @app.before_request
 def _to_the_sites_address():
