@@ -272,6 +272,9 @@ def profile_view(client):
         "model": reading.get("model"),
         "read_quality": reading.get("read_quality"),
         "outside": facts.get("outside"),
+        # What Market Radar watches for this kind of business (tracker/market_radar_playbooks.py).
+        "playbook": {"label": playbooks.get(eff.get("archetype"))["label"],
+                     "watch": playbooks.get(eff.get("archetype"))["watch"]},
     }
 
 

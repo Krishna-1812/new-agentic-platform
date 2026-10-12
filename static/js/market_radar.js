@@ -410,7 +410,22 @@
           '</b><small>' + esc(s[2]) + '</small></div>' + btn + '</li>';
       }).join('') + '</ol></div>';
 
-    return '<div class="mr-ov">' + cmd + '<div class="mr-ov-grid">' + hot + board + '</div>' + next + '</div>';
+    return '<div class="mr-ov">' + cmd + '<div class="mr-ov-grid">' + hot + board + '</div>' + fieldNow(state.rivals, p.playbook) + next + '</div>';
+  }
+
+  // The field in one strip: is it heating up, what several rivals are doing, and what is watched for this kind of business.
+  function fieldNow(r, pb) {
+    var pats = ((r || {}).patterns || []).slice(0, 3);
+    var heat = ((r || {}).heat || {}).label;
+    var left = pats.length ? '<ul class="mr-fn-l">' + pats.map(function (x) {
+      return '<li><i>' + (PATTERN_ICON[x.kind] || '&bull;') + '</i><span>' + esc(x.text) + '</span></li>';
+    }).join('') + '</ul>' : '<p class="mr-hint">Patterns appear when several rivals have been collected.</p>';
+    var watch = pb && (pb.watch || []).length ? '<div class="mr-fn-w"><span class="mr-k">What we watch for ' + esc(String(pb.label || '').toLowerCase()) +
+      '</span><div>' + pb.watch.map(function (w) { return '<span class="mr-chip">' + esc(w) + '</span>'; }).join('') + '</div></div>' : '';
+    if (!pats.length && !watch) return '';
+    return '<div class="card mr-card mr-fn"><div class="mr-card-h"><div><h3>' + esc(HEAT[heat] || 'The field right now') +
+      '</h3><p>What several rivals are doing at once.</p></div><button type="button" class="mr-btn small" data-act="section" data-section="rivals">Rival cards</button></div>' +
+      '<div class="mr-card-b mr-fn-b">' + left + watch + '</div></div>';
   }
 
   // == the rail ======================================================================
@@ -522,16 +537,35 @@
     if (editing) {
       return '<div class="card mr-card">' + head + '<div class="mr-card-b">' + checks + body + renderLocation(view) + '</div></div>';
     }
-    var ev = renderEvidence(p);
-    var keys = ev ? ['what', 'where', 'evidence'] : ['what', 'where'];
+    var ev = renderEvidence(p), pub = renderPublic(p);
+    var keys = ['what', 'where'].concat(pub ? ['public'] : [], ev ? ['evidence'] : []);
+    var names = { what: 'What they do', where: 'Where', public: 'Public records', evidence: 'What the website says' };
     var on = pick(tab, keys);
     return '<div class="mr-ov">' + profileHead(view) + '<div class="card mr-card mr-prof">' + head + '<div class="mr-card-b">' + checks +
-      tabs('profile', [['what', 'What they do'], ['where', 'Where'], ['evidence', 'What the website says']].slice(0, keys.length), on) +
+      tabs('profile', keys.map(function (k) { return [k, names[k]]; }), on) +
       pane('profile', 'what', on, body) + pane('profile', 'where', on, renderLocation(view)) +
+      (pub ? pane('profile', 'public', on, pub) : '') +
       (ev ? pane('profile', 'evidence', on, ev) : '') + '</div></div></div>';
   }
 
   /** The profile's head: who they are in a line, four figures, and where they are. */
+  // What Wikidata and Wikipedia say about the company (tracker/market_radar_outside.py), when they were read.
+  function renderPublic(p) {
+    var o = p.outside;
+    if (!o) return '';
+    var list = function (v) { return Array.isArray(v) ? v.join(', ') : v; };
+    var rows = [['Description', o.description], ['Kind of organisation', list(o.kind)], ['Industry', list(o.industry)],
+      ['Head office', list(o.head_office)], ['Country', list(o.country)], ['Founded', o.founded], ['Staff', o.employees ? Number(o.employees).toLocaleString('en-US') + (o.employees_year ? ' (' + o.employees_year + ')' : '') : ''],
+      ['Revenue', o.revenue ? (o.revenue >= 1e9 ? (o.revenue / 1e9).toFixed(1).replace(/\.0$/, '') + ' billion' : (o.revenue / 1e6).toFixed(0) + ' million') + (o.revenue_year ? ' (' + o.revenue_year + ')' : '') : ''],
+      ['Chief executive', list(o.ceo)], ['Founders', list(o.founders)], ['Part of', list(o.parent)], ['Owned by', list(o.owners)],
+      ['Listed on', list(o.listed_on)]].filter(function (r) { return r[1]; });
+    if (!rows.length) return '';
+    return '<div class="mr-public"><p class="mr-hint">From Wikidata' + (o.wikipedia_title ? ' and Wikipedia' : '') +
+      ', the record whose official website is this company\'s. Revenue is in the record\'s own currency, which is not shown here.</p><dl class="mr-facts">' + rows.map(function (r) {
+      return '<div><dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd></div>';
+    }).join('') + '</dl></div>';
+  }
+
   function profileHead(view) {
     var p = view.profile || {}, f = p.fields || {}, c = view.client || {};
     var offers = f.offerings || [], mk = f.markets || [], locs = f.location_count, sites = p.sites || [];

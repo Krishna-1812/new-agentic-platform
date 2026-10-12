@@ -197,7 +197,8 @@ def _money(v):
         return None
     for limit, word in ((1e9, "billion"), (1e6, "million")):
         if abs(v) >= limit:
-            return "%.1f %s" % (v / limit, word)
+            n = "%.1f" % (v / limit)
+            return "%s %s" % (n[:-2] if n.endswith(".0") else n, word)
     return "%d" % v
 
 

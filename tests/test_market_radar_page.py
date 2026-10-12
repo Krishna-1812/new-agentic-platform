@@ -957,3 +957,26 @@ def test_the_rival_cards_route_reads_stored_readings_and_only_for_the_owner(clie
     assert c.get(BASE + "/api/clients/999999/rivals").status_code == 404
     other = _client(OTHER)
     assert other.get(BASE + "/api/clients/%d/rivals" % w["client"]).status_code in (302, 404)
+
+
+def test_the_profile_lists_public_records_and_the_overview_says_what_is_watched_for_this_kind_of_business():
+    view = {"client": {"id": 1, "domain": "acme.example", "name": "Acme", "radius_km": None},
+            "profile": {"has_reading": True, "fields": {"name": "Acme", "archetype": "professional_services"}, "edited": [],
+                        "site_reading": {}, "checks": [], "unknowns": [], "evidence": [], "facts": {},
+                        "outside": {"description": EVIL, "industry": ["law"], "employees": 4500, "employees_year": "2025",
+                                    "revenue": 2.5e9, "revenue_year": "2025", "ceo": ["Ann Lee"], "wikipedia_title": "Acme"},
+                        "playbook": {"label": "Professional services (law, accounting, consulting)",
+                                     "watch": ["Partners and senior people joining or leaving", "Rankings and awards"]}},
+            "competitors": [], "last_run": None}
+    rivals = {"heat": {"label": "heating_up"}, "patterns": [{"kind": "hiring", "text": "3 of 5 rivals are hiring", "rivals": []}],
+              "rivals": [], "counts": {}}
+    out = run_js("""const v = %s, r = %s; return {profile: MR.renderProfile(v, false, null, 'public'),
+        overview: MR.renderOverview({view: Object.assign({competitors: []}, v), moves: null, rivals: r})};""" % (
+        json.dumps(view), json.dumps(rivals)))
+    prof = out["profile"]
+    assert "Public records" in prof and "4,500 (2025)" in prof and "2.5 billion (2025)" in prof and "Ann Lee" in prof
+    assert "$" not in prof.split("mr-public")[1].split("</dl>")[0], "the record's currency is not known, so none is shown"
+    _no_markup_from(prof)
+    ov = out["overview"]
+    assert "The field is heating up" in ov and "3 of 5 rivals are hiring" in ov
+    assert "What we watch for professional services (law, accounting, consulting)" in ov and "Rankings and awards" in ov

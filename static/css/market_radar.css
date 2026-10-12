@@ -706,8 +706,11 @@
 .mr-rc-buzz b { color: var(--tx); margin-right: 4px; }
 .mr-rc-buzz em { font-style: normal; font-weight: 700; color: #B83C0C; }
 .mr-rc-moves ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
-.mr-rc-moves li { display: grid; grid-template-columns: 46px 1fr; gap: 12px; align-items: center; font-size: 13.5px; line-height: 1.4; }
-.mr-rc-moves .mr-dt { transform: scale(.78); transform-origin: left center; margin: -4px 0; }
+.mr-rc-moves li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; font-size: 13.5px; line-height: 1.4; }
+.mr-rc-moves li > div { min-width: 0; overflow-wrap: anywhere; }
+.mr-rc-moves .mr-dt { width: auto; grid-auto-flow: column; gap: 5px; align-items: baseline; padding: 5px 10px; justify-self: start; }
+.mr-rc-moves .mr-dt b { font-size: 15px; }
+.mr-rc-moves .mr-dt span, .mr-rc-moves .mr-dt small { margin: 0; }
 .mr-rc-moves a { color: var(--tx); text-decoration-color: var(--line); }
 .mr-rc-none { margin: 0; font-size: 13px; color: var(--tx3); }
 .mr-pat ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 12px; }
@@ -718,3 +721,18 @@
 .mr-pat li small { display: block; margin-top: 2px; font-size: 12px; opacity: .7; }
 @media (max-width: 600px) { .mr-rc-facts { grid-template-columns: 1fr; } .mr-rc { padding: 18px 16px; } }
 @media (prefers-reduced-motion: reduce) { .mr-rc { transition: none; } .mr-rc:hover { transform: none; } }
+
+/* == The field right now (Overview) ======================================================= */
+.mr-fn-b { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.mr-fn-l { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.mr-fn-l li { display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: center; font-size: 14.5px; line-height: 1.4; font-weight: 600; }
+.mr-fn-l li i { font-style: normal; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px;
+  background: var(--acc); color: var(--ink); font-size: 14px; font-weight: 700; }
+.mr-fn-w > div { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+@media (max-width: 760px) { .mr-fn-b { grid-template-columns: 1fr; } }
+
+/* == Public records tab (Profile) ======================================================== */
+.mr-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; margin: 12px 0 0; }
+.mr-facts > div { padding: 12px 14px; border-radius: 14px; background: var(--s2); min-width: 0; }
+.mr-facts dt { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--tx3); }
+.mr-facts dd { margin: 4px 0 0; font-size: 14.5px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
