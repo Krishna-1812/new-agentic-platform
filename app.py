@@ -5586,7 +5586,7 @@ CLIENT_TOOL_ROUTES = {
         r"thought-leader-pr/(resolve|search|runs/\d+(/(collect|collect-press|collect-reaction|collect-synthesis|confirm))?)",),
     # Not the weekly email (its settings are read-only to a client), the one-off tidies or the cost report.
     "market-radar": (
-        r"market-radar/api/(runs(/\d+)?|clients(/\d+(/(profile|competitors(/\d+)?|collect|moves|rivals|monitor|report|"
+        r"market-radar/api/(runs(/\d+)?|clients(/\d+(/(profile|competitors(/\d+)?|collect|moves|rivals|map|monitor|report|"
         r"report/pdf|events/\d+/feedback))?)?)",),
     # The free mapping only: never a reveal, which spends the agency's Saleshandy credits.
     "people-signals": (r"people-signals/api/(status|estimate|runs(/\d+(/export\.csv)?)?)",),
@@ -11501,6 +11501,24 @@ def admin_market_radar_rivals(client_id):
         return jsonify(error="The database is unavailable (%s)." % e), 503
     if out is None:
         return jsonify(error="No such company of yours."), 404
+    return jsonify(out)
+
+
+@app.route("/strategic-agents/market-radar/api/clients/<int:client_id>/map")
+@position2_required
+def admin_market_radar_map(client_id):
+    """Where the client's sites and its rivals are (tracker/market_radar_map.py), for the Overview's map.
+    Free: stored coordinates, plus cached OpenStreetMap lookups of the towns rivals state."""
+    from tracker import market_radar_map as mr_map, market_radar_store as mr_store
+    try:
+        out = mr_map.map_view(client_id, _mr_email(), store=mr_store)
+    except mr_store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+    if out is None:
+        return jsonify(error="No such company of yours."), 404
+    out["tiles"] = {"url": os.environ.get("MR_MAP_TILES") or "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    "attribution": os.environ.get("MR_MAP_ATTRIBUTION") or
+                    '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'}
     return jsonify(out)
 
 

@@ -57,3 +57,31 @@ the paid browser:
 | Tools reader answered | 76% (the rest: the site refused) |
 
 Before this work, the 12 sites that refused the reader had no profile at all.
+
+## 6. The map
+
+The Overview's radar dial was replaced by a real map: the client's own sites and every rival pinned where it is
+(`static/js/market_radar_map.js`, Leaflet over OpenStreetMap; data from `GET .../api/clients/<id>/map`,
+`tracker/market_radar_map.py`).
+
+How a rival is placed, most precise first:
+
+- **Map listing.** A rival the map data lists (a nearby clinic, a branch) is pinned at its listing's coordinates,
+  stored when the competitor search found it (`lat` and `lon` in the competitor's details).
+- **Stated location.** A rival found from its website is pinned at the town or address its homepage was judged to
+  give, looked up in OpenStreetMap's Nominatim. Each lookup is cached for good and spaced a second apart, and one
+  call makes at most six, so a client with twenty rivals fills in over a few loads (`pending` says how many are
+  left; the page asks again). A pin from a stated town is a town, not a street, and the map says so.
+- **Not placed.** A rival with no stated base ("online only", "worldwide") is listed under the map as not placed.
+  It is never put somewhere to fill the picture.
+
+A business that competes by neighbourhood opens on its neighbourhood (rivals within twice its search radius, at
+least 10 km); "Show all" widens to every pin, which is what an online brand opens on. Pins that would overlap
+become one counted pin; the client's own pin is always on top and a rival at the same spot is drawn beside it.
+New places the radar found near the client's sites are small green marks (opened) or blue ones (coming soon).
+
+Map tiles come from OpenStreetMap's public servers by default, loaded by the viewer's browser, so OpenStreetMap
+sees the viewer's address and which tiles were asked for. Its policy suits an internal tool; for heavy use, set
+`MR_MAP_TILES` (an `https://` address with `{z}/{x}/{y}`) and `MR_MAP_ATTRIBUTION` in Railway → web → Variables
+to a paid tile provider. Leaflet itself is vendored in `static/vendor/leaflet/` (BSD licence), so no script is
+loaded from anyone else's server.

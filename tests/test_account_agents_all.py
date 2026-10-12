@@ -110,6 +110,7 @@ def test_a_people_signals_run_in_an_account_is_filed_to_it_with_who_started_it(s
 @pytest.mark.parametrize("path, tool", [
     (MR + "/api/clients", "market-radar"), (MR + "/api/clients/4", "market-radar"),
     (MR + "/api/clients/4/moves", "market-radar"), (MR + "/api/clients/4/rivals", "market-radar"),
+    (MR + "/api/clients/4/map", "market-radar"),
     (MR + "/api/clients/4/report", "market-radar"),
     (MR + "/api/clients/4/monitor", "market-radar"), (MR + "/api/runs", "market-radar"),
     (MR + "/api/runs/9", "market-radar"), (MR + "/api/clients/4/competitors/2", "market-radar"),

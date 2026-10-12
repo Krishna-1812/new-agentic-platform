@@ -240,91 +240,20 @@
     }).join('');
   }
 
-  // == the radar of rivals =============================================================
+  // == the map of rivals ==============================================================
   //
-  // Each rival is a blip: its quarter is its kind, its distance from the
-  // centre is how closely to watch it (the higher the score, the closer).
-  // The sweep passes every blip once a turn and it pings as it does.
+  // The Overview's map (static/js/market_radar_map.js) puts the client's sites and each rival where they are.
+  // This only leaves a slot for it: the page repaints often, and mountMap() hands the slot to the map after
+  // each repaint so the view the user chose is kept.
 
-  var SWEEP_S = 6;
-  var QUARTER = { direct: 0, local: 90, indirect: 180, aspirational: 270 };
   function hashOf(s) {
     var h = 0;
     s = String(s || '');
     for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
     return h;
   }
-  function blips(rows) {
-    var pts = (rows || []).filter(function (r) { return r.status !== 'removed'; }).map(function (r) {
-      var score = r.score != null ? r.score : (r.confidence != null ? Math.round(r.confidence * 100) : 50);
-      return { r: r, score: Math.max(0, Math.min(100, Number(score) || 0)) };
-    });
-    // Distance is relative to this set, so a list scored 55 to 88 fills the
-    // scope instead of bunching at the centre.
-    var hi = Math.max.apply(null, pts.map(function (p) { return p.score; }).concat([0]));
-    var lo = Math.min.apply(null, pts.map(function (p) { return p.score; }).concat([100]));
-    var span = Math.max(hi - lo, 20);
-    // Each quarter's blips are spread evenly across it, the order fixed by
-    // domain so a blip keeps its place from one visit to the next.
-    var byQ = {};
-    pts.forEach(function (p) {
-      var q = QUARTER[p.r.kind] != null ? QUARTER[p.r.kind] : 0;
-      (byQ[q] = byQ[q] || []).push(p);
-    });
-    Object.keys(byQ).forEach(function (q) {
-      var list = byQ[q].sort(function (x, y) { return hashOf(x.r.domain || x.r.name) - hashOf(y.r.domain || y.r.name); });
-      list.forEach(function (p, i) {
-        p.a = Number(q) + 90 * (i + 0.5) / list.length + (hashOf(p.r.name) % 9) - 4;
-        p.d = 0.22 + (hi - p.score) / span * 0.68;
-      });
-    });
-    return pts;
-  }
-
-  function renderRadarPlot(rows, size) {
-    var S = size || 360, C = S / 2, R = C - 26;
-    var pts = blips(rows);
-    var rings = [1, 2, 3].map(function (i) {
-      return '<circle cx="' + C + '" cy="' + C + '" r="' + (R * i / 3).toFixed(1) + '" class="mr-pl-ring"/>';
-    }).join('');
-    var axes = '<path class="mr-pl-axis" d="M' + C + ' ' + (C - R) + 'V' + (C + R) + 'M' + (C - R) + ' ' + C + 'H' + (C + R) + '"/>';
-    var q = [['Direct', 'end', C + R * 0.74, C - R * 0.94], ['Nearby', 'end', C + R * 0.74, C + R * 0.99],
-      ['Indirect', 'start', C - R * 0.74, C + R * 0.99], ['Bigger players', 'start', C - R * 0.74, C - R * 0.94]];
-    var labels = q.map(function (l) {
-      return '<text class="mr-pl-q" text-anchor="' + l[1] + '" x="' + l[2].toFixed(1) + '" y="' + l[3].toFixed(1) + '">' + l[0] + '</text>';
-    }).join('');
-    // A wedge trailing the hand: flat, translucent, no gradient.
-    var w = 34 * Math.PI / 180;
-    var sweep = '<g class="mr-pl-sweep" style="animation-duration:' + SWEEP_S + 's;transform-origin:' + C + 'px ' + C + 'px">' +
-      '<path class="mr-pl-wedge" d="M' + C + ' ' + C + 'L' + (C - R * Math.sin(w)).toFixed(1) + ' ' + (C - R * Math.cos(w)).toFixed(1) +
-      'A' + R + ' ' + R + ' 0 0 1 ' + C + ' ' + (C - R) + 'Z"/><path class="mr-pl-hand" d="M' + C + ' ' + C + 'V' + (C - R) + '"/></g>';
-    pts.forEach(function (p) {
-      var rad = p.a * Math.PI / 180;
-      p.x = C + Math.sin(rad) * p.d * R; p.y = C - Math.cos(rad) * p.d * R;
-    });
-    // Names for the five to watch most, unless one would sit on another.
-    var named = [];
-    pts.slice().sort(function (a, b) { return b.score - a.score; }).forEach(function (p) {
-      if (named.length >= 5) return;
-      var right = p.x > C;
-      if (named.some(function (q) { return (q.x > C) === right && Math.abs(q.y - p.y) < 16 && Math.abs(q.x - p.x) < 130; })) return;
-      named.push(p);
-    });
-    var top = named;
-    var dots = pts.map(function (p) {
-      var x = p.x, y = p.y;
-      var hue = KIND_HUE[p.r.kind] || 'ink', delay = (((p.a % 360) + 360) % 360 / 360 * SWEEP_S).toFixed(2);
-      var name = p.r.name || p.r.domain || '';
-      var lab = top.indexOf(p) >= 0 ? '<text class="mr-pl-lab" x="' + (x + (x > C ? 11 : -11)).toFixed(1) + '" y="' + (y + 4).toFixed(1) +
-        '" text-anchor="' + (x > C ? 'start' : 'end') + '">' + esc(name.length > 18 ? name.slice(0, 17) + '…' : name) + '</text>' : '';
-      return '<g class="mr-pl-b h-' + hue + (p.r.status === 'proposed' ? ' open' : '') + '">' +
-        '<circle class="mr-pl-ping" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="7" style="--ping:' + delay + 's;animation-duration:' + SWEEP_S + 's"/>' +
-        '<circle class="mr-pl-dot" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="6"/>' + lab +
-        '<title>' + esc(name) + ' · ' + esc(label(KINDS, p.r.kind)) + ' · watch score ' + esc(p.score) + (p.r.status === 'proposed' ? ' · to review' : '') + '</title></g>';
-    }).join('');
-    return '<svg class="mr-plot" viewBox="0 0 ' + S + ' ' + S + '" role="img" aria-label="Radar of ' + esc(pts.length) +
-      ' competitors: the nearer the centre, the more closely to watch">' + rings + axes + labels + sweep + dots +
-      '<circle cx="' + C + '" cy="' + C + '" r="9" class="mr-pl-you"/><circle cx="' + C + '" cy="' + C + '" r="16" class="mr-pl-you2"/></svg>';
+  function renderMapSlot() {
+    return '<div class="mr-mapslot" id="mrMapSlot"><div class="mr-map-wait"><i></i>Placing your rivals on the map…</div></div>';
   }
 
   // == the overview ====================================================================
@@ -352,10 +281,7 @@
       kpi('moves', 'k-paper', m ? f.high : '–', 'High-impact', m ? 'of ' + f.moves + ' moves' : 'loading') +
       kpi('nearby', 'k-sky', m ? f.near + f.brands : '–', 'New nearby', f.brands ? f.brands + ' new brands' : 'openings') +
       kpi('pulse', 'k-cream', m ? f.themes : '–', 'Industry themes', 'this month') +
-      '</div></div><div class="mr-cmd-r">' + renderRadarPlot(rows) +
-      '<div class="mr-legend">' + KINDS.map(function (k) {
-        return '<span class="h-' + KIND_HUE[k[0]] + '"><i></i>' + esc(k[1]) + '</span>';
-      }).join('') + '<span class="open"><i></i>To review</span></div></div></div>';
+      '</div></div><div class="mr-cmd-r">' + renderMapSlot() + '</div></div>';
 
     // The moves that matter most, at most three.
     var top = [];
@@ -1303,7 +1229,7 @@
     var watch = (c.watch || []).map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('');
     var h = c.hiring;
     var buzz = c.buzz ? '<p class="mr-rc-buzz"><b>On Hacker News</b> ' + esc(c.buzz.title) + ' <em>' + esc(c.buzz.points) + ' points</em></p>' : '';
-    return '<article class="mr-rc mr-rc--' + esc((c.momentum || {}).label || 'steady') + '">' +
+    return '<article class="mr-rc mr-rc--' + esc((c.momentum || {}).label || 'steady') + '" data-domain="' + esc(c.domain) + '">' +
       '<header class="mr-rc-h">' + mono(c.name, c.kind) + '<div class="mr-rc-n"><b>' +
       (site ? '<a href="' + esc(site) + '" target="_blank" rel="noopener noreferrer">' + esc(c.name) + '</a>' : esc(c.name)) + '</b><span>' +
       esc(c.domain) + '</span></div><span class="mr-mom ' + m[0] + '">' + esc(m[1]) + '</span></header>' +
@@ -1385,7 +1311,7 @@
     renderProgress: renderProgress, renderProfile: renderProfile, renderCompetitors: renderCompetitors,
     renderRow: renderRow, renderRun: renderRun, renderDetail: renderDetail, formChanges: formChanges,
     renderMoves: renderMoves, renderMoveRow: renderMoveRow, renderRivals: renderRivals, renderRadar: renderRadar, renderPulse: renderPulse, renderMonitor: renderMonitor,
-    renderNav: renderNav, renderOverview: renderOverview, renderRadarPlot: renderRadarPlot, SECTIONS: SECTIONS,
+    renderNav: renderNav, renderOverview: renderOverview, renderMapSlot: renderMapSlot, SECTIONS: SECTIONS,
     FIELDS: FIELDS, STAGE_STEP: STAGE_STEP };
   root.MR = MR;
 
@@ -1394,7 +1320,7 @@
   if (typeof document === 'undefined' || !document.getElementById('mr')) return;
 
   var state = { clients: [], selected: null, view: null, filter: null, editing: false, errors: null,
-    run: null, poll: null, moves: null, collect: null, collectPoll: null, monitor: null, rivals: null,
+    run: null, poll: null, moves: null, collect: null, collectPoll: null, monitor: null, rivals: null, map: null,
     section: 'overview', tabs: {} };
   var $ = function (id) { return document.getElementById(id); };
 
@@ -1446,7 +1372,30 @@
     var on = nav.querySelector('.on');
     if (on && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = Math.max(0, on.offsetLeft - 16);
   }
-  function paint() { $('mrDetail').innerHTML = renderDetail(state); paintNav(); }
+  function paint() { $('mrDetail').innerHTML = renderDetail(state); paintNav(); mountMap(); }
+  // Hands the Overview's slot to the map (static/js/market_radar_map.js), which keeps its view across repaints.
+  function mountMap() {
+    var slot = $('mrMapSlot');
+    if (!slot || !window.MRMap) return;
+    var status = {};
+    ((state.view || {}).competitors || []).forEach(function (r) { status[r.entity_id] = r.status; });
+    var found = ((((state.moves || {}).radar || {}).local || {}).findings) || [];
+    window.MRMap.attach(slot, state.map, { key: state.selected, esc: esc, opened: found,
+      status: function (id, fallback) { return status[id] || fallback; }, onOpen: openRival });
+  }
+  // A pin's "Open rival card": the Rival cards section, scrolled to that rival.
+  function openRival(domain) {
+    showSection('rivals');
+    var cards = document.querySelectorAll('#mrDetail .mr-rc');
+    for (var i = 0; i < cards.length; i++) {
+      if (cards[i].getAttribute('data-domain') === domain) {
+        cards[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        cards[i].classList.add('flash');
+        setTimeout(function (c) { c.classList.remove('flash'); }.bind(null, cards[i]), 2200);
+        return;
+      }
+    }
+  }
   function setHash() {
     var h = '#company-' + state.selected + (state.section !== 'overview' ? '/' + state.section : '');
     try { history.replaceState(null, '', h); } catch (e) { /* ignore */ }
@@ -1458,6 +1407,7 @@
       p.hidden = p.getAttribute('data-panel') !== state.section;
     });
     paintNav(); setHash();
+    if (state.section === 'overview' && window.MRMap) window.MRMap.refresh();
     var top = $('mrDetail').getBoundingClientRect().top + window.pageYOffset - 96;
     if (window.pageYOffset > top) window.scrollTo({ top: top, behavior: 'smooth' });
   }
@@ -1502,6 +1452,17 @@
       state.rivals = r; paint();
     }).catch(function (e) { toast('Rival cards: ' + e.message); });
   }
+  // Rivals are placed a few at a time (each town is looked up once and remembered), so ask again while some are pending.
+  function loadMap(tries) {
+    var id = state.selected;
+    return api('/clients/' + id + '/map').then(function (m) {
+      if (state.selected !== id) return;
+      state.map = m; paint();
+      if (m.pending && (tries || 0) < 8) setTimeout(function () { if (state.selected === id) loadMap((tries || 0) + 1); }, 1200);
+    }).catch(function (e) {
+      if (state.selected === id) { state.map = { error: e.message }; paint(); }
+    });
+  }
   function loadMoves() {
     var id = state.selected;
     return api('/clients/' + id + '/moves').then(function (m) {
@@ -1521,15 +1482,15 @@
         if (r.status === 'running' && !r.stale) { paint(); state.collectPoll = setTimeout(tick, 5000); return; }
         state.collect = null;
         toast(r.status === 'complete' ? 'Collection finished.' : 'The collection did not finish: ' + (r.error || r.stale || r.status));
-        loadMoves(); loadMonitor(); loadRivals();
+        loadMoves(); loadMonitor(); loadRivals(); loadMap();
       }).catch(function () { state.collectPoll = setTimeout(tick, 8000); });
     }
     tick();
   }
   function loadView() {
     var id = state.selected;
-    state.moves = null; state.collect = null; state.monitor = null; state.rivals = null; clearTimeout(state.collectPoll);
-    loadMoves(); loadMonitor(); loadRivals();
+    state.moves = null; state.collect = null; state.monitor = null; state.rivals = null; state.map = null; clearTimeout(state.collectPoll);
+    loadMoves(); loadMonitor(); loadRivals(); loadMap();
     return api('/clients/' + id).then(function (v) {
       if (state.selected !== id) return;
       state.view = v;
