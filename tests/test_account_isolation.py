@@ -130,6 +130,8 @@ def _urls(slug):
         if not rule.rule.startswith("/<acct:slug>") or "GET" not in rule.methods or rule.rule in INT_ROUTES:
             continue
         path = rule.rule.replace("<acct:slug>", slug)
+        # Market Radar's report page is a shell: its data comes from routes that check the owner.
+        path = path.replace("/market-radar/report/<int:client_id>", "/market-radar/report/1")
         if "<agent_slug>" in path:
             out += [(rule.rule, path.replace("<agent_slug>", a[0])) for a in appmod.ACCT_AGENTS]
         elif "<tool_slug>" in path:

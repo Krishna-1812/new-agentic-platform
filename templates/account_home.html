@@ -12,7 +12,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head(acct.name, ["account-space.css?v=17"]) }}
+{{ head(acct.name, ["account-space.css?v=18"]) }}
 </head>
 <body class="as-page">
 
@@ -220,6 +220,10 @@
   <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><g class="rx-lens"><circle cx="17.5" cy="13.5" r="3"/><path d="m19.7 15.7 2.3 2.3"/></g></svg>
   {%- elif slug == "thought-leader-pr" -%}
   <svg viewBox="0 0 24 24"><path d="M3 10v4a1 1 0 0 0 1 1h3l6 4V5L7 9H4a1 1 0 0 0-1 1z"/><path d="M8 15.2 9.3 20h2.4"/><path class="rx-wave" d="M16.5 9a4 4 0 0 1 0 6"/><path class="rx-wave rx-wave--2" d="M19 6.5a7.5 7.5 0 0 1 0 11"/></svg>
+  {%- elif slug == "market-radar" -%}
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path class="rx-trend" d="M3 12h4l2.5-5 4 10 2.5-5h5"/></svg>
+  {%- elif slug == "people-signals" -%}
+  <svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3.2"/><path d="M2.5 20a5.5 5.5 0 0 1 11 0"/><path class="rx-wave" d="M16 8.5a3 3 0 0 1 0 5"/><path class="rx-wave rx-wave--2" d="M18.6 6a6.5 6.5 0 0 1 0 10"/></svg>
   {%- elif slug in ("seo-geo-audit", "seo-geo-snapshot") -%}
   <svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0"/><path class="rx-needle" d="M12 18l4-6"/><circle cx="12" cy="18" r="1.3"/>{% if slug == "seo-geo-snapshot" %}<path d="M3 21h18"/>{% endif %}</svg>
   {%- elif slug == "on-page-audit" -%}

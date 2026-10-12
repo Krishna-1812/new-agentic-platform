@@ -5395,7 +5395,29 @@ ACCT_AGENTS = (
      "Decision-makers at the company", (("#fpCompanyDomain", "domain"),)),
     ("thought-leader-pr", "thought_leader_pr", "/strategic-agents/thought-leader-pr", "Thought Leader Intelligence",
      "Their leaders' presence and PR openings", (("#tlprCompany", "name"),)),
+    ("market-radar", "admin_market_radar", "/strategic-agents/market-radar", "Market Radar",
+     "Their rivals' moves, new places nearby and their industry's news", (("#mrAddUrl", "website"),)),
+    ("people-signals", "admin_account_mapper", "/strategic-agents/people-signals", "People & Signals",
+     "The right people at their target accounts, and what each account is doing", ()),
 )
+# Every agent on the agents page (templates/b2b_agents.html) is in ACCT_AGENTS, so it opens inside every
+# account, for the whole team and for clients the account shares it with; tests/test_account_agents_all.py
+# fails the build when a new one is not. The few that are not about one client are listed here with why.
+ACCT_AGENTS_EXEMPT = {
+    "/strategic-agents/page-watch": "has its own page in every account (ACCT_PAGES)",
+    "/strategic-agents/video-studio": "has its own page in every account (ACCT_PAGES)",
+    "/strategic-agents/42-north-dental-slot-checker": "made for one client, 42 North Dental",
+    # Older agents that do not yet save their runs to an account's space: opened inside an account they
+    # would show the person's own runs to everyone in it. Each comes off this list once it does.
+    "/abm-signal-tracker/healthcare": "older agent: runs not yet saved to accounts",
+    "/strategic-agents/anonymous-visitors": "older agent: runs not yet saved to accounts",
+    "/strategic-agents/job-change-alert": "older agent: runs not yet saved to accounts",
+    "/strategic-agents/linkedin-intelligence": "older agent: runs not yet saved to accounts",
+    "/strategic-agents/linkedin-strategy-researcher": "older agent: runs not yet saved to accounts",
+    "/strategic-agents/linkedin-social-researcher": "older agent: runs not yet saved to accounts",
+    "/strategic-agents/ad-intelligence": "older agent: runs not yet saved to accounts",
+    "/strategic-agents/sentiment-pulse": "older agent: runs not yet saved to accounts",
+}
 ACCT_GLOBAL = {"": "/hub", "google-ads": "/dashboards/google-ads",
                "google-ads/ai-review": "/dashboards/google-ads/ai-review",
                "page-watch": "/strategic-agents/page-watch", "video-studio": "/strategic-agents/video-studio"}
@@ -5562,6 +5584,12 @@ CLIENT_TOOL_ROUTES = {
         r"parse-query|search|vocab)",),
     "thought-leader-pr": (
         r"thought-leader-pr/(resolve|search|runs/\d+(/(collect|collect-press|collect-reaction|collect-synthesis|confirm))?)",),
+    # Not the weekly email (its settings are read-only to a client), the one-off tidies or the cost report.
+    "market-radar": (
+        r"market-radar/api/(runs(/\d+)?|clients(/\d+(/(profile|competitors(/\d+)?|collect|moves|monitor|report|"
+        r"report/pdf|events/\d+/feedback))?)?)",),
+    # The free mapping only: never a reveal, which spends the agency's Saleshandy credits.
+    "people-signals": (r"people-signals/api/(status|estimate|runs(/\d+(/export\.csv)?)?)",),
 }
 CLIENT_RUN_ROUTES = {          # (method, path): what counts as a run started
     "page-watch": (r"/[^/]+/api/page-watch/watches", r"page-watch/api/watches/\d+/check"),
@@ -5571,6 +5599,8 @@ CLIENT_RUN_ROUTES = {          # (method, path): what counts as a run started
     "event-conference-intelligence": (r"event-conference-intelligence/run",),
     "company-people-intelligence": (r"company-people-intelligence/(search|enrich|enrich-bulk|chat)",),
     "thought-leader-pr": (r"thought-leader-pr/resolve",),
+    "market-radar": (r"market-radar/api/runs", r"market-radar/api/clients/\d+/collect"),
+    "people-signals": (r"people-signals/api/runs",),
 }
 _CLIENT_TOOL_RX = {t: re.compile("^%s(%s)$" % (re.escape(_SA), "|".join(ps))) for t, ps in CLIENT_TOOL_ROUTES.items()}
 _CLIENT_RUN_RX = {t: re.compile("^(%s)$" % "|".join(p if p.startswith("/") else re.escape(_SA) + p for p in ps))
@@ -5660,7 +5690,9 @@ def _acct_runs_left(acct):
 
 # What a client is never shown: what a run cost the agency (Claude, Apify, SERP), or its Apollo credits.
 CLIENT_HIDDEN_KEYS = frozenset({"cost", "costs", "cost_usd", "usd", "usd_max", "usd_min", "ceiling", "spent_usd",
-                                "spend", "budget_usd", "credits", "credits_spent", "credits_left", "balance"})
+                                "spend", "budget_usd", "credits", "credits_spent", "credits_left", "balance",
+                                "credits_used", "cost_cap_usd", "usd_cap", "usd_typical", "credits_default",
+                                "worst_credits"})
 
 
 def _client_scrub(obj):
@@ -5787,7 +5819,8 @@ def _acct_tool_catalog():
 ACCT_TOOL_COLOURS = {
     "page-watch": "#8CCBFF", "video-studio": "#FF6022", "social-media-intelligence": "#8CCBFF",
     "local-business-radar": "#FF6022", "event-conference-intelligence": "#FFB500",
-    "company-people-intelligence": "#121213", "thought-leader-pr": "#FF3B30", "seo-geo-audit": "#34D399",
+    "company-people-intelligence": "#121213", "thought-leader-pr": "#FF3B30", "market-radar": "#121213",
+    "people-signals": "#8CCBFF", "seo-geo-audit": "#34D399",
     "on-page-audit": "#8CCBFF", "agent-readiness-audit": "#B79CFF", "seo-geo-snapshot": "#2DD4BF",
     "image-alt-audit": "#FF6022", "keyword-research": "#FFB500", "content-research": "#FF3B30",
     "content-architect": "#121213", "market-potential": "#C6F432"}
@@ -6358,7 +6391,9 @@ def _work_acct():
     are, and a header from anyone else counts for nothing."""
     acct = getattr(g, "acct", None)
     if acct is None:
-        slug = request.headers.get("X-Account", "").strip()
+        # A plain download link cannot send the header, so a GET may name the account as ?acct= instead.
+        slug = request.headers.get("X-Account", "").strip() or (
+            request.args.get("acct", "").strip() if request.method == "GET" else "")
         if slug:
             acct = (_acct_listing().get("by_slug") or {}).get(slug)
     if acct is None:
@@ -11208,7 +11243,20 @@ def admin_external_usage_market_radar_run_status():
 # == Market Radar (the team; on the agents page, still Building) ===================
 
 def _mr_email():
-    return (_get_user() or {}).get("email", "")
+    """Whose Market Radar (and People & Signals) work this request reads and files: inside a client
+    account its space ("acct:<id>", the whole team's and its clients'), else the person's own."""
+    acct = _work_acct()
+    return acct["space"] if acct else (_get_user() or {}).get("email", "")
+
+
+def _mr_started(run_id):
+    """Inside an account a run is the account's: keep who started it, for its History."""
+    from tracker import market_radar_store as mr_store
+    if _work_acct() is not None:
+        try:
+            mr_store.set_started_by(run_id, (_get_user() or {}).get("email", ""))
+        except Exception:
+            app.logger.exception("market radar: who started run %s not kept", run_id)
 
 
 def _mr_guard_post():
@@ -11366,6 +11414,7 @@ def admin_market_radar_run_start():
                 return jsonify(error="A run for this company is already going.",
                                run_id=last["id"]), 409
         run_id = market_radar_run.start(url, email, reuse_profile=reuse)
+        _mr_started(run_id)
     except ValueError as e:
         return jsonify(error="Not a usable website address: %s" % e), 400
     except mr_store.StoreUnavailable as e:
@@ -11395,6 +11444,7 @@ def admin_market_radar_collect(client_id):
                 return jsonify(error="A collection for this company is already going.",
                                run_id=last["id"]), 409
         run_id = market_radar_run.start_collect(client_id, email)
+        _mr_started(run_id)
     except PermissionError:
         return jsonify(error="No such company of yours."), 404
     except mr_store.StoreUnavailable as e:
@@ -11422,6 +11472,14 @@ def admin_market_radar_report_page(client_id):
     """The client report (tracker/market_radar_report), rendered by
     static/js/market_radar_report.js from the JSON route below."""
     return render_template("market_radar_report.html", user=_get_user(), client_id=client_id)
+
+
+@app.route("/<acct:slug>/agents/market-radar/report/<int:client_id>")
+@_acct_view("agents", tool="market-radar")
+def account_market_radar_report(acct, client_id):
+    """Market Radar's report for one of the account's companies, inside the account."""
+    g.acct_page = "agents/market-radar"
+    return render_template("market_radar_report.html", user=_get_user(), client_id=client_id, acct=acct)
 
 
 @app.route("/strategic-agents/market-radar/api/clients/<int:client_id>/report")
@@ -11508,6 +11566,8 @@ def admin_market_radar_monitor(client_id):
             refused = _mr_guard_post()
             if refused:
                 return refused
+            if viewer_is_client():
+                return jsonify(error="Only the team can change the weekly update."), 403
             try:
                 view = views.save_monitor(client_id, _mr_email(), request.get_json(silent=True) or {})
             except views.EditError as e:
@@ -11542,6 +11602,7 @@ def admin_market_radar_update_now(client_id):
                 return jsonify(error="A collection is already running for this company.",
                                run_id=last["id"]), 409
         run_id = market_radar_run.start_collect(client_id, email, monitor="send" if send else "preview")
+        _mr_started(run_id)
     except PermissionError:
         return jsonify(error="No such company of yours."), 404
     except mr_store.StoreUnavailable as e:
@@ -11751,8 +11812,8 @@ def admin_account_mapper_status():
     out = {"saleshandy": {"configured": sh.configured()}, "claude": {"configured": search.claude_configured()},
            "models": list(AM_MODELS), "limits": {"companies": am.MAX_COMPANIES, "roles": am.MAX_ROLES,
                                                  "per_role": am.MAX_PER_ROLE},
-           "credit_cap_default": 50}
-    if out["saleshandy"]["configured"]:
+           "credit_cap_default": 50, "client": viewer_is_client()}
+    if out["saleshandy"]["configured"] and not out["client"]:
         try:
             client = sh.Client()
             out["saleshandy"]["credits"] = client.credits()
@@ -11772,9 +11833,10 @@ def _am_settings(body):
     except (TypeError, ValueError):
         raise ValueError("people per title must be a number")
     model = body.get("model") if body.get("model") in AM_MODELS else AM_MODELS[0]
+    paid = not viewer_is_client()        # a client maps for free: none of Claude's steps, which cost the agency
     return {"companies": companies, "roles": roles, "per_role": per_role, "insights": body.get("insights") is not False,
-            "use_claude": body.get("use_claude") is True, "web_fill": body.get("web_fill") is True,
-            "briefs": body.get("briefs") is True, "model": model}
+            "use_claude": paid and body.get("use_claude") is True, "web_fill": paid and body.get("web_fill") is True,
+            "briefs": paid and body.get("briefs") is True, "model": model}
 
 
 @app.route("/strategic-agents/people-signals/api/estimate", methods=["POST"])
@@ -11822,7 +11884,8 @@ def admin_account_mapper_runs():
         going = store.running_run(email)
         if going:
             return jsonify(error="A run of yours is already going.", run_id=going["id"]), 409
-        run_id = store.start_map(st, email, cap_usd=est["usd_cap"] if est["claude"] else 0)
+        run_id = store.start_map(st, email, cap_usd=est["usd_cap"] if est["claude"] else 0,
+                                 started_by=(_get_user() or {}).get("email", "") if _work_acct() else None)
     except store.StoreUnavailable as e:
         return jsonify(error="The database is unavailable (%s)." % e), 503
     return jsonify(run_id=run_id), 202

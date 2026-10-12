@@ -295,6 +295,10 @@ SCHEMA = [
         delivery JSONB NOT NULL DEFAULT '{}'::jsonb,
         created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp())""",
     "CREATE INDEX IF NOT EXISTS idx_mr_digests_client ON mr_digests (client_id, created_at DESC)",
+    # 2026-10-12: inside a client account the owner is the account's space
+    # ("acct:<id>", tracker/workspace.py), shared by the whole team; who
+    # started each run is kept here for the account's History.
+    "ALTER TABLE mr_runs ADD COLUMN IF NOT EXISTS started_by TEXT",
 ]
 
 
@@ -598,6 +602,24 @@ def get_run(run_id, owner_email, *, conn=None):
     keys = ("id", "client_id", "mode", "status", "stage", "cost_cap_usd", "error", "summary",
             "coverage", "created_at", "finished_at")
     return dict(zip(keys, row))
+
+
+def set_started_by(run_id, email, *, conn=None):
+    """Who started a run (an account's runs are owned by its space, not a person)."""
+    with _tx(conn) as cur:
+        cur.execute("UPDATE mr_runs SET started_by=%s WHERE id=%s", ((email or "").strip().lower() or None, run_id))
+
+
+def space_runs(owner, *, limit=60, conn=None):
+    """An owner's runs, newest first, with the company each was for (an account's History)."""
+    with _tx(conn) as cur:
+        cur.execute("""SELECT r.id, r.client_id, r.mode, r.status, r.created_at, r.started_by, e.domain, e.name
+                       FROM mr_runs r JOIN mr_clients cl ON cl.id = r.client_id
+                       JOIN mr_entities e ON e.id = cl.entity_id
+                       WHERE r.owner_email=%s AND e.domain NOT LIKE '%%.example'
+                       ORDER BY r.created_at DESC LIMIT %s""", ((owner or "").strip().lower(), limit))
+        keys = ("id", "client_id", "mode", "status", "created_at", "started_by", "domain", "name")
+        return [dict(zip(keys, r)) for r in cur.fetchall()]
 
 
 # -- snapshots -----------------------------------------------------------------

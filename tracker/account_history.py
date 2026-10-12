@@ -81,7 +81,7 @@ def _reviews(acct):
 
 
 # ── The agents (phase 2) ─────────────────────────────────────────────────────
-STATE = {"complete": ("ready", "Done"), "done": ("ready", "Done"), "confirmed": ("ready", "Done"),
+STATE = {"complete": ("ready", "Done"), "done": ("ready", "Done"), "ready": ("ready", "Done"), "confirmed": ("ready", "Done"),
          "failed": ("failed", "Failed"), "error": ("failed", "Failed"), "cancelled": ("", "Stopped"),
          "needs_review": ("changed", "Needs a look")}
 
@@ -92,7 +92,8 @@ def _state(status):
 
 AGENT_NAMES = {"local-business-radar": "Local Business Radar", "social-media-intelligence": "Social Media Intelligence",
                "event-conference-intelligence": "Event & Conference Intelligence",
-               "thought-leader-pr": "Thought Leader Intelligence", "company-people-intelligence": "Contact Finder"}
+               "thought-leader-pr": "Thought Leader Intelligence", "company-people-intelligence": "Contact Finder",
+               "market-radar": "Market Radar", "people-signals": "People & Signals"}
 
 
 def agent_entry(acct, agent, title, detail, who, at, status, href=None):
@@ -151,6 +152,36 @@ def _tlpr(acct):
     return out
 
 
+MR_KINDS = {"baseline": "Found competitors for", "refresh": "Searched again for", "collect": "Collected rivals' moves for"}
+
+
+def _mr(acct):
+    """Market Radar: an account's companies and runs are owned by its space (app.py _mr_email)."""
+    from tracker import market_radar_store
+    out = []
+    for r in market_radar_store.space_runs(acct["space"], limit=LIMIT):
+        href = "/%s/agents/market-radar#company-%d" % (acct["slug"], r["client_id"])
+        out.append(_agent(acct, "market-radar", "%s %s" % (MR_KINDS.get(r["mode"], "Market Radar on"),
+                                                         r.get("name") or r.get("domain") or "a company"),
+                          r.get("domain") or "", r.get("started_by"), r.get("created_at"), r.get("status"), href))
+    return out
+
+
+def _ps(acct):
+    """People & Signals: likewise owned by the account's space."""
+    from tracker import account_mapper_store
+    out = []
+    for r in account_mapper_store.space_runs(acct["space"], limit=LIMIT):
+        st = r.get("settings") or {}
+        names = [c.get("name") for c in st.get("companies") or [] if isinstance(c, dict) and c.get("name")]
+        title = "Mapped " + (", ".join(names[:3]) + (" and %d more" % (len(names) - 3) if len(names) > 3 else "")
+                             if names else "accounts")
+        out.append(_agent(acct, "people-signals", title, ", ".join(st.get("roles") or [])[:160], r.get("started_by"),
+                          r.get("created_at"), r.get("status"),
+                          "/%s/agents/people-signals#run-%d" % (acct["slug"], r["id"])))
+    return out
+
+
 # ── The SEO & AEO tools (phase 3) ────────────────────────────────────────────
 def _seo(acct):
     from tracker import seo_runs, seo_runs_store
@@ -166,7 +197,8 @@ def _seo(acct):
 
 
 AGENT_READS = (("seo", _seo), ("local-business-radar", _lbr), ("social-media-intelligence", _smi),
-               ("event-conference-intelligence", _evi), ("thought-leader-pr", _tlpr))
+               ("event-conference-intelligence", _evi), ("thought-leader-pr", _tlpr), ("market-radar", _mr),
+               ("people-signals", _ps))
 
 
 def entries(acct, library=None, limit=SHOWN, extra=()):

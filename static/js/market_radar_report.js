@@ -352,7 +352,8 @@
     ['competitors', 'moves', 'nearby', 'entrants', 'themes', 'rules', 'hiring'].forEach(function (k) {
       (pack[k] || []).forEach(function (it) { state.refs[it.ref] = it; });
     });
-    var back = '<a class="mr-btn ghost" href="/strategic-agents/market-radar#company-' + esc(v.client_id) + '">Edit page</a>';
+    var home = (root && root.getAttribute('data-home')) || '/strategic-agents/market-radar';
+    var back = '<a class="mr-btn ghost" href="' + esc(home) + '#company-' + esc(v.client_id) + '">Edit page</a>';
     if (v.status === 'none' || !v.brief) {
       var why = v.status === 'none' ? 'No report has been written for this company yet. A report is written at the end of every collection: open the edit page and press Collect.'
         : (v.note || 'The report could not be written.');

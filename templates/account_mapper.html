@@ -15,7 +15,7 @@
 <head>
 {{ head("People & Signals", ["strategic-agents.css?v=2", "market_radar.css?v=3", "contact_lab.css?v=1", "account_mapper.css?v=1"]) }}
 </head>
-<body class="sa">
+<body class="sa"{% if viewer_is_client() %} data-am-client{% endif %}>
 
 {{ topbar([(brand.agents_plural, "/strategic-agents"), ("People & Signals", none)]) }}
 
@@ -23,22 +23,27 @@
 
   <section class="sa-hero mr-hero mr-hero--compact cl-hero">
     <div class="sa-hero-top">
-      <span class="sa-lbl">Building &middot; built on Saleshandy</span>
+      <span class="sa-lbl">Building{% if not viewer_is_client() %} &middot; built on Saleshandy{% endif %}</span>
       <span class="cl-ready" id="amReady"><span class="mr-chip">Checking&hellip;</span></span>
     </div>
     <h1 class="sa-h1 mr-h1">
       <span class="sa-ln"><span>Accounts in.</span></span>
       <span class="sa-ln"><span><span class="sa-mk">Buying groups</span> <em class="sa-it">out.</em></span></span>
     </h1>
+    {% if viewer_is_client() %}
+    <p class="cl-lead">Give it companies and the titles you sell to. It finds the right people, shows who is new,
+      which teams are growing and whether they are hiring, and ranks the accounts.</p>
+    {% else %}
     <p class="cl-lead">Give it companies and the titles you sell to. It finds the right people in Saleshandy, shows who is new,
       which teams are growing and whether they are hiring, ranks the accounts, and reveals verified emails only for the people
       you tick, after you confirm the credits.</p>
+    {% endif %}
   </section>
 
   <div class="mr cl" id="am">
     <div class="cl-top">
       <form class="card mr-card cl-form" id="amForm" autocomplete="off">
-        <div class="mr-card-h"><div><h3>Map accounts</h3><p>Up to 25 companies and 6 titles. Mapping uses no credits.</p></div></div>
+        <div class="mr-card-h"><div><h3>Map accounts</h3><p>Up to 25 companies and 6 titles.{% if not viewer_is_client() %} Mapping uses no credits.{% endif %}</p></div></div>
         <div class="mr-card-b">
           <label class="mr-k" for="amCompanies">Companies, one a line</label>
           <textarea id="amCompanies" rows="6" placeholder="HubSpot&#10;Gong | gong.io&#10;Core Care Clinic | corecareclinic.com"></textarea>
@@ -49,16 +54,19 @@
             <fieldset class="cl-backends">
               <legend class="mr-k">Also</legend>
               <label class="cl-tog"><input type="checkbox" id="amInsights" checked> <b>Account signals</b> <small>free</small></label>
-              <label class="cl-tog"><input type="checkbox" id="amPhrasings"> <b>Claude phrases the titles</b> <small>under a cent</small></label>
-              <label class="cl-tog"><input type="checkbox" id="amWeb"> <b>Web search for empty seats</b> <small>paid</small></label>
-              <label class="cl-tog"><input type="checkbox" id="amBriefs" checked> <b>Account briefs</b> <small>about $0.005 each</small></label>
+              {#- A client maps for free: the paid steps stay in the page (its script reads them), hidden and off. #}
+              <label class="cl-tog"{% if viewer_is_client() %} hidden{% endif %}><input type="checkbox" id="amPhrasings"> <b>Claude phrases the titles</b> <small>under a cent</small></label>
+              <label class="cl-tog"{% if viewer_is_client() %} hidden{% endif %}><input type="checkbox" id="amWeb"> <b>Web search for empty seats</b> <small>paid</small></label>
+              <label class="cl-tog"{% if viewer_is_client() %} hidden{% endif %}><input type="checkbox" id="amBriefs"{% if not viewer_is_client() %} checked{% endif %}> <b>Account briefs</b> <small>about $0.005 each</small></label>
             </fieldset>
             <div class="cl-model">
               <label class="mr-k" for="amPerRole">People per title</label>
               <select id="amPerRole"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select>
+              <div{% if viewer_is_client() %} hidden{% endif %}>
               <label class="mr-k" for="amModel" style="margin-top:14px">Claude model</label>
               <select id="amModel"></select>
               <div class="mr-hint">Haiku is plenty for briefs.</div>
+              </div>
             </div>
           </div>
           <div class="cl-est" id="amEstimate" aria-live="polite"></div>
@@ -87,6 +95,6 @@
 </div>
 
 {{ topbar_script() }}
-<script src="{{ url_for('static', filename='js/account_mapper.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/account_mapper.js') }}?v=2"></script>
 </body>
 </html>

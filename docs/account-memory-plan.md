@@ -212,3 +212,38 @@ use, and sets **Runs a month**. Then:
   pages) is sent back to their account; with two accounts, to the first.
 - **Client Usage.** Every shared account has a card in Admin → Client Usage, made the moment an admin
   shares it: who it is shared with, what, their visits and runs against the limit, and every change.
+
+## Every agent in every account
+
+Every agent on the agents page opens inside every client account, for the whole team, and for the
+account's clients once it is ticked in the Share panel. `ACCT_AGENTS` in `app.py` lists them, and
+`tests/test_account_agents_all.py` fails the build when a card on the agents page is neither there nor
+in `ACCT_AGENTS_EXEMPT` with its reason. So a new agent cannot ship without a place in the accounts.
+
+Adding an agent to the accounts means, each time:
+
+1. **Its runs are the account's.** Inside an account a run is saved to the account's space and its
+   lists show only that space (`_work_space` / `_list_space`, or, for an agent that keeps its work by
+   owner, the space as the owner: `_mr_email`). Never the person's General work.
+2. **Its fields come from the profile.** The `ACCT_AGENTS` entry names the page's fields and the
+   profile value each one gets.
+3. **A client can use it.** Its routes go in `CLIENT_TOOL_ROUTES`, and the requests that start a run go
+   in `CLIENT_RUN_ROUTES`. Anything that spends a prepaid balance (Saleshandy credits) or sends email
+   stays with the team.
+4. **It shows in History.** It needs a reader in `tracker/account_history.py` (`AGENT_READS`) and a name in
+   `AGENT_NAMES`.
+
+**Market Radar** (2026-10-12): inside an account, its companies, runs and reports belong to the account's
+space. The whole team shares them. A client the account shares it with can add companies, search,
+collect and read the report (`/<account>/agents/market-radar/report/<id>`). Two things stay with the team:
+changing the weekly email and the "update now" send. Prices are hidden from clients. Companies already on
+someone's own list stay theirs; adding the site again inside the account starts a fresh entry there.
+
+**People & Signals** (2026-10-12): mapping inside an account belongs to the account's space. A client maps
+for free. Claude's paid steps are turned off for them, the reveal is not open to them because it spends the
+agency's Saleshandy credits, and they see no credits or balances. The team reveals as before.
+
+Still to adapt, so not yet in the accounts: ABM Signal Tracker, Anonymous Visitors, Job Change Alert,
+LinkedIn Intelligence, LinkedIn Strategy Researcher, LinkedIn Social Researcher, Ad Intelligence and
+Sentiment Pulse. Their runs are not saved per account yet. The 42 North Dental Slot Checker is made for
+one client.
