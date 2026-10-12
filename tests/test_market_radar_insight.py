@@ -99,7 +99,7 @@ def test_a_battlecard_holds_every_fact_with_where_it_came_from():
     alpha = next(c for c in out["rivals"] if c["name"] == "Alpha")
     facts = {f["label"]: f for f in alpha["facts"]}
     assert facts["Staff"]["value"] == "1,500 (2025)" and facts["Staff"]["source"] == "Wikidata"
-    assert facts["Revenue"]["value"] == "250.0 million (2025)"
+    assert facts["Revenue"]["value"] == "250 million (2025)"
     assert facts["Locations"]["value"] == "3 listed on its site" and facts["Locations"]["source"] == "its sitemap"
     assert facts["Reviews"]["value"] == "150 reviews, up to 4.8 stars"
     assert facts["App"]["value"] == "Alpha, 4.6 stars from 12,000 ratings" and facts["App"]["source"] == "App Store"
