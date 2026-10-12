@@ -845,7 +845,8 @@ a.as-ev-main::after { content: ""; position: absolute; inset: 0; border-radius: 
 .sh-tool:has(.sh-tool-in:disabled):hover { transform: none; }
 .sh-tool--company-people-intelligence.is-on .sh-tool-t small,
 .sh-tool--content-architect.is-on .sh-tool-t small { color: var(--tx2); }
-.sh-tool--page-watch { --c: var(--sky); --c-dim: var(--sky-dim); --c-tx: var(--sky-tx); }
+.sh-tool--page-watch, .rx-ag--page-watch { --c: var(--sky); --c-dim: var(--sky-dim); --c-tx: var(--sky-tx); }
+.rx-ag--video-studio { --c: var(--acc); --c-dim: var(--acc-dim); --c-tx: var(--acc-tx); }
 .sh-tool--company-people-intelligence.is-on, .sh-tool--content-architect.is-on { background: var(--s2); }
 
 /* Runs a month. */

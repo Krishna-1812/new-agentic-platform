@@ -278,6 +278,18 @@
     <p class="as-runs-sub">Each opens with {{ acct.name }}&rsquo;s details from the master doc already filled in. Nothing runs until you press its own button.</p>
     {%- endif %}
 
+    {%- if runs.watch %}
+    <div class="rx-group-h">
+      <span class="rx-label"><i class="as-dot as-dot--sky"></i>Watch &amp; make <em>{{ runs.watch|length }}</em></span>
+      <span class="rx-hint">Pages watched for changes, and short videos in your brand</span>
+    </div>
+    <ul class="rx-agents" role="list">
+      {%- for t in runs.watch %}
+      <li class="rx-cell">{{ run_card(t, loop.index) }}</li>
+      {%- endfor %}
+    </ul>
+    {%- endif %}
+
     {%- if runs.agents %}
     <div class="rx-group-h">
       <span class="rx-label"><i class="as-dot"></i>Agents <em>{{ runs.agents|length }}</em></span>
