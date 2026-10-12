@@ -55,7 +55,10 @@
     CA: 'Canada', IE: 'Ireland', FR: 'France', ES: 'Spain', IT: 'Italy', NL: 'Netherlands', BR: 'Brazil' };
   var ARCHETYPE = { local_single: 'Local business, one site', multi_location: 'Several locations',
     ecommerce: 'Online shop / D2C brand', b2b_services: 'B2B services', b2b_product: 'B2B product',
-    manufacturer: 'Manufacturer', other: 'Other' };
+    manufacturer: 'Manufacturer', marketplace: 'Marketplace or platform', professional_services: 'Professional services',
+    hospitality_travel: 'Hotels, travel and airlines', education: 'Education and training', health_system: 'Hospital or health system',
+    real_estate: 'Real estate', financial_services: 'Banking, insurance and fintech', nonprofit: 'Nonprofit or association',
+    personal_brand: 'Creator, consultant or personal brand', other: 'Other' };
   var KIND = { direct: 'Direct', indirect: 'Indirect', local: 'Local', aspirational: 'Aspirational' };
   var SEV = { HIGH: ['bad', 'High'], MEDIUM: ['warn', 'Medium'], LOW: ['', 'Low'] };
   var STATUS = { planned: 'Planned', announced: 'Announced', rumored: 'Rumoured', opened: 'Opened',

@@ -84,6 +84,8 @@ TYPES = {
     "rebrand": "a new name, brand or positioning",
     "marketing_campaign": "an advertising campaign, a new ambassador or a sponsored athlete or star",
     "other_move": "another business decision by the company",
+    "award_ranking": "wins or loses an award, ranking or list place (only reported for kinds of business where it matters)",
+    "licence_accreditation": "gains, loses or is warned about a licence, accreditation or certification",
 }
 STATUSES = ("rumored", "announced", "planned", "opened", "completed", "closed", "unknown")
 LEFT_OUT = {
@@ -158,9 +160,18 @@ Be strict:
 Use each headline once. Never use em dashes or en dashes."""
 
 
-def _system():
-    return SYSTEM % ("\n".join("- %s: %s" % kv for kv in TYPES.items()),
-                     "\n".join("- %s: %s" % kv for kv in LEFT_OUT.items()))
+def _system(sector=None):
+    """The move-reading prompt. `sector` is the client's playbook note: for a law firm or a hotel group an
+    award or ranking is a move, so it is no longer left out."""
+    left = dict(LEFT_OUT)
+    note = ""
+    if sector:
+        note = "\n\nSECTOR: " + sector["note"]
+        if sector.get("awards"):
+            left.pop("award_or_ranking", None)
+    types = {k: v for k, v in TYPES.items() if k != "award_ranking" or (sector or {}).get("awards")}
+    return SYSTEM % ("\n".join("- %s: %s" % kv for kv in types.items()),
+                     "\n".join("- %s: %s" % kv for kv in left.items())) + note
 
 
 def _clean(text, limit):
@@ -211,7 +222,7 @@ def _source_url(e):
     return next((s.get("url") for s in e.get("sources") or [] if s.get("url")), None)
 
 
-def triage(company, items, existing, *, now, run_id=None, client=None, llm=None):
+def triage(company, items, existing, *, now, run_id=None, client=None, llm=None, sector=None):
     """{"events", "left_out", "unanswered", "note"}. `existing` is [{"key",
     "type", "title", "date"}]. Raises nothing: a failed call returns
     events None and the reason in note."""
@@ -227,7 +238,7 @@ def triage(company, items, existing, *, now, run_id=None, client=None, llm=None)
                                           " (%d outlets)" % it["copies"] if it["copies"] > 1
                                           else "", it["title"]) for i, it in enumerate(items)))
     try:
-        data, _meta = llm.call_json(_system(), user, SCHEMA, model=MODEL,
+        data, _meta = llm.call_json(_system(sector), user, SCHEMA, model=MODEL,
                                     max_tokens=min(16000, 1500 + 90 * len(items)),
                                     run_id=run_id, stage="signals_triage", client=client)
     except Exception as e:
@@ -351,7 +362,7 @@ def prior_presence(place, entity_id, event_day, *, store):
     return None
 
 
-def triage_company(entity, *, store, now, run_id=None, client=None, llm=None, sells=None):
+def triage_company(entity, *, store, now, run_id=None, client=None, llm=None, sells=None, sector=None):
     """Read one company's new headlines and posts into events. Returns a
     summary row for coverage."""
     snap = store.latest_snapshot(entity["id"], "news")
@@ -386,7 +397,7 @@ def triage_company(entity, *, store, now, run_id=None, client=None, llm=None, se
     existing.sort(key=lambda e: 0 if e["type"] not in ("product_launch", "sold_out",
                                                         "product_removed") else 1)
     got = triage(dict(entity, sells=sells), items, existing, now=now, run_id=run_id,
-                 client=client, llm=llm)
+                 client=client, llm=llm, sector=sector)
     if got["events"] is None:
         row.update(status="failed", note=got["note"])
         return row
@@ -448,6 +459,10 @@ WEIGHTS = {
     "announcement": 2,
     # A host name first certified: a hint of a product or region to come.
     "new_subdomain": 3,
+    # Sector moves (tracker/market_radar_playbooks.py): only read for kinds of business where they matter.
+    "award_ranking": 3, "licence_accreditation": 5,
+    # Depth readers (tracker/market_radar_more.py)
+    "new_content": 3, "app_update": 2, "community_buzz": 3, "stack_change": 2,
 }
 TIER = {"direct": 1.0, "local": 1.0, "indirect": 0.7, "aspirational": 0.5}
 HIGH, MEDIUM = 6.0, 2.5
@@ -632,12 +647,17 @@ def run_for_client(client_id, owner_email, *, run_id=None, store=None, now=None,
         raise PermissionError("client %s is not yours or does not exist" % client_id)
     from . import market_radar_collect as mc
     companies, _ = mc.targets(client_id, owner_email, store=store)
+    from . import market_radar_playbooks as playbooks, market_radar_views as views
+    archetype = views.effective_profile(c.get("profile") or {}, c.get("settings") or {}).get("archetype") \
+        or c.get("archetype")
+    note = playbooks.sector_note(archetype)
+    sector = {"note": note, "awards": playbooks.get(archetype)["awards"]} if note else None
     sells = {r["entity_id"]: (r.get("details") or {}).get("sells")
              for r in store.competitors(client_id, owner_email)}
     def one(e):
         try:
             return triage_company(e, store=store, now=now, run_id=run_id, client=client,
-                                  llm=llm, sells=sells.get(e["id"]))
+                                  llm=llm, sells=sells.get(e["id"]), sector=sector)
         except Exception as ex:
             logger.exception("market_radar_signals: triage of %s failed", e["domain"])
             return {"entity_id": e["id"], "domain": e["domain"], "name": e.get("name"),

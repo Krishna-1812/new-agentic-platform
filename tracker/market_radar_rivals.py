@@ -41,6 +41,7 @@ from urllib.parse import urljoin, urlsplit
 
 from . import market_radar_footprint as fp
 from . import market_radar_llm as llm
+from . import market_radar_playbooks as playbooks
 from . import market_radar_site as site_reader
 
 logger = logging.getLogger(__name__)
@@ -141,6 +142,9 @@ def client_brief(profile):
         "industry": ind.get("plain_label"),
         "industry_keywords": (ind.get("keywords") or [])[:10],
         "languages": profile.get("languages") or [],
+        # How this kind of business finds its rivals, and what its rivals' moves look like.
+        "how_its_rivals_are_found": playbooks.get(profile.get("archetype"))["rivals"],
+        "what_its_rivals_do_that_matters": playbooks.get(profile.get("archetype"))["watch"],
     }
 
 
@@ -184,7 +188,7 @@ PLAN_SCHEMA = {
 PLAN_SYSTEM = """You plan how to find a company's competitors, for a market-intelligence report. You are given the company's profile, read from its own website.
 
 Return:
-- queries: up to 10 Google web searches whose results would be competitors' OWN websites, or articles listing such companies ("best X in Y", "brands like Z", "alternatives to Z"). Write each in the language people in the company's main market search in. For a local business, name its city or neighbourhood. For a business with a few sites in different towns (competes_locally is true and sites lists several), write searches for each town, not only the head office's. For a chain, search for the other chains in its country. For an online brand, search by product category and by "brands like / alternatives to" the brand. Do not search for the company's own name alone. Each under 12 words. purpose: one short phrase.
+- queries: up to 10 Google web searches whose results would be competitors' OWN websites, or articles listing such companies ("best X in Y", "brands like Z", "alternatives to Z"). Write each in the language people in the company's main market search in. For a local business, name its city or neighbourhood. For a business with a few sites in different towns (competes_locally is true and sites lists several), write searches for each town, not only the head office's. For a chain, search for the other chains in its country. For an online brand, search by product category and by "brands like / alternatives to" the brand. Do not search for the company's own name alone. Follow the profile's how_its_rivals_are_found. Each under 12 words. purpose: one short phrase.
 - search_country: ISO 3166-1 alpha-2 code (lowercase) of the country whose Google to search, normally the headquarters' country or main market.
 - search_language: the language code of the queries (e.g. en, de, pt, es, ja).
 - known: competitors you already know of with confidence, as an analyst of this industry would name them, each with its main website domain (e.g. "rothys.com"). Only real companies you are sure exist and compete with THIS company in its market; it is fine to return none, and for a small local business you normally should, because you cannot know its neighbours. Every domain will be checked by fetching it, so a guessed domain is wasted. relation: direct (same offering, same customers, same market), indirect (a substitute), aspirational (a much larger player the company is measured against). why: one short sentence.

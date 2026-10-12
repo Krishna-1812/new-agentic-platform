@@ -19,10 +19,10 @@ import re
 from datetime import datetime, timezone
 
 from . import market_radar_footprint as fp
+from . import market_radar_playbooks as playbooks
 from . import market_radar_store as store
 
-ARCHETYPES = ("local_single", "multi_location", "ecommerce", "b2b_services", "b2b_product",
-              "manufacturer", "other")
+ARCHETYPES = playbooks.ARCHETYPES
 CUSTOMER_TYPES = ("B2C", "B2B", "both")
 PRICE_POSITIONS = ("budget", "mid", "premium", "luxury", "unknown")
 HQ_FIELDS = ("hq.street", "hq.postal_code", "hq.city", "hq.region", "hq.country_code")
@@ -415,7 +415,9 @@ EVENT_LABELS = {
     "hiring_push": "Hiring drive", "pricing_change": "Pricing", "partnership": "Partnership",
     "new_market": "New market", "legal_regulatory": "Legal", "financial_results": "Results",
     "rebrand": "Rebrand", "other_move": "Move", "marketing_campaign": "Campaign",
-    "new_subdomain": "New subdomain",
+    "new_subdomain": "New subdomain", "award_ranking": "Award or ranking",
+    "licence_accreditation": "Licence or accreditation", "new_content": "New pages", "app_update": "App update",
+    "community_buzz": "Hacker News", "stack_change": "Technology change",
 }
 def _detector_labels():
     from .market_radar_collect import DETECTORS

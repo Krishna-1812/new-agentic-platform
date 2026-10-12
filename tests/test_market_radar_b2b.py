@@ -422,10 +422,12 @@ def test_linkedin_says_why_it_read_nothing():
 
 def test_specialist_detectors_run_only_for_the_kinds_of_business_they_fit():
     run = lambda a: {n for n in mc.NAMES if mc.applies(n, a)}  # noqa: E731
-    assert run("local_single") == run("multi_location") == set(mc.NAMES) - {"subdomains", "headcount", "linkedin"}
+    gated = {"subdomains", "headcount", "linkedin", "apps", "buzz", "facts"}
+    assert run("local_single") == run("multi_location") == set(mc.NAMES) - gated
     assert run("ecommerce") == set(mc.NAMES) - {"headcount", "linkedin"}
-    assert run("b2b_product") == run("b2b_services") == set(mc.NAMES)
-    assert run("manufacturer") == set(mc.NAMES) - {"subdomains"}
+    assert run("b2b_product") == set(mc.NAMES)
+    assert run("b2b_services") == set(mc.NAMES) - {"apps"}
+    assert run("manufacturer") == set(mc.NAMES) - {"subdomains", "apps", "buzz"}
     assert run(None) == run("local_single")
 
 

@@ -21,7 +21,12 @@
   var ARCHETYPES = [
     ['local_single', 'Local business, one site'], ['multi_location', 'Several locations or a chain'],
     ['ecommerce', 'Online shop'], ['b2b_services', 'Business services'],
-    ['b2b_product', 'Business software or products'], ['manufacturer', 'Manufacturer'], ['other', 'Other']];
+    ['b2b_product', 'Business software or products'], ['manufacturer', 'Manufacturer'],
+    ['marketplace', 'Marketplace or platform'], ['professional_services', 'Professional services (law, accounting, consulting)'],
+    ['hospitality_travel', 'Hotels, travel and airlines'], ['education', 'Education and training'],
+    ['health_system', 'Hospital or health system'], ['real_estate', 'Real estate'],
+    ['financial_services', 'Banking, insurance and fintech'], ['nonprofit', 'Nonprofit or association'],
+    ['personal_brand', 'Creator, consultant or personal brand'], ['other', 'Other']];
   var CUSTOMERS = [['B2C', 'Consumers'], ['B2B', 'Businesses'], ['both', 'Both']];
   var PRICES = [['budget', 'Budget'], ['mid', 'Mid-market'], ['premium', 'Premium'], ['luxury', 'Luxury'],
     ['unknown', 'Not known']];

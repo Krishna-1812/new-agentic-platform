@@ -637,7 +637,8 @@ def entrant(v, *, from_news=False):
 
 
 def scan_entrants(profile, *, own_domain, competitors, get, fetch_home, now=None, token=None,
-                  run_id=None, client=None, breaker, llm=None, search=None, verify=None):
+                  run_id=None, client=None, breaker, llm=None, search=None, verify=None,
+                  use_domains=True):
     """The new-entrant scan for a business selling online. Returns
     {"status", "note", "findings", "news", "coverage"}."""
     from . import market_radar_rivals as rivals
@@ -675,7 +676,9 @@ def scan_entrants(profile, *, own_domain, competitors, get, fetch_home, now=None
                         "news_says_new": b["is_new_brand"],
                         "via": [{"kind": "radar", "note": "named in a launch headline: %s"
                                  % b["headline"]["title"]}]}
-    stems = domain_stems(words)
+    # Yesterday's new shop domains only mean something for physical products; for software, services and
+    # the rest the launch and funding news is the signal.
+    stems = domain_stems(words) if use_domains else []
     fresh, nrd_notes = new_domains(get, now) if stems else ([], [])
     notes += nrd_notes
     matched = [d for d in fresh if any(s in d for s in stems)][:MAX_ENTRANTS_JUDGED]
@@ -760,7 +763,9 @@ def scan_entrants(profile, *, own_domain, competitors, get, fetch_home, now=None
 
 REUSE_HOURS = 24
 LOCAL_ARCHETYPES = {"local_single", "multi_location"}
-ENTRANT_ARCHETYPES = {"ecommerce"}
+from . import market_radar_playbooks as playbooks
+
+ENTRANT_ARCHETYPES = playbooks.entrant_types()
 
 
 def _search_settings(store, client_id, owner_email):
@@ -858,10 +863,11 @@ def run_for_client(client_id, owner_email, *, run_id=None, store=None, io=None, 
             profile, own_domain=c["domain"], competitors=competitors, get=io["get"],
             fetch_home=io["fetch_home"], now=now, token=os.environ.get("APIFY_API_TOKEN", ""),
             run_id=run_id, client=client, breaker=breaker, llm=llm, search=search,
-            verify=verify))
+            verify=verify, use_domains=playbooks.get(archetype)["domains"]))
     if not out:
-        out["skipped"] = "the radar covers local businesses and online shops; this is %s" % (
-            archetype or "an unknown type")
+        out["skipped"] = ("the radar looks around local businesses (new places nearby) and around "
+                          "categories with new entrants; this is %s" % (
+                              playbooks.get(archetype)["label"].lower() if archetype else "an unknown type"))
     return out
 
 
