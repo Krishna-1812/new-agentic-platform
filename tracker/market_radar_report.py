@@ -77,7 +77,7 @@ def build_pack(client_id, owner_email, *, store, now, collection=None, run_id=No
         "city": hq.get("city"), "country": hq.get("country_code"),
         "locations": profile.get("location_count"), "offerings": (profile.get("offerings") or [])[:6]},
         "competitors": [], "moves": [], "nearby": [], "entrants": [], "themes": [], "rules": [],
-        "hiring": [], "coverage": [], "built_at": now.isoformat(timespec="seconds")}
+        "hiring": [], "patterns": [], "coverage": [], "built_at": now.isoformat(timespec="seconds")}
 
     comps = store.competitors(client_id, owner_email)
     cref = {}
@@ -89,6 +89,25 @@ def build_pack(client_id, owner_email, *, store, now, collection=None, run_id=No
             "domain": r["domain"], "kind": r["kind"], "status": r["status"],
             "sells": (r.get("details") or {}).get("sells")})
     names = {r["entity_id"]: r.get("name") or r["domain"] for r in comps}
+
+    # What the readings add up to (tracker/market_radar_insight.py): each rival's momentum and public
+    # facts, and what several rivals are doing at once. Arithmetic on stored readings, so the writer
+    # may cite it and the checker can check it.
+    from . import market_radar_insight as insight
+    try:
+        over = insight.rivals_overview(client_id, owner_email, store=store, now=now) or {}
+    except Exception:
+        over = {}
+    by_entity = {c["entity_id"]: c for c in over.get("rivals") or []}
+    for item in pack["competitors"]:
+        card = by_entity.get(item["entity_id"]) or {}
+        item["momentum"] = (card.get("momentum") or {}).get("label")
+        item["facts"] = ["%s: %s (%s)" % (f["label"], f["value"], f["source"]) for f in card.get("facts") or []][:8]
+    for i, p in enumerate(over.get("patterns") or []):
+        pack["patterns"].append({"ref": "P%d" % (i + 1), "kind": p["kind"], "text": p["text"],
+                                 "rivals": p.get("rivals") or []})
+    if over.get("heat"):
+        pack["heat"] = over["heat"]["label"]
 
     # Moves, as scored for this client.
     scores = store.client_scores(client_id)
@@ -237,16 +256,20 @@ def evidence_text(item):
             ", ".join("%s %s" % tuple(kv) for kv in item["functions"]) or "n/a",
             "; ".join(item["senior"]) or "none")
     if ref[0] == "C":
-        return "%s | competitor %s (%s), %s, %s%s" % (
+        return "%s | competitor %s (%s), %s, %s%s%s%s" % (
             ref, item["name"], item["domain"], item["kind"], item["status"],
-            ", sells " + item["sells"] if item.get("sells") else "")
+            ", sells " + item["sells"] if item.get("sells") else "",
+            ", momentum: %s" % item["momentum"].replace("_", " ") if item.get("momentum") else "",
+            " | public facts: " + "; ".join(item["facts"]) if item.get("facts") else "")
+    if ref[0] == "P":
+        return "%s | %s%s" % (ref, item["text"], " (" + ", ".join(item["rivals"]) + ")" if item.get("rivals") else "")
     return ref
 
 
 def items_by_ref(pack):
     out = {}
-    for key in ("competitors", "moves", "nearby", "entrants", "themes", "rules", "hiring"):
-        for it in pack[key]:
+    for key in ("competitors", "moves", "nearby", "entrants", "themes", "rules", "hiring", "patterns"):
+        for it in pack.get(key) or []:
             out[it["ref"]] = it
     return out
 
@@ -261,8 +284,9 @@ def pack_text(pack):
                                                         "(severity is for this client)", "moves"),
                        ("NEW NEARBY", "nearby"), ("NEW BRANDS", "entrants"),
                        ("INDUSTRY THEMES", "themes"), ("US RULES", "rules"),
-                       ("HIRING", "hiring")):
-        items = pack[key]
+                       ("HIRING", "hiring"),
+                       ("WHAT SEVERAL RIVALS DO AT ONCE (counted from stored readings)", "patterns")):
+        items = pack.get(key) or []
         if not items:
             continue
         lines = []
@@ -284,7 +308,7 @@ CITED = {"type": "array", "items": {"type": "string"}}
 BRIEF_SCHEMA = {
     "type": "object", "additionalProperties": False,
     "required": ["summary", "top", "competitors", "local", "industry", "opportunities", "threats",
-                 "watch"],
+                 "watch", "patterns"],
     "properties": {
         "summary": {"type": "object", "additionalProperties": False, "required": ["text", "cites"],
                     "properties": {"text": {"type": "string"}, "cites": CITED}},
@@ -316,6 +340,9 @@ BRIEF_SCHEMA = {
             "properties": {"text": {"type": "string"}, "cites": CITED}}},
         "watch": {"type": "array", "items": {
             "type": "object", "additionalProperties": False, "required": ["text", "cites"],
+            "properties": {"text": {"type": "string"}, "cites": CITED}}},
+        "patterns": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False, "required": ["text", "cites"],
             "properties": {"text": {"type": "string"}, "cites": CITED}}}}}
 
 WRITER_SYSTEM = """You write a market-intelligence brief for the business named as CLIENT, from an evidence pack: its competitors' recent moves, new businesses near it or new brands in its category, its industry's news themes and the hiring of its competitors. The reader runs the business and has five minutes.
@@ -335,6 +362,7 @@ Write:
 - industry: for each industry theme that matters to the client (at most 5), a title and one sentence on its implication for the client.
 - opportunities, threats: two to four each, one sentence each, specific to the client.
 - watch: two or three things to check in the coming weeks (a planned opening's date, a pending deal).
+- patterns: one to three statements on what SEVERAL rivals are doing at once, taken from the WHAT SEVERAL RIVALS DO AT ONCE section (cite its P references and, where you name a rival, its C reference), each with what it means for the client. Empty when that section is empty. Competitor lines may carry public facts (staff, app, tools) and momentum: use them in a competitor's summary and cite its C reference.
 
 Rules for facts:
 - Facts about the client itself (its location, offer, size) come only from the CLIENT line. Do not assume anything else about the client (ownership, payment model, history).
@@ -400,7 +428,7 @@ def clean_brief(data, refs):
     brief["competitors"] = comps
     for key, fields, cap in (("local", ["text"], 2), ("industry", ["title", "implication"], 5),
                              ("opportunities", ["text"], 4), ("threats", ["text"], 4),
-                             ("watch", ["text"], 3)):
+                             ("watch", ["text"], 3), ("patterns", ["text"], 3)):
         brief[key] = [k for k in (keep(x, fields, "%s %d" % (key, i + 1))
                                   for i, x in enumerate(data.get(key) or [])) if k][:cap]
     return brief, dropped
@@ -437,8 +465,8 @@ def statements(brief):
             t["title"], t["what_happened"], t["so_what"], t["action"]), t["cites"]))
     for i, c in enumerate(brief["competitors"]):
         out.append(("competitors.%d" % i, c["summary"], c["cites"]))
-    for key in ("local", "opportunities", "threats", "watch"):
-        for i, x in enumerate(brief[key]):
+    for key in ("local", "opportunities", "threats", "watch", "patterns"):
+        for i, x in enumerate(brief.get(key) or []):
             out.append(("%s.%d" % (key, i), x["text"], x["cites"]))
     for i, x in enumerate(brief["industry"]):
         out.append(("industry.%d" % i, "%s: %s" % (x["title"], x["implication"]), x["cites"]))
@@ -486,8 +514,8 @@ def check_brief(brief, pack, *, run_id=None, client=None, llm=None):
     out = dict(brief)
     if "summary" in bad:
         out["summary"] = None
-    for key in ("top", "competitors", "local", "industry", "opportunities", "threats", "watch"):
-        out[key] = [x for i, x in enumerate(brief[key]) if "%s.%d" % (key, i) not in bad]
+    for key in ("top", "competitors", "local", "industry", "opportunities", "threats", "watch", "patterns"):
+        out[key] = [x for i, x in enumerate(brief.get(key) or []) if "%s.%d" % (key, i) not in bad]
     note = None
     if unchecked:
         note = "%d statements got no verdict from the check and are shown unchecked." % len(unchecked)

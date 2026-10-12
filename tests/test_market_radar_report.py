@@ -136,6 +136,38 @@ def test_the_writer_reads_every_item_with_its_reference():
         assert frag in text, frag
 
 
+def test_the_pack_carries_each_rivals_public_facts_and_what_several_rivals_do_at_once():
+    st = Store()
+    st.jobs[11] = {"payload": {"open": 5, "places": {"Austin": 1}, "by_function": {"Clinical": 4}, "senior_open": []},
+                   "last_seen_at": NOW}
+    base = st.latest_snapshot
+    st.latest_snapshot = lambda e, d: ({"payload": {"employees": 900, "employees_year": "2025"}} if (e, d) == (10, "facts")
+                                       else {"payload": {"tools": ["Klaviyo"]}} if (e, d) == (10, "stack") else base(e, d))
+    p = R.build_pack(1, "o", store=st, now=NOW, collection=COLLECTION, run_id=7)
+    big = next(c for c in p["competitors"] if c["ref"] == "C1")
+    assert big["facts"] == ["Staff: 900 (2025) (Wikidata)", "Tools: Klaviyo (its homepage)"]
+    assert big["momentum"] in ("speeding_up", "steady", "quiet", "slowing")
+    texts = [x["text"] for x in p["patterns"]]
+    assert "2 of 2 rivals are hiring; most open roles are in Clinical (34)" in texts and p["patterns"][0]["ref"] == "P1"
+    text = R.pack_text(p)
+    assert "WHAT SEVERAL RIVALS DO AT ONCE" in text and "public facts: Staff: 900 (2025) (Wikidata)" in text
+    assert R.items_by_ref(p)["P1"] is p["patterns"][0] and R.evidence_text(p["patterns"][0]).startswith("P1 | ")
+
+
+def test_the_brief_may_state_patterns_and_the_check_reads_them():
+    p = pack()
+    p["patterns"] = [{"ref": "P1", "kind": "hiring_focus", "text": "2 of 2 rivals are hiring", "rivals": ["BigChain"]}]
+    data = {"summary": {"text": "s", "cites": ["M1"]}, "top": [], "competitors": [], "local": [], "industry": [],
+            "opportunities": [], "threats": [], "watch": [],
+            "patterns": [{"text": "Both rivals are hiring, so staff are in demand.", "cites": ["p1", "M1"]},
+                         {"text": "Nobody cited this.", "cites": []}]}
+    brief, dropped = R.clean_brief(data, R.items_by_ref(p))
+    assert brief["patterns"] == [{"text": "Both rivals are hiring, so staff are in demand.", "cites": ["P1", "M1"]}]
+    assert any(d["where"] == "patterns 2" for d in dropped)
+    assert ("patterns.0", "Both rivals are hiring, so staff are in demand.", ["P1", "M1"]) in R.statements(brief)
+    assert "patterns" in R.BRIEF_SCHEMA["required"] and "patterns" in R.WRITER_SYSTEM
+
+
 # == the brief ==============================================================================
 
 def test_the_brief_keeps_only_statements_that_cite_real_evidence():

@@ -5586,7 +5586,7 @@ CLIENT_TOOL_ROUTES = {
         r"thought-leader-pr/(resolve|search|runs/\d+(/(collect|collect-press|collect-reaction|collect-synthesis|confirm))?)",),
     # Not the weekly email (its settings are read-only to a client), the one-off tidies or the cost report.
     "market-radar": (
-        r"market-radar/api/(runs(/\d+)?|clients(/\d+(/(profile|competitors(/\d+)?|collect|moves|monitor|report|"
+        r"market-radar/api/(runs(/\d+)?|clients(/\d+(/(profile|competitors(/\d+)?|collect|moves|rivals|monitor|report|"
         r"report/pdf|events/\d+/feedback))?)?)",),
     # The free mapping only: never a reveal, which spends the agency's Saleshandy credits.
     "people-signals": (r"people-signals/api/(status|estimate|runs(/\d+(/export\.csv)?)?)",),
@@ -11487,6 +11487,21 @@ def admin_market_radar_moves(client_id):
     if view is None:
         return jsonify(error="No such company of yours."), 404
     return jsonify(view)
+
+
+@app.route("/strategic-agents/market-radar/api/clients/<int:client_id>/rivals")
+@position2_required
+def admin_market_radar_rivals(client_id):
+    """The rivals side by side (tracker/market_radar_insight.py): momentum, a card of everything known
+    about each, and what several of them are doing at once. Free: arithmetic on stored readings."""
+    from tracker import market_radar_insight as insight, market_radar_store as mr_store
+    try:
+        out = insight.rivals_overview(client_id, _mr_email(), store=mr_store)
+    except mr_store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+    if out is None:
+        return jsonify(error="No such company of yours."), 404
+    return jsonify(out)
 
 
 @app.route("/strategic-agents/market-radar/report/<int:client_id>")

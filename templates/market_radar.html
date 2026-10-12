@@ -15,7 +15,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Market Radar", ["strategic-agents.css?v=2", "market_radar.css?v=4"]) }}
+{{ head("Market Radar", ["strategic-agents.css?v=2", "market_radar.css?v=5"]) }}
 </head>
 <body class="sa"{% if viewer_is_client() %} data-mr-client{% endif %}>
 
@@ -106,6 +106,6 @@
 </footer>
 
 {{ topbar_script() }}
-<script src="{{ url_for('static', filename='js/market_radar.js') }}?v=7"></script>
+<script src="{{ url_for('static', filename='js/market_radar.js') }}?v=8"></script>
 </body>
 </html>
