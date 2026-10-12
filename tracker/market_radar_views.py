@@ -295,7 +295,7 @@ def competitor_rows(client_id, owner_email, *, conn=None):
             "confidence": _num(r["confidence"]), "reason": d.get("reason"),
             "sells": d.get("sells"), "location": d.get("location"),
             "distance_km": d.get("distance_km"), "near_site": d.get("near_site"),
-            "branches_nearby": d.get("branches_nearby"),
+            "branches_nearby": d.get("branches_nearby"), "lat": d.get("lat"), "lon": d.get("lon"),
             "checked_on": d.get("checked_on"), "found": r.get("found_via") or [],
             "added_by_user": bool(d.get("added_by_user")), "updated_at": _iso(r.get("updated_at"))})
     return out
@@ -508,7 +508,7 @@ def moves_view(client_id, owner_email, *, conn=None):
                     radar[part]["findings"] = [
                         {k: f.get(k) for k in ("name", "category", "distance_km", "near", "address",
                                                "website", "status", "certain", "evidence", "date",
-                                               "is_competitor", "reason", "location")}
+                                               "is_competitor", "reason", "location", "lat", "lon")}
                         for f in x.get("findings") or []][:40]
                     radar[part]["news"] = [{k: h.get(k) for k in ("title", "publisher", "date",
                                                                   "link")}

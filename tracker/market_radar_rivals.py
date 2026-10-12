@@ -503,7 +503,7 @@ def from_places(pool, profile, plan, *, places=None):
             pool.add(w, "places", name=p.get("name"), url=w, distance_km=p["distance_km"],
                      category=p.get("taxonomy") or p.get("category"),
                      address=", ".join(x for x in (p.get("street"), p.get("city")) if x),
-                     branches_nearby=len(rows), **extra)
+                     lat=p.get("lat"), lon=p.get("lon"), branches_nearby=len(rows), **extra)
             here += 1
             added += 1
         companies.update(by_domain)
@@ -1097,6 +1097,7 @@ def discover(profile, *, run_id=None, client=None, token=None, progress=None, se
             near = [v for v in item["via"] if v["kind"] == "places"]
             if kind == "local" and not near and line_by[d].get("where") != "same_city":
                 kind = "direct"     # "local" needs a map listing or a same-city address
+            nearest = min(near, key=lambda v: v["distance_km"]) if near else {}
             competitors.append({
                 "domain": d, "name": line_by[d]["name"], "kind": kind,
                 "score": score,
@@ -1104,6 +1105,8 @@ def discover(profile, *, run_id=None, client=None, token=None, progress=None, se
                 "location": line_by[d]["location"], "distance_km": line_by[d]["distance_km"],
                 "near_site": line_by[d]["near_site"],
                 "branches_nearby": line_by[d]["branches_nearby"],
+                # Where the map lists it (not sent to the ranking model, which has no use for it).
+                "lat": nearest.get("lat"), "lon": nearest.get("lon"),
                 "found": [_via_label(v) for v in item["via"][:4]],
                 "found_by": line_by[d]["found_by"], "checked_on": line_by[d]["checked_on"]})
             if len(competitors) >= limit:
@@ -1138,7 +1141,8 @@ def save(result, *, client_id, owner_email, conn=None):
     for c in result.get("competitors") or []:
         entity = store.upsert_entity(c["domain"], name=c.get("name") or None, conn=conn)
         details = {k: c.get(k) for k in ("reason", "sells", "location", "distance_km",
-                                         "near_site", "branches_nearby", "checked_on", "found_by", "score")}
+                                         "near_site", "branches_nearby", "lat", "lon", "checked_on", "found_by",
+                                         "score")}
         details["run_id"] = result.get("run_id")
         store.propose_competitor(client_id, owner_email, entity, c["kind"],
                                  confidence=round(c["score"] / 100.0, 2),

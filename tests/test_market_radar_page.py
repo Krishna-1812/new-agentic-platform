@@ -210,7 +210,8 @@ def _client(email):
     ("post", BASE + "/api/clients/1/profile"), ("post", BASE + "/api/clients/1/competitors"),
     ("post", BASE + "/api/clients/1/competitors/2"), ("post", BASE + "/api/runs"),
     ("get", BASE + "/api/runs/1"), ("post", BASE + "/api/clients/1/collect"),
-    ("get", BASE + "/api/clients/1/moves"), ("get", BASE + "/api/clients/1/rivals")])
+    ("get", BASE + "/api/clients/1/moves"), ("get", BASE + "/api/clients/1/rivals"),
+    ("get", BASE + "/api/clients/1/map")])
 @pytest.mark.parametrize("email", [None, "someone@gmail.example"])
 def test_every_route_is_for_the_team_only(method, path, email):
     """Market Radar is a team agent now (listed on the agents page as
@@ -832,7 +833,7 @@ def test_the_company_page_shows_one_section_at_a_time_and_the_menu_says_whats_in
     assert "Results" in nav and "Set-up" in nav and out["none"] == ""
 
 
-def test_the_overview_leads_with_what_needs_doing_and_draws_the_rivals_on_a_radar():
+def test_the_overview_leads_with_what_needs_doing_and_leaves_a_slot_for_the_map():
     import re
     out = run_js("""const v = %s, m = %s; return {
         ov: MR.renderOverview({view: v, moves: m}),
@@ -841,27 +842,34 @@ def test_the_overview_leads_with_what_needs_doing_and_draws_the_rivals_on_a_rada
                  % (json.dumps(SECTION_VIEW), json.dumps(SECTION_MOVES)))
     ov = out["ov"]
     assert "1 move needs your attention." in ov and "Watching 2 rivals around 2 sites" in ov
-    assert ov.count('class="mr-pl-dot"') == 2                       # the removed rival is not drawn
-    assert ov.count("mr-pl-b h-sky open") == 1 and "mr-pl-b h-acc\"" in ov
+    assert 'id="mrMapSlot"' in ov and "Placing your rivals on the map" in ov     # the map (market_radar_map.js) fills it
+    assert "mr-pl-dot" not in ov and "mr-pl-sweep" not in ov                      # the radar dial is gone
     assert "Most important now" in ov and "Opened" in ov and "Rivals to watch" in ov
     assert ov.index("Alpha</b>") < ov.index("Beta</b>")              # ranked by score
     assert 'data-act="collect"' in ov and "Collect again" in ov and "/strategic-agents/market-radar/report/7" in ov
     assert "Loading…" in out["loading"] and "No rivals on the radar yet." in out["empty"]
 
 
-def test_the_radar_puts_the_rivals_to_watch_nearest_and_escapes_their_names():
-    import re
-    rows = [{"domain": "d%d.example" % i, "name": EVIL if i == 0 else "R%d" % i, "kind": k, "status": "confirmed",
-             "score": 40 + i * 6} for i, k in enumerate(["direct", "local", "indirect", "aspirational"] * 2)]
-    svg = run_js("return MR.renderRadarPlot(%s);" % json.dumps(rows))
-    _no_markup_from(svg)
-    dots = [(float(x), float(y)) for x, y in re.findall(r'class="mr-pl-dot" cx="([\d.]+)" cy="([\d.]+)"', svg)]
-    dist = [((x - 180) ** 2 + (y - 180) ** 2) ** .5 for x, y in dots]
-    assert len(dots) == 8 and dist.index(min(dist)) == 7 and dist.index(max(dist)) == 0
-    # each kind keeps to its quarter: direct is up and to the right
-    x, y = dots[0]
-    assert x >= 180 and y <= 180
-    assert svg.count('class="mr-pl-lab"') <= 5
+def test_the_map_route_reads_stored_coordinates_and_only_for_the_owner(client_with_reading, monkeypatch):
+    import app as appmod
+    from tracker import market_radar_store as store
+    monkeypatch.setattr(appmod, "ADMIN_EMAILS", set(appmod.ADMIN_EMAILS) | {OWNER})
+    w = client_with_reading
+    near = store.upsert_entity("near.example", name="Near Dental")
+    store.propose_competitor(w["client"], OWNER, near, "local", confidence=0.8, found_via=["map"],
+                             details={"score": 80, "distance_km": 0.9, "lat": 52.51, "lon": 13.31, "location": "Berlin"})
+    online = store.upsert_entity("online.example", name="Online Only")
+    store.propose_competitor(w["client"], OWNER, online, "indirect", confidence=0.5,
+                             details={"score": 50, "location": "Online only"})
+    c = _client(OWNER)
+    out = c.get(BASE + "/api/clients/%d/map" % w["client"]).get_json()
+    assert [(p["name"], p["how"], p["lat"]) for p in out["rivals"]] == [("Near Dental", "map listing", 52.51)]
+    assert [u["name"] for u in out["unplaced"]] == ["Online Only"] and out["pending"] == 0
+    assert out["you"][0]["lat"] == 52.5 and out["tiles"]["url"].startswith("https://") and "OpenStreetMap" in out["tiles"]["attribution"]
+    assert c.get(BASE + "/api/clients/999999/map").status_code == 404
+    assert _client(OTHER).get(BASE + "/api/clients/%d/map" % w["client"]).status_code in (302, 404)
+    monkeypatch.setenv("MR_MAP_TILES", "https://tiles.example/{z}/{x}/{y}.png")
+    assert c.get(BASE + "/api/clients/%d/map" % w["client"]).get_json()["tiles"]["url"] == "https://tiles.example/{z}/{x}/{y}.png"
 
 
 def test_long_cards_are_split_into_tabs_with_one_open():

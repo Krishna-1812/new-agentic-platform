@@ -268,6 +268,7 @@ def test_places_use_the_clients_own_listing_category_and_keep_the_nearest_compan
     assert "closed.example" not in pool.items and "acme.example" not in pool.items
     chain = pool.items["chain.example"]["via"][0]
     assert chain["distance_km"] == 0.4 and chain["branches_nearby"] == 2
+    assert (chain["lat"], chain["lon"]) == (30.0, -97.0), "where the map lists it is kept, for the map of rivals"
 
 
 def test_places_widen_the_radius_once_when_the_area_is_thin():
@@ -457,6 +458,8 @@ def test_discover_end_to_end_ranks_only_checked_candidates():
     assert list(got) == ["rival.example", "near.example", "web.example"]     # by score
     assert out["coverage"]["rank_dropped"]["domains"] == ["invented.example"]
     assert got["near.example"]["kind"] == "local" and got["near.example"]["distance_km"] == 0.5
+    assert (got["near.example"]["lat"], got["near.example"]["lon"]) == (30.0, -97.0)
+    assert got["web.example"]["lat"] is None and got["web.example"]["lon"] is None, "a web rival has no listing"
     assert got["web.example"]["kind"] == "direct"     # "local" needs the map or a same-city address
     assert "—" not in got["rival.example"]["reason"] and "—" not in out["gaps"][0]
     assert got["rival.example"]["checked_on"] == "its own homepage"

@@ -417,33 +417,24 @@
 .mr-kpi.k-paper { background: #F6F4F0; }
 .mr-kpi.k-sky { background: var(--sky); }
 .mr-kpi.k-cream { background: var(--cream); }
-.mr-cmd-r { display: grid; justify-items: center; gap: 12px; }
+.mr-cmd-r { display: grid; justify-items: stretch; gap: 12px; }
 @media (max-width: 1080px) { .mr-cmd { grid-template-columns: 1fr; } .mr-cmd-r { order: -1; } .mr-plot { max-width: 320px; } }
 @media (max-width: 520px) { .mr-kpis { gap: 8px; } .mr-kpi { padding: 12px 13px; } }
 
-/* The radar of rivals (renderRadarPlot): rings, quarters by kind, a sweep. */
+/* The distance plot of the Nearby section (proximityPlot): rings round the client's sites. */
 .mr-plot { width: 100%; max-width: 400px; height: auto; display: block; overflow: visible; }
 .mr-pl-ring { fill: none; stroke: #303034; stroke-width: 1; }
 .mr-pl-ring:last-of-type { stroke: #3A3A3F; }
 .mr-pl-axis { fill: none; stroke: #2C2C30; stroke-dasharray: 2 5; }
 .mr-pl-q { fill: #77736D; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-family: var(--font-body); }
-.mr-pl-sweep { transform-box: view-box; animation-name: mr-sweep; animation-timing-function: linear; animation-iteration-count: infinite; }
-.mr-pl-wedge { fill: rgba(255,96,34,.13); }
-.mr-pl-hand { stroke: var(--acc); stroke-width: 2; stroke-linecap: round; }
 .mr-pl-dot { fill: var(--hue); stroke: #121213; stroke-width: 2; }
 .mr-pl-b.open .mr-pl-dot { fill: #121213; stroke: var(--hue); stroke-width: 2.4; }
-.mr-pl-ping { fill: none; stroke: var(--hue); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center;
-  animation-name: mr-ping; animation-timing-function: ease-out; animation-iteration-count: infinite;
-  /* Not an entrance stagger: each blip pings when the sweep's hand reaches
-     its bearing, so its delay is its angle as a share of one turn. */
-  animation-delay: var(--ping, 0s); }
-@keyframes mr-ping { 0% { opacity: .95; transform: scale(1); } 22% { opacity: 0; transform: scale(3); } 100% { opacity: 0; transform: scale(3); } }
 .mr-pl-lab { fill: #E4E0D9; font-size: 11px; font-weight: 600; font-family: var(--font-body); paint-order: stroke; stroke: #121213; stroke-width: 4px; stroke-linejoin: round; }
 .mr-pl-you { fill: var(--acc); }
 .mr-pl-you2 { fill: none; stroke: var(--acc); stroke-opacity: .45; stroke-width: 1.5; }
 .mr-pl-b { cursor: default; }
 .mr-pl-b:hover .mr-pl-dot { stroke: #F6F4F0; }
-@media (prefers-reduced-motion: reduce) { .mr-pl-sweep, .mr-pl-ping, .mr-cmd-eye i { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .mr-cmd-eye i { animation: none; } }
 .mr-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; font-size: 12px; color: #A8A39C; }
 .mr-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .mr-legend i { width: 9px; height: 9px; border-radius: 50%; background: var(--hue); }
@@ -736,3 +727,88 @@
 .mr-facts > div { padding: 12px 14px; border-radius: 14px; background: var(--s2); min-width: 0; }
 .mr-facts dt { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--tx3); }
 .mr-facts dd { margin: 4px 0 0; font-size: 14.5px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+
+
+/* == The map of rivals (static/js/market_radar_map.js; Leaflet over OpenStreetMap) =============== */
+.mr-mapslot { min-width: 0; }
+.mr-map { position: relative; min-width: 0; }
+.mr-map-stage { position: relative; border-radius: 22px; overflow: hidden; background: #E9E4DA; isolation: isolate;
+  box-shadow: 0 0 0 1px #34343A, 0 18px 40px -18px rgba(0,0,0,.65); }
+.mr-map-canvas { height: clamp(340px, 38vw, 470px); width: 100%; background: #E9E4DA; font-family: var(--font-body); }
+.mr-map .leaflet-container { font-family: var(--font-body); }
+.mr-map-chips { position: absolute; z-index: 800; left: 12px; top: 12px; right: 64px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
+.mr-mk { pointer-events: auto; appearance: none; border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; font: 700 12px var(--font-body);
+  padding: 6px 11px 6px 9px; border-radius: var(--r-pill); color: #121213; background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.22);
+  backdrop-filter: blur(6px); transition: opacity 150ms ease, transform 150ms ease; }
+.mr-mk i { width: 11px; height: 11px; border-radius: 50%; background: var(--hue); box-shadow: inset 0 0 0 2px #121213; }
+.mr-mk b { font-weight: 800; color: #6B675F; font-variant-numeric: tabular-nums; }
+.mr-mk:not(.on) { opacity: .55; }
+.mr-mk:not(.on) i { background: transparent; }
+.mr-mk:hover { transform: translateY(-1px); }
+.mr-mk:focus-visible, .mr-mt:focus-visible, .mr-pop-go:focus-visible { outline: 2px solid #121213; outline-offset: 2px; }
+.mr-map-tools { position: absolute; z-index: 800; left: 12px; bottom: 30px; display: flex; gap: 6px; }
+.mr-mt { appearance: none; border: 0; cursor: pointer; font: 700 12px var(--font-body); padding: 7px 13px; border-radius: var(--r-pill); color: #F6F4F0; background: #121213;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3); transition: background 150ms ease; }
+.mr-mt:hover { background: #2A2A2E; }
+.mr-map-warn { position: absolute; z-index: 800; left: 12px; right: 12px; bottom: 66px; padding: 8px 12px; border-radius: 12px; background: #FFF4D6; color: #5A4300; font-size: 12.5px; text-align: center; }
+.mr-map-note { margin: 10px 2px 0; font-size: 12.5px; line-height: 1.5; color: #A8A39C; }
+.mr-map .leaflet-bar { border: 0; box-shadow: 0 2px 8px rgba(0,0,0,.28); border-radius: 12px; overflow: hidden; }
+.mr-map .leaflet-bar a { width: 34px; height: 34px; line-height: 34px; color: #121213; border-bottom-color: #E4E0D9; }
+.mr-map .leaflet-control-attribution { font-size: 10px; background: rgba(255,255,255,.82); border-radius: 8px 0 0 0; }
+.mr-map .leaflet-popup-content-wrapper { border-radius: 16px; padding: 2px; box-shadow: 0 12px 30px -8px rgba(0,0,0,.45); }
+.mr-map .leaflet-popup-content { margin: 12px 14px 13px; font-size: 13px; line-height: 1.45; color: #2A2823; }
+
+/* Pins: a teardrop in the rival's kind colour, a ring for one still to review. */
+.mr-pinwrap { background: none; border: 0; }
+.mr-pin { position: absolute; left: 2px; top: 0; width: 26px; height: 26px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+  background: var(--hue); border: 2.5px solid #121213; box-shadow: 0 4px 9px rgba(0,0,0,.38); transition: transform 150ms ease; }
+.mr-pin i { position: absolute; inset: 4.5px; border-radius: 50%; background: #fff; }
+.mr-pin.open { background: #fff; border-style: dashed; }
+.mr-pin.open i { background: var(--hue); }
+.leaflet-marker-icon:hover .mr-pin { transform: rotate(-45deg) scale(1.12); }
+.mr-cl { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: #121213; color: #fff; border: 3px solid var(--hue);
+  box-shadow: 0 0 0 5px rgba(18,18,19,.16), 0 5px 12px rgba(0,0,0,.35); }
+.mr-cl b { font: 800 14px var(--font-body); font-variant-numeric: tabular-nums; }
+.mr-you-wrap { z-index: 700; }
+.mr-you { position: absolute; inset: 8px; border-radius: 50%; background: #121213; border: 3px solid var(--acc); box-shadow: 0 0 0 0 rgba(255,96,34,.55), 0 4px 10px rgba(0,0,0,.4);
+  animation: mr-you-ping 2.6s ease-out infinite; }
+.mr-you i { position: absolute; inset: 3px; border-radius: 50%; background: var(--acc); }
+@keyframes mr-you-ping { 0% { box-shadow: 0 0 0 0 rgba(255,96,34,.55), 0 4px 10px rgba(0,0,0,.4); } 70%, 100% { box-shadow: 0 0 0 16px rgba(255,96,34,0), 0 4px 10px rgba(0,0,0,.4); } }
+.mr-map .leaflet-tooltip.mr-tip { background: #121213; color: #fff; border: 0; border-radius: 9px; padding: 4px 9px; font: 600 12px var(--font-body); box-shadow: 0 3px 10px rgba(0,0,0,.35); }
+.mr-map .leaflet-tooltip.mr-tip::before { display: none; }
+.mr-map .leaflet-tooltip.mr-tip.you { background: var(--acc); color: #121213; padding: 3px 9px; font-weight: 800; letter-spacing: .02em; }
+
+/* The popup of a rival. */
+.mr-pop b { display: block; font-size: 15px; letter-spacing: -.01em; margin: 3px 0 1px; color: #121213; }
+.mr-pop p { margin: 4px 0 0; }
+.mr-pop .mr-pop-w { color: #6B675F; font-weight: 600; }
+.mr-pop small { display: block; margin-top: 6px; color: #8A857C; font-size: 11.5px; }
+.mr-pop-k { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #6B675F; }
+.mr-pop-k i { width: 10px; height: 10px; border-radius: 50%; background: var(--hue, #121213); box-shadow: inset 0 0 0 2px #121213; }
+.mr-pop-go { appearance: none; border: 0; cursor: pointer; margin-top: 10px; font: 700 12px var(--font-body); padding: 7px 13px; border-radius: var(--r-pill); background: #121213; color: #F6F4F0; }
+.mr-pop-go:hover { background: #2A2A2E; }
+.mr-pop-l { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; max-height: 190px; overflow: auto; }
+.mr-pop-l li { display: flex; align-items: center; gap: 8px; }
+.mr-pop-l i { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--hue); box-shadow: inset 0 0 0 2px #121213; }
+.mr-pop-l .mr-pop-go { margin: 0; padding: 4px 11px; background: #F1EEE8; color: #121213; text-align: left; }
+.mr-pop-l .mr-pop-go:hover { background: #E4E0D9; }
+
+.mr-map-wait { min-height: 260px; border-radius: 22px; display: grid; place-content: center; justify-items: center; gap: 12px; text-align: center; padding: 24px;
+  color: #A8A39C; font-size: 14px; line-height: 1.5; background: #1A1A1C; box-shadow: 0 0 0 1px #34343A; }
+.mr-map-wait b { color: #F6F4F0; }
+.mr-map-wait i { width: 22px; height: 22px; border-radius: 50%; border: 3px solid #34343A; border-top-color: var(--acc); animation: mr-spin 900ms linear infinite; }
+@keyframes mr-spin { to { transform: rotate(360deg); } }
+.mr-map-fallback { padding: 18px; border-radius: 22px; background: #1A1A1C; color: #B5B1AB; font-size: 13.5px; box-shadow: 0 0 0 1px #34343A; }
+.mr-map-fallback ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.mr-map-fallback li { display: grid; grid-template-columns: 12px auto; gap: 2px 9px; align-items: center; }
+.mr-map-fallback li i { width: 10px; height: 10px; border-radius: 50%; background: var(--hue); }
+.mr-map-fallback li span { grid-column: 2; font-size: 12px; opacity: .8; }
+.mr-map-fallback b { color: #F6F4F0; }
+.mr-rc.flash { box-shadow: 0 0 0 3px var(--acc); transition: box-shadow 300ms ease; }
+@media (max-width: 520px) {
+  .mr-map-canvas { height: 330px; }
+  .mr-map-chips { right: 52px; gap: 5px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; pointer-events: auto; padding-bottom: 4px; }
+  .mr-mk { flex: none; }
+  .mr-mk { padding: 5px 9px 5px 8px; font-size: 11.5px; }
+}
+@media (prefers-reduced-motion: reduce) { .mr-you, .mr-map-wait i { animation: none; } .mr-pin, .mr-mk { transition: none; } }
