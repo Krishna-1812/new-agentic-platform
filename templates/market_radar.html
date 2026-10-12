@@ -100,7 +100,8 @@
   </div>
   <div class="sa-foot-bottom">
     <span>{{ brand.name }} &middot; Internal use only</span>
-    <a href="/strategic-agents/market-radar">Market Radar</a>
+    {%- set mr_link = crumb_href("/strategic-agents/market-radar") %}
+    {%- if mr_link %}<a href="{{ mr_link }}">Market Radar</a>{% endif %}
   </div>
 </footer>
 

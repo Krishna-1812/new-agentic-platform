@@ -5712,6 +5712,27 @@ def viewer_is_client():
 app.add_template_global(viewer_is_client, "viewer_is_client")
 
 
+def crumb_href(href):
+    """A link in the top bar, as a client inside their account may follow it: a page their account has
+    becomes the account's own (the Market Radar page -> /<account>/agents/market-radar); any other page
+    of ours turns them away, so it is no link at all (None). Staff, and links elsewhere, are unchanged."""
+    if not href or not viewer_is_client():
+        return href
+    acct = g.get("client_acct") or g.get("acct")
+    if acct is None:
+        return href
+    path, _, frag = href.partition("#")
+    page = _ACCT_FROM_GLOBAL.get(path.rstrip("/") or "/")
+    if page is not None:
+        return "/%s%s%s" % (acct["slug"], "/" + page if page else "", "#" + frag if frag else "")
+    if any(path == p or path.startswith(p + "/") for p in CLIENT_FENCE):
+        return None
+    return href
+
+
+app.add_template_global(crumb_href, "crumb_href")
+
+
 @app.after_request
 def _acct_client_scrub(resp):
     """A client's JSON answers lose every cost and credit figure, whatever route they came from."""
@@ -5972,6 +5993,8 @@ def _inject_account_switch():
     u = _get_user() or {}
     email = u.get("email", "")
     acct = getattr(g, "acct", None)
+    if acct is None and email and not _is_staff(email):
+        acct = g.get("client_acct")      # a client on a page a shared tool opens (a radar's report)
     ctx = None
     if acct is not None:
         ctx = {"slug": acct["slug"], "name": acct["name"], "home": "/" + acct["slug"],

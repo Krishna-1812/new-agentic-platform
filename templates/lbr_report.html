@@ -65,7 +65,7 @@
         {% endif %}
         <a class="sa-btn sa-btn--ghost" href="/strategic-agents/local-business-radar/runs/{{ run.id }}/export.xlsx">Excel</a>
         <a class="sa-btn sa-btn--ghost" href="/strategic-agents/local-business-radar/runs/{{ run.id }}/export.csv">CSV</a>
-        <a class="sa-btn {{ 'sa-btn--ghost' if payload.resumable else 'sa-btn--hero' }} lbrr-new" href="/strategic-agents/local-business-radar">New search</a>
+        <a class="sa-btn {{ 'sa-btn--ghost' if payload.resumable else 'sa-btn--hero' }} lbrr-new" href="{{ crumb_href('/strategic-agents/local-business-radar') }}">New search</a>
       </div>
     </div>
 
@@ -211,7 +211,7 @@
   </div>
   <div class="sa-foot-bottom">
     <span>{{ brand.name }} &middot; Internal use only</span>
-    <a href="/strategic-agents/local-business-radar">Local Business Radar</a>
+    <a href="{{ crumb_href('/strategic-agents/local-business-radar') }}">Local Business Radar</a>
   </div>
 </footer>
 

@@ -213,7 +213,7 @@
   </div>
   <div class="sa-foot-bottom">
     <span>{{ brand.name }} &middot; Internal use only</span>
-    <a href="/strategic-agents">{{ brand.agents_plural }}</a>
+    {%- if crumb_href("/strategic-agents") %}<a href="/strategic-agents">{{ brand.agents_plural }}</a>{% endif %}
   </div>
 </footer>
 
