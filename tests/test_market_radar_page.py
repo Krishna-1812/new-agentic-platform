@@ -876,3 +876,45 @@ def test_long_cards_are_split_into_tabs_with_one_open():
     assert open_tab(out["near"], "nearby") == ["entrants"] and "Near your sites" in out["near"]
     assert open_tab(out["prof"], "profile") == ["where"] and "What the website says" in out["prof"]
     assert "Waltham" in out["prof"] and 'data-act="tab"' not in out["edit"]
+
+
+# == Each results section opens like the overview ==========================================
+
+def test_each_results_section_opens_with_a_head_of_figures_and_a_picture():
+    import re
+    out = run_js("""const v = %s, m = %s;
+        m.events[0].entity_id = 1;
+        m.radar.local.findings = [{name: 'Newco', distance_km: 0.9, near: 'Tampa', certain: true, evidence: ['opened'], date: '2026-10-01'},
+                                  {name: 'Maybe', distance_km: 6.1, certain: false, evidence: [], date: '2026-05-24'}];
+        m.pulse.markets[0].themes = [{title: 'T1', summary: 's', kind: 'workforce', kind_label: 'Staffing', publishers: 2,
+                                      articles: [{title: 'a', publisher: 'Axios', link: 'https://a.example'}]},
+                                     {title: 'T2', summary: 's', kind: 'regulation', kind_label: 'Regulation', publishers: 3, articles: []}];
+        m.pulse.markets[0].articles = 297; m.pulse.markets[0].label = 'Dentists';
+        v.profile.fields.offerings = ['Implants', 'Braces']; v.profile.fields.location_count = 3;
+        const d = MR.renderDetail({view: v, moves: m, section: 'moves'});
+        return {moves: MR.renderMoves(m, null), near: MR.renderRadar(m.radar), pulse: MR.renderPulse(m.pulse),
+                prof: MR.renderProfile(v, false, null), edit: MR.renderProfile(v, true, null), detail: d};"""
+                 % (json.dumps(SECTION_VIEW), json.dumps(SECTION_MOVES)))
+    for key in ("moves", "near", "pulse", "prof"):
+        assert out[key].startswith('<div class="mr-ov"><div class="mr-cmd mr-sh'), key
+        assert out[key].count('class="mr-kpi static') == 4, key
+    assert "1 move needs your attention." in out["moves"] and 'class="mr-ac"' in out["moves"] and "Most active" in out["moves"]
+    assert 'class="mr-dt" title="2026-10-06"><b>6</b><span>Oct</span>' in out["moves"]
+    assert "1 new business like this one near you." in out["near"] and "mr-prox" in out["near"]
+    assert "Distance to scale, direction not" in out["near"] and '<b>0.9</b><small>km</small>' in out["near"]
+    assert "2 themes moving the industry this month." in out["pulse"] and "What the news is about" in out["pulse"]
+    assert ">297<" in out["pulse"] and 'class="mr-theme h-acc"' in out["pulse"] and "mr-pubs" in out["pulse"]
+    assert "Where they are" in out["prof"] and "Waltham" in out["prof"] and '<div class="mr-v mr-pills"><span>Implants</span>' in out["prof"]
+    assert "mr-sh" not in out["edit"], "editing the profile shows the form alone"
+    # the monogram of a rival in the moves takes its kind's colour (Alpha is direct)
+    assert re.search(r'mr-mono h-acc"[^>]*>A</span><b>Alpha</b>', out["detail"])
+
+
+def test_section_heads_say_so_when_there_is_nothing_yet():
+    out = run_js("""return {moves: MR.renderMoves({today: '2026-10-11', events: [], top: [], competitors: [{}],
+                               last_collect: {status: 'complete', coverage: []}}, null),
+                            near: MR.renderRadar({local: {status: 'ok', note: 'n', findings: [], news: []}}),
+                            pulse: MR.renderPulse({markets: [{country: 'US', status: 'not_read'}]})};""")
+    assert "No moves yet." in out["moves"] and "No moves yet" in out["moves"]
+    assert "Nothing new nearby." in out["near"] and "mr-prox" not in out["near"]
+    assert "No clear themes this month." in out["pulse"] and "Not read yet." in out["pulse"]
