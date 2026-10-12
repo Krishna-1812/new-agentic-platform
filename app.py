@@ -11678,6 +11678,201 @@ def admin_contact_lab_run(run_id):
     return jsonify(run)
 
 
+# == Account Mapper (admin only) =====================================================
+# Company names and job titles in; the right people, their verified emails and
+# a picture of each account out, built on Saleshandy's Lead Finder. Mapping is
+# free; credits are spent only on a reveal confirmed on the page; Claude is
+# optional and capped. tracker/account_mapper*.py; docs/account-mapper-plan.md.
+
+AM_MODELS = ("claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5")
+
+
+@app.route("/admin/account-mapper")
+@admin_required
+def admin_account_mapper():
+    return render_template("account_mapper.html", user=_get_user())
+
+
+@app.route("/admin/account-mapper/api/status")
+@admin_required
+def admin_account_mapper_status():
+    """Is Saleshandy connected, and what is left. Free: the credit balance
+    and the rate limits cost nothing."""
+    from tracker import account_mapper as am, contact_lab_search as search, saleshandy_client as sh
+    out = {"saleshandy": {"configured": sh.configured()}, "claude": {"configured": search.claude_configured()},
+           "models": list(AM_MODELS), "limits": {"companies": am.MAX_COMPANIES, "roles": am.MAX_ROLES,
+                                                 "per_role": am.MAX_PER_ROLE},
+           "credit_cap_default": 50}
+    if out["saleshandy"]["configured"]:
+        try:
+            client = sh.Client()
+            out["saleshandy"]["credits"] = client.credits()
+            out["saleshandy"]["rate_limits"] = client.rate_limits()
+            out["saleshandy"]["ok"] = True
+        except sh.SaleshandyError as e:
+            out["saleshandy"].update(ok=False, error=str(e))
+    return jsonify(out)
+
+
+def _am_settings(body):
+    from tracker import account_mapper as am
+    companies = am.parse_companies(body.get("companies") or "")
+    roles = am.parse_roles(body.get("roles") or "")
+    try:
+        per_role = max(1, min(int(body.get("per_role") or am.DEFAULT_PER_ROLE), am.MAX_PER_ROLE))
+    except (TypeError, ValueError):
+        raise ValueError("people per title must be a number")
+    model = body.get("model") if body.get("model") in AM_MODELS else AM_MODELS[0]
+    return {"companies": companies, "roles": roles, "per_role": per_role, "insights": body.get("insights") is not False,
+            "use_claude": body.get("use_claude") is True, "web_fill": body.get("web_fill") is True,
+            "briefs": body.get("briefs") is True, "model": model}
+
+
+@app.route("/admin/account-mapper/api/estimate", methods=["POST"])
+@admin_required
+def admin_account_mapper_estimate():
+    from tracker import account_mapper as am
+    try:
+        st = _am_settings(request.get_json(silent=True) or {})
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    out = am.estimate(len(st["companies"]), len(st["roles"]), use_claude=st["use_claude"], web_fill=st["web_fill"],
+                      briefs=st["briefs"], model=st["model"])
+    return jsonify(dict(out, companies=len(st["companies"]), roles=len(st["roles"])))
+
+
+@app.route("/admin/account-mapper/api/runs", methods=["GET", "POST"])
+@admin_required
+def admin_account_mapper_runs():
+    from tracker import account_mapper as am, account_mapper_store as store, contact_lab_search as search
+    from tracker import saleshandy_client as sh
+    email = _mr_email()
+    if request.method == "GET":
+        try:
+            return jsonify(runs=store.list_runs(email))
+        except store.StoreUnavailable as e:
+            return jsonify(error="The database is unavailable (%s)." % e), 503
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    body = request.get_json(silent=True) or {}
+    try:
+        st = _am_settings(body)
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    if not sh.configured():
+        return jsonify(error="SALESHANDY_API_KEY is not set on this service (Railway → web → Variables)."), 400
+    est = am.estimate(len(st["companies"]), len(st["roles"]), use_claude=st["use_claude"], web_fill=st["web_fill"],
+                      briefs=st["briefs"], model=st["model"])
+    if est["claude"]:
+        if body.get("confirm_spend") is not True:
+            return jsonify(error="Claude's steps cost money; confirm to run them."), 400
+        if not search.claude_configured():
+            return jsonify(error="ANTHROPIC_API_KEY is not set on this service."), 400
+    try:
+        going = store.running_run(email)
+        if going:
+            return jsonify(error="A run of yours is already going.", run_id=going["id"]), 409
+        run_id = store.start_map(st, email, cap_usd=est["usd_cap"] if est["claude"] else 0)
+    except store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+    return jsonify(run_id=run_id), 202
+
+
+def _am_run(run_id):
+    from tracker import account_mapper_store as store
+    try:
+        return store.get_run(run_id, _mr_email()), None
+    except store.StoreUnavailable as e:
+        return None, (jsonify(error="The database is unavailable (%s)." % e), 503)
+
+
+@app.route("/admin/account-mapper/api/runs/<int:run_id>")
+@admin_required
+def admin_account_mapper_run(run_id):
+    run, err = _am_run(run_id)
+    if err:
+        return err
+    if run is None:
+        return jsonify(error="No such run of yours."), 404
+    if request.args.get("download") == "1":
+        resp = jsonify(run)
+        resp.headers["Content-Disposition"] = "attachment; filename=account-mapper-run-%d.json" % run_id
+        return resp
+    return jsonify(run)
+
+
+@app.route("/admin/account-mapper/api/runs/<int:run_id>/export.csv")
+@admin_required
+def admin_account_mapper_csv(run_id):
+    from tracker import account_mapper_store as store
+    run, err = _am_run(run_id)
+    if err:
+        return err
+    if run is None or not run.get("summary"):
+        return jsonify(error="No such run of yours."), 404
+    resp = make_response(store.to_csv(run["summary"]))
+    resp.headers["Content-Type"] = "text/csv; charset=utf-8"
+    resp.headers["Content-Disposition"] = "attachment; filename=account-mapper-run-%d.csv" % run_id
+    return resp
+
+
+def _am_reveal_args(body):
+    keys = body.get("keys")
+    if not isinstance(keys, list) or not keys or len(keys) > 500:
+        raise ValueError("choose who to reveal")
+    keys = [k for k in keys if isinstance(k, (int, str)) and not isinstance(k, bool) and len(str(k)) < 300]
+    try:
+        cap = int(body.get("cap_credits"))
+    except (TypeError, ValueError):
+        raise ValueError("set a credit cap")
+    return keys, cap, body.get("phone") is True
+
+
+@app.route("/admin/account-mapper/api/runs/<int:run_id>/reveal", methods=["POST"])
+@admin_required
+def admin_account_mapper_reveal(run_id):
+    """dry_run: what the reveal would do (free). Otherwise, with confirm,
+    the reveal itself: credits."""
+    from tracker import account_mapper_reveal as ar, account_mapper_store as store, saleshandy_client as sh
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    body = request.get_json(silent=True) or {}
+    try:
+        keys, cap, phone = _am_reveal_args(body)
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    run, err = _am_run(run_id)
+    if err:
+        return err
+    if run is None or not run.get("summary"):
+        return jsonify(error="No such run of yours."), 404
+    if run["status"] != "ready":
+        return jsonify(error="This run is %s; wait for it to finish." % run["status"]), 409
+    if not sh.configured():
+        return jsonify(error="SALESHANDY_API_KEY is not set on this service."), 400
+    balance = None
+    try:
+        balance = sh.Client().credits().get("total")
+    except sh.SaleshandyError as e:
+        if isinstance(e, sh.AuthError):
+            return jsonify(error=str(e)), 400
+    check = ar.plan_reveal(run["summary"], keys, phone=phone, cap=cap, balance=balance)
+    if body.get("dry_run") is True:
+        return jsonify(check)
+    if not check["ok"]:
+        return jsonify(error=check["why"], check=check), 400
+    if body.get("confirm") is not True:
+        return jsonify(error="Revealing spends Saleshandy credits; confirm to go ahead."), 400
+    try:
+        if not store.start_reveal(run_id, _mr_email(), check["keys"], cap_credits=check["cap"], phone=phone):
+            return jsonify(error="This run is busy; wait for it to finish."), 409
+    except store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+    return jsonify(started=True, check=check), 202
+
+
 def _unipile_selftest() -> dict:
     """Prove the Unipile integration end to end -- see
     tracker/unipile_client.probe. Free: list_accounts() needs no connected

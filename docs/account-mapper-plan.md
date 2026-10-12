@@ -152,6 +152,57 @@ account cards · people table · CSV / JSON export · run history
    - whether to keep the web-search gap filler;
    - whether to open the agent to the team or clients.
 
+## Where it stands
+
+- **Phases 1–5 are built:**
+  - the Saleshandy client;
+  - the free mapping engine;
+  - reveals with a credit cap;
+  - the email pattern learned from verified emails;
+  - the web search for empty seats;
+  - priority ranking and Claude briefs;
+  - the page, CSV and JSON exports.
+- **Code:**
+  - `tracker/saleshandy_client.py`;
+  - `tracker/account_mapper.py` (mapping);
+  - `tracker/account_mapper_reveal.py`;
+  - `tracker/account_mapper_brief.py`;
+  - `tracker/account_mapper_store.py` (runs in `am_runs`, CSV).
+- **Page:** Admin → **Account Mapper** (`/admin/account-mapper`); admins only.
+- **Phase 6 waits for the key.**
+
+### Adding the key (Windows laptop)
+1. In Saleshandy, open **Settings → API Key → Create API Key**. Name it `northaxis-account-mapper` and click Create. Copy the key straight away, because Saleshandy shows it only once.
+2. Open **railway.com**, open the project, then click the **web** service and its **Variables** tab.
+3. Click **+ New Variable**. Name: `SALESHANDY_API_KEY`. Value: paste the key (Ctrl+V). Click **Add**, then **Deploy**.
+4. When the deployment shows **Active**, open `/admin/account-mapper` and press **Ctrl+F5**. The chip top right should read **Saleshandy: N credits**.
+   - If it reads **no key**, the deployment hasn't finished.
+   - If it shows an error, the key was copied wrong. Make a new key and replace the variable.
+
+### Using it
+1. Type the companies, one a line; add `| domain.com` when you know it. Then type the titles you sell to.
+2. Choose the extras:
+   - **Account signals** are free and on by default;
+   - **Account briefs** cost about $0.005 each on Haiku;
+   - **Claude phrases the titles** costs under a cent;
+   - **Web search for empty seats** is paid, roughly $0.02 per empty seat.
+
+   Claude's spending per run is capped at twice its estimate, between $0.50 and $3.00.
+3. Click **Map accounts**. This uses no Saleshandy credits.
+4. Read the results:
+   - accounts are ranked by priority (score and reasons);
+   - each account card shows the profile, team sizes, new leaders, hiring and funding signals, and the brief;
+   - each title shows its best people and "also found".
+5. Choose who to reveal. **Best per title** is ticked for you; untick or tick people as you like. Set the **credit cap**, then click **Reveal emails**. A dialog shows the most it can use and your balance, and nothing is spent until you confirm.
+6. **Download CSV** gives one row per person, best accounts first: email, label, LinkedIn, the opener. It's ready to import into Saleshandy or a CRM.
+
+**Email labels:**
+- **Verified**: Saleshandy verified it.
+- **Risky**: for example, a domain that accepts every address.
+- **Not found**: no credit was charged.
+- **Pattern**: built from the pattern that 2 or more verified emails at that company follow.
+- **Pattern, likely**: built from the pattern of 1 verified email.
+
 ## What it won't do
 
 - **It doesn't find everyone.**
