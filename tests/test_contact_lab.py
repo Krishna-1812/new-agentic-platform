@@ -393,7 +393,31 @@ def test_every_lab_route_is_admin_only(method, path, email, status):
     assert resp.status_code == status
 
 
-def test_a_run_is_refused_from_another_site_and_without_its_pieces(monkeypatch):
+@pytest.fixture
+def unhidden(monkeypatch):
+    """The lab is hidden (app.CONTACT_LAB_HIDDEN); its routes are still
+    tested as they would work if it were brought back."""
+    import app as appmod
+    monkeypatch.setattr(appmod, "CONTACT_LAB_HIDDEN", False)
+
+
+@pytest.mark.parametrize("method, path", [("get", BASE), ("get", BASE + "/api/status"), ("get", BASE + "/api/runs"),
+                                          ("post", BASE + "/api/runs"), ("get", BASE + "/api/runs/1"),
+                                          ("post", BASE + "/api/estimate")])
+def test_the_lab_is_hidden_even_from_admins(method, path):
+    c = _client(ADMIN)
+    resp = getattr(c, method)(path, json={}) if method == "post" else c.get(path)
+    assert resp.status_code == 404
+
+
+def test_the_lab_is_on_no_menu_or_agents_page():
+    c = _client(ADMIN)
+    for page in ("/admin/internal-usage", "/strategic-agents", "/hub"):
+        html = c.get(page).get_data(as_text=True)
+        assert "/admin/contact-lab" not in html and "Contact Finder Lab" not in html, page
+
+
+def test_a_run_is_refused_from_another_site_and_without_its_pieces(monkeypatch, unhidden):
     monkeypatch.setenv("SEARXNG_URL", "http://sx:8080")
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     c = _client(ADMIN)
@@ -408,7 +432,7 @@ def test_a_run_is_refused_from_another_site_and_without_its_pieces(monkeypatch):
     assert c.post(BASE + "/api/runs", json=dict(body, model="gpt")).status_code == 400
 
 
-def test_a_free_run_starts_once(monkeypatch):
+def test_a_free_run_starts_once(monkeypatch, unhidden):
     from tracker import contact_lab_store as store
     monkeypatch.setenv("SEARXNG_URL", "http://sx:8080")
     started, going = [], {}
@@ -428,7 +452,7 @@ def test_a_free_run_starts_once(monkeypatch):
     assert r.status_code == 409 and r.get_json()["run_id"] == 7 and len(started) == 1
 
 
-def test_the_estimate_route_explains_bad_input():
+def test_the_estimate_route_explains_bad_input(unhidden):
     c = _client(ADMIN)
     r = c.post(BASE + "/api/estimate", json={"companies": "A\nB", "roles": "CFO", "backends": ["claude"],
                                              "model": "claude-haiku-5-5"})
@@ -436,9 +460,9 @@ def test_the_estimate_route_explains_bad_input():
     assert c.post(BASE + "/api/estimate", json={"companies": "", "roles": "CFO"}).status_code == 400
 
 
-def test_the_page_renders_with_its_script_and_menu_entry():
+def test_the_page_would_render_with_its_script(unhidden):
     html = _client(ADMIN).get(BASE).get_data(as_text=True)
-    assert "js/contact_lab.js" in html and "css/contact_lab.css" in html and 'href="/admin/contact-lab"' in html
+    assert "js/contact_lab.js" in html and "css/contact_lab.css" in html
 
 
 # == the page script ================================================================
