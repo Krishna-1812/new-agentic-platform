@@ -210,7 +210,7 @@ def _client(email):
     ("post", BASE + "/api/clients/1/profile"), ("post", BASE + "/api/clients/1/competitors"),
     ("post", BASE + "/api/clients/1/competitors/2"), ("post", BASE + "/api/runs"),
     ("get", BASE + "/api/runs/1"), ("post", BASE + "/api/clients/1/collect"),
-    ("get", BASE + "/api/clients/1/moves")])
+    ("get", BASE + "/api/clients/1/moves"), ("get", BASE + "/api/clients/1/rivals")])
 @pytest.mark.parametrize("email", [None, "someone@gmail.example"])
 def test_every_route_is_for_the_team_only(method, path, email):
     """Market Radar is a team agent now (listed on the agents page as
@@ -822,10 +822,10 @@ def test_the_company_page_shows_one_section_at_a_time_and_the_menu_says_whats_in
     shown = lambda html: re.findall(r'<section class="mr-panel" data-panel="(\w+)" id="mr-p-\w+">', html)
     panels = lambda html: re.findall(r'<section class="mr-panel" data-panel="(\w+)"', html)
     assert shown(out["moves"]) == ["moves"]
-    assert panels(out["moves"]) == ["overview", "competitors", "moves", "nearby", "pulse", "profile", "monitor", "run"]
+    assert panels(out["moves"]) == ["overview", "competitors", "moves", "rivals", "nearby", "pulse", "profile", "monitor", "run"]
     assert shown(out["first"]) == ["overview"] and shown(out["bogus"]) == ["overview"]
     nav = out["nav"]
-    assert nav.count('data-act="section"') == 8 and 'aria-current="page"' in nav
+    assert nav.count('data-act="section"') == 9 and 'aria-current="page"' in nav
     assert re.search(r'class="mr-nav-i on" data-act="section" data-section="moves"', nav)
     for badge in (">1 new<", ">1 high<", ">1<", ">Off<", ">$0.155<"):
         assert badge in nav, badge
@@ -935,3 +935,25 @@ def test_the_profile_says_how_much_of_the_company_it_could_see():
     assert "mr-rq--ok" in html and "Read in full" in html
     view["profile"]["read_quality"] = None
     assert "mr-rq" not in run_js("return MR.renderProfile(%s, false, null);" % json.dumps(view)).replace("mr-rq-chip", "")
+
+
+def test_the_rival_cards_route_reads_stored_readings_and_only_for_the_owner(client_with_reading, monkeypatch):
+    import app as appmod
+    from tracker import market_radar_store as store
+    monkeypatch.setattr(appmod, "ADMIN_EMAILS", set(appmod.ADMIN_EMAILS) | {OWNER})
+    w = client_with_reading
+    rival = store.upsert_entity("rival.example", name="Rival")
+    store.propose_competitor(w["client"], OWNER, rival, "direct", confidence=0.7)
+    store.save_snapshot(rival, "facts", {"name": "Rival", "employees": 900, "employees_year": "2025"}, item_count=1)
+    store.save_snapshot(rival, "stack", {"tools": ["Klaviyo", "Shopify"]}, item_count=2)
+    c = _client(OWNER)
+    r = c.get(BASE + "/api/clients/%d/rivals" % w["client"])
+    assert r.status_code == 200
+    out = r.get_json()
+    (card,) = out["rivals"]
+    assert card["name"] == "Rival" and card["momentum"]["label"] == "quiet"
+    assert {f["label"]: f["source"] for f in card["facts"]} == {"Staff": "Wikidata", "Tools": "its homepage"}
+    assert out["counts"]["total"] == 1 and out["heat"]["label"] == "quiet"
+    assert c.get(BASE + "/api/clients/999999/rivals").status_code == 404
+    other = _client(OTHER)
+    assert other.get(BASE + "/api/clients/%d/rivals" % w["client"]).status_code in (302, 404)

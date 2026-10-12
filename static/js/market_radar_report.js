@@ -111,7 +111,14 @@
       return '<li><b>' + esc(it.company) + '</b>: ' + esc(it.open) + ' open roles in ' + esc(it.places) + ' places' +
         (it.read ? ' <span class="rr-q">read ' + esc(day(it.read)) + '</span>' : '') + '</li>';
     }
-    if (k === 'C') return '<li><b>' + esc(it.name) + '</b> <span class="rr-q">' + esc(it.domain) + '</span></li>';
+    if (k === 'C') {
+      return '<li><b>' + esc(it.name) + '</b> <span class="rr-q">' + esc(it.domain) + '</span>' +
+        ((it.facts || []).length ? '<ul class="rr-src">' + it.facts.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('') + '</ul>' : '') + '</li>';
+    }
+    if (k === 'P') {
+      return '<li><b>' + esc(it.text) + '</b>' + ((it.rivals || []).length ? ' <span class="rr-q">' + esc(it.rivals.join(', ')) + '</span>' : '') +
+        ' <span class="rr-q">counted from stored readings</span></li>';
+    }
     return '';
   }
 
@@ -352,7 +359,7 @@
     state.view = v;
     state.refs = {};
     var pack = v.pack || {};
-    ['competitors', 'moves', 'nearby', 'entrants', 'themes', 'rules', 'hiring'].forEach(function (k) {
+    ['competitors', 'moves', 'nearby', 'entrants', 'themes', 'rules', 'hiring', 'patterns'].forEach(function (k) {
       (pack[k] || []).forEach(function (it) { state.refs[it.ref] = it; });
     });
     var home = (root && root.getAttribute('data-home')) || '/strategic-agents/market-radar';
@@ -389,6 +396,7 @@
       ['rr-comp', 'Competitor moves', 'What each competitor did, from its website, shop, jobs board and the news. A dot shows how much a move matters to you.', renderCompetitors(b, pack), (pack.moves || []).length],
       ['rr-near', 'Nearby and new', null, renderNearby(b, pack), (pack.nearby || []).length + (pack.entrants || []).length],
       ['rr-ind', 'Industry pulse', 'This month\'s industry news, grouped into themes, and what each could mean for you.', renderIndustry(b, pack), (b.industry || []).length],
+      ['rr-pat', 'Across your rivals', 'What several rivals are doing at once, counted from what was read about each.', listOf(b.patterns), (b.patterns || []).length],
       ['rr-hire', 'Hiring', null, renderHiring(pack), (pack.hiring || []).length],
       ['rr-ot', 'Opportunities and threats', null, renderOT(b), (b.opportunities || []).length + (b.threats || []).length],
       ['rr-watch', 'What to watch next', null, listOf(b.watch), (b.watch || []).length],

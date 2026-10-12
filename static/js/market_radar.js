@@ -127,6 +127,7 @@
 
   var SECTIONS = [
     ['overview', 'Overview', 'results'], ['competitors', 'Competitors', 'results'], ['moves', 'Moves', 'results'],
+    ['rivals', 'Rival cards', 'results'],
     ['nearby', 'Nearby & new', 'results'], ['pulse', 'Industry pulse', 'results'],
     ['profile', 'Profile', 'setup'], ['monitor', 'Weekly update', 'setup'], ['run', 'Last search', 'setup']]
     .filter(function (s) { return !(CLIENT && s[0] === 'monitor'); });
@@ -134,6 +135,7 @@
     overview: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
     competitors: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>',
     moves: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+    rivals: '<circle cx="9" cy="8" r="3.2"/><circle cx="17.5" cy="9.5" r="2.4"/><path d="M3 20a6 6 0 0 1 12 0M15.5 20a4.6 4.6 0 0 1 5.8-2"/>',
     nearby: '<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
     pulse: '<path d="M4 5h12v14H6a2 2 0 0 1-2-2V5z"/><path d="M16 9h3v8a2 2 0 0 1-2 2"/><path d="M7 9h6M7 13h6M7 16h4"/>',
     profile: '<path d="M4 21V7l8-4 8 4v14"/><path d="M9 21v-5h6v5"/><path d="M8 10h.01M12 10h.01M16 10h.01"/>',
@@ -208,7 +210,8 @@
     return { confirmed: c.confirmed, proposed: c.proposed, removed: c.removed, moves: events.length, high: high,
       near: near, brands: brands, themes: themes, collected: !!(m.last_collect && m.last_collect.status === 'complete'),
       monitor: state.monitor ? !!state.monitor.enabled : null, cost: run ? run.cost_usd : null,
-      sites: ((v.profile || {}).sites || []).length };
+      sites: ((v.profile || {}).sites || []).length,
+      speeding: ((state.rivals || {}).counts || {}).speeding_up || 0 };
   }
 
   function renderNav(state) {
@@ -217,6 +220,7 @@
     var badge = {
       competitors: f.proposed ? [f.proposed + ' new', 'hot'] : f.confirmed ? [f.confirmed, ''] : null,
       moves: f.high ? [f.high + ' high', 'bad'] : f.moves ? [f.moves, ''] : null,
+      rivals: f.speeding ? [f.speeding + ' up', 'hot'] : null,
       nearby: f.near + f.brands ? [f.near + f.brands, 'sky'] : null,
       pulse: f.themes ? [f.themes, ''] : null,
       monitor: f.monitor == null ? null : [f.monitor ? 'On' : 'Off', f.monitor ? 'ok' : 'off'],
@@ -1241,6 +1245,66 @@
     return '<div class="card mr-card"><div class="mr-card-h"><div><h3>' + esc(title) + '</h3></div></div><div class="mr-empty">' + text + '</div></div>';
   }
 
+  // == rival cards ====================================================================
+  //
+  // Every rival on one card: is it speeding up, what is known about it (each fact with where it came
+  // from), what to watch, its biggest recent moves. All from stored readings (tracker/market_radar_insight).
+
+  var MOMENTUM = { speeding_up: ['hot', 'Speeding up'], steady: ['', 'Steady'], slowing: ['warn', 'Slowing'], quiet: ['off', 'Quiet'] };
+  var HEAT = { heating_up: 'The field is heating up', cooling: 'The field is cooling down', steady: 'The field is steady', quiet: 'The field is quiet' };
+  var PATTERN_ICON = { launching: '&#9889;', pricing: '$', expanding: '&#9906;', hiring: '&#9733;', reshaping: '&#8644;',
+    under_pressure: '&#9660;', hiring_focus: '&#9733;', shared_tools: '&#9881;', apps: '&#9635;' };
+
+  function rivalCard(c) {
+    var m = MOMENTUM[(c.momentum || {}).label] || MOMENTUM.steady;
+    var site = siteUrl(c.domain);
+    var facts = (c.facts || []).map(function (f) {
+      return '<div class="mr-rc-f"><dt>' + esc(f.label) + '</dt><dd>' + esc(f.value) + '</dd><small>' + esc(f.source) + '</small></div>';
+    }).join('');
+    var moves = (c.moves || []).map(function (e) {
+      var href = safeUrl(e.url), sev = SEVERITY[e.severity] || SEVERITY.LOW;
+      return '<li>' + dateBlock(e.date) + '<div><span class="mr-chip ' + sev[0] + '">' + esc(sev[1]) + '</span> ' +
+        (href ? '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(e.title) + '</a>' : esc(e.title)) + '</div></li>';
+    }).join('');
+    var watch = (c.watch || []).map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('');
+    var h = c.hiring;
+    var buzz = c.buzz ? '<p class="mr-rc-buzz"><b>On Hacker News</b> ' + esc(c.buzz.title) + ' <em>' + esc(c.buzz.points) + ' points</em></p>' : '';
+    return '<article class="mr-rc mr-rc--' + esc((c.momentum || {}).label || 'steady') + '">' +
+      '<header class="mr-rc-h">' + mono(c.name, c.kind) + '<div class="mr-rc-n"><b>' +
+      (site ? '<a href="' + esc(site) + '" target="_blank" rel="noopener noreferrer">' + esc(c.name) + '</a>' : esc(c.name)) + '</b><span>' +
+      esc(c.domain) + '</span></div><span class="mr-mom ' + m[0] + '">' + esc(m[1]) + '</span></header>' +
+      (c.sells ? '<p class="mr-rc-sells">' + esc(c.sells) + '</p>' : '') +
+      (c.kind ? '<div class="mr-rc-tags">' + kindChip(c.kind) + (h && h.open ? '<span class="mr-chip">' + esc(h.open) + ' open roles</span>' : '') + '</div>' : '') +
+      (watch ? '<div class="mr-rc-watch"><span class="mr-k">Watch</span><ul>' + watch + '</ul></div>' : '') +
+      (facts ? '<dl class="mr-rc-facts">' + facts + '</dl>' : '<p class="mr-rc-none">No public facts found yet. Collect again, or this company keeps little public data.</p>') +
+      buzz +
+      (moves ? '<div class="mr-rc-moves"><span class="mr-k">Biggest recent moves</span><ul>' + moves + '</ul></div>'
+        : '<p class="mr-rc-none">No scored moves yet.</p>') + '</article>';
+  }
+
+  function renderRivals(r) {
+    if (!r) return null;
+    var cards = r.rivals || [];
+    if (!cards.length) {
+      return '<div class="card mr-card"><div class="mr-card-h"><div><h3>Rival cards</h3></div></div><div class="mr-empty"><b>No rivals yet</b>' +
+        'Confirm the rivals you agree with, then collect their moves.</div></div>';
+    }
+    var c = r.counts || {}, pats = r.patterns || [];
+    var right = pats.length ? '<div class="mr-idc mr-pat"><span class="mr-k">What several rivals are doing at once</span><ul>' + pats.map(function (p) {
+      return '<li><i>' + (PATTERN_ICON[p.kind] || '&bull;') + '</i><div><b>' + esc(p.text) + '</b>' +
+        ((p.rivals || []).length ? '<small>' + esc(p.rivals.join(', ')) + '</small>' : '') + '</div></li>';
+    }).join('') + '</ul></div>' : '';
+    var heat = (r.heat || {}).label;
+    return '<div class="mr-ov">' + sectHead({
+      eye: 'Rival cards', quiet: !c.speeding_up, h: HEAT[heat] || 'The field',
+      p: c.speeding_up ? plural(c.speeding_up, 'rival is', 'rivals are') + ' speeding up. Each card shows what is known about it and where that came from.'
+        : 'Each card shows what is known about a rival and where that came from.',
+      kpis: [[c.total || 0, 'Rivals tracked', 'confirmed and suggested', 'k-paper'], [c.speeding_up || 0, 'Speeding up', 'more than the fortnight before', 'k-acc'],
+        [c.quiet || 0, 'Quiet', 'little recent activity', 'k-sky'], [c.with_facts || 0, 'With public facts', 'staff, revenue, apps, tools', 'k-cream']],
+      right: right
+    }) + '<div class="mr-rc-grid">' + cards.map(rivalCard).join('') + '</div></div>';
+  }
+
   function renderDetail(state) {
     var v = state.view;
     if (!v) return '<div class="card"><div class="mr-empty"><b>Pick a company</b>Or add one by its website above.</div></div>';
@@ -1253,6 +1317,7 @@
       panel('overview', active, renderOverview(state)) +
       panel('competitors', active, renderCompetitors(v.competitors, state.filter)) +
       panel('moves', active, m ? renderMoves(m, state.collect, t.moves) : waiting('Competitor moves', 'Loading…')) +
+      panel('rivals', active, renderRivals(state.rivals) || waiting('Rival cards', 'Loading…')) +
       panel('nearby', active, renderRadar(m && m.radar, t.nearby) || waiting('Nearby and new', later)) +
       panel('pulse', active, renderPulse(m && m.pulse, t.pulse) || waiting('Industry pulse', later)) +
       panel('profile', active, renderProfile(v, state.editing, state.errors, t.profile)) +
@@ -1285,7 +1350,7 @@
   var MR = { esc: esc, safeUrl: safeUrl, siteUrl: siteUrl, renderClientList: renderClientList,
     renderProgress: renderProgress, renderProfile: renderProfile, renderCompetitors: renderCompetitors,
     renderRow: renderRow, renderRun: renderRun, renderDetail: renderDetail, formChanges: formChanges,
-    renderMoves: renderMoves, renderMoveRow: renderMoveRow, renderRadar: renderRadar, renderPulse: renderPulse, renderMonitor: renderMonitor,
+    renderMoves: renderMoves, renderMoveRow: renderMoveRow, renderRivals: renderRivals, renderRadar: renderRadar, renderPulse: renderPulse, renderMonitor: renderMonitor,
     renderNav: renderNav, renderOverview: renderOverview, renderRadarPlot: renderRadarPlot, SECTIONS: SECTIONS,
     FIELDS: FIELDS, STAGE_STEP: STAGE_STEP };
   root.MR = MR;
@@ -1295,7 +1360,7 @@
   if (typeof document === 'undefined' || !document.getElementById('mr')) return;
 
   var state = { clients: [], selected: null, view: null, filter: null, editing: false, errors: null,
-    run: null, poll: null, moves: null, collect: null, collectPoll: null, monitor: null,
+    run: null, poll: null, moves: null, collect: null, collectPoll: null, monitor: null, rivals: null,
     section: 'overview', tabs: {} };
   var $ = function (id) { return document.getElementById(id); };
 
@@ -1396,6 +1461,13 @@
       state.monitor = m; paint();
     }).catch(function (e) { toast('Weekly update: ' + e.message); });
   }
+  function loadRivals() {
+    var id = state.selected;
+    return api('/clients/' + id + '/rivals').then(function (r) {
+      if (state.selected !== id) return;
+      state.rivals = r; paint();
+    }).catch(function (e) { toast('Rival cards: ' + e.message); });
+  }
   function loadMoves() {
     var id = state.selected;
     return api('/clients/' + id + '/moves').then(function (m) {
@@ -1415,15 +1487,15 @@
         if (r.status === 'running' && !r.stale) { paint(); state.collectPoll = setTimeout(tick, 5000); return; }
         state.collect = null;
         toast(r.status === 'complete' ? 'Collection finished.' : 'The collection did not finish: ' + (r.error || r.stale || r.status));
-        loadMoves(); loadMonitor();
+        loadMoves(); loadMonitor(); loadRivals();
       }).catch(function () { state.collectPoll = setTimeout(tick, 8000); });
     }
     tick();
   }
   function loadView() {
     var id = state.selected;
-    state.moves = null; state.collect = null; state.monitor = null; clearTimeout(state.collectPoll);
-    loadMoves(); loadMonitor();
+    state.moves = null; state.collect = null; state.monitor = null; state.rivals = null; clearTimeout(state.collectPoll);
+    loadMoves(); loadMonitor(); loadRivals();
     return api('/clients/' + id).then(function (v) {
       if (state.selected !== id) return;
       state.view = v;

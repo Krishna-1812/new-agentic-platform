@@ -14,7 +14,7 @@
 <head>
 {%- set mr_home = ("/" ~ acct.slug ~ "/agents/market-radar") if acct else "/strategic-agents/market-radar" %}
 {% if acct %}<script src="{{ url_for('static', filename='js/account-context.js') }}?v=1" data-acct="{{ acct.slug }}"></script>{% endif %}
-{{ head("Market Radar report", ["market_radar.css?v=4", "market_radar_report.css?v=2"]) }}
+{{ head("Market Radar report", ["market_radar.css?v=5", "market_radar_report.css?v=2"]) }}
 </head>
 <body class="sa">
 
@@ -25,6 +25,6 @@
 </main>
 
 {{ topbar_script() }}
-<script src="{{ url_for('static', filename='js/market_radar_report.js') }}?v=4"></script>
+<script src="{{ url_for('static', filename='js/market_radar_report.js') }}?v=5"></script>
 </body>
 </html>
