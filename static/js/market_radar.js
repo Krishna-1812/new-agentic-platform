@@ -152,6 +152,37 @@
     return keys.indexOf(wanted) >= 0 ? wanted : keys[0];
   }
 
+  // == section heads ===================================================================
+  //
+  // Every results section opens the way the overview does: an ink block with
+  // the one sentence that matters, four figures and a picture of the section.
+
+  var KPI_HUES = ['k-acc', 'k-paper', 'k-sky', 'k-cream'];
+  /** {eye, h, p, kpis: [[figure, label, sub, hue]], right, quiet} */
+  function sectHead(o) {
+    var kpis = (o.kpis || []).map(function (k, i) {
+      return '<div class="mr-kpi static ' + (k[3] || KPI_HUES[i % 4]) + '"><b>' + esc(k[0]) + '</b><span>' + esc(k[1]) + '</span>' +
+        (k[2] ? '<small>' + esc(k[2]) + '</small>' : '') + '</div>';
+    }).join('');
+    return '<div class="mr-cmd mr-sh' + (o.right ? '' : ' solo') + '"><div class="mr-cmd-l"><div class="mr-cmd-eye' + (o.quiet ? ' quiet' : '') + '"><i></i>' +
+      esc(o.eye) + '</div><h3 class="mr-cmd-h">' + esc(o.h) + '</h3>' + (o.p ? '<p class="mr-cmd-p">' + esc(o.p) + '</p>' : '') +
+      (kpis ? '<div class="mr-kpis mr-kpis--4">' + kpis + '</div>' : '') + '</div>' +
+      (o.right ? '<div class="mr-cmd-r">' + o.right + '</div>' : '') + '</div>';
+  }
+
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  /** A calendar leaf for a timeline: the day large, the month and year small. */
+  function dateBlock(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+    if (!m) return '<div class="mr-dt none" aria-label="No date"><b>&middot;</b><span>No date</span></div>';
+    return '<div class="mr-dt" title="' + esc(m[0]) + '"><b>' + Number(m[3]) + '</b><span>' + MONTHS[Number(m[2]) - 1] +
+      '</span><small>' + m[1] + '</small></div>';
+  }
+  function plural(n, one, many) { return esc(n) + ' ' + (Number(n) === 1 ? one : (many || one + 's')); }
+  var PIN = '<svg viewBox="0 0 24 24" aria-hidden="true" class="mr-ico s"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
+  // Each rival's kind, for its monogram's colour wherever it is named.
+  var KIND_OF = {};
+
   /** What each section holds, for the rail's badges and the overview. */
   function facts(state) {
     var v = state.view || {}, m = state.moves || {}, rows = v.competitors || [];
@@ -449,9 +480,11 @@
       body = '<div class="mr-fields">' + FIELDS.map(function (d) {
         var name = d[0], text = shown(name, f[name]), isEdited = edited.indexOf(name) >= 0;
         var was = isEdited ? shown(name, (p.site_reading || {})[name]) : null;
-        return '<div class="mr-field' + (d[4] ? ' wide' : '') + '"><div class="mr-k">' + esc(d[1]) +
+        var list = d[2] === 'list' && Array.isArray(f[name]) && f[name].length;
+        return '<div class="mr-field' + (d[4] ? ' wide' : '') + (list ? ' pills' : '') + '"><div class="mr-k">' + esc(d[1]) +
           (isEdited ? ' <span class="mr-edited">Your correction</span>' : '') + '</div>' +
-          '<div class="mr-v' + (text ? '' : ' muted') + '">' + esc(text || 'Not stated') + '</div>' +
+          (list ? '<div class="mr-v mr-pills">' + f[name].map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div>'
+            : '<div class="mr-v' + (text ? '' : ' muted') + '">' + esc(text || 'Not stated') + '</div>') +
           (isEdited ? '<div class="mr-was">The website said: ' + esc(was || 'nothing') +
             ' · <button type="button" class="mr-link" data-act="reset" data-field="' + esc(name) + '">Use the website\'s</button></div>' : '') +
           '</div>';
@@ -464,10 +497,37 @@
     var ev = renderEvidence(p);
     var keys = ev ? ['what', 'where', 'evidence'] : ['what', 'where'];
     var on = pick(tab, keys);
-    return '<div class="card mr-card">' + head + '<div class="mr-card-b">' + checks +
+    return '<div class="mr-ov">' + profileHead(view) + '<div class="card mr-card mr-prof">' + head + '<div class="mr-card-b">' + checks +
       tabs('profile', [['what', 'What they do'], ['where', 'Where'], ['evidence', 'What the website says']].slice(0, keys.length), on) +
       pane('profile', 'what', on, body) + pane('profile', 'where', on, renderLocation(view)) +
-      (ev ? pane('profile', 'evidence', on, ev) : '') + '</div></div>';
+      (ev ? pane('profile', 'evidence', on, ev) : '') + '</div></div></div>';
+  }
+
+  /** The profile's head: who they are in a line, four figures, and where they are. */
+  function profileHead(view) {
+    var p = view.profile || {}, f = p.fields || {}, c = view.client || {};
+    var offers = f.offerings || [], mk = f.markets || [], locs = f.location_count, sites = p.sites || [];
+    var addr = [f['hq.street'], [f['hq.city'], f['hq.region'], f['hq.postal_code']].filter(Boolean).join(' '), f['hq.country_code']]
+      .filter(Boolean);
+    var where = '<div class="mr-idc"><span class="mr-k">Where they are</span>' +
+      (sites.length > 1 ? '<ol class="mr-idc-sites">' + sites.map(function (st, i) {
+        return st.name ? '<li><span>' + (i + 1) + '</span>' + esc(st.name) + '</li>' : '';
+      }).join('') + '</ol>' : addr.length ? '<p class="mr-idc-addr">' + PIN + '<span>' + addr.map(esc).join('<br>') + '</span></p>'
+        : '<p class="mr-idc-addr">No address on the website.</p>') +
+      (f.service_area ? '<p class="mr-idc-area"><b>Serves</b> ' + esc(f.service_area) + '</p>' : '') +
+      '<div class="mr-idc-tags">' + [label(ARCHETYPES, f.archetype), f['industry.plain_label'], label(CUSTOMERS, f.customer_type)]
+        .filter(Boolean).map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div></div>';
+    return sectHead({
+      eye: 'Company profile', quiet: true, h: f.name || c.name || c.domain || 'This company',
+      p: f.one_liner || 'What the company does is not stated on its website.',
+      kpis: [[locs == null || locs === -1 ? '–' : locs === 0 ? 'Online' : locs, 'Locations', sites.length > 1 ? sites.length + ' searched for rivals' : 'from the website', 'k-acc'],
+        [offers.length || '–', 'Things they sell', offers.length ? offers.slice(0, 2).join(', ') : 'none listed', 'k-paper'],
+        [mk.length ? mk.join(' · ') : '–', 'Markets', 'countries served', 'k-sky'],
+        [f.price_positioning && f.price_positioning !== 'unknown' ? label(PRICES, f.price_positioning) : '–', 'Price level',
+          f.price_positioning && f.price_positioning !== 'unknown'
+            ? (label(CUSTOMERS, f.customer_type) ? 'sells to ' + label(CUSTOMERS, f.customer_type).toLowerCase() : '') : 'not stated', 'k-cream']],
+      right: where
+    });
   }
 
   function renderLocation(view) {
@@ -631,18 +691,76 @@
     var href = safeUrl(e.url);
     var title = href ? '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(e.title) + '</a>' : esc(e.title);
     var sev = SEVERITY[e.severity];
-    return '<li class="mr-move"><div class="mr-move-when">' + esc(e.date || when(e.seen)) + '</div>' +
-      '<div class="mr-move-b"><div class="mr-move-t">' +
-      (sev ? '<span class="mr-chip mr-sev ' + sev[0] + '" title="How much this matters to this client">' + sev[1] + '</span>' : '') +
-      '<span class="mr-chip ' + esc(TONE[e.type] || '') + '">' + esc(e.label) + '</span>' +
-      (STATUS_SAYS[e.status] ? '<span class="mr-chip">' + STATUS_SAYS[e.status] + '</span>' : '') +
-      '<b>' + esc(e.name) + '</b>' + (e.place ? ' <span class="mr-hint">' + esc(e.place) +
+    var tier = e.severity === 'HIGH' ? 'hi' : e.severity === 'MEDIUM' ? 'md' : 'lo';
+    return '<li class="mr-move mr-mv ' + tier + '">' + dateBlock(e.date || e.seen) +
+      '<div class="mr-move-b"><div class="mr-mv-who">' + mono(e.name, KIND_OF[e.entity_id]) + '<b>' + esc(e.name) + '</b>' +
+      (e.place ? '<span class="mr-mv-place">' + PIN + esc(e.place) +
         (e.distance_km != null ? ', ' + esc(Number(e.distance_km).toFixed(1)) + ' km from your nearest site' : '') + '</span>' : '') +
       '</div><div class="mr-move-title">' + title + '</div>' +
       (e.summary ? '<div class="mr-move-sum">' + esc(e.summary) + '</div>' : '') +
-      '<div class="mr-move-src">Seen in: ' + esc((e.detectors || []).join(', ') || 'unknown') +
+      '<div class="mr-move-t">' +
+      (sev ? '<span class="mr-chip mr-sev ' + sev[0] + '" title="How much this matters to this client">' + sev[1] + '</span>' : '') +
+      '<span class="mr-chip ' + esc(TONE[e.type] || '') + '">' + esc(e.label) + '</span>' +
+      (STATUS_SAYS[e.status] ? '<span class="mr-chip">' + STATUS_SAYS[e.status] + '</span>' : '') +
+      '<span class="mr-move-src">Seen in: ' + esc((e.detectors || []).join(', ') || 'unknown') +
       (e.articles > 1 ? ' (' + esc(e.articles) + ' articles)' : '') +
-      (e.evidence > 1 ? '; ' + esc(e.evidence) + ' independent sources' : '') + '</div></div></li>';
+      (e.evidence > 1 ? '; ' + esc(e.evidence) + ' independent sources' : '') + '</span></div></div></li>';
+  }
+
+  /** Thirteen weeks of moves as stacked bars, high on top: when they moved. */
+  function activityChart(events, today) {
+    var end = Date.parse((today || new Date().toISOString().slice(0, 10)) + 'T00:00:00Z');
+    var weeks = [];
+    for (var i = 0; i < 13; i++) weeks.push({ hi: 0, md: 0, lo: 0 });
+    events.forEach(function (e) {
+      var t = Date.parse(String(e.date || e.seen || '').slice(0, 10) + 'T00:00:00Z');
+      if (isNaN(t) || t > end) return;
+      var w = 12 - Math.floor((end - t) / (7 * 864e5));
+      if (w < 0) return;
+      weeks[w][e.severity === 'HIGH' ? 'hi' : e.severity === 'MEDIUM' ? 'md' : 'lo']++;
+    });
+    var max = Math.max.apply(null, weeks.map(function (w) { return w.hi + w.md + w.lo; }).concat([1]));
+    var W = 320, H = 150, base = 124, bw = 17, gap = (W - 13 * bw) / 12;
+    var bars = weeks.map(function (w, i) {
+      var x = (i * (bw + gap)).toFixed(1), y = base, out = '';
+      [['lo', 'mr-ac-lo'], ['md', 'mr-ac-md'], ['hi', 'mr-ac-hi']].forEach(function (k) {
+        if (!w[k[0]]) return;
+        var h = Math.max(3, w[k[0]] / max * 104);
+        y -= h;
+        out += '<rect class="' + k[1] + '" x="' + x + '" y="' + y.toFixed(1) + '" width="' + bw + '" height="' + (h - 1.5).toFixed(1) + '" rx="3"/>';
+      });
+      var n = w.hi + w.md + w.lo;
+      return '<g><rect class="mr-ac-bg" x="' + x + '" y="20" width="' + bw + '" height="' + (base - 20) + '" rx="3"/>' + out +
+        '<title>' + (12 - i ? (12 - i) + ' week' + (12 - i > 1 ? 's' : '') + ' ago' : 'This week') + ': ' + n + ' move' + (n === 1 ? '' : 's') + '</title></g>';
+    }).join('');
+    return '<figure class="mr-fig"><svg class="mr-ac" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Moves per week over the last 13 weeks">' + bars +
+      '<text class="mr-pl-q" x="0" y="' + (H - 4) + '">13 weeks ago</text><text class="mr-pl-q" x="' + W + '" y="' + (H - 4) + '" text-anchor="end">This week</text></svg>' +
+      '<figcaption class="mr-legend"><span class="h-acc"><i></i>High impact</span><span class="h-cream"><i></i>Medium</span><span class="h-dim"><i></i>Low</span></figcaption></figure>';
+  }
+
+  function movesHead(moves, events, ahead, top) {
+    var high = events.filter(function (e) { return e.severity === 'HIGH'; }).length;
+    var med = events.filter(function (e) { return e.severity === 'MEDIUM'; }).length;
+    var by = {};
+    events.concat(ahead).forEach(function (e) { by[e.name] = by[e.name] || { n: 0, id: e.entity_id }; by[e.name].n++; });
+    var names = Object.keys(by).sort(function (a, b) { return by[b].n - by[a].n; });
+    var tracked = (moves.competitors || []).length;
+    var last = moves.last_collect || {};
+    var h = high ? plural(high, 'move needs', 'moves need') + ' your attention.'
+      : top.length ? plural(top.length, 'move is', 'moves are') + ' worth reading first.'
+      : events.length ? plural(events.length, 'move') + ', none of them urgent.' : ahead.length ? 'Nothing yet, but moves are coming.' : 'No moves yet.';
+    var active = names.slice(0, 3).map(function (n) {
+      return '<li>' + mono(n, KIND_OF[by[n].id]) + '<b>' + esc(n) + '</b><em>' + esc(by[n].n) + '</em></li>';
+    }).join('');
+    return sectHead({
+      eye: 'Competitor moves', quiet: !events.length,
+      h: h,
+      p: events.length || ahead.length ? (names.length + ' of ' + (tracked || names.length) + ' tracked rivals moved' +
+        (last.finished_at ? '. Last collected ' + when(last.finished_at) : '') + '.') : 'Nothing differs from the last collection yet.',
+      kpis: [[high, 'High impact', 'of ' + events.length + ' moves', 'k-acc'], [med, 'Medium', 'worth a look', 'k-cream'],
+        [names.length, 'Rivals moving', tracked ? 'of ' + tracked + ' tracked' : '', 'k-sky'], [ahead.length, 'Coming up', 'dated ahead', 'k-paper']],
+      right: activityChart(events, moves.today) + (active ? '<div class="mr-act"><span class="mr-k">Most active</span><ol>' + active + '</ol></div>' : '')
+    });
   }
 
   function renderCollectProgress(run) {
@@ -734,6 +852,7 @@
     }
     var keys = [hi && 'top', all && 'all', read && 'read'].filter(Boolean);
     var on = pick(tab, keys);
+    var lead = last ? movesHead(moves, events, ahead, top) : '';
     if (keys.length > 1) {
       body += tabs('moves', [['top', 'Highlights', top.length + ahead.length], ['all', 'All moves', events.length], ['read', 'What was read']]
         .filter(function (t) { return keys.indexOf(t[0]) >= 0; }), on) +
@@ -741,7 +860,7 @@
     } else {
       body += hi + all + read;
     }
-    return '<div class="card mr-card" id="mrMoves">' + head + '<div class="mr-card-b">' + body + '</div></div>';
+    return '<div class="mr-ov">' + lead + '<div class="card mr-card" id="mrMoves">' + head + '<div class="mr-card-b">' + body + '</div></div></div>';
   }
 
   // == nearby and new (Phase 4) =======================================================
@@ -758,11 +877,17 @@
     var where = local
       ? [String(f.category || '').replace(/_/g, ' '), f.distance_km != null ? f.distance_km + ' km ' + (f.near ? 'from your ' + f.near + ' site' : 'away') : '', f.address].filter(Boolean).join(' · ')
       : [f.location, f.reason].filter(Boolean).join(' · ');
-    return '<li class="mr-move"><div class="mr-move-when">' + esc(f.date || '') + '</div><div class="mr-move-b">' +
-      '<div class="mr-move-t">' + radarChip(f) + '<b>' + name + '</b>' +
+    var tier = f.certain === false ? 'lo' : f.status === 'planned' ? 'soon' : 'hi';
+    var face = local && f.distance_km != null
+      ? '<span class="mr-km" title="Distance from your nearest site"><b>' + esc(Number(f.distance_km) < 10 ? Number(f.distance_km).toFixed(1) : Math.round(f.distance_km)) +
+        '</b><small>km</small></span>'
+      : mono(f.name, 'ink');
+    return '<li class="mr-move mr-mv mr-fd ' + tier + '">' + dateBlock(f.date) + '<div class="mr-move-b"><div class="mr-fd-h">' + face +
+      '<div class="mr-fd-m"><div class="mr-move-t">' + radarChip(f) + '<b>' + name + '</b>' +
       (f.is_competitor ? '<span class="mr-chip acc">On your competitor list</span>' : '') + '</div>' +
-      (where ? '<div class="mr-move-sum">' + esc(where) + '</div>' : '') +
-      '<ul class="mr-ev">' + (f.evidence || []).map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul></div></li>';
+      (where ? '<div class="mr-move-sum">' + esc(where) + '</div>' : '') + '</div></div>' +
+      ((f.evidence || []).length ? '<ul class="mr-ev">' + f.evidence.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul>' : '') +
+      '</div></li>';
   }
 
   function renderHeadlines(items, title) {
@@ -775,19 +900,81 @@
       }).join('') + '</ul></details>';
   }
 
+  /** How a part was searched: the note is "Site: ...; Site: ...", one line per site. */
+  function searchedNote(part) {
+    var bits = String(part.note || '').split(/;\s+(?=[A-Z][^:;]{1,40}:)/).filter(Boolean);
+    if (!bits.length) return part.reused ? '<p class="mr-hint">From a scan in the last day.</p>' : '';
+    return '<details class="mr-more mr-how"><summary>How it was searched' + (part.reused ? ' (a scan from the last day)' : '') + '</summary>' +
+      '<ul class="mr-list">' + bits.map(function (b) {
+        var m = /^([^:]{1,40}):\s*(.*)$/.exec(b);
+        return '<li>' + (m ? '<b>' + esc(m[1]) + '</b>: ' + esc(m[2]) : esc(b)) + '</li>';
+      }).join('') + '</ul></details>';
+  }
+
   function renderRadarPart(part, local) {
     if (!part) return '';
     var head = '<h4 class="mr-sub">' + (local ? 'New businesses like this one nearby' : 'New brands in this category') + '</h4>';
     if (part.status !== 'ok') return head + '<p class="mr-hint">' + esc(part.note || 'Not run.') + '</p>';
     var f = part.findings || [];
-    return head + '<p class="mr-hint">' + esc(part.note || '') + (part.reused ? ' (from a scan in the last day)' : '') + '</p>' +
-      (f.length ? '<ul class="mr-moves">' + f.map(function (x) { return renderFinding(x, local); }).join('') + '</ul>'
+    return head + (f.length ? '<ul class="mr-moves">' + f.map(function (x) { return renderFinding(x, local); }).join('') + '</ul>'
         : '<div class="mr-empty"><b>Nothing new found</b>' + (local ? 'No business of this kind nearby shows a sign of having just opened.' : 'No new brand was confirmed this time.') + '</div>') +
+      searchedNote(part) +
       renderHeadlines(part.news, local ? 'Local opening news' : 'Launch news read') +
       (part.left_out && part.left_out.length ? '<details class="mr-more"><summary>Considered and left out (' + esc(part.left_out.length) +
         ')</summary><ul class="mr-list">' + part.left_out.map(function (l) {
           return '<li><b>' + esc(l.name) + '</b>' + (l.domain && l.domain !== l.name ? ' <span class="mr-hint">' + esc(l.domain) + '</span>' : '') + ': ' + esc(l.why) + '</li>';
         }).join('') + '</ul></details>' : '');
+  }
+
+  /** New places around the client: distance to scale, direction not. */
+  function proximityPlot(findings) {
+    var pts = (findings || []).filter(function (f) { return f.distance_km != null; });
+    if (!pts.length) return '';
+    var S = 300, C = S / 2, R = C - 22;
+    var far = Math.max.apply(null, pts.map(function (f) { return Number(f.distance_km); }));
+    var scale = [1, 2, 5, 10, 15, 20, 25, 50, 100].filter(function (k) { return k >= far; })[0] || Math.ceil(far);
+    var rings = [1, 2, 3, 4].map(function (i) {
+      var r = 22 + (R - 22) * i / 4;
+      return '<circle cx="' + C + '" cy="' + C + '" r="' + r.toFixed(1) + '" class="mr-pl-ring"/>' +
+        (i % 2 === 0 ? '<text class="mr-pl-q" x="' + (C + 4) + '" y="' + (C - r - 4).toFixed(1) + '">' + esc(+(scale * i / 4).toFixed(1)) + ' km</text>' : '');
+    }).join('');
+    var placed = [];
+    var dots = pts.map(function (f) {
+      var a = (hashOf(f.name) % 360) * Math.PI / 180, d = 22 + Math.min(1, Number(f.distance_km) / scale) * (R - 22);
+      var x = C + Math.sin(a) * d, y = C - Math.cos(a) * d;
+      var hue = f.certain === false ? 'cream' : f.status === 'planned' ? 'sky' : 'ok';
+      var lab = '';
+      if (placed.length < 4 && !placed.some(function (q) { return Math.abs(q[1] - y) < 15 && Math.abs(q[0] - x) < 120; })) {
+        placed.push([x, y]);
+        var nm = String(f.name || '');
+        lab = '<text class="mr-pl-lab" x="' + (x + (x > C ? 10 : -10)).toFixed(1) + '" y="' + (y + 4).toFixed(1) + '" text-anchor="' + (x > C ? 'start' : 'end') + '">' +
+          esc(nm.length > 18 ? nm.slice(0, 17) + '…' : nm) + '</text>';
+      }
+      return '<g class="mr-pl-b h-' + hue + '"><circle class="mr-pl-dot" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="6"/>' + lab +
+        '<title>' + esc(f.name) + ' · ' + esc(f.distance_km) + ' km' + (f.near ? ' from your ' + esc(f.near) + ' site' : '') + '</title></g>';
+    }).join('');
+    return '<figure class="mr-fig"><svg class="mr-plot mr-prox" viewBox="0 0 ' + S + ' ' + S + '" role="img" aria-label="' + esc(pts.length) +
+      ' new places by distance from your sites">' + rings + dots + '<circle cx="' + C + '" cy="' + C + '" r="8" class="mr-pl-you"/><circle cx="' + C + '" cy="' + C +
+      '" r="15" class="mr-pl-you2"/></svg><figcaption class="mr-legend"><span class="h-ok"><i></i>New</span><span class="h-sky"><i></i>Coming soon</span>' +
+      '<span class="h-cream"><i></i>Possibly new</span><span class="open">Distance to scale, direction not</span></figcaption></figure>';
+  }
+
+  function radarHead(radar) {
+    var loc = (radar.local || {}).findings || [], ent = (radar.entrants || {}).findings || [];
+    var sure = loc.filter(function (f) { return f.certain !== false; }).length, maybe = loc.length - sure;
+    var near = loc.filter(function (f) { return f.distance_km != null; })
+      .sort(function (a, b) { return a.distance_km - b.distance_km; })[0];
+    var h = sure ? plural(sure, 'new business', 'new businesses') + ' like this one near you.'
+      : loc.length ? plural(loc.length, 'place', 'places') + ' nearby may be new.'
+      : ent.length ? plural(ent.length, 'new brand') + ' entering the category.' : 'Nothing new nearby.';
+    return sectHead({
+      eye: 'Nearby and new', quiet: !loc.length && !ent.length, h: h,
+      p: 'Each one is listed only with a sign that it is really new: a fresh website, an opening notice or the chain\'s own store list.',
+      kpis: [[sure, 'New nearby', 'with a clear sign', 'k-acc'], [maybe, 'Possibly new', 'a weaker sign', 'k-cream'],
+        [ent.length, 'New brands', 'in the category', 'k-sky'],
+        [near ? (Number(near.distance_km) < 10 ? Number(near.distance_km).toFixed(1) : Math.round(near.distance_km)) + ' km' : '–', 'Nearest', near ? near.name : 'nothing nearby', 'k-paper']],
+      right: proximityPlot(loc)
+    });
   }
 
   function renderRadar(radar, tab) {
@@ -804,10 +991,11 @@
     } else {
       body += renderRadarPart(radar.local, true) + renderRadarPart(radar.entrants, false);
     }
-    return '<div class="card mr-card" id="mrRadar"><div class="mr-card-h"><div><h3>Nearby and new</h3>' +
+    var lead = radar.local || radar.entrants ? radarHead(radar) : '';
+    return '<div class="mr-ov">' + lead + '<div class="card mr-card" id="mrRadar"><div class="mr-card-h"><div><h3>Nearby and new</h3>' +
       '<p>Businesses like this one that opened or are about to open nearby, and new brands entering its category. ' +
-      'Each is listed only with a sign that it is really new; the reasons are under each name.</p></div></div>' +
-      '<div class="mr-card-b">' + body + '</div></div>';
+      'The reasons are under each name.</p></div></div>' +
+      '<div class="mr-card-b">' + body + '</div></div></div>';
   }
 
   // == industry pulse (Phase 5) =======================================================
@@ -821,15 +1009,81 @@
     return '<li>' + t + ' <span class="mr-hint">' + esc([a.publisher, a.date].filter(Boolean).join(', ')) + '</span></li>';
   }
 
+  // Each kind of theme keeps one colour, on its card and in the head's chart.
+  var THEME_HUE = { regulation: 'sky', workforce: 'acc', costs_and_prices: 'cream', demand: 'ok', competition_and_deals: 'asp',
+    technology: 'ink', supply: 'clay', other: 'dim' };
+  var THEME_ICON = {
+    regulation: '<path d="M12 3v18M5 7h14M7 7l-3 7h6zM17 7l-3 7h6z"/>',
+    workforce: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M17 11a2.6 2.6 0 1 0 0-5.2M21 20a5 5 0 0 0-4-4.9"/>',
+    costs_and_prices: '<path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.5" cy="8.5" r="1.4"/>',
+    demand: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+    competition_and_deals: '<path d="M8 12l3 3 5-6"/><path d="M3 12l4-4 3 2 4-4 3 3 4 3-7 7z"/>',
+    technology: '<rect x="4" y="4" width="16" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+    supply: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+    other: '<circle cx="12" cy="12" r="8"/><path d="M12 8v5M12 16h.01"/>'
+  };
+  function themeKind(k) { return THEME_HUE[k] ? k : 'other'; }
+
   function renderTheme(t) {
-    var n = (t.articles || []).length + (t.more || 0);
-    return '<li class="mr-theme"><div class="mr-move-t"><span class="mr-chip">' + esc(t.kind_label) + '</span><b>' + esc(t.title) + '</b></div>' +
+    var n = (t.articles || []).length + (t.more || 0), kind = themeKind(t.kind);
+    var pubs = [];
+    (t.articles || []).forEach(function (a) { if (a.publisher && pubs.indexOf(a.publisher) < 0) pubs.push(a.publisher); });
+    return '<li class="mr-theme h-' + THEME_HUE[kind] + '"><div class="mr-theme-top"><span class="mr-theme-ic" aria-hidden="true"><svg viewBox="0 0 24 24">' +
+      THEME_ICON[kind] + '</svg></span><span class="mr-chip">' + esc(t.kind_label) + '</span>' +
+      (t.latest ? '<span class="mr-theme-d">' + esc(t.latest) + '</span>' : '') + '</div>' +
+      '<h5 class="mr-theme-h">' + esc(t.title) + '</h5>' +
       '<p class="mr-theme-sum">' + esc(t.summary) + '</p>' +
       (t.why_it_matters ? '<p class="mr-theme-why"><b>Why it matters:</b> ' + esc(t.why_it_matters) + '</p>' : '') +
+      '<div class="mr-theme-f">' + (pubs.length ? '<span class="mr-pubs" aria-hidden="true">' + pubs.slice(0, 4).map(function (pb) {
+        return '<i title="' + esc(pb) + '">' + esc((String(pb).match(/[A-Za-z0-9]/) || ['?'])[0].toUpperCase()) + '</i>';
+      }).join('') + '</span>' : '') +
       '<details class="mr-more"><summary>' + esc(n) + ' articles from ' + esc(t.publishers) + ' publisher' + (t.publishers === 1 ? '' : 's') +
       (t.latest ? ', latest ' + esc(t.latest) : '') + '</summary><ul class="mr-list">' +
       (t.articles || []).map(renderArticle).join('') + '</ul>' +
-      (t.more ? '<p class="mr-hint">and ' + esc(t.more) + ' more</p>' : '') + '</details></li>';
+      (t.more ? '<p class="mr-hint">and ' + esc(t.more) + ' more</p>' : '') + '</details></div></li>';
+  }
+
+  /** The kinds of theme this month, as bars: what the industry is talking about. */
+  function themeMix(markets) {
+    var by = {}, labels = {};
+    markets.forEach(function (m) {
+      (m.themes || []).forEach(function (t) {
+        var k = themeKind(t.kind);
+        by[k] = (by[k] || 0) + 1;
+        labels[k] = t.kind_label || k;
+      });
+    });
+    var keys = Object.keys(by).sort(function (a, b) { return by[b] - by[a]; });
+    if (!keys.length) return '';
+    var max = by[keys[0]];
+    return '<div class="mr-mix"><span class="mr-k">What the news is about</span><ul>' + keys.map(function (k) {
+      return '<li class="h-' + THEME_HUE[k] + '"><span>' + esc(labels[k]) + '</span><i><em style="width:' + Math.round(by[k] / max * 100) + '%"></em></i><b>' +
+        esc(by[k]) + '</b></li>';
+    }).join('') + '</ul></div>';
+  }
+
+  function pulseHead(pulse) {
+    var markets = pulse.markets || [];
+    var themes = 0, read = 0, pubs = {}, asked = 0, answered = 0;
+    markets.forEach(function (m) {
+      themes += (m.themes || []).length;
+      read += Number(m.articles) || 0;
+      (m.themes || []).forEach(function (t) { (t.articles || []).forEach(function (a) { if (a.publisher) pubs[a.publisher] = 1; }); });
+      (m.queries || []).forEach(function (q) { asked++; if (q.status === 'ok') answered++; });
+    });
+    var lab = (markets.filter(function (m) { return m.label; })[0] || {}).label;
+    var where = markets.filter(function (m) { return m.status && m.status !== 'not_read'; })
+      .map(function (m) { return COUNTRY_NAME[m.country] || m.country; });
+    return sectHead({
+      eye: 'Industry pulse', quiet: !themes,
+      h: themes ? plural(themes, 'theme') + ' moving the industry this month.' : 'No clear themes this month.',
+      p: (lab ? lab + ': ' : '') + (where.length ? 'read from the news in ' + where.join(', ') + '. Every theme rests on at least two articles.'
+        : 'the news is read with the next collection.'),
+      kpis: [[themes, 'Themes', 'each backed by 2+ articles', 'k-acc'], [read || '–', 'Headlines read', 'in the last month', 'k-paper'],
+        [Object.keys(pubs).length || '–', 'Publishers', 'cited in the themes', 'k-sky'],
+        [asked ? answered + '/' + asked : '–', 'Searches answered', markets.length > 1 ? 'across ' + markets.length + ' markets' : '', 'k-cream']],
+      right: themeMix(markets)
+    });
   }
 
   function renderPulseMarket(m) {
@@ -880,10 +1134,11 @@
     } else {
       body += markets.map(renderPulseMarket).join('');
     }
-    return '<div class="card mr-card" id="mrPulse"><div class="mr-card-h"><div><h3>Industry pulse</h3>' +
+    var lead = markets.length ? pulseHead(pulse) : '';
+    return '<div class="mr-ov">' + lead + '<div class="card mr-card" id="mrPulse"><div class="mr-card-h"><div><h3>Industry pulse</h3>' +
       '<p>What the news says about this industry in each market this month, grouped into themes. ' +
       'Every theme rests on at least two articles, listed under it.</p></div></div>' +
-      '<div class="mr-card-b">' + body + '</div></div>';
+      '<div class="mr-card-b">' + body + '</div></div></div>';
   }
 
   // == weekly update (Phase 8) =========================================================
@@ -967,6 +1222,8 @@
     if (!v) return '<div class="card"><div class="mr-empty"><b>Pick a company</b>Or add one by its website above.</div></div>';
     var running = state.run && state.run.status === 'running';
     var active = sectionOf(state), t = state.tabs || {}, m = state.moves;
+    KIND_OF = {};
+    (v.competitors || []).forEach(function (r) { KIND_OF[r.entity_id] = r.kind; });
     var later = m ? '<b>Nothing yet</b>This fills in with the first collection. Open <i>Moves</i> and press Collect now.' : 'Loading…';
     return renderHead(v, running) + (running ? renderProgress(state.run) : '') + '<div class="mr-panels">' +
       panel('overview', active, renderOverview(state)) +
