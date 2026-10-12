@@ -1,4 +1,4 @@
-"""Account Mapper, phase 4: what the facts say about each account.
+"""People & Signals, phase 4: what the facts say about each account.
 
     rank_accounts(summary)                                 # free: priority and its reasons
     brief_accounts(summary, model=..., budget=...)         # Claude: one brief per account

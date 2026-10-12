@@ -1,4 +1,4 @@
-"""Account Mapper phases 3-4 (tracker/account_mapper_reveal.py,
+"""People & Signals phases 3-4 (tracker/account_mapper_reveal.py,
 tracker/account_mapper_brief.py): a reveal is refused before it can pass
 its credit cap or the balance, its results are matched back to the people
 asked for, each company's email pattern is learned from verified emails

@@ -1,4 +1,4 @@
-"""Account Mapper: company names and the job titles you sell to in; for
+"""People & Signals: company names and the job titles you sell to in; for
 every company, the right people and a picture of the account out.
 Built around Saleshandy's Lead Finder (tracker/saleshandy_client.py).
 The plan: docs/account-mapper-plan.md.

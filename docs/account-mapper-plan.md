@@ -1,4 +1,4 @@
-# Account Mapper: the plan
+# People & Signals: the plan
 
 **What it does:** you give it company names and the job titles you sell to. For every company it returns:
 - **the right people**, with their LinkedIn profile and a verified work email;
@@ -168,7 +168,7 @@ account cards · people table · CSV / JSON export · run history
   - `tracker/account_mapper_reveal.py`;
   - `tracker/account_mapper_brief.py`;
   - `tracker/account_mapper_store.py` (runs in `am_runs`, CSV).
-- **Page:** Admin → **Account Mapper** (`/admin/account-mapper`); admins only.
+- **Page:** Admin → **People & Signals** (`/admin/account-mapper`); admins only.
 - **Phase 6 waits for the key.**
 
 ### Adding the key (Windows laptop)

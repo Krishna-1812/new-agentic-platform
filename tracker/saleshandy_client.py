@@ -1,4 +1,4 @@
-"""Saleshandy's public API, the calls the Account Mapper uses.
+"""Saleshandy's public API, the calls People & Signals uses.
 
     sh = Client()                         # key from SALESHANDY_API_KEY
     sh.credits()                          # {"total": 1480, "today": 2, "month": 20}

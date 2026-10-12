@@ -1,4 +1,4 @@
-"""Account Mapper: its runs, in Postgres (am_runs), and the background jobs
+"""People & Signals: its runs, in Postgres (am_runs), and the background jobs
 that fill them.
 
     run_id = start_map(settings, owner_email)              # free (+ Claude if asked, capped)

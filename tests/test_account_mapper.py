@@ -1,4 +1,4 @@
-"""Account Mapper (tracker/account_mapper.py, tracker/saleshandy_client.py):
+"""People & Signals (the Account Mapper code) (tracker/account_mapper.py, tracker/saleshandy_client.py):
 Saleshandy's API read the way its reference describes it (quirks
 included), job titles turned into search filters, a company resolved and
 its people found, ranked and counted, all on fakes: no key, no network."""

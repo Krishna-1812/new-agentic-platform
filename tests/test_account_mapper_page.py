@@ -1,4 +1,4 @@
-"""Account Mapper phase 5: the admin routes (admin only, no spending
+"""People & Signals phase 5: the admin routes (admin only, no spending
 without its confirmation, one job at a time), the CSV export, runs kept in
 Postgres per owner with mapping and revealing as separate jobs, and the
 page script under Node with hostile strings (names, titles, photos and
@@ -61,6 +61,8 @@ def test_every_route_is_admin_only(method, path, email, status):
 def test_the_page_renders_with_its_script_and_menu_entry():
     html = _client(ADMIN).get(BASE).get_data(as_text=True)
     assert "js/account_mapper.js" in html and "css/account_mapper.css" in html and 'href="/admin/account-mapper"' in html
+    assert "<title>People &amp; Signals" in html and "People &amp; Signals" in html.split('href="/admin/account-mapper"', 1)[1][:2000]
+    assert "Account Mapper" not in html
 
 
 def test_status_says_when_the_key_is_missing_and_shows_the_balance_when_set(monkeypatch):
