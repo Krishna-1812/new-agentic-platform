@@ -659,3 +659,12 @@
 .mr-prof .mr-field.pills .mr-pills span:first-child { background: var(--ink); color: var(--tx-on-ink); }
 /* On a narrow screen a section's sentence comes first, then its picture. */
 @media (max-width: 1080px) { .mr-sh .mr-cmd-r { order: 0; } }
+
+/* == How much of the company the profile could see ======================================= */
+.mr-rq { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 14px; padding: 10px 14px;
+  border-radius: 14px; background: var(--s2, #F3F1EC); color: var(--tx2); font-size: 13.5px; line-height: 1.45; }
+.mr-rq-chip { flex: none; padding: 3px 11px; border-radius: 999px; font-weight: 600; font-size: 12px; letter-spacing: .02em;
+  background: var(--s1, #fff); color: var(--tx); }
+.mr-rq--ok .mr-rq-chip { background: #D9F4E6; color: #0B6B3A; }
+.mr-rq--warn .mr-rq-chip { background: #FFF1CC; color: #8A5A00; }
+.mr-rq--bad .mr-rq-chip { background: #FFE0DC; color: #C8261B; }

@@ -33,6 +33,9 @@ os.environ.setdefault("WATCH_ALERTS", "off")
 # The Page Watch worker starts no Video Studio renderer (which would install
 # HyperFrames with npm) unless a test switches it on (tests/test_video_*.py).
 os.environ.setdefault("VIDEO_STUDIO", "off")
+# Market Radar reads Wikidata and Wikipedia for a company its own site cannot describe; never in tests
+# unless a test passes its own reader (tests/test_market_radar_outside.py).
+os.environ.setdefault("MR_OUTSIDE", "off")
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

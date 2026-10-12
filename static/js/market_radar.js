@@ -440,6 +440,15 @@
 
   // == the profile ===================================================================
 
+  // How much of the company the profile could see, said plainly (tracker/market_radar_outside.read_quality).
+  var QUALITY = { full: ['ok', 'Read in full'], partial: ['warn', 'Read in part'], thin: ['bad', 'Thin reading'],
+    outside: ['bad', 'Website not read'] };
+  function readQuality(q) {
+    if (!q || !QUALITY[q.grade]) return '';
+    var meta = QUALITY[q.grade];
+    return '<div class="mr-rq mr-rq--' + meta[0] + '"><span class="mr-rq-chip">' + esc(meta[1]) + '</span><span>' + esc(q.why || '') + '</span></div>';
+  }
+
   function renderProfile(view, editing, errors, tab) {
     var p = view.profile || {};
     var f = p.fields || {};
@@ -450,7 +459,9 @@
         '<div class="mr-empty"><b>Not read yet</b>The website has not been read for this company. Run it to build a profile.</div></div>';
     }
     var head = '<div class="mr-card-h"><div><h3>Profile</h3><p>' +
-      ((p.facts || {}).read_from_apollo ? 'The website refused our reader, so this was read from Apollo\'s company record' +
+      ((p.facts || {}).read_from_wikidata_and_wikipedia && (p.read_quality || {}).grade === 'outside' ? 'The website could not be read, so this was built from Wikidata and Wikipedia' +
+        (p.read_at ? ' ' + esc(when(p.read_at)) : '') + '. Check it more carefully than usual'
+        : (p.facts || {}).read_from_apollo ? 'The website refused our reader, so this was read from Apollo\'s company record' +
         (p.read_at ? ' ' + esc(when(p.read_at)) : '') + '. Check it more carefully than usual'
         : (p.facts || {}).read_in_browser ? 'The website refuses our usual reader, so it was read in a real browser' +
           (p.read_at ? ' ' + esc(when(p.read_at)) : '')
@@ -458,7 +469,7 @@
       (edited.length ? '; ' + esc(edited.length) + ' field' + (edited.length > 1 ? 's' : '') + ' corrected by you' : '') +
       '</p></div>' + (editing ? '' : '<button type="button" class="mr-btn small" data-act="edit">Edit profile</button>') + '</div>';
 
-    var checks = (p.checks || []).map(function (c) {
+    var checks = readQuality(p.read_quality) + (p.checks || []).map(function (c) {
       return '<div class="mr-callout">' + esc(c) + '</div>';
     }).join('');
 
