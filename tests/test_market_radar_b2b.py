@@ -422,10 +422,12 @@ def test_linkedin_says_why_it_read_nothing():
 
 def test_specialist_detectors_run_only_for_the_kinds_of_business_they_fit():
     run = lambda a: {n for n in mc.NAMES if mc.applies(n, a)}  # noqa: E731
-    assert run("local_single") == run("multi_location") == set(mc.NAMES) - {"subdomains", "headcount", "linkedin"}
+    gated = {"subdomains", "headcount", "linkedin", "apps", "buzz", "facts"}
+    assert run("local_single") == run("multi_location") == set(mc.NAMES) - gated
     assert run("ecommerce") == set(mc.NAMES) - {"headcount", "linkedin"}
-    assert run("b2b_product") == run("b2b_services") == set(mc.NAMES)
-    assert run("manufacturer") == set(mc.NAMES) - {"subdomains"}
+    assert run("b2b_product") == set(mc.NAMES)
+    assert run("b2b_services") == set(mc.NAMES) - {"apps"}
+    assert run("manufacturer") == set(mc.NAMES) - {"subdomains", "apps", "buzz"}
     assert run(None) == run("local_single")
 
 
@@ -502,8 +504,8 @@ def test_a_b2b_clients_collection_runs_every_detector_and_stores_their_moves(pg,
     io2["get"] = get
     io2["crt_connect"] = lambda **kw: pytest.fail("certificate logs read for a dentist")
     out = mc.collect_client(dent, OWNER, io=io2, store=pg, now=now)
-    assert {r["detector"] for r in out["companies"][0]["rows"]} == set(mc.NAMES) - {"subdomains", "headcount", "linkedin"}
-    assert {l["detector"] for l in out["coverage"]} == set(mc.NAMES) - {"subdomains", "headcount", "linkedin"}
+    assert {r["detector"] for r in out["companies"][0]["rows"]} == set(mc.NAMES) - {"subdomains", "headcount", "linkedin", "apps", "buzz", "facts"}
+    assert {l["detector"] for l in out["coverage"]} == set(mc.NAMES) - {"subdomains", "headcount", "linkedin", "apps", "buzz", "facts"}
 
 
 def test_linkedin_is_read_for_a_few_companies_per_collection(pg, monkeypatch):

@@ -34,7 +34,9 @@ from . import market_radar_b2b as b2b
 from . import market_radar_detectors as det
 from . import market_radar_jobs as jobs
 from . import market_radar_linkedin as li
+from . import market_radar_more as more
 from . import market_radar_news as news
+from . import market_radar_playbooks as playbooks
 
 logger = logging.getLogger(__name__)
 
@@ -63,21 +65,25 @@ DETECTORS = [
      "New subdomains"),
     ("headcount", b2b.read_headcount, b2b.compare_headcount, b2b.baseline_headcount, "Headcount"),
     ("linkedin", li.read_linkedin, li.compare_linkedin, li.baseline_linkedin, "LinkedIn posts"),
+    # Depth (tracker/market_radar_more): free, public, no model.
+    ("content", more.read_content, more.compare_content, None, "New site pages"),
+    ("apps", more.read_apps, more.compare_apps, more.baseline_apps, "Mobile apps"),
+    ("buzz", more.read_buzz, more.compare_buzz, more.baseline_buzz, "Hacker News"),
+    ("facts", more.read_facts, more.compare_facts, None, "Company facts"),
+    ("stack", more.read_stack, more.compare_stack, None, "Tools on the homepage"),
 ]
 NAMES = [d[0] for d in DETECTORS]
 B2B = {"b2b_services", "b2b_product"}
-# Which kinds of client each specialist detector runs for (the plan's
-# module table); a detector not listed runs for every client. A dentist's
-# rivals have no certificate-log story to tell, and every Apollo read or
-# LinkedIn read spends a credit or a person's session.
-FOR_ARCHETYPES = {
-    "subdomains": B2B | {"ecommerce"},
-    "headcount": B2B | {"manufacturer"},
-    "linkedin": B2B | {"manufacturer"},
-}
+# Which kinds of client each specialist detector runs for is the playbook's
+# (tracker/market_radar_playbooks.py); a detector it does not gate runs for
+# every client. A dentist's rivals have no certificate-log story to tell,
+# and every Apollo read or LinkedIn read spends a credit or a person's session.
+FOR_ARCHETYPES = {name: {k for k, v in playbooks.PLAYBOOKS.items() if name in v["specialists"]}
+                  for name in playbooks.GATED}
 # How long a read stays good, in hours, where 12 is too often: headcount
 # costs a credit and moves slowly, certificate logs take a minute to query.
-REUSE = {"subdomains": 7 * 24, "headcount": 30 * 24, "linkedin": 7 * 24}
+REUSE = {"subdomains": 7 * 24, "headcount": 30 * 24, "linkedin": 7 * 24, "content": 24, "apps": 48,
+         "buzz": 24, "facts": 30 * 24, "stack": 7 * 24}
 
 
 HOOKS = ("crt_connect", "apollo_enrich", "linkedin_collect", "linkedin_available", "sleep",
@@ -88,10 +94,10 @@ def applies(name, archetype):
     return name not in FOR_ARCHETYPES or archetype in FOR_ARCHETYPES[name]
 # Detectors that read the live page text: an archived copy of a page is not
 # this week's page, so these are skipped when the site refuses us.
-LIVE_TEXT = {"promotions", "pages"}
+LIVE_TEXT = {"promotions", "pages", "stack", "content"}
 # Detectors that do not need the company's own website to answer. The
 # registry and LinkedIn take an identifier from it, but remember it.
-SITELESS = {"news", "filings", "subdomains", "headcount", "linkedin", "registry"}
+SITELESS = {"news", "filings", "subdomains", "headcount", "linkedin", "registry", "apps", "buzz", "facts"}
 
 
 def _iso(dt):
@@ -351,7 +357,10 @@ NONE_WORDS = {"news": "no articles", "locations": "no location pages or addresse
               "newsroom": "no news page or feed", "jobs": "no public jobs board",
               "filings": "no US stock-market listing", "registry": "no UK company number on its site",
               "subdomains": "no certificates logged", "headcount": "no Apollo employee estimate",
-              "linkedin": "no LinkedIn page linked from its site"}
+              "linkedin": "no LinkedIn page linked from its site",
+              "content": "no readable sitemap", "apps": "no app listed on the App Store",
+              "buzz": "no Hacker News stories", "facts": "no Wikidata record",
+              "stack": "no tools recognised"}
 
 
 def coverage(results):

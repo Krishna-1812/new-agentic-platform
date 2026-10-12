@@ -38,8 +38,9 @@ MAX_OUTPUT_TOKENS = 8000
 HOME_CHARS = 14_000
 PAGE_CHARS = 7_000
 CORPUS_CHARS = 60_000
-ARCHETYPES = ("local_single", "multi_location", "ecommerce", "b2b_services", "b2b_product",
-              "manufacturer", "other")
+from . import market_radar_playbooks as playbooks
+
+ARCHETYPES = playbooks.ARCHETYPES
 CONFIDENCE = {"type": "string", "enum": ["high", "medium", "low"]}
 
 PROFILE_SCHEMA = {
@@ -104,13 +105,9 @@ SYSTEM = """You profile a company from its own website, for a market-intelligenc
 You are given (1) FACTS a program read from the site's code and sitemap, and (2) the TEXT of the pages it read, each headed by its URL. Use only these. You have no search tool, and you must not fill gaps from general knowledge about a company with the same name: two firms often share a name, and this report is about the one at this website.
 
 Archetypes, pick one:
-- local_single: one physical location (or a few in one town) serving people nearby, e.g. a dental practice, a restaurant, a gym.
-- multi_location: physical locations in more than one town: a practice with clinics in two or three towns, or a chain or franchise with many.
-- ecommerce: sells its own products online to consumers as its main channel (it may also have stores or stockists).
-- b2b_services: sells services to businesses (agency, consultancy, IT services).
-- b2b_product: sells software or products to businesses.
-- manufacturer: makes physical goods, mostly sold through others.
-- other: none of these fits; say why in archetype_reason.
+%(archetypes)s
+
+Pick the most specific type that fits: a law firm is professional_services, not b2b_services; a hotel group is hospitality_travel; a hospital network is health_system; a marketplace that only takes a fee is marketplace, not ecommerce. A single-location restaurant, clinic, salon, gym or hotel is local_single.
 
 Rules:
 - location_count: the number of physical locations the pages or the facts support. Use the sitemap's location-page count only as a rough guide and say so in location_count_basis. 0 for an online-only business, -1 when nothing supports a number.
@@ -124,6 +121,7 @@ Rules:
 - evidence: for name, archetype, hq, location_count and industry, a short verbatim quote (under 25 words) from the page text, with that page's URL. Never invent or paraphrase a quote.
 - unknowns: what a reader would expect to know that these pages did not say.
 - Write in English, plainly. Do not use em dashes or en dashes. Use an empty string or empty list when something is unknown; never guess to fill a field."""
+SYSTEM = SYSTEM.replace("%(archetypes)s", playbooks.prompt_lines())
 
 
 # == building the model's input ==================================================
