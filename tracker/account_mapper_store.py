@@ -40,6 +40,9 @@ SCHEMA = [
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now())""",
     "CREATE INDEX IF NOT EXISTS idx_am_runs_owner ON am_runs (owner_email, created_at DESC)",
+    # 2026-10-12: inside a client account the owner is the account's space ("acct:<id>"), shared by
+    # the whole team; who started the run is kept for the account's History.
+    "ALTER TABLE am_runs ADD COLUMN IF NOT EXISTS started_by TEXT",
 ]
 _READY = False
 
@@ -80,10 +83,10 @@ def _json(value):
     return json.dumps(value, default=lambda o: float(o) if isinstance(o, Decimal) else str(o))
 
 
-def create_run(owner_email, settings, cap_usd):
-    row = _exec("""INSERT INTO am_runs (owner_email, settings, cost_cap_usd, stage)
-                   VALUES (%s, %s, %s, 'queued') RETURNING id""",
-                (owner_email, _json(settings), Decimal(str(cap_usd))), fetch="one")
+def create_run(owner_email, settings, cap_usd, started_by=None):
+    row = _exec("""INSERT INTO am_runs (owner_email, settings, cost_cap_usd, stage, started_by)
+                   VALUES (%s, %s, %s, 'queued', %s) RETURNING id""",
+                (owner_email, _json(settings), Decimal(str(cap_usd)), started_by), fetch="one")
     return row[0]
 
 
@@ -155,6 +158,13 @@ def list_runs(owner_email, limit=20):
     return out
 
 
+def space_runs(owner, limit=60):
+    """An owner's runs, newest first, for an account's History: what each mapped and who started it."""
+    rows = _exec("""SELECT id, status, settings, created_at, started_by, credits_used FROM am_runs
+                    WHERE owner_email=%s ORDER BY created_at DESC LIMIT %s""", (owner, limit), fetch="all")
+    return [dict(zip(("id", "status", "settings", "created_at", "started_by", "credits_used"), r)) for r in rows]
+
+
 def running_run(owner_email):
     for run in list_runs(owner_email, limit=5):
         if run["status"] == "running" and not run.get("stale"):
@@ -174,11 +184,11 @@ def _spawn(spawn, target, args, name):
 STORED = ("companies", "roles", "per_role", "insights", "use_claude", "web_fill", "briefs", "model")
 
 
-def start_map(settings, owner_email, *, cap_usd=None, spawn=None):
+def start_map(settings, owner_email, *, cap_usd=None, spawn=None, started_by=None):
     from . import account_mapper as am
     cap = Decimal(str(cap_usd)) if cap_usd is not None else am.DEFAULT_CLAUDE_CAP_USD
     stored = {k: settings[k] for k in STORED if k in settings}
-    run_id = create_run(owner_email, stored, cap)
+    run_id = create_run(owner_email, stored, cap, started_by)
     _spawn(spawn, map_job, (run_id, stored, cap), "am-map-%s" % run_id)
     return run_id
 

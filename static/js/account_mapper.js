@@ -13,6 +13,13 @@
   'use strict';
 
   var API = '/strategic-agents/people-signals/api';
+  // Inside a client account (app.py account_agent) every call carries the account (account-context.js);
+  // a download link names it as ?acct=. A client of the account maps for free: no credits, no reveal,
+  // no Claude steps and no costs (app.py refuses and strips them too).
+  var DOC = typeof document !== 'undefined' ? document : null;
+  var CLIENT = !!(DOC && DOC.body && DOC.body.hasAttribute('data-am-client'));
+  var ACCT = typeof window !== 'undefined' && window.__acctContext;
+  var AQ = ACCT ? 'acct=' + encodeURIComponent(ACCT) : '';
   var EMAIL = {
     verified: ['ok', 'Verified', 'Saleshandy verified this address when it revealed it'],
     saleshandy: ['ok', 'From Saleshandy', 'Revealed by Saleshandy, which verifies on reveal; no status was returned'],
@@ -62,6 +69,7 @@
   function renderReady(s) {
     if (!s) return '';
     var h = s.saleshandy || {};
+    if (CLIENT || s.client) return h.configured ? chip('ok', 'Ready') : chip('bad', 'Not connected yet');
     var sh = !h.configured ? chip('bad', 'Saleshandy: no key', 'Add SALESHANDY_API_KEY in Railway → web → Variables') :
       h.ok === false ? chip('bad', 'Saleshandy: ' + (h.error || 'error')) :
       chip('ok', 'Saleshandy: ' + num((h.credits || {}).total) + ' credits', 'Used today ' + num((h.credits || {}).today) + ' · this month ' + num((h.credits || {}).month));
@@ -71,6 +79,7 @@
   function renderEstimate(e) {
     if (!e) return '';
     if (e.error) return '<div class="mr-callout bad">' + esc(e.error) + '</div>';
+    if (CLIENT) return '<div class="am-est-grid"><div><b>Free</b><span>' + plural(e.companies, 'company', 'companies') + ' &times; ' + plural(e.roles, 'title') + '</span></div></div>';
     return '<div class="am-est-grid">' +
       '<div><b>Free</b><span>Mapping: ' + plural(e.companies, 'company', 'companies') + ' &times; ' + plural(e.roles, 'title') + ', about ' + esc(num(e.free_searches)) + ' searches</span></div>' +
       '<div><b>' + esc(num(e.credits_default)) + ' credits at most</b><span>Only if you reveal the best person per title, and only for emails found. You choose after mapping.</span></div>' +
@@ -88,7 +97,7 @@
       return '<li><button type="button" class="cl-run' + (r.id === selected ? ' on' : '') + '" data-act="open" data-id="' + esc(r.id) + '">' +
         '<b>Run ' + esc(r.id) + '</b>' + st + '<small>' + esc(when(r.created_at)) + ' &middot; ' + plural(n, 'account') +
         (t.titles ? ' &middot; ' + esc(t.titles_found || 0) + '/' + esc(t.titles) + ' titles' : '') +
-        ' &middot; ' + esc(num(r.credits_used || 0)) + ' credits' + (r.spent_usd ? ' &middot; ' + esc(money(r.spent_usd)) : '') + '</small></button></li>';
+        (CLIENT ? '' : ' &middot; ' + esc(num(r.credits_used || 0)) + ' credits' + (r.spent_usd ? ' &middot; ' + esc(money(r.spent_usd)) : '')) + '</small></button></li>';
     }).join('') + '</ul>';
   }
 
@@ -124,8 +133,9 @@
     }).join('');
     return '<div class="am-ink"><div class="am-ink-h"><div><div class="cl-eye">Overview</div>' +
       '<h3>' + esc(t.titles_found || 0) + ' of ' + esc(t.titles || 0) + ' seats filled across ' + plural(t.companies || 0, 'account') + '</h3>' +
+      (CLIENT ? '<p>The right people at each account, and what each account is doing.</p></div></div>' :
       '<p>Mapping is free. Emails are revealed only for the people you tick, and only after you confirm the credits.</p></div>' +
-      '<div class="cl-total"><b>' + esc(num(run.credits_used || 0)) + '</b><span>credits used' + (cost.spent_usd ? ' · ' + esc(money(cost.spent_usd)) + ' Claude' : '') + '</span></div></div>' +
+      '<div class="cl-total"><b>' + esc(num(run.credits_used || 0)) + '</b><span>credits used' + (cost.spent_usd ? ' · ' + esc(money(cost.spent_usd)) + ' Claude' : '') + '</span></div></div>') +
       '<div class="am-kpis">' + kpi(esc(num(t.people_picked || 0)), 'best matches', 'k-big') + kpi(esc(num(t.people_also || 0)), 'also found') +
       kpi(esc(num(t.new_in_role || 0)), 'new in their role') + kpi(esc(num(e.verified)), 'verified emails') +
       kpi(esc(num(e.pattern)), 'emails from a pattern') + kpi(esc(num(t.companies_resolved || 0)) + '/' + esc(num(t.companies || 0)), 'accounts matched') + '</div>' +
@@ -150,7 +160,7 @@
   function personCard(p, opts) {
     opts = opts || {};
     var key = keyOf(p);
-    var can = key && !p.revealed;
+    var can = key && !p.revealed && !CLIENT;
     var facts = [p.location, p.experience_years ? p.experience_years + ' yrs experience' : null, p.department].filter(Boolean);
     return '<article class="am-person' + (opts.picked ? ' picked' : '') + (opts.selected ? ' sel' : '') + '">' +
       (can ? '<label class="am-tick" title="Reveal this person\'s email"><input type="checkbox" data-act="pick" data-key="' + esc(key) + '"' + (opts.selected ? ' checked' : '') + '><span>Reveal</span></label>' : '') +
@@ -269,8 +279,8 @@
     var head = '<div class="cl-run-h"><div><div class="eyebrow">Run ' + esc(run.id) + ' &middot; ' + esc(when(run.created_at)) + '</div>' +
       '<h2>' + esc(((run.settings || {}).roles || []).join(', ')) + '</h2>' +
       '<p>' + esc(((run.settings || {}).companies || []).map(function (c) { return c.name; }).join(' · ')) + '</p></div>' +
-      '<div class="mr-actions"><a class="mr-btn" href="' + API + '/runs/' + encodeURIComponent(run.id) + '/export.csv">Download CSV</a>' +
-      '<a class="mr-btn ghost" href="' + API + '/runs/' + encodeURIComponent(run.id) + '?download=1">JSON</a></div></div>';
+      '<div class="mr-actions"><a class="mr-btn" href="' + API + '/runs/' + encodeURIComponent(run.id) + '/export.csv' + (AQ ? '?' + AQ : '') + '">Download CSV</a>' +
+      '<a class="mr-btn ghost" href="' + API + '/runs/' + encodeURIComponent(run.id) + '?download=1' + (AQ ? '&amp;' + AQ : '') + '">JSON</a></div></div>';
     var stateLine = running ? '<div class="mr-callout info">' + esc(run.stage === 'revealing' || /^revealing/.test(run.stage || '') ? 'Revealing' : 'Mapping') + ': ' +
       esc(run.stage || 'starting') + '&hellip; ' + esc(cs.length) + ' of ' + esc(((run.settings || {}).companies || []).length) + ' accounts done.</div>' :
       run.stale ? '<div class="mr-callout bad">' + esc(run.stale) + '</div>' :
@@ -290,7 +300,7 @@
         '<span class="am-tab-s">' + esc(((c.priority || {}).score == null) ? '·' : c.priority.score) + '</span><span class="am-tab-n">' + esc(c.display_name || c.name) +
         '<small>' + esc(found) + '/' + esc((c.roles || []).length) + ' seats</small></span></button>';
     }).join('') + '</nav>';
-    return head + stateLine + notes + renderOverview(run) + (run.status === 'ready' || running ? renderRevealBar(run, ui.selected, ui) : '') +
+    return head + stateLine + notes + renderOverview(run) + (!CLIENT && (run.status === 'ready' || running) ? renderRevealBar(run, ui.selected, ui) : '') +
       '<div class="am-body">' + tabs + renderAccount(list[pick], ui.selected) + '</div>';
   }
 
@@ -442,7 +452,7 @@
     state.status = s;
     $('amReady').innerHTML = renderReady(s);
     $('amModel').innerHTML = (s.models || []).map(function (m) { return '<option value="' + esc(m) + '">' + esc(m) + '</option>'; }).join('');
-    if (!(s.claude || {}).configured) ['amPhrasings', 'amWeb', 'amBriefs'].forEach(function (id) { $(id).checked = false; $(id).disabled = true; });
+    if (CLIENT || !(s.claude || {}).configured) ['amPhrasings', 'amWeb', 'amBriefs'].forEach(function (id) { $(id).checked = false; $(id).disabled = true; });
     estimate();
   }).catch(function (e) { $('amReady').innerHTML = chip('bad', e.message); });
   loadRuns().then(function () {

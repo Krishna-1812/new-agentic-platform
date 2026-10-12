@@ -117,7 +117,7 @@ def test_a_run_needs_the_key_its_confirmation_and_starts_once(monkeypatch):
     started, going = [], {}
     monkeypatch.setattr(store, "running_run", lambda email: going.get("run"))
 
-    def start(settings, email, cap_usd=None):
+    def start(settings, email, cap_usd=None, started_by=None):
         started.append((settings, cap_usd))
         going["run"] = {"id": 5}
         return 5

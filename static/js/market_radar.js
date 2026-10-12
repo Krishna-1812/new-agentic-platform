@@ -10,6 +10,13 @@
   'use strict';
 
   var API = '/strategic-agents/market-radar/api';
+  // Inside a client account (app.py account_agent) the page's calls carry the account
+  // (account-context.js) and its links stay inside it. A client of the account sees no weekly
+  // email settings and no prices (app.py also refuses them and strips every cost).
+  var DOC = typeof document !== 'undefined' ? document : null;
+  var CLIENT = !!(DOC && DOC.body && DOC.body.hasAttribute('data-mr-client'));
+  var ACCT = typeof window !== 'undefined' && window.__acctContext;
+  var REPORT = ACCT ? '/' + encodeURIComponent(ACCT) + '/agents/market-radar/report/' : '/strategic-agents/market-radar/report/';
 
   var ARCHETYPES = [
     ['local_single', 'Local business, one site'], ['multi_location', 'Several locations or a chain'],
@@ -116,7 +123,8 @@
   var SECTIONS = [
     ['overview', 'Overview', 'results'], ['competitors', 'Competitors', 'results'], ['moves', 'Moves', 'results'],
     ['nearby', 'Nearby & new', 'results'], ['pulse', 'Industry pulse', 'results'],
-    ['profile', 'Profile', 'setup'], ['monitor', 'Weekly update', 'setup'], ['run', 'Last search', 'setup']];
+    ['profile', 'Profile', 'setup'], ['monitor', 'Weekly update', 'setup'], ['run', 'Last search', 'setup']]
+    .filter(function (s) { return !(CLIENT && s[0] === 'monitor'); });
   var ICON = {
     overview: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
     competitors: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>',
@@ -383,11 +391,11 @@
       [f.collected, 'Collect their moves', 'Free. Reads their sites, shops, jobs and the news.', 'collect', running ? 'Collecting…' : f.collected ? 'Collect again' : 'Collect now'],
       [false, 'Read the report', 'A cited brief: what matters, so what, and what to do.', 'report', 'Open the report'],
       [!!f.monitor, 'Turn on the weekly update', 'A short "what changed" email once a week.', 'monitor', 'Set up']
-    ];
+    ].filter(function (s) { return !(CLIENT && s[3] === 'monitor'); });
     var next = '<div class="card mr-card mr-next"><div class="mr-card-h"><div><h3>Next steps</h3></div></div><ol class="mr-steps2">' +
       steps.map(function (s, i) {
         var btn = s[3] === 'collect' ? '<button type="button" class="mr-btn small" data-act="collect"' + (running ? ' disabled' : '') + '>' + esc(s[4]) + '</button>'
-          : s[3] === 'report' ? '<a class="mr-btn small" href="/strategic-agents/market-radar/report/' + encodeURIComponent((v.client || {}).id) + '">' + esc(s[4]) + '</a>'
+          : s[3] === 'report' ? '<a class="mr-btn small" href="' + REPORT + encodeURIComponent((v.client || {}).id) + '">' + esc(s[4]) + '</a>'
           : '<button type="button" class="mr-btn small" data-act="section" data-section="' + s[3] + '">' + esc(s[4]) + '</button>';
         return '<li class="' + (s[0] ? 'done' : '') + '"><span class="mr-steps2-n">' + (s[0] ? '&#10003;' : i + 1) + '</span><div><b>' + esc(s[1]) +
           '</b><small>' + esc(s[2]) + '</small></div>' + btn + '</li>';
@@ -1204,7 +1212,7 @@
       (href ? '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(c.domain) + '</a>' : esc(c.domain)) +
       (f.archetype ? '<span class="mr-chip">' + esc(label(ARCHETYPES, f.archetype)) + '</span>' : '') +
       (where ? '<span class="mr-chip">' + esc(where) + '</span>' : '') +
-      '</div></div><div class="mr-actions"><a class="mr-btn primary hot" href="/strategic-agents/market-radar/report/' + encodeURIComponent(c.id) + '">Open the report' +
+      '</div></div><div class="mr-actions"><a class="mr-btn primary hot" href="' + REPORT + encodeURIComponent(c.id) + '">Open the report' +
       '<svg viewBox="0 0 24 24" aria-hidden="true" class="mr-ico s"><path d="M7 17L17 7M9 7h8v8"/></svg></a>' +
       '<button type="button" class="mr-btn" data-act="run"' + (running ? ' disabled' : '') + '>' +
       (running ? 'Running…' : 'Search again') + '</button></div></div>';
@@ -1365,6 +1373,7 @@
     return loadView();
   }
   function loadMonitor() {
+    if (CLIENT) return Promise.resolve();
     var id = state.selected;
     return api('/clients/' + id + '/monitor').then(function (m) {
       if (state.selected !== id) return;
@@ -1448,7 +1457,8 @@
     var url = $('mrAddUrl').value.trim();
     if (!url) { $('mrAddUrl').focus(); return; }
     startRun({ url: url }, 'Find competitors for ' + url + '?',
-      'This reads the website and searches for competitors: about $0.12 and 2 to 4 minutes. If the company is already on your list, its stored profile is reused.')
+      'This reads the website and searches for competitors' + (CLIENT ? ', in 2 to 4 minutes.' : ': about $0.12 and 2 to 4 minutes.') +
+      ' If the company is already on your list, its stored profile is reused.')
       .then(function () { $('mrAddUrl').value = ''; });
   });
 
@@ -1511,8 +1521,9 @@
     } else if (act === 'run') {
       var name = (state.view.profile.fields || {}).name || state.view.client.domain;
       startRun({ client_id: state.selected }, 'Search again for ' + name + '?',
-        'Searches for competitors again using the profile with your corrections: about $0.07 and 2 to 4 minutes. Competitors you confirmed or removed keep your decision.',
-        'Also re-read the website (about $0.05 more). Your corrections still apply.');
+        'Searches for competitors again using the profile with your corrections' + (CLIENT ? ', in 2 to 4 minutes.' : ': about $0.07 and 2 to 4 minutes.') +
+        ' Competitors you confirmed or removed keep your decision.',
+        'Also re-read the website' + (CLIENT ? '.' : ' (about $0.05 more).') + ' Your corrections still apply.');
     }
   });
   document.addEventListener('change', function (e) {

@@ -2,6 +2,8 @@
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
 {#- ════════════════════════════════════════════════════════════════════════
     MARKET RADAR REPORT (/strategic-agents/market-radar/report/<client_id>) — the team; listed as Building
+    Inside an account (/<account>/agents/market-radar/report/<client_id>) it is the account's, for its
+    team and the clients it shares Market Radar with: `acct` is set and every call says so (X-Account).
 
     The written report (tracker/market_radar_report.py), drawn by
     static/js/market_radar_report.js from /strategic-agents/market-radar/api/clients/<id>/report.
@@ -10,17 +12,19 @@
 -#}
 <html lang="en">
 <head>
+{%- set mr_home = ("/" ~ acct.slug ~ "/agents/market-radar") if acct else "/strategic-agents/market-radar" %}
+{% if acct %}<script src="{{ url_for('static', filename='js/account-context.js') }}?v=1" data-acct="{{ acct.slug }}"></script>{% endif %}
 {{ head("Market Radar report", ["market_radar.css?v=3", "market_radar_report.css?v=2"]) }}
 </head>
 <body class="sa">
 
-{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Market Radar", "/strategic-agents/market-radar#company-" ~ client_id), ("Report", none)]) }}
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Market Radar", mr_home ~ "#company-" ~ client_id), ("Report", none)]) }}
 
-<main class="mr rr" id="rr" data-client="{{ client_id }}">
+<main class="mr rr" id="rr" data-client="{{ client_id }}" data-home="{{ mr_home }}">
   <div id="rrBody" aria-live="polite"><div class="card"><div class="mr-empty">Loading the report&hellip;</div></div></div>
 </main>
 
 {{ topbar_script() }}
-<script src="{{ url_for('static', filename='js/market_radar_report.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/market_radar_report.js') }}?v=4"></script>
 </body>
 </html>

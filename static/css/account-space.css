@@ -557,6 +557,8 @@ a.as-ev-main::after { content: ""; position: absolute; inset: 0; border-radius: 
 .rx-ag--event-conference-intelligence, .sh-tool--event-conference-intelligence { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
 .rx-ag--company-people-intelligence, .sh-tool--company-people-intelligence { --c: var(--ink); --c-dim: var(--s2); --c-tx: var(--tx); --c-on: var(--tx-on-ink); }
 .rx-ag--thought-leader-pr, .sh-tool--thought-leader-pr { --c: var(--clay); --c-dim: var(--clay-dim); --c-tx: var(--clay-tx); }
+.rx-ag--market-radar, .sh-tool--market-radar { --c: var(--ink); --c-dim: var(--s2); --c-tx: var(--tx); --c-on: var(--tx-on-ink); }
+.rx-ag--people-signals, .sh-tool--people-signals { --c: var(--sky); --c-dim: var(--sky-dim); --c-tx: var(--sky-tx); }
 
 /* The flood: a circle behind the icon that grows to cover the card. */
 .rx-flood { position: absolute; z-index: -1; left: 48px; top: 48px; width: 56px; height: 56px; margin: -28px 0 0 -28px;
