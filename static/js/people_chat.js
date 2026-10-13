@@ -456,26 +456,23 @@
     });
   }
 
-  function restore(runs) {
-    var chats = (runs || []).filter(function (r) { return (r.settings || {}).chat; }).slice(0, 4).reverse();
-    return Promise.all(chats.map(function (r) { return P.api('/runs/' + r.id).catch(function () { return null; }); })).then(function (full) {
-      full.forEach(function (run) {
-        if (!run || itemOf(run.id)) return;
-        var chat = (run.settings || {}).chat || {};
-        items.push({ t: 'day', text: when(run.created_at) });
-        items.push({ t: 'user', text: chat.message || '' });
-        items.push({ t: 'run', id: run.id, run: run, understood: { companies: run.settings.companies, asks: chat.asks, where: chat.where, how: chat.how } });
-        if (run.status === 'ready') sels[run.id] = defaultSelection(run);
-        if (run.status === 'running' && !run.stale) { busy = true; poll(run.id); }
-      });
-      paint(true);
-    });
+  // A page load starts a new chat: earlier ones are in Recent (click one to read it again). The one exception is
+  // a search still running, which is shown so its answer is not lost and the composer is not blocked by it.
+  function resumeRunning(runs) {
+    var going = (runs || []).filter(function (r) { return (r.settings || {}).chat && r.status === 'running' && !r.stale; })[0];
+    if (!going) return Promise.resolve();
+    return P.api('/runs/' + going.id).then(function (run) {
+      var chat = (run.settings || {}).chat || {};
+      items.push({ t: 'user', text: chat.message || '' });
+      items.push({ t: 'run', id: run.id, run: run, understood: { companies: run.settings.companies, asks: chat.asks, where: chat.where, how: chat.how } });
+      busy = true; paint(true); poll(run.id);
+    }).catch(function () { /* the list still shows it */ });
   }
 
   AMChat.init = function (runs, st) {
     if (st) status = st;
     paintSetup(); paint();
-    return restore(runs);
+    return resumeRunning(runs);
   };
   AMChat.setStatus = function (st) { status = st; paintSetup(); paint(); };
   AMChat.show = function (id) {
