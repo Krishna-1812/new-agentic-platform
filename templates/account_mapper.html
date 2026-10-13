@@ -13,7 +13,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("People & Signals", ["strategic-agents.css?v=2", "market_radar.css?v=7", "contact_lab.css?v=1", "account_mapper.css?v=5"]) }}
+{{ head("People & Signals", ["strategic-agents.css?v=2", "market_radar.css?v=7", "contact_lab.css?v=1", "account_mapper.css?v=6"]) }}
 </head>
 <body class="sa"{% if viewer_is_client() %} data-am-client{% endif %}>
 
@@ -96,7 +96,11 @@
             <svg class="am-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14 M5 12h14"/></svg><span class="am-long">New chat</span></button>
         </header>
         <div id="amAskSetup"></div>
-        <div class="am-thread empty" id="amThread" role="log" aria-live="polite" aria-label="Conversation"></div>
+        <div class="am-thread-w">
+          <div class="am-thread empty" id="amThread" role="log" aria-live="polite" aria-label="Conversation" tabindex="0"></div>
+          <button type="button" class="am-jump" id="amJump" hidden aria-label="Jump to the latest message">Latest
+            <svg class="am-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14 M6 13l6 6 6-6"/></svg></button>
+        </div>
         <form class="am-composer" id="amComposer" autocomplete="off">
           <div class="amc-follow" id="amFollow"></div>
           <div class="am-box">
@@ -178,6 +182,6 @@
 
 {{ topbar_script() }}
 <script src="{{ url_for('static', filename='js/account_mapper.js') }}?v=5"></script>
-<script src="{{ url_for('static', filename='js/people_chat.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/people_chat.js') }}?v=4"></script>
 </body>
 </html>

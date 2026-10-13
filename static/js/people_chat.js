@@ -320,18 +320,35 @@
 
   function connected() { return !status || (status.saleshandy || {}).configured; }
 
+  // The thread scrolls inside its card; the page does not grow with it.
+  function scrollThread(to, smooth) {
+    var box = $('amThread');
+    box.scrollTo({ top: to, behavior: smooth === false ? 'auto' : 'smooth' });
+  }
+  function atLatest() {
+    var box = $('amThread');
+    return box.scrollHeight - box.scrollTop - box.clientHeight < 160;
+  }
+  function toggleJump() {
+    var box = $('amThread');
+    $('amJump').hidden = !items.length || atLatest() || box.scrollHeight <= box.clientHeight + 40;
+  }
+
   function paint(stick) {
     var box = $('amThread');
+    var keep = box.scrollTop;
     box.innerHTML = items.length ? renderThread(items, UI, sels) : renderEmpty(status, UI);
     box.classList.toggle('empty', !items.length);
     $('amFollow').innerHTML = busy ? '' : renderFollow(items, UI);
     $('amNew').hidden = !items.length;
     $('amSend').disabled = busy || !connected();
-    // The page scrolls, not the thread. A new answer is read from its top; a new question shows at the bottom.
-    if (stick && items.length) {
+    // A new answer is read from its top; a new question shows at the bottom; anything else stays where it was.
+    if (!items.length) box.scrollTop = 0;
+    else if (stick) {
       var last = box.lastElementChild;
-      if (last && last.scrollIntoView) last.scrollIntoView({ block: last.classList.contains('result') ? 'start' : 'end', behavior: 'smooth' });
-    }
+      scrollThread(last && last.classList.contains('result') ? Math.max(0, last.offsetTop - 14) : box.scrollHeight);
+    } else box.scrollTop = keep;
+    toggleJump();
   }
 
   function paintStatus() {
@@ -488,7 +505,7 @@
       paint();
       var els = document.querySelectorAll('.amc-msg.result');
       var at = items.filter(function (x) { return x.t === 'run'; }).indexOf(it);
-      if (els[at]) els[at].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (els[at]) scrollThread(Math.max(0, els[at].offsetTop - 14));
     };
     if (itemOf(id)) { go(); return; }
     P.api('/runs/' + id).then(function (run) {
@@ -501,6 +518,8 @@
     }).catch(function (e) { P.toast(e.message); });
   };
 
+  $('amThread').addEventListener('scroll', toggleJump, { passive: true });
+  $('amJump').addEventListener('click', function () { scrollThread($('amThread').scrollHeight); });
   $('amComposer').addEventListener('submit', function (e) { e.preventDefault(); send($('amMsg').value); });
   $('amMsg').addEventListener('input', grow);
   $('amMsg').addEventListener('keydown', function (e) {
