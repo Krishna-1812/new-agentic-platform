@@ -84,3 +84,11 @@ def test_only_a_slow_request_is_logged_and_never_with_its_query_string(caplog):
         with caplog.at_level(logging.WARNING, logger="timing-test"):
             rt.finish(appmod.g, "GET", "/static/app.js", 200, staff=False, logger=log)
         assert caplog.records == [], "static files are not logged"
+
+
+def test_static_files_are_cached_an_hour_and_refreshed_in_the_background_past_it():
+    c = _client()
+    cc = c.get("/static/css/bento-tokens.css").headers["Cache-Control"]
+    assert cc == "public, max-age=3600, stale-while-revalidate=86400"
+    assert "stale-while-revalidate" not in c.get("/health").headers.get("Cache-Control", "")
+    assert c.get("/static/does-not-exist.css").status_code == 404

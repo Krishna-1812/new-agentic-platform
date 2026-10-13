@@ -47,13 +47,18 @@ class StoreUnavailable(RuntimeError):
     """DATABASE_URL is unset or Postgres refused the connection."""
 
 
-def _connect():
+def _connect(pooled=True):
+    """A connection. `pooled=False` is for a caller that keeps session state on it (an advisory lock held
+    across calls): that connection is closed for real afterwards, never handed to anyone else."""
     url = os.environ.get("DATABASE_URL", "")
     if not url:
         raise StoreUnavailable("DATABASE_URL is not set")
     import psycopg2
+    from tracker import db_pool
     try:
-        return psycopg2.connect(url, connect_timeout=8)
+        if not pooled:
+            return psycopg2.connect(url, connect_timeout=8)
+        return db_pool.connect(url, connect_timeout=8)
     except Exception as e:
         raise StoreUnavailable("Postgres connection failed: %s" % e) from e
 
@@ -1034,7 +1039,7 @@ def advisory_lock(key, *, conn=None):
     """Yields True when this process holds the Postgres advisory lock `key`
     for the duration, False when another process does. Session-level, so it
     is held on one connection kept open for the block."""
-    own = conn or _connect()
+    own = conn or _connect(pooled=False)
     try:
         with own.cursor() as cur:
             cur.execute("SELECT pg_try_advisory_lock(%s)", (int(key),))

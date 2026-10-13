@@ -81,6 +81,19 @@ def _time_the_request():
 
 
 @app.after_request
+def _static_files_keep_serving_while_they_refresh(resp):
+    """A static file is cached an hour (SEND_FILE_MAX_AGE_DEFAULT). Past the hour a browser used to wait for
+    the server to say "unchanged" before showing the page; with stale-while-revalidate it shows the file it has
+    at once and checks in the background, so a page never waits on that round trip. The `?v=` that templates
+    bump when a file changes still gets a changed file at once."""
+    if request.path.startswith("/static/") and resp.status_code in (200, 304):
+        cc = resp.headers.get("Cache-Control", "")
+        if cc.startswith("public, max-age=") and "stale-while-revalidate" not in cc:
+            resp.headers["Cache-Control"] = cc + ", stale-while-revalidate=86400"
+    return resp
+
+
+@app.after_request
 def _report_the_request_time(resp):
     try:
         email = ((session.get("google_user") or {}).get("email") or "").lower()

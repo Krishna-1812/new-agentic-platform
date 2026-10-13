@@ -38,8 +38,9 @@ def _norm(email):
 @contextlib.contextmanager
 def _pg():
     global _READY
-    import psycopg2
-    conn = psycopg2.connect(os.environ["DATABASE_URL"], connect_timeout=8)
+    import psycopg2  # noqa: F401
+    from tracker import db_pool
+    conn = db_pool.connect(os.environ["DATABASE_URL"], connect_timeout=8)
     try:
         if not _READY:
             with conn.cursor() as cur:

@@ -60,7 +60,7 @@ def test_a_static_js_file_carries_the_new_cache_header():
     # cleanup pass retired it; bento-motion.js is loaded by every product page.
     resp = client.get("/static/js/bento-motion.js")
     assert resp.status_code == 200
-    assert resp.headers.get("Cache-Control") == "public, max-age=3600"
+    assert resp.headers.get("Cache-Control") == "public, max-age=3600, stale-while-revalidate=86400"
 
 
 def test_a_route_that_explicitly_overrides_cache_control_after_send_file_still_wins():
