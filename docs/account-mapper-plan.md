@@ -161,13 +161,15 @@ account cards · people table · CSV / JSON export · run history
   - the email pattern learned from verified emails;
   - the web search for empty seats;
   - priority ranking and Claude briefs;
-  - the page, CSV and JSON exports.
+  - the page, CSV and JSON exports;
+  - the chat: ask in plain words, get the people (`tracker/people_chat.py`, `static/js/people_chat.js`).
 - **Code:**
   - `tracker/saleshandy_client.py`;
   - `tracker/account_mapper.py` (mapping);
   - `tracker/account_mapper_reveal.py`;
   - `tracker/account_mapper_brief.py`;
-  - `tracker/account_mapper_store.py` (runs in `am_runs`, CSV).
+  - `tracker/account_mapper_store.py` (runs in `am_runs`, CSV);
+  - `tracker/people_chat.py` (reading a message, searching a team or a title).
 - **Page:** Strategic Agents → **People & Signals** (`/strategic-agents/people-signals`), tagged Building. Open to the whole team; each person sees only their own runs. The old `/admin/account-mapper` address redirects.
 - **The page** (`static/js/account_mapper.js`, `static/css/account_mapper.css`):
   - the hero shows a buying group; the form has a line counter, one-click title presets, "Try an example" and switches for the optional steps, and says plainly how to connect Saleshandy while there is no key (the Map button waits for it);
@@ -210,6 +212,29 @@ account cards · people table · CSV / JSON export · run history
 - **Not found**: no credit was charged.
 - **Pattern**: built from the pattern that 2 or more verified emails at that company follow.
 - **Pattern, likely**: built from the pattern of 1 verified email.
+
+## Ask in plain words (the chat)
+
+The page opens on a chat. Write what you want, the way you would say it:
+
+- "marketing people at Stripe": a team, most senior first (default 10, "top 5" or "all" changes it);
+- "who is the CMO of Databricks?" or "VP Sales and CFO at Notion and Ramp": job titles, several companies;
+- "directors in finance at Shopify", "recruiters at Meta in Austin", "top 5 engineers at hubspot.com": a level, a place, a website;
+- "and their sales team?" or "what about Notion?": a follow-up keeps the half you did not repeat.
+
+**How it reads a message** (`tracker/people_chat.py`):
+- Plain rules read it, free and instantly. They pick out the company (or companies, or a website), the people (a department, a level, a job title or a job family such as engineers), a count and a place.
+- Only when the rules find no company or no kind of person, and only for the team with a Claude key, one small Claude call (Haiku, capped at $0.02, about $0.0004 in practice) reads it. The answer shows "Read by Claude" when that happened. A client's messages never use Claude.
+- When it still cannot tell, it asks: "Who at Stripe?" with one-click choices.
+- The "Looking for ... at ..." line above every answer shows what it understood, so a misreading is seen at once. Searching is free, so asking again costs nothing.
+
+**What comes back:** each message that names who to find becomes a run (it shows in Recent, History and the CSV like any other). The people appear as rows: name, title, place, decision-maker and new-in-role badges, and how many Saleshandy lists in all. A team is searched by Saleshandy's department (and, when that is thin, by job-title words), without interns, assistants or former staff, most senior first. A place ("in London") narrows the list by the location each person lists; when nobody lists it, it says so and shows everyone.
+
+**Emails and LinkedIn:** Saleshandy's search returns neither. They arrive with the reveal, which is the same credit-capped reveal as the mapping: the people shown are ticked, **Get emails & LinkedIn** shows the most it can use and the balance, and nothing is spent until you confirm. Until then each row has a link that searches LinkedIn for that person (a plain link; it opens nothing on our side). The reveal's field names for the LinkedIn address are still read by guess until the first live reveal.
+
+**Clients** can ask and download the CSV. They never see credits, ticks or the reveal, and their messages are read by rules only. A question that only gets a hint or a clarification does not count against a client's runs; a search does.
+
+**Keeping it:** the thread is rebuilt from your last four questions when you reload. The runs list shows a question as the question; clicking it brings its answer back. **New chat** clears the thread (and what a follow-up remembers), not your runs.
 
 ## What it won't do
 

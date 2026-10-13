@@ -252,6 +252,54 @@ def map_job(run_id, settings, cap, *, client=None, mapper=None, web=None, briefe
             pass
 
 
+# == the chat ==========================================================================
+
+def start_chat(parsed, message, owner_email, *, spawn=None, started_by=None, usd=0):
+    """One chat message that found something to search for becomes a run: the same rows, reveal, CSV and list as a
+    mapping. Searching is free; `usd` is what Claude cost to read the message (0 when plain rules did)."""
+    from . import people_chat as pc
+    settings = {"companies": parsed["companies"], "roles": [a["label"] for a in parsed["asks"]], "per_role": pc.DEFAULT_TITLE,
+                "chat": {"message": message[:pc.MAX_MESSAGE], "asks": parsed["asks"], "where": parsed.get("where"),
+                         "how": parsed.get("how"), "usd": float(usd)}}
+    run_id = create_run(owner_email, settings, 0, started_by)
+    _spawn(spawn, chat_job, (run_id, parsed, message), "am-chat-%s" % run_id)
+    return run_id
+
+
+def chat_job(run_id, parsed, message, *, client=None, answerer=None):
+    from . import account_mapper_brief as ab
+    from . import people_chat as pc
+    from . import saleshandy_client as sh
+
+    def stage(text):
+        try:
+            update_run(run_id, stage=text[:300])
+        except Exception:
+            logger.warning("account mapper chat %s: could not record its stage", run_id)
+
+    def partial(summary):
+        try:
+            update_run(run_id, summary=dict(summary, partial=True))
+        except Exception:
+            logger.warning("account mapper chat %s: could not save its partial summary", run_id)
+
+    summary = None
+    try:
+        client = client or sh.Client()
+        summary = (answerer or pc.answer)(parsed, client, message=message, progress=stage, on_company=partial)
+        ab.rank_accounts(summary)
+        summary["cost"] = {"spent_usd": 0.0, "cap_usd": 0.0, "by_stage": {}, "calls": 0}
+        summary["log"] = list(getattr(client, "log", []))[-200:]
+        update_run(run_id, status="ready", stage="found", summary=summary, error=summary.get("stopped"))
+    except Exception as e:
+        logger.exception("account mapper chat %s failed", run_id)
+        try:
+            update_run(run_id, status="failed", error="%s: %s" % (type(e).__name__, str(e)[:300]),
+                       summary=dict(summary or {}, trace=traceback.format_exc()[-1500:]))
+        except Exception:
+            pass
+
+
 # == revealing =========================================================================
 
 def start_reveal(run_id, owner_email, keys, *, cap_credits, phone=False, spawn=None):

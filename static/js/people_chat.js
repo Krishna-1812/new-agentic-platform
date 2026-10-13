@@ -1,0 +1,479 @@
+/* People & Signals chat (templates/account_mapper.html, loaded after account_mapper.js).
+ *
+ * Write who you want in plain words ("marketing people at Stripe"); the server reads it (POST /api/chat), searches
+ * Saleshandy (free) as a run, and this file draws the answer: the people as rows, with a LinkedIn link and an email
+ * slot. Emails and exact LinkedIn profiles come from the reveal: credits, only after a yes.
+ *
+ * The render* functions are pure (data in, HTML out, every value escaped; names, titles and photos come from
+ * Saleshandy) and exported as window.AMChat so tests can run them under Node. The wiring at the bottom only runs on
+ * the page. Shared pieces (icons, chips, avatars, the page's api/toast/modal) come from window.AM.
+ */
+(function (root) {
+  'use strict';
+
+  var AM = root.AM;
+  if (!AM) return;
+  var esc = AM.esc, safeUrl = AM.safeUrl, ic = AM.ic, chip = AM.chip, hue = AM.hue, avatar = AM.avatar, num = AM.num,
+    when = AM.when, plural = AM.plural;
+
+  var SUGGESTIONS = [
+    ['Marketing people at HubSpot', 'A whole team, most senior first', 'users'],
+    ['Who is the CMO of Notion?', 'One job title', 'spark'],
+    ['Sales leaders at Stripe and Ramp', 'Several companies at once', 'bolt'],
+    ['Top 5 engineers at hubspot.com', 'Use a website to be exact', 'globe']
+  ];
+  var FOLLOW = [['Leadership', 'leadership'], ['Marketing team', 'marketing team'], ['Sales team', 'sales team'],
+    ['Engineering team', 'engineering team'], ['Finance team', 'finance team'], ['HR team', 'HR team'], ['The CFO', 'the CFO']];
+
+  // A made-up answer, shown before the first question and clearly marked: it is never real data.
+  var SAMPLE = {
+    id: 0, status: 'ready', settings: { chat: { message: 'Marketing people at Northwind Labs' } },
+    summary: { chat: { message: 'Marketing people at Northwind Labs' }, credits: { total: 0 }, companies: [{
+      name: 'Northwind Labs', display_name: 'Northwind Labs', domain: 'northwind.example',
+      resolved: { how: 'exact name', company: { industry: 'Software', employees: 1200, hq: 'Austin, United States' }, alternatives: [] },
+      roles: [{ role: 'Marketing team', kind: 'team', status: 'found', total: 38, attempts: [], also: [], picked: [
+        { id: 'a', name: 'Avery Lindqvist', title: 'Chief Marketing Officer', location: 'Austin, Texas', decision_maker: true, department: 'Marketing',
+          email: { address: 'avery@northwind.example', label: 'verified' }, linkedin: 'https://www.linkedin.com/in/example', revealed: true },
+        { id: 'b', name: 'Kofi Mensah', title: 'VP of Demand Generation', location: 'London, United Kingdom', decision_maker: true, new_in_role: true, department: 'Marketing' },
+        { id: 'c', name: 'Priya Raman', title: 'Director of Brand', location: 'Toronto, Canada', department: 'Marketing' },
+        { id: 'd', name: 'Mateo Ruiz', title: 'Content Marketing Lead', location: 'Madrid, Spain', department: 'Marketing' }] }] }] }
+  };
+
+  // == small pieces =======================================================================
+
+  function keyOf(p) { return AM.keyOf(p); }
+  function liSearch(p, company) {
+    return 'https://www.linkedin.com/search/results/people/?keywords=' + encodeURIComponent([p.name, company || p.company].filter(Boolean).join(' '));
+  }
+  function allPeople(run) {
+    var out = [];
+    (((run || {}).summary || {}).companies || []).forEach(function (c) {
+      (c.roles || []).forEach(function (r) { out = out.concat(r.picked || [], r.also || [], r.web || []); });
+    });
+    return out;
+  }
+  function pickedPeople(run) {
+    var out = [];
+    (((run || {}).summary || {}).companies || []).forEach(function (c) {
+      (c.roles || []).forEach(function (r) { out = out.concat(r.picked || [], r.web || []); });
+    });
+    return out;
+  }
+  // The people a reveal would default to: everyone shown, not revealed yet.
+  function defaultSelection(run) {
+    var sel = {};
+    pickedPeople(run).forEach(function (p) { var k = keyOf(p); if (k && !p.revealed) sel[k] = true; });
+    return sel;
+  }
+  function selectedKeys(run, sel) {
+    var have = {};
+    allPeople(run).forEach(function (p) { var k = keyOf(p); if (k && !p.revealed) have[k] = true; });
+    return Object.keys(sel || {}).filter(function (k) { return sel[k] && have[k]; });
+  }
+  function emails(run) {
+    var out = [];
+    allPeople(run).forEach(function (p) {
+      var a = p.email && p.email.address;
+      if (a && out.indexOf(a) < 0) out.push(a);
+    });
+    return out;
+  }
+
+  // == one person, one row ================================================================
+
+  // The email, as far as it is known: the address (with copy) or nothing yet. Its status and the LinkedIn link are pills.
+  function mailLine(p) {
+    var em = p.email;
+    if (!em || !em.address) return '';
+    return '<div class="amc-mail on"><code>' + esc(em.address) + '</code>' +
+      '<button type="button" class="am-copy" data-act="copy" data-text="' + esc(em.address) + '" title="Copy the address" aria-label="Copy ' + esc(em.address) + '">' + ic('copy') + '</button></div>';
+  }
+  function mailPill(p, ui) {
+    var em = p.email;
+    if (!em) return ui.client ? '' : '<span class="amc-lock" title="Revealing costs 1 credit when an email is found">' + ic('lock') + 'Email: reveal</span>';
+    var lab = AM.EMAIL[em.label] || ['', em.label || 'unknown', ''];
+    return chip(lab[0], lab[1], em.note || lab[2]);
+  }
+
+  function liPill(p, company) {
+    var url = safeUrl(p.linkedin);
+    if (url) return '<a class="amc-li on" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer" title="Their LinkedIn profile">' + ic('li') + '<span>LinkedIn</span></a>';
+    return '<a class="amc-li" href="' + esc(liSearch(p, company)) + '" target="_blank" rel="noopener noreferrer" title="Search LinkedIn for this person. The exact profile comes with the reveal.">' + ic('search') + '<span>Find on LinkedIn</span></a>';
+  }
+
+  function personRow(p, o) {
+    o = o || {};
+    var ui = o.ui || {};
+    var key = keyOf(p);
+    var can = key && !p.revealed && !ui.client && !ui.busy && !ui.sample;
+    var on = !!(o.selected && key && o.selected[key]);
+    var badges = (p.new_in_role ? chip('acc', 'New in role', 'Started this role in the last year (Saleshandy)') : '') +
+      (p.decision_maker ? chip('ok', 'Decision-maker') : '') + (p.source === 'web' ? chip('', 'Found on the web') : '');
+    var tick = ui.client || ui.sample ? '' : (can ? '<label class="amc-tick" title="Include in the reveal"><input type="checkbox" data-act="cpick" data-run="' + esc(o.runId) + '" data-key="' + esc(key) + '"' + (on ? ' checked' : '') + '><span class="am-tick-box">' + ic('check') + '</span></label>' :
+      '<span class="amc-tick off" aria-hidden="true"></span>');
+    return '<li class="amc-row' + (tick ? '' : ' nt') + (on ? ' sel' : '') + (p.new_in_role ? ' fresh' : '') + (o.dim ? ' dim' : '') + '">' + tick + avatar(p) +
+      '<div class="amc-id"><b>' + esc(p.name) + '</b><span class="amc-title">' + esc(p.title || '') + '</span>' + (badges ? '<span class="amc-badges">' + badges + '</span>' : '') + '</div>' +
+      '<div class="amc-loc">' + (p.location ? ic('pin') + '<span>' + esc(p.location) + '</span>' : '') + '</div>' +
+      '<div class="amc-contact">' + mailLine(p) + '<div class="amc-pills">' + mailPill(p, ui) + liPill(p, o.company) + '</div></div></li>';
+  }
+
+  // == the answer to one question ===========================================================
+
+  function understoodLine(u) {
+    if (!u) return '';
+    var cs = (u.companies || []).map(function (c) {
+      return '<span class="amc-u co ' + hue(c.name) + '"><i>' + esc((c.name || '?').charAt(0).toUpperCase()) + '</i>' + esc(c.name) + (c.domain ? '<small>' + esc(c.domain) + '</small>' : '') + '</span>';
+    }).join('');
+    var as = (u.asks || []).map(function (a) {
+      return '<span class="amc-u ask">' + ic(a.kind === 'team' ? 'users' : 'spark') + esc(a.label) + (a.count ? '<small>up to ' + esc(a.count) + '</small>' : '') + '</span>';
+    }).join('');
+    var extra = (u.where ? '<span class="amc-u pin">' + ic('pin') + esc(u.where) + '</span>' : '') +
+      (u.how === 'claude' ? '<span class="amc-u ai" title="Plain rules could not read this, so one small Claude call did">' + ic('bolt') + 'Read by Claude</span>' : '') +
+      (u.how === 'context' ? '<span class="amc-u ai" title="Kept from your last question">' + ic('refresh') + 'From your last question</span>' : '');
+    return '<div class="amc-understood"><span class="amc-u-k">Looking for</span>' + as + '<span class="amc-u-k">at</span>' + cs + extra + '</div>' +
+      (u.note ? '<div class="amc-note">' + esc(u.note) + '</div>' : '');
+  }
+
+  function companyHead(c) {
+    var r = c.resolved || {}, co = r.company || {};
+    var meta = [co.industry, co.employees ? num(co.employees) + ' employees' : null, co.hq].filter(Boolean).map(function (x) { return chip('', x); }).join(' ');
+    var alts = (r.alternatives || []).length ? '<div class="amc-alt">' + ic('globe') + '<span>Other companies share this name: ' + r.alternatives.map(function (a) {
+      return esc(a.name) + (a.domain ? ' (' + esc(a.domain) + ')' : '');
+    }).join(', ') + '. Write the website, like <code>' + esc((r.alternatives[0] || {}).domain || 'company.com') + '</code>, to pick one.</span></div>' : '';
+    return '<header class="amc-co-h"><span class="am-mono ' + hue(c.display_name || c.name) + '" aria-hidden="true">' + esc(AM.initials(c.display_name || c.name)) + '</span>' +
+      '<div class="amc-co-t"><h4>' + esc(c.display_name || c.name) + '</h4><div class="amc-co-sub">' +
+      (c.domain ? AM.link('https://' + c.domain + '/', c.domain) : '<i>no company matched</i>') +
+      (co.linkedin ? ' ' + AM.link(co.linkedin, 'LinkedIn page') : '') +
+      (r.how && r.how !== 'exact name' && r.how !== 'domain you gave' ? ' ' + chip(r.how === 'not found' ? 'bad' : 'warn', 'matched by ' + r.how) : '') + '</div>' +
+      (meta ? '<div class="amc-co-meta">' + meta + '</div>' : '') + '</div></header>' + alts;
+  }
+
+  function roleBlock(r, c, o) {
+    var shown = (r.picked || []).length + (r.web || []).length;
+    var people = (r.picked || []).concat(r.web || []).map(function (p) { return personRow(p, { selected: o.selected, runId: o.runId, ui: o.ui, company: c.display_name || c.name }); }).join('');
+    var also = (r.also || []).map(function (p) { return personRow(p, { selected: o.selected, runId: o.runId, ui: o.ui, company: c.display_name || c.name, dim: true }); }).join('');
+    var tried = (r.attempts || []).map(function (a) { return '<li>' + esc(a.how) + ': ' + esc(num(a.total)) + ' found' + (a.kept != null && a.kept !== a.total ? ', ' + esc(a.kept) + ' kept' : '') + '</li>'; }).join('');
+    var head = '<div class="amc-seg-h"><h5>' + ic(r.kind === 'team' ? 'users' : 'spark') + esc(r.role) + '</h5>' +
+      (shown ? chip('ok', shown + ' shown') : chip('bad', 'Nobody found')) +
+      (r.total && r.total > shown ? '<span class="amc-of">of ' + esc(num(r.total)) + ' listed in Saleshandy</span>' : '') + '</div>';
+    var note = r.note ? '<div class="amc-note">' + esc(r.note) + '</div>' : '';
+    var none = !shown ? '<div class="amc-none"><b>Nobody matched</b>' + (also ? 'The closest people are below.' : 'Saleshandy has nobody for this at ' + esc(c.display_name || c.name) + '. Try a broader team, a different title, or write the company&rsquo;s website.') + '</div>' : '';
+    return '<section class="amc-seg">' + head + note + none + (people ? '<ul class="amc-rows">' + people + '</ul>' : '') +
+      (also ? '<details class="amc-more"' + (shown ? '' : ' open') + '><summary>Also found (' + esc((r.also || []).length) + ')</summary><ul class="amc-rows">' + also + '</ul></details>' : '') +
+      (tried ? '<details class="amc-more"><summary>How it searched</summary><ul class="mr-list">' + tried + '</ul></details>' : '') + '</section>';
+  }
+
+  function actions(run, ui, sel) {
+    var keys = selectedKeys(run, sel);
+    var left = allPeople(run).filter(function (p) { return keyOf(p) && !p.revealed; }).length;
+    var got = emails(run);
+    var credits = (((run.summary || {}).credits) || {}).total;
+    var canReveal = !ui.client && !ui.sample && run.status === 'ready' && left;
+    var buttons = '';
+    if (canReveal) {
+      buttons += '<button type="button" class="mr-btn primary hot amc-reveal" data-act="creveal" data-run="' + esc(run.id) + '"' + (keys.length ? '' : ' disabled') + '>' + ic('mail') +
+        '<span>Get emails &amp; LinkedIn</span><small>' + (keys.length ? 'up to ' + esc(keys.length) + ' credit' + (keys.length === 1 ? '' : 's') : 'choose who') + '</small></button>';
+    }
+    if (got.length && !ui.sample) buttons += '<button type="button" class="mr-btn" data-act="ccopyall" data-run="' + esc(run.id) + '">' + ic('copy') + 'Copy ' + esc(got.length) + ' email' + (got.length === 1 ? '' : 's') + '</button>';
+    if (!ui.sample) buttons += '<a class="mr-btn ghost" href="' + esc(ui.api) + '/runs/' + encodeURIComponent(run.id) + '/export.csv' + (ui.aq ? '?' + esc(ui.aq) : '') + '">' + ic('dl') + 'CSV</a>';
+    if (!ui.client && !ui.sample) buttons += '<button type="button" class="mr-btn ghost am-del" data-act="cremove" data-run="' + esc(run.id) + '" title="Remove this answer and its results from your list" aria-label="Remove this answer">' + ic('trash') + '</button>';
+    var pick = canReveal ? '<span class="amc-sel"><b>' + esc(keys.length) + '</b> of ' + esc(left) + ' selected<span class="amc-pickall"><button type="button" data-act="call" data-run="' + esc(run.id) + '">All</button><button type="button" data-act="cnone" data-run="' + esc(run.id) + '">None</button></span></span>' : '';
+    var fine = ui.client ? 'Emails and exact LinkedIn profiles are added by your account manager.' :
+      ui.sample ? '' :
+      left ? 'Revealing uses 1 credit for each email found and nothing when none is found' + (credits != null ? ' &middot; ' + esc(num(credits)) + ' credits in the account' : '') + '. You confirm before anything is spent.' :
+      (got.length ? 'Everyone shown has been revealed.' : '');
+    return '<footer class="amc-foot"><div class="amc-foot-top">' + pick + '<div class="amc-foot-r">' + buttons + '</div></div>' + (fine ? '<p class="amc-fine">' + fine + '</p>' : '') + '</footer>';
+  }
+
+  function working(run, understood) {
+    var stage = (run && run.stage) || 'starting';
+    var revealing = /^reveal/.test(stage);
+    return '<div class="amc-working" role="status"><span class="am-spin" aria-hidden="true"></span><div><b>' + (revealing ? 'Getting emails and LinkedIn profiles' : 'Searching Saleshandy') + '</b>' +
+      '<span>' + esc(stage) + '&hellip;</span></div></div>' +
+      '<div class="amc-skel" aria-hidden="true"><i></i><i></i><i></i></div>';
+  }
+
+  function renderResult(run, understood, ui, sel) {
+    ui = ui || {};
+    var s = run.summary || {};
+    var running = run.status === 'running' && !run.stale;
+    var cs = s.companies || [];
+    if (run.status === 'failed') {
+      return '<div class="amc-fail"><b>That search did not finish</b><p>' + esc(run.error || 'No reason was given.') + '</p>' +
+        '<button type="button" class="mr-btn primary" data-act="cretry" data-run="' + esc(run.id) + '">' + ic('refresh') + 'Try again</button></div>';
+    }
+    if (run.stale) return '<div class="mr-callout bad">' + esc(run.stale) + '</div>';
+    var total = cs.reduce(function (n, c) { return n + (c.roles || []).reduce(function (m, r) { return m + (r.picked || []).length + (r.web || []).length; }, 0); }, 0);
+    var head = '<div class="amc-sum">' + (running && !cs.length ? '' : '<b>' + (total ? 'Found ' + plural(total, 'person', 'people') : 'No one found') + '</b>' +
+      (cs.length ? ' at ' + esc(cs.map(function (c) { return c.display_name || c.name; }).slice(0, 3).join(', ')) + (cs.length > 3 ? ' and ' + (cs.length - 3) + ' more' : '') : '')) + '</div>';
+    var body = cs.map(function (c) {
+      return '<article class="amc-co">' + companyHead(c) + (c.errors || []).map(function (e) { return '<div class="mr-callout bad">' + esc(e) + '</div>'; }).join('') +
+        (c.roles || []).map(function (r) { return roleBlock(r, c, { selected: sel, runId: run.id, ui: dict(ui, { busy: running }) }); }).join('') + '</article>';
+    }).join('');
+    var warn = [run.error && run.status === 'ready' ? run.error : '', s.reveal_error].filter(Boolean).map(function (e) { return '<div class="mr-callout warn">' + esc(e) + '</div>'; }).join('');
+    return understoodLine(understood) + head + (running ? working(run, understood) : '') + warn + body + (running || ui.sample ? '' : actions(run, ui, sel));
+  }
+
+  function dict(a, b) { var o = {}, k; for (k in a) o[k] = a[k]; for (k in b) o[k] = b[k]; return o; }
+
+  // == the thread =========================================================================
+
+  function botBubble(inner, cls) {
+    return '<div class="amc-msg bot' + (cls ? ' ' + cls : '') + '"><span class="amc-av" aria-hidden="true"></span><div class="amc-bub">' + inner + '</div></div>';
+  }
+
+  function renderItem(it, ui, sels) {
+    if (it.t === 'user') return '<div class="amc-msg me"><div class="amc-bub">' + esc(it.text) + '</div></div>';
+    if (it.t === 'day') return '<div class="amc-day"><span>' + esc(it.text) + '</span></div>';
+    if (it.t === 'bot') {
+      var ch = (it.choices || []).length ? '<div class="amc-choices">' + it.choices.map(function (c) {
+        return '<button type="button" class="amc-chip" data-act="csay" data-say="' + esc(c) + '">' + esc(c) + '</button>';
+      }).join('') + '</div>' : '';
+      return botBubble('<p>' + esc(it.text) + '</p>' + ch, it.kind === 'error' ? 'err' : '');
+    }
+    if (it.t === 'run') {
+      var run = it.run || { id: it.id, status: 'running', stage: 'starting', summary: {} };
+      return botBubble(renderResult(run, it.understood, ui, (sels || {})[it.id] || {}), 'result');
+    }
+    return '';
+  }
+
+  function renderThread(items, ui, sels) {
+    return (items || []).map(function (it) { return renderItem(it, ui || {}, sels); }).join('');
+  }
+
+  function renderEmpty(status, ui) {
+    ui = ui || {};
+    var hi = '<div class="amc-hello"><h4>Who are you looking for?</h4><p>Write it the way you would say it. Name the company and the people: a team, a job title or a level.' +
+      (ui.client ? '' : ' Searching is free.') + '</p></div>';
+    var sugg = '<div class="amc-sugg">' + SUGGESTIONS.map(function (x) {
+      return '<button type="button" class="amc-s" data-act="csay" data-say="' + esc(x[0]) + '">' + ic(x[2]) + '<b>' + esc(x[0]) + '</b><span>' + esc(x[1]) + '</span></button>';
+    }).join('') + '</div>';
+    var sample = '<div class="amc-sample"><div class="amc-sample-k"><span>Example answer</span><em>Made-up people, to show what you get</em></div>' +
+      '<div class="amc-msg me"><div class="amc-bub">Marketing people at Northwind Labs</div></div>' +
+      botBubble(renderResult(SAMPLE, { companies: [{ name: 'Northwind Labs' }], asks: [{ kind: 'team', label: 'Marketing team' }] }, dict(ui, { sample: true, client: ui.client }), {}), 'result') + '</div>';
+    return hi + sugg + sample;
+  }
+
+  function renderFollow(items, ui) {
+    var last = null, i;
+    for (i = (items || []).length - 1; i >= 0; i--) if (items[i].t === 'run' && items[i].understood) { last = items[i]; break; }
+    if (!last || !last.run || last.run.status !== 'ready') return '';
+    var used = ((last.understood || {}).asks || []).map(function (a) { return a.label.toLowerCase(); });
+    var out = FOLLOW.filter(function (f) { return used.indexOf(f[0].toLowerCase()) < 0; }).slice(0, 4);
+    return '<span class="amc-fk">Also</span>' + out.map(function (f) {
+      return '<button type="button" class="amc-chip" data-act="csay" data-say="' + esc('and their ' + f[1] + '?') + '">' + ic('plus') + esc(f[0]) + '</button>';
+    }).join('');
+  }
+
+  function contextOf(items) {
+    for (var i = (items || []).length - 1; i >= 0; i--) {
+      var u = items[i].t === 'run' && items[i].understood;
+      if (u && u.companies && u.asks) return { companies: u.companies, asks: u.asks };
+    }
+    return {};
+  }
+
+  var AMChat = { renderResult: renderResult, renderThread: renderThread, renderEmpty: renderEmpty, renderFollow: renderFollow,
+    personRow: personRow, understoodLine: understoodLine, defaultSelection: defaultSelection, selectedKeys: selectedKeys,
+    contextOf: contextOf, liSearch: liSearch, emails: emails, SAMPLE: SAMPLE };
+  AM.chat = AMChat;
+
+  // == the page ===========================================================================
+
+  var P = AM.page;
+  if (typeof document === 'undefined' || !document.getElementById('amAsk') || !P) return;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var items = [], sels = {}, status = null, busy = false, polls = {};
+  var API = '/strategic-agents/people-signals/api';
+  var ACCT = typeof window !== 'undefined' && window.__acctContext;
+  var UI = { client: AM.client, api: API, aq: ACCT ? 'acct=' + encodeURIComponent(ACCT) : '' };
+
+  function connected() { return !status || (status.saleshandy || {}).configured; }
+
+  function paint(stick) {
+    var box = $('amThread');
+    box.innerHTML = items.length ? renderThread(items, UI, sels) : renderEmpty(status, UI);
+    box.classList.toggle('empty', !items.length);
+    $('amFollow').innerHTML = busy ? '' : renderFollow(items, UI);
+    $('amNew').hidden = !items.length;
+    $('amSend').disabled = busy || !connected();
+    // The page scrolls, not the thread. A new answer is read from its top; a new question shows at the bottom.
+    if (stick && items.length) {
+      var last = box.lastElementChild;
+      if (last && last.scrollIntoView) last.scrollIntoView({ block: last.classList.contains('result') ? 'start' : 'end', behavior: 'smooth' });
+    }
+  }
+
+  function paintSetup() {
+    var ok = connected();
+    $('amAskSetup').innerHTML = ok ? '' : AM.renderSetup(status);
+    $('amMsg').disabled = !ok;
+    $('amMsg').placeholder = ok ? 'Try: marketing people at Stripe' : (UI.client ? 'Not connected yet' : 'Add SALESHANDY_API_KEY to start asking');
+    $('amSend').disabled = busy || !ok;
+    $('amFine').innerHTML = UI.client ? 'Searching is free. Press Enter to send.' :
+      'Searching is free. Emails and LinkedIn profiles cost 1 credit per email found, only after you confirm. <kbd>Enter</kbd> sends, <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a line.';
+  }
+
+  function grow() {
+    var t = $('amMsg');
+    t.style.height = 'auto';
+    t.style.height = Math.min(t.scrollHeight, 150) + 'px';
+  }
+
+  function itemOf(id) { return items.filter(function (x) { return x.t === 'run' && x.id === id; })[0]; }
+
+  function poll(id) {
+    clearTimeout(polls[id]);
+    P.api('/runs/' + id).then(function (run) {
+      var it = itemOf(id);
+      if (!it) return;
+      it.run = run;
+      if (run.status === 'ready' && !sels[id]) sels[id] = defaultSelection(run);
+      busy = run.status === 'running' && !run.stale;
+      paint(run.status !== 'running');
+      if (busy) polls[id] = setTimeout(function () { poll(id); }, 1400);
+      else P.loadRuns().then(P.refreshRuns);
+    }).catch(function (e) {
+      busy = false; paint();
+      P.toast(e.message);
+    });
+  }
+
+  function send(text) {
+    text = String(text || '').trim();
+    if (!text || busy || !connected()) return;
+    items.push({ t: 'user', text: text });
+    busy = true; paint(true);
+    $('amMsg').value = ''; grow();
+    P.api('/chat', { message: text, context: contextOf(items.slice(0, -1)) }).then(function (j) {
+      if (j.kind === 'search') {
+        items.push({ t: 'run', id: j.run_id, understood: j.understood, run: null });
+        paint(true); poll(j.run_id);
+      } else {
+        busy = false;
+        items.push({ t: 'bot', kind: j.kind, text: j.reply, choices: j.choices || [] });
+        paint(true);
+      }
+    }).catch(function (e) {
+      busy = false;
+      var again = e.status === 409 && e.data && e.data.run_id;
+      items.push({ t: 'bot', kind: 'error', text: e.message });
+      if (again && !itemOf(e.data.run_id)) { items.push({ t: 'run', id: e.data.run_id, understood: null, run: null }); busy = true; poll(e.data.run_id); }
+      paint(true);
+    });
+  }
+
+  function reveal(id) {
+    var it = itemOf(id);
+    if (!it || !it.run) return;
+    var keys = selectedKeys(it.run, sels[id]).map(function (k) { return /^\d+$/.test(k) ? Number(k) : k; });
+    if (!keys.length) return;
+    var body = { keys: keys, cap_credits: Math.max(keys.length, 1), phone: false };
+    P.api('/runs/' + id + '/reveal', dict({ dry_run: true }, body)).then(function (check) {
+      if (!check.ok) { P.toast(check.why || 'This reveal cannot go ahead.'); return; }
+      return P.ask('Reveal ' + check.people + ' email' + (check.people === 1 ? '' : 's') + '?',
+        'This uses up to ' + check.worst_credits + ' Saleshandy credit' + (check.worst_credits === 1 ? '' : 's') + ' (1 per email found, nothing when none is found). ' +
+        (check.balance != null ? 'The account has ' + num(check.balance) + ' credits. ' : '') + 'You also get each person’s LinkedIn profile when Saleshandy has it.', 'Reveal').then(function (ok) {
+        if (!ok) return;
+        return P.api('/runs/' + id + '/reveal', dict({ confirm: true }, body)).then(function () {
+          sels[id] = {}; it.run.status = 'running'; it.run.stage = 'revealing'; busy = true; paint();
+          P.toast('Revealing ' + check.people + (check.people === 1 ? ' person' : ' people') + '…');
+          poll(id);
+        });
+      });
+    }).catch(function (e) { P.toast(e.message); });
+  }
+
+  function remove(id) {
+    P.ask('Remove this answer?', 'Its people and any revealed emails leave your list. Credits already spent stay spent.', 'Remove').then(function (ok) {
+      if (!ok) return;
+      P.api('/runs/' + id + '/delete', {}).then(function () {
+        var at = -1;
+        items.forEach(function (x, i) { if (x.t === 'run' && x.id === id) at = i; });
+        if (at > 0 && items[at - 1].t === 'user') items.splice(at - 1, 2); else if (at >= 0) items.splice(at, 1);
+        busy = false; paint(); P.toast('Removed.');
+        P.loadRuns().then(P.refreshRuns);
+      }).catch(function (e) { P.toast(e.message); });
+    });
+  }
+
+  function restore(runs) {
+    var chats = (runs || []).filter(function (r) { return (r.settings || {}).chat; }).slice(0, 4).reverse();
+    return Promise.all(chats.map(function (r) { return P.api('/runs/' + r.id).catch(function () { return null; }); })).then(function (full) {
+      full.forEach(function (run) {
+        if (!run || itemOf(run.id)) return;
+        var chat = (run.settings || {}).chat || {};
+        items.push({ t: 'day', text: when(run.created_at) });
+        items.push({ t: 'user', text: chat.message || '' });
+        items.push({ t: 'run', id: run.id, run: run, understood: { companies: run.settings.companies, asks: chat.asks, where: chat.where, how: chat.how } });
+        if (run.status === 'ready') sels[run.id] = defaultSelection(run);
+        if (run.status === 'running' && !run.stale) { busy = true; poll(run.id); }
+      });
+      paint(true);
+    });
+  }
+
+  AMChat.init = function (runs, st) {
+    if (st) status = st;
+    paintSetup(); paint();
+    return restore(runs);
+  };
+  AMChat.setStatus = function (st) { status = st; paintSetup(); paint(); };
+  AMChat.show = function (id) {
+    var go = function () {
+      var it = itemOf(id);
+      if (!it) return;
+      paint();
+      var els = document.querySelectorAll('.amc-msg.result');
+      var at = items.filter(function (x) { return x.t === 'run'; }).indexOf(it);
+      if (els[at]) els[at].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    if (itemOf(id)) { go(); return; }
+    P.api('/runs/' + id).then(function (run) {
+      var chat = (run.settings || {}).chat || {};
+      items.push({ t: 'day', text: when(run.created_at) });
+      items.push({ t: 'user', text: chat.message || '' });
+      items.push({ t: 'run', id: run.id, run: run, understood: { companies: run.settings.companies, asks: chat.asks, where: chat.where, how: chat.how } });
+      if (run.status === 'ready') sels[run.id] = defaultSelection(run);
+      paint(); go();
+    }).catch(function (e) { P.toast(e.message); });
+  };
+
+  $('amComposer').addEventListener('submit', function (e) { e.preventDefault(); send($('amMsg').value); });
+  $('amMsg').addEventListener('input', grow);
+  $('amMsg').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send($('amMsg').value); }
+  });
+  $('amNew').addEventListener('click', function () {
+    items = []; sels = {}; busy = false; Object.keys(polls).forEach(function (k) { clearTimeout(polls[k]); });
+    paint(); $('amMsg').focus();
+  });
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act]');
+    if (!el || !$('amAsk').contains(el)) return;
+    var act = el.getAttribute('data-act'), id = Number(el.getAttribute('data-run'));
+    if (act === 'csay') { var t = el.getAttribute('data-say'); if (connected()) send(t); else { $('amMsg').value = t; grow(); } }
+    else if (act === 'creveal') reveal(id);
+    else if (act === 'cremove') remove(id);
+    else if (act === 'call') { var it = itemOf(id); if (it) { sels[id] = defaultSelection(it.run); paint(); } }
+    else if (act === 'cnone') { sels[id] = {}; paint(); }
+    else if (act === 'ccopyall') { var r = itemOf(id); if (r) P.copyText(emails(r.run).join(', ')); }
+    else if (act === 'cretry') {
+      var f = itemOf(id), chat = f && f.run && (f.run.settings || {}).chat;
+      if (chat && chat.message) { items = items.filter(function (x) { return x !== f && !(x.t === 'user' && x.text === chat.message && items.indexOf(x) === items.indexOf(f) - 1); }); busy = false; send(chat.message); }
+    }
+  });
+  document.addEventListener('change', function (e) {
+    var el = e.target;
+    if (el.getAttribute && el.getAttribute('data-act') === 'cpick') {
+      var id = el.getAttribute('data-run');
+      sels[id] = sels[id] || {};
+      sels[id][el.getAttribute('data-key')] = el.checked;
+      paint();
+    }
+  });
+
+  paintSetup(); paint();
+})(typeof window !== 'undefined' ? window : globalThis);

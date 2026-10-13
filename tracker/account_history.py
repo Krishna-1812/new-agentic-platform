@@ -174,7 +174,8 @@ def _ps(acct):
     for r in account_mapper_store.space_runs(acct["space"], limit=LIMIT):
         st = r.get("settings") or {}
         names = [c.get("name") for c in st.get("companies") or [] if isinstance(c, dict) and c.get("name")]
-        title = "Mapped " + (", ".join(names[:3]) + (" and %d more" % (len(names) - 3) if len(names) > 3 else "")
+        asked = (st.get("chat") or {}).get("message")
+        title = ("Asked: " + asked[:120]) if asked else "Mapped " + (", ".join(names[:3]) + (" and %d more" % (len(names) - 3) if len(names) > 3 else "")
                              if names else "accounts")
         out.append(_agent(acct, "people-signals", title, ", ".join(st.get("roles") or [])[:160], r.get("started_by"),
                           r.get("created_at"), r.get("status"),

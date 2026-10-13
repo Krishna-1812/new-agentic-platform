@@ -90,7 +90,13 @@
     dl: 'M12 4v11 M7 11l5 5 5-5 M5 20h14',
     search: 'M11 18a7 7 0 100-14 7 7 0 000 14z M20 20l-4-4',
     plus: 'M12 5v14 M5 12h14',
-    trash: 'M5 7h14 M10 7V5h4v2 M7 7l1 12h8l1-12 M10 11v5 M14 11v5'
+    trash: 'M5 7h14 M10 7V5h4v2 M7 7l1 12h8l1-12 M10 11v5 M14 11v5',
+    chat: 'M5 5h14a1 1 0 011 1v9a1 1 0 01-1 1H10l-4 4v-4H5a1 1 0 01-1-1V6a1 1 0 011-1z',
+    send: 'M5 12h13 M12 6l6 6-6 6',
+    bolt: 'M13 3L5 13h6l-1 8 8-10h-6z',
+    globe: 'M12 21a9 9 0 100-18 9 9 0 000 18z M3 12h18 M12 3c2.5 2.6 3.7 5.6 3.7 9s-1.2 6.4-3.7 9c-2.5-2.6-3.7-5.6-3.7-9S9.5 5.6 12 3z',
+    eye: 'M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z M12 14.8a2.8 2.8 0 100-5.6 2.8 2.8 0 000 5.6z',
+    x: 'M6 6l12 12 M18 6L6 18'
   };
   function ic(name, cls) {
     return '<svg class="am-ic' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true"><path d="' + (IC[name] || '') + '"/></svg>';
@@ -148,11 +154,18 @@
   }
 
   function renderRuns(runs, selected) {
-    if (!runs || !runs.length) return '<div class="mr-empty"><b>No runs yet</b>Map your first accounts on the left.</div>';
+    if (!runs || !runs.length) return '<div class="mr-empty"><b>Nothing yet</b>Ask a question, or map a list of accounts.</div>';
     return '<ul class="cl-runl">' + runs.map(function (r) {
       var st = r.status === 'running' ? (r.stale ? chip('bad', 'Stalled') : chip('acc', r.stage === 'revealing' || /^reveal/.test(r.stage || '') ? 'Revealing' : 'Mapping')) :
         r.status === 'failed' ? chip('bad', 'Failed') : chip('ok', 'Ready');
       var n = ((r.settings || {}).companies || []).length, t = r.totals || {}, share = seatShare(r);
+      var q = ((r.settings || {}).chat || {}).message;
+      if (q) {
+        return '<li><button type="button" class="cl-run am-runb am-runq s-' + esc(r.status || 'ready') + (r.id === selected ? ' on' : '') + '" data-act="open" data-id="' + esc(r.id) + '">' +
+          '<span class="am-run-n">' + ic('chat') + '</span><span class="am-run-t"><b title="' + esc(q) + '">' + esc(q) + '</b>' + st + '</span>' +
+          '<small>' + esc(when(r.created_at)) + ' &middot; ' + (t.people_picked != null ? plural(t.people_picked, 'person', 'people') + ' found' : 'asked in chat') +
+          (CLIENT ? '' : ' &middot; ' + esc(num(r.credits_used || 0)) + ' credits') + '</small></button></li>';
+      }
       return '<li><button type="button" class="cl-run am-runb s-' + esc(r.status || 'ready') + (r.id === selected ? ' on' : '') + '" data-act="open" data-id="' + esc(r.id) + '">' +
         '<span class="am-run-n">' + esc(r.id) + '</span><span class="am-run-t"><b>Run ' + esc(r.id) + '</b>' + st + '</span>' +
         '<small>' + esc(when(r.created_at)) + ' &middot; ' + plural(n, 'account') +
@@ -504,7 +517,10 @@
   var AM = { esc: esc, safeUrl: safeUrl, keyOf: keyOf, renderReady: renderReady, renderEstimate: renderEstimate, renderRuns: renderRuns,
     renderRun: renderRun, renderOverview: renderOverview, renderAccount: renderAccount, personCard: personCard,
     renderRevealBar: renderRevealBar, bestSelection: bestSelection, renderSetup: renderSetup, renderWelcome: renderWelcome,
-    renderSeatMap: renderSeatMap, renderProgress: renderProgress, ring: ring, formLines: formLines, seatOf: seatOf };
+    renderSeatMap: renderSeatMap, renderProgress: renderProgress, ring: ring, formLines: formLines, seatOf: seatOf,
+    // what the chat (people_chat.js) shares
+    ic: ic, chip: chip, hue: hue, initials: initials, avatar: avatar, num: num, when: when, plural: plural, link: link,
+    money: money, EMAIL: EMAIL, client: CLIENT };
   root.AM = AM;
 
   // == the page =========================================================================
@@ -586,7 +602,28 @@
     return api('/runs').then(function (j) { state.runs = j.runs || []; $('amRuns').innerHTML = renderRuns(state.runs, state.selected); })
       .catch(function (e) { $('amRuns').innerHTML = '<div class="mr-empty">' + esc(e.message) + '</div>'; });
   }
+  function isChat(id) {
+    var r = state.runs.filter(function (x) { return x.id === id; })[0];
+    return !!(r && (r.settings || {}).chat);
+  }
+  // Two ways in: ask in plain words (the chat) or map many accounts at once (the form and its dashboard).
+  function setMode(mode) {
+    state.mode = mode === 'map' ? 'map' : 'ask';
+    var ask = state.mode === 'ask';
+    $('amAsk').hidden = !ask; $('amForm').hidden = ask; $('amDetail').hidden = ask;
+    ['ask', 'map'].forEach(function (m) {
+      var b = document.querySelector('[data-mode="' + m + '"]');
+      if (b) { b.classList.toggle('on', m === state.mode); b.setAttribute('aria-selected', String(m === state.mode)); }
+    });
+    try { sessionStorage.setItem('am-mode', state.mode); } catch (e) { /* ignore */ }
+  }
   function open(id) {
+    if (isChat(id)) {
+      setMode('ask'); state.selected = id; $('amRuns').innerHTML = renderRuns(state.runs, id);
+      if (AM.chat) AM.chat.show(id);
+      return Promise.resolve();
+    }
+    setMode('map');
     clearTimeout(state.poll);
     var fresh = state.selected !== id;
     state.selected = id;
@@ -697,6 +734,7 @@
 
   api('/status').then(function (s) {
     state.status = s;
+    if (AM.chat) AM.chat.setStatus(s);
     $('amReady').innerHTML = renderReady(s);
     $('amSetup').innerHTML = renderSetup(s);
     if (s.limits) { LIMITS.companies = s.limits.companies || LIMITS.companies; LIMITS.roles = s.limits.roles || LIMITS.roles; counts(); }
@@ -705,9 +743,29 @@
     if (CLIENT || !(s.claude || {}).configured) ['amPhrasings', 'amWeb', 'amBriefs'].forEach(function (id) { $(id).checked = false; $(id).disabled = true; });
     estimate();
   }).catch(function (e) { $('amReady').innerHTML = chip('bad', e.message); });
+  AM.page = { api: api, toast: toast, ask: ask, copyText: copyText, loadRuns: loadRuns, state: state, setMode: setMode,
+    refreshRuns: function () { $('amRuns').innerHTML = renderRuns(state.runs, state.selected); } };
+  document.querySelectorAll('[data-mode]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      setMode(b.getAttribute('data-mode'));
+      if (state.mode === 'map' && !state.run) {
+        var last = state.runs.filter(function (r) { return !(r.settings || {}).chat; })[0];
+        if (last) open(last.id); else welcome();
+      }
+    });
+  });
   loadRuns().then(function () {
     var m = /#run-(\d+)/.exec(location.hash);
-    var id = m ? Number(m[1]) : (state.runs[0] && state.runs[0].id);
-    if (id) open(id); else welcome();
+    var hashId = m ? Number(m[1]) : null;
+    var saved = null;
+    try { saved = sessionStorage.getItem('am-mode'); } catch (e) { /* ignore */ }
+    if (AM.chat) AM.chat.init(state.runs, state.status);
+    if (hashId && !isChat(hashId)) { open(hashId); return; }
+    setMode(hashId || saved !== 'map' ? 'ask' : 'map');
+    if (hashId) { open(hashId); return; }
+    if (state.mode === 'map') {
+      var last = state.runs.filter(function (r) { return !(r.settings || {}).chat; })[0];
+      if (last) open(last.id); else welcome();
+    }
   });
 })(typeof window !== 'undefined' ? window : globalThis);
