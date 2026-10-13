@@ -37,7 +37,9 @@
   'integrations': 'Integrations',
   'resources':    'Resources',
   'industries':   'Industries',
-  'login':        'Log in'
+  'login':        'Log in',
+  'privacy':      'Privacy Policy',
+  'terms':        'Terms of Service'
 } -%}
 {%- if page == 'industry' %}{% set _tt = industry.name ~ ' · Industries' %}
 {%- elif page == 'iagent' %}{% set _tt = agent.name ~ ' · ' ~ industry.name %}
@@ -63,7 +65,7 @@
     is the site's single most recognisable mark. Zalando Sans is the text
     face outcomes.digital uses, and the product's too. -#}
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Zalando+Sans:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/press.css?v=6">
+<link rel="stylesheet" href="/static/css/press.css?v=8">
 {#- The no-JS contract, same as the product's: every hidden state in press.css
     is gated on html.js, so a page whose script never runs shows finished type
     instead of an empty column. Set here, before first paint, so the reveal
@@ -970,6 +972,26 @@
   {% set cta_p = 'Tell us where to send our guides on intent-led growth and AI search. Useful, or nothing at all.' %}
   {% include "_press_cta.html" %}
 
+{# ════════════════════════════ PRIVACY / TERMS ════════════════════════════ #}
+{% elif page == 'privacy' or page == 'terms' %}
+
+  <header class="wrap hero">
+    <span class="lbl rv fade">Legal</span>
+    <h1 class="d1 rv">
+      <span class="ln"><span>{% if page == 'privacy' %}Privacy <span class="mk">Policy</span>{% else %}Terms of <span class="mk">Service</span>{% endif %}</span></span>
+    </h1>
+    <div class="hero-foot">
+      <span class="idx rv fade">Last updated {{ legal_updated }}</span>
+    </div>
+  </header>
+
+  <section class="wrap sec-sm">
+    <span class="rule rv"></span>
+    <article class="legal prose">
+      {% if page == 'privacy' %}{% include "_legal_privacy.html" %}{% else %}{% include "_legal_terms.html" %}{% endif %}
+    </article>
+  </section>
+
 {# ════════════════════════════ INDUSTRIES ═════════════════════════════ #}
 {% elif page == 'industries' %}
 
@@ -1198,7 +1220,7 @@
   </div>
   <div class="wrap foot-bottom">
     <span>&copy; {{ brand.legal_entity }}</span>
-    <span>{{ brand.domain }}</span>
+    <span><a class="lk-d" href="/privacy">Privacy Policy</a> &middot; <a class="lk-d" href="/terms">Terms of Service</a> &middot; {{ brand.domain }}</span>
   </div>
 </footer>
 

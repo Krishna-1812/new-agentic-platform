@@ -1781,3 +1781,16 @@ a.stat:hover { border-top-color: transparent; }
 .sig-dot { fill: var(--ink); }
 .sig-dot-in { fill: var(--acc); }
 .story-steps, .story-fig { position: relative; z-index: 1; }
+
+/* PRIVACY POLICY and TERMS: long running text, readable measure. */
+.legal { display: block; max-width: 70ch; margin-top: var(--s7); }
+.legal h2 { font-family: var(--f-head, inherit); font-size: clamp(1.35rem, 2.4vw, 1.75rem); line-height: 1.2; margin: 1.9em 0 .45em; color: var(--ink); word-spacing: .14em; }
+.legal h3 { font-size: 1.05rem; margin: 1.3em 0 .25em; color: var(--ink); }
+.legal h2:first-child { margin-top: 0; }
+.legal p + p { margin-top: .8em; }
+.legal p, .legal li { font-size: 1.0625rem; line-height: 1.7; }
+.legal li { list-style: disc; }
+.legal ul { padding-left: 1.3em; margin: .6em 0 0; }
+.legal li + li { margin-top: .35em; }
+.legal a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.legal code { font-size: .92em; background: var(--paper2); padding: .1em .35em; }

@@ -1,0 +1,32 @@
+<p>These terms apply to your use of {{ brand.name }} ({{ brand.product }}), operated by {{ brand.legal_entity }} (&ldquo;we&rdquo;, &ldquo;us&rdquo;). By signing in or using the site you agree to them. If you do not agree, do not use the service.</p>
+
+<h2>The service</h2>
+<p>{{ brand.name }} is a set of research and monitoring tools for sales, marketing and SEO teams. Access to the app is by invitation or approval. We may change, pause or withdraw any feature, and we will try to give notice of changes that affect you.</p>
+
+<h2>Your account</h2>
+<p>You sign in with a Google account. Keep your sign-in secure, tell us if you think someone else has used it, and do not share it. You are responsible for what happens under your account. Client workspaces are for the people they are shared with; do not try to open workspaces you were not given.</p>
+
+<h2>Acceptable use</h2>
+<p>You agree not to: break the law or anyone&rsquo;s rights; probe, overload or bypass the security of the service; scrape or resell its output at scale without our written agreement; use it to harass or deceive people; or use contact details it surfaces for unlawful marketing. You are responsible for following the privacy, email and marketing laws that apply to how you use the results.</p>
+
+<h2>Your content and results</h2>
+<p>You keep ownership of what you put in. You give us permission to process it to provide the service, as described in the <a href="/privacy">Privacy Policy</a>. Results are produced from public sources and third-party data, and AI-written summaries can contain mistakes: check anything important before you act on it.</p>
+
+<h2>Our property</h2>
+<p>The service, its design and its software belong to us or our licensors. These terms give you a right to use the service, not to own or copy it.</p>
+
+<h2>No warranty</h2>
+<p>The service is provided &ldquo;as is&rdquo; and &ldquo;as available&rdquo;. We do not promise that it will be uninterrupted, error-free, or that its results are complete or accurate.</p>
+
+<h2>Limit of liability</h2>
+<p>To the fullest extent the law allows, we are not liable for indirect or consequential loss, lost profit or lost data, and our total liability for any claim is limited to the amount you paid us for the service in the 12 months before the claim (or zero if you paid nothing). Nothing here limits liability that cannot be limited by law.</p>
+
+<h2>Ending access</h2>
+<p>You may stop using the service at any time. We may suspend or end your access if you break these terms or put the service or other people at risk. Sections that by their nature should survive (ownership, warranty, liability) do so.</p>
+
+<h2>Changes and law</h2>
+<p>We may update these terms and will change the date above when we do; continuing to use the service after that means you accept the update. These terms are governed by the laws of the place where {{ brand.legal_entity }} is registered, and its courts have jurisdiction, unless your local law says otherwise.</p>
+
+<h2>Contact</h2>
+{% if contact_email %}<p>Questions about these terms: <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.</p>
+{% else %}<p>Use the &ldquo;Let&rsquo;s talk&rdquo; form on the <a href="/">home page</a>; a person will reply.</p>{% endif %}

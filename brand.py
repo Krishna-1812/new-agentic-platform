@@ -59,8 +59,8 @@ BRAND = {
 
     # The registered entity named in the site footer. It is deliberately
     # separate from "name": a brand and a company are not the same string.
-    # The /privacy and /terms pages were removed (they carried another
-    # company's legal text); when real ones return they should name this.
+    # The /privacy and /terms pages (templates/_legal_*.html) name this and the
+    # brand name above; Google's consent-screen app name must match "name".
     "legal_entity": "Northaxis, Inc.",
 
     # ── auth ────────────────────────────────────────────────────────────────
