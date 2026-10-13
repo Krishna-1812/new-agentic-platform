@@ -1204,7 +1204,7 @@ def auth_google():
 # alone; each other entry covers its page and everything under it.
 ROBOTS_PUBLIC_PATHS = ["/$", "/agents", "/industries", "/platform", "/signals",
                        "/solutions", "/why-intelligence", "/integrations",
-                       "/resources", "/static/", "/favicon"]
+                       "/resources", "/privacy", "/terms", "/static/", "/favicon"]
 
 
 @app.route("/robots.txt")
@@ -3162,6 +3162,28 @@ def integrations_page():
 @app.route("/resources")
 def resources_page():
     return render_template("agents.html", page="resources", agents=AGENTS, agent=None, related=[])
+
+LEGAL_UPDATED = "13 October 2026"
+
+
+def _legal_page(page):
+    """/privacy and /terms: public, so Google's app verification (and anyone signing in) can read them."""
+    contact = (os.environ.get("LEGAL_CONTACT_EMAIL") or "").strip()
+    if "@" not in contact or any(c.isspace() for c in contact):
+        contact = ""
+    return render_template("agents.html", page=page, agents=AGENTS, agent=None, related=[],
+                           legal_updated=LEGAL_UPDATED, contact_email=contact)
+
+
+@app.route("/privacy")
+def privacy_page():
+    return _legal_page("privacy")
+
+
+@app.route("/terms")
+def terms_page():
+    return _legal_page("terms")
+
 
 @app.route("/login")
 def login_page():

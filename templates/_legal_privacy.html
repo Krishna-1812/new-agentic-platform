@@ -1,0 +1,44 @@
+<p>{{ brand.name }} ({{ brand.product }}) is operated by {{ brand.legal_entity }} (&ldquo;we&rdquo;, &ldquo;us&rdquo;), reachable at {{ brand.domain }}. This page explains what personal information the site and the {{ brand.name }} app handle, what we use it for, who else sees it, and how you can have it removed.</p>
+
+<h2>Information we collect</h2>
+<h3>When you sign in with Google</h3>
+<p>You sign in with Google Sign-In. Google gives us your <strong>name, email address and profile picture</strong> and a confirmation that the address is yours. We ask for no other Google data: we do not read your email, contacts, calendar, Drive files or any Google account content. We store the name, email and picture to recognise you, show your name in the app and decide which workspaces you may open.</p>
+<h3>When you use the app</h3>
+<p>Staff and invited clients use the app to run research and reports on companies and websites (for example SEO checks, Google Ads reviews, page monitoring and account research). We keep what you ask for and the results, so they appear in your history, together with the account workspace they belong to. Information inside a client workspace is visible only to the {{ brand.name }} team and to the clients that workspace was shared with.</p>
+<h3>When you visit the public site</h3>
+<p>The public pages use first-party analytics, with no third-party tracking scripts. For each page view we record the page, the time, the referring site, any campaign tags in the address, how long you stayed, how far you scrolled and where you clicked, a random visitor identifier (stored in your browser and in a cookie named <code>p2_vid</code>), your browser and device type, and your IP address. We may match the IP address with public network records to work out which organisation a visit came from. We do not collect that data from browsers that send a Do Not Track or Global Privacy Control signal.</p>
+<h3>When you contact us</h3>
+<p>If you fill in the contact form we keep the name, company, work email and message you typed, to reply to you.</p>
+<h3>Cookies</h3>
+<p>We use a session cookie to keep you signed in (up to 7 days), <code>p2_seen</code> to remember that this browser has signed in before, and <code>p2_vid</code> for the analytics described above.</p>
+
+<h2>How we use it</h2>
+<ul>
+  <li>To sign you in, keep you signed in and protect accounts from misuse.</li>
+  <li>To run the research you request and show you the results and your history.</li>
+  <li>To understand which public pages are useful and to reply to people who contact us.</li>
+  <li>To keep the service secure, fix faults and meet our legal obligations.</li>
+</ul>
+<p>We do not sell personal information. We do not use Google sign-in data for advertising.</p>
+
+<h2>Who else handles it</h2>
+<p>We use service providers to run the app, and they process data only on our behalf: our hosting and database provider; Google (sign-in, and spreadsheets we use for usage records); Anthropic, whose AI models read the text of requests and the public information being analysed so that we can write summaries; and the research data providers behind individual features. We share information with authorities only when the law requires it. If the business is sold or merged, information may transfer to the new owner under the same commitments.</p>
+
+<h2>How long we keep it</h2>
+<p>Account details and history stay for as long as your access exists. Visit analytics are kept only as long as they are useful to us. When access ends, or when you ask us, we delete or anonymise the information we hold about you, except what we must keep by law or to settle a dispute.</p>
+
+<h2>Your choices</h2>
+<p>You can ask to see, correct or delete the information we hold about you, or ask us to stop analysing your visits, by contacting us at the address below. You can also clear the cookies above in your browser, turn on Do Not Track or Global Privacy Control, and remove {{ brand.name }}&rsquo;s access to your Google account at <a href="https://myaccount.google.com/permissions" rel="noopener">myaccount.google.com/permissions</a>.</p>
+
+<h2>Security</h2>
+<p>All traffic uses HTTPS. Access to client workspaces is limited to the people they are shared with, and the app enforces that when a page is opened. No system is perfectly secure, and we cannot promise otherwise.</p>
+
+<h2>Children</h2>
+<p>The service is for business use and is not directed to anyone under 16.</p>
+
+<h2>Changes to this policy</h2>
+<p>If we change this policy we will update the date at the top of the page. For a material change we will also tell signed-in users.</p>
+
+<h2>Contact</h2>
+{% if contact_email %}<p>Write to <a href="mailto:{{ contact_email }}">{{ contact_email }}</a> about anything on this page.</p>
+{% else %}<p>Use the &ldquo;Let&rsquo;s talk&rdquo; form on the <a href="/">home page</a> and mention privacy; a person will reply.</p>{% endif %}
