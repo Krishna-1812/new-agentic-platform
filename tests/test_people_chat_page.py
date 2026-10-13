@@ -191,3 +191,32 @@ def test_the_two_scripts_agree_on_what_they_share():
     for name in ("esc", "safeUrl", "ic", "chip", "hue", "avatar", "num", "when", "plural", "link", "EMAIL", "initials", "keyOf", "renderSetup"):
         assert name in run_js("return Object.keys(AM);"), name
         assert "AM." + name in src or name in ("keyOf",), name
+
+
+def test_the_companies_to_choose_from_are_listed_with_what_tells_them_apart():
+    needs = [{"name": "Position2", "candidates": [
+        {"name": "Position2 Inc", "domain": "position2.com", "industry": "Marketing Services", "employees": 220,
+         "hq": "Sunnyvale, United States", "linkedin": "https://www.linkedin.com/company/position2", "founded": 2003},
+        {"name": EVIL, "domain": "position2.in", "industry": EVIL, "employees": 40, "hq": None,
+         "linkedin": "javascript:alert(1)"}]}]
+    it = {"t": "choose", "state": "open", "message": "marketing people at Position2", "understood": UNDERSTOOD, "needs": needs}
+    html = run_js("return C.renderThread(%s, {api: '/a'}, {});" % json.dumps([it]))
+    assert "Which &ldquo;Position2&rdquo; do you mean?" in html and "2 companies with a similar name" in html
+    assert html.count('data-act="cchoose"') == 2 and 'data-domain="position2.com"' in html and 'data-item="0" data-need="0"' in html
+    assert "Marketing Services" in html and "220 employees" in html and "founded 2003" in html and "Sunnyvale" in html
+    assert 'href="https://position2.com/"' in html and 'href="https://www.linkedin.com/company/position2"' in html
+    assert "<img" not in html and "javascript:" not in html and "None of these" in html and "This one" in html
+
+
+def test_once_chosen_the_cards_lock_and_the_chosen_one_is_marked():
+    needs = [{"name": "Position2", "picked": "position2.com", "candidates": [
+        {"name": "Position2 Inc", "domain": "position2.com"}, {"name": "Position2", "domain": "position2.in"}]}]
+    it = {"t": "choose", "state": "done", "understood": UNDERSTOOD, "needs": needs}
+    html = run_js("return C.renderThread(%s, {api: '/a'}, {});" % json.dumps([it]))
+    assert html.count("disabled") == 2 and "Chosen" in html and "None of these" not in html and "choose past" in html
+
+
+def test_a_name_nobody_lists_asks_for_the_website_instead():
+    it = {"t": "choose", "state": "open", "understood": UNDERSTOOD, "needs": [{"name": "Zzzzz Qqqq", "candidates": []}]}
+    html = run_js("return C.renderThread(%s, {api: '/a'}, {});" % json.dumps([it]))
+    assert "could not find &ldquo;Zzzzz Qqqq&rdquo;" in html and "zzzzzqqqq.com" in html and "cchoose" not in html

@@ -291,9 +291,11 @@ def title_filter(plan):
     return {"includes": plan["variants"], "excludes": plan["exclude"], "exactMatch": 0}
 
 
-def find_people(company_name, domain, plan, client):
+def find_people(company_name, domain, plan, client, *, by_name=True):
     """Candidates for one title, trying narrower searches first. Returns
-    (people, attempts)."""
+    (people, attempts). `by_name=False` never searches by the company's name
+    once its domain is known: a company the user chose is only ever searched
+    at its own domain."""
     attempts = []
     tries = [("title at %s" % (domain or company_name), dict(_base(domain, company_name), job_title=title_filter(plan)))]
     if plan["levels"] and plan["departments"]:
@@ -301,7 +303,7 @@ def find_people(company_name, domain, plan, client):
                       dict(_base(domain, company_name),
                            management_level={"includes": plan["levels"]},
                            department={"includes": plan["departments"]})))
-    if domain:
+    if domain and by_name:
         tries.append(("title at company named %s" % company_name,
                       dict(_base(None, company_name), job_title=title_filter(plan))))
     for how, filters in tries:

@@ -619,6 +619,89 @@ def clean_context(ctx):
     return out
 
 
+# == which company? ==============================================================================
+
+MAX_CANDIDATES = 8
+CLOSE_SCORE = 60          # a company this close in name to the one asked for is a real candidate
+
+
+def _guess_domain(name):
+    slug = re.sub(r"[^a-z0-9]", "", _low(name))
+    return slug + ".com" if slug else None
+
+
+def candidates_for(name, client):
+    """The companies Saleshandy lists under a name, closest first (free). One search by name and, when the name
+    could be a website, one by its likely domain, so the company is found even when its listed name differs.
+    -> [{name, domain, industry, employees, hq, linkedin, founded, score}]"""
+    found = {}
+
+    def add(c, bonus=0):
+        dom = c.get("domain")
+        if not dom or dom in found:
+            return
+        found[dom] = {"name": c.get("name") or dom, "domain": dom, "industry": c.get("industry"),
+                      "employees": c.get("employees"), "hq": c.get("hq"), "linkedin": c.get("linkedin"),
+                      "founded": c.get("founded"), "score": min(100, am.name_score(name, c.get("name") or "") + bonus)}
+    for c in client.search_companies({"company_name": {"includes": [name]}})["companies"]:
+        add(c)
+    guess = _guess_domain(name)
+    if guess and guess not in found:
+        for c in client.search_companies({"company_domain": {"includes": [guess]}})["companies"]:
+            if c.get("domain") == guess:
+                add(c, 40)
+    out = sorted(found.values(), key=lambda c: (c["score"], c["employees"] or 0), reverse=True)
+    return [c for c in out if c["score"] > 0][:MAX_CANDIDATES]
+
+
+def resolve_plan(parsed, client):
+    """Before searching for people, settle which company each name means (free). A company whose website is known
+    is settled. A name that exactly one company in Saleshandy answers to is settled. Anything else, several
+    companies of that name, only a near name, or none, is put to the user.
+    -> (companies with domains where settled, [{"name", "candidates"}] still to choose)"""
+    settled, needs = [], []
+    for company in parsed["companies"]:
+        if company.get("domain"):
+            settled.append(dict(company))
+            continue
+        cands = candidates_for(company["name"], client)
+        close = [c for c in cands if c["score"] >= CLOSE_SCORE]
+        if len(close) == 1 and close[0]["score"] >= 100:
+            settled.append({"name": company["name"], "domain": close[0]["domain"]})
+        else:
+            settled.append(dict(company))
+            needs.append({"name": company["name"], "candidates": cands})
+    return settled, needs
+
+
+def clean_request(req):
+    """A request the browser sends back after the user chose a company: every value checked, as clean_context does,
+    plus the place, the count and how it was read."""
+    ctx = clean_context(req)
+    if not ctx["companies"] or not ctx["asks"]:
+        return None
+    count = None
+    for a, raw in zip(ctx["asks"], (req.get("asks") or [])):
+        n = raw.get("count") if isinstance(raw, dict) else None
+        if isinstance(n, int) and not isinstance(n, bool) and n > 0:
+            a["count"] = min(n, MAX_TEAM if a["kind"] == "team" else MAX_TITLE)
+    where = req.get("where")
+    how = req.get("how") if req.get("how") in ("rules", "claude", "context") else "rules"
+    return {"kind": "search", "companies": ctx["companies"], "asks": ctx["asks"], "count": count,
+            "where": re.sub(r"\s+", " ", where).strip()[:60] if isinstance(where, str) and where.strip() else None,
+            "how": how, "note": None}
+
+
+def apply_picks(parsed, picks):
+    """The companies the user chose, by the name asked for: name and website."""
+    picks = picks if isinstance(picks, dict) else {}
+    for c in parsed["companies"]:
+        dom = _as_domain(str(picks.get(c["name"]) or ""))
+        if dom:
+            c["domain"] = dom
+    return parsed
+
+
 # == finding the people ==========================================================================
 
 DROP_ALWAYS = ("former", "retired", "aspiring", "freelance", "student", "ex-")
@@ -669,21 +752,15 @@ def find_team(company_name, domain, ask, client, count, *, message=""):
     if not tries and levels:
         tries.append(("%s at %s" % (" / ".join(levels[:3]), domain or company_name),
                       dict(base, management_level={"includes": levels})))
-    if domain and tries:
-        tries.append(("same, at the company named %s" % company_name, dict(am._base(None, company_name), **{
-            k: v for k, v in tries[0][1].items() if k not in ("company_domain", "company_name")})))
     found, attempts, total = {}, [], 0
     for how, filters in tries:
-        by_name = "company_domain" not in filters
-        if by_name and domain and found:
-            break                      # the company's own domain answered: a name search would only add namesakes
+        # A company with a known domain is searched only at that domain: a search by its name brings in namesakes.
         if len(found) >= count:
             break
         res = client.search_people(filters)
         people = res["people"]
-        if by_name:
-            people = [p for p in people if (domain and p.get("domain") == domain)
-                      or am.name_score(company_name, p.get("company") or "") >= 70]
+        if "company_domain" not in filters:
+            people = [p for p in people if am.name_score(company_name, p.get("company") or "") >= 70]
         people = [p for p in people if _title_ok(p, msg)]
         attempts.append({"how": how, "total": res["total"], "kept": len(people)})
         if people:
@@ -699,7 +776,7 @@ def find_team(company_name, domain, ask, client, count, *, message=""):
 def find_title(company_name, domain, ask, client, count):
     """The people holding one job title. -> (picked, also, attempts, total)."""
     plan = am.role_plan(ask["role"], ask.get("variants") or ())
-    people, attempts = am.find_people(company_name, domain, plan, client)
+    people, attempts = am.find_people(company_name, domain, plan, client, by_name=False)
     picked, also = am.rank(people, plan, count)
     total = attempts[-1]["total"] if attempts else 0
     return picked, also, attempts, total

@@ -216,13 +216,43 @@
 
   function dict(a, b) { var o = {}, k; for (k in a) o[k] = a[k]; for (k in b) o[k] = b[k]; return o; }
 
+  // == which company? ======================================================================
+
+  function candidateCard(c, i, k, picked) {
+    var meta = [c.industry, c.employees ? num(c.employees) + ' employees' : null, c.hq, c.founded ? 'founded ' + c.founded : null].filter(Boolean)
+      .map(function (x) { return chip('', x); }).join(' ');
+    var on = picked === c.domain;
+    return '<div class="amc-cand' + (on ? ' on' : '') + '"><button type="button" class="amc-cand-b" data-act="cchoose" data-item="' + esc(i) + '" data-need="' + esc(k) +
+      '" data-domain="' + esc(c.domain) + '"' + (picked != null ? ' disabled' : '') + '>' +
+      '<span class="am-mono ' + hue(c.name) + '" aria-hidden="true">' + esc(AM.initials(c.name)) + '</span>' +
+      '<span class="amc-cand-t"><b>' + esc(c.name) + '</b><small>' + esc(c.domain) + '</small>' + (meta ? '<span class="amc-cand-meta">' + meta + '</span>' : '') + '</span>' +
+      '<span class="amc-cand-go">' + (on ? ic('check') + 'Chosen' : 'This one' + ic('arrow')) + '</span></button>' +
+      '<span class="amc-cand-l">' + AM.link('https://' + c.domain + '/', 'Open site') + (c.linkedin ? AM.link(c.linkedin, 'LinkedIn page') : '') + '</span></div>';
+  }
+
+  // A company name that more than one company answers to: show them all and let the user choose.
+  function renderChoose(it, i) {
+    var done = it.state === 'done' || it.state === 'skipped';
+    return (it.needs || []).map(function (n, k) {
+      var cands = n.candidates || [];
+      var head = cands.length ?
+        '<p><b>Which &ldquo;' + esc(n.name) + '&rdquo; do you mean?</b> ' + (cands.length === 1 ? 'I found one company, and it is not an exact match.' : 'I found ' + esc(cands.length) + ' companies with a similar name.') +
+        (done ? '' : ' Choose the right one and I will search there.') + '</p>' :
+        '<p><b>I could not find &ldquo;' + esc(n.name) + '&rdquo; in Saleshandy.</b> Write its website, like <code>' + esc(n.name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'company') + '.com</code>, and ask again.</p>';
+      var list = cands.length ? '<div class="amc-cands">' + cands.map(function (c) { return candidateCard(c, i, k, n.picked === undefined ? null : n.picked); }).join('') + '</div>' : '';
+      var none = cands.length && !done && n.picked == null ? '<div class="amc-choices"><button type="button" class="amc-chip" data-act="cnone-of" data-item="' + esc(i) + '">' + ic('x') + 'None of these</button>' +
+        '<span class="amc-hint">Or write the website, like <code>company.com</code>.</span></div>' : '';
+      return '<section class="amc-choose">' + head + list + none + '</section>';
+    }).join('');
+  }
+
   // == the thread =========================================================================
 
   function botBubble(inner, cls) {
     return '<div class="amc-msg bot' + (cls ? ' ' + cls : '') + '"><span class="amc-av" aria-hidden="true"></span><div class="amc-bub">' + inner + '</div></div>';
   }
 
-  function renderItem(it, ui, sels) {
+  function renderItem(it, ui, sels, i) {
     if (it.t === 'user') return '<div class="amc-msg me"><div class="amc-bub">' + esc(it.text) + '</div></div>';
     if (it.t === 'day') return '<div class="amc-day"><span>' + esc(it.text) + '</span></div>';
     if (it.t === 'bot') {
@@ -231,6 +261,7 @@
       }).join('') + '</div>' : '';
       return botBubble('<p>' + esc(it.text) + '</p>' + ch, it.kind === 'error' ? 'err' : '');
     }
+    if (it.t === 'choose') return botBubble(renderChoose(it, i), 'choose' + (it.state === 'done' || it.state === 'skipped' ? ' past' : ''));
     if (it.t === 'run') {
       var run = it.run || { id: it.id, status: 'running', stage: 'starting', summary: {} };
       return botBubble(renderResult(run, it.understood, ui, (sels || {})[it.id] || {}), 'result');
@@ -239,7 +270,7 @@
   }
 
   function renderThread(items, ui, sels) {
-    return (items || []).map(function (it) { return renderItem(it, ui || {}, sels); }).join('');
+    return (items || []).map(function (it, i) { return renderItem(it, ui || {}, sels, i); }).join('');
   }
 
   function renderEmpty(status, ui) {
@@ -275,7 +306,7 @@
   }
 
   var AMChat = { renderResult: renderResult, renderThread: renderThread, renderEmpty: renderEmpty, renderFollow: renderFollow,
-    personRow: personRow, understoodLine: understoodLine, defaultSelection: defaultSelection, selectedKeys: selectedKeys,
+    personRow: personRow, renderChoose: renderChoose, understoodLine: understoodLine, defaultSelection: defaultSelection, selectedKeys: selectedKeys,
     contextOf: contextOf, liSearch: liSearch, emails: emails, SAMPLE: SAMPLE };
   AM.chat = AMChat;
 
@@ -344,6 +375,7 @@
   function send(text) {
     text = String(text || '').trim();
     if (!text || busy || !connected()) return;
+    items.forEach(function (x) { if (x.t === 'choose' && x.state === 'open') x.state = 'skipped'; });
     items.push({ t: 'user', text: text });
     busy = true; paint(true);
     $('amMsg').value = ''; grow();
@@ -351,6 +383,10 @@
       if (j.kind === 'search') {
         items.push({ t: 'run', id: j.run_id, understood: j.understood, run: null });
         paint(true); poll(j.run_id);
+      } else if (j.kind === 'choose') {
+        busy = false;
+        items.push({ t: 'choose', state: 'open', message: text, understood: j.understood, needs: j.needs });
+        paint(true);
       } else {
         busy = false;
         items.push({ t: 'bot', kind: j.kind, text: j.reply, choices: j.choices || [] });
@@ -361,6 +397,27 @@
       var again = e.status === 409 && e.data && e.data.run_id;
       items.push({ t: 'bot', kind: 'error', text: e.message });
       if (again && !itemOf(e.data.run_id)) { items.push({ t: 'run', id: e.data.run_id, understood: null, run: null }); busy = true; poll(e.data.run_id); }
+      paint(true);
+    });
+  }
+
+  // The user chose a company (or said none of them): once every name has one, the search goes ahead.
+  function choose(i, k, domain) {
+    var it = items[i];
+    if (!it || it.t !== 'choose' || it.state !== 'open' || busy) return;
+    it.needs[k].picked = domain;
+    var left = it.needs.filter(function (n) { return n.picked == null; }).length;
+    if (left) { paint(); return; }
+    var picks = {};
+    it.needs.forEach(function (n) { if (n.picked) picks[n.name] = n.picked; });
+    it.state = 'done'; busy = true; paint();
+    P.api('/chat', { message: it.message, resume: { understood: it.understood, picks: picks } }).then(function (j) {
+      var u = dict(it.understood, { companies: j.understood.companies });
+      items.push({ t: 'run', id: j.run_id, understood: u, run: null });
+      paint(true); poll(j.run_id);
+    }).catch(function (e) {
+      busy = false;
+      items.push({ t: 'bot', kind: 'error', text: e.message });
       paint(true);
     });
   }
@@ -455,6 +512,11 @@
     if (!el || !$('amAsk').contains(el)) return;
     var act = el.getAttribute('data-act'), id = Number(el.getAttribute('data-run'));
     if (act === 'csay') { var t = el.getAttribute('data-say'); if (connected()) send(t); else { $('amMsg').value = t; grow(); } }
+    else if (act === 'cchoose') choose(Number(el.getAttribute('data-item')), Number(el.getAttribute('data-need')), el.getAttribute('data-domain'));
+    else if (act === 'cnone-of') {
+      var ci = items[Number(el.getAttribute('data-item'))];
+      if (ci) { ci.state = 'skipped'; items.push({ t: 'bot', kind: 'clarify', text: 'No problem. Write the company\u2019s website, like company.com, and I will search there.', choices: [] }); paint(true); $('amMsg').focus(); }
+    }
     else if (act === 'creveal') reveal(id);
     else if (act === 'cremove') remove(id);
     else if (act === 'call') { var it = itemOf(id); if (it) { sels[id] = defaultSelection(it.run); paint(); } }

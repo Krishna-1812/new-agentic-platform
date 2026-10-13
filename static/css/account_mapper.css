@@ -646,3 +646,33 @@ span.am-cell.s-found { background: #9BE3B8; } span.am-cell.s-close { background:
 .am-runq.s-running .am-run-n { background: var(--acc); color: #121213; }
 .cl-run.on.am-runq .am-run-n { background: #FF8B5D; color: #121213; }
 .am-runq .am-run-t b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; font-size: 14px; }
+
+/* Which company? Several answer to the name: they are listed and the user chooses. */
+.amc-choose + .amc-choose { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.amc-choose p { margin: 0 0 12px; font-size: 14.5px; line-height: 1.5; }
+.amc-choose p b { font-size: 16px; }
+.amc-choose code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; background: var(--s2); padding: 1px 6px; border-radius: 6px; }
+.amc-cands { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@container amthread (max-width: 700px) { .amc-cands { grid-template-columns: 1fr; } }
+.amc-cand { display: grid; border-radius: 18px; background: var(--s1); box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow 150ms ease, transform 150ms ease; min-width: 0; }
+.amc-cand:hover:not(.on) { transform: translateY(-2px); box-shadow: inset 0 0 0 1px #FF8B5D, 0 10px 22px -14px rgba(0,0,0,.3); }
+.amc-cand.on { box-shadow: inset 0 0 0 2px var(--acc); background: #FFFBF8; }
+.amc-cand-b { appearance: none; border: 0; background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer; display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 4px 14px; align-items: center; padding: 14px 14px 6px; border-radius: 18px; }
+.amc-cand-b:disabled { cursor: default; opacity: 1; }
+.amc-cand-b:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.amc-cand-b .am-mono { width: 48px; height: 48px; border-radius: 15px; font-size: 16px; }
+.amc-cand-t { display: grid; gap: 2px; min-width: 0; }
+.amc-cand-t b { font-size: 15.5px; line-height: 1.25; overflow-wrap: anywhere; }
+.amc-cand-t small { font-size: 12.5px; color: var(--tx3); overflow-wrap: anywhere; }
+.amc-cand-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.amc-cand-go { grid-column: 1 / -1; justify-self: end; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 800; padding: 6px 14px; border-radius: var(--r-pill); background: var(--ink); color: var(--tx-on-ink); }
+.amc-cand-go .am-ic { width: 14px; height: 14px; }
+.amc-cand-b:disabled .amc-cand-go { background: var(--s2); color: var(--tx3); }
+.amc-cand.on .amc-cand-go { background: var(--acc); color: #121213; }
+.amc-cand-l { display: flex; gap: 14px; padding: 0 16px 12px 78px; font-size: 12px; }
+.amc-cand-l a { color: var(--mr-accent); font-weight: 600; text-decoration: none; }
+.amc-cand-l a:hover { text-decoration: underline; }
+.amc-hint { font-size: 12.5px; color: var(--tx3); }
+.amc-msg.choose.past .amc-cand:not(.on) { opacity: .55; }
+@media (max-width: 520px) { .amc-cand-b { grid-template-columns: 40px minmax(0, 1fr); } .amc-cand-b .am-mono { width: 40px; height: 40px; } .amc-cand-l { padding-left: 68px; } }
+.amc-cand-meta .mr-chip { white-space: normal; text-align: left; }

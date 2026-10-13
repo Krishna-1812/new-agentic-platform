@@ -228,6 +228,13 @@ The page opens on a chat. Write what you want, the way you would say it:
 - When it still cannot tell, it asks: "Who at Stripe?" with one-click choices.
 - The "Looking for ... at ..." line above every answer shows what it understood, so a misreading is seen at once. Searching is free, so asking again costs nothing.
 
+**Which company?** Before it searches for anyone it settles which company each name means (free, one or two Saleshandy company searches per name):
+- a website you wrote (`stripe.com`) is trusted;
+- a name that exactly one company in Saleshandy answers to goes ahead;
+- anything else, several companies of that name, only a near name, or none, is put to you. Each candidate is a card with its website, LinkedIn page, industry, size and headquarters; click **This one** and the search goes ahead there. **None of these** asks you for the website.
+- A company's likely website (`position2.com` for "Position2") is also looked up, so it is found when listed under a different name.
+- Once the website is known, people are searched only at that website, never by the company's name, which is how namesakes' staff used to slip in.
+
 **What comes back:** each message that names who to find becomes a run (it shows in Recent, History and the CSV like any other). The people appear as rows: name, title, place, decision-maker and new-in-role badges, and how many Saleshandy lists in all. A team is searched by Saleshandy's department (and, when that is thin, by job-title words), without interns, assistants or former staff, most senior first. A place ("in London") narrows the list by the location each person lists; when nobody lists it, it says so and shows everyone.
 
 **Emails and LinkedIn:** Saleshandy's search returns neither. They arrive with the reveal, which is the same credit-capped reveal as the mapping: the people shown are ticked, **Get emails & LinkedIn** shows the most it can use and the balance, and nothing is spent until you confirm. Until then each row has a link that searches LinkedIn for that person (a plain link; it opens nothing on our side). The reveal's field names for the LinkedIn address are still read by guess until the first live reveal.
