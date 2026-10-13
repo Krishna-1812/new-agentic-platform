@@ -65,8 +65,9 @@ _TABLES_LOCK = threading.Lock()
 def _pg():
     """One connection for one unit of work: committed on success, rolled back
     on error, and always closed (psycopg2's own `with conn` only commits)."""
-    import psycopg2
-    conn = psycopg2.connect(os.environ["DATABASE_URL"], connect_timeout=8)
+    import psycopg2  # noqa: F401
+    from tracker import db_pool
+    conn = db_pool.connect(os.environ["DATABASE_URL"], connect_timeout=8)
     try:
         yield conn
         conn.commit()

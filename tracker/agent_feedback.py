@@ -59,8 +59,9 @@ def _pg_conn():
     if not database_url:
         return None
     try:
-        import psycopg2
-        return psycopg2.connect(database_url, connect_timeout=8)
+        import psycopg2  # noqa: F401
+        from tracker import db_pool
+        return db_pool.connect(database_url, connect_timeout=8)
     except Exception as e:
         logger.warning("agent_feedback: Postgres connection failed: %s", e)
         return None

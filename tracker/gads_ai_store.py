@@ -53,8 +53,9 @@ _TABLES_LOCK = threading.Lock()
 
 @contextlib.contextmanager
 def _pg():
-    import psycopg2
-    conn = psycopg2.connect(os.environ["DATABASE_URL"], connect_timeout=8)
+    import psycopg2  # noqa: F401
+    from tracker import db_pool
+    conn = db_pool.connect(os.environ["DATABASE_URL"], connect_timeout=8)
     try:
         yield conn
         conn.commit()
