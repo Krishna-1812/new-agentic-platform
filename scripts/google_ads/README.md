@@ -98,6 +98,8 @@ It adds these tabs at the **end** of the sheet. It never changes the first tab, 
 
 Every morning at about **10:00 India time**, the site posts to one Slack channel.
 
+**Which accounts.** Only twelve: AIHS, Alphametic, AllureAvani, Basil woods school, Core Care Clinic, Madge Beauty, July Mode, Greet Technologies, Artistic Yoga(BTA), Turquoise Institute, City College and KFI (`DIGEST_ACCOUNTS` in `tracker/gads_digest.py`). Case, spaces, punctuation and a bracketed tag such as `(BTA)` don't have to match the sheet, but the rest of the name does: "KFI" will not pick up "KFI Foods". Every other account is left out of the overview and gets no message. To change the list without a deploy, set `GOOGLE_ADS_DIGEST_ACCOUNTS` in Railway → web → Variables (names separated by commas or new lines; `*` sends every account). A listed name that matches nothing in the sheet is not skipped quietly: the Action's reply counts it as `not_found`, and the staff preview names it.
+
 - **First, an overview.** Accounts are grouped under *Needs action*, *Worth a look* and *On track*, each with its main reason. It also shows the day's totals when every account uses one currency.
 - **Then one message per account.** Each is a card whose coloured side bar is the account's status: red, amber or green. The card holds:
   - the key figures, each with its change against the 7-day average;
