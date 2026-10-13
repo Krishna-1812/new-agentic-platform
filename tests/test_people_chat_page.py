@@ -220,3 +220,11 @@ def test_a_name_nobody_lists_asks_for_the_website_instead():
     it = {"t": "choose", "state": "open", "understood": UNDERSTOOD, "needs": [{"name": "Zzzzz Qqqq", "candidates": []}]}
     html = run_js("return C.renderThread(%s, {api: '/a'}, {});" % json.dumps([it]))
     assert "could not find &ldquo;Zzzzz Qqqq&rdquo;" in html and "zzzzzqqqq.com" in html and "cchoose" not in html
+
+
+def test_a_reload_starts_a_new_chat_and_only_a_running_search_is_brought_back():
+    src = open(CHAT_JS).read()
+    init = src[src.index("AMChat.init = function"):src.index("AMChat.setStatus")]
+    assert "resumeRunning(runs)" in init and "restore" not in src
+    body = src[src.index("function resumeRunning"):src.index("AMChat.init = function")]
+    assert "r.status === 'running'" in body and "slice(" not in body          # never the old finished chats
