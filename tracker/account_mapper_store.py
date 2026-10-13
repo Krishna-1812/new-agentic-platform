@@ -120,6 +120,15 @@ def claim(run_id, owner_email, stage):
     return bool(row)
 
 
+def delete_run(run_id, owner_email):
+    """Remove one of the owner's runs; False when there is no such run of theirs or it is still running (a run
+    whose worker died, no progress for STALE_AFTER_S, can be removed)."""
+    row = _exec("""DELETE FROM am_runs WHERE id=%s AND owner_email=%s
+                   AND (status <> 'running' OR updated_at < now() - make_interval(secs => %s)) RETURNING id""",
+                (run_id, owner_email, STALE_AFTER_S), fetch="one")
+    return bool(row)
+
+
 COLS = ("id", "status", "stage", "settings", "summary", "error", "cost_cap_usd", "spent_usd", "credits_used",
         "created_at", "updated_at", "idle_seconds")
 
