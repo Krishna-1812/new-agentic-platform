@@ -11958,20 +11958,31 @@ def admin_account_mapper_chat():
     if refused:
         return refused
     body = request.get_json(silent=True) or {}
+    resume = body.get("resume")
     message = body.get("message")
     if not isinstance(message, str) or not message.strip():
         return jsonify(error="Write who you are looking for."), 400
     if len(message) > pc.MAX_MESSAGE:
         return jsonify(error="Keep it under %d characters." % pc.MAX_MESSAGE), 400
-    budget = claude = None
-    if not viewer_is_client() and search.claude_configured():
-        budget = search.Budget(pc.PARSE_CAP_USD)
-        claude = pc.claude_reader(AM_MODELS[0], budget)
-    parsed = pc.understand(message, pc.clean_context(body.get("context")), claude=claude)
-    usd = round(float(budget.spent), 6) if budget else 0
-    if parsed["kind"] != "search":
-        g.pop("client_run", None)        # a question or a hint is not a search: it does not use up a client's runs
-        return jsonify(dict(parsed, usd=usd))
+    usd = 0
+    if isinstance(resume, dict):
+        # The user has chosen the company: carry on with the request they were shown, nothing is read again.
+        parsed = pc.clean_request(resume.get("understood"))
+        if parsed is None:
+            return jsonify(error="That request could not be picked up again; ask it once more."), 400
+        parsed = pc.apply_picks(parsed, resume.get("picks"))
+        needs = []
+    else:
+        budget = claude = None
+        if not viewer_is_client() and search.claude_configured():
+            budget = search.Budget(pc.PARSE_CAP_USD)
+            claude = pc.claude_reader(AM_MODELS[0], budget)
+        parsed = pc.understand(message, pc.clean_context(body.get("context")), claude=claude)
+        usd = round(float(budget.spent), 6) if budget else 0
+        if parsed["kind"] != "search":
+            g.pop("client_run", None)    # a question or a hint is not a search: it does not use up a client's runs
+            return jsonify(dict(parsed, usd=usd))
+        needs = None
     if not sh.configured():
         return jsonify(error="SALESHANDY_API_KEY is not set on this service (Railway → web → Variables).",
                        understood=parsed), 400
@@ -11980,6 +11991,18 @@ def admin_account_mapper_chat():
         going = store.running_run(email)
         if going:
             return jsonify(error="A search of yours is already going; wait for it to finish.", run_id=going["id"]), 409
+        if needs is None:
+            # Which company is meant? Settled here when only one answers to the name; otherwise the user chooses.
+            try:
+                companies, needs = pc.resolve_plan(parsed, sh.Client())
+            except sh.AuthError as e:
+                return jsonify(error=str(e), understood=parsed), 400
+            except sh.SaleshandyError as e:
+                return jsonify(error="Saleshandy could not look the company up: %s" % e, understood=parsed), 502
+            parsed = dict(parsed, companies=companies)
+            if needs:
+                g.pop("client_run", None)    # choosing a company is not yet a search
+                return jsonify(kind="choose", understood=parsed, needs=needs, usd=usd)
         run_id = store.start_chat(parsed, message, email, usd=usd,
                                   started_by=(_get_user() or {}).get("email", "") if _work_acct() else None)
     except store.StoreUnavailable as e:

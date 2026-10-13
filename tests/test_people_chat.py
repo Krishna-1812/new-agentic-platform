@@ -289,7 +289,23 @@ def test_a_question_or_a_hint_is_answered_at_once_and_uses_no_run(monkeypatch):
     assert started == []
 
 
+class OneCompany(FakeSH):
+    """Saleshandy where "Acme" and "Company X" are each one company: nothing to choose."""
+
+    def search_companies(self, filters, **kw):
+        self.asked.append(("companies", filters))
+        if "company_domain" in filters:
+            return {"total": 0, "companies": []}
+        n = filters["company_name"]["includes"][0]
+        return {"total": 1, "companies": [{"id": 1, "name": n, "domain": "x.com", "employees": 5}]}
+
+
+def _fake_saleshandy(monkeypatch, cls=OneCompany):
+    monkeypatch.setattr(sh, "Client", lambda *a, **k: cls([ACME], WORLD))
+
+
 def test_a_search_needs_the_key_and_starts_once(monkeypatch):
+    _fake_saleshandy(monkeypatch)
     monkeypatch.delenv("SALESHANDY_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     c = _client(ADMIN)
@@ -318,6 +334,7 @@ def test_a_search_needs_the_key_and_starts_once(monkeypatch):
 def test_the_follow_up_context_comes_from_the_page(monkeypatch):
     monkeypatch.setenv("SALESHANDY_API_KEY", "k")
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    _fake_saleshandy(monkeypatch)
     monkeypatch.setattr(store, "running_run", lambda email: None)
     got = []
     monkeypatch.setattr(store, "start_chat", lambda parsed, message, email, usd=0, started_by=None: got.append(parsed) or 3)
@@ -330,6 +347,7 @@ def test_the_follow_up_context_comes_from_the_page(monkeypatch):
 def test_claude_reads_a_message_only_for_staff_with_a_key_and_is_capped(monkeypatch):
     monkeypatch.setenv("SALESHANDY_API_KEY", "k")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
+    _fake_saleshandy(monkeypatch)
     monkeypatch.setattr(store, "running_run", lambda email: None)
     monkeypatch.setattr(store, "start_chat", lambda parsed, message, email, usd=0, started_by=None: 9)
     seen = {}
@@ -352,6 +370,111 @@ def test_claude_reads_a_message_only_for_staff_with_a_key_and_is_capped(monkeypa
     seen.clear()
     j = c.post(BASE + "/api/chat", json={"message": "marketing people at Acme"}).get_json()
     assert j["usd"] == 0 and j["understood"]["how"] == "rules"
+
+
+# == which company? ============================================================================
+
+P2 = [{"id": 11, "name": "Position2 Inc", "domain": "position2.com", "employees": 220, "industry": "Marketing Services",
+       "hq": "Sunnyvale, United States"},
+      {"id": 12, "name": "Position2", "domain": "position2.in", "employees": 40, "industry": "Advertising Services"},
+      {"id": 13, "name": "Position2 Solutions Ltd", "domain": "position2solutions.co.uk", "employees": 8},
+      {"id": 14, "name": "Unrelated Co", "domain": "unrelated.com", "employees": 99}]
+P2_WORLD = WORLD + [
+    {"id": 300, "name": "Right Person", "title": "Chief Marketing Officer", "company": "Position2 Inc", "domain": "position2.com",
+     "department": "Marketing", "level": "C-Level", "decision_maker": True, "location": "Bengaluru, India"},
+    {"id": 301, "name": "Namesake Person", "title": "Marketing Director", "company": "Position2 Solutions Ltd",
+     "domain": "position2solutions.co.uk", "department": "Marketing", "level": "Director", "location": "London, United Kingdom"}]
+
+
+def test_a_name_that_several_companies_answer_to_is_put_to_the_user():
+    c = FakeSH([ACME] + P2, P2_WORLD)
+    parsed = read("marketing people at Position2")
+    companies, needs = pc.resolve_plan(parsed, c)
+    assert companies == [{"name": "Position2", "domain": None}]
+    (need,) = needs
+    assert need["name"] == "Position2"
+    assert [x["domain"] for x in need["candidates"]] == ["position2.com", "position2.in", "position2solutions.co.uk"]
+    assert need["candidates"][0]["industry"] == "Marketing Services" and "Unrelated Co" not in str(need)
+
+
+def test_one_exact_company_is_settled_without_asking_and_a_website_is_never_asked_about():
+    c = FakeSH([ACME] + P2, P2_WORLD)
+    companies, needs = pc.resolve_plan(read("CFO at Acme"), c)
+    assert needs == [] and companies == [{"name": "Acme", "domain": "acme.com"}]
+    c = FakeSH([ACME] + P2, P2_WORLD)
+    companies, needs = pc.resolve_plan(read("CFO at position2.in"), c)
+    assert needs == [] and companies[0]["domain"] == "position2.in" and c.asked == []          # not even looked up
+
+
+def test_a_near_name_only_or_no_company_at_all_is_also_put_to_the_user():
+    c = FakeSH([ACME] + P2, P2_WORLD)
+    _, needs = pc.resolve_plan(read("CFO at Position2 Solutions"), c)
+    assert [x["domain"] for x in needs[0]["candidates"]][0] == "position2solutions.co.uk"      # one candidate, still confirmed
+    assert len(needs[0]["candidates"]) >= 1
+    _, needs = pc.resolve_plan(read("CFO at Zzzzz Qqqq"), FakeSH([ACME], WORLD))
+    assert needs == [{"name": "Zzzzz Qqqq", "candidates": []}]
+
+
+def test_the_likely_website_finds_a_company_listed_under_another_name():
+    world = [{"id": 1, "name": "Pos Two Digital", "domain": "position2.com", "employees": 10}]
+    cands = pc.candidates_for("Position2", FakeSH(world, []))
+    assert [c["domain"] for c in cands] == ["position2.com"] and cands[0]["score"] >= 40
+
+
+def test_a_company_the_user_chose_is_searched_only_at_its_website():
+    """The namesake's marketing director never appears: no search by the company's name once the website is known."""
+    c = FakeSH([ACME] + P2, P2_WORLD)
+    parsed = pc.apply_picks(read("marketing people at Position2"), {"Position2": "position2.com"})
+    assert parsed["companies"] == [{"name": "Position2", "domain": "position2.com"}]
+    role = pc.answer(parsed, c)["companies"][0]["roles"][0]
+    assert [p["name"] for p in role["picked"] + role["also"]] == ["Right Person"]
+    assert all("company_name" not in f for kind, f in c.asked if kind == "people")
+    title = pc.answer(pc.apply_picks(read("CMO at Position2"), {"Position2": "position2.com"}), FakeSH([ACME] + P2, P2_WORLD))
+    assert [p["name"] for p in title["companies"][0]["roles"][0]["picked"]] == ["Right Person"]
+
+
+def test_a_request_sent_back_after_choosing_is_checked_and_a_pick_cannot_be_a_non_domain():
+    parsed = read("top 3 marketing people at Position2 in Bengaluru")
+    back = pc.clean_request(dict(parsed, companies=[{"name": "Position2", "domain": None}]))
+    assert back["asks"][0]["count"] == 3 and back["where"] == "Bengaluru" and back["kind"] == "search"
+    assert pc.clean_request({"companies": [], "asks": []}) is None and pc.clean_request("x") is None
+    assert pc.apply_picks(back, {"Position2": "javascript:alert(1)", "Other": "x.com"})["companies"][0]["domain"] is None
+    assert pc.apply_picks(back, {"Position2": "www.position2.com"})["companies"][0]["domain"] == "position2.com"
+
+
+def test_the_route_lists_the_companies_then_searches_the_one_chosen(monkeypatch):
+    monkeypatch.setenv("SALESHANDY_API_KEY", "k")
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setattr(sh, "Client", lambda *a, **k: FakeSH([ACME] + P2, P2_WORLD))
+    monkeypatch.setattr(store, "running_run", lambda email: None)
+    started = []
+    monkeypatch.setattr(store, "start_chat", lambda parsed, message, email, usd=0, started_by=None: started.append(parsed) or 4)
+    c = _client(ADMIN)
+    r = c.post(BASE + "/api/chat", json={"message": "marketing people at Position2"})
+    j = r.get_json()
+    assert r.status_code == 200 and j["kind"] == "choose" and started == []
+    assert [x["domain"] for x in j["needs"][0]["candidates"]][:2] == ["position2.com", "position2.in"]
+    r = c.post(BASE + "/api/chat", json={"message": "marketing people at Position2",
+                                         "resume": {"understood": j["understood"], "picks": {"Position2": "position2.com"}}})
+    assert r.status_code == 202 and r.get_json()["run_id"] == 4
+    assert started[0]["companies"] == [{"name": "Position2", "domain": "position2.com"}]
+    assert started[0]["asks"][0]["label"] == "Marketing team"
+    r = c.post(BASE + "/api/chat", json={"message": "x", "resume": {"understood": {"companies": [], "asks": []}, "picks": {}}})
+    assert r.status_code == 400 and len(started) == 1
+
+
+def test_saleshandy_failing_while_looking_a_company_up_is_said_not_hidden(monkeypatch):
+    monkeypatch.setenv("SALESHANDY_API_KEY", "k")
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setattr(store, "running_run", lambda email: None)
+    monkeypatch.setattr(sh, "Client", lambda *a, **k: FakeSH([ACME], WORLD, fail=None))
+
+    class Down(FakeSH):
+        def search_companies(self, filters, **kw):
+            raise sh.AuthError("the key was refused") if "company_name" in filters else sh.SaleshandyError("down")
+    monkeypatch.setattr(sh, "Client", lambda *a, **k: Down([ACME], WORLD))
+    r = _client(ADMIN).post(BASE + "/api/chat", json={"message": "CFO at Acme"})
+    assert r.status_code == 400 and "refused" in r.get_json()["error"]
 
 
 # == the run, on a real Postgres ===============================================================
