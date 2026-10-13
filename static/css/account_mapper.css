@@ -456,7 +456,7 @@ span.am-cell.s-found { background: #9BE3B8; } span.am-cell.s-close { background:
 .am-ask .am-setup { margin: 16px 20px 0; }
 
 /* The thread. */
-.am-thread { container-type: inline-size; container-name: amthread; display: flex; flex-direction: column; gap: 16px; padding: 22px 20px; min-height: 460px; background: var(--s2); }
+.am-thread { display: flex; flex-direction: column; gap: 16px; padding: 22px 20px; min-height: 460px; background: var(--s2); }
 .amc-msg { display: flex; gap: 10px; align-items: flex-start; max-width: 100%; animation: amc-in 260ms ease both; }
 .amc-msg.me { justify-content: flex-end; }
 .amc-msg.me .amc-bub { background: var(--ink); color: var(--tx-on-ink); border-radius: 20px 20px 6px 20px; max-width: min(78%, 520px); font-size: 15.5px; line-height: 1.45; padding: 12px 18px; overflow-wrap: anywhere; }
@@ -884,3 +884,48 @@ span.am-cell.s-found { background: #9BE3B8; } span.am-cell.s-close { background:
 .am-opt .am-price { grid-column: 2; grid-row: 3; justify-self: start; margin-top: 4px; }
 .am-opt .am-opt-i { grid-row: 1 / 4; align-self: start; }
 .mr .am-opt input[type=checkbox] { grid-row: 1; align-self: start; margin-top: 2px; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   The thread scrolls inside its card, with a scrollbar worth looking at.
+   ════════════════════════════════════════════════════════════════════════ */
+.am-thread-w { position: relative; container-type: inline-size; container-name: amthread; }
+.am-thread { position: relative; max-height: 76vh; max-height: clamp(460px, 76dvh, 860px); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scroll-behavior: auto;
+  /* soft shadows at the edges say "there is more": they show only while there is */
+  background:
+    linear-gradient(#EFEDE9 30%, rgba(239,237,233,0)) top / 100% 38px no-repeat local,
+    linear-gradient(rgba(239,237,233,0), #EFEDE9 70%) bottom / 100% 38px no-repeat local,
+    radial-gradient(farthest-side at 50% 0, rgba(18,18,19,.16), rgba(18,18,19,0)) top / 100% 14px no-repeat scroll,
+    radial-gradient(farthest-side at 50% 100%, rgba(18,18,19,.16), rgba(18,18,19,0)) bottom / 100% 14px no-repeat scroll,
+    radial-gradient(560px 280px at 100% 0%, rgba(255,96,34,.075), transparent 70%) local,
+    radial-gradient(520px 300px at 0% 100%, rgba(140,203,255,.2), transparent 70%) local,
+    #EFEDE9; }
+.am-thread.empty { max-height: none; }
+.am-thread:focus-visible { outline: 2px solid var(--acc); outline-offset: -2px; }
+.am-composer { position: relative; box-shadow: 0 -10px 22px -18px rgba(0,0,0,.28); }
+
+/* The scrollbar: a slim track with an orange-to-amber thumb that widens as you reach for it. (Styled, never hidden.) */
+.am-thread::-webkit-scrollbar, .cl-runs .cl-runl::-webkit-scrollbar { width: 14px; height: 14px; }
+.am-thread::-webkit-scrollbar-track, .cl-runs .cl-runl::-webkit-scrollbar-track { background: transparent; margin: 12px 0; }
+.am-thread::-webkit-scrollbar-thumb, .cl-runs .cl-runl::-webkit-scrollbar-thumb { border-radius: 99px; border: 4px solid transparent; background-clip: padding-box; min-height: 56px;
+  background-color: #FF8B5D; background-image: linear-gradient(180deg, #FF6022, #FFB500); box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); transition: border-width 150ms ease; }
+.am-thread::-webkit-scrollbar-thumb:hover, .cl-runs .cl-runl::-webkit-scrollbar-thumb:hover { border-width: 2px; background-image: linear-gradient(180deg, #FF7A45, #FFC83D); }
+.am-thread::-webkit-scrollbar-thumb:active, .cl-runs .cl-runl::-webkit-scrollbar-thumb:active { border-width: 2px; background-image: linear-gradient(180deg, #E8501A, #FFB500); }
+.cl-runs .cl-runl { scrollbar-width: auto; scrollbar-color: auto; }
+.am-thread { scrollbar-width: auto; scrollbar-color: auto; }
+/* Firefox has no ::-webkit-scrollbar: it gets the slim standard one in the same colour. */
+@-moz-document url-prefix() {
+  .am-thread, .cl-runs .cl-runl { scrollbar-width: thin; scrollbar-color: #FF8B5D transparent; }
+}
+@media (max-width: 640px) { .am-thread::-webkit-scrollbar { width: 10px; } .am-thread::-webkit-scrollbar-thumb { border-width: 3px; } }
+
+/* "Latest": appears when you have scrolled up, and takes you back down. */
+.am-jump { position: absolute; left: 50%; bottom: 14px; z-index: 5; transform: translateX(-50%); appearance: none; border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px 9px 18px; border-radius: var(--r-pill); font: 800 13px var(--font-body); color: var(--tx-on-ink);
+  background: linear-gradient(135deg, #1B1B1D, #34343A); box-shadow: 0 14px 26px -10px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.1); animation: amc-pop 220ms ease both; }
+.am-jump[hidden] { display: none; }
+.am-jump .am-ic { width: 15px; height: 15px; color: #FF8B5D; transition: transform 150ms ease; }
+.am-jump:hover .am-ic { transform: translateY(2px); }
+.am-jump:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
+@keyframes amc-pop { from { opacity: 0; transform: translate(-50%, 10px) scale(.92); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .am-jump { animation: none; } }
+.amc-msg { scroll-margin: 0; }

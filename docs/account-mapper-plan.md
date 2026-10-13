@@ -241,6 +241,8 @@ The page opens on a chat. Write what you want, the way you would say it:
 
 **Clients** can ask and download the CSV. They never see credits, ticks or the reveal, and their messages are read by rules only. A question that only gets a hint or a clarification does not count against a client's runs; a search does.
 
+**Scrolling:** the conversation scrolls inside its card (about three quarters of the screen tall) with a slim orange scrollbar, so the page does not grow with it. A new answer scrolls into view from its top; when you scroll up, a **Latest** button takes you back down. The Recent list has the same scrollbar.
+
 **Keeping it:** reloading the page starts a new chat (the one exception is a search still running, which is shown so its answer is not lost). Earlier questions stay in **Recent** and in the account's History: the runs list shows a question as the question, and clicking it brings its answer back. **New chat** clears the thread (and what a follow-up remembers), not your runs.
 
 ## What it won't do

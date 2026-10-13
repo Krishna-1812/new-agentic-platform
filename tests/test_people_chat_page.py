@@ -262,3 +262,18 @@ def test_the_page_has_the_polished_pieces():
         assert hook in html, hook
     for hook in ("amPhrasings", "amWeb", "amBriefs", "amInsights", "amPerRole", "amModel"):         # the script reads these
         assert 'id="%s"' % hook in html, hook
+
+
+def test_the_thread_scrolls_inside_its_card_with_a_styled_scrollbar_that_is_never_hidden():
+    import re
+    css = re.sub(r"/\*.*?\*/", "", open(os.path.join(ROOT, "static", "css", "account_mapper.css")).read(), flags=re.S)
+    rule = lambda sel: [m.group(1) for m in re.finditer(r"(?m)^%s\s*\{([^}]*)\}" % re.escape(sel), css)]
+    thread = " ".join(rule(".am-thread"))
+    assert "overflow-y: auto" in thread and "max-height" in thread                          # bounded: the page does not grow with the chat
+    assert "container-type" not in thread, "container-type on the scroller removes its scrollbar in Chrome"
+    assert "container-type: inline-size" in " ".join(rule(".am-thread-w"))                   # it lives on the wrapper instead
+    assert ".am-thread::-webkit-scrollbar-thumb" in css and "width: 14px" in css            # styled
+    assert not re.search(r"scrollbar-width:\s*none|::-webkit-scrollbar\s*\{[^}]*(display:\s*none|width:\s*0)", css)   # never hidden
+    page = open(CHAT_JS).read()
+    assert "scrollThread(" in page and "scrollIntoView" not in page                          # scrolls the thread, not the page
+    assert 'id="amJump"' in _client(ADMIN).get(BASE).get_data(as_text=True)
