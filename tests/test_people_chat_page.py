@@ -136,10 +136,10 @@ def test_the_thread_shows_questions_answers_hints_and_choices():
     assert "Searching Saleshandy" in html and "Found 2 people" in html
 
 
-def test_the_empty_thread_has_suggestions_and_a_marked_example_that_cannot_spend():
+def test_the_empty_thread_has_a_welcome_and_suggestions_and_no_made_up_people():
     html = run_js("return C.renderEmpty(null, {api: '/a'});")
     assert "Who are you looking for?" in html and html.count('class="amc-s"') == 4 and 'data-say="Marketing people at HubSpot"' in html
-    assert "Example answer" in html and "Made-up people" in html and "Northwind Labs" in html
+    assert "Example answer" not in html and "Northwind" not in html and "Made-up" not in html and "amc-row" not in html
     assert "creveal" not in html and "cpick" not in html and "ccopyall" not in html and "cremove" not in html
 
 

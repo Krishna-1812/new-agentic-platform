@@ -13,7 +13,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("People & Signals", ["strategic-agents.css?v=2", "market_radar.css?v=7", "contact_lab.css?v=1", "account_mapper.css?v=3"]) }}
+{{ head("People & Signals", ["strategic-agents.css?v=2", "market_radar.css?v=7", "contact_lab.css?v=1", "account_mapper.css?v=4"]) }}
 </head>
 <body class="sa"{% if viewer_is_client() %} data-am-client{% endif %}>
 
@@ -164,6 +164,6 @@
 
 {{ topbar_script() }}
 <script src="{{ url_for('static', filename='js/account_mapper.js') }}?v=4"></script>
-<script src="{{ url_for('static', filename='js/people_chat.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/people_chat.js') }}?v=2"></script>
 </body>
 </html>
