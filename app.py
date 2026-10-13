@@ -4783,9 +4783,12 @@ def _gads_digest_run(dry_run, force=False, account=""):
                      force=not dry_run)
     except Exception:
         app.logger.exception("gads_digest: insights unavailable, sending the campaign report figures only")
-    accounts = [a for a, _ in _gads_ai_accounts(rows)]
+    accounts, not_found = gads_digest.pick_accounts(
+        [a for a, _ in _gads_ai_accounts(rows)],
+        gads_digest.wanted_names(os.environ.get("GOOGLE_ADS_DIGEST_ACCOUNTS", "")))
     if account:
         accounts = [a for a in accounts if a == account]
+        not_found = []
 
     def last_posted(a):
         try:
@@ -4802,12 +4805,14 @@ def _gads_digest_run(dry_run, force=False, account=""):
             app.logger.exception("gads_digest: could not record the post")
 
     base_url = _gads_digest_base_url()
-    return gads_digest.run(rows, accounts, st,
-                           token=os.environ.get("GOOGLE_ADS_SLACK_BOT_TOKEN", ""),
-                           channel=os.environ.get("GOOGLE_ADS_SLACK_CHANNEL", ""),
-                           base_url=base_url, dry_run=dry_run, force=force,
-                           last_posted=last_posted, mark_posted=mark_posted, on_thread=_slack_thread_remember,
-                           chart_url=lambda a, day: _gads_chart_url(base_url, a, day))
+    results = gads_digest.run(rows, accounts, st,
+                               token=os.environ.get("GOOGLE_ADS_SLACK_BOT_TOKEN", ""),
+                               channel=os.environ.get("GOOGLE_ADS_SLACK_CHANNEL", ""),
+                               base_url=base_url, dry_run=dry_run, force=force,
+                               last_posted=last_posted, mark_posted=mark_posted, on_thread=_slack_thread_remember,
+                               chart_url=lambda a, day: _gads_chart_url(base_url, a, day))
+    # A listed name that matches no account in the sheet is reported, never skipped silently.
+    return results + [{"account": n, "day": "", "status": "not_found", "error": ""} for n in not_found]
 
 
 # The chart in each digest message is an image Slack fetches from here. Slack needs a public address,

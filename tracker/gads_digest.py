@@ -11,6 +11,7 @@ message per second per channel (https://api.slack.com/apis/rate-limits#posting-m
 are spaced a second apart and a 429 is retried once after its Retry-After.
 """
 import datetime as _dt
+import re
 import time
 from urllib.parse import quote
 
@@ -76,6 +77,46 @@ def change(now, base):
     if pct == 0:
         return "flat"
     return ("↑ +%d%%" if pct > 0 else "↓ %d%%") % pct
+
+
+# The accounts the morning digest is about; every other account in the sheet is left out. Spelling, case,
+# spaces and punctuation do not have to match the sheet, and a "(...)" tag may be left off on either side
+# ("Artistic Yoga(BTA)" finds "Artistic Yoga" and "Artistic Yoga (BTA)"). GOOGLE_ADS_DIGEST_ACCOUNTS
+# (Railway -> web -> Variables; names separated by commas, semicolons or new lines) replaces this list
+# without a deploy, and "*" sends every account.
+DIGEST_ACCOUNTS = ["AIHS", "Alphametic", "AllureAvani", "Basil woods school", "Core Care Clinic",
+                   "Madge Beauty", "July Mode", "Greet Technologies", "Artistic Yoga(BTA)",
+                   "Turquoise Institute", "City College", "KFI"]
+
+
+def wanted_names(env=""):
+    """The list to send: the environment's names when it has any, else DIGEST_ACCOUNTS; None means every account."""
+    names = [n.strip() for n in re.split(r"[,;\n]", env or "") if n.strip()]
+    if names == ["*"]:
+        return None
+    return names or list(DIGEST_ACCOUNTS)
+
+
+def _keys(name):
+    """The forms of a name that count as the same account: whole, and without its "(...)" tag, letters and digits only."""
+    whole = re.sub(r"[^a-z0-9]", "", str(name or "").casefold())
+    bare = re.sub(r"[^a-z0-9]", "", re.sub(r"\([^)]*\)", "", str(name or "")).casefold())
+    return {k for k in (whole, bare) if k}
+
+
+def pick_accounts(accounts, names):
+    """(the accounts to send, in the order given, and the listed names that matched none of them)."""
+    if names is None:
+        return list(accounts), []
+    chosen, missing = [], []
+    wanted = [(n, _keys(n)) for n in names]
+    for a in accounts:
+        if any(_keys(a) & k for _, k in wanted):
+            chosen.append(a)
+    for n, k in wanted:
+        if not any(_keys(a) & k for a in accounts):
+            missing.append(n)
+    return chosen, missing
 
 
 def esc(s):

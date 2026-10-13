@@ -243,6 +243,7 @@ def site(monkeypatch):
                  ("GOOGLE_ADS_SLACK_CHANNEL", "C123")):
         monkeypatch.setenv(k, v)
     monkeypatch.delenv("PUBLIC_BASE_URL", raising=False)
+    monkeypatch.setenv("GOOGLE_ADS_DIGEST_ACCOUNTS", "*")   # the test sheet's account is not on the real list
     yield slack
     store.reset_memory()
 
@@ -283,6 +284,55 @@ def test_staff_can_preview_the_messages(site):
     body = T._client().get("/api/dashboards/google-ads/slack-digest/preview?account=Acme").get_json()
     assert body["ok"] and body["channel_set"] and body["token_set"]
     assert body["results"][0]["status"] == "preview" and site.calls == []
+
+
+# ── Which accounts the digest covers ─────────────────────────────────────────
+THE_TWELVE = ["AIHS", "Alphametic", "AllureAvani", "Basil woods school", "Core Care Clinic", "Madge Beauty",
+              "July Mode", "Greet Technologies", "Artistic Yoga(BTA)", "Turquoise Institute", "City College", "KFI"]
+
+
+def test_the_digest_covers_exactly_the_twelve_listed_accounts():
+    assert d.DIGEST_ACCOUNTS == THE_TWELVE
+    assert d.wanted_names("") == THE_TWELVE
+
+
+def test_spelling_case_spacing_and_a_bracketed_tag_do_not_matter():
+    sheet = ["aihs", "Allure Avani", "BASIL WOODS SCHOOL", "Artistic Yoga", "Artistic Yoga (BTA)", "K.F.I", "Other Client"]
+    got, missing = d.pick_accounts(sheet, d.DIGEST_ACCOUNTS)
+    assert got == ["aihs", "Allure Avani", "BASIL WOODS SCHOOL", "Artistic Yoga", "Artistic Yoga (BTA)", "K.F.I"]
+    assert "Other Client" not in got
+    assert "Alphametic" in missing and "AIHS" not in missing and "Artistic Yoga(BTA)" not in missing
+
+
+def test_a_name_must_match_whole_not_part_of_another_account():
+    got, missing = d.pick_accounts(["KFI Foods", "City College of Art", "Basil"], ["KFI", "City College", "Basil woods school"])
+    assert got == [] and missing == ["KFI", "City College", "Basil woods school"]
+
+
+def test_the_environment_can_replace_the_list_or_send_everything():
+    assert d.wanted_names("Acme; Beta,\nGamma") == ["Acme", "Beta", "Gamma"]
+    assert d.wanted_names("*") is None
+    assert d.pick_accounts(["A", "B"], None) == (["A", "B"], [])
+
+
+def test_only_the_listed_accounts_get_a_message_and_a_missing_one_is_reported(site, monkeypatch):
+    rows = _week("AIHS", last=[("Generic - Search", 1000.0, 4.0)]) + _week("Not Listed") + _week("Core Care Clinic")
+    monkeypatch.setattr(appmod, "_fetch_google_ads_rows", lambda force=False: rows)
+    monkeypatch.delenv("GOOGLE_ADS_DIGEST_ACCOUNTS")
+    r = appmod.app.test_client().post("/api/dashboards/google-ads/slack-digest",
+                                      headers={"Authorization": "Bearer s3cret"})
+    body = r.get_json()
+    assert r.status_code == 200 and body["counts"] == {"posted": 3, "not_found": 10}, body
+    sent = json.dumps([c["json"] for c in site.calls])
+    assert "AIHS" in sent and "Core Care Clinic" in sent and "Not Listed" not in sent
+    assert "Alphametic" not in r.get_data(as_text=True), "the Action's log never sees account names"
+
+
+def test_the_preview_names_the_listed_accounts_it_could_not_find(site, monkeypatch):
+    monkeypatch.setenv("GOOGLE_ADS_DIGEST_ACCOUNTS", "Acme, Ghost Co")
+    body = T._client().get("/api/dashboards/google-ads/slack-digest/preview").get_json()
+    by = {r["account"]: r["status"] for r in body["results"]}
+    assert by["Acme"] == "preview" and by["Ghost Co"] == "not_found"
 
 
 def test_the_schedule_is_10am_india_time_and_the_log_shows_no_figures():
