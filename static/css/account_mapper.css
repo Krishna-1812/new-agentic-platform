@@ -476,7 +476,7 @@ span.am-cell.s-found { background: #9BE3B8; } span.am-cell.s-close { background:
 .amc-chip:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 .amc-chip .am-ic { width: 13px; height: 13px; }
 
-/* The empty thread: a welcome, four things to try, and a made-up answer. */
+/* The empty thread: a welcome and four things to try. */
 .am-thread.empty { justify-content: flex-start; }
 .amc-hello h4 { margin: 4px 0 6px; font-family: var(--font-display); font-variation-settings: var(--display-axes); font-weight: 600; font-size: clamp(24px, 3.4cqi, 32px); letter-spacing: -0.02em; line-height: 1.08; }
 .amc-hello p { margin: 0; color: var(--tx2); font-size: 14.5px; line-height: 1.5; max-width: 60ch; }
@@ -489,11 +489,6 @@ span.am-cell.s-found { background: #9BE3B8; } span.am-cell.s-close { background:
 .amc-s b { font-size: 14px; line-height: 1.3; overflow-wrap: anywhere; }
 .amc-s span { font-size: 12px; color: var(--tx3); }
 @container amthread (max-width: 560px) { .amc-sugg { grid-template-columns: 1fr; } }
-.amc-sample { position: relative; display: grid; gap: 12px; padding: 14px; border-radius: 22px; border: 1.5px dashed var(--s3); pointer-events: none; user-select: none; }
-.amc-sample-k { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.amc-sample-k span { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; padding: 3px 10px; border-radius: var(--r-pill); background: var(--acc); color: #121213; }
-.amc-sample-k em { font-style: normal; font-size: 12px; color: var(--tx3); }
-.amc-sample .amc-msg { animation: none; }
 
 /* "Looking for ... at ...": what the words were understood as. */
 .amc-understood { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-bottom: 14px; }

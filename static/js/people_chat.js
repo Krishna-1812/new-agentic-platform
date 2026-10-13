@@ -25,20 +25,6 @@
   var FOLLOW = [['Leadership', 'leadership'], ['Marketing team', 'marketing team'], ['Sales team', 'sales team'],
     ['Engineering team', 'engineering team'], ['Finance team', 'finance team'], ['HR team', 'HR team'], ['The CFO', 'the CFO']];
 
-  // A made-up answer, shown before the first question and clearly marked: it is never real data.
-  var SAMPLE = {
-    id: 0, status: 'ready', settings: { chat: { message: 'Marketing people at Northwind Labs' } },
-    summary: { chat: { message: 'Marketing people at Northwind Labs' }, credits: { total: 0 }, companies: [{
-      name: 'Northwind Labs', display_name: 'Northwind Labs', domain: 'northwind.example',
-      resolved: { how: 'exact name', company: { industry: 'Software', employees: 1200, hq: 'Austin, United States' }, alternatives: [] },
-      roles: [{ role: 'Marketing team', kind: 'team', status: 'found', total: 38, attempts: [], also: [], picked: [
-        { id: 'a', name: 'Avery Lindqvist', title: 'Chief Marketing Officer', location: 'Austin, Texas', decision_maker: true, department: 'Marketing',
-          email: { address: 'avery@northwind.example', label: 'verified' }, linkedin: 'https://www.linkedin.com/in/example', revealed: true },
-        { id: 'b', name: 'Kofi Mensah', title: 'VP of Demand Generation', location: 'London, United Kingdom', decision_maker: true, new_in_role: true, department: 'Marketing' },
-        { id: 'c', name: 'Priya Raman', title: 'Director of Brand', location: 'Toronto, Canada', department: 'Marketing' },
-        { id: 'd', name: 'Mateo Ruiz', title: 'Content Marketing Lead', location: 'Madrid, Spain', department: 'Marketing' }] }] }] }
-  };
-
   // == small pieces =======================================================================
 
   function keyOf(p) { return AM.keyOf(p); }
@@ -105,11 +91,11 @@
     o = o || {};
     var ui = o.ui || {};
     var key = keyOf(p);
-    var can = key && !p.revealed && !ui.client && !ui.busy && !ui.sample;
+    var can = key && !p.revealed && !ui.client && !ui.busy;
     var on = !!(o.selected && key && o.selected[key]);
     var badges = (p.new_in_role ? chip('acc', 'New in role', 'Started this role in the last year (Saleshandy)') : '') +
       (p.decision_maker ? chip('ok', 'Decision-maker') : '') + (p.source === 'web' ? chip('', 'Found on the web') : '');
-    var tick = ui.client || ui.sample ? '' : (can ? '<label class="amc-tick" title="Include in the reveal"><input type="checkbox" data-act="cpick" data-run="' + esc(o.runId) + '" data-key="' + esc(key) + '"' + (on ? ' checked' : '') + '><span class="am-tick-box">' + ic('check') + '</span></label>' :
+    var tick = ui.client ? '' : (can ? '<label class="amc-tick" title="Include in the reveal"><input type="checkbox" data-act="cpick" data-run="' + esc(o.runId) + '" data-key="' + esc(key) + '"' + (on ? ' checked' : '') + '><span class="am-tick-box">' + ic('check') + '</span></label>' :
       '<span class="amc-tick off" aria-hidden="true"></span>');
     return '<li class="amc-row' + (tick ? '' : ' nt') + (on ? ' sel' : '') + (p.new_in_role ? ' fresh' : '') + (o.dim ? ' dim' : '') + '">' + tick + avatar(p) +
       '<div class="amc-id"><b>' + esc(p.name) + '</b><span class="amc-title">' + esc(p.title || '') + '</span>' + (badges ? '<span class="amc-badges">' + badges + '</span>' : '') + '</div>' +
@@ -168,18 +154,17 @@
     var left = allPeople(run).filter(function (p) { return keyOf(p) && !p.revealed; }).length;
     var got = emails(run);
     var credits = (((run.summary || {}).credits) || {}).total;
-    var canReveal = !ui.client && !ui.sample && run.status === 'ready' && left;
+    var canReveal = !ui.client && run.status === 'ready' && left;
     var buttons = '';
     if (canReveal) {
       buttons += '<button type="button" class="mr-btn primary hot amc-reveal" data-act="creveal" data-run="' + esc(run.id) + '"' + (keys.length ? '' : ' disabled') + '>' + ic('mail') +
         '<span>Get emails &amp; LinkedIn</span><small>' + (keys.length ? 'up to ' + esc(keys.length) + ' credit' + (keys.length === 1 ? '' : 's') : 'choose who') + '</small></button>';
     }
-    if (got.length && !ui.sample) buttons += '<button type="button" class="mr-btn" data-act="ccopyall" data-run="' + esc(run.id) + '">' + ic('copy') + 'Copy ' + esc(got.length) + ' email' + (got.length === 1 ? '' : 's') + '</button>';
-    if (!ui.sample) buttons += '<a class="mr-btn ghost" href="' + esc(ui.api) + '/runs/' + encodeURIComponent(run.id) + '/export.csv' + (ui.aq ? '?' + esc(ui.aq) : '') + '">' + ic('dl') + 'CSV</a>';
-    if (!ui.client && !ui.sample) buttons += '<button type="button" class="mr-btn ghost am-del" data-act="cremove" data-run="' + esc(run.id) + '" title="Remove this answer and its results from your list" aria-label="Remove this answer">' + ic('trash') + '</button>';
+    if (got.length) buttons += '<button type="button" class="mr-btn" data-act="ccopyall" data-run="' + esc(run.id) + '">' + ic('copy') + 'Copy ' + esc(got.length) + ' email' + (got.length === 1 ? '' : 's') + '</button>';
+    buttons += '<a class="mr-btn ghost" href="' + esc(ui.api) + '/runs/' + encodeURIComponent(run.id) + '/export.csv' + (ui.aq ? '?' + esc(ui.aq) : '') + '">' + ic('dl') + 'CSV</a>';
+    if (!ui.client) buttons += '<button type="button" class="mr-btn ghost am-del" data-act="cremove" data-run="' + esc(run.id) + '" title="Remove this answer and its results from your list" aria-label="Remove this answer">' + ic('trash') + '</button>';
     var pick = canReveal ? '<span class="amc-sel"><b>' + esc(keys.length) + '</b> of ' + esc(left) + ' selected<span class="amc-pickall"><button type="button" data-act="call" data-run="' + esc(run.id) + '">All</button><button type="button" data-act="cnone" data-run="' + esc(run.id) + '">None</button></span></span>' : '';
     var fine = ui.client ? 'Emails and exact LinkedIn profiles are added by your account manager.' :
-      ui.sample ? '' :
       left ? 'Revealing uses 1 credit for each email found and nothing when none is found' + (credits != null ? ' &middot; ' + esc(num(credits)) + ' credits in the account' : '') + '. You confirm before anything is spent.' :
       (got.length ? 'Everyone shown has been revealed.' : '');
     return '<footer class="amc-foot"><div class="amc-foot-top">' + pick + '<div class="amc-foot-r">' + buttons + '</div></div>' + (fine ? '<p class="amc-fine">' + fine + '</p>' : '') + '</footer>';
@@ -211,7 +196,7 @@
         (c.roles || []).map(function (r) { return roleBlock(r, c, { selected: sel, runId: run.id, ui: dict(ui, { busy: running }) }); }).join('') + '</article>';
     }).join('');
     var warn = [run.error && run.status === 'ready' ? run.error : '', s.reveal_error].filter(Boolean).map(function (e) { return '<div class="mr-callout warn">' + esc(e) + '</div>'; }).join('');
-    return understoodLine(understood) + head + (running ? working(run, understood) : '') + warn + body + (running || ui.sample ? '' : actions(run, ui, sel));
+    return understoodLine(understood) + head + (running ? working(run, understood) : '') + warn + body + (running ? '' : actions(run, ui, sel));
   }
 
   function dict(a, b) { var o = {}, k; for (k in a) o[k] = a[k]; for (k in b) o[k] = b[k]; return o; }
@@ -280,10 +265,7 @@
     var sugg = '<div class="amc-sugg">' + SUGGESTIONS.map(function (x) {
       return '<button type="button" class="amc-s" data-act="csay" data-say="' + esc(x[0]) + '">' + ic(x[2]) + '<b>' + esc(x[0]) + '</b><span>' + esc(x[1]) + '</span></button>';
     }).join('') + '</div>';
-    var sample = '<div class="amc-sample"><div class="amc-sample-k"><span>Example answer</span><em>Made-up people, to show what you get</em></div>' +
-      '<div class="amc-msg me"><div class="amc-bub">Marketing people at Northwind Labs</div></div>' +
-      botBubble(renderResult(SAMPLE, { companies: [{ name: 'Northwind Labs' }], asks: [{ kind: 'team', label: 'Marketing team' }] }, dict(ui, { sample: true, client: ui.client }), {}), 'result') + '</div>';
-    return hi + sugg + sample;
+    return hi + sugg;
   }
 
   function renderFollow(items, ui) {
@@ -307,7 +289,7 @@
 
   var AMChat = { renderResult: renderResult, renderThread: renderThread, renderEmpty: renderEmpty, renderFollow: renderFollow,
     personRow: personRow, renderChoose: renderChoose, understoodLine: understoodLine, defaultSelection: defaultSelection, selectedKeys: selectedKeys,
-    contextOf: contextOf, liSearch: liSearch, emails: emails, SAMPLE: SAMPLE };
+    contextOf: contextOf, liSearch: liSearch, emails: emails };
   AM.chat = AMChat;
 
   // == the page ===========================================================================
