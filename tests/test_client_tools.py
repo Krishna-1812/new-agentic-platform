@@ -389,6 +389,7 @@ TEAM_ONLY = {
     "/strategic-agents/video-studio/api/plan-tests/<int:version_id>/review": "the planner's tests",
     "/strategic-agents/video-studio/api/plan-tests/build": "the planner's tests",
     "/strategic-agents/video-studio/api/plan-tests/export": "the planner's tests",
+    "/strategic-agents/people-signals/api/runs/<int:run_id>/delete": "removing a run from the shared list is the team's",
     "/strategic-agents/local-business-radar/readiness": "which paid services are connected",
     "/strategic-agents/local-business-radar/selftest": "the connection check",
     "/strategic-agents/market-radar/api/clients/<int:client_id>/update-now": "sends the weekly email",

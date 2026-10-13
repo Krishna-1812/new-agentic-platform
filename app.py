@@ -12023,6 +12023,23 @@ def admin_account_mapper_csv(run_id):
     return resp
 
 
+@app.route("/strategic-agents/people-signals/api/runs/<int:run_id>/delete", methods=["POST"])
+@position2_required
+def admin_account_mapper_delete(run_id):
+    """Remove one of your runs (and its results) from the list. A run still going is refused."""
+    from tracker import account_mapper_store as store
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    try:
+        gone = store.delete_run(run_id, _mr_email())
+    except store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+    if not gone:
+        return jsonify(error="No such run of yours, or it is still running."), 404
+    return jsonify(deleted=run_id)
+
+
 def _am_reveal_args(body):
     keys = body.get("keys")
     if not isinstance(keys, list) or not keys or len(keys) > 500:

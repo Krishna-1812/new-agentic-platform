@@ -50,7 +50,7 @@ def _summary():
 @pytest.mark.parametrize("method, path", [
     ("get", BASE), ("get", BASE + "/api/status"), ("get", BASE + "/api/runs"), ("post", BASE + "/api/runs"),
     ("get", BASE + "/api/runs/1"), ("get", BASE + "/api/runs/1/export.csv"), ("post", BASE + "/api/estimate"),
-    ("post", BASE + "/api/runs/1/reveal")])
+    ("post", BASE + "/api/runs/1/reveal"), ("post", BASE + "/api/runs/1/delete")])
 @pytest.mark.parametrize("email", [None, "someone@gmail.example"])
 def test_every_route_is_for_the_team_only(method, path, email):
     """A team agent (on the agents page, Building): signed-out visitors are
@@ -334,3 +334,119 @@ def test_both_are_on_the_agents_page_as_building_not_live(slug, name, group):
     assert "sa-state--build" in card and ">Building<" in card.replace("<i></i>", "") and "sa-state--live" not in card
     assert "data-agent-name>%s<" % name in card
     assert 'href="/strategic-agents/%s"' % slug in html.split('class="sa-tick-track"', 1)[1].split("</div>", 1)[0]
+
+
+# == deleting a run ====================================================================
+
+def test_deleting_a_run_is_refused_from_another_site_and_for_a_run_that_is_not_yours(monkeypatch):
+    c = _client(ADMIN)
+    assert c.post(BASE + "/api/runs/3/delete", json={}, headers={"Origin": "https://evil.example"}).status_code == 403
+    monkeypatch.setattr(store, "delete_run", lambda rid, owner: False)
+    resp = c.post(BASE + "/api/runs/3/delete", json={})
+    assert resp.status_code == 404 and "still running" in resp.get_json()["error"]
+    seen = []
+    monkeypatch.setattr(store, "delete_run", lambda rid, owner: seen.append((rid, owner)) or True)
+    resp = c.post(BASE + "/api/runs/3/delete", json={})
+    assert resp.status_code == 200 and resp.get_json() == {"deleted": 3} and seen == [(3, ADMIN)]
+
+
+def test_a_client_cannot_delete_a_run():
+    import app as appmod
+    assert appmod._client_route_tool(BASE + "/api/runs/3/delete") is None
+
+
+@pytest.fixture
+def pg_runs(pg):
+    return pg
+
+
+def test_the_store_deletes_only_the_owners_finished_runs(pg_runs, monkeypatch):
+    monkeypatch.setattr(store, "_READY", False)
+    mine = store.create_run(ADMIN, {"companies": [], "roles": []}, 0)
+    store.update_run(mine, status="ready", stage="mapped")
+    theirs = store.create_run("other@x.example", {"companies": [], "roles": []}, 0)
+    store.update_run(theirs, status="ready", stage="mapped")
+    going = store.create_run(ADMIN, {"companies": [], "roles": []}, 0)
+    store.update_run(going, status="running", stage="mapping")
+    assert store.delete_run(theirs, ADMIN) is False, "another owner's run is not yours to delete"
+    assert store.delete_run(going, ADMIN) is False, "a run still going is refused"
+    assert store.delete_run(mine, ADMIN) is True and store.get_run(mine, ADMIN) is None
+    assert store.get_run(theirs, "other@x.example") is not None
+
+
+# == the dashboard and the new pieces =====================================================
+
+def test_the_seat_map_shows_every_account_against_every_title_and_what_each_seat_holds():
+    out = run_js("const r = %s; return [AM.renderSeatMap(r, r.summary.companies), AM.seatOf(r.summary.companies[0], %s), "
+                 "AM.seatOf({roles: []}, 'Nobody Title'), AM.seatOf({roles: [{role: 'X', status: 'close', picked: [], also: [{name: 'Al', title: 'Dir'}]}]}, 'X')];"
+                 % (json.dumps(_run()), json.dumps(EVIL)))
+    html, found, none, close = out
+    assert html.count('class="am-sm-row"') == 1 and html.count("am-sm-col") == 1 and 'data-act="jump"' in html
+    assert "s-found" in html and "Seat map" in html
+    assert "onerror=alert(1)>" not in html.replace("&gt;", "") and "<img src=x" not in html
+    assert found["s"] == "found" and none["s"] == "none" and close["s"] == "close" and "Close match only: Al" in close["t"]
+
+
+def test_the_dashboard_has_a_donut_a_pulse_and_a_seat_map_and_a_client_sees_no_credits():
+    out = run_js("const r = %s; return [AM.renderOverview(r), AM.ring(70, 40), AM.ring(null, 40), AM.ring(150, 40, 'x')];" % json.dumps(_run()))
+    html, hi, none, over = out
+    assert "am-donut" in html and "50" in html and "am-seatmap" in html and "hiring" in html and "credits used" in html
+    assert "r-hi" in hi and "r-none" in none and "stroke-dashoffset" in hi and 'class="fg"' in hi
+    assert "<b>100</b>" in over, "a score over 100 is drawn as 100"
+
+
+def test_the_run_filters_the_people_and_counts_each_filter():
+    out = run_js("const r = %s; const c = r.summary.companies[0];"
+                 "return [AM.renderAccount(c, {selected: {}, filter: 'new'}), AM.renderAccount(c, {selected: {}, filter: 'dm'}), AM.renderAccount(c, {selected: {}, filter: 'email'}), AM.renderAccount(c, {selected: {}})];"
+                 % json.dumps(_run()))
+    new, dm, email, everyone = out
+    for html in out:
+        assert 'data-act="filter"' in html and "Everyone" in html and "With an email" in html
+    assert new.count("am-person ") < everyone.count("am-person ") or new.count("am-person") <= everyone.count("am-person")
+    assert 'class="am-f on" data-act="filter" data-f="new"' in new and 'data-f="email"' in email
+    assert "Buying group" in everyone and "Copy " in everyone
+
+
+def test_a_person_card_copies_an_address_and_never_links_a_dangerous_url():
+    html = run_js("return AM.personCard({id: 1, name: 'Jane Doe', title: 'VP', linkedin: 'javascript:alert(1)', email: {address: 'jane@acme.com', label: 'verified'}}, {});")
+    assert 'data-act="copy" data-text="jane@acme.com"' in html and "LinkedIn profile" not in html
+    ok = run_js("return AM.personCard({id: 1, name: 'Jane', linkedin: 'https://www.linkedin.com/in/jane'}, {});")
+    assert 'href="https://www.linkedin.com/in/jane"' in ok and 'rel="noopener noreferrer"' in ok
+
+
+def test_the_page_says_how_to_connect_saleshandy_and_what_a_client_sees_instead():
+    team = run_js("return AM.renderSetup({saleshandy: {configured: false}});")
+    assert "SALESHANDY_API_KEY" in team and "Railway" in team and "Connect Saleshandy" in team
+    assert run_js("return AM.renderSetup({saleshandy: {configured: true}});") == ""
+    client = run_js("return AM.renderSetup({saleshandy: {configured: false}, client: true});")
+    assert "Not connected yet" in client and "SALESHANDY_API_KEY" not in client
+
+
+def test_a_run_in_progress_shows_its_progress_and_holds_back_the_dashboard():
+    run = {"id": 9, "status": "running", "stage": "mapping Gong", "created_at": "2026-10-12T05:00:00Z",
+           "settings": {"roles": ["CMO"], "companies": [{"name": "A"}, {"name": "B"}, {"name": "C"}, {"name": "D"}]},
+           "summary": {"companies": [{"name": "A", "roles": [], "priority": {"score": 10}}]}}
+    html = run_js("return AM.renderRun(%s, {});" % json.dumps(run))
+    assert "Mapping accounts" in html and "mapping Gong" in html and "1 of 4" in html and "am-pbar" in html
+    assert "am-ink" not in html and "am-revealbar" not in html and "am-del" not in html
+
+
+def test_a_failed_run_says_why_and_offers_another_go_and_the_form_can_be_refilled_from_a_run():
+    run = {"id": 5, "status": "failed", "error": EVIL, "created_at": "2026-10-12T05:00:00Z", "summary": {},
+           "settings": {"roles": ["CMO", "VP Marketing"], "companies": [{"name": "Acme", "domain": "acme.com"}, {"name": "Beta"}]}}
+    html, lines = run_js("const r = %s; return [AM.renderRun(r, {}), AM.formLines(r)];" % json.dumps(run))
+    assert "The run did not finish" in html and 'data-act="again"' in html and "<img src=x" not in html
+    assert lines == {"companies": "Acme | acme.com\nBeta", "roles": "CMO\nVP Marketing"}
+
+
+def test_a_welcome_screen_explains_the_three_steps_before_any_run():
+    html = run_js("return AM.renderWelcome();")
+    assert "How it works" in html and "Map" in html and "Reveal" in html and "am-seatgrid" in html
+
+
+def test_the_runs_list_shows_progress_and_the_page_has_the_hero_picture_and_form_helpers():
+    runs = run_js("return AM.renderRuns([{id: 7, status: 'ready', created_at: '2026-10-12T05:00:00Z', credits_used: 2, settings: {companies: [{}, {}]}, totals: {titles: 4, titles_found: 3}}], 7);")
+    assert 'class="am-run-bar"' in runs and "75% of seats filled" in runs and "Run 7" in runs and "2 credits" in runs
+    html = _client(ADMIN).get(BASE).get_data(as_text=True)
+    for hook in ("am-hero-art", 'id="amPresets"', 'id="amCompaniesN"', 'id="amRolesN"', 'data-act="example"', 'id="amSetup"', "am-sw"):
+        assert hook in html, hook

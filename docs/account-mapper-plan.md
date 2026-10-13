@@ -169,6 +169,14 @@ account cards · people table · CSV / JSON export · run history
   - `tracker/account_mapper_brief.py`;
   - `tracker/account_mapper_store.py` (runs in `am_runs`, CSV).
 - **Page:** Strategic Agents → **People & Signals** (`/strategic-agents/people-signals`), tagged Building. Open to the whole team; each person sees only their own runs. The old `/admin/account-mapper` address redirects.
+- **The page** (`static/js/account_mapper.js`, `static/css/account_mapper.css`):
+  - the hero shows a buying group; the form has a line counter, one-click title presets, "Try an example" and switches for the optional steps, and says plainly how to connect Saleshandy while there is no key (the Map button waits for it);
+  - the run list shows each run's seats-filled bar, and "Run again" puts a run's accounts and titles back in the form;
+  - a run in progress shows its progress and the accounts finished so far; a failed one says why and offers another go; the team can delete a run;
+  - the dashboard has a seats-filled donut, what is hiring or funded, six figures, a **seat map** (every account against every title: found, close match, from the web, nobody) and the accounts to work first;
+  - an account shows a score ring, its brief, its buying group, filters (new in role, decision-makers, with an email) and a card per person with a copy button for the address;
+  - the first screen, before any run, explains the three steps.
+- A client sees the same page without credits, costs, the reveal or delete.
 - **Phase 6 waits for the key.**
 
 ### Adding the key (Windows laptop)

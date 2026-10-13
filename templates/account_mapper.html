@@ -13,7 +13,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("People & Signals", ["strategic-agents.css?v=2", "market_radar.css?v=7", "contact_lab.css?v=1", "account_mapper.css?v=1"]) }}
+{{ head("People & Signals", ["strategic-agents.css?v=2", "market_radar.css?v=7", "contact_lab.css?v=1", "account_mapper.css?v=2"]) }}
 </head>
 <body class="sa"{% if viewer_is_client() %} data-am-client{% endif %}>
 
@@ -21,43 +21,85 @@
 
 <main class="sa-shell">
 
-  <section class="sa-hero mr-hero mr-hero--compact cl-hero">
-    <div class="sa-hero-top">
-      <span class="sa-lbl">Building{% if not viewer_is_client() %} &middot; built on Saleshandy{% endif %}</span>
-      <span class="cl-ready" id="amReady"><span class="mr-chip">Checking&hellip;</span></span>
+  <section class="sa-hero mr-hero mr-hero--compact cl-hero am-hero">
+    <div class="am-hero-copy">
+      <div class="sa-hero-top">
+        <span class="sa-lbl">Building{% if not viewer_is_client() %} &middot; built on Saleshandy{% endif %}</span>
+        <span class="cl-ready" id="amReady"><span class="mr-chip">Checking&hellip;</span></span>
+      </div>
+      <h1 class="sa-h1 mr-h1">
+        <span class="sa-ln"><span>Accounts in.</span></span>
+        <span class="sa-ln"><span><span class="sa-mk">Buying groups</span> <em class="sa-it">out.</em></span></span>
+      </h1>
+      {% if viewer_is_client() %}
+      <p class="cl-lead">Give it companies and the titles you sell to. It finds the right people, shows who is new,
+        which teams are growing and whether they are hiring, and ranks the accounts.</p>
+      <ol class="am-steps">
+        <li><b>1</b><span>Map accounts<small>free</small></span></li>
+        <li><b>2</b><span>See who is new and who is hiring</span></li>
+        <li><b>3</b><span>Download the people as a CSV</span></li>
+      </ol>
+      {% else %}
+      <p class="cl-lead">Give it companies and the titles you sell to. It finds the right people in Saleshandy, shows who is new,
+        which teams are growing and whether they are hiring, ranks the accounts, and reveals verified emails only for the people
+        you tick, after you confirm the credits.</p>
+      <ol class="am-steps">
+        <li><b>1</b><span>Map accounts<small>free</small></span></li>
+        <li><b>2</b><span>Tick who matters</span></li>
+        <li><b>3</b><span>Reveal verified emails<small>credits, after you confirm</small></span></li>
+      </ol>
+      {% endif %}
     </div>
-    <h1 class="sa-h1 mr-h1">
-      <span class="sa-ln"><span>Accounts in.</span></span>
-      <span class="sa-ln"><span><span class="sa-mk">Buying groups</span> <em class="sa-it">out.</em></span></span>
-    </h1>
-    {% if viewer_is_client() %}
-    <p class="cl-lead">Give it companies and the titles you sell to. It finds the right people, shows who is new,
-      which teams are growing and whether they are hiring, and ranks the accounts.</p>
-    {% else %}
-    <p class="cl-lead">Give it companies and the titles you sell to. It finds the right people in Saleshandy, shows who is new,
-      which teams are growing and whether they are hiring, ranks the accounts, and reveals verified emails only for the people
-      you tick, after you confirm the credits.</p>
-    {% endif %}
+    <div class="am-hero-art" aria-hidden="true">
+      <svg viewBox="0 0 460 340" role="img" focusable="false">
+        <defs>
+          <radialGradient id="amGlow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FF6022" stop-opacity=".34"/><stop offset="1" stop-color="#FF6022" stop-opacity="0"/></radialGradient>
+        </defs>
+        <circle cx="230" cy="170" r="150" fill="url(#amGlow)"/>
+        <circle class="am-orbit o1" cx="230" cy="170" r="112"/>
+        <circle class="am-orbit o2" cx="230" cy="170" r="150"/>
+        <g class="am-links">
+          <path d="M230 170 L96 86"/><path d="M230 170 L360 70"/><path d="M230 170 L402 176"/>
+          <path d="M230 170 L350 270"/><path d="M230 170 L110 262"/><path d="M230 170 L58 168"/>
+        </g>
+        <g class="am-core"><circle cx="230" cy="170" r="40" fill="#121213" stroke="#FF6022" stroke-width="3"/><circle class="pulse" cx="230" cy="170" r="40"/>
+          <text x="230" y="178" text-anchor="middle">Acme</text></g>
+        <g class="am-node n1"><circle cx="96" cy="86" r="26" fill="#C7A6F5"/><text x="96" y="91" text-anchor="middle">KW</text>
+          <rect x="52" y="120" width="88" height="22" rx="11" fill="#242427"/><text class="lab" x="96" y="135" text-anchor="middle">VP Marketing</text></g>
+        <g class="am-node n2"><circle cx="360" cy="70" r="24" fill="#8CCBFF"/><text x="360" y="75" text-anchor="middle">PN</text>
+          <rect x="332" y="22" width="56" height="20" rx="10" fill="#FF6022"/><text class="lab dark" x="360" y="36" text-anchor="middle">NEW</text></g>
+        <g class="am-node n3"><circle cx="402" cy="176" r="22" fill="#FFD27A"/><text x="402" y="181" text-anchor="middle">AC</text>
+          <circle cx="418" cy="160" r="9" fill="#3FD68C"/><path d="M413.5 160l3 3 5-6" fill="none" stroke="#121213" stroke-width="2" stroke-linecap="round"/></g>
+        <g class="am-node n4"><circle cx="350" cy="270" r="25" fill="#FFB08F"/><text x="350" y="275" text-anchor="middle">HT</text>
+          <rect x="312" y="300" width="76" height="22" rx="11" fill="#242427"/><text class="lab" x="350" y="315" text-anchor="middle">CMO</text></g>
+        <g class="am-node n5"><circle cx="110" cy="262" r="23" fill="#9BE3B8"/><text x="110" y="267" text-anchor="middle">SR</text></g>
+        <g class="am-node n6"><circle cx="58" cy="168" r="21" fill="#F6F4F0"/><text x="58" y="173" text-anchor="middle">MH</text></g>
+      </svg>
+    </div>
   </section>
 
   <div class="mr cl" id="am">
     <div class="cl-top">
-      <form class="card mr-card cl-form" id="amForm" autocomplete="off">
-        <div class="mr-card-h"><div><h3>Map accounts</h3><p>Up to 25 companies and 6 titles.{% if not viewer_is_client() %} Mapping uses no credits.{% endif %}</p></div></div>
+      <form class="card mr-card cl-form am-form" id="amForm" autocomplete="off">
+        <div class="mr-card-h"><div><h3>Map accounts</h3><p>Up to 25 companies and 6 titles.{% if not viewer_is_client() %} Mapping uses no credits.{% endif %}</p></div>
+          <button type="button" class="am-example" data-act="example">Try an example</button></div>
         <div class="mr-card-b">
-          <label class="mr-k" for="amCompanies">Companies, one a line</label>
+          <div id="amSetup"></div>
+          <div class="am-field-h"><span class="am-num">1</span><label class="mr-k" for="amCompanies">Companies, one a line</label><span class="am-count" id="amCompaniesN">0 of 25</span></div>
           <textarea id="amCompanies" rows="6" placeholder="HubSpot&#10;Gong | gong.io&#10;Core Care Clinic | corecareclinic.com"></textarea>
           <div class="mr-hint">Add &ldquo;| domain.com&rdquo; when you know the website: it picks the right company when names are shared.</div>
-          <label class="mr-k" for="amRoles" style="margin-top:16px">Titles you sell to, one a line</label>
+          <div class="am-field-h" style="margin-top:20px"><span class="am-num">2</span><label class="mr-k" for="amRoles">Titles you sell to, one a line</label><span class="am-count" id="amRolesN">0 of 6</span></div>
           <textarea id="amRoles" rows="3" placeholder="VP Marketing&#10;Head of Demand Generation&#10;CMO"></textarea>
+          <div class="am-presets" id="amPresets" aria-label="Common titles"></div>
+          <div class="am-field-h" style="margin-top:22px"><span class="am-num">3</span><span class="mr-k">What else to read</span></div>
           <div class="cl-row">
             <fieldset class="cl-backends">
               <legend class="mr-k">Also</legend>
-              <label class="cl-tog"><input type="checkbox" id="amInsights" checked> <b>Account signals</b> <small>free</small></label>
+              <label class="cl-tog am-sw"><input type="checkbox" id="amInsights" checked> <b>Account signals</b> <small>free</small></label>
               {#- A client maps for free: the paid steps stay in the page (its script reads them), hidden and off. #}
-              <label class="cl-tog"{% if viewer_is_client() %} hidden{% endif %}><input type="checkbox" id="amPhrasings"> <b>Claude phrases the titles</b> <small>under a cent</small></label>
-              <label class="cl-tog"{% if viewer_is_client() %} hidden{% endif %}><input type="checkbox" id="amWeb"> <b>Web search for empty seats</b> <small>paid</small></label>
-              <label class="cl-tog"{% if viewer_is_client() %} hidden{% endif %}><input type="checkbox" id="amBriefs"{% if not viewer_is_client() %} checked{% endif %}> <b>Account briefs</b> <small>about $0.005 each</small></label>
+              <label class="cl-tog am-sw"{% if viewer_is_client() %} hidden{% endif %}><input type="checkbox" id="amPhrasings"> <b>Claude phrases the titles</b> <small>under a cent</small></label>
+              <label class="cl-tog am-sw"{% if viewer_is_client() %} hidden{% endif %}><input type="checkbox" id="amWeb"> <b>Web search for empty seats</b> <small>paid</small></label>
+              <label class="cl-tog am-sw"{% if viewer_is_client() %} hidden{% endif %}><input type="checkbox" id="amBriefs"{% if not viewer_is_client() %} checked{% endif %}> <b>Account briefs</b> <small>about $0.005 each</small></label>
             </fieldset>
             <div class="cl-model">
               <label class="mr-k" for="amPerRole">People per title</label>
@@ -70,7 +112,7 @@
             </div>
           </div>
           <div class="cl-est" id="amEstimate" aria-live="polite"></div>
-          <div class="mr-form-foot"><button type="submit" class="mr-btn primary hot" id="amRunBtn">Map accounts</button></div>
+          <div class="mr-form-foot"><button type="submit" class="mr-btn primary hot am-go" id="amRunBtn">Map accounts <svg class="am-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
         </div>
       </form>
       <aside class="card mr-card cl-runs">
@@ -95,6 +137,6 @@
 </div>
 
 {{ topbar_script() }}
-<script src="{{ url_for('static', filename='js/account_mapper.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/account_mapper.js') }}?v=3"></script>
 </body>
 </html>
