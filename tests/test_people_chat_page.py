@@ -138,7 +138,7 @@ def test_the_thread_shows_questions_answers_hints_and_choices():
 
 def test_the_empty_thread_has_a_welcome_and_suggestions_and_no_made_up_people():
     html = run_js("return C.renderEmpty(null, {api: '/a'});")
-    assert "Who are you looking for?" in html and html.count('class="amc-s"') == 4 and 'data-say="Marketing people at HubSpot"' in html
+    assert "Who are you <em>looking for</em>?" in html and html.count('class="amc-s"') == 4 and 'data-say="Marketing people at HubSpot"' in html
     assert "Example answer" not in html and "Northwind" not in html and "Made-up" not in html and "amc-row" not in html
     assert "creveal" not in html and "cpick" not in html and "ccopyall" not in html and "cremove" not in html
 
@@ -228,3 +228,37 @@ def test_a_reload_starts_a_new_chat_and_only_a_running_search_is_brought_back():
     assert "resumeRunning(runs)" in init and "restore" not in src
     body = src[src.index("function resumeRunning"):src.index("AMChat.init = function")]
     assert "r.status === 'running'" in body and "slice(" not in body          # never the old finished chats
+
+
+def test_recent_groups_by_day_filters_and_never_trusts_what_it_shows():
+    now = "2026-10-13T08:00:00Z"
+    runs = [{"id": 9, "status": "ready", "created_at": now, "credits_used": 0, "totals": {"people_picked": 2},
+             "settings": {"companies": [{"name": "Acme"}], "chat": {"message": EVIL}}},
+            {"id": 8, "status": "running", "stage": "mapping", "created_at": now, "settings": {"companies": [{"name": EVIL}, {"name": "B"}, {"name": "C"}]}},
+            {"id": 7, "status": "failed", "created_at": "2020-01-02T08:00:00Z", "settings": {"companies": [{"name": "Old"}]}}]
+    html = run_js("return AM.renderRuns(%s, 9);" % json.dumps(runs))
+    assert "<img" not in html and html.count('class="amr-day"') == 2 and "Mapped" in html and " +1" in html
+    assert "am-spin sm" in html and "Failed" in html and "Run 8" in html and "Run 7" in html
+    only = run_js("return AM.renderRuns(%s, null, 'ask');" % json.dumps(runs))
+    assert "Run 8" not in only and "2 people found" in only
+    assert "Questions you ask appear here" in run_js("return AM.renderRuns(%s, null, 'ask');" % json.dumps(runs[1:2]))
+    empty = run_js("return AM.renderRuns([], null);")
+    assert "Nothing yet" in empty and "amr-stack" in empty
+    both = run_js("return AM.renderRunFilters(%s, 'map');" % json.dumps(runs))
+    assert 'data-f="ask"' in both and 'data-f="map"' in both and 'aria-pressed="true"' in both
+    assert run_js("return AM.renderRunFilters(%s, 'all');" % json.dumps(runs[:1])) == ""            # one kind: nothing to filter
+
+
+def test_the_form_previews_what_was_typed_as_chips_without_trusting_it():
+    html = run_js("return AM.renderChips(['HubSpot | hubspot.com', %s, '  ', 'Gong'], 'co');" % json.dumps(EVIL + " | " + EVIL))
+    assert html.count("am-chip co") == 3 and "<small>hubspot.com</small>" in html and "<img" not in html
+    titles = run_js("return AM.renderChips(['VP Marketing', %s], 'ti');" % json.dumps(EVIL))
+    assert titles.count("am-chip ti") == 2 and "<img" not in titles
+
+
+def test_the_page_has_the_polished_pieces():
+    html = _client(ADMIN).get(BASE).get_data(as_text=True)
+    for hook in ('id="amAskSt"', 'id="amRunsF"', 'id="amRunsN"', 'id="amCompaniesChips"', 'am-opt', 'am-price', 'am-step', 'am-map-h'):
+        assert hook in html, hook
+    for hook in ("amPhrasings", "amWeb", "amBriefs", "amInsights", "amPerRole", "amModel"):         # the script reads these
+        assert 'id="%s"' % hook in html, hook

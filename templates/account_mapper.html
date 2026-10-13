@@ -13,7 +13,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("People & Signals", ["strategic-agents.css?v=2", "market_radar.css?v=7", "contact_lab.css?v=1", "account_mapper.css?v=4"]) }}
+{{ head("People & Signals", ["strategic-agents.css?v=2", "market_radar.css?v=7", "contact_lab.css?v=1", "account_mapper.css?v=5"]) }}
 </head>
 <body class="sa"{% if viewer_is_client() %} data-am-client{% endif %}>
 
@@ -91,6 +91,7 @@
         <header class="am-ask-h">
           <span class="am-orb" aria-hidden="true"></span>
           <div><h3>Ask for anyone</h3><p>Say who you need, in plain words.</p></div>
+          <span class="am-ask-st" id="amAskSt"></span>
           <button type="button" class="am-new" id="amNew" hidden aria-label="New chat">
             <svg class="am-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14 M5 12h14"/></svg><span class="am-long">New chat</span></button>
         </header>
@@ -107,33 +108,42 @@
         </form>
       </section>
       <form class="card mr-card cl-form am-form" id="amForm" autocomplete="off" hidden>
-        <div class="mr-card-h"><div><h3>Map accounts</h3><p>Up to 25 companies and 6 titles.{% if not viewer_is_client() %} Mapping uses no credits.{% endif %}</p></div>
-          <button type="button" class="am-example" data-act="example">Try an example</button></div>
-        <div class="mr-card-b">
+        <header class="am-ask-h am-map-h">
+          <span class="am-tile" aria-hidden="true"><svg class="am-ic" viewBox="0 0 24 24"><path d="M4 5h6v6H4z M14 5h6v6h-6z M4 15h6v4H4z M14 15h6v4h-6z"/></svg></span>
+          <div><h3>Map accounts</h3><p>Up to 25 companies and 6 titles.{% if not viewer_is_client() %} Mapping uses no credits.{% endif %}</p></div>
+          <button type="button" class="am-example" data-act="example"><svg class="am-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>Try an example</button>
+        </header>
+        <div class="mr-card-b am-map-b">
           <div id="amSetup"></div>
-          <div class="am-field-h"><span class="am-num">1</span><label class="mr-k" for="amCompanies">Companies, one a line</label><span class="am-count" id="amCompaniesN">0 of 25</span></div>
-          <textarea id="amCompanies" rows="6" placeholder="HubSpot&#10;Gong | gong.io&#10;Core Care Clinic | corecareclinic.com"></textarea>
-          <div class="mr-hint">Add &ldquo;| domain.com&rdquo; when you know the website: it picks the right company when names are shared.</div>
-          <div class="am-field-h" style="margin-top:20px"><span class="am-num">2</span><label class="mr-k" for="amRoles">Titles you sell to, one a line</label><span class="am-count" id="amRolesN">0 of 6</span></div>
-          <textarea id="amRoles" rows="3" placeholder="VP Marketing&#10;Head of Demand Generation&#10;CMO"></textarea>
-          <div class="am-presets" id="amPresets" aria-label="Common titles"></div>
-          <div class="am-field-h" style="margin-top:22px"><span class="am-num">3</span><span class="mr-k">What else to read</span></div>
-          <div class="cl-row">
-            <fieldset class="cl-backends">
-              <legend class="mr-k">Also</legend>
-              <label class="cl-tog am-sw"><input type="checkbox" id="amInsights" checked> <b>Account signals</b> <small>free</small></label>
+          <div class="am-step">
+            <div class="am-field-h"><span class="am-num">1</span><label class="mr-k" for="amCompanies">Companies, one a line</label><span class="am-count" id="amCompaniesN">0 of 25</span></div>
+            <textarea id="amCompanies" rows="5" placeholder="HubSpot&#10;Gong | gong.io&#10;Core Care Clinic | corecareclinic.com"></textarea>
+            <div class="am-chips" id="amCompaniesChips" aria-live="polite"></div>
+            <div class="mr-hint">Add &ldquo;| domain.com&rdquo; when you know the website: it picks the right company when names are shared.</div>
+          </div>
+          <div class="am-step">
+            <div class="am-field-h"><span class="am-num">2</span><label class="mr-k" for="amRoles">Titles you sell to, one a line</label><span class="am-count" id="amRolesN">0 of 6</span></div>
+            <textarea id="amRoles" rows="3" placeholder="VP Marketing&#10;Head of Demand Generation&#10;CMO"></textarea>
+            <div class="am-presets" id="amPresets" aria-label="Common titles"></div>
+          </div>
+          <div class="am-step">
+            <div class="am-field-h"><span class="am-num">3</span><span class="mr-k">What else to read</span></div>
+            <div class="am-opts">
+              <label class="cl-tog am-sw am-opt"><input type="checkbox" id="amInsights" checked><span class="am-opt-i i-sky"><svg class="am-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17l5-5 4 4 7-8 M15 8h5v5"/></svg></span><span class="am-opt-t"><b>Account signals</b><small>Team sizes, who is new, hiring and funding</small></span><em class="am-price free">free</em></label>
               {#- A client maps for free: the paid steps stay in the page (its script reads them), hidden and off. #}
-              <label class="cl-tog am-sw"{% if viewer_is_client() %} hidden{% endif %}><input type="checkbox" id="amPhrasings"> <b>Claude phrases the titles</b> <small>under a cent</small></label>
-              <label class="cl-tog am-sw"{% if viewer_is_client() %} hidden{% endif %}><input type="checkbox" id="amWeb"> <b>Web search for empty seats</b> <small>paid</small></label>
-              <label class="cl-tog am-sw"{% if viewer_is_client() %} hidden{% endif %}><input type="checkbox" id="amBriefs"{% if not viewer_is_client() %} checked{% endif %}> <b>Account briefs</b> <small>about $0.005 each</small></label>
-            </fieldset>
-            <div class="cl-model">
-              <label class="mr-k" for="amPerRole">People per title</label>
-              <select id="amPerRole"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select>
-              <div{% if viewer_is_client() %} hidden{% endif %}>
-              <label class="mr-k" for="amModel" style="margin-top:14px">Claude model</label>
-              <select id="amModel"></select>
-              <div class="mr-hint">Haiku is plenty for briefs.</div>
+              <label class="cl-tog am-sw am-opt"{% if viewer_is_client() %} hidden{% endif %}><input type="checkbox" id="amPhrasings"><span class="am-opt-i i-lilac"><svg class="am-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></span><span class="am-opt-t"><b>Claude phrases the titles</b><small>Finds the wording people really use</small></span><em class="am-price">under a cent</em></label>
+              <label class="cl-tog am-sw am-opt"{% if viewer_is_client() %} hidden{% endif %}><input type="checkbox" id="amWeb"><span class="am-opt-i i-amber"><svg class="am-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 100-18 9 9 0 000 18z M3 12h18 M12 3c2.5 2.6 3.7 5.6 3.7 9s-1.2 6.4-3.7 9c-2.5-2.6-3.7-5.6-3.7-9S9.5 5.6 12 3z"/></svg></span><span class="am-opt-t"><b>Web search for empty seats</b><small>Looks on the web when Saleshandy has nobody</small></span><em class="am-price paid">paid</em></label>
+              <label class="cl-tog am-sw am-opt"{% if viewer_is_client() %} hidden{% endif %}><input type="checkbox" id="amBriefs"{% if not viewer_is_client() %} checked{% endif %}><span class="am-opt-i i-acc"><svg class="am-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v11H4z M9 8V6h6v2 M4 13h16"/></svg></span><span class="am-opt-t"><b>Account briefs</b><small>A short read on each company and who to call</small></span><em class="am-price">about $0.005 each</em></label>
+            </div>
+            <div class="am-opts-b">
+              <div class="am-pp">
+                <label class="mr-k" for="amPerRole">People per title</label>
+                <select id="amPerRole"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select>
+              </div>
+              <div class="am-pp"{% if viewer_is_client() %} hidden{% endif %}>
+                <label class="mr-k" for="amModel">Claude model</label>
+                <select id="amModel"></select>
+                <div class="mr-hint">Haiku is plenty for briefs.</div>
               </div>
             </div>
           </div>
@@ -142,7 +152,11 @@
         </div>
       </form>
       <aside class="card mr-card cl-runs">
-        <div class="mr-card-h"><div><h3>Recent</h3><p>Questions and mapped lists, newest first.</p></div></div>
+        <header class="amr-h">
+          <span class="am-tile" aria-hidden="true"><svg class="am-ic" viewBox="0 0 24 24"><path d="M12 8v4l3 2 M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8 M3 3v5h5"/></svg></span>
+          <div><h3>Recent <span class="amr-n" id="amRunsN" hidden></span></h3><p>Your questions and mapped lists.</p></div>
+        </header>
+        <div class="amr-f" id="amRunsF" role="group" aria-label="Show" hidden></div>
         <div id="amRuns"><div class="mr-empty">Loading&hellip;</div></div>
       </aside>
     </div>
@@ -163,7 +177,7 @@
 </div>
 
 {{ topbar_script() }}
-<script src="{{ url_for('static', filename='js/account_mapper.js') }}?v=4"></script>
-<script src="{{ url_for('static', filename='js/people_chat.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/account_mapper.js') }}?v=5"></script>
+<script src="{{ url_for('static', filename='js/people_chat.js') }}?v=3"></script>
 </body>
 </html>

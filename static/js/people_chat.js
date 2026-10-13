@@ -17,11 +17,14 @@
     when = AM.when, plural = AM.plural;
 
   var SUGGESTIONS = [
-    ['Marketing people at HubSpot', 'A whole team, most senior first', 'users'],
-    ['Who is the CMO of Notion?', 'One job title', 'spark'],
-    ['Sales leaders at Stripe and Ramp', 'Several companies at once', 'bolt'],
-    ['Top 5 engineers at hubspot.com', 'Use a website to be exact', 'globe']
+    ['Marketing people at HubSpot', 'A whole team, most senior first', 'users', 'sky'],
+    ['Who is the CMO of Notion?', 'One job title', 'spark', 'lilac'],
+    ['Sales leaders at Stripe and Ramp', 'Several companies at once', 'bolt', 'acc'],
+    ['Top 5 engineers at hubspot.com', 'Use a website to be exact', 'globe', 'amber']
   ];
+  var CAN = [['users', 'A team'], ['spark', 'A job title'], ['bolt', 'Several companies'], ['globe', 'A website'], ['pin', 'A place'], ['search', '\u201ctop 5\u201d']];
+  var SHORT_HINTS = ['CMO of Notion', 'sales team at Ramp', 'top 5 engineers at Zoom'];
+  var HINTS = ['marketing people at Stripe', 'who is the CMO of Notion?', 'top 5 engineers at hubspot.com', 'sales leaders at Ramp and Gong', 'recruiters at Meta in Austin'];
   var FOLLOW = [['Leadership', 'leadership'], ['Marketing team', 'marketing team'], ['Sales team', 'sales team'],
     ['Engineering team', 'engineering team'], ['Finance team', 'finance team'], ['HR team', 'HR team'], ['The CFO', 'the CFO']];
 
@@ -260,12 +263,18 @@
 
   function renderEmpty(status, ui) {
     ui = ui || {};
-    var hi = '<div class="amc-hello"><h4>Who are you looking for?</h4><p>Write it the way you would say it. Name the company and the people: a team, a job title or a level.' +
-      (ui.client ? '' : ' Searching is free.') + '</p></div>';
+    var hi = '<div class="amc-hello"><span class="amc-kicker">' + ic('bolt') + 'Plain words in, real people out</span>' +
+      '<h4>Who are you <em>looking for</em>?</h4><p>Write it the way you would say it: name the company and the people, a team, a job title or a level.' +
+      (ui.client ? '' : ' Searching is free.') + '</p>' +
+      '<div class="amc-can"><span class="amc-can-k">You can say</span>' + CAN.map(function (c) { return '<span>' + ic(c[0]) + esc(c[1]) + '</span>'; }).join('') + '</div></div>';
     var sugg = '<div class="amc-sugg">' + SUGGESTIONS.map(function (x) {
-      return '<button type="button" class="amc-s" data-act="csay" data-say="' + esc(x[0]) + '">' + ic(x[2]) + '<b>' + esc(x[0]) + '</b><span>' + esc(x[1]) + '</span></button>';
+      return '<button type="button" class="amc-s" data-act="csay" data-say="' + esc(x[0]) + '"><span class="amc-s-i i-' + esc(x[3]) + '">' + ic(x[2]) + '</span>' +
+        '<b>' + esc(x[0]) + '</b><span>' + esc(x[1]) + '</span><i class="amc-s-go" aria-hidden="true">' + ic('arrow') + '</i></button>';
     }).join('') + '</div>';
-    return hi + sugg;
+    var flow = '<ol class="amc-flow" aria-label="How it works"><li><b>1</b><span>Ask<small>name the company and who</small></span></li>' +
+      '<li><b>2</b><span>Confirm the company<small>when several share the name</small></span></li>' +
+      '<li><b>3</b><span>Pick people<small>' + (ui.client ? 'download the list' : 'emails &amp; LinkedIn on request') + '</small></span></li></ol>';
+    return hi + sugg + flow;
   }
 
   function renderFollow(items, ui) {
@@ -298,7 +307,13 @@
   if (typeof document === 'undefined' || !document.getElementById('amAsk') || !P) return;
 
   var $ = function (id) { return document.getElementById(id); };
-  var items = [], sels = {}, status = null, busy = false, polls = {};
+  var items = [], sels = {}, status = null, busy = false, polls = {}, hint = 0;
+  // On a phone the box is narrow: the examples it offers are shorter there.
+  function hintText() {
+    var narrow = typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 520px)').matches;
+    var list = narrow ? SHORT_HINTS : HINTS;
+    return 'Try: ' + list[hint % list.length];
+  }
   var API = '/strategic-agents/people-signals/api';
   var ACCT = typeof window !== 'undefined' && window.__acctContext;
   var UI = { client: AM.client, api: API, aq: ACCT ? 'acct=' + encodeURIComponent(ACCT) : '' };
@@ -319,11 +334,20 @@
     }
   }
 
+  function paintStatus() {
+    var h = (status || {}).saleshandy || {}, el = $('amAskSt');
+    if (!status) { el.innerHTML = ''; return; }
+    if (!h.configured) { el.className = 'am-ask-st off'; el.innerHTML = '<i></i>Not connected'; return; }
+    el.className = 'am-ask-st on';
+    el.innerHTML = '<i></i>' + (UI.client ? 'Ready' : h.ok === false ? 'Saleshandy error' : 'Saleshandy connected' + (h.credits && h.credits.total != null ? '<b>' + esc(num(h.credits.total)) + ' credits</b>' : ''));
+  }
+
   function paintSetup() {
+    paintStatus();
     var ok = connected();
     $('amAskSetup').innerHTML = ok ? '' : AM.renderSetup(status);
     $('amMsg').disabled = !ok;
-    $('amMsg').placeholder = ok ? 'Try: marketing people at Stripe' : (UI.client ? 'Not connected yet' : 'Add SALESHANDY_API_KEY to start asking');
+    $('amMsg').placeholder = ok ? hintText() : (UI.client ? 'Not connected yet' : 'Add SALESHANDY_API_KEY to start asking');
     $('amSend').disabled = busy || !ok;
     $('amFine').innerHTML = UI.client ? 'Searching is free. Press Enter to send.' :
       'Searching is free. Emails and LinkedIn profiles cost 1 credit per email found, only after you confirm. <kbd>Enter</kbd> sends, <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a line.';
@@ -515,6 +539,13 @@
       paint();
     }
   });
+
+  // The placeholder offers a new example now and then, while the box is empty and not being used.
+  setInterval(function () {
+    var t = $('amMsg');
+    if (t.disabled || t.value || document.activeElement === t || document.hidden) return;
+    hint++; t.placeholder = hintText();
+  }, 3800);
 
   paintSetup(); paint();
 })(typeof window !== 'undefined' ? window : globalThis);
