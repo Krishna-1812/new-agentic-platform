@@ -5627,7 +5627,7 @@ CLIENT_TOOL_ROUTES = {
         r"market-radar/api/(runs(/\d+)?|clients(/\d+(/(profile|competitors(/\d+)?|collect|moves|rivals|map|monitor|report|"
         r"report/pdf|events/\d+/feedback))?)?)",),
     # The free mapping only: never a reveal, which spends the agency's Saleshandy credits.
-    "people-signals": (r"people-signals/api/(status|estimate|runs(/\d+(/export\.csv)?)?)",),
+    "people-signals": (r"people-signals/api/(status|estimate|chat|runs(/\d+(/export\.csv)?)?)",),
 }
 CLIENT_RUN_ROUTES = {          # (method, path): what counts as a run started
     "page-watch": (r"/[^/]+/api/page-watch/watches", r"page-watch/api/watches/\d+/check"),
@@ -5638,7 +5638,7 @@ CLIENT_RUN_ROUTES = {          # (method, path): what counts as a run started
     "company-people-intelligence": (r"company-people-intelligence/(search|enrich|enrich-bulk|chat)",),
     "thought-leader-pr": (r"thought-leader-pr/resolve",),
     "market-radar": (r"market-radar/api/runs", r"market-radar/api/clients/\d+/collect"),
-    "people-signals": (r"people-signals/api/runs",),
+    "people-signals": (r"people-signals/api/(runs|chat)",),
 }
 _CLIENT_TOOL_RX = {t: re.compile("^%s(%s)$" % (re.escape(_SA), "|".join(ps))) for t, ps in CLIENT_TOOL_ROUTES.items()}
 _CLIENT_RUN_RX = {t: re.compile("^(%s)$" % "|".join(p if p.startswith("/") else re.escape(_SA) + p for p in ps))
@@ -11944,6 +11944,47 @@ def admin_account_mapper_estimate():
     out = am.estimate(len(st["companies"]), len(st["roles"]), use_claude=st["use_claude"], web_fill=st["web_fill"],
                       briefs=st["briefs"], model=st["model"])
     return jsonify(dict(out, companies=len(st["companies"]), roles=len(st["roles"])))
+
+
+@app.route("/strategic-agents/people-signals/api/chat", methods=["POST"])
+@position2_required
+def admin_account_mapper_chat():
+    """One message from the chat. Plain rules read it (free); when they cannot, staff with a Claude key get one small
+    capped call. A message that names who to find becomes a run (searching is free); anything else is answered at
+    once with a question or a hint."""
+    from tracker import account_mapper_store as store, contact_lab_search as search, people_chat as pc
+    from tracker import saleshandy_client as sh
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    body = request.get_json(silent=True) or {}
+    message = body.get("message")
+    if not isinstance(message, str) or not message.strip():
+        return jsonify(error="Write who you are looking for."), 400
+    if len(message) > pc.MAX_MESSAGE:
+        return jsonify(error="Keep it under %d characters." % pc.MAX_MESSAGE), 400
+    budget = claude = None
+    if not viewer_is_client() and search.claude_configured():
+        budget = search.Budget(pc.PARSE_CAP_USD)
+        claude = pc.claude_reader(AM_MODELS[0], budget)
+    parsed = pc.understand(message, pc.clean_context(body.get("context")), claude=claude)
+    usd = round(float(budget.spent), 6) if budget else 0
+    if parsed["kind"] != "search":
+        g.pop("client_run", None)        # a question or a hint is not a search: it does not use up a client's runs
+        return jsonify(dict(parsed, usd=usd))
+    if not sh.configured():
+        return jsonify(error="SALESHANDY_API_KEY is not set on this service (Railway → web → Variables).",
+                       understood=parsed), 400
+    email = _mr_email()
+    try:
+        going = store.running_run(email)
+        if going:
+            return jsonify(error="A search of yours is already going; wait for it to finish.", run_id=going["id"]), 409
+        run_id = store.start_chat(parsed, message, email, usd=usd,
+                                  started_by=(_get_user() or {}).get("email", "") if _work_acct() else None)
+    except store.StoreUnavailable as e:
+        return jsonify(error="The database is unavailable (%s)." % e), 503
+    return jsonify(kind="search", run_id=run_id, understood=parsed, usd=usd), 202
 
 
 @app.route("/strategic-agents/people-signals/api/runs", methods=["GET", "POST"])

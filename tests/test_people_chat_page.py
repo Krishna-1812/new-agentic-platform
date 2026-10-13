@@ -1,0 +1,193 @@
+"""People & Signals chat page (static/js/people_chat.js, templates/account_mapper.html) under Node, with hostile strings:
+names, titles, photos, places and company names come from Saleshandy and what the viewer typed. Plus the page's
+hooks: both scripts, the two modes, and the runs list showing a question as the question."""
+import json
+import os
+import shutil
+import subprocess
+import sys
+
+import pytest
+
+os.environ.setdefault("GOOGLE_CLIENT_ID", "test")
+os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test")
+os.environ.setdefault("FLASK_SECRET_KEY", "test")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+
+EVIL = '<img src=x onerror=alert(1)>"\'&'
+ADMIN = "kris@markifydigital.com"
+BASE = "/strategic-agents/people-signals"
+AM_JS = os.path.join(ROOT, "static", "js", "account_mapper.js")
+CHAT_JS = os.path.join(ROOT, "static", "js", "people_chat.js")
+
+
+def run_js(expr):
+    if shutil.which("node") is None:
+        pytest.skip("node is not installed")
+    prog = ("globalThis.window = globalThis; require(%s); require(%s); const AM = globalThis.AM, C = globalThis.AM.chat;\n"
+            "process.stdout.write(JSON.stringify((() => { %s })()));") % (json.dumps(AM_JS), json.dumps(CHAT_JS), expr)
+    proc = subprocess.run([shutil.which("node"), "-e", prog], capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    return json.loads(proc.stdout)
+
+
+def person(i, name, title, **kw):
+    return dict({"id": i, "name": name, "title": title, "location": "Austin, Texas"}, **kw)
+
+
+def run(people=None, status="ready", **kw):
+    people = people if people is not None else [person(11, "Jane Doe", "VP of Marketing", decision_maker=True),
+                                                person(12, "Raj Patel", "Marketing Manager", new_in_role=True)]
+    return dict({"id": 7, "status": status, "stage": "found", "settings": {"chat": {"message": "marketing people at Acme"}},
+                 "summary": {"credits": {"total": 412}, "companies": [{
+                     "name": "Acme", "display_name": "Acme Inc", "domain": "acme.com",
+                     "resolved": {"how": "exact name", "alternatives": [], "company": {"industry": "Software", "employees": 4000}},
+                     "roles": [{"role": "Marketing team", "kind": "team", "status": "found", "total": 140,
+                                "picked": people, "also": [], "attempts": [{"how": "Marketing department at acme.com", "total": 140, "kept": 2}]}]}]}},
+                **kw)
+
+
+UNDERSTOOD = {"companies": [{"name": "Acme", "domain": "acme.com"}], "asks": [{"kind": "team", "label": "Marketing team", "count": 5}],
+              "where": "Austin"}
+
+
+def test_every_value_is_escaped_and_every_link_is_checked():
+    bad = person(1, EVIL, EVIL, photo="javascript:alert(1)", linkedin="javascript:alert(1)", location=EVIL,
+                 email={"address": EVIL, "label": "verified", "note": EVIL}, revealed=True)
+    r = run([bad])
+    r["summary"]["companies"][0]["display_name"] = EVIL
+    r["summary"]["companies"][0]["roles"][0]["role"] = EVIL
+    r["summary"]["companies"][0]["roles"][0]["note"] = EVIL
+    r["summary"]["companies"][0]["resolved"]["alternatives"] = [{"name": EVIL, "domain": "acme.io"}]
+    u = {"companies": [{"name": EVIL, "domain": EVIL}], "asks": [{"kind": "team", "label": EVIL}], "where": EVIL, "how": "claude", "note": EVIL}
+    html = run_js("return C.renderResult(%s, %s, {api: '/a', client: false}, {});" % (json.dumps(r), json.dumps(u)))
+    assert "<img" not in html and "onerror=alert" not in html.replace("onerror=alert(1)&gt;", "")
+    assert "&lt;img src=x onerror=alert(1)&gt;" in html
+    assert 'href="javascript:' not in html and 'src="javascript:' not in html
+    # without a safe profile address the link is a LinkedIn search for the name, never the unsafe value
+    assert "linkedin.com/search/results/people/?keywords=" in html and "%3Cimg" in html
+
+
+def test_a_found_person_shows_title_place_badges_and_a_search_link_until_revealed():
+    html = run_js("return C.renderResult(%s, %s, {api: '/a'}, {11: true});" % (json.dumps(run()), json.dumps(UNDERSTOOD)))
+    assert "Found 2 people" in html and "Acme Inc" in html
+    assert "of 140 listed in Saleshandy" in html and "2 shown" in html
+    assert "VP of Marketing" in html and "Austin, Texas" in html and "Decision-maker" in html and "New in role" in html
+    assert html.count("Find on LinkedIn") == 2 and "Email: reveal" in html and "in Austin" not in html
+    assert "Looking for" in html and "Marketing team" in html and "up to 5" in html and "Austin" in html
+    assert 'data-act="cpick" data-run="7" data-key="11" checked' in html and 'data-key="12"' in html
+    assert "<b>1</b> of 2 selected" in html and "up to 1 credit" in html
+
+
+def test_a_revealed_person_shows_the_email_with_its_status_and_the_real_profile():
+    p = person(11, "Jane Doe", "VP of Marketing", revealed=True, linkedin="https://www.linkedin.com/in/jane-doe",
+               email={"address": "jane.doe@acme.com", "label": "verified"})
+    q = person(12, "Raj Patel", "Marketing Manager", revealed=True, email={"address": None, "label": "not_found"})
+    html = run_js("return C.renderResult(%s, %s, {api: '/a'}, {});" % (json.dumps(run([p, q])), json.dumps(UNDERSTOOD)))
+    assert "jane.doe@acme.com" in html and "Verified" in html and 'href="https://www.linkedin.com/in/jane-doe"' in html
+    assert "Not found" in html and html.count("Find on LinkedIn") == 1
+    assert 'data-act="ccopyall"' in html and "Copy 1 email" in html
+    assert "creveal" not in html and "Everyone shown has been revealed." in html
+
+
+def test_the_reveal_button_counts_credits_and_waits_for_a_choice():
+    r = json.dumps(run())
+    none = run_js("return C.renderResult(%s, null, {api: '/a'}, {});" % r)
+    assert 'data-act="creveal"' in none and "disabled" in none and "choose who" in none and "<b>0</b> of 2 selected" in none
+    two = run_js("return C.renderResult(%s, null, {api: '/a'}, {11: true, 12: true});" % r)
+    assert "up to 2 credits" in two and "<b>2</b> of 2 selected" in two
+    assert run_js("return C.selectedKeys(%s, {11: true, 12: false, 99: true});" % r) == ["11"]       # only people in this answer
+    assert sorted(run_js("return Object.keys(C.defaultSelection(%s));" % r)) == ["11", "12"]
+
+
+def test_a_client_sees_no_credits_ticks_or_reveal_and_cannot_delete():
+    html = run_js("return C.renderResult(%s, %s, {api: '/a', client: true}, {11: true});" % (json.dumps(run()), json.dumps(UNDERSTOOD)))
+    assert "credit" not in html.lower() and "creveal" not in html and "cpick" not in html and "cremove" not in html
+    assert "Email: reveal" not in html and "Find on LinkedIn" in html and "export.csv" in html
+    assert "added by your account manager" in html
+
+
+def test_working_failed_and_empty_answers():
+    working = run_js("return C.renderResult(%s, %s, {api: '/a'}, {});" % (
+        json.dumps({"id": 7, "status": "running", "stage": "finding Acme", "summary": {}}), json.dumps(UNDERSTOOD)))
+    assert "Searching Saleshandy" in working and "finding Acme" in working and "creveal" not in working
+    revealing = run_js("return C.renderResult(%s, null, {api: '/a'}, {});" % json.dumps(dict(run(), status="running", stage="revealing")))
+    assert "Getting emails and LinkedIn profiles" in revealing and "cpick" not in revealing        # ticks lock while it works
+    failed = run_js("return C.renderResult(%s, null, {api: '/a'}, {});" % json.dumps(
+        {"id": 7, "status": "failed", "error": EVIL, "summary": {}}))
+    assert "did not finish" in failed and 'data-act="cretry"' in failed and "<img" not in failed
+    empty = run_js("return C.renderResult(%s, null, {api: '/a'}, {});" % json.dumps(run([])))
+    assert "No one found" in empty and "Nobody matched" in empty and "Nobody found" in empty
+    nomatch = run()
+    nomatch["summary"]["companies"][0].update(domain=None, resolved={"how": "not found", "alternatives": [{"name": "Acme Robotics", "domain": "acmerobotics.com"}]})
+    html = run_js("return C.renderResult(%s, null, {api: '/a'}, {});" % json.dumps(nomatch))
+    assert "no company matched" in html and "acmerobotics.com" in html and "Write the website" in html
+
+
+def test_the_thread_shows_questions_answers_hints_and_choices():
+    items = [{"t": "day", "text": "Oct 13"}, {"t": "user", "text": EVIL},
+             {"t": "bot", "kind": "clarify", "text": "Who at Stripe?", "choices": ["Leadership", EVIL]},
+             {"t": "bot", "kind": "error", "text": EVIL},
+             {"t": "run", "id": 7, "run": run(), "understood": UNDERSTOOD}, {"t": "run", "id": 8, "run": None, "understood": None}]
+    html = run_js("return C.renderThread(%s, {api: '/a'}, {7: {11: true}});" % json.dumps(items))
+    assert "<img" not in html and html.count("amc-msg me") == 1 and html.count("amc-msg bot") == 4
+    assert 'data-act="csay" data-say="Leadership"' in html and "amc-msg bot err" in html
+    assert "Searching Saleshandy" in html and "Found 2 people" in html
+
+
+def test_the_empty_thread_has_suggestions_and_a_marked_example_that_cannot_spend():
+    html = run_js("return C.renderEmpty(null, {api: '/a'});")
+    assert "Who are you looking for?" in html and html.count('class="amc-s"') == 4 and 'data-say="Marketing people at HubSpot"' in html
+    assert "Example answer" in html and "Made-up people" in html and "Northwind Labs" in html
+    assert "creveal" not in html and "cpick" not in html and "ccopyall" not in html and "cremove" not in html
+
+
+def test_follow_ups_skip_what_was_asked_and_context_comes_from_the_last_answer():
+    items = [{"t": "run", "id": 7, "run": run(), "understood": UNDERSTOOD}]
+    html = run_js("return C.renderFollow(%s, {});" % json.dumps(items))
+    assert "Marketing team" not in html and "Leadership" in html and 'data-say="and their leadership?"' in html
+    assert run_js("return C.renderFollow(%s, {});" % json.dumps([{"t": "run", "id": 7, "run": run(status="running"), "understood": UNDERSTOOD}])) == ""
+    assert run_js("return C.contextOf(%s);" % json.dumps(items)) == {"companies": UNDERSTOOD["companies"], "asks": UNDERSTOOD["asks"]}
+    assert run_js("return C.contextOf([]);") == {}
+
+
+def test_a_question_in_the_runs_list_reads_as_the_question():
+    runs = [{"id": 9, "status": "ready", "created_at": "2026-10-13T08:00:00Z", "credits_used": 3, "totals": {"people_picked": 8},
+             "settings": {"companies": [{"name": "Acme"}], "chat": {"message": EVIL}}},
+            {"id": 8, "status": "ready", "created_at": "2026-10-13T07:00:00Z", "totals": {"titles": 2, "titles_found": 1},
+             "settings": {"companies": [{"name": "Acme"}]}}]
+    html = run_js("return AM.renderRuns(%s, 9);" % json.dumps(runs))
+    assert "<img" not in html and "8 people found" in html and "Run 8" in html and "am-runq" in html and "Run 9" not in html
+
+
+# == the page ==========================================================================
+
+def _client(email):
+    import app as appmod
+    c = appmod.app.test_client()
+    if email:
+        with c.session_transaction() as sess:
+            sess["google_user"] = {"email": email, "name": "T"}
+    return c
+
+
+def test_the_page_has_the_chat_the_two_modes_and_both_scripts():
+    html = _client(ADMIN).get(BASE).get_data(as_text=True)
+    assert 'id="amAsk"' in html and 'id="amComposer"' in html and 'id="amMsg"' in html and 'id="amThread"' in html
+    assert 'data-mode="ask"' in html and 'data-mode="map"' in html and 'id="amForm"' in html
+    assert html.index("js/account_mapper.js") < html.index("js/people_chat.js")
+    assert 'maxlength="500"' in html and "marketing people at Stripe" in html
+
+
+def test_the_chat_reaches_clients_as_a_run_that_counts_and_questions_do_not():
+    import app as appmod
+    assert appmod._client_route_tool(BASE + "/api/chat") == "people-signals"
+    assert appmod._CLIENT_RUN_RX["people-signals"].match(BASE + "/api/chat")
+
+
+def test_the_two_scripts_agree_on_what_they_share():
+    src = open(CHAT_JS).read()
+    for name in ("esc", "safeUrl", "ic", "chip", "hue", "avatar", "num", "when", "plural", "link", "EMAIL", "initials", "keyOf", "renderSetup"):
+        assert name in run_js("return Object.keys(AM);"), name
+        assert "AM." + name in src or name in ("keyOf",), name
