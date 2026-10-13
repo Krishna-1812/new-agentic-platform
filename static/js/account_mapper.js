@@ -96,7 +96,8 @@
     bolt: 'M13 3L5 13h6l-1 8 8-10h-6z',
     globe: 'M12 21a9 9 0 100-18 9 9 0 000 18z M3 12h18 M12 3c2.5 2.6 3.7 5.6 3.7 9s-1.2 6.4-3.7 9c-2.5-2.6-3.7-5.6-3.7-9S9.5 5.6 12 3z',
     eye: 'M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z M12 14.8a2.8 2.8 0 100-5.6 2.8 2.8 0 000 5.6z',
-    x: 'M6 6l12 12 M18 6L6 18'
+    x: 'M6 6l12 12 M18 6L6 18',
+    grid: 'M4 5h6v6H4z M14 5h6v6h-6z M4 15h6v4H4z M14 15h6v4h-6z'
   };
   function ic(name, cls) {
     return '<svg class="am-ic' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true"><path d="' + (IC[name] || '') + '"/></svg>';
@@ -153,26 +154,84 @@
     return t.titles ? Math.round(100 * (t.titles_found || 0) / t.titles) : null;
   }
 
-  function renderRuns(runs, selected) {
-    if (!runs || !runs.length) return '<div class="mr-empty"><b>Nothing yet</b>Ask a question, or map a list of accounts.</div>';
-    return '<ul class="cl-runl">' + runs.map(function (r) {
-      var st = r.status === 'running' ? (r.stale ? chip('bad', 'Stalled') : chip('acc', r.stage === 'revealing' || /^reveal/.test(r.stage || '') ? 'Revealing' : 'Mapping')) :
+  function dayLabel(iso) {
+    var d = new Date(iso || ''); if (isNaN(d)) return 'Earlier';
+    var now = new Date(), day = function (x) { return new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime(); };
+    var diff = Math.round((day(now) - day(d)) / 86400000);
+    if (diff <= 0) return 'Today';
+    if (diff === 1) return 'Yesterday';
+    if (diff < 7) return d.toLocaleDateString(undefined, { weekday: 'long' });
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  }
+  function clock(iso) {
+    var d = new Date(iso || '');
+    return isNaN(d) ? '' : d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+  function namesOf(r) {
+    var n = ((r.settings || {}).companies || []).map(function (c) { return c.name; }).filter(Boolean);
+    return n.length ? n.slice(0, 2).join(', ') + (n.length > 2 ? ' +' + (n.length - 2) : '') : '';
+  }
+  var RUN_FILTERS = [['all', 'All'], ['ask', 'Asked'], ['map', 'Mapped']];
+  function isAsked(r) { return !!((r.settings || {}).chat || {}).message; }
+
+  // The runs and questions, newest first, grouped by day. `filter`: all | ask | map.
+  function renderRuns(runs, selected, filter) {
+    filter = filter || 'all';
+    if (!runs || !runs.length) {
+      return '<div class="amr-empty"><span class="amr-stack" aria-hidden="true"><i></i><i></i><i></i></span><b>Nothing yet</b>' +
+        '<span>Ask a question or map a list of accounts. It collects here, ready to open again.</span></div>';
+    }
+    var shown = runs.filter(function (r) { return filter === 'ask' ? isAsked(r) : filter === 'map' ? !isAsked(r) : true; });
+    if (!shown.length) return '<div class="amr-empty"><b>None of these yet</b><span>' + (filter === 'ask' ? 'Questions you ask appear here.' : 'Lists you map appear here.') + '</span></div>';
+    var out = '', last = null;
+    shown.forEach(function (r) {
+      var label = dayLabel(r.created_at);
+      if (label !== last) { out += (last === null ? '' : '</ul>') + '<div class="amr-day">' + esc(label) + '</div><ul class="cl-runl">'; last = label; }
+      var running = r.status === 'running' && !r.stale;
+      var st = r.status === 'running' ? (r.stale ? chip('bad', 'Stalled') : chip('acc', r.stage === 'revealing' || /^reveal/.test(r.stage || '') ? 'Revealing' : 'Working')) :
         r.status === 'failed' ? chip('bad', 'Failed') : chip('ok', 'Ready');
       var n = ((r.settings || {}).companies || []).length, t = r.totals || {}, share = seatShare(r);
       var q = ((r.settings || {}).chat || {}).message;
+      var on = r.id === selected ? ' on' : '';
       if (q) {
-        return '<li><button type="button" class="cl-run am-runb am-runq s-' + esc(r.status || 'ready') + (r.id === selected ? ' on' : '') + '" data-act="open" data-id="' + esc(r.id) + '">' +
-          '<span class="am-run-n">' + ic('chat') + '</span><span class="am-run-t"><b title="' + esc(q) + '">' + esc(q) + '</b>' + st + '</span>' +
-          '<small>' + esc(when(r.created_at)) + ' &middot; ' + (t.people_picked != null ? plural(t.people_picked, 'person', 'people') + ' found' : 'asked in chat') +
+        out += '<li><button type="button" class="cl-run am-runb am-runq s-' + esc(r.status || 'ready') + on + '" data-act="open" data-id="' + esc(r.id) + '">' +
+          '<span class="am-run-n">' + (running ? '<span class="am-spin sm" aria-hidden="true"></span>' : ic('chat')) + '</span>' +
+          '<span class="am-run-t"><b title="' + esc(q) + '">' + esc(q) + '</b>' + st + '</span>' +
+          '<small>' + esc(clock(r.created_at)) + ' &middot; ' + (t.people_picked != null ? plural(t.people_picked, 'person', 'people') + ' found' : 'asked in chat') +
           (CLIENT ? '' : ' &middot; ' + esc(num(r.credits_used || 0)) + ' credits') + '</small></button></li>';
+        return;
       }
-      return '<li><button type="button" class="cl-run am-runb s-' + esc(r.status || 'ready') + (r.id === selected ? ' on' : '') + '" data-act="open" data-id="' + esc(r.id) + '">' +
-        '<span class="am-run-n">' + esc(r.id) + '</span><span class="am-run-t"><b>Run ' + esc(r.id) + '</b>' + st + '</span>' +
-        '<small>' + esc(when(r.created_at)) + ' &middot; ' + plural(n, 'account') +
+      out += '<li><button type="button" class="cl-run am-runb am-runm s-' + esc(r.status || 'ready') + on + '" data-act="open" data-id="' + esc(r.id) + '">' +
+        '<span class="am-run-n">' + (running ? '<span class="am-spin sm" aria-hidden="true"></span>' : ic('grid')) + '</span>' +
+        '<span class="am-run-t"><b>' + esc(namesOf(r) ? 'Mapped ' + namesOf(r) : 'Run ' + r.id) + '</b>' + st + '</span>' +
+        '<small>Run ' + esc(r.id) + ' &middot; ' + esc(clock(r.created_at)) + ' &middot; ' + plural(n, 'account') +
         (t.titles ? ' &middot; ' + esc(t.titles_found || 0) + '/' + esc(t.titles) + ' titles' : '') +
         (CLIENT ? '' : ' &middot; ' + esc(num(r.credits_used || 0)) + ' credits' + (r.spent_usd ? ' &middot; ' + esc(money(r.spent_usd)) : '')) + '</small>' +
         (share == null ? '' : '<i class="am-run-bar" title="' + esc(share) + '% of seats filled"><em style="width:' + esc(share) + '%"></em></i>') + '</button></li>';
-    }).join('') + '</ul>';
+    });
+    return out + '</ul>';
+  }
+
+  // The filter chips above the list (only when both kinds exist).
+  function renderRunFilters(runs, filter) {
+    runs = runs || [];
+    var asked = runs.filter(isAsked).length, mapped = runs.length - asked;
+    if (!asked || !mapped) return '';
+    return RUN_FILTERS.map(function (f) {
+      var n = f[0] === 'ask' ? asked : f[0] === 'map' ? mapped : runs.length;
+      return '<button type="button" class="am-f' + (f[0] === (filter || 'all') ? ' on' : '') + '" data-act="rfilter" data-f="' + f[0] + '" aria-pressed="' + (f[0] === (filter || 'all')) + '">' + esc(f[1]) + '<b>' + esc(n) + '</b></button>';
+    }).join('');
+  }
+
+  // What was typed in the form, as chips: a company (with its website, if given) or a title.
+  function renderChips(lines, kind) {
+    return (lines || []).map(function (l) {
+      var parts = String(l).split('|'), name = parts[0].trim(), dom = (parts[1] || '').trim();
+      if (!name) return '';
+      return kind === 'co' ?
+        '<span class="am-chip co ' + hue(name) + '"><i>' + esc(initials(name)) + '</i>' + esc(name) + (dom ? '<small>' + esc(dom) + '</small>' : '') + '</span>' :
+        '<span class="am-chip ti">' + ic('spark') + esc(name) + '</span>';
+    }).join('');
   }
 
   // The first screen, before any run: how it works, and a small picture of what comes back.
@@ -520,7 +579,7 @@
     renderSeatMap: renderSeatMap, renderProgress: renderProgress, ring: ring, formLines: formLines, seatOf: seatOf,
     // what the chat (people_chat.js) shares
     ic: ic, chip: chip, hue: hue, initials: initials, avatar: avatar, num: num, when: when, plural: plural, link: link,
-    money: money, EMAIL: EMAIL, client: CLIENT };
+    money: money, EMAIL: EMAIL, client: CLIENT, renderRunFilters: renderRunFilters, renderChips: renderChips };
   root.AM = AM;
 
   // == the page =========================================================================
@@ -528,7 +587,7 @@
   if (typeof document === 'undefined' || !document.getElementById('am')) return;
 
   var $ = function (id) { return document.getElementById(id); };
-  var state = { status: null, runs: [], selected: null, run: null, poll: null, estTimer: null,
+  var state = { status: null, runs: [], selected: null, run: null, poll: null, estTimer: null, runFilter: 'all',
     ui: { company: 0, selected: {}, cap: 50, phone: false, filter: 'all' } };
   var LIMITS = { companies: 25, roles: 6 };
   var PRESETS = ['VP Marketing', 'Head of Demand Generation', 'CMO', 'VP Sales', 'Head of Growth', 'CTO', 'VP Engineering', 'Founder'];
@@ -571,6 +630,8 @@
     $('amCompaniesN').className = 'am-count' + (c > LIMITS.companies ? ' over' : '');
     $('amRolesN').textContent = r + ' of ' + LIMITS.roles;
     $('amRolesN').className = 'am-count' + (r > LIMITS.roles ? ' over' : '');
+    $('amCompaniesChips').innerHTML = renderChips(lines('amCompanies').slice(0, LIMITS.companies), 'co');
+    $('amRolesChips') && ($('amRolesChips').innerHTML = renderChips(lines('amRoles').slice(0, LIMITS.roles), 'ti'));
     var have = lines('amRoles').map(function (x) { return x.toLowerCase(); });
     $('amPresets').innerHTML = PRESETS.map(function (t) {
       var on = have.indexOf(t.toLowerCase()) >= 0;
@@ -598,8 +659,15 @@
     $('amDetail').innerHTML = renderRun(state.run, state.ui);
     window.scrollTo(0, y);
   }
+  function paintRuns() {
+    var f = renderRunFilters(state.runs, state.runFilter);
+    if (!f) state.runFilter = 'all';
+    $('amRunsF').innerHTML = f; $('amRunsF').hidden = !f;
+    $('amRunsN').textContent = state.runs.length; $('amRunsN').hidden = !state.runs.length;
+    $('amRuns').innerHTML = renderRuns(state.runs, state.selected, state.runFilter);
+  }
   function loadRuns() {
-    return api('/runs').then(function (j) { state.runs = j.runs || []; $('amRuns').innerHTML = renderRuns(state.runs, state.selected); })
+    return api('/runs').then(function (j) { state.runs = j.runs || []; paintRuns(); })
       .catch(function (e) { $('amRuns').innerHTML = '<div class="mr-empty">' + esc(e.message) + '</div>'; });
   }
   function isChat(id) {
@@ -619,7 +687,7 @@
   }
   function open(id) {
     if (isChat(id)) {
-      setMode('ask'); state.selected = id; $('amRuns').innerHTML = renderRuns(state.runs, id);
+      setMode('ask'); state.selected = id; paintRuns();
       if (AM.chat) AM.chat.show(id);
       return Promise.resolve();
     }
@@ -628,7 +696,7 @@
     var fresh = state.selected !== id;
     state.selected = id;
     try { history.replaceState(null, '', '#run-' + id); } catch (e) { /* ignore */ }
-    $('amRuns').innerHTML = renderRuns(state.runs, id);
+    paintRuns();
     return api('/runs/' + id).then(function (run) {
       if (state.selected !== id) return;
       var wasRunning = state.run && state.run.id === id && state.run.status === 'running';
@@ -711,6 +779,7 @@
       var body = $('amBody'); if (body) body.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     else if (act === 'filter') { state.ui.filter = el.getAttribute('data-f'); paintRun(); }
+    else if (act === 'rfilter') { state.runFilter = el.getAttribute('data-f'); paintRuns(); }
     else if (act === 'copy') copyText(el.getAttribute('data-text'));
     else if (act === 'again' && state.run) { var f = formLines(state.run); fill(f.companies, f.roles); toast('The form has this run\u2019s accounts and titles.'); }
     else if (act === 'example') { fill(EXAMPLE.companies, EXAMPLE.roles); }
@@ -744,7 +813,7 @@
     estimate();
   }).catch(function (e) { $('amReady').innerHTML = chip('bad', e.message); });
   AM.page = { api: api, toast: toast, ask: ask, copyText: copyText, loadRuns: loadRuns, state: state, setMode: setMode,
-    refreshRuns: function () { $('amRuns').innerHTML = renderRuns(state.runs, state.selected); } };
+    refreshRuns: paintRuns };
   document.querySelectorAll('[data-mode]').forEach(function (b) {
     b.addEventListener('click', function () {
       setMode(b.getAttribute('data-mode'));
