@@ -232,7 +232,7 @@ holds up only its own section.
 |---|---|---|
 | Spend | `/admin/panel/spend?days=7\|30\|90` | Money by agent, by workspace and by person, from every agent's own cost ledger (`tracker/admin_spend.py`) |
 | Team | `/admin/panel/team` | Staff sign-ins, pages opened, time, and each person's spend |
-| Clients | `/admin/panel/clients` | The client workspaces shared with clients and the portals we run; `/admin/panel/account/<slug>` and `/admin/panel/portal/<slug>` fill the side panel |
+| Clients | `/admin/panel/clients` | The client workspaces shared with clients; `/admin/panel/account/<slug>` fills the side panel |
 | Public site | `/admin/panel/traffic` | Visitors, sources, devices, and how many sign in |
 | Inbox | `/admin/panel/inbox` | Access requests, thumbs on agent reports, public agent use |
 
