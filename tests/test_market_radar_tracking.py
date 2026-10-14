@@ -162,7 +162,9 @@ def test_the_page_tells_the_user_which_competitors_are_researched():
     js = open(os.path.join(root, "static", "js", "market_radar.js"), encoding="utf-8").read()
     assert "Only the ones you confirm are researched" in js
     assert "Not researched until you confirm it" in js
-    assert "moves.tracking.text" in js and "renderCompetitors(v.competitors, state.filter, v.tracking)" in js
+    assert "moves.tracking.text" in js and "renderCompetitors(v.competitors, state.filter, v.tracking, v.last_run)" in js
+    assert "tr.mode !== 'none'" in js, "an empty list does not need a banner saying it is empty"
+    assert "The last search did not finish" in js
 
 
 def test_the_niche_cards_do_not_borrow_the_tab_bars_class():

@@ -23,8 +23,11 @@ How it stays accurate:
 2. **A program checks the niche against the site**: vaguer than the site (a material or audience the site
    stresses that the niche leaves out), a word no page says, or too few meaningful words. The town a business
    is in and a product range listed among many are not counted as missing.
-3. **If the check fails, one small second model call** rewrites the positioning with the problems listed.
-   It costs a few cents and runs only when the check fails. If it fails or does not fully fix it, the first
+3. **The niche is read in a call of its own** (about 3 cents), after the ordinary profile call, so a problem
+   with it can never stop a company's profile or its competitor search: if it fails, the profile is kept, the
+   page says why ("could not be read this time"), the search uses the broad category as before, and the next
+   Search again tries once more. **If the check fails, one more small call** rewrites the positioning with the
+   problems listed; it runs only then. If it fails or does not fully fix it, the first
    reading is kept and the remaining flags are shown on the profile ("Niche and buyer" tab), never hidden.
 4. **Staff can correct it.** Niche, who they sell to, what sets them apart, not-in categories and buyer
    searches are editable on the profile; a correction reaches the competitor search, the judging and the
