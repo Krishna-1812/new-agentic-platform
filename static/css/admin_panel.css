@@ -45,7 +45,7 @@ html:root { background-color: var(--bg); }
 .ctl-h1 { margin-top: clamp(20px, 3vw, 44px); font-size: clamp(44px, 7.4vw, 108px); line-height: 1.04; letter-spacing: -0.03em; color: var(--tx-on-ink); }
 .ctl-h2 { font-size: clamp(30px, 3.6vw, 52px); line-height: 1.06; letter-spacing: -0.025em; color: var(--tx); }
 .ctl-h1 em, .ctl-h2 em { font-style: italic; }
-.ctl-h1 em { color: var(--acc); }
+.ctl-h1 em { color: var(--acc-hi); }
 .ctl-note { margin: var(--sp-2) 0 0; max-width: 62ch; color: var(--tx3); font-size: var(--fs-sm); line-height: 1.5; }
 
 /* ── Hero ──────────────────────────────────────────────────────────────── */
@@ -77,7 +77,7 @@ html:root { background-color: var(--bg); }
 .ctl-fig span { display: block; margin-top: var(--sp-2); font-size: 12px; font-weight: var(--fw-medium); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--ink-3); }
 .ctl-fig span em { font-style: normal; }
 .ctl-fig small { display: block; margin-top: 2px; font-size: 13px; color: var(--ink-2); min-height: 1.3em; }
-.ctl-fig:hover b { color: var(--acc); }
+.ctl-fig:hover b { color: var(--acc-hi); }
 
 /* ── Section chips ─────────────────────────────────────────────────────── */
 .ctl-nav { position: sticky; top: var(--topbar-h); z-index: 50; display: flex; gap: var(--sp-2); flex-wrap: wrap; padding: var(--sp-3) 0; margin: var(--sp-3) 0 var(--sp-4); background: var(--bg); }
