@@ -162,10 +162,10 @@ def test_admin_page_is_refused_to_a_non_admin_position2_user(client):
     assert r.status_code == 403
 
 
-def test_admin_page_loads_for_an_admin(admin_client):
+def test_the_old_feedback_page_sends_an_admin_to_the_admin_panel(admin_client):
+    """Agent Feedback is a card in the admin panel's Inbox now (tests/test_admin_panel.py reads its data)."""
     r = admin_client.get("/admin/agent-feedback")
-    assert r.status_code == 200
-    assert b"Agent Feedback" in r.data
+    assert r.status_code == 302 and r.headers["Location"].endswith("/admin#inbox")
 
 
 def test_admin_data_endpoint_is_admin_only_and_shape_holds(admin_client, client):

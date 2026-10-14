@@ -219,7 +219,7 @@ def test_no_route_under_p2_admin_escapes_the_gate():
     direction: everything under /admin/ is either gated itself, or is a
     bare 301 onto something that is.
 
-    Nine of these are the pre-rename URLs (/admin/members, /admin/usage
+    Several of these are the pre-rename URLs, and the old tabs (now sections of /admin) (/admin/members, /admin/usage
     and friends). They are correct as they stand -- a redirect to a gated page
     hands out nothing, and the gate answers on arrival -- but "it only
     redirects" is a claim worth checking rather than reading, so the redirect
@@ -234,7 +234,7 @@ def test_no_route_under_p2_admin_escapes_the_gate():
     leaks = []
     for rule in sorted(under_admin - gated):
         resp = _client(_EXTERNAL).get(rule)
-        target = resp.headers.get("Location", "").split("?")[0]
+        target = resp.headers.get("Location", "").split("?")[0].split("#")[0]
         moved = next((new for old, new in _MOVED_TO_TEAM.items()
                       if rule == old or rule.startswith(old + "/")), None)
         if moved:

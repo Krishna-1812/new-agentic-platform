@@ -221,11 +221,23 @@ agent connection types: SERP-connected, dashboard-backed, and external-tool (ifr
 
 ---
 
-### Admin analytics (all `@admin_required`)
+### Admin panel (all `@admin_required`)
 
-`/admin/internal-usage`, `/admin/external-usage` (also hosts the live self-test buttons for
-Arena, Apollo, Unipile, and LPS AI Insights), `/admin/client-usage`, `/admin/anonymous-traffic`,
-`/admin/public-page-analytics`, `/admin/public-agent-usage`, `/admin/access-requests`.
+`/admin` is the one admin page. It replaced eight tabs (Internal Usage, External Usage, Client Usage,
+Agent Feedback, Anonymous Traffic, Public Page Analytics, Public Agent Usage, Access Requests), and their
+old addresses redirect into it. It is a shell: each section is its own JSON route, so a slow Google Sheet
+holds up only its own section.
+
+| Section | Route | What it shows |
+|---|---|---|
+| Spend | `/admin/panel/spend?days=7\|30\|90` | Money by agent, by workspace and by person, from every agent's own cost ledger (`tracker/admin_spend.py`) |
+| Team | `/admin/panel/team` | Staff sign-ins, pages opened, time, and each person's spend |
+| Clients | `/admin/panel/clients` | The client workspaces shared with clients and the portals we run; `/admin/panel/account/<slug>` and `/admin/panel/portal/<slug>` fill the side panel |
+| Public site | `/admin/panel/traffic` | Visitors, sources, devices, and how many sign in |
+| Inbox | `/admin/panel/inbox` | Access requests, thumbs on agent reports, public agent use |
+
+The live self-test routes (`/admin/external-usage/*-check`, `unipile-connect`) are API routes, not pages;
+the agents' own pages call them, and they are unchanged.
 
 ---
 

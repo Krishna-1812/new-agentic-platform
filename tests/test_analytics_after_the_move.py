@@ -227,12 +227,9 @@ def test_the_health_check_is_admin_only():
     assert c.get("/admin/analytics-health").status_code in (302, 403)
 
 
-@pytest.mark.parametrize("path", ["/admin/internal-usage", "/admin/external-usage",
-                                  "/admin/client-usage", "/admin/anonymous-traffic",
-                                  "/admin/public-page-analytics", "/admin/public-agent-usage",
-                                  "/admin/access-requests"])
-def test_every_sheet_backed_page_shows_the_health_note(path):
-    body = _admin_client().get(path).get_data(as_text=True)
+def test_the_admin_panel_shows_the_health_note():
+    """The panel is the one page that reads the login-log sheet now; the old tabs redirect into it."""
+    body = _admin_client().get("/admin").get_data(as_text=True)
     assert 'id="admHealth"' in body
     assert "/admin/analytics-health" in body
 
