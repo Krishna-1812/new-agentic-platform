@@ -61,19 +61,8 @@ BENTO_PAGES = [
     ("anonymous_visitors.css", "Anonymous Visitors"),
     ("fieldguide.css", "the Field Guide"),
     ("sentiment_pulse.css", "Sentiment Pulse"),
-    # The admin family. admin.css is the sheet that harmonizes all nine and is
-    # loaded last by each of them; the per-page sheets hold what is specific to
-    # one dashboard.
-    ("admin.css", "the shared admin layer"),
-    ("admin_requests.css", "Access Requests"),
-    ("admin_agent_runs.css", "Agent Runs"),
-    ("admin_client_usage.css", "Client Usage"),
-    ("admin_client_detail.css", "Client Detail"),
-    ("admin_visitors.css", "Anonymous Traffic"),
-    ("admin_members.css", "Members"),
-    ("admin_usage.css", "Internal Usage"),
-    ("admin_external_usage.css", "External Usage"),
-    ("admin_agent_feedback.css", "Agent Feedback"),
+    # The admin panel: the one admin page, which replaced nine dashboards.
+    ("admin_panel.css", "the admin panel"),
     ("embed.css", "the embedded-tool wrapper"),
     # The workspace family: /app and the co-branded client portals. They keep
     # a sidebar rather than a breadcrumb bar (see workspace.css for why), but

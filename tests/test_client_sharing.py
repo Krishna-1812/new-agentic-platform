@@ -102,35 +102,45 @@ def test_each_page_a_client_opens_is_recorded_and_staff_are_not(seeded):
     assert [(e["email"], e["kind"], e["path"]) for e in ev] == [(T.CLIENT, "visit", "/lumina")]
 
 
-# ── Client Usage ─────────────────────────────────────────────────────────────
-def test_sharing_an_account_gives_it_a_card_in_client_usage(seeded):
+# ── The admin panel's Clients section ────────────────────────────────────────
+def test_sharing_an_account_gives_it_a_card_in_the_admin_panel(seeded):
     admin = T._client(KRIS)
-    html = admin.get("/admin/client-usage").get_data(as_text=True)
-    assert "Shared client workspaces" in html and 'href="/admin/client-usage/accounts/lumina"' not in html
+
+    def clients():
+        return admin.get("/admin/panel/clients?fresh=1").get_json()
+
+    assert clients()["accounts"] == [] and clients()["totals"]["accounts"] == 0, "nothing is shared yet"
     _api(admin, "", {"who": T.CLIENT})
     _api(admin, "/share", {"shares": {"tool:page-watch": True, "tool:local-business-radar": True}})
     T._client(T.CLIENT).get("/lumina")
-    html = admin.get("/admin/client-usage").get_data(as_text=True)
-    card = html[html.index('href="/admin/client-usage/accounts/lumina"'):]
-    card = card[:card.index("</a>")]
-    assert "Lumina Smiles Dental" in card and "Shared with 1 person" in card
-    assert "Page Watch" in card and "Local Business Radar" in card and "Social Media Intelligence" not in card
-    assert "shared Local Business Radar" in card or "shared Page Watch" in card
-    assert 'href="/admin/client-usage/accounts/bloom"' not in html, "an account nobody shared has no card"
+    d = clients()
+    cards = {c["slug"]: c for c in d["accounts"]}
+    card = cards["lumina"]
+    assert card["name"] == "Lumina Smiles Dental" and [p["who"] for p in card["people"]] == [T.CLIENT]
+    assert set(card["tools"]) == {"Page Watch", "Local Business Radar"} and card["tools_total"] > 2
+    assert card["visits_30"] == 1 and card["visitors_30"] == 1
+    assert "shared Local Business Radar" in card["last_change"] or "shared Page Watch" in card["last_change"]
+    assert card["space"].startswith("acct:") and card["avatar"]["initials"]
+    assert "bloom" not in cards, "an account nobody shared has no card"
+    assert d["totals"]["accounts"] == 1 and d["totals"]["people"] == 1
 
 
-def test_the_accounts_usage_page_shows_people_tools_visits_and_changes(seeded):
+def test_the_accounts_side_panel_shows_people_tools_visits_and_changes(seeded):
     admin = T._client(KRIS)
     _api(admin, "", {"who": T.CLIENT})
     _api(admin, "/share", {"share": "tool:page-watch", "on": True})
     _api(admin, "/limit", {"limit": 40})
     T._client(T.CLIENT).get("/lumina")
-    html = admin.get("/admin/client-usage/accounts/lumina").get_data(as_text=True)
-    assert T.CLIENT in html and "1 visit" in html and "opened the home page" in html
-    assert "Page Watch" in html and "set the runs a month to 40" in html and "invited " + T.CLIENT in html
-    assert "0 of 40 runs used this month" in html
-    assert admin.get("/admin/client-usage/accounts/no-such").status_code == 404
-    assert T._client(T.RAJ).get("/admin/client-usage/accounts/lumina").status_code in (302, 403), "admins only"
+    a = admin.get("/admin/panel/account/lumina").get_json()
+    assert [p["who"] for p in a["people"]] == [T.CLIENT] and a["people"][0]["kind"] == "email"
+    assert a["visits_30"] == 1 and [(e["kind"], e["where"]) for e in a["events"]] == [("visit", "the home page")]
+    assert a["by_person"][0]["email"] == T.CLIENT and a["by_person"][0]["visits"] == 1
+    assert a["tools"] == ["Page Watch"] and a["limit"] == 40 and a["runs"] == 0
+    said = [x["text"] for x in a["audit"]]
+    assert any("set the runs a month to 40" in t for t in said) and any("invited " + T.CLIENT in t for t in said)
+    assert admin.get("/admin/panel/account/no-such").status_code == 404
+    assert T._client(T.RAJ).get("/admin/panel/account/lumina").status_code in (302, 403), "admins only"
+    assert T._client(T.RAJ).get("/admin/panel/clients").status_code in (302, 403), "admins only"
 
 
 # ── The rules, alone ─────────────────────────────────────────────────────────

@@ -2138,9 +2138,7 @@ def agent_feedback_add_reason(feedback_id):
 @app.route("/admin/agent-feedback")
 @admin_required
 def admin_agent_feedback():
-    from tracker import agent_feedback
-    return render_template("admin_agent_feedback.html", user=_get_user(),
-                            agent_labels=agent_feedback.AGENT_LABELS)
+    return redirect("/admin#inbox")
 
 
 @app.route("/admin/agent-feedback/data")
@@ -8080,8 +8078,8 @@ def _fetch_visitor_analytics_uncached() -> dict:
 @app.route("/admin/anonymous-traffic")
 @admin_required
 def admin_visitors():
-    """Admin-only anonymous visitor analytics dashboard."""
-    return render_template("admin_visitors.html", user=_get_user())
+    """Moved into the admin panel (/admin), which carries every admin view on one page."""
+    return redirect("/admin#traffic")
 
 @app.route("/admin/anonymous-traffic/data")
 @admin_required
@@ -8501,9 +8499,8 @@ def _fetch_member_analytics_uncached() -> dict:
 @app.route("/admin/public-page-analytics")
 @admin_required
 def admin_members():
-    """Admin-only analytics for public Google sign-ins (members), synced with
-    their pre-login Visitor Analytics journey."""
-    return render_template("admin_members.html", user=_get_user())
+    """Moved into the admin panel (/admin)."""
+    return redirect("/admin#traffic")
 
 
 @app.route("/admin/public-page-analytics/data")
@@ -8862,8 +8859,8 @@ def admin_analytics_health():
 @app.route("/admin/internal-usage")
 @admin_required
 def admin_usage():
-    """Shell page — renders instantly, JS fetches /admin/internal-usage/data async."""
-    return render_template("admin_usage.html", user=_get_user())
+    """Moved into the admin panel (/admin)."""
+    return redirect("/admin#team")
 
 
 @app.route("/admin/internal-usage/data")
@@ -8876,9 +8873,8 @@ def admin_usage_data():
 @app.route("/admin/external-usage")
 @admin_required
 def admin_external_usage():
-    """Shell page — everyone signing in with a non-@markifydigital.com email. JS fetches
-    /admin/external-usage/data async."""
-    return render_template("admin_external_usage.html", user=_get_user())
+    """Moved into the admin panel (/admin): External is now the client workspaces shared with clients."""
+    return redirect("/admin#clients")
 
 @app.route("/admin/external-usage/data")
 @admin_required
@@ -9970,7 +9966,7 @@ def _cu_account(acct, key=None, events_limit=500):
         p["last"] = max(p["last"] or e["at"], e["at"])
     audit = client_accounts_store.audit(key, limit=50)
     out = {
-        "slug": acct["slug"], "name": acct["name"], "key": key,
+        "slug": acct["slug"], "name": acct["name"], "key": key, "space": acct.get("space") or "",
         "avatar": client_accounts.avatar(acct["name"], acct["profile"].get("colours")),
         "people": [dict(p, kind="domain" if p["who"].startswith("@") else "email") for p in people],
         "pages": [label for k, label, _, _ in client_access.SHARES if shares.get(k)],
@@ -10027,40 +10023,26 @@ def _cu_shared_accounts():
 @app.route("/admin/client-usage")
 @admin_required
 def admin_client_usage():
-    """Landing page: a card per client account shared with its client, then one per portal we run."""
-    force = request.args.get("fresh") in ("1", "true", "yes")
-    clients = _fetch_all_client_summaries(force=force)
-    return render_template("admin_client_usage.html", user=_get_user(), clients=clients,
-                           shared=_cu_shared_accounts(), nice_day=client_accounts.nice_day)
+    """Moved into the admin panel (/admin): each shared client account, and each portal we run."""
+    return redirect("/admin#clients")
 
 
 @app.route("/admin/client-usage/accounts/<slug>")
 @admin_required
 def admin_client_account(slug):
-    """One shared client account: who it is shared with, what, how they use it, every change."""
-    acct = _acct_listing()["by_slug"].get(slug)
-    if acct is None:
+    """One shared client account now opens in the admin panel's side panel."""
+    if _acct_listing()["by_slug"].get(slug) is None:
         abort(404)
-    from tracker import people_store
-    data = _cu_account(acct, events_limit=1000)
-    tools = {t["slug"]: t["label"] for t in _acct_tool_catalog()}
-    pages = dict(ACCT_PAGES)
-    for e in data["events"]:
-        t = e["tool"] or ""
-        e["where"] = "the home page" if t == "" else (tools.get(t.split("/", 1)[-1]) or pages.get(t) or t)
-        e["who"] = people_store.display(e["email"], data["actor_names"])
-    return render_template("admin_client_account.html", user=_get_user(), a=data, tool_labels=tools,
-                           nice_day=client_accounts.nice_day)
+    return redirect("/admin#client-%s" % slug)
 
 
 @app.route("/admin/client-usage/<client_slug>")
 @admin_required
 def admin_client_detail(client_slug):
-    """Per-client portal analytics dashboard (Position² team vs client team)."""
+    """A client portal's analytics now open in the admin panel's side panel."""
     if client_slug not in CLIENTS:
         abort(404)
-    return render_template("admin_client_detail.html", user=_get_user(),
-                           client=CLIENTS[client_slug], client_slug=client_slug)
+    return redirect("/admin#portal-%s" % client_slug)
 
 
 @app.route("/admin/client-usage/<client_slug>/data")
@@ -10076,19 +10058,14 @@ def admin_client_detail_data(client_slug):
 @app.route("/admin/access-requests")
 @admin_required
 def admin_requests():
-    """Admin view of everyone who submitted the Request Access form, plus
-    everyone who requested access to a not-yet-connected agent from /app."""
-    reqs = _read_access_requests()
-    agent_reqs = _agent_access_requests_raw()
-    return render_template("admin_requests.html", user=_get_user(),
-                           requests=reqs, count=len(reqs),
-                           agent_requests=agent_reqs, agent_count=len(agent_reqs))
+    """Moved into the admin panel (/admin)."""
+    return redirect("/admin#inbox")
 
 @app.route("/admin/public-agent-usage")
 @admin_required
 def admin_agent_runs():
-    """Admin-only view of per-user, per-agent run counts against the cap."""
-    return render_template("admin_agent_runs.html", user=_get_user())
+    """Moved into the admin panel (/admin)."""
+    return redirect("/admin#inbox")
 
 @app.route("/admin/public-agent-usage/data")
 @admin_required
@@ -10096,13 +10073,225 @@ def admin_agent_runs_data():
     """JSON data endpoint called by the admin agent-usage shell page."""
     return jsonify(_fetch_agent_run_stats())
 
+
+# ── The admin panel (/admin) ─────────────────────────────────────────────────
+# One page for every admin view. The page is a shell; each section (spend, team, clients, traffic,
+# inbox) is its own JSON route, so a slow Google Sheet holds up its own section and nothing else, and a
+# section that fails says so in place. The numbers come from the same readers the old tabs used
+# (_fetch_usage_data, _cu_shared_accounts, _fetch_visitor_analytics, ...) and, for money, from
+# tracker/admin_spend.py, which reads every agent's own cost ledger.
+_PANEL_CACHE = {}
+_PANEL_TTL = 60
+PANEL_PERIODS = (7, 30, 90)
+
+
+def _panel_cached(key, build, force=False, ttl=_PANEL_TTL):
+    now = time.time()
+    hit = _PANEL_CACHE.get(key)
+    if hit and not force and now - hit[0] < ttl:
+        return hit[1]
+    val = build()
+    _PANEL_CACHE[key] = (now, val)
+    return val
+
+
+def _iso(v):
+    return v.isoformat() if hasattr(v, "isoformat") else (v or None)
+
+
+def _panel_workspaces():
+    """{space: account name} for every client account."""
+    try:
+        return {a["space"]: a["name"] for a in _acct_listing()["accounts"]}
+    except Exception:
+        app.logger.exception("admin panel: the account list could not be read")
+        return {}
+
+
+def _panel_spend(days):
+    from tracker import admin_spend, people_store
+    out = admin_spend.panel(days, names_of=people_store.names, workspaces=_panel_workspaces())
+    for p in out["people"]:
+        p["staff"] = bool(p["email"]) and _is_staff(p["email"])
+    return out
+
+
+def _panel_team():
+    """The staff: who signs in, what they open, how long they stay."""
+    d = _fetch_usage_data()
+    users = []
+    for u in d["user_activity"]:
+        users.append({
+            "email": u["email"], "name": u.get("name") or u["email"], "logins": u["logins"],
+            "page_views": u.get("page_views", 0), "time": u.get("time_fmt", "—"),
+            "last_active": u.get("last_active", ""), "first_seen": u.get("first_seen", ""),
+            "device": u.get("device", ""), "browser": u.get("browser", ""), "os": u.get("os", ""),
+            "recent": list(reversed((u.get("timeline") or [])[-8:]))})
+    return {"kpis": {"users": d["unique_users"], "logins": d["total_logins"], "page_views": d["total_page_views"],
+                     "time": d["total_time_fmt"], "avg_view": d["avg_view_fmt"],
+                     "views_per_user": d["views_per_user"], "busiest_day": d["busiest_day"]},
+            "login_days": d["login_days"], "top_pages": d["top_pages"][:8], "devices": d["device_breakdown"],
+            "browsers": d["browser_breakdown"], "users": users[:200]}
+
+
+def _panel_client_card(a):
+    last = a.get("last_change") or {}
+    return {"slug": a["slug"], "name": a["name"], "space": a.get("space", ""), "avatar": a["avatar"],
+            "people": [{"who": p["who"], "kind": p["kind"]} for p in a["people"]],
+            "pages": a["pages"], "tools": [t["label"] for t in a["tools"]], "tools_total": a["tools_total"],
+            "visits_30": a["visits_30"], "visitors_30": a["visitors_30"], "runs": a["runs"], "limit": a["limit"],
+            "last_visit": _iso(a["last_visit"]), "last_change": last.get("text", ""), "last_change_at": _iso(last.get("at"))}
+
+
+def _panel_clients():
+    """External: the client accounts an admin has shared, and the client portals we run."""
+    cards = [_panel_client_card(a) for a in _cu_shared_accounts()]
+    portals = []
+    try:
+        for c in _fetch_all_client_summaries():
+            portals.append({k: c[k] for k in ("slug", "name", "short", "logo", "website", "accent", "views",
+                                              "people", "last_active")})
+    except Exception:
+        app.logger.exception("admin panel: client portals unreadable")
+    return {"accounts": cards, "portals": portals,
+            "totals": {"accounts": len(cards), "people": sum(len(c["people"]) for c in cards),
+                       "visitors_30": sum(c["visitors_30"] for c in cards),
+                       "runs": sum(c["runs"] for c in cards)}}
+
+
+def _panel_account(slug):
+    """One shared client account, in full, for the side panel."""
+    from tracker import people_store
+    acct = _acct_listing()["by_slug"].get(slug)
+    if acct is None:
+        return None
+    a = _cu_account(acct, events_limit=1000)
+    tools = {t["slug"]: t["label"] for t in _acct_tool_catalog()}
+    pages = dict(ACCT_PAGES)
+    events = []
+    for e in a["events"][:80]:
+        t = e["tool"] or ""
+        events.append({"at": _iso(e["at"]), "kind": e["kind"], "who": people_store.display(e["email"], a["actor_names"]),
+                       "where": "the home page" if t == "" else (tools.get(t.split("/", 1)[-1]) or pages.get(t) or t)})
+    card = _panel_client_card(a)
+    card.update(
+        people=[{"who": p["who"], "kind": p["kind"], "added_by": people_store.display(p.get("added_by") or "", a["actor_names"])
+                 if p.get("added_by") else "", "at": _iso(p.get("created_at"))} for p in a["people"]],
+        by_person=[{"name": p["name"], "email": p["email"], "visits": p["visits"], "runs": p["runs"], "last": _iso(p["last"])}
+                   for p in a["by_person"]],
+        audit=[{"text": x["text"], "at": _iso(x["at"])} for x in a["audit"]], events=events)
+    return card
+
+
+def _panel_portal(slug):
+    """One client portal's usage, for the side panel."""
+    if slug not in CLIENTS:
+        return None
+    d = _fetch_client_usage(slug) or {}
+    seg = d.get("segments") or {}
+    return {"slug": slug, "name": CLIENTS[slug]["name"], "website": CLIENTS[slug].get("website", ""),
+            "kpis": d.get("kpis") or {},
+            "segments": [{"label": v["label"], "people": len(v["people"]), "views": v["views"], "time": v["time"],
+                          "logins": v["logins"], "runs": v["runs"]} for v in seg.values()],
+            "timeline": (d.get("timeline") or [])[-30:],
+            "top_pages": [{"title": p.get("title") or p.get("url"), "views": p["views"], "viewers": p.get("viewers", 0)}
+                          for p in (d.get("top_pages") or [])[:8]]}
+
+
+def _panel_traffic():
+    """The public site: visitors before they sign in, and who signs in."""
+    v = _fetch_visitor_analytics()
+    m = _fetch_member_analytics()
+    mk = m.get("kpis") or {}
+    return {"configured": bool(v.get("configured")), "kpis": v.get("kpis") or {}, "series": v.get("series") or [],
+            "top_pages": (v.get("top_pages") or [])[:8], "referrers": (v.get("referrers") or [])[:8],
+            "devices": (v.get("devices") or [])[:5], "landing": (v.get("top_landing") or [])[:6],
+            "signins": {k: mk.get(k, 0) for k in ("members", "signins", "new", "returning", "conv_rate")},
+            "funnel": m.get("funnel") or {}, "companies": (m.get("companies") or [])[:8]}
+
+
+def _panel_inbox():
+    """What people ask of us and tell us: access requests, thumbs on agent reports, public agent use."""
+    from tracker import agent_feedback
+    reqs = _read_access_requests()
+    agent_reqs = _agent_access_requests_raw()
+    fb = agent_feedback.summary(days=30)
+    labels = agent_feedback.AGENT_LABELS
+    by_agent = {}
+    for r in fb:
+        x = by_agent.setdefault(r["agent_slug"], {"agent": r["agent_slug"], "label": labels.get(r["agent_slug"], r["agent_slug"]),
+                                                  "up": 0, "down": 0})
+        x["up"] += r["up"]
+        x["down"] += r["down"]
+    runs = _fetch_agent_run_stats()
+    return {
+        "requests": {"total": len(reqs), "rows": reqs[:60]},
+        "agent_requests": {"total": len(agent_reqs), "rows": agent_reqs[:60]},
+        "feedback": {"agents": sorted(by_agent.values(), key=lambda x: -(x["up"] + x["down"])),
+                     "down": [dict(r, label=labels.get(r["agent_slug"], r["agent_slug"]))
+                              for r in agent_feedback.list_recent(rating="down", limit=12)]},
+        "agent_use": {"configured": runs.get("configured"), "cap": runs.get("cap"), "runs": runs.get("total_runs", 0),
+                      "users": runs.get("total_users", 0), "at_cap": runs.get("users_at_cap", 0),
+                      "agents": [a for a in runs.get("agents", []) if a["runs"]][:12],
+                      "top_users": [{"name": u["name"], "email": u["email"], "total": u["total"], "last_run": u["last_run"]}
+                                    for u in runs.get("users", [])[:8]]}}
+
+
+@app.route("/admin")
+@admin_required
+def admin_panel():
+    """The one admin page: spend, team, clients, the public site and the inbox."""
+    return render_template("admin_panel.html", user=_get_user())
+
+
+@app.route("/admin/panel/<section>")
+@admin_required
+def admin_panel_data(section):
+    from werkzeug.exceptions import HTTPException
+    force = request.args.get("fresh") in ("1", "true", "yes")
+    try:
+        if section == "spend":
+            days = request.args.get("days", type=int)
+            days = days if days in PANEL_PERIODS else 30
+            data = _panel_cached(("spend", days), lambda: _panel_spend(days), force)
+        elif section in ("team", "clients", "traffic", "inbox"):
+            build = {"team": _panel_team, "clients": _panel_clients, "traffic": _panel_traffic,
+                     "inbox": _panel_inbox}[section]
+            data = _panel_cached(section, build, force)
+        else:
+            abort(404)
+    except HTTPException:
+        raise
+    except Exception as e:
+        app.logger.exception("admin panel: %s could not be built", section)
+        return jsonify({"error": "%s: %s" % (type(e).__name__, str(e)[:200])}), 500
+    return jsonify(data)
+
+
+@app.route("/admin/panel/account/<slug>")
+@admin_required
+def admin_panel_account(slug):
+    data = _panel_account(slug)
+    if data is None:
+        abort(404)
+    return jsonify(data)
+
+
+@app.route("/admin/panel/portal/<slug>")
+@admin_required
+def admin_panel_portal(slug):
+    data = _panel_portal(slug)
+    if data is None:
+        abort(404)
+    return jsonify(data)
+
 # ── Legacy admin URLs (pre-rename) ───────────────────────────────────────────
 # These pages' URLs originally didn't match their display names (e.g. "Public
 # Page Analytics" lived at /admin/members). Renamed the routes above to
 # match; these 301s keep any bookmarked/shared old links working.
 @app.route("/admin/usage")
 def _legacy_admin_usage():
-    return redirect("/admin/internal-usage", code=301)
+    return redirect("/admin#team", code=301)
 
 @app.route("/admin/usage/data")
 def _legacy_admin_usage_data():
@@ -10110,7 +10299,7 @@ def _legacy_admin_usage_data():
 
 @app.route("/admin/visitors")
 def _legacy_admin_visitors():
-    return redirect("/admin/anonymous-traffic", code=301)
+    return redirect("/admin#traffic", code=301)
 
 @app.route("/admin/visitors/data")
 def _legacy_admin_visitors_data():
@@ -10118,7 +10307,7 @@ def _legacy_admin_visitors_data():
 
 @app.route("/admin/members")
 def _legacy_admin_members():
-    return redirect("/admin/public-page-analytics", code=301)
+    return redirect("/admin#traffic", code=301)
 
 @app.route("/admin/members/data")
 def _legacy_admin_members_data():
@@ -10126,11 +10315,11 @@ def _legacy_admin_members_data():
 
 @app.route("/admin/requests")
 def _legacy_admin_requests():
-    return redirect("/admin/access-requests", code=301)
+    return redirect("/admin#inbox", code=301)
 
 @app.route("/admin/agent-runs")
 def _legacy_admin_agent_runs():
-    return redirect("/admin/public-agent-usage", code=301)
+    return redirect("/admin#inbox", code=301)
 
 @app.route("/admin/agent-runs/data")
 def _legacy_admin_agent_runs_data():
@@ -12223,8 +12412,8 @@ def admin_external_usage_unipile_connect():
     base = request.url_root.rstrip("/")
     data, err = unipile_client.create_hosted_auth_link(
         providers,
-        success_redirect_url=base + "/admin/external-usage",
-        failure_redirect_url=base + "/admin/external-usage",
+        success_redirect_url=base + "/admin",
+        failure_redirect_url=base + "/admin",
         name="Social Media Intelligence")
     if err is not None:
         return jsonify({"error": unipile_client.describe_error(err)}), 502

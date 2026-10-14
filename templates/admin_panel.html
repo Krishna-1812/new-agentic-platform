@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    ADMIN PANEL (/admin) -- the one admin page.
+
+    It replaces eight separate tabs (Internal Usage, External Usage, Client Usage, Agent Feedback,
+    Anonymous Traffic, Public Page Analytics, Public Agent Usage, Access Requests). The page is a shell:
+    static/js/admin_panel.js draws each section from its own JSON route (/admin/panel/<section>, app.py),
+    so a slow Google Sheet holds up only its own section. The ids below are the ones the script reads.
+    Its look is static/css/admin_panel.css, written against the Bento tokens.
+-#}
+<html lang="en">
+<head>
+{{ head("Admin", ["admin_panel.css?v=1"]) }}
+</head>
+<body class="ctl">
+
+{{ topbar([("Admin", none)]) }}
+
+<main class="ctl-shell">
+
+  {% include "_admin_sheet_health.html" %}
+
+  {# ── Hero: the whole platform in four numbers ─────────────────────────── #}
+  <section class="ctl-hero" aria-labelledby="ctlTitle">
+    <div class="ctl-hero-top">
+      <span class="ctl-lbl">Admin panel</span>
+      <span class="ctl-live" id="ctlStamp"><i></i><span>Reading every ledger&hellip;</span></span>
+      <div class="ctl-hero-tools">
+        <div class="ctl-seg" role="group" aria-label="Period for the money figures" id="ctlPeriod">
+          <button type="button" data-days="7">7 days</button>
+          <button type="button" data-days="30" class="is-on" aria-pressed="true">30 days</button>
+          <button type="button" data-days="90">90 days</button>
+        </div>
+        <button type="button" class="ctl-btn" id="ctlRefresh">Refresh</button>
+      </div>
+    </div>
+
+    <h1 class="ctl-h1" id="ctlTitle">Everything, <em>on one page.</em></h1>
+    <p class="ctl-lead">What every agent costs, who is using the platform, what clients can see, and who is knocking on the door. Each number is read straight from the place it is recorded.</p>
+
+    <div class="ctl-figs">
+      <a class="ctl-fig" href="#spend"><b data-fig="spend">&mdash;</b><span>Spent, <em data-fig="days">30 days</em></span><small data-fig-sub="spend"></small></a>
+      <a class="ctl-fig" href="#team"><b data-fig="staff">&mdash;</b><span>Staff signed in</span><small data-fig-sub="staff"></small></a>
+      <a class="ctl-fig" href="#clients"><b data-fig="clients">&mdash;</b><span>Client workspaces shared</span><small data-fig-sub="clients"></small></a>
+      <a class="ctl-fig" href="#traffic"><b data-fig="visitors">&mdash;</b><span>Public visitors</span><small data-fig-sub="visitors"></small></a>
+    </div>
+  </section>
+
+  {# ── Section chips: jump, and show where you are ──────────────────────── #}
+  <nav class="ctl-nav" id="ctlNav" aria-label="Sections">
+    <a href="#spend" class="is-on">Spend</a>
+    <a href="#team">Team</a>
+    <a href="#clients">Clients</a>
+    <a href="#traffic">Public site</a>
+    <a href="#inbox">Inbox</a>
+  </nav>
+
+  <section class="ctl-sec" id="spend" aria-labelledby="spendH">
+    <header class="ctl-sec-head"><span class="ctl-idx">01</span>
+      <div><h2 class="ctl-h2" id="spendH">Where the money <em>goes.</em></h2>
+      <p class="ctl-note">By workspace, by agent and by person. Dollars only: Apollo and event credits are shown apart, never added in.</p></div></header>
+    <div class="ctl-body" id="spendBody" aria-live="polite"></div>
+  </section>
+
+  <section class="ctl-sec" id="team" aria-labelledby="teamH">
+    <header class="ctl-sec-head"><span class="ctl-idx">02</span>
+      <div><h2 class="ctl-h2" id="teamH">The <em>team.</em></h2>
+      <p class="ctl-note">Everyone on the staff domain who signs in: how often, what they open, and what they spend.</p></div></header>
+    <div class="ctl-body" id="teamBody" aria-live="polite"></div>
+  </section>
+
+  <section class="ctl-sec" id="clients" aria-labelledby="clientsH">
+    <header class="ctl-sec-head"><span class="ctl-idx">03</span>
+      <div><h2 class="ctl-h2" id="clientsH">What clients <em>see.</em></h2>
+      <p class="ctl-note">Only what an admin has shared: the client workspaces, the pages and agents inside them, and how their people use them.</p></div></header>
+    <div class="ctl-body" id="clientsBody" aria-live="polite"></div>
+  </section>
+
+  <section class="ctl-sec" id="traffic" aria-labelledby="trafficH">
+    <header class="ctl-sec-head"><span class="ctl-idx">04</span>
+      <div><h2 class="ctl-h2" id="trafficH">The public <em>site.</em></h2>
+      <p class="ctl-note">Visitors before they sign in, where they came from, and how many become members.</p></div></header>
+    <div class="ctl-body" id="trafficBody" aria-live="polite"></div>
+  </section>
+
+  <section class="ctl-sec" id="inbox" aria-labelledby="inboxH">
+    <header class="ctl-sec-head"><span class="ctl-idx">05</span>
+      <div><h2 class="ctl-h2" id="inboxH">The <em>inbox.</em></h2>
+      <p class="ctl-note">Access requests, thumbs on agent reports, and how the public agents are used.</p></div></header>
+    <div class="ctl-body" id="inboxBody" aria-live="polite"></div>
+  </section>
+
+</main>
+
+{# ── Side panel: one client workspace or portal, in full ──────────────── #}
+<div class="bn-ovl" id="ctlOvl"></div>
+<aside class="bn-drawer ctl-drawer" id="ctlDrawer" role="dialog" aria-modal="true" aria-labelledby="ctlDrawerT" aria-hidden="true">
+  <div class="ctl-drawer-bar">
+    <span class="ctl-lbl" id="ctlDrawerK">Client workspace</span>
+    <button type="button" class="ctl-x" id="ctlDrawerX" aria-label="Close">&times;</button>
+  </div>
+  <div class="ctl-drawer-body" id="ctlDrawerBody"></div>
+</aside>
+
+{{ topbar_script() }}
+<script src="{{ url_for('static', filename='js/admin_panel.js') }}?v=1" defer></script>
+</body>
+</html>
