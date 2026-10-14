@@ -4,6 +4,39 @@ How Market Radar reads a company that is not a clinic, and what it adds up. Ever
 public: no model, no key, no credit. (The report writer and the move reader still use Claude, capped and
 confirmed on the page as before.)
 
+## 0. How exactly a company is placed: niche, buyer, ICP
+
+`tracker/market_radar_niche.py`, `tracker/market_radar_profile.py`. A company profiled as "men's innerwear"
+whose whole site says Pima cotton, modal and bamboo, zero polyester, is not wrong but it is too broad: its
+buyer, its rivals and its report all change with the niche. The profile now carries a **positioning**: the
+niche (4 to 14 words: product, the attribute the site makes its point of difference, the customer),
+the broad category and its path, the defining attributes (each with a verbatim quote and page), what sets it
+apart, the neighbouring categories it is NOT in, who it sells to (gender, age, market, needs, buying
+triggers), one to three ideal customer segments, and the searches a buyer would type.
+
+How it stays accurate:
+
+1. **A program counts what the site keeps saying** (free): its title, description, headings, menu, product
+   and collection addresses and text, weighted by where a word sits, the materials and audiences it names,
+   what it says it is free of ("zero polyester"), and the prices it shows. The model is given these counts
+   as facts (`what_the_site_stresses`), so "Pima cotton" in the title outweighs a product listed once.
+2. **A program checks the niche against the site**: vaguer than the site (a material or audience the site
+   stresses that the niche leaves out), a word no page says, or too few meaningful words. The town a business
+   is in and a product range listed among many are not counted as missing.
+3. **If the check fails, one small second model call** rewrites the positioning with the problems listed.
+   It costs a few cents and runs only when the check fails. If it fails or does not fully fix it, the first
+   reading is kept and the remaining flags are shown on the profile ("Niche and buyer" tab), never hidden.
+4. **Staff can correct it.** Niche, who they sell to, what sets them apart, not-in categories and buyer
+   searches are editable on the profile; a correction reaches the competitor search, the judging and the
+   report on the next run.
+
+How the niche is used: the competitor search plan builds its queries from the niche's attributes and the
+buyer's market, not the broad category, and never searches a "not in" category; each candidate is judged
+`same_niche` (yes, adjacent, no); a same-category brand without the niche is held at "indirect" and below 70,
+and a different category is left out; the report writer is told the niche and the buyer; the profile page
+leads with the niche. A profile stored before this existed is read again once on its next run (corrections
+kept).
+
 ## 1. When a website cannot be read
 
 `tracker/market_radar_outside.py`. If a site refuses the reader or says very little, the profile also reads

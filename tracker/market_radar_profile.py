@@ -28,6 +28,7 @@ import time
 import requests
 
 from . import market_radar_llm as llm
+from . import market_radar_niche as niche_reader
 from . import market_radar_outside as outside
 from . import market_radar_site as site_reader
 
@@ -42,6 +43,44 @@ from . import market_radar_playbooks as playbooks
 
 ARCHETYPES = playbooks.ARCHETYPES
 CONFIDENCE = {"type": "string", "enum": ["high", "medium", "low"]}
+ATTRIBUTE_KINDS = ["product_type", "material", "ingredient", "technology", "audience", "price_tier",
+                   "ethos", "origin", "channel", "use_case", "service_model", "specialism", "other"]
+
+
+def _strs(max_items=None):
+    return {"type": "array", "items": {"type": "string"}}
+
+
+POSITIONING_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "required": ["niche", "broad_category", "category_path", "defining_attributes", "differentiators",
+                 "not_this", "audience", "customer_segments", "rival_search_phrases", "price_note",
+                 "confidence"],
+    "properties": {
+        "niche": {"type": "string"},
+        "broad_category": {"type": "string"},
+        "category_path": _strs(),
+        "defining_attributes": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False, "required": ["kind", "value", "quote", "url"],
+            "properties": {"kind": {"type": "string", "enum": ATTRIBUTE_KINDS}, "value": {"type": "string"},
+                           "quote": {"type": "string"}, "url": {"type": "string"}}}},
+        "differentiators": _strs(),
+        "not_this": _strs(),
+        "audience": {"type": "object", "additionalProperties": False,
+                     "required": ["who", "gender", "age_range", "geography", "needs", "buying_triggers"],
+                     "properties": {"who": {"type": "string"}, "gender": {"type": "string"},
+                                    "age_range": {"type": "string"}, "geography": {"type": "string"},
+                                    "needs": _strs(), "buying_triggers": _strs()}},
+        "customer_segments": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False,
+            "required": ["name", "description", "why_they_buy"],
+            "properties": {"name": {"type": "string"}, "description": {"type": "string"},
+                           "why_they_buy": {"type": "string"}}}},
+        "rival_search_phrases": _strs(),
+        "price_note": {"type": "string"},
+        "confidence": CONFIDENCE,
+    },
+}
 
 PROFILE_SCHEMA = {
     "type": "object",
@@ -49,7 +88,7 @@ PROFILE_SCHEMA = {
     "required": ["name", "one_liner", "offerings", "customer_type", "archetype",
                  "archetype_reason", "business_model", "sells_online", "location_count",
                  "location_count_basis", "hq", "locations", "markets", "service_area",
-                 "price_positioning",
+                 "price_positioning", "positioning",
                  "industry", "competitors_named", "languages", "evidence", "confidence",
                  "unknowns"],
     "properties": {
@@ -78,6 +117,7 @@ PROFILE_SCHEMA = {
         "service_area": {"type": "string"},
         "price_positioning": {"type": "string",
                               "enum": ["budget", "mid", "premium", "luxury", "unknown"]},
+        "positioning": POSITIONING_SCHEMA,
         "industry": {"type": "object", "additionalProperties": False,
                      "required": ["plain_label", "naics_code", "naics_title", "keywords"],
                      "properties": {"plain_label": {"type": "string"},
@@ -118,10 +158,24 @@ Rules:
 - markets: ISO alpha-2 codes of the countries the company actually serves or ships to, per the pages.
 - industry.naics_code: the best-matching 6-digit NAICS 2022 code, and its title.
 - competitors_named: only companies the site itself presents as competitors or alternatives (comparison pages, "vs" pages, "switch from"). Not partners, clients, insurers, suppliers or press outlets. Usually empty.
+Positioning (the niche). Everything downstream, the competitors searched for, how each is judged and the buyer the report describes, follows it, so be exact:
+- niche: the finest category the pages support, in 4 to 14 words: the product or service, the attribute the site makes its point of difference (its material, method, specialism, ingredient, technology, price tier, origin or audience) and the customer it is for. Take the attributes from what_the_site_stresses in the FACTS: words in the page title and headline, and materials or audiences named many times, are what the company itself says it is. A broad category is not a niche: "men's innerwear" is a category, while "Pima cotton, modal and bamboo men's basics, zero polyester" is a niche. The product range may be wider than the first product you notice (a brand that starts with underwear but also sells polos and hoodies sells basics, not only innerwear): describe the range the site shows. Use the site's own words where it has them, and never add an attribute no page states. If a company is really broad, say so; do not invent a specialism.
+- broad_category: the ordinary industry name a person would use ("men's apparel").
+- category_path: from broad to narrow, 2 to 5 steps, ending at the niche.
+- defining_attributes: each attribute that makes up the niche, with its kind, the value, a verbatim quote under 25 words from a page, and that page's URL. The strongest first.
+- differentiators: up to 5 things the company claims set it apart, each stated on a page.
+- not_this: up to 5 neighbouring categories this company is NOT in, so that competitors from them are not mistaken for rivals ("mass-market polyester activewear", "women's intimates").
+- audience: who it sells to. who: one plain sentence (stated or clearly implied by the pages). gender: "men", "women", "all" or "" when not stated. age_range, geography (the market the prices, shipping and currency show) and up to 4 needs and up to 4 buying_triggers, only what the pages or the products support; empty when not.
+- customer_segments: the 1 to 3 ideal customer profiles, each with a name, a description (for a business customer: roles, company size and industry) and why they buy. Judge them from the offer, price and tone; leave the list empty rather than guess.
+- rival_search_phrases: 6 to 10 searches a buyer in its market would type to find brands like this one, built from the niche's attributes, never the company's own name.
+- price_note: where its price points sit, from prices_seen (for example "boxer briefs about $20, tops $38 to $68"); empty when none were seen.
+- confidence for the niche.
+Also set industry.plain_label to the niche in under 8 words, and put the niche's defining words in industry.keywords.
 - evidence: for name, archetype, hq, location_count and industry, a short verbatim quote (under 25 words) from the page text, with that page's URL. Never invent or paraphrase a quote.
 - unknowns: what a reader would expect to know that these pages did not say.
 - Write in English, plainly. Do not use em dashes or en dashes. Use an empty string or empty list when something is unknown; never guess to fill a field."""
 SYSTEM = SYSTEM.replace("%(archetypes)s", playbooks.prompt_lines())
+POSITIONING_RULES = SYSTEM[SYSTEM.index("Positioning (the niche)."):SYSTEM.index("- evidence: for name")].strip()
 
 
 # == building the model's input ==================================================
@@ -188,6 +242,8 @@ def facts_for_model(site):
         "shopify_store_info": site.get("shopify_store") or "not a Shopify store, or not readable",
         "read_from_archive": bool(site.get("via_archive")),
         "read_from_wikidata_and_wikipedia": bool(site.get("via_outside")),
+        # Counted by a program, not read by a model: the site's own most repeated words, and where they sit.
+        "what_the_site_stresses": niche_reader.stresses(site),
     }
 
 
@@ -208,6 +264,60 @@ def ask_model(facts, corpus, *, run_id=None, stage="profile", client=None):
             + "\n\nTEXT OF THE PAGES READ:\n" + corpus)
     return llm.call_json(SYSTEM, user, PROFILE_SCHEMA, model=MODEL, max_tokens=MAX_OUTPUT_TOKENS,
                          run_id=run_id, stage=stage, client=client or _client())
+
+
+REFINE_SYSTEM = """You correct the positioning of a company that was profiled from its own website, for a market-intelligence report. A first reading was checked by a program against what the site actually says, and the problems are listed below. Rewrite the positioning so that none of them remain, using only the pages given. You have no search tool and must not use outside knowledge.
+
+""" + POSITIONING_RULES + """
+
+Write in English, plainly. Do not use em dashes or en dashes. Keep what was right in the first reading."""
+
+
+def refine_positioning(facts, corpus, current, problems, *, run_id=None, client=None):
+    """One small structured-output call: the positioning again, given what a program found wrong with it.
+    Returns (positioning, meta). Raises ProfileError."""
+    brief = {k: facts.get(k) for k in ("website", "page_title", "meta_description", "what_the_site_stresses",
+                                       "currencies_seen", "country_signals")}
+    user = ("FACTS:\n" + json.dumps(brief, ensure_ascii=False, indent=1)
+            + "\n\nFIRST READING:\n" + json.dumps(current, ensure_ascii=False, indent=1)
+            + "\n\nPROBLEMS FOUND IN IT:\n- " + "\n- ".join(problems)
+            + "\n\nTEXT OF THE PAGES READ:\n" + corpus[:HOME_CHARS + PAGE_CHARS])
+    return llm.call_json(REFINE_SYSTEM, user, POSITIONING_SCHEMA, model=MODEL, max_tokens=3000,
+                         run_id=run_id, stage="profile_niche", client=client or _client())
+
+
+def clean_positioning(pos):
+    """The model's positioning, house style, bounded. Always returns a full dict."""
+    pos = pos if isinstance(pos, dict) else {}
+
+    def strs(v, n, width=140):
+        return [_clean(str(x))[:width] for x in (v or []) if str(x).strip()][:n]
+    aud = pos.get("audience") if isinstance(pos.get("audience"), dict) else {}
+    return {
+        "niche": _clean(str(pos.get("niche") or ""))[:200],
+        "broad_category": _clean(str(pos.get("broad_category") or ""))[:120],
+        "category_path": strs(pos.get("category_path"), 5, 100),
+        "defining_attributes": [
+            {"kind": str(a.get("kind") or "other"), "value": _clean(str(a.get("value") or ""))[:140],
+             "quote": str(a.get("quote") or "")[:300], "url": str(a.get("url") or "")}
+            for a in (pos.get("defining_attributes") or []) if isinstance(a, dict)
+            and str(a.get("value") or "").strip()][:8],
+        "differentiators": strs(pos.get("differentiators"), 5),
+        "not_this": strs(pos.get("not_this"), 5),
+        "audience": {"who": _clean(str(aud.get("who") or ""))[:300],
+                     "gender": _clean(str(aud.get("gender") or ""))[:30],
+                     "age_range": _clean(str(aud.get("age_range") or ""))[:40],
+                     "geography": _clean(str(aud.get("geography") or ""))[:120],
+                     "needs": strs(aud.get("needs"), 4), "buying_triggers": strs(aud.get("buying_triggers"), 4)},
+        "customer_segments": [
+            {"name": _clean(str(c.get("name") or ""))[:80], "description": _clean(str(c.get("description") or ""))[:300],
+             "why_they_buy": _clean(str(c.get("why_they_buy") or ""))[:240]}
+            for c in (pos.get("customer_segments") or []) if isinstance(c, dict)
+            and str(c.get("name") or "").strip()][:3],
+        "rival_search_phrases": strs(pos.get("rival_search_phrases"), 10, 90),
+        "price_note": _clean(str(pos.get("price_note") or ""))[:200],
+        "confidence": pos.get("confidence") if pos.get("confidence") in ("high", "medium", "low") else "low",
+    }
 
 
 # == checking the model against the facts ======================================
@@ -259,6 +369,14 @@ def checks(site, p):
                and _norm(e["quote"]) not in structured]
     if unfound:
         out.append("%d evidence quote(s) do not appear on the page they cite." % len(unfound))
+    attrs = ((p.get("positioning") or {}).get("defining_attributes") or [])
+    unproven = [a for a in attrs if _norm(a.get("quote"))
+                and ((_u(a.get("url")) in texts and not _quote_on_page(a["quote"], texts[_u(a["url"])])
+                      and _norm(a["quote"]) not in structured)
+                     or (_u(a.get("url")) not in page_urls and _u(a.get("url")) not in texts))]
+    if unproven:
+        out.append("%d quote(s) backing the niche's defining attributes do not appear on the page they cite."
+                   % len(unproven))
     return out
 
 
@@ -283,9 +401,20 @@ def _norm(text, keep_links=False):
     return " ".join(re.sub(r"[^\w\s]", " ", text.lower()).split())
 
 
-def assemble(site, parsed, meta):
-    """The stored profile: the model's reading, the facts, and the checks."""
+def assemble(site, parsed, meta, *, refined=None):
+    """The stored profile: the model's reading, the facts, and the checks. `refined` is the niche
+    refining call's note when one was made."""
     p = dict(parsed)
+    p["positioning"] = clean_positioning(p.get("positioning"))
+    stress = niche_reader.stresses(site)
+    where = p.get("hq") or {}
+    places = niche_reader.place_words(where.get("city"), where.get("region"), p.get("service_area"),
+                                      (p["positioning"].get("audience") or {}).get("geography"))
+    p["niche_check"] = {"flags": niche_reader.check(p["positioning"], stress, site, places),
+                        "stresses": stress, "refined": refined or None}
+    if refined and not refined.get("failed") and p["positioning"]["niche"]:
+        # The industry label everything else reads follows the niche that was corrected.
+        p["industry"] = dict(p.get("industry") or {}, plain_label=p["positioning"]["niche"][:100])
     for key in ("one_liner", "archetype_reason", "business_model", "location_count_basis",
                 "service_area"):
         p[key] = _clean(p.get(key))
@@ -588,7 +717,28 @@ def build_profile(url, *, run_id=None, client=None, save=True, conn=None, apollo
     except ProfileError as e:
         return {"status": "failed", "profile": None, "entity_id": None,
                 "error": {"kind": e.kind, "detail": e.detail}, "pages": site.get("pages")}
-    profile = assemble(site, parsed, meta)
+    refined = None
+    where = parsed.get("hq") or {}
+    flags = niche_reader.check(
+        clean_positioning(parsed.get("positioning")), niche_reader.stresses(site), site,
+        niche_reader.place_words(where.get("city"), where.get("region"), parsed.get("service_area"),
+                                 ((parsed.get("positioning") or {}).get("audience") or {}).get("geography")))
+    if niche_reader.needs_refine(flags):
+        # The niche is vaguer than the site, or says what no page says: one small second call, with the
+        # problems listed. Whatever it still gets wrong is shown on the profile, not hidden.
+        try:
+            first = clean_positioning(parsed.get("positioning"))
+            better, rmeta = refine_positioning(facts_for_model(site), build_corpus(site), first,
+                                               niche_reader.feedback(flags), run_id=run_id, client=client)
+            parsed = dict(parsed, positioning=better)
+            refined = {"before": first.get("niche"), "problems": niche_reader.feedback(flags),
+                       "cost_usd": rmeta.get("cost_usd")}
+        except Exception as e:      # a failed refinement must never fail the profile
+            refined = {"before": clean_positioning(parsed.get("positioning")).get("niche"),
+                       "problems": niche_reader.feedback(flags),
+                       "failed": "%s: %s" % (getattr(e, "kind", type(e).__name__),
+                                             str(getattr(e, "detail", e))[:120])}
+    profile = assemble(site, parsed, meta, refined=refined)
     profile["hq_point"] = locate_hq(profile, conn=conn)
     profile["site_points"] = locate_sites(profile, conn=conn)
     entity_id = None

@@ -75,7 +75,11 @@ def build_pack(client_id, owner_email, *, store, now, collection=None, run_id=No
         "one_liner": profile.get("one_liner"), "archetype": profile.get("archetype"),
         "industry": (profile.get("industry") or {}).get("plain_label"),
         "city": hq.get("city"), "country": hq.get("country_code"),
-        "locations": profile.get("location_count"), "offerings": (profile.get("offerings") or [])[:6]},
+        "locations": profile.get("location_count"), "offerings": (profile.get("offerings") or [])[:6],
+        "niche": (profile.get("positioning") or {}).get("niche"),
+        "buyer": ((profile.get("positioning") or {}).get("audience") or {}).get("who"),
+        "segments": [c.get("name") for c in ((profile.get("positioning") or {}).get("customer_segments") or [])[:3]
+                     if c.get("name")]},
         "competitors": [], "moves": [], "nearby": [], "entrants": [], "themes": [], "rules": [],
         "hiring": [], "patterns": [], "coverage": [], "built_at": now.isoformat(timespec="seconds")}
 
@@ -280,6 +284,12 @@ def pack_text(pack):
         c["name"], c["domain"], c.get("one_liner") or "", c.get("archetype"), c.get("industry"),
         c.get("city") or "?", c.get("country") or "?",
         " Sells: " + ", ".join(c["offerings"]) + "." if c.get("offerings") else "")]
+    if c.get("niche"):
+        parts[0] += " Niche: %s." % c["niche"]
+        if c.get("buyer"):
+            parts[0] += " Sells to: %s" % c["buyer"].rstrip(".") + "."
+        if c.get("segments"):
+            parts[0] += " Its main buyer types: %s." % ", ".join(c["segments"])
     for title, key in (("COMPETITORS", "competitors"), ("COMPETITOR MOVES, highest ranked first "
                                                         "(severity is for this client)", "moves"),
                        ("NEW NEARBY", "nearby"), ("NEW BRANDS", "entrants"),
@@ -346,6 +356,8 @@ BRIEF_SCHEMA = {
             "properties": {"text": {"type": "string"}, "cites": CITED}}}}}
 
 WRITER_SYSTEM = """You write a market-intelligence brief for the business named as CLIENT, from an evidence pack: its competitors' recent moves, new businesses near it or new brands in its category, its industry's news themes and the hiring of its competitors. The reader runs the business and has five minutes.
+
+When the CLIENT line gives a niche and a buyer, write for that niche and that buyer: what a rival's move means for a company that sells exactly that to exactly those people, not for its broad category.
 
 Use only the evidence pack. Every statement cites the references it rests on (M3, T2, N1, H4, C2...). Never state a fact (a name, number, date, place, or what a company did) that is not in the evidence you cite. Do not invent figures, motives or outcomes. A move marked planned or announced has not happened yet: say "plans to", "will", "announced".
 

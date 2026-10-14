@@ -119,10 +119,34 @@ def _clean(value):
 
 # == what the prompts are told about the client =====================================
 
+def niche_brief(profile):
+    """What the company is, as finely as its site supports, and who it sells to: the unit its rivals are
+    judged by. Empty for a profile read before the niche existed."""
+    pos = profile.get("positioning") or {}
+    if not (pos.get("niche") or "").strip():
+        return {}
+    aud = pos.get("audience") or {}
+    out = {
+        "niche": pos.get("niche"),
+        "category_path": pos.get("category_path") or [],
+        "defining_attributes": ["%s: %s" % (a.get("kind"), a.get("value"))
+                                for a in (pos.get("defining_attributes") or [])[:8]],
+        "differentiators": (pos.get("differentiators") or [])[:5],
+        "not_in_these_categories": (pos.get("not_this") or [])[:5],
+        "sells_to": {k: aud.get(k) for k in ("who", "gender", "age_range", "geography") if aud.get(k)},
+        "buyer_needs": (aud.get("needs") or [])[:4],
+        "customer_segments": [{"name": c.get("name"), "description": c.get("description")}
+                              for c in (pos.get("customer_segments") or [])[:3]],
+        "searches_a_buyer_would_type": (pos.get("rival_search_phrases") or [])[:10],
+        "price_note": pos.get("price_note"),
+    }
+    return {k: v for k, v in out.items() if v}
+
+
 def client_brief(profile):
     hq = profile.get("hq") or {}
     ind = profile.get("industry") or {}
-    return {
+    return dict(niche_brief(profile), **{
         "name": profile.get("name"),
         "website": (profile.get("facts") or {}).get("website"),
         "domain": (profile.get("facts") or {}).get("domain"),
@@ -145,7 +169,7 @@ def client_brief(profile):
         # How this kind of business finds its rivals, and what its rivals' moves look like.
         "how_its_rivals_are_found": playbooks.get(profile.get("archetype"))["rivals"],
         "what_its_rivals_do_that_matters": playbooks.get(profile.get("archetype"))["watch"],
-    }
+    })
 
 
 def site_names(profile):
@@ -189,9 +213,10 @@ PLAN_SYSTEM = """You plan how to find a company's competitors, for a market-inte
 
 Return:
 - queries: up to 10 Google web searches whose results would be competitors' OWN websites, or articles listing such companies ("best X in Y", "brands like Z", "alternatives to Z"). Write each in the language people in the company's main market search in. For a local business, name its city or neighbourhood. For a business with a few sites in different towns (competes_locally is true and sites lists several), write searches for each town, not only the head office's. For a chain, search for the other chains in its country. For an online brand, search by product category and by "brands like / alternatives to" the brand. Do not search for the company's own name alone. Follow the profile's how_its_rivals_are_found. Each under 12 words. purpose: one short phrase.
+  When the profile has a niche, the niche is what competes, not the broad category: build the queries from its defining_attributes and from who it sells_to, so that a company selling "premium Pima cotton men's basics" is searched for as "Pima cotton underwear brands for men" and "organic cotton basics for men", never only "men's innerwear brands". Start from searches_a_buyer_would_type and improve them. Search in the market it sells_to (its geography). Never search for a category listed in not_in_these_categories.
 - search_country: ISO 3166-1 alpha-2 code (lowercase) of the country whose Google to search, normally the headquarters' country or main market.
 - search_language: the language code of the queries (e.g. en, de, pt, es, ja).
-- known: competitors you already know of with confidence, as an analyst of this industry would name them, each with its main website domain (e.g. "rothys.com"). Only real companies you are sure exist and compete with THIS company in its market; it is fine to return none, and for a small local business you normally should, because you cannot know its neighbours. Every domain will be checked by fetching it, so a guessed domain is wasted. relation: direct (same offering, same customers, same market), indirect (a substitute), aspirational (a much larger player the company is measured against). why: one short sentence.
+- known: competitors you already know of with confidence, as an analyst of this industry would name them, each with its main website domain (e.g. "rothys.com"). Only real companies you are sure exist and compete with THIS company in its market (with a niche: companies that share its defining attributes and sell to the same buyer, closest first; a brand from the broad category without them is indirect at most); it is fine to return none, and for a small local business you normally should, because you cannot know its neighbours. Every domain will be checked by fetching it, so a guessed domain is wasted. relation: direct (same offering, same customers, same market), indirect (a substitute), aspirational (a much larger player the company is measured against). why: one short sentence.
 - place_categories: for a business serving customers at a physical location, the Overture Maps place categories its competitors would be listed under, in Overture's snake_case English vocabulary. Use its own names (examples: dental_clinic, general_dentistry, orthodontics, doctors_office, family_practice, internal_medicine, psychiatry, psychology, counseling, behavioral_or_mental_health_clinic, physical_therapy, gym, fitness_studio, yoga_studio, restaurant, pizza_restaurant, hair_salon, nail_salon, shoe_store, clothing_store, pharmacy, veterinarian, accountant, lawyer, real_estate_agent). Name the specific kinds, not a broad group (not health_care or medical_service). Empty for online-only businesses.
 - place_terms: 1 to 3 lowercase word stems that every such category contains (e.g. "dent", "orthodont", "psychiat"), used as a catch-all. Never a generic word such as health, care, medical, clinic, service, center or office: those match unrelated kinds of business.
 - radius_km: for a local business, how far its customers usually travel (a city dentist: 3 to 5; a rural one: 15 to 25). 0 when not local.
@@ -614,8 +639,8 @@ VERIFY_SCHEMA = {
     "type": "object", "additionalProperties": False, "required": ["verdicts"],
     "properties": {"verdicts": {"type": "array", "items": {
         "type": "object", "additionalProperties": False,
-        "required": ["domain", "site_type", "name", "sells", "same_offering", "same_customers",
-                     "where", "location", "scale", "locations", "reason"],
+        "required": ["domain", "site_type", "name", "sells", "same_offering", "same_niche",
+                     "same_customers", "where", "location", "scale", "locations", "reason"],
         "properties": {
             "domain": {"type": "string"},
             "site_type": {"type": "string", "enum": [
@@ -624,6 +649,7 @@ VERIFY_SCHEMA = {
             "name": {"type": "string"},
             "sells": {"type": "string"},
             "same_offering": {"type": "string", "enum": ["yes", "partly", "no", "unclear"]},
+            "same_niche": {"type": "string", "enum": ["yes", "adjacent", "no", "unclear"]},
             "same_customers": {"type": "string", "enum": ["yes", "partly", "no", "unclear"]},
             "where": {"type": "string", "enum": ["same_city", "same_region", "same_country",
                                                 "other_country", "worldwide", "unclear"]},
@@ -644,6 +670,7 @@ Judge the business behind the site. A group, parent company or support organisat
 - name: the business's name as the page gives it.
 - sells: what it sells, in under 12 words.
 - same_offering: does it sell what the client sells (yes), something overlapping or a substitute (partly), or something else (no)?
+- same_niche: against the client's niche (its defining_attributes and who it sells_to): "yes" when it sells with the same defining attributes (the same material, specialism, method or price tier) to the same buyer; "adjacent" when it is in the same broad category but without those attributes or for a different buyer (a mass-market polyester brand next to a natural-fibre one); "no" when it is a different kind of product, or sits in one of the client's not_in_these_categories; "unclear" when the page does not say. Without a niche in CLIENT, answer "unclear".
 - same_customers: the same kind of customer (consumers vs businesses, similar segment)?
 - where: where it operates relative to the nearest of the client's sites (the client's "sites"; its headquarters when none are listed). A practice in one of those towns is same_city.
 - location: its city and country if the page says, else "".
@@ -878,11 +905,11 @@ RANK_SCHEMA = {
 RANK_SYSTEM = """You choose and rank a company's competitors for a market-intelligence report that will track what they do. You are given the company's profile and a list of candidates already checked against their own homepages, with how each was found.
 
 Choose at most {limit} competitors, only from the candidate list, most important first. Labels:
-- direct: same offering, same kind of customer, same market.
+- direct: same offering, same kind of customer, same market. When the client has a niche, direct also needs same_niche "yes".
 - indirect: a substitute or a partial overlap that customers really compare.
 - local: a business of the same kind near the client (use only for candidates found on the map near the client, or verified to be in the same city).
 - aspirational: a much larger player in the same market the client is measured against.
-score: 0 to 100, how much the client should watch this company. A business near the client in the same category scores higher than a distant one; a national chain present in the client's city counts as local. When the client has several sites, a business near any one of them is local to that site (near_site names it): a one-site practice next to one of the client's sites is a real rival, not too small to matter.
+score: 0 to 100, how much the client should watch this company. With a niche, a candidate whose same_niche is "adjacent" is indirect at most and scores under 70, and one whose same_niche is "no" scores under 40: the report is about the client's niche, so its nearest rivals come first. A business near the client in the same category scores higher than a distant one; a national chain present in the client's city counts as local. When the client has several sites, a business near any one of them is local to that site (near_site names it): a one-site practice next to one of the client's sites is a real rival, not too small to matter.
 reason: one plain sentence a business owner would accept, saying why (what they sell, where, how they were found). No em dashes or en dashes, no internal jargon.
 left_out: candidates you did not choose that a reader might expect, with a short why.
 gaps: what this list probably misses (for example, competitors whose websites could not be read), or empty."""
@@ -893,6 +920,7 @@ def _rank_line(item, verdict, brief):
                   key=lambda v: v["distance_km"])
     return {"domain": item["domain"], "name": verdict.get("name") or (item["names"] or [""])[0],
             "sells": verdict.get("sells"), "same_offering": verdict.get("same_offering"),
+            "same_niche": verdict.get("same_niche"),
             "same_customers": verdict.get("same_customers"), "where": verdict.get("where"),
             "location": verdict.get("location"), "scale": verdict.get("scale"),
             "distance_km": near[0]["distance_km"] if near else None,
@@ -1090,17 +1118,26 @@ def discover(profile, *, run_id=None, client=None, token=None, progress=None, se
                     invented.append(d)
                 continue
             score = max(0, min(100, int(c.get("score") or 0)))
+            kind = c.get("kind")
+            fit = line_by[d].get("same_niche")
+            if niche_brief(profile):
+                # The model is told this; the program holds it to it.
+                if fit == "no":
+                    score = min(score, MIN_SCORE - 1)
+                elif fit == "adjacent":
+                    score = min(score, 69)
+                    if kind == "direct":
+                        kind = "indirect"
             if score < MIN_SCORE:
                 weak.append({"domain": d, "why": "weak match (score %d): %s" % (score, _clean(c.get("reason")))})
                 continue
-            kind = c.get("kind")
             near = [v for v in item["via"] if v["kind"] == "places"]
             if kind == "local" and not near and line_by[d].get("where") != "same_city":
                 kind = "direct"     # "local" needs a map listing or a same-city address
             nearest = min(near, key=lambda v: v["distance_km"]) if near else {}
             competitors.append({
                 "domain": d, "name": line_by[d]["name"], "kind": kind,
-                "score": score,
+                "score": score, "niche_fit": fit,
                 "reason": _clean(c.get("reason")), "sells": line_by[d]["sells"],
                 "location": line_by[d]["location"], "distance_km": line_by[d]["distance_km"],
                 "near_site": line_by[d]["near_site"],

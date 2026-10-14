@@ -52,6 +52,11 @@
     ['price_positioning', 'Price level', 'select', PRICES],
     ['offerings', 'What they sell', 'list', null, true, 'Separate items with commas.'],
     ['industry.keywords', 'Industry keywords', 'list', null, true, 'Used to find news and competitors. Separate with commas.'],
+    ['positioning.niche', 'Niche', 'textarea', null, true, 'The most specific category they are in. Competitors are searched for and judged against it. Example: premium Pima cotton, modal and bamboo men\'s basics.'],
+    ['positioning.audience.who', 'Who they sell to', 'textarea', null, true, 'The buyer, in a sentence.'],
+    ['positioning.differentiators', 'What sets them apart', 'list', null, true, 'Separate with commas.'],
+    ['positioning.not_this', 'Not in these categories', 'list', null, true, 'Competitors from these are left out. Separate with commas.'],
+    ['positioning.rival_search_phrases', 'What buyers search for', 'list', null, true, 'Searches that find brands like this one. Separate with commas.'],
     ['location_count', 'Number of locations', 'number', null, false, '0 for online only. Leave empty if not known.'],
     ['markets', 'Countries served', 'list', null, false, 'Two-letter codes, such as US, GB.'],
     ['service_area', 'Service area', 'text', null, true],
@@ -463,13 +468,13 @@
     if (editing) {
       return '<div class="card mr-card">' + head + '<div class="mr-card-b">' + checks + body + renderLocation(view) + '</div></div>';
     }
-    var ev = renderEvidence(p), pub = renderPublic(p);
-    var keys = ['what', 'where'].concat(pub ? ['public'] : [], ev ? ['evidence'] : []);
-    var names = { what: 'What they do', where: 'Where', public: 'Public records', evidence: 'What the website says' };
+    var ev = renderEvidence(p), pub = renderPublic(p), nic = renderNiche(p);
+    var keys = ['what'].concat(nic ? ['niche'] : [], ['where'], pub ? ['public'] : [], ev ? ['evidence'] : []);
+    var names = { what: 'What they do', niche: 'Niche and buyer', where: 'Where', public: 'Public records', evidence: 'What the website says' };
     var on = pick(tab, keys);
     return '<div class="mr-ov">' + profileHead(view) + '<div class="card mr-card mr-prof">' + head + '<div class="mr-card-b">' + checks +
       tabs('profile', keys.map(function (k) { return [k, names[k]]; }), on) +
-      pane('profile', 'what', on, body) + pane('profile', 'where', on, renderLocation(view)) +
+      pane('profile', 'what', on, body) + (nic ? pane('profile', 'niche', on, nic) : '') + pane('profile', 'where', on, renderLocation(view)) +
       (pub ? pane('profile', 'public', on, pub) : '') +
       (ev ? pane('profile', 'evidence', on, ev) : '') + '</div></div></div>';
   }
@@ -503,7 +508,7 @@
       }).join('') + '</ol>' : addr.length ? '<p class="mr-idc-addr">' + PIN + '<span>' + addr.map(esc).join('<br>') + '</span></p>'
         : '<p class="mr-idc-addr">No address on the website.</p>') +
       (f.service_area ? '<p class="mr-idc-area"><b>Serves</b> ' + esc(f.service_area) + '</p>' : '') +
-      '<div class="mr-idc-tags">' + [label(ARCHETYPES, f.archetype), f['industry.plain_label'], label(CUSTOMERS, f.customer_type)]
+      '<div class="mr-idc-tags">' + [label(ARCHETYPES, f.archetype), f['positioning.niche'] || f['industry.plain_label'], label(CUSTOMERS, f.customer_type)]
         .filter(Boolean).map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div></div>';
     return sectHead({
       eye: 'Company profile', quiet: true, h: f.name || c.name || c.domain || 'This company',
@@ -543,6 +548,45 @@
         '<button type="submit" class="mr-btn small">Save radius</button>' +
         (radius != null ? '<button type="button" class="mr-link" data-act="radius-auto">Back to automatic</button>' : '') +
         '</form>' : '') + '</div>';
+  }
+
+  /** The niche, who it sells to, and what the site itself keeps saying (tracker/market_radar_niche.py). */
+  function renderNiche(p) {
+    var pos = p.positioning || {}, nc = p.niche_check || {}, st = nc.stresses || {};
+    if (!pos.niche && !(nc.flags || []).length) return '';
+    var chips = function (xs, cls) {
+      return (xs || []).length ? '<div class="mr-pills ' + (cls || '') + '">' + xs.map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div>' : '';
+    };
+    var aud = pos.audience || {};
+    var path = (pos.category_path || []).length ? '<p class="mr-niche-path">' + pos.category_path.map(esc).join(' <i>\u203a</i> ') + '</p>' : '';
+    var attrs = (pos.defining_attributes || []).map(function (a) {
+      var href = safeUrl(a.url);
+      return '<li><span class="mr-k" style="display:inline">' + esc(String(a.kind || '').replace(/_/g, ' ')) + '</span> <b>' + esc(a.value) + '</b>' +
+        (a.quote ? '<br><q>' + esc(a.quote) + '</q>' : '') + (href ? ' <a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">page</a>' : '') + '</li>';
+    }).join('');
+    var segs = (pos.customer_segments || []).map(function (c) {
+      return '<div class="mr-seg"><b>' + esc(c.name) + '</b><p>' + esc(c.description) + '</p>' +
+        (c.why_they_buy ? '<p class="mr-hint">Why they buy: ' + esc(c.why_they_buy) + '</p>' : '') + '</div>';
+    }).join('');
+    var who = [aud.gender, aud.age_range, aud.geography].filter(Boolean).map(esc).join(' \u00b7 ');
+    var terms = (st.terms || []).slice(0, 10).map(function (t) { return t.term + ' \u00d7' + t.mentions; });
+    var flags = (nc.flags || []).filter(function (f) { return f.kind !== 'no_audience'; }).map(function (f) {
+      return '<div class="mr-callout">' + esc(f.text) + '</div>';
+    }).join('');
+    var ref = nc.refined ? '<p class="mr-hint">' + (nc.refined.failed ? 'The first reading was checked against the site and could not be improved (' + esc(nc.refined.failed) + ').'
+      : 'The first reading, \u201c' + esc(nc.refined.before || '') + '\u201d, was too broad for what the site says, so it was read again.') + '</p>' : '';
+    return '<div class="mr-niche"><div class="mr-k">Niche</div><p class="mr-niche-t">' + esc(pos.niche || 'Not stated') + '</p>' + path + ref + flags +
+      (pos.broad_category ? '<p class="mr-hint">Broad category: ' + esc(pos.broad_category) + (pos.price_note ? ' \u00b7 ' + esc(pos.price_note) : '') + '</p>' : '') +
+      (attrs ? '<div class="mr-k" style="margin-top:14px">What defines it</div><ul class="mr-quotes">' + attrs + '</ul>' : '') +
+      (aud.who ? '<div class="mr-k" style="margin-top:14px">Who they sell to</div><p>' + esc(aud.who) + '</p>' + (who ? '<p class="mr-hint">' + who + '</p>' : '') +
+        (aud.needs && aud.needs.length ? '<div class="mr-hint">Needs</div>' + chips(aud.needs) : '') +
+        (aud.buying_triggers && aud.buying_triggers.length ? '<div class="mr-hint">Buys when</div>' + chips(aud.buying_triggers) : '') : '') +
+      (segs ? '<div class="mr-k" style="margin-top:14px">Ideal customers</div><div class="mr-segs">' + segs + '</div>' : '') +
+      ((pos.differentiators || []).length ? '<div class="mr-k" style="margin-top:14px">What sets them apart</div>' + chips(pos.differentiators) : '') +
+      ((pos.not_this || []).length ? '<div class="mr-k" style="margin-top:14px">Not in</div>' + chips(pos.not_this, 'mr-not') : '') +
+      (terms.length ? '<div class="mr-k" style="margin-top:14px">What the site keeps saying</div>' + chips(terms) +
+        '<p class="mr-hint">Counted by a program from the site\'s title, headline, menu and text, not by a model.' +
+        ((st.says_it_is_free_of || []).length ? ' It says it is free of: ' + esc(st.says_it_is_free_of.join(', ')) + '.' : '') + '</p>' : '') + '</div>';
   }
 
   function renderEvidence(p) {
@@ -622,6 +666,8 @@
       '<div class="mr-row-main"><div class="mr-row-top"><b>' + esc(r.name || r.domain) + '</b>' +
       (href ? '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(r.domain) + '</a>' : esc(r.domain)) +
       kindChip(r.kind) + '</div>' +
+      (r.niche_fit === 'yes' || r.niche_fit === 'adjacent' ? '<div class="mr-hint" style="margin:2px 0 0">' +
+        (r.niche_fit === 'yes' ? 'Same niche' : 'Same category, not the same niche') + '</div>' : '') +
       (r.reason ? '<div class="mr-reason">' + esc(r.reason) + '</div>' : (r.sells ? '<div class="mr-reason">' + esc(r.sells) + '</div>' : '')) +
       (meta.length ? '<div class="mr-row-meta">' + meta.join('<span aria-hidden="true">·</span>') + '</div>' : '') +
       '</div><div class="mr-row-act">' + act + '</div></div>';
