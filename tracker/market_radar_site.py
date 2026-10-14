@@ -193,6 +193,7 @@ LOCATION_PATH = re.compile(r"/(locations?|stores?|store-locator|clinics?|centres
                            r"branches|offices|studios?|standorte?|filialen|unidades|lojas|"
                            r"tiendas|find-a-[\w-]+|dentists?|gyms?|practices?|[\w-]*near-me)(/|$)",
                            re.I)
+COLLECTION_PATH = re.compile(r"/(collections?|categor(?:y|ies)|shop|c)/[^/]+", re.I)
 PRODUCT_PATH = re.compile(r"/(products?|p|produtos?|produkte?|productos?|item|shop/p)/[^/]+",
                           re.I)
 
@@ -225,6 +226,8 @@ class _Collector(HTMLParser):
         self.scripts_src = []
         self.jsonld_raw = []
         self.links = []          # (href, text)
+        self.headings = []       # (level, text) of h1 and h2, in page order
+        self._h = None
         self._in_title = False
         self._in_jsonld = False
         self._buf = []
@@ -258,8 +261,15 @@ class _Collector(HTMLParser):
                 self._in_jsonld, self._buf = True, []
         elif tag == "a" and a.get("href") and parseable(a["href"]):
             self._a = [a["href"], []]
+        elif tag in ("h1", "h2"):
+            self._h = [tag, []]
 
     def handle_endtag(self, tag):
+        if tag in ("h1", "h2") and self._h is not None:
+            text = " ".join("".join(self._h[1]).split())
+            if text and len(self.headings) < 40:
+                self.headings.append((self._h[0], text[:160]))
+            self._h = None
         if tag == "title":
             self._in_title = False
         elif tag == "script" and self._in_jsonld:
@@ -276,6 +286,8 @@ class _Collector(HTMLParser):
             self._buf.append(data)
         if self._a is not None:
             self._a[1].append(data)
+        if self._h is not None:
+            self._h[1].append(data)
 
 
 def parse_html(markup):
@@ -918,12 +930,16 @@ def read_sitemap(home_url, sitemap_urls):
             urls.extend(locs[:MAX_SITEMAP_URLS - len(urls)])
     if not urls:
         return None
-    first = Counter()
+    first, slug_words = Counter(), Counter()
     for u in urls:
-        seg = [s for s in (urlsplit(u).path or "/").split("/") if s]
+        path = urlsplit(u).path or "/"
+        seg = [s for s in path.split("/") if s]
         first["/" + seg[0] if seg else "/"] += 1
+        if seg and (PRODUCT_PATH.search(path) or COLLECTION_PATH.search(path)):
+            slug_words.update(set(w for w in re.split(r"[^a-z]+", seg[-1].lower()) if len(w) >= 3))
     return {"files_read": files_read, "urls": len(urls), "capped": len(urls) >= MAX_SITEMAP_URLS,
             "top_sections": first.most_common(8),
+            "product_words": slug_words.most_common(30),
             "location_like": sum(1 for u in urls if LOCATION_PATH.search(urlsplit(u).path or "")),
             "product_like": sum(1 for u in urls if PRODUCT_PATH.search(urlsplit(u).path or ""))}
 
@@ -1234,6 +1250,9 @@ def signals_from(docs, home_url):
         "title": " ".join(home_doc.title.split())[:200],
         "description": (home_doc.meta.get("description") or home_doc.meta.get("og:description") or "")[:400],
         "site_name": home_doc.meta.get("og:site_name"),
+        "headings": [{"level": lv, "text": t} for lv, t in home_doc.headings][:25],
+        "menu_labels": list(dict.fromkeys(
+            t for _, t in home_doc.links if 2 <= len(t) <= 40 and len(t.split()) <= 5))[:60],
         "html_lang": home_doc.lang,
         "og_locale": home_doc.meta.get("og:locale"),
         "hreflang": sorted({h for h, _ in home_doc.hreflang})[:30],

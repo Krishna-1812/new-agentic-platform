@@ -121,6 +121,12 @@ FIELDS = {
     "industry.keywords": _text_list(15, 60),
     "price_positioning": _choice(PRICE_POSITIONS),
     "service_area": _text(200),
+    # The niche and who it sells to: the unit its competitors are searched for and judged by.
+    "positioning.niche": _text(200),
+    "positioning.audience.who": _text(300),
+    "positioning.differentiators": _text_list(8, 140),
+    "positioning.not_this": _text_list(8, 100),
+    "positioning.rival_search_phrases": _text_list(12, 90),
 }
 
 
@@ -272,6 +278,10 @@ def profile_view(client):
         "model": reading.get("model"),
         "read_quality": reading.get("read_quality"),
         "outside": facts.get("outside"),
+        # The niche and the buyer (tracker/market_radar_niche.py), with the corrections laid over, and what
+        # a program found when it checked the niche against the site's own words.
+        "positioning": eff.get("positioning") or {},
+        "niche_check": reading.get("niche_check") or {},
         # What Market Radar watches for this kind of business (tracker/market_radar_playbooks.py).
         "playbook": {"label": playbooks.get(eff.get("archetype"))["label"],
                      "watch": playbooks.get(eff.get("archetype"))["watch"]},
@@ -293,7 +303,7 @@ def competitor_rows(client_id, owner_email, *, conn=None):
             "entity_id": r["entity_id"], "domain": r["domain"], "name": r["name"] or r["domain"],
             "kind": r["kind"], "status": r["status"], "score": d.get("score"),
             "confidence": _num(r["confidence"]), "reason": d.get("reason"),
-            "sells": d.get("sells"), "location": d.get("location"),
+            "sells": d.get("sells"), "location": d.get("location"), "niche_fit": d.get("niche_fit"),
             "distance_km": d.get("distance_km"), "near_site": d.get("near_site"),
             "branches_nearby": d.get("branches_nearby"), "lat": d.get("lat"), "lon": d.get("lon"),
             "checked_on": d.get("checked_on"), "found": r.get("found_via") or [],

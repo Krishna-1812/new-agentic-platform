@@ -78,6 +78,11 @@ def job(run_id, url, owner_email, client_id, entity_id, reuse_profile, *, client
                     and "site_points" not in profile:
                 profile = None
                 profile_note = "the stored profile predates the list of sites; read the site again"
+            # A profile read before the niche existed knows the broad category only (a cotton-first
+            # men's brand as "men's innerwear"), and every search and judgement follows that.
+            elif profile and "positioning" not in profile:
+                profile = None
+                profile_note = "the stored profile predates the niche and audience reading; read the site again"
         if not profile:
             stage("profile")
             built = build_profile(url, run_id=run_id, client=client)

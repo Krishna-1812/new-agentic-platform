@@ -253,8 +253,8 @@ def test_a_profile_read_before_sites_were_listed_is_read_again_once():
             setattr(real, k, v)
     assert built == ["https://www.corecareclinic.com/"]
     assert "predates the list of sites" in runs["summary"]["profile_note"]
-    # A profile that already has its sites is reused.
-    stored = dict(CORE_CARE)
+    # A profile that already has its sites and its niche is reused.
+    stored = dict(CORE_CARE, positioning={"niche": "outpatient psychiatry and therapy clinics"})
     built.clear()
     real.get_entity = lambda eid: {"profile": stored}
     real.update_run = lambda run_id, **kw: runs.update(kw)
