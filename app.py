@@ -10039,10 +10039,10 @@ def admin_client_account(slug):
 @app.route("/admin/client-usage/<client_slug>")
 @admin_required
 def admin_client_detail(client_slug):
-    """A client portal's analytics now open in the admin panel's side panel."""
+    """Client portal analytics are not in the admin panel; this address now opens its Clients section."""
     if client_slug not in CLIENTS:
         abort(404)
-    return redirect("/admin#portal-%s" % client_slug)
+    return redirect("/admin#clients")
 
 
 @app.route("/admin/client-usage/<client_slug>/data")
@@ -10144,16 +10144,9 @@ def _panel_client_card(a):
 
 
 def _panel_clients():
-    """External: the client accounts an admin has shared, and the client portals we run."""
+    """External: the client accounts an admin has shared with clients."""
     cards = [_panel_client_card(a) for a in _cu_shared_accounts()]
-    portals = []
-    try:
-        for c in _fetch_all_client_summaries():
-            portals.append({k: c[k] for k in ("slug", "name", "short", "logo", "website", "accent", "views",
-                                              "people", "last_active")})
-    except Exception:
-        app.logger.exception("admin panel: client portals unreadable")
-    return {"accounts": cards, "portals": portals,
+    return {"accounts": cards,
             "totals": {"accounts": len(cards), "people": sum(len(c["people"]) for c in cards),
                        "visitors_30": sum(c["visitors_30"] for c in cards),
                        "runs": sum(c["runs"] for c in cards)}}
@@ -10181,21 +10174,6 @@ def _panel_account(slug):
                    for p in a["by_person"]],
         audit=[{"text": x["text"], "at": _iso(x["at"])} for x in a["audit"]], events=events)
     return card
-
-
-def _panel_portal(slug):
-    """One client portal's usage, for the side panel."""
-    if slug not in CLIENTS:
-        return None
-    d = _fetch_client_usage(slug) or {}
-    seg = d.get("segments") or {}
-    return {"slug": slug, "name": CLIENTS[slug]["name"], "website": CLIENTS[slug].get("website", ""),
-            "kpis": d.get("kpis") or {},
-            "segments": [{"label": v["label"], "people": len(v["people"]), "views": v["views"], "time": v["time"],
-                          "logins": v["logins"], "runs": v["runs"]} for v in seg.values()],
-            "timeline": (d.get("timeline") or [])[-30:],
-            "top_pages": [{"title": p.get("title") or p.get("url"), "views": p["views"], "viewers": p.get("viewers", 0)}
-                          for p in (d.get("top_pages") or [])[:8]]}
 
 
 def _panel_traffic():
@@ -10276,14 +10254,6 @@ def admin_panel_account(slug):
         abort(404)
     return jsonify(data)
 
-
-@app.route("/admin/panel/portal/<slug>")
-@admin_required
-def admin_panel_portal(slug):
-    data = _panel_portal(slug)
-    if data is None:
-        abort(404)
-    return jsonify(data)
 
 # ── Legacy admin URLs (pre-rename) ───────────────────────────────────────────
 # These pages' URLs originally didn't match their display names (e.g. "Public

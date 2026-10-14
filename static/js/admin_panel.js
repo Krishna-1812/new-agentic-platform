@@ -2,10 +2,10 @@
 
    /admin/panel/spend?days=N   what every agent cost, by workspace, agent and person
    /admin/panel/team           staff sign-ins and page views
-   /admin/panel/clients        the client workspaces shared with clients, and the client portals
+   /admin/panel/clients        the client workspaces shared with clients
    /admin/panel/traffic        the public site's visitors and sign-ins
    /admin/panel/inbox          access requests, feedback on agent reports, public agent use
-   /admin/panel/account/<slug> and /admin/panel/portal/<slug>   one of them, in full, for the side panel
+   /admin/panel/account/<slug>   one shared workspace, in full, for the side panel
 
    A section that fails says so in place and offers a retry; the rest of the page is unaffected.
    Every value that came from a server is escaped (esc) before it is written into markup. */
@@ -291,16 +291,10 @@
         '<span class="ctl-cc-foot"><span><b>' + num(a.visits_30) + '</b> visits by <b>' + num(a.visitors_30) + '</b> in 30 days</span><span>Agents shared: <b>' + shared + '/' + a.tools_total + '</b></span>' +
         '<span>Last visit <b>' + esc(ago(a.last_visit)) + '</b></span><span>Spent <b>' + (S.spend ? usd(spaceSpend(a.space)) : '…') + '</b></span></span></button>';
     }).join('');
-    var portals = d.portals.map(function (p) {
-      return '<button type="button" class="ctl-portal" data-portal="' + esc(p.slug) + '"><b>' + esc(p.name) + '</b><span>Client portal &middot; ' + num(p.views) + ' page views &middot; ' + plural(p.people, 'person', 'people') +
-        '</span><span>Last active ' + esc(p.last_active || '—') + '</span></button>';
-    }).join('');
     body('clients').innerHTML =
       '<div class="ctl-stats"><div class="ctl-stat" data-lead><b>' + num(t.accounts) + '</b><span>Workspaces shared</span></div><div class="ctl-stat"><b>' + num(t.people) + '</b><span>People invited</span></div>' +
-      '<div class="ctl-stat"><b>' + num(t.visitors_30) + '</b><span>Active in 30 days</span></div><div class="ctl-stat"><b>' + num(t.runs) + '</b><span>Agent runs this month</span></div>' +
-      '<div class="ctl-stat"><b>' + num(d.portals.length) + '</b><span>Client portals</span></div></div>' +
-      (cards ? '<div class="ctl-cards">' + cards + '</div>' : '<div class="ctl-card"><div class="ctl-empty"><b>Nothing is shared with a client yet.</b>A workspace appears here once an admin invites someone to it or shares a page or agent.</div></div>') +
-      (portals ? '<div class="ctl-card-h" style="margin:var(--sp-4) 0 0"><h3>Client portals</h3><span>co-branded portals we run</span></div><div class="ctl-cards">' + portals + '</div>' : '');
+      '<div class="ctl-stat"><b>' + num(t.visitors_30) + '</b><span>Active in 30 days</span></div><div class="ctl-stat"><b>' + num(t.runs) + '</b><span>Agent runs this month</span></div></div>' +
+      (cards ? '<div class="ctl-cards">' + cards + '</div>' : '<div class="ctl-card"><div class="ctl-empty"><b>Nothing is shared with a client yet.</b>A workspace appears here once an admin invites someone to it or shares a page or agent.</div></div>');
     updateFigs();
   }
 
@@ -406,7 +400,7 @@
   function closeDrawer() {
     $('#ctlDrawer').classList.remove('is-open'); $('#ctlOvl').classList.remove('is-open');
     $('#ctlDrawer').setAttribute('aria-hidden', 'true');
-    if (/^#(client|portal)-/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
+    if (/^#client-/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
   function openAccount(slug) {
@@ -432,30 +426,14 @@
       $('#ctlDrawerX').focus();
     }).catch(function (e) { drawer('Client workspace', failed('account', e.message)); });
   }
-  function openPortal(slug) {
-    lastFocus = document.activeElement;
-    drawer('Client portal', '<div class="ctl-skel"><i class="bn-skel tall bn-sweep"></i><i class="bn-skel bn-sweep"></i></div>');
-    getJSON('/admin/panel/portal/' + encodeURIComponent(slug)).then(function (p) {
-      var k = p.kpis || {};
-      var tl = (p.timeline || []).map(function (x) { var t = (x.p2 || 0) + (x.client || 0) + (x.other || 0); return { label: dayLabel(x.date), title: dayLabel(x.date) + ': ' + plural(t, 'view'), parts: [[x.p2 || 0, 'var(--ink)'], [x.client || 0, 'var(--acc)'], [x.other || 0, 'var(--sky)']] }; });
-      drawer('Client portal',
-        '<div class="ctl-dh"><h2 id="ctlDrawerT">' + esc(p.name) + '</h2></div>' +
-        '<div class="ctl-tiles"><div class="ctl-tile" data-lead><b>' + num(k.total_views) + '</b><span>page views</span></div><div class="ctl-tile"><b>' + num(k.total_people) + '</b><span>people</span></div>' +
-        '<div class="ctl-tile"><b>' + num(k.total_logins) + '</b><span>sign-ins</span></div><div class="ctl-tile"><b>' + esc(k.total_time || '—') + '</b><span>time spent</span></div></div>' +
-        (tl.length ? '<div class="ctl-dsec"><h4>Views per day</h4>' + columns(tl, { short: true, aria: 'Portal views per day' }) + '<div class="ctl-legend"><span><i style="background:var(--ink)"></i>Our team</span><span><i style="background:var(--acc)"></i>Their team</span><span><i style="background:var(--sky)"></i>Others</span></div></div>' : '') +
-        '<div class="ctl-dsec"><h4>Who uses it</h4><ul>' + (p.segments || []).map(function (s) { return '<li><span>' + esc(s.label) + '</span><small>' + plural(s.people, 'person', 'people') + ' &middot; ' + s.views + ' views &middot; ' + esc(s.time) + '</small></li>'; }).join('') + '</ul></div>' +
-        '<div class="ctl-dsec"><h4>Most opened</h4><ul>' + ((p.top_pages || []).map(function (x) { return '<li><span>' + esc(x.title) + '</span><small>' + x.views + ' views &middot; ' + plural(x.viewers, 'person', 'people') + '</small></li>'; }).join('') || '<li><span class="ctl-sub">Nothing yet.</span></li>') + '</ul></div>');
-      $('#ctlDrawerX').focus();
-    }).catch(function (e) { drawer('Client portal', failed('portal', e.message)); });
-  }
   function fromHash() {
-    var m = /^#(client|portal)-(.+)$/.exec(location.hash);
-    if (m) (m[1] === 'client' ? openAccount : openPortal)(decodeURIComponent(m[2]));
+    var m = /^#client-(.+)$/.exec(location.hash);
+    if (m) openAccount(decodeURIComponent(m[1]));
   }
 
   // ── events ────────────────────────────────────────────────────────────────
   document.addEventListener('click', function (ev) {
-    var t = ev.target.closest ? ev.target.closest('[data-retry],[data-tab],[data-req],[data-csv],[data-account],[data-portal],[data-user],[data-days],#ctlRefresh,#ctlDrawerX,#ctlOvl') : null;
+    var t = ev.target.closest ? ev.target.closest('[data-retry],[data-tab],[data-req],[data-csv],[data-account],[data-user],[data-days],#ctlRefresh,#ctlDrawerX,#ctlOvl') : null;
     if (!t) return;
     if (t.dataset.retry) { var s = t.dataset.retry; if (RENDER[s]) load(s, true); else fromHash(); return; }
     if (t.dataset.tab) { S.tab = t.dataset.tab; S.query = ''; if (S.spend) renderSpendBreakdown(); return; }
@@ -467,7 +445,6 @@
       return;
     }
     if (t.dataset.account) { location.hash = 'client-' + t.dataset.account; return; }
-    if (t.dataset.portal) { location.hash = 'portal-' + t.dataset.portal; return; }
     if (t.dataset.user) { S.open[t.dataset.user] = !S.open[t.dataset.user]; if (S.team) renderTeam(S.team); return; }
     if (t.dataset.days) {
       S.days = +t.dataset.days;
@@ -497,7 +474,7 @@
     if (row && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); row.click(); }
   });
   window.addEventListener('hashchange', function () {
-    if (/^#(client|portal)-/.test(location.hash)) fromHash(); else if ($('#ctlDrawer').classList.contains('is-open')) closeDrawer();
+    if (/^#client-/.test(location.hash)) fromHash(); else if ($('#ctlDrawer').classList.contains('is-open')) closeDrawer();
   });
 
   // Which section chip is lit follows the page as it scrolls.

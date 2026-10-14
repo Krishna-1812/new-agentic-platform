@@ -57,8 +57,7 @@ def fresh_cache(monkeypatch):
 # == who may open it ===========================================================================
 
 @pytest.mark.parametrize("path", ["/admin", "/admin/panel/spend", "/admin/panel/team", "/admin/panel/clients",
-                                  "/admin/panel/traffic", "/admin/panel/inbox", "/admin/panel/account/x",
-                                  "/admin/panel/portal/northstaranesthesia"])
+                                  "/admin/panel/traffic", "/admin/panel/inbox", "/admin/panel/account/x"])
 def test_only_an_admin_gets_in(path):
     signed_out = _client().get(path)
     assert signed_out.status_code == 302 and "/login" in signed_out.headers["Location"]
@@ -89,7 +88,7 @@ def test_the_old_tabs_lead_into_the_panel():
         r = _client().get(old)
         assert r.status_code == 301 and r.headers["Location"].endswith("/admin#" + section), old
     r = c.get("/admin/client-usage/northstaranesthesia")
-    assert r.status_code == 302 and r.headers["Location"].endswith("/admin#portal-northstaranesthesia")
+    assert r.status_code == 302 and r.headers["Location"].endswith("/admin#clients"), "portals are not in the panel"
     assert c.get("/admin/client-usage/no-such-portal").status_code == 404
     assert _client(STAFF).get("/admin/internal-usage").status_code == 403, "the old addresses keep the gate"
 
@@ -201,17 +200,16 @@ def _fake_account(slug, name, space):
             "last_change": {"text": "Kris shared Page Watch", "at": NOW}, "actor_names": {}}
 
 
-def test_clients_lists_shared_accounts_and_portals_with_totals(monkeypatch):
+def test_clients_lists_only_the_shared_accounts_with_totals(monkeypatch):
     monkeypatch.setattr(appmod, "_cu_shared_accounts", lambda: [_fake_account("lumina", "Lumina", "acct:7"), _fake_account("bloom", "Bloom", "acct:8")])
-    monkeypatch.setattr(appmod, "_fetch_all_client_summaries", lambda force=False: [
-        {"slug": "northstaranesthesia", "name": "NorthStar", "short": "NS", "logo": "", "website": "", "accent": "#5b9dff",
-         "accent2": "#8b5cf6", "domains": [], "views": 12, "people": 3, "last_active": "2026-10-13"}])
+    monkeypatch.setattr(appmod, "_fetch_all_client_summaries", lambda force=False: pytest.fail("portals are not read"))
     d = _client(ADMIN).get("/admin/panel/clients").get_json()
     assert d["totals"] == {"accounts": 2, "people": 2, "visitors_30": 4, "runs": 6}
     a = d["accounts"][0]
     assert a["tools"] == ["Page Watch"] and a["limit"] == 20 and a["space"] == "acct:7" and a["last_change"] == "Kris shared Page Watch"
     assert a["last_visit"] and "T" in a["last_visit"], "dates are sent as ISO text"
-    assert d["portals"][0]["views"] == 12 and "accent2" not in d["portals"][0]
+    assert "portals" not in d
+    assert _client(ADMIN).get("/admin/panel/portal/northstaranesthesia").status_code == 404, "the portal route is gone"
 
 
 def test_traffic_joins_the_visitor_and_sign_in_figures(monkeypatch):
@@ -304,8 +302,6 @@ def _real_json(monkeypatch):
     monkeypatch.setattr(appmod, "_panel_workspaces", lambda: {"acct:7": "Lumina Dental", "acct:9": EVIL})
     monkeypatch.setattr(appmod, "_fetch_usage_data", lambda internal=True: FAKE_USAGE)
     monkeypatch.setattr(appmod, "_cu_shared_accounts", lambda: [_fake_account("lumina", EVIL, "acct:7")])
-    monkeypatch.setattr(appmod, "_fetch_all_client_summaries", lambda force=False: [
-        {"slug": "northstaranesthesia", "name": EVIL, "short": "NS", "logo": "", "website": "", "accent": "#5b9dff", "views": 12, "people": 3, "last_active": "2026-10-13"}])
     monkeypatch.setattr(appmod, "_fetch_visitor_analytics", lambda force=False: {
         "configured": True, "kpis": {"visitors": 2840, "pageviews": 9120, "new": 5, "returning": 6, "bounce_rate": 41, "conversions": 17},
         "series": [["2026-10-01", 5], ["2026-10-02", 9]], "top_pages": [[EVIL, 9]], "referrers": [["direct", 5]], "devices": [["Desktop", 5]], "top_landing": []})
@@ -344,7 +340,8 @@ def test_the_script_draws_every_section_and_escapes_what_it_was_given(monkeypatc
     assert out['[data-fig="staff"]'] == "2" and "Mia" in out["#teamBody"] and "Page 11" not in out["#teamBody"], "row detail is closed until clicked"
     assert "2,840" in out["#trafficBody"] and "From visit to member" in out["#trafficBody"]
     assert "Access requests" in out["#inboxBody"] and "Thumbs on agent reports" in out["#inboxBody"]
-    assert 'data-account="lumina"' in out["#clientsBody"] and 'data-portal="northstaranesthesia"' in out["#clientsBody"]
+    assert 'data-account="lumina"' in out["#clientsBody"]
+    assert "portal" not in out["#clientsBody"].lower(), "no Client portals section"
     everything = "\n".join(out.values())
     assert "<img" not in everything, "a hostile name became markup"
     assert "&lt;img src=x onerror=alert(1)&gt;" in everything, "it is shown as text"

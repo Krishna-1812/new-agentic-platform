@@ -221,10 +221,6 @@ html:root { background-color: var(--bg); }
 .ctl-meter .bar i.is-full { background: var(--clay); }
 .ctl-cc-foot { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2) var(--sp-4); font-size: 12px; color: var(--tx3); border-top: 1px solid var(--line); padding-top: var(--sp-3); margin-top: auto; }
 .ctl-cc-foot b { color: var(--tx); }
-.ctl-portal { display: flex; flex-direction: column; gap: var(--sp-2); text-align: left; width: 100%; border: 0; cursor: pointer; font: inherit; color: var(--tx-on-fill); background: var(--sky); border-radius: var(--r-lg); padding: var(--sp-5); transition: background var(--dur) var(--ease); }
-.ctl-portal:hover { background: var(--sky-hi); }
-.ctl-portal b { font-family: var(--font-display); font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144; font-weight: 600; font-size: var(--fs-xl); letter-spacing: -0.02em; }
-.ctl-portal span { font-size: 13px; }
 
 /* ── Funnel, lists, feedback ───────────────────────────────────────────── */
 .ctl-funnel { display: grid; gap: var(--sp-2); }
