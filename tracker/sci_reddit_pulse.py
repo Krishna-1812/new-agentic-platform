@@ -39,6 +39,8 @@ from datetime import datetime, timezone
 
 from tracker import claude_websearch
 
+from tracker import sci_spend  # noqa: E402
+
 logger = logging.getLogger(__name__)
 
 # How many threads to pull per query before dedupe. Reddit's search caps a
@@ -361,6 +363,7 @@ def analyze(company_name: str, posts: list[dict]) -> dict:
         logger.warning("sci_reddit_pulse: analysis call failed for %r: %s", company_name, e)
         return {"error": "The Reddit conversation analysis could not be completed (%s)."
                          % (str(e)[:160] or type(e).__name__)}
+    sci_spend.claude("reddit-analysis", resp)
     # web_search is not used here, but joining every text block rather than
     # reading the last one is the house rule now -- reading content[-1] is
     # exactly what silently broke sci_identify for months.

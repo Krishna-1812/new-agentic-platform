@@ -18,6 +18,8 @@ import json
 import logging
 import os
 
+from tracker import sci_spend  # noqa: E402
+
 logger = logging.getLogger(__name__)
 
 PLATFORMS = ("instagram", "linkedin", "x", "tiktok", "youtube", "facebook", "reddit")
@@ -231,6 +233,7 @@ def identify_handles(company_name: str, company_url: str | None = None) -> dict[
                 messages=[{"role": "user", "content": user_text}],
             ) as stream:
                 resp = stream.get_final_message()
+            sci_spend.claude("identify", resp)
         except Exception as e:
             last_err = e
             logger.warning("sci_identify: web_search tool '%s' failed for %r: %s",

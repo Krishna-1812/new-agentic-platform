@@ -23,6 +23,8 @@ import os
 
 from tracker import claude_websearch
 
+from tracker import sci_spend  # noqa: E402
+
 logger = logging.getLogger(__name__)
 
 _SYSTEM = (
@@ -128,7 +130,9 @@ def _anthropic():
     if not key:
         return None
     from anthropic import Anthropic
-    return Anthropic(api_key=key, timeout=90.0, max_retries=1)
+    # 300s, not 90: the report is up to 12,000 tokens written in one reply, which can take minutes on a large
+    # run, and a timeout here costs the whole strategy section (the run still finishes, without it).
+    return Anthropic(api_key=key, timeout=300.0, max_retries=1)
 
 
 def _clean_vision(analysis: dict | None) -> dict | None:
@@ -313,6 +317,7 @@ def synthesize_report(run_id: int, classify_result: dict) -> dict:
     except Exception as e:
         logger.warning("sci_synthesize: synthesize_report failed for run %s: %s", run_id, e)
         return {"error": "vendor_call_failed"}
+    sci_spend.claude("synthesis", resp)
 
     if _truncated(resp):
         logger.warning("sci_synthesize: synthesis reply for run %s was cut off at max_tokens", run_id)

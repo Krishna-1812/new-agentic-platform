@@ -12793,6 +12793,12 @@ def social_media_intelligence_analyze():
         return jsonify({"error": "A company name is required."}), 400
 
     email = (_get_user() or {}).get("email", "").lower()
+    # One analysis at a time per person: each is hundreds of paid calls, and starting several at once
+    # multiplies the spend (the per-run cap is per run). The page polls the one already going.
+    going = sci_store.active_run(email)
+    if going:
+        return jsonify({"error": "You already have an analysis running (%s). Wait for it to finish, then start "
+                                 "the next one." % going.get("company_name"), "run_id": going["id"]}), 409
     run_id = sci_store.save_run(email, company_name, company_url, company_logo, space=_work_space(email))
     if run_id is None:
         return jsonify({"error": "Could not start the analysis."}), 500
@@ -12828,6 +12834,9 @@ def social_media_intelligence_run(run_id):
     run = sci_store.resolve_stale_run(run)
     run["platforms"] = sci_store.get_platform_runs(run_id)
     run["posts"] = sci_store.get_posts(run_id)
+    if email in ADMIN_EMAILS:
+        # What the run cost is the agency's own cost, not something a client reading the report should see.
+        run["cost"] = sci_store.run_spend(run_id)
     return jsonify(run)
 
 

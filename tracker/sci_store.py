@@ -794,8 +794,8 @@ def update_post_creative_analysis(post_id: int, analysis: dict, status: str = "o
 def log_spend(run_id: int | None, platform: str | None, vendor: str, operation: str,
              units: float | None = None, cost_usd: float | None = None) -> None:
     """Best-effort spend instrumentation -- never raises, never blocks the
-    pipeline. Enforcement (checking accumulated spend against a cap) is a
-    later phase; this just makes sure the data exists to enforce against."""
+    pipeline. tracker/sci_spend.py calls this for every paid call of a run and
+    holds the per-run cap; the admin panel reads the rows (tracker/admin_spend.py)."""
     conn = _pg_conn()
     if not conn:
         return
@@ -819,3 +819,58 @@ def log_spend(run_id: int | None, platform: str | None, vendor: str, operation: 
             conn.close()
         except Exception:
             pass
+
+
+def run_spend(run_id: int) -> dict:
+    """What one run cost: {"usd": total, "by_vendor": {vendor: usd}}. Zeroes when nothing was recorded or on
+    any failure."""
+    out = {"usd": 0.0, "by_vendor": {}}
+    conn = _pg_conn()
+    if not conn:
+        return out
+    try:
+        _ensure_tables(conn)
+        with conn.cursor() as cur:
+            cur.execute("SELECT vendor, COALESCE(SUM(cost_usd), 0) FROM sci_spend_log WHERE run_id = %s "
+                        "GROUP BY vendor", (run_id,))
+            rows = cur.fetchall()
+        out["by_vendor"] = {v: round(float(c), 4) for v, c in rows}
+        out["usd"] = round(sum(out["by_vendor"].values()), 4)
+        return out
+    except Exception as e:
+        logger.warning("sci_store: run_spend failed for run %s: %s", run_id, e)
+        return out
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def active_run(email: str) -> dict | None:
+    """The run this person has going right now, or None. A run that went quiet (a deploy killed its thread)
+    is settled first by resolve_stale_run, so it never blocks a new one."""
+    conn = _pg_conn()
+    if not conn or not email:
+        return None
+    try:
+        _ensure_tables(conn)
+        with conn.cursor() as cur:
+            cur.execute(f"SELECT {', '.join(_RUN_COLUMNS)} FROM sci_runs WHERE email = %s AND status = 'running' "
+                        "ORDER BY created_at DESC LIMIT 5", (email.lower(),))
+            rows = cur.fetchall()
+    except Exception as e:
+        logger.warning("sci_store: active_run failed: %s", e)
+        return None
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+    for row in rows:
+        d = dict(zip(_RUN_COLUMNS, row))
+        _ts(d, "created_at", "updated_at")
+        d = resolve_stale_run(d)
+        if d.get("status") == "running":
+            return d
+    return None

@@ -26,6 +26,7 @@
           <div class="ph-plat-ic" title="TikTok" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.5v11.2a3.3 3.3 0 11-2.7-3.24M14 3.5c.5 2.6 2.4 4.5 4.8 4.9"/></svg></div>
           <div class="ph-plat-ic" title="YouTube" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.7" y="6" width="18.6" height="12" rx="3.6"/><path d="M10.3 9.6l5 2.4-5 2.4z" fill="currentColor" stroke="none"/></svg></div>
           <div class="ph-plat-ic" title="Facebook" style="color:var(--sky-tx)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 21v-7.2h2.4l.4-2.8h-2.8v-1.8c0-.8.2-1.4 1.4-1.4h1.5V5.3A20 20 0 0015.6 5c-2.3 0-3.9 1.4-3.9 4v2h-2.4v2.8h2.4V21"/></svg></div>
+          <div class="ph-plat-ic" title="Reddit" style="color:var(--acc-tx)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14" r="6.3"/><circle cx="9.6" cy="13.3" r="1" fill="currentColor" stroke="none"/><circle cx="14.4" cy="13.3" r="1" fill="currentColor" stroke="none"/><path d="M9.6 16.4c1.4 1 3.4 1 4.8 0M12 7.7V4.5l3.2.8"/><circle cx="17.2" cy="5.2" r="1"/></svg></div>
         </div>
       </div>
     </div>
@@ -291,14 +292,14 @@
         '<div class="sci-datasrc-sub">Apify</div>' +
         '<div class="sci-datasrc-body" id="dsApifyBody"><div class="sci-datasrc-loading"><span class="sci-spinner" style="width:14px;height:14px;border-width:2px"></span>Checking Apify…</div></div>' +
         '<div class="sci-datasrc-sub">AI vision (creative analysis)</div>' +
-        '<div class="sci-datasrc-body" id="dsVisionClaudeBody"><div class="sci-datasrc-loading"><span class="sci-spinner" style="width:14px;height:14px;border-width:2px"></span>Checking…</div></div>' +
+        '<div class="sci-datasrc-body" id="dsVisionClaudeBody"><div class="sci-datasrc-empty">Not checked on page load: it makes a small paid AI call (a cent or less). <button type="button" class="sci-datasrc-refresh" onclick="loadVisionClaudeCheck()">Run check</button></div></div>' +
         '<div class="sci-datasrc-sub">AI vision (image URL fetch)</div>' +
-        '<div class="sci-datasrc-body" id="dsVisionClaudeUrlBody"><div class="sci-datasrc-loading"><span class="sci-spinner" style="width:14px;height:14px;border-width:2px"></span>Checking…</div></div>' +
+        '<div class="sci-datasrc-body" id="dsVisionClaudeUrlBody"><div class="sci-datasrc-empty">Not checked on page load: it makes a small paid AI call (a cent or less). <button type="button" class="sci-datasrc-refresh" onclick="loadVisionClaudeUrlCheck()">Run check</button></div></div>' +
       '</div>';
       loadDataSources();
       loadApifyDataSources();
-      loadVisionClaudeCheck();
-      loadVisionClaudeUrlCheck();
+      // The two vision checks each make a small PAID AI call, so they wait for a click (Refresh, or the
+      // button in their own card) instead of running every time an admin opens this page.
     }
 
     // A single glyph for both vision self-tests -- an eye, since that's
@@ -335,7 +336,8 @@
     // The vision pass, checked the same way as the URL-fetch variant below
     // it: one real vision call against a tiny inert test image, so it is
     // NOT re-run automatically on every page load the way the free
-    // Unipile/Apify checks are -- only on an explicit Refresh click.
+    // Unipile/Apify checks are -- only on an explicit click (Refresh, or
+    // "Run check" in its card).
     function loadVisionClaudeCheck(){
       var body = document.getElementById('dsVisionClaudeBody');
       if(!body) return;
@@ -545,6 +547,12 @@ function dsApifyRow(platform, entry){
       }).then(function(r){ return r.json(); }).then(function(data){
         if(data.error){
           alert(data.error);
+          if(data.run_id){
+            // Already running: follow the one that is, instead of leaving the page looking idle.
+            document.getElementById('runningWrap').style.display = 'block';
+            pollRun(data.run_id);
+            return;
+          }
           document.getElementById('analyzeBtn').disabled = false;
           return;
         }
@@ -2914,6 +2922,13 @@ function dsApifyRow(platform, entry){
       return hero + body + (isReddit ? renderRedditPulse(run) : '');
     }
 
+    // What the run cost, for admins only (the server sends it to nobody else): this is the agency's own spend.
+    function costChip(run){
+      if(!IS_ADMIN || !run.cost || !run.cost.usd) return '';
+      var by = Object.keys(run.cost.by_vendor || {}).map(function(v){ return v + ' $' + run.cost.by_vendor[v].toFixed(2); }).join(' · ');
+      return '<span class="sci-rep-chip" title="' + esc(by) + '">Cost $' + run.cost.usd.toFixed(2) + '</span>';
+    }
+
     function reportHead(run, allPosts, names, byName){
       var statusCls = run.status === 'done' ? 'st-done' : (run.status === 'error' ? 'st-error' : 'st-running');
       var siteUrl = absUrl(run.company_url);
@@ -2929,7 +2944,8 @@ function dsApifyRow(platform, entry){
 
       var chips = '<span class="status-pill ' + statusCls + '"><span class="d"></span>' + esc(run.status) + '</span>' +
         '<span class="sci-rep-chip">' + live + ' of ' + names.length + ' platforms live</span>' +
-        (when.short ? '<span class="sci-rep-chip" title="' + esc(when.full) + '">Analyzed ' + esc(when.short) + '</span>' : '');
+        (when.short ? '<span class="sci-rep-chip" title="' + esc(when.full) + '">Analyzed ' + esc(when.short) + '</span>' : '') +
+        costChip(run);
 
       var actions = renderSocialRail(run) +
         (siteUrl ? '<a class="sci-act" href="' + esc(siteUrl) + '" target="_blank" rel="noopener">' +
