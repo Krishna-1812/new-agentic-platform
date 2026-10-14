@@ -15,7 +15,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Market Radar", ["strategic-agents.css?v=2", "market_radar.css?v=9"]) }}
+{{ head("Market Radar", ["strategic-agents.css?v=2", "market_radar.css?v=10"]) }}
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}?v=1.9.4">
 </head>
 <body class="sa"{% if viewer_is_client() %} data-mr-client{% endif %}>
@@ -109,6 +109,6 @@
 {{ topbar_script() }}
 <script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}?v=1.9.4"></script>
 <script src="{{ url_for('static', filename='js/market_radar_map.js') }}?v=1"></script>
-<script src="{{ url_for('static', filename='js/market_radar.js') }}?v=11"></script>
+<script src="{{ url_for('static', filename='js/market_radar.js') }}?v=12"></script>
 </body>
 </html>

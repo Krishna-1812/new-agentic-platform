@@ -255,7 +255,8 @@ def rivals_overview(client_id, owner_email, *, store, now=None):
     now = now or datetime.now(timezone.utc)
     if not store.get_client(client_id, owner_email):
         return None
-    comps = [c for c in store.competitors(client_id, owner_email) if c["status"] != "removed"]
+    from . import market_radar_tracking as tracking
+    comps = tracking.choose(store.competitors(client_id, owner_email))
     ids = [c["entity_id"] for c in comps]
     scores = store.client_scores(client_id)
     events = [e for e in store.recent_events(ids, days=WINDOW_DAYS + 30, limit=1500) if e["id"] in scores] if ids else []

@@ -66,7 +66,7 @@ def world():
     events = [r[0] for r in rows]
     scores = {r[0]["id"]: r[1] for r in rows}
     comps = [comp(1, "Alpha", sells="running shoes"), comp(2, "Beta"), comp(3, "Gamma", kind="indirect"),
-             comp(4, "Delta", kind="aspirational"), comp(5, "Epsilon", status="proposed")]
+             comp(4, "Delta", kind="aspirational"), comp(5, "Epsilon", status="confirmed")]
     snaps = {
         (1, "jobs"): {"open": 12, "places": {"A": 1, "B": 1}, "by_function": {"Sales": 7, "Engineering": 5},
                       "senior_open": ["VP Marketing"]},

@@ -267,11 +267,12 @@ def _ago(delta):
 # == a client's competitors ===========================================================
 
 def targets(client_id, owner_email, *, store=None, limit=MAX_COMPETITORS):
-    """The companies to collect for a client: confirmed competitors first,
-    then suggestions by confidence; removed ones never."""
+    """The companies to collect for a client: the competitors the user confirmed, or every suggestion
+    while none is confirmed yet (tracker/market_radar_tracking.py); removed ones never."""
     if store is None:
         from . import market_radar_store as store
-    rows = store.competitors(client_id, owner_email)
+    from . import market_radar_tracking as tracking
+    rows = tracking.choose(store.competitors(client_id, owner_email))
     out = []
     for r in rows[:limit]:
         e = store.get_entity(r["entity_id"]) or {}
@@ -329,7 +330,9 @@ def collect_client(client_id, owner_email, *, run_id=None, progress=None, store=
                 progress("collect %d/%d" % (done, len(companies)))
     order = {e["id"]: i for i, e in enumerate(companies)}
     results.sort(key=lambda r: order.get(r["entity_id"], 99))
+    from . import market_radar_tracking as tracking
     return {"status": "ok" if companies else "empty",
+            "tracking": tracking.summary(store.competitors(client_id, owner_email)),
             "companies": [_public(r) for r in results],
             "coverage": coverage(results),
             "left_out": left_out,

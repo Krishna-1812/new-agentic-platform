@@ -601,7 +601,8 @@ def score_client(client_id, owner_email, *, store, now, run_id=None, geocode=Non
     from . import market_radar_views as views
     c = store.get_client(client_id, owner_email)
     profile = views.effective_profile(c["profile"] or {}, c["settings"])
-    comps = store.competitors(client_id, owner_email)
+    from . import market_radar_tracking as tracking
+    comps = tracking.choose(store.competitors(client_id, owner_email))
     tiers = {r["entity_id"]: (r["kind"], r["status"]) for r in comps}
     tiers[c["entity_id"]] = ("direct", "confirmed")
     ids = [r["entity_id"] for r in comps] + [c["entity_id"]]

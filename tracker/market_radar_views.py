@@ -289,7 +289,9 @@ def profile_view(client):
 
 
 def competitor_rows(client_id, owner_email, *, conn=None):
+    from . import market_radar_tracking as tracking
     rows = store.competitors(client_id, owner_email, include_removed=True, conn=conn)
+    researched = {r["entity_id"] for r in tracking.choose(rows)}
     older = None
     out = []
     for r in rows:
@@ -307,6 +309,7 @@ def competitor_rows(client_id, owner_email, *, conn=None):
             "distance_km": d.get("distance_km"), "near_site": d.get("near_site"),
             "branches_nearby": d.get("branches_nearby"), "lat": d.get("lat"), "lon": d.get("lon"),
             "checked_on": d.get("checked_on"), "found": r.get("found_via") or [],
+            "researched": r["entity_id"] in researched and r["status"] != "removed",
             "added_by_user": bool(d.get("added_by_user")), "updated_at": _iso(r.get("updated_at"))})
     return out
 
@@ -378,8 +381,15 @@ def client_view(client_id, owner_email, *, conn=None):
                    "profile_updated_at": _iso(client["profile_updated_at"])},
         "profile": profile_view(client),
         "competitors": competitor_rows(client_id, owner_email, conn=conn),
+        "tracking": tracking_for(client_id, owner_email, conn=conn),
         "last_run": run_view(store.latest_run(client_id, owner_email, conn=conn)),
     }
+
+
+def tracking_for(client_id, owner_email, *, conn=None):
+    """Which competitors the research covers, in words (tracker/market_radar_tracking.py)."""
+    from . import market_radar_tracking as tracking
+    return tracking.summary(store.competitors(client_id, owner_email, conn=conn))
 
 
 def client_list(owner_email, *, conn=None):
@@ -446,7 +456,9 @@ def moves_view(client_id, owner_email, *, conn=None):
     collection's coverage. None when the client is not this person's."""
     if store.get_client(client_id, owner_email, conn=conn) is None:
         return None
-    rows = store.competitors(client_id, owner_email, conn=conn)
+    from . import market_radar_tracking as tracking
+    all_rows = store.competitors(client_id, owner_email, conn=conn)
+    rows = tracking.choose(all_rows)
     names = {r["entity_id"]: (r.get("name") or r["domain"], r["domain"]) for r in rows}
     ids = list(names)
     events, hidden = [], []
@@ -548,6 +560,7 @@ def moves_view(client_id, owner_email, *, conn=None):
     return {"events": events, "top": top, "hidden": hidden[:400], "hidden_count": len(hidden),
             "today": datetime.now(timezone.utc).date().isoformat(),
             "last_collect": last, "radar": radar,
+            "tracking": tracking.summary(all_rows),
             "pulse": pulse_view(client_id, owner_email, conn=conn),
             "competitors": [{"entity_id": i, "name": names[i][0], "domain": names[i][1],
                              "tracked": tracked.get(i, {})} for i in ids]}

@@ -83,7 +83,11 @@ def build_pack(client_id, owner_email, *, store, now, collection=None, run_id=No
         "competitors": [], "moves": [], "nearby": [], "entrants": [], "themes": [], "rules": [],
         "hiring": [], "patterns": [], "coverage": [], "built_at": now.isoformat(timespec="seconds")}
 
-    comps = store.competitors(client_id, owner_email)
+    from . import market_radar_tracking as tracking
+    all_comps = store.competitors(client_id, owner_email)
+    comps = tracking.choose(all_comps)
+    if all_comps:
+        pack["coverage"].append(tracking.summary(all_comps)["text"])
     cref = {}
     for i, r in enumerate(comps):
         ref = "C%d" % (i + 1)

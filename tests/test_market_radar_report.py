@@ -53,7 +53,7 @@ class Store:
         return [{"entity_id": 10, "domain": "big.example", "name": "BigChain", "kind": "direct",
                  "status": "confirmed", "details": {"sells": "dental care"}},
                 {"entity_id": 11, "domain": "small.example", "name": "Small Smiles", "kind": "local",
-                 "status": "proposed", "details": {}}]
+                 "status": "confirmed", "details": {}}]
 
     def client_scores(self, cid):
         return self.scores
