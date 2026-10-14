@@ -37,6 +37,20 @@ and a different category is left out; the report writer is told the niche and th
 leads with the niche. A profile stored before this existed is read again once on its next run (corrections
 kept).
 
+## 0b. Which competitors are researched
+
+`tracker/market_radar_tracking.py` holds the one rule. The agent suggests competitors; you Confirm the ones
+that matter and Remove the rest. Once at least one is confirmed, **only the confirmed ones** are researched:
+the moves collection, the reading and scoring of what it found, the rival cards, the moves page and the
+written report. Suggestions you have neither confirmed nor removed are listed (marked "Not researched until
+you confirm it") but left alone. Before anything is confirmed nothing has been chosen, so every suggestion
+that was not removed is researched, and the page says so ("No competitor is confirmed yet, so all N suggestions
+are being researched"). A removed competitor is never researched. The same sentence is shown on the
+Competitors list, the Moves page and in the report's "what was and was not checked".
+
+The "new businesses nearby" and "new brands" scans still know every suggested competitor, so a suggestion is
+never reported back to you as a new entrant.
+
 ## 1. When a website cannot be read
 
 `tracker/market_radar_outside.py`. If a site refuses the reader or says very little, the profile also reads

@@ -565,7 +565,7 @@
         (a.quote ? '<br><q>' + esc(a.quote) + '</q>' : '') + (href ? ' <a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">page</a>' : '') + '</li>';
     }).join('');
     var segs = (pos.customer_segments || []).map(function (c) {
-      return '<div class="mr-seg"><b>' + esc(c.name) + '</b><p>' + esc(c.description) + '</p>' +
+      return '<div class="mr-icp"><b>' + esc(c.name) + '</b><p>' + esc(c.description) + '</p>' +
         (c.why_they_buy ? '<p class="mr-hint">Why they buy: ' + esc(c.why_they_buy) + '</p>' : '') + '</div>';
     }).join('');
     var who = [aud.gender, aud.age_range, aud.geography].filter(Boolean).map(esc).join(' \u00b7 ');
@@ -581,7 +581,7 @@
       (aud.who ? '<div class="mr-k" style="margin-top:14px">Who they sell to</div><p>' + esc(aud.who) + '</p>' + (who ? '<p class="mr-hint">' + who + '</p>' : '') +
         (aud.needs && aud.needs.length ? '<div class="mr-hint">Needs</div>' + chips(aud.needs) : '') +
         (aud.buying_triggers && aud.buying_triggers.length ? '<div class="mr-hint">Buys when</div>' + chips(aud.buying_triggers) : '') : '') +
-      (segs ? '<div class="mr-k" style="margin-top:14px">Ideal customers</div><div class="mr-segs">' + segs + '</div>' : '') +
+      (segs ? '<div class="mr-k" style="margin-top:14px">Ideal customers</div><div class="mr-icps">' + segs + '</div>' : '') +
       ((pos.differentiators || []).length ? '<div class="mr-k" style="margin-top:14px">What sets them apart</div>' + chips(pos.differentiators) : '') +
       ((pos.not_this || []).length ? '<div class="mr-k" style="margin-top:14px">Not in</div>' + chips(pos.not_this, 'mr-not') : '') +
       (terms.length ? '<div class="mr-k" style="margin-top:14px">What the site keeps saying</div>' + chips(terms) +
@@ -610,7 +610,7 @@
     return c;
   }
 
-  function renderCompetitors(rows, filter) {
+  function renderCompetitors(rows, filter, tracking) {
     rows = rows || [];
     var c = counts(rows);
     filter = filter || (c.proposed ? 'proposed' : 'confirmed');
@@ -626,10 +626,12 @@
     }[filter]) + '</div>';
     var bulk = filter === 'proposed' && list.length > 1
       ? '<button type="button" class="mr-btn small ok" data-act="confirm-all">Confirm all ' + esc(list.length) + '</button>' : '';
+    var tr = tracking || {};
+    var banner = tr.text ? '<div class="mr-callout mr-tracking' + (tr.mode === 'all_suggested' ? ' warn' : '') + '">' + esc(tr.text) + '</div>' : '';
     return '<div class="card mr-card"><div class="mr-card-h"><div><h3>Competitors</h3>' +
-      '<p>Suggested by the agent, checked against each company\'s own website. Confirmed ones will be tracked.</p></div>' +
+      '<p>Suggested by the agent, checked against each company\'s own website. Only the ones you confirm are researched: their moves, news and the report.</p></div>' +
       '<div class="mr-actions"><div class="mr-seg" role="tablist">' + tabs + '</div>' + bulk + '</div></div>' +
-      '<div class="mr-rows">' + body + '</div>' +
+      banner + '<div class="mr-rows">' + body + '</div>' +
       '<form class="mr-addrow" id="mrAddCompetitor" autocomplete="off"><label class="mr-sr" for="mrCompUrl">Competitor website</label>' +
       '<input type="text" id="mrCompUrl" placeholder="Add a competitor by website, such as rival.com" />' +
       '<select id="mrCompKind" aria-label="Kind of competitor">' + KINDS.map(function (k) {
@@ -666,6 +668,7 @@
       '<div class="mr-row-main"><div class="mr-row-top"><b>' + esc(r.name || r.domain) + '</b>' +
       (href ? '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(r.domain) + '</a>' : esc(r.domain)) +
       kindChip(r.kind) + '</div>' +
+      (r.status === 'proposed' && r.researched === false ? '<div class="mr-hint" style="margin:2px 0 0">Not researched until you confirm it</div>' : '') +
       (r.niche_fit === 'yes' || r.niche_fit === 'adjacent' ? '<div class="mr-hint" style="margin:2px 0 0">' +
         (r.niche_fit === 'yes' ? 'Same niche' : 'Same category, not the same niche') + '</div>' : '') +
       (r.reason ? '<div class="mr-reason">' + esc(r.reason) + '</div>' : (r.sells ? '<div class="mr-reason">' + esc(r.sells) + '</div>' : '')) +
@@ -818,6 +821,9 @@
       '<button type="button" class="mr-btn" data-act="collect"' + (running ? ' disabled' : '') + '>' +
       (running ? 'Collecting…' : last ? 'Collect again' : 'Collect now') + '</button></div>';
     var body = '';
+    if (moves.tracking && moves.tracking.text) {
+      body += '<div class="mr-callout info">' + esc(moves.tracking.text) + '</div>';
+    }
     if (running) body += renderCollectProgress(collectRun);
     if (!last && !running) {
       body += '<div class="mr-empty"><b>Nothing collected yet</b>Collecting is free (no paid search) and takes 2 to 6 minutes. ' +
@@ -1321,7 +1327,7 @@
     var later = m ? '<b>Nothing yet</b>This fills in with the first collection. Open <i>Moves</i> and press Collect now.' : 'Loading…';
     return renderHead(v, running) + (running ? renderProgress(state.run) : '') + '<div class="mr-panels">' +
       panel('overview', active, renderOverview(state)) +
-      panel('competitors', active, renderCompetitors(v.competitors, state.filter)) +
+      panel('competitors', active, renderCompetitors(v.competitors, state.filter, v.tracking)) +
       panel('moves', active, m ? renderMoves(m, state.collect, t.moves) : waiting('Competitor moves', 'Loading…')) +
       panel('rivals', active, renderRivals(state.rivals) || waiting('Rival cards', 'Loading…')) +
       panel('nearby', active, renderRadar(m && m.radar, t.nearby) || waiting('Nearby and new', later)) +

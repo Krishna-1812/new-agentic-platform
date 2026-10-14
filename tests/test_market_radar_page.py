@@ -29,7 +29,7 @@ READING = {
     "customer_type": "B2C", "offerings": ["checkups"], "location_count": 1,
     "hq": {"street": "", "postal_code": "", "city": "Berlin", "region": "Berlin", "country_code": "DE"},
     "markets": ["DE"], "industry": {"plain_label": "Dentist", "keywords": ["zahnarzt"]},
-    "price_positioning": "mid", "service_area": "Berlin",
+    "price_positioning": "mid", "service_area": "Berlin", "positioning": {"niche": "Family dentist in Berlin"},
     "hq_point": {"lat": 52.5, "lon": 13.3, "precision": "city", "label": "Berlin"},
     "evidence": [{"field": "name", "quote": "Acme <b>Dental</b>", "url": "https://acme-dental.com/"}],
     "checks": [], "unknowns": [], "facts": {"website": "https://acme-dental.com/"},

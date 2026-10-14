@@ -817,8 +817,8 @@
 .mr-niche-t { font-family: var(--font-display); font-variation-settings: var(--display-axes); font-size: clamp(20px, 2.4vw, 26px); line-height: 1.25; margin: 4px 0 6px; color: var(--tx); word-spacing: .14em; }
 .mr-niche-path { font-size: 12.5px; color: var(--tx3); margin: 0 0 10px; }
 .mr-niche-path i { font-style: normal; padding: 0 4px; opacity: .6; }
-.mr-segs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 8px; }
-.mr-seg { border: 1px solid var(--line, rgba(255, 255, 255, .1)); border-radius: 14px; padding: 12px 14px; background: rgba(255, 255, 255, .03); }
-.mr-seg b { display: block; font-size: 14px; color: var(--tx); margin-bottom: 4px; }
-.mr-seg p { margin: 0 0 6px; font-size: 13px; line-height: 1.5; color: var(--tx2); }
+.mr-icps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 8px; }
+.mr-icp { border: 1px solid var(--line, rgba(255, 255, 255, .1)); border-radius: 14px; padding: 12px 14px; background: rgba(255, 255, 255, .03); }
+.mr-icp b { display: block; font-size: 14px; color: var(--tx); margin-bottom: 4px; }
+.mr-icp p { margin: 0 0 6px; font-size: 13px; line-height: 1.5; color: var(--tx2); }
 .mr-pills.mr-not span { text-decoration: line-through; text-decoration-color: rgba(255, 255, 255, .35); opacity: .8; }
