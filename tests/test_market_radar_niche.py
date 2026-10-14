@@ -78,10 +78,10 @@ PRECISE = {
     "price_note": "boxer briefs about $20, tops $38 to $68", "confidence": "high"}
 
 
-def profile_body(positioning):
+def profile_body(_unused=None):
     from tests.test_market_radar_profile import GOOD
     return dict(GOOD, name="July Mode", archetype="ecommerce", sells_online=True,
-                hq={"city": "", "region": "", "country_code": "US"}, evidence=[], positioning=positioning,
+                hq={"city": "", "region": "", "country_code": "US"}, evidence=[],
                 industry={"plain_label": "Men's innerwear", "naics_code": "315990",
                           "naics_title": "Apparel Accessories", "keywords": ["men's underwear"]})
 
@@ -168,7 +168,7 @@ def test_the_sitemap_reports_the_words_in_product_and_collection_addresses(monke
     assert words["boxer"] == 2 and words["pima"] == 2 and words["modal"] == 1
 
 
-# == the profile asks for the niche, checks it, and reads again when it is too broad ==========
+# == the niche is read in a call of its own, checked, and read again when too broad ===========
 
 def build(monkeypatch, *replies):
     monkeypatch.setattr(prof.site_reader, "read_site", lambda url: dict(SITE))
@@ -177,20 +177,26 @@ def build(monkeypatch, *replies):
     return prof.build_profile(HOME, client=client, save=False), client
 
 
-def test_the_profile_prompt_asks_for_the_niche_and_the_buyer_and_carries_the_counted_words(monkeypatch):
-    out, client = build(monkeypatch, reply(profile_body(PRECISE)))
-    kind, kw = client.calls[0]
-    assert "Positioning (the niche)" in kw["system"] and "customer_segments" in kw["system"]
-    assert '"men\'s innerwear" is a category' in kw["system"]
-    sent = kw["messages"][0]["content"]
+def test_the_profile_call_is_unchanged_and_the_niche_is_asked_in_a_call_of_its_own(monkeypatch):
+    out, client = build(monkeypatch, reply(profile_body(None)), reply(PRECISE))
+    assert "positioning" not in prof.PROFILE_SCHEMA["properties"], "the profile schema stays as it was"
+    assert "positioning" not in prof.PROFILE_SCHEMA["required"] and "Positioning" not in prof.SYSTEM
+    first, second = client.calls[0][1], client.calls[1][1]
+    assert first["output_config"]["format"]["schema"] is prof.PROFILE_SCHEMA
+    assert "what_the_site_stresses" not in first["messages"][0]["content"]
+    assert second["system"] is prof.POSITIONING_SYSTEM
+    assert second["output_config"]["format"]["schema"] is prof.POSITIONING_SCHEMA
+    assert "Positioning (the niche)" in second["system"] and "customer_segments" in second["system"]
+    assert '"men\'s innerwear" is a category' in second["system"]
+    sent = second["messages"][0]["content"]
     assert "what_the_site_stresses" in sent and "pima" in sent and "polyester" in sent
-    assert kw["output_config"]["format"]["schema"]["properties"]["positioning"] is prof.POSITIONING_SCHEMA
+    assert "TEXT OF THE PAGES READ" in sent
 
 
-def test_a_precise_first_reading_costs_one_call_and_is_kept(monkeypatch):
-    out, client = build(monkeypatch, reply(profile_body(PRECISE)))
+def test_a_precise_first_reading_costs_one_extra_call_and_is_kept(monkeypatch):
+    out, client = build(monkeypatch, reply(profile_body(None)), reply(PRECISE))
     p = out["profile"]
-    assert len(client.calls) == 1 and p["niche_check"]["refined"] is None
+    assert len(client.calls) == 2 and p["niche_check"]["refined"] is None and p["niche_check"]["error"] is None
     assert p["positioning"]["niche"].startswith("Pima cotton")
     assert p["positioning"]["customer_segments"][0]["name"] == "Fibre-conscious men"
     assert not niche.needs_refine(p["niche_check"]["flags"])
@@ -198,13 +204,13 @@ def test_a_precise_first_reading_costs_one_call_and_is_kept(monkeypatch):
 
 
 def test_a_too_broad_reading_is_read_again_once_with_the_problems_listed(monkeypatch):
-    out, client = build(monkeypatch, reply(profile_body(BROAD)), reply(PRECISE))
+    out, client = build(monkeypatch, reply(profile_body(None)), reply(BROAD), reply(PRECISE))
     p = out["profile"]
-    assert len(client.calls) == 2
-    second = client.calls[1][1]
-    assert second["system"] is prof.REFINE_SYSTEM
-    assert second["output_config"]["format"]["schema"] is prof.POSITIONING_SCHEMA
-    ask = second["messages"][0]["content"]
+    assert len(client.calls) == 3
+    third = client.calls[2][1]
+    assert third["system"] is prof.REFINE_SYSTEM
+    assert third["output_config"]["format"]["schema"] is prof.POSITIONING_SCHEMA
+    ask = third["messages"][0]["content"]
     assert "Men's innerwear" in ask and "PROBLEMS FOUND IN IT" in ask
     assert "the site stresses" in ask.lower() and "cotton" in ask
     assert p["positioning"]["niche"] == PRECISE["niche"]
@@ -215,7 +221,7 @@ def test_a_too_broad_reading_is_read_again_once_with_the_problems_listed(monkeyp
 
 
 def test_a_second_look_that_fails_keeps_the_first_reading_and_shows_why(monkeypatch):
-    out, client = build(monkeypatch, reply(profile_body(BROAD)), reply("{not json"))
+    out, client = build(monkeypatch, reply(profile_body(None)), reply(BROAD), reply("{not json"))
     p = out["profile"]
     assert out["status"] == "ok" and p["positioning"]["niche"] == "Men's innerwear"
     assert "bad_json" in p["niche_check"]["refined"]["failed"]
@@ -223,10 +229,49 @@ def test_a_second_look_that_fails_keeps_the_first_reading_and_shows_why(monkeypa
     assert p["industry"]["plain_label"] == "Men's innerwear"
 
 
+@pytest.mark.parametrize("bad", ["{not json", "refusal", "truncated"])
+def test_a_niche_reading_that_fails_never_fails_the_profile_or_the_search(monkeypatch, bad):
+    """The profile call is the one that always worked; the niche is an addition. When the API refuses
+    the niche request (or it comes back cut off, refused or unreadable) the company still gets its
+    profile, and the page says what happened."""
+    second = {"{not json": reply("{not json"), "refusal": reply("", stop="refusal"),
+              "truncated": reply("{}", stop="max_tokens")}[bad]
+    out, client = build(monkeypatch, reply(profile_body(None)), second)
+    p = out["profile"]
+    assert out["status"] == "ok" and p["name"] == "July Mode" and len(client.calls) == 2
+    assert p["positioning"]["niche"] == "" and p["niche_check"]["error"]
+    assert any("could not be read this time" in c and "Search again to retry" in c for c in p["checks"])
+    assert p["industry"]["plain_label"] == "Men's innerwear", "the profile's own label stands"
+    assert "niche" not in rv.client_brief(dict(PROFILE, **{k: p[k] for k in ("positioning",)})), \
+        "with no niche the competitor search works as it did"
+
+
+def test_a_niche_call_the_api_rejects_outright_is_reported_not_raised(monkeypatch):
+    import anthropic
+    from tests.test_market_radar_profile import api_error
+    monkeypatch.setattr(prof.site_reader, "read_site", lambda url: dict(SITE))
+    monkeypatch.setattr(prof, "geocode", lambda q, conn=None: None)
+
+    class Client(FakeClient):
+        def __init__(self):
+            super().__init__(reply(profile_body(None)))
+            outer = self
+            real = self.beta.messages.create
+
+            def create(**kw):
+                if kw["output_config"]["format"]["schema"] is prof.POSITIONING_SCHEMA:
+                    raise api_error(anthropic.BadRequestError, 400, "schema is too complex")
+                return real(**kw)
+            self.beta.messages.create = create
+    out = prof.build_profile(HOME, client=Client(), save=False)
+    assert out["status"] == "ok"
+    assert "BadRequestError" in out["profile"]["niche_check"]["error"] or "api_error" in out["profile"]["niche_check"]["error"]
+
+
 def test_a_quote_behind_a_defining_attribute_that_is_not_on_the_page_is_flagged(monkeypatch):
     fake = json.loads(json.dumps(PRECISE))
     fake["defining_attributes"][0]["quote"] = "Hand-loomed in the Himalayas"
-    out, _ = build(monkeypatch, reply(profile_body(fake)))
+    out, _ = build(monkeypatch, reply(profile_body()), reply(fake))
     assert any("defining attributes do not appear" in c for c in out["profile"]["checks"])
 
 
@@ -244,8 +289,8 @@ def test_the_model_s_positioning_is_bounded_and_in_house_style():
     assert prof.clean_positioning(None)["niche"] == ""
 
 
-def test_the_refining_prompt_carries_the_same_rules_as_the_profile_prompt():
-    assert prof.POSITIONING_RULES in prof.SYSTEM and prof.POSITIONING_RULES in prof.REFINE_SYSTEM
+def test_the_refining_prompt_carries_the_same_rules_as_the_first_niche_prompt():
+    assert prof.POSITIONING_RULES in prof.POSITIONING_SYSTEM and prof.POSITIONING_RULES in prof.REFINE_SYSTEM
     assert "never add an attribute no page states" in prof.POSITIONING_RULES
 
 
@@ -346,6 +391,28 @@ def test_staff_can_correct_the_niche_and_the_correction_reaches_the_competitor_s
     assert "positioning.niche" in effective["edited_fields"]
 
 
+def test_a_profile_whose_niche_failed_last_time_is_tried_again_on_the_next_run():
+    from tracker import market_radar_run as mrun
+    import tracker.market_radar_store as real
+    built, runs = [], {}
+    saved = {k: getattr(real, k) for k in ("get_entity", "update_run", "get_client")}
+    stored = {"archetype": "ecommerce", "name": "July Mode", "positioning": prof.clean_positioning(None),
+              "niche_check": {"flags": [], "error": "api_error: BadRequestError"}}
+    real.get_entity = lambda eid: {"profile": stored}
+    real.update_run = lambda run_id, **kw: runs.update(kw)
+    real.get_client = lambda cid, email: {"settings": {}, "radius_km": None}
+    try:
+        def build_one(url, **k):
+            built.append(url)
+            return {"status": "ok", "profile": dict(PROFILE, positioning=PRECISE)}
+        mrun.job(1, HOME, "o", 1, 1, True, build_profile=build_one,
+                 discover=lambda p, **k: {"status": "none_found", "competitors": []})
+    finally:
+        for k, v in saved.items():
+            setattr(real, k, v)
+    assert built == [HOME] and "could not be read last time" in runs["summary"]["profile_note"]
+
+
 def test_a_stored_profile_without_a_niche_is_read_again_once_on_the_next_run():
     from tracker import market_radar_run as mrun
     import tracker.market_radar_store as real
@@ -363,7 +430,7 @@ def test_a_stored_profile_without_a_niche_is_read_again_once_on_the_next_run():
     finally:
         for k, v in saved.items():
             setattr(real, k, v)
-    assert built == [HOME] and "predates the niche" in runs["summary"]["profile_note"]
+    assert built == [HOME] and "has no niche" in runs["summary"]["profile_note"]
 
 
 def test_the_profile_view_carries_the_niche_and_what_the_program_found():

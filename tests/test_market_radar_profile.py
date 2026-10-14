@@ -431,13 +431,6 @@ GOOD = {"name": "Acme Dental", "one_liner": "A family dental practice \u2014 in 
         "industry": {"plain_label": "Dentist", "naics_code": "621210",
                      "naics_title": "Offices of Dentists", "keywords": ["dentist"]},
         "competitors_named": [], "languages": ["English"],
-        "positioning": {"niche": "Family dentist in Kensington", "broad_category": "Dentist",
-                        "category_path": ["Healthcare", "Dentist", "Family dentist"],
-                        "defining_attributes": [], "differentiators": [], "not_this": [],
-                        "audience": {"who": "Families living near Kensington", "gender": "", "age_range": "",
-                                     "geography": "London", "needs": [], "buying_triggers": []},
-                        "customer_segments": [], "rival_search_phrases": [], "price_note": "",
-                        "confidence": "high"},
         "evidence": [{"field": "name", "quote": "Family dentist \u2014 Kensington",
                       "url": "https://acme.example/"}],
         "confidence": {"archetype": "high", "industry": "high", "hq": "high", "location_count": "high"},
@@ -746,12 +739,22 @@ def test_route_access(no_profile, email, headers, status):
 def test_route_profiles_books_and_closes_the_run(world, monkeypatch):
     monkeypatch.setattr(prof.site_reader, "read_site", lambda url: site_for())
     monkeypatch.setattr(prof, "geocode", lambda q, conn=None: None)
-    monkeypatch.setattr(prof, "_client", lambda: FakeClient(reply()))
+    # The profile call, then the niche call (its own call; a good niche needs no third).
+    fake = FakeClient(reply(), reply({
+        "niche": "Family dentist in Kensington", "broad_category": "Dentist",
+        "category_path": ["Healthcare", "Dentist", "Family dentist"], "defining_attributes": [],
+        "differentiators": [], "not_this": [],
+        "audience": {"who": "Families living near Kensington", "gender": "", "age_range": "",
+                     "geography": "London", "needs": [], "buying_triggers": []},
+        "customer_segments": [], "rival_search_phrases": [], "price_note": "", "confidence": "high"}))
+    monkeypatch.setattr(prof, "_client", lambda: fake)
     resp = _client(ADMIN).post(ROUTE, json={"url": "https://acme.example/", "confirm_spend": True})
     body = resp.get_json()
     assert resp.status_code == 200, body
     assert body["status"] == "ok" and body["profile"]["archetype"] == "local_single"
-    assert body["ledger"]["total_usd"] == 0.044 and not body["ledger"]["partial"]
+    assert body["profile"]["positioning"]["niche"] == "Family dentist in Kensington"
+    assert len(fake.calls) == 2
+    assert body["ledger"]["total_usd"] == 0.088 and not body["ledger"]["partial"]    # 2 calls x (12k x $2 + 2k x $10)
     from tracker import market_radar_store as store
     assert store.get_run(body["run_id"], ADMIN)["status"] == "complete"
 

@@ -88,7 +88,7 @@ PROFILE_SCHEMA = {
     "required": ["name", "one_liner", "offerings", "customer_type", "archetype",
                  "archetype_reason", "business_model", "sells_online", "location_count",
                  "location_count_basis", "hq", "locations", "markets", "service_area",
-                 "price_positioning", "positioning",
+                 "price_positioning",
                  "industry", "competitors_named", "languages", "evidence", "confidence",
                  "unknowns"],
     "properties": {
@@ -117,7 +117,6 @@ PROFILE_SCHEMA = {
         "service_area": {"type": "string"},
         "price_positioning": {"type": "string",
                               "enum": ["budget", "mid", "premium", "luxury", "unknown"]},
-        "positioning": POSITIONING_SCHEMA,
         "industry": {"type": "object", "additionalProperties": False,
                      "required": ["plain_label", "naics_code", "naics_title", "keywords"],
                      "properties": {"plain_label": {"type": "string"},
@@ -158,7 +157,14 @@ Rules:
 - markets: ISO alpha-2 codes of the countries the company actually serves or ships to, per the pages.
 - industry.naics_code: the best-matching 6-digit NAICS 2022 code, and its title.
 - competitors_named: only companies the site itself presents as competitors or alternatives (comparison pages, "vs" pages, "switch from"). Not partners, clients, insurers, suppliers or press outlets. Usually empty.
-Positioning (the niche). Everything downstream, the competitors searched for, how each is judged and the buyer the report describes, follows it, so be exact:
+- evidence: for name, archetype, hq, location_count and industry, a short verbatim quote (under 25 words) from the page text, with that page's URL. Never invent or paraphrase a quote.
+- unknowns: what a reader would expect to know that these pages did not say.
+- Write in English, plainly. Do not use em dashes or en dashes. Use an empty string or empty list when something is unknown; never guess to fill a field."""
+SYSTEM = SYSTEM.replace("%(archetypes)s", playbooks.prompt_lines())
+
+# The niche, the buyer and the ideal customers are read in a call of their own (not in the profile call),
+# so a problem with that reading can never stop a company's profile or its competitor search.
+POSITIONING_RULES = """Positioning (the niche). Everything downstream, the competitors searched for, how each is judged and the buyer the report describes, follows it, so be exact:
 - niche: the finest category the pages support, in 4 to 14 words: the product or service, the attribute the site makes its point of difference (its material, method, specialism, ingredient, technology, price tier, origin or audience) and the customer it is for. Take the attributes from what_the_site_stresses in the FACTS: words in the page title and headline, and materials or audiences named many times, are what the company itself says it is. A broad category is not a niche: "men's innerwear" is a category, while "Pima cotton, modal and bamboo men's basics, zero polyester" is a niche. The product range may be wider than the first product you notice (a brand that starts with underwear but also sells polos and hoodies sells basics, not only innerwear): describe the range the site shows. Use the site's own words where it has them, and never add an attribute no page states. If a company is really broad, say so; do not invent a specialism.
 - broad_category: the ordinary industry name a person would use ("men's apparel").
 - category_path: from broad to narrow, 2 to 5 steps, ending at the niche.
@@ -170,12 +176,12 @@ Positioning (the niche). Everything downstream, the competitors searched for, ho
 - rival_search_phrases: 6 to 10 searches a buyer in its market would type to find brands like this one, built from the niche's attributes, never the company's own name.
 - price_note: where its price points sit, from prices_seen (for example "boxer briefs about $20, tops $38 to $68"); empty when none were seen.
 - confidence for the niche.
-Also set industry.plain_label to the niche in under 8 words, and put the niche's defining words in industry.keywords.
-- evidence: for name, archetype, hq, location_count and industry, a short verbatim quote (under 25 words) from the page text, with that page's URL. Never invent or paraphrase a quote.
-- unknowns: what a reader would expect to know that these pages did not say.
-- Write in English, plainly. Do not use em dashes or en dashes. Use an empty string or empty list when something is unknown; never guess to fill a field."""
-SYSTEM = SYSTEM.replace("%(archetypes)s", playbooks.prompt_lines())
-POSITIONING_RULES = SYSTEM[SYSTEM.index("Positioning (the niche)."):SYSTEM.index("- evidence: for name")].strip()
+Also set industry.plain_label to the niche in under 8 words, and put the niche's defining words in industry.keywords."""
+POSITIONING_SYSTEM = """You place a company in its market as precisely as its own website allows, for a market-intelligence report that tracks its competitors. You are given FACTS (including what_the_site_stresses: the site's own most repeated words, counted by a program) and the TEXT of the pages it read, each headed by its URL. Use only these. You have no search tool, and you must not fill gaps from general knowledge about a company with the same name.
+
+""" + POSITIONING_RULES + """
+
+Write in English, plainly. Do not use em dashes or en dashes. Use an empty string or empty list when something is unknown; never guess to fill a field."""
 
 
 # == building the model's input ==================================================
@@ -242,8 +248,6 @@ def facts_for_model(site):
         "shopify_store_info": site.get("shopify_store") or "not a Shopify store, or not readable",
         "read_from_archive": bool(site.get("via_archive")),
         "read_from_wikidata_and_wikipedia": bool(site.get("via_outside")),
-        # Counted by a program, not read by a model: the site's own most repeated words, and where they sit.
-        "what_the_site_stresses": niche_reader.stresses(site),
     }
 
 
@@ -266,24 +270,70 @@ def ask_model(facts, corpus, *, run_id=None, stage="profile", client=None):
                          run_id=run_id, stage=stage, client=client or _client())
 
 
-REFINE_SYSTEM = """You correct the positioning of a company that was profiled from its own website, for a market-intelligence report. A first reading was checked by a program against what the site actually says, and the problems are listed below. Rewrite the positioning so that none of them remain, using only the pages given. You have no search tool and must not use outside knowledge.
+REFINE_SYSTEM = POSITIONING_SYSTEM + """
 
-""" + POSITIONING_RULES + """
+A first reading was checked by a program against what the site actually says, and the problems are listed in
+the request. Rewrite the positioning so that none of them remain, using only the pages given. Keep what was right."""
 
-Write in English, plainly. Do not use em dashes or en dashes. Keep what was right in the first reading."""
+
+def positioning_facts(site, profile):
+    """What the positioning call is given besides the pages: a few facts of the profile just read, and the
+    site's own most repeated words, counted by a program."""
+    s = site.get("signals") or {}
+    return {
+        "website": site.get("home_url"), "page_title": s.get("title"), "meta_description": s.get("description"),
+        "company": profile.get("name"), "business_type": profile.get("archetype"),
+        "what_they_sell": (profile.get("offerings") or [])[:8], "price_level": profile.get("price_positioning"),
+        "countries_served": profile.get("markets"), "currencies_seen": s.get("currencies", []),
+        "what_the_site_stresses": niche_reader.stresses(site),
+    }
 
 
-def refine_positioning(facts, corpus, current, problems, *, run_id=None, client=None):
-    """One small structured-output call: the positioning again, given what a program found wrong with it.
-    Returns (positioning, meta). Raises ProfileError."""
-    brief = {k: facts.get(k) for k in ("website", "page_title", "meta_description", "what_the_site_stresses",
-                                       "currencies_seen", "country_signals")}
-    user = ("FACTS:\n" + json.dumps(brief, ensure_ascii=False, indent=1)
-            + "\n\nFIRST READING:\n" + json.dumps(current, ensure_ascii=False, indent=1)
-            + "\n\nPROBLEMS FOUND IN IT:\n- " + "\n- ".join(problems)
-            + "\n\nTEXT OF THE PAGES READ:\n" + corpus[:HOME_CHARS + PAGE_CHARS])
-    return llm.call_json(REFINE_SYSTEM, user, POSITIONING_SCHEMA, model=MODEL, max_tokens=3000,
-                         run_id=run_id, stage="profile_niche", client=client or _client())
+def ask_positioning(site, profile, corpus, *, current=None, problems=None, run_id=None, client=None,
+                    stage="profile_niche"):
+    """One structured-output call: the niche, the buyer and the ideal customers. With `problems`, the first
+    reading is corrected. Returns (positioning, meta). Raises ProfileError."""
+    user = "FACTS:\n" + json.dumps(positioning_facts(site, profile), ensure_ascii=False, indent=1)
+    if problems:
+        user += ("\n\nFIRST READING:\n" + json.dumps(current, ensure_ascii=False, indent=1)
+                 + "\n\nPROBLEMS FOUND IN IT:\n- " + "\n- ".join(problems))
+    user += "\n\nTEXT OF THE PAGES READ:\n" + corpus[:HOME_CHARS + PAGE_CHARS]
+    return llm.call_json(REFINE_SYSTEM if problems else POSITIONING_SYSTEM, user, POSITIONING_SCHEMA,
+                         model=MODEL, max_tokens=4000, run_id=run_id, stage=stage,
+                         client=client or _client())
+
+
+def _why(e):
+    return "%s: %s" % (getattr(e, "kind", type(e).__name__), str(getattr(e, "detail", e))[:200])
+
+
+def read_positioning(site, profile, *, run_id=None, client=None):
+    """The niche and buyer, checked against the site and corrected once if it is vaguer than the site.
+    Never raises: returns (positioning, refined, error). `error` is a plain reason when the niche could not
+    be read at all; the profile and the competitor search carry on without it, and say so."""
+    try:
+        corpus = build_corpus(site)
+        first, _ = ask_positioning(site, profile, corpus, run_id=run_id, client=client)
+        first = clean_positioning(first)
+    except Exception as e:      # the niche is an addition: its failure must never fail the profile
+        logger.warning("market_radar_profile: niche reading failed: %s", _why(e))
+        return clean_positioning(None), None, _why(e)
+    where = profile.get("hq") or {}
+    places = niche_reader.place_words(where.get("city"), where.get("region"), profile.get("service_area"),
+                                      (first.get("audience") or {}).get("geography"))
+    flags = niche_reader.check(first, niche_reader.stresses(site), site, places)
+    if not niche_reader.needs_refine(flags):
+        return first, None, None
+    # The niche is vaguer than the site, or says what no page says: one more call, with the problems listed.
+    # Whatever it still gets wrong is shown on the profile, not hidden.
+    problems = niche_reader.feedback(flags)
+    try:
+        better, rmeta = ask_positioning(site, profile, corpus, current=first, problems=problems,
+                                        run_id=run_id, client=client, stage="profile_niche_fix")
+        return clean_positioning(better), {"before": first.get("niche"), "problems": problems,
+                                           "cost_usd": rmeta.get("cost_usd")}, None
+    except Exception as e:
+        return first, {"before": first.get("niche"), "problems": problems, "failed": _why(e)}, None
 
 
 def clean_positioning(pos):
@@ -401,9 +451,9 @@ def _norm(text, keep_links=False):
     return " ".join(re.sub(r"[^\w\s]", " ", text.lower()).split())
 
 
-def assemble(site, parsed, meta, *, refined=None):
+def assemble(site, parsed, meta, *, refined=None, niche_error=None):
     """The stored profile: the model's reading, the facts, and the checks. `refined` is the niche
-    refining call's note when one was made."""
+    refining call's note when one was made; `niche_error` why the niche could not be read at all."""
     p = dict(parsed)
     p["positioning"] = clean_positioning(p.get("positioning"))
     stress = niche_reader.stresses(site)
@@ -411,7 +461,7 @@ def assemble(site, parsed, meta, *, refined=None):
     places = niche_reader.place_words(where.get("city"), where.get("region"), p.get("service_area"),
                                       (p["positioning"].get("audience") or {}).get("geography"))
     p["niche_check"] = {"flags": niche_reader.check(p["positioning"], stress, site, places),
-                        "stresses": stress, "refined": refined or None}
+                        "stresses": stress, "refined": refined or None, "error": niche_error or None}
     if refined and not refined.get("failed") and p["positioning"]["niche"]:
         # The industry label everything else reads follows the niche that was corrected.
         p["industry"] = dict(p.get("industry") or {}, plain_label=p["positioning"]["niche"][:100])
@@ -459,6 +509,9 @@ def assemble(site, parsed, meta, *, refined=None):
         "outside": site.get("outside"),
     }
     p["checks"] = checks(site, p)
+    if niche_error:
+        p["checks"].append("The niche and who the company sells to could not be read this time (%s), so the "
+                           "competitor search used the broad category. Search again to retry." % niche_error[:160])
     p["read_quality"] = outside.read_quality(site)
     p["coverage"] = {
         "pages": [{k: pg.get(k) for k in ("kind", "url", "status", "note", "via")} for pg in site.get("pages", [])],
@@ -717,28 +770,10 @@ def build_profile(url, *, run_id=None, client=None, save=True, conn=None, apollo
     except ProfileError as e:
         return {"status": "failed", "profile": None, "entity_id": None,
                 "error": {"kind": e.kind, "detail": e.detail}, "pages": site.get("pages")}
-    refined = None
-    where = parsed.get("hq") or {}
-    flags = niche_reader.check(
-        clean_positioning(parsed.get("positioning")), niche_reader.stresses(site), site,
-        niche_reader.place_words(where.get("city"), where.get("region"), parsed.get("service_area"),
-                                 ((parsed.get("positioning") or {}).get("audience") or {}).get("geography")))
-    if niche_reader.needs_refine(flags):
-        # The niche is vaguer than the site, or says what no page says: one small second call, with the
-        # problems listed. Whatever it still gets wrong is shown on the profile, not hidden.
-        try:
-            first = clean_positioning(parsed.get("positioning"))
-            better, rmeta = refine_positioning(facts_for_model(site), build_corpus(site), first,
-                                               niche_reader.feedback(flags), run_id=run_id, client=client)
-            parsed = dict(parsed, positioning=better)
-            refined = {"before": first.get("niche"), "problems": niche_reader.feedback(flags),
-                       "cost_usd": rmeta.get("cost_usd")}
-        except Exception as e:      # a failed refinement must never fail the profile
-            refined = {"before": clean_positioning(parsed.get("positioning")).get("niche"),
-                       "problems": niche_reader.feedback(flags),
-                       "failed": "%s: %s" % (getattr(e, "kind", type(e).__name__),
-                                             str(getattr(e, "detail", e))[:120])}
-    profile = assemble(site, parsed, meta, refined=refined)
+    # The niche, the buyer and the ideal customers: a separate step that cannot fail the profile.
+    positioning, refined, niche_error = read_positioning(site, parsed, run_id=run_id, client=client)
+    parsed = dict(parsed, positioning=positioning)
+    profile = assemble(site, parsed, meta, refined=refined, niche_error=niche_error)
     profile["hq_point"] = locate_hq(profile, conn=conn)
     profile["site_points"] = locate_sites(profile, conn=conn)
     entity_id = None

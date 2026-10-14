@@ -152,9 +152,9 @@ def test_a_client_uses_market_radar_without_prices_or_the_weekly_email(seeded):
     _share("market-radar")
     c = T._client(CLIENT)
     page = c.get("/lumina/agents/market-radar").get_data(as_text=True)
-    assert "data-mr-client" in page and "$0.12" not in page and "$1.00" not in page and "Weekly updates" not in page
+    assert "data-mr-client" in page and "$0.15" not in page and "$1.00" not in page and "Weekly updates" not in page
     staff = T._client(T.RAJ).get("/lumina/agents/market-radar").get_data(as_text=True)
-    assert "data-mr-client" not in staff and "$0.12" in staff
+    assert "data-mr-client" not in staff and "$0.15" in staff
     r = c.post(MR + "/api/clients/4/monitor", json={"enabled": True}, headers=XA)
     assert r.status_code == 403 and "team" in r.get_json()["error"]
     assert c.post(MR + "/api/clients/4/update-now", json={}, headers=XA).status_code in (302, 403)

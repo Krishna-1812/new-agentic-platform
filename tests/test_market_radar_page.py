@@ -988,3 +988,16 @@ def test_the_profile_lists_public_records_and_the_overview_says_what_is_watched_
     ov = out["overview"]
     assert "The field is heating up" in ov and "3 of 5 rivals are hiring" in ov
     assert "What we watch for professional services (law, accounting, consulting)" in ov and "Rankings and awards" in ov
+
+
+def test_a_failed_search_with_no_competitors_says_why_on_the_competitors_page():
+    """July Mode showed an empty list and a red chip; the reason was on another page."""
+    out = run_js("""
+      const tr = {mode: 'none', text: 'There are no competitors yet.', tracked: 0, not_tracked: 0};
+      const run = {status: 'failed', stage: 'profile', error: "profile failed: {'kind': 'api_error'}"};
+      const html = MR.renderCompetitors([], 'confirmed', tr, run);
+      return {why: html.includes('The last search did not finish') && html.includes('at: profile') && html.includes('api_error'),
+              banner: html.includes('mr-tracking'),
+              ok: MR.renderCompetitors([], 'confirmed', tr, {status: 'complete'}).includes('did not finish')};
+    """)
+    assert out == {"why": True, "banner": False, "ok": False}

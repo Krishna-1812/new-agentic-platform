@@ -610,7 +610,7 @@
     return c;
   }
 
-  function renderCompetitors(rows, filter, tracking) {
+  function renderCompetitors(rows, filter, tracking, run) {
     rows = rows || [];
     var c = counts(rows);
     filter = filter || (c.proposed ? 'proposed' : 'confirmed');
@@ -627,7 +627,11 @@
     var bulk = filter === 'proposed' && list.length > 1
       ? '<button type="button" class="mr-btn small ok" data-act="confirm-all">Confirm all ' + esc(list.length) + '</button>' : '';
     var tr = tracking || {};
-    var banner = tr.text ? '<div class="mr-callout mr-tracking' + (tr.mode === 'all_suggested' ? ' warn' : '') + '">' + esc(tr.text) + '</div>' : '';
+    var failed = run && run.status === 'failed' && !rows.length
+      ? '<div class="mr-callout bad"><span>The last search did not finish' + (run.stage ? ' (at: ' + esc(String(run.stage).replace(/_/g, ' ')) + ')' : '') + '. ' +
+        esc(run.error || 'No reason was recorded.') + ' Use Search again to retry.</span></div>' : '';
+    var banner = failed + (tr.text && tr.mode !== 'none'
+      ? '<div class="mr-callout mr-tracking' + (tr.mode === 'all_suggested' ? ' warn' : '') + '">' + esc(tr.text) + '</div>' : '');
     return '<div class="card mr-card"><div class="mr-card-h"><div><h3>Competitors</h3>' +
       '<p>Suggested by the agent, checked against each company\'s own website. Only the ones you confirm are researched: their moves, news and the report.</p></div>' +
       '<div class="mr-actions"><div class="mr-seg" role="tablist">' + tabs + '</div>' + bulk + '</div></div>' +
@@ -1327,7 +1331,7 @@
     var later = m ? '<b>Nothing yet</b>This fills in with the first collection. Open <i>Moves</i> and press Collect now.' : 'Loading…';
     return renderHead(v, running) + (running ? renderProgress(state.run) : '') + '<div class="mr-panels">' +
       panel('overview', active, renderOverview(state)) +
-      panel('competitors', active, renderCompetitors(v.competitors, state.filter, v.tracking)) +
+      panel('competitors', active, renderCompetitors(v.competitors, state.filter, v.tracking, v.last_run)) +
       panel('moves', active, m ? renderMoves(m, state.collect, t.moves) : waiting('Competitor moves', 'Loading…')) +
       panel('rivals', active, renderRivals(state.rivals) || waiting('Rival cards', 'Loading…')) +
       panel('nearby', active, renderRadar(m && m.radar, t.nearby) || waiting('Nearby and new', later)) +
@@ -1592,7 +1596,7 @@
     var url = $('mrAddUrl').value.trim();
     if (!url) { $('mrAddUrl').focus(); return; }
     startRun({ url: url }, 'Find competitors for ' + url + '?',
-      'This reads the website and searches for competitors' + (CLIENT ? ', in 2 to 4 minutes.' : ': about $0.12 and 2 to 4 minutes.') +
+      'This reads the website and searches for competitors' + (CLIENT ? ', in 2 to 4 minutes.' : ': about $0.15 and 2 to 4 minutes.') +
       ' If the company is already on your list, its stored profile is reused.')
       .then(function () { $('mrAddUrl').value = ''; });
   });
