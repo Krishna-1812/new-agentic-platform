@@ -25,6 +25,8 @@ import tempfile
 
 from tracker import sci_video
 
+from tracker import sci_spend  # noqa: E402
+
 logger = logging.getLogger(__name__)
 
 # A social post's audio track is always short; this is a generous cap that
@@ -86,6 +88,7 @@ def transcribe(audio_bytes: bytes) -> str | None:
         buf = io.BytesIO(audio_bytes)
         buf.name = "audio.mp3"
         resp = client.audio.transcriptions.create(model="whisper-1", file=buf)
+        sci_spend.whisper(audio_bytes)
         return (resp.text or "").strip()
     except Exception as e:
         logger.warning("sci_audio: transcribe failed: %s", e)

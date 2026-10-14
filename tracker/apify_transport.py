@@ -27,6 +27,16 @@ class ApifyTransportError(Exception):
     'the vendor call failed' from 'the vendor call succeeded with no rows'."""
 
 
+def _record_cost(run, actor_id):
+    """Tell the Social Media Intelligence run that is on this thread, if any, what this actor run cost
+    (Apify reports it as usageTotalUsd). Other agents using this transport have no such run: nothing happens."""
+    try:
+        from tracker import sci_spend
+        sci_spend.apify(run, actor_id)
+    except Exception:
+        logger.exception("apify_transport: could not record an actor run's cost")
+
+
 def _headers(token: str) -> dict:
     return {"Authorization": "Bearer " + token, "Content-Type": "application/json"}
 
@@ -134,6 +144,7 @@ def run_actor_and_wait(actor_id: str, run_input: dict, token: str, timeout: int 
     try:
         run_id = _start_run(actor_id, run_input, token, max_charge_usd)
         run = _poll_run(run_id, token, timeout, poll_interval)
+        _record_cost(run, actor_id)
         if run.get("status") != "SUCCEEDED":
             raise ApifyTransportError(
                 "Apify actor %s run %s ended with status %s" % (actor_id, run_id, run.get("status")))

@@ -17,6 +17,8 @@ import logging
 import os
 import time
 
+from tracker import sci_spend
+
 logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = (
@@ -246,6 +248,7 @@ def analyze_image(image_url: str, context: dict | None = None) -> dict:
         logger.info("sci_vision: retrying %s with bytes fetched here", image_url)
         return analyze_image_bytes(data, media_type=media_type, context=context)
 
+    sci_spend.claude("vision", resp)
     if _truncated(resp):
         logger.warning("sci_vision: reply for %s was cut off at max_tokens", image_url)
         return {"error": "response_truncated"}
@@ -296,6 +299,7 @@ def analyze_image_bytes(image_bytes: bytes, media_type: str = "image/jpeg",
         logger.warning("sci_vision: analyze_image_bytes failed: %s", e)
         return {"error": "vendor_call_failed"}
 
+    sci_spend.claude("vision", resp)
     if _truncated(resp):
         logger.warning("sci_vision: a video frame's reply was cut off at max_tokens")
         return {"error": "response_truncated"}

@@ -311,6 +311,8 @@ each agent's section above for what specifically goes inert.
 | `APIFY_API_TOKEN` | Social Media Intelligence's Facebook/TikTok/X collection (not currently set, see Known gaps) |
 | `YOUTUBE_API_KEY` | Social Media Intelligence's YouTube collection (opt) |
 | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT` | Social Media Intelligence's Reddit brand-conversation read (not currently set) |
+| `SCI_RUN_CAP_USD` | Social Media Intelligence: the most one run may spend on scraping and reading posts, default `5`; `0` means no cap. Reaching it stops those steps and says so on each platform; identify and the final report are never refused. |
+| `SCI_PARALLEL_PLATFORMS` | Social Media Intelligence: how many platforms one run works at once, default `3`; `1` is one after another |
 | `SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID`, `SLACK_WEBHOOK_URL` | Job Change Alert ingestion, ABM Signal Tracker alerts |
 | `SEO_STUDIO_URL`, `SEO_STUDIO_SECRET` | SEO Studio (`seo-apps/`): its public URL, and the secret shared with it for signing each user's pass |
 | `IPINFO_TOKEN`, `IDENTIFY_TOKEN` (opt) | Visitor de-anonymization |

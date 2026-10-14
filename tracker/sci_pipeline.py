@@ -15,18 +15,25 @@ normalize() returns, and tracker/sci_store.upsert_posts() expects:
         "raw": dict,                     # the untouched scraped/API item
     }
 
-Threading model: one daemon thread per run (_sci_run_analysis_job), looping
-over platforms SEQUENTIALLY, each wrapped in its own try/except so one
-platform's failure never blanks out another's already-collected results --
-see the plan's "Architecture decisions" for why (no connection pooling on
-_pg_conn(), no queue infra in this codebase).
+Threading model: one daemon thread per run (_sci_run_analysis_job). It
+identifies the platforms, then works them SCI_PARALLEL_PLATFORMS at a time
+(default 3; 1 is the old one-after-another), each platform wrapped in its own
+try/except so one platform's failure never blanks out another's
+already-collected results. The report and the Reddit pulse run after all of
+them. Every paid call of the run is recorded and counted against a cap
+(tracker/sci_spend.py); once the cap is reached the steps that fan out into
+many paid calls stop, and say so on the platform they stopped.
 """
 
 from __future__ import annotations
 
+import concurrent.futures
+import contextvars
 import logging
 import os
 from datetime import datetime, timedelta, timezone
+
+from tracker import sci_spend
 
 logger = logging.getLogger(__name__)
 
@@ -703,7 +710,13 @@ def run_platform_creative_analysis(run_id: int, platform: str) -> None:
     from tracker import sci_store
 
     posts = sci_store.get_posts(run_id, platform)
+    unread = 0
     for post in posts:
+        if sci_spend.over_cap():
+            # Each post costs up to seven vision calls and a transcript, so this is where a run runs away.
+            unread += 1
+            sci_store.update_post_creative_analysis(post["id"], None, status="skipped", error=sci_spend.cap_note())
+            continue
         context = {"caption": post.get("caption", "")}
         post_type = post.get("post_type", "")
         media_urls = post.get("media_urls") or []
@@ -731,7 +744,11 @@ def run_platform_creative_analysis(run_id: int, platform: str) -> None:
         _run_claude_creative_analysis(post["id"], effective_type, media_urls, context,
                                       frames, thumbnail_url, image_url)
 
-    sci_store.upsert_platform_run(run_id, platform, analyzed_at=datetime.now(timezone.utc).isoformat())
+    extra = {}
+    if unread:
+        extra["status_detail"] = "%s %d of %d posts were collected but not described." % (
+            sci_spend.cap_note(platform), unread, len(posts))
+    sci_store.upsert_platform_run(run_id, platform, analyzed_at=datetime.now(timezone.utc).isoformat(), **extra)
 
 
 def run_synthesis(run_id: int) -> None:
@@ -750,6 +767,32 @@ def run_synthesis(run_id: int) -> None:
         logger.warning("sci_pipeline: synthesis failed for run %s: %s", run_id, e)
 
 
+def _parallel_platforms() -> int:
+    try:
+        return max(1, int(os.environ.get("SCI_PARALLEL_PLATFORMS", "3")))
+    except ValueError:
+        return 3
+
+
+def _run_one_platform(run_id: int, platform: str, handle: str, company_name: str, company_url: str | None) -> None:
+    """Collect then read one platform. Never raises: a failure is written onto that platform's row, so it
+    cannot take the others (or the run) down."""
+    from tracker import sci_store
+    with sci_spend.platform(platform):
+        try:
+            if sci_spend.over_cap():
+                sci_store.upsert_platform_run(
+                    run_id, platform, status="scrape_failed",
+                    status_detail="Not collected: this run had already reached its cost cap ($%.2f)." % (
+                        sci_spend.cap() or 0))
+                return
+            run_platform_collection(run_id, platform, handle, company_name=company_name, company_url=company_url)
+            run_platform_creative_analysis(run_id, platform)
+        except Exception as e:
+            logger.warning("sci_pipeline: platform %s failed entirely for run %s: %s", platform, run_id, e)
+            sci_store.upsert_platform_run(run_id, platform, status="error", status_detail=str(e)[:500])
+
+
 def _sci_run_analysis_job(run_id: int, email: str, company_name: str, company_url: str | None) -> None:
     """The actual thread target -- all inputs explicit, never touches Flask's
     session/request/g (they're gone once the request that started this
@@ -759,21 +802,28 @@ def _sci_run_analysis_job(run_id: int, email: str, company_name: str, company_ur
     can't take down the others."""
     from tracker import sci_store
 
+    spend = sci_spend.begin(run_id)
     try:
         identify_result = run_identify(run_id, company_name, company_url)
-        for platform, entry in identify_result.items():
-            if entry.get("confidence") not in _USABLE_CONFIDENCE or not entry.get("handle"):
-                continue
-            try:
-                run_platform_collection(run_id, platform, entry["handle"],
-                                        company_name=company_name, company_url=company_url)
-                run_platform_creative_analysis(run_id, platform)
-            except Exception as e:
-                logger.warning("sci_pipeline: platform %s failed entirely for run %s: %s", platform, run_id, e)
-                sci_store.upsert_platform_run(run_id, platform, status="error", status_detail=str(e)[:500])
+        todo = [(platform, entry["handle"]) for platform, entry in identify_result.items()
+                if entry.get("confidence") in _USABLE_CONFIDENCE and entry.get("handle")]
+        workers = min(_parallel_platforms(), len(todo))
+        if workers <= 1:
+            for platform, handle in todo:
+                _run_one_platform(run_id, platform, handle, company_name, company_url)
+        else:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=workers, thread_name_prefix="sci-platform") as pool:
+                # A context copy per task, so each platform thread reports into this run's spend.
+                futures = [pool.submit(contextvars.copy_context().run, _run_one_platform, run_id, platform,
+                                       handle, company_name, company_url) for platform, handle in todo]
+                concurrent.futures.wait(futures)
         run_reddit_pulse(run_id, company_name, company_url)
         run_synthesis(run_id)
         sci_store.update_run_status(run_id, "done")
+        logger.info("sci_pipeline: run %s done, $%.2f spent%s", run_id, spend.spent,
+                    " (cap reached)" if spend.over() else "")
     except Exception as e:
         logger.warning("sci_pipeline: analysis job failed for run %s: %s", run_id, e)
         sci_store.update_run_status(run_id, "error", error="Analysis could not be completed.")
+    finally:
+        sci_spend.end(spend)
