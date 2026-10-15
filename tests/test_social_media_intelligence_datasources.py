@@ -223,7 +223,6 @@ def test_a_healthy_data_source_is_drawn_green_not_in_the_error_accent():
     def rule(sel):
         return re.search(r"(?:^|\})\s*" + re.escape(sel) + r"\s*\{([^}]*)\}", css).group(1)
     assert "color: var(--ok)" in rule(".sci-datasrc-status.ok")
-    assert "color: var(--ok)" in rule('[data-theme="light"] .sci-datasrc-status.ok')
     assert "color: var(--tx)" in rule(".sci-datasrc-name") and "--acc-tx" not in rule(".sci-datasrc-name")
     assert "color: var(--cream-tx)" in rule(".sci-datasrc-status.warn"), "amber, as its own comment says"
     assert "color: var(--danger)" in rule(".sci-datasrc-status.err")

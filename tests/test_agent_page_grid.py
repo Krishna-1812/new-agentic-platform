@@ -27,7 +27,6 @@ CSS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 # (stylesheet, container selector). One row per agent page, listed explicitly so
 # a new page has to be added here on purpose rather than quietly skipped.
 PAGES = [
-    ("social_media_intelligence.css", ".main"),
     ("linkedin.css", ".shell"),                     # LinkedIn Intelligence
     ("job_change_alert.css", ".main"),
     ("42_north_dental_slot_checker.css", ".main"),
@@ -56,6 +55,7 @@ MARGIN_TOKENS = ("var(--margin)", "var(--margin-app)")
 BENTO_PAGES = [
     ("company_people_intelligence.css", "Contact Finder"),
     ("hub.css", "Workspace"),
+    ("social_media_intelligence.css", "Social Media Intelligence"),
     ("strategic-agents.css", "the Go-to-market and Operational agent directories"),
     ("accounts.css", "ABM Signal Tracker"),
     ("anonymous_visitors.css", "Anonymous Visitors"),

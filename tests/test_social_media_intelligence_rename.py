@@ -210,7 +210,7 @@ def test_the_registry_copy_names_every_platform_it_actually_covers():
 
 def test_the_page_hero_is_no_longer_only_about_creative():
     page = _read("templates", "social_media_intelligence.html")
-    hero = page[page.index('<div class="eyebrow">'):page.index('<div class="ph-platforms"')]
+    hero = page[page.index('<div class="sci-hero-copy">'):page.index('<div class="sci-mosaic"')]
     low = hero.lower()
     assert "creative analysis" not in low
     assert "engagement" in low and "messaging" in low

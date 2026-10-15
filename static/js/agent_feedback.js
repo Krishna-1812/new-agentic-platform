@@ -45,8 +45,8 @@
     return '<div class="agent-fb" data-agent="' + esc(agentSlug) + '" data-run="' + esc(runId) +
       '" data-section="' + esc(sectionKey) + '" data-label="' + esc(sectionLabel) + '">' +
       '<span class="agent-fb-q">Was this useful?</span>' +
- '<button type="button" class="agent-fb-btn agent-fb-up" data-rating="up" aria-label="Thumbs up, this was useful" title="Thumbs up"></button>' +
- '<button type="button" class="agent-fb-btn agent-fb-down" data-rating="down" aria-label="Thumbs down, this was not useful" title="Thumbs down"></button>' +
+      '<button type="button" class="agent-fb-btn agent-fb-up" data-rating="up" aria-label="Thumbs up, this was useful" title="Thumbs up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v11H4a1 1 0 01-1-1V11a1 1 0 011-1h3zM7 10l4-7a2.2 2.2 0 012.3 2.7L12.6 9H19a2 2 0 012 2.3l-1.3 7.5A2 2 0 0117.7 20H7"/></svg></button>' +
+      '<button type="button" class="agent-fb-btn agent-fb-down" data-rating="down" aria-label="Thumbs down, this was not useful" title="Thumbs down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14V3H4a1 1 0 00-1 1v9a1 1 0 001 1h3zM7 14l4 7a2.2 2.2 0 002.3-2.7L12.6 15H19a2 2 0 002-2.3l-1.3-7.5A2 2 0 0017.7 4H7"/></svg></button>' +
       '<span class="agent-fb-ack" hidden></span>' +
       '<div class="agent-fb-reason" hidden>' +
         '<textarea class="agent-fb-reason-input" maxlength="2000" placeholder="Optional — what was wrong with this?"></textarea>' +
