@@ -171,18 +171,23 @@ def test_selftest_reports_every_platform_when_the_token_is_good(monkeypatch):
     assert out["actors"]["x"]["accessible"] is False
     assert "not found" in out["actors"]["x"]["error"]
 
-    # LinkedIn is feature-flagged off by design -- SCI_APIFY_LINKEDIN_ACTOR_ID
-    # has no default (see tracker/sci_source_linkedin.py). This must render
-    # as "not used", never as a failure alongside X's genuine one.
+    # LinkedIn uses Apify's company-posts actor by default, like the other platforms.
     li = out["actors"]["linkedin"]
-    assert li["enabled"] is False
-    assert li["accessible"] is False
-    assert li["error"] == ""
+    assert li["enabled"] is True
+    assert li["actor_id"] == "harvestapi/linkedin-company-posts"
+
+
+def test_selftest_shows_linkedin_off_when_switched_off(monkeypatch):
+    monkeypatch.setenv("APIFY_API_TOKEN", "good-tok")
+    monkeypatch.setenv("SCI_APIFY_LINKEDIN_ACTOR_ID", "off")
+    monkeypatch.setattr(apify_transport, "probe_token", lambda tok: ({"username": "position2"}, None))
+    monkeypatch.setattr(apify_transport, "check_actor", lambda actor_id, tok: ({"name": "x"}, None))
+    li = appmod._sci_apify_selftest()["actors"]["linkedin"]
+    assert li["enabled"] is False and li["accessible"] is False and li["error"] == ""
 
 
 def test_selftest_honors_a_manually_set_linkedin_actor_id(monkeypatch):
-    """LinkedIn stays off unless someone deliberately sets the env var --
-    when they do, the self-test must check it like any other platform."""
+    """Pointing LinkedIn at another actor: the self-test must check that one."""
     monkeypatch.setenv("APIFY_API_TOKEN", "good-tok")
     monkeypatch.setenv("SCI_APIFY_LINKEDIN_ACTOR_ID", "someone/linkedin-actor")
     monkeypatch.setattr(apify_transport, "probe_token", lambda tok: ({"username": "position2"}, None))

@@ -1,7 +1,7 @@
 """tracker/sci_pipeline.py -- Phase 2 additions: the facebook/tiktok/x
 registry dispatch and, most importantly, LinkedIn's feature-flag contract.
 LinkedIn is the platform most exposed to scraping-detection/ToS enforcement,
-so the requirement is strict: an unset SCI_APIFY_LINKEDIN_ACTOR_ID must never
+so the requirement is strict: SCI_APIFY_LINKEDIN_ACTOR_ID=off must never
 reach apify_transport (no network call, no retry storm against a fragile
 actor) and must degrade that one platform to scrape_failed without touching
 any other platform's row.
@@ -16,8 +16,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from tracker import sci_pipeline  # noqa: E402
 
 
-def test_collect_linkedin_raises_without_calling_apify_when_actor_id_unset(monkeypatch):
-    monkeypatch.delenv("SCI_APIFY_LINKEDIN_ACTOR_ID", raising=False)
+def test_collect_linkedin_raises_without_calling_apify_when_switched_off(monkeypatch):
+    monkeypatch.setenv("SCI_APIFY_LINKEDIN_ACTOR_ID", "off")
     monkeypatch.setenv("APIFY_API_TOKEN", "tok")
     with patch("tracker.apify_transport.run_actor_and_wait") as mock_run:
         try:
@@ -50,7 +50,7 @@ def test_collect_linkedin_calls_apify_once_when_fully_configured(monkeypatch):
 
 
 def test_run_platform_collection_marks_linkedin_scrape_failed_without_a_transport_call(monkeypatch):
-    monkeypatch.delenv("SCI_APIFY_LINKEDIN_ACTOR_ID", raising=False)
+    monkeypatch.setenv("SCI_APIFY_LINKEDIN_ACTOR_ID", "off")
     from tracker import sci_store
     calls = []
     monkeypatch.setattr(sci_store, "upsert_platform_run",
@@ -426,3 +426,16 @@ def test_run_reddit_pulse_never_raises(monkeypatch):
     monkeypatch.setattr(sci_reddit_pulse, "build_pulse",
                         lambda name, url: (_ for _ in ()).throw(RuntimeError("boom")))
     sci_pipeline.run_reddit_pulse(9, "Acme", None)  # must not raise
+
+
+def test_collect_linkedin_uses_the_default_apify_actor_when_nothing_is_set(monkeypatch):
+    """LinkedIn collects through Apify out of the box: no env var, no Unipile."""
+    monkeypatch.delenv("SCI_APIFY_LINKEDIN_ACTOR_ID", raising=False)
+    monkeypatch.setenv("APIFY_API_TOKEN", "tok")
+    monkeypatch.delenv("UNIPILE_API_KEY", raising=False)
+    with patch("tracker.apify_transport.run_actor_and_wait") as mock_run:
+        mock_run.return_value = [{"type": "post", "id": "1", "content": "hi"}]
+        posts, vendor, note = sci_pipeline._collect_linkedin("acmeco")
+    assert mock_run.call_args.args[0] == "harvestapi/linkedin-company-posts"
+    assert vendor == "apify" and note is None
+    assert [p["platform_post_id"] for p in posts] == ["1"]

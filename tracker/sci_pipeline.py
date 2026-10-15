@@ -331,7 +331,7 @@ def _collect_linkedin(handle: str, company_name: str | None = None,
     account is a real authenticated LinkedIn session, not a scraper actor
     fighting LinkedIn's own detection, so it's tried first whenever one is
     available. Falls back to the pre-existing Apify path unchanged: an unset
-    SCI_APIFY_LINKEDIN_ACTOR_ID still means "disabled" and must never reach
+    SCI_APIFY_LINKEDIN_ACTOR_ID set to "off" still means "disabled" and must never reach
     apify_transport at all -- raising here (before any network call) is what
     lets this platform be killed instantly by unsetting the env var, with no
     deploy and no risk of a retry storm against a fragile, easily-detected
@@ -361,7 +361,7 @@ def _collect_linkedin(handle: str, company_name: str | None = None,
     if not sci_source_linkedin.actor_id():
         raise RuntimeError(
             "LinkedIn collection is disabled on this deployment "
-            "(no Unipile account connected and no Apify actor configured).")
+            "(no Unipile account connected and the Apify actor is switched off).")
     token = os.environ.get("APIFY_API_TOKEN", "")
     if not token:
         raise RuntimeError("APIFY_API_TOKEN is not configured on this deployment.")
@@ -564,9 +564,18 @@ def _poster_candidates(raw: dict) -> list:
             out.append(att.get("url"))
         out += [att.get("preview_url"), att.get("thumbnail_url"), att.get("poster")]
     out.append(_dig("article", "picture_url"))
-    # Apify: a flat images/imageUrls array.
-    for img in raw.get("images") or raw.get("imageUrls") or []:
+    # Apify: a flat images/imageUrls array, or (harvestapi) postImages, a video's own
+    # thumbnailUrl and a document's cover pages.
+    for img in raw.get("postImages") or raw.get("images") or raw.get("imageUrls") or []:
         out.append(img.get("url") if isinstance(img, dict) else img)
+    pv = raw.get("postVideo")
+    if isinstance(pv, dict):
+        out += [pv.get("thumbnailUrl"), pv.get("thumbnail"), pv.get("poster")]
+    doc = raw.get("document")
+    if isinstance(doc, dict):
+        for page in doc.get("coverPages") or []:
+            if isinstance(page, dict):
+                out += list(page.get("imageUrls") or [])[:1]
     # Reddit.
     out.append(raw.get("thumbnail_url"))
     # Facebook via Apify.

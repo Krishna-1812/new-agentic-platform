@@ -199,9 +199,9 @@ def test_each_platform_gets_the_right_status_class_and_nothing_is_unescaped():
     assert 'class="sci-datasrc-status ok">actor reachable' in html
     assert "Facebook Posts Scraper" in html
     assert 'class="sci-datasrc-status err"' in html
-    # LinkedIn's absence-by-design must render as its own neutral state, not
-    # be silently dropped from the row list and not look like a failure.
-    assert 'class="sci-datasrc-status off">not used here (by design)</span>' in html
+    # A platform with no actor in use (LinkedIn switched off) renders as its own neutral state, not
+    # silently dropped from the row list and not looking like a failure.
+    assert 'class="sci-datasrc-status off">switched off</span>' in html
     # A vendor-supplied error string must never reach the page unescaped.
     assert "<script>evil</script>" not in html
     assert "&lt;script&gt;evil&lt;/script&gt;" in html

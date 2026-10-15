@@ -274,8 +274,8 @@
     // nothing). Instagram is listed here too even though it is Apify's
     // FALLBACK for that platform (Unipile is tried first) -- an admin
     // debugging "why did Instagram scrape_failed" needs to see both paths.
-    // LinkedIn always renders as "not used here by design", never absent,
-    // so its missing row never reads as a bug.
+    // LinkedIn is listed too: it reads "switched off" only when
+    // SCI_APIFY_LINKEDIN_ACTOR_ID is set to off.
     var APIFY_PLATFORMS = ['facebook', 'tiktok', 'x', 'instagram', 'linkedin'];
 
     function renderDataSourcesPanel(){
@@ -429,15 +429,14 @@
 
     // `entry` is one platform's slice of sci-apify-check's `actors` map:
     // {enabled, actor_id, accessible, name, error}. `enabled` false means
-    // no actor id is configured for this platform at all (LinkedIn, by
-    // design -- see sci_source_linkedin.py); that is a NEUTRAL state, never
-    // rendered as a failure, since turning it on is a deliberate decision
-    // this panel must not appear to be nudging anyone toward.
+    // no actor id is in use for this platform (LinkedIn when
+    // SCI_APIFY_LINKEDIN_ACTOR_ID is set to off -- see sci_source_linkedin.py);
+    // that is a NEUTRAL state, never rendered as a failure.
 function dsApifyRow(platform, entry){
       var meta = platformMeta(platform);
       var dsc = DS_OFF, statusHtml;
       if(!entry || !entry.enabled){
-        statusHtml = '<span class="sci-datasrc-status off">not used here (by design)</span>';
+        statusHtml = '<span class="sci-datasrc-status off">switched off</span>';
       } else if(entry.accessible){
         dsc = DS_OK;
         statusHtml = '<span class="sci-datasrc-status ok">actor reachable' +
@@ -804,8 +803,11 @@ function dsApifyRow(platform, entry){
           if(at.url && !at.unavailable && (at.type || '').toLowerCase() === 'img') return at.url;
         }
         if(raw.article && raw.article.picture_url) return raw.article.picture_url;
-        var imgs = raw.images || raw.imageUrls || [];
+        var imgs = raw.postImages || raw.images || raw.imageUrls || [];
         if(imgs.length){ var im = imgs[0]; return (typeof im === 'string') ? im : (im && im.url) || null; }
+        if(raw.postVideo && (raw.postVideo.thumbnailUrl || raw.postVideo.thumbnail)) return raw.postVideo.thumbnailUrl || raw.postVideo.thumbnail;
+        var cover = raw.document && raw.document.coverPages && raw.document.coverPages[0];
+        if(cover && cover.imageUrls && cover.imageUrls[0]) return cover.imageUrls[0];
         return null;
       }
       return (post.post_type === 'image' && post.media_urls && post.media_urls[0]) || null;
