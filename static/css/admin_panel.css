@@ -276,6 +276,22 @@ html:root { background-color: var(--bg); }
 .ctl-dsec ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
 .ctl-dsec li { display: flex; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) 0; border-top: 1px solid var(--line); font-size: 14px; }
 .ctl-dsec li:first-child { border-top: 0; }
+/* Withdrawing access: a small x on every shared dashboard and agent, Remove on every person, and one block to
+   withdraw it all. Red is for a failure and for taking something away. */
+.ctl-cc.is-withdrawn { background: var(--s2); }
+.ctl-rv { padding-right: 4px; }
+.ctl-rv button { width: 20px; height: 20px; display: inline-grid; place-items: center; border-radius: 50%; background: var(--s1); color: var(--tx); font-size: 14px; line-height: 1; cursor: pointer; transition: background var(--dur) var(--ease), color var(--dur) var(--ease); }
+.ctl-rv button:hover { background: var(--ink); color: var(--tx-on-ink); }
+.ctl-rv button:disabled, .ctl-danger-sm:disabled, .ctl-danger-btn:disabled { opacity: .5; cursor: progress; }
+.ctl-rowact { display: flex; align-items: center; gap: var(--sp-3); flex: none; }
+.ctl-danger-sm { height: 28px; padding: 0 12px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--line-strong); font-size: 12.5px; font-weight: var(--fw-semi); cursor: pointer; transition: background var(--dur) var(--ease), color var(--dur) var(--ease); }
+.ctl-danger-sm:hover:not(:disabled) { background: var(--clay-dim); color: var(--clay-tx); box-shadow: inset 0 0 0 1px var(--clay); }
+.ctl-dsec.ctl-danger { padding: var(--sp-4) var(--sp-5); border-radius: var(--r); background: var(--clay-dim); }
+.ctl-dsec.ctl-danger h4 { color: var(--clay-tx); }
+.ctl-danger .ctl-sub { margin: 0 0 var(--sp-3); color: var(--tx2); }
+.ctl-danger-btn { height: 40px; padding: 0 var(--sp-5); border-radius: var(--r-pill); background: var(--clay); color: var(--tx-on-fill); font-size: 14px; font-weight: var(--fw-semi); cursor: pointer; transition: background var(--dur) var(--ease); }
+.ctl-danger-btn:hover:not(:disabled) { background: var(--clay-hi); }
+.ctl-dnote { margin: 0 0 var(--sp-4); padding: 10px 14px; border-radius: 12px; background: #DDF3E6; color: var(--ok); font-size: 14px; font-weight: var(--fw-medium); }
 .ctl-dsec li small { color: var(--tx3); font-size: 12px; text-align: right; flex: none; }
 .ctl-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
 .ctl-tile { border-radius: var(--r); padding: var(--sp-4); background: var(--s2); }
