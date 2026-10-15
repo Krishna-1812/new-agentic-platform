@@ -210,3 +210,20 @@ def test_each_platform_gets_the_right_status_class_and_nothing_is_unescaped():
 def test_the_note_reports_which_account_the_token_belongs_to():
     out = _run({"configured": True, "ok": True, "account": "position2-agency", "actors": {}})
     assert "position2-agency" in out["html"]
+
+
+def test_a_healthy_data_source_is_drawn_green_not_in_the_error_accent():
+    """A reachable Apify actor read as red-orange text next to a green bar, which looked like a failure.
+    The name is plain text, 'ok' is the green, 'warn' is amber and only 'err' is red."""
+    import re
+    css = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            "static", "css", "social_media_intelligence.css"), encoding="utf-8").read()
+    css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+
+    def rule(sel):
+        return re.search(r"(?:^|\})\s*" + re.escape(sel) + r"\s*\{([^}]*)\}", css).group(1)
+    assert "color: var(--ok)" in rule(".sci-datasrc-status.ok")
+    assert "color: var(--ok)" in rule('[data-theme="light"] .sci-datasrc-status.ok')
+    assert "color: var(--tx)" in rule(".sci-datasrc-name") and "--acc-tx" not in rule(".sci-datasrc-name")
+    assert "color: var(--cream-tx)" in rule(".sci-datasrc-status.warn"), "amber, as its own comment says"
+    assert "color: var(--danger)" in rule(".sci-datasrc-status.err")

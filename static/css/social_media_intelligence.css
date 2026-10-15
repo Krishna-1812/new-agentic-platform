@@ -673,14 +673,14 @@ a.sci-phero-handle:hover { color: var(--tx); border-bottom-color: var(--pf-color
 .sci-datasrc-ic { width: 30px; height: 30px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm, 9px); color: var(--dsc); background: color-mix(in srgb, var(--dsc) 16%, transparent); border: 1px solid color-mix(in srgb, var(--dsc) 30%, transparent); }
 .sci-datasrc-ic svg { width: 16px; height: 16px; }
 .sci-datasrc-main { min-width: 0; flex: 1; padding-top: 1px; }
-.sci-datasrc-name { font-size: 12.5px; font-weight: 700; color: var(--acc-tx); text-transform: capitalize; line-height: 1.3; }
+.sci-datasrc-name { font-size: 12.5px; font-weight: 700; color: var(--tx); text-transform: capitalize; line-height: 1.3; }
 .sci-datasrc-name .unit { display: block; text-transform: none; font-weight: 500; color: var(--tx2); font-size: 10px; margin-top: 1px; }
 .sci-datasrc-status { display: block; margin-top: 5px; font-size: 10.5px; font-weight: 700; letter-spacing: .01em; }
-.sci-datasrc-status.ok { color: var(--acc-tx); }
+.sci-datasrc-status.ok { color: var(--ok); }
 /* A platform whose only accounts have signed out: not an error (nothing
    is broken until a run needs it) but not "connected" either, so it gets
    its own amber rather than borrowing either neighbour's colour. */
-.sci-datasrc-status.warn { color: var(--clay-tx); }
+.sci-datasrc-status.warn { color: var(--cream-tx); }
 /* A configured actor Apify itself can't find with this token -- a real
    failure, distinct from .warn's "not broken yet, just untidy". */
 .sci-datasrc-status.err { color: var(--danger); cursor: help; }
@@ -1251,10 +1251,10 @@ a.sci-rank-row:hover { background: var(--s2); }
 [data-theme="light"] .sci-datasrc-refresh:hover { background: var(--s2); color: var(--s1); }
 [data-theme="light"] .sci-datasrc-row { background: var(--s2); border-color: var(--line); }
 [data-theme="light"] .sci-datasrc-row:hover { background: var(--s2); }
-[data-theme="light"] .sci-datasrc-name { color: var(--s1); }
+[data-theme="light"] .sci-datasrc-name { color: var(--tx); }
 [data-theme="light"] .sci-datasrc-name .unit { color: var(--tx2); }
-[data-theme="light"] .sci-datasrc-status.ok { color: var(--acc-tx); }
-[data-theme="light"] .sci-datasrc-status.warn { color: var(--clay-tx); }
+[data-theme="light"] .sci-datasrc-status.ok { color: var(--ok); }
+[data-theme="light"] .sci-datasrc-status.warn { color: var(--cream-tx); }
 [data-theme="light"] .sci-datasrc-status.err { color: var(--danger); }
 [data-theme="light"] .sci-datasrc-status.off { color: var(--tx2); }
 [data-theme="light"] .sci-datasrc-connect { background: rgba(255,181,0,.1); border-color: rgba(255,181,0,.35); color: var(--clay-tx); }
