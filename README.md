@@ -103,7 +103,9 @@ transcription for spoken video dialogue) to describe what the creative actually 
 a cited, per-platform and cross-platform report on content patterns and what correlates with
 engagement. Two collection vendors, additive not exclusive: **Unipile** (a real authenticated
 account per platform, live for LinkedIn) tried first, falling back to **Apify** (actor-based
-scraping) where configured. Genuinely uncommon in this space: it looks at the actual pixels of a
+scraping). LinkedIn works through Apify out of the box (`harvestapi/linkedin-company-posts`, about
+$2 per 1,000 posts, no LinkedIn login); set `SCI_APIFY_LINKEDIN_ACTOR_ID` to another actor id to swap it,
+or to `off` to switch LinkedIn collection off. Genuinely uncommon in this space: it looks at the actual pixels of a
 competitor's creative, not just engagement metadata.
 
 #### Event & Conference Intelligence
