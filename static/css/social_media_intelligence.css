@@ -117,6 +117,10 @@ html:root { background-color: var(--bg); }
 .sci-suggest-site { flex: none; font-size: 12.5px; color: var(--tx3); }
 .sci-suggest-loading, .sci-suggest-empty, .sci-suggest-fallback-note { display: flex; align-items: center; gap: var(--sp-2); padding: 10px 12px; font-size: 14px; line-height: 1.5; color: var(--tx3); }
 .sci-suggest-fallback-note { color: var(--cream-tx); font-size: 13px; padding: 0 12px 8px; }
+.sci-suggest-note { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; padding: 12px 16px; border-radius: 12px; background: var(--s2); font-size: 14px; line-height: 1.5; color: var(--tx2); }
+.sci-suggest-note b { color: var(--tx); font-weight: var(--fw-semi); }
+.sci-suggest-note span { font-size: 13px; color: var(--tx3); }
+.sci-suggest-note code { font-family: inherit; font-weight: var(--fw-semi); }
 .sci-suggest-error { margin-bottom: 8px; padding: 14px 16px; border-radius: 12px; background: var(--clay-dim); box-shadow: inset 4px 0 0 var(--clay); }
 .sci-suggest-error-msg { font-size: 14px; line-height: 1.55; color: var(--tx); }
 .sci-suggest-error-detail { margin: 10px 0 0; max-height: 140px; overflow: auto; padding: 8px 10px; border-radius: var(--r-sm); background: var(--s1); font-size: 12px; color: var(--tx2); white-space: pre-wrap; word-break: break-word; }

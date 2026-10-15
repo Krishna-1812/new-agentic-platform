@@ -520,7 +520,15 @@ function dsApifyRow(platform, entry){
       var panel = document.getElementById('sciSuggestPanel');
       window.__sciCompanies = companies || [];
       var html = '';
-      if(error){
+      if(error && error.code === 'not_configured'){
+        // Suggestions are a convenience, not a step of the run: with no Apollo key the page says so
+        // quietly and carries on, instead of a red alarm over a form that works fine.
+        html += '<div class="sci-suggest-note">' +
+          '<b>Company suggestions are switched off here.</b> ' +
+          'Analyses do not need them: type the company\'s name and website and press Analyze.' +
+          (IS_ADMIN ? '<span>Apollo is not connected on this deployment (<code>APOLLO_API_KEY</code> is not set).</span>' : '') +
+          '</div>';
+      } else if(error){
         html += '<div class="sci-suggest-error">' +
           '<div class="sci-suggest-error-msg">' + esc(error.message || 'Company search is unavailable right now. You can still fill this in manually.') + '</div>' +
           (error.detail ? '<pre class="sci-suggest-error-detail">' + esc(error.detail) + '</pre>' : '') +
