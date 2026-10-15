@@ -435,8 +435,9 @@ def test_opening_the_page_makes_no_paid_call():
 
 def test_all_seven_platforms_have_an_icon():
     page = _page()
+    mosaic = page[page.index('<div class="sci-mosaic"'):page.index('<form class="sci-cmd"')]
     for name in ("Instagram", "LinkedIn", "X", "TikTok", "YouTube", "Facebook", "Reddit"):
-        assert 'class="ph-plat-ic" title="%s"' % name in page, name
+        assert "<b>%s</b>" % name in mosaic, name
     assert "across seven platforms" in page
 
 

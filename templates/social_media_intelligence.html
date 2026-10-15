@@ -1,104 +1,135 @@
 <!DOCTYPE html>
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    SOCIAL MEDIA INTELLIGENCE -- the agent's page.
+
+    Three parts, top to bottom: the hero (what it does, a seven-platform mosaic and the command bar that
+    starts a run), the live view of a run in flight, and the past runs. A finished run opens in the
+    full-screen report sheet below (#drawerOverlay), which the script at the bottom of this file fills.
+    The look is static/css/social_media_intelligence.css, written against the Bento tokens: paper
+    ground, white cards, colour in whole blocks, ink pills for action.
+-#}
 <html lang="en">
 <head>
 {{ head("Social Media Intelligence", [
-     "social_media_intelligence.css?v=2",
-     "agent-feedback.css",
-   ], [], compat=True) }}
+     "social_media_intelligence.css?v=3",
+   ], [
+     "agent_feedback.js",
+   ]) }}
 </head>
-<body>
-  <div class="sci-aurora"><div class="b b1"></div><div class="b b2"></div><div class="b b3"></div></div>
-  <div class="sci-grain"></div>
+<body class="sci">
 
   {{ topbar([(brand.agents_plural, "/strategic-agents"), ("Social Media Intelligence", none)]) }}
 
-  <div class="main">
-    <div class="ph">
-      <div>
-        <div class="eyebrow"><span class="dot"></span>Strategic Agents · Cross-platform social analysis</div>
-        <h1>See what a company is really doing on <em>social</em>.</h1>
-        <p>Give it a company name or URL. It finds the company's organic presence across seven platforms, then reports what they post and how often, which posts earn engagement, the messaging and tone behind them, what every image and video actually shows, and what people are saying about the brand, all cited back to real posts.</p>
-        <div class="ph-platforms" aria-hidden="true">
-          <div class="ph-plat-ic" title="Instagram" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg></div>
-          <div class="ph-plat-ic" title="LinkedIn" style="color:#0a66c2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><circle cx="8" cy="8.3" r="1" fill="currentColor" stroke="none"/><path d="M8 11.3v6.2M12.6 17.5v-3.6c0-1.6 1-2.5 2.2-2.5s2 .9 2 2.5v3.6"/></svg></div>
-          <div class="ph-plat-ic" title="X" style="color:var(--sky-tx)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l14 16M19 4L5 20"/></svg></div>
-          <div class="ph-plat-ic" title="TikTok" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.5v11.2a3.3 3.3 0 11-2.7-3.24M14 3.5c.5 2.6 2.4 4.5 4.8 4.9"/></svg></div>
-          <div class="ph-plat-ic" title="YouTube" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.7" y="6" width="18.6" height="12" rx="3.6"/><path d="M10.3 9.6l5 2.4-5 2.4z" fill="currentColor" stroke="none"/></svg></div>
-          <div class="ph-plat-ic" title="Facebook" style="color:var(--sky-tx)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 21v-7.2h2.4l.4-2.8h-2.8v-1.8c0-.8.2-1.4 1.4-1.4h1.5V5.3A20 20 0 0015.6 5c-2.3 0-3.9 1.4-3.9 4v2h-2.4v2.8h2.4V21"/></svg></div>
-          <div class="ph-plat-ic" title="Reddit" style="color:var(--acc-tx)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14" r="6.3"/><circle cx="9.6" cy="13.3" r="1" fill="currentColor" stroke="none"/><circle cx="14.4" cy="13.3" r="1" fill="currentColor" stroke="none"/><path d="M9.6 16.4c1.4 1 3.4 1 4.8 0M12 7.7V4.5l3.2.8"/><circle cx="17.2" cy="5.2" r="1"/></svg></div>
+  <main class="sci-page">
+
+    {# ── Hero: what it does, the seven surfaces it reads, and the command bar ── #}
+    <section class="sci-hero" aria-labelledby="sciTitle">
+      <div class="sci-hero-top">
+        <span class="sci-lbl">Strategic agent</span>
+        <span class="sci-chip-dark"><i></i>Seven surfaces, one report</span>
+      </div>
+
+      <div class="sci-hero-grid">
+        <div class="sci-hero-copy">
+          <h1 class="sci-h1" id="sciTitle">See what a company is really doing on <em>social.</em></h1>
+          <p class="sci-lead">Give it a company name or URL. It finds the company's organic presence across seven platforms, then reports what they post and how often, which posts earn engagement, the messaging and tone behind them, what every image and video actually shows, and what people are saying about the brand. Every claim points back to a real post.</p>
+        </div>
+
+        <div class="sci-mosaic" aria-hidden="true">
+          <div class="sci-mt sci-mt-clay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg><b>Instagram</b></div>
+          <div class="sci-mt sci-mt-sky"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><circle cx="8" cy="8.3" r="1" fill="currentColor" stroke="none"/><path d="M8 11.3v6.2M12.6 17.5v-3.6c0-1.6 1-2.5 2.2-2.5s2 .9 2 2.5v3.6"/></svg><b>LinkedIn</b></div>
+          <div class="sci-mt sci-mt-cream"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.5v11.2a3.3 3.3 0 11-2.7-3.24M14 3.5c.5 2.6 2.4 4.5 4.8 4.9"/></svg><b>TikTok</b></div>
+          <div class="sci-mt sci-mt-acc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.7" y="6" width="18.6" height="12" rx="3.6"/><path d="M10.3 9.6l5 2.4-5 2.4z" fill="currentColor" stroke="none"/></svg><b>YouTube</b></div>
+          <div class="sci-mt sci-mt-paper"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14" r="6.3"/><circle cx="9.6" cy="13.3" r="1" fill="currentColor" stroke="none"/><circle cx="14.4" cy="13.3" r="1" fill="currentColor" stroke="none"/><path d="M9.6 16.4c1.4 1 3.4 1 4.8 0M12 7.7V4.5l3.2.8"/><circle cx="17.2" cy="5.2" r="1"/></svg><b>Reddit</b></div>
+          <div class="sci-mt sci-mt-stone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l14 16M19 4L5 20"/></svg><b>X</b></div>
+          <div class="sci-mt sci-mt-sky"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 21v-7.2h2.4l.4-2.8h-2.8v-1.8c0-.8.2-1.4 1.4-1.4h1.5V5.3A20 20 0 0015.6 5c-2.3 0-3.9 1.4-3.9 4v2h-2.4v2.8h2.4V21"/></svg><b>Facebook</b></div>
+          <div class="sci-mt sci-mt-line sci-mt-wide"><span>Every image and video</span><b>read, not guessed</b></div>
         </div>
       </div>
-    </div>
 
-    <div class="sci-card">
-      <div class="sci-card-pad">
-        <form class="sci-form" id="analyzeForm" onsubmit="return startAnalysis(event)">
-          <div class="sci-field">
+      {# The command bar. The fields, the suggestion list and the button keep the ids the script reads. #}
+      <form class="sci-cmd" id="analyzeForm" onsubmit="return startAnalysis(event)">
+        <div class="sci-cmd-row">
+          <div class="sci-field sci-field-main">
             <label for="companyName">Company name</label>
             <input type="text" id="companyName" placeholder="e.g. Acme Inc." required autocomplete="off" oninput="onCompanyNameInput()" />
           </div>
           <div class="sci-field">
-            <label for="companyUrl">Website (optional)</label>
+            <label for="companyUrl">Website <span>optional</span></label>
             <input type="text" id="companyUrl" placeholder="acme.com" />
           </div>
- <button type="submit" class="sci-btn" id="analyzeBtn">Analyze </button>
-        </form>
-
+          <button type="submit" class="sci-btn" id="analyzeBtn">Analyze <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
         <div class="sci-suggest-panel" id="sciSuggestPanel" style="display:none"></div>
+      </form>
+    </section>
 
-        <div id="runningWrap" style="display:none;margin-top:20px">
-          <div class="sci-running-note"><span class="thinking-orb-slot" data-orb-state="working" data-orb-size="20"></span><span>Identifying platforms and collecting posts. This runs in the background and can take a few minutes. You can leave this page; your run will be here in History when it's done.</span></div>
-          <div class="sci-platform-grid" id="platformGrid"></div>
+    {# ── A run in flight: the four stages, then one tile per platform ── #}
+    <section class="sci-live" id="runningWrap" style="display:none" aria-live="polite">
+      <div class="sci-live-head">
+        <span class="sci-live-dot" aria-hidden="true"></span>
+        <div>
+          <h2 class="sci-h2">Reading <em id="liveCompany">the company</em></h2>
+          <p class="sci-running-note"><span class="thinking-orb-slot" data-orb-state="working" data-orb-size="20"></span><span>This runs in the background and can take a few minutes. You can leave this page; your run will be here in History when it's done.</span></p>
         </div>
       </div>
-    </div>
+      <ol class="sci-steps" id="liveSteps">
+        <li class="sci-step" data-step="0"><i>1</i><b>Find the accounts</b><span>Which handle is theirs, on each platform</span></li>
+        <li class="sci-step" data-step="1"><i>2</i><b>Collect the posts</b><span>Their recent organic posts and numbers</span></li>
+        <li class="sci-step" data-step="2"><i>3</i><b>Read every creative</b><span>What each image and video actually shows</span></li>
+        <li class="sci-step" data-step="3"><i>4</i><b>Write the report</b><span>Patterns, strategy and cited evidence</span></li>
+      </ol>
+      <div class="sci-platform-grid" id="platformGrid"></div>
+    </section>
 
-    <div class="sci-card">
-      <div class="sci-card-head">
-        <h2>{{ ("History for " ~ acct_ctx.name) if acct_ctx else "History" }}</h2>
-        <span class="cnt">{{ runs|length }} run{{ '' if runs|length == 1 else 's' }}{% if acct_ctx %} &middot; the whole team's{% endif %}</span>
-      </div>
+    {# ── What happens when you press Analyze ── #}
+    <section class="sci-how" aria-label="How a run works">
+      <div class="sci-how-i"><i>01</i><b>Finds the real accounts</b><p>It resolves the company to one handle per platform and says how sure it is, instead of guessing.</p></div>
+      <div class="sci-how-i"><i>02</i><b>Reads the creative</b><p>Every image and video is looked at and described: subject, hook, tone, call to action.</p></div>
+      <div class="sci-how-i"><i>03</i><b>Measures what works</b><p>Cadence, formats and engagement are counted from the posts themselves, never from a summary.</p></div>
+      <div class="sci-how-i"><i>04</i><b>Cites its claims</b><p>Each finding in the report links to the posts that prove it, so you can check them.</p></div>
+    </section>
+
+    {# ── Past runs ── #}
+    <section class="sci-hist" aria-labelledby="histTitle">
+      <header class="sci-sec-head">
+        <h2 class="sci-h2" id="histTitle">{{ ("History for " ~ acct_ctx.name) if acct_ctx else "History" }}</h2>
+        <span class="sci-count">{{ runs|length }} run{{ '' if runs|length == 1 else 's' }}{% if acct_ctx %} &middot; the whole team's{% endif %}</span>
+      </header>
       <div class="sci-run-list" id="historyList">
         {% if runs %}
-          {# A monogram's colour cycles by position rather than every row
-             sharing one identical orange-pink square -- with no logo (the
-             common case) that was the only thing distinguishing eight
-             companies from each other in a skimmed list. Six stops, all
-             drawn from this page's own established gradient family
-             (orange/pink/purple/amber/rose/cyan), so it reads as variety
-             within one palette rather than an unrelated rainbow. #}
-          {% set monograms = [
-            'linear-gradient(135deg,#FFB500,#FF3B30)',
-            'linear-gradient(135deg,#FF3B30,#FF6022)',
-            'linear-gradient(135deg,#FF6022,#FF6022)',
-            'linear-gradient(135deg,#FFB500,#FFB500)',
-            'linear-gradient(135deg,#FF3B30,#FF6022)',
-            'linear-gradient(135deg,#8CCBFF,#8CCBFF)'] %}
+          {# A monogram's colour cycles through the five block colours by position, so a list of companies
+             with no logo (the common case) is still told apart at a glance. #}
+          {% set blocks = ['acc', 'cream', 'sky', 'clay', 'paper'] %}
           {% for r in runs %}
           {% set st = 'st-running' if r.status == 'running' else ('st-error' if r.status == 'error' else 'st-done') %}
-          <div class="sci-run-row" onclick="viewRun({{ r.id }})">
-            <div class="sci-run-mono{{ '' if r.company_logo else ' sci-run-nologo' }}" style="background:{{ monograms[loop.index0 % monograms|length] }}">
-              {% if r.company_logo %}<img src="{{ r.company_logo }}" alt="" loading="lazy" onerror="this.closest('.sci-run-mono').classList.add('sci-run-nologo');this.remove()">{% endif %}
-              <span class="sci-run-initial">{{ (r.company_name or '?')[0]|upper }}</span>
+          {% set open_it = ("followRun(" ~ r.id ~ ", " ~ (r.company_name|tojson) ~ ")") if r.status == 'running' else ("viewRun(" ~ r.id ~ ")") %}
+          <div class="sci-run-row {{ st }}" onclick="{{ open_it }}" tabindex="0" role="button"
+               onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();{{ open_it }};}">
+            <div class="sci-run-top">
+              <div class="sci-run-mono sci-blk-{{ blocks[loop.index0 % blocks|length] }}{{ '' if r.company_logo else ' sci-run-nologo' }}">
+                {% if r.company_logo %}<img src="{{ r.company_logo }}" alt="" loading="lazy" onerror="this.closest('.sci-run-mono').classList.add('sci-run-nologo');this.remove()">{% endif %}
+                <span class="sci-run-initial">{{ (r.company_name or '?')[0]|upper }}</span>
+              </div>
+              <span class="status-pill {{ st }}"><span class="d"></span>{{ r.status }}</span>
             </div>
             <div class="sci-run-info">
               <div class="r-name">{{ r.company_name }}</div>
               <div class="r-meta" data-created="{{ r.created_at }}">{{ r.created_at }}</div>
               {%- if acct_ctx and r.by %}<div class="r-meta r-by">by {{ r.by }}</div>{% endif %}
             </div>
-            <span class="status-pill {{ st }}"><span class="d"></span>{{ r.status }}</span>
- <span class="sci-run-arrow"></span>
+            <div class="sci-run-foot"><span>{{ 'Follow this run' if r.status == 'running' else ('See what went wrong' if r.status == 'error' else 'Open the report') }}</span><span class="sci-run-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></div>
           </div>
           {% endfor %}
         {% else %}
-          <div class="sci-empty">No analyses yet. Run one above and it'll show up here.</div>
+          <div class="sci-empty"><b>No analyses yet.</b><span>Run one above and it'll show up here.</span></div>
         {% endif %}
       </div>
-    </div>
+    </section>
 
     <div id="dataSourcesPanel"></div>
-  </div>
+  </main>
 
   <div class="sci-drawer-overlay" id="drawerOverlay" onclick="if(event.target===this) closeReport()">
     <div class="sci-drawer" id="drawerPanel"></div>
@@ -548,19 +579,50 @@ function dsApifyRow(platform, entry){
           alert(data.error);
           if(data.run_id){
             // Already running: follow the one that is, instead of leaving the page looking idle.
-            document.getElementById('runningWrap').style.display = 'block';
+            showLive('');
             pollRun(data.run_id);
             return;
           }
           document.getElementById('analyzeBtn').disabled = false;
           return;
         }
-        document.getElementById('runningWrap').style.display = 'block';
+        showLive(name);
         pollRun(data.run_id);
       }).catch(function(){
         document.getElementById('analyzeBtn').disabled = false;
       });
       return false;
+    }
+
+    // The live view of a run: named for the company, and scrolled to so starting one is never a silent click.
+    function showLive(name){
+      var wrap = document.getElementById('runningWrap');
+      if(!wrap) return;
+      var label = document.getElementById('liveCompany');
+      if(label) label.textContent = name || 'your analysis';
+      wrap.style.display = 'block';
+      renderLiveSteps([]);
+      if(wrap.scrollIntoView) wrap.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+    // History's running row: follow the run that is in flight instead of opening an empty report.
+    function followRun(runId, name){
+      showLive(name);
+      pollRun(runId);
+    }
+    // Which of the four stages the run is in, worked out from the platform rows alone: no accounts yet
+    // is "find", anything still being collected is "collect", collected-but-not-yet-read is "read", and
+    // once every platform has been read only the report is left.
+    function renderLiveSteps(platforms){
+      var list = document.getElementById('liveSteps');
+      if(!list) return;
+      var ps = platforms || [], stage;
+      var collecting = ps.some(function(p){ return p.status === 'pending' || p.status === 'identifying' || p.status === 'collecting'; });
+      var reading = ps.some(function(p){ return (p.status === 'ok' || p.status === 'low_activity') && !p.analyzed_at; });
+      if(!ps.length) stage = 0; else if(collecting) stage = 1; else if(reading) stage = 2; else stage = 3;
+      list.querySelectorAll('.sci-step').forEach(function(li, i){
+        li.classList.toggle('is-done', i < stage);
+        li.classList.toggle('is-on', i === stage);
+      });
     }
 
     function renderPlatforms(platforms){
@@ -599,6 +661,7 @@ function dsApifyRow(platform, entry){
         fetch(BASE + '/runs/' + runId + '/status')
           .then(function(r){ return r.json(); }).then(function(data){
             renderPlatforms(data.platforms);
+            renderLiveSteps(data.platforms);
             if(data.status === 'running'){ POLL_TIMER = setTimeout(check, 4000); return; }
             document.getElementById('analyzeBtn').disabled = false;
             location.reload();
@@ -616,7 +679,7 @@ function dsApifyRow(platform, entry){
     // card. The full wording still shows on the platform's own pane.
     var STATUS_SHORT = {no_presence:'No presence found', handle_not_found:'No account found',
       scrape_failed:'Collection failed', error:'Failed', low_activity:'Low activity'};
- var VIEW_GLYPH = '';
+    var VIEW_GLYPH = '<svg class="sci-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg>';
 
     // Categorical hues live in CSS as .sci-c0 … .sci-c5 (each sets --c), never
     // as an inline style: the dark steps are chosen against the dark panel and
@@ -984,7 +1047,7 @@ function dsApifyRow(platform, entry){
       var media = thumb ? '<div class="sci-cdetail-hero-media"><img src="' + esc(thumb) + '" alt="" loading="lazy"></div>' : '';
       var caption = (post.caption || '').trim();
       var when = relTime(post.posted_at);
-      return '<div class="sci-cdetail-hero' + (thumb ? '' : ' sci-cdetail-hero-notext') + '">' + media +
+      return '<div class="sci-cdetail-hero' + (thumb ? '' : ' sci-cdetail-hero-notext') + '" data-platform="' + esc(post.platform) + '">' + media +
         '<div class="sci-cdetail-hero-body">' +
           '<div class="sci-cdetail-tags">' +
             '<span class="sci-postcard-plat"><span class="sci-postcard-plat-ic">' + meta.icon + '</span>' + esc(platformLabel(post.platform)) + '</span>' +
@@ -1009,9 +1072,9 @@ function dsApifyRow(platform, entry){
         return;
       }
       panel.innerHTML =
- '<button type="button" class="sci-cdetail-close" onclick="closeCreativeDetail()" aria-label="Close"></button>' +
+        '<button type="button" class="sci-cdetail-close" onclick="closeCreativeDetail()" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
         cdetailHero(post) +
- '<div class="sci-cdetail-section-label"><span></span>What the AI sees</div>' +
+        '<div class="sci-cdetail-section-label">What the AI sees</div>' +
         cdetailInsights(post);
       overlay.classList.add('open');
     }
@@ -1022,7 +1085,11 @@ function dsApifyRow(platform, entry){
     document.addEventListener('keydown', function(e){
       if(e.key === 'Escape'){
         var overlay = document.getElementById('cdetailOverlay');
-        if(overlay && overlay.classList.contains('open')) closeCreativeDetail();
+        if(overlay && overlay.classList.contains('open')){
+          closeCreativeDetail();
+          // Handled here: the report's own Escape handler must not close the report as well.
+          e.stopImmediatePropagation();
+        }
       }
     });
 
@@ -2329,6 +2396,9 @@ function dsApifyRow(platform, entry){
       });
       var scroller = root.querySelector('.sci-panes');
       if(scroller){ scroller.scrollTop = 0; updatePaneFade(scroller); }
+      // The report is one scrolling sheet: after a tab change, start the new pane from the top of the tabs.
+      var sheet = document.getElementById('drawerOverlay'), shell = root.querySelector('.sci-shell');
+      if(sheet && shell && sheet.scrollTop > shell.offsetTop) sheet.scrollTop = shell.offsetTop - 8;
       revealCharts();
     }
     // A long pane (this section is routinely the tail end of one: Content
@@ -2968,15 +3038,17 @@ function dsApifyRow(platform, entry){
          note: (pulse && pulse.subreddit_count) ? 'across ' + pulse.subreddit_count + ' subreddits' : null}
       ], 'sci-tiles-band');
 
- return '<button class="sci-drawer-close" onclick="closeReport()" aria-label="Close report"></button>' +
-        '<div class="sci-rep-head">' +
-          '<div class="sci-rep-id">' + logo +
-            '<div class="sci-rep-txt"><h3>' + esc(run.company_name) + '</h3>' +
-            '<div class="sci-rep-chips">' + chips + '</div></div>' +
+      return '<button class="sci-drawer-close" onclick="closeReport()" aria-label="Close report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
+        '<div class="sci-rep">' +
+          '<div class="sci-rep-head">' +
+            '<div class="sci-rep-id">' + logo +
+              '<div class="sci-rep-txt"><h3>' + esc(run.company_name) + '</h3>' +
+              '<div class="sci-rep-chips">' + chips + '</div></div>' +
+            '</div>' +
+            '<div class="sci-rep-actions">' + actions + '</div>' +
           '</div>' +
-          '<div class="sci-rep-actions">' + actions + '</div>' +
-        '</div>' +
-        (band ? '<div class="sci-rep-band">' + band + '</div>' : '');
+          (band ? '<div class="sci-rep-band">' + band + '</div>' : '') +
+        '</div>';
     }
 
     // Paper is white, so the report prints in the light theme regardless of
@@ -3050,7 +3122,8 @@ function dsApifyRow(platform, entry){
       var hasCross = !!(cross && (toPoints(cross.summary).length ||
         toPoints(cross.messaging_and_strategy).length || (cross.claims || []).length));
 
-      var nav = '', panes = '';
+      var nav = '<button type="button" class="sci-nav-back" onclick="closeReport()">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>All analyses</button>', panes = '';
       // Feedback attaches to each pane individually -- a reader who thinks
       // the LinkedIn read is spot on and the TikTok read is off is a real,
       // different opinion about the same run, and a single run-level rating
@@ -3092,12 +3165,14 @@ function dsApifyRow(platform, entry){
           '<div class="sci-panes">' + panes + '</div>' +
         '</div>';
       document.getElementById('drawerOverlay').classList.add('open');
+      document.body.classList.add('sci-lock');
       updatePaneFade(document.querySelector('#drawerPanel .sci-panes'));
       revealCharts();
     }
 
     function closeReport(){
       document.getElementById('drawerOverlay').classList.remove('open');
+      document.body.classList.remove('sci-lock');
     }
 
     function viewRun(runId){
@@ -3106,8 +3181,9 @@ function dsApifyRow(platform, entry){
       // all until the report suddenly appeared. Now opens immediately with
       // a loading state, same as every other drawer/panel load on this page.
       var panel = document.getElementById('drawerPanel');
-      panel.innerHTML = '<div style="padding:60px;text-align:center"><div class="thinking-orb-slot" data-orb-state="listening" data-orb-size="64">Loading report…</div></div>';
+      panel.innerHTML = '<div class="sci-loading">Opening the report…</div>';
       document.getElementById('drawerOverlay').classList.add('open');
+      document.body.classList.add('sci-lock');
       fetch(BASE + '/runs/' + runId)
         .then(function(r){ return r.json(); })
         .then(renderReport)
@@ -3118,6 +3194,9 @@ function dsApifyRow(platform, entry){
       if(e.key !== 'Escape') return;
       var panel = document.getElementById('sciSuggestPanel');
       if(panel && panel.style.display !== 'none' && panel.innerHTML){ panel.style.display = 'none'; return; }
+      // The post detail sits above the report and closes first; one Escape never closes both.
+      var detail = document.getElementById('cdetailOverlay');
+      if(detail && detail.classList.contains('open')) return;
       closeReport();
     });
 
