@@ -163,3 +163,44 @@ def test_the_thumbs_widget_is_loaded_and_styled_here_not_by_the_compat_sheet():
     # Both thumbs carry a drawn icon: an empty button is not a control anyone can find.
     js = open(os.path.join(_ROOT, "static", "js", "agent_feedback.js"), encoding="utf-8").read()
     assert js.count('<svg viewBox="0 0 24 24"') >= 2
+
+
+# ── Company suggestions are optional ───────────────────────────────────────
+
+def _suggestions(error, companies=None, admin=False):
+    html = _page_html()
+    from test_social_media_intelligence_datasources import _extract_line_fn
+    src = "\n".join([
+        "var IS_ADMIN = %s;" % ("true" if admin else "false"),
+        "global.document = {getElementById: function(){ return __panel; }}; global.window = {};",
+        "var __panel = {innerHTML: '', style: {}};",
+        _extract_line_fn(html, "esc"),
+        _extract_fn(html, "sciSuggestRow"),
+        _extract_fn(html, "sciAdminDiagControl"),
+        _extract_fn(html, "renderCompanySuggestions"),
+    ])
+    js = src + "\nrenderCompanySuggestions(%s, %s, 'acme');\nconsole.log(JSON.stringify(__panel.innerHTML));" % (
+        json.dumps(companies or []), json.dumps(error))
+    r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=30)
+    assert r.returncode == 0, r.stderr[-1500:]
+    return json.loads(r.stdout.strip().splitlines()[-1])
+
+
+@needs_node
+def test_a_missing_apollo_key_is_a_quiet_note_not_a_red_alarm():
+    """Suggestions are a convenience: a run never calls Apollo (identify uses the web). With no key the page
+    says suggestions are off and that the form still works, and only an admin is told which variable."""
+    err = {"code": "not_configured", "message": "Company search is not configured on this deployment: APOLLO_API_KEY is missing.",
+           "detail": "APOLLO_API_KEY is not set on this deployment."}
+    member = _suggestions(err)
+    assert "sci-suggest-note" in member and "sci-suggest-error" not in member
+    assert "press Analyze" in member
+    assert "APOLLO_API_KEY" not in member, "a member is not shown an environment variable"
+    admin = _suggestions(err, admin=True)
+    assert "sci-suggest-note" in admin and "APOLLO_API_KEY" in admin and "sci-suggest-error" not in admin
+
+
+@needs_node
+def test_a_real_provider_failure_is_still_an_error():
+    out = _suggestions({"code": "http", "message": "Apollo rejected our API key (HTTP 401).", "detail": "HTTP 401"})
+    assert "sci-suggest-error" in out and "HTTP 401" in out
