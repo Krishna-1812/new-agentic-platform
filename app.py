@@ -10140,14 +10140,17 @@ def _panel_client_card(a):
             "people": [{"who": p["who"], "kind": p["kind"]} for p in a["people"]],
             "pages": a["pages"], "tools": [t["label"] for t in a["tools"]], "tools_total": a["tools_total"],
             "visits_30": a["visits_30"], "visitors_30": a["visitors_30"], "runs": a["runs"], "limit": a["limit"],
-            "last_visit": _iso(a["last_visit"]), "last_change": last.get("text", ""), "last_change_at": _iso(last.get("at"))}
+            "last_visit": _iso(a["last_visit"]), "last_change": last.get("text", ""), "last_change_at": _iso(last.get("at")),
+            # Everything has been taken back: nobody can sign in and nothing is shared. The card stays, with its
+            # history, but it is not counted as a shared workspace.
+            "withdrawn": not (a["people"] or a["pages"] or a["tools"])}
 
 
 def _panel_clients():
     """External: the client accounts an admin has shared with clients."""
     cards = [_panel_client_card(a) for a in _cu_shared_accounts()]
     return {"accounts": cards,
-            "totals": {"accounts": len(cards), "people": sum(len(c["people"]) for c in cards),
+            "totals": {"accounts": sum(1 for c in cards if not c["withdrawn"]), "people": sum(len(c["people"]) for c in cards),
                        "visitors_30": sum(c["visitors_30"] for c in cards),
                        "runs": sum(c["runs"] for c in cards)}}
 
@@ -10167,7 +10170,14 @@ def _panel_account(slug):
         events.append({"at": _iso(e["at"]), "kind": e["kind"], "who": people_store.display(e["email"], a["actor_names"]),
                        "where": "the home page" if t == "" else (tools.get(t.split("/", 1)[-1]) or pages.get(t) or t)})
     card = _panel_client_card(a)
+    shares = _acct_shares(acct)
+    # What can be withdrawn one by one: every dashboard page and agent the client currently has, with the key
+    # the revoke route takes.
+    share_items = [{"key": k, "label": label, "kind": "page"} for k, label, _, _ in client_access.SHARES if shares.get(k)]
+    share_items += [{"key": client_access.tool_key(t["slug"]), "label": t["label"], "kind": "agent"}
+                    for t in _acct_tool_catalog() if shares.get(client_access.tool_key(t["slug"]))]
     card.update(
+        share_items=share_items,
         people=[{"who": p["who"], "kind": p["kind"], "added_by": people_store.display(p.get("added_by") or "", a["actor_names"])
                  if p.get("added_by") else "", "at": _iso(p.get("created_at"))} for p in a["people"]],
         by_person=[{"name": p["name"], "email": p["email"], "visits": p["visits"], "runs": p["runs"], "last": _iso(p["last"])}
@@ -10253,6 +10263,56 @@ def admin_panel_account(slug):
     if data is None:
         abort(404)
     return jsonify(data)
+
+
+@app.route("/admin/panel/account/<slug>/revoke", methods=["POST"])
+@admin_required
+def admin_panel_account_revoke(slug):
+    """Withdraw what a client account was given, from the admin panel.
+
+    {"people": ["a@client.com", "@client.com"] | "all", "shares": ["google-ads", "tool:market-radar"] | "all"}.
+    People removed can no longer sign in to the account; shares stopped are no longer open to its clients, at
+    once. Staff are never touched. Every change is written to the account's audit trail with who made it, the
+    same trail the account's own Share panel writes, so both places show one history. Answers with the account
+    as the side panel draws it, now."""
+    if request.headers.get("X-Requested-With") != "fetch":
+        return jsonify({"error": "Bad request."}), 400
+    acct = _acct_listing()["by_slug"].get(slug)
+    if acct is None:
+        abort(404)
+    p = request.get_json(silent=True) or {}
+    actor = (_get_user() or {}).get("email", "").lower()
+    key = acct["key"]
+    known = set(client_access.SHARE_KEYS) | {client_access.tool_key(t["slug"]) for t in _acct_tool_catalog()}
+    current = _acct_shares(acct)
+    want = p.get("shares")
+    if want == "all":
+        stop = [k for k in known if current.get(k)]
+    elif isinstance(want, list):
+        if any(k not in known for k in want):
+            return jsonify({"error": "No such part of the account."}), 400
+        stop = [k for k in want if current.get(k)]
+    else:
+        stop = []
+    have = [e["who"] for e in client_accounts_store.access(key)]
+    who = p.get("people")
+    if who == "all":
+        drop = list(have)
+    elif isinstance(who, list):
+        wanted = {str(w).strip().lower()[:320] for w in who}
+        drop = [w for w in have if w in wanted]
+    else:
+        drop = []
+    for k in stop:
+        client_accounts_store.set_share(key, k, False, actor)
+    for w in drop:
+        client_accounts_store.remove_access(key, w, actor)
+    g.pop("_acct_shares", None)
+    _PANEL_CACHE.pop("clients", None)
+    out = _panel_account(slug)
+    if out is None:
+        abort(404)
+    return jsonify(out)
 
 
 # ── Legacy admin URLs (pre-rename) ───────────────────────────────────────────

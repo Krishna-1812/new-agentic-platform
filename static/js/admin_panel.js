@@ -13,7 +13,7 @@
   'use strict';
 
   var S = { days: 30, tab: 'workspaces', spend: null, team: null, clients: null, traffic: null, inbox: null,
-            agentColour: {}, query: '', reqTab: 'form', open: {} };
+            agentColour: {}, query: '', reqTab: 'form', open: {}, acct: '' };
 
   // ── helpers ───────────────────────────────────────────────────────────────
   function $(sel, root) { return (root || document).querySelector(sel); }
@@ -81,6 +81,14 @@
 
   function getJSON(url) {
     return fetch(url, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(j.error || ('The server answered ' + r.status + '.'));
+        return j;
+      });
+    });
+  }
+  function postJSON(url, body) {
+    return fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'fetch' }, body: JSON.stringify(body) }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
         if (!r.ok) throw new Error(j.error || ('The server answered ' + r.status + '.'));
         return j;
@@ -281,12 +289,12 @@
     var cards = d.accounts.map(function (a) {
       var limit = +a.limit || 0, used = +a.runs || 0, fill = limit ? Math.min(100, used / limit * 100) : 0;
       var shared = a.tools.length;
-      return '<button type="button" class="ctl-cc" data-account="' + esc(a.slug) + '"><span class="ctl-cc-top"><span class="ctl-av ctl-av--lg" style="background:' + esc(a.avatar.bg) + ';color:' + esc(a.avatar.fg) + '">' + esc(a.avatar.initials) + '</span>' +
+      return '<button type="button" class="ctl-cc' + (a.withdrawn ? ' is-withdrawn' : '') + '" data-account="' + esc(a.slug) + '"><span class="ctl-cc-top"><span class="ctl-av ctl-av--lg" style="background:' + esc(a.avatar.bg) + ';color:' + esc(a.avatar.fg) + '">' + esc(a.avatar.initials) + '</span>' +
         '<span><b>' + esc(a.name) + '</b><small>' + plural(a.people.length, 'person', 'people') + ' can sign in</small></span><span class="go" aria-hidden="true">&rarr;</span></span>' +
         '<span class="ctl-chips">' + a.pages.slice(0, 4).map(function (p) { return '<span class="ctl-pill">' + esc(p) + '</span>'; }).join('') +
         a.tools.slice(0, 3).map(function (p) { return '<span class="ctl-pill ctl-pill--acc">' + esc(p) + '</span>'; }).join('') +
         ((a.pages.length > 4 || a.tools.length > 3) ? '<span class="ctl-pill">+' + ((a.pages.length > 4 ? a.pages.length - 4 : 0) + (a.tools.length > 3 ? a.tools.length - 3 : 0)) + ' more</span>' : '') +
-        (!a.pages.length && !a.tools.length ? '<span class="ctl-pill">Nothing shared yet</span>' : '') + '</span>' +
+        (!a.pages.length && !a.tools.length ? '<span class="ctl-pill">' + (a.withdrawn ? 'Access withdrawn' : 'Nothing shared yet') + '</span>' : '') + '</span>' +
         '<span class="ctl-meter"><span><span>Agent runs this month</span><b>' + used + (limit ? ' of ' + limit : '') + '</b></span><span class="bar"><i class="' + (fill >= 100 ? 'is-full' : (fill >= 75 ? 'is-hot' : '')) + '" style="width:' + fill + '%"></i></span></span>' +
         '<span class="ctl-cc-foot"><span><b>' + num(a.visits_30) + '</b> visits by <b>' + num(a.visitors_30) + '</b> in 30 days</span><span>Agents shared: <b>' + shared + '/' + a.tools_total + '</b></span>' +
         '<span>Last visit <b>' + esc(ago(a.last_visit)) + '</b></span><span>Spent <b>' + (S.spend ? usd(spaceSpend(a.space)) : '…') + '</b></span></span></button>';
@@ -403,28 +411,59 @@
     if (/^#client-/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
+  // One client workspace, in full. Everything an admin has given the client can be withdrawn from here: a person
+  // or a whole domain loses sign-in, a dashboard or an agent stops being shared, or all of it at once.
+  function renderAccount(slug, a, note) {
+    var limit = +a.limit || 0;
+    var list = function (title, items, fn, empty) {
+      return '<div class="ctl-dsec"><h4>' + title + '</h4>' + (items.length ? '<ul>' + items.map(fn).join('') + '</ul>' : '<span class="ctl-sub">' + empty + '</span>') + '</div>';
+    };
+    var items = a.share_items || [];
+    var chips = items.map(function (it) {
+      return '<span class="ctl-pill' + (it.kind === 'agent' ? ' ctl-pill--acc' : '') + ' ctl-rv">' + esc(it.label) +
+        '<button type="button" data-revoke-share="' + esc(it.key) + '" data-label="' + esc(it.label) + '" aria-label="Stop sharing ' + esc(it.label) + '" title="Stop sharing ' + esc(it.label) + '">&times;</button></span>';
+    }).join('');
+    var anything = items.length || a.people.length;
+    drawer('Client workspace',
+      '<div class="ctl-dh"><span class="ctl-av ctl-av--lg" style="background:' + esc(a.avatar.bg) + ';color:' + esc(a.avatar.fg) + '">' + esc(a.avatar.initials) + '</span><h2 id="ctlDrawerT">' + esc(a.name) + '</h2></div>' +
+      (note ? '<p class="ctl-dnote" role="status">' + esc(note) + '</p>' : '') +
+      '<div class="ctl-tiles"><div class="ctl-tile" data-lead><b>' + (S.spend ? usd(spaceSpend(a.space)) : '—') + '</b><span>spent in ' + (S.spend ? S.spend.days : S.days) + ' days</span></div>' +
+      '<div class="ctl-tile"><b>' + num(a.runs) + (limit ? ' / ' + limit : '') + '</b><span>agent runs this month</span></div>' +
+      '<div class="ctl-tile"><b>' + num(a.visits_30) + '</b><span>visits in 30 days</span></div><div class="ctl-tile"><b>' + num(a.visitors_30) + '</b><span>people active</span></div></div>' +
+      '<div class="ctl-dsec"><h4>Shared with the client</h4><div class="ctl-chips">' + (chips || '<span class="ctl-sub">Nothing is shared yet.</span>') + '</div>' +
+        '<p class="ctl-sub" style="margin:8px 0 0">' + a.tools.length + ' of ' + a.tools_total + ' agents are shared.' + (items.length ? ' Press &times; on one to stop sharing it.' : '') + '</p></div>' +
+      list('People who can sign in', a.people, function (p) {
+        return '<li><span>' + esc(p.who) + ' <span class="ctl-pill">' + (p.kind === 'domain' ? 'whole domain' : 'person') + '</span></span><span class="ctl-rowact"><small>' +
+          (p.added_by ? 'added by ' + esc(p.added_by) + ' &middot; ' : '') + esc(ago(p.at)) + '</small>' +
+          '<button type="button" class="ctl-danger-sm" data-revoke-person="' + esc(p.who) + '" aria-label="Remove ' + esc(p.who) + '">Remove</button></span></li>';
+      }, 'Nobody is invited yet.') +
+      (anything ? '<div class="ctl-dsec ctl-danger"><h4>Withdraw access</h4><p class="ctl-sub">Stops every dashboard and agent being shared and removes everyone who can sign in. The client loses access at once. You can share again later.</p>' +
+        '<button type="button" class="ctl-danger-btn" data-revoke-all="1">Withdraw all access</button></div>' : '') +
+      list('Who uses it', a.by_person, function (p) { return '<li><span>' + esc(p.name) + '<br><small>' + esc(p.email) + '</small></span><small>' + p.visits + ' visits &middot; ' + p.runs + ' runs<br>' + esc(ago(p.last)) + '</small></li>'; }, 'No client has opened it yet.') +
+      list('Latest activity', a.events.slice(0, 12), function (e) { return '<li><span>' + esc(e.who) + (e.kind === 'run' ? ' ran ' : ' opened ') + esc(e.where) + '</span><small>' + esc(ago(e.at)) + '</small></li>'; }, 'No activity yet.') +
+      list('Changes to what is shared', a.audit, function (x) { return '<li><span>' + esc(x.text) + '</span><small>' + esc(ago(x.at)) + '</small></li>'; }, 'No changes recorded.'));
+  }
   function openAccount(slug) {
     lastFocus = document.activeElement;
+    S.acct = slug;
     drawer('Client workspace', '<div class="ctl-skel"><i class="bn-skel tall bn-sweep"></i><i class="bn-skel bn-sweep"></i></div>');
     getJSON('/admin/panel/account/' + encodeURIComponent(slug)).then(function (a) {
-      var limit = +a.limit || 0;
-      var list = function (title, items, fn, empty) {
-        return '<div class="ctl-dsec"><h4>' + title + '</h4>' + (items.length ? '<ul>' + items.map(fn).join('') + '</ul>' : '<span class="ctl-sub">' + empty + '</span>') + '</div>';
-      };
-      drawer('Client workspace',
-        '<div class="ctl-dh"><span class="ctl-av ctl-av--lg" style="background:' + esc(a.avatar.bg) + ';color:' + esc(a.avatar.fg) + '">' + esc(a.avatar.initials) + '</span><h2 id="ctlDrawerT">' + esc(a.name) + '</h2></div>' +
-        '<div class="ctl-tiles"><div class="ctl-tile" data-lead><b>' + (S.spend ? usd(spaceSpend(a.space)) : '—') + '</b><span>spent in ' + (S.spend ? S.spend.days : S.days) + ' days</span></div>' +
-        '<div class="ctl-tile"><b>' + num(a.runs) + (limit ? ' / ' + limit : '') + '</b><span>agent runs this month</span></div>' +
-        '<div class="ctl-tile"><b>' + num(a.visits_30) + '</b><span>visits in 30 days</span></div><div class="ctl-tile"><b>' + num(a.visitors_30) + '</b><span>people active</span></div></div>' +
-        '<div class="ctl-dsec"><h4>Shared with the client</h4><div class="ctl-chips">' + (a.pages.map(function (p) { return '<span class="ctl-pill">' + esc(p) + '</span>'; }).join('') +
-          a.tools.map(function (p) { return '<span class="ctl-pill ctl-pill--acc">' + esc(p) + '</span>'; }).join('') || '<span class="ctl-sub">Nothing is shared yet.</span>') + '</div>' +
-          '<p class="ctl-sub" style="margin:8px 0 0">' + a.tools.length + ' of ' + a.tools_total + ' agents are shared.</p></div>' +
-        list('People who can sign in', a.people, function (p) { return '<li><span>' + esc(p.who) + ' <span class="ctl-pill">' + (p.kind === 'domain' ? 'whole domain' : 'person') + '</span></span><small>' + (p.added_by ? 'added by ' + esc(p.added_by) + ' &middot; ' : '') + esc(ago(p.at)) + '</small></li>'; }, 'Nobody is invited yet.') +
-        list('Who uses it', a.by_person, function (p) { return '<li><span>' + esc(p.name) + '<br><small>' + esc(p.email) + '</small></span><small>' + p.visits + ' visits &middot; ' + p.runs + ' runs<br>' + esc(ago(p.last)) + '</small></li>'; }, 'No client has opened it yet.') +
-        list('Latest activity', a.events.slice(0, 12), function (e) { return '<li><span>' + esc(e.who) + (e.kind === 'run' ? ' ran ' : ' opened ') + esc(e.where) + '</span><small>' + esc(ago(e.at)) + '</small></li>'; }, 'No activity yet.') +
-        list('Changes to what is shared', a.audit, function (x) { return '<li><span>' + esc(x.text) + '</span><small>' + esc(ago(x.at)) + '</small></li>'; }, 'No changes recorded.'));
+      renderAccount(slug, a);
       $('#ctlDrawerX').focus();
     }).catch(function (e) { drawer('Client workspace', failed('account', e.message)); });
+  }
+  // Withdraw something and redraw the panel with what is left. The clients section behind it is read again so its
+  // cards and the hero figures match.
+  function revoke(body, ask, done) {
+    if (!S.acct || !window.confirm(ask)) return;
+    var busy = $$('#ctlDrawerBody button'); busy.forEach(function (b) { b.disabled = true; });
+    postJSON('/admin/panel/account/' + encodeURIComponent(S.acct) + '/revoke', body).then(function (a) {
+      renderAccount(S.acct, a, done);
+      load('clients', true);
+    }).catch(function (e) {
+      busy.forEach(function (b) { b.disabled = false; });
+      window.alert('That could not be withdrawn: ' + e.message);
+    });
   }
   function fromHash() {
     var m = /^#client-(.+)$/.exec(location.hash);
@@ -433,8 +472,20 @@
 
   // ── events ────────────────────────────────────────────────────────────────
   document.addEventListener('click', function (ev) {
-    var t = ev.target.closest ? ev.target.closest('[data-retry],[data-tab],[data-req],[data-csv],[data-account],[data-user],[data-days],#ctlRefresh,#ctlDrawerX,#ctlOvl') : null;
+    var t = ev.target.closest ? ev.target.closest('[data-revoke-share],[data-revoke-person],[data-revoke-all],[data-retry],[data-tab],[data-req],[data-csv],[data-account],[data-user],[data-days],#ctlRefresh,#ctlDrawerX,#ctlOvl') : null;
     if (!t) return;
+    if (t.dataset.revokeShare) {
+      revoke({ shares: [t.dataset.revokeShare] }, 'Stop sharing ' + (t.dataset.label || 'this') + '? The client loses it at once.', 'Stopped sharing ' + (t.dataset.label || 'it') + '.');
+      return;
+    }
+    if (t.dataset.revokePerson) {
+      revoke({ people: [t.dataset.revokePerson] }, 'Remove ' + t.dataset.revokePerson + '? They lose access at once.', 'Removed ' + t.dataset.revokePerson + '.');
+      return;
+    }
+    if (t.dataset.revokeAll) {
+      revoke({ shares: 'all', people: 'all' }, 'Withdraw all access for this client? Everyone is removed and nothing stays shared. They lose access at once.', 'All access withdrawn. You can share again at any time from the account.');
+      return;
+    }
     if (t.dataset.retry) { var s = t.dataset.retry; if (RENDER[s]) load(s, true); else fromHash(); return; }
     if (t.dataset.tab) { S.tab = t.dataset.tab; S.query = ''; if (S.spend) renderSpendBreakdown(); return; }
     if (t.dataset.req) { S.reqTab = t.dataset.req; if (S.inbox) renderInbox(S.inbox); return; }
