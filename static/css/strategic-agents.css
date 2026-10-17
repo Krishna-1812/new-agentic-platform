@@ -85,6 +85,9 @@ html:root { background-color: var(--bg); }
 }
 .sa-live i { width: 8px; height: 8px; border-radius: 50%; background: #3FD68C; position: relative; }
 .sa-live i::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid #3FD68C; opacity: 0; animation: sa-ping 2.4s var(--glide) infinite; }
+/* Still being built (the operational agents): the same pill, the Building badge's amber. */
+.sa-live--build i { background: var(--amber); }
+.sa-live--build i::after { border-color: var(--amber); }
 @keyframes sa-ping { 0% { transform: scale(.4); opacity: .9; } 100% { transform: scale(1.6); opacity: 0; } }
 
 .sa-shapes { margin-left: auto; display: grid; grid-template-columns: repeat(4, 38px); gap: 8px; }

@@ -45,7 +45,7 @@
   <section class="sa-hero" data-sa-settle>
     <div class="sa-hero-top">
       <span class="sa-lbl" data-sa-decode>Operational agents &middot; SEO + AEO</span>
-      <span class="sa-live"><i></i>{{ seo_tools|length }} live now</span>
+      <span class="sa-live sa-live--build"><i></i>{{ seo_tools|length }} in build</span>
       <div class="sa-shapes" aria-hidden="true">
         <span class="sa-shape sa-shape--circle"></span>
         <span class="sa-shape sa-shape--half"></span>
@@ -206,11 +206,11 @@
         {% for t in tools %}
         {% set n.i = n.i + 1 %}
         {% set b = seo_tool_briefs.get(t.slug, {}) %}
-        <a href="/seo-aeo/{{ t.slug }}" id="t-{{ t.slug }}" class="sa-card" data-tool="{{ t.slug }}" data-state="active" data-badge="live" data-group="{{ g.key }}">
+        <a href="/seo-aeo/{{ t.slug }}" id="t-{{ t.slug }}" class="sa-card" data-tool="{{ t.slug }}" data-state="active" data-badge="building" data-group="{{ g.key }}">
           <span class="sa-card-top">
             <span class="sa-ic sa-ic--letter" aria-hidden="true">{{ (t.name or '?')[:1]|upper }}</span>
             <span class="sa-num">{{ "%02d"|format(n.i) }}</span>
-            <span class="sa-state sa-state--live"><i></i>Live</span>
+            <span class="sa-state sa-state--build"><i></i>Building</span>
           </span>
           <span class="sa-name" data-tool-name>{{ t.name }}</span>
           <span class="sa-desc">{{ b.lead or t.desc }}</span>
@@ -220,9 +220,9 @@
             <span><em>You get</em>{{ b.gets }}</span>
           </span>
           {% endif %}
-          {% if t.tags %}
-          <span class="sa-tags">{% for tag in t.tags %}<span class="sa-tag">{{ tag }}</span>{% endfor %}</span>
-          {% endif %}
+          {#- Every operational agent is an SEO tool: "SEO" leads its tags, once. #}
+          {% set tags = ["SEO"] + ((t.tags or []) | reject("equalto", "SEO") | list) %}
+          <span class="sa-tags">{% for tag in tags %}<span class="sa-tag">{{ tag }}</span>{% endfor %}</span>
           <span class="sa-go">Open tool <span aria-hidden="true">&rarr;</span></span>
         </a>
         {% endfor %}
