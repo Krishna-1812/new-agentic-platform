@@ -289,8 +289,9 @@
     return body;
   }
 
-  function leadQuery(filter) {
-    if (filter === 'strong') return '?min=70';
+  // "Strong" is the workspace's own strong-lead score (Settings), 70 until the status has loaded.
+  function leadQuery(filter, strong) {
+    if (filter === 'strong') return '?min=' + encodeURIComponent(strong == null ? 70 : strong);
     if (filter && filter.indexOf('offer:') === 0) return '?offer=' + encodeURIComponent(filter.slice(6));
     if (filter && filter !== 'all') return '?status=' + encodeURIComponent(filter);
     return '';
@@ -361,7 +362,8 @@
   }
 
   function loadLeads() {
-    return api('/leads' + leadQuery(state.filter)).then(function (j) {
+    var strong = state.status && state.status.settings && state.status.settings.alert_score;
+    return api('/leads' + leadQuery(state.filter, strong)).then(function (j) {
       state.leads = j.leads || [];
       $('brLeads').innerHTML = renderLeads(state.leads, state.filter);
     }).catch(function (e) { $('brLeads').innerHTML = '<div class="mr-empty">' + esc(e.message) + '</div>'; });

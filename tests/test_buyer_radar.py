@@ -836,6 +836,7 @@ def test_the_page_escapes_everything_from_linkedin_and_the_model():
 
 
 def test_the_page_offers_the_filters_and_queries_the_right_leads():
+    assert run_js("return BR.leadQuery('strong', 85);") == "?min=85", "Strong follows the workspace's strong-lead score"
     out = run_js("return [BR.renderFilters('strong', BR.offers), BR.leadQuery('strong'), BR.leadQuery('offer:markify'), "
                  "BR.leadQuery('new'), BR.leadQuery('all'), BR.renderLeads([], 'new'), BR.renderLeads([], 'all')];")
     assert 'data-filter="strong" aria-pressed="true"' in out[0] and "Markify Digital" in out[0]
