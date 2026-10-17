@@ -46,7 +46,7 @@
 .br-stat { padding: 16px 20px; border-radius: var(--r-lg); background: var(--s1); box-shadow: 0 0 0 1px rgba(18,18,19,.05); }
 .br-stat b { display: block; font: 600 30px/1.1 var(--font-display); font-variation-settings: var(--display-axes); font-variant-numeric: tabular-nums; color: var(--tx); }
 .br-stat span { font-size: 12.5px; color: var(--tx3); font-weight: 600; }
-.br-stat--acc { background: var(--ink); } .br-stat--acc b { color: var(--acc); } .br-stat--acc span { color: #A8A39C; }
+.br-stat--acc { background: var(--ink); } .br-stat--acc b { color: var(--acc-hi); } .br-stat--acc span { color: #A8A39C; }
 
 /* ── The layout ──────────────────────────────────────────────────────────── */
 .br-top { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
