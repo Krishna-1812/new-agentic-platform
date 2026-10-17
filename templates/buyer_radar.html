@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    BUYER RADAR (/strategic-agents/buyer-radar) — the team; listed as Building
+
+    LinkedIn posts from people asking for what we sell (CallVibe's call
+    analytics, Markify's marketing services), found by Apify's post search,
+    read by Claude, kept as leads with an email and a LinkedIn note written
+    for each. Sent from here, or automatically where the workspace switches
+    it on. Drawn by static/js/buyer_radar.js from the JSON routes in app.py;
+    the engine is tracker/buyer_radar*.py; the plan is docs/buyer-radar-plan.md.
+    A client the workspace shares it with may search and read the leads: no
+    settings, no drafts, no sending, no costs.
+-#}
+<html lang="en">
+<head>
+{{ head("Buyer Radar", ["strategic-agents.css?v=2", "market_radar.css?v=7", "buyer_radar.css?v=3"]) }}
+</head>
+<body class="sa"{% if client %} data-br-client{% endif %}>
+
+{{ topbar([(brand.agents_plural, "/strategic-agents"), ("Buyer Radar", none)]) }}
+
+<main class="sa-shell">
+
+  <section class="sa-hero mr-hero mr-hero--compact br-hero">
+    <div class="br-hero-copy">
+      <div class="sa-hero-top">
+        <span class="sa-lbl">Building{% if not client %} &middot; LinkedIn posts, read by Claude{% endif %}</span>
+        <span class="br-ready" id="brReady"><span class="mr-chip">Checking&hellip;</span></span>
+      </div>
+      <h1 class="sa-h1 mr-h1">
+        <span class="sa-ln"><span>They ask.</span></span>
+        <span class="sa-ln"><span><span class="sa-mk">You answer</span> <em class="sa-it">first.</em></span></span>
+      </h1>
+      <p class="br-intro">Every day people post on LinkedIn that they need a call analytics tool or a marketing agency.
+        Buyer Radar finds those posts, keeps the real buyers{% if not client %}, writes each one an email and a LinkedIn note,
+        and sends them for you if you want{% endif %}.</p>
+      <ol class="br-steps">
+        <li><b>1</b><span>Searches LinkedIn posts<small>{{ offers | map(attribute="label") | join(" and ") }}</small></span></li>
+        <li><b>2</b><span>Claude keeps the buyers<small>not vendors or job seekers</small></span></li>
+        <li><b>3</b><span>{% if client %}See who to talk to{% else %}Message ready to send<small>email and LinkedIn</small>{% endif %}</span></li>
+      </ol>
+    </div>
+    <div class="br-hero-art" aria-hidden="true">
+      <div class="br-post br-post--1">
+        <span class="br-av">MH</span>
+        <span class="br-pl"><b>Michael H.</b><i>VP Marketing</i></span>
+        <span class="br-pt">We are looking for a full-service marketing agency. RFP goes out this week.</span>
+        <span class="br-pin">92</span>
+      </div>
+      <div class="br-post br-post--2">
+        <span class="br-av br-av--2">SS</span>
+        <span class="br-pl"><b>Spinder S.</b><i>Head of Sales Ops</i></span>
+        <span class="br-pt">Need an AI call audit tool: compliance, objections, agent scoring. Demos welcome.</span>
+        <span class="br-pin">95</span>
+      </div>
+      <div class="br-post br-post--3">
+        <span class="br-av br-av--3">AK</span>
+        <span class="br-pl"><b>A vendor</b><i>Sells call analytics</i></span>
+        <span class="br-pt">Our new release makes call analytics easier than ever&hellip;</span>
+        <span class="br-pin br-pin--no">0</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="mr br" id="br">
+    <div class="br-stats" id="brStats" aria-live="polite"></div>
+
+    <div class="br-top">
+      <section class="card mr-card br-inbox" aria-label="Leads">
+        <header class="br-inbox-h">
+          <div><h3>Leads</h3><p>Newest first. Each one is a post Claude read as someone looking to buy.</p></div>
+          <div class="br-filters" id="brFilters" role="group" aria-label="Show"></div>
+        </header>
+        <div id="brLeads" class="br-leads"><div class="mr-empty">Loading&hellip;</div></div>
+      </section>
+
+      <aside class="br-side">
+        <section class="card mr-card br-run" aria-label="Search now">
+          <header class="mr-card-h"><div><h3>Search now</h3><p id="brRunSub">Searches LinkedIn posts{% if not client %} with the searches in Settings{% endif %}.</p></div></header>
+          <div class="mr-card-b">
+            <div id="brEstimate" class="br-est"></div>
+            <div id="brLive" class="br-live" hidden></div>
+            <button type="button" class="mr-btn primary hot br-go" id="brRunBtn">Search LinkedIn now</button>
+          </div>
+        </section>
+        <section class="card mr-card br-runs" aria-label="Recent searches">
+          <header class="mr-card-h"><div><h3>Recent searches</h3></div></header>
+          <div class="mr-card-b" id="brRuns"><div class="mr-empty">Loading&hellip;</div></div>
+        </section>
+      </aside>
+    </div>
+
+    {% if not client %}
+    <section class="card mr-card br-settings" id="brSettingsCard" aria-label="Settings">
+      <button type="button" class="br-set-h" id="brSetToggle" aria-expanded="false" aria-controls="brSettings">
+        <span><h3>Settings</h3><span>What to look for, the daily search, sending and Slack. Saved for this workspace.</span></span>
+        <svg class="br-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <form id="brSettings" class="mr-card-b br-set-b" hidden autocomplete="off"></form>
+    </section>
+    {% endif %}
+  </div>
+
+</main>
+
+<div class="mr br-drawer-bg" id="brDrawerBg" hidden></div>
+<aside class="mr br-drawer" id="brDrawer" role="dialog" aria-modal="true" aria-labelledby="brDrawerTitle" hidden>
+  <header class="br-drawer-h">
+    <h4 id="brDrawerTitle">Message</h4>
+    <button type="button" class="br-x" id="brDrawerClose" aria-label="Close"><svg class="br-ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </header>
+  <div class="br-drawer-b" id="brDrawerBody"></div>
+</aside>
+
+<div class="mr mr-modal-bg" id="brModal" role="dialog" aria-modal="true" aria-labelledby="brModalTitle">
+  <div class="mr-modal">
+    <h4 id="brModalTitle"></h4>
+    <p id="brModalText"></p>
+    <div class="mr-modal-foot">
+      <button type="button" class="mr-btn ghost" id="brModalNo">Cancel</button>
+      <button type="button" class="mr-btn primary" id="brModalYes">Go ahead</button>
+    </div>
+  </div>
+</div>
+
+<script id="brOffers" type="application/json">{{ offers | tojson }}</script>
+{{ topbar_script() }}
+<script src="{{ url_for('static', filename='js/buyer_radar.js') }}?v=1"></script>
+</body>
+</html>

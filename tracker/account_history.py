@@ -93,7 +93,7 @@ def _state(status):
 AGENT_NAMES = {"local-business-radar": "Local Business Radar", "social-media-intelligence": "Social Media Intelligence",
                "event-conference-intelligence": "Event & Conference Intelligence",
                "thought-leader-pr": "Thought Leader Intelligence", "company-people-intelligence": "Contact Finder",
-               "market-radar": "Market Radar", "people-signals": "People & Signals"}
+               "market-radar": "Market Radar", "people-signals": "People & Signals", "buyer-radar": "Buyer Radar"}
 
 
 def agent_entry(acct, agent, title, detail, who, at, status, href=None):
@@ -183,6 +183,25 @@ def _ps(acct):
     return out
 
 
+def _br(acct):
+    """Buyer Radar: owned by the account's space too. A daily search has nobody's name on it."""
+    from tracker import buyer_radar_store
+    out = []
+    for r in buyer_radar_store.space_runs(acct["space"], limit=LIMIT):
+        sm = r.get("summary") or {}
+        title = ("Daily LinkedIn search" if r.get("trigger") == "daily" else "Searched LinkedIn") + " for buyers"
+        bits = []
+        if sm.get("kept") is not None and r.get("status") == "ready":
+            bits.append("%d lead%s" % (sm["kept"], "" if sm["kept"] == 1 else "s"))
+        if sm.get("strong"):
+            bits.append("%d strong" % sm["strong"])
+        if sm.get("emailed") or sm.get("messaged"):
+            bits.append("%d written to" % ((sm.get("emailed") or 0) + (sm.get("messaged") or 0)))
+        out.append(_agent(acct, "buyer-radar", title, " \u00b7 ".join(bits), r.get("started_by"), r.get("created_at"),
+                          r.get("status"), "/%s/agents/buyer-radar#run-%d" % (acct["slug"], r["id"])))
+    return out
+
+
 # ── The SEO & AEO tools (phase 3) ────────────────────────────────────────────
 def _seo(acct):
     from tracker import seo_runs, seo_runs_store
@@ -199,7 +218,7 @@ def _seo(acct):
 
 AGENT_READS = (("seo", _seo), ("local-business-radar", _lbr), ("social-media-intelligence", _smi),
                ("event-conference-intelligence", _evi), ("thought-leader-pr", _tlpr), ("market-radar", _mr),
-               ("people-signals", _ps))
+               ("people-signals", _ps), ("buyer-radar", _br))
 
 
 def entries(acct, library=None, limit=SHOWN, extra=()):

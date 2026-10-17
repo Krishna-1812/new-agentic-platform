@@ -19,6 +19,7 @@ import os
 import socket
 from contextlib import contextmanager
 from email.message import EmailMessage
+from email.utils import formataddr
 
 import requests
 
@@ -45,11 +46,13 @@ def ready():
             "slack": bool(os.environ.get("SLACK_BOT_TOKEN"))}
 
 
-def _message(subject, text, html_body, to, sender):
+def _message(subject, text, html_body, to, sender, headers=None):
     msg = EmailMessage()
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = ", ".join(to)
+    for k, v in (headers or {}).items():
+        msg[k] = v
     msg.set_content(text)
     msg.add_alternative(html_body, subtype="html")
     return msg
@@ -66,11 +69,13 @@ def _gmail_reason(e):
     return "%s: %s" % (type(e).__name__, text[:200])
 
 
-def send_email(subject, text, html_body, to):
+def send_email(subject, text, html_body, to, sender=None, headers=None, from_name=None):
     """Gmail API first; SMTP when that is not set up or refuses (as the
     platform's own access-request email does). Raises with both reasons
-    when neither sends."""
-    sender = os.environ.get("GMAIL_SENDER", "")
+    when neither sends. `sender` sends as another address of the same Google
+    Workspace (the service account must be allowed to impersonate it);
+    `headers` are added as they are (List-Unsubscribe, Reply-To)."""
+    sender = sender or os.environ.get("GMAIL_SENDER", "")
     sa = os.environ.get("GOOGLE_SA_JSON", "")
     gmail_error = None
     if sender and sa:
@@ -80,7 +85,8 @@ def send_email(subject, text, html_body, to):
             creds = service_account.Credentials.from_service_account_info(
                 json.loads(sa), scopes=["https://www.googleapis.com/auth/gmail.send"]).with_subject(sender)
             svc = build("gmail", "v1", credentials=creds, cache_discovery=False)
-            raw = base64.urlsafe_b64encode(_message(subject, text, html_body, to, sender).as_bytes()).decode()
+            shown = formataddr((from_name, sender)) if from_name else sender
+            raw = base64.urlsafe_b64encode(_message(subject, text, html_body, to, shown, headers).as_bytes()).decode()
             svc.users().messages().send(userId="me", body={"raw": raw}).execute()
             return
         except Exception as e:
@@ -92,7 +98,7 @@ def send_email(subject, text, html_body, to):
         raise NotConfigured("no email sender is set up (GMAIL_SENDER with GOOGLE_SA_JSON, "
                             "or SMTP_HOST/SMTP_USER/SMTP_PASS)")
     try:
-        _smtp(subject, text, html_body, to, host, user, pwd)
+        _smtp(subject, text, html_body, to, host, user, pwd, headers)
     except Exception as e:
         raise RuntimeError(((gmail_error + " ") if gmail_error else "") +
                            "SMTP failed too: %s: %s" % (type(e).__name__, str(e)[:150]))
@@ -114,16 +120,16 @@ def _ipv4():
         socket.getaddrinfo = orig
 
 
-def _smtp(subject, text, html_body, to, host, user, pwd):
+def _smtp(subject, text, html_body, to, host, user, pwd, headers=None):
     with _ipv4():
-        _smtp_send(subject, text, html_body, to, host, user, pwd)
+        _smtp_send(subject, text, html_body, to, host, user, pwd, headers)
 
 
-def _smtp_send(subject, text, html_body, to, host, user, pwd):
+def _smtp_send(subject, text, html_body, to, host, user, pwd, headers=None):
     import smtplib
     import ssl
     port = int(os.environ.get("SMTP_PORT", "587") or 587)
-    msg = _message(subject, text, html_body, to, os.environ.get("SMTP_FROM", "") or user)
+    msg = _message(subject, text, html_body, to, os.environ.get("SMTP_FROM", "") or user, headers)
     ctx = ssl.create_default_context()
     if port == 465:
         with smtplib.SMTP_SSL(host, port, timeout=15, context=ctx) as srv:

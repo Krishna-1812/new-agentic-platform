@@ -398,6 +398,8 @@ TEAM_ONLY = {
     "/strategic-agents/market-radar/api/tidy-suggestions": "a one-off tidy for the team",
     "/strategic-agents/market-radar/report/<int:client_id>": "inside an account it is /<account>/agents/market-radar/report/<id>",
     "/strategic-agents/people-signals/api/runs/<int:run_id>/reveal": "spends the agency's Saleshandy credits",
+    "/strategic-agents/buyer-radar/api/settings": "what to search, the caps and automatic sending are the team's",
+    "/strategic-agents/buyer-radar/api/leads/<int:lead_id>/send": "writes to people for the agency",
 }
 
 

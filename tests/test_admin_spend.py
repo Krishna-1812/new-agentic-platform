@@ -137,9 +137,9 @@ def test_whose_work_a_ledger_row_is(owner, by, space, want):
 # == reading the real ledgers ==================================================================
 
 def _reset_stores(monkeypatch):
-    from tracker import (account_mapper_store, contact_lab_store, event_intel_store, gads_ai_store, lbr_store,
-                         market_radar_store, sci_store, video_store, watch_store)
-    for mod, flag in ((account_mapper_store, "_READY"), (contact_lab_store, "_READY"),
+    from tracker import (account_mapper_store, buyer_radar_store, contact_lab_store, event_intel_store, gads_ai_store,
+                         lbr_store, market_radar_store, sci_store, video_store, watch_store)
+    for mod, flag in ((account_mapper_store, "_READY"), (buyer_radar_store, "_READY"), (contact_lab_store, "_READY"),
                       (event_intel_store, "_TABLES_READY"), (gads_ai_store, "_TABLES_READY"),
                       (lbr_store, "_TABLES_READY"), (market_radar_store, "_TABLES_READY"),
                       (sci_store, "_TABLES_READY"), (video_store, "_READY"), (watch_store, "_READY")):
@@ -147,8 +147,8 @@ def _reset_stores(monkeypatch):
 
 
 def test_every_ledger_is_read_with_who_where_and_how_much(pg, world, monkeypatch):
-    from tracker import (account_mapper_store as am, contact_lab_store as cl, event_intel_store as evi,
-                         gads_ai_store as gads, lbr_store, sci_store, video_store, watch_store)
+    from tracker import (account_mapper_store as am, buyer_radar_store as br, contact_lab_store as cl,
+                         event_intel_store as evi, gads_ai_store as gads, lbr_store, sci_store, video_store, watch_store)
     _reset_stores(monkeypatch)
     # Market Radar, inside a client account (owner is the space) and as a person's own work
     entity = world["entity"]
@@ -170,6 +170,10 @@ def test_every_ledger_is_read_with_who_where_and_how_much(pg, world, monkeypatch
     am.update_run(amr, spent=0.30)
     clr = cl.create_run("kris@x.com", {}, 1.0)
     cl.update_run(clr, spent=0.05)
+    # Buyer Radar: dollars (Apify, Claude) and Saleshandy credits in one ledger, inside a client account
+    brr = br.create_run("acct:8", {}, 2.0, "mia@x.com")
+    br.add_spend(brr, "acct:8", "mia@x.com", "apify", "post-search", usd=0.40)
+    br.add_spend(brr, "acct:8", "mia@x.com", "saleshandy", "email-reveal", credits=2)
     # Video Studio and Page Watch, each with a space on the project / watch
     vp = video_store.create_project("mia@x.com", space="acct:8")
     video_store.add_ai_call("plan", email="mia@x.com", project_id=vp, cost_usd=0.60)
@@ -197,6 +201,9 @@ def test_every_ledger_is_read_with_who_where_and_how_much(pg, world, monkeypatch
     assert one("social-media-intelligence")["space"] == "acct:8"
     assert one("account-mapper")["email"] == "mia@x.com" and one("account-mapper")["space"] == "acct:7"
     assert one("contact-lab")["usd"] == pytest.approx(0.05) and one("contact-lab")["space"] == ""
+    assert one("buyer-radar")["usd"] == pytest.approx(0.40) and one("buyer-radar")["space"] == "acct:8"
+    assert one("buyer-radar")["email"] == "mia@x.com"
+    assert one("buyer-radar-emails")["unit"] == "credits" and one("buyer-radar-emails")["usd"] == 2
     assert one("video-studio")["space"] == "acct:8" and one("video-studio")["email"] == "mia@x.com"
     assert one("page-watch")["space"] == "acct:7"
     assert one("google-ads-ai-review")["usd"] == pytest.approx(0.75)

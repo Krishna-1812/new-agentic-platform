@@ -69,9 +69,9 @@
 
     {# Counted from the rows below; tests/test_hub_card_counts.py checks they agree. #}
     <div class="sa-figs">
-      <div class="sa-fig"><b data-sa-odo data-figure="agents">16</b><span>agents</span></div>
+      <div class="sa-fig"><b data-sa-odo data-figure="agents">17</b><span>agents</span></div>
       <div class="sa-fig"><b data-sa-odo data-figure="live">10</b><span>live</span></div>
-      <div class="sa-fig"><b data-sa-odo data-figure="building">6</b><span>in build</span></div>
+      <div class="sa-fig"><b data-sa-odo data-figure="building">7</b><span>in build</span></div>
       {% if tracked_companies %}
       <div class="sa-fig"><b data-sa-odo>{{ "{:,}".format(tracked_companies) }}+</b><span>companies tracked</span></div>
       {% endif %}
@@ -95,6 +95,7 @@
         ("b", "Thought Leader Intelligence", "/strategic-agents/thought-leader-pr"),
         ("b", "Local Business Radar", "/strategic-agents/local-business-radar"),
         ("b", "People & Signals", "/strategic-agents/people-signals"),
+        ("b", "Buyer Radar", "/strategic-agents/buyer-radar"),
         ("a", "Ad Intelligence", "/strategic-agents/ad-intelligence"),
         ("a", "42 North Dental Slot Checker", "/strategic-agents/42-north-dental-slot-checker"),
         ("a", "Event & Conference Intelligence", "/strategic-agents/event-conference-intelligence"),
@@ -173,9 +174,9 @@
     <div class="sa-filters" id="sa-filters">
       <div class="sa-filters-in">
         <div class="sa-chips" role="group" aria-label="Group">
-          <button type="button" class="sa-chip is-on" data-sa-group="all">All <b>16</b></button>
+          <button type="button" class="sa-chip is-on" data-sa-group="all">All <b>17</b></button>
           <button type="button" class="sa-chip" data-sa-group="signals"><i class="sa-dot sa-dot--c"></i>Signals <b>6</b></button>
-          <button type="button" class="sa-chip" data-sa-group="people"><i class="sa-dot sa-dot--b"></i>People &amp; Research <b>7</b></button>
+          <button type="button" class="sa-chip" data-sa-group="people"><i class="sa-dot sa-dot--b"></i>People &amp; Research <b>8</b></button>
           <button type="button" class="sa-chip" data-sa-group="vertical"><i class="sa-dot sa-dot--a"></i>Vertical Tools <b>3</b></button>
         </div>
         <div class="sa-chips sa-chips--state" role="group" aria-label="Status">
@@ -188,7 +189,7 @@
           <input type="search" id="sa-q" placeholder="Search agents, signals, sources&hellip;" aria-label="Search agents">
           <kbd class="sa-slash" aria-hidden="true">/</kbd>
         </label>
-        <span class="sa-count" id="sa-count" aria-live="polite">Showing 16 of 16</span>
+        <span class="sa-count" id="sa-count" aria-live="polite">Showing 17 of 17</span>
       </div>
     </div>
 
@@ -423,6 +424,22 @@
             <span><em>Hands you</em>Who to contact first, why now, and their email</span>
           </span>
           <span class="sa-tags dir-tags"><span class="sa-tag">Saleshandy</span><span class="sa-tag">ABM</span><span class="sa-tag">Emails</span></span>
+          <span class="sa-go">Open agent <span aria-hidden="true">&rarr;</span></span>
+        </a>
+
+        <a href="/strategic-agents/buyer-radar" id="a-c-br" class="sa-card" data-agent="c-br" data-state="active" data-badge="building" data-group="people">
+          <span class="sa-card-top">
+            <span class="sa-ic"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5.5h10a2 2 0 0 1 2 2V12a2 2 0 0 1-2 2H8.5L5 17v-3H4a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2z"/><circle cx="17.5" cy="15.5" r="3"/><path d="m19.7 17.7 2.3 2.3"/></svg></span>
+            <span class="sa-num">17</span>
+            <span class="sa-state sa-state--build"><i></i>Building</span>
+          </span>
+          <span class="sa-name" data-agent-name>Buyer Radar</span>
+          <span class="sa-desc">Finds LinkedIn posts from people asking for what we sell: call analytics for CallVibe, an agency for Markify. Claude reads each one, keeps the real buyers, writes an email and a LinkedIn note, and can send them for you every day.</span>
+          <span class="sa-dl">
+            <span><em>Watches</em>LinkedIn posts asking for a vendor, an agency or recommendations</span>
+            <span><em>Hands you</em>Buyers in one list, with a message ready to send</span>
+          </span>
+          <span class="sa-tags dir-tags"><span class="sa-tag">LinkedIn</span><span class="sa-tag">Buying intent</span><span class="sa-tag">Outreach</span></span>
           <span class="sa-go">Open agent <span aria-hidden="true">&rarr;</span></span>
         </a>
 
