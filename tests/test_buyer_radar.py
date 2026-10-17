@@ -108,6 +108,26 @@ def test_collect_caps_the_charge_and_reports_what_apify_charged():
     assert got["usd"] == 0.04 and len(got["posts"]) == 1
 
 
+def test_a_refused_start_says_why_in_apifys_own_words(monkeypatch):
+    import requests
+    from tracker import apify_transport as at
+
+    class R:
+        status_code = 403
+
+        def raise_for_status(self):
+            raise requests.HTTPError("403 Client Error: Forbidden for url: https://api.apify.com/v2/acts/x/runs", response=self)
+
+        def json(self):
+            return {"error": {"type": "insufficient-permissions", "message": "This token is not allowed to run this Actor."}}
+    monkeypatch.setattr(at.requests, "post", lambda *a, **k: R())
+    got = at.run_actor_collect("x/y", {}, "t")
+    assert got["error"] == ("start failed: Apify answered HTTP 403: This token is not allowed to run this Actor. "
+                            "(insufficient-permissions)")
+    R.json = lambda self: (_ for _ in ()).throw(ValueError("not json"))
+    assert "403 Client Error" in at.run_actor_collect("x/y", {}, "t")["error"], "no body: the plain error, as before"
+
+
 def test_apify_collect_passes_the_cap_and_returns_the_runs_cost(monkeypatch):
     from tracker import apify_transport as at
     calls = []
