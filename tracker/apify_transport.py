@@ -37,6 +37,24 @@ def _record_cost(run, actor_id):
         logger.exception("apify_transport: could not record an actor run's cost")
 
 
+def _apify_reason(exc) -> str | None:
+    """Apify's own words for a refused request: its body is {"error": {"type", "message"}}
+    (docs.apify.com/api/v2#errors), which says why (a token not allowed this Actor, a usage limit
+    reached), where requests' HTTPError says only "403 Client Error: Forbidden for url". The URL
+    is left out: it carries nothing the reader needs."""
+    resp = getattr(exc, "response", None)
+    if resp is None:
+        return None
+    try:
+        err = (resp.json() or {}).get("error") or {}
+    except Exception:
+        return None
+    if not isinstance(err, dict) or not (err.get("message") or err.get("type")):
+        return None
+    return ("Apify answered HTTP %s: %s (%s)" % (resp.status_code, str(err.get("message") or "")[:220],
+                                                  err.get("type") or "no type"))
+
+
 def _headers(token: str) -> dict:
     return {"Authorization": "Bearer " + token, "Content-Type": "application/json"}
 
@@ -111,7 +129,7 @@ def run_actor_collect(actor_id: str, run_input: dict, token: str, timeout: int =
         resp.raise_for_status()
         run = resp.json()["data"]
     except Exception as e:
-        out["error"] = "start failed: %s" % str(e)[:200]
+        out["error"] = "start failed: %s" % (_apify_reason(e) or str(e)[:200])
         return out
     try:
         run = _poll_run(run["id"], token, timeout + 30, poll_interval)
