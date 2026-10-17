@@ -54,7 +54,7 @@ def test_every_tool_gets_exactly_one_card(body):
 def test_the_figures_and_chips_count_the_same_list(body):
     tools = appmod._seo_tools()
     assert re.search(r'data-figure="tools">%d<' % len(tools), body)
-    assert ">%d live now<" % len(tools) in body
+    assert ">%d in build<" % len(tools) in body
     assert "Showing %d of %d" % (len(tools), len(tools)) in body
     for name, group in appmod._seo_tool_groups():
         key = name.lower()
@@ -62,6 +62,19 @@ def test_the_figures_and_chips_count_the_same_list(body):
         assert re.search(r'data-sa-group="%s">.*?%s <b>%d</b>' % (key, name, len(group)), body), name
         assert 'data-sa-groupbox="%s"' % key in body
         assert "%d tools</span>" % len(group) in body
+
+
+def test_every_operational_agent_is_building_and_tagged_seo(body):
+    """All the operational agents are still being built (2026-10-17, the owner): each card is
+    Building, none Live, and each carries an "SEO" tag first, once."""
+    import re as _re
+    cards = _re.findall(r'<a href="/seo-aeo/[^"]+" id="t-[^"]+" class="sa-card".*?</a>', body, _re.S)
+    assert len(cards) == len(appmod._seo_tools())
+    for card in cards:
+        assert 'data-badge="building"' in card and "sa-state--build" in card and ">Building<" in card
+        assert "sa-state--live" not in card and ">Live<" not in card
+        tags = _re.findall(r'<span class="sa-tag">([^<]*)</span>', card)
+        assert tags[0] == "SEO" and tags.count("SEO") == 1, tags
 
 
 def test_the_ticker_and_the_path_name_every_tool(body):
