@@ -145,17 +145,20 @@ def describe_error(err: dict | None) -> str:
 
 
 def _request(method: str, path: str, json_body: dict | None = None,
-            params: dict | None = None, timeout: int = _TIMEOUT) -> tuple[Any, dict | None]:
+            params: dict | None = None, timeout: int = _TIMEOUT,
+            form: dict | None = None) -> tuple[Any, dict | None]:
     """One HTTP call to Unipile, parsed. Returns (data, None) or (None, err).
-    Never raises."""
+    Never raises. `form` is sent as multipart/form-data, which POST /chats
+    takes (developer.unipile.com/docs/send-messages)."""
     key = _api_key()
     if not key:
         return None, _err(ERR_NOT_CONFIGURED, "UNIPILE_API_KEY is not set on this deployment.")
     url = f"{_dsn()}{path}"
     headers = {"X-API-KEY": key, "accept": "application/json"}
     try:
+        files = {k: (None, str(v)) for k, v in form.items()} if form else None
         resp = requests.request(method, url, headers=headers, json=json_body,
-                                params=params, timeout=timeout)
+                                params=params, timeout=timeout, files=files)
     except requests.Timeout as e:
         return None, _err(ERR_TIMEOUT, "No response within %ss: %s" % (timeout, e))
     except requests.RequestException as e:
@@ -415,6 +418,39 @@ def list_posts(account_id: str, identifier: str, is_company: bool = True,
     if cursor:
         params["cursor"] = cursor
     return _request("GET", f"{_API}/users/{identifier}/posts", params=params)
+
+
+def linkedin_account_id() -> tuple[str | None, dict | None]:
+    """The connected LinkedIn account messages are sent from: UNIPILE_LINKEDIN_ACCOUNT_ID when set,
+    else the first LinkedIn account whose login works."""
+    pinned = (os.environ.get("UNIPILE_LINKEDIN_ACCOUNT_ID") or "").strip()
+    if pinned:
+        return pinned, None
+    accounts, err = list_accounts()
+    if err is not None:
+        return None, err
+    linked = accounts_by_platform(accounts or [], connected_only=True).get("linkedin") or []
+    if not linked:
+        return None, _err(ERR_NOT_CONFIGURED, "No working LinkedIn account is connected to Unipile.")
+    return str(linked[0].get("id")), None
+
+
+def send_invitation(account_id: str, provider_id: str, message: str | None = None) -> tuple[Any, dict | None]:
+    """A LinkedIn connection request with an optional note (at most 300 characters on a paid account,
+    200 on a free one, per Unipile's provider limits page). POST /api/v1/users/invite,
+    developer.unipile.com/docs/invite-users. Not yet confirmed against a live response."""
+    body: dict[str, Any] = {"account_id": account_id, "provider_id": provider_id}
+    if message:
+        body["message"] = message
+    return _request("POST", f"{_API}/users/invite", json_body=body)
+
+
+def start_chat(account_id: str, provider_id: str, text: str) -> tuple[Any, dict | None]:
+    """A message to a LinkedIn first-degree connection: a new chat, POST /api/v1/chats as multipart, per
+    developer.unipile.com/docs/send-messages ("unless InMail, you can start new chats only with your
+    relations"). Not yet confirmed against a live response."""
+    return _request("POST", f"{_API}/chats", form={"account_id": account_id, "attendees_ids": provider_id,
+                                                    "text": text})
 
 
 def probe() -> dict:

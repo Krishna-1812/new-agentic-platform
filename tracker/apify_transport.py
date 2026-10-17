@@ -89,7 +89,8 @@ def _fetch_dataset_items(dataset_id: str, token: str) -> list[dict]:
 
 
 def run_actor_collect(actor_id: str, run_input: dict, token: str, timeout: int = 240,
-                      poll_interval: int = 5, memory_mb: int | None = None) -> dict:
+                      poll_interval: int = 5, memory_mb: int | None = None,
+                      max_charge_usd: float | None = None) -> dict:
     """Run an actor for at most `timeout` seconds and keep whatever it saved.
 
     For actors whose partial output is worth having (a crawler that loaded
@@ -103,6 +104,8 @@ def run_actor_collect(actor_id: str, run_input: dict, token: str, timeout: int =
         params = {"timeout": int(timeout)}
         if memory_mb:
             params["memory"] = int(memory_mb)
+        if max_charge_usd:
+            params["maxTotalChargeUsd"] = "%.2f" % max_charge_usd
         resp = requests.post(url, json=run_input, headers=_headers(token),
                              params=params, timeout=30)
         resp.raise_for_status()
@@ -120,6 +123,11 @@ def run_actor_collect(actor_id: str, run_input: dict, token: str, timeout: int =
         except Exception:
             pass
     out["status"] = run.get("status")
+    if run.get("usageTotalUsd") is not None:
+        try:
+            out["usd"] = float(run["usageTotalUsd"])
+        except (TypeError, ValueError):
+            pass
     if run.get("defaultDatasetId"):
         try:
             out["items"] = _fetch_dataset_items(run["defaultDatasetId"], token)

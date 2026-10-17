@@ -5462,6 +5462,8 @@ ACCT_AGENTS = (
      "Their rivals' moves, new places nearby and their industry's news", (("#mrAddUrl", "website"),)),
     ("people-signals", "admin_account_mapper", "/strategic-agents/people-signals", "People & Signals",
      "The right people at their target accounts, and what each account is doing", ()),
+    ("buyer-radar", "buyer_radar_page", "/strategic-agents/buyer-radar", "Buyer Radar",
+     "LinkedIn posts from people asking for what we sell, with a message ready", ()),
 )
 # Every agent on the agents page (templates/b2b_agents.html) is in ACCT_AGENTS, so it opens inside every
 # account, for the whole team and for clients the account shares it with; tests/test_account_agents_all.py
@@ -5653,6 +5655,8 @@ CLIENT_TOOL_ROUTES = {
         r"report/pdf|events/\d+/feedback))?)?)",),
     # The free mapping only: never a reveal, which spends the agency's Saleshandy credits.
     "people-signals": (r"people-signals/api/(status|estimate|chat|runs(/\d+(/export\.csv)?)?)",),
+    # Searching and reading the leads; never the settings or a send, which write to people for the agency.
+    "buyer-radar": (r"buyer-radar/api/(status|runs(/\d+)?|leads(/\d+)?)",),
 }
 CLIENT_RUN_ROUTES = {          # (method, path): what counts as a run started
     "page-watch": (r"/[^/]+/api/page-watch/watches", r"page-watch/api/watches/\d+/check"),
@@ -5664,6 +5668,7 @@ CLIENT_RUN_ROUTES = {          # (method, path): what counts as a run started
     "thought-leader-pr": (r"thought-leader-pr/resolve",),
     "market-radar": (r"market-radar/api/runs", r"market-radar/api/clients/\d+/collect"),
     "people-signals": (r"people-signals/api/(runs|chat)",),
+    "buyer-radar": (r"buyer-radar/api/runs",),
 }
 _CLIENT_TOOL_RX = {t: re.compile("^%s(%s)$" % (re.escape(_SA), "|".join(ps))) for t, ps in CLIENT_TOOL_ROUTES.items()}
 _CLIENT_RUN_RX = {t: re.compile("^(%s)$" % "|".join(p if p.startswith("/") else re.escape(_SA) + p for p in ps))
@@ -5904,7 +5909,7 @@ ACCT_TOOL_COLOURS = {
     "page-watch": "#8CCBFF", "video-studio": "#FF6022", "social-media-intelligence": "#8CCBFF",
     "local-business-radar": "#FF6022", "event-conference-intelligence": "#FFB500",
     "company-people-intelligence": "#121213", "thought-leader-pr": "#FF3B30", "market-radar": "#121213",
-    "people-signals": "#8CCBFF", "seo-geo-audit": "#34D399",
+    "people-signals": "#8CCBFF", "buyer-radar": "#FFB500", "seo-geo-audit": "#34D399",
     "on-page-audit": "#8CCBFF", "agent-readiness-audit": "#B79CFF", "seo-geo-snapshot": "#2DD4BF",
     "image-alt-audit": "#FF6022", "keyword-research": "#FFB500", "content-research": "#FF3B30",
     "content-architect": "#121213", "market-potential": "#C6F432"}
@@ -12404,6 +12409,282 @@ def admin_account_mapper_reveal(run_id):
     except store.StoreUnavailable as e:
         return jsonify(error="The database is unavailable (%s)." % e), 503
     return jsonify(started=True, check=check), 202
+
+
+# == Buyer Radar (the team; on the agents page, still Building) ======================
+# LinkedIn posts from people asking for what we sell (CallVibe, Markify), read by Claude, in one list with an
+# email and a LinkedIn note written for each; sent from here, or automatically where a workspace has switched
+# that on. tracker/buyer_radar*.py; docs/buyer-radar-plan.md. Inside a workspace its work is the workspace's
+# (_mr_email). A client the workspace shares it with may search and read the leads; settings and sending stay
+# with the team, and a client's run never sends.
+
+BR = "/strategic-agents/buyer-radar"
+
+
+def _br_team_only():
+    if viewer_is_client():
+        return jsonify(error="Only the team can do this."), 403
+    return None
+
+
+def _br_store_error(e):
+    return jsonify(error="The database is unavailable (%s)." % e), 503
+
+
+@app.route(BR)
+@position2_required
+def buyer_radar_page():
+    from tracker import buyer_radar as br
+    offers = [{"key": k, "label": o["label"], "site": o["site"], "queries": o["queries"]} for k, o in br.OFFERS.items()]
+    return render_template("buyer_radar.html", user=_get_user(), offers=offers, client=viewer_is_client())
+
+
+@app.route(BR + "/api/status")
+@position2_required
+def buyer_radar_status():
+    """What is connected and what a run costs. Free: nothing here calls a paid service."""
+    from tracker import buyer_radar as br, buyer_radar_send as send, buyer_radar_store as store
+    from tracker import market_radar_deliver, saleshandy_client as sh
+    client = viewer_is_client()
+    owner = _mr_email()
+    try:
+        settings = store.get_settings(owner)
+        counts = store.counts(owner)
+        month = store.month_spend(owner)
+        running = store.running_run(owner)
+    except store.StoreUnavailable as e:
+        return _br_store_error(e)
+    out = {"client": client, "counts": counts, "running": running["id"] if running else None,
+           "ready": {"search": bool(os.environ.get("APIFY_API_TOKEN")), "claude": bool(os.environ.get("ANTHROPIC_API_KEY"))}}
+    if client:
+        out["settings"] = {k: settings[k] for k in ("offers", "posted", "keep_score", "alert_score")}
+        return jsonify(out)
+    out["ready"].update(email=market_radar_deliver.ready()["email"], linkedin=bool(os.environ.get("UNIPILE_API_KEY")),
+                        slack=bool(send.slack_token()), saleshandy=sh.configured(), cron=bool(os.environ.get("BUYER_RADAR_CRON_TOKEN")),
+                        sending=not send.sending_off())
+    out.update(settings=settings, estimate=br.estimate(settings), month=month,
+               defaults={k: o["queries"] for k, o in br.OFFERS.items()})
+    return jsonify(out)
+
+
+@app.route(BR + "/api/settings", methods=["POST"])
+@position2_required
+def buyer_radar_settings():
+    from tracker import buyer_radar as br, buyer_radar_store as store
+    refused = _mr_guard_post() or _br_team_only()
+    if refused:
+        return refused
+    owner = _mr_email()
+    try:
+        current = store.get_settings(owner)
+        settings = br.clean_settings(request.get_json(silent=True) or {}, current)
+        store.save_settings(owner, settings, (_get_user() or {}).get("email", ""))
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    except store.StoreUnavailable as e:
+        return _br_store_error(e)
+    return jsonify(settings=settings, estimate=br.estimate(settings))
+
+
+@app.route(BR + "/api/runs", methods=["GET", "POST"])
+@position2_required
+def buyer_radar_runs():
+    from tracker import buyer_radar as br, buyer_radar_store as store
+    owner = _mr_email()
+    if request.method == "GET":
+        try:
+            return jsonify(runs=store.list_runs(owner))
+        except store.StoreUnavailable as e:
+            return _br_store_error(e)
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    body = request.get_json(silent=True) or {}
+    if not os.environ.get("APIFY_API_TOKEN"):
+        return jsonify(error="APIFY_API_TOKEN is not set on this service (Railway → web → Variables)."), 400
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return jsonify(error="ANTHROPIC_API_KEY is not set on this service (Railway → web → Variables)."), 400
+    if body.get("confirm_spend") is not True:
+        return jsonify(error="A search costs money (Apify and Claude); confirm to run it."), 400
+    try:
+        settings = store.get_settings(owner)
+        if viewer_is_client():
+            # A client's search never writes to anyone or spends Saleshandy credits: that stays with the team.
+            settings = dict(settings, auto_email=False, auto_linkedin=False, find_emails=False, slack_channel="")
+        going = store.running_run(owner)
+        if going:
+            return jsonify(error="A search is already going here; wait for it to finish.", run_id=going["id"]), 409
+        run_id = store.start_run(owner, settings, started_by=(_get_user() or {}).get("email", ""), spawn=_br_spawn)
+    except store.StoreUnavailable as e:
+        return _br_store_error(e)
+    return jsonify(run_id=run_id), 202
+
+
+def _br_spawn(target, args):
+    from tracker import buyer_radar_store as store
+    store._spawn(target, args)
+
+
+@app.route(BR + "/api/runs/<int:run_id>")
+@position2_required
+def buyer_radar_run(run_id):
+    from tracker import buyer_radar_store as store
+    try:
+        run = store.get_run(run_id, _mr_email())
+    except store.StoreUnavailable as e:
+        return _br_store_error(e)
+    if run is None:
+        return jsonify(error="No such search here."), 404
+    run.pop("settings", None)
+    return jsonify(run)
+
+
+def _br_lead_out(lead, client):
+    out = dict(lead)
+    if client:
+        # A client reads the lead and its need; not who on the team wrote to them or the drafts.
+        out.pop("draft", None)
+        out["sends"] = [{"channel": s["channel"], "status": s["status"], "at": s["at"]} for s in lead.get("sends") or []]
+    return out
+
+
+@app.route(BR + "/api/leads")
+@position2_required
+def buyer_radar_leads():
+    from tracker import buyer_radar as br, buyer_radar_store as store
+    status = request.args.get("status") or None
+    offer = request.args.get("offer") or None
+    if status and status not in store.LEAD_STATUSES:
+        return jsonify(error="Unknown status."), 400
+    if offer and offer not in br.OFFERS:
+        return jsonify(error="Unknown offer."), 400
+    try:
+        min_score = max(0, min(100, int(request.args.get("min") or 0)))
+    except ValueError:
+        min_score = 0
+    client = viewer_is_client()
+    try:
+        leads = store.list_leads(_mr_email(), status=status, offer=offer, min_score=min_score)
+    except store.StoreUnavailable as e:
+        return _br_store_error(e)
+    return jsonify(leads=[_br_lead_out(x, client) for x in leads])
+
+
+@app.route(BR + "/api/leads/<int:lead_id>", methods=["POST"])
+@position2_required
+def buyer_radar_lead(lead_id):
+    """Change a lead: its status (anyone who can see it), or, for the team, its email address and messages."""
+    from tracker import buyer_radar as br, buyer_radar_judge as judge, buyer_radar_store as store
+    refused = _mr_guard_post()
+    if refused:
+        return refused
+    body = request.get_json(silent=True) or {}
+    owner = _mr_email()
+    if ("email" in body or "draft" in body) and viewer_is_client():
+        return _br_team_only()
+    kw = {}
+    if "status" in body:
+        if body["status"] not in store.LEAD_STATUSES:
+            return jsonify(error="Unknown status."), 400
+        kw["status"] = body["status"]
+    if "email" in body:
+        email = str(body["email"] or "").strip()
+        if email and not br.EMAIL_RX.match(email):
+            return jsonify(error="That email address does not look right."), 400
+        kw.update(email=email, email_source="typed")
+    if isinstance(body.get("draft"), dict):
+        d = body["draft"]
+        kw["draft"] = {"subject": str(d.get("subject") or "")[:120], "email": str(d.get("email") or "")[:4000],
+                       "note": str(d.get("note") or "")[:judge.NOTE_MAX], "message": str(d.get("message") or "")[:judge.MESSAGE_MAX]}
+    if not kw:
+        return jsonify(error="Nothing to change."), 400
+    try:
+        if not store.update_lead(lead_id, owner, **kw):
+            return jsonify(error="No such lead here."), 404
+        lead = store.get_lead(lead_id, owner)
+    except store.StoreUnavailable as e:
+        return _br_store_error(e)
+    return jsonify(lead=_br_lead_out(lead, viewer_is_client()))
+
+
+@app.route(BR + "/api/leads/<int:lead_id>/send", methods=["POST"])
+@position2_required
+def buyer_radar_send(lead_id):
+    """Write to one lead now, by email or on LinkedIn, from the message on the page. The team only."""
+    from tracker import buyer_radar_send as send, buyer_radar_store as store
+    refused = _mr_guard_post() or _br_team_only()
+    if refused:
+        return refused
+    body = request.get_json(silent=True) or {}
+    channel = body.get("channel")
+    if channel not in ("email", "linkedin"):
+        return jsonify(error="Choose email or LinkedIn."), 400
+    if body.get("confirm") is not True:
+        return jsonify(error="Confirm to send."), 400
+    owner = _mr_email()
+    by = (_get_user() or {}).get("email", "")
+    try:
+        lead = store.get_lead(lead_id, owner)
+        if lead is None:
+            return jsonify(error="No such lead here."), 404
+        settings = store.get_settings(owner)
+        res = (send.email_lead if channel == "email" else send.linkedin_lead)(owner, lead, settings, by=by, auto=False)
+    except store.StoreUnavailable as e:
+        return _br_store_error(e)
+    if not res.get("ok"):
+        return jsonify(error=res["detail"][:300]), 400
+    return jsonify(ok=True, detail=res["detail"])
+
+
+@app.route("/api/buyer-radar/daily", methods=["POST"])
+def buyer_radar_daily():
+    """Called once a day by .github/workflows/buyer-radar-daily.yml with "Authorization: Bearer
+    <BUYER_RADAR_CRON_TOKEN>". Starts one search for each workspace whose daily search is on, unless it
+    already ran today or this month's spend has reached its monthly cap. The reply holds counts only: the
+    Action's log may be public."""
+    import hmac
+    from tracker import buyer_radar_store as store
+    secret = os.environ.get("BUYER_RADAR_CRON_TOKEN", "")
+    if not secret:
+        return jsonify(ok=False, error="BUYER_RADAR_CRON_TOKEN is not set on the server."), 503
+    if not hmac.compare_digest(request.headers.get("Authorization", "").encode(), ("Bearer " + secret).encode()):
+        return jsonify(ok=False, error="Not allowed."), 403
+    if not (os.environ.get("APIFY_API_TOKEN") and os.environ.get("ANTHROPIC_API_KEY")):
+        return jsonify(ok=False, error="APIFY_API_TOKEN and ANTHROPIC_API_KEY are needed."), 503
+    started, skipped = 0, {"ran_today": 0, "monthly_cap": 0, "running": 0}
+    try:
+        for owner in store.daily_owners():
+            settings = store.get_settings(owner)
+            if store.ran_today(owner):
+                skipped["ran_today"] += 1
+            elif store.month_spend(owner)["usd"] >= float(settings["monthly_cap_usd"]):
+                skipped["monthly_cap"] += 1
+            elif store.running_run(owner):
+                skipped["running"] += 1
+            else:
+                store.start_run(owner, settings, started_by="", trigger="daily", spawn=_br_spawn)
+                started += 1
+    except store.StoreUnavailable:
+        return jsonify(ok=False, error="The database is unavailable."), 503
+    return jsonify(ok=True, started=started, skipped=skipped)
+
+
+@app.route("/buyer-radar/opt-out/<token>", methods=["GET", "POST"])
+def buyer_radar_opt_out(token):
+    """The opt-out link in every Buyer Radar email. A GET shows a button (mail scanners follow links); a
+    POST, from the button or from a mail app's one-click unsubscribe (RFC 8058), opts the address out
+    for good, from every workspace."""
+    from tracker import buyer_radar_send as send, buyer_radar_store as store
+    address = send.optout_address(token)
+    if not address:
+        return render_template("buyer_radar_optout.html", state="bad"), 404
+    if request.method == "POST":
+        try:
+            store.suppress(address, "opted out")
+        except store.StoreUnavailable:
+            return render_template("buyer_radar_optout.html", state="error"), 503
+        return render_template("buyer_radar_optout.html", state="done")
+    return render_template("buyer_radar_optout.html", state="ask", token=token)
 
 
 def _unipile_selftest() -> dict:
