@@ -30,7 +30,8 @@ Ads and Meta accounts. They sit on the Operational Agents page with a **Paid mar
 | 3f | Audience Segment Analysis | Done |
 | 3g | Asset Coverage Audit | Done |
 | 4a | Account Audit | Done |
-| 4b | Landing Page Check, Experiment Tracker | One PR each |
+| 4b | Landing Page Check | Done |
+| 4c | Experiment Tracker | Next |
 | 5 | Pacing Desk and Search Query Analysis, with the source's client data taken out | One PR each |
 | 6 | Business Research, Keyword Research, Strategy and Campaign Book, QA Agent | One PR each |
 | 7 | Call Transcript Analyzer (needs `CALLRAIL_API_KEY`) and Client Feedback (needs Slack and Google OAuth apps) | When those exist |

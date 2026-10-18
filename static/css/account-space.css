@@ -571,6 +571,7 @@ a.as-ev-main::after { content: ""; position: absolute; inset: 0; border-radius: 
 .rx-ag--audience-segments, .sh-tool--audience-segments { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
 .rx-ag--asset-coverage, .sh-tool--asset-coverage { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
 .rx-ag--account-audit, .sh-tool--account-audit { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
+.rx-ag--landing-page-check, .sh-tool--landing-page-check { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
 
 /* The flood: a circle behind the icon that grows to cover the card. */
 .rx-flood { position: absolute; z-index: -1; left: 48px; top: 48px; width: 56px; height: 56px; margin: -28px 0 0 -28px;
