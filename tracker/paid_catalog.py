@@ -10,6 +10,8 @@ reads it for each agent's name and History. An agent is added here when its page
     endpoint  the Flask view of its page
     api       its JSON routes, as regexes after /strategic-agents/ (for a client the workspace shares it with)
     runs      the requests that start one of its runs (counted against a client's monthly runs)
+    workspace False for an agent that is the team's view across every client, so not opened inside a workspace
+              (CLAUDE.md's exemption, for an agent genuinely not about one client); it says why in `why`
 """
 from __future__ import annotations
 
@@ -141,8 +143,19 @@ AGENTS = (
      "tags": ["Google Ads", "Launch"],
      "api": (_ACCOUNTS, r"paid-marketing/api/qa/(checklist|campaigns|start|launches)(/[\w-]+)*"),
      "runs": (r"paid-marketing/api/qa/start", r"paid-marketing/api/qa/launches/\w+/run")},
+    {"slug": "pacing-desk", "endpoint": "paid_pacing_desk",
+     "name": "Pacing Desk", "icon": "D",
+     "about": "Land every account on budget: where to move money today",
+     "lead": "Each morning reads every account from Google Ads and Meta and measures it against the month's allocations, "
+             "projects it to month end from what it actually spends, and says where to move budget today, netting to zero.",
+     "gives": "The month's allocations, once; then nothing",
+     "gets": "Every account's pace and today's budget moves",
+     "tags": ["Google Ads", "Meta"],
+     "api": (), "runs": (),
+     "workspace": False, "why": "the team's pacing view across every client account, not one client's"},
 )
 
+WORKSPACE = tuple(a for a in AGENTS if a.get("workspace", True))
 BY_SLUG = {a["slug"]: a for a in AGENTS}
 SLUGS = frozenset(BY_SLUG)
 NAMES = {a["slug"]: a["name"] for a in AGENTS}

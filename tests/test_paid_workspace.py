@@ -118,7 +118,9 @@ def test_the_history_shows_what_each_agent_read_in_the_workspace(seeded, monkeyp
 
 
 def test_every_paid_agent_is_in_every_workspace_with_its_colour():
-    for a in paid_catalog.AGENTS:
+    """Every one but those the catalog marks as the team's view across every client, each saying why."""
+    assert all(a.get("why") for a in paid_catalog.AGENTS if a not in paid_catalog.WORKSPACE)
+    for a in paid_catalog.WORKSPACE:
         assert (a["slug"], a["endpoint"], paid_catalog.path(a["slug"])) in [x[:3] for x in appmod.ACCT_AGENTS]
         assert appmod.ACCT_TOOL_COLOURS[a["slug"]] == paid_catalog.COLOUR
         assert a["slug"] in appmod.CLIENT_TOOL_ROUTES and a["slug"] in appmod.CLIENT_RUN_ROUTES
@@ -127,9 +129,9 @@ def test_every_paid_agent_is_in_every_workspace_with_its_colour():
 
 def test_the_workspace_home_has_a_paid_marketing_group_starting_with_its_google_ads_accounts(seeded):
     html = T._client(T.RAJ).get("/lumina").get_data(as_text=True)
-    assert "Paid marketing <em>%d</em>" % len(paid_catalog.AGENTS) in html
+    assert "Paid marketing <em>%d</em>" % len(paid_catalog.WORKSPACE) in html
     research = html.split("Paid marketing <em>", 1)[0]
-    for a in paid_catalog.AGENTS:
+    for a in paid_catalog.WORKSPACE:
         assert 'class="rx-ag rx-ag--%s" href="/lumina/agents/%s"' % (a["slug"], a["slug"]) in html
         assert 'rx-ag--%s"' % a["slug"] not in research, "a paid agent is in its own group, not among the research agents"
     assert "412-118-3390" in html.split("Paid marketing <em>", 1)[1].split("</ul>", 1)[0]

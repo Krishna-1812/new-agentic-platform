@@ -5988,6 +5988,243 @@ def paid_qa_set_check(launch_id, check_id):
         return _pm_store_error(e)
 
 
+# Pacing Desk -----------------------------------------------------------------
+# Every client account's spend this month against its allocation, projected to month end, with where to move budget today
+# (paid_marketing/pacing_engine, run by tracker/paid_refresh.py on live Google Ads and Meta numbers; plain arithmetic, no model).
+# It is the team's view across every client, so it is not opened inside a workspace (tracker/paid_catalog.py "workspace": False,
+# with the reason). The per-client rules the engine may use are data, never code (pacing_engine/config.py).
+
+@app.route(_PM_PREFIX + "/pacing-desk")
+@position2_required
+def paid_pacing_desk():
+    return _pm_page("pacing_desk.html", "pacing-desk")
+
+
+# Pacing Desk data ------------------------------------------------------------
+
+@app.route(_PM_PREFIX + "/api/pacing/snapshots")
+@position2_required
+def paid_pacing_snapshots():
+    from tracker import paid_store
+    try:
+        return jsonify(snapshots=paid_store.list_snapshots(), latest=paid_store.latest_date())
+    except paid_store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/pacing/clients")
+@position2_required
+def paid_pacing_clients():
+    """Client names from the latest run (the Client Feedback Agent's picker)."""
+    from tracker import paid_store
+    try:
+        date, clients = paid_store.latest_clients()
+    except paid_store.StoreUnavailable as e:
+        return _pm_store_error(e)
+    return jsonify(date=date, clients=clients)
+
+
+@app.route(_PM_PREFIX + "/api/pacing/snapshots/<date>")
+@position2_required
+def paid_pacing_snapshot(date):
+    from tracker import paid_pacing, paid_store
+    if not paid_pacing.DATE_RE.match(date):
+        abort(404)
+    try:
+        snap = paid_store.get_snapshot(date)
+    except paid_store.StoreUnavailable as e:
+        return _pm_store_error(e)
+    if not snap:
+        return jsonify(error="No Pacing Desk snapshot for %s." % date), 404
+    return jsonify(snap)
+
+
+@app.route(_PM_PREFIX + "/api/pacing/moves")
+@position2_required
+def paid_pacing_moves():
+    from tracker import paid_pacing, paid_store
+    date = request.args.get("date", "")
+    if not paid_pacing.DATE_RE.match(date):
+        return jsonify(error="date should be YYYY-MM-DD"), 400
+    try:
+        return jsonify(moves=paid_store.list_moves(date))
+    except paid_store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/pacing/moves/<move_id>", methods=["PUT"])
+@position2_required
+def paid_pacing_set_move(move_id):
+    from tracker import paid_pacing, paid_store
+    try:
+        f = paid_pacing.check_move(move_id, request.get_json(silent=True))
+    except paid_pacing.BadPayload as e:
+        return jsonify(error=str(e)), 400
+    try:
+        return jsonify(move=paid_store.set_move(move_id, by=_pm_user_email(), **f))
+    except paid_store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/pacing/refresh", methods=["GET", "POST"])
+@position2_required
+def paid_pacing_refresh():
+    """The Refresh button, and the page's own start of the day. POST starts a rebuild from Google Ads and the saved budgets
+    (tracker/paid_refresh.py); {"auto": true} is the page asking, which is refused unless a run is due; {"recompute": true} runs the
+    engine again on the last read of Google Ads (an allocation changed), which needs no wait. GET is its progress, which the page polls."""
+    from tracker import paid_pacing, paid_refresh, paid_store
+
+    def state():
+        return paid_refresh.status(paid_store, paid_store.latest_built())
+    try:
+        if request.method == "POST":
+            problem = paid_refresh.config_problem()
+            if problem:
+                return jsonify(error=problem, **state()), 409
+            body = request.get_json(silent=True)
+            body = body if isinstance(body, dict) else {}
+            try:
+                paid_refresh.start(paid_store, paid_pacing, _pm_user_email(), auto=body.get("auto") is True, recompute=body.get("recompute") is True,
+                                   last_built=paid_store.latest_built())
+            except paid_refresh.RefreshBusy as e:
+                return jsonify(error=str(e), **state()), 409
+            except paid_refresh.RefreshTooSoon as e:
+                return jsonify(error=str(e), retryIn=e.retry_in, **state()), 429
+            return jsonify(state()), 202
+        return jsonify(state())
+    except paid_store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+# The month's budgets: what each account is meant to spend, which Google Ads cannot say (tracker/paid_pacing_budgets.py). One table the
+# whole team edits; a save names the version it started from, so two people editing at once cannot overwrite each other.
+
+def _pacing_month():
+    from tracker import paid_pacing_budgets as pb, paid_refresh
+    month = request.args.get("month") or pb.month_of(paid_refresh.pacific_day())
+    return pb.check_month(month)
+
+
+@app.route(_PM_PREFIX + "/api/pacing/budgets", methods=["GET", "PUT"])
+@position2_required
+def paid_pacing_budgets():
+    from tracker import paid_pacing_budgets as pb, paid_pacing_budget_store as bstore, paid_refresh, paid_store
+    try:
+        month = _pacing_month()
+        saved = bstore.list_month(month)
+        if request.method == "PUT":
+            body = request.get_json(silent=True)
+            if not isinstance(body, dict):
+                return jsonify(error="The body should be a JSON object."), 400
+            if str(body.get("version") or "") != pb.version_of(saved):
+                who = max(saved, key=lambda r: r.get("updatedAt") or "").get("updatedBy") if saved else None
+                return jsonify(error="Someone saved these allocations while you were editing%s. Reload to see their changes." % (" (%s)" % who if who else ""),
+                               kind="conflict"), 409
+            rows = pb.check_rows(body.get("rows"))
+            if not rows:
+                return jsonify(error="Add at least one account before saving."), 400
+            saved = bstore.replace_month(month, rows, _pm_user_email())
+            app.logger.info("pacing budgets: %s saved %d rows for %s", _pm_user_email(), len(saved), month)
+        book = pb.book_for(month, store=bstore, run_fn=lambda: paid_refresh.latest_run(paid_store))
+        last = max(saved, key=lambda r: r.get("updatedAt") or "") if saved else None
+        return jsonify(month=month, rows=book["rows"], source=book["source"], version=pb.version_of(saved),
+                       lastSaved={"by": last["updatedBy"], "at": last["updatedAt"]} if last else None,
+                       months=sorted(set(bstore.months()) | {month}), accounts=_pacing_google_names())
+    except pb.BadBudget as e:
+        return jsonify(error=str(e)), 400
+    except paid_store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+def _pacing_google_names():
+    """The Google Ads and Meta ad account names, as hints for the account column. Empty when the lists cannot be had: it is a convenience."""
+    names = []
+    try:
+        from tracker import paid_gads_segments
+        names += [a["name"] for a in paid_gads_segments.list_accounts()]
+    except Exception as e:
+        app.logger.info("pacing budgets: no Google account names for the hint (%s)", e)
+    try:
+        from tracker import paid_meta, paid_store
+        if not paid_meta.config_problem():
+            names += [a["name"] for a in paid_meta.list_accounts(paid_store)]
+    except Exception as e:
+        app.logger.info("pacing budgets: no Meta account names for the hint (%s)", e)
+    return list(dict.fromkeys(names))
+
+
+@app.route(_PM_PREFIX + "/api/pacing/budgets/parse", methods=["POST"])
+@position2_required
+def paid_pacing_budgets_parse():
+    """Rows pasted from the Budget Tracker, read for a month and handed back to be reviewed. Nothing is saved here."""
+    from tracker import paid_pacing_budgets as pb
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict) or not isinstance(body.get("text"), str):
+        return jsonify(error="Send the pasted cells as {\"month\": \"2026-10\", \"text\": \"...\"}."), 400
+    try:
+        return jsonify(**pb.parse_paste(body["text"], pb.check_month(body.get("month"))))
+    except pb.BadBudget as e:
+        return jsonify(error=str(e)), 400
+
+
+@app.route(_PM_PREFIX + "/api/pacing/meta-probe")
+@position2_required
+def paid_pacing_meta_probe():
+    """Admin only: what the Pacing Desk would read for one Meta ad account this month (its campaigns, their budgets and the days), without saving or running anything.
+    A check that Meta's answers are what the reader expects, like /api/meta/status?probe=."""
+    if not _pm_is_admin():
+        return jsonify(error="Only an admin can run the Meta pacing check."), 403
+    from tracker import paid_meta, paid_pacing_meta as pm, paid_pacing_read as reader, paid_store
+    act = request.args.get("account", "")
+    if not paid_meta.is_meta(act):
+        return jsonify(error="account should be a Meta ad account (act_...)."), 400
+    try:
+        problem = paid_meta.config_problem()
+        if problem:
+            return jsonify(error=problem), 503
+        account = paid_meta.account_by_id(paid_store, act)
+        if not account:
+            return jsonify(error="That account is not one of the Meta ad accounts the connected token can read."), 400
+        as_of, start, _ends = reader.plan_window([account])
+        end = pm.ends_for([account], as_of)[act]
+        got = pm.read_account(account, start.isoformat(), end, store=paid_store)
+        camps = {}
+        for r in got["rows"]:
+            c = camps.setdefault(r["id"], {"name": r["name"], "status": r["status"], "type": r["type"], "bid": r["bid"], "budget": r["budget"], "spend": 0.0, "days": 0})
+            c["spend"] = round(c["spend"] + r["cost"], 2)
+            c["days"] += 1 if r["cost"] else 0
+        return jsonify(account=account["name"], currency=account["currency"], asOf=as_of.isoformat(), start=start.isoformat(), end=end, campaigns=list(camps.values()),
+                       rows=len(got["rows"]), notes=got["notes"])
+    except paid_meta.AdsError as e:
+        return jsonify(error=str(e)), 502
+
+
+@app.route(_PM_PREFIX + "/api/pacing/seed", methods=["POST"])
+def paid_pacing_seed():
+    """The engine's daily push (paid_marketing/pacing_engine/push.py). No session: a shared secret in X-Seed-Secret,
+    and with neither PACING_SEED_SECRET nor SEED_SECRET set, every push is refused."""
+    import hmac
+    from tracker import paid_pacing, paid_store
+    secret = os.environ.get("PACING_SEED_SECRET", "") or os.environ.get("SEED_SECRET", "")
+    given = request.headers.get("X-Seed-Secret", "")
+    if not secret or not hmac.compare_digest(given.encode("utf-8"), secret.encode("utf-8")):
+        return jsonify(error="Forbidden."), 403
+    if (request.content_length or 0) > 16 * 1024 * 1024:
+        return jsonify(error="That payload is over 16 MB."), 413
+    try:
+        meta, clients, latest = paid_pacing.build_seed(request.get_json(silent=True))
+    except paid_pacing.BadPayload as e:
+        return jsonify(error=str(e)), 400
+    try:
+        paid_store.save_snapshot(meta, clients, latest)
+    except paid_store.StoreUnavailable as e:
+        return _pm_store_error(e)
+    app.logger.info("paid marketing: Pacing Desk snapshot %s stored (%d clients, %d accounts)",
+                    meta["asOf"], meta["clientCount"], meta["accountCount"])
+    return jsonify(ok=True, date=meta["asOf"], clients=meta["clientCount"],
+                   accounts=meta["accountCount"], latest=latest)
+
+
 @app.route(_PM_PREFIX + "/api/meta/status")
 @position2_required
 def paid_meta_status():
@@ -6897,7 +7134,7 @@ ACCT_AGENTS_EXEMPT = {
 # The Paid Marketing Agents, each in every workspace (tracker/paid_catalog.py): inside one they read only its
 # own Google Ads accounts (app.py _pm_scope), so there is no page field to fill from the profile.
 ACCT_AGENTS += tuple((a["slug"], a["endpoint"], paid_catalog.path(a["slug"]), a["name"], a["about"], ())
-                     for a in paid_catalog.AGENTS)
+                     for a in paid_catalog.WORKSPACE)
 ACCT_GLOBAL = {"": "/hub", "google-ads": "/dashboards/google-ads",
                "google-ads/ai-review": "/dashboards/google-ads/ai-review",
                "page-watch": "/strategic-agents/page-watch", "video-studio": "/strategic-agents/video-studio"}
@@ -7075,7 +7312,7 @@ CLIENT_TOOL_ROUTES = {
 }
 # The Paid Marketing Agents read the workspace's own ad accounts only (_pm_scope). Several share a route (the
 # account list): a request is granted when ANY agent it belongs to is shared (_acct_client_grant).
-CLIENT_TOOL_ROUTES.update({a["slug"]: a["api"] for a in paid_catalog.AGENTS})
+CLIENT_TOOL_ROUTES.update({a["slug"]: a["api"] for a in paid_catalog.WORKSPACE})
 CLIENT_RUN_ROUTES = {          # (method, path): what counts as a run started
     "page-watch": (r"/[^/]+/api/page-watch/watches", r"page-watch/api/watches/\d+/check"),
     "video-studio": (r"video-studio/api/videos", r"video-studio/api/versions/\d+/(approve|change|idea|retry|shape)"),
@@ -7088,7 +7325,7 @@ CLIENT_RUN_ROUTES = {          # (method, path): what counts as a run started
     "people-signals": (r"people-signals/api/(runs|chat)",),
     "buyer-radar": (r"buyer-radar/api/runs",),
 }
-CLIENT_RUN_ROUTES.update({a["slug"]: a["runs"] for a in paid_catalog.AGENTS})
+CLIENT_RUN_ROUTES.update({a["slug"]: a["runs"] for a in paid_catalog.WORKSPACE})
 _CLIENT_TOOL_RX = {t: re.compile("^%s(%s)$" % (re.escape(_SA), "|".join(ps))) for t, ps in CLIENT_TOOL_ROUTES.items()}
 _CLIENT_RUN_RX = {t: re.compile("^(%s)$" % "|".join(p if p.startswith("/") else re.escape(_SA) + p for p in ps))
                   for t, ps in CLIENT_RUN_ROUTES.items()}
@@ -7342,7 +7579,7 @@ ACCT_TOOL_COLOURS = {
     "on-page-audit": "#8CCBFF", "agent-readiness-audit": "#B79CFF", "seo-geo-snapshot": "#2DD4BF",
     "image-alt-audit": "#FF6022", "keyword-research": "#FFB500", "content-research": "#FF3B30",
     "content-architect": "#121213", "market-potential": "#C6F432"}
-ACCT_TOOL_COLOURS.update({a["slug"]: paid_catalog.COLOUR for a in paid_catalog.AGENTS})
+ACCT_TOOL_COLOURS.update({a["slug"]: paid_catalog.COLOUR for a in paid_catalog.WORKSPACE})
 
 
 

@@ -231,7 +231,7 @@ def _seo(acct):
 
 AGENT_READS = (("seo", _seo), ("local-business-radar", _lbr), ("social-media-intelligence", _smi),
                ("event-conference-intelligence", _evi), ("thought-leader-pr", _tlpr), ("market-radar", _mr),
-               ("people-signals", _ps), ("buyer-radar", _br)) + tuple((a["slug"], _paid(a["slug"])) for a in paid_catalog.AGENTS)
+               ("people-signals", _ps), ("buyer-radar", _br)) + tuple((a["slug"], _paid(a["slug"])) for a in paid_catalog.WORKSPACE)
 
 
 def entries(acct, library=None, limit=SHOWN, extra=()):
