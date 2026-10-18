@@ -40,7 +40,7 @@ window.PMPicker = function(host, opts){
     shown.forEach(function(it,i){
       if(it.group&&it.group!==grp){grp=it.group; html+='<div class="pd-grp">'+esc(grp)+'</div>';}
       html+='<button type="button" role="option" class="sq-opt'+(i===hl?' hl':'')+'" data-i="'+i+'" aria-selected="'+(it.value===value)+
-        '" style="animation-delay:'+Math.min(i*18,300)+'ms">'+av(it)+'<span class="sq-dd-txt"><span class="nm" style="font-size:13.5px">'+esc(it.label)+
+        '">'+av(it)+'<span class="sq-dd-txt"><span class="nm" style="font-size:13.5px">'+esc(it.label)+
         '</span><span class="ds">'+esc(it.sub||"")+'</span></span>'+(it.badge||"")+'<span class="tick">✓</span></button>';
     });
     list.innerHTML=html||'<div class="sq-none">Nothing matches “'+esc(term)+'”.</div>';

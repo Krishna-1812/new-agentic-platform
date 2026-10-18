@@ -160,7 +160,7 @@
 
 .ps-ins{display:flex;flex-direction:column;gap:10px}
 .ps-in{display:flex;gap:12px;padding:13px 14px;border-radius:16px;background:var(--pm-panel2);border:1px solid var(--pm-line);
-  animation:psIn .45s var(--ease,ease) both;animation-delay:calc(var(--i)*70ms)}
+  animation:psIn .45s var(--ease,ease) both}
 .ps-in .ic{width:30px;height:30px;padding:6px;border-radius:10px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
   background:color-mix(in srgb,currentColor 14%,transparent)}
 .ps-in.good{color:var(--ok)} .ps-in.warn{color:#fbbf24} .ps-in.info{color:var(--pm-a2)}
