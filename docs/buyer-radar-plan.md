@@ -8,20 +8,26 @@ every workspace at `/<account>/agents/buyer-radar`.
 
 1. **Searches LinkedIn posts** for each offer switched on, through Apify's
    [HarvestAPI LinkedIn Post Search](https://apify.com/harvestapi/linkedin-post-search) actor. It needs no
-   LinkedIn login. The searches are LinkedIn's own search words, at most 5 AND/OR/NOT a line.
-   - **CallVibe:** call analytics, conversation intelligence, call audit and QA, speech analytics, call
-     recording, "Gong alternative".
-   - **Markify Digital:** marketing agency, digital marketing agency, Google Ads, SEO agency, marketing RFP,
-     performance marketing agency.
+   LinkedIn login. The searches are LinkedIn's own search words, at most 5 AND/OR/NOT a line, over the last
+   3 months by default (Settings: last day, week, month or 3 months).
+   - **CallVibe:** "looking for a call recording", "recommend a conversation intelligence", "Gong
+     alternative", call QA tools, speech analytics vendors, "anyone using Gong".
+   - **Markify Digital:** "looking for a marketing agency", "recommend a digital marketing agency", "looking
+     for an SEO agency", Google Ads and PPC agencies, marketing RFPs, social media, branding and web agencies.
 
-   Each workspace can change the searches in Settings.
+   Each search is a buyer's exact words. The first live search (2026-10-18) used loose pairs such as
+   `"marketing agency" AND "looking for"` over the last day: of 152 posts, about 150 were sellers ("Looking
+   to grow? We are an agency..."), job ads and job seekers, and none was kept. Each workspace can change the
+   searches in Settings.
 2. **Claude Haiku reads each post** (8 at a time) and decides:
    - whether the author is a buyer, a seller promoting their own product, a job seeker, or other;
    - which offer fits, what they want, and any deadline or region;
    - a score from 0 to 100 for how welcome a message would be now.
 
    Sellers and job seekers are held to 10 at most, whatever the model says (`buyer_radar_judge.clean_verdict`).
-   A post kept once is never kept again for the same workspace.
+   The offer is held to the run's offer keys (`judge_schema`). A post kept once is never kept again for the
+   same workspace. A search that keeps nothing shows the best post it did not keep, with Claude's reason,
+   and the run's notes say how many posts Claude could not read.
 3. **Writes each lead an email and a LinkedIn note** (and a longer message for a first-degree connection),
    built on the post itself. There are no em dashes and no claims beyond the offer's description.
 4. **Saves the leads**, newest first, with filters for strong, new, contacted, replied, not a fit, and by offer.
@@ -41,8 +47,9 @@ Every paid call is recorded in `br_spend`, with who ran it and the workspace. It
 | Claude Haiku, writing | Well under a cent per lead |
 | Saleshandy email finding (optional) | 1 credit, about $0.026, per email found |
 
-With the default settings (13 searches × 25 posts = up to 325 posts a day), a run usually costs $0.40–0.70,
-about $15–20 a month. Each run has a cap (`run_cap_usd`, default $2): Apify is told to stop charging at 80%
+With the default settings (13 searches × 25 posts = up to 325 posts), a run usually costs $0.40–0.70, about
+$15–20 a month if it runs daily. Each search returns its newest posts first, so a daily search over 3 months
+fetches (and Apify charges for) many of yesterday's posts again; Claude does not read a post already kept. Each run has a cap (`run_cap_usd`, default $2): Apify is told to stop charging at 80%
 of it (`maxTotalChargeUsd`), and Claude stops at the rest. The daily run is skipped once the month's spend
 reaches `monthly_cap_usd` (default $40).
 

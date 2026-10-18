@@ -25,8 +25,10 @@ log = logging.getLogger(__name__)
 MODEL = "claude-haiku-5-5"
 
 # == the offers ===========================================================================================
-# The searches are LinkedIn's own post search (5 AND/OR/NOT at most). Each one pairs what the offer solves
-# with words people use when they are shopping: looking for, recommend, vendor, RFP.
+# The searches are LinkedIn's own post search (5 AND/OR/NOT at most). Each one is the exact words a buyer
+# writes ("looking for a marketing agency", "recommend a call recording"): loose pairs such as
+# "marketing agency" AND "looking for" brought back almost only sellers ("Looking to grow? We are an
+# agency...") on the first live search, 2026-10-18.
 OFFERS = {
     "callvibe": {
         "label": "CallVibe",
@@ -40,13 +42,14 @@ OFFERS = {
                    "founders, who want call recording, call analytics, call audit or QA, speech analytics, "
                    "conversation intelligence, rep coaching or a cheaper alternative to Gong, Chorus or similar."),
         "queries": [
-            '"call analytics" AND ("looking for" OR recommend OR vendor)',
-            '"conversation intelligence" AND ("looking for" OR recommendations OR alternative)',
-            '"call audit" OR "call quality monitoring" OR "call QA"',
-            '"speech analytics" AND ("looking for" OR vendor OR recommend)',
-            '"call recording" AND (software OR tool) AND ("looking for" OR recommend)',
-            '"alternative to Gong" OR "Gong alternative"',
-            '"sales calls" AND AI AND ("looking for" OR "anyone using")',
+            '"looking for a call recording" OR "recommend a call recording" OR "call recording software recommendations"',
+            '"looking for a conversation intelligence" OR "recommend a conversation intelligence" OR '
+            '"conversation intelligence recommendations"',
+            '"alternative to Gong" OR "Gong alternative" OR "alternatives to Gong" OR "cheaper than Gong"',
+            '("call QA tool" OR "call auditing tool" OR "call monitoring software") AND (recommend OR "looking for")',
+            '"looking for a speech analytics" OR "recommend a speech analytics" OR "speech analytics vendor"',
+            '"any recommendations for" AND ("call recording" OR "call analytics" OR "sales call")',
+            '"anyone using" AND (Gong OR Chorus OR "call analytics" OR "conversation intelligence")',
         ],
     },
     "markify": {
@@ -59,12 +62,16 @@ OFFERS = {
                    "paid-media agency or freelancer, issuing a marketing RFP, asking for agency recommendations, "
                    "or building out marketing that they could hand to an agency."),
         "queries": [
-            '"marketing agency" AND ("looking for" OR RFP OR recommendations)',
-            '"digital marketing agency" AND (recommend OR "looking for")',
-            '"Google Ads" AND (agency OR freelancer) AND "looking for"',
-            '"SEO agency" AND ("looking for" OR recommend)',
-            '"marketing RFP" OR "RFP for marketing"',
-            '"performance marketing agency" AND ("looking for" OR recommend)',
+            '"looking for a marketing agency" OR "looking for a digital marketing agency" OR '
+            '"looking for a performance marketing agency"',
+            '"recommend a marketing agency" OR "recommend a digital marketing agency" OR '
+            '"recommendations for a marketing agency"',
+            '"looking for an SEO agency" OR "recommend an SEO agency" OR "looking for an SEO consultant"',
+            '"looking for a Google Ads" OR "recommend a Google Ads" OR "looking for a PPC agency" OR '
+            '"looking for a paid ads agency"',
+            '"marketing RFP" OR "RFP for digital marketing" OR "RFP for marketing services" OR "marketing agency RFP"',
+            '"looking for a social media agency" OR "looking for a branding agency" OR '
+            '"looking for a web design agency" OR "need a marketing agency"',
         ],
     },
 }
@@ -73,7 +80,7 @@ OFFERS = {
 DEFAULTS = {
     "offers": ["callvibe", "markify"],
     "queries": {},                    # offer -> its own searches, in place of OFFERS[offer]["queries"]
-    "posted": "24h",                  # how far back each search looks
+    "posted": "3months",              # how far back each search looks; a post already kept is not read again
     "per_query": 25,                  # posts per search
     "keep_score": 50,                 # a post scored below this is not kept as a lead
     "alert_score": 70,                # Slack and the "strong" filter
@@ -301,6 +308,8 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     finally:
         _book_claude(budget, spend, "read")
     summary["read"] = len(verdicts)
+    if len(verdicts) < len(posts) and not any("cost cap" in n for n in summary["notes"]):
+        summary["notes"].append("Claude could not read %d of the %d posts." % (len(posts) - len(verdicts), len(posts)))
     leads = []
     for p in posts:
         v = verdicts.get(p["key"])
@@ -309,6 +318,12 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
         leads.append({"post": p, "verdict": v, "offer": v["offer"], "score": int(v["score"]),
                       "emails": emails_in(p["text"]), "person": p["author"].get("key") or ""})
     leads.sort(key=lambda lead: -lead["score"])
+    kept = {lead["post"]["key"] for lead in leads}
+    misses = sorted((p for p in posts if p["key"] in verdicts and p["key"] not in kept),
+                    key=lambda p: -verdicts[p["key"]].get("score", 0))[:3]
+    summary["closest"] = [{"url": p["url"], "score": verdicts[p["key"]].get("score", 0),
+                           "role": verdicts[p["key"]].get("role"), "reason": verdicts[p["key"]].get("reason", "")[:200]}
+                          for p in misses]
     summary["kept"] = len(leads)
     summary["strong"] = sum(1 for lead in leads if lead["score"] >= settings["alert_score"])
 

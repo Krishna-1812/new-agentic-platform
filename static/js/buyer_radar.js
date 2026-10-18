@@ -154,15 +154,25 @@
       var label = r.status === 'running' ? (STAGE_WORDS[r.stage] || 'Running') : r.status === 'failed' ? 'Stopped' : (s.kept || 0) + ' lead' + (s.kept === 1 ? '' : 's');
       var bits = [];
       if (r.status === 'ready') {
-        bits.push((s.posts || 0) + ' posts read');
+        bits.push((s.posts || 0) + ' posts found');
+        if (s.read != null && s.read !== s.posts) bits.push(s.read + ' read by Claude');
         if (s.strong) bits.push(s.strong + ' strong');
         if (s.emailed || s.messaged) bits.push(((s.emailed || 0) + (s.messaged || 0)) + ' written to');
       }
       if (!CLIENT && r.spent_usd != null) bits.push(money(r.spent_usd));
       return '<li id="run-' + esc(r.id) + '" class="br-r br-r--' + esc(r.status) + '"><span class="br-r-dot"></span><span class="br-r-t"><b>' + esc(label) + '</b>' +
         '<small>' + esc((r.trigger === 'daily' ? 'Daily · ' : '') + ago(r.created_at)) + (bits.length ? ' · ' + esc(bits.join(' · ')) : '') + '</small>' +
-        (r.status === 'failed' && r.error ? '<small class="br-err">' + esc(r.error) + '</small>' : '') + '</span></li>';
+        (r.status === 'failed' && r.error ? '<small class="br-err">' + esc(r.error) + '</small>' : '') +
+        (r.status === 'ready' && !s.kept ? renderClosest(s.closest) : '') + '</span></li>';
     }).join('') + '</ol>';
+  }
+
+  // A search that kept nothing says how close the best post came, so an empty list explains itself.
+  function renderClosest(closest) {
+    var c = (closest || [])[0];
+    if (!c) return '';
+    return '<small class="br-closest">Best post not kept: scored ' + esc(c.score) + (c.role && c.role !== 'buyer' ? ', a ' + esc(String(c.role).replace('_', ' ')) : '') +
+      '. ' + esc(excerpt(c.reason, 140)) + ' ' + link(c.url, 'Open') + '</small>';
   }
 
   function renderLive(run) {
@@ -181,7 +191,7 @@
 
   function renderEstimate(est, settings) {
     if (!est) return '';
-    return '<p><b>' + esc(est.queries) + ' searches</b>, up to ' + esc(est.posts) + ' posts from the last ' + esc({ '1h': 'hour', '24h': 'day', week: 'week', month: 'month' }[settings.posted] || settings.posted) + '.</p>' +
+    return '<p><b>' + esc(est.queries) + ' searches</b>, up to ' + esc(est.posts) + ' posts from the last ' + esc({ '1h': 'hour', '24h': 'day', week: 'week', month: 'month', '3months': '3 months' }[settings.posted] || settings.posted) + '.</p>' +
       '<p class="br-cost">Usually about ' + esc(money(est.typical_usd)) + ', never more than ' + esc(money(Math.min(est.worst_usd, est.usd_cap))) + ' (the run\'s cap). Every day for a month: up to ' + esc(money(est.month_usd)) + '.</p>';
   }
 
@@ -239,8 +249,8 @@
         '<div><label class="mr-k" for="brSe-' + esc(k) + '">Send from</label><input type="email" id="brSe-' + esc(k) + '" value="' + esc(snd.email || '') + '" placeholder="the platform sender"></div></div>' +
         '</fieldset>';
     }).join('');
-    var posted = ['24h', 'week', 'month'].map(function (p) {
-      return '<option value="' + p + '"' + (s.posted === p ? ' selected' : '') + '>' + { '24h': 'Last day', week: 'Last week', month: 'Last month' }[p] + '</option>';
+    var posted = ['24h', 'week', 'month', '3months'].map(function (p) {
+      return '<option value="' + p + '"' + (s.posted === p ? ' selected' : '') + '>' + { '24h': 'Last day', week: 'Last week', month: 'Last month', '3months': 'Last 3 months' }[p] + '</option>';
     }).join('');
     return '<h4 class="br-set-t">What to look for</h4>' + o +
       '<div class="br-grid3"><div><label class="mr-k" for="brPosted">How far back</label><select id="brPosted">' + posted + '</select></div>' +

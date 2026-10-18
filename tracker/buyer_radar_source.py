@@ -6,7 +6,7 @@ included (at most 500 characters and 5 operators per query). `maxPosts` is per q
 lists it at $1.50 to $2 per 1,000 posts; the run's real charge is what Apify reports
 (usageTotalUsd), and `maxTotalChargeUsd` makes Apify stop charging at the run's cap.
 
-    build_input(queries, posted="24h", per_query=25)
+    build_input(queries, posted="3months", per_query=25)
     normalize(raw_items) -> [post]      one shape, whatever the actor returns
     collect(queries, token, ...) -> {"posts", "usd", "error"}
 
@@ -19,7 +19,7 @@ import re
 from urllib.parse import urlsplit
 
 DEFAULT_ACTOR_ID = "harvestapi/linkedin-post-search"
-POSTED = ("1h", "24h", "week", "month")
+POSTED = ("1h", "24h", "week", "month", "3months")
 USD_PER_POST = 0.002            # the store's list price, for estimates only; the real charge is Apify's
 MAX_QUERY_CHARS = 500
 MAX_OPERATORS = 5
@@ -41,9 +41,9 @@ def check_query(q):
     return None
 
 
-def build_input(queries, posted="24h", per_query=25):
+def build_input(queries, posted="3months", per_query=25):
     return {"searchQueries": [q.strip() for q in queries if q and q.strip()],
-            "maxPosts": int(per_query), "postedLimit": posted if posted in POSTED else "24h",
+            "maxPosts": int(per_query), "postedLimit": posted if posted in POSTED else "3months",
             "sortBy": "date", "profileScraperMode": "short"}
 
 
@@ -128,7 +128,7 @@ def normalize(raw_items):
     return out
 
 
-def collect(queries, token, *, posted="24h", per_query=25, max_charge_usd=None, timeout=420, runner=None):
+def collect(queries, token, *, posted="3months", per_query=25, max_charge_usd=None, timeout=420, runner=None):
     """One Apify run over every query. Never raises: {"posts", "usd", "error", "status"}."""
     from tracker import apify_transport
     runner = runner or apify_transport.run_actor_collect
