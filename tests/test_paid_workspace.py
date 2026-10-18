@@ -287,3 +287,15 @@ def test_inside_a_workspace_the_landing_page_check_reads_only_its_own_accounts(s
     assert c.get(base + "report?account=" + LUMINA, headers=XA).status_code == 200
     assert c.post(base + "read", json={"account": LUMINA, "page": "https://a.test/"}, headers=same).status_code == 200
     assert read == [LUMINA, (LUMINA, "landing-page-check")] and ads[-1][1:3] == ("landing-page-check", LUMINA)
+
+
+def test_inside_a_workspace_the_experiment_tracker_reads_only_its_own_accounts(seeded, segs, ads, monkeypatch):
+    from tracker import paid_exp
+    read = []
+    monkeypatch.setattr(paid_exp, "report_for", lambda account, **k: read.append(account) or {"accounts": [{"name": "Lumina Ads"}]})
+    c, base = T._client(T.RAJ), "/strategic-agents/paid-marketing/api/exp/"
+    for other in (OTHER, META):
+        assert c.get(base + "report?account=" + other, headers=XA).status_code == 403, other
+        assert c.get(base + "download?file=pdf&account=" + other, headers=XA).status_code == 403, other
+    assert read == [] and c.get(base + "report?account=" + LUMINA, headers=XA).status_code == 200
+    assert ads[-1][1:3] == ("experiment-tracker", LUMINA)

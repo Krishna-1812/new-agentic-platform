@@ -1,0 +1,139 @@
+"""Test & Experiment Tracker: the routes, the page and where the agent is listed (app.py, templates)."""
+import os
+import re
+
+import pytest
+
+import app as app_module
+from tracker import paid_exp as ex
+from tracker import paid_gads as base
+from tracker import paid_gads_segments as gads
+
+STAFF = "ana@markifydigital.com"
+API = "/strategic-agents/paid-marketing/api/exp"
+PAGE = "/strategic-agents/paid-marketing/experiment-tracker"
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def client_as(email):
+    c = app_module.app.test_client()
+    if email:
+        with c.session_transaction() as sess:
+            sess["google_user"] = {"email": email, "name": "T"}
+    return c
+
+
+REPORT = {"account": {"id": "1112223334", "name": "Acme", "currency": "USD"}, "summary": {"needsAction": 2}, "experiments": [], "adTests": [], "needs": [], "warnings": [], "unread": [],
+          "notes": [], "readAt": "2026-10-18T12:00:00+00:00", "generatedAt": "2026-10-18T12:00:00+00:00"}
+
+
+def test_the_report_route_returns_the_report_and_passes_refresh_on(monkeypatch):
+    seen = []
+    monkeypatch.setattr(ex, "report_for", lambda *x, **k: seen.append((x, k)) or REPORT)
+    r = client_as(STAFF).get(API + "/report?account=1112223334&refresh=1")
+    assert r.status_code == 200 and r.get_json()["summary"]["needsAction"] == 2 and seen[0] == (("1112223334",), {"force": True})
+    seen.clear()
+    client_as(STAFF).get(API + "/report?account=1112223334")
+    client_as(STAFF).get(API + "/report?account=1112223334&refresh=0")
+    assert seen == [(("1112223334",), {}), (("1112223334",), {})]
+
+
+@pytest.mark.parametrize("err, status", [
+    (gads.GadsError("not_configured", "not set"), 503), (gads.GadsError("quota", "slow down"), 429), (gads.GadsError("auth", "revoked"), 502),
+    (gads.GadsError("api", "google broke"), 502), (ex.BadRequest("That account is not one of the agency's Google Ads accounts."), 400)])
+def test_failures_reach_the_page_with_a_status_and_a_reason(monkeypatch, err, status):
+    def boom(*x, **k):
+        raise err
+    monkeypatch.setattr(ex, "report_for", boom)
+    r = client_as(STAFF).get(API + "/report?account=1112223334")
+    assert r.status_code == status and str(err) in r.get_json()["error"]
+
+
+def test_a_refresh_that_is_too_soon_says_when_to_try_again_and_the_api_is_staff_only(monkeypatch):
+    def boom(*x, **k):
+        raise base.RefreshTooSoon("Refreshed a moment ago.", 45)
+    monkeypatch.setattr(ex, "report_for", boom)
+    r = client_as(STAFF).get(API + "/report?account=1112223334&refresh=1")
+    assert r.status_code == 429 and r.get_json()["kind"] == "cooldown" and r.get_json()["retryIn"] == 45
+    assert client_as(None).get(API + "/report?account=1").status_code == 302 and client_as("someone@gmail.com").get(API + "/report?account=1").status_code == 302
+
+
+def test_a_bad_account_is_a_400_through_the_real_parser():
+    r = client_as(STAFF).get(API + "/report?account=nonsense")
+    assert r.status_code == 400 and "10-digit Google Ads customer id" in r.get_json()["error"]
+    assert client_as(STAFF).get(API + "/report").status_code == 400
+    assert client_as(STAFF).get(API + "/report?account=1112223334%2B1112223334").status_code == 400            # two Google accounts are not a pair
+
+
+def test_the_page_opens_for_staff_and_is_closed_to_everyone_else():
+    r = client_as(STAFF).get(PAGE)
+    assert r.status_code == 200
+    html = r.get_data(as_text=True)
+    assert "Test &amp; Experiment Tracker" in html and 'id="acctPick"' in html and "js/exp_data.js" in html and "js/experiment_tracker.js" in html and "css/experiment_tracker.css" in html
+    assert client_as(None).get(PAGE).status_code == 302 and client_as("someone@gmail.com").get(PAGE).status_code == 302
+
+
+def _read(name):
+    return open(os.path.join(ROOT, name), encoding="utf-8").read()
+
+
+def _cards(html):
+    body = re.sub(r"<!--.*?-->", "", html, flags=re.S)
+    return [c for c in re.findall(r'class="dash-card ([^"]*)"', body)]
+
+
+def test_the_operational_agents_page_and_every_workspace_list_the_new_agent():
+    from tests import paid_checks
+    paid_checks.assert_routes("/experiment-tracker", "/api/exp/report", "/api/exp/download")
+    paid_checks.assert_listed("experiment-tracker", "Experiment Tracker")
+
+
+def test_the_agent_only_reads():
+    src = open(app_module.__file__, encoding="utf-8").read()
+    block = src[src.index("# Test & Experiment Tracker ---"):src.index('@app.route(_PM_PREFIX + "/api/meta/status")')]
+    assert block.count("@app.route") == 3 and 'methods=' not in block
+
+
+# ── Downloads ───────────────────────────────────────────────────────────────
+
+def _report():
+    from tests.test_paid_exp_export import make_report
+    return make_report()
+
+
+@pytest.mark.parametrize("kind, ctype, ext, magic", [("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx", b"PK"),
+                                                        ("pdf", "application/pdf", ".pdf", b"%PDF-"), ("zip", "application/zip", ".zip", b"PK")])
+def test_each_file_downloads_from_the_same_report_with_a_safe_name(monkeypatch, kind, ctype, ext, magic):
+    seen = []
+    rep = _report()
+    monkeypatch.setattr(ex, "report_for", lambda *x, **k: seen.append((x, k)) or rep)
+    r = client_as(STAFF).get(API + "/download?account=1112223334&file=" + kind)
+    assert r.status_code == 200 and r.headers["Content-Type"].startswith(ctype) and r.data[:len(magic)] == magic
+    assert r.headers["Content-Disposition"] == 'attachment; filename="Acme-test-and-experiment-tracker%s"' % ext and r.headers["Cache-Control"] == "private, no-store"
+    assert seen == [(("1112223334",), {})]                                   # the saved read: a download never asks to refresh
+
+
+def test_a_download_needs_a_known_file_and_staff_and_says_why_it_cannot_be_made(monkeypatch):
+    assert client_as(STAFF).get(API + "/download?account=1112223334&file=doc").status_code == 400
+    assert client_as(STAFF).get(API + "/download?account=1112223334").status_code == 400
+    assert client_as(None).get(API + "/download?account=1112223334&file=pdf").status_code == 302
+    assert client_as(STAFF).get(API + "/download?account=nonsense&file=pdf").status_code == 400
+
+    def boom(*x, **k):
+        raise gads.GadsError("quota", "slow down")
+    monkeypatch.setattr(ex, "report_for", boom)
+    r = client_as(STAFF).get(API + "/download?account=1112223334&file=pdf")
+    assert r.status_code == 429 and "slow down" in r.get_json()["error"]
+
+    def tooSoon(*x, **k):
+        raise base.RefreshTooSoon("moments ago", 12)
+    monkeypatch.setattr(ex, "report_for", tooSoon)
+    assert client_as(STAFF).get(API + "/download?account=1112223334&file=pdf").get_json()["retryIn"] == 12
+
+
+def test_a_file_that_cannot_be_made_is_said_in_words(monkeypatch):
+    from tracker import paid_exp_export as export
+    monkeypatch.setattr(ex, "report_for", lambda *x, **k: _report())
+    monkeypatch.setattr(export, "pdf", lambda r: (_ for _ in ()).throw(RuntimeError("x")))
+    r = client_as(STAFF).get(API + "/download?account=1112223334&file=pdf")
+    assert r.status_code == 500 and "RuntimeError" in r.get_json()["error"]

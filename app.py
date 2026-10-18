@@ -5663,6 +5663,75 @@ def paid_lp_download():
     return resp
 
 
+# Test & Experiment Tracker ----------------------------------------------------
+# Pick a Google Ads account, a Meta ad account or one of each and it reads, read only, every experiment (its control and trial arms and what
+# each did day by day; Meta's A/B tests too) and every ad group or ad set that runs two or more live ads (an ad copy test whether or not anyone
+# planned it), and says for each test whether it has a result yet, which side is ahead and what to do about it. Every verdict is arithmetic
+# (tracker/paid_exp_stats.py: a two-proportion z-test, with rules for how much data a test needs before it may be called); no model is asked.
+# Reading is tracker/paid_exp_read.py, the report tracker/paid_exp.py and the downloads (Excel, PDF, CSV zip) paid_exp_export.py. It only
+# reads. Inside a workspace only its own Google Ads accounts are read.
+
+@app.route(_PM_PREFIX + "/experiment-tracker")
+@position2_required
+def paid_experiment_tracker():
+    return _pm_page("experiment_tracker.html", "experiment-tracker")
+
+
+def _pm_exp_report():
+    """(report, None) for ?account=, or (None, the error response)."""
+    from tracker import paid_exp, paid_gads as paid_gads_base, paid_gads_segments as paid_gads
+    extra = {"force": True} if str(request.args.get("refresh") or "") in ("1", "true") else {}      # the Refresh button
+    try:
+        refused = _pm_target_refusal(request.args.get("account"), paid_gads.list_groups)
+        if refused:
+            return None, (jsonify(error=refused), 403)
+        return paid_exp.report_for(request.args.get("account"), **extra), None
+    except paid_exp.BadRequest as e:
+        return None, (jsonify(error=str(e)), 400)
+    except paid_gads_base.RefreshTooSoon as e:
+        return None, (jsonify(error=str(e), kind="cooldown", retryIn=e.retry_in), 429)
+    except paid_gads.GadsError as e:
+        return None, _pm_gads_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/exp/report")
+@position2_required
+def paid_exp_report():
+    report, err = _pm_exp_report()
+    if err:
+        return err
+    names = " and ".join(a.get("name", "") for a in report.get("accounts") or []) or (report.get("account") or {}).get("name", "")
+    _pm_note("experiment-tracker", request.args.get("account", ""), "Tests in %s" % (names or "an account"))
+    return jsonify(report)
+
+
+_EXP_FILES = {"xlsx": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"), "pdf": ("application/pdf", ".pdf"), "zip": ("application/zip", ".zip")}
+
+
+@app.route(_PM_PREFIX + "/api/exp/download")
+@position2_required
+def paid_exp_download():
+    """?account=...&file=xlsx|pdf|zip. The files are made from the same report the page shows (the saved read, so no new quota is spent while it is fresh);
+    a report that could not be made is the same error the page shows."""
+    from tracker import paid_exp_export as export
+    kind = request.args.get("file") or ""
+    if kind not in _EXP_FILES:
+        return jsonify(error="file should be one of: %s." % ", ".join(_EXP_FILES)), 400
+    report, err = _pm_exp_report()
+    if err:
+        return err
+    try:
+        body = {"xlsx": export.xlsx, "pdf": export.pdf, "zip": export.csv_zip}[kind](report)
+    except Exception as e:                                  # noqa: BLE001 (a file that cannot be made is said in words, not a stack trace)
+        app.logger.exception("experiment tracker download failed")
+        return jsonify(error="The file could not be made (%s)." % type(e).__name__), 500
+    resp = make_response(body)
+    resp.headers["Content-Type"] = _EXP_FILES[kind][0]
+    resp.headers["Content-Disposition"] = 'attachment; filename="%s%s"' % (export.file_stem(report), _EXP_FILES[kind][1])
+    resp.headers["Cache-Control"] = "private, no-store"
+    return resp
+
+
 @app.route(_PM_PREFIX + "/api/meta/status")
 @position2_required
 def paid_meta_status():

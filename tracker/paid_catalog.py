@@ -121,6 +121,16 @@ AGENTS = (
      "tags": ["Google Ads", "Meta"],
      "api": (_ACCOUNTS, _SEGMENTS, r"paid-marketing/api/lp/(report|lab|read|download)"),
      "runs": (r"paid-marketing/api/lp/report",)},
+    {"slug": "experiment-tracker", "endpoint": "paid_experiment_tracker",
+     "name": "Experiment Tracker", "icon": "X",
+     "about": "Which tests have said something, and what to do about each",
+     "lead": "Reads every Google Ads experiment and Meta A/B test, and every ad group running two or more ads, holds each to the "
+             "same honest arithmetic and says which side is ahead, whether that is more than chance, and what to do.",
+     "gives": "A Google Ads account, a Meta ad account or one of each",
+     "gets": "Every test with its verdict: apply it, end it, pause or wait",
+     "tags": ["Google Ads", "Meta"],
+     "api": (_ACCOUNTS, _SEGMENTS, r"paid-marketing/api/exp/(report|download)"),
+     "runs": (r"paid-marketing/api/exp/report",)},
 )
 
 BY_SLUG = {a["slug"]: a for a in AGENTS}
