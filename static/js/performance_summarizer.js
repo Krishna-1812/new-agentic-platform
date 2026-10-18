@@ -507,7 +507,7 @@ $("#kpiCustom").addEventListener("click",function(){
 function paintKpiState(){$$("#kpis .ps-kpi[data-m]").forEach(function(b){b.classList.toggle("on",S.ex.metrics.indexOf(b.dataset.m)>=0);});}
 
 /* ── The chart builder ────────────────────────────────────────── */
-Chart.defaults.font.family="'Space Grotesk',system-ui,sans-serif";
+Chart.defaults.font.family="'Zalando Sans',system-ui,sans-serif";
 Chart.defaults.font.size=11.5;
 Chart.defaults.animation.duration=reduceMotion?0:650;
 var crosshair={id:"psCross",afterDatasetsDraw:function(ch){
@@ -742,8 +742,8 @@ function pieConfig(spec,pl,th,onPick){
   var vals=items.map(function(i){return def.get(i.t)||0;}), tot=vals.reduce(function(a,b){return a+b;},0), donut=spec.type==="donut", clickable=items.some(function(i){return i.ids;});
   var center={id:"psCenter",afterDraw:function(ch){
     if(!donut) return; var a=ch.chartArea, c=ch.ctx, x=(a.left+a.right)/2, y=(a.top+a.bottom)/2;
-    c.save(); c.textAlign="center"; c.fillStyle=th.ink; c.font="700 24px 'Space Grotesk',sans-serif"; c.fillText(P.fmt(def.kind,tot,C,true),x,y+4);
-    c.fillStyle=th.faint; c.font="700 10.5px 'Space Grotesk',sans-serif"; c.fillText(def.label.toUpperCase(),x,y+22); c.restore();}};
+    c.save(); c.textAlign="center"; c.fillStyle=th.ink; c.font="700 24px 'Zalando Sans',sans-serif"; c.fillText(P.fmt(def.kind,tot,C,true),x,y+4);
+    c.fillStyle=th.faint; c.font="700 10.5px 'Zalando Sans',sans-serif"; c.fillText(def.label.toUpperCase(),x,y+22); c.restore();}};
   var tip=tipBase(th); tip.callbacks={label:function(c){return " "+c.label+":  "+P.fmt(def.kind,c.raw,C)+"  ("+Math.round(c.raw/tot*100)+"%)";}};
   return {type:"doughnut",plugins:[center],data:{labels:items.map(function(i){return i.label;}),
       datasets:[{data:vals,backgroundColor:items.map(function(i,k){return i.rest?"#8b94be":scol(k);}),borderColor:th.panel,borderWidth:3,hoverOffset:8,borderRadius:donut?5:3}]},
@@ -998,8 +998,8 @@ function cardPng(card){
   var src=card.canvas; if(!src.width) return;
   var c=document.createElement("canvas"), pad=24, head=64; c.width=src.width+pad*2; c.height=src.height+pad*2+head;
   var x=c.getContext("2d"), th=theme(); x.fillStyle=light()?"#ffffff":"#0b0e1c"; x.fillRect(0,0,c.width,c.height);
-  x.fillStyle=th.ink; x.font="700 26px 'Space Grotesk',sans-serif"; x.fillText(titleFor(card.spec),pad,pad+26);
-  x.fillStyle=th.muted; x.font="400 18px 'Space Grotesk',sans-serif"; x.fillText(S.acct.name+"  ·  "+fmtRange(S.range),pad,pad+54);
+  x.fillStyle=th.ink; x.font="700 26px 'Zalando Sans',sans-serif"; x.fillText(titleFor(card.spec),pad,pad+26);
+  x.fillStyle=th.muted; x.font="400 18px 'Zalando Sans',sans-serif"; x.fillText(S.acct.name+"  ·  "+fmtRange(S.range),pad,pad+54);
   x.drawImage(src,pad,pad+head);
   c.toBlob(function(b){var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="chart-"+slugify(S.acct.name)+"-"+card.spec.dim+".png";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);});
 }

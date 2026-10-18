@@ -61,6 +61,16 @@ AGENTS = (
      "tags": ["Google Ads", "Meta"],
      "api": (_ACCOUNTS, _SEGMENTS, r"paid-marketing/api/geo/(report|summary)"),
      "runs": (r"paid-marketing/api/geo/report",)},
+    {"slug": "seasonality-analysis", "endpoint": "paid_seasonality_analysis",
+     "name": "Seasonality Analysis", "icon": "Y",
+     "about": "When in the year an account earns, and what to do with budgets next",
+     "lead": "Turns two to three years of daily Google Ads or Meta numbers into the shape of the year: which months and days "
+             "carry the account, what the holidays really did, and what to do with budgets in the next three months.",
+     "gives": "An ad account (or one of each platform) and how many months to look back",
+     "gets": "The year's shape, the holidays and a three-month budget plan",
+     "tags": ["Google Ads", "Meta"],
+     "api": (_ACCOUNTS, r"paid-marketing/api/gads/seasonality(/warm)?"),
+     "runs": (r"paid-marketing/api/gads/seasonality",)},
 )
 
 BY_SLUG = {a["slug"]: a for a in AGENTS}
