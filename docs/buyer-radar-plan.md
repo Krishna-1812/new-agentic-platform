@@ -23,7 +23,11 @@ every workspace at `/<account>/agents/buyer-radar`.
    - **Markify Digital:** "looking for a marketing agency", "recommend a digital marketing agency", "looking
      for an SEO agency", Google Ads and PPC agencies, marketing RFPs, social media, branding and web agencies.
 
-   Each search is a buyer's exact words. The first live search (2026-10-18) used loose pairs such as
+   Each offer has two kinds of search: a buyer's exact words, and broader ones that pair the topic with
+   any buying word (`("call audit" OR "call auditing") AND (looking OR vendor OR freelancer OR need)`,
+   `"marketing agency" AND (hiring OR RFP OR "looking for" OR seeking)`), added after two real buyers
+   ("Looking for an AI Solution / Freelancer for Call Auditing", "WAE is hiring a marketing agency... The
+   RFP goes out") were missed by the exact phrases alone. The first live search (2026-10-18) used loose pairs such as
    `"marketing agency" AND "looking for"` over the last day: of 152 posts, about 150 were sellers ("Looking
    to grow? We are an agency..."), job ads and job seekers, and none was kept. Each workspace can change the
    searches in Settings.
@@ -56,8 +60,9 @@ Every paid call is recorded in `br_spend`, with who ran it and the workspace. It
 | Claude Haiku, writing | Well under a cent per lead |
 | Saleshandy email finding (optional) | 1 credit, about $0.026, per email found |
 
-With the default settings (13 searches × 25 posts = up to 325 posts), a run usually costs $0.40–0.70, about
-$15–20 a month if it runs daily. Each search returns its newest posts first, so a daily search over 3 months
+With the default settings (23 searches × 25 posts = up to 575 posts), a run through Unipile costs only
+Claude's reading, a few cents; through Apify it usually costs $0.80–1.30. 575 is within Unipile's daily
+limit of 900, so one run a day fits. Each search returns its newest posts first, so a daily search over 3 months
 fetches (and Apify charges for) many of yesterday's posts again; Claude does not read a post already kept. Each run has a cap (`run_cap_usd`, default $2): Apify is told to stop charging at 80%
 of it (`maxTotalChargeUsd`), and Claude stops at the rest. The daily run is skipped once the month's spend
 reaches `monthly_cap_usd` (default $40).

@@ -111,7 +111,11 @@ def test_every_default_search_is_one_linkedin_accepts():
         assert offer["queries"] and len(offer["queries"]) <= br.MAX_QUERIES
         for q in offer["queries"]:
             assert src.check_query(q) is None, q
-            assert '"' in q, "each search holds a buyer's exact words, not loose words a seller's post also has"
+            assert '"' in q, "each search holds a quoted phrase, not single words a seller's post also has"
+    calls = " ".join(br.OFFERS["callvibe"]["queries"]).lower()
+    assert '"call auditing"' in calls and "freelancer" in calls, "finds 'Looking for an AI Solution / Freelancer for Call Auditing'"
+    assert '"marketing agency" AND (hiring OR RFP' in " ".join(br.OFFERS["markify"]["queries"]), "finds 'hiring a marketing agency... RFP'"
+    assert sum(len(o["queries"]) for o in br.OFFERS.values()) * 25 <= 900, "a run fits in Unipile's day"
     assert br.merged({})["posted"] == "3months" and "3months" in src.POSTED
     assert br.clean_settings({"posted": "3months"})["posted"] == "3months"
 
@@ -468,7 +472,8 @@ def test_a_unipile_search_is_free_keeps_to_the_days_limit_and_says_how_far_back_
     d, _ = deps([92, 40], out)
     summary = br.run(1, "acct:7", br.merged({}), started_by="mia@x.com", deps=d)
     assert br.merged({})["source"] == "unipile", "Unipile is the default: nothing to pay per post"
-    assert out["unipile"] == (13, "3months", 25, 100) and "search" not in out, "the room left today, not more"
+    n = sum(len(o["queries"]) for o in br.OFFERS.values())
+    assert out["unipile"] == (n, "3months", 25, 100) and "search" not in out, "the room left today, not more"
     assert summary["source"] == "unipile" and summary["unipile_results"] == 2 and summary["kept"] == 1
     assert not any(s[0] == "apify" for s in fake.spend), "no Apify spend through Unipile"
     assert any("a month at most" in n for n in summary["notes"])
@@ -483,7 +488,8 @@ def test_search_with_is_unipile_or_apify_and_the_estimate_follows_it():
     with pytest.raises(ValueError):
         br.clean_settings({"source": "phantom"})
     uni, apify = br.estimate(br.merged({})), br.estimate(br.merged({"source": "apify"}))
-    assert uni["source"] == "unipile" and uni["apify_usd"] == 0 and apify["apify_usd"] == pytest.approx(0.65)
+    n = sum(len(o["queries"]) for o in br.OFFERS.values())
+    assert uni["source"] == "unipile" and uni["apify_usd"] == 0 and apify["apify_usd"] == pytest.approx(n * 25 * 0.002)
     assert br.estimate(br.merged({"per_query": 100}))["posts"] == 900, "a Unipile run reads at most the day's limit"
     assert uni["worst_usd"] < apify["worst_usd"]
 

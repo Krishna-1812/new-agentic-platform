@@ -50,6 +50,12 @@ OFFERS = {
             '"looking for a speech analytics" OR "recommend a speech analytics" OR "speech analytics vendor"',
             '"any recommendations for" AND ("call recording" OR "call analytics" OR "sales call")',
             '"anyone using" AND (Gong OR Chorus OR "call analytics" OR "conversation intelligence")',
+            # broader: the topic with any buying word, for posts worded their own way ("Looking for an AI
+            # Solution / Freelancer for Call Auditing"); Claude drops the sellers these also find
+            '("call audit" OR "call auditing") AND (looking OR vendor OR freelancer OR need)',
+            '("call quality monitoring" OR "call QA") AND (looking OR vendor OR solution)',
+            '("call analytics" OR "conversation intelligence") AND (looking OR vendor OR recommend)',
+            '("speech analytics" OR "call recording") AND (looking OR recommend OR vendor)',
         ],
     },
     "markify": {
@@ -72,6 +78,13 @@ OFFERS = {
             '"marketing RFP" OR "RFP for digital marketing" OR "RFP for marketing services" OR "marketing agency RFP"',
             '"looking for a social media agency" OR "looking for a branding agency" OR '
             '"looking for a web design agency" OR "need a marketing agency"',
+            # broader: the topic with any buying word ("WAE is hiring a marketing agency... The RFP goes out")
+            '"marketing agency" AND (hiring OR RFP OR "looking for" OR seeking)',
+            '"marketing partner" AND (looking OR seeking OR hiring)',
+            '("SEO agency" OR "SEO partner" OR "SEO consultant") AND (looking OR need OR recommend)',
+            '("Google Ads" OR PPC) AND (agency OR freelancer) AND looking',
+            '("branding agency" OR "creative agency" OR "web design agency") AND (looking OR need OR RFP)',
+            '"request for proposal" AND (marketing OR agency)',
         ],
     },
 }
