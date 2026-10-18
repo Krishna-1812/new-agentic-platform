@@ -42,11 +42,15 @@ BASE = "/strategic-agents/buyer-radar"
 
 
 def raw_post(n, text="We are looking for a call analytics tool for our sales team. Demos welcome.", **author):
+    """A post as the actor returns it (checked against a live run on 2026-10-18)."""
     a = {"name": "Person %d" % n, "info": "Head of Sales at Acme", "linkedinUrl": "https://www.linkedin.com/in/person-%d/" % n,
          "type": "profile"}
     a.update(author)
     return {"id": "7%015d" % n, "linkedinUrl": "https://www.linkedin.com/posts/p%d-share-7%015d-abc?utm=1" % (n, n),
-            "content": text, "postedAt": {"date": "2026-10-16T08:00:00Z"}, "author": a, "query": '"call analytics"'}
+            "content": text, "postedAt": {"timestamp": 1792137600000, "date": "2026-10-16T08:00:00Z", "postedAgoShort": "2d"},
+            "author": a, "engagement": {"likes": 4, "comments": 2, "shares": 0, "reactions": [{"type": "LIKE", "count": 4}]},
+            "comments": [{"id": "c1"}], "reactions": [{"type": "LIKE"}],
+            "query": {"sortBy": "date", "page": 1, "search": '"call analytics"', "postedLimit": "24h"}}
 
 
 # == the search ==========================================================================================
@@ -68,6 +72,17 @@ def test_a_post_is_read_the_same_whatever_shape_the_actor_returns():
     assert a["author"] == {"name": "Person 1", "headline": "Head of Sales at Acme",
                            "url": "https://www.linkedin.com/in/person-1/", "key": "in/person-1", "company": False}
     assert posts[1]["author"]["key"] == "in/ana-b" and posts[1]["author"]["name"] == "Ana"
+    assert (a["query"], a["reactions"], a["comments"], a["posted_at"]) == ('"call analytics"', 4, 2, "2026-10-16T08:00:00Z")
+    assert (posts[1]["query"], posts[1]["reactions"], posts[1]["comments"]) == ("", 0, 0)
+
+
+def test_the_search_a_post_came_from_is_its_text_whatever_shape_it_comes_in():
+    """The actor returns the query as a dict; the run looks the offer up by it, so it must be a string."""
+    base = raw_post(1)
+    for q, want in [({"search": "x"}, "x"), ("y", "y"), ({"page": 1}, ""), (None, ""), (["x"], "")]:
+        assert src.normalize([dict(base, query=q)])[0]["query"] == want
+    no_counts = dict(base, engagement=None, comments=[{"id": "c1"}], likes=True)
+    assert (src.normalize([no_counts])[0]["comments"], src.normalize([no_counts])[0]["reactions"]) == (0, 0)
 
 
 @pytest.mark.parametrize("url, key", [
@@ -297,12 +312,14 @@ def verdict(score, offer="callvibe", role="buyer"):
 
 def deps(scores, out, **over):
     """A run's outside world: the search returns one post per score; Claude scores them as given."""
-    posts = src.normalize([raw_post(i, text="Looking for call analytics. Write to buyer%d@acme.com" % i if i == 1 else "Need it")
-                           for i in range(1, len(scores) + 1)])
+    raws = [raw_post(i, text="Looking for call analytics. Write to buyer%d@acme.com" % i if i == 1 else "Need it")
+            for i in range(1, len(scores) + 1)]
+    posts = src.normalize(raws)
 
     def search(queries, token, posted, per_query, max_charge_usd):
         out["search"] = (len(queries), posted, per_query, max_charge_usd)
-        return {"posts": [dict(p, query=queries[0]) for p in posts], "usd": 0.25, "error": None}
+        return {"posts": src.normalize([dict(raw, query={"search": queries[0], "page": 1}) for raw in raws]),
+                "usd": 0.25, "error": None}
 
     def judge_posts(ps, offers, budget, model):
         budget.add("read", model, Decimal("0.01"), {})

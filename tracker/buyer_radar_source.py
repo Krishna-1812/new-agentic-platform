@@ -82,6 +82,21 @@ def _post_key(item, url):
     return m.group(1) if m else (url or "")
 
 
+def _count(item, *keys):
+    """A whole number of likes or comments. The actor's own "comments" is the list of comments, not a count."""
+    v = _get(item, *keys)
+    return v if isinstance(v, int) and not isinstance(v, bool) else 0
+
+
+def _query(item):
+    """The search that found the post. The actor returns it as {"search": "...", "page": 1, ...}."""
+    q = item.get("query")
+    if isinstance(q, dict):
+        q = q.get("search")
+    q = q if isinstance(q, str) else _get(item, "searchQuery")
+    return q if isinstance(q, str) else ""
+
+
 def normalize(raw_items):
     """Posts in one shape. A post with no text or no link is dropped: there is nothing to judge or open."""
     out, seen = [], set()
@@ -106,9 +121,9 @@ def normalize(raw_items):
                        "headline": _get(author, "info", "headline", "position") or "",
                        "url": a_url or "", "key": profile_key(a_url),
                        "company": kind == "company" or profile_key(a_url).startswith("company/")},
-            "reactions": _get(item, "engagement.likes", "numLikes", "likes") or 0,
-            "comments": _get(item, "engagement.comments", "numComments", "comments") or 0,
-            "query": item.get("query") or _get(item, "searchQuery") or "",
+            "reactions": _count(item, "engagement.likes", "numLikes", "likes"),
+            "comments": _count(item, "engagement.comments", "numComments", "comments"),
+            "query": _query(item),
         })
     return out
 
