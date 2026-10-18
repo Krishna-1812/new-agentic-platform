@@ -1411,3 +1411,7 @@ html[data-theme="light"] body.pmx .pm.pm-panel{ border-radius: var(--r-lg); box-
 }
 /* On a phone the command bar's tools wrap rather than push the page sideways. */
 html[data-theme="light"] body.pmx .ps-cmd-tools{ flex-wrap: wrap; }
+@media (max-width: 760px){
+  html[data-theme="light"] body.pmx .ps-card-actions{ max-width: 100%; min-width: 0; }
+  html[data-theme="light"] body.pmx .ps-card-actions .ps-seg{ flex-wrap: wrap; max-width: 100%; }
+}
