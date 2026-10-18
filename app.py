@@ -12455,7 +12455,8 @@ def buyer_radar_status():
     except store.StoreUnavailable as e:
         return _br_store_error(e)
     out = {"client": client, "counts": counts, "running": running["id"] if running else None,
-           "ready": {"search": bool(os.environ.get("APIFY_API_TOKEN")), "claude": bool(os.environ.get("ANTHROPIC_API_KEY"))}}
+           "ready": {"search": not br.search_missing(settings), "claude": bool(os.environ.get("ANTHROPIC_API_KEY"))},
+           "source": settings.get("source"), "sources": br.SEARCH_SOURCES}
     if client:
         out["settings"] = {k: settings[k] for k in ("offers", "posted", "keep_score", "alert_score")}
         return jsonify(out)
@@ -12500,14 +12501,15 @@ def buyer_radar_runs():
     if refused:
         return refused
     body = request.get_json(silent=True) or {}
-    if not os.environ.get("APIFY_API_TOKEN"):
-        return jsonify(error="APIFY_API_TOKEN is not set on this service (Railway → web → Variables)."), 400
     if not os.environ.get("ANTHROPIC_API_KEY"):
         return jsonify(error="ANTHROPIC_API_KEY is not set on this service (Railway → web → Variables)."), 400
     if body.get("confirm_spend") is not True:
-        return jsonify(error="A search costs money (Apify and Claude); confirm to run it."), 400
+        return jsonify(error="A search costs money (Claude, and Apify when it searches); confirm to run it."), 400
     try:
         settings = store.get_settings(owner)
+        missing = br.search_missing(settings)
+        if missing:
+            return jsonify(error="%s is not set on this service (Railway → web → Variables)." % missing), 400
         if viewer_is_client():
             # A client's search never writes to anyone or spends Saleshandy credits: that stays with the team.
             settings = dict(settings, auto_email=False, auto_linkedin=False, find_emails=False, slack_channel="")
@@ -12643,19 +12645,21 @@ def buyer_radar_daily():
     already ran today or this month's spend has reached its monthly cap. The reply holds counts only: the
     Action's log may be public."""
     import hmac
-    from tracker import buyer_radar_store as store
+    from tracker import buyer_radar as br, buyer_radar_store as store
     secret = os.environ.get("BUYER_RADAR_CRON_TOKEN", "")
     if not secret:
         return jsonify(ok=False, error="BUYER_RADAR_CRON_TOKEN is not set on the server."), 503
     if not hmac.compare_digest(request.headers.get("Authorization", "").encode(), ("Bearer " + secret).encode()):
         return jsonify(ok=False, error="Not allowed."), 403
-    if not (os.environ.get("APIFY_API_TOKEN") and os.environ.get("ANTHROPIC_API_KEY")):
-        return jsonify(ok=False, error="APIFY_API_TOKEN and ANTHROPIC_API_KEY are needed."), 503
-    started, skipped = 0, {"ran_today": 0, "monthly_cap": 0, "running": 0}
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return jsonify(ok=False, error="ANTHROPIC_API_KEY is needed."), 503
+    started, skipped = 0, {"ran_today": 0, "monthly_cap": 0, "running": 0, "no_search_key": 0}
     try:
         for owner in store.daily_owners():
             settings = store.get_settings(owner)
-            if store.ran_today(owner):
+            if br.search_missing(settings):
+                skipped["no_search_key"] += 1
+            elif store.ran_today(owner):
                 skipped["ran_today"] += 1
             elif store.month_spend(owner)["usd"] >= float(settings["monthly_cap_usd"]):
                 skipped["monthly_cap"] += 1

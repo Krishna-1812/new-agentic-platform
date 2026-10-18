@@ -77,7 +77,10 @@ OFFERS = {
 }
 
 # == settings =============================================================================================
+SEARCH_SOURCES = {"unipile": "Unipile", "apify": "Apify"}
+
 DEFAULTS = {
+    "source": "unipile",              # who runs the search: Unipile (free per post, as our LinkedIn account) or Apify
     "offers": ["callvibe", "markify"],
     "queries": {},                    # offer -> its own searches, in place of OFFERS[offer]["queries"]
     "posted": "3months",              # how far back each search looks; a post already kept is not read again
@@ -117,6 +120,13 @@ def merged(saved):
         elif k in out:
             out[k] = v
     return out
+
+
+def search_missing(settings):
+    """The variable the chosen search needs and this service lacks, or None."""
+    import os
+    name = "UNIPILE_API_KEY" if settings.get("source") == "unipile" else "APIFY_API_TOKEN"
+    return None if os.environ.get(name) else name
 
 
 def queries_for(settings, offer):
@@ -162,6 +172,10 @@ def clean_settings(body, current=None):
             if lines and lines != OFFERS[offer]["queries"]:
                 clean[offer] = lines
         out["queries"] = clean
+    if "source" in body:
+        if body["source"] not in SEARCH_SOURCES:
+            raise ValueError("Search with must be Unipile or Apify.")
+        out["source"] = body["source"]
     if "posted" in body:
         if body["posted"] not in src.POSTED:
             raise ValueError("How far back must be one of %s." % ", ".join(src.POSTED))
@@ -208,18 +222,23 @@ DRAFT_MAX_TOKENS = 900
 
 
 def estimate(settings):
-    """The most one run can cost, and what it usually costs. Apify is the search, at its list price for
-    every post the searches may return; Claude reads each post (in batches) and drafts for up to one in
-    four. The run's cap (run_cap_usd) is what is enforced."""
-    from . import buyer_radar_source as src, market_radar_costs as costs
+    """The most one run can cost, and what it usually costs. Through Apify the search is paid at its list
+    price for every post the searches may return; through Unipile it is free per post, and a run reads at
+    most the day's Unipile limit. Claude reads each post (in batches) and drafts for up to one in four.
+    The run's cap (run_cap_usd) is what is enforced."""
+    from . import buyer_radar_source as src, buyer_radar_unipile as uni, market_radar_costs as costs
     n_queries = sum(len(queries_for(settings, o)) for o in settings["offers"])
     posts = n_queries * int(settings["per_query"])
-    apify = posts * src.USD_PER_POST
+    unipile = settings.get("source") == "unipile"
+    if unipile:
+        posts = min(posts, uni.DAY_MAX)
+    apify = 0.0 if unipile else posts * src.USD_PER_POST
     batches = -(-posts // JUDGE_BATCH)
     judge = float(costs.worst_case_model_usd(MODEL, 900 * JUDGE_BATCH + 1500, JUDGE_MAX_TOKENS)) * batches
     drafts = float(costs.worst_case_model_usd(MODEL, 2500, DRAFT_MAX_TOKENS)) * max(1, posts // 4)
     worst = apify + judge + drafts
-    return {"queries": n_queries, "posts": posts, "apify_usd": round(apify, 4), "claude_usd": round(judge + drafts, 4),
+    return {"queries": n_queries, "posts": posts, "source": "unipile" if unipile else "apify",
+            "apify_usd": round(apify, 4), "claude_usd": round(judge + drafts, 4),
             "worst_usd": round(worst, 4), "typical_usd": round(apify * 0.6 + (judge + drafts) * 0.3, 4),
             "usd_cap": float(settings["run_cap_usd"]), "capped": worst > float(settings["run_cap_usd"]),
             "month_usd": round(min(worst, float(settings["run_cap_usd"])) * 30, 2)}
@@ -246,10 +265,11 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     """Search, read, keep, draft, then (if switched on) find emails, send and post to Slack. Every stage is
     saved as it ends, and the leads are saved before anything is sent, so a failure late in the run keeps
     what was found. deps replaces the outside world in tests: search, judge, draft, find_emails,
-    send_email, send_linkedin, slack."""
+    send_email, send_linkedin, slack, unipile_search."""
     from . import buyer_radar_judge as judge, buyer_radar_send as send, buyer_radar_source as src
     from . import buyer_radar_store as store, contact_lab_search as cls
-    deps = dict({"search": src.collect, "judge": judge.judge_posts, "draft": judge.draft,
+    from . import buyer_radar_unipile as uni
+    deps = dict({"search": src.collect, "unipile_search": uni.collect, "judge": judge.judge_posts, "draft": judge.draft,
                  "find_emails": send.find_emails, "send_email": send.email_lead, "send_linkedin": send.linkedin_lead,
                  "slack": send.slack_leads}, **(deps or {}))
     who = started_by or ""
@@ -266,21 +286,36 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     # 1. search: one Apify run for every offer's searches, capped at what the run may spend
     stage("searching")
     import os
+    source = settings.get("source") if settings.get("source") in SEARCH_SOURCES else "apify"
+    summary["source"] = source
     token = os.environ.get("APIFY_API_TOKEN", "")
-    if not token:
+    if source == "apify" and not token:
         raise RuntimeError("APIFY_API_TOKEN is not set on this service (Railway → web → Variables).")
+    if source == "unipile" and not os.environ.get("UNIPILE_API_KEY"):
+        raise RuntimeError("UNIPILE_API_KEY is not set on this service (Railway → web → Variables).")
     queries, offer_of = [], {}
     for offer in settings["offers"]:
         for q in queries_for(settings, offer):
             queries.append(q)
             offer_of.setdefault(q, offer)
     summary["searched"] = len(queries)
-    apify_cap = float(cap) * 0.8
-    got = deps["search"](queries, token, posted=settings["posted"], per_query=settings["per_query"],
-                         max_charge_usd=apify_cap)
-    apify_usd = float(got.get("usd") or 0)
-    if not got.get("usd") and got.get("posts"):
-        apify_usd = len(got["posts"]) * src.USD_PER_POST      # not reported: counted at the list price
+    if source == "unipile":
+        from . import buyer_radar_unipile as uni
+        room = uni.DAY_MAX - store.unipile_results_today()
+        if room <= 0:
+            raise RuntimeError("Today's Unipile limit of %d LinkedIn search results is reached, across every "
+                               "workspace. Search with Apify, or again tomorrow." % uni.DAY_MAX)
+        got = deps["unipile_search"](queries, posted=settings["posted"], per_query=settings["per_query"], room=room)
+        summary["unipile_results"] = int(got.get("results") or 0)
+        summary["notes"].extend(got.get("notes") or [])
+        apify_usd = 0.0
+    else:
+        apify_cap = float(cap) * 0.8
+        got = deps["search"](queries, token, posted=settings["posted"], per_query=settings["per_query"],
+                             max_charge_usd=apify_cap)
+        apify_usd = float(got.get("usd") or 0)
+        if not got.get("usd") and got.get("posts"):
+            apify_usd = len(got["posts"]) * src.USD_PER_POST      # not reported: counted at the list price
     if apify_usd:
         spend("apify", "post-search", usd=apify_usd)
     if got.get("error") and not got.get("posts"):

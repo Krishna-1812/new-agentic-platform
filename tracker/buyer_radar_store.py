@@ -233,6 +233,16 @@ def ran_today(owner, trigger="daily"):
     return bool(row)
 
 
+def unipile_results_today():
+    """LinkedIn search results read through Unipile today, across every owner: Unipile's daily advice is
+    per LinkedIn account, and there is one."""
+    row = _exec("""SELECT COALESCE(SUM((summary->>'unipile_results')::int), 0) FROM br_runs
+                   WHERE summary ? 'unipile_results'
+                   AND created_at >= date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'""",
+                fetch="one")
+    return int(row[0] or 0)
+
+
 # == spend ===============================================================================================
 
 def add_spend(run_id, owner, started_by, provider, op, *, usd=0, credits=0):
