@@ -197,14 +197,14 @@ def test_settings_are_checked():
 
 
 def test_the_estimate_is_capped_and_honest_about_a_month():
-    s = br.merged({})
+    s = br.merged({"source": "apify"})
     e = br.estimate(s)
     n = sum(len(o["queries"]) for o in br.OFFERS.values())
     assert e["queries"] == n and e["posts"] == n * 25
     assert e["apify_usd"] == pytest.approx(n * 25 * 0.002)
     assert e["typical_usd"] < e["worst_usd"] and e["claude_usd"] > 0
     assert e["month_usd"] == round(min(e["worst_usd"], 2.0) * 30, 2)
-    one = br.estimate(br.merged({"offers": ["callvibe"], "per_query": 5}))
+    one = br.estimate(br.merged({"offers": ["callvibe"], "per_query": 5, "source": "apify"}))
     assert one["posts"] == len(br.OFFERS["callvibe"]["queries"]) * 5
 
 
@@ -279,12 +279,18 @@ def test_a_draft_has_no_em_dashes_and_a_note_linkedin_accepts():
 # == the run =============================================================================================
 
 class FakeStore:
-    def __init__(self, known=()):
+    def __init__(self, known=(), unipile_today=0):
         self.known, self.spend, self.leads, self.updates, self.sent = set(known), [], {}, [], {"email": 0, "linkedin": 0}
+        self.unipile_today = unipile_today
 
     def install(self, monkeypatch):
-        for name in ("update_run", "add_spend", "known_posts", "add_leads", "get_lead", "update_lead", "sent_today"):
+        monkeypatch.setenv("UNIPILE_API_KEY", "u")
+        for name in ("update_run", "add_spend", "known_posts", "add_leads", "get_lead", "update_lead", "sent_today",
+                     "unipile_results_today"):
             monkeypatch.setattr(store, name, getattr(self, name))
+
+    def unipile_results_today(self):
+        return self.unipile_today
 
     def update_run(self, run_id, **kw):
         self.updates.append(kw.get("stage"))
@@ -330,6 +336,11 @@ def deps(scores, out, **over):
         return {"posts": src.normalize([dict(raw, query={"search": queries[0], "page": 1}) for raw in raws]),
                 "usd": 0.25, "error": None}
 
+    def unipile_search(queries, posted, per_query, room):
+        out["unipile"] = (len(queries), posted, per_query, room)
+        return {"posts": src.normalize([dict(raw, query=queries[0]) for raw in raws]), "usd": 0.0, "error": None,
+                "results": len(raws), "notes": ["Unipile looks back a month at most, so this search read the last month."]}
+
     def judge_posts(ps, offers, budget, model):
         budget.add("read", model, Decimal("0.01"), {})
         return {p["key"]: verdict(s) for p, s in zip(posts, scores) if p["key"] in {x["key"] for x in ps}}
@@ -353,7 +364,7 @@ def deps(scores, out, **over):
     def find_emails(leads):
         out["find"] = [x["id"] for x in leads]
         return {x["id"]: "found%d@acme.com" % x["id"] for x in leads}, len(leads), None
-    d = {"search": search, "judge": judge_posts, "draft": draft, "send_email": send_email, "send_linkedin": send_linkedin,
+    d = {"search": search, "unipile_search": unipile_search, "judge": judge_posts, "draft": draft, "send_email": send_email, "send_linkedin": send_linkedin,
          "slack": slack, "find_emails": find_emails}
     d.update(over)
     return d, posts
@@ -365,7 +376,7 @@ def test_a_run_keeps_the_buyers_drafts_them_and_records_every_cost(monkeypatch):
     fake.install(monkeypatch)
     out = {}
     d, posts = deps([92, 40, 75, 10], out)
-    s = br.merged({})
+    s = br.merged({"source": "apify"})
     summary = br.run(1, "acct:7", s, started_by="mia@x.com", deps=d)
     assert out["search"] == (sum(len(o["queries"]) for o in br.OFFERS.values()), "3months", 25, pytest.approx(1.6))
     assert (summary["posts"], summary["read"], summary["kept"], summary["strong"], summary["drafted"]) == (4, 4, 2, 2, 2)
@@ -388,7 +399,7 @@ def test_posts_claude_could_not_read_are_said_in_the_runs_notes(monkeypatch):
     d["judge"] = lambda ps, offers, budget, model: {posts[0]["key"]: verdict(92)}
     summary = br.run(1, "k", br.merged({}), deps=d)
     assert summary["read"] == 1 and summary["kept"] == 1 and summary["closest"] == []
-    assert summary["notes"] == ["Claude could not read 2 of the 3 posts."]
+    assert summary["notes"][-1] == "Claude could not read 2 of the 3 posts."
 
 
 def test_a_post_already_kept_is_not_read_again(monkeypatch):
@@ -436,12 +447,45 @@ def test_a_search_that_did_not_run_fails_the_run_and_one_cut_short_keeps_its_pos
     FakeStore().install(monkeypatch)
     d, _ = deps([90], {}, search=lambda *a, **k: {"posts": [], "usd": 0, "error": "start failed: 401"})
     with pytest.raises(RuntimeError) as e:
-        br.run(1, "k", br.merged({}), deps=d)
+        br.run(1, "k", br.merged({"source": "apify"}), deps=d)
     assert "did not run" in str(e.value)
     monkeypatch.delenv("APIFY_API_TOKEN")
     with pytest.raises(RuntimeError) as e:
-        br.run(1, "k", br.merged({}), deps=d)
+        br.run(1, "k", br.merged({"source": "apify"}), deps=d)
     assert "APIFY_API_TOKEN" in str(e.value)
+    monkeypatch.delenv("UNIPILE_API_KEY")
+    with pytest.raises(RuntimeError) as e:
+        br.run(1, "k", br.merged({}), deps=d)
+    assert "UNIPILE_API_KEY" in str(e.value)
+
+
+def test_a_unipile_search_is_free_keeps_to_the_days_limit_and_says_how_far_back_it_read(monkeypatch):
+    from tracker import buyer_radar_unipile as uni
+    monkeypatch.delenv("APIFY_API_TOKEN", raising=False)
+    fake = FakeStore(unipile_today=uni.DAY_MAX - 100)
+    fake.install(monkeypatch)
+    out = {}
+    d, _ = deps([92, 40], out)
+    summary = br.run(1, "acct:7", br.merged({}), started_by="mia@x.com", deps=d)
+    assert br.merged({})["source"] == "unipile", "Unipile is the default: nothing to pay per post"
+    assert out["unipile"] == (13, "3months", 25, 100) and "search" not in out, "the room left today, not more"
+    assert summary["source"] == "unipile" and summary["unipile_results"] == 2 and summary["kept"] == 1
+    assert not any(s[0] == "apify" for s in fake.spend), "no Apify spend through Unipile"
+    assert any("a month at most" in n for n in summary["notes"])
+    FakeStore(unipile_today=uni.DAY_MAX).install(monkeypatch)
+    with pytest.raises(RuntimeError) as e:
+        br.run(2, "acct:7", br.merged({}), deps=d)
+    assert "Unipile limit" in str(e.value) and "Apify" in str(e.value)
+
+
+def test_search_with_is_unipile_or_apify_and_the_estimate_follows_it():
+    assert br.clean_settings({"source": "apify"})["source"] == "apify"
+    with pytest.raises(ValueError):
+        br.clean_settings({"source": "phantom"})
+    uni, apify = br.estimate(br.merged({})), br.estimate(br.merged({"source": "apify"}))
+    assert uni["source"] == "unipile" and uni["apify_usd"] == 0 and apify["apify_usd"] == pytest.approx(0.65)
+    assert br.estimate(br.merged({"per_query": 100}))["posts"] == 900, "a Unipile run reads at most the day's limit"
+    assert uni["worst_usd"] < apify["worst_usd"]
 
 
 def test_a_run_stopped_at_the_cap_keeps_its_leads(monkeypatch):
@@ -711,7 +755,12 @@ def test_the_page_and_its_routes_are_the_teams(mem):
 
 def test_status_says_what_is_connected_and_what_a_run_costs(mem, monkeypatch):
     monkeypatch.setenv("APIFY_API_TOKEN", "t")
+    monkeypatch.delenv("UNIPILE_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    st = _client(STAFF).get(BASE + "/api/status").get_json()
+    assert st["source"] == "unipile" and st["sources"] == {"unipile": "Unipile", "apify": "Apify"}
+    assert st["ready"]["search"] is False, "the search ready is the chosen source's: Unipile here"
+    monkeypatch.setenv("UNIPILE_API_KEY", "u")
     st = _client(STAFF).get(BASE + "/api/status").get_json()
     assert st["ready"]["search"] is True and st["ready"]["claude"] is False and st["client"] is False
     assert st["estimate"]["posts"] > 0 and st["month"]["usd"] == 0.5 and st["settings"]["offers"] == ["callvibe", "markify"]
@@ -724,14 +773,20 @@ def test_settings_are_saved_for_the_workspace_only_from_this_site(mem):
     assert r.status_code == 200 and mem["settings"][STAFF]["daily"] is True and r.get_json()["estimate"]["posts"] > 0
     r = c.post(BASE + "/api/settings", json={"offers": []}, headers=H)
     assert r.status_code == 400 and "at least one" in r.get_json()["error"]
+    r = c.post(BASE + "/api/settings", json={"source": "apify"}, headers=H)
+    assert r.status_code == 200 and mem["settings"][STAFF]["source"] == "apify" and mem["settings"][STAFF]["daily"] is True
+    assert c.post(BASE + "/api/settings", json={"source": "x"}, headers=H).status_code == 400
 
 
 def test_a_search_needs_its_keys_and_a_yes(mem, monkeypatch):
     c = _client(STAFF)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
+    monkeypatch.delenv("UNIPILE_API_KEY", raising=False)
+    assert "UNIPILE_API_KEY" in c.post(BASE + "/api/runs", json={"confirm_spend": True}, headers=H).get_json()["error"]
+    mem["settings"][STAFF] = br.merged({"source": "apify"})
     monkeypatch.delenv("APIFY_API_TOKEN", raising=False)
     assert "APIFY_API_TOKEN" in c.post(BASE + "/api/runs", json={"confirm_spend": True}, headers=H).get_json()["error"]
     monkeypatch.setenv("APIFY_API_TOKEN", "t")
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
     r = c.post(BASE + "/api/runs", json={}, headers=H)
     assert r.status_code == 400 and "confirm" in r.get_json()["error"]
     r = c.post(BASE + "/api/runs", json={"confirm_spend": True}, headers=H)
@@ -775,14 +830,17 @@ def test_the_daily_search_needs_the_token_and_keeps_to_each_cap(mem, monkeypatch
     assert c.post("/api/buyer-radar/daily").status_code == 503
     monkeypatch.setenv("BUYER_RADAR_CRON_TOKEN", "s3cret")
     assert c.post("/api/buyer-radar/daily", headers={"Authorization": "Bearer nope"}).status_code == 403
-    monkeypatch.setenv("APIFY_API_TOKEN", "t")
+    monkeypatch.setenv("UNIPILE_API_KEY", "u")
+    monkeypatch.delenv("APIFY_API_TOKEN", raising=False)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
-    mem["settings"].update({"acct:1": {"daily": True}, "acct:2": {"daily": True}, "acct:3": {"daily": True, "monthly_cap_usd": 1}})
-    monkeypatch.setattr(store, "daily_owners", lambda: ["acct:1", "acct:2", "acct:3"])
+    mem["settings"].update({"acct:1": {"daily": True}, "acct:2": {"daily": True}, "acct:3": {"daily": True, "monthly_cap_usd": 1},
+                            "acct:4": {"daily": True, "source": "apify"}})
+    monkeypatch.setattr(store, "daily_owners", lambda: ["acct:1", "acct:2", "acct:3", "acct:4"])
     monkeypatch.setattr(store, "ran_today", lambda owner: owner == "acct:2")
     monkeypatch.setattr(store, "month_spend", lambda owner: {"usd": 5.0 if owner == "acct:3" else 0, "credits": 0})
     r = c.post("/api/buyer-radar/daily", headers={"Authorization": "Bearer s3cret"})
-    assert r.get_json() == {"ok": True, "started": 1, "skipped": {"ran_today": 1, "monthly_cap": 1, "running": 0}}
+    assert r.get_json() == {"ok": True, "started": 1, "skipped": {"ran_today": 1, "monthly_cap": 1, "running": 0,
+                                                                   "no_search_key": 1}}, "acct:4 searches with Apify, unset"
     assert [x[0] for x in mem["runs"]] == ["acct:1"] and mem["runs"][0][3] == "daily"
 
 
@@ -809,6 +867,7 @@ XA = {"X-Account": "lumina", "X-Requested-With": "fetch", "Origin": "http://loca
 
 def test_inside_a_workspace_the_work_is_the_workspaces(seeded, mem, monkeypatch):
     monkeypatch.setenv("APIFY_API_TOKEN", "t")
+    monkeypatch.setenv("UNIPILE_API_KEY", "u")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
     space = T._acct("lumina")["space"]
     assert T._client(T.RAJ).post(BASE + "/api/runs", json={"confirm_spend": True}, headers=XA).status_code == 202
@@ -820,6 +879,7 @@ def test_inside_a_workspace_the_work_is_the_workspaces(seeded, mem, monkeypatch)
 
 def test_a_client_searches_and_reads_but_never_sends_or_sees_costs(seeded, mem, monkeypatch):
     monkeypatch.setenv("APIFY_API_TOKEN", "t")
+    monkeypatch.setenv("UNIPILE_API_KEY", "u")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
     T._invite("lumina", **{"tool:buyer-radar": True})
     space = T._acct("lumina")["space"]
@@ -892,6 +952,20 @@ def test_the_page_escapes_everything_from_linkedin_and_the_model():
         assert "javascript:" not in html
     assert "br-lead--hot" in out[0] and "Looking for a vendor" in out[0] and "CallVibe" in out[0]
     assert "Already sent" in out[1] and 'data-channel="email" disabled' in out[1], "nobody is emailed twice from the page"
+
+
+def test_the_toggle_at_the_top_says_who_searches_and_what_it_costs():
+    out = run_js("return [BR.renderSource('unipile', {unipile: 'Unipile', apify: 'Apify'}), BR.renderSource('apify'), "
+                 "BR.renderEstimate(%s, {posted: '3months'}), BR.renderEstimate(%s, {posted: '3months'}), "
+                 "BR.renderRuns([{id: 1, status: 'ready', summary: {posts: 9, read: 9, kept: 2, source: 'unipile'}}])];"
+                 % (json.dumps(br.estimate(br.merged({}))), json.dumps(br.estimate(br.merged({"source": "apify"})))))
+    uni, apify, est_uni, est_apify, runs = out
+    assert 'role="radiogroup"' in uni and 'data-source="unipile"' in uni and 'aria-checked="true" data-source="unipile"' in uni
+    assert 'aria-checked="false" data-source="apify"' in uni and "Free per post" in uni and "900 results a day" in uni
+    assert 'aria-checked="true" data-source="apify"' in apify and "$0.002 a post" in apify
+    assert "last month (Unipile looks back no further)" in est_uni and "free through Unipile" in est_uni
+    assert "last 3 months" in est_apify and "free through Unipile" not in est_apify
+    assert "via Unipile" in runs
 
 
 def test_a_search_that_kept_nothing_shows_the_best_post_it_read():

@@ -75,7 +75,9 @@
   function renderReady(st) {
     var r = (st && st.ready) || {};
     var out = [];
-    out.push(chip(r.search ? 'ok' : 'bad', r.search ? 'LinkedIn search' : 'Search not set up', r.search ? 'Apify is connected' : 'APIFY_API_TOKEN is not set'));
+    var uni = st && st.source === 'unipile';
+    out.push(chip(r.search ? 'ok' : 'bad', r.search ? 'LinkedIn search' : 'Search not set up',
+      r.search ? (uni ? 'Unipile' : 'Apify') + ' is connected' : (uni ? 'UNIPILE_API_KEY' : 'APIFY_API_TOKEN') + ' is not set'));
     out.push(chip(r.claude ? 'ok' : 'bad', r.claude ? 'Claude' : 'Claude not set up', r.claude ? '' : 'ANTHROPIC_API_KEY is not set'));
     if (!CLIENT) {
       out.push(chip(r.email ? 'ok' : 'warn', r.email ? 'Email' : 'Email not set up', r.email ? '' : 'Needs GMAIL_SENDER with GOOGLE_SA_JSON'));
@@ -83,6 +85,21 @@
       if (r.sending === false) out.push(chip('bad', 'Sending switched off', 'BUYER_RADAR_SEND is off on the service'));
     }
     return out.join(' ');
+  }
+
+  // ── who runs the search ──────────────────────────────────────────────────
+  var SOURCE_NOTES = {
+    unipile: 'Free per post. Runs as your connected LinkedIn account, up to 900 results a day, the last month at most.',
+    apify: 'About $0.002 a post. No LinkedIn account used, and up to 3 months back.'
+  };
+  function renderSource(current, sources) {
+    sources = sources || { unipile: 'Unipile', apify: 'Apify' };
+    var btns = Object.keys(sources).map(function (k) {
+      var on = k === current;
+      return '<button type="button" class="br-src-b' + (on ? ' on' : '') + '" role="radio" aria-checked="' + on + '" data-source="' + esc(k) + '">' + esc(sources[k]) + '</button>';
+    }).join('');
+    return '<span class="br-src-l" id="brSourceL">Search with</span><span class="br-src-g" role="radiogroup" aria-labelledby="brSourceL">' + btns + '</span>' +
+      '<span class="br-src-n">' + esc(SOURCE_NOTES[current] || '') + '</span>';
   }
 
   // ── a lead ───────────────────────────────────────────────────────────────
@@ -156,6 +173,7 @@
       if (r.status === 'ready') {
         bits.push((s.posts || 0) + ' posts found');
         if (s.read != null && s.read !== s.posts) bits.push(s.read + ' read by Claude');
+        if (s.source) bits.push('via ' + (s.source === 'unipile' ? 'Unipile' : 'Apify'));
         if (s.strong) bits.push(s.strong + ' strong');
         if (s.emailed || s.messaged) bits.push(((s.emailed || 0) + (s.messaged || 0)) + ' written to');
       }
@@ -191,7 +209,11 @@
 
   function renderEstimate(est, settings) {
     if (!est) return '';
-    return '<p><b>' + esc(est.queries) + ' searches</b>, up to ' + esc(est.posts) + ' posts from the last ' + esc({ '1h': 'hour', '24h': 'day', week: 'week', month: 'month', '3months': '3 months' }[settings.posted] || settings.posted) + '.</p>' +
+    var uni = est.source === 'unipile';
+    var back = uni && settings.posted === '3months' ? 'month (Unipile looks back no further)' :
+      ({ '1h': 'hour', '24h': 'day', week: 'week', month: 'month', '3months': '3 months' }[settings.posted] || settings.posted);
+    return '<p><b>' + esc(est.queries) + ' searches</b>, up to ' + esc(est.posts) + ' posts from the last ' + esc(back) + '.</p>' +
+      (uni ? '<p class="br-cost">The search is free through Unipile; Claude reading the posts is the cost.</p>' : '') +
       '<p class="br-cost">Usually about ' + esc(money(est.typical_usd)) + ', never more than ' + esc(money(Math.min(est.worst_usd, est.usd_cap))) + ' (the run\'s cap). Every day for a month: up to ' + esc(money(est.month_usd)) + '.</p>';
   }
 
@@ -307,7 +329,7 @@
     return '';
   }
 
-  root.BR = { esc: esc, safeUrl: safeUrl, renderLead: renderLead, renderLeads: renderLeads, renderRuns: renderRuns,
+  root.BR = { esc: esc, safeUrl: safeUrl, renderSource: renderSource, renderLead: renderLead, renderLeads: renderLeads, renderRuns: renderRuns,
     renderStats: renderStats, renderReady: renderReady, renderDrawer: renderDrawer, renderSettings: renderSettings,
     renderEstimate: renderEstimate, renderFilters: renderFilters, renderLive: renderLive, leadQuery: leadQuery, offers: {} };
 
@@ -361,6 +383,7 @@
       $('brReady').innerHTML = renderReady(st);
       $('brStats').innerHTML = renderStats(st);
       if (!CLIENT && st.estimate) $('brEstimate').innerHTML = renderEstimate(st.estimate, st.settings);
+      if (!CLIENT && $('brSource')) $('brSource').innerHTML = renderSource(st.source, st.sources);
       if (!CLIENT && $('brSettings') && !$('brSettings').dataset.drawn) {
         $('brSettings').innerHTML = renderSettings(st.settings, OFFERS, st.defaults);
         $('brSettings').dataset.drawn = '1';
@@ -415,6 +438,17 @@
         .catch(function (e) { toast(e.message, true); if (e.data && e.data.run_id) watch(e.data.run_id); });
     });
   });
+
+  if ($('brSource')) {
+    $('brSource').addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-source]');
+      if (!b || !state.status || b.getAttribute('data-source') === state.status.source) return;
+      var to = b.getAttribute('data-source');
+      api('/settings', { method: 'POST', body: { source: to } })
+        .then(function () { toast('Searches now run through ' + (to === 'unipile' ? 'Unipile' : 'Apify') + '.'); return loadStatus(); })
+        .catch(function (e) { toast(e.message, true); });
+    });
+  }
 
   $('brFilters').innerHTML = renderFilters(state.filter, OFFERS);
   $('brFilters').addEventListener('click', function (ev) {

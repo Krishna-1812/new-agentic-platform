@@ -93,3 +93,16 @@ def test_runs_and_spend_are_kept_for_the_history_and_the_caps(db):
     assert db.month_spend("acct:1") == {"usd": pytest.approx(0.2623, abs=1e-4), "credits": 3.0}
     rows = db.space_runs("acct:1")
     assert [(r["id"], r["trigger"], r["started_by"]) for r in rows] == [(b, "daily", None), (a, "manual", "kris@x.com")]
+
+
+def test_unipile_results_today_are_counted_across_every_workspace(db):
+    assert db.unipile_results_today() == 0
+    a = db.create_run("acct:1", br.merged({}), 2.0)
+    b = db.create_run("acct:2", br.merged({}), 2.0)
+    c = db.create_run("acct:2", br.merged({"source": "apify"}), 2.0)
+    db.update_run(a, summary={"source": "unipile", "unipile_results": 300})
+    db.update_run(b, summary={"source": "unipile", "unipile_results": 25})
+    db.update_run(c, summary={"source": "apify", "posts": 400})
+    assert db.unipile_results_today() == 325, "one LinkedIn account searches for every workspace"
+    db._exec("UPDATE br_runs SET created_at = now() - interval '2 days' WHERE id=%s", (a,))
+    assert db.unipile_results_today() == 25, "yesterday's do not count"

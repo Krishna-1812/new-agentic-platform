@@ -401,6 +401,25 @@ def search_posts(account_id: str, keywords: str | None = None,
     return _request("POST", f"{_API}/linkedin/search", json_body=body, params=params)
 
 
+def search_posts_filtered(account_id: str, keywords: str, *, date_posted: str | None = None,
+                          sort_by: str | None = None, cursor: str | None = None,
+                          limit: int = 25) -> tuple[Any, dict | None]:
+    """search_posts with LinkedIn's date and order filters, for Buyer Radar. Per Unipile's reference
+    (linkedincontroller_search, read 2026-10-18): `date_posted` is past_day, past_week or past_month;
+    `sort_by` is relevance (the default) or date; a post search returns up to 49 a page; the next page
+    is the same request with the `cursor` the last one returned. Not yet confirmed against a live
+    response."""
+    body: dict[str, Any] = {"api": "classic", "category": "posts", "keywords": keywords}
+    if date_posted in ("past_day", "past_week", "past_month"):
+        body["date_posted"] = date_posted
+    if sort_by in ("relevance", "date"):
+        body["sort_by"] = sort_by
+    params: dict[str, Any] = {"account_id": account_id, "limit": max(1, min(limit, 49))}
+    if cursor:
+        params["cursor"] = cursor
+    return _request("POST", f"{_API}/linkedin/search", json_body=body, params=params)
+
+
 def list_posts(account_id: str, identifier: str, is_company: bool = True,
                cursor: str | None = None, limit: int = 50) -> tuple[dict | None, dict | None]:
     """Recent posts for `identifier`, fetched through `account_id`'s

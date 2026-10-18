@@ -6,10 +6,18 @@ every workspace at `/<account>/agents/buyer-radar`.
 
 ## What it does
 
-1. **Searches LinkedIn posts** for each offer switched on, through Apify's
-   [HarvestAPI LinkedIn Post Search](https://apify.com/harvestapi/linkedin-post-search) actor. It needs no
-   LinkedIn login. The searches are LinkedIn's own search words, at most 5 AND/OR/NOT a line, over the last
-   3 months by default (Settings: last day, week, month or 3 months).
+1. **Searches LinkedIn posts** for each offer switched on. "Search with" at the top of the page picks who
+   runs LinkedIn's own post search:
+   - **Unipile** (the default, `tracker/buyer_radar_unipile.py`): free per post, from the connected LinkedIn
+     account (the one Buyer Radar sends from). LinkedIn's filter goes back a month at most, so "Last 3
+     months" reads the last month. Unipile advises about 1,000 search results a day for a standard
+     account and warns that more risks the account; `DAY_MAX` (900) holds every workspace together under
+     it (`buyer_radar_store.unipile_results_today`), and the requests are spaced 2 to 5 seconds apart.
+   - **Apify** ([HarvestAPI LinkedIn Post Search](https://apify.com/harvestapi/linkedin-post-search)):
+     about $0.002 a post, no LinkedIn login, up to 3 months back.
+
+   The searches are LinkedIn's own search words, at most 5 AND/OR/NOT a line, over the last 3 months by
+   default (Settings: last day, week, month or 3 months).
    - **CallVibe:** "looking for a call recording", "recommend a conversation intelligence", "Gong
      alternative", call QA tools, speech analytics vendors, "anyone using Gong".
    - **Markify Digital:** "looking for a marketing agency", "recommend a digital marketing agency", "looking
@@ -42,6 +50,7 @@ Every paid call is recorded in `br_spend`, with who ran it and the workspace. It
 
 | What | Price |
 |---|---|
+| Unipile post search | Nothing per post (Unipile is paid per connected account) |
 | Apify post search | About $2 per 1,000 posts (Apify's own figure for each run is recorded) |
 | Claude Haiku, reading | About $0.01 for 300 posts |
 | Claude Haiku, writing | Well under a cent per lead |
@@ -107,7 +116,8 @@ search still going.
 
 | Variable | What for |
 |---|---|
-| `APIFY_API_TOKEN` | The search (already set for other agents) |
+| `UNIPILE_API_KEY`, `UNIPILE_DSN` | The search with Unipile, and LinkedIn sending |
+| `APIFY_API_TOKEN` | The search with Apify (already set for other agents) |
 | `ANTHROPIC_API_KEY` | Reading and writing (already set) |
 | `BUYER_RADAR_CRON_TOKEN` | The daily search; also a GitHub repository secret of the same name |
 | `GMAIL_SENDER`, `GOOGLE_SA_JSON` | Email (as Market Radar's weekly email) |
@@ -121,5 +131,5 @@ search still going.
 
 - [ ] One live search, checked by hand: are the strong leads real buyers?
 - [ ] One email and one LinkedIn send to a team member's own address and profile, through each route.
-- [ ] Unipile's invite and chat routes confirmed against a live response; update the docstrings.
+- [ ] Unipile's post search, invite and chat routes confirmed against a live response; update the docstrings.
 - [ ] The opt-out link tried from a real inbox.
