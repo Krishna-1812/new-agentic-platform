@@ -43,6 +43,9 @@ every workspace at `/<account>/agents/buyer-radar`.
 3. **Writes each lead an email and a LinkedIn note** (and a longer message for a first-degree connection),
    built on the post itself. There are no em dashes and no claims beyond the offer's description.
 4. **Saves the leads**, newest first, with filters for strong, new, contacted, replied, not a fit, and by offer.
+   **Export CSV** downloads the leads shown, with the same filter (`/api/leads/export`): the person, the post,
+   what Claude read, who was written to and, for the team, the drafted messages. A client's file has no
+   drafts. A cell starting with = + - @ is written as text, so a post cannot run as a spreadsheet formula.
 5. **Sends**, either from the page (the team, after a confirm) or automatically for the workspace's strong
    leads where Settings switches it on.
 6. **Posts the strong leads to Slack**, if a channel is set.

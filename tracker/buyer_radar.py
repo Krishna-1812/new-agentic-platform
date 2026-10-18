@@ -257,6 +257,50 @@ def estimate(settings):
             "month_usd": round(min(worst, float(settings["run_cap_usd"])) * 30, 2)}
 
 
+# == the export ===========================================================================================
+EXPORT_COLS = [("Found", "created_at"), ("Score", "score"), ("Offer", "offer"), ("Status", "status"),
+               ("Name", "name"), ("Headline", "headline"), ("Profile", "profile"), ("Email address", "email"),
+               ("What they want", "need"), ("Intent", "intent"), ("Company", "company"), ("Region", "region"),
+               ("Deadline", "deadline"), ("Why", "reason"), ("Posted", "posted_at"), ("Post", "url"),
+               ("Post text", "text"), ("Contacted", "contacted")]
+EXPORT_DRAFT_COLS = [("Email subject", "subject"), ("Email body", "email_body"), ("LinkedIn note", "note"),
+                     ("LinkedIn message", "message")]
+
+
+def _cell(v):
+    """A spreadsheet cell that is only ever text: a value starting = + - @ (or a tab or return) would be
+    read by Excel or Sheets as a formula, and a post is written by anyone on LinkedIn."""
+    v = "" if v is None else str(v)
+    return "'" + v if v[:1] in ("=", "+", "-", "@", "\t", "\r") else v
+
+
+def leads_csv(leads, *, drafts=True):
+    """The leads as CSV text, one row each, with the post, the person and what Claude read. `drafts` adds
+    the messages written for them (the team's; a client does not see them on the page either). Starts with
+    a byte order mark so Excel on Windows opens it as UTF-8."""
+    import csv
+    import io
+    cols = EXPORT_COLS + (EXPORT_DRAFT_COLS if drafts else [])
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow([label for label, _ in cols])
+    for lead in leads:
+        post, v, d = lead.get("post") or {}, lead.get("verdict") or {}, lead.get("draft") or {}
+        a = post.get("author") or {}
+        sent = sorted({"%s (%s)" % (s.get("channel"), (s.get("at") or "")[:10]) for s in lead.get("sends") or []
+                       if s.get("status") == "sent"})
+        row = {"created_at": (lead.get("created_at") or "")[:10], "score": lead.get("score"),
+               "offer": OFFERS.get(lead.get("offer"), {}).get("label", lead.get("offer")), "status": lead.get("status"),
+               "name": a.get("name"), "headline": a.get("headline"), "profile": a.get("url"), "email": lead.get("email"),
+               "need": v.get("need"), "intent": v.get("intent_label") or v.get("intent"), "company": v.get("company"),
+               "region": v.get("region"), "deadline": v.get("deadline"), "reason": v.get("reason"),
+               "posted_at": (post.get("posted_at") or "")[:10], "url": post.get("url"), "text": post.get("text"),
+               "contacted": ", ".join(sent), "subject": d.get("subject"), "email_body": d.get("email"),
+               "note": d.get("note"), "message": d.get("message")}
+        w.writerow([_cell(row[key]) for _, key in cols])
+    return "\ufeff" + buf.getvalue()
+
+
 # == emails in a post ====================================================================================
 POST_EMAIL_RX = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 

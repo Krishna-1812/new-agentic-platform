@@ -450,6 +450,27 @@
     });
   }
 
+  // The file comes through fetch, not a plain link, so it carries the workspace (X-Account) like every call.
+  $('brExport').addEventListener('click', function () {
+    var btn = $('brExport');
+    var strong = state.status && state.status.settings && state.status.settings.alert_score;
+    btn.disabled = true;
+    fetch(API + '/leads/export' + leadQuery(state.filter, strong), { headers: { 'X-Requested-With': 'fetch' }, credentials: 'same-origin' })
+      .then(function (r) {
+        if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.error || ('HTTP ' + r.status)); });
+        var m = /filename="([^"]+)"/.exec(r.headers.get('Content-Disposition') || '');
+        return r.blob().then(function (b) {
+          var a = DOC.createElement('a');
+          a.href = URL.createObjectURL(b);
+          a.download = m ? m[1] : 'buyer-radar-leads.csv';
+          DOC.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+        });
+      })
+      .catch(function (e) { toast('Export failed: ' + e.message, true); })
+      .then(function () { btn.disabled = false; });
+  });
+
   $('brFilters').innerHTML = renderFilters(state.filter, OFFERS);
   $('brFilters').addEventListener('click', function (ev) {
     var b = ev.target.closest('[data-filter]');
