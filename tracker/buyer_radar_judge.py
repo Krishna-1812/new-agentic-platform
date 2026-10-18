@@ -11,9 +11,13 @@ an agency or recommendations scores high.
 """
 from __future__ import annotations
 
+import copy
+import logging
 import re
 
 from . import buyer_radar as br
+
+log = logging.getLogger(__name__)
 
 INTENTS = ("seeking_vendor", "asking_recommendations", "hiring_for_it", "pain_point", "none")
 INTENT_LABELS = {"seeking_vendor": "Looking for a vendor", "asking_recommendations": "Asking for recommendations",
@@ -54,6 +58,23 @@ JUDGE_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["v
                                    "deadline": {"type": "string"}, "reason": {"type": "string"}}}}}}
 
 
+def judge_schema(offers):
+    """JUDGE_SCHEMA with the offer held to the run's offer keys or 'none', so a verdict naming the offer
+    some other way ("Markify Digital") is not dropped."""
+    schema = copy.deepcopy(JUDGE_SCHEMA)
+    schema["properties"]["verdicts"]["items"]["properties"]["offer"] = {"type": "string",
+                                                                        "enum": list(offers) + ["none"]}
+    return schema
+
+
+def _offer_key(v, offers):
+    got = str(v.get("offer") or "").strip()
+    for k, o in offers.items():
+        if got.lower() in (k, str(o.get("label") or "").lower()):
+            return k
+    return "none"
+
+
 def _offers_text(offers):
     return "\n".join("OFFER %s: %s\nWHO BUYS IT: %s" % (k, o["sells"], o["buyers"]) for k, o in offers.items())
 
@@ -68,7 +89,7 @@ def _post_text(n, p):
 def clean_verdict(v, offers):
     """A verdict the code can trust: a known offer and intent, a score held to 0..100, and a seller or job
     seeker never kept as a lead whatever score the model gave."""
-    offer = v.get("offer") if v.get("offer") in offers else "none"
+    offer = _offer_key(v, offers)
     intent = v.get("intent") if v.get("intent") in INTENTS else "none"
     role = v.get("role") if v.get("role") in ROLES else "other"
     try:
@@ -89,16 +110,19 @@ def judge_posts(posts, offers, *, budget, model=br.MODEL, call=None):
     call = call or lab._json_call
     out = {}
     offers_text = _offers_text(offers)
+    schema = judge_schema(offers)
     for start in range(0, len(posts), br.JUDGE_BATCH):
         batch = posts[start:start + br.JUDGE_BATCH]
         user = offers_text + "\n\n" + "\n\n".join(_post_text(i + 1, p) for i, p in enumerate(batch))
         try:
-            got = call(budget, "read", model, JUDGE_SYSTEM, user, JUDGE_SCHEMA, br.JUDGE_MAX_TOKENS)
+            got = call(budget, "read", model, JUDGE_SYSTEM, user, schema, br.JUDGE_MAX_TOKENS)
         except Exception as e:
             from . import contact_lab_search as cls
             if isinstance(e, cls.BudgetExceeded):
                 e.partial = out
                 raise
+            log.warning("buyer_radar: Claude could not read posts %d-%d: %s: %s", start + 1, start + len(batch),
+                        type(e).__name__, str(e)[:200])
             continue                       # one batch the model could not read is skipped, not the run
         for v in got.get("verdicts") or []:
             try:

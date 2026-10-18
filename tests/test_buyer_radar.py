@@ -59,7 +59,8 @@ def test_the_actor_is_asked_for_recent_posts_sorted_by_date():
     got = src.build_input(['"call analytics"', " ", "x"], posted="week", per_query=30)
     assert got == {"searchQueries": ['"call analytics"', "x"], "maxPosts": 30, "postedLimit": "week",
                    "sortBy": "date", "profileScraperMode": "short"}
-    assert src.build_input(["x"], posted="forever")["postedLimit"] == "24h"
+    assert src.build_input(["x"], posted="forever")["postedLimit"] == "3months"
+    assert src.build_input(["x"])["postedLimit"] == "3months", "buyers post rarely: the last 3 months, not the last day"
 
 
 def test_a_post_is_read_the_same_whatever_shape_the_actor_returns():
@@ -110,6 +111,9 @@ def test_every_default_search_is_one_linkedin_accepts():
         assert offer["queries"] and len(offer["queries"]) <= br.MAX_QUERIES
         for q in offer["queries"]:
             assert src.check_query(q) is None, q
+            assert '"' in q, "each search holds a buyer's exact words, not loose words a seller's post also has"
+    assert br.merged({})["posted"] == "3months" and "3months" in src.POSTED
+    assert br.clean_settings({"posted": "3months"})["posted"] == "3months"
 
 
 def test_collect_caps_the_charge_and_reports_what_apify_charged():
@@ -221,6 +225,8 @@ def test_a_seller_or_job_seeker_is_never_a_lead_whatever_score_the_model_gave():
     assert judge.clean_verdict(dict(base, role="seller"), OFFERS)["score"] == 10
     assert judge.clean_verdict(dict(base, role="job_seeker"), OFFERS)["score"] == 10
     assert judge.clean_verdict(dict(base, role="buyer", offer="gong"), OFFERS)["offer"] == "none"
+    assert judge.clean_verdict(dict(base, role="buyer", offer="Markify Digital"), OFFERS)["offer"] == "markify"
+    assert judge.clean_verdict(dict(base, role="buyer", offer="CallVibe"), OFFERS)["score"] == 95
     v = judge.clean_verdict(dict(base, role="buyer", score="250", intent="??"), OFFERS)
     assert v["score"] == 10 and v["intent"] == "none" and v["intent_label"] == "Not buying"
 
@@ -231,12 +237,15 @@ def test_posts_are_read_in_batches_and_each_verdict_finds_its_post():
 
     def call(budget, stage, model, system, user, schema, max_tokens):
         batches.append(user)
+        offer = schema["properties"]["verdicts"]["items"]["properties"]["offer"]
+        assert offer["enum"] == ["callvibe", "markify", "none"], "the model can only name a real offer"
         n = user.count("POST ")
         return {"verdicts": [{"n": i, "role": "buyer", "offer": "callvibe", "intent": "seeking_vendor", "score": 80 + i,
                               "need": "a tool", "company": "", "region": "", "deadline": "", "reason": ""}
                              for i in range(1, n + 1)] + [{"n": 99, "role": "buyer"}, {"n": "x"}]}
     got = judge.judge_posts(posts, OFFERS, budget=cls.Budget(1), call=call)
     assert len(batches) == 2 and batches[0].count("POST ") == 8 and "OFFER callvibe" in batches[0]
+    assert "enum" not in judge.JUDGE_SCHEMA["properties"]["verdicts"]["items"]["properties"]["offer"], "not changed in place"
     assert got[posts[0]["key"]]["score"] == 81 and got[posts[8]["key"]]["score"] == 81 and len(got) == 10
 
 
@@ -358,7 +367,7 @@ def test_a_run_keeps_the_buyers_drafts_them_and_records_every_cost(monkeypatch):
     d, posts = deps([92, 40, 75, 10], out)
     s = br.merged({})
     summary = br.run(1, "acct:7", s, started_by="mia@x.com", deps=d)
-    assert out["search"] == (sum(len(o["queries"]) for o in br.OFFERS.values()), "24h", 25, pytest.approx(1.6))
+    assert out["search"] == (sum(len(o["queries"]) for o in br.OFFERS.values()), "3months", 25, pytest.approx(1.6))
     assert (summary["posts"], summary["read"], summary["kept"], summary["strong"], summary["drafted"]) == (4, 4, 2, 2, 2)
     assert [x["score"] for x in fake.leads.values()] == [92, 75], "best first, below 50 not kept"
     assert fake.leads[1]["email"] == "buyer1@acme.com", "the address in the post is kept"
@@ -367,6 +376,19 @@ def test_a_run_keeps_the_buyers_drafts_them_and_records_every_cost(monkeypatch):
     assert ("anthropic", "read", 0.01, 0, "acct:7", "mia@x.com") in fake.spend
     assert ("anthropic", "draft", 0.004, 0, "acct:7", "mia@x.com") in fake.spend
     assert fake.updates[:3] == ["searching", "reading", "drafting"]
+    assert [(c["score"], c["role"]) for c in summary["closest"]] == [(40, "buyer"), (10, "buyer")], \
+        "the best posts not kept, so a search that keeps nothing says how close it came"
+    assert summary["closest"][0]["url"].startswith("https://www.linkedin.com/posts/") and summary["notes"] == []
+
+
+def test_posts_claude_could_not_read_are_said_in_the_runs_notes(monkeypatch):
+    monkeypatch.setenv("APIFY_API_TOKEN", "t")
+    FakeStore().install(monkeypatch)
+    d, posts = deps([92, 91, 90], {})
+    d["judge"] = lambda ps, offers, budget, model: {posts[0]["key"]: verdict(92)}
+    summary = br.run(1, "k", br.merged({}), deps=d)
+    assert summary["read"] == 1 and summary["kept"] == 1 and summary["closest"] == []
+    assert summary["notes"] == ["Claude could not read 2 of the 3 posts."]
 
 
 def test_a_post_already_kept_is_not_read_again(monkeypatch):
@@ -870,6 +892,16 @@ def test_the_page_escapes_everything_from_linkedin_and_the_model():
         assert "javascript:" not in html
     assert "br-lead--hot" in out[0] and "Looking for a vendor" in out[0] and "CallVibe" in out[0]
     assert "Already sent" in out[1] and 'data-channel="email" disabled' in out[1], "nobody is emailed twice from the page"
+
+
+def test_a_search_that_kept_nothing_shows_the_best_post_it_read():
+    closest = [{"url": "javascript:alert(1)", "score": 45, "role": "seller", "reason": EVIL}]
+    out = run_js("return [BR.renderRuns([{id: 1, status: 'ready', summary: {posts: 152, read: 150, kept: 0, closest: %s}}]), "
+                 "BR.renderRuns([{id: 2, status: 'ready', summary: {posts: 9, read: 9, kept: 1, closest: %s}}])];"
+                 % (json.dumps(closest), json.dumps(closest)))
+    assert "152 posts found" in out[0] and "150 read by Claude" in out[0]
+    assert "Best post not kept: scored 45, a seller" in out[0] and "<img" not in out[0] and "javascript:" not in out[0]
+    assert "Best post not kept" not in out[1] and "read by Claude" not in out[1]
 
 
 def test_the_page_offers_the_filters_and_queries_the_right_leads():
