@@ -6,5 +6,11 @@
   },
   "enabledPlugins": {
     "video-studio@markify-tools": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(cp /home/user/source-intelligence/*)",
+      "Bash(cp -r /home/user/source-intelligence/*)"
+    ]
   }
 }

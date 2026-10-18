@@ -43,3 +43,7 @@ playwright>=1.49.0
 # Market Radar reads Overture Maps places (tracker/market_radar_places.py) straight
 # from its public Parquet files on S3; DuckDB reads only the row groups it needs.
 duckdb>=1.5.0
+# Paid Marketing Agents: the Pacing Desk's engine (paid_marketing/pacing_engine) works in pandas, and the
+# Client Feedback Agent keeps its OAuth tokens encrypted at rest (tracker/paid_store.py, Fernet).
+pandas>=2.2.0
+cryptography>=42.0.0
