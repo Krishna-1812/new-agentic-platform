@@ -6225,6 +6225,61 @@ def paid_pacing_seed():
                    accounts=meta["accountCount"], latest=latest)
 
 
+# Search Query Analysis -------------------------------------------------------
+# One Google Ads account's search terms, keywords and negative keywords for a range, read straight from Google Ads
+# (tracker/paid_sqr_data.py), sorted on the page by deterministic rules (static/js/sqr_core.js); Claude reads only the
+# clicked terms the rules cannot settle (tracker/paid_sqr.py), booked to the person and the workspace (tracker/paid_spend.py).
+# It suggests negatives and keywords; nothing is applied in Google Ads. The source's per-client rulebooks are not carried
+# over: every account is read with the generic one. Inside a workspace only its own accounts are read (_gads_account).
+
+@app.route(_PM_PREFIX + "/search-query-analysis")
+@position2_required
+def paid_sqr_agent():
+    return _pm_page("sqr_agent.html", "search-query-analysis")
+
+
+@app.route(_PM_PREFIX + "/api/sqr/data")
+@position2_required
+def paid_sqr_read():
+    """One Google Ads account's search terms, keywords and negative keywords for a range (what used to be three CSV exports), and which of
+    the agent's rulesets the account's name points to. Google only: Meta has no search terms."""
+    from tracker import paid_gads, paid_sqr_data, paid_store
+
+    def run():
+        acct = _gads_account(paid_store)
+        if acct.get("platform") != "google":
+            raise ValueError("Search terms are read from Google Ads: pick a Google Ads account")
+        start, end = paid_sqr_data.check_range(request.args.get("start", ""), request.args.get("end", ""))
+        force = request.args.get("refresh") == "1"
+        if force:
+            paid_gads.refresh_guard(paid_store, "sqr:" + acct["id"])
+        notes, stamps = [], []
+        out = paid_sqr_data.read(paid_store, acct, start, end, force=force, notes=notes, stamps=stamps)
+        rid, why = paid_sqr_data.suggest_ruleset(acct["name"])
+        _pm_note("search-query-analysis", acct["id"], "Search terms of %s" % acct["name"], "%s to %s" % (start, end))
+        return jsonify(account=acct, range=[start, end], ruleset={"id": rid, "why": why}, stale=min(notes) if notes else None,
+                       fetchedAt=paid_gads.oldest(stamps), blockedUntil=_platform_blocked(acct, paid_store), **out)
+    return _gads_guard(run)
+
+
+@app.route(_PM_PREFIX + "/api/sqr/classify", methods=["POST"])
+@position2_required
+def paid_sqr_classify():
+    from tracker import paid_spend, paid_sqr
+    from tracker.market_radar_llm import ModelError
+    body = request.get_json(silent=True) or {}
+    acct = _work_acct()
+    try:
+        with paid_spend.charging("search-query-analysis", _pm_user_email(), acct["space"] if acct else ""):
+            results = paid_sqr.classify(body.get("ruleset"), body.get("terms"), account=body.get("account") or "", profile=body.get("profile"))
+    except paid_sqr.BadRequest as e:
+        return jsonify(error=str(e)), 400
+    except ModelError as e:
+        app.logger.warning("paid marketing: SQR classify failed: %s", e)
+        return jsonify(error="The model could not classify this batch (%s)." % e.kind), 502
+    return jsonify(results=results)
+
+
 @app.route(_PM_PREFIX + "/api/meta/status")
 @position2_required
 def paid_meta_status():

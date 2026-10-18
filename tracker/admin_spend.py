@@ -87,6 +87,9 @@ SOURCES = (
     ("qa-agent", "QA Agent", "usd", """
         SELECT email, NULL::text, space, usd, created_at
           FROM pm_spend WHERE agent = 'qa-agent' AND created_at >= %(since)s AND usd > 0"""),
+    ("search-query-analysis", "Search Query Analysis", "usd", """
+        SELECT email, NULL::text, space, usd, created_at
+          FROM pm_spend WHERE agent = 'search-query-analysis' AND created_at >= %(since)s AND usd > 0"""),
     ("event-intelligence", "Event & Conference Intelligence", "credits", """
         SELECT email, NULL::text, to_jsonb(evi_runs)->>'space', credits_spent, created_at
           FROM evi_runs WHERE created_at >= %(since)s AND credits_spent > 0"""),
