@@ -1003,8 +1003,9 @@ def test_the_toggle_at_the_top_says_who_searches_and_what_it_costs():
     assert 'role="radiogroup"' in uni and 'data-source="unipile"' in uni and 'aria-checked="true" data-source="unipile"' in uni
     assert 'aria-checked="false" data-source="apify"' in uni and "Free per post" in uni and "900 results a day" in uni
     assert 'aria-checked="true" data-source="apify"' in apify and "$0.002 a post" in apify
-    assert "last month (Unipile looks back no further)" in est_uni and "free through Unipile" in est_uni
-    assert "last 3 months" in est_apify and "free through Unipile" not in est_apify
+    assert "free through Unipile" in est_uni and "free through Unipile" not in est_apify
+    assert "searches</b>" not in est_uni + est_apify and "posts from the last" not in est_uni + est_apify, \
+        "the card does not repeat how many searches and posts"
     assert "via Unipile" in runs
 
 
@@ -1037,4 +1038,4 @@ def test_the_settings_form_holds_every_setting_and_the_estimate_reads_plainly():
                 "brSlack", "brAutoEmail", "brAutoLi", "brFind", "brSend", "brEcap", "brLcap", "brAddr"):
         assert 'id="%s"' % id_ in form, id_
     assert "&quot;call QA&quot;" in form and "<img" not in form
-    assert "searches</b>" in est and "the run's cap" in est
+    assert "the run's cap" in est

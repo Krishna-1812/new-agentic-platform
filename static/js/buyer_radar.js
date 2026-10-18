@@ -207,13 +207,10 @@
     return '<ol class="br-steps-live">' + steps + '</ol>' + (n.length ? '<p class="br-live-n">' + esc(n.join(' · ')) + '</p>' : '');
   }
 
-  function renderEstimate(est, settings) {
+  function renderEstimate(est) {
     if (!est) return '';
     var uni = est.source === 'unipile';
-    var back = uni && settings.posted === '3months' ? 'month (Unipile looks back no further)' :
-      ({ '1h': 'hour', '24h': 'day', week: 'week', month: 'month', '3months': '3 months' }[settings.posted] || settings.posted);
-    return '<p><b>' + esc(est.queries) + ' searches</b>, up to ' + esc(est.posts) + ' posts from the last ' + esc(back) + '.</p>' +
-      (uni ? '<p class="br-cost">The search is free through Unipile; Claude reading the posts is the cost.</p>' : '') +
+    return (uni ? '<p class="br-cost">The search is free through Unipile; Claude reading the posts is the cost.</p>' : '') +
       '<p class="br-cost">Usually about ' + esc(money(est.typical_usd)) + ', never more than ' + esc(money(Math.min(est.worst_usd, est.usd_cap))) + ' (the run\'s cap). Every day for a month: up to ' + esc(money(est.month_usd)) + '.</p>';
   }
 
@@ -382,7 +379,7 @@
       state.status = st;
       $('brReady').innerHTML = renderReady(st);
       $('brStats').innerHTML = renderStats(st);
-      if (!CLIENT && st.estimate) $('brEstimate').innerHTML = renderEstimate(st.estimate, st.settings);
+      if (!CLIENT && st.estimate) $('brEstimate').innerHTML = renderEstimate(st.estimate);
       if (!CLIENT && $('brSource')) $('brSource').innerHTML = renderSource(st.source, st.sources);
       if (!CLIENT && $('brSettings') && !$('brSettings').dataset.drawn) {
         $('brSettings').innerHTML = renderSettings(st.settings, OFFERS, st.defaults);
@@ -563,7 +560,7 @@
       api('/settings', { method: 'POST', body: readSettings($, OFFERS) }).then(function (j) {
         state.status.settings = j.settings;
         state.status.estimate = j.estimate;
-        $('brEstimate').innerHTML = renderEstimate(j.estimate, j.settings);
+        $('brEstimate').innerHTML = renderEstimate(j.estimate);
         msg.textContent = 'Saved.';
         msg.className = 'br-set-msg ok';
       }).catch(function (e) { msg.textContent = e.message; msg.className = 'br-set-msg bad'; });
