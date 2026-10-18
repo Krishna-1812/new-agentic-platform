@@ -802,6 +802,30 @@ def test_a_search_needs_its_keys_and_a_yes(mem, monkeypatch):
     assert r.status_code == 409 and r.get_json()["run_id"] == 3
 
 
+def test_the_leads_export_as_a_spreadsheet_with_the_lists_filters(mem):
+    mem["leads"][7].update(post={"url": "https://www.linkedin.com/posts/x", "text": "=HYPERLINK(\"http://evil\") need an agency",
+                                 "posted_at": "2026-10-12T15:22:00Z", "author": {"name": "Michael", "headline": "CMO", "url": "https://www.linkedin.com/in/m/"}},
+                           verdict={"need": "A full-service agency", "intent_label": "Looking for a vendor", "deadline": "Nov 6", "reason": "+RFP"},
+                           draft={"subject": "Your RFP", "email": "Hi", "note": "n", "message": "m"}, email="cmo@wae.com",
+                           created_at="2026-10-18T07:00:00+00:00",
+                           sends=[{"channel": "linkedin", "status": "sent", "at": "2026-10-18T08:00:00+00:00"}])
+    r = _client(STAFF).get(BASE + "/api/leads/export?offer=markify&min=70")
+    assert r.status_code == 200 and r.mimetype == "text/csv"
+    assert r.headers["Content-Disposition"].startswith('attachment; filename="buyer-radar-leads-') and r.headers["Content-Disposition"].endswith('-markify.csv"')
+    assert mem["asked"][-1] == (STAFF, {"status": None, "offer": "markify", "min_score": 70, "limit": 5000})
+    import csv as csvmod
+    import io
+    text = r.get_data(as_text=True)
+    assert text.startswith("\ufeff"), "Excel on Windows reads it as UTF-8"
+    rows = list(csvmod.DictReader(io.StringIO(text.lstrip("\ufeff"))))
+    assert len(rows) == 1 and rows[0]["Name"] == "Michael" and rows[0]["Email address"] == "cmo@wae.com"
+    assert rows[0]["Email body"] == "Hi" and len(set(rows[0])) == len(br.EXPORT_COLS) + len(br.EXPORT_DRAFT_COLS), "every heading is its own"
+    assert rows[0]["What they want"] == "A full-service agency" and rows[0]["Deadline"] == "Nov 6" and rows[0]["Posted"] == "2026-10-12"
+    assert rows[0]["Post text"].startswith("'=HYPERLINK") and rows[0]["Why"] == "'+RFP", "never read as a formula"
+    assert rows[0]["Email subject"] == "Your RFP" and rows[0]["Contacted"] == "linkedin (2026-10-18)" and rows[0]["Offer"] == "CallVibe"
+    assert _client(STAFF).get(BASE + "/api/leads/export?status=bogus").status_code == 400
+
+
 def test_leads_are_filtered_and_a_lead_can_be_edited(mem):
     c = _client(STAFF)
     got = c.get(BASE + "/api/leads?status=new&offer=callvibe&min=70").get_json()
@@ -902,6 +926,11 @@ def test_a_client_searches_and_reads_but_never_sends_or_sees_costs(seeded, mem, 
     assert not (settings["auto_email"] or settings["auto_linkedin"] or settings["find_emails"] or settings["slack_channel"])
     leads = c.get(BASE + "/api/leads", headers=XA).get_json()["leads"]
     assert "draft" not in leads[0] and leads[0]["sends"] == [{"channel": "email", "status": "sent", "at": None}]
+    mem["leads"][7]["draft"] = {"subject": "Our secret pitch", "email": "e", "note": "n", "message": "m"}
+    csv_text = c.get(BASE + "/api/leads/export", headers=XA).get_data(as_text=True)
+    assert "What they want" in csv_text and "Email subject" not in csv_text and "Our secret pitch" not in csv_text, \
+        "a client's export has no drafted messages"
+    assert mem["asked"][-1][0] == space
     assert c.post(BASE + "/api/leads/7", json={"status": "replied"}, headers=XA).status_code == 200
     assert c.post(BASE + "/api/leads/7", json={"email": "x@y.co"}, headers=XA).status_code == 403
     for path in ("/api/settings", "/api/leads/7/send"):
@@ -958,6 +987,11 @@ def test_the_page_escapes_everything_from_linkedin_and_the_model():
         assert "javascript:" not in html
     assert "br-lead--hot" in out[0] and "Looking for a vendor" in out[0] and "CallVibe" in out[0]
     assert "Already sent" in out[1] and 'data-channel="email" disabled' in out[1], "nobody is emailed twice from the page"
+
+
+def test_an_empty_export_still_has_its_headings():
+    text = br.leads_csv([], drafts=False)
+    assert text.lstrip("\ufeff").splitlines() == [",".join(label for label, _ in br.EXPORT_COLS)]
 
 
 def test_the_toggle_at_the_top_says_who_searches_and_what_it_costs():

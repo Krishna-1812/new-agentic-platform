@@ -5656,7 +5656,7 @@ CLIENT_TOOL_ROUTES = {
     # The free mapping only: never a reveal, which spends the agency's Saleshandy credits.
     "people-signals": (r"people-signals/api/(status|estimate|chat|runs(/\d+(/export\.csv)?)?)",),
     # Searching and reading the leads; never the settings or a send, which write to people for the agency.
-    "buyer-radar": (r"buyer-radar/api/(status|runs(/\d+)?|leads(/\d+)?)",),
+    "buyer-radar": (r"buyer-radar/api/(status|runs(/\d+)?|leads(/\d+|/export)?)",),
 }
 CLIENT_RUN_ROUTES = {          # (method, path): what counts as a run started
     "page-watch": (r"/[^/]+/api/page-watch/watches", r"page-watch/api/watches/\d+/check"),
@@ -12570,6 +12570,33 @@ def buyer_radar_leads():
     except store.StoreUnavailable as e:
         return _br_store_error(e)
     return jsonify(leads=[_br_lead_out(x, client) for x in leads])
+
+
+@app.route(BR + "/api/leads/export")
+@position2_required
+def buyer_radar_leads_export():
+    """The leads as a CSV file, with the same filters as the list (status, offer, min). A client's file has
+    no drafted messages, as the page shows them none."""
+    from flask import Response
+    from tracker import buyer_radar as br, buyer_radar_store as store
+    status = request.args.get("status") or None
+    offer = request.args.get("offer") or None
+    if status and status not in store.LEAD_STATUSES:
+        return jsonify(error="Unknown status."), 400
+    if offer and offer not in br.OFFERS:
+        return jsonify(error="Unknown offer."), 400
+    try:
+        min_score = max(0, min(100, int(request.args.get("min") or 0)))
+    except ValueError:
+        min_score = 0
+    try:
+        leads = store.list_leads(_mr_email(), status=status, offer=offer, min_score=min_score, limit=5000)
+    except store.StoreUnavailable as e:
+        return _br_store_error(e)
+    name = "buyer-radar-leads-%s%s.csv" % (datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+                                          "-" + (status or offer or "min%d" % min_score) if (status or offer or min_score) else "")
+    return Response(br.leads_csv(leads, drafts=not viewer_is_client()), mimetype="text/csv",
+                    headers={"Content-Disposition": 'attachment; filename="%s"' % name, "Cache-Control": "no-store"})
 
 
 @app.route(BR + "/api/leads/<int:lead_id>", methods=["POST"])
