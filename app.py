@@ -5281,6 +5281,60 @@ def paid_audiences_report():
     return jsonify(report)
 
 
+# Asset Coverage Audit ---------------------------------------------------------
+# Every live Search, Performance Max, Display and Demand Gen campaign of a Google Ads account or MCC held against what its kind of
+# campaign should carry (sitelinks, callouts, snippets, calls, images, logos, business name, videos, headlines and the rest), with
+# what is missing, disapproved, paused, past its end date or never shown. Reading is tracker/paid_assets.py, the rules
+# tracker/paid_assets_rules.py. It only recommends: nothing is changed in Google Ads. The account list is Segment Analysis's.
+
+@app.route(_PM_PREFIX + "/asset-coverage")
+@position2_required
+def paid_asset_coverage():
+    return _pm_page("asset_coverage.html", "asset-coverage")
+
+
+def _paid_assets_answer(make, note=False):
+    """Runs one of the Asset Coverage Audit's reads and maps what can go wrong the same way for all three routes. Inside a
+    workspace only its own accounts are read; `note` writes the day's History row (the report, not each asset opened)."""
+    from tracker import paid_gads as paid_gads_base, paid_gads_segments as paid_gads, paid_assets
+    try:
+        refused = _pm_target_refusal(request.args.get("account"), paid_gads.list_groups)
+        if refused:
+            return jsonify(error=refused), 403
+        out = make(paid_assets)
+    except paid_assets.BadRequest as e:
+        return jsonify(error=str(e)), 400
+    except paid_gads_base.RefreshTooSoon as e:
+        return jsonify(error=str(e), kind="cooldown", retryIn=e.retry_in), 429
+    except paid_gads.GadsError as e:
+        return _pm_gads_error(e)
+    if note:
+        account = out.get("account") or {}
+        _pm_note("asset-coverage", account.get("id", ""), "Asset coverage of %s" % account.get("name", "an account"))
+    return jsonify(out)
+
+
+@app.route(_PM_PREFIX + "/api/assets/report")
+@position2_required
+def paid_assets_report():
+    extra = {"force": True} if str(request.args.get("refresh") or "") in ("1", "true") else {}      # the Refresh button
+    return _paid_assets_answer(lambda pa: pa.report_for(request.args.get("account"), **extra), note=True)
+
+
+# What one campaign's assets are (the pictures, the text, the dates), and every asset of one kind: read from the detail the report's
+# read saved, so opening them costs no Google Ads quota unless that copy has gone.
+@app.route(_PM_PREFIX + "/api/assets/campaign")
+@position2_required
+def paid_assets_campaign():
+    return _paid_assets_answer(lambda pa: pa.campaign_detail_for(request.args.get("account"), request.args.get("campaign")))
+
+
+@app.route(_PM_PREFIX + "/api/assets/library")
+@position2_required
+def paid_assets_library():
+    return _paid_assets_answer(lambda pa: pa.library_for(request.args.get("account"), request.args.get("kind"), request.args.get("state") or "all", request.args.get("level")))
+
+
 @app.route(_PM_PREFIX + "/api/meta/status")
 @position2_required
 def paid_meta_status():
