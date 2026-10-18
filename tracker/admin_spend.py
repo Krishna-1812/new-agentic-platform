@@ -78,6 +78,9 @@ SOURCES = (
     ("ad-strength", "Ad Strength Analysis", "usd", """
         SELECT email, NULL::text, space, usd, created_at
           FROM pm_spend WHERE agent = 'ad-strength' AND created_at >= %(since)s AND usd > 0"""),
+    ("account-audit", "Account Audit", "usd", """
+        SELECT email, NULL::text, space, usd, created_at
+          FROM pm_spend WHERE agent = 'account-audit' AND created_at >= %(since)s AND usd > 0"""),
     ("event-intelligence", "Event & Conference Intelligence", "credits", """
         SELECT email, NULL::text, to_jsonb(evi_runs)->>'space', credits_spent, created_at
           FROM evi_runs WHERE created_at >= %(since)s AND credits_spent > 0"""),

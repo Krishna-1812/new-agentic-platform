@@ -253,3 +253,21 @@ def test_inside_a_workspace_asset_coverage_and_the_assets_it_opens_are_its_own(s
         assert c.get(base + route + LUMINA, headers=XA).status_code == 200, route
     assert read == [LUMINA] * 3
     assert [a[1] for a in ads] == ["asset-coverage"], "the report writes the History row, opening an asset does not"
+
+
+def test_inside_a_workspace_the_audit_and_its_saved_copies_are_its_own(seeded, segs, ads, monkeypatch):
+    from tracker import paid_audit, paid_audit_store
+    read = []
+    monkeypatch.setattr(paid_audit, "report_for", lambda account, **k: read.append(account) or {
+        "accounts": [{"name": "Lumina Ads"}], "score": 72})
+    monkeypatch.setattr(paid_audit_store, "get", lambda sid, key=None: {"id": sid, "accountKey": OTHER, "createdBy": T.RAJ})
+    monkeypatch.setattr(paid_audit_store, "delete", lambda *a, **k: pytest.fail("deleted another account's audit"))
+    c = T._client(T.RAJ)
+    base = "/strategic-agents/paid-marketing/api/audit/"
+    for other in (OTHER, META, LUMINA + "+" + META):
+        assert c.get(base + "report?account=" + other, headers=XA).status_code == 403, other
+        assert c.get(base + "download?file=pdf&account=" + other, headers=XA).status_code == 403, other
+    assert read == []
+    assert c.get(base + "report?account=" + LUMINA, headers=XA).status_code == 200 and read == [LUMINA]
+    assert ads[-1][1:3] == ("account-audit", LUMINA) and ads[-1][5] == "Score 72"
+    assert c.delete(base + "history/s1", headers=dict(XA, Origin="http://localhost"), content_type="application/json").status_code == 403

@@ -101,6 +101,16 @@ AGENTS = (
      "tags": ["Google Ads", "Assets"],
      "api": (_SEGMENTS, r"paid-marketing/api/assets/(report|campaign|library)"),
      "runs": (r"paid-marketing/api/assets/report",)},
+    {"slug": "account-audit", "endpoint": "paid_account_audit",
+     "name": "Account Audit", "icon": "K",
+     "about": "Is the account set up to win: about fifty checks, scored, before any strategy",
+     "lead": "Reads a Google Ads or Meta ad account live and holds it against a written checklist of about fifty checks, from "
+             "conversion tracking to landing pages. Anything it could not read says so instead of passing or failing.",
+     "gives": "A Google Ads account, a Meta ad account or one of each",
+     "gets": "A score, the checks to fix first, and the full list to download",
+     "tags": ["Google Ads", "Meta"],
+     "api": (_ACCOUNTS, _SEGMENTS, r"paid-marketing/api/audit/(report|save|history|compare|summary|download)(/[\w-]+)?"),
+     "runs": (r"paid-marketing/api/audit/report",)},
 )
 
 BY_SLUG = {a["slug"]: a for a in AGENTS}
