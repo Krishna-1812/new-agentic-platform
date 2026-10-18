@@ -14,6 +14,8 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 
+from . import paid_catalog
+
 log = logging.getLogger(__name__)
 
 TOOLS = {"page-watch": "Page Watch", "video-studio": "Video Studio", "ai-review": "AI review", "agents": "Agents",
@@ -94,6 +96,7 @@ AGENT_NAMES = {"local-business-radar": "Local Business Radar", "social-media-int
                "event-conference-intelligence": "Event & Conference Intelligence",
                "thought-leader-pr": "Thought Leader Intelligence", "company-people-intelligence": "Contact Finder",
                "market-radar": "Market Radar", "people-signals": "People & Signals", "buyer-radar": "Buyer Radar"}
+AGENT_NAMES.update(paid_catalog.NAMES)
 
 
 def agent_entry(acct, agent, title, detail, who, at, status, href=None):
@@ -202,6 +205,16 @@ def _br(acct):
     return out
 
 
+def _paid(agent):
+    """A Paid Marketing agent: the ad accounts it read in the workspace, one row per account and day
+    (tracker/paid_activity.py)."""
+    def read(acct):
+        from tracker import paid_activity
+        return [_agent(acct, agent, r["title"], r["detail"], r["who"], r["at"], "done")
+                for r in paid_activity.space_rows(acct["space"], limit=LIMIT * 4) if r["agent"] == agent][:LIMIT]
+    return read
+
+
 # ── The SEO & AEO tools (phase 3) ────────────────────────────────────────────
 def _seo(acct):
     from tracker import seo_runs, seo_runs_store
@@ -218,7 +231,7 @@ def _seo(acct):
 
 AGENT_READS = (("seo", _seo), ("local-business-radar", _lbr), ("social-media-intelligence", _smi),
                ("event-conference-intelligence", _evi), ("thought-leader-pr", _tlpr), ("market-radar", _mr),
-               ("people-signals", _ps), ("buyer-radar", _br))
+               ("people-signals", _ps), ("buyer-radar", _br)) + tuple((a["slug"], _paid(a["slug"])) for a in paid_catalog.AGENTS)
 
 
 def entries(acct, library=None, limit=SHOWN, extra=()):

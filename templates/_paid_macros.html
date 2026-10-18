@@ -1,0 +1,23 @@
+{#- The Paid Marketing pages' shared pieces (templates/_paid_base.html says how a page is put together).
+
+    paid_hero(kind, line1, mark, after, lead): the ink block a page opens with, in the directory's voice:
+    "Paid marketing . <kind>", the Building pill, a two-line statement whose second line starts behind the
+    orange marker, and a lead. Called with {% call %}, whatever the call holds (a live status, a figure)
+    sits on its right. Import it `with context` so it knows when the page is inside a workspace. -#}
+{%- macro paid_hero(kind, line1, mark, after, lead) -%}
+  <section class="sa-hero mr-hero mr-hero--compact pmx-hero">
+    <div class="pmx-hero-copy">
+      <div class="sa-hero-top">
+        <span class="sa-lbl">Paid marketing &middot; {{ kind }}</span>
+        <span class="pmx-pill"><i></i>Building</span>
+      </div>
+      <h1 class="sa-h1 mr-h1">
+        <span class="sa-ln"><span>{{ line1 }}</span></span>
+        <span class="sa-ln"><span><span class="sa-mk">{{ mark }}</span> <em class="sa-it">{{ after }}</em></span></span>
+      </h1>
+      <p class="pmx-lead">{{ lead }}</p>
+      {% if pm_scoped %}<p class="pmx-scope">Inside this workspace it reads the workspace's own Google Ads accounts only.</p>{% endif %}
+    </div>
+    {{ caller() if caller else '' }}
+  </section>
+{%- endmacro %}

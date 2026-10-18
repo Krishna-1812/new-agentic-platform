@@ -218,6 +218,7 @@ a.as-mod:hover .as-go { background: var(--ink); color: var(--tx-on-ink); }
 .as-runs-sub { margin: calc(var(--sp-3) * -1) 0 var(--sp-4); color: var(--tx2); font-size: var(--fs-sm); }
 .as-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--acc); flex: none; }
 .as-dot--sky { background: var(--sky); }
+.as-dot--cream { background: var(--cream); }
 
 /* ── History: everything done for the account, by day ──────────────────── */
 .as-hist { margin-bottom: var(--sp-8); }
@@ -560,6 +561,8 @@ a.as-ev-main::after { content: ""; position: absolute; inset: 0; border-radius: 
 .rx-ag--market-radar, .sh-tool--market-radar { --c: var(--ink); --c-dim: var(--s2); --c-tx: var(--tx); --c-on: var(--tx-on-ink); }
 .rx-ag--people-signals, .sh-tool--people-signals { --c: var(--sky); --c-dim: var(--sky-dim); --c-tx: var(--sky-tx); }
 .rx-ag--buyer-radar, .sh-tool--buyer-radar { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
+/* The Paid Marketing agents: amber, the Paid marketing group's hue (tracker/paid_catalog.py COLOUR). */
+.rx-ag--performance-summarizer, .sh-tool--performance-summarizer { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
 
 /* The flood: a circle behind the icon that grows to cover the card. */
 .rx-flood { position: absolute; z-index: -1; left: 48px; top: 48px; width: 56px; height: 56px; margin: -28px 0 0 -28px;

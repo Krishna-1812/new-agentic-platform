@@ -20,8 +20,8 @@ Ads and Meta accounts. They sit on the Operational Agents page with a **Paid mar
 
 | Step | What | State |
 |---|---|---|
-| 1 | The backend: every `tracker/paid_*` module and its module tests | This PR |
-| 2 | Performance Summarizer, with the shared page layout, the cards and the workspace wiring | Next |
+| 1 | The backend: every `tracker/paid_*` module and its module tests | Done (#153) |
+| 2 | Performance Summarizer, with the shared page layout, the cards and the workspace wiring | This PR |
 | 3 | Product, Segment, Geo, Seasonality, Ad Strength, Audience Segments, Asset Coverage | One PR each |
 | 4 | Account Audit, Landing Page Check, Experiment Tracker | One PR each |
 | 5 | Pacing Desk and Search Query Analysis, with the source's client data taken out | One PR each |
@@ -37,6 +37,30 @@ with those taken out and the algorithm kept.
 user agents is now the agency's or the brand's (`brand.BRAND`); staff addresses in the tests are the platform's;
 the design docs say "the agency". `market_radar_llm` keeps the model's token usage on every reply (the cost ledger
 reads it). `pandas` (the pacing engine) and `cryptography` (encrypted OAuth tokens) are in `requirements.txt`.
+
+## How a page is put together
+
+- **The frame** is Northaxis's: `templates/_paid_base.html` (the head, the top bar with Operational Agents >
+  Paid marketing > the agent, the paper shell) and the ink hero, `paid_hero` in `templates/_paid_macros.html`.
+- **The page itself** is the source's template body and script, unchanged in what they draw into. Its sheet,
+  `static/css/paid_marketing.css`, keeps the source's classes; the pages set `data-theme="light"` so its light
+  rules apply, and the block at the end maps every `--pm-*` colour onto Northaxis's tokens (one orange accent as
+  a fill, its text-safe `--acc-tx` wherever it is the colour of text). The charts use Northaxis's hues
+  (`static/js/ps_data.js`), deepened for the white ground.
+- **The list** is `tracker/paid_catalog.py`: each agent's slug, page, card words, client routes and runs. The
+  Operational Agents page draws the amber "Paid marketing" group from it, each card with a "Paid marketing" pill.
+
+## In every client workspace
+
+- Each agent is in `ACCT_AGENTS` (from the catalog), so it opens at `/<account>/agents/<slug>`.
+- **Inside a workspace it reads only that workspace's own Google Ads accounts**, its profile's customer ids
+  (`app.py _pm_scope`), for the team and for a client alike; no Meta ad account, since a workspace names none
+  yet. A workspace with no customer id says how to add one.
+- A client the workspace shares an agent with can use it on their own accounts and **keeps their own ad
+  figures** (spend, cost per conversion): the platform's scrub of the agency's costs from client answers skips
+  the paid agents. A route several agents share (the account list) is the client's when any of them is shared.
+- **History:** a read inside a workspace is one row per agent, ad account and day (`tracker/paid_activity.py`,
+  table `pm_activity`), read by `tracker/account_history.py`.
 
 ## Variables (Railway → web → Variables)
 
