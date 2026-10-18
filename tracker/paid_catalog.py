@@ -51,6 +51,16 @@ AGENTS = (
      "tags": ["Google Ads", "Meta"],
      "api": (_ACCOUNTS, _SEGMENTS, r"paid-marketing/api/segments/(report|summary)"),
      "runs": (r"paid-marketing/api/segments/report",)},
+    {"slug": "geo-performance", "endpoint": "paid_geo_performance",
+     "name": "Geo Performance", "icon": "G",
+     "about": "Which places earn their spend, which leak it, and the bid adjustment each deserves",
+     "lead": "Reads Google Ads or Meta live at the level you choose, from country down to postal code, charts every place, "
+             "judges each against the account's own average and says where to raise bids, where to cut and where spend leaks.",
+     "gives": "An ad account or MCC, a date range and a location level",
+     "gets": "Every place judged, with its bid adjustment and a briefing",
+     "tags": ["Google Ads", "Meta"],
+     "api": (_ACCOUNTS, _SEGMENTS, r"paid-marketing/api/geo/(report|summary)"),
+     "runs": (r"paid-marketing/api/geo/report",)},
 )
 
 BY_SLUG = {a["slug"]: a for a in AGENTS}

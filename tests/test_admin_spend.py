@@ -185,6 +185,7 @@ def test_every_ledger_is_read_with_who_where_and_how_much(pg, world, monkeypatch
     # The Paid Marketing agents' model calls, inside a client workspace
     from tracker import paid_spend
     paid_spend.record("segment-analysis", "Mia@x.com", "acct:7", "segments", "claude-sonnet-5-5", 0.012)
+    paid_spend.record("geo-performance", "kris@x.com", "", "geo", "claude-sonnet-5-5", 0.02)
     er = evi.save_run("kris@x.com", "lookup", "ai summit", space="acct:7")
     evi.update_run(er, credits_spent=40)
 
@@ -213,6 +214,7 @@ def test_every_ledger_is_read_with_who_where_and_how_much(pg, world, monkeypatch
     assert one("event-intelligence")["unit"] == "credits" and one("event-intelligence")["usd"] == 40
     assert one("segment-analysis")["usd"] == pytest.approx(0.012) and one("segment-analysis")["space"] == "acct:7"
     assert one("segment-analysis")["email"] == "mia@x.com"
+    assert one("geo-performance")["usd"] == pytest.approx(0.02) and one("geo-performance")["space"] == ""
 
 
 def test_a_ledger_nobody_has_used_yet_is_reported_as_empty_not_as_broken(pg):

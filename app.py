@@ -5007,6 +5007,80 @@ def paid_segment_summary():
     return jsonify(out)
 
 
+# Geo Performance -------------------------------------------------------------
+# Performance by location for a Google Ads account or MCC, a Meta ad account, or a Google and a Meta account
+# together, at one location level: which places earn their spend, which leak it, and what geo bid adjustment
+# each deserves. The numbers are tracker/paid_geo.py, their meaning tracker/paid_geo_insights.py, the Claude
+# briefing tracker/paid_geo_summary.py (booked, tracker/paid_spend.py). The account lists are Segment
+# Analysis's, and inside a workspace the same targets are refused (_pm_target_refusal).
+
+GEO_SUMMARY_DAILY_CAP = 100
+_GEO_SUMMARY_USES = {}
+
+
+@app.route(_PM_PREFIX + "/geo-performance")
+@position2_required
+def paid_geo_performance():
+    return _pm_page("geo_performance.html", "geo-performance")
+
+
+def _pm_geo_report():
+    """(report, None) for the account, level and dates in the query string, or (None, the error response)."""
+    from tracker import paid_gads as paid_gads_base, paid_gads_segments as paid_gads, paid_geo
+    src = request.args if request.method == "GET" else (request.get_json(silent=True) or {})
+    try:
+        refused = _pm_target_refusal(src.get("account"), paid_gads.list_groups)
+        if refused:
+            return None, (jsonify(error=refused), 403)
+        extra = {"force": True} if str(src.get("refresh") or "") in ("1", "true") else {}      # the Refresh button
+        return paid_geo.report_for(src.get("account"), str(src.get("level") or "region"), src.get("from"), src.get("to"), **extra), None
+    except paid_geo.BadRequest as e:
+        return None, (jsonify(error=str(e)), 400)
+    except paid_gads_base.RefreshTooSoon as e:
+        return None, (jsonify(error=str(e), kind="cooldown", retryIn=e.retry_in), 429)
+    except paid_gads.GadsError as e:
+        return None, _pm_gads_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/geo/report")
+@position2_required
+def paid_geo_report():
+    report, err = _pm_geo_report()
+    if err:
+        return err
+    account, rng = report.get("account") or {}, report.get("range") or {}
+    _pm_note("geo-performance", account.get("id", ""), "Geo of %s" % account.get("name", "an account"),
+             "%s to %s, by %s" % (rng.get("from", ""), rng.get("to", ""), report.get("level", "")) if rng else "")
+    return jsonify(report)
+
+
+@app.route(_PM_PREFIX + "/api/geo/summary", methods=["POST"])
+@position2_required
+def paid_geo_summary():
+    """The Claude-written briefing for one table. The page sends only the account, level, dates and campaign type; the report and
+    its insights are rebuilt here, so the model can only ever be shown what the rules found."""
+    from tracker import paid_geo_summary, paid_spend
+    body = request.get_json(silent=True) or {}
+    ctype = str(body.get("type") or "All")
+    email, today = _pm_user_email(), datetime.now(timezone.utc).date().isoformat()
+    day, used = _GEO_SUMMARY_USES.get(email, (today, 0))
+    if day != today:
+        used = 0
+    if used >= GEO_SUMMARY_DAILY_CAP:
+        return jsonify(error="That is %d summaries in a day, the most this allows." % used), 429
+    report, err = _pm_geo_report()
+    if err:
+        return err
+    view = report["views"].get(ctype)
+    if view is None:
+        return jsonify(error="That campaign type is not in this report."), 400
+    _GEO_SUMMARY_USES[email] = (today, used + 1)
+    key = (report["account"]["id"], report["level"], ctype, report["range"]["from"], report["range"]["to"])
+    acct = _work_acct()
+    with paid_spend.charging("geo-performance", email, acct["space"] if acct else ""):
+        return jsonify(paid_geo_summary.cached_summary(key, report, view, ctype))
+
+
 @app.route(_PM_PREFIX + "/api/meta/status")
 @position2_required
 def paid_meta_status():

@@ -191,3 +191,17 @@ def test_the_segment_summary_is_booked_to_the_person_and_the_workspace(seeded, s
     assert r.status_code == 200 and booked == [("segment-analysis", T.RAJ, T._acct("lumina")["space"])]
     assert paid_spend._who.get() is None, "nothing outside the request is charged"
     appmod._SEGMENT_SUMMARY_USES.clear()
+
+
+def test_inside_a_workspace_a_geo_report_reads_only_what_is_its_own(seeded, segs, ads, monkeypatch):
+    from tracker import paid_geo
+    read = []
+    monkeypatch.setattr(paid_geo, "report_for", lambda account, level, a, b, **k: read.append(account) or {
+        "account": {"id": account, "name": "Lumina Ads"}, "level": level, "range": {"from": a, "to": b}, "views": {}})
+    c = T._client(T.RAJ)
+    geo = "/strategic-agents/paid-marketing/api/geo/report?level=city&account="
+    for other in (OTHER, "mcc-2", META):
+        assert c.get(geo + other + SEG_RANGE, headers=XA).status_code == 403, other
+    assert read == []
+    assert c.get(geo + LUMINA + SEG_RANGE, headers=XA).status_code == 200 and read == [LUMINA]
+    assert ads[-1][1:3] == ("geo-performance", LUMINA) and "by city" in ads[-1][5]

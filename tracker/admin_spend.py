@@ -72,6 +72,9 @@ SOURCES = (
     ("segment-analysis", "Segment Analysis", "usd", """
         SELECT email, NULL::text, space, usd, created_at
           FROM pm_spend WHERE agent = 'segment-analysis' AND created_at >= %(since)s AND usd > 0"""),
+    ("geo-performance", "Geo Performance", "usd", """
+        SELECT email, NULL::text, space, usd, created_at
+          FROM pm_spend WHERE agent = 'geo-performance' AND created_at >= %(since)s AND usd > 0"""),
     ("event-intelligence", "Event & Conference Intelligence", "credits", """
         SELECT email, NULL::text, to_jsonb(evi_runs)->>'space', credits_spent, created_at
           FROM evi_runs WHERE created_at >= %(since)s AND credits_spent > 0"""),
