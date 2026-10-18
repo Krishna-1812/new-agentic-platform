@@ -145,7 +145,7 @@ function recompute(){
 function paintPickers(){
   $("#acctPick").hidden=S.platform==="meta"; $("#metaPick").hidden=S.platform==="google";
   var both=S.platform==="both";
-  var items=[{value:"",label:both?"None":"Choose an account",sub:both?"Leave Google out":S.metaAccounts.length+" accounts",avatar:both?"–":"?",hue:200}];
+  var items=[{value:"",label:both?"None":"Choose an account",sub:both?"Leave Google out":S.metaAccounts.length+" accounts",avatar:both?"-":"?",hue:200}];
   S.metaAccounts.forEach(function(a){items.push({value:a.id,label:a.name,avatar:inits(a.name),hue:hueOf(a.name),sub:a.id+" · "+a.currency});});
   if(!metaAcct(S.m)) S.m="";
   mpicker.set(items,S.m,!S.metaAccounts.length);
@@ -155,7 +155,7 @@ var MCC_BADGE='<span class="badge pm-pill ok">MCC</span>';
 function setAccounts(list, groups){
   S.accounts=list; S.groups=groups||[];
   var both=S.platform==="both";
-  var items=[{value:"",label:both?"None":"Choose an account",sub:both?"Leave Meta out":list.length+" accounts"+(S.groups.length?" · "+S.groups.length+" MCCs to combine":""),avatar:both?"–":"?",hue:200}];
+  var items=[{value:"",label:both?"None":"Choose an account",sub:both?"Leave Meta out":list.length+" accounts"+(S.groups.length?" · "+S.groups.length+" MCCs to combine":""),avatar:both?"-":"?",hue:200}];
   var seen={};
   (both?[]:S.groups).forEach(function(g){
     var head=g.name+" MCC";

@@ -206,7 +206,7 @@ function accounts(host,o){
   function list(p){return st.all.filter(function(a){return a.platform===p;});}
   function find(id){return st.all.filter(function(a){return a.id===id;})[0]||null;}
   function item(a){return {value:a.id,label:a.name,sub:fmtId(a.id)+" · "+a.currency,avatar:initials(a.name),hue:hueOf(a.name)};}
-  var NONE={value:"",label:"None",sub:"Leave this platform out",avatar:"–",hue:220};
+  var NONE={value:"",label:"None",sub:"Leave this platform out",avatar:"-",hue:220};
 
   function paintSwitch(){swc.set(st.platform);}
   function paintNote(){

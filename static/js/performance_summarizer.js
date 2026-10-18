@@ -799,7 +799,7 @@ function accountsConfig(spec,pl,th){
   });
   var tip=tipBase(th);
   tip.callbacks={title:function(items){return dayTitle(spec,pl,items);},
-    label:function(c){return c.dataset.label+":  "+(spec.index?c.raw==null?"–":c.raw.toFixed(0)+" (index)":P.fmt(def.kind,c.raw,c.dataset._cur));}};
+    label:function(c){return c.dataset.label+":  "+(spec.index?c.raw==null?"-":c.raw.toFixed(0)+" (index)":P.fmt(def.kind,c.raw,c.dataset._cur));}};
   return {type:"line",data:{labels:pl.labels,datasets:ds},plugins:[crosshair],
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
       scales:{x:catAxis(th,pl.labels,false),y:valueAxis(def,C,th,{beginAtZero:!spec.index,ticks:{color:th.muted,padding:8,maxTicksLimit:6,
@@ -1252,7 +1252,7 @@ function paintTable(){
         var v=S.cd[r.i].map(function(t){return P.METRICS[tb.trend].get(t);});
         return '<td class="num trend">'+sparkSvg(v,mcol(tb.trend))+'</td>';
       }
-      var v2=val(r,c.k), txt=c.k==="sis"?(v2==null?"–":P.fmt("pct",v2)):fm(c.k,v2,c.k==="cost"||c.k==="impressions"||c.k==="value");
+      var v2=val(r,c.k), txt=c.k==="sis"?(v2==null?"-":P.fmt("pct",v2)):fm(c.k,v2,c.k==="cost"||c.k==="impressions"||c.k==="value");
       var d="";
       if(r.p&&(c.k==="cost"||c.k==="conversions"||c.k==="cpa")){var ch=P.change(c.k,v2,P.METRICS[c.k].get(r.p)); d='<small class="d '+ch.tone+'">'+esc(ch.text)+'</small>';}
       var bar=c.k==="cost"?'<span class="sbar"><s style="width:'+Math.min(100,r.t[P.COST]/totalSpend*100).toFixed(1)+'%"></s></span>':"";
@@ -1262,7 +1262,7 @@ function paintTable(){
       '<td class="name"><span class="cn">'+esc(r.c.name)+'</span><span class="cm"><i class="st '+esc(st)+'"></i>'+esc(st||"")+' · '+esc(P.label(P.TYPE_LABEL,r.c.type))+(r.c.budget?' · '+esc(P.fmt("money",r.c.budget,C))+'/day':'')+'</span></td>'+cells+'</tr>';
   }).join("");
   var tot='<tr class="tot"><td></td><td class="name"><span class="cn">'+(q?"Matching campaigns":S.filter.length?"Whole account":"All campaigns")+'</span></td>'+cols.map(function(c){
-    if(c.k==="trend") return "<td></td>"; if(c.k==="sis") return '<td class="num">'+(S.sis&&S.sis.account!=null?P.fmt("pct",S.sis.account):"–")+'</td>';
+    if(c.k==="trend") return "<td></td>"; if(c.k==="sis") return '<td class="num">'+(S.sis&&S.sis.account!=null?P.fmt("pct",S.sis.account):"-")+'</td>';
     return '<td class="num">'+esc(fm(c.k,P.METRICS[c.k].get(tc),c.k==="cost"||c.k==="impressions"||c.k==="value"))+'</td>';}).join("")+'</tr>';
   el.innerHTML='<div class="ps-tools"><label class="ps-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4-4"/></svg><input id="cq" placeholder="Find a campaign…" value="'+esc(tb.q)+'" autocomplete="off"></label>'+
     '<div class="ps-tools-r"><button type="button" class="ps-sel" data-act="trend"><span class="k">Trend</span><b>'+esc(P.METRICS[tb.trend].label)+'</b><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>'+

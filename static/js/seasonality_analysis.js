@@ -285,7 +285,7 @@ function paintAhead(){
 }
 function idxTile(label,v,key){
   var t=D.tone(v,S.data.thresholds), c=D.toneColor(t,key);
-  return '<div class="sa-it"><span class="k">'+esc(label)+'</span><b style="color:'+c+'">'+(v==null?"–":Math.round(v))+'</b></div>';
+  return '<div class="sa-it"><span class="k">'+esc(label)+'</span><b style="color:'+c+'">'+(v==null?"-":Math.round(v))+'</b></div>';
 }
 
 /* Year over year: a line for each year across the months (or weeks). */
@@ -353,7 +353,7 @@ function paintGap(){
     {label:"Spend",data:sp,borderColor:col("#fbbf24"),backgroundColor:"transparent",borderWidth:2.2,pointRadius:3,tension:.3}]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
       plugins:{legend:{display:true,position:"bottom",labels:{color:t.muted,usePointStyle:true,boxWidth:8,padding:14}},
-        tooltip:Object.assign(tip(),{callbacks:{label:function(i){return i.dataset.label+" index: "+(i.parsed.y==null?"–":Math.round(i.parsed.y));}}})},
+        tooltip:Object.assign(tip(),{callbacks:{label:function(i){return i.dataset.label+" index: "+(i.parsed.y==null?"-":Math.round(i.parsed.y));}}})},
       scales:{x:axes().x,y:Object.assign(axes().y,{suggestedMin:50})}}});
 }
 
@@ -376,7 +376,7 @@ function paintDow(){
   $("#dowKey").onchange=function(){S.dk=this.value;paintDow();writeHash();};
   var colors=vals.map(function(v){return alpha(col(D.toneColor(D.tone(v,th),key)),v==null?0:.8);});
   mkChart("dow",$("#cvDow"),{type:"bar",data:{labels:D.DAYS,datasets:[{label:"Index",data:vals,backgroundColor:colors,borderRadius:6,borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:Object.assign(tip(),{callbacks:{label:function(i){return "Index "+(i.parsed.y==null?"–":Math.round(i.parsed.y));}}})},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:Object.assign(tip(),{callbacks:{label:function(i){return "Index "+(i.parsed.y==null?"-":Math.round(i.parsed.y));}}})},
       scales:{x:axes().x,y:Object.assign(axes().y,{suggestedMin:0})}},
     plugins:[{id:"hundred",afterDraw:function(ch){
       var y=ch.scales.y.getPixelForValue(100), a=ch.chartArea, c=ch.ctx; c.save(); c.strokeStyle=t.faint; c.setLineDash([5,5]); c.lineWidth=1.2;
@@ -385,7 +385,7 @@ function paintDow(){
 
 /* Holidays. */
 function liftCell(v,lowGood){
-  if(v==null) return '<td class="num">–</td>';
+  if(v==null) return '<td class="num">-</td>';
   var good=lowGood?v<0:v>0, tone=Math.abs(v)<.03?"flat":good?"good":"bad";
   return '<td class="num"><span class="sa-pill '+tone+'">'+D.pct(v)+'</span></td>';
 }

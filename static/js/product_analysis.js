@@ -59,7 +59,7 @@ function theme(){
 }
 function cur(){return S.acct?S.acct.currency:"USD";}
 function money(v,small){return P.fmt("money",v,cur(),small);}
-function pctStr(v,d){return v==null?"–":(v*100).toFixed(d==null?0:d)+"%";}
+function pctStr(v,d){return v==null?"-":(v*100).toFixed(d==null?0:d)+"%";}
 function fmtK(kind,v,small){return P.fmt(kind,v,cur(),small);}
 function toast(msg){
   var t=$("#psToast"); if(!t){t=document.createElement("div");t.id="psToast";t.className="ps-toast";document.body.appendChild(t);}
@@ -367,17 +367,17 @@ function paintKpis(){
   var hasV=c.hasValue, cards=[];
   cards.push({k:"Spend",c:"#fbbf24",i:IC.spend,v:money(t[COST],true),d:delta("cost",t[COST],pt?pt[COST]:null,pt?money(pt[COST],true):"")});
   cards.push(hasV?{k:"Revenue",c:"#34d399",i:IC.revenue,v:money(t[VAL],true),d:delta("value",t[VAL],pt?pt[VAL]:null,pt?money(pt[VAL],true):"")}
-    :{k:"Revenue",c:"#34d399",i:IC.revenue,v:"–",d:'<span class="d flat"><em>No conversion value reported</em></span>',nodata:true});
-  cards.push(hasV?{k:"ROAS",c:"#38bdf8",i:IC.roas,v:k.roas==null?"–":k.roas.toFixed(2)+"x",d:delta("roas",k.roas,pt?(pt[COST]?pt[VAL]/pt[COST]:null):null,pt&&pt[COST]?(pt[VAL]/pt[COST]).toFixed(2)+"x":"")}
-    :{k:"ROAS",c:"#38bdf8",i:IC.roas,v:"–",d:'<span class="d flat"><em>No conversion value reported</em></span>',nodata:true});
+    :{k:"Revenue",c:"#34d399",i:IC.revenue,v:"-",d:'<span class="d flat"><em>No conversion value reported</em></span>',nodata:true});
+  cards.push(hasV?{k:"ROAS",c:"#38bdf8",i:IC.roas,v:k.roas==null?"-":k.roas.toFixed(2)+"x",d:delta("roas",k.roas,pt?(pt[COST]?pt[VAL]/pt[COST]:null):null,pt&&pt[COST]?(pt[VAL]/pt[COST]).toFixed(2)+"x":"")}
+    :{k:"ROAS",c:"#38bdf8",i:IC.roas,v:"-",d:'<span class="d flat"><em>No conversion value reported</em></span>',nodata:true});
   cards.push({k:"Conversions",c:"#a3e635",i:IC.conv,v:fmtK("num",t[CONV],true),d:delta("conversions",t[CONV],pt?pt[CONV]:null,pt?fmtK("num",pt[CONV],true):"")});
-  cards.push({k:"Cost / conv.",c:"#fb7185",i:IC.cpa,v:k.cpa==null?"–":fmtK("money2",k.cpa),d:delta("cpa",k.cpa,pk?pk.cpa:null,pk&&pk.cpa!=null?fmtK("money2",pk.cpa):"")});
+  cards.push({k:"Cost / conv.",c:"#fb7185",i:IC.cpa,v:k.cpa==null?"-":fmtK("money2",k.cpa),d:delta("cpa",k.cpa,pk?pk.cpa:null,pk&&pk.cpa!=null?fmtK("money2",pk.cpa):"")});
   cards.push({k:"Products selling",c:"#818cf8",i:IC.sell,v:k.selling.toLocaleString("en-US")+'<small> of '+k.products.toLocaleString("en-US")+'</small>',
     d:delta("conversions",k.selling,pk?pk.selling:null,pk?pk.selling.toLocaleString("en-US"):"")});
   cards.push({k:"Spend, no sales",c:"#f97316",i:IC.waste,v:money(k.waste,true),
     d:k.wastePct==null?'<span class="d flat"><em>&nbsp;</em></span>':'<span class="d '+(k.wastePct>=0.2?"bad":k.wastePct>=0.1?"flat":"good")+'">'+pctStr(k.wastePct,1)+'<em>of spend'+(pk&&pk.waste!=null&&pt?", was "+pctStr(pk.wastePct,1):"")+'</em></span>'});
   cards.push(pa.count>=2?{k:"Top five share",c:"#e879f9",i:IC.top,v:pctStr(pa.top5,0),d:'<span class="d flat"><em>of '+(hasV?"revenue":"conversions")+' from 5 products</em></span>'}
-    :{k:"Top five share",c:"#e879f9",i:IC.top,v:"–",d:'<span class="d flat"><em>Too few products with sales</em></span>',nodata:true});
+    :{k:"Top five share",c:"#e879f9",i:IC.top,v:"-",d:'<span class="d flat"><em>Too few products with sales</em></span>',nodata:true});
   $("#kpis").style.setProperty("--cols",P.kpiCols(cards.length));
   $("#kpis").innerHTML=cards.map(function(x,i){
     return '<div class="ps-kpi ps-kpi-static'+(x.nodata?" nodata":"")+'" style="--kc:'+x.c+'"><div class="ps-kpi-h"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">'+x.i+'</svg></span><span class="k">'+esc(x.k)+'</span></div>'+
@@ -495,7 +495,7 @@ function paintPerf(){
     '<th class="num">'+esc(meta.label)+'</th><th class="num">'+(lb.additive?"Share":"Against best")+'</th><th class="num">Vs before</th><th class="grp">Group</th></tr></thead><tbody>'+
     (lb.rows.length?lb.rows.map(function(r,i){
       var it=r.it, vals=A.seriesValues(ser,it.id,S.pm), seg=it.seg?A.SEG[it.seg]:null, share=lb.additive?r.share:(maxV?r.v/maxV:0);
-      var ch=r.change?'<span class="d '+r.change.tone+'">'+(r.change.dir>0?'<i>▲</i>':r.change.dir<0?'<i>▼</i>':'')+esc(r.change.text)+'</span>':'<span class="d flat">–</span>';
+      var ch=r.change?'<span class="d '+r.change.tone+'">'+(r.change.dir>0?'<i>▲</i>':r.change.dir<0?'<i>▼</i>':'')+esc(r.change.text)+'</span>':'<span class="d flat">-</span>';
       var li=have.indexOf(r);
       return '<tr data-id="'+esc(it.id)+'"><td class="num pa-rank">'+r.rank+'</td><td class="name"><span class="cn">'+esc(trunc(it.title,80))+'</span><span class="cm">'+esc(it.id)+(it.brand?' · '+esc(it.brand):"")+'</span></td>'+
         '<td class="trend">'+(vals?sparkSvg(vals,li>=0&&li<nLines?pcol(li):col("#8b94be")):'<span class="pa-nospark">daily not read</span>')+'</td>'+

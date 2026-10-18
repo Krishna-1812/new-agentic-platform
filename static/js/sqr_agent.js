@@ -78,7 +78,7 @@ function money(v, whole){
 }
 const num = v => (Number(v) || 0).toLocaleString();
 // conversions per click, so over 100% when one click converts more than once
-const convRate = (conv, clicks) => clicks > 0 ? (Number(conv) / clicks * 100).toFixed(1) + "%" : "–";
+const convRate = (conv, clicks) => clicks > 0 ? (Number(conv) / clicks * 100).toFixed(1) + "%" : "-";
 const plural = (n, one, many) => n + " " + (n === 1 ? one : (many || one + "s"));
 function toast(t){
   let el = $id("sqToast");
@@ -433,7 +433,7 @@ function renderResults(r){
     '<div class="sq-mix">' + MIX.map(m => { const n = s.byStatus[m[0]] || 0; return n ? '<i class="' + m[1] + '" style="width:' + (100 * n / N).toFixed(2) + '%" title="' + m[0] + ': ' + n + '"></i>' : ""; }).join("") + '</div>' +
     '<div class="sq-legend">' + MIX.filter(m => s.byStatus[m[0]]).map(m => '<span><span class="sw ' + m[1] + '"></span>' + m[0] + ' <b>' + (s.byStatus[m[0]] || 0).toLocaleString() + '</b></span>').join("") + '</div>' +
     '<div class="sq-kpis">' + kpi(num(s.uniqueTerms), "distinct terms (" + num(N) + " rows)") + kpi(money(s.totalSpend), "spend") + kpi(fmtConv(s.totalConv).toLocaleString(), "conversions") +
-      kpi(money(s.wastedSpend), "spent on not-relevant terms that never converted") + kpi(s.relevantSpendPct == null ? "–" : s.relevantSpendPct + "%", "of spend on relevant terms") +
+      kpi(money(s.wastedSpend), "spent on not-relevant terms that never converted") + kpi(s.relevantSpendPct == null ? "-" : s.relevantSpendPct + "%", "of spend on relevant terms") +
       kpi(r.priorityNegatives.length, r.priorityNegatives.length === 1 ? "priority negative" : "priority negatives") + kpi(reviewCount, reviewCount === 1 ? "negative to check first" : "negatives to check first") + kpi(r.priorityKeywords.length, r.priorityKeywords.length === 1 ? "priority keyword" : "priority keywords") + '</div>' +
     (skippedBits.length ? hint("Left out: " + skippedBits.join("; ") + ".") : "") +
     '<div class="sq-tabs">' + tab("negs", "Priority negatives", r.priorityNegatives.length) + tab("check", "Check before blocking", reviewCount) + tab("kws", "Priority keywords", r.priorityKeywords.length) +
@@ -473,7 +473,7 @@ function paneCheck(r){
 }
 function paneKws(r){
   const rows = r.priorityKeywords.map(k => '<tr><td class="sq-term">' + esc(k.term) + '</td><td>' + esc(k.assetType) + '</td><td>' + esc(k.matchType) + '</td><td>' + esc(k.whereToAdd) + '</td><td class="r num">' + fmtConv(k.conversions) +
-    '</td><td class="r num">' + money(k.cost, false) + '</td><td class="r num">' + (k.cpa == null ? "–" : money(k.cpa, false)) + '</td><td class="r num">' + (k.ctr * 100).toFixed(1) + '%</td><td class="r num">' + num(k.clicks) + '</td><td class="r num">' + convRate(k.conversions, k.clicks) + '</td><td><span class="pm-pill ' + (k.tier === 1 ? "ok" : "under") + '">Tier ' + k.tier + '</span></td></tr>').join("");
+    '</td><td class="r num">' + money(k.cost, false) + '</td><td class="r num">' + (k.cpa == null ? "-" : money(k.cpa, false)) + '</td><td class="r num">' + (k.ctr * 100).toFixed(1) + '%</td><td class="r num">' + num(k.clicks) + '</td><td class="r num">' + convRate(k.conversions, k.clicks) + '</td><td><span class="pm-pill ' + (k.tier === 1 ? "ok" : "under") + '">Tier ' + k.tier + '</span></td></tr>').join("");
   const ref = r.allKeywords.slice(PRIORITY_N).map(k => '<tr><td class="sq-term">' + esc(k.term) + '</td><td>' + esc(k.assetType) + '</td><td class="r num">' + fmtConv(k.conversions) + '</td><td class="r num">' + money(k.cost, false) + '</td><td class="r num">' + convRate(k.conversions, k.clicks) + '</td></tr>').join("");
   return '<div class="pane" id="pane-kws" hidden>' + hint("Relevant terms the account does not bid on yet. Tier 1 converted at least once; tier 2 drew clicks at a good click rate (or a partial conversion). Ranked by tier, conversions, then clicks.") +
     (rows ? tbl([["Term"], ["Type"], ["Match"], ["Where to add"], ["Conv", 1], ["Cost", 1], ["Cost / conv", 1], ["CTR", 1], ["Clicks", 1], ["Conv rate", 1], ["Tier"]], rows) : none()) +

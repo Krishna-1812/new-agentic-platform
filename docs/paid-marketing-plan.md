@@ -93,7 +93,29 @@ check accepts any prefix, or none.
 
 | Variable | For |
 |---|---|
-| `GOOGLE_ADS_DEVELOPER_TOKEN`, `GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_CLIENT_SECRET`, `GOOGLE_ADS_REFRESH_TOKEN`, `GOOGLE_ADS_LOGIN_CUSTOMER_ID` | Every Google Ads read |
-| `META_ADS_ACCESS_TOKEN` (a System User token with `ads_read`), optional `META_BUSINESS_ID`, `META_API_VERSION` | Every Meta read |
-| `ANTHROPIC_API_KEY` | The written parts (already set) |
-| `PAGESPEED_API_KEY` | Optional: the Landing Page Check's speed score |
+| `GOOGLE_ADS_DEVELOPER_TOKEN`, `GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_CLIENT_SECRET`, `GOOGLE_ADS_REFRESH_TOKEN`, `GOOGLE_ADS_LOGIN_CUSTOMER_ID` | Every Google Ads read (every agent but the research builds' website reading) |
+| `META_ADS_ACCESS_TOKEN` (a System User token with `ads_read`; `business_management` too for pixel stats), optional `META_BUSINESS_ID`, `META_API_VERSION` | Every Meta read |
+| `ANTHROPIC_API_KEY` (already set) | The written parts: Segment, Geo, Ad Strength, Account Audit, Landing Page Check, QA Agent, Search Query Analysis, and the three research builds |
+| `PAGESPEED_API_KEY` | Optional: the Landing Page Check's lab speed test |
+| `PACING_SEED_SECRET` | Optional: lets the pacing engine push a run from a machine (`pacing_engine/push.py`) |
+| `PACING_CLIENT_RULES` | Optional: a JSON file of per-client pacing rules (`pacing_engine/config.py`) |
+| `PAID_CAMPAIGN_PREFIX` | Optional: the agency's campaign name prefix in the campaign books (default `NA`) |
+| `CALLRAIL_API_KEY` | The Call Transcript Analyzer, when it is built |
+
+## Known limitations (carried over from the source, stated honestly)
+
+- A Meta token without `business_management` leaves pixel stats and business info "unknown" (Account Audit checks
+  M-TRK-03, M-TRK-05, M-ACC-03).
+- Segment Analysis's "All" cost per lead mixes Meta result kinds; the weekly overlay on partial weeks is not aligned.
+- Keyword Research merges keys with symbols (c++ and c#) and reordered words (on purpose).
+- The Performance Max business name account-level fallback, the Campaign Book's video limits and a Demand Gen
+  portrait-only image rule are unverified; the Google speed score can come back empty (reported as unknown).
+- The model-driven agents (Keyword Research, Business Research, Campaign Book, QA Agent) are verified by code and
+  tests; a live model run costs money, so the first one should be deliberate and its cost read off the admin panel.
+- Meta pacing was verified through the read probe and fakes, not a full production run.
+- Large Google segment reports can be about 10 MB and take 45 seconds; the server runs gunicorn with
+  `--timeout 120 --workers 2 --threads 4`, as the source did.
+- Not built yet: the **Call Transcript Analyzer** (needs `CALLRAIL_API_KEY`, and a decision on how a CallRail
+  account belongs to a client workspace; its data is HIPAA data and is never stored or sent to a model) and the
+  **Client Feedback Agent** (needs Slack, Google and Zoom OAuth apps; its source code held client names and a real
+  Drive folder, which must come out first).
