@@ -72,6 +72,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=0, x_proto=1)
 # its database connections took.
 from flask import has_request_context as _has_request_context  # noqa: E402
 from tracker import request_timing as _request_timing  # noqa: E402
+from tracker import paid_catalog  # noqa: E402
 _request_timing.install(g, _has_request_context)
 
 
@@ -3999,7 +4000,8 @@ def ppc_linkedin_scraper_redirect():
 def seo():
     return render_template("seo.html", user=_get_user(), seo_tools=_seo_tools(),
                            seo_tool_groups=_seo_tool_groups(),
-                           seo_tool_briefs=_SEO_TOOL_BRIEFS)
+                           seo_tool_briefs=_SEO_TOOL_BRIEFS, paid_agents=paid_catalog.AGENTS,
+                           paid_prefix=paid_catalog.PREFIX)
 
 
 # ── /seo/* -> /seo-aeo/* ───────────────────────────────────────────────
@@ -4594,6 +4596,272 @@ def seo_tool(tool_slug: str):
         current=tool["name"],
         accent="#34d399",
     )
+
+# ── Paid Marketing Agents ───────────────────────────────────────────────────────
+# The paid media team's agents, ported from the source platform (docs/paid-marketing-plan.md): each reads
+# a Google Ads account (the agency's manager account, REST v24) or a Meta ad account (Graph), read only,
+# and they share one account list, one quota and one set of errors (tracker/paid_gads.py, paid_meta.py,
+# paid_store.py). Listed on the Operational Agents page (templates/seo.html) from tracker/paid_catalog.py,
+# and opened inside every client workspace (ACCT_AGENTS), where they read only that workspace's own Google
+# Ads accounts (its profile's customer ids), for the team and for a client the workspace shares one with.
+_PM_PREFIX = paid_catalog.PREFIX
+
+
+def _pm_refuse_cross_site():
+    """None when a state-changing request is same-origin JSON, else the refusal."""
+    if not _evi_same_origin():
+        app.logger.warning("paid marketing: refused cross-site %s to %s", request.method, request.path)
+        return jsonify(error="This request came from another site and was refused."), 403
+    if not request.is_json:
+        return jsonify(error="This action needs a JSON request."), 415
+    return None
+
+
+@app.before_request
+def _pm_state_change_guard():
+    """Every state-changing request under the Paid Marketing Agents is same-origin JSON."""
+    if request.method not in ("POST", "PUT", "DELETE") or not (
+            request.path == _PM_PREFIX or request.path.startswith(_PM_PREFIX + "/")):
+        return None
+    if not (_get_user() or {}).get("email"):
+        return None
+    return _pm_refuse_cross_site()
+
+
+def _pm_user_email():
+    return ((_get_user() or {}).get("email") or "").lower()
+
+
+def _pm_is_admin():
+    return _pm_user_email() in ADMIN_EMAILS
+
+
+def _pm_store_error(e):
+    return jsonify(error="The Paid Marketing store is unavailable: %s" % e), 503
+
+
+def _pm_scope():
+    """The Google Ads accounts this request may read: inside a client workspace, the workspace's own
+    (its profile's customer ids, possibly none); outside one, None, every account the manager account
+    holds. Someone who is not staff never gets None: a client reads only their workspace's accounts."""
+    acct = _work_acct()
+    if acct is not None:
+        return {re.sub(r"\D", "", str(c)) for c in acct.get("customer_ids") or [] if re.sub(r"\D", "", str(c))}
+    return None if _is_staff(_pm_user_email()) else set()
+
+
+def _pm_note(agent, account, title, detail=""):
+    """Inside a workspace, the day's History row for this read (tracker/paid_activity.py). Never fails a read."""
+    acct = _work_acct()
+    if acct is None:
+        return
+    try:
+        from tracker import paid_activity
+        paid_activity.record(acct["space"], agent, account, _pm_user_email(), title, detail)
+    except Exception:
+        app.logger.exception("paid marketing: %s activity not recorded", agent)
+
+
+@app.route(_PM_PREFIX)
+@position2_required
+def paid_marketing():
+    """The section's own address: its agents are on the Operational Agents page."""
+    return redirect("/seo-aeo#paid-marketing")
+
+
+def _pm_page(template, slug):
+    agent = paid_catalog.BY_SLUG[slug]
+    return render_template(template, user=_get_user(), pm_agent=agent, pm_scoped=_work_acct() is not None,
+                           client=viewer_is_client())
+
+
+@app.route(_PM_PREFIX + "/performance-summarizer")
+@position2_required
+def paid_performance_summarizer():
+    return _pm_page("performance_summarizer.html", "performance-summarizer")
+
+
+def _gads_guard(fn):
+    """Run fn() and turn the ways an ad-platform read can fail into answers the
+    page can show: not connected, over the day's budget, the platform refusing,
+    or the cache store being down (reads still work without it). A request for
+    a Meta account (`account=act_...`, or `platform=meta`) is held to Meta's
+    connection, anything else to Google's."""
+    from tracker import paid_gads, paid_meta
+    meta = paid_meta.is_meta(request.args.get("account", "")) or request.args.get("platform") == "meta"
+    both = request.args.get("platform") == "both"
+    problem = None if both else (paid_meta.config_problem() if meta else paid_gads.config_problem())
+    if problem:
+        return jsonify(error=problem, configProblem=problem), 409
+    try:
+        return fn()
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    except paid_gads.RefreshTooSoon as e:
+        return jsonify(error=str(e), cooldown=True, retryIn=e.retry_in), 429
+    except paid_gads.OverQuota as e:
+        return jsonify(error=str(e), blockedUntil=e.until), 429
+    except paid_gads.AdsError as e:
+        app.logger.warning("paid marketing: %s read failed: %s", "meta ads" if meta else "google ads", e)
+        return jsonify(error=str(e)), 502
+
+
+def _gads_account(store, cid=None):
+    """The Google Ads or Meta account named by ?account= (or by `cid`), as {id, name, currency, platform, ...}.
+    Inside a client workspace only the workspace's own Google Ads accounts can be named (_pm_scope)."""
+    from tracker import paid_gads, paid_meta
+    cid = request.args.get("account", "") if cid is None else cid
+    scope = _pm_scope()
+    if paid_meta.is_meta(cid):
+        if scope is not None:
+            raise ValueError("inside a client workspace only its own Google Ads accounts are read; open this "
+                             "agent outside the workspace to read a Meta ad account")
+        found = {a["id"]: a for a in paid_meta.list_accounts(store)}.get(cid)
+        if not found:
+            raise ValueError("that account is not one of the Meta ad accounts the connected token can read")
+        return found
+    if not paid_gads.ID_RE.match(cid):
+        raise ValueError("account should be a 10-digit Google Ads customer id or a Meta ad account id (act_...)")
+    if scope is not None and cid not in scope:
+        raise ValueError("that account is not one of this workspace's Google Ads accounts")
+    accounts = {a["id"]: a for a in paid_gads.list_accounts(store)}
+    if cid not in accounts:
+        raise ValueError("that account is not under the agency's Google Ads manager account")
+    return dict(accounts[cid], platform="google")
+
+
+def _platform_blocked(acct, store):
+    from tracker import paid_gads, paid_meta
+    return (paid_meta if acct.get("platform") == "meta" else paid_gads).blocked_until(store) or None
+
+
+@app.route(_PM_PREFIX + "/api/gads/accounts")
+@position2_required
+def paid_gads_accounts():
+    """The ad accounts the pages can read. ?platform=google (the default), meta, or both. With `both`, one platform
+    being unconnected or failing does not hide the other's accounts: it is reported in `googleProblem` / `metaProblem`.
+    Inside a client workspace: only its own Google Ads accounts, and no Meta ad accounts (a workspace names none yet)."""
+    from tracker import paid_gads, paid_meta, paid_store
+    platform = request.args.get("platform", "google")
+    if platform not in ("google", "meta", "both"):
+        return jsonify(error="platform should be google, meta or both"), 400
+    scope = _pm_scope()
+
+    def half(module, tag):
+        """(accounts, problem text or None) for one platform."""
+        problem = module.config_problem()
+        if problem:
+            return [], problem
+        try:
+            return [dict(a, platform=tag) for a in module.list_accounts(paid_store)], None
+        except paid_gads.AdsError as e:
+            if platform != "both":
+                raise
+            app.logger.warning("paid marketing: %s account list failed: %s", tag, e)
+            return [], str(e)
+
+    def run():
+        gacc, gprob = half(paid_gads, "google") if platform in ("google", "both") else ([], None)
+        if scope is not None:
+            macc, mprob = [], ("A client workspace reads its own Google Ads accounts only."
+                               if platform in ("meta", "both") else None)
+            gacc = [a for a in gacc if a["id"] in scope]
+            if not gacc and not gprob and platform in ("google", "both"):
+                gprob = "This workspace has no Google Ads account yet: add its customer id to the workspace's profile."
+        else:
+            macc, mprob = half(paid_meta, "meta") if platform in ("meta", "both") else ([], None)
+        if platform == "both" and gprob and mprob:
+            return jsonify(error=gprob, configProblem=gprob, googleProblem=gprob, metaProblem=mprob), 409
+        if scope is not None and platform != "both" and (gprob or mprob):
+            return jsonify(error=gprob or mprob, configProblem=gprob or mprob), 409
+        try:
+            used = paid_store.gads_calls(paid_gads._pacific_day())
+        except Exception:
+            used = None
+        resp = jsonify(accounts=gacc + macc, platform=platform, googleProblem=gprob if platform == "both" else None,
+                       metaProblem=mprob if platform == "both" else None,
+                       scoped=scope is not None,
+                       blockedUntil=paid_gads.blocked_until(paid_store) or None,
+                       usage={"calls": used, "limit": paid_gads.DAILY_LIMIT} if _pm_is_admin() else None)
+        resp.headers["Cache-Control"] = "private, max-age=300"          # the account list changes rarely
+        return resp
+    return _gads_guard(run)
+
+
+@app.route(_PM_PREFIX + "/api/gads/performance")
+@position2_required
+def paid_gads_performance():
+    from tracker import paid_gads, paid_store
+
+    def run():
+        acct = _gads_account(paid_store)
+        start, end = paid_gads.check_range(request.args.get("start", ""), request.args.get("end", ""), "the range")
+        cmp = None
+        cs, ce = request.args.get("compare_start", ""), request.args.get("compare_end", "")
+        if cs or ce:
+            cmp = paid_gads.check_range(cs, ce, "the comparison range")
+        main = request.args.get("sis", "1") != "0"            # the other accounts of a side-by-side chart skip the shares
+        force = request.args.get("refresh") == "1"            # the Refresh button: ask Google again, at most every 2 minutes
+        if force:
+            paid_gads.refresh_guard(paid_store, "perf:" + acct["id"])
+        stamps = []
+        if acct["platform"] == "meta":
+            from tracker import paid_meta
+            current, compare, saved = paid_meta.performance_pair(paid_store, acct["id"], (start, end), cmp, currency=acct["currency"],
+                                                                 with_shares=main, force=force, stamps=stamps)
+        else:
+            current, compare, saved = paid_gads.performance_pair(paid_store, acct["id"], (start, end), cmp,
+                                                                 with_sis=main, with_shares=main, force=force, stamps=stamps)
+        if main:
+            _pm_note("performance-summarizer", acct["id"], "Performance of %s" % (acct.get("name") or acct["id"]),
+                     "%s to %s" % (start, end))
+        # `stale` is the oldest saved copy that stood in for the platform (it was spent or unreachable), else null;
+        # `fetchedAt` is when the numbers on screen were last read from it.
+        return jsonify(account=acct, current=current, compare=compare, stale=min(saved) if saved else None,
+                       fetchedAt=paid_gads.oldest(stamps), blockedUntil=_platform_blocked(acct, paid_store))
+    return _gads_guard(run)
+
+
+@app.route(_PM_PREFIX + "/api/gads/extras")
+@position2_required
+def paid_gads_extras():
+    from tracker import paid_gads, paid_store
+
+    def run():
+        acct = _gads_account(paid_store)
+        start, end = paid_gads.check_range(request.args.get("start", ""), request.args.get("end", ""), "the range")
+        saved, stamps = [], []
+        force = request.args.get("refresh") == "1"
+        if force:
+            paid_gads.refresh_guard(paid_store, "extras:" + acct["id"])
+        if acct["platform"] == "meta":
+            from tracker import paid_meta
+            out = dict(paid_meta.extras(paid_store, acct["id"], start, end, notes=saved, force=force, stamps=stamps))
+        else:
+            out = dict(paid_gads.extras(paid_store, acct["id"], start, end, notes=saved, force=force, stamps=stamps))
+        out["stale"] = min(saved) if saved else None
+        out["fetchedAt"] = paid_gads.oldest(stamps)
+        return jsonify(out)
+    return _gads_guard(run)
+
+
+@app.route(_PM_PREFIX + "/api/meta/status")
+@position2_required
+def paid_meta_status():
+    """Admin only: is the Meta connection working, and which ad accounts does it read? Never returns the token."""
+    if not _pm_is_admin():
+        return jsonify(error="Only an admin can run the Meta connection check."), 403
+    from tracker import paid_meta, paid_store
+    try:
+        if request.args.get("probe"):
+            return jsonify(paid_meta.probe(paid_store, request.args.get("probe"), days=min(max(int(request.args.get("days", "30") or 30), 1), 90),
+                                                breakdown=request.args.get("breakdown", "")))
+        return jsonify(paid_meta.status(paid_store))
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    except paid_meta.AdsError as e:
+        return jsonify(error=str(e), configured=paid_meta.config_problem() is None), 502
+
 
 # ── ABM Signal Tracker ────────────────────────────────────────────────────────
 @app.route("/abm-signal-tracker/accounts")
@@ -5483,6 +5751,10 @@ ACCT_AGENTS_EXEMPT = {
     "/strategic-agents/ad-intelligence": "older agent: runs not yet saved to accounts",
     "/strategic-agents/sentiment-pulse": "older agent: runs not yet saved to accounts",
 }
+# The Paid Marketing Agents, each in every workspace (tracker/paid_catalog.py): inside one they read only its
+# own Google Ads accounts (app.py _pm_scope), so there is no page field to fill from the profile.
+ACCT_AGENTS += tuple((a["slug"], a["endpoint"], paid_catalog.path(a["slug"]), a["name"], a["about"], ())
+                     for a in paid_catalog.AGENTS)
 ACCT_GLOBAL = {"": "/hub", "google-ads": "/dashboards/google-ads",
                "google-ads/ai-review": "/dashboards/google-ads/ai-review",
                "page-watch": "/strategic-agents/page-watch", "video-studio": "/strategic-agents/video-studio"}
@@ -5658,6 +5930,9 @@ CLIENT_TOOL_ROUTES = {
     # Searching and reading the leads; never the settings or a send, which write to people for the agency.
     "buyer-radar": (r"buyer-radar/api/(status|runs(/\d+)?|leads(/\d+|/export)?)",),
 }
+# The Paid Marketing Agents read the workspace's own ad accounts only (_pm_scope). Several share a route (the
+# account list): a request is granted when ANY agent it belongs to is shared (_acct_client_grant).
+CLIENT_TOOL_ROUTES.update({a["slug"]: a["api"] for a in paid_catalog.AGENTS})
 CLIENT_RUN_ROUTES = {          # (method, path): what counts as a run started
     "page-watch": (r"/[^/]+/api/page-watch/watches", r"page-watch/api/watches/\d+/check"),
     "video-studio": (r"video-studio/api/videos", r"video-studio/api/versions/\d+/(approve|change|idea|retry|shape)"),
@@ -5670,6 +5945,7 @@ CLIENT_RUN_ROUTES = {          # (method, path): what counts as a run started
     "people-signals": (r"people-signals/api/(runs|chat)",),
     "buyer-radar": (r"buyer-radar/api/runs",),
 }
+CLIENT_RUN_ROUTES.update({a["slug"]: a["runs"] for a in paid_catalog.AGENTS})
 _CLIENT_TOOL_RX = {t: re.compile("^%s(%s)$" % (re.escape(_SA), "|".join(ps))) for t, ps in CLIENT_TOOL_ROUTES.items()}
 _CLIENT_RUN_RX = {t: re.compile("^(%s)$" % "|".join(p if p.startswith("/") else re.escape(_SA) + p for p in ps))
                   for t, ps in CLIENT_RUN_ROUTES.items()}
@@ -5686,6 +5962,11 @@ def _client_route_tool(path):
         if rx.match(path):
             return tool
     return None
+
+
+def _client_route_tools(path):
+    """Every tool a route belongs to: one, except routes several paid agents share (the account list)."""
+    return [t for t, rx in _CLIENT_TOOL_RX.items() if rx.match(path)]
 
 
 def _client_req_acct(email):
@@ -5736,6 +6017,8 @@ def _acct_client_grant():
     if tool is None:
         return None
     shares = _acct_shares(acct)
+    # A route several tools share is the client's when any of those tools is shared with them.
+    tool = next((t for t in _client_route_tools(request.path) if shares.get(client_access.tool_key(t))), tool)
     if not shares.get(client_access.tool_key(tool)):
         return jsonify({"ok": False, "error": "This tool is not shared with you."}), 403
     g.client_tool = tool
@@ -5804,6 +6087,9 @@ app.add_template_global(crumb_href, "crumb_href")
 @app.after_request
 def _acct_client_scrub(resp):
     """A client's JSON answers lose every cost and credit figure, whatever route they came from."""
+    # A paid agent's figures (its spend, cost per conversion) are the client's own ad account, not the agency's costs.
+    if g.get("client_tool") in paid_catalog.SLUGS:
+        return resp
     if g.get("client_acct") is not None and resp.mimetype == "application/json" and not resp.direct_passthrough:
         try:
             data = json.loads(resp.get_data(as_text=True) or "null")
@@ -5913,6 +6199,7 @@ ACCT_TOOL_COLOURS = {
     "on-page-audit": "#8CCBFF", "agent-readiness-audit": "#B79CFF", "seo-geo-snapshot": "#2DD4BF",
     "image-alt-audit": "#FF6022", "keyword-research": "#FFB500", "content-research": "#FF3B30",
     "content-architect": "#121213", "market-potential": "#C6F432"}
+ACCT_TOOL_COLOURS.update({a["slug"]: paid_catalog.COLOUR for a in paid_catalog.AGENTS})
 
 
 
@@ -6730,6 +7017,12 @@ def _acct_runs(acct):
     agents = [{"href": "/%s/agents/%s" % (acct["slug"], slug), "slug": slug, "name": label, "about": about,
                "given": given(fields)}
               for slug, _, _, label, about, fields in ACCT_AGENTS]
+    # The Paid Marketing agents start with the account's Google Ads accounts (all they read inside it), and
+    # sit in their own group on the home (templates/account_home.html).
+    cids = " · ".join(client_profile.format_cid(c) for c in acct.get("customer_ids") or []) or "No Google Ads ID yet"
+    for a in agents:
+        if a["slug"] in paid_catalog.SLUGS:
+            a.update(paid=True, given=cids)
     return {"seo": seo, "agents": agents, "website": f["domain"]}
 
 

@@ -17,7 +17,7 @@
 {#- Inside an account, every call the page makes says which account it is for (X-Account), so a
     client's calls reach the account's work even when their browser sends no Referer. -#}
 {%- if acct %}<script src="{{ url_for('static', filename='js/account-context.js') }}?v=1" data-acct="{{ acct.slug }}"></script>{% endif %}
-{{ head("Page Watch", ["strategic-agents.css?v=2", "page-watch.css?v=4"]) }}
+{{ head("Page Watch", ["strategic-agents.css?v=3", "page-watch.css?v=4"]) }}
 </head>
 <body class="sa pw">
 

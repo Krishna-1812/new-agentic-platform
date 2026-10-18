@@ -18,6 +18,11 @@
     The hub card for this page is headed "Operational agents"; the page keeps
     its "SEO + AEO" title (tests/test_seo_aeo_rename.py).
 
+    The Paid Marketing Agents (tracker/paid_catalog.py, docs/paid-marketing-plan.md)
+    are the amber "Paid marketing" group after the SEO groups: native pages at
+    /strategic-agents/paid-marketing/<slug>, each card carrying a "Paid marketing"
+    pill where the SEO tools carry "SEO". Every count on the page is of both.
+
     Motion is off under prefers-reduced-motion; with JS off this is a
     finished, static page.
 -#}
@@ -30,9 +35,11 @@
                "sub": "New pages, site structure, local posts, the context every tool reads, and the monitor that keeps pages indexed."},
 } %}
 {%- set by_slug = {} %}{% for t in seo_tools %}{% set _ = by_slug.update({t.slug: t}) %}{% endfor %}
+{%- set paid = paid_agents or [] %}
+{%- set total = seo_tools|length + paid|length %}
 <html lang="en">
 <head>
-{{ head("SEO + AEO", ["strategic-agents.css?v=2"]) }}
+{{ head("SEO + AEO", ["strategic-agents.css?v=3"]) }}
 </head>
 <body class="sa">
 
@@ -44,8 +51,8 @@
   {# ── Hero ────────────────────────────────────────────────────────────── #}
   <section class="sa-hero" data-sa-settle>
     <div class="sa-hero-top">
-      <span class="sa-lbl" data-sa-decode>Operational agents &middot; SEO + AEO</span>
-      <span class="sa-live sa-live--build"><i></i>{{ seo_tools|length }} in build</span>
+      <span class="sa-lbl" data-sa-decode>Operational agents &middot; SEO + AEO{% if paid %} &middot; Paid marketing{% endif %}</span>
+      <span class="sa-live sa-live--build"><i></i>{{ total }} in build</span>
       <div class="sa-shapes" aria-hidden="true">
         <span class="sa-shape sa-shape--circle"></span>
         <span class="sa-shape sa-shape--half"></span>
@@ -63,7 +70,8 @@
       <p class="sa-lead">
         {{ seo_tools|length }} tools for search and answer-engine visibility, in the order the work
         happens: research where the demand is, optimize the pages already live, and build the
-        ones that are missing.
+        ones that are missing.{% if paid %} And {{ paid|length }} paid marketing agent{{ '' if paid|length == 1 else 's' }}
+        that read{{ 's' if paid|length == 1 else '' }} Google Ads and Meta live.{% endif %}
       </p>
       <div class="sa-hero-actions">
         <a href="#agents" class="sa-btn sa-btn--hero">Browse the tools</a>
@@ -79,6 +87,7 @@
       {% for group_name, tools in seo_tool_groups %}
       <div class="sa-fig"><b data-sa-odo data-figure="{{ G[group_name].key if group_name in G else group_name|lower }}">{{ tools|length }}</b><span>{{ group_name|lower }}</span></div>
       {% endfor %}
+      {% if paid %}<div class="sa-fig"><b data-sa-odo data-figure="paid-marketing">{{ paid|length }}</b><span>paid marketing</span></div>{% endif %}
     </div>
   </section>
 
@@ -87,6 +96,9 @@
     <div class="sa-tick-track">
       {%- for t in seo_tools %}
       <a class="sa-tick-i sa-tick-i--{{ G[t.group].hue if t.group in G else 'a' }}" href="/seo-aeo/{{ t.slug }}">{{ t.name }}</a>
+      {%- endfor %}
+      {%- for a in paid %}
+      <a class="sa-tick-i sa-tick-i--d" href="{{ paid_prefix }}/{{ a.slug }}">{{ a.name }}</a>
       {%- endfor %}
     </div>
   </div>
@@ -175,18 +187,19 @@
     <div class="sa-filters" id="sa-filters">
       <div class="sa-filters-in">
         <div class="sa-chips" role="group" aria-label="Group">
-          <button type="button" class="sa-chip is-on" data-sa-group="all">All <b>{{ seo_tools|length }}</b></button>
+          <button type="button" class="sa-chip is-on" data-sa-group="all">All <b>{{ total }}</b></button>
           {% for group_name, tools in seo_tool_groups %}
           {% set g = G.get(group_name, {"key": group_name|lower, "hue": "a"}) %}
           <button type="button" class="sa-chip" data-sa-group="{{ g.key }}"><i class="sa-dot sa-dot--{{ g.hue }}"></i>{{ group_name }} <b>{{ tools|length }}</b></button>
           {% endfor %}
+          {% if paid %}<button type="button" class="sa-chip" data-sa-group="paid-marketing"><i class="sa-dot sa-dot--d"></i>Paid marketing <b>{{ paid|length }}</b></button>{% endif %}
         </div>
         <label class="sa-search">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-3.4-3.4"/></svg>
           <input type="search" id="sa-q" placeholder="Search tools, inputs, outputs&hellip;" aria-label="Search tools">
           <kbd class="sa-slash" aria-hidden="true">/</kbd>
         </label>
-        <span class="sa-count" id="sa-count" aria-live="polite">Showing {{ seo_tools|length }} of {{ seo_tools|length }}</span>
+        <span class="sa-count" id="sa-count" aria-live="polite">Showing {{ total }} of {{ total }}</span>
       </div>
     </div>
 
@@ -229,6 +242,42 @@
       </div>
     </div>
     {% endfor %}
+
+    {% if paid %}
+    {#- The paid media team's agents: each reads an ad account live, read only. #}
+    <div class="sa-group sa-group--d" id="paid-marketing" data-sa-groupbox="paid-marketing">
+      <div class="sa-group-head">
+        <span class="sa-group-tile" aria-hidden="true"></span>
+        <div>
+          <h3 class="sa-group-name">Paid marketing</h3>
+          <p class="sa-group-sub">Google Ads and Meta, read live and read only: performance, where the money goes, and what to fix first.</p>
+        </div>
+        <span class="sa-group-count">{{ paid|length }} agent{{ '' if paid|length == 1 else 's' }}</span>
+      </div>
+      <div class="sa-grid">
+        {% for a in paid %}
+        {% set n.i = n.i + 1 %}
+        <a href="{{ paid_prefix }}/{{ a.slug }}" id="t-{{ a.slug }}" class="sa-card" data-tool="{{ a.slug }}" data-state="active" data-badge="building" data-group="paid-marketing">
+          <span class="sa-card-top">
+            <span class="sa-ic sa-ic--letter" aria-hidden="true">{{ a.icon or (a.name or '?')[:1]|upper }}</span>
+            <span class="sa-num">{{ "%02d"|format(n.i) }}</span>
+            <span class="sa-state sa-state--build"><i></i>Building</span>
+          </span>
+          <span class="sa-name" data-tool-name>{{ a.name }}</span>
+          <span class="sa-desc">{{ a.lead }}</span>
+          <span class="sa-dl">
+            <span><em>You give</em>{{ a.gives }}</span>
+            <span><em>You get</em>{{ a.gets }}</span>
+          </span>
+          {#- A paid marketing agent leads its tags with "Paid marketing", where an SEO tool has "SEO". #}
+          {% set tags = ["Paid marketing"] + ((a.tags or []) | reject("equalto", "Paid marketing") | list) %}
+          <span class="sa-tags">{% for tag in tags %}<span class="sa-tag">{{ tag }}</span>{% endfor %}</span>
+          <span class="sa-go">Open agent <span aria-hidden="true">&rarr;</span></span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
 
     <p class="sa-none" id="sa-none" hidden>No tool matches that. Try an input like &ldquo;URL&rdquo; or an output like &ldquo;brief&rdquo;.</p>
   </section>

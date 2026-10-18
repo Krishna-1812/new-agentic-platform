@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+{%- from "_bento.html" import head, topbar, topbar_script with context %}
+{#- ════════════════════════════════════════════════════════════════════════
+    PAID MARKETING AGENTS: the frame every one of their pages extends.
+
+    The pages are the source platform's, ported (docs/paid-marketing-plan.md):
+    their scripts draw into the same ids and classes, so the frame around them
+    is Northaxis's own (the head, the top bar, the paper shell) and their sheet,
+    static/css/paid_marketing.css, maps their colours onto Northaxis's tokens.
+
+    A page sets:
+      block title     its name, also the last breadcrumb
+      block hero      the ink block at its top (paid_hero, templates/_paid_macros.html)
+      block content   the rest
+      block head      its own stylesheets;  block scripts  its own scripts
+    `pm_agent` (tracker/paid_catalog.py) and `pm_scoped` (opened inside a client
+    workspace, where only its own Google Ads accounts are read) come from app.py.
+-#}
+<html lang="en" data-theme="light">
+<head>
+{{ head(self.title(), ["strategic-agents.css?v=3", "market_radar.css?v=7", "paid_marketing.css?v=1"]) }}
+{% block head %}{% endblock %}
+</head>
+<body class="sa pmx"{% if client %} data-pm-client{% endif %}>
+
+{{ topbar([("Operational Agents", "/seo-aeo"), ("Paid marketing", "/seo-aeo#paid-marketing"), (self.title(), none)]) }}
+
+<main class="sa-shell pmx-shell">
+  {% block hero %}{% endblock %}
+  {% block content %}{% endblock %}
+</main>
+
+{{ topbar_script() }}
+{% block scripts %}{% endblock %}
+</body>
+</html>

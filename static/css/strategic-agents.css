@@ -176,6 +176,7 @@ html:root { background-color: var(--bg); }
 .sa-tick-i--c::after { background: var(--clay); }
 .sa-tick-i--b::after { background: var(--sky); }
 .sa-tick-i--a::after { background: var(--acc); }
+.sa-tick-i--d::after { background: var(--cream); }
 .sa-tick-i:hover { text-decoration: underline; text-decoration-color: var(--acc); text-decoration-thickness: 3px; text-underline-offset: 6px; }
 .sa-tick-i:hover::after { transform: scale(1.8); }
 
@@ -280,6 +281,7 @@ html:root { background-color: var(--bg); }
 @keyframes sa-pop { 50% { transform: scale(1.07); } }
 .sa-dot { width: 9px; height: 9px; border-radius: 50%; }
 .sa-dot--c { background: var(--clay); } .sa-dot--b { background: var(--sky); } .sa-dot--a { background: var(--acc); }
+.sa-dot--d { background: var(--cream); }
 .sa-search {
   flex: 1 1 200px; display: flex; align-items: center; gap: var(--sp-2); height: 40px; min-width: 180px;
   border-radius: var(--r-pill); background: var(--s2); padding: 0 8px 0 14px; transition: box-shadow 200ms ease;
@@ -298,6 +300,8 @@ html:root { background-color: var(--bg); }
 .sa-group--c .sa-group-tile { background: var(--clay); } .sa-group--c .sa-group-tile::after { border-radius: 50%; }
 .sa-group--b .sa-group-tile { background: var(--sky); } .sa-group--b .sa-group-tile::after { left: 24px; border-radius: 0 30px 30px 0; }
 .sa-group--a .sa-group-tile { background: var(--acc); } .sa-group--a .sa-group-tile::after { border-radius: 4px; inset: 16px; }
+/* Paid marketing: amber, a bar chart's rising bars in the tile. */
+.sa-group--d .sa-group-tile { background: var(--cream); } .sa-group--d .sa-group-tile::after { inset: 14px 16px; border-radius: 3px; clip-path: polygon(0 60%, 30% 60%, 30% 30%, 62% 30%, 62% 0, 100% 0, 100% 100%, 0 100%); }
 .sa-group-head:hover .sa-group-tile { transform: rotate(-90deg) scale(1.06); }
 .sa-group-name {
   margin: 0; font-family: var(--font-display); font-weight: 600; font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
@@ -322,6 +326,7 @@ html:root { background-color: var(--bg); }
 .sa-group--c .sa-card { --hue: var(--clay); }
 .sa-group--b .sa-card { --hue: var(--sky); }
 .sa-group--a .sa-card { --hue: var(--acc); }
+.sa-group--d .sa-card { --hue: var(--cream); }
 .sa-card::after {
   content: ''; position: absolute; z-index: -1; pointer-events: none;
   left: var(--x, 0px); top: var(--y, 100%); width: 14px; height: 14px; margin: -7px 0 0 -7px;

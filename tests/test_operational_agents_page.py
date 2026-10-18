@@ -52,10 +52,13 @@ def test_every_tool_gets_exactly_one_card(body):
 
 
 def test_the_figures_and_chips_count_the_same_list(body):
+    from tracker import paid_catalog
     tools = appmod._seo_tools()
+    total = len(tools) + len(paid_catalog.AGENTS)
     assert re.search(r'data-figure="tools">%d<' % len(tools), body)
-    assert ">%d in build<" % len(tools) in body
-    assert "Showing %d of %d" % (len(tools), len(tools)) in body
+    assert ">%d in build<" % total in body
+    assert "Showing %d of %d" % (total, total) in body and "All <b>%d</b>" % total in body
+    assert re.search(r'data-figure="paid-marketing">%d<' % len(paid_catalog.AGENTS), body)
     for name, group in appmod._seo_tool_groups():
         key = name.lower()
         assert re.search(r'data-figure="%s">%d<' % (key, len(group)), body), name
@@ -69,7 +72,7 @@ def test_every_operational_agent_is_building_and_tagged_seo(body):
     Building, none Live, and each carries an "SEO" tag first, once."""
     import re as _re
     cards = _re.findall(r'<a href="/seo-aeo/[^"]+" id="t-[^"]+" class="sa-card".*?</a>', body, _re.S)
-    assert len(cards) == len(appmod._seo_tools())
+    assert len(cards) == len(appmod._seo_tools())       # the SEO tools; the paid agents are pinned below
     for card in cards:
         assert 'data-badge="building"' in card and "sa-state--build" in card and ">Building<" in card
         assert "sa-state--live" not in card and ">Live<" not in card
@@ -96,3 +99,19 @@ def test_the_page_runs_on_the_shared_directory_system(body):
     assert 'class="sa"' in body
     # The section keeps its own title; only the hub card says "Operational agents".
     assert "SEO + AEO" in body
+
+
+def test_the_paid_marketing_agents_are_a_group_of_their_own_with_a_paid_marketing_pill(body):
+    """Each paid agent is one card in the amber "Paid marketing" group, linking to its own page (not an SEO
+    Studio embed), Building, and leading its tags with "Paid marketing" where the SEO tools say "SEO"."""
+    from tracker import paid_catalog
+    assert 'id="paid-marketing" data-sa-groupbox="paid-marketing"' in body and "sa-group--d" in body
+    assert 'data-sa-group="paid-marketing"><i class="sa-dot sa-dot--d"></i>Paid marketing <b>%d</b>' % len(paid_catalog.AGENTS) in body
+    cards = re.findall(r'<a href="/strategic-agents/paid-marketing/[^"]+" id="t-[^"]+" class="sa-card".*?</a>', body, re.S)
+    assert len(cards) == len(paid_catalog.AGENTS) >= 1
+    for a, card in zip(paid_catalog.AGENTS, cards):
+        assert 'id="t-%s"' % a["slug"] in card and 'data-group="paid-marketing"' in card
+        assert 'data-badge="building"' in card and ">Building<" in card and ">Live<" not in card
+        tags = re.findall(r'<span class="sa-tag">([^<]*)</span>', card)
+        assert tags[0] == "Paid marketing" and "SEO" not in tags, tags
+        assert 'class="sa-tick-i sa-tick-i--d" href="/strategic-agents/paid-marketing/%s"' % a["slug"] in body
