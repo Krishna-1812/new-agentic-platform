@@ -5335,6 +5335,183 @@ def paid_assets_library():
     return _paid_assets_answer(lambda pa: pa.library_for(request.args.get("account"), request.args.get("kind"), request.args.get("state") or "all", request.args.get("level")))
 
 
+# Account Audit ----------------------------------------------------------------
+# Pick a Google Ads account, a Meta ad account or one of each ("<google id>", "act_...", or "<google id>+<act_...>"; an MCC is not audited)
+# and it reads the account live and holds it against a written checklist: settings, conversion tracking, links, structure and bidding,
+# keywords and search terms, ads and landing pages for Google; the ad account, pixel and tracking, campaigns and ad sets, and ads for
+# Meta. Each check has a severity and a result (pass, warn, fail, not applicable, unknown); a part that could not be read says unknown and
+# is never passed or failed. Reading is tracker/paid_audit_google_read.py, paid_audit_meta_read.py and paid_audit_pages.py, the checklists
+# paid_audit_google_checks.py and paid_audit_meta_checks.py, the report tracker/paid_audit.py. It only reads: nothing is changed in either
+# platform. Inside a workspace only its own Google Ads accounts are audited (_pm_target_refusal), saved audits included; the briefing's
+# model calls are booked (tracker/paid_spend.py).
+
+@app.route(_PM_PREFIX + "/account-audit")
+@position2_required
+def paid_account_audit():
+    return _pm_page("account_audit.html", "account-audit")
+
+
+def _paid_audit_answer(make, account=None):
+    """Runs the Account Audit's report and maps what can go wrong the same way for every route."""
+    from tracker import paid_gads as paid_gads_base, paid_gads_segments as paid_gads, paid_audit, paid_audit_store
+    try:
+        refused = _pm_target_refusal(request.args.get("account") if account is None else account, paid_gads.list_groups)
+        if refused:
+            return jsonify(error=refused), 403
+        out = make(paid_audit)
+        return (jsonify(out[0]), out[1]) if isinstance(out, tuple) else jsonify(out)
+    except paid_audit.BadRequest as e:
+        return jsonify(error=str(e)), 400
+    except paid_audit_store.StoreUnavailable as e:
+        return _pm_store_error(e)
+    except paid_gads_base.RefreshTooSoon as e:
+        return jsonify(error=str(e), kind="cooldown", retryIn=e.retry_in), 429
+    except paid_gads.GadsError as e:
+        return _pm_gads_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/audit/report")
+@position2_required
+def paid_audit_report():
+    extra = {"force": True} if str(request.args.get("refresh") or "") in ("1", "true") else {}      # the Refresh button
+
+    def make(pa):
+        report = pa.report_for(request.args.get("account"), **extra)
+        names = " and ".join(a.get("name", "") for a in report.get("accounts") or [])
+        _pm_note("account-audit", pa.account_key(request.args.get("account")), "Audit of %s" % (names or "an account"),
+                 "Score %s" % report["score"] if report.get("score") is not None else "")
+        return report
+    return _paid_audit_answer(make)
+
+
+# Saved audits: a person keeps an audit (with a note such as "Onboarding" or "Q1 review") and later sees what changed since. Nothing is saved
+# unless someone asks. tracker/paid_audit_store.py keeps them, tracker/paid_audit_history.py compares.
+
+@app.route(_PM_PREFIX + "/api/audit/save", methods=["POST"])
+@position2_required
+def paid_audit_save():
+    body = request.get_json(silent=True)
+    body = body if isinstance(body, dict) else {}
+
+    def make(pa):
+        from tracker import paid_audit_store as store
+        key = pa.account_key(body.get("account"))
+        report = pa.report_for(body.get("account"))
+        if report.get("stale"):                          # a saved copy shown because a platform would not answer is not today's audit
+            return {"error": "A platform is not answering, so the audit shown is an older saved copy. Save it once a fresh read is possible.", "kind": "stale"}, 409
+        names = " + ".join(a["name"] for a in report["accounts"])
+        return {"saved": store.save(key, names, _pm_user_email(), report, body.get("note"))}
+    return _paid_audit_answer(make, body.get("account"))
+
+
+@app.route(_PM_PREFIX + "/api/audit/history")
+@position2_required
+def paid_audit_history_list():
+    def make(pa):
+        from tracker import paid_audit_store as store
+        return {"history": store.list_saved(pa.account_key(request.args.get("account")))}
+    return _paid_audit_answer(make)
+
+
+@app.route(_PM_PREFIX + "/api/audit/compare")
+@position2_required
+def paid_audit_compare():
+    """The audit now against a saved one for the same account: ?id=<saved audit> or, without it, the latest saved. {compare: null} when none is saved."""
+    def make(pa):
+        from tracker import paid_audit_history as hist, paid_audit_store as store
+        key = pa.account_key(request.args.get("account"))
+        wanted = request.args.get("id")
+        saved = store.get(wanted, key) if wanted else store.latest(key)
+        if wanted and saved is None:
+            raise pa.BadRequest("That saved audit is not one for this account.")
+        if saved is None:
+            return {"compare": None}
+        return {"compare": hist.compare(pa.report_for(request.args.get("account")), saved), "id": saved["id"]}
+    return _paid_audit_answer(make)
+
+
+@app.route(_PM_PREFIX + "/api/audit/history/<sid>", methods=["DELETE"])
+@position2_required
+def paid_audit_history_delete(sid):
+    from tracker import paid_audit_store as store
+    try:
+        row = store.get(sid)
+        if row is None:
+            return jsonify(error="That saved audit does not exist."), 404
+        if _pm_scope() is not None and _pm_target_refusal(row["accountKey"], lambda: []):
+            return jsonify(error="That saved audit is not one of this workspace's accounts."), 403
+        if row["createdBy"] != _pm_user_email() and not _pm_is_admin():
+            return jsonify(error="Only whoever saved this audit, or an admin, can remove it."), 403
+        store.delete(sid, _pm_user_email(), _pm_is_admin())
+        return jsonify(ok=True)
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+# The Claude-written briefing: written from the audit's findings only (tracker/paid_audit_summary.py), never from the names of the campaigns,
+# keywords or pages. At most AUDIT_SUMMARY_DAILY_CAP a person a day; the briefing falls back to the findings' own words without a model.
+AUDIT_SUMMARY_DAILY_CAP = 20
+_AUDIT_SUMMARY_USES = {}
+
+
+@app.route(_PM_PREFIX + "/api/audit/summary", methods=["POST"])
+@position2_required
+def paid_audit_summary_route():
+    body = request.get_json(silent=True)
+    body = body if isinstance(body, dict) else {}
+    email, today = _pm_user_email(), datetime.now(timezone.utc).date().isoformat()
+    day, used = _AUDIT_SUMMARY_USES.get(email, (today, 0))
+    if day != today:
+        used = 0
+    if used >= AUDIT_SUMMARY_DAILY_CAP:
+        return jsonify(error="That is %d briefings in a day, the most this allows." % used), 429
+
+    def make(pa):
+        from tracker import paid_audit_summary, paid_spend
+        report = pa.report_for(body.get("account"))
+        _AUDIT_SUMMARY_USES[email] = (today, used + 1)
+        acct = _work_acct()
+        with paid_spend.charging("account-audit", email, acct["space"] if acct else ""):
+            return paid_audit_summary.cached_summary((pa.account_key(body.get("account")),), report)
+    return _paid_audit_answer(make, body.get("account"))
+
+
+_AUDIT_FILES = {"xlsx": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"), "pdf": ("application/pdf", ".pdf"),
+                "zip": ("application/zip", ".zip")}
+
+
+@app.route(_PM_PREFIX + "/api/audit/download")
+@position2_required
+def paid_audit_download():
+    """?account=...&file=xlsx|pdf|zip. The files are made from the same report the page shows (the saved read, so no new quota is spent
+    while it is fresh); a report that could not be made is the same error the page shows."""
+    from tracker import paid_gads as paid_gads_base, paid_gads_segments as paid_gads, paid_audit, paid_audit_export as export
+    kind = request.args.get("file") or ""
+    if kind not in _AUDIT_FILES:
+        return jsonify(error="file should be one of: %s." % ", ".join(_AUDIT_FILES)), 400
+    try:
+        refused = _pm_target_refusal(request.args.get("account"), paid_gads.list_groups)
+        if refused:
+            return jsonify(error=refused), 403
+        report = paid_audit.report_for(request.args.get("account"))
+    except paid_audit.BadRequest as e:
+        return jsonify(error=str(e)), 400
+    except paid_gads_base.RefreshTooSoon as e:
+        return jsonify(error=str(e), kind="cooldown", retryIn=e.retry_in), 429
+    except paid_gads.GadsError as e:
+        return _pm_gads_error(e)
+    try:
+        body = {"xlsx": export.xlsx, "pdf": export.pdf, "zip": export.csv_zip}[kind](report)
+    except Exception as e:                                  # noqa: BLE001 (a file that cannot be made is said in words, not a stack trace)
+        app.logger.exception("account audit download failed")
+        return jsonify(error="The file could not be made (%s)." % type(e).__name__), 500
+    resp = make_response(body)
+    resp.headers["Content-Type"] = _AUDIT_FILES[kind][0]
+    resp.headers["Content-Disposition"] = 'attachment; filename="%s%s"' % (export.file_stem(report), _AUDIT_FILES[kind][1])
+    resp.headers["Cache-Control"] = "private, no-store"
+    return resp
+
+
 @app.route(_PM_PREFIX + "/api/meta/status")
 @position2_required
 def paid_meta_status():
