@@ -111,6 +111,16 @@ AGENTS = (
      "tags": ["Google Ads", "Meta"],
      "api": (_ACCOUNTS, _SEGMENTS, r"paid-marketing/api/audit/(report|save|history|compare|summary|download)(/[\w-]+)?"),
      "runs": (r"paid-marketing/api/audit/report",)},
+    {"slug": "landing-page-check", "endpoint": "paid_landing_page_check",
+     "name": "Landing Page Check", "icon": "L",
+     "about": "Does each landing page keep the promise its ads make",
+     "lead": "Reads what each landing page took over 30 days and the ads, keywords and search terms behind it, fetches the busiest "
+             "pages and holds each against a written checklist: it opens, it matches the ad, a visitor can act, it works on a phone.",
+     "gives": "A Google Ads account, a Meta ad account or one of each",
+     "gets": "Every landing page scored, with what to fix and a speed test",
+     "tags": ["Google Ads", "Meta"],
+     "api": (_ACCOUNTS, _SEGMENTS, r"paid-marketing/api/lp/(report|lab|read|download)"),
+     "runs": (r"paid-marketing/api/lp/report",)},
 )
 
 BY_SLUG = {a["slug"]: a for a in AGENTS}

@@ -5512,6 +5512,157 @@ def paid_audit_download():
     return resp
 
 
+# Landing Page & Relevancy Check -----------------------------------------------
+# Pick a Google Ads account, a Meta ad account or one of each and it reads, read only, what each landing page took over the last 30 days and
+# the ads, keywords (with their Quality Score parts) and search terms that send people there, fetches the busiest pages (the platform's
+# SSRF-guarded fetch) and holds each one against a written checklist: the page opens, does it match the ad, can a visitor act, works on a
+# phone, loads fast, tracking and trust. Every check has a severity and a result (pass, warn, fail, not applicable, could not check); a page
+# that refuses us or is built by scripts is "could not check", never failed. Reading is tracker/paid_lp_read.py, the page fetch
+# paid_lp_page.py, the matching paid_lp_match.py, the checks paid_lp_checks*.py and the report tracker/paid_lp.py. Inside a workspace only
+# its own Google Ads accounts are read; "read it like a person" is a model call, booked (tracker/paid_spend.py).
+
+@app.route(_PM_PREFIX + "/landing-page-check")
+@position2_required
+def paid_landing_page_check():
+    return _pm_page("landing_page_check.html", "landing-page-check")
+
+
+def _pm_lp_refusal(account):
+    """The workspace refusal for an account the Landing Page Check is asked about, as a response, or None."""
+    from tracker import paid_gads_segments as paid_gads
+    refused = _pm_target_refusal(account, paid_gads.list_groups)
+    return (jsonify(error=refused), 403) if refused else None
+
+
+@app.route(_PM_PREFIX + "/api/lp/report")
+@position2_required
+def paid_lp_report():
+    from tracker import paid_gads as paid_gads_base, paid_gads_segments as paid_gads, paid_lp
+    extra = {"force": True} if str(request.args.get("refresh") or "") in ("1", "true") else {}      # the Refresh button
+    try:
+        refused = _pm_lp_refusal(request.args.get("account"))
+        if refused:
+            return refused
+        report = paid_lp.report_for(request.args.get("account"), **extra)
+    except paid_lp.BadRequest as e:
+        return jsonify(error=str(e)), 400
+    except paid_gads_base.RefreshTooSoon as e:
+        return jsonify(error=str(e), kind="cooldown", retryIn=e.retry_in), 429
+    except paid_gads.GadsError as e:
+        return _pm_gads_error(e)
+    names = " and ".join(a.get("name", "") for a in report.get("accounts") or []) or (report.get("account") or {}).get("name", "")
+    _pm_note("landing-page-check", request.args.get("account", ""), "Landing pages of %s" % (names or "an account"))
+    return jsonify(report)
+
+
+# The lab speed test (tracker/paid_lp_speed.py): Google's PageSpeed Insights loads one page of the report like a mid-range phone. It is run only when someone asks,
+# for a page the report names (never an address the caller supplies), at most LP_LAB_DAILY_CAP a person a day, and only when PAGESPEED_API_KEY is set.
+LP_LAB_DAILY_CAP = 40
+_LP_LAB_USES = {}
+
+
+@app.route(_PM_PREFIX + "/api/lp/lab", methods=["POST"])
+@position2_required
+def paid_lp_lab():
+    from tracker import paid_gads_segments as paid_gads, paid_lp, paid_lp_speed
+    body = request.get_json(silent=True)
+    body = body if isinstance(body, dict) else {}
+    problem = paid_lp_speed.config_problem()
+    if problem:
+        return jsonify(error=problem, kind="not_configured"), 503
+    email, today = _pm_user_email(), datetime.now(timezone.utc).date().isoformat()
+    day, used = _LP_LAB_USES.get(email, (today, 0))
+    if day != today:
+        used = 0
+    if used >= LP_LAB_DAILY_CAP:
+        return jsonify(error="That is %d speed tests in a day, the most this allows." % used, kind="cap"), 429
+    try:
+        refused = _pm_lp_refusal(body.get("account"))
+        if refused:
+            return refused
+        result = paid_lp.run_lab(body.get("account"), body.get("page"))
+        _LP_LAB_USES[email] = (today, used + 1)
+        return jsonify(lab=result)
+    except paid_lp.BadRequest as e:
+        return jsonify(error=str(e)), 400
+    except paid_lp_speed.LabError as e:
+        _LP_LAB_USES[email] = (today, used + (0 if e.kind in ("not_configured", "quota") else 1))
+        status = {"not_configured": 503, "quota": 429}.get(e.kind, 502)
+        return jsonify(error=str(e), kind=e.kind), status
+    except paid_gads.GadsError as e:
+        return _pm_gads_error(e)
+
+
+# "Read it like a person" (tracker/paid_lp_ai.py): Claude judges one page of the report against the promise its ads make, from the ad copy, the keywords, the search terms and the
+# page's own visible text, never from a number it was not shown. At most LP_READ_DAILY_CAP a person a day; without a model the answer is the checks' own words.
+LP_READ_DAILY_CAP = 30
+_LP_READ_USES = {}
+
+
+@app.route(_PM_PREFIX + "/api/lp/read", methods=["POST"])
+@position2_required
+def paid_lp_read_page():
+    from tracker import paid_gads as paid_gads_base, paid_gads_segments as paid_gads, paid_lp, paid_spend
+    body = request.get_json(silent=True)
+    body = body if isinstance(body, dict) else {}
+    email, today = _pm_user_email(), datetime.now(timezone.utc).date().isoformat()
+    day, used = _LP_READ_USES.get(email, (today, 0))
+    if day != today:
+        used = 0
+    if used >= LP_READ_DAILY_CAP:
+        return jsonify(error="That is %d page reads in a day, the most this allows." % used, kind="cap"), 429
+    try:
+        refused = _pm_lp_refusal(body.get("account"))
+        if refused:
+            return refused
+        acct = _work_acct()
+        with paid_spend.charging("landing-page-check", email, acct["space"] if acct else ""):
+            out = paid_lp.explain(body.get("account"), body.get("page"))
+        _LP_READ_USES[email] = (today, used + 1)
+        return jsonify(read=out)
+    except paid_lp.BadRequest as e:
+        return jsonify(error=str(e)), 400
+    except paid_gads_base.RefreshTooSoon as e:
+        return jsonify(error=str(e), kind="cooldown", retryIn=e.retry_in), 429
+    except paid_gads.GadsError as e:
+        return _pm_gads_error(e)
+
+
+_LP_FILES = {"xlsx": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"), "pdf": ("application/pdf", ".pdf"), "zip": ("application/zip", ".zip")}
+
+
+@app.route(_PM_PREFIX + "/api/lp/download")
+@position2_required
+def paid_lp_download():
+    """?account=...&file=xlsx|pdf|zip. The files are made from the same report the page shows (the saved read, so no new quota is spent while it is fresh);
+    a report that could not be made is the same error the page shows."""
+    from tracker import paid_gads as paid_gads_base, paid_gads_segments as paid_gads, paid_lp, paid_lp_export as export
+    kind = request.args.get("file") or ""
+    if kind not in _LP_FILES:
+        return jsonify(error="file should be one of: %s." % ", ".join(_LP_FILES)), 400
+    try:
+        refused = _pm_lp_refusal(request.args.get("account"))
+        if refused:
+            return refused
+        report = paid_lp.report_for(request.args.get("account"))
+    except paid_lp.BadRequest as e:
+        return jsonify(error=str(e)), 400
+    except paid_gads_base.RefreshTooSoon as e:
+        return jsonify(error=str(e), kind="cooldown", retryIn=e.retry_in), 429
+    except paid_gads.GadsError as e:
+        return _pm_gads_error(e)
+    try:
+        body = {"xlsx": export.xlsx, "pdf": export.pdf, "zip": export.csv_zip}[kind](report)
+    except Exception as e:                                  # noqa: BLE001 (a file that cannot be made is said in words, not a stack trace)
+        app.logger.exception("landing page check download failed")
+        return jsonify(error="The file could not be made (%s)." % type(e).__name__), 500
+    resp = make_response(body)
+    resp.headers["Content-Type"] = _LP_FILES[kind][0]
+    resp.headers["Content-Disposition"] = 'attachment; filename="%s%s"' % (export.file_stem(report), _LP_FILES[kind][1])
+    resp.headers["Cache-Control"] = "private, no-store"
+    return resp
+
+
 @app.route(_PM_PREFIX + "/api/meta/status")
 @position2_required
 def paid_meta_status():

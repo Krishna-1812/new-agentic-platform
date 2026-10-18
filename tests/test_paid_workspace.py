@@ -271,3 +271,19 @@ def test_inside_a_workspace_the_audit_and_its_saved_copies_are_its_own(seeded, s
     assert c.get(base + "report?account=" + LUMINA, headers=XA).status_code == 200 and read == [LUMINA]
     assert ads[-1][1:3] == ("account-audit", LUMINA) and ads[-1][5] == "Score 72"
     assert c.delete(base + "history/s1", headers=dict(XA, Origin="http://localhost"), content_type="application/json").status_code == 403
+
+
+def test_inside_a_workspace_the_landing_page_check_reads_only_its_own_accounts(seeded, segs, ads, monkeypatch):
+    from tracker import paid_lp, paid_spend
+    read = []
+    monkeypatch.setattr(paid_lp, "report_for", lambda account, **k: read.append(account) or {"accounts": [{"name": "Lumina Ads"}]})
+    monkeypatch.setattr(paid_lp, "explain", lambda account, page: read.append((account, paid_spend._who.get()[0])) or {})
+    c, same = T._client(T.RAJ), dict(XA, Origin="http://localhost")
+    base = "/strategic-agents/paid-marketing/api/lp/"
+    for other in (OTHER, META):
+        assert c.get(base + "report?account=" + other, headers=XA).status_code == 403, other
+        assert c.post(base + "read", json={"account": other, "page": "https://a.test/"}, headers=same).status_code == 403, other
+    assert read == []
+    assert c.get(base + "report?account=" + LUMINA, headers=XA).status_code == 200
+    assert c.post(base + "read", json={"account": LUMINA, "page": "https://a.test/"}, headers=same).status_code == 200
+    assert read == [LUMINA, (LUMINA, "landing-page-check")] and ads[-1][1:3] == ("landing-page-check", LUMINA)
