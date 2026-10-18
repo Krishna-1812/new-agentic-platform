@@ -4845,6 +4845,42 @@ def paid_gads_extras():
     return _gads_guard(run)
 
 
+# Product Analysis (ecommerce): per-product Shopping, Performance Max and Meta catalog numbers from the same
+# read-only sign-ins (tracker/paid_products.py, paid_meta_products.py), on the Performance Summarizer's quota.
+@app.route(_PM_PREFIX + "/product-analysis")
+@position2_required
+def paid_product_analysis():
+    return _pm_page("product_analysis.html", "product-analysis")
+
+
+@app.route(_PM_PREFIX + "/api/gads/products")
+@position2_required
+def paid_gads_products():
+    from tracker import paid_gads, paid_products, paid_store
+
+    def run():
+        acct = _gads_account(paid_store)
+        start, end = paid_gads.check_range(request.args.get("start", ""), request.args.get("end", ""), "the range")
+        cmp = None
+        cs, ce = request.args.get("compare_start", ""), request.args.get("compare_end", "")
+        if cs or ce:
+            cmp = paid_gads.check_range(cs, ce, "the comparison range")
+        force = request.args.get("refresh") == "1"            # the Refresh button: ask Google again, at most every 2 minutes
+        if force:
+            paid_gads.refresh_guard(paid_store, "prod:" + acct["id"])
+        stamps = []
+        if acct["platform"] == "meta":
+            from tracker import paid_meta_products
+            current, compare, saved = paid_meta_products.analysis(paid_store, acct["id"], (start, end), cmp, currency=acct["currency"],
+                                                                  force=force, stamps=stamps)
+        else:
+            current, compare, saved = paid_products.analysis(paid_store, acct["id"], (start, end), cmp, force=force, stamps=stamps)
+        _pm_note("product-analysis", acct["id"], "Products of %s" % (acct.get("name") or acct["id"]), "%s to %s" % (start, end))
+        return jsonify(account=acct, current=current, compare=compare, stale=min(saved) if saved else None,
+                       fetchedAt=paid_gads.oldest(stamps), blockedUntil=_platform_blocked(acct, paid_store))
+    return _gads_guard(run)
+
+
 @app.route(_PM_PREFIX + "/api/meta/status")
 @position2_required
 def paid_meta_status():

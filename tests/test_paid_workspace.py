@@ -95,10 +95,12 @@ def test_a_client_the_agent_is_not_shared_with_cannot_read(seeded):
     assert r.status_code in (302, 403)
 
 
-def test_a_route_several_agents_share_is_granted_when_any_of_them_is_shared(monkeypatch):
-    """The account list is every paid agent's: sharing one agent must be enough to list the accounts."""
-    monkeypatch.setitem(appmod._CLIENT_TOOL_RX, "zz-other-paid", appmod._CLIENT_TOOL_RX["performance-summarizer"])
-    assert appmod._client_route_tools(API + "accounts") == ["performance-summarizer", "zz-other-paid"]
+def test_a_route_several_agents_share_is_granted_when_any_of_them_is_shared(seeded):
+    """The account list is every paid agent's: sharing any one of them is enough to list the accounts."""
+    assert appmod._client_route_tools(API + "accounts") == [a["slug"] for a in paid_catalog.AGENTS]
+    last = paid_catalog.AGENTS[-1]["slug"]
+    T._invite("lumina", **{"tool:" + last: True})
+    assert _ids(T._client(T.CLIENT).get(API + "accounts", headers=XA)) == [LUMINA]
 
 
 def test_the_history_shows_what_each_agent_read_in_the_workspace(seeded, monkeypatch):

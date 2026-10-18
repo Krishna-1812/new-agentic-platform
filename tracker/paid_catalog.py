@@ -30,6 +30,16 @@ AGENTS = (
      "tags": ["Google Ads", "Meta"],
      "api": (_ACCOUNTS, r"paid-marketing/api/gads/(performance|extras)"),
      "runs": (r"paid-marketing/api/gads/performance",)},
+    {"slug": "product-analysis", "endpoint": "paid_product_analysis",
+     "name": "Product Analysis", "icon": "A",
+     "about": "Which products earn their ad spend, from Shopping, Performance Max and Meta catalogs",
+     "lead": "Reads product-level numbers from Google Shopping and Performance Max, and from Meta catalog ads, and sorts "
+             "every product into stars, steady sellers, drags and money pits, with the few clear things to do about each.",
+     "gives": "An ecommerce ad account and a date range",
+     "gets": "Every product sorted, with what to do about it",
+     "tags": ["Shopping", "Ecommerce"],
+     "api": (_ACCOUNTS, r"paid-marketing/api/gads/products"),
+     "runs": (r"paid-marketing/api/gads/products",)},
 )
 
 BY_SLUG = {a["slug"]: a for a in AGENTS}
