@@ -79,7 +79,7 @@ function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];
 function mkChart(id,canvas,cfg){destroyChart(id);charts[id]=new Chart(canvas,cfg);return charts[id];}
 function trunc(s,n){s=String(s||"");return s.length>n?s.slice(0,n-1)+"…":s;}
 
-Chart.defaults.font.family="'Space Grotesk',system-ui,sans-serif";
+Chart.defaults.font.family="'Zalando Sans',system-ui,sans-serif";
 Chart.defaults.font.size=11.5;
 Chart.defaults.animation.duration=reduceMotion?0:650;
 function tip(){

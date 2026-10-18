@@ -5081,6 +5081,100 @@ def paid_geo_summary():
         return jsonify(paid_geo_summary.cached_summary(key, report, view, ctype))
 
 
+# Seasonality Analysis --------------------------------------------------------
+# When in the year an account earns, and what to do about it: a Google Ads account, a Meta ad account, or one of each added
+# together, over up to three years of daily numbers (tracker/paid_seasonality.py; every figure is plain arithmetic, no model).
+# The page first reads the history slice by slice (api/gads/seasonality/warm, newest year first, so no request is long and a
+# failure keeps what was read), then asks for the analysis, which then answers from the stored days. Inside a workspace
+# each account named goes through _gads_account, so only the workspace's own Google Ads accounts are read.
+
+@app.route(_PM_PREFIX + "/seasonality-analysis")
+@position2_required
+def paid_seasonality_analysis():
+    return _pm_page("seasonality_analysis.html", "seasonality-analysis")
+
+
+def _season_accounts(store):
+    """The one or two accounts ?account= names, each as _gads_account returns it. A platform that is not connected is
+    left out of a combined account (named in the second value) rather than failing the whole read."""
+    from tracker import paid_gads, paid_meta, paid_seasonality
+    ids = paid_seasonality.parse_account(request.args.get("account", ""))
+    accts, problems = [], []
+    for cid in ids:
+        meta = paid_meta.is_meta(cid)
+        problem = paid_meta.config_problem() if meta else paid_gads.config_problem()
+        if problem:
+            if len(ids) == 1:
+                raise paid_gads.NotConfigured(problem)
+            problems.append(problem)
+            continue
+        accts.append(_gads_account(store, cid))
+    if not accts:
+        raise paid_gads.NotConfigured(problems[0])
+    return accts, problems
+
+
+def _season_run(fn):
+    from tracker import paid_gads, paid_seasonality, paid_store
+    try:
+        accts, problems = _season_accounts(paid_store)
+        out = fn(accts, paid_store)
+        if problems:
+            out["warnings"] = list(out.get("warnings") or []) + problems
+        out["accounts"] = accts
+        out["blockedUntil"] = max((_platform_blocked(a, paid_store) or 0) for a in accts) or None
+        return jsonify(out)
+    except paid_seasonality.BadRequest as e:
+        return jsonify(error=str(e)), 400
+    except ValueError as e:
+        return jsonify(error=str(e)), 400
+    except paid_gads.NotConfigured as e:
+        return jsonify(error=str(e), configProblem=str(e)), 409
+    except paid_gads.RefreshTooSoon as e:
+        return jsonify(error=str(e), cooldown=True, retryIn=e.retry_in), 429
+    except paid_gads.OverQuota as e:
+        return jsonify(error=str(e), blockedUntil=e.until), 429
+    except paid_gads.AdsError as e:
+        app.logger.warning("paid marketing: seasonality read failed: %s", e)
+        return jsonify(error=str(e)), 502
+
+
+@app.route(_PM_PREFIX + "/api/gads/seasonality/warm")
+@position2_required
+def paid_gads_seasonality_warm():
+    """Read one slice (?part=0 is the newest year) of the history into the stored days. ?refresh=1 re-reads the latest
+    45 days only, at most once every two minutes per account."""
+    from tracker import paid_gads, paid_seasonality
+
+    def run(accts, store):
+        months = paid_seasonality.check_months(request.args.get("months"))
+        start, end = paid_seasonality.window(months)
+        try:
+            part = int(request.args.get("part", "0"))
+        except ValueError:
+            raise paid_seasonality.BadRequest("part should be a whole number")
+        if request.args.get("refresh") == "1":
+            start = max(start, (paid_seasonality._d(end) - timedelta(days=paid_seasonality.REFRESH_DAYS - 1)).isoformat())
+            paid_gads.refresh_guard(store, "season:" + request.args.get("account", ""))
+            return paid_seasonality.warm(store, accts, start, end, 0, force=True)
+        return paid_seasonality.warm(store, accts, start, end, part)
+    return _season_run(run)
+
+
+@app.route(_PM_PREFIX + "/api/gads/seasonality")
+@position2_required
+def paid_gads_seasonality():
+    from tracker import paid_seasonality
+
+    def run(accts, store):
+        months = paid_seasonality.check_months(request.args.get("months"))
+        out = paid_seasonality.report(store, accts, months)
+        _pm_note("seasonality-analysis", "+".join(a["id"] for a in accts),
+                 "Seasonality of %s" % " and ".join(a.get("name", a["id"]) for a in accts), "%s months" % months)
+        return out
+    return _season_run(run)
+
+
 @app.route(_PM_PREFIX + "/api/meta/status")
 @position2_required
 def paid_meta_status():

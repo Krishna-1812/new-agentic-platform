@@ -373,7 +373,7 @@ function drawChart(){
   $("#chartNote").textContent=empty?"":(kind==="bars"?"top "+Math.min(S.chart.top,rows.length)+" by "+M.label.toLowerCase():"");
   $("#legend").innerHTML="";
   if(empty){ var c=cv.getContext("2d"); c.clearRect(0,0,cv.width,cv.height); return; }
-  Chart.defaults.font.family="'Space Grotesk',system-ui,sans-serif"; Chart.defaults.font.size=11.5;
+  Chart.defaults.font.family="'Zalando Sans',system-ui,sans-serif"; Chart.defaults.font.size=11.5;
   Chart.defaults.animation.duration=reduceMotion?0:500; Chart.defaults.color=th.muted;
   var tip={backgroundColor:"rgba(9,12,24,.96)",borderColor:"rgba(255,255,255,.14)",borderWidth:1,padding:12,cornerRadius:12,titleColor:"#eef1fb",bodyColor:"#c4cbe4",
            titleFont:{weight:"700",size:12.5},bodyFont:{size:12},displayColors:false};
@@ -437,7 +437,7 @@ function drawChart(){
         backgroundColor:vcol(k)+"aa",borderColor:vcol(k),pointRadius:7,pointHoverRadius:9};})},
       plugins:[avg,{id:"gpNone",afterDraw:function(ch){
         if(pool5.length) return;
-        var a=ch.chartArea, c=ch.ctx; c.save(); c.fillStyle=th.muted; c.textAlign="center"; c.font="600 14px 'Space Grotesk',sans-serif";
+        var a=ch.chartArea, c=ch.ctx; c.save(); c.fillStyle=th.muted; c.textAlign="center"; c.font="600 14px 'Zalando Sans',sans-serif";
         c.fillText("No place here has enough conversions to be judged",(a.left+a.right)/2,(a.top+a.bottom)/2); c.restore();}}],
       options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:Object.assign({},tip,{callbacks:{
         title:function(i){return i[0].raw.row.label;},label:function(i){return "Index "+i.raw.y+" · "+i.raw.x.toFixed(1)+"% of spend";},afterBody:function(i){return tipLines(i[0].raw.row);}}})},

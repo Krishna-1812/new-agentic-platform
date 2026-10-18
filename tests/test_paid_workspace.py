@@ -205,3 +205,15 @@ def test_inside_a_workspace_a_geo_report_reads_only_what_is_its_own(seeded, segs
     assert read == []
     assert c.get(geo + LUMINA + SEG_RANGE, headers=XA).status_code == 200 and read == [LUMINA]
     assert ads[-1][1:3] == ("geo-performance", LUMINA) and "by city" in ads[-1][5]
+
+
+def test_inside_a_workspace_seasonality_reads_only_its_own_accounts(seeded, ads, monkeypatch):
+    from tracker import paid_seasonality
+    read = []
+    monkeypatch.setattr(paid_seasonality, "report", lambda store, accts, months: read.append([a["id"] for a in accts]) or {"months": months})
+    c = T._client(T.RAJ)
+    for other in (BLOOM, META, LUMINA + "+" + META):
+        assert c.get(API + "seasonality?account=" + other, headers=XA).status_code == 400, other
+    assert read == []
+    assert c.get(API + "seasonality?account=" + LUMINA, headers=XA).status_code == 200 and read == [[LUMINA]]
+    assert ads[-1][1:3] == ("seasonality-analysis", LUMINA) and "Lumina Ads" in ads[-1][4]

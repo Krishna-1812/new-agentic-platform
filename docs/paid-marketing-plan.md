@@ -25,7 +25,8 @@ Ads and Meta accounts. They sit on the Operational Agents page with a **Paid mar
 | 3a | Product Analysis | Done |
 | 3b | Segment Analysis, with the agents' spend ledger | This PR |
 | 3c | Geo Performance | Done |
-| 3d | Seasonality, Ad Strength, Audience Segments, Asset Coverage | One PR each |
+| 3d | Seasonality Analysis | Done |
+| 3e | Ad Strength, Audience Segments, Asset Coverage | One PR each |
 | 4 | Account Audit, Landing Page Check, Experiment Tracker | One PR each |
 | 5 | Pacing Desk and Search Query Analysis, with the source's client data taken out | One PR each |
 | 6 | Business Research, Keyword Research, Strategy and Campaign Book, QA Agent | One PR each |
