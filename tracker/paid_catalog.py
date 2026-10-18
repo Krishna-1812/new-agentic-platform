@@ -71,6 +71,16 @@ AGENTS = (
      "tags": ["Google Ads", "Meta"],
      "api": (_ACCOUNTS, r"paid-marketing/api/gads/seasonality(/warm)?"),
      "runs": (r"paid-marketing/api/gads/seasonality",)},
+    {"slug": "ad-strength", "endpoint": "paid_ad_strength",
+     "name": "Ad Strength Analysis", "icon": "R",
+     "about": "Every ad Google rates below Good, busiest first, and how to lift it",
+     "lead": "Reads Google's ad strength rating for every live Responsive Search Ad and Performance Max asset group, lists the "
+             "ones below Good with Google's own tips beside the headlines and descriptions, and suggests new text on request.",
+     "gives": "A Google Ads account or MCC",
+     "gets": "The weak ads, worst and busiest first, with what to change",
+     "tags": ["Google Ads", "Ad copy"],
+     "api": (_SEGMENTS, r"paid-marketing/api/adstrength/(report|suggest)"),
+     "runs": (r"paid-marketing/api/adstrength/report",)},
 )
 
 BY_SLUG = {a["slug"]: a for a in AGENTS}

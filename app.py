@@ -5175,6 +5175,78 @@ def paid_gads_seasonality():
     return _season_run(run)
 
 
+# Ad Strength Analysis --------------------------------------------------------
+# Google's ad strength rating for every live Responsive Search Ad and Performance Max asset group in an account or MCC,
+# the ones below Good busiest first, with Google's own tips, and on request Claude's suggested headline and description
+# changes. The reading is tracker/paid_adstrength.py, what it means tracker/paid_adstrength_insights.py, the Claude
+# suggestions tracker/paid_adstrength_ai.py (booked, tracker/paid_spend.py). The account list is Segment Analysis's.
+
+ADSTRENGTH_SUGGEST_DAILY_CAP = 60
+_ADSTRENGTH_USES = {}
+
+
+@app.route(_PM_PREFIX + "/ad-strength")
+@position2_required
+def paid_ad_strength():
+    return _pm_page("ad_strength.html", "ad-strength")
+
+
+def _pm_adstrength_report():
+    """(report, None) for the account in the query string or JSON body, or (None, the error response)."""
+    from tracker import paid_gads as paid_gads_base, paid_gads_segments as paid_gads, paid_adstrength
+    src = request.args if request.method == "GET" else (request.get_json(silent=True) or {})
+    try:
+        refused = _pm_target_refusal(src.get("account"), paid_gads.list_groups)
+        if refused:
+            return None, (jsonify(error=refused), 403)
+        extra = {"force": True} if str(src.get("refresh") or "") in ("1", "true") else {}      # the Refresh button
+        return paid_adstrength.report_for(src.get("account"), **extra), None
+    except paid_adstrength.BadRequest as e:
+        return None, (jsonify(error=str(e)), 400)
+    except paid_gads_base.RefreshTooSoon as e:
+        return None, (jsonify(error=str(e), kind="cooldown", retryIn=e.retry_in), 429)
+    except paid_gads.GadsError as e:
+        return None, _pm_gads_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/adstrength/report")
+@position2_required
+def paid_adstrength_report():
+    report, err = _pm_adstrength_report()
+    if err:
+        return err
+    account = report.get("account") or {}
+    _pm_note("ad-strength", account.get("id", ""), "Ad strength of %s" % account.get("name", "an account"))
+    return jsonify(report)
+
+
+@app.route(_PM_PREFIX + "/api/adstrength/suggest", methods=["POST"])
+@position2_required
+def paid_adstrength_suggest():
+    """Suggested headline and description changes for one ad. The page sends only the account and the ad's key; the report
+    and the ad are rebuilt here, so the model can only ever be shown what Google Ads said about it."""
+    from tracker import paid_adstrength, paid_adstrength_ai, paid_spend
+    body = request.get_json(silent=True) or {}
+    key = str(body.get("key") or "")
+    email, today = _pm_user_email(), datetime.now(timezone.utc).date().isoformat()
+    day, used = _ADSTRENGTH_USES.get(email, (today, 0))
+    if day != today:
+        used = 0
+    if used >= ADSTRENGTH_SUGGEST_DAILY_CAP:
+        return jsonify(error="That is %d suggestions in a day, the most this allows." % used), 429
+    report, err = _pm_adstrength_report()
+    if err:
+        return err
+    item = paid_adstrength.find_item(report, key)
+    if item is None:
+        return jsonify(error="That ad is not in this report any more. Refresh and try again."), 404
+    _ADSTRENGTH_USES[email] = (today, used + 1)
+    cache_key = (report["account"]["id"], key)
+    acct = _work_acct()
+    with paid_spend.charging("ad-strength", email, acct["space"] if acct else ""):
+        return jsonify(paid_adstrength_ai.cached_suggestion(cache_key, item, generated_at=report["generatedAt"]))
+
+
 @app.route(_PM_PREFIX + "/api/meta/status")
 @position2_required
 def paid_meta_status():

@@ -96,9 +96,12 @@ def test_a_client_the_agent_is_not_shared_with_cannot_read(seeded):
 
 
 def test_a_route_several_agents_share_is_granted_when_any_of_them_is_shared(seeded):
-    """The account list is every paid agent's: sharing any one of them is enough to list the accounts."""
-    assert appmod._client_route_tools(API + "accounts") == [a["slug"] for a in paid_catalog.AGENTS]
-    last = paid_catalog.AGENTS[-1]["slug"]
+    """The account list is every paid agent's that reads it: sharing any one of them is enough to list the accounts."""
+    readers = [a["slug"] for a in paid_catalog.AGENTS if paid_catalog._ACCOUNTS in a["api"]]
+    assert len(readers) > 1 and appmod._client_route_tools(API + "accounts") == readers
+    assert appmod._client_route_tools(SEG + "accounts") == [a["slug"] for a in paid_catalog.AGENTS
+                                                             if paid_catalog._SEGMENTS in a["api"]]
+    last = readers[-1]
     T._invite("lumina", **{"tool:" + last: True})
     assert _ids(T._client(T.CLIENT).get(API + "accounts", headers=XA)) == [LUMINA]
 
