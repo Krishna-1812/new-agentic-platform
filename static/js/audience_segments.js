@@ -114,7 +114,7 @@ function recompute(){
 function paintPickers(){
   $("#acctPick").hidden=S.platform==="meta"; $("#metaPick").hidden=S.platform==="google";
   var both=S.platform==="both";
-  var items=[{value:"",label:both?"None":"Choose an account",sub:both?"Leave Google out":S.metaAccounts.length+" accounts",avatar:both?"–":"?",hue:200}];
+  var items=[{value:"",label:both?"None":"Choose an account",sub:both?"Leave Google out":S.metaAccounts.length+" accounts",avatar:both?"-":"?",hue:200}];
   S.metaAccounts.forEach(function(a){items.push({value:a.id,label:a.name,avatar:inits(a.name),hue:hueOf(a.name),sub:a.id+" · "+a.currency});});
   if(!metaAcct(S.m)) S.m="";
   mpicker.set(items,S.m,!S.metaAccounts.length);
@@ -125,7 +125,7 @@ var MCC_BADGE='<span class="badge pm-pill ok">MCC</span>';
 function setAccounts(list, groups){
   S.accounts=list; S.groups=groups||[];
   var both=S.platform==="both";
-  var items=[{value:"",label:both?"None":"Choose an account",sub:both?"Leave Meta out":list.length+" accounts"+(S.groups.length?" · "+S.groups.length+" MCCs to combine":""),avatar:both?"–":"?",hue:200}], seen={};
+  var items=[{value:"",label:both?"None":"Choose an account",sub:both?"Leave Meta out":list.length+" accounts"+(S.groups.length?" · "+S.groups.length+" MCCs to combine":""),avatar:both?"-":"?",hue:200}], seen={};
   (both?[]:S.groups).forEach(function(g){
     var head=g.name+" MCC";
     items.push({value:g.id,label:"All of "+g.name,avatar:inits(g.name),hue:hueOf(g.name),group:head,badge:MCC_BADGE,sub:g.accountIds.length+" accounts combined · "+g.currency});
@@ -323,7 +323,7 @@ function paintTable(){
         if(c[0]==="pctCost") return '<td class="r sg-pc"><i style="width:'+Math.min(100,(r.pctCost||0)/maxShare*100).toFixed(1)+'%"></i><span>'+pc(r.pctCost,1)+'</span></td>';
         if(c[0]==="verdict") return '<td class="r"><span class="gp-v '+VERDICTS[r.verdict][1]+'" title="'+esc(r.why||"")+'">'+esc(r.verdictLabel)+'</span></td>';
         if(c[0]==="mode") return '<td class="r"><span class="au-mode '+r.mode+'">'+modeText(r.mode,r.platform)+'</span></td>';
-        if(c[0]==="bid") return '<td class="r num">'+esc(r.platform==="meta"?"–":bidText(r))+'</td>';
+        if(c[0]==="bid") return '<td class="r num">'+esc(r.platform==="meta"?"-":bidText(r))+'</td>';
         if(c[0]==="adjustment") return '<td class="r"><span class="gp-adj '+(r.adjustment>0?"up":r.adjustment<0?"down":"")+(r.adjustable?"":" off")+'" title="'+
           (r.adjustable?esc(r.confidence||"")+" confidence":r.platform==="meta"?"Meta has no audience bid adjustment":"These campaigns take no audience bid adjustment")+'">'+esc(r.adjustment==null||r.platform==="meta"?"":signed(r.adjustment))+'</span></td>';
         return '<td class="r num">'+esc(cell(c[0],r))+'</td>';
@@ -346,7 +346,7 @@ function detail(r){
   return what+why+'<table class="as-tx au-uses"><thead><tr><th>Where it is used</th><th>Mode</th>'+(showBid()?'<th class="r">Bid now</th>':'')+'<th class="r">Spend</th><th class="r">Clicks</th><th class="r">Conv.</th></tr></thead><tbody>'+
     live.map(function(u){
       return '<tr><td>'+esc(u.campaign)+(u.adGroup?' <span class="gp-sub">'+esc(u.adGroup)+(u.platform==="meta"?" (ad set)":"")+'</span>':' <span class="gp-sub">campaign level</span>')+'</td><td><span class="au-mode '+u.mode+'">'+modeText(u.mode,u.platform)+'</span></td>'+
-        (showBid()?'<td class="r">'+(u.platform==="meta"?"–":u.bid==null?"None":signed(u.bid))+'</td>':'')+'<td class="r">'+money(u.m.cost,0)+'</td><td class="r">'+int(u.m.clicks)+'</td><td class="r">'+conv(u.m.conversions)+'</td></tr>';
+        (showBid()?'<td class="r">'+(u.platform==="meta"?"-":u.bid==null?"None":signed(u.bid))+'</td>':'')+'<td class="r">'+money(u.m.cost,0)+'</td><td class="r">'+int(u.m.clicks)+'</td><td class="r">'+conv(u.m.conversions)+'</td></tr>';
     }).join("")+'</tbody></table>'+(silent?'<p class="au-why">'+silent+' more place'+(silent===1?" it is":"s it is")+' attached had no traffic in this range.</p>':"");
 }
 $("#tbl").addEventListener("click",function(e){
@@ -399,7 +399,7 @@ function paintLists(){
   $("#lists").innerHTML=all.length?'<thead><tr><th>List</th><th>Kind</th><th class="r">'+(S.report.account.platform==="meta"?"People (Meta's estimate)":S.report.account.platform==="both"?"Search · Meta people":"Search")+'</th>'+(S.report.account.platform==="meta"?"":'<th class="r">Display and YouTube</th>')+'<th>Status</th><th>Used</th><th>What is wrong</th></tr></thead><tbody>'+
     (ls.length?ls.map(function(l){
       return '<tr><td class="sg-lab">'+esc(l.label)+(multi?'<span class="gp-sub">'+esc(l.account)+'</span>':"")+(l.readOnly?'<span class="gp-sub">created by Google</span>':"")+'</td><td>'+esc(l.detail)+'</td><td class="r num">'+(l.sizeSearch==null?"Not shown":int(l.sizeSearch))+'</td>'+
-        (S.report.account.platform==="meta"?"":'<td class="r num">'+(l.platform==="meta"?"–":int(l.sizeDisplay))+'</td>')+'<td>'+esc(l.status==="OPEN"?"Open":l.status==="CLOSED"?"Closed":l.status==="NOT_READY"?"Not ready":l.status||"")+'</td><td>'+(l.used?"Yes":'<span class="au-no">Not used</span>')+
+        (S.report.account.platform==="meta"?"":'<td class="r num">'+(l.platform==="meta"?"-":int(l.sizeDisplay))+'</td>')+'<td>'+esc(l.status==="OPEN"?"Open":l.status==="CLOSED"?"Closed":l.status==="NOT_READY"?"Not ready":l.status||"")+'</td><td>'+(l.used?"Yes":'<span class="au-no">Not used</span>')+
         '</td><td class="au-prob">'+(l.problems.length?l.problems.map(esc).join("<br>"):"Nothing")+'</td></tr>';
     }).join(""):'<tr><td colspan="7" class="pm-empty">No list matches.</td></tr>')+'</tbody>':'<tbody><tr><td class="pm-empty">The account has no audience lists.</td></tr></tbody>';
 }

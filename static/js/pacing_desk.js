@@ -176,9 +176,9 @@ function paintStrip(){
   var pl=function(n,w){return n+" "+w+(n===1?"":"s")};
   var cells=[
     ["","Allocated",m0(tAll),pl(nC,"client")+" · "+pl(A.length,"account"),null],
-    ["","Spent to date",m0(tSp),tAll?pc(tSp/tAll,1)+" of budget":"–",tAll?tSp/tAll:null],
-    [Math.abs((tPr/(tAll||1))-1)<=0.02?"good":"info","Projected month end",m0(tPr),tAll?pc(tPr/tAll)+" of budget":"–",tAll?tPr/tAll:null],
-    ["","Conversions",Math.round(tCv).toLocaleString("en-US"),tCv?"CPA "+m0(cpaOf(A)):"–",null],
+    ["","Spent to date",m0(tSp),tAll?pc(tSp/tAll,1)+" of budget":"-",tAll?tSp/tAll:null],
+    [Math.abs((tPr/(tAll||1))-1)<=0.02?"good":"info","Projected month end",m0(tPr),tAll?pc(tPr/tAll)+" of budget":"-",tAll?tPr/tAll:null],
+    ["","Conversions",Math.round(tCv).toLocaleString("en-US"),tCv?"CPA "+m0(cpaOf(A)):"-",null],
     [off?"warn":"good","Moves suggested",String(tMv),pl(off,"account")+" off target",null],
     [atRisk>0?"warn":"good","At risk from caps",m0(atRisk),pl(capped.length,"account")+" can’t reach budget",null]
   ];
@@ -383,7 +383,7 @@ function bar(a){
 
 function arw(state,key){return state.key===key?' <span class="arw">'+(state.dir>0?'▲':'▼')+'</span>':''}
 function delta(active,d){
-  if(!active||Math.abs(d)<1) return '<span class="dim">–</span>';
+  if(!active||Math.abs(d)<1) return '<span class="dim">-</span>';
   return '<span class="'+(d>0?'pd-delta-up':'pd-delta-dn')+'">'+(d>0?'+':'')+m0(d)+'</span>';
 }
 
@@ -429,8 +429,8 @@ function campTable(a){
         (c.pool?' <span class="pm-tag" title="Shared budget pool">pool: '+esc(c.pool)+'</span>':'')+
         (c.flags||[]).map(function(f){return '<span class="pd-flag">'+esc(f)+'</span>'}).join("")+'</td>'+
         '<td><span class="pm-tag">'+esc(c.type)+'</span></td><td class="r num">'+m0(c.spend)+'</td><td class="r num">'+(c.conv||0)+'</td>'+
-        '<td class="r num">'+(c.cpa!=null?m0(c.cpa):'<span class="dim">–</span>')+'</td><td class="r num">'+(c.budget?m0(c.budget):'<span class="dim">–</span>')+'</td>'+
-        '<td class="r num">'+(c.util?pc(c.util):'<span class="dim">–</span>')+'</td><td class="r num">'+(c.sis!=null?pc(c.sis):'<span class="dim">–</span>')+'</td>'+
+        '<td class="r num">'+(c.cpa!=null?m0(c.cpa):'<span class="dim">-</span>')+'</td><td class="r num">'+(c.budget?m0(c.budget):'<span class="dim">-</span>')+'</td>'+
+        '<td class="r num">'+(c.util?pc(c.util):'<span class="dim">-</span>')+'</td><td class="r num">'+(c.sis!=null?pc(c.sis):'<span class="dim">-</span>')+'</td>'+
         '<td class="r num">'+delta(c.active,r.delta)+'</td></tr>'}).join("")+'</tbody></table></div>';
 }
 
@@ -444,8 +444,8 @@ function categoryTable(a){
       return '<tr>'+(multi?'<td>'+esc(c.loc)+'</td>':'')+'<td class="cn">'+esc(c.name)+
         (c.pooled?' <span class="pm-tag" title="Shared budget pool, '+(c.members||[]).length+' campaigns">pool</span>':'')+'</td>'+
         '<td class="r num">'+m0(c.spend)+'</td><td class="r num">'+(c.conv||0)+'</td>'+
-        '<td class="r num">'+(c.cpl!=null?m0(c.cpl):'<span class="dim">–</span>')+'</td><td class="r num">'+(c.budget?m0(c.budget):'<span class="dim">–</span>')+'</td>'+
-        '<td class="r num">'+(c.util?pc(c.util):'<span class="dim">–</span>')+'</td><td class="r num">'+delta(c.active,c.newDaily-c.budget)+'</td></tr>';
+        '<td class="r num">'+(c.cpl!=null?m0(c.cpl):'<span class="dim">-</span>')+'</td><td class="r num">'+(c.budget?m0(c.budget):'<span class="dim">-</span>')+'</td>'+
+        '<td class="r num">'+(c.util?pc(c.util):'<span class="dim">-</span>')+'</td><td class="r num">'+delta(c.active,c.newDaily-c.budget)+'</td></tr>';
     }).join("")+'</tbody></table></div>';
 }
 
@@ -455,7 +455,7 @@ function detail(a){
   k.push(["Spend / day",m0(a.currentDaily)]);
   if(!a.ambiguous) k.push(["Needs / day",m0(a.requiredDaily)]);
   k.push(["Budget / day",m0(a.budgetDaily)],["Used",pc(a.utilisation)],["Active days left",String(a.daysLeft)],
-         ["Conversions",String(a.conv)],["CPA",a.cpa!=null?m0(a.cpa):"–"]);
+         ["Conversions",String(a.conv)],["CPA",a.cpa!=null?m0(a.cpa):"-"]);
   if(a.targetCpa) k.push(["Target CPA",m0(a.targetCpa)]);
   if(a.roas!=null) k.push(["ROAS",a.roas.toFixed(2)+"x"]);
   if(a.convValue) k.push(["Conv. value",m0(a.convValue)]);
