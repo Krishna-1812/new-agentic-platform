@@ -220,3 +220,20 @@ def test_inside_a_workspace_seasonality_reads_only_its_own_accounts(seeded, ads,
     assert read == []
     assert c.get(API + "seasonality?account=" + LUMINA, headers=XA).status_code == 200 and read == [[LUMINA]]
     assert ads[-1][1:3] == ("seasonality-analysis", LUMINA) and "Lumina Ads" in ads[-1][4]
+
+
+def test_inside_a_workspace_the_audience_and_ad_strength_reports_read_only_what_is_its_own(seeded, segs, ads, monkeypatch):
+    from tracker import paid_adstrength, paid_audiences
+    read = []
+    monkeypatch.setattr(paid_audiences, "report_for", lambda account, a, b, **k: read.append(account) or {
+        "account": {"id": account, "name": "Lumina Ads"}, "range": {"from": a, "to": b}})
+    monkeypatch.setattr(paid_adstrength, "report_for", lambda account, **k: read.append(account) or {
+        "account": {"id": account, "name": "Lumina Ads"}})
+    c = T._client(T.RAJ)
+    base = "/strategic-agents/paid-marketing/api/"
+    for route in ("audiences/report?" + SEG_RANGE[1:] + "&account=", "adstrength/report?account="):
+        for other in (OTHER, "mcc-2", META):
+            assert c.get(base + route + other, headers=XA).status_code == 403, (route, other)
+        assert c.get(base + route + LUMINA, headers=XA).status_code == 200, route
+    assert read == [LUMINA, LUMINA]
+    assert [a[1] for a in ads[-2:]] == ["audience-segments", "ad-strength"]
