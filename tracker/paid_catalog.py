@@ -91,6 +91,16 @@ AGENTS = (
      "tags": ["Google Ads", "Meta"],
      "api": (_ACCOUNTS, _SEGMENTS, r"paid-marketing/api/audiences/report"),
      "runs": (r"paid-marketing/api/audiences/report",)},
+    {"slug": "asset-coverage", "endpoint": "paid_asset_coverage",
+     "name": "Asset Coverage Audit", "icon": "C",
+     "about": "What every campaign's assets are missing, and exactly what to add",
+     "lead": "Reads every asset an account's live campaigns carry (sitelinks, callouts, snippets, images, logos, videos, headlines) "
+             "and holds each campaign and asset group against what its kind should have, busiest first, with how many to add.",
+     "gives": "A Google Ads account or MCC",
+     "gets": "Every gap, with how many to add, and each asset opened",
+     "tags": ["Google Ads", "Assets"],
+     "api": (_SEGMENTS, r"paid-marketing/api/assets/(report|campaign|library)"),
+     "runs": (r"paid-marketing/api/assets/report",)},
 )
 
 BY_SLUG = {a["slug"]: a for a in AGENTS}

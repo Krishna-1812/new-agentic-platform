@@ -237,3 +237,19 @@ def test_inside_a_workspace_the_audience_and_ad_strength_reports_read_only_what_
         assert c.get(base + route + LUMINA, headers=XA).status_code == 200, route
     assert read == [LUMINA, LUMINA]
     assert [a[1] for a in ads[-2:]] == ["audience-segments", "ad-strength"]
+
+
+def test_inside_a_workspace_asset_coverage_and_the_assets_it_opens_are_its_own(seeded, segs, ads, monkeypatch):
+    from tracker import paid_assets
+    read = []
+    monkeypatch.setattr(paid_assets, "report_for", lambda account, **k: read.append(account) or {"account": {"id": account, "name": "Lumina Ads"}})
+    monkeypatch.setattr(paid_assets, "campaign_detail_for", lambda account, campaign, **k: read.append(account) or {})
+    monkeypatch.setattr(paid_assets, "library_for", lambda account, kind=None, state="all", level=None, **k: read.append(account) or {})
+    c = T._client(T.RAJ)
+    base = "/strategic-agents/paid-marketing/api/assets/"
+    for route in ("report?account=", "campaign?campaign=5&account=", "library?kind=SITELINK&account="):
+        for other in (OTHER, "mcc-2", META):
+            assert c.get(base + route + other, headers=XA).status_code == 403, (route, other)
+        assert c.get(base + route + LUMINA, headers=XA).status_code == 200, route
+    assert read == [LUMINA] * 3
+    assert [a[1] for a in ads] == ["asset-coverage"], "the report writes the History row, opening an asset does not"
