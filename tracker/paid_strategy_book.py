@@ -21,7 +21,7 @@ HEADER = ["Field", "Value", "Other things to check"]
 
 # What a person should look at when the campaign is built, for the rows that depend on the plan or that Google Ads hides.
 OTHER = {
-    "1.1": "Name as P2_<type>_<theme>_<launch date>, one campaign per theme.",
+    "1.1": "Name as <prefix>_<type>_<theme>_<launch date>, one campaign per theme.",
     "1.2": "The campaign type decides which checks apply: Search is checked against this book, the others are judged on the spot.",
     "1.3": "Search Partners and the Display Network stay off on a Search campaign.",
     "1.4": "Headlines in Start Case, brand spelled as the client writes it, no claim the client has not confirmed.",

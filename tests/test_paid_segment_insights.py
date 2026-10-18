@@ -47,7 +47,7 @@ def report(rows_by_dim, start=START, end=END):
         k: {"name": "City" + k[-1], "canonical": ""} for k in keys})
 
 
-def days(spec, name="P2_NonBrand", imp=1000, clk=40):
+def days(spec, name="NA_NonBrand", imp=1000, clk=40):
     """day rows from {DAY: (cost, conv)}"""
     return [r(name, "SEARCH", imp, clk, cost, conv, segments={"dayOfWeek": d}) for d, (cost, conv) in spec.items()]
 
@@ -82,7 +82,7 @@ def test_weekend_days_with_spend_and_no_conversions_are_one_insight():
 
 
 def test_a_run_of_idle_hours_is_one_window_not_a_list():
-    hours = [r("P2_NonBrand", "SEARCH", 500, 20, c, v, segments={"hour": h}) for h, c, v in
+    hours = [r("NA_NonBrand", "SEARCH", 500, 20, c, v, segments={"hour": h}) for h, c, v in
              [(8, 150, 4), (9, 150, 4), (10, 150, 3), (13, 150, 3), (21, 90, 0), (22, 90, 0), (23, 90, 0)]]
     out = ins.build(report({"day": days(WEEK), "hour": hours}))
     w = find(out, "waste", "hour")
@@ -91,7 +91,7 @@ def test_a_run_of_idle_hours_is_one_window_not_a_list():
 
 
 def test_the_best_hour_widens_to_the_adjacent_hours_that_also_beat_the_average():
-    hours = [r("P2_NonBrand", "SEARCH", 500, 20, c, v, segments={"hour": h}) for h, c, v in
+    hours = [r("NA_NonBrand", "SEARCH", 500, 20, c, v, segments={"hour": h}) for h, c, v in
              [(6, 100, 0), (7, 100, 5), (8, 100, 4), (9, 300, 3), (14, 300, 2)]]
     out = ins.build(report({"day": days(WEEK), "hour": hours}))
     best = find(out, "best", "hour")[0]
@@ -99,7 +99,7 @@ def test_the_best_hour_widens_to_the_adjacent_hours_that_also_beat_the_average()
 
 
 def test_a_segment_that_converts_but_costs_far_more_than_average_is_flagged():
-    genders = [r("P2_NonBrand", "SEARCH", 1000, 40, c, v, adGroupCriterion={"gender": {"type": g}})
+    genders = [r("NA_NonBrand", "SEARCH", 1000, 40, c, v, adGroupCriterion={"gender": {"type": g}})
                for g, c, v in [("FEMALE", 300, 10), ("MALE", 300, 2), ("UNDETERMINED", 300, 3)]]
     out = ins.build(report({"day": days(WEEK), "gender": genders}))
     costly = find(out, "costly", "gender")
@@ -108,23 +108,23 @@ def test_a_segment_that_converts_but_costs_far_more_than_average_is_flagged():
 
 
 def test_high_ctr_without_conversions_changes_the_advice_to_check_the_page():
-    nets = [r("P2_NonBrand", "SEARCH", 1000, 40, 300, 12, segments={"adNetworkType": "SEARCH"}),
-            r("P2_NonBrand", "SEARCH", 200, 150, 90, 0, segments={"adNetworkType": "CONTENT"})]
+    nets = [r("NA_NonBrand", "SEARCH", 1000, 40, 300, 12, segments={"adNetworkType": "SEARCH"}),
+            r("NA_NonBrand", "SEARCH", 200, 150, 90, 0, segments={"adNetworkType": "CONTENT"})]
     out = ins.build(report({"day": days(WEEK), "network": nets}))
     w = find(out, "waste", "network")[0]
     assert w["labels"] == ["Display Network"] and "landing page" in w["action"]
 
 
 def test_performance_max_cross_network_is_told_it_cannot_be_switched_off():
-    nets = [r("P2_NonBrand", "SEARCH", 1000, 40, 300, 12, segments={"adNetworkType": "SEARCH"}),
-            r("P2_Pmax", "PERFORMANCE_MAX", 400, 10, 100, 0, segments={"adNetworkType": "MIXED"})]
+    nets = [r("NA_NonBrand", "SEARCH", 1000, 40, 300, 12, segments={"adNetworkType": "SEARCH"}),
+            r("NA_Pmax", "PERFORMANCE_MAX", 400, 10, 100, 0, segments={"adNetworkType": "MIXED"})]
     out = ins.build(report({"day": days(WEEK), "network": nets}))
     w = find(out, "waste", "network")[0]
     assert "Performance Max" in w["action"] and "cannot be turned off" in w["action"]
 
 
 def test_cities_with_no_conversions_are_grouped():
-    cities = [r("P2_NonBrand", "SEARCH", 500, 20, c, v, segments={"geoTargetCity": "geoTargetConstants/%d" % i})
+    cities = [r("NA_NonBrand", "SEARCH", 500, 20, c, v, segments={"geoTargetCity": "geoTargetConstants/%d" % i})
               for i, (c, v) in enumerate([(300, 9), (120, 0), (100, 0), (90, 0), (50, 3)], start=1)]
     out = ins.build(report({"day": days(WEEK), "city": cities}))
     w = find(out, "waste", "city")
@@ -158,15 +158,15 @@ def test_a_short_range_warns_that_timing_needs_weeks():
 
 
 def test_a_table_that_misses_a_campaign_type_is_flagged_by_name():
-    gender = [r("P2_NonBrand", "SEARCH", 1000, 40, 300, 10, adGroupCriterion={"gender": {"type": "FEMALE"}})]
-    camp = days(WEEK) + [r("P2_Pmax", "PERFORMANCE_MAX", 1000, 40, 900, 5, segments={"dayOfWeek": "MONDAY"})]
+    gender = [r("NA_NonBrand", "SEARCH", 1000, 40, 300, 10, adGroupCriterion={"gender": {"type": "FEMALE"}})]
+    camp = days(WEEK) + [r("NA_Pmax", "PERFORMANCE_MAX", 1000, 40, 900, 5, segments={"dayOfWeek": "MONDAY"})]
     out = ins.build(report({"day": camp, "gender": gender}))
     cav = [i for i in out if i["kind"] == "caveat" and i["dimension"] == "gender"][0]
     assert "covers only" in cav["headline"] and "Performance Max" in cav["evidence"]
 
 
 def test_a_campaign_type_that_spends_and_never_converts_is_something_to_watch():
-    camp = days(WEEK) + [r("P2_Demand_Gen", "DEMAND_GEN", 50000, 900, 250, 0, segments={"dayOfWeek": "MONDAY"})]
+    camp = days(WEEK) + [r("NA_Demand_Gen", "DEMAND_GEN", 50000, 900, 250, 0, segments={"dayOfWeek": "MONDAY"})]
     out = ins.build(report({"day": camp}))
     t = find(out, "waste", "type")[0]
     assert t["labels"] == ["Demand Gen"] and t["severity"] == "watch" and "Upper-funnel" in t["action"]
@@ -175,9 +175,9 @@ def test_a_campaign_type_that_spends_and_never_converts_is_something_to_watch():
 # ── Order, size, copy ───────────────────────────────────────────────────────
 
 def test_actions_come_before_watch_before_caveats_and_the_list_is_capped():
-    camp = days(WEEK) + [r("P2_Demand_Gen", "DEMAND_GEN", 50000, 900, 250, 0, segments={"dayOfWeek": "MONDAY"})]
+    camp = days(WEEK) + [r("NA_Demand_Gen", "DEMAND_GEN", 50000, 900, 250, 0, segments={"dayOfWeek": "MONDAY"})]
     out = ins.build(report({"day": camp, "gender": [
-        r("P2_NonBrand", "SEARCH", 1000, 40, 300, 10, adGroupCriterion={"gender": {"type": "FEMALE"}})]}))
+        r("NA_NonBrand", "SEARCH", 1000, 40, 300, 10, adGroupCriterion={"gender": {"type": "FEMALE"}})]}))
     sev = [i["severity"] for i in out]
     assert sev == sorted(sev, key=lambda s: ins.SEVERITY_ORDER[s])
     assert len(out) <= ins.MAX_FINDINGS + ins.MAX_CAVEATS
@@ -185,15 +185,15 @@ def test_actions_come_before_watch_before_caveats_and_the_list_is_capped():
 
 def test_a_long_list_of_findings_never_crowds_out_the_caveats(monkeypatch):
     monkeypatch.setattr(ins, "MAX_FINDINGS", 1)
-    gender = [r("P2_NonBrand", "SEARCH", 1000, 40, 300, 10, adGroupCriterion={"gender": {"type": "FEMALE"}})]
-    camp = days(WEEK) + [r("P2_Pmax", "PERFORMANCE_MAX", 1000, 40, 900, 5, segments={"dayOfWeek": "MONDAY"})]
+    gender = [r("NA_NonBrand", "SEARCH", 1000, 40, 300, 10, adGroupCriterion={"gender": {"type": "FEMALE"}})]
+    camp = days(WEEK) + [r("NA_Pmax", "PERFORMANCE_MAX", 1000, 40, 900, 5, segments={"dayOfWeek": "MONDAY"})]
     out = ins.build(report({"day": camp, "gender": gender}))
     assert len([i for i in out if i["severity"] != "info"]) == 1
     assert any(i["kind"] == "caveat" and "covers only" in i["headline"] for i in out)
 
 
 def test_no_insight_text_uses_an_em_dash_and_ids_are_unique():
-    camp = days(WEEK) + [r("P2_Demand_Gen", "DEMAND_GEN", 50000, 900, 250, 0, segments={"dayOfWeek": "MONDAY"})]
+    camp = days(WEEK) + [r("NA_Demand_Gen", "DEMAND_GEN", 50000, 900, 250, 0, segments={"dayOfWeek": "MONDAY"})]
     out = ins.build(report({"day": camp}))
     for i in out:
         assert "—" not in " ".join(str(v) for v in i.values())
@@ -294,7 +294,7 @@ def mcc_report(per_account, fail=None, zones=("America/New_York",)):
 
 
 def three_accounts():
-    one = lambda cost, conv: [r("P2_NonBrand", "SEARCH", 1000, 40, cost, conv, segments={"dayOfWeek": "MONDAY"})]
+    one = lambda cost, conv: [r("NA_NonBrand", "SEARCH", 1000, 40, cost, conv, segments={"dayOfWeek": "MONDAY"})]
     return {"Acme A": one(200, 10), "Acme B": one(200, 0), "Acme C": one(200, 2)}
 
 

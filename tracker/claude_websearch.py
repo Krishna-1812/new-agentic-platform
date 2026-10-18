@@ -59,6 +59,8 @@ ERR_UNPARSABLE = "unparsable"
 # is the tool failing, and it must never be reported as "we looked and found
 # nothing".
 ERR_SEARCH_LIMIT = "search_limit"
+# The call ran past CALL_DEADLINE_SECONDS of wall clock and was abandoned (callers that pass `deadline`).
+ERR_DEADLINE = "deadline"
 
 # Error codes that mean the search DID NOT RUN, as opposed to running and
 # matching nothing. `too_many_requests` is rate limiting and `unavailable` is
@@ -109,7 +111,7 @@ SEARCH_BUDGET_CODES = ("max_uses_exceeded",)
 
 _RESULT_KEYS = ("text", "raw", "error", "stop_reason", "text_block_count",
                 "tool_version", "search_count", "tool_errors", "usage",
-                "budget_spent")
+                "budget_spent", "result_urls")
 
 
 def _search_count(resp, usage: dict) -> int:
@@ -248,6 +250,8 @@ READER_REASON = {
     ERR_UNPARSABLE: "the answer came back in a shape that could not be read",
     ERR_SEARCH_LIMIT: "the search tool stopped returning results part-way "
                       "through",
+    ERR_DEADLINE: "the search took far longer than it is allowed and was "
+                  "stopped",
 }
 
 _READER_FALLBACK = "the search could not be completed"
@@ -345,8 +349,75 @@ def spend_usd(record: dict) -> float:
     return round(usd, 2)
 
 
+# The wall-clock bound on one call, in seconds.
+#
+# The client's timeout (280s) is a per-READ timeout, not a per-call one: a
+# streamed reply that keeps sending pings or deltas resets it on every event,
+# so a call that never finishes was never bounded by anything. Measured calls
+# ran 16 and 19 minutes and a few passed 30, so this sits well above the
+# slowest real call we have seen: it exists to stop a hang, not to cut a slow
+# answer short.
+CALL_DEADLINE_SECONDS = 2400.0
+
+# Models that still accept sampling parameters.
+#
+# `temperature` is removed on Sonnet 5, Opus 4.7 and later, and the Fable and
+# Mythos families: sending it returns a 400. This module's default model is
+# claude-sonnet-5, so sending it on every call would fail every call, and the
+# 400 would then be read as "this tool version is rejected" and burn through
+# the whole version list before reporting a missing tool version. So it is an
+# ALLOW list: a model not named here, including any future one, gets no
+# sampling parameter, which is the safe direction.
+_TEMPERATURE_MODEL_PREFIXES = ("claude-sonnet-4-6", "claude-opus-4-6",
+                               "claude-haiku-4-5", "claude-sonnet-4-5",
+                               "claude-opus-4-5", "claude-opus-4-1",
+                               "claude-opus-4-0", "claude-sonnet-4-0",
+                               "claude-opus-4-2", "claude-sonnet-4-2",
+                               "claude-3")
+
+
+def accepts_temperature(model_id: str) -> bool:
+    """Whether this model takes a `temperature` at all. See the list above."""
+    m = str(model_id or "").lower()
+    return any(m.startswith(p) for p in _TEMPERATURE_MODEL_PREFIXES)
+
+
+def _result_urls(resp) -> list:
+    """Every URL the web_search tool actually returned, in order, deduped.
+
+    The one record of what the searches SAW, as opposed to what the model
+    typed. A confirmation's `sources` used to be accepted as whatever URLs
+    the reply named, so a source nobody searched for could stand in for
+    evidence; callers can now check a citation against this list.
+    """
+    out, seen = [], set()
+    for b in getattr(resp, "content", None) or []:
+        if getattr(b, "type", "") != "web_search_tool_result":
+            continue
+        content = getattr(b, "content", None)
+        if not isinstance(content, list):
+            continue
+        for item in content:
+            url = getattr(item, "url", None)
+            if url is None and isinstance(item, dict):
+                url = item.get("url")
+            if isinstance(url, str) and url.startswith(("http://", "https://")) \
+                    and url not in seen:
+                seen.add(url)
+                out.append(url)
+    return out
+
+
+class _DeadlineExceeded(Exception):
+    def __init__(self, limit):
+        super().__init__("deadline")
+        self.limit = limit
+
+
 def _ask(system: str, user: str, *, max_uses: int = 8, max_tokens: int = 8000,
-        timeout: float = 280.0, model: str | None = None) -> dict:
+        timeout: float = 280.0, model: str | None = None,
+        temperature: float | None = None,
+        deadline: float | None = None) -> dict:
     """One streamed Claude call, with the web_search tool when max_uses > 0.
 
     max_uses <= 0 means "no tool at all", which is a real mode rather than a
@@ -371,12 +442,18 @@ def _ask(system: str, user: str, *, max_uses: int = 8, max_tokens: int = 8000,
     question. Expect it to be True on most calls, because these callers size
     `max_uses` to what they are willing to spend rather than to what a model
     would ideally use.
+
+    `temperature` (the Paid Marketing research passes 0) is sent only to a model
+    that accepts it (see accepts_temperature); None, the default, never sends it.
+    `deadline` is the wall-clock bound in seconds, CALL_DEADLINE_SECONDS by
+    default. `result_urls` lists every URL the searches returned.
     """
+    import time as _time
     client = _client(timeout)
     if client is None:
         return {"text": "", "raw": "", "stop_reason": None, "text_block_count": 0,
                 "tool_version": None, "search_count": 0, "tool_errors": [],
-                "usage": {}, "budget_spent": False,
+                "usage": {}, "budget_spent": False, "result_urls": [],
                 "error": _err(ERR_NOT_CONFIGURED,
                               "ANTHROPIC_API_KEY is not configured on this deployment.")}
 
@@ -390,6 +467,12 @@ def _ask(system: str, user: str, *, max_uses: int = 8, max_tokens: int = 8000,
     else:
         versions = (None,)
 
+    extra = {}
+    if temperature is not None and accepts_temperature(model_id):
+        extra["temperature"] = temperature
+    limit = CALL_DEADLINE_SECONDS if deadline is None else deadline
+    ends_at = _time.monotonic() + limit
+
     resp, used_version, last_err = None, None, None
     for version in versions:
         tools = ([{"type": version, "name": "web_search", "max_uses": max_uses}]
@@ -401,8 +484,25 @@ def _ask(system: str, user: str, *, max_uses: int = 8, max_tokens: int = 8000,
                 system=system,
                 tools=tools,
                 messages=[{"role": "user", "content": user}],
+                **extra,
             ) as stream:
+                # Read event by event so the deadline is checked between
+                # events: a stream that keeps pinging never trips the read
+                # timeout, which is the hang this bound exists for.
+                if hasattr(stream, "__iter__"):
+                    for _event in stream:
+                        if _time.monotonic() > ends_at:
+                            raise _DeadlineExceeded(limit)
                 resp = stream.get_final_message()
+        except _DeadlineExceeded as e:
+            logger.warning("claude_websearch: call abandoned after %ss", e.limit)
+            return {"text": "", "raw": "", "stop_reason": None,
+                    "text_block_count": 0, "tool_version": version,
+                    "search_count": 0, "tool_errors": [], "usage": {},
+                    "budget_spent": False, "result_urls": [],
+                    "error": _err(ERR_DEADLINE,
+                                  "The call ran past its %ss wall-clock "
+                                  "deadline and was abandoned." % int(e.limit))}
         except Exception as e:
             last_err = e
             logger.warning("claude_websearch: call with tool '%s' failed: %s", version, e)
@@ -428,7 +528,7 @@ def _ask(system: str, user: str, *, max_uses: int = 8, max_tokens: int = 8000,
             kind = ERR_NO_TOOL_VERSION
         return {"text": "", "raw": "", "stop_reason": None, "text_block_count": 0,
                 "tool_version": None, "search_count": 0, "tool_errors": [],
-                "usage": {}, "budget_spent": False,
+                "usage": {}, "budget_spent": False, "result_urls": [],
                 "error": _err(kind, detail)}
 
     # Join EVERY text block, in order. Not content[-1]: with web_search on,
@@ -452,6 +552,7 @@ def _ask(system: str, user: str, *, max_uses: int = 8, max_tokens: int = 8000,
            # on a successful reply, never as an error: the answer is complete
            # and every result it did get is in it.
            "budget_spent": any(c in SEARCH_BUDGET_CODES for c in tool_errors),
+           "result_urls": _result_urls(resp),
            "error": None}
 
     if any(c in SEARCH_STARVED_CODES for c in tool_errors):
@@ -614,12 +715,13 @@ def extract_json(raw: str, require: str | None = None):
 
 
 def ask(system: str, user: str, *, max_uses: int = 8, max_tokens: int = 8000,
-        timeout: float = 280.0, model: str | None = None):
+        timeout: float = 280.0, model: str | None = None,
+        temperature: float | None = None, deadline: float | None = None):
     """Record and bound event-worker calls; other platform callers are unchanged."""
     from .event_intel_jobs import CURRENT, reserve_call, finish_call
     import time
     if CURRENT.get() is None:
-        return _ask(system,user,max_uses=max_uses,max_tokens=max_tokens,timeout=timeout,model=model)
+        return _ask(system,user,max_uses=max_uses,max_tokens=max_tokens,timeout=timeout,model=model,temperature=temperature,deadline=deadline)
     began = time.monotonic()
     try:
         reservation = reserve_call(system,user,model or os.getenv('ANTHROPIC_MODEL','claude-sonnet-5'),max_tokens,max_uses)
@@ -627,6 +729,6 @@ def ask(system: str, user: str, *, max_uses: int = 8, max_tokens: int = 8000,
             return reservation['cached']
     except RuntimeError as exc:
         return {'text':'', 'error':{'kind':'operational_limit','detail':str(exc)}, 'usage':{}}
-    result = _ask(system,user,max_uses=max_uses,max_tokens=max_tokens,timeout=timeout,model=model)
+    result = _ask(system,user,max_uses=max_uses,max_tokens=max_tokens,timeout=timeout,model=model,temperature=temperature,deadline=deadline)
     finish_call(reservation['id'],result,int((time.monotonic()-began)*1000))
     return result

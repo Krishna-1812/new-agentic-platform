@@ -2,7 +2,7 @@
 from tests import keyword_fakes as K
 from tracker import paid_keywords_check as kck, paid_keywords_data as kd
 
-CAMPS = ["P2_Search_Implants_20250101", "P2_Search_Invisalign_20250101"]
+CAMPS = ["NA_Search_Implants_20250101", "NA_Search_Invisalign_20250101"]
 
 
 _DEFAULT = object()
@@ -19,12 +19,12 @@ def test_the_themes_are_kept_with_their_words_checked():
     t = out["themes"]
     assert [x["key"] for x in t] == ["implants", "invisalign", "emergency", "family", "brand"] and out["assumptions"] == ["Implants earn the most per patient"]
     assert t[0] == {"key": "implants", "name": "Dental Implants", "intent": "transactional", "priority": "high", "why": "People ready to replace missing teeth, the client's highest value service.",
-                    "campaign": "P2_Search_Implants_20250101", "existing": True}
+                    "campaign": "NA_Search_Implants_20250101", "existing": True}
 
 
 def test_an_existing_campaign_must_be_one_the_account_has_and_is_written_as_the_account_writes_it():
     t = {x["key"]: x for x in themes()["themes"]}
-    assert t["invisalign"]["campaign"] == "P2_Search_Invisalign_20250101" and t["invisalign"]["existing"] is True          # given in lower case, kept as the account has it
+    assert t["invisalign"]["campaign"] == "NA_Search_Invisalign_20250101" and t["invisalign"]["existing"] is True          # given in lower case, kept as the account has it
     assert t["family"]["campaign"] == "" and t["family"]["existing"] is False                                           # one the model made up
     assert themes(camps=[])["themes"][0]["campaign"] == ""
 

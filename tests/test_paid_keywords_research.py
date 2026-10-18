@@ -54,10 +54,10 @@ def test_the_account_is_read_into_keywords_negatives_converting_terms_and_campai
     p = kr.read_account(ACCOUNT, sqr_read=K.sqr_read(), today=None)
     d = p["data"]
     assert p["state"] == "ok" and d["keywordCount"] == 5 and len(d["keywords"]) == 5 and d["negativeCount"] == 2 and d["listCount"] == 1 and d["keywordsTruncated"] is False
-    assert [c["name"] for c in d["campaigns"]] == ["P2_Search_Implants_20250101", "P2_Search_Invisalign_20250101", "P2_Search_Emergency_20250101", "P2_Search_Brand_20250101"]
-    assert d["campaigns"][0] == {"name": "P2_Search_Implants_20250101", "keywords": 2, "adGroups": 2}
+    assert [c["name"] for c in d["campaigns"]] == ["NA_Search_Implants_20250101", "NA_Search_Invisalign_20250101", "NA_Search_Emergency_20250101", "NA_Search_Brand_20250101"]
+    assert d["campaigns"][0] == {"name": "NA_Search_Implants_20250101", "keywords": 2, "adGroups": 2}
     assert [t["term"] for t in d["terms"]["converting"]] == ["dental implants austin", "all on 4 implants austin tx", "implant dentist near me", "cheap tooth pulling"]          # most conversions first
-    assert d["terms"]["converting"][1] == {"term": "all on 4 implants austin tx", "clicks": 44, "cost": 380.0, "conv": 4.0, "campaign": "P2_Search_Implants_20250101"}
+    assert d["terms"]["converting"][1] == {"term": "all on 4 implants austin tx", "clicks": 44, "cost": 380.0, "conv": 4.0, "campaign": "NA_Search_Implants_20250101"}
     assert [t["term"] for t in d["terms"]["wasteful"]] == ["dentist jobs austin"] and d["terms"]["total"] == 5 and d["window"]["end"] and d["account"]["currency"] == "USD"
     assert "5 keywords in 4 campaigns" in p["note"] and "2 negative keywords" in p["note"] and "1 shared lists" in p["note"]
 

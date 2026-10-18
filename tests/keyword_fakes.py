@@ -87,22 +87,22 @@ def planner(calls=None, empty=(), fail=(), extra=None, results=None):
 
 
 ACCOUNT_KEYWORDS = [
-    {"t": "dental implants austin", "m": "EXACT", "c": "P2_Search_Implants_20250101", "g": "Implants Exact"},
-    {"t": "dental implants", "m": "PHRASE", "c": "P2_Search_Implants_20250101", "g": "Implants Phrase"},
-    {"t": "invisalign", "m": "BROAD", "c": "P2_Search_Invisalign_20250101", "g": "Invisalign"},
-    {"t": "emergency dentist austin", "m": "EXACT", "c": "P2_Search_Emergency_20250101", "g": "Emergency"},
-    {"t": "acme dental", "m": "EXACT", "c": "P2_Search_Brand_20250101", "g": "Brand"},
+    {"t": "dental implants austin", "m": "EXACT", "c": "NA_Search_Implants_20250101", "g": "Implants Exact"},
+    {"t": "dental implants", "m": "PHRASE", "c": "NA_Search_Implants_20250101", "g": "Implants Phrase"},
+    {"t": "invisalign", "m": "BROAD", "c": "NA_Search_Invisalign_20250101", "g": "Invisalign"},
+    {"t": "emergency dentist austin", "m": "EXACT", "c": "NA_Search_Emergency_20250101", "g": "Emergency"},
+    {"t": "acme dental", "m": "EXACT", "c": "NA_Search_Brand_20250101", "g": "Brand"},
 ]
-ACCOUNT_NEGATIVES = [{"t": "jobs", "m": "PHRASE", "c": ["P2_Search_Implants_20250101", "P2_Search_Invisalign_20250101", "P2_Search_Emergency_20250101", "P2_Search_Brand_20250101"]},
-                     {"t": "dallas", "m": "PHRASE", "c": ["P2_Search_Implants_20250101"]}]
-ACCOUNT_LISTS = [{"n": "Shared negatives", "c": ["P2_Search_Implants_20250101", "P2_Search_Invisalign_20250101", "P2_Search_Emergency_20250101", "P2_Search_Brand_20250101"],
+ACCOUNT_NEGATIVES = [{"t": "jobs", "m": "PHRASE", "c": ["NA_Search_Implants_20250101", "NA_Search_Invisalign_20250101", "NA_Search_Emergency_20250101", "NA_Search_Brand_20250101"]},
+                     {"t": "dallas", "m": "PHRASE", "c": ["NA_Search_Implants_20250101"]}]
+ACCOUNT_LISTS = [{"n": "Shared negatives", "c": ["NA_Search_Implants_20250101", "NA_Search_Invisalign_20250101", "NA_Search_Emergency_20250101", "NA_Search_Brand_20250101"],
                   "k": [["dogs", "PHRASE"], ["free", "PHRASE"]]}]
 TERMS = [
-    {"t": "all on 4 implants austin tx", "s": "", "c": "P2_Search_Implants_20250101", "ct": "SEARCH", "g": "Implants Phrase", "i": 600, "k": 44, "x": 380.0, "v": 4.0},
-    {"t": "implant dentist near me", "s": "", "c": "P2_Search_Implants_20250101", "ct": "SEARCH", "g": "Implants Phrase", "i": 800, "k": 55, "x": 300.0, "v": 3.0},
-    {"t": "dental implants austin", "s": "ADDED", "c": "P2_Search_Implants_20250101", "ct": "SEARCH", "g": "Implants Exact", "i": 900, "k": 90, "x": 540.0, "v": 9.0},
-    {"t": "dentist jobs austin", "s": "", "c": "P2_Search_Implants_20250101", "ct": "SEARCH", "g": "Implants Phrase", "i": 400, "k": 30, "x": 120.0, "v": 0.0},
-    {"t": "cheap tooth pulling", "s": "", "c": "P2_Search_Emergency_20250101", "ct": "SEARCH", "g": "Emergency", "i": 100, "k": 10, "x": 90.0, "v": 1.0},
+    {"t": "all on 4 implants austin tx", "s": "", "c": "NA_Search_Implants_20250101", "ct": "SEARCH", "g": "Implants Phrase", "i": 600, "k": 44, "x": 380.0, "v": 4.0},
+    {"t": "implant dentist near me", "s": "", "c": "NA_Search_Implants_20250101", "ct": "SEARCH", "g": "Implants Phrase", "i": 800, "k": 55, "x": 300.0, "v": 3.0},
+    {"t": "dental implants austin", "s": "ADDED", "c": "NA_Search_Implants_20250101", "ct": "SEARCH", "g": "Implants Exact", "i": 900, "k": 90, "x": 540.0, "v": 9.0},
+    {"t": "dentist jobs austin", "s": "", "c": "NA_Search_Implants_20250101", "ct": "SEARCH", "g": "Implants Phrase", "i": 400, "k": 30, "x": 120.0, "v": 0.0},
+    {"t": "cheap tooth pulling", "s": "", "c": "NA_Search_Emergency_20250101", "ct": "SEARCH", "g": "Emergency", "i": 100, "k": 10, "x": 90.0, "v": 1.0},
 ]
 
 
@@ -117,8 +117,8 @@ def sqr_read(keywords=None, negatives=None, lists=None, terms=None, warnings=Non
 
 
 THEMES = {"themes": [
-    {"key": "implants", "name": "Dental Implants", "intent": "transactional", "why": "People ready to replace missing teeth, the client's highest value service.", "existingCampaign": "P2_Search_Implants_20250101", "priority": "high"},
-    {"key": "invisalign", "name": "Invisalign", "intent": "commercial", "why": "Adults and parents comparing clear aligners.", "existingCampaign": "p2_search_invisalign_20250101", "priority": "medium"},
+    {"key": "implants", "name": "Dental Implants", "intent": "transactional", "why": "People ready to replace missing teeth, the client's highest value service.", "existingCampaign": "NA_Search_Implants_20250101", "priority": "high"},
+    {"key": "invisalign", "name": "Invisalign", "intent": "commercial", "why": "Adults and parents comparing clear aligners.", "existingCampaign": "na_search_invisalign_20250101", "priority": "medium"},
     {"key": "emergency", "name": "Emergency Dentist", "intent": "local", "why": "Urgent, close by, high intent.", "existingCampaign": "", "priority": "high"},
     {"key": "family", "name": "Family Dentist", "intent": "local", "why": "Everyday care for local families.", "existingCampaign": "A campaign the account does not have", "priority": "medium"},
     {"key": "brand", "name": "Brand", "intent": "brand", "why": "Searches for the practice by name.", "existingCampaign": "", "priority": "low"}],

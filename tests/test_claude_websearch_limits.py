@@ -294,3 +294,37 @@ def test_the_untouched_reply_is_still_available_for_a_diagnostic(transport):
 def test_a_reply_with_no_markup_is_passed_through_unchanged(transport):
     transport["resp"] = _resp(text='He said "no" about <b>everything</b>.')
     assert C.ask("s", "u")["text"] == 'He said "no" about <b>everything</b>.'
+
+
+# ── The options the Paid Marketing research passes (temperature, deadline) and what the searches saw ──
+
+def test_temperature_is_sent_only_when_asked_for_and_only_to_a_model_that_takes_it(transport):
+    C.ask("s", "u", max_uses=2)
+    assert "temperature" not in transport["kw"], "no caller that did not ask sends it"
+    C.ask("s", "u", max_uses=2, temperature=0.0, model="claude-sonnet-5")
+    assert "temperature" not in transport["kw"], "a model that rejects it never gets it"
+    C.ask("s", "u", max_uses=2, temperature=0.0, model="claude-sonnet-4-6")
+    assert transport["kw"]["temperature"] == 0.0
+
+
+def test_the_urls_the_searches_returned_are_listed_once_each(transport):
+    hits = [types.SimpleNamespace(url="https://a.example/x"), {"url": "https://b.example/"},
+            types.SimpleNamespace(url="https://a.example/x"), types.SimpleNamespace(url="javascript:void(0)")]
+    r = _resp()
+    r.content.append(_Block(type="web_search_tool_result", content=hits))
+    transport["resp"] = r
+    assert C.ask("s", "u", max_uses=2)["result_urls"] == ["https://a.example/x", "https://b.example/"]
+
+
+def test_a_stream_that_never_ends_is_abandoned_at_its_deadline(monkeypatch):
+    class _Endless:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def __iter__(self):
+            while True:
+                yield object()
+        def get_final_message(self): raise AssertionError("never reached")
+    monkeypatch.setattr(C, "_client", lambda timeout: types.SimpleNamespace(
+        messages=types.SimpleNamespace(stream=lambda **kw: _Endless())))
+    r = C.ask("s", "u", max_uses=2, deadline=0.05)
+    assert r["error"]["kind"] == C.ERR_DEADLINE and r["text"] == "" and r["result_urls"] == []

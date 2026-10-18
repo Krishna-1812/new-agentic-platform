@@ -51,8 +51,8 @@ def test_the_keywords_sheet_has_every_keyword_judged_a_fit_first_and_says_what_t
     fits = [r[1] for r in rows]
     assert fits == sorted(fits, key=lambda f: {"yes": 0, "maybe": 1, "no": 2, "unjudged": 3}[f])
     by = {r[0]: r for r in rows}
-    assert by["dental implants austin"][head.index("In the account")] == "Already a keyword (exact match in P2_Search_Implants_20250101)"
-    assert by["cost of dental implants"][head.index("In the account")] == "Matched by \"dental implants\" (phrase) in P2_Search_Implants_20250101"
+    assert by["dental implants austin"][head.index("In the account")] == "Already a keyword (exact match in NA_Search_Implants_20250101)"
+    assert by["cost of dental implants"][head.index("In the account")] == "Matched by \"dental implants\" (phrase) in NA_Search_Implants_20250101"
     assert by["emergency dentist near me"][head.index("In the account")] == "New to the account" and by["emergency dentist near me"][-1] == "Yes" and by["invisalign cost"][-1] == "No"
     assert by["dentist dallas"][head.index("In the account")] == "New to the account. Blocked in some campaigns by \"dallas\""
     assert by["emergency dentist near me"][head.index("Low bid (USD)")] == 7.0 and by["invisalign cost"][head.index("How it moves through the year")].startswith("Peaks in May")
@@ -64,20 +64,20 @@ def test_add_to_account_is_the_included_keywords_most_important_first_with_their
     order = {"high": 0, "medium": 1, "low": 2}
     assert [order[r[0]] for r in rows] == sorted(order[r[0]] for r in rows)
     r = next(x for x in rows if x[1] == "emergency dentist near me")
-    assert r[2] == "phrase" and r[3] == "Emergency Dentist" and r[4] == "P2_Search_EmergencyDentist" and r[5] == "Emergency Dentist | Local" and r[6] == 9900
+    assert r[2] == "phrase" and r[3] == "Emergency Dentist" and r[4] == "NA_Search_EmergencyDentist" and r[5] == "Emergency Dentist | Local" and r[6] == 9900
 
 
 def test_the_already_covered_sheet_says_what_covers_each_keyword(rec):
     head, rows = ex.tables(rec)["Already in the account"]
     by = {r[0]: r for r in rows}
-    assert by["cost of dental implants"][2:6] == ["Matched by a broader keyword", "dental implants", "Phrase", "P2_Search_Implants_20250101"] and by["dental implants austin"][2] == "Already a keyword"
+    assert by["cost of dental implants"][2:6] == ["Matched by a broader keyword", "dental implants", "Phrase", "NA_Search_Implants_20250101"] and by["dental implants austin"][2] == "Already a keyword"
     assert "emergency dentist near me" not in by and all(isinstance(r[1], int) for r in rows)
 
 
 def test_converting_search_terms_carry_their_clicks_cost_and_conversions(rec):
     head, rows = ex.tables(rec)["Converting search terms"]
     by = {r[0]: r for r in rows}
-    assert by["all on 4 implants austin tx"][1:5] == [4.0, 44, 380.0, "P2_Search_Implants_20250101"] and [r[1] for r in rows] == sorted([r[1] for r in rows], reverse=True)
+    assert by["all on 4 implants austin tx"][1:5] == [4.0, 44, 380.0, "NA_Search_Implants_20250101"] and [r[1] for r in rows] == sorted([r[1] for r in rows], reverse=True)
 
 
 def test_competitor_keywords_are_listed_with_the_decision_that_belongs_to_the_client(rec):

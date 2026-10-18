@@ -13,6 +13,7 @@ background run is tracker/paid_strategy_job.py.
 from __future__ import annotations
 
 import datetime as dt
+import os
 import re
 from urllib.parse import urlsplit
 
@@ -228,12 +229,20 @@ def slug(text, n=24):
     return "".join(w[:1].upper() + w[1:] for w in words)[:n]
 
 
+# The agency's own prefix on every campaign name (the QA Agent's first check allows any, or none).
+CAMPAIGN_PREFIX = re.sub(r"[^A-Za-z0-9]", "", os.environ.get("PAID_CAMPAIGN_PREFIX", "NA"))[:12]
+
+
+def prefixed(rest):
+    return "%s_%s" % (CAMPAIGN_PREFIX, rest) if CAMPAIGN_PREFIX else rest
+
+
 def campaign_name(kind, theme, launch):
-    """P2_<Search|PMax|...>_<Theme>_<launch date>: the team's name format (the QA Agent's first check), with the theme added."""
+    """<prefix>_<Search|PMax|...>_<Theme>_<launch date>: the team's name format (the QA Agent's first check), with the theme added."""
     code = KINDS[kind]["code"]
     day = str(launch or "").replace("-", "")
     theme = slug(theme)
-    return "P2_%s_%s_%s" % (code, theme, day) if theme else "P2_%s_%s" % (code, day)
+    return prefixed("%s_%s_%s" % (code, theme, day)) if theme else prefixed("%s_%s" % (code, day))
 
 
 def daily_from_monthly(monthly):

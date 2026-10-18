@@ -522,7 +522,7 @@ def test_themes_made_without_the_accounts_campaigns_are_made_again_with_them_and
     calls = []
     again = run(store, sid, K.deps(call=K.model(calls=calls)), resume=True)
     assert [s for s, _ in calls] == ["themes", "classify", "plan"] and again["plan"]["themeDef"]["campaignsKnown"] is True
-    assert {t["campaign"] for t in again["plan"]["themes"]} >= {"P2_Search_Implants_20250101"}
+    assert {t["campaign"] for t in again["plan"]["themes"]} >= {"NA_Search_Implants_20250101"}
 
 
 # ── what the second round of mutation tests found missing ──────────────────

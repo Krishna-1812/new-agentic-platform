@@ -171,7 +171,7 @@ def camp(kind="search", theme="Implants", share=50, **kw):
 def test_campaigns_are_named_the_teams_way_and_the_budget_is_split():
     arch = ck.architecture({"campaigns": [camp(share=7), camp("Performance Max", "Local", 3)]}, inputs())
     a, b = arch["campaigns"]
-    assert (a["name"], b["name"]) == ("P2_Search_Implants_20261102", "P2_PMax_Local_20261102") and (a["kind"], b["kind"]) == ("search", "pmax")
+    assert (a["name"], b["name"]) == ("NA_Search_Implants_20261102", "NA_PMax_Local_20261102") and (a["kind"], b["kind"]) == ("search", "pmax")
     assert round(a["daily"] + b["daily"], 2) == 197.37 and a["share"] == 70.0 and b["share"] == 30.0 and a["monthly"] == round(a["daily"] * 30.4)
     assert a["key"] != b["key"]
 
@@ -418,5 +418,5 @@ def test_channel_shares_that_add_to_more_than_a_whole_budget_are_scaled_to_100()
 def test_two_campaigns_on_the_same_theme_do_not_get_the_same_name():
     arch = ck.architecture({"campaigns": [camp("search", "Brand"), camp("search", "brand"), camp("search", "Brand")]}, inputs())
     names = [c["name"] for c in arch["campaigns"]]
-    assert len(set(names)) == 3 and names[0] == "P2_Search_Brand_20261102" and names[1].startswith("P2_Search_Brand_20261102_")
+    assert len(set(names)) == 3 and names[0] == "NA_Search_Brand_20261102" and names[1].startswith("NA_Search_Brand_20261102_")
     assert len({c["key"] for c in arch["campaigns"]}) == 3

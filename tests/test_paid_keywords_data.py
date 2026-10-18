@@ -241,7 +241,7 @@ def test_the_floor_is_the_clients_and_a_converting_term_is_kept_below_it():
 def test_a_converting_term_that_is_not_a_keyword_is_a_candidate_with_its_numbers():
     rows, stats = cands()
     t = next(r for r in rows if r["kw"] == "all on 4 implants austin tx")
-    assert t["src"] == "term" and t["conv"] == {"clicks": 44, "cost": 380.0, "conv": 4.0, "campaign": "P2_Search_Implants_20250101"} and t["from"] == ["a converting search term"] and t["avg"] is None
+    assert t["src"] == "term" and t["conv"] == {"clicks": 44, "cost": 380.0, "conv": 4.0, "campaign": "NA_Search_Implants_20250101"} and t["from"] == ["a converting search term"] and t["avg"] is None
     assert not any(r["kw"] == "dental implants austin" and r.get("conv") for r in rows)                  # a term that is already a keyword is not offered again
     both = next(r for r in rows if r["kw"] == "implant dentist near me")
     assert both["conv"]["conv"] == 3.0 and both["src"] == "idea" and both["from"] == ["seed: dental implants", "a converting search term"]
@@ -306,7 +306,7 @@ THEME_DEF = K.THEMES["themes"]
 
 def theme_list():
     from tracker import paid_keywords_check as kck
-    return kck.themes(K.THEMES, ["P2_Search_Implants_20250101", "P2_Search_Invisalign_20250101"])["themes"]
+    return kck.themes(K.THEMES, ["NA_Search_Implants_20250101", "NA_Search_Invisalign_20250101"])["themes"]
 
 
 def assembled(**kw):
@@ -366,8 +366,8 @@ def test_the_themes_carry_their_own_totals_and_the_campaign_they_would_go_in():
     assert imp["keywords"] == len(members) and imp["yes"] == len(yes) and imp["searches"] == sum(r["avg"] or 0 for r in yes)
     assert imp["new"] == sum(1 for r in yes if r["status"] == "new") and imp["newSearches"] == sum(r["avg"] or 0 for r in yes if r["status"] == "new")
     assert imp["coveredSearches"] == imp["searches"] - imp["newSearches"] and imp["coverage"] == round(imp["coveredSearches"] / imp["searches"] * 100)
-    assert imp["campaign"] == "P2_Search_Implants_20250101" and imp["existing"] is True and t["emergency"]["campaign"] == "P2_Search_EmergencyDentist" and t["emergency"]["existing"] is False
-    assert t["invisalign"]["campaign"] == "P2_Search_Invisalign_20250101" and t["invisalign"]["pattern"].startswith("Peaks in May")
+    assert imp["campaign"] == "NA_Search_Implants_20250101" and imp["existing"] is True and t["emergency"]["campaign"] == "NA_Search_EmergencyDentist" and t["emergency"]["existing"] is False
+    assert t["invisalign"]["campaign"] == "NA_Search_Invisalign_20250101" and t["invisalign"]["pattern"].startswith("Peaks in May")
     assert imp["top"] == sorted(imp["top"], key=lambda x: -(x["avg"] or 0)) and all(x["kw"] for x in imp["top"])
     assert [x["newSearches"] for x in a["themes"]] == sorted([x["newSearches"] for x in a["themes"]], reverse=True)
 
@@ -413,7 +413,7 @@ def test_the_editor_rows_are_the_included_keywords_paused_with_a_campaign_and_an
     assert {r[2] for r in ed} == included and len(ed) == len(included)
     assert all(r[4] == "Paused" and r[3] in ("Exact", "Phrase", "Broad") for r in ed)
     row = next(r for r in ed if r[2] == "emergency dentist near me")
-    assert row == ["P2_Search_EmergencyDentist", "Emergency Dentist | Local", "emergency dentist near me", "Phrase", "Paused"]
+    assert row == ["NA_Search_EmergencyDentist", "Emergency Dentist | Local", "emergency dentist near me", "Phrase", "Paused"]
     assert not any(r[2] in ("smile austin dentistry", "dentist dallas", "teeth whitening austin") for r in ed)
     assert ed == sorted(ed, key=lambda r: ed.index(r))                              # stable
     assert kd.editor_rows([], []) == []
@@ -431,8 +431,8 @@ def test_the_seasonal_table_has_one_row_per_theme_with_a_year_and_the_month_name
 
 
 def test_the_campaign_and_the_ad_group_are_named_the_way_the_qa_agent_expects():
-    assert kd.campaign_for({"name": "Emergency dentist"}) == "P2_Search_EmergencyDentist" and kd.campaign_for({"name": "x", "campaign": "My Existing"}) == "My Existing"
-    assert kd.campaign_for({}) == "P2_Search_Other" and kd.ad_group_for({"name": "Dental Implants"}, "cost") == "Dental Implants | Cost" and kd.ad_group_for({}, None) == "Other | Other"
+    assert kd.campaign_for({"name": "Emergency dentist"}) == "NA_Search_EmergencyDentist" and kd.campaign_for({"name": "x", "campaign": "My Existing"}) == "My Existing"
+    assert kd.campaign_for({}) == "NA_Search_Other" and kd.ad_group_for({"name": "Dental Implants"}, "cost") == "Dental Implants | Cost" and kd.ad_group_for({}, None) == "Other | Other"
     assert kd.slug("Dental Implants!") == "dental-implants" and kd.slug("") == "other" and len(kd.slug("a" * 99)) == 40
 
 
@@ -559,21 +559,21 @@ def test_a_new_negative_is_covered_only_by_an_existing_one_that_blocks_everythin
 
 
 def test_a_keyword_blocked_by_a_negative_in_the_campaign_it_would_go_in_is_not_offered_for_that_campaign():
-    account = {"keywords": [{"t": "dental implants austin", "m": "EXACT", "c": "P2_Search_Implants_20250101", "g": "G"}, {"t": "invisalign austin", "m": "EXACT", "c": "P2_Search_Invisalign_20250101", "g": "G"}],
-               "negatives": [{"t": "emergency", "m": "PHRASE", "c": ["P2_Search_Implants_20250101"]}], "lists": [], "terms": {}}
+    account = {"keywords": [{"t": "dental implants austin", "m": "EXACT", "c": "NA_Search_Implants_20250101", "g": "G"}, {"t": "invisalign austin", "m": "EXACT", "c": "NA_Search_Invisalign_20250101", "g": "G"}],
+               "negatives": [{"t": "emergency", "m": "PHRASE", "c": ["NA_Search_Implants_20250101"]}], "lists": [], "terms": {}}
     ideas = [one_idea("emergency dental implants", 800), one_idea("emergency invisalign", 700)]
     rows, _ = kd.candidates(K.clean(), {"planner": {"data": {"ideas": ideas}}, "account": {"data": account}})
     by = {r["kw"]: r for r in rows}
-    assert by["emergency dental implants"]["neg"] == {"scope": "some", "by": [{"kw": "emergency", "match": "Phrase", "campaigns": ["P2_Search_Implants_20250101"]}], "campaigns": ["P2_Search_Implants_20250101"]}
-    themes = [{"key": "implants", "name": "Dental Implants", "intent": "transactional", "priority": "high", "why": "", "campaign": "P2_Search_Implants_20250101", "existing": True},
-              {"key": "inv", "name": "Invisalign", "intent": "commercial", "priority": "medium", "why": "", "campaign": "P2_Search_Invisalign_20250101", "existing": True}]
+    assert by["emergency dental implants"]["neg"] == {"scope": "some", "by": [{"kw": "emergency", "match": "Phrase", "campaigns": ["NA_Search_Implants_20250101"]}], "campaigns": ["NA_Search_Implants_20250101"]}
+    themes = [{"key": "implants", "name": "Dental Implants", "intent": "transactional", "priority": "high", "why": "", "campaign": "NA_Search_Implants_20250101", "existing": True},
+              {"key": "inv", "name": "Invisalign", "intent": "commercial", "priority": "medium", "why": "", "campaign": "NA_Search_Invisalign_20250101", "existing": True}]
     judged = {"emergency dental implants": dict(K.judge("dental implants"), theme="implants"), "emergency invisalign": dict(K.judge("invisalign"), theme="inv")}
     a = kd.assemble(rows, judged, themes)
     out = {r["kw"]: r for r in a["keywords"]}
     assert out["emergency dental implants"]["include"] is False and out["emergency dental implants"]["blockedInTarget"] is True                  # the Implants campaign blocks it
     assert out["emergency invisalign"]["include"] is True and out["emergency invisalign"]["blockedInTarget"] is False                             # another campaign does not
     assert a["coverage"]["blockedInTarget"] == 1 and a["coverage"]["include"] == 1 
-    assert kd.editor_rows(a["keywords"], a["themes"]) == [["P2_Search_Invisalign_20250101", "Invisalign | Commercial", "emergency invisalign", "Phrase", "Paused"]]
+    assert kd.editor_rows(a["keywords"], a["themes"]) == [["NA_Search_Invisalign_20250101", "Invisalign | Commercial", "emergency invisalign", "Phrase", "Paused"]]
 
 
 def test_a_converting_search_term_a_broader_keyword_already_matches_is_still_offered_to_add_as_exact():

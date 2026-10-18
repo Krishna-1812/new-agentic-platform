@@ -341,3 +341,37 @@ def test_inside_a_workspace_search_query_analysis_reads_only_its_own_accounts_an
     assert ads[-1][1:3] == ("search-query-analysis", LUMINA)
     assert c.post(base + "classify", json={"ruleset": "generic", "terms": ["x"]}, headers=dict(XA, Origin="http://localhost")).status_code == 200
     assert seen == [("search-query-analysis", T.RAJ, T._acct("lumina")["space"])]
+
+
+# ── The research builds: Business Research, Keyword Research, Strategy & Campaign Book ──────────
+
+def test_social_media_intelligence_is_off_unless_its_card_is_turned_on(seeded):
+    c = T._client(T.RAJ)
+    for agent in ("strategy", "business"):
+        cards = c.get("/strategic-agents/paid-marketing/api/%s/options" % agent).get_json()["cards"]
+        assert [x["default"] for x in cards if x["key"] == "social"] == [False], agent
+    with appmod.app.test_request_context(json={"name": "Acme", "research": {"market": True}}):
+        assert appmod._strat_raw()["research"]["social"] is False
+    with appmod.app.test_request_context(json={"name": "Acme", "research": {"social": "yes"}}):
+        assert appmod._strat_raw()["research"]["social"] is False, "only a real true turns on a paid run"
+    with appmod.app.test_request_context(json={"name": "Acme", "research": {"social": True}}):
+        assert appmod._strat_raw()["research"]["social"] is True
+
+
+def test_inside_a_workspace_only_its_builds_and_its_accounts(seeded, monkeypatch):
+    from tracker import paid_strategy_store as store
+    acct_space = T._acct("lumina")["space"]
+    builds = [{"id": "a" * 32, "inputs": {"kind": "strategy", "space": acct_space}, "archived": False, "created_by": T.RAJ},
+              {"id": "b" * 32, "inputs": {"kind": "strategy", "space": ""}, "archived": False, "created_by": T.RAJ}]
+    monkeypatch.setattr(store, "list_recent", lambda limit=100, kind="strategy": builds)
+    monkeypatch.setattr(store, "get", lambda sid: next((b for b in builds if b["id"] == sid), None))
+    from tracker import paid_strategy as ps
+    monkeypatch.setattr(ps, "brief", lambda r: {"id": r["id"]})
+    monkeypatch.setattr(ps, "public", lambda r: {"id": r["id"]})
+    c, base = T._client(T.RAJ), "/strategic-agents/paid-marketing/api/strategy/"
+    assert [b["id"] for b in c.get(base + "list", headers=XA).get_json()["builds"]] == ["a" * 32]
+    assert [b["id"] for b in c.get(base + "list").get_json()["builds"]] == ["a" * 32, "b" * 32], "outside, the team sees all"
+    assert c.get(base + "b" * 32, headers=XA).status_code == 404 and c.get(base + "a" * 32, headers=XA).status_code == 200
+    r = c.post(base + "start", json={"name": "Acme", "website": "https://acme.test", "account": OTHER, "budget": 3000, "goal": "leads"},
+               headers=dict(XA, Origin="http://localhost"))
+    assert r.status_code in (400, 403) and (r.status_code == 403 or "account" in r.get_json()["error"].lower())

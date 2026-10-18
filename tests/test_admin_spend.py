@@ -138,8 +138,8 @@ def test_whose_work_a_ledger_row_is(owner, by, space, want):
 
 def _reset_stores(monkeypatch):
     from tracker import (account_mapper_store, buyer_radar_store, contact_lab_store, event_intel_store, gads_ai_store,
-                         lbr_store, market_radar_store, paid_spend, sci_store, video_store, watch_store)
-    for mod, flag in ((account_mapper_store, "_READY"), (paid_spend, "_READY"), (buyer_radar_store, "_READY"), (contact_lab_store, "_READY"),
+                         lbr_store, market_radar_store, paid_spend, paid_strategy_store, sci_store, video_store, watch_store)
+    for mod, flag in ((account_mapper_store, "_READY"), (paid_spend, "_READY"), (paid_strategy_store, "_READY"), (buyer_radar_store, "_READY"), (contact_lab_store, "_READY"),
                       (event_intel_store, "_TABLES_READY"), (gads_ai_store, "_TABLES_READY"),
                       (lbr_store, "_TABLES_READY"), (market_radar_store, "_TABLES_READY"),
                       (sci_store, "_TABLES_READY"), (video_store, "_READY"), (watch_store, "_READY")):
@@ -191,6 +191,11 @@ def test_every_ledger_is_read_with_who_where_and_how_much(pg, world, monkeypatch
     paid_spend.record("landing-page-check", "kris@x.com", "", "lp", "claude-sonnet-5-5", 0.05)
     paid_spend.record("qa-agent", "mia@x.com", "acct:8", "qa", "claude-sonnet-5-5", 0.06)
     paid_spend.record("search-query-analysis", "kris@x.com", "acct:7", "sqr", "claude-sonnet-5-5", 0.07)
+    # The research builds keep what each spent on the build itself (pm_strategies.cost), with its workspace in its inputs
+    from tracker import paid_strategy_store as strat
+    for kind, by, space, usd in (("strategy", "mia@x.com", "acct:7", 0.81), ("business", "kris@x.com", "", 0.32), ("keywords", "mia@x.com", "acct:8", 0.27)):
+        rec = strat.create(by=by, inputs={"name": "Acme Dental", "account": "", "kind": kind, "space": space}, steps=[])
+        strat.finish(rec["id"], cost={"usd": usd, "model": usd, "research": 0})
     er = evi.save_run("kris@x.com", "lookup", "ai summit", space="acct:7")
     evi.update_run(er, credits_spent=40)
 
@@ -225,6 +230,9 @@ def test_every_ledger_is_read_with_who_where_and_how_much(pg, world, monkeypatch
     assert one("landing-page-check")["usd"] == pytest.approx(0.05) and one("landing-page-check")["space"] == ""
     assert one("qa-agent")["usd"] == pytest.approx(0.06) and one("qa-agent")["space"] == "acct:8"
     assert one("search-query-analysis")["usd"] == pytest.approx(0.07) and one("search-query-analysis")["space"] == "acct:7"
+    assert one("campaign-book")["usd"] == pytest.approx(0.81) and one("campaign-book")["space"] == "acct:7" and one("campaign-book")["email"] == "mia@x.com"
+    assert one("business-research")["usd"] == pytest.approx(0.32) and one("business-research")["space"] == ""
+    assert one("ppc-keyword-research")["usd"] == pytest.approx(0.27) and one("ppc-keyword-research")["space"] == "acct:8"
 
 
 def test_a_ledger_nobody_has_used_yet_is_reported_as_empty_not_as_broken(pg):
