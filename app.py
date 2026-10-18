@@ -4651,7 +4651,11 @@ def _pm_scope():
 
 
 def _pm_note(agent, account, title, detail=""):
-    """Inside a workspace, the day's History row for this read (tracker/paid_activity.py). Never fails a read."""
+    """Inside a workspace, the day's History row for this read (tracker/paid_activity.py). Never fails a read. Outside a
+    request (a build resumed by a background job) there is no workspace to write it to."""
+    from flask import has_request_context
+    if not has_request_context():
+        return
     acct = _work_acct()
     if acct is None:
         return
@@ -6278,6 +6282,625 @@ def paid_sqr_classify():
         app.logger.warning("paid marketing: SQR classify failed: %s", e)
         return jsonify(error="The model could not classify this batch (%s)." % e.kind), 502
     return jsonify(results=results)
+
+
+# Strategy & Campaign Book -----------------------------------------------------
+# Give it a client (a website, a brief, optionally a Google Ads account) and it researches the client, its competitors, its social media,
+# the account and the market, then writes the strategy and, for each campaign, the campaign book: ad groups, keywords, negatives, ad copy
+# and assets, with the settings in the layout the QA Agent checks a launched campaign against. The build runs in a background thread
+# (tracker/paid_strategy_job.py) with its progress in Postgres; the page polls. What is read is tracker/paid_strategy_research.py, the
+# writing is paid_strategy_ai.py, what the writing is held to is paid_strategy_check.py, the book rows are paid_strategy_book.py, the
+# downloads (Excel, CSV, PDF) are paid_strategy_export.py and what was saved is paid_strategy_store.py. It only recommends: nothing is
+# changed in Google Ads. The account list is Segment Analysis's (api/segments/accounts).
+#
+# Northaxis: a build made inside a client workspace is that workspace's (inputs["space"]): only its builds are listed or
+# opened there, and only its own Google Ads accounts can be named. Each build saves what it spent (model and web search)
+# in pm_strategies.cost, which the admin panel reads (tracker/admin_spend.py). Social Media Intelligence is a paid
+# Apify run: it is off unless the person turns its card on, and its run is filed in the workspace (its own ledger).
+
+_STRAT_ID = re.compile(r"[0-9a-f]{32}")
+_STRAT_RUN_GAP_S = 20
+_STRAT_LAST = {}
+_STRAT_AGENT = {"strategy": "campaign-book", "business": "business-research", "keywords": "ppc-keyword-research"}
+
+
+def _strat_space():
+    acct = _work_acct()
+    return acct["space"] if acct else ""
+
+
+def _strat_mine(rec):
+    """Whether this request may see a build: inside a workspace, only the workspace's own."""
+    return _work_acct() is None or ((rec.get("inputs") or {}).get("space") or "") == _strat_space()
+
+
+def _strat_cards(cards):
+    """The research cards as the page first shows them: Social Media Intelligence (a paid run) off."""
+    return [dict(c, default=False) if c["key"] == "social" else c for c in cards]
+
+
+def _strat_raw():
+    """The posted build, with Social Media Intelligence on only when the card was turned on."""
+    raw = request.get_json(silent=True)
+    if isinstance(raw, dict):
+        research = raw.get("research") if isinstance(raw.get("research"), dict) else {}
+        raw = dict(raw, research=dict(research, social=research.get("social") is True))
+    return raw
+
+
+def _strat_scoped(inputs):
+    """None when the build's account may be named here, else the refusal; the build is filed in this workspace."""
+    inputs["space"] = _strat_space()
+    if inputs["account"] and not _pm_in_scope(inputs["account"]):
+        return jsonify(error="that account is not one of this workspace's Google Ads accounts"), 403
+    return None
+
+
+def _strat_spawn(fn):
+    """Run a build in the background. (Tests run it inline by replacing this.)"""
+    threading.Thread(target=fn, daemon=True, name="strategy-build").start()
+
+
+def _strat_rec_or_404(store, sid, kind="strategy"):
+    """The saved build, or a 404. A build belongs to one agent (its inputs say which: Business Research's say "business"): the other agent's ids are not found here."""
+    if not _STRAT_ID.fullmatch(sid or ""):
+        abort(404)
+    rec = store.get(sid)
+    if not rec or rec["archived"] or (rec.get("inputs") or {}).get("kind", "strategy") != kind or not _strat_mine(rec):
+        abort(404)
+    return rec
+
+
+def _strat_account(account_id):
+    """{'id', 'name', 'currency'} for a Google Ads account the platform can read, or None."""
+    from tracker import paid_gads_segments as gads
+    if not account_id:
+        return None
+    try:
+        return next((a for a in gads.list_accounts() if a["id"] == account_id), None)
+    except Exception:                                       # noqa: BLE001 (the account list is a convenience: the build can go on without a name)
+        return None
+
+
+def _strat_deps(rec, account):
+    """What a build needs from the rest of the platform, so the job itself touches nothing global."""
+    from tracker import (paid_gads as base, paid_gads_segments as gads, paid_seasonality, paid_sqr_data, paid_store, paid_strategy_store, sci_pipeline, sci_store)
+    planner, planner_currency = (account or {}).get("id"), (account or {}).get("currency")
+    if not planner:
+        try:
+            first = (gads.list_accounts() or [{}])[0]
+            planner, planner_currency = first.get("id"), first.get("currency")
+        except Exception:                                   # noqa: BLE001
+            planner = None
+    return {"account": account, "email": rec["created_by"], "planner_account": planner, "planner_currency": planner_currency, "model_ready": bool(os.environ.get("ANTHROPIC_API_KEY")),
+            "business_list": lambda kind="business": paid_strategy_store.list_recent(kind=kind), "business_get": paid_strategy_store.get,
+            "search": lambda cid, gaql: gads.search(cid, gaql), "geo_names": gads.geo_names, "gads_store": paid_store,
+            "sqr_read": lambda st, acct, start, end: paid_sqr_data.read(paid_store, acct, start, end),
+            "cached": lambda key, ttl, make: base._cached(paid_store, key, ttl, make),
+            "post": lambda path, body: base._post(path, body, paid_store),
+            "season_report": lambda accts, months: paid_seasonality.report(paid_store, accts, months),
+            "sci_store": sci_store, "sci_pipeline": sci_pipeline, "spawn": _strat_spawn}
+
+
+def _strat_begin(store, rec, resume=False):
+    """Start (or resume) the build unless one is already running. Returns (started, why_not). The agent that runs it is the one the build belongs to."""
+    from tracker import paid_business_job, paid_keywords_job, paid_strategy as ps, paid_strategy_job as job
+    kind = (rec.get("inputs") or {}).get("kind")
+    if kind == "business":
+        job = paid_business_job                                         # noqa: F811 (same run_build call, Business Research's own build)
+    elif kind == "keywords":
+        job = paid_keywords_job                                         # noqa: F811 (and Keyword Research's)
+    email = _pm_user_email()
+    used = store.runs_today(email)                          # counted in the database, so every server counts the same builds
+    if used >= ps.BUILDS_PER_DAY:
+        return False, "That is %d builds in a day, the most this allows." % used
+    if not store.begin(rec["id"], resume=resume):
+        return False, ""
+    store.record_run(email)
+    sid = rec["id"]
+    _pm_note(_STRAT_AGENT.get(kind or "strategy", "campaign-book"), rec["inputs"].get("account") or "",
+             "%s for %s" % (paid_catalog.NAMES.get(_STRAT_AGENT.get(kind or "strategy", "campaign-book"), "Build"), rec["inputs"].get("name") or "a client"))
+    _strat_spawn(lambda: job.run_build(sid, store=store, deps=lambda: _strat_deps(rec, _strat_account(rec["inputs"].get("account"))), resume=resume))
+    return True, ""
+
+
+@app.route(_PM_PREFIX + "/campaign-book")
+@position2_required
+def paid_campaign_book():
+    return _pm_page("campaign_book.html", "campaign-book")
+
+
+@app.route(_PM_PREFIX + "/api/strategy/options")
+@position2_required
+def paid_strategy_options():
+    from tracker import paid_strategy as ps
+    return jsonify(cards=_strat_cards(ps.CARDS), goals=ps.GOALS, kinds={k: v["label"] for k, v in ps.KINDS.items()}, buildsPerDay=ps.BUILDS_PER_DAY,
+                   modelReady=bool(os.environ.get("ANTHROPIC_API_KEY")))
+
+
+@app.route(_PM_PREFIX + "/api/strategy/list")
+@position2_required
+def paid_strategy_list():
+    from tracker import paid_strategy as ps, paid_strategy_store as store
+    try:
+        return jsonify(builds=[ps.brief(r) for r in store.list_recent() if _strat_mine(r)])
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/strategy/start", methods=["POST"])
+@position2_required
+def paid_strategy_start():
+    """POST the client's details and the research cards that are on: save the build and start it."""
+    from tracker import paid_strategy as ps, paid_strategy_store as store
+    try:
+        inputs = ps.clean_inputs(_strat_raw())
+    except ps.BadPayload as e:
+        return jsonify(error=str(e)), 400
+    refused = _strat_scoped(inputs)
+    if refused:
+        return refused
+    account = _strat_account(inputs["account"])
+    if inputs["account"] and not account:
+        return jsonify(error="That Google Ads account is not one this platform can read."), 400
+    if account:
+        inputs["currency"] = account.get("currency") or inputs["currency"]
+    try:
+        rec = store.create(by=_pm_user_email(), inputs=inputs, account_name=(account or {}).get("name") or "")
+        started, why = _strat_begin(store, rec)
+        if why:
+            store.archive(rec["id"])
+            return jsonify(error=why, kind="cap"), 429
+        return jsonify(id=rec["id"], started=started), 201
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/strategy/<sid>")
+@position2_required
+def paid_strategy_get(sid):
+    from tracker import paid_strategy as ps, paid_strategy_store as store
+    try:
+        return jsonify(ps.public(_strat_rec_or_404(store, sid)))
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/strategy/<sid>/status")
+@position2_required
+def paid_strategy_status(sid):
+    from tracker import paid_strategy_store as store
+    if not _STRAT_ID.fullmatch(sid or ""):
+        abort(404)
+    try:
+        light = store.get_light(sid)
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+    if not light or light.get("kind", "strategy") != "strategy":
+        abort(404)
+    if _work_acct() is not None and not _strat_mine(store.get(sid) or {}):
+        abort(404)
+    return jsonify(light)
+
+
+@app.route(_PM_PREFIX + "/api/strategy/<sid>/rebuild", methods=["POST"])
+@position2_required
+def paid_strategy_rebuild(sid):
+    """Build again. {resume: true} keeps what the last build finished and redoes only the rest; otherwise it starts over."""
+    import time
+    from tracker import paid_strategy_store as store
+    try:
+        rec = _strat_rec_or_404(store, sid)
+        if rec["created_by"] != _pm_user_email() and not _pm_is_admin():
+            return jsonify(error="Only whoever started this build, or an admin, can build it again. Open the form with these details to start your own."), 403
+        wait = _STRAT_RUN_GAP_S - (time.time() - _STRAT_LAST.get(sid, 0))
+        if wait > 0:
+            return jsonify(error="That was started a moment ago. Try again in %d seconds." % (wait + 1), kind="cooldown", retryIn=int(wait) + 1), 429
+        resume = bool((request.get_json(silent=True) or {}).get("resume"))
+        started, why = _strat_begin(store, rec, resume=resume)
+        if why:
+            return jsonify(error=why, kind="cap"), 429
+        if not started:
+            return jsonify(error="This build is already running."), 409
+        _STRAT_LAST[sid] = time.time()
+        return jsonify(id=sid, started=True)
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/strategy/<sid>", methods=["DELETE"])
+@position2_required
+def paid_strategy_delete(sid):
+    from tracker import paid_strategy_store as store
+    try:
+        rec = _strat_rec_or_404(store, sid)
+        if rec["created_by"] != _pm_user_email() and not _pm_is_admin():
+            return jsonify(error="Only whoever started this build, or an admin, can remove it."), 403
+        store.archive(sid)
+        return jsonify(ok=True)
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+_STRAT_FILES = {"xlsx": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx", ""), "csv": ("text/csv; charset=utf-8", ".csv", "-campaign-book"),
+                "pdf": ("application/pdf", ".pdf", ""), "zip": ("application/zip", "-all-tables.zip", ""),
+                "book-xlsx": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx", ""), "book-csv": ("text/csv; charset=utf-8", ".csv", "")}
+
+
+@app.route(_PM_PREFIX + "/api/strategy/<sid>/download")
+@position2_required
+def paid_strategy_download(sid):
+    """?file=xlsx|csv|pdf|zip, or book-xlsx|book-csv with &campaign=<key> for one campaign's book in the QA Agent's layout."""
+    from tracker import paid_strategy_export as export, paid_strategy_store as store
+    try:
+        rec = _strat_rec_or_404(store, sid)
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+    kind = request.args.get("file") or ""
+    if kind not in _STRAT_FILES:
+        return jsonify(error="file should be one of: %s." % ", ".join(_STRAT_FILES)), 400
+    if not (rec.get("plan") or {}).get("campaigns"):
+        return jsonify(error="There is nothing to download yet: the campaigns have not been written."), 409
+    stem, mime = export.file_stem(rec), _STRAT_FILES[kind][0]
+    key = request.args.get("campaign") or ""
+    try:
+        if kind == "xlsx":
+            body, name = export.xlsx(rec), stem + ".xlsx"
+        elif kind == "csv":
+            body, name = "\ufeff" + export.csv_book(rec), stem + "-campaign-book.csv"
+        elif kind == "pdf":
+            body, name = export.pdf(rec), stem + ".pdf"
+        elif kind == "zip":
+            body, name = export.csv_zip(rec), stem + "-all-tables.zip"
+        else:
+            body = export.xlsx_campaign(rec, key) if kind == "book-xlsx" else export.csv_campaign(rec, key)
+            if body is None:
+                return jsonify(error="That campaign has no campaign book."), 404
+            name = "%s-%s-campaign-book%s" % (stem.replace("-strategy-and-campaign-book", ""), re.sub(r"[^A-Za-z0-9]+", "-", key)[:40], ".xlsx" if kind == "book-xlsx" else ".csv")
+            if kind == "book-csv":
+                body = "\ufeff" + body
+    except Exception as e:                                  # noqa: BLE001 (a file that cannot be made is said in words, not a stack trace)
+        app.logger.exception("strategy download failed")
+        return jsonify(error="The file could not be made (%s)." % type(e).__name__), 500
+    resp = make_response(body)
+    resp.headers["Content-Type"] = mime
+    resp.headers["Content-Disposition"] = 'attachment; filename="%s"' % name
+    resp.headers["Cache-Control"] = "private, no-store"
+    return resp
+
+
+# Business Research ------------------------------------------------------------
+# The first step of any engagement: a clear picture of the client's business before an audit or a strategy. Give it a client (a website, a brief,
+# optionally a Google Ads account) and it reads the site (and what the site is set up to measure), what customers and the press say, what the brand
+# posts on social media, what the account has paid for, a few competitors and the market's rules, then writes the business (offers, what sets it apart and
+# what proves it), who buys and how they decide, what it means for paid media and what to ask the client. It shares its run, its table of saved builds and
+# its research with Strategy & Campaign Book (above): tracker/paid_business.py (inputs), paid_business_research.py (reputation and site tracking),
+# paid_business_ai.py (the writing), paid_business_check.py (what is kept), paid_business_export.py (Excel, CSV, PDF) and paid_business_job.py (the run).
+# It only recommends: nothing is changed in Google Ads.
+
+_BIZ_FILES = {"xlsx": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"), "pdf": ("application/pdf", ".pdf"),
+              "zip": ("application/zip", "-all-tables.zip"), "csv": ("text/csv; charset=utf-8", "-questions-for-the-client.csv")}
+
+
+@app.route(_PM_PREFIX + "/business-research")
+@position2_required
+def paid_business_research_page():
+    return _pm_page("business_research.html", "business-research")
+
+
+@app.route(_PM_PREFIX + "/api/business/options")
+@position2_required
+def paid_business_options():
+    from tracker import paid_business as pb, paid_strategy as ps
+    return jsonify(cards=_strat_cards(pb.CARDS), goals=ps.GOALS, buildsPerDay=pb.BUILDS_PER_DAY, modelReady=bool(os.environ.get("ANTHROPIC_API_KEY")))
+
+
+@app.route(_PM_PREFIX + "/api/business/list")
+@position2_required
+def paid_business_list():
+    from tracker import paid_business as pb, paid_strategy_store as store
+    try:
+        return jsonify(builds=[pb.brief(r) for r in store.list_recent(kind=pb.KIND) if _strat_mine(r)])
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/business/start", methods=["POST"])
+@position2_required
+def paid_business_start():
+    """POST the client's details and the research cards that are on: save the build and start it."""
+    from tracker import paid_business as pb, paid_strategy as ps, paid_strategy_store as store
+    try:
+        inputs = pb.clean_inputs(_strat_raw())
+    except ps.BadPayload as e:
+        return jsonify(error=str(e)), 400
+    refused = _strat_scoped(inputs)
+    if refused:
+        return refused
+    account = _strat_account(inputs["account"])
+    if inputs["account"] and not account:
+        return jsonify(error="That Google Ads account is not one this platform can read."), 400
+    if account:
+        inputs["currency"] = account.get("currency") or inputs["currency"]
+    try:
+        rec = store.create(by=_pm_user_email(), inputs=inputs, account_name=(account or {}).get("name") or "", steps=pb.steps_for(inputs))
+        started, why = _strat_begin(store, rec)
+        if why:
+            store.archive(rec["id"])
+            return jsonify(error=why, kind="cap"), 429
+        return jsonify(id=rec["id"], started=started), 201
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/business/<sid>")
+@position2_required
+def paid_business_get(sid):
+    from tracker import paid_business as pb, paid_strategy as ps, paid_strategy_store as store
+    try:
+        return jsonify(ps.public(_strat_rec_or_404(store, sid, pb.KIND)))
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/business/<sid>/status")
+@position2_required
+def paid_business_status(sid):
+    from tracker import paid_business as pb, paid_strategy_store as store
+    if not _STRAT_ID.fullmatch(sid or ""):
+        abort(404)
+    try:
+        light = store.get_light(sid)
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+    if not light or light.get("kind") != pb.KIND:
+        abort(404)
+    if _work_acct() is not None and not _strat_mine(store.get(sid) or {}):
+        abort(404)
+    return jsonify(light)
+
+
+@app.route(_PM_PREFIX + "/api/business/<sid>/rebuild", methods=["POST"])
+@position2_required
+def paid_business_rebuild(sid):
+    """Build again. {resume: true} keeps what the last build finished and redoes only the rest; otherwise it starts over."""
+    import time
+    from tracker import paid_business as pb, paid_strategy_store as store
+    try:
+        rec = _strat_rec_or_404(store, sid, pb.KIND)
+        if rec["created_by"] != _pm_user_email() and not _pm_is_admin():
+            return jsonify(error="Only whoever started this build, or an admin, can build it again. Open the form with these details to start your own."), 403
+        wait = _STRAT_RUN_GAP_S - (time.time() - _STRAT_LAST.get(sid, 0))
+        if wait > 0:
+            return jsonify(error="That was started a moment ago. Try again in %d seconds." % (wait + 1), kind="cooldown", retryIn=int(wait) + 1), 429
+        started, why = _strat_begin(store, rec, resume=bool((request.get_json(silent=True) or {}).get("resume")))
+        if why:
+            return jsonify(error=why, kind="cap"), 429
+        if not started:
+            return jsonify(error="This build is already running."), 409
+        _STRAT_LAST[sid] = time.time()
+        return jsonify(id=sid, started=True)
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/business/<sid>", methods=["DELETE"])
+@position2_required
+def paid_business_delete(sid):
+    from tracker import paid_business as pb, paid_strategy_store as store
+    try:
+        rec = _strat_rec_or_404(store, sid, pb.KIND)
+        if rec["created_by"] != _pm_user_email() and not _pm_is_admin():
+            return jsonify(error="Only whoever started this build, or an admin, can remove it."), 403
+        store.archive(sid)
+        return jsonify(ok=True)
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/business/<sid>/download")
+@position2_required
+def paid_business_download(sid):
+    """?file=xlsx|pdf|zip|csv (csv is the questions for the client)."""
+    from tracker import paid_business as pb, paid_business_export as export, paid_strategy_store as store
+    try:
+        rec = _strat_rec_or_404(store, sid, pb.KIND)
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+    kind = request.args.get("file") or ""
+    if kind not in _BIZ_FILES:
+        return jsonify(error="file should be one of: %s." % ", ".join(_BIZ_FILES)), 400
+    if not (rec.get("plan") or {}).get("generatedAt"):                       # the checks are written last: a report that stopped halfway has no claims sheet and must not read as "none"
+        return jsonify(error="There is nothing to download yet: the write-up has not been finished and checked."), 409
+    stem = export.file_stem(rec)
+    try:
+        if kind == "xlsx":
+            body = export.xlsx(rec)
+        elif kind == "pdf":
+            body = export.pdf(rec)
+        elif kind == "zip":
+            body = export.csv_zip(rec)
+        else:
+            body = export.csv_questions(rec)
+            if body is None:
+                return jsonify(error="There are no questions for the client."), 404
+            body = "\ufeff" + body
+    except Exception as e:                                  # noqa: BLE001 (a file that cannot be made is said in words, not a stack trace)
+        app.logger.exception("business research download failed")
+        return jsonify(error="The file could not be made (%s)." % type(e).__name__), 500
+    resp = make_response(body)
+    resp.headers["Content-Type"] = _BIZ_FILES[kind][0]
+    resp.headers["Content-Disposition"] = 'attachment; filename="%s%s"' % (stem, _BIZ_FILES[kind][1])
+    resp.headers["Cache-Control"] = "private, no-store"
+    return resp
+
+
+# Keyword Research -------------------------------------------------------------
+# New keyword opportunities for a client: what people search for that the account does not yet bid on. Give it a client (what it sells, a website, optionally a
+# Google Ads account) and it asks Google Keyword Planner for ideas (for what the client sells, for its site, for each competitor's site and for what already
+# converts), compares every idea with the keywords and negative keywords the account already has, and has Claude group the market into themes and judge each
+# keyword's fit, intent and match type. Every number is Keyword Planner's; the matching against the account, the coverage and the seasonality are arithmetic
+# (tracker/paid_keywords_data.py). It shares its run and its table of saved builds with Strategy & Campaign Book and Business Research (above):
+# tracker/paid_keywords.py (inputs), paid_keywords_research.py (Keyword Planner, the account), paid_keywords_ai.py (the judging), paid_keywords_check.py
+# (what is kept), paid_keywords_export.py (Excel, CSV, PDF and the file for Google Ads Editor) and paid_keywords_job.py (the run).
+# It only recommends: nothing is changed in Google Ads.
+
+_KW_FILES = {"xlsx": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"), "pdf": ("application/pdf", ".pdf"),
+             "zip": ("application/zip", "-all-tables.zip"), "csv": ("text/csv; charset=utf-8", "-ads-editor-keywords.csv")}
+
+
+@app.route(_PM_PREFIX + "/ppc-keyword-research")
+@position2_required
+def paid_keywords_page():
+    return _pm_page("keyword_research.html", "ppc-keyword-research")
+
+
+@app.route(_PM_PREFIX + "/api/keywords/options")
+@position2_required
+def paid_keywords_options():
+    from tracker import paid_keywords as pk, paid_strategy as ps
+    return jsonify(cards=_strat_cards(pk.CARDS), goals=ps.GOALS, minSearches=list(pk.MIN_SEARCHES), defaultMin=pk.DEFAULT_MIN, buildsPerDay=pk.BUILDS_PER_DAY,
+                   modelReady=bool(os.environ.get("ANTHROPIC_API_KEY")))
+
+
+@app.route(_PM_PREFIX + "/api/keywords/list")
+@position2_required
+def paid_keywords_list():
+    from tracker import paid_keywords as pk, paid_strategy_store as store
+    try:
+        return jsonify(builds=[pk.brief(r) for r in store.list_recent(kind=pk.KIND) if _strat_mine(r)])
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/keywords/start", methods=["POST"])
+@position2_required
+def paid_keywords_start():
+    """POST the client's details and the research cards that are on: save the build and start it."""
+    from tracker import paid_keywords as pk, paid_strategy as ps, paid_strategy_store as store
+    try:
+        inputs = pk.clean_inputs(_strat_raw())
+    except ps.BadPayload as e:
+        return jsonify(error=str(e)), 400
+    refused = _strat_scoped(inputs)
+    if refused:
+        return refused
+    account = _strat_account(inputs["account"])
+    if inputs["account"] and not account:
+        return jsonify(error="That Google Ads account is not one this platform can read."), 400
+    if account:
+        inputs["currency"] = account.get("currency") or inputs["currency"]
+    try:
+        rec = store.create(by=_pm_user_email(), inputs=inputs, account_name=(account or {}).get("name") or "", steps=pk.steps_for(inputs))
+        started, why = _strat_begin(store, rec)
+        if why:
+            store.archive(rec["id"])
+            return jsonify(error=why, kind="cap"), 429
+        return jsonify(id=rec["id"], started=started), 201
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/keywords/<sid>")
+@position2_required
+def paid_keywords_get(sid):
+    from tracker import paid_keywords as pk, paid_strategy as ps, paid_strategy_store as store
+    try:
+        return jsonify(ps.public(_strat_rec_or_404(store, sid, pk.KIND)))
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/keywords/<sid>/status")
+@position2_required
+def paid_keywords_status(sid):
+    from tracker import paid_keywords as pk, paid_strategy_store as store
+    if not _STRAT_ID.fullmatch(sid or ""):
+        abort(404)
+    try:
+        light = store.get_light(sid)
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+    if not light or light.get("kind") != pk.KIND:
+        abort(404)
+    if _work_acct() is not None and not _strat_mine(store.get(sid) or {}):
+        abort(404)
+    return jsonify(light)
+
+
+@app.route(_PM_PREFIX + "/api/keywords/<sid>/rebuild", methods=["POST"])
+@position2_required
+def paid_keywords_rebuild(sid):
+    """Build again. {resume: true} keeps what the last build finished and redoes only the rest; otherwise it starts over."""
+    import time
+    from tracker import paid_keywords as pk, paid_strategy_store as store
+    try:
+        rec = _strat_rec_or_404(store, sid, pk.KIND)
+        if rec["created_by"] != _pm_user_email() and not _pm_is_admin():
+            return jsonify(error="Only whoever started this build, or an admin, can build it again. Open the form with these details to start your own."), 403
+        wait = _STRAT_RUN_GAP_S - (time.time() - _STRAT_LAST.get(sid, 0))
+        if wait > 0:
+            return jsonify(error="That was started a moment ago. Try again in %d seconds." % (wait + 1), kind="cooldown", retryIn=int(wait) + 1), 429
+        started, why = _strat_begin(store, rec, resume=bool((request.get_json(silent=True) or {}).get("resume")))
+        if why:
+            return jsonify(error=why, kind="cap"), 429
+        if not started:
+            return jsonify(error="This build is already running."), 409
+        _STRAT_LAST[sid] = time.time()
+        return jsonify(id=sid, started=True)
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/keywords/<sid>", methods=["DELETE"])
+@position2_required
+def paid_keywords_delete(sid):
+    from tracker import paid_keywords as pk, paid_strategy_store as store
+    try:
+        rec = _strat_rec_or_404(store, sid, pk.KIND)
+        if rec["created_by"] != _pm_user_email() and not _pm_is_admin():
+            return jsonify(error="Only whoever started this build, or an admin, can remove it."), 403
+        store.archive(sid)
+        return jsonify(ok=True)
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/keywords/<sid>/download")
+@position2_required
+def paid_keywords_download(sid):
+    """?file=xlsx|pdf|zip|csv (csv is the keywords to add, for Google Ads Editor)."""
+    from tracker import paid_keywords as pk, paid_keywords_export as export, paid_strategy_store as store
+    try:
+        rec = _strat_rec_or_404(store, sid, pk.KIND)
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+    kind = request.args.get("file") or ""
+    if kind not in _KW_FILES:
+        return jsonify(error="file should be one of: %s." % ", ".join(_KW_FILES)), 400
+    if not (rec.get("plan") or {}).get("generatedAt"):                       # the checks are written last: a result that stopped halfway must not read as complete
+        return jsonify(error="There is nothing to download yet: the keywords have not been judged and checked."), 409
+    stem = export.file_stem(rec)
+    try:
+        if kind == "xlsx":
+            body = export.xlsx(rec)
+        elif kind == "pdf":
+            body = export.pdf(rec)
+        elif kind == "zip":
+            body = export.csv_zip(rec)
+        else:
+            body = export.csv_editor(rec)
+            if body is None:
+                return jsonify(error="There are no keywords to add: every keyword that fits is already in the account."), 404
+            body = "\ufeff" + body
+    except Exception as e:                                  # noqa: BLE001 (a file that cannot be made is said in words, not a stack trace)
+        app.logger.exception("keyword research download failed")
+        return jsonify(error="The file could not be made (%s)." % type(e).__name__), 500
+    resp = make_response(body)
+    resp.headers["Content-Type"] = _KW_FILES[kind][0]
+    resp.headers["Content-Disposition"] = 'attachment; filename="%s%s"' % (stem, _KW_FILES[kind][1])
+    resp.headers["Cache-Control"] = "private, no-store"
+    return resp
 
 
 @app.route(_PM_PREFIX + "/api/meta/status")

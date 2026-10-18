@@ -491,7 +491,8 @@ def _wavg(rows, key):
 
 def campaign_for(theme):
     """The campaign a theme's keywords would go in: the account's own campaign when the theme says one fits, else a new one named the way the QA Agent expects."""
-    return theme.get("campaign") or "P2_Search_%s" % "".join(w.capitalize() for w in re.findall(r"[A-Za-z0-9]+", theme.get("name") or "Other"))[:40]
+    from .paid_strategy import prefixed
+    return theme.get("campaign") or prefixed("Search_%s" % "".join(w.capitalize() for w in re.findall(r"[A-Za-z0-9]+", theme.get("name") or "Other"))[:40])
 
 
 def ad_group_for(theme, intent):

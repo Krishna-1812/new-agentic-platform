@@ -575,6 +575,9 @@ a.as-ev-main::after { content: ""; position: absolute; inset: 0; border-radius: 
 .rx-ag--experiment-tracker, .sh-tool--experiment-tracker { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
 .rx-ag--qa-agent, .sh-tool--qa-agent { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
 .rx-ag--search-query-analysis, .sh-tool--search-query-analysis { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
+.rx-ag--business-research, .sh-tool--business-research { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
+.rx-ag--keyword-research, .sh-tool--keyword-research { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
+.rx-ag--campaign-book, .sh-tool--campaign-book { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
 
 /* The flood: a circle behind the icon that grows to cover the card. */
 .rx-flood { position: absolute; z-index: -1; left: 48px; top: 48px; width: 56px; height: 56px; margin: -28px 0 0 -28px;
@@ -658,7 +661,7 @@ a.as-ev-main::after { content: ""; position: absolute; inset: 0; border-radius: 
 .rx-ag--agent-readiness-audit, .sh-tool--agent-readiness-audit { --c: #B79CFF; --c-dim: #EFE8FF; --c-tx: #5B3CC4; }
 .rx-ag--seo-geo-snapshot, .sh-tool--seo-geo-snapshot { --c: #2DD4BF; --c-dim: #D5F7F1; --c-tx: #0F766E; }
 .rx-ag--image-alt-audit, .sh-tool--image-alt-audit { --c: var(--acc); --c-dim: var(--acc-dim); --c-tx: var(--acc-tx); }
-.rx-ag--keyword-research, .sh-tool--keyword-research { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
+.rx-ag--ppc-keyword-research, .sh-tool--ppc-keyword-research { --c: var(--cream); --c-dim: #FFF1CC; --c-tx: var(--cream-tx); }
 .rx-ag--content-research, .sh-tool--content-research { --c: var(--clay); --c-dim: var(--clay-dim); --c-tx: var(--clay-tx); }
 .rx-ag--content-architect, .sh-tool--content-architect { --c: var(--ink); --c-dim: var(--s2); --c-tx: var(--tx); --c-on: var(--tx-on-ink); }
 .rx-ag--market-potential, .sh-tool--market-potential { --c: #C6F432; --c-dim: #F1FCD2; --c-tx: #4D6B00; }

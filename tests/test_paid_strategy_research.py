@@ -199,7 +199,7 @@ def test_history_reads_what_the_account_spent_and_what_converted():
     assert d["totals"]["cost"] == 1300.0 and d["totals"]["conv"] == 12.0 and d["totals"]["cpa"] == 108.33 and d["totals"]["cvr"] == 4.1 and d["totals"]["cpc"] == 4.48
     assert "roas" not in d["totals"]
     c = d["campaigns"][0]
-    assert c["name"] == "P2_Search_Old_20240101" and c["type"] == "Search" and c["bid"] == "Maximize Conversions" and c["daily"] == 50.0
+    assert c["name"] == "NA_Search_Old_20240101" and c["type"] == "Search" and c["bid"] == "Maximize Conversions" and c["daily"] == 50.0
     assert d["keywordsBest"][0]["text"] == "dental implants austin" and d["keywordsWasted"][0]["text"] == "dentist"
     assert d["terms"]["converting"][0]["term"] == "dental implants austin tx" and d["terms"]["wasteful"][0]["term"] == "dentist jobs austin"
     assert d["negatives"] == {"campaign": 3, "lists": 1} and d["keywordCount"] == 2
@@ -603,3 +603,18 @@ def test_places_are_looked_up_worldwide_not_only_in_the_united_states():
     sent.clear()
     rs.resolve_places(["Austin"], post=post, country_code="US")
     assert sent[0][1]["countryCode"] == "US"
+
+
+def test_a_build_in_a_client_workspace_reuses_and_files_its_social_run_there():
+    """The run's cost then shows under the workspace in the admin panel (sci_runs.space), not the person's General work."""
+    from tests.strategy_fakes import FakeSci
+    sci = FakeSci(runs={1: {"email": "ana@x.com", "company_name": "Acme Dental", "company_url": "https://acmedental.com", "status": "done",
+                            "updated_at": "2026-10-10T09:00:00+00:00", "space": "acct:7"}})
+    inputs = {"name": "Acme Dental", "website": "https://acmedental.com", "space": "acct:7"}
+    now = dt.datetime(2026, 10, 16, tzinfo=dt.timezone.utc)
+    assert rs.find_social_run("raj@x.com", inputs, store=sci, now=now)["id"] == 1, "a teammate's run in the workspace is reused"
+    assert rs.find_social_run("ana@x.com", dict(inputs, space=""), store=sci, now=now) is None, "General work does not see it"
+    started = []
+    rid = rs.start_social("raj@x.com", dict(inputs, space="acct:9"), store=sci, pipeline=type("P", (), {"_sci_run_analysis_job": staticmethod(lambda *a: None)}),
+                          spawn=started.append)
+    assert sci.runs[rid]["space"] == "acct:9" and len(started) == 1

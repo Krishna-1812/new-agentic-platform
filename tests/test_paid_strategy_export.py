@@ -38,19 +38,19 @@ def test_the_overview_and_forecast_say_what_was_asked_and_what_it_buys(rec):
 
 def test_ad_copy_is_one_row_per_line_with_its_length_and_limit(rec):
     header, rows = export.tables(rec)["Ad copy"]
-    heads = [r for r in rows if r[0] == "P2_Search_Implants_20261102" and r[3] == "Headline"]
+    heads = [r for r in rows if r[0] == "NA_Search_Implants_20261102" and r[3] == "Headline"]
     assert len(heads) == 15 and heads[0][5] == "Dental Implants Austin" and heads[0][6] == 22 and heads[0][7] == 30
     assert all(r[6] <= r[7] for r in rows)
-    assert ("P2_Search_Implants_20261102", "Implants Core", "Ad 1", "Path 1", "", "implants", 8, 15, "") in [tuple(r) for r in rows]
+    assert ("NA_Search_Implants_20261102", "Implants Core", "Ad 1", "Path 1", "", "implants", 8, 15, "") in [tuple(r) for r in rows]
     assert any(r[3] == "Long headline" and r[7] == 90 for r in rows) and any(r[3] == "Business name" for r in rows)
 
 
 def test_keywords_negatives_assets_and_themes_are_listed_per_campaign(rec):
     t = export.tables(rec)
     kw = t["Ad groups and keywords"][1]
-    assert ["P2_Search_Implants_20261102", "Implants Core", "Dental implants", "service", "https://acmedental.com/services/dental-implants", "dental implants austin", "Exact", "service", "Planner"] in kw
+    assert ["NA_Search_Implants_20261102", "Implants Core", "Dental implants", "service", "https://acmedental.com/services/dental-implants", "dental implants austin", "Exact", "service", "Planner"] in kw
     neg = t["Negatives"][1]
-    assert ["P2_Search_Implants_20261102", "Campaign", "free", "Phrase", "Not a buyer"] in neg and ["P2_Search_Implants_20261102", "List: Jobs and careers", "careers", "Phrase", "Not buyers"] in neg
+    assert ["NA_Search_Implants_20261102", "Campaign", "free", "Phrase", "Not a buyer"] in neg and ["NA_Search_Implants_20261102", "List: Jobs and careers", "careers", "Phrase", "Not buyers"] in neg
     assets = t["Assets"][1]
     assert any(r[2] == "Sitelink" and r[3] == "Dental Implants" and r[5].endswith("/services/dental-implants") for r in assets) and any(r[2] == "Callout" for r in assets)
     assert any(r[2] == "Image brief" and r[3] == "1.91:1" for r in assets) and any(r[2].startswith("Audience signal") for r in assets)
@@ -59,7 +59,7 @@ def test_keywords_negatives_assets_and_themes_are_listed_per_campaign(rec):
 
 def test_the_checks_sheet_says_what_was_held_back(rec):
     rows = export.tables(rec)["Checks"][1]
-    assert ["Negative removed", "dental implants [phrase] would block the keyword 'dental implants austin' (P2_Search_Implants_20261102)"] in rows
+    assert ["Negative removed", "dental implants [phrase] would block the keyword 'dental implants austin' (NA_Search_Implants_20261102)"] in rows
     assert ["Facts not found on a page", "1"] in rows
 
 
@@ -70,7 +70,7 @@ def test_the_workbook_has_every_table_and_a_book_sheet_per_campaign(rec):
     assert ws.freeze_panes == "A2" and ws["A1"].font.bold and ws["A1"].fill.fgColor.rgb.endswith("1F2A44") and ws.auto_filter.ref
     book = wb["Book Search_Implants_20261102"]
     rows = list(book.iter_rows(values_only=True))
-    assert rows[0] == ("Field", "Value", "Other things to check") and rows[1] == ("1. Campaign Setup", None, None) and rows[2][:2] == ("Campaign Name", "P2_Search_Implants_20261102")
+    assert rows[0] == ("Field", "Value", "Other things to check") and rows[1] == ("1. Campaign Setup", None, None) and rows[2][:2] == ("Campaign Name", "NA_Search_Implants_20261102")
     assert book["A2"].font.bold and book.column_dimensions["B"].width == 60
 
 
@@ -102,14 +102,14 @@ def test_the_csv_book_is_one_flat_table_and_a_single_campaigns_is_in_the_qa_layo
 def test_the_zip_has_every_table_and_every_book(rec):
     names = zipfile.ZipFile(io.BytesIO(export.csv_zip(rec))).namelist()
     assert "overview.csv" in names and "ad-copy.csv" in names and "campaign-book-all-campaigns.csv" in names
-    assert "campaign-book-p2-search-implants-20261102.csv" in names and "campaign-book-p2-pmax-local-20261102.csv" in names and len(names) == len(set(names))
+    assert "campaign-book-na-search-implants-20261102.csv" in names and "campaign-book-na-pmax-local-20261102.csv" in names and len(names) == len(set(names))
 
 
 def test_sheet_names_are_legal_and_unique():
     used = set()
-    a = export.book_sheet_name({"name": "P2_Search_" + "Very/Long:Name?" * 5}, used)
+    a = export.book_sheet_name({"name": "NA_Search_" + "Very/Long:Name?" * 5}, used)
     used.add(a)
-    b = export.book_sheet_name({"name": "P2_Search_" + "Very/Long:Name?" * 5}, used)
+    b = export.book_sheet_name({"name": "NA_Search_" + "Very/Long:Name?" * 5}, used)
     assert len(a) <= 31 and not set("[]*?/\\:") & set(a) and a != b and len(b) <= 31
 
 
@@ -119,7 +119,7 @@ def test_the_pdf_is_a_document_with_the_whole_plan_in_it(rec):
     pdf = pdfplumber.open(io.BytesIO(data))
     text = "\n".join(p.extract_text() or "" for p in pdf.pages)
     assert len(pdf.pages) >= 8
-    for want in ("Strategy and Campaign Book", "Acme Dental", "What the budget buys", "P2_Search_Implants_20261102", "P2_PMax_Local_20261102", "Campaign Book: P2_Search_Implants_20261102",
+    for want in ("Strategy and Campaign Book", "Acme Dental", "What the budget buys", "NA_Search_Implants_20261102", "NA_PMax_Local_20261102", "Campaign Book: NA_Search_Implants_20261102",
                  "Dental Implants Austin", "Open questions and what is needed from the client", "Which insurance plans are accepted?"):
         assert want in text, want
 

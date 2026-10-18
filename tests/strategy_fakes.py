@@ -297,13 +297,16 @@ class FakeSci:
         self.runs = runs if runs is not None else {}
         self.started, self.finish, self.n = [], finish, 100
 
-    def list_runs(self, email, limit=100):
-        return [dict(r, id=i) for i, r in self.runs.items() if r["email"] == email]
+    def list_runs(self, email, limit=100, space=None):
+        """As our sci_store: a client workspace's runs (everyone's), or with no space the person's own General ones."""
+        if space:
+            return [dict(r, id=i) for i, r in self.runs.items() if r.get("space") == space]
+        return [dict(r, id=i) for i, r in self.runs.items() if r["email"] == email and not r.get("space")]
 
-    def save_run(self, email, name, url=None, logo=None):
+    def save_run(self, email, name, url=None, logo=None, space=""):
         self.n += 1
         self.runs[self.n] = {"email": email, "company_name": name, "company_url": url, "status": "running", "updated_at": "2026-10-16T09:00:00+00:00", "synthesis": None,
-                             "created_at": "2026-10-16T09:00:00+00:00"}
+                             "created_at": "2026-10-16T09:00:00+00:00", "space": space}
         return self.n
 
     def get_run(self, run_id, email):
@@ -331,10 +334,10 @@ class FakeSci:
 SYNTHESIS = {"platforms": {"instagram": {"summary": ["Short reels of the team", "Before and after smiles"], "messaging_and_strategy": ["Warm, people first", "Offers in captions"], "claims": []}},
              "cross_platform": {"summary": ["Video of people beats stills"], "messaging_and_strategy": ["Lead with the dentist, not the offer"], "claims": []}}
 
-KEYWORD_ROWS = {"keyword_view": [{"campaign": {"name": "P2_Search_Old_20240101"}, "adGroup": {"name": "Implants"},
+KEYWORD_ROWS = {"keyword_view": [{"campaign": {"name": "NA_Search_Old_20240101"}, "adGroup": {"name": "Implants"},
                                   "metrics": {"clicks": "200", "conversions": 12.0, "costMicros": "900000000", "impressions": "3000"},
                                   "adGroupCriterion": {"qualityInfo": {"qualityScore": 8}, "keyword": {"matchType": "EXACT", "text": "dental implants austin"}}},
-                                 {"campaign": {"name": "P2_Search_Old_20240101"}, "adGroup": {"name": "General"},
+                                 {"campaign": {"name": "NA_Search_Old_20240101"}, "adGroup": {"name": "General"},
                                   "metrics": {"clicks": "90", "conversions": 0, "costMicros": "400000000", "impressions": "2500"},
                                   "adGroupCriterion": {"keyword": {"matchType": "BROAD", "text": "dentist"}}}]}
 
@@ -344,7 +347,7 @@ def fake_search(customer_id, gaql):
     if "FROM keyword_view" in gaql:
         return KEYWORD_ROWS["keyword_view"]
     if "FROM campaign WHERE campaign.status" in gaql:
-        return [{"campaign": {"id": "1", "name": "P2_Search_Old_20240101", "status": "ENABLED", "advertisingChannelType": "SEARCH", "biddingStrategyType": "MAXIMIZE_CONVERSIONS",
+        return [{"campaign": {"id": "1", "name": "NA_Search_Old_20240101", "status": "ENABLED", "advertisingChannelType": "SEARCH", "biddingStrategyType": "MAXIMIZE_CONVERSIONS",
                               "startDateTime": "2024-01-01 10:00:00"}, "campaignBudget": {"amountMicros": "50000000"},
                  "metrics": {"impressions": "5500", "clicks": "290", "costMicros": "1300000000", "conversions": 12.0, "conversionsValue": 0}}]
     if "FROM conversion_action" in gaql:
@@ -355,7 +358,7 @@ def fake_search(customer_id, gaql):
     if "user_location_view" in gaql:
         return [{"segments": {"geoTargetRegion": "geoTargetConstants/21176"}, "metrics": {"clicks": "280", "costMicros": "1250000000", "conversions": 12.0}}]
     if "responsive_search_ad" in gaql:
-        return [{"campaign": {"name": "P2_Search_Old_20240101"}, "metrics": {"clicks": "290", "conversions": 12.0},
+        return [{"campaign": {"name": "NA_Search_Old_20240101"}, "metrics": {"clicks": "290", "conversions": 12.0},
                  "adGroupAd": {"ad": {"finalUrls": ["https://www.acmedental.com/"], "responsiveSearchAd": {"headlines": [{"text": "Austin Dentist"}, {"text": "Book Today"}],
                                                                                                      "descriptions": [{"text": "Family dentistry in Austin."}]}}}}]
     return []
@@ -366,8 +369,8 @@ def fake_geo_names(resources):
 
 
 def fake_sqr_read(store, account, start, end):
-    return {"terms": [{"t": "dental implants austin tx", "s": "", "c": "P2_Search_Old_20240101", "ct": "SEARCH", "g": "Implants", "i": 900, "k": 60, "x": 270.0, "v": 5.0},
-                      {"t": "dentist jobs austin", "s": "", "c": "P2_Search_Old_20240101", "ct": "SEARCH", "g": "General", "i": 400, "k": 30, "x": 120.0, "v": 0.0}],
+    return {"terms": [{"t": "dental implants austin tx", "s": "", "c": "NA_Search_Old_20240101", "ct": "SEARCH", "g": "Implants", "i": 900, "k": 60, "x": 270.0, "v": 5.0},
+                      {"t": "dentist jobs austin", "s": "", "c": "NA_Search_Old_20240101", "ct": "SEARCH", "g": "General", "i": 400, "k": 30, "x": 120.0, "v": 0.0}],
             "keywords": [{}] * 14, "negatives": [{}] * 3, "lists": [{}], "warnings": []}
 
 

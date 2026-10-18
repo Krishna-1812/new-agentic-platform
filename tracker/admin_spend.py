@@ -90,6 +90,21 @@ SOURCES = (
     ("search-query-analysis", "Search Query Analysis", "usd", """
         SELECT email, NULL::text, space, usd, created_at
           FROM pm_spend WHERE agent = 'search-query-analysis' AND created_at >= %(since)s AND usd > 0"""),
+    ("campaign-book", "Strategy & Campaign Book", "usd", """
+        SELECT created_by, NULL::text, inputs->>'space', NULLIF(cost->>'usd', '')::numeric, created_at
+          FROM pm_strategies
+         WHERE COALESCE(inputs->>'kind', 'strategy') = 'strategy' AND created_at >= %(since)s
+           AND COALESCE(NULLIF(cost->>'usd', '')::numeric, 0) > 0"""),
+    ("business-research", "Business Research", "usd", """
+        SELECT created_by, NULL::text, inputs->>'space', NULLIF(cost->>'usd', '')::numeric, created_at
+          FROM pm_strategies
+         WHERE COALESCE(inputs->>'kind', 'strategy') = 'business' AND created_at >= %(since)s
+           AND COALESCE(NULLIF(cost->>'usd', '')::numeric, 0) > 0"""),
+    ("ppc-keyword-research", "Keyword Research (paid)", "usd", """
+        SELECT created_by, NULL::text, inputs->>'space', NULLIF(cost->>'usd', '')::numeric, created_at
+          FROM pm_strategies
+         WHERE COALESCE(inputs->>'kind', 'strategy') = 'keywords' AND created_at >= %(since)s
+           AND COALESCE(NULLIF(cost->>'usd', '')::numeric, 0) > 0"""),
     ("event-intelligence", "Event & Conference Intelligence", "credits", """
         SELECT email, NULL::text, to_jsonb(evi_runs)->>'space', credits_spent, created_at
           FROM evi_runs WHERE created_at >= %(since)s AND credits_spent > 0"""),

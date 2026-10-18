@@ -26,10 +26,10 @@ ACCOUNTS = [{"id": "1111111111", "name": "Acme Dental", "currency": "USD", "time
             {"id": "4444444444", "name": "Delta Co", "currency": "USD", "timeZone": "America/New_York"}]
 
 CAMPAIGNS = {   # account id -> [(campaign id, name, type, daily budget $, daily spend $, conversions a day)]
-    "1111111111": [("11", "P2_Brand", "SEARCH", 60, 35, 1.0), ("12", "P2_Generic", "SEARCH", 80, 78, 2.0), ("13", "P2_PMax", "PERFORMANCE_MAX", 50, 20, 0.5)],
-    "2222222222": [("21", "P2_Brand", "SEARCH", 40, 38, 3.0), ("22", "P2_Generic", "SEARCH", 40, 10, 0.2)],
-    "3333333333": [("31", "P2_Brand", "SEARCH", 20, 20, 1.0)],
-    "4444444444": [("41", "P2_Brand", "SEARCH", 10, 10, 1.0)],
+    "1111111111": [("11", "NA_Brand", "SEARCH", 60, 35, 1.0), ("12", "NA_Generic", "SEARCH", 80, 78, 2.0), ("13", "NA_PMax", "PERFORMANCE_MAX", 50, 20, 0.5)],
+    "2222222222": [("21", "NA_Brand", "SEARCH", 40, 38, 3.0), ("22", "NA_Generic", "SEARCH", 40, 10, 0.2)],
+    "3333333333": [("31", "NA_Brand", "SEARCH", 20, 20, 1.0)],
+    "4444444444": [("41", "NA_Brand", "SEARCH", 10, 10, 1.0)],
 }
 
 

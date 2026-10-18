@@ -308,7 +308,7 @@ def tables(rec):
 
 
 def book_sheet_name(camp, used):
-    base = SHEET_NAME_BAD.sub("", "Book %s" % camp["name"].replace("P2_", ""))[:31] or "Book"
+    base = SHEET_NAME_BAD.sub("", "Book %s" % re.sub(r"^[A-Za-z0-9]{1,12}_(?=(Search|PMax|Display|Video|DemandGen|DG|Shopping)_)", "", camp["name"]))[:31] or "Book"
     name, n = base, 2
     while name in used:
         name = base[:28] + "-%d" % n

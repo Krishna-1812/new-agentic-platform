@@ -12,7 +12,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head(acct.name, ["account-space.css?v=31"]) }}
+{{ head(acct.name, ["account-space.css?v=32"]) }}
 </head>
 <body class="as-page">
 
@@ -268,6 +268,12 @@
   <svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z"/><path class="rx-tick" d="m8.5 12 2.5 2.5 4.5-5"/></svg>
   {%- elif slug == "search-query-analysis" -%}
   <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/><path class="rx-tick" d="M7.5 10.5h6"/></svg>
+  {%- elif slug == "business-research" -%}
+  <svg viewBox="0 0 24 24"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/><path class="rx-tick" d="M9 10h6"/></svg>
+  {%- elif slug == "ppc-keyword-research" -%}
+  <svg viewBox="0 0 24 24"><path d="M4 7h10M4 12h7M4 17h5"/><circle cx="16.5" cy="14.5" r="3.5"/><path class="rx-tick" d="m19 17 2.5 2.5"/></svg>
+  {%- elif slug == "campaign-book" -%}
+  <svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path class="rx-tick" d="M9 8h6"/></svg>
   {%- elif slug == "page-watch" -%}
   <svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
   {%- elif slug == "video-studio" -%}

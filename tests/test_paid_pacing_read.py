@@ -85,7 +85,7 @@ def test_the_queries_ask_for_the_budget_and_the_days_and_never_for_removed_campa
 
 # ── Parsing ─────────────────────────────────────────────────────────────────
 
-def day_row(cid="1", name="P2_Brand", day="2026-10-02", cost=12_500_000, status="ENABLED", kind="SEARCH", budget=40_000_000, shared=False,
+def day_row(cid="1", name="NA_Brand", day="2026-10-02", cost=12_500_000, status="ENABLED", kind="SEARCH", budget=40_000_000, shared=False,
             pool="", sis=0.4, conv=2, value=300.5, bid="TARGET_CPA"):
     m = {"impressions": "100", "clicks": "10", "costMicros": str(cost), "conversions": conv, "conversionsValue": value}
     if sis is not None:
@@ -97,7 +97,7 @@ def day_row(cid="1", name="P2_Brand", day="2026-10-02", cost=12_500_000, status=
 
 def test_a_day_row_becomes_the_numbers_and_settings_the_engine_reads():
     [r] = rd.parse_days([day_row()])
-    assert (r["id"], r["name"], r["date"], r["status"], r["type"], r["bid"]) == ("1", "P2_Brand", "2026-10-02", "ENABLED", "Search", "Target CPA")
+    assert (r["id"], r["name"], r["date"], r["status"], r["type"], r["bid"]) == ("1", "NA_Brand", "2026-10-02", "ENABLED", "Search", "Target CPA")
     assert (r["cost"], r["conv"], r["value"], r["impr"], r["clicks"], r["budget"], r["sis"]) == (12.5, 2.0, 300.5, 100.0, 10.0, 40.0, 0.4)
     assert r["pool"] == ""
 
@@ -108,7 +108,7 @@ def test_money_is_kept_to_the_cent():
 
 
 def test_only_an_explicitly_shared_budget_is_a_pool():
-    own = rd.parse_days([day_row(pool="P2_Brand", shared=False)])[0]            # Google names every budget after its campaign
+    own = rd.parse_days([day_row(pool="NA_Brand", shared=False)])[0]            # Google names every budget after its campaign
     shared = rd.parse_days([day_row(pool="MRI", shared=True)])[0]
     assert own["pool"] == "" and shared["pool"] == "MRI"
 
@@ -135,7 +135,7 @@ def test_rows_without_a_campaign_or_a_day_are_skipped():
 
 # ── Campaigns that served nothing ───────────────────────────────────────────
 
-def enabled_row(cid, name="P2_Dark", budget=25_000_000):
+def enabled_row(cid, name="NA_Dark", budget=25_000_000):
     return {"campaign": {"id": cid, "name": name, "status": "ENABLED", "advertisingChannelType": "SEARCH"},
             "campaignBudget": {"name": name, "amountMicros": str(budget), "explicitlyShared": False}}
 

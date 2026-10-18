@@ -35,7 +35,7 @@ Ads and Meta accounts. They sit on the Operational Agents page with a **Paid mar
 | 5a | Pacing Desk, the engine's client rules moved to data | Done |
 | 5b | Search Query Analysis, with the source's client rulebooks taken out | Done |
 | 6a | QA Agent | Done |
-| 6b | Business Research, Keyword Research, Strategy and Campaign Book | One PR each |
+| 6b | Business Research, Keyword Research, Strategy and Campaign Book (one build machinery, one PR) | Done |
 | 7 | Call Transcript Analyzer (needs `CALLRAIL_API_KEY`) and Client Feedback (needs Slack and Google OAuth apps) | When those exist |
 
 **Held back from step 1, with their tests:** the Pacing Desk (`paid_pacing*`, `paid_refresh*` and the vendored
@@ -80,6 +80,14 @@ the work in `paid_spend.charging(agent, email, space)`; every call inside it is 
 served it and written to `pm_spend` (`tracker/paid_spend.py`), including a reply that came back cut off. The
 admin panel reads it with one `SOURCES` entry per agent in `tracker/admin_spend.py`. Ad platform reads cost
 nothing per call and are not booked.
+
+The three research builds (Business Research, Keyword Research, Strategy and Campaign Book) run in a background
+thread and already total what each build spent, model and web search, in `pm_strategies.cost`; the admin panel
+reads that with the person who started it and the workspace it was started in (`inputs.space`), so those calls
+are not booked twice. **Social Media Intelligence** inside a build is a paid Apify run: its card starts off and
+runs only when turned on, and its run is filed in the build's workspace, where its own ledger (`sci_spend_log`)
+shows it. Campaign names carry the agency's prefix, `PAID_CAMPAIGN_PREFIX` (default `NA`); the QA Agent's name
+check accepts any prefix, or none.
 
 ## Variables (Railway → web → Variables)
 

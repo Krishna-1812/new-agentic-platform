@@ -37,7 +37,7 @@ def test_a_build_researches_writes_checks_and_saves_everything():
     assert sorted(calls) == sorted(["profile", "competitive", "strategy", "architecture", "build:searchimplants", "build:pmaxlocal"])
     plan = rec["plan"]
     assert set(plan) >= {"profile", "competitive", "strategy", "architecture", "campaigns", "forecast", "claims", "checks", "generatedAt", "model"}
-    assert [c["name"] for c in plan["campaigns"]] == ["P2_Search_Implants_20261102", "P2_PMax_Local_20261102"]
+    assert [c["name"] for c in plan["campaigns"]] == ["NA_Search_Implants_20261102", "NA_PMax_Local_20261102"]
     assert all(len(c["book"]) == 61 for c in plan["campaigns"]) and all(c["build"] for c in plan["campaigns"])
     assert {s["state"] for s in rec["progress"]["steps"]} == {"done"}
     assert [s["key"] for s in rec["progress"]["steps"]][-3:] == ["b:searchimplants", "b:pmaxlocal", "f:finish"]
@@ -64,7 +64,7 @@ def test_facts_not_on_a_page_and_claims_not_on_a_page_are_listed():
         return raw
     rec = run(*start(), call=F.model({"build:searchimplants": risky}))
     claims = {c["claim"] for c in rec["plan"]["claims"]}
-    assert {"Best", "40%"} <= claims and any(c["campaign"] == "P2_Search_Implants_20261102" for c in rec["plan"]["claims"])
+    assert {"Best", "40%"} <= claims and any(c["campaign"] == "NA_Search_Implants_20261102" for c in rec["plan"]["claims"])
 
 
 def test_no_dash_survives_anywhere_in_the_plan():
@@ -147,7 +147,7 @@ def test_a_campaign_that_cannot_be_written_is_named_and_resume_writes_only_it():
     calls = []
     rec = run(store, sid, resume=True, call=F.model(calls=calls))
     assert calls == ["build:pmaxlocal"] and rec["note"] == "" and all(c["build"] for c in rec["plan"]["campaigns"])
-    assert [c["name"] for c in rec["plan"]["campaigns"]] == ["P2_Search_Implants_20261102", "P2_PMax_Local_20261102"]
+    assert [c["name"] for c in rec["plan"]["campaigns"]] == ["NA_Search_Implants_20261102", "NA_PMax_Local_20261102"]
 
 
 def test_a_build_that_came_up_short_is_asked_again_with_what_to_fix():
@@ -363,7 +363,7 @@ def test_a_running_build_says_it_is_alive_and_stops_when_it_is_done():
 def test_a_budget_too_small_for_a_search_campaign_to_learn_is_said():
     rec = run(*start(budget="300"))
     short = rec["plan"]["checks"]["shortfalls"]
-    assert any("P2_Search_Implants_20261102 gets" in s and "too few for a Search campaign to learn" in s for s in short)
+    assert any("NA_Search_Implants_20261102 gets" in s and "too few for a Search campaign to learn" in s for s in short)
     assert not any("PMax" in s and "too few" in s for s in short)                      # the rule is for Search
     assert not any("too few" in s for s in run(*start(budget="6000"))["plan"]["checks"]["shortfalls"])
     assert not any("too few" in s for s in run(*start(budget=None))["plan"]["checks"]["shortfalls"])

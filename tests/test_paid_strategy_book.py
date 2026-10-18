@@ -28,13 +28,13 @@ def test_a_book_has_a_row_for_every_check_that_applies_to_the_campaign_type(rec)
         want = paid_qa.applicable([], [qa])
         assert [r["id"] for r in rows] == [i["id"] for i in want] and [r["field"] for r in rows] == [i["check"] for i in want]
     assert len(camp(rec, "search")["book"]) == 61 and len(camp(rec, "pmax")["book"]) == 61
-    dg = book.rows_for({"kind": "demandgen", "name": "P2_DemandGen_X_20261102", "kindLabel": "Demand Gen", "settings": {}, "build": {}}, INPUTS)
+    dg = book.rows_for({"kind": "demandgen", "name": "NA_DemandGen_X_20261102", "kindLabel": "Demand Gen", "settings": {}, "build": {}}, INPUTS)
     assert len(dg) == 59 and {"6.4"} <= {r["id"] for r in dg} and not {"6.1", "6.2", "6.3"} & {r["id"] for r in dg}
 
 
 def test_what_depends_on_the_plan_comes_from_the_plan_and_the_rest_is_the_teams_standing_answer(rec):
     rows = {r["id"]: r for r in camp(rec, "search")["book"]}
-    assert rows["1.1"]["value"] == "P2_Search_Implants_20261102" and rows["1.1"]["source"] == "plan"
+    assert rows["1.1"]["value"] == "NA_Search_Implants_20261102" and rows["1.1"]["source"] == "plan"
     assert rows["1.2"]["value"] == "Search" and rows["1.8"]["value"].startswith("Maximize conversions, then target CPA")
     assert rows["1.14"]["value"] == "Austin, Texas" and rows["1.10"]["value"] == "All devices, no bid adjustments" and rows["1.22"]["value"] == "Start 2026-11-02, no end date"
     assert rows["1.25"]["value"] == "https://acmedental.com/services/dental-implants"
@@ -62,7 +62,7 @@ def test_a_performance_max_book_describes_its_signals_and_themes(rec):
 
 
 def test_an_unwritten_campaign_still_gets_its_settings_and_says_what_is_missing():
-    rows = {r["id"]: r for r in book.rows_for({"kind": "search", "name": "P2_Search_X_20261102", "kindLabel": "Search", "settings": {}, "build": {}}, INPUTS)}
+    rows = {r["id"]: r for r in book.rows_for({"kind": "search", "name": "NA_Search_X_20261102", "kindLabel": "Search", "settings": {}, "build": {}}, INPUTS)}
     assert rows["1.25"]["value"] == "Working final URL for every ad (to be confirmed)" and rows["1.6"]["value"] == "Added: to be written (none planned yet)"
     assert rows["1.4"]["value"] == "Minimum 1 ad per ad group (planned: 0 responsive search ads in 0 ad groups)"
 

@@ -839,11 +839,12 @@ def _parsed_time(s):
 
 
 def find_social_run(email, inputs, *, store, now=None):
-    """The user's latest finished Social Media Intelligence run for this company that is recent enough, or None."""
+    """The user's latest finished Social Media Intelligence run for this company that is recent enough, or None. A build
+    made in a client workspace reads that workspace's runs (inputs["space"]), one made in General work the person's own."""
     now = now or dt.datetime.now(dt.timezone.utc)
     name, host = _norm_name(inputs.get("name")), ps.host_of(inputs.get("website"))
     best = None
-    for run in store.list_runs(email, limit=100) or []:
+    for run in store.list_runs(email, limit=100, space=inputs.get("space") or None) or []:
         if run.get("status") != "done":
             continue
         run_host = ps.host_of(run.get("company_url"))
@@ -860,8 +861,9 @@ def find_social_run(email, inputs, *, store, now=None):
 
 
 def start_social(email, inputs, *, store, pipeline, spawn):
-    """Start a new Social Media Intelligence run for the client in the background. Returns the run id, or None."""
-    run_id = store.save_run(email, inputs["name"], inputs.get("website") or None, None)
+    """Start a new Social Media Intelligence run for the client in the background, filed in the build's workspace (so its
+    cost shows there in the admin panel). Returns the run id, or None."""
+    run_id = store.save_run(email, inputs["name"], inputs.get("website") or None, None, space=inputs.get("space") or "")
     if run_id is None:
         return None
     spawn(lambda: pipeline._sci_run_analysis_job(run_id, email, inputs["name"], inputs.get("website") or None))

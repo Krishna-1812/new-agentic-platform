@@ -103,7 +103,7 @@ def test_steps_follow_the_cards_that_are_on():
 
 def test_each_campaign_gets_a_build_step_before_the_finish():
     steps = ps.steps_for(ok())
-    got = ps.with_builds(steps, [{"key": "a", "name": "P2_Search_A_1"}, {"key": "b", "name": "P2_PMax_B_1"}])
+    got = ps.with_builds(steps, [{"key": "a", "name": "NA_Search_A_1"}, {"key": "b", "name": "NA_PMax_B_1"}])
     keys = [s["key"] for s in got]
     assert keys[-3:] == ["b:a", "b:b", "f:finish"]
     again = ps.with_builds(got, [{"key": "z", "name": "Z"}])        # redesigned campaigns replace the old build steps
@@ -114,9 +114,9 @@ def test_each_campaign_gets_a_build_step_before_the_finish():
 
 def test_campaign_names_follow_the_teams_format_and_pass_the_qa_name_rule():
     from tracker.paid_qa_auto import NAME_RE
-    assert ps.campaign_name("search", "Implants & Veneers", "2026-11-02") == "P2_Search_ImplantsVeneers_20261102"
-    assert ps.campaign_name("pmax", "", "2026-11-02") == "P2_PMax_20261102"
-    assert ps.campaign_name("demandgen", "Local", "2026-11-02") == "P2_DemandGen_Local_20261102"
+    assert ps.campaign_name("search", "Implants & Veneers", "2026-11-02") == "NA_Search_ImplantsVeneers_20261102"
+    assert ps.campaign_name("pmax", "", "2026-11-02") == "NA_PMax_20261102"
+    assert ps.campaign_name("demandgen", "Local", "2026-11-02") == "NA_DemandGen_Local_20261102"
     for kind in ("search", "pmax"):
         name = ps.campaign_name(kind, "Brand", "2026-11-02")
         m = NAME_RE.match(name)
