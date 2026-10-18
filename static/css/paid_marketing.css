@@ -1420,3 +1420,10 @@ html[data-theme="light"] body.pmx .ps-cmd-tools{ flex-wrap: wrap; }
   html[data-theme="light"] body.pmx .sg-cmd-grid{ grid-template-columns: minmax(0, 1fr); }
   html[data-theme="light"] body.pmx .sg-plat > *, html[data-theme="light"] body.pmx .sg-when{ min-width: 0; max-width: 100%; }
 }
+/* Ad strength ratings in Northaxis hues: the bar takes the fill, the pill's words its text-safe shade. */
+html[data-theme="light"] body.pmx .as-bar .poor, html[data-theme="light"] body.pmx .as-pill.poor{ --c: var(--clay); --ct: var(--clay-tx); }
+html[data-theme="light"] body.pmx .as-bar .avg, html[data-theme="light"] body.pmx .as-pill.avg{ --c: var(--cream); --ct: var(--cream-tx); }
+html[data-theme="light"] body.pmx .as-bar .good, html[data-theme="light"] body.pmx .as-pill.good{ --c: #2FB57A; --ct: #17753F; }
+html[data-theme="light"] body.pmx .as-bar .exc, html[data-theme="light"] body.pmx .as-pill.exc{ --c: var(--sky); --ct: var(--sky-tx); }
+html[data-theme="light"] body.pmx .as-bar .unr, html[data-theme="light"] body.pmx .as-pill.unr{ --c: #9A948C; --ct: var(--tx2); }
+html[data-theme="light"] body.pmx .as-pill{ color: var(--ct, var(--pm-muted)); }
