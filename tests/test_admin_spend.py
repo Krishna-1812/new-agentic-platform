@@ -138,8 +138,8 @@ def test_whose_work_a_ledger_row_is(owner, by, space, want):
 
 def _reset_stores(monkeypatch):
     from tracker import (account_mapper_store, buyer_radar_store, contact_lab_store, event_intel_store, gads_ai_store,
-                         lbr_store, market_radar_store, sci_store, video_store, watch_store)
-    for mod, flag in ((account_mapper_store, "_READY"), (buyer_radar_store, "_READY"), (contact_lab_store, "_READY"),
+                         lbr_store, market_radar_store, paid_spend, sci_store, video_store, watch_store)
+    for mod, flag in ((account_mapper_store, "_READY"), (paid_spend, "_READY"), (buyer_radar_store, "_READY"), (contact_lab_store, "_READY"),
                       (event_intel_store, "_TABLES_READY"), (gads_ai_store, "_TABLES_READY"),
                       (lbr_store, "_TABLES_READY"), (market_radar_store, "_TABLES_READY"),
                       (sci_store, "_TABLES_READY"), (video_store, "_READY"), (watch_store, "_READY")):
@@ -182,6 +182,9 @@ def test_every_ledger_is_read_with_who_where_and_how_much(pg, world, monkeypatch
     # Ads AI review, and the two credit ledgers
     gr = gads.create_review("Lumina Ads", "kris@x.com")
     gads.update_review(gr, cost={"usd": 0.75, "calls": []})
+    # The Paid Marketing agents' model calls, inside a client workspace
+    from tracker import paid_spend
+    paid_spend.record("segment-analysis", "Mia@x.com", "acct:7", "segments", "claude-sonnet-5-5", 0.012)
     er = evi.save_run("kris@x.com", "lookup", "ai summit", space="acct:7")
     evi.update_run(er, credits_spent=40)
 
@@ -208,6 +211,8 @@ def test_every_ledger_is_read_with_who_where_and_how_much(pg, world, monkeypatch
     assert one("page-watch")["space"] == "acct:7"
     assert one("google-ads-ai-review")["usd"] == pytest.approx(0.75)
     assert one("event-intelligence")["unit"] == "credits" and one("event-intelligence")["usd"] == 40
+    assert one("segment-analysis")["usd"] == pytest.approx(0.012) and one("segment-analysis")["space"] == "acct:7"
+    assert one("segment-analysis")["email"] == "mia@x.com"
 
 
 def test_a_ledger_nobody_has_used_yet_is_reported_as_empty_not_as_broken(pg):

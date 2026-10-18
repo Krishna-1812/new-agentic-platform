@@ -130,3 +130,64 @@ def test_the_workspace_home_has_a_paid_marketing_group_starting_with_its_google_
         assert 'class="rx-ag rx-ag--%s" href="/lumina/agents/%s"' % (a["slug"], a["slug"]) in html
         assert 'rx-ag--%s"' % a["slug"] not in research, "a paid agent is in its own group, not among the research agents"
     assert "412-118-3390" in html.split("Paid marketing <em>", 1)[1].split("</ul>", 1)[0]
+
+
+# ── Segment Analysis: accounts and MCCs, and the summary's cost ───────────────
+
+SEG = "/strategic-agents/paid-marketing/api/segments/"
+SEG_RANGE = "&from=2026-10-01&to=2026-10-07"
+
+
+@pytest.fixture
+def segs(monkeypatch):
+    from tracker import paid_gads_segments, paid_segment_insights, paid_segments
+    monkeypatch.setattr(paid_segment_insights, "build", lambda report: [])
+    groups = [{"id": "mcc-1", "name": "Lumina group", "currency": "INR", "accountIds": [LUMINA]},
+              {"id": "mcc-2", "name": "Mixed group", "currency": "INR", "accountIds": [LUMINA, OTHER]}]
+    monkeypatch.setattr(paid_gads_segments, "config_problem", lambda: None)
+    monkeypatch.setattr(paid_gads_segments, "inventory", lambda: {"accounts": [
+        {"id": i, "name": n, "currency": "INR", "group": ""} for i, n in ((LUMINA, "Lumina Ads"), (OTHER, "Other"))],
+        "groups": groups})
+    monkeypatch.setattr(paid_gads_segments, "list_groups", lambda: groups)
+    read = []
+
+    def report_for(account, a, b, **k):
+        read.append(account)
+        return {"account": {"id": account, "name": "Lumina Ads", "currency": "INR"},
+                "range": {"from": a, "to": b}, "segments": [], "total": {}, "types": [], "warnings": [],
+                "generatedAt": "2026-10-08T00:00:00+00:00"}
+    monkeypatch.setattr(paid_segments, "report_for", report_for)
+    return read
+
+
+def test_inside_a_workspace_the_segment_pages_list_its_accounts_and_only_its_whole_mccs(seeded, segs):
+    c = T._client(T.RAJ)
+    every = c.get(SEG + "accounts").get_json()
+    assert [a["id"] for a in every["accounts"]] == [LUMINA, OTHER] and len(every["groups"]) == 2
+    mine = c.get(SEG + "accounts", headers=XA).get_json()
+    assert [a["id"] for a in mine["accounts"]] == [LUMINA] and [g["id"] for g in mine["groups"]] == ["mcc-1"]
+    assert mine["scoped"] is True
+
+
+def test_inside_a_workspace_a_segment_report_reads_only_what_is_its_own(seeded, segs, ads):
+    c = T._client(T.RAJ)
+    for other in (OTHER, "mcc-2", META, LUMINA + "+" + META):
+        assert c.get(SEG + "report?account=" + other + SEG_RANGE, headers=XA).status_code == 403, other
+    assert segs == [], "a refused target is never fetched"
+    for mine in (LUMINA, "mcc-1"):
+        assert c.get(SEG + "report?account=" + mine + SEG_RANGE, headers=XA).status_code == 200, mine
+    assert ads[-1][1:3] == ("segment-analysis", "mcc-1")
+    assert c.get(SEG + "report?account=" + OTHER + SEG_RANGE).status_code == 200, "outside a workspace, any account"
+
+
+def test_the_segment_summary_is_booked_to_the_person_and_the_workspace(seeded, segs, monkeypatch):
+    from tracker import paid_segment_insights, paid_spend
+    booked = []
+    monkeypatch.setattr(paid_segment_insights, "cached_summary", lambda key, report, items, **k: (
+        booked.append(paid_spend._who.get()) or {"summary": "ok", "topActions": [], "source": "model"}))
+    appmod._SEGMENT_SUMMARY_USES.clear()
+    body = {"account": LUMINA, "from": "2026-10-01", "to": "2026-10-07"}
+    r = T._client(T.RAJ).post(SEG + "summary", json=body, headers=dict(XA, Origin="http://localhost"))
+    assert r.status_code == 200 and booked == [("segment-analysis", T.RAJ, T._acct("lumina")["space"])]
+    assert paid_spend._who.get() is None, "nothing outside the request is charged"
+    appmod._SEGMENT_SUMMARY_USES.clear()

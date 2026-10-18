@@ -4881,6 +4881,132 @@ def paid_gads_products():
     return _gads_guard(run)
 
 
+# Segment Analysis ------------------------------------------------------------
+# Pick a Google Ads account (or an MCC, a Meta ad account, or a Google and a Meta account together) and a date
+# range, get the seven-segment report the PPC team used to build by hand, plus the insights computed from it.
+# Reads Google Ads live (tracker/paid_gads_segments.py, on tracker/paid_gads.py); the numbers are
+# tracker/paid_segments.py and the insights tracker/paid_segment_insights.py. The written summary is a model
+# call, booked to the person and the workspace (tracker/paid_spend.py).
+
+SEGMENT_SUMMARY_DAILY_CAP = 100
+_SEGMENT_SUMMARY_USES = {}
+
+
+@app.route(_PM_PREFIX + "/segment-analysis")
+@position2_required
+def paid_segment_analysis():
+    return _pm_page("segment_analysis.html", "segment-analysis")
+
+
+def _pm_gads_error(e):
+    """A Google Ads failure, as the page shows it. 429 is Google rate limiting
+    this server; 503 is Google Ads not being connected here at all."""
+    status = {"not_configured": 503, "quota": 429}.get(e.kind, 502)
+    return jsonify(error=str(e), kind=e.kind), status
+
+
+def _pm_target_refusal(target, groups):
+    """Why this request may not read `target` (an account, an MCC "mcc-...", a Meta act_..., or "<google>+<act_>"),
+    or None. Inside a client workspace only its own Google Ads accounts, and an MCC only when every account it
+    holds is the workspace's."""
+    from tracker import paid_meta
+    scope = _pm_scope()
+    if scope is None:
+        return None
+    for part in str(target or "").split("+"):
+        part = part.strip()
+        if paid_meta.is_meta(part):
+            return ("inside a client workspace only its own Google Ads accounts are read; open this agent outside "
+                    "the workspace to read a Meta ad account")
+        if part.startswith("mcc-"):
+            group = next((g for g in groups() if g["id"] == part), None)
+            if not group or not set(group["accountIds"]) <= scope:
+                return "that MCC holds accounts that are not this workspace's"
+        elif re.sub(r"\D", "", part) not in scope:
+            return "that account is not one of this workspace's Google Ads accounts"
+    return None
+
+
+@app.route(_PM_PREFIX + "/api/segments/accounts")
+@position2_required
+def paid_segment_accounts():
+    """The Google Ads accounts and MCCs the segment pages read. Inside a client workspace, its own accounts and
+    only the MCCs wholly its own."""
+    from tracker import paid_gads_segments as paid_gads
+    problem = paid_gads.config_problem()
+    if problem:
+        return jsonify(error=problem, kind="not_configured", accounts=[]), 503
+    try:
+        inv = paid_gads.inventory()
+    except paid_gads.GadsError as e:
+        return _pm_gads_error(e)
+    accounts, groups, scope = inv["accounts"], inv["groups"], _pm_scope()
+    if scope is not None:
+        accounts = [a for a in accounts if a["id"] in scope]
+        groups = [g for g in groups if g["accountIds"] and set(g["accountIds"]) <= scope]
+        if not accounts:
+            why = "This workspace has no Google Ads account yet: add its customer id to the workspace's profile."
+            return jsonify(error=why, kind="not_configured", accounts=[], groups=[]), 409
+    return jsonify(accounts=accounts, groups=groups, scoped=scope is not None)
+
+
+def _pm_segment_report():
+    """(report, None) for the account and dates in the query string (GET) or
+    the JSON body (POST), or (None, the error response)."""
+    from tracker import paid_gads as paid_gads_base, paid_gads_segments as paid_gads, paid_segments
+    src = request.args if request.method == "GET" else (request.get_json(silent=True) or {})
+    try:
+        refused = _pm_target_refusal(src.get("account"), paid_gads.list_groups)
+        if refused:
+            return None, (jsonify(error=refused), 403)
+        extra = {"force": True} if str(src.get("refresh") or "") in ("1", "true") else {}      # the Refresh button
+        return paid_segments.report_for(src.get("account"), src.get("from"), src.get("to"), **extra), None
+    except paid_segments.BadRequest as e:
+        return None, (jsonify(error=str(e)), 400)
+    except paid_gads_base.RefreshTooSoon as e:
+        return None, (jsonify(error=str(e), kind="cooldown", retryIn=e.retry_in), 429)
+    except paid_gads.GadsError as e:
+        return None, _pm_gads_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/segments/report")
+@position2_required
+def paid_segment_report():
+    from tracker import paid_segment_insights
+    report, err = _pm_segment_report()
+    if err:
+        return err
+    rng = report.get("range") or {}
+    _pm_note("segment-analysis", (report.get("account") or {}).get("id", ""),
+             "Segments of %s" % (report.get("account") or {}).get("name", "an account"),
+             "%s to %s" % (rng.get("from", ""), rng.get("to", "")) if rng else "")
+    return jsonify(dict(report, insights=paid_segment_insights.build(report)))
+
+
+@app.route(_PM_PREFIX + "/api/segments/summary", methods=["POST"])
+@position2_required
+def paid_segment_summary():
+    """The Claude-written summary of one report's insights. The page sends only
+    the account and dates; the report and insights are rebuilt here, so the
+    model can only ever be shown what the rules found."""
+    from tracker import paid_segment_insights, paid_spend
+    email, today = _pm_user_email(), datetime.now(timezone.utc).date().isoformat()
+    day, used = _SEGMENT_SUMMARY_USES.get(email, (today, 0))
+    if day != today:
+        used = 0
+    if used >= SEGMENT_SUMMARY_DAILY_CAP:
+        return jsonify(error="That is %d summaries in a day, the most this allows." % used), 429
+    report, err = _pm_segment_report()
+    if err:
+        return err
+    _SEGMENT_SUMMARY_USES[email] = (today, used + 1)
+    key = (report["account"]["id"], report["range"]["from"], report["range"]["to"])
+    acct = _work_acct()
+    with paid_spend.charging("segment-analysis", email, acct["space"] if acct else ""):
+        out = paid_segment_insights.cached_summary(key, report, paid_segment_insights.build(report))
+    return jsonify(out)
+
+
 @app.route(_PM_PREFIX + "/api/meta/status")
 @position2_required
 def paid_meta_status():

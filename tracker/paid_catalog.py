@@ -18,6 +18,7 @@ COLOUR = "#FFB500"            # amber, the Paid marketing group's hue on the dir
 
 # The account list and the reads every Google Ads or Meta page shares.
 _ACCOUNTS = r"paid-marketing/api/gads/accounts"
+_SEGMENTS = r"paid-marketing/api/segments/accounts"      # accounts and MCCs, for the segment-based pages
 
 AGENTS = (
     {"slug": "performance-summarizer", "endpoint": "paid_performance_summarizer",
@@ -40,6 +41,16 @@ AGENTS = (
      "tags": ["Shopping", "Ecommerce"],
      "api": (_ACCOUNTS, r"paid-marketing/api/gads/products"),
      "runs": (r"paid-marketing/api/gads/products",)},
+    {"slug": "segment-analysis", "endpoint": "paid_segment_analysis",
+     "name": "Segment Analysis", "icon": "S",
+     "about": "Where an account really performs, by day, hour, age, gender, city, device and network",
+     "lead": "Reads Google Ads or Meta live and lays out the seven segments the team used to build by hand, then says "
+             "what to change: where to push, where spend is leaking, and how far each table can be trusted.",
+     "gives": "An ad account or MCC and a date range",
+     "gets": "Seven segment tables, the insights and a written summary",
+     "tags": ["Google Ads", "Meta"],
+     "api": (_ACCOUNTS, _SEGMENTS, r"paid-marketing/api/segments/(report|summary)"),
+     "runs": (r"paid-marketing/api/segments/report",)},
 )
 
 BY_SLUG = {a["slug"]: a for a in AGENTS}

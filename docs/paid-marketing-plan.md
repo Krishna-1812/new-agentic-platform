@@ -21,8 +21,10 @@ Ads and Meta accounts. They sit on the Operational Agents page with a **Paid mar
 | Step | What | State |
 |---|---|---|
 | 1 | The backend: every `tracker/paid_*` module and its module tests | Done (#153) |
-| 2 | Performance Summarizer, with the shared page layout, the cards and the workspace wiring | This PR |
-| 3 | Product, Segment, Geo, Seasonality, Ad Strength, Audience Segments, Asset Coverage | One PR each |
+| 2 | Performance Summarizer, with the shared page layout, the cards and the workspace wiring | Done |
+| 3a | Product Analysis | Done |
+| 3b | Segment Analysis, with the agents' spend ledger | This PR |
+| 3c | Geo, Seasonality, Ad Strength, Audience Segments, Asset Coverage | One PR each |
 | 4 | Account Audit, Landing Page Check, Experiment Tracker | One PR each |
 | 5 | Pacing Desk and Search Query Analysis, with the source's client data taken out | One PR each |
 | 6 | Business Research, Keyword Research, Strategy and Campaign Book, QA Agent | One PR each |
@@ -61,6 +63,15 @@ reads it). `pandas` (the pacing engine) and `cryptography` (encrypted OAuth toke
   the paid agents. A route several agents share (the account list) is the client's when any of them is shared.
 - **History:** a read inside a workspace is one row per agent, ad account and day (`tracker/paid_activity.py`,
   table `pm_activity`), read by `tracker/account_history.py`.
+
+## What the agents spend
+
+The written parts (the Segment Analysis summary, and later the audits, research and campaign books) are model
+calls through `tracker/market_radar_llm.call_json`, outside any Market Radar run. A route that may spend wraps
+the work in `paid_spend.charging(agent, email, space)`; every call inside it is priced at the model that
+served it and written to `pm_spend` (`tracker/paid_spend.py`), including a reply that came back cut off. The
+admin panel reads it with one `SOURCES` entry per agent in `tracker/admin_spend.py`. Ad platform reads cost
+nothing per call and are not booked.
 
 ## Variables (Railway → web → Variables)
 

@@ -12,7 +12,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head(acct.name, ["account-space.css?v=20"]) }}
+{{ head(acct.name, ["account-space.css?v=21"]) }}
 </head>
 <body class="as-page">
 
@@ -246,6 +246,8 @@
   <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 17v-5M11 17V8M16 17v-4M21 17V6"/><path class="rx-trend" d="m3 10 5-4 4 3 6-5 3 2"/></svg>
   {%- elif slug == "product-analysis" -%}
   <svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path class="rx-tick" d="M12 11v10"/></svg>
+  {%- elif slug == "segment-analysis" -%}
+  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6.4 6.4"/><path class="rx-tick" d="M12 12H3"/></svg>
   {%- elif slug == "page-watch" -%}
   <svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
   {%- elif slug == "video-studio" -%}
