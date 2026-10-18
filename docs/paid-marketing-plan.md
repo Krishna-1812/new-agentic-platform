@@ -23,7 +23,7 @@ Ads and Meta accounts. They sit on the Operational Agents page with a **Paid mar
 | 1 | The backend: every `tracker/paid_*` module and its module tests | Done (#153) |
 | 2 | Performance Summarizer, with the shared page layout, the cards and the workspace wiring | Done |
 | 3a | Product Analysis | Done |
-| 3b | Segment Analysis, with the agents' spend ledger | This PR |
+| 3b | Segment Analysis, with the agents' spend ledger | Done |
 | 3c | Geo Performance | Done |
 | 3d | Seasonality Analysis | Done |
 | 3e | Ad Strength Analysis | Done |
