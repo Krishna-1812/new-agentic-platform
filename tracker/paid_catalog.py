@@ -81,6 +81,16 @@ AGENTS = (
      "tags": ["Google Ads", "Ad copy"],
      "api": (_SEGMENTS, r"paid-marketing/api/adstrength/(report|suggest)"),
      "runs": (r"paid-marketing/api/adstrength/report",)},
+    {"slug": "audience-segments", "endpoint": "paid_audience_segments",
+     "name": "Audience Segment Analysis", "icon": "U",
+     "about": "Which audiences earn their bids, and where an adjustment would do nothing",
+     "lead": "Compares every audience an account uses on Google Ads, Meta or both (in-market, affinity, interests, remarketing, "
+             "customer lists, lookalikes) against the account's own average, and says where a bid, an ad set or an exclusion would pay.",
+     "gives": "An ad account or MCC and a date range",
+     "gets": "Every audience judged, with what to do and the lists' sizes",
+     "tags": ["Google Ads", "Meta"],
+     "api": (_ACCOUNTS, _SEGMENTS, r"paid-marketing/api/audiences/report"),
+     "runs": (r"paid-marketing/api/audiences/report",)},
 )
 
 BY_SLUG = {a["slug"]: a for a in AGENTS}

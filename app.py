@@ -5247,6 +5247,40 @@ def paid_adstrength_suggest():
         return jsonify(paid_adstrength_ai.cached_suggestion(cache_key, item, generated_at=report["generatedAt"]))
 
 
+# Audience Segment Analysis ---------------------------------------------------
+# How the audiences a Google Ads account (or an MCC), a Meta ad account, or one of each use perform: in-market, affinity,
+# remarketing, customer match, similar and custom segments, each judged against the account's own average, with the list
+# sizes, the exclusions and what to do about each. The reading is tracker/paid_audiences.py, what it means
+# tracker/paid_audiences_insights.py. Plain arithmetic, no model. The account list is Segment Analysis's.
+
+@app.route(_PM_PREFIX + "/audience-segments")
+@position2_required
+def paid_audience_segments():
+    return _pm_page("audience_segments.html", "audience-segments")
+
+
+@app.route(_PM_PREFIX + "/api/audiences/report")
+@position2_required
+def paid_audiences_report():
+    from tracker import paid_gads as paid_gads_base, paid_gads_segments as paid_gads, paid_audiences
+    try:
+        refused = _pm_target_refusal(request.args.get("account"), paid_gads.list_groups)
+        if refused:
+            return jsonify(error=refused), 403
+        extra = {"force": True} if str(request.args.get("refresh") or "") in ("1", "true") else {}      # the Refresh button
+        report = paid_audiences.report_for(request.args.get("account"), request.args.get("from"), request.args.get("to"), **extra)
+    except paid_audiences.BadRequest as e:
+        return jsonify(error=str(e)), 400
+    except paid_gads_base.RefreshTooSoon as e:
+        return jsonify(error=str(e), kind="cooldown", retryIn=e.retry_in), 429
+    except paid_gads.GadsError as e:
+        return _pm_gads_error(e)
+    account, rng = report.get("account") or {}, report.get("range") or {}
+    _pm_note("audience-segments", account.get("id", ""), "Audiences of %s" % account.get("name", "an account"),
+             "%s to %s" % (rng.get("from", ""), rng.get("to", "")) if rng else "")
+    return jsonify(report)
+
+
 @app.route(_PM_PREFIX + "/api/meta/status")
 @position2_required
 def paid_meta_status():
