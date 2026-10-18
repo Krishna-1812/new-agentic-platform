@@ -42,10 +42,10 @@ def test_an_admin_turns_tools_on_one_or_a_group_at_a_time():
     agents = {"tool:" + a[0]: True for a in appmod.ACCT_AGENTS}
     d = _api(c, "/share", {"shares": agents}).get_json()
     assert {t["slug"] for t in d["tools"] if t["on"]} == {"page-watch"} | {a[0] for a in appmod.ACCT_AGENTS}
-    changes = [a for a in d["audit"] if a["action"] == "shared"]
+    changes = [a for a in client_accounts_store.audit(T._acct("lumina")["key"], 200) if a["action"] == "shared"]
     assert len(changes) == 1 + len(appmod.ACCT_AGENTS), "one entry per tool that changed"
     assert _api(c, "/share", {"shares": agents}).get_json()["ok"]
-    assert len([a for a in client_accounts_store.audit(T._acct("lumina")["key"], 100) if a["action"] == "shared"]) == \
+    assert len([a for a in client_accounts_store.audit(T._acct("lumina")["key"], 200) if a["action"] == "shared"]) == \
         1 + len(appmod.ACCT_AGENTS), "turning on what is on already changes nothing"
     assert _api(c, "/share", {"share": "tool:rm -rf", "on": True}).status_code == 400
     assert _api(c, "/share", {"shares": {"tool:page-watch": False, "history": True}}).status_code == 400

@@ -415,7 +415,8 @@ def _need_campaign(c):
 
 # 1. Campaign setup ----------------------------------------------------------
 
-NAME_RE = re.compile(r"^P2_(Search|PMax|Pmax|PMAX)_(.+)$", re.I)
+# <type>_<launch date>, optionally after the agency's own prefix (e.g. "NA_Search_20261014"); the source's fixed prefix is not assumed.
+NAME_RE = re.compile(r"^(?:[A-Za-z0-9]{1,12}_)?(Search|PMax)_(.+)$", re.I)
 
 
 @rule("1.1")
@@ -424,16 +425,16 @@ def r_name(c):
         return _need_campaign(c)
     name = c.camp.get("name") or ""
     m = NAME_RE.match(name)
-    want = "P2_Search_<launch date> or P2_PMax_<launch date>"
+    want = "Search_<launch date> or PMax_<launch date>"
     if not m:
-        return F("fail", "The name is '%s'. It should follow P2_<Search or PMax>_<launch date>, e.g. %s." % (name, want))
+        return F("fail", "The name is '%s'. It should follow <Search or PMax>_<launch date>, after the agency's prefix if it uses one, e.g. %s." % (name, want))
     kind = type_label(c.channel)
     said = "PMax" if m.group(1).lower() == "pmax" else "Search"
     if kind in ("Search", "PMax") and said != kind:
         return F("fail", "The name '%s' says %s but the campaign is %s." % (name, said, kind))
     if not re.search(r"\d{2,4}", m.group(2)):
         return F("fail", "The name '%s' has no launch date after the campaign type." % name)
-    return F("pass", "The name '%s' follows P2_<type>_<launch date>." % name)
+    return F("pass", "The name '%s' follows <type>_<launch date>." % name)
 
 
 @rule("1.2")

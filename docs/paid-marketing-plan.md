@@ -33,7 +33,8 @@ Ads and Meta accounts. They sit on the Operational Agents page with a **Paid mar
 | 4b | Landing Page Check | Done |
 | 4c | Experiment Tracker | Done |
 | 5 | Pacing Desk and Search Query Analysis, with the source's client data taken out | One PR each |
-| 6 | Business Research, Keyword Research, Strategy and Campaign Book, QA Agent | One PR each |
+| 6a | QA Agent | Done |
+| 6b | Business Research, Keyword Research, Strategy and Campaign Book | One PR each |
 | 7 | Call Transcript Analyzer (needs `CALLRAIL_API_KEY`) and Client Feedback (needs Slack and Google OAuth apps) | When those exist |
 
 **Held back from step 1, with their tests:** the Pacing Desk (`paid_pacing*`, `paid_refresh*` and the vendored

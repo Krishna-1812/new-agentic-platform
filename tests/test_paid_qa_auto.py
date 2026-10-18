@@ -38,7 +38,7 @@ def rows(**named):
 
 
 def campaign(**k):
-    base = {"id": "1", "name": "P2_Search_20261014", "status": "ENABLED", "servingStatus": "SERVING", "advertisingChannelType": "SEARCH",
+    base = {"id": "1", "name": "NA_Search_20261014", "status": "ENABLED", "servingStatus": "SERVING", "advertisingChannelType": "SEARCH",
             "networkSettings": {"targetGoogleSearch": True, "targetSearchNetwork": False, "targetContentNetwork": False,
                                 "targetYoutube": False, "targetGoogleTvNetwork": False},
             "geoTargetTypeSetting": {"positiveGeoTargetType": "PRESENCE", "negativeGeoTargetType": "PRESENCE"},
@@ -98,10 +98,11 @@ def test_nothing_printed_uses_an_em_dash():
 # ── 1. Campaign setup ───────────────────────────────────────────────────────
 
 @pytest.mark.parametrize("name,channel,result", [
-    ("P2_Search_20261014", "SEARCH", "pass"), ("P2_PMax_2026-10-14", "PERFORMANCE_MAX", "pass"), ("p2_pmax_14102026", "PERFORMANCE_MAX", "pass"),
-    ("P2_Brand_McH_Set-A", "SEARCH", "fail"), ("Search_20261014", "SEARCH", "fail"), ("P2_PMax_20261014", "SEARCH", "fail"),
-    ("P2_Search_20261014", "PERFORMANCE_MAX", "fail"), ("P2_Search_", "SEARCH", "fail"), ("P2_Search_launch", "SEARCH", "fail")])
-def test_the_campaign_name_must_be_p2_type_and_a_launch_date(name, channel, result):
+    ("NA_Search_20261014", "SEARCH", "pass"), ("NA_PMax_2026-10-14", "PERFORMANCE_MAX", "pass"), ("na_pmax_14102026", "PERFORMANCE_MAX", "pass"),
+    ("Search_20261014", "SEARCH", "pass"),                                   # an agency with no prefix of its own
+    ("NA_Brand_Set-A", "SEARCH", "fail"), ("NA_PMax_20261014", "SEARCH", "fail"),
+    ("NA_Search_20261014", "PERFORMANCE_MAX", "fail"), ("NA_Search_", "SEARCH", "fail"), ("NA_Search_launch", "SEARCH", "fail")])
+def test_the_campaign_name_must_be_type_and_a_launch_date(name, channel, result):
     f = find("1.1", campaign=campaign(name=name, advertisingChannelType=channel), _channel=channel)
     assert f["result"] == result and name in f["found"]
 
@@ -590,15 +591,15 @@ def pmax_data(signals=(), groups=(("1", "Design Build", "GOOD"), ("2", "Patios",
 
 
 def test_an_asset_group_with_no_audience_signal_is_a_fail_naming_it():
-    d = pmax_data(signals=[("1", "audience", "customers/1/audiences/9"), ("1", "theme", "patio builder")], names={"customers/1/audiences/9": "P2_Customers"})
+    d = pmax_data(signals=[("1", "audience", "customers/1/audiences/9"), ("1", "theme", "patio builder")], names={"customers/1/audiences/9": "NA_Customers"})
     f = auto.evaluate(d)["6.1"]
-    assert f["result"] == "fail" and "Patios" in f["found"] and "Design Build: P2_Customers" in f["found"]
+    assert f["result"] == "fail" and "Patios" in f["found"] and "Design Build: NA_Customers" in f["found"]
 
 
 def test_audience_signals_on_every_asset_group_are_printed_for_the_ai_to_judge_not_ticked():
-    d = pmax_data(signals=[("1", "audience", "customers/1/audiences/9"), ("2", "audience", "customers/1/audiences/9")], names={"customers/1/audiences/9": "P2_Customers"})
+    d = pmax_data(signals=[("1", "audience", "customers/1/audiences/9"), ("2", "audience", "customers/1/audiences/9")], names={"customers/1/audiences/9": "NA_Customers"})
     f = auto.evaluate(d)["6.1"]
-    assert f["result"] is None and "Design Build: P2_Customers" in f["found"] and "Patios: P2_Customers" in f["found"] and "landing page" in f["found"]
+    assert f["result"] is None and "Design Build: NA_Customers" in f["found"] and "Patios: NA_Customers" in f["found"] and "landing page" in f["found"]
 
 
 def test_an_asset_group_with_no_search_theme_is_a_fail_and_themes_are_printed_otherwise():

@@ -189,6 +189,7 @@ def test_every_ledger_is_read_with_who_where_and_how_much(pg, world, monkeypatch
     paid_spend.record("ad-strength", "mia@x.com", "acct:8", "adstrength", "claude-sonnet-5-5", 0.03)
     paid_spend.record("account-audit", "kris@x.com", "acct:7", "audit", "claude-sonnet-5-5", 0.04)
     paid_spend.record("landing-page-check", "kris@x.com", "", "lp", "claude-sonnet-5-5", 0.05)
+    paid_spend.record("qa-agent", "mia@x.com", "acct:8", "qa", "claude-sonnet-5-5", 0.06)
     er = evi.save_run("kris@x.com", "lookup", "ai summit", space="acct:7")
     evi.update_run(er, credits_spent=40)
 
@@ -221,6 +222,7 @@ def test_every_ledger_is_read_with_who_where_and_how_much(pg, world, monkeypatch
     assert one("ad-strength")["usd"] == pytest.approx(0.03) and one("ad-strength")["space"] == "acct:8"
     assert one("account-audit")["usd"] == pytest.approx(0.04) and one("account-audit")["email"] == "kris@x.com"
     assert one("landing-page-check")["usd"] == pytest.approx(0.05) and one("landing-page-check")["space"] == ""
+    assert one("qa-agent")["usd"] == pytest.approx(0.06) and one("qa-agent")["space"] == "acct:8"
 
 
 def test_a_ledger_nobody_has_used_yet_is_reported_as_empty_not_as_broken(pg):
