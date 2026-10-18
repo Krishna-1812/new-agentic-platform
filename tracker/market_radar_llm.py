@@ -18,6 +18,7 @@ rules:
 from __future__ import annotations
 
 import json
+import logging
 import os
 import time
 
@@ -54,6 +55,23 @@ def _request(client, model, max_tokens, system, user, schema, use_fallbacks, eff
     return client.messages.create(**kwargs)
 
 
+# Called with (stage, model served, usage dict) after every call made outside a Market Radar run, before its
+# reply is read (a truncated or refused reply was still billed). Other agents book their own costs through it
+# (tracker/paid_spend.py). An observer that fails never fails the call.
+OBSERVERS = []
+
+
+def _tell(stage, served, resp):
+    if not OBSERVERS or getattr(resp, "usage", None) is None:
+        return
+    usage = resp.usage.model_dump() if hasattr(resp.usage, "model_dump") else dict(resp.usage)
+    for fn in list(OBSERVERS):
+        try:
+            fn(stage, served, usage)
+        except Exception:
+            logging.getLogger(__name__).exception("model call observer failed")
+
+
 def call_json(system, user, schema, *, model, max_tokens, run_id=None, stage, client=None,
               effort="low"):
     """Returns (parsed, meta). Raises ModelError. `effort` is "low" for
@@ -77,7 +95,9 @@ def call_json(system, user, schema, *, model, max_tokens, run_id=None, stage, cl
         return resp
 
     if run_id is None:
-        return _parse(call(), meta, model, max_tokens)
+        resp = call()
+        _tell(stage, getattr(resp, "model", None) or model, resp)
+        return _parse(resp, meta, model, max_tokens)
 
     import anthropic
     from . import market_radar_ledger as ledger
