@@ -37,7 +37,7 @@ def workbook(rows, title="Sheet1", extra=None):
 
 
 TEMPLATE = [["Field ", "Value", "Other things to Check"],
-            ["Campaign Name", "Should follow the format - P2_Campaign Type(Search or Pmax)_Launchdate"],
+            ["Campaign Name", "Should follow the format - NA_Campaign Type(Search or Pmax)_Launchdate"],
             ["Bid Strategy Type", "Maximize conversions"],
             ["Devices", "Desktop and mobile, no tablets", "Check the devices"],
             ["Ad Shceduling", "Mon-Fri 8am to 6pm"],

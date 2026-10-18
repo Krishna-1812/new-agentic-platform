@@ -1,0 +1,76 @@
+{% extends "_paid_base.html" %}
+{%- from "_paid_macros.html" import paid_hero with context %}
+{#- QA AGENT (/strategic-agents/paid-marketing/<slug>): ported from the source platform (docs/paid-marketing-plan.md). -#}
+{% block title %}QA Agent{% endblock %}
+{% block hero %}
+{% call paid_hero("Launch QC", "The AI does the QC,", "you read the flags.", "",
+                  "Pick the account, then one or more of its live campaigns. The AI goes through the team's Campaign Book checks for you, reading the campaign in Google Ads, the landing pages it sends people to, and the campaign book you add. It flags what is wrong, says how to fix it, and lists what it cannot see for itself.") %}{% endcall %}
+{% endblock %}
+{% block content %}
+<div class="pm pm-qa" id="qa" data-user="{{ (user.name or '') if user else '' }}" data-email="{{ user.email if user else '' }}">
+
+  <!-- Account, then one of its live campaigns -->
+  <section class="pm-panel qa-cmd" id="cmd">
+    <div class="qa-cmd-top" id="pickers">
+      <div id="acctPick" class="qa-acct"></div>
+      <div id="campPick" class="qa-camp"></div>
+    </div>
+    <div class="qa-manual" id="manual" hidden>
+      <label><span class="pd-dd-k">Account name</span><input type="text" id="mName" maxlength="120" placeholder="e.g. Beta Bionics" autocomplete="off"></label>
+      <label><span class="pd-dd-k">Google Ads customer ID</span><input type="text" id="mId" maxlength="14" placeholder="123-456-7890" autocomplete="off" inputmode="numeric"></label>
+      <label><span class="pd-dd-k">Campaign name</span><input type="text" id="mCamp" maxlength="120" placeholder="e.g. Brand Campaign" autocomplete="off"></label>
+      <label><span class="pd-dd-k">Campaign ID</span><input type="text" id="mCampId" maxlength="20" placeholder="digits only" autocomplete="off" inputmode="numeric"></label>
+      <label><span class="pd-dd-k">Campaign type</span>
+        <select id="mType">
+          <option value="SEARCH">Search</option><option value="PERFORMANCE_MAX">Performance Max</option>
+          <option value="SHOPPING">Shopping</option><option value="DISPLAY">Display</option>
+          <option value="DEMAND_GEN">Demand Gen</option><option value="VIDEO">Video</option><option value="MULTI_CHANNEL">App</option>
+        </select></label>
+      <button type="button" class="pm-btn qa-go" id="mGo">Start the QC</button>
+    </div>
+  </section>
+
+  <div id="qcTabs" class="qa-tabs" hidden></div>
+
+  <div id="msg"></div>
+
+  <div id="empty" class="pm-panel qa-empty">
+    <div class="qa-empty-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div>
+    <h2 id="emptyT">Choose an account to begin</h2>
+    <p id="emptyP">Then pick one or more of its live campaigns. The AI reviews the PPC team's Campaign Book checks: the campaign's own settings, the automation switches and the auto-apply recommendations.</p>
+  </div>
+  <div id="skel" hidden><div class="pd-skel"></div><div class="pd-skel"></div></div>
+
+  <!-- The QC -->
+  <div id="work" hidden>
+    <div class="qa-head">
+      <div class="qa-title"><h2 id="wName"></h2><p id="wMeta"></p></div>
+      <div class="qa-actions">
+        <button type="button" class="pm-btn-ghost" id="runBtn" title="Have the AI review the campaign again"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg><span>Re-run the AI review</span></button>
+        <button type="button" class="pm-btn-ghost" id="copyBtn"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg><span>Copy summary</span></button>
+        <button type="button" class="pm-btn-ghost qa-danger" id="removeBtn"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/></svg>Remove</button>
+      </div>
+    </div>
+
+    <div id="bookBox"></div>
+    <div id="reviewBox"></div>
+    <div id="results">
+      <section class="qa-verdict" id="verdict" aria-live="polite"></section>
+
+      <div class="qa-tools">
+        <div><span class="pd-dd-k">Show</span><div class="pm-chips" id="fStatus"></div></div>
+        <div id="grpSev" hidden><span class="pd-dd-k">Severity</span><div class="pm-chips" id="fSev"></div></div>
+        <div id="grpClient" hidden><span class="pd-dd-k">Client type <i>(optional)</i></span><div class="pm-chips" id="fClient"></div></div>
+      </div>
+      <p class="qa-client-note" id="clientNote" hidden></p>
+
+      <div id="sections"></div>
+      <p class="pd-foot" id="foot"></p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pm_picker.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/qa_agent.js') }}?v=1"></script>
+{% endblock %}

@@ -131,6 +131,16 @@ AGENTS = (
      "tags": ["Google Ads", "Meta"],
      "api": (_ACCOUNTS, _SEGMENTS, r"paid-marketing/api/exp/(report|download)"),
      "runs": (r"paid-marketing/api/exp/report",)},
+    {"slug": "qa-agent", "endpoint": "paid_qa_agent",
+     "name": "QA Agent", "icon": "Q",
+     "about": "The launch QC checklist done by AI: it reads the campaign and flags what is wrong",
+     "lead": "Pick an account and its live campaigns. The AI goes through the Campaign Book checks, reading the campaign in Google Ads, "
+             "its landing pages and the campaign book you add, flags what is wrong, says how to fix it and lists what it cannot see.",
+     "gives": "A Google Ads account, a live campaign and optionally its campaign book",
+     "gets": "Every check passed, flagged or left for a person, with fixes",
+     "tags": ["Google Ads", "Launch"],
+     "api": (_ACCOUNTS, r"paid-marketing/api/qa/(checklist|campaigns|start|launches)(/[\w-]+)*"),
+     "runs": (r"paid-marketing/api/qa/start", r"paid-marketing/api/qa/launches/\w+/run")},
 )
 
 BY_SLUG = {a["slug"]: a for a in AGENTS}

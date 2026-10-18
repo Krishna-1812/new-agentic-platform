@@ -21,11 +21,11 @@ from tracker import paid_qa_ai as ai  # noqa: E402
 from tracker import paid_qa_auto as auto  # noqa: E402
 from tests.test_paid_qa_auto import ad_group, book_of, campaign, customer, group, rows, rsa  # noqa: E402
 
-EVIDENCE = json.dumps({"campaign": {"name": "P2_Search_20261014", "dailyBudget": "30.00 USD"},
+EVIDENCE = json.dumps({"campaign": {"name": "NA_Search_20261014", "dailyBudget": "30.00 USD"},
                        "adGroups": [{"ads": [{"headlines": ["Free estimates today!!"]}]}]})
 
 
-def answer(id_, verdict="pass", finding="The campaign is named P2_Search_20261014.", evidence="P2_Search_20261014", fix=""):
+def answer(id_, verdict="pass", finding="The campaign is named NA_Search_20261014.", evidence="NA_Search_20261014", fix=""):
     return {"id": id_, "verdict": verdict, "finding": finding, "evidence": evidence, "fix": fix}
 
 
@@ -59,7 +59,7 @@ def test_a_quote_from_the_evidence_is_grounded_and_an_invented_one_is_not():
 def test_a_pass_with_grounded_evidence_is_a_pass_and_a_flag_keeps_its_fix():
     out = ai.validate([answer("1.1"), answer("1.4", "flag", "Headline 1 ends with two exclamation marks.", "Free estimates today!!",
                                              "Remove the exclamation marks from headline 1.")], ["1.1", "1.4"], EVIDENCE)
-    assert out["1.1"] == {"result": "pass", "found": "The campaign is named P2_Search_20261014.", "evidence": "P2_Search_20261014",
+    assert out["1.1"] == {"result": "pass", "found": "The campaign is named NA_Search_20261014.", "evidence": "NA_Search_20261014",
                           "fix": "", "source": "ai", "unverified": False}
     assert out["1.4"]["result"] == "fail" and out["1.4"]["fix"].startswith("Remove the exclamation") and out["1.4"]["unverified"] is False
 
@@ -88,7 +88,7 @@ def test_cannot_verify_passes_through_with_its_reason():
 
 def test_a_skipped_check_an_unknown_id_and_a_bad_verdict_never_become_passes():
     out = ai.validate([answer("1.1"), answer("99.9"), {"id": "1.4", "verdict": "maybe", "finding": "x", "evidence": "", "fix": ""},
-                       "junk", None, answer("1.1", "flag", "A second, conflicting answer for the same check.", "P2_Search_20261014")],
+                       "junk", None, answer("1.1", "flag", "A second, conflicting answer for the same check.", "NA_Search_20261014")],
                       ["1.1", "1.4", "1.25"], EVIDENCE)
     assert set(out) == {"1.1", "1.4", "1.25"}                                           # exactly what was asked
     assert out["1.1"]["result"] == "pass"                                               # the first answer stands
@@ -102,8 +102,8 @@ def test_a_reply_that_is_not_a_list_leaves_everything_for_a_person():
 
 
 def test_em_dashes_are_cleaned_from_what_the_page_shows():
-    out = ai.validate([answer("1.1", finding="Named P2_Search_20261014 — follows the convention.")], ["1.1"], EVIDENCE)
-    assert "—" not in out["1.1"]["found"] and "P2_Search_20261014, follows" in out["1.1"]["found"]
+    out = ai.validate([answer("1.1", finding="Named NA_Search_20261014 — follows the convention.")], ["1.1"], EVIDENCE)
+    assert "—" not in out["1.1"]["found"] and "NA_Search_20261014, follows" in out["1.1"]["found"]
 
 
 # ── Exact rules outrank the AI ──────────────────────────────────────────────
@@ -136,7 +136,7 @@ def checks(*ids):
     return [qa.item(i) for i in ids]
 
 
-META = {"name": "P2_Search_20261014", "type": "Search", "today": "2026-10-15"}
+META = {"name": "NA_Search_20261014", "type": "Search", "today": "2026-10-15"}
 
 
 class Model:
@@ -157,7 +157,7 @@ def ok(c):
 
 def test_each_section_is_asked_separately_with_only_its_own_checks_and_evidence():
     m = Model(ok)
-    ev = {"account": {"a": 1}, "campaign": {"name": "P2_Search_20261014"}, "targeting": {}, "adGroups": [{"x": 1}], "assets": {},
+    ev = {"account": {"a": 1}, "campaign": {"name": "NA_Search_20261014"}, "targeting": {}, "adGroups": [{"x": 1}], "assets": {},
           "automaticallyCreatedAssets": "none found", "accountSettingsNotVisibleToTheApi": ["x"], "autoApplyRecommendationsEnabled": "none",
           "campaignBook": "none uploaded"}
     findings, problems = ai.review(checks("1.1", "1.4", "2.1", "3.4", "4.1"), ev,
@@ -187,7 +187,7 @@ def test_a_section_that_fails_leaves_its_checks_for_a_person_and_the_other_secti
             if json.loads(user)["section"].startswith("3."):
                 raise RuntimeError("boom")
             return super().__call__(system, user, max_tokens=max_tokens)
-    findings, problems = ai.review(checks("1.1", "3.4", "3.5"), {"campaign": {"name": "P2_Search_20261014"}}, {}, META, call=Flaky(ok), workers=1)
+    findings, problems = ai.review(checks("1.1", "3.4", "3.5"), {"campaign": {"name": "NA_Search_20261014"}}, {}, META, call=Flaky(ok), workers=1)
     assert findings["1.1"]["result"] == "pass"
     assert findings["3.4"]["result"] is None and findings["3.4"]["unverified"] and "could not be completed" in findings["3.4"]["found"]
     assert findings["3.5"]["result"] is None and problems == {"RuntimeError": 1}
@@ -204,7 +204,7 @@ def test_a_model_that_is_down_or_not_configured_never_produces_a_pass():
 
 def test_progress_is_reported_after_each_section():
     seen = []
-    ai.review(checks("1.1", "2.1", "3.4"), {"campaign": {"name": "P2_Search_20261014"}}, {}, META, call=Model(ok),
+    ai.review(checks("1.1", "2.1", "3.4"), {"campaign": {"name": "NA_Search_20261014"}}, {}, META, call=Model(ok),
               progress=lambda done, total: seen.append((done, total)))
     assert seen == [(1, 3), (2, 3), (3, 3)]
 
@@ -246,7 +246,7 @@ def sample_data(book=None):
 def test_the_evidence_has_what_the_campaign_book_checks_need_to_be_judged():
     d = sample_data()
     ev = ai.evidence_bundle(d, auto.Ctx(d))
-    assert ev["account"]["trackingTemplate"] == "{lpurl}?utm_source=google" and ev["campaign"]["name"] == "P2_Search_20261014"
+    assert ev["account"]["trackingTemplate"] == "{lpurl}?utm_source=google" and ev["campaign"]["name"] == "NA_Search_20261014"
     t = ev["targeting"]
     assert t["locationsTargeted"] == ["Annapolis,Maryland,United States"]
     assert t["devices"] == [{"device": "TABLET", "bidModifier": 0, "note": "0 means excluded"}]
@@ -336,13 +336,13 @@ def test_the_evidence_says_the_book_is_not_used_and_never_carries_it():
 
 def test_performance_max_evidence_has_each_asset_groups_audience_signals_and_search_themes():
     d = sample_data()
-    d.update(_channel="PERFORMANCE_MAX", _names={"customers/1/audiences/9": "P2_Customers"},
+    d.update(_channel="PERFORMANCE_MAX", _names={"customers/1/audiences/9": "NA_Customers"},
              asset_groups=[{"assetGroup": {"id": "7", "name": "Design Build", "adStrength": "GOOD", "finalUrls": ["https://example.com/"]}},
                            {"assetGroup": {"id": "8", "name": "Patios", "adStrength": "AVERAGE", "finalUrls": ["https://example.com/p"]}}],
              signals=[{"assetGroup": {"id": "7"}, "assetGroupSignal": {"audience": {"audience": "customers/1/audiences/9"}}},
                       {"assetGroup": {"id": "7"}, "assetGroupSignal": {"searchTheme": {"text": "patio builder"}}}])
     ev = ai.evidence_bundle(d, auto.Ctx(d))
-    assert ev["performanceMaxSignals"] == [{"assetGroup": "Design Build", "audienceSignals": ["P2_Customers"], "searchThemes": ["patio builder"]},
+    assert ev["performanceMaxSignals"] == [{"assetGroup": "Design Build", "audienceSignals": ["NA_Customers"], "searchThemes": ["patio builder"]},
                                            {"assetGroup": "Patios", "audienceSignals": "none", "searchThemes": "none"}]
     assert ev["demandGenTargeting"] is None
 

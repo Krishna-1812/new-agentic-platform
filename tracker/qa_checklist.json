@@ -30,9 +30,9 @@
    "id": "1.1",
    "section": "1. Campaign Setup",
    "check": "Campaign Name",
-   "expected": "Should follow the format - P2_Campaign Type(Search or Pmax)_Launchdate",
+   "expected": "Should follow the format - Campaign Type(Search or Pmax)_Launchdate, after the agency's prefix if it uses one",
    "otherThingsToCheck": "",
-   "verify": "Expected: Should follow the format - P2_Campaign Type(Search or Pmax)_Launchdate.",
+   "verify": "Expected: Should follow the format - Campaign Type(Search or Pmax)_Launchdate, after the agency's prefix if it uses one.",
    "fromBook": false,
    "campaignTypes": [
     "All"
@@ -59,7 +59,7 @@
    ],
    "severity": "Required",
    "sheetRow": 3,
-   "onTheSpot": "There is no plan to compare with for this campaign type. Judge the type on its own: pass when the campaign's type matches the type in its name (P2_<type>_<launch date>) and the evidence shows a normal sub-type; flag a mismatch between the name and the type."
+   "onTheSpot": "There is no plan to compare with for this campaign type. Judge the type on its own: pass when the campaign's type matches the type in its name (<type>_<launch date>) and the evidence shows a normal sub-type; flag a mismatch between the name and the type."
   },
   {
    "id": "1.3",

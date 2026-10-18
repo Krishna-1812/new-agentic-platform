@@ -5732,6 +5732,262 @@ def paid_exp_download():
     return resp
 
 
+# QA Agent --------------------------------------------------------------------
+# The PPC team's Campaign Launch QC checklist, done by the AI: pick an account, pick one of its live campaigns, and the AI reviews every check
+# and flags what is wrong. The evidence is read from Google Ads (tracker/paid_qa_auto.py) and from the campaign's landing pages
+# (tracker/paid_qa_web.py); exact rules settle what Google Ads answers exactly, and Claude (tracker/paid_qa_ai.py) reviews the rest. The
+# review runs in a background thread (tracker/paid_qa_job.py) with its progress in Postgres; the page polls. Its model calls are booked to
+# whoever started it and the workspace it was started in (_pm_charged). Inside a workspace only its own accounts' campaigns and QCs are seen.
+
+_QC_ID = re.compile(r"[0-9a-f]{32}")
+_QC_RUN_GAP_S = 60
+_QC_LAST_RUN = {}
+
+
+@app.route(_PM_PREFIX + "/qa-agent")
+@position2_required
+def paid_qa_agent():
+    return _pm_page("qa_agent.html", "qa-agent")
+
+
+@app.route(_PM_PREFIX + "/api/qa/checklist")
+@position2_required
+def paid_qa_checklist():
+    from tracker import paid_qa
+    resp = jsonify(paid_qa.checklist())
+    resp.headers["Cache-Control"] = "private, max-age=3600"
+    return resp
+
+
+def _pm_in_scope(account_id):
+    """Whether this request may see a Google Ads account's work (inside a workspace, only the workspace's own)."""
+    scope = _pm_scope()
+    return scope is None or re.sub(r"\D", "", str(account_id or "")) in scope
+
+
+def _qc_launch_or_404(store, launch_id):
+    if not _QC_ID.fullmatch(launch_id or ""):
+        abort(404)
+    launch = store.get_launch(launch_id)
+    if not launch or launch["archived"] or not _pm_in_scope(launch["account_id"]):
+        abort(404)
+    return launch
+
+
+def _qc_payload(store, launch, **extra):
+    from tracker import paid_qa
+    return dict(paid_qa.payload(launch, store.checks_for([launch["id"]])[launch["id"]]), **extra)
+
+
+_QC_AI_DAILY_CAP = 40
+_QC_AI_USES = {}
+
+
+def _qc_spawn(fn):
+    """Run a review in the background. (Tests run it inline by replacing this.)"""
+    threading.Thread(target=fn, daemon=True, name="qa-review").start()
+
+
+def _pm_charged(agent, fn):
+    """`fn` with its model calls booked to the person and the workspace of this request, wherever it later runs."""
+    from tracker import paid_spend
+    acct, email = _work_acct(), _pm_user_email()
+    space = acct["space"] if acct else ""
+
+    def run():
+        with paid_spend.charging(agent, email, space):
+            return fn()
+    return run
+
+
+def _qc_start_review(store, launch):
+    """Start the AI review of this QC unless one is already running. Returns
+    (started, why_not): why_not is words for the page when the daily cap is hit."""
+    from tracker import paid_gads_segments as gads, paid_qa_job, paid_qa_web
+    email, today = _pm_user_email(), datetime.now(timezone.utc).date().isoformat()
+    day, used = _QC_AI_USES.get(email, (today, 0))
+    if day != today:
+        used = 0
+    if used >= _QC_AI_DAILY_CAP:
+        return False, "That is %d AI reviews in a day, the most this allows." % used
+    if not store.begin_review(launch["id"]):
+        return False, ""
+    _QC_AI_USES[email] = (today, used + 1)
+    lid = launch["id"]
+    _pm_note("qa-agent", launch["account_id"], "QC of %s" % launch["campaign_name"], launch["account_name"])
+    _qc_spawn(_pm_charged("qa-agent", lambda: paid_qa_job.run_review(lid, store=store, search=gads.search, geo_fn=gads.geo_names,
+                                                                    web_fn=paid_qa_web.audit_pages)))
+    return True, ""
+
+
+@app.route(_PM_PREFIX + "/api/qa/campaigns")
+@position2_required
+def paid_qa_campaigns():
+    """GET ?account=<customer id>: the account's live campaigns, each with its
+    QC (and verdict) if one has been started."""
+    from tracker import paid_gads_segments as gads, paid_qa, paid_qa_auto, paid_qa_store as store
+    try:
+        account = paid_qa.customer_id(request.args.get("account"))
+    except paid_qa.BadPayload as e:
+        return jsonify(error=str(e)), 400
+    if not _pm_in_scope(account):
+        return jsonify(error="that account is not one of this workspace's Google Ads accounts"), 403
+    try:
+        campaigns = paid_qa_auto.list_campaigns(account, gads.search)
+    except gads.GadsError as e:
+        return _pm_gads_error(e)
+    started = {}
+    try:
+        launches = store.list_launches(account)
+        checks = store.checks_for([l["id"] for l in launches])
+        for l in launches:
+            rows = paid_qa.effective(l, checks[l["id"]], l["auto"], l["auto_at"])
+            started[l["campaign_id"]] = dict(id=l["id"], **paid_qa.brief(paid_qa.summarize(l, rows)))
+    except store.StoreUnavailable:
+        pass                                    # the list still works; it just cannot show which have a QC
+    for c in campaigns:
+        c["qc"] = started.get(c["id"])
+    return jsonify(campaigns=campaigns)
+
+
+@app.route(_PM_PREFIX + "/api/qa/start", methods=["POST"])
+@position2_required
+def paid_qa_start():
+    """Start the QC for a campaign, or open the one already started. A new QC
+    starts the AI review at once; the page polls the QC until it is done."""
+    from tracker import paid_qa, paid_qa_store as store
+    try:
+        fields = paid_qa.clean_start(request.get_json(silent=True))
+    except paid_qa.BadPayload as e:
+        return jsonify(error=str(e)), 400
+    if not _pm_in_scope(fields["account_id"]):
+        return jsonify(error="that account is not one of this workspace's Google Ads accounts"), 403
+    try:
+        launch, created = store.start_launch(by=_pm_user_email(), campaign_types=paid_qa.campaign_types_for(fields["channel"]),
+                                             **fields)
+        extra = {}
+        if not launch["auto_at"] and not launch["review_status"]:
+            _started, why = _qc_start_review(store, launch)
+            if why:
+                extra["reviewError"] = why
+            launch = store.get_launch(launch["id"])
+        return jsonify(_qc_payload(store, launch, **extra)), (201 if created else 200)
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/qa/launches/<launch_id>", methods=["GET", "PUT", "DELETE"])
+@position2_required
+def paid_qa_launch(launch_id):
+    """GET: the QC, every check's state and the verdict. PUT {clientTypes}: say
+    which client type this is, which adds the checks that exist only for it.
+    DELETE: remove the QC (whoever started it, or an admin); the campaign can
+    start a fresh one."""
+    from tracker import paid_qa, paid_qa_store as store
+    try:
+        launch = _qc_launch_or_404(store, launch_id)
+        if request.method == "PUT":
+            try:
+                types = paid_qa.clean_client_types(request.get_json(silent=True))
+            except paid_qa.BadPayload as e:
+                return jsonify(error=str(e)), 400
+            launch = store.set_client_types(launch_id, types) or abort(404)
+        elif request.method == "DELETE":
+            if launch["created_by"] != _pm_user_email() and not _pm_is_admin():
+                return jsonify(error="Only whoever started this QC, or an admin, can remove it."), 403
+            store.archive_launch(launch_id)
+            return jsonify(ok=True)
+        return jsonify(_qc_payload(store, launch))
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/qa/launches/<launch_id>/run", methods=["POST"])
+@position2_required
+def paid_qa_run(launch_id):
+    """Run the AI review again (the Re-run button). A short gap is kept between
+    runs of one QC, and only one review of a QC runs at a time."""
+    import time
+    from tracker import paid_qa_store as store
+    try:
+        launch = _qc_launch_or_404(store, launch_id)
+        wait = _QC_RUN_GAP_S - (time.time() - _QC_LAST_RUN.get(launch_id, 0))
+        if wait > 0:
+            return jsonify(error="That campaign was reviewed a moment ago. Try again in %d seconds." % (wait + 1),
+                           kind="cooldown", retryIn=int(wait) + 1), 429
+        started, why = _qc_start_review(store, launch)
+        if why:
+            return jsonify(error=why, kind="cap"), 429
+        if not started:
+            return jsonify(error="A review of this campaign is already running."), 409
+        _QC_LAST_RUN[launch_id] = time.time()
+        return jsonify(_qc_payload(store, store.get_launch(launch_id)))
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/qa/launches/<launch_id>/book", methods=["POST", "DELETE"])
+@position2_required
+def paid_qa_book(launch_id):
+    """POST {filename, data} (an .xlsx or .csv, base64) or {sheetUrl} (a Google Sheet shared as anyone with the link
+    can view): add the campaign book the AI compares the campaign with, and start a fresh review against it.
+    DELETE: remove the book. The book only ever supplies what the checks "depend on the campaign book" for."""
+    from tracker import paid_qa_book as books, paid_qa_store as store
+    try:
+        launch = _qc_launch_or_404(store, launch_id)
+        if request.method == "DELETE":
+            store.set_book(launch_id, {})
+            return jsonify(_qc_payload(store, store.get_launch(launch_id)))
+        if not books.applies_to(launch["channel"]):
+            return jsonify(error=books.not_used_note(launch["channel"])), 400
+        body = request.get_json(silent=True)
+        if not isinstance(body, dict):
+            return jsonify(error="the body should be a JSON object"), 400
+        try:
+            if body.get("sheetUrl"):
+                book = books.from_google_sheet(str(body["sheetUrl"]))
+            else:
+                book = books.from_upload(body.get("filename"), body.get("data"))
+        except books.BookError as e:
+            return jsonify(error=str(e)), 400
+        book["uploadedBy"] = _pm_user_email()
+        book["uploadedAt"] = datetime.now(timezone.utc).isoformat()
+        store.set_book(launch_id, book)
+        extra = {}
+        started, why = _qc_start_review(store, store.get_launch(launch_id))
+        if why:
+            extra["reviewError"] = why
+        elif not started:
+            extra["reviewError"] = "The book is saved. A review is already running; run the review again when it finishes to compare against the book."
+        return jsonify(_qc_payload(store, store.get_launch(launch_id), **extra))
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
+@app.route(_PM_PREFIX + "/api/qa/launches/<launch_id>/checks/<check_id>", methods=["PUT"])
+@position2_required
+def paid_qa_set_check(launch_id, check_id):
+    """Answer one check: {status: pass|fail|na, note}, or {status: null} to clear
+    the answer (the check goes back to what the agent read). A fail needs a
+    reason. Returns that check as it now shows and the new verdict."""
+    from tracker import paid_qa, paid_qa_store as store
+    try:
+        launch = _qc_launch_or_404(store, launch_id)
+        try:
+            status, note = paid_qa.clean_check(launch, check_id, request.get_json(silent=True))
+        except paid_qa.BadPayload as e:
+            return jsonify(error=str(e)), 400
+        if status is None:
+            if not store.clear_check(launch_id, check_id):
+                abort(404)
+        elif store.set_check(launch_id, check_id, status, note, _pm_user_email()) is None:
+            abort(404)
+        out = _qc_payload(store, launch)
+        return jsonify(check=out["checks"].get(check_id), summary=out["summary"])
+    except store.StoreUnavailable as e:
+        return _pm_store_error(e)
+
+
 @app.route(_PM_PREFIX + "/api/meta/status")
 @position2_required
 def paid_meta_status():

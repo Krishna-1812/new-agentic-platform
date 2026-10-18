@@ -90,7 +90,8 @@ def test_the_operational_agents_page_and_every_workspace_list_the_new_agent():
 
 def test_the_agent_only_reads():
     src = open(app_module.__file__, encoding="utf-8").read()
-    block = src[src.index("# Test & Experiment Tracker ---"):src.index('@app.route(_PM_PREFIX + "/api/meta/status")')]
+    start = src.index("# Test & Experiment Tracker ---")
+    block = src[start:src.index("\n# ", src.index("\n\n\n", start) + 3)]          # up to the next section
     assert block.count("@app.route") == 3 and 'methods=' not in block
 
 

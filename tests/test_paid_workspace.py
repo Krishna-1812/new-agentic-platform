@@ -299,3 +299,29 @@ def test_inside_a_workspace_the_experiment_tracker_reads_only_its_own_accounts(s
         assert c.get(base + "download?file=pdf&account=" + other, headers=XA).status_code == 403, other
     assert read == [] and c.get(base + "report?account=" + LUMINA, headers=XA).status_code == 200
     assert ads[-1][1:3] == ("experiment-tracker", LUMINA)
+
+
+def test_inside_a_workspace_the_qa_agent_sees_only_its_own_accounts_campaigns_and_qcs(seeded, ads, monkeypatch):
+    from tracker import paid_qa_auto, paid_qa_store
+    monkeypatch.setattr(paid_qa_auto, "list_campaigns", lambda account, search: [{"id": "1", "name": "Search"}])
+    monkeypatch.setattr(paid_qa_store, "list_launches", lambda account: [])
+    monkeypatch.setattr(paid_qa_store, "checks_for", lambda ids: {})
+    monkeypatch.setattr(paid_qa_store, "get_launch", lambda lid: {"id": lid, "account_id": OTHER, "archived": False})
+    c, base = T._client(T.RAJ), "/strategic-agents/paid-marketing/api/qa/"
+    assert c.get(base + "campaigns?account=" + OTHER, headers=XA).status_code == 403
+    assert c.get(base + "campaigns?account=" + LUMINA, headers=XA).status_code == 200
+    r = c.post(base + "start", json={"accountId": OTHER, "accountName": "Other", "campaignId": "1", "campaignName": "Search"},
+               headers=dict(XA, Origin="http://localhost"))
+    assert r.status_code == 403
+    assert c.get(base + "launches/" + "a" * 32, headers=XA).status_code == 404, "another account's QC is not found here"
+
+
+def test_a_background_review_is_booked_to_whoever_started_it_and_their_workspace(seeded, monkeypatch):
+    from tracker import paid_spend
+    seen = []
+    with appmod.app.test_request_context("/", headers=XA):
+        monkeypatch.setattr(appmod, "_work_acct", lambda: {"space": "acct:42"})
+        monkeypatch.setattr(appmod, "_pm_user_email", lambda: T.RAJ)
+        run = appmod._pm_charged("qa-agent", lambda: seen.append(paid_spend._who.get()))
+    run()                                                  # later, on another thread, outside the request
+    assert seen == [("qa-agent", T.RAJ, "acct:42")] and paid_spend._who.get() is None
