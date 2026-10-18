@@ -1,0 +1,47 @@
+{% extends "_paid_base.html" %}
+{%- from "_paid_macros.html" import paid_hero with context %}
+{#- PACING DESK (/strategic-agents/paid-marketing/<slug>): ported from the source platform (docs/paid-marketing-plan.md). -#}
+{% block title %}Pacing Desk{% endblock %}
+{% block hero %}
+{% call paid_hero("Budget pacing", "Land every account", "on budget.", "",
+                  "Each morning's run reads every account straight from Google Ads and Meta Ads and measures it against the month's allocations, projects it to month end from what it actually spends, and says where to move budget today. Moves stay inside one location and net to zero.") %}
+  <div class="pmx-hero-side"><div class="pd-ring" id="ring" hidden></div></div>
+{% endcall %}
+{% endblock %}
+{% block content %}
+<div class="pm pm-pd" id="pd">
+
+  <div class="pm-panel pd-cmd" id="pickers" hidden></div>
+  <div class="pd-freshrow">
+    <p class="pd-fresh stale" id="fresh"><span class="live"></span>Loading the latest run…</p>
+    <div class="pd-actions">
+      <button type="button" class="pm-btn-ghost" id="alBtn" aria-expanded="false" aria-controls="alPanel" title="What each account is meant to spend this month">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Allocations
+      </button>
+      <div class="pd-refresh" id="refreshBox">
+        <button type="button" class="pd-refresh-btn" id="refreshBtn" title="Read every account from Google Ads and Meta Ads again and rebuild today’s run">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span id="refreshLabel">Refresh</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="pd-refresh-note" id="refreshNote" hidden></div>
+  <section class="pm-panel pd-al" id="alPanel" hidden aria-label="Monthly allocations"></section>
+  <div class="pd-strip" id="strip"></div>
+  <div class="pm-panel pd-trend" id="trend" hidden></div>
+
+  <div class="pd-controls" id="controlsRow" hidden>
+    <div class="pm-chips" id="controls"></div>
+    <button class="pm-btn-ghost" id="exportAccounts" type="button"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Accounts CSV</button>
+  </div>
+  <p class="pd-crumb" id="crumb"></p>
+  <div id="list"><div class="pd-skel"></div><div class="pd-skel"></div><div class="pd-skel"></div></div>
+  <div id="orphans" class="pd-outside"></div>
+  <p class="pd-foot" id="foot"></p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pm_picker.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/pacing_budgets.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/pacing_desk.js') }}?v=1"></script>
+{% endblock %}

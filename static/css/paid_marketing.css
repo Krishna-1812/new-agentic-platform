@@ -1427,3 +1427,13 @@ html[data-theme="light"] body.pmx .as-bar .good, html[data-theme="light"] body.p
 html[data-theme="light"] body.pmx .as-bar .exc, html[data-theme="light"] body.pmx .as-pill.exc{ --c: var(--sky); --ct: var(--sky-tx); }
 html[data-theme="light"] body.pmx .as-bar .unr, html[data-theme="light"] body.pmx .as-pill.unr{ --c: #9A948C; --ct: var(--tx2); }
 html[data-theme="light"] body.pmx .as-pill{ color: var(--ct, var(--pm-muted)); }
+/* The Pacing Desk's day ring sits on the ink hero (outside .pm, so in Northaxis's own ink tokens). */
+.pmx-hero .pd-ring{display:flex;align-items:center;gap:18px;padding:14px 20px 14px 14px;border-radius:24px;
+  background:rgba(246,244,240,.06);border:1px solid rgba(246,244,240,.14);box-shadow:none}
+.pmx-hero .pd-ring[hidden]{display:none}
+.pmx-hero .pd-ring .trk{stroke:rgba(246,244,240,.16)}
+.pmx-hero .pd-ring .arc{filter:drop-shadow(0 0 10px rgba(255,96,34,.45))}
+.pmx-hero .pd-ring .big{fill:var(--ink-paper)}
+.pmx-hero .pd-ring .small{fill:var(--ink-3)}
+.pmx-hero .pd-ring-meta{color:var(--ink-2)}
+.pmx-hero .pd-ring-meta b{color:var(--ink-paper)}
