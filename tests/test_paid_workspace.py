@@ -327,3 +327,17 @@ def test_a_background_review_is_booked_to_whoever_started_it_and_their_workspace
         run = appmod._pm_charged("qa-agent", lambda: seen.append(paid_spend._who.get()))
     run()                                                  # later, on another thread, outside the request
     assert seen == [("qa-agent", T.RAJ, "acct:42")] and paid_spend._who.get() is None
+
+
+def test_inside_a_workspace_search_query_analysis_reads_only_its_own_accounts_and_books_the_model(seeded, ads, monkeypatch):
+    from tracker import paid_spend, paid_sqr, paid_sqr_data
+    monkeypatch.setattr(paid_sqr_data, "read", lambda store, acct, a, b, **k: {"terms": [], "keywords": [], "negatives": []})
+    seen = []
+    monkeypatch.setattr(paid_sqr, "classify", lambda rid, terms, account="", profile=None: seen.append(paid_spend._who.get()) or {})
+    c, base = T._client(T.RAJ), "/strategic-agents/paid-marketing/api/sqr/"
+    for other in (BLOOM, META):
+        assert c.get(base + "data?start=2026-10-01&end=2026-10-07&account=" + other, headers=XA).status_code == 400, other
+    assert c.get(base + "data?start=2026-10-01&end=2026-10-07&account=" + LUMINA, headers=XA).status_code == 200
+    assert ads[-1][1:3] == ("search-query-analysis", LUMINA)
+    assert c.post(base + "classify", json={"ruleset": "generic", "terms": ["x"]}, headers=dict(XA, Origin="http://localhost")).status_code == 200
+    assert seen == [("search-query-analysis", T.RAJ, T._acct("lumina")["space"])]

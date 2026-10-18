@@ -1,0 +1,123 @@
+{% extends "_paid_base.html" %}
+{%- from "_paid_macros.html" import paid_hero with context %}
+{#- SEARCH QUERY ANALYSIS (/strategic-agents/paid-marketing/<slug>): ported from the source platform (docs/paid-marketing-plan.md). -#}
+{% block title %}Search Query Analysis{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/performance_summarizer.css') }}?v=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+{% endblock %}
+{% block hero %}
+{% call paid_hero("Search terms", "Every search term,", "sorted.", "",
+                  "Pick a Google Ads account and a date range. Its search terms, keywords and negative keywords are read straight from Google Ads: no exports to download. The account's own rules (brand, competitors, territories) settle most terms instantly; Claude reads only the clicked ones the rules can't. Out come priority negatives, new keywords and a workbook.") %}
+  <div class="pmx-hero-side">
+    <div class="ps-live" id="live" aria-live="polite"><span class="ps-live-dot"></span><span id="liveText">Connecting to Google Ads…</span><span class="ps-upd" id="upd"></span></div>
+  </div>
+{% endcall %}
+{% endblock %}
+{% block content %}
+<div class="pm pm-ps pm-sqr" id="sqr">
+
+  <!-- 1 · Account and days -->
+  <section class="pm-panel ps-cmd" id="cmd">
+    <div class="ps-cmd-grid">
+      <div id="acctPick" class="ps-cmd-acct"></div>
+      <div class="ps-cmd-block">
+        <span class="pd-dd-k">Date range</span>
+        <div class="ps-ranges" id="ranges" role="group" aria-label="Date range"></div>
+        <div class="ps-custom" id="custom" hidden>
+          <input type="date" id="cStart" aria-label="Start date"><span>to</span><input type="date" id="cEnd" aria-label="End date">
+          <button type="button" class="pm-chip on" id="cApply">Apply</button>
+        </div>
+      </div>
+    </div>
+    <div class="ps-cmd-foot">
+      <p class="ps-range-note" id="rangeNote"></p>
+      <div class="ps-cmd-tools">
+        <button type="button" class="pm-btn-ghost" id="refreshBtn" title="Read this account from Google Ads again. The numbers are saved, so this is only needed when you want the very latest.">
+          <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg><span>Refresh</span></button>
+      </div>
+    </div>
+  </section>
+
+  <div id="notice"></div>
+  <div class="ps-stale" id="staleBar" hidden></div>
+  <div class="sq-data" id="dataLine" aria-live="polite"></div>
+
+  <!-- 2 · Rules -->
+  <section class="pm-panel sq-bar">
+    <div class="sq-bar-l">
+      <span class="sq-num">1</span>
+      <div class="sq-dd" id="dd">
+        <button type="button" class="sq-dd-btn" id="ddBtn" aria-haspopup="listbox" aria-expanded="false" aria-label="Rules"></button>
+        <div class="sq-dd-menu" id="ddMenu" hidden>
+          <input class="sq-dd-search" id="ddSearch" placeholder="Filter rules…" autocomplete="off" aria-label="Filter rules">
+          <p class="sq-dd-note">The rules are not a list of accounts. <b>Automatic</b> works for every Google Ads account. A <b>client rulebook</b> is hand-written for one client and is picked for that account by its name.</p>
+          <div role="listbox" id="ddList" aria-label="Rules"></div>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="sq-rules-btn" id="rulesBtn" aria-expanded="false" aria-controls="rulesetNote"><span class="i">i</span>How this account is judged</button>
+    <p class="sq-why" id="rulesWhy"></p>
+  </section>
+  <div class="sq-note" id="rulesetNote" hidden></div>
+
+  <!-- 3 · Run -->
+  <section class="pm-panel sq-run">
+    <span class="sq-num">2</span>
+    <div class="sq-meter"><div class="top"><span id="readyText">Pick an account to start.</span></div></div>
+    <div class="sq-actions">
+      <button class="pm-btn sq-go" id="runBtn" disabled>Run analysis <kbd>⌘↵</kbd></button>
+      <button class="pm-btn-ghost" id="dlBtn" disabled><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Workbook (.xlsx)</button>
+    </div>
+    <span class="sq-status" id="statusLine" style="flex-basis:100%"></span>
+  </section>
+
+  <!-- Fallback: the exports, for an account Google Ads cannot be read for -->
+  <details class="sq-fallback" id="csvFallback">
+    <summary>Can't read Google Ads? Use CSV exports instead</summary>
+    <p class="sq-hint">Google Ads UI exports, as CSV, read in your browser. With a search terms file added, the analysis runs on the files and ignores the account above.</p>
+    <div class="sq-drops">
+      <label class="sq-drop main" id="drop-terms">
+        <input type="file" accept=".csv,text/csv" id="file-terms">
+        <span class="ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/><path d="M8 11h6"/></svg></span>
+        <span class="ttl">Search terms report</span>
+        <span class="req">Required</span>
+        <span class="sub">Drag it here, or <span class="browse">browse</span>. Every term gets a verdict: relevant, competitor, not relevant, or client review.</span>
+        <span class="sq-file" id="file-terms-name"></span>
+      </label>
+      <label class="sq-drop" id="drop-keywords">
+        <input type="file" accept=".csv,text/csv" id="file-keywords">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h7"/></svg></span>
+        <span class="body"><span class="ttl">Keyword report</span><span class="req">Optional</span>
+          <span class="sub">So it never suggests a keyword you already bid on.</span>
+          <span class="sq-file" id="file-keywords-name"></span></span>
+      </label>
+      <label class="sq-drop" id="drop-negs">
+        <input type="file" accept=".csv,text/csv" id="file-negs">
+        <span class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg></span>
+        <span class="body"><span class="ttl">Negative keyword report</span><span class="req">Optional</span>
+          <span class="sub">So it never re-suggests a negative that's already in place.</span>
+          <span class="sq-file" id="file-negs-name"></span></span>
+      </label>
+    </div>
+  </details>
+
+  <div id="results"></div>
+
+  <div class="sq-overlay" id="overlay" hidden>
+    <div class="sq-ov-card">
+      <div id="ovOrb" style="display:flex;justify-content:center"></div>
+      <div class="ttl">Analysing search terms</div>
+      <div class="st" id="ovStatus">Starting…</div>
+      <div class="sq-prog"><i id="ovBar"></i></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pm_picker.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/pm_platform.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/ps_data.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/sqr_core.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='js/sqr_agent.js') }}?v=1"></script>
+{% endblock %}
