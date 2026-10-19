@@ -12,9 +12,10 @@ Environment (Railway):
   GOOGLE_ADS_REFRESH_TOKEN                          one sign-in that can see the MCC
   GOOGLE_ADS_LOGIN_CUSTOMER_ID                      the manager account (required: there is no default)
 
-The developer token has Explorer access, a small daily allowance that Google
-counts in its own way (the 429 says "Number of operations for explorer
-access"). What keeps a busy team inside it:
+The Google Cloud project has Basic access (since 2026-10-19; it began on
+Explorer, 2,880 operations a day): 15,000 operations a day for the whole
+agency, which Google counts in its own way (a 429 names the rate it hit, e.g.
+"Number of operations for explorer access"). What keeps a busy team inside it:
 
   * campaign numbers are stored one day at a time in Postgres (pm_gads_days),
     so a range is built from days already read and only the days never read,
@@ -55,7 +56,16 @@ log = logging.getLogger(__name__)
 API_VERSION = "v24"
 API = "https://googleads.googleapis.com/" + API_VERSION
 TOKEN_URL = "https://oauth2.googleapis.com/token"
-DAILY_LIMIT = 2400            # our own ceiling, below what we believe Google allows
+
+
+def _daily_limit(default=12000):
+    """Our own ceiling, below Google's 15,000 a day on Basic access (it was 2,400 on Explorer). GOOGLE_ADS_DAILY_LIMIT on
+    Railway overrides it, e.g. after a move to Standard access; a value that is not a positive whole number is ignored."""
+    raw = os.environ.get("GOOGLE_ADS_DAILY_LIMIT", "").strip()
+    return int(raw) if raw.isdigit() and int(raw) > 0 else default
+
+
+DAILY_LIMIT = _daily_limit()
 MAX_RANGE_DAYS = 800
 MAX_ROWS = 250_000
 TTL_OPEN = 3600               # a range that includes today or yesterday
@@ -704,7 +714,7 @@ def _cached(store, key, ttl, make, notes=None, force=False, stamps=None):
 
 def refresh_guard(store, scope):
     """Called when someone presses Refresh: raises RefreshTooSoon if `scope` (an account, say) was refreshed in the
-    last REFRESH_COOLDOWN_S seconds, else notes that it is being refreshed now. The Explorer allowance is shared by
+    last REFRESH_COOLDOWN_S seconds, else notes that it is being refreshed now. The daily allowance is shared by
     everyone, so a button that can be pressed over and over would spend it."""
     key = "rl:" + scope
     try:

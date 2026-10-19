@@ -2,8 +2,8 @@
 
 The transport is tracker/paid_gads.py (the Performance Summarizer's): one OAuth
 sign-in, retries, paging, the Postgres cache and, above all, the daily request
-budget that both agents share, because the Explorer allowance (about 2,880
-calls a day) is one pool. Nothing here talks to Google any other way, so a
+budget that both agents share, because Google's daily allowance (15,000
+operations a day on Basic access) is one pool. Nothing here talks to Google any other way, so a
 Segment Analysis view is counted against the same budget and refused with the
 same message when it is used up.
 

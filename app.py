@@ -6103,20 +6103,25 @@ def paid_pacing_refresh():
 
     def state():
         return paid_refresh.status(paid_store, paid_store.latest_built())
+
+    def refused(why, code, **extra):
+        """The state with why this press was refused as `error`. The state can carry an `error` of its own (the last run
+        failed), so the two are merged as dicts: passed as keywords side by side they were a 500, 2026-10-19."""
+        return jsonify(dict(state(), error=why, **extra)), code
     try:
         if request.method == "POST":
             problem = paid_refresh.config_problem()
             if problem:
-                return jsonify(error=problem, **state()), 409
+                return refused(problem, 409)
             body = request.get_json(silent=True)
             body = body if isinstance(body, dict) else {}
             try:
                 paid_refresh.start(paid_store, paid_pacing, _pm_user_email(), auto=body.get("auto") is True, recompute=body.get("recompute") is True,
                                    last_built=paid_store.latest_built())
             except paid_refresh.RefreshBusy as e:
-                return jsonify(error=str(e), **state()), 409
+                return refused(str(e), 409)
             except paid_refresh.RefreshTooSoon as e:
-                return jsonify(error=str(e), retryIn=e.retry_in, **state()), 429
+                return refused(str(e), 429, retryIn=e.retry_in)
             return jsonify(state()), 202
         return jsonify(state())
     except paid_store.StoreUnavailable as e:
