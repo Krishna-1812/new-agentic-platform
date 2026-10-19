@@ -14,7 +14,7 @@ from urllib.parse import parse_qs, urlsplit
 import pytest
 
 import app as appmod
-from tracker import client_accounts_store
+from tracker import account_history, client_accounts_store
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STAFF = "reporting@markifydigital.com"
@@ -71,17 +71,17 @@ def _embed(html):
     ("market-potential", "pf_service", "Dental implants"),
 ])
 def test_a_tool_opens_with_the_accounts_details(tool, key, value):
-    r = _client().get("/lumina/seo-aeo/" + tool)
+    r = _client().get("/lumina/operational-agents/" + tool)
     html = r.get_data(as_text=True)
     assert r.status_code == 200 and _embed(html)[key] == [value]
-    assert 'data-acct-current="lumina"' in html and 'data-acct-page="seo-aeo/%s"' % tool in html
-    assert 'var SEO_BASE = "/lumina/seo-aeo"' in html, "the address follows the tool inside the account"
+    assert 'data-acct-current="lumina"' in html and 'data-acct-page="operational-agents/%s"' % tool in html
+    assert 'var SEO_BASE = "/lumina/operational-agents"' in html, "the address follows the tool inside the account"
 
 
 def test_a_tool_with_nothing_to_give_still_opens_inside_the_account():
-    q = _embed(_client().get("/lumina/seo-aeo/knowledge-base").get_data(as_text=True))
+    q = _embed(_client().get("/lumina/operational-agents/knowledge-base").get_data(as_text=True))
     assert not [k for k in q if k.startswith("pf_")]
-    assert _client().get("/lumina/seo-aeo/no-such-tool").status_code == 302
+    assert _client().get("/lumina/operational-agents/no-such-tool").status_code == 302
 
 
 def test_an_agent_opens_on_its_own_page_with_the_fields_filled():
@@ -104,20 +104,20 @@ def test_profile_text_cannot_break_out_of_the_script():
 def test_the_home_lists_what_to_run_for_staff_only():
     html = _client().get("/lumina").get_data(as_text=True)
     assert "Run for Lumina Smiles Dental" in html
-    assert 'href="/lumina/seo-aeo/seo-geo-audit"' in html and "dental implants pune" in html
+    assert 'href="/lumina/operational-agents/seo-geo-audit"' in html and "dental implants pune" in html
     assert 'href="/lumina/agents/local-business-radar"' in html and "Dental clinic · Pune" in html
     post = _client(ADMIN).post("/lumina/api/access", json={"who": "ana@lumina.in"}, headers={"X-Requested-With": "fetch"})
     assert post.status_code == 200
     client = _client("ana@lumina.in")
     assert "Run for" not in client.get("/lumina").get_data(as_text=True)
-    for path in ("/lumina/seo-aeo/seo-geo-audit", "/lumina/agents/local-business-radar"):
+    for path in ("/lumina/operational-agents/seo-geo-audit", "/lumina/agents/local-business-radar"):
         r = client.get(path)
         assert r.status_code == 302 and r.headers["Location"].endswith("/lumina"), path
 
 
 def test_from_a_global_tool_the_picker_opens_it_for_the_account():
     html = _client().get("/operational-agents/keyword-research").get_data(as_text=True)
-    assert 'data-acct-page="seo-aeo/keyword-research"' in html
+    assert 'data-acct-page="operational-agents/keyword-research"' in html
     html = _client().get("/strategic-agents/local-business-radar").get_data(as_text=True)
     assert 'data-acct-page="agents/local-business-radar"' in html
 
@@ -143,8 +143,8 @@ def test_each_studio_form_reads_what_the_platform_hands_it():
 def test_each_agent_is_a_card_in_its_own_colour_and_each_tool_a_card():
     html = _client().get("/lumina").get_data(as_text=True)
     for slug, *_ in appmod.ACCT_AGENTS:
-        assert 'class="rx-ag rx-ag--%s" href="/lumina/agents/%s"' % (slug, slug) in html, slug
-    tools = [s for s, _ in appmod.ACCT_SEO if 'href="/lumina/seo-aeo/%s"' % s in html]
+        assert 'class="rx-ag rx-ag--%s" href="%s"' % (slug, account_history.agent_href("lumina", slug)) in html, slug
+    tools = [s for s, _ in appmod.ACCT_SEO if 'href="/lumina/operational-agents/%s"' % s in html]
     assert tools and html.count('rx-ag--tool"') == len(tools)
     assert html.count('class="rx-ag ') == len(appmod.ACCT_AGENTS) + len(tools)
     assert "Starts with" in html and "Not run for Lumina Smiles Dental yet" in html

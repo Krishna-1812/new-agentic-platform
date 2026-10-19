@@ -7839,8 +7839,10 @@ ACCT_AGENTS += tuple((a["slug"], a["endpoint"], paid_catalog.path(a["slug"]), a[
 ACCT_GLOBAL = {"": "/hub", "google-ads": "/dashboards/google-ads",
                "google-ads/ai-review": "/dashboards/google-ads/ai-review",
                "page-watch": "/strategic-agents/page-watch", "video-studio": "/strategic-agents/video-studio"}
-ACCT_GLOBAL.update({"seo-aeo/" + t: _OPS + "/" + t for t, _ in ACCT_SEO})
-ACCT_GLOBAL.update({"agents/" + a[0]: a[2] for a in ACCT_AGENTS})
+# An account's own address for each page (after /<account>/), and the page's address outside any account.
+ACCT_GLOBAL.update({"operational-agents/" + t: _OPS + "/" + t for t, _ in ACCT_SEO})
+ACCT_GLOBAL.update({("operational-agents/" if a[0] in paid_catalog.WORKSPACE_SLUGS else "agents/") + a[0]: a[2]
+                    for a in ACCT_AGENTS})
 _ACCT_FROM_GLOBAL = {v: k for k, v in ACCT_GLOBAL.items()}
 
 
@@ -9088,14 +9090,15 @@ def _acct_runs(acct):
     """What the account's home offers to run for it: each tool and agent, with what it is given."""
     f = _acct_facts(acct)
     tools = {t["slug"]: t for t in _seo_tools()}
-    seo = [{"href": "/%s/seo-aeo/%s" % (acct["slug"], slug), "slug": slug, "name": tools[slug]["name"],
+    seo = [{"href": _acct_ops(acct, slug), "slug": slug, "name": tools[slug]["name"],
             "given": f[key] if key != "url" else f["domain"], "about": tools[slug]["desc"]}
            for slug, key in ACCT_SEO if slug in tools]
     def given(fields):   # what is distinctive: not the account's own name, a website as its domain
         vals = [f["domain"] if k in ("website", "url") else f[k] for _, k in fields if k != "name"]
         vals = [v for v in dict.fromkeys(vals) if v]
         return " · ".join(vals) or f["name"]
-    agents = [{"href": "/%s/agents/%s" % (acct["slug"], slug), "slug": slug, "name": label, "about": about,
+    agents = [{"href": _acct_ops(acct, slug) if slug in paid_catalog.WORKSPACE_SLUGS else "/%s/agents/%s" % (acct["slug"], slug),
+               "slug": slug, "name": label, "about": about,
                "given": given(fields)}
               for slug, _, _, label, about, fields in ACCT_AGENTS]
     # The Paid Marketing agents start with the account's Google Ads accounts (all they read inside it), and
@@ -9107,14 +9110,45 @@ def _acct_runs(acct):
     return {"seo": seo, "agents": agents, "website": f["domain"]}
 
 
-@app.route("/<acct:slug>/seo-aeo/<tool_slug>")
+# ── An account's operational agents: /<account>/operational-agents/<slug> ──────────────────
+# Inside a workspace, as on /operational-agents, each SEO Studio tool and each paid marketing agent opens at
+# operational-agents/<slug>. They were at /<account>/seo-aeo/<tool> and /<account>/agents/<paid agent> until
+# 2026-10-19; both redirect here. What a page is called for access, sharing and Client Usage is unchanged
+# ("seo-aeo/<tool>", "agents/<slug>"): only the address moved.
+_ACCT_OPS = "operational-agents"
+
+
+def _acct_ops(acct, slug=""):
+    return "/%s/%s" % (acct["slug"] if isinstance(acct, dict) else acct, _ACCT_OPS) + ("/" + slug if slug else "")
+
+
+@app.route("/<acct:slug>/" + _ACCT_OPS + "/<tool_slug>")
+def account_operational_agent(slug, tool_slug):
+    """A paid marketing agent or an SEO Studio tool, opened for the account."""
+    if tool_slug in _SEO_TOOL_ALIASES:
+        target = _SEO_TOOL_ALIASES[tool_slug]
+        return redirect(_acct_ops(slug, target) if target else "/" + slug, code=301)
+    if tool_slug in paid_catalog.WORKSPACE_SLUGS:
+        return account_paid_agent(slug, agent_slug=tool_slug)
+    return account_seo_tool(slug, tool_slug=tool_slug)
+
+
+@app.route("/<acct:slug>/seo-aeo/<path:rest>", methods=["GET", "POST", "DELETE"])
+def account_seo_aeo_old(slug, rest):
+    """An account's SEO address before 2026-10-19, /<account>/seo-aeo/...: sent on, query string kept."""
+    target = _acct_ops(slug, rest)
+    if request.query_string:
+        target += "?" + request.query_string.decode("utf-8", "ignore")
+    return redirect(target, code=301 if request.method == "GET" else 308)
+
+
 @_acct_view("seo-aeo", tool=lambda kw: kw.get("tool_slug"))
 def account_seo_tool(acct, tool_slug):
     """An SEO Studio tool opened for the account: its website, keyword or service filled in."""
     tool = next((t for t in _seo_tools() if t.get("slug") == tool_slug), None)
     if not tool or tool.get("url"):
         return redirect(_OPS + "/" + tool_slug)
-    g.acct_page = "seo-aeo/" + tool_slug
+    g.acct_page = _ACCT_OPS + "/" + tool_slug
     f = _acct_facts(acct)
     key = dict(ACCT_SEO).get(tool_slug)
     pf = []
@@ -9138,7 +9172,7 @@ def account_seo_tool(acct, tool_slug):
     embed_url = f"{_SERP_BASE}{path}" + (("?" + urlencode(qs)) if qs else "")
     return render_template("embed.html", user=_get_user(), title=tool["name"], embed_url=embed_url,
                            breadcrumb=[], current=tool["name"], accent="#34d399", acct=acct,
-                           seo_base="/%s/seo-aeo" % acct["slug"])
+                           seo_base=_acct_ops(acct))
 
 
 # ── SEO & AEO runs (account memory, phase 3) ─────────────────────────────────
@@ -9157,7 +9191,7 @@ def _seo_run_tool(run_id):
 
 def _seo_run_home(r):
     """Where a run's page is: inside its account, or the General one."""
-    return (_space_home(r["space"], "seo-aeo/runs/%d" % r["id"])
+    return (_space_home(r["space"], _ACCT_OPS + "/runs/%d" % r["id"])
             or _OPS + "/runs/%d" % r["id"])
 
 
@@ -9181,7 +9215,7 @@ def seo_runs_save():
     except Exception:
         app.logger.exception("seo runs: the run could not be saved")
         return jsonify(ok=False, error="The run could not be saved."), 503
-    page = ("/%s/seo-aeo/runs/%d" % (acct["slug"], rid)) if acct else _OPS + "/runs/%d" % rid
+    page = _acct_ops(acct, "runs/%d" % rid) if acct else _OPS + "/runs/%d" % rid
     return jsonify(ok=True, id=rid, page=page, where=(acct["name"] + " Workspace" if acct else my_workspace_name())), 201
 
 
@@ -9189,10 +9223,10 @@ def _seo_run_page(r, acct=None):
     from tracker import seo_runs
     _people([r], key="email")
     tool = next((t for t in _seo_tools() if t.get("slug") == r["tool"]), None)
-    again = ("/%s/seo-aeo/%s" % (acct["slug"], r["tool"])) if acct else _OPS + "/%s" % r["tool"]
+    again = _acct_ops(acct, r["tool"]) if acct else _OPS + "/%s" % r["tool"]
     return render_template("seo_run.html", user=_get_user(), r=r, acct=acct, tool_name=seo_runs.TOOLS.get(r["tool"], r["tool"]),
                            again=again if tool else None,
-                           download=("/%s/seo-aeo" % acct["slug"] if acct else _OPS) + "/runs/%d.json" % r["id"],
+                           download=(_acct_ops(acct) if acct else _OPS) + "/runs/%d.json" % r["id"],
                            mine=r["email"] == _pw_email().lower())
 
 
@@ -9208,7 +9242,7 @@ def seo_run_page(run_id):
     return _seo_run_page(r)
 
 
-@app.route("/<acct:slug>/seo-aeo/runs/<int:run_id>")
+@app.route("/<acct:slug>/" + _ACCT_OPS + "/runs/<int:run_id>")
 @_acct_view("seo-aeo", tool=lambda kw: _seo_run_tool(kw.get("run_id")))
 def account_seo_run_page(acct, run_id):
     from tracker import seo_runs_store
@@ -9217,7 +9251,7 @@ def account_seo_run_page(acct, run_id):
         abort(404)
     if r["space"] != acct["space"]:
         return redirect(_seo_run_home(r))
-    g.acct_page = "seo-aeo/" + r["tool"]
+    g.acct_page = _ACCT_OPS + "/" + r["tool"]
     return _seo_run_page(r, acct)
 
 
@@ -9240,7 +9274,7 @@ def seo_run_json(run_id):
     return _seo_run_json(r)
 
 
-@app.route("/<acct:slug>/seo-aeo/runs/<int:run_id>.json")
+@app.route("/<acct:slug>/" + _ACCT_OPS + "/runs/<int:run_id>.json")
 @_acct_view("seo-aeo", tool=lambda kw: _seo_run_tool(kw.get("run_id")))
 def account_seo_run_json(acct, run_id):
     from tracker import seo_runs_store
@@ -9267,6 +9301,22 @@ def seo_run_delete(run_id):
 @app.route("/<acct:slug>/agents/<agent_slug>")
 @_acct_view("agents", tool=lambda kw: kw.get("agent_slug"))
 def account_agent(acct, agent_slug):
+    """An agent's own page, opened for the account. A paid marketing agent opens with the account's other
+    operational agents, at /<account>/operational-agents/<slug>: its old address here is sent on."""
+    if agent_slug in paid_catalog.WORKSPACE_SLUGS:
+        target = _acct_ops(acct, agent_slug)
+        if request.query_string:
+            target += "?" + request.query_string.decode("utf-8", "ignore")
+        return redirect(target, code=301)
+    return _account_agent_page(acct, agent_slug)
+
+
+@_acct_view("agents", tool=lambda kw: kw.get("agent_slug"))
+def account_paid_agent(acct, agent_slug):
+    return _account_agent_page(acct, agent_slug, _ACCT_OPS)
+
+
+def _account_agent_page(acct, agent_slug, under="agents"):
     """An agent's own page, opened for the account: its fields filled in from the profile (they can be
     changed), the account in the top bar."""
     agent = next((a for a in ACCT_AGENTS if a[0] == agent_slug), None)
@@ -9276,7 +9326,7 @@ def account_agent(acct, agent_slug):
     view = app.view_functions.get(endpoint)
     if view is None:
         return redirect(path)
-    g.acct_page = "agents/" + slug
+    g.acct_page = under + "/" + slug
     resp = make_response(view())
     if resp.status_code != 200 or resp.mimetype != "text/html":
         return resp
@@ -10070,10 +10120,11 @@ _PAGE_LABEL_ALIASES = (
     # "SEO + AEO" -> "Operational agents" at /operational-agents, 2026-10-18,
     # with the paid marketing pages moved from /strategic-agents/paid-marketing
     # to the same prefix. After the /p2 fold, so a path already brought to
-    # /seo-aeo above lands on today's. Anchored at the start of the path: a
-    # client workspace still opens its SEO tools at /<account>/seo-aeo/<tool>.
+    # /seo-aeo above lands on today's. Not anchored: a client workspace's
+    # /<account>/seo-aeo/<tool> moved to /<account>/operational-agents/<tool>
+    # the next day, 2026-10-19.
     ("SEO + AEO Dashboards", "Operational Agents"),
-    ("^/seo-aeo", _OPS),
+    ("/seo-aeo", _OPS),
     ("^/strategic-agents/paid-marketing", _OPS),
 )
 

@@ -88,14 +88,14 @@ def _pass(html):
 
 # ── The pass names the account ───────────────────────────────────────────────
 def test_the_studio_is_opened_with_the_accounts_space_inside_an_account():
-    inside = _pass(_client(ANA).get("/lumina/seo-aeo/on-page-audit").get_data(as_text=True))
+    inside = _pass(_client(ANA).get("/lumina/operational-agents/on-page-audit").get_data(as_text=True))
     assert inside["s"] == _space("lumina") and inside["e"] == ANA
     general = _pass(_client(ANA).get("/operational-agents/on-page-audit").get_data(as_text=True))
     assert "s" not in general, "General: the studio files the work as the person's own"
 
 
 def test_the_embed_hands_finished_runs_to_the_platform():
-    html = _client(ANA).get("/lumina/seo-aeo/keyword-research").get_data(as_text=True)
+    html = _client(ANA).get("/lumina/operational-agents/keyword-research").get_data(as_text=True)
     assert 'var ACCT = {"name": "Lumina Smiles Dental", "slug": "lumina"}' in html
     assert "'agent-run-finished'" in html and "fetch('/api/seo-runs'" in html and "headers['X-Account'] = ACCT.slug" in html
     assert "var ACCT = null" in _client(ANA).get("/operational-agents/keyword-research").get_data(as_text=True)
@@ -119,7 +119,7 @@ def test_a_run_inside_an_account_is_the_teams():
     r = _save(_client(ANA), account="lumina")
     assert r.status_code == 201, r.get_json()
     j = r.get_json()
-    assert j["page"] == "/lumina/seo-aeo/runs/%d" % j["id"] and j["where"] == "Lumina Smiles Dental Workspace"
+    assert j["page"] == "/lumina/operational-agents/runs/%d" % j["id"] and j["where"] == "Lumina Smiles Dental Workspace"
     run = seo_runs_store.get(j["id"], RAJ)
     assert run["space"] == _space("lumina") and run["title"] == "https://luminasmiles.in"
     assert run["summary"]["facts"][:2] == [["Overall score", 78], ["Band", "Good"]]
@@ -127,14 +127,14 @@ def test_a_run_inside_an_account_is_the_teams():
     page = _client(RAJ).get(j["page"])
     html = page.get_data(as_text=True)
     assert page.status_code == 200 and "Run by <b>Ana Mehta</b>" in html and "for Lumina Smiles Dental" in html
-    assert "Add FAQ schema" in html and 'href="/lumina/seo-aeo/seo-geo-audit"' in html
+    assert "Add FAQ schema" in html and 'href="/lumina/operational-agents/seo-geo-audit"' in html
     assert ">Delete<" not in html, "only its maker deletes it"
     assert _client(RAJ).delete("/api/seo-runs/%d" % j["id"], headers=FETCH).status_code == 403
-    dl = _client(RAJ).get("/lumina/seo-aeo/runs/%d.json" % j["id"])
+    dl = _client(RAJ).get("/lumina/operational-agents/runs/%d.json" % j["id"])
     assert dl.status_code == 200 and json.loads(dl.data)["output"]["findings"]["scores"]["overall"] == 78
     r = _client(RAJ).get("/operational-agents/runs/%d" % j["id"])
-    assert r.status_code == 302 and r.headers["Location"].endswith("/lumina/seo-aeo/runs/%d" % j["id"])
-    assert _client(RAJ).get("/bloom/seo-aeo/runs/%d" % j["id"]).status_code == 302, "never shown inside another account"
+    assert r.status_code == 302 and r.headers["Location"].endswith("/lumina/operational-agents/runs/%d" % j["id"])
+    assert _client(RAJ).get("/bloom/operational-agents/runs/%d" % j["id"]).status_code == 302, "never shown inside another account"
     assert _client(ANA).delete("/api/seo-runs/%d" % j["id"], headers=FETCH).status_code == 200
 
 

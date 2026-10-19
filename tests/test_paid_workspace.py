@@ -85,7 +85,7 @@ def test_a_client_reads_only_their_workspaces_accounts_and_keeps_their_own_ad_fi
     assert c.get(API + "performance?account=" + BLOOM + RANGE, headers=XA).status_code == 400
     j = c.get(API + "performance?account=" + LUMINA + RANGE, headers=XA).get_json()
     assert j["current"]["campaigns"][0]["cost"] == 1234.5, "a client's own ad spend is not the agency's cost"
-    assert c.get("/lumina/agents/performance-summarizer").status_code == 200
+    assert c.get("/lumina/operational-agents/performance-summarizer").status_code == 200
 
 
 def test_a_client_the_agent_is_not_shared_with_cannot_read(seeded):
@@ -114,7 +114,7 @@ def test_the_history_shows_what_each_agent_read_in_the_workspace(seeded, monkeyp
         {"agent": "some-other-agent", "account": LUMINA, "who": T.RAJ, "title": "x", "detail": "", "at": "2026-10-18T09:00:00+00:00"}])
     rows = dict(account_history.AGENT_READS)["performance-summarizer"](acct)
     assert [(r["title"], r["tool_label"], r["href"]) for r in rows] == [
-        ("Performance of Lumina Ads", "Performance Summarizer", "/lumina/agents/performance-summarizer")]
+        ("Performance of Lumina Ads", "Performance Summarizer", "/lumina/operational-agents/performance-summarizer")]
 
 
 def test_every_paid_agent_is_in_every_workspace_with_its_colour():
@@ -132,7 +132,7 @@ def test_the_workspace_home_has_a_paid_marketing_group_starting_with_its_google_
     assert "Paid marketing <em>%d</em>" % len(paid_catalog.WORKSPACE) in html
     research = html.split("Paid marketing <em>", 1)[0]
     for a in paid_catalog.WORKSPACE:
-        assert 'class="rx-ag rx-ag--%s" href="/lumina/agents/%s"' % (a["slug"], a["slug"]) in html
+        assert 'class="rx-ag rx-ag--%s" href="/lumina/operational-agents/%s"' % (a["slug"], a["slug"]) in html
         assert 'rx-ag--%s"' % a["slug"] not in research, "a paid agent is in its own group, not among the research agents"
     assert "412-118-3390" in html.split("Paid marketing <em>", 1)[1].split("</ul>", 1)[0]
 

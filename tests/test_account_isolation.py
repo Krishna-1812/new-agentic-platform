@@ -12,6 +12,7 @@ import re
 import pytest
 
 import app as appmod
+from tracker import paid_catalog
 from tracker import (account_brief, account_history, client_accounts_store, gads_ai_store, lbr_store, people_store,
                      seo_runs_store, video_store, watch_store, workspace)
 
@@ -116,8 +117,8 @@ def seeded():
 INT_ROUTES = {           # an account route that takes an id -> the kind of id it takes
     "/<acct:slug>/page-watch/changes/<int:change_id>": "change",
     "/<acct:slug>/page-watch/watches/<int:target_id>": "watch",
-    "/<acct:slug>/seo-aeo/runs/<int:run_id>": "seo",
-    "/<acct:slug>/seo-aeo/runs/<int:run_id>.json": "seo",
+    "/<acct:slug>/operational-agents/runs/<int:run_id>": "seo",
+    "/<acct:slug>/operational-agents/runs/<int:run_id>.json": "seo",
     "/<acct:slug>/video-studio/videos/<int:project_id>": "video",
     "/<acct:slug>/api/ai-review/reviews/<int:review_id>": "review",
 }
@@ -134,8 +135,11 @@ def _urls(slug):
         path = path.replace("/market-radar/report/<int:client_id>", "/market-radar/report/1")
         if "<agent_slug>" in path:
             out += [(rule.rule, path.replace("<agent_slug>", a[0])) for a in appmod.ACCT_AGENTS]
-        elif "<tool_slug>" in path:
-            out += [(rule.rule, path.replace("<tool_slug>", t)) for t, _ in appmod.ACCT_SEO]
+        elif "<tool_slug>" in path:     # /<account>/operational-agents/<slug>: the SEO tools and the paid agents
+            out += [(rule.rule, path.replace("<tool_slug>", t))
+                    for t in [t for t, _ in appmod.ACCT_SEO] + sorted(paid_catalog.WORKSPACE_SLUGS)]
+        elif "<path:rest>" in path:     # an old address, only redirected (/<account>/seo-aeo/...)
+            out += [(rule.rule, path.replace("<path:rest>", t)) for t, _ in appmod.ACCT_SEO]
         else:
             assert "<" not in path, "a new account route takes %s: add it to the sweep" % rule.rule
             out.append((rule.rule, path + ("?account=" + ADS[slug] if path.endswith("/reviews") else "")))
@@ -153,7 +157,7 @@ def test_every_account_page_and_api_shows_only_that_accounts_work(seeded):
     for route, url in _urls("lumina"):
         r = staff.get(url)
         seen.add(route)
-        assert r.status_code in (200, 302, 403), (url, r.status_code)
+        assert r.status_code in (200, 301, 302, 403), (url, r.status_code)
         assert not _foreign(r.get_data(as_text=True), "lumina-mark"), (url, _foreign(r.get_data(as_text=True), ""))
     home = staff.get("/lumina").get_data(as_text=True)
     assert "lumina-mark" in home, "the sweep would prove nothing if the account's own work did not show"

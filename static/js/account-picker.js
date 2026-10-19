@@ -141,9 +141,9 @@
   }
 
   function hrefFor(a, page) {
-    // The SEO tools and the agents open for any account; the rest only where the account has them.
+    // The operational agents and the agents open for any account; the rest only where the account has them.
     var has = (a.pages || []).some(function (p) { return p.page === page; }) ||
-              (!(DATA && DATA.client) && /^(seo-aeo|agents)\//.test(page));
+              (!(DATA && DATA.client) && /^(operational-agents|agents)\//.test(page));
     return "/" + a.slug + (page && has ? "/" + page : "");
   }
 

@@ -101,7 +101,7 @@ and a merge.
   - **The platform keeps the run** (`tracker/seo_runs_store.py`, table `seo_runs`), with a few
     readable facts (`tracker/seo_runs.py`). A result over 2 MB keeps its facts only.
   - **Where runs show:**
-    - Each run has a page (`/<account>/seo-aeo/runs/<id>`, or `/operational-agents/runs/<id>` for General) with
+    - Each run has a page (`/<account>/operational-agents/runs/<id>`, or `/operational-agents/runs/<id>` for General) with
       a download of the full result.
     - Runs join the account's History under "SEO & AEO".
     - "Run for" on the account home gives each tool's last run.
