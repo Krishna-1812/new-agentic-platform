@@ -83,6 +83,27 @@ def test_a_refresh_right_after_a_read_of_google_is_held_back_with_how_long(runs)
     assert j["cooldownLeft"] == j["retryIn"] or abs(j["cooldownLeft"] - j["retryIn"]) <= 1
 
 
+def test_a_refusal_after_a_failed_run_says_why_instead_of_a_500(runs, monkeypatch):
+    """The state of a failed run carries its own `error`; a refused press used to pass both as keywords and answer 500,
+    2026-10-19. Now the press's reason is the `error` and the rest of the state comes with it."""
+    runs.state = {"state": "failed", "error": "The engine could not finish.", "finishedAt": dt.datetime.now(dt.timezone.utc).isoformat()}
+    runs.read_at = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=2)).isoformat()
+    c = client_as(STAFF)
+    r = c.post(REFRESH, json={}, headers=SAME)
+    j = r.get_json()
+    assert r.status_code == 429 and "Try again in 8 minutes" in j["error"] and j["state"] == "failed" and j["retryIn"] > 0
+    monkeypatch.setattr(rf, "config_problem", lambda: "GOOGLE_ADS_DEVELOPER_TOKEN is not set.")
+    r = c.post(REFRESH, json={}, headers=SAME)
+    assert r.status_code == 409 and "GOOGLE_ADS_DEVELOPER_TOKEN" in r.get_json()["error"] and r.get_json()["state"] == "failed"
+    assert runs.started == []
+
+
+def test_a_refusal_while_a_run_is_busy_after_a_failed_one_says_why(runs):
+    runs.state = {"state": "running", "error": "left over from the run before", "startedAt": dt.datetime.now(dt.timezone.utc).isoformat()}
+    r = client_as(STAFF).post(REFRESH, json={}, headers=SAME)
+    assert r.status_code == 409 and "already running" in r.get_json()["error"] and runs.started == []
+
+
 def test_changed_allocations_are_not_held_back_by_that_wait(runs, monkeypatch):
     runs.read_at = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=2)).isoformat()
     c = client_as(STAFF)
