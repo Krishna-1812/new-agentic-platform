@@ -110,9 +110,10 @@ def test_an_old_label_folds_into_the_new_one(old, new):
     assert appmod._page_label(old) == new
 
 
-def test_a_workspace_address_is_not_folded():
-    """A workspace still opens its SEO tools at /<account>/seo-aeo/<tool>, so that path is current."""
-    assert appmod._page_label("/lumina/seo-aeo/keyword-research") == "/lumina/seo-aeo/keyword-research"
+def test_a_workspace_address_folds_too():
+    """A workspace's /<account>/seo-aeo/<tool> moved to /<account>/operational-agents/<tool>, 2026-10-19
+    (tests/test_workspace_operational_agents.py)."""
+    assert appmod._page_label("/lumina/seo-aeo/keyword-research") == "/lumina/operational-agents/keyword-research"
     assert appmod._page_label("/seo-aeo-tools") == "/seo-aeo-tools"
 
 
@@ -124,9 +125,10 @@ def test_the_new_section_is_internal_and_fenced_from_clients():
 
 
 def test_a_workspace_page_maps_to_its_new_global_address():
-    assert appmod.ACCT_GLOBAL["seo-aeo/keyword-research"] == "/operational-agents/keyword-research"
+    assert appmod.ACCT_GLOBAL["operational-agents/keyword-research"] == "/operational-agents/keyword-research"
     slug = paid_catalog.WORKSPACE[0]["slug"]
-    assert appmod.ACCT_GLOBAL["agents/" + slug] == "/operational-agents/" + slug
+    assert appmod.ACCT_GLOBAL["operational-agents/" + slug] == "/operational-agents/" + slug
+    assert "seo-aeo/keyword-research" not in appmod.ACCT_GLOBAL and "agents/" + slug not in appmod.ACCT_GLOBAL
 
 
 def test_nothing_on_the_hub_links_to_the_old_address(client):

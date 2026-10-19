@@ -64,7 +64,8 @@ reads it). `pandas` (the pacing engine) and `cryptography` (encrypted OAuth toke
 
 ## In every client workspace
 
-- Each agent is in `ACCT_AGENTS` (from the catalog), so it opens at `/<account>/agents/<slug>`.
+- Each agent is in `ACCT_AGENTS` (from the catalog), so it opens at `/<account>/operational-agents/<slug>`
+  (beside the account's SEO tools; its address before 2026-10-19, `/<account>/agents/<slug>`, redirects).
 - **Inside a workspace it reads only that workspace's own Google Ads accounts**, its profile's customer ids
   (`app.py _pm_scope`), for the team and for a client alike; no Meta ad account, since a workspace names none
   yet. A workspace with no customer id says how to add one.

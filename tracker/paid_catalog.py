@@ -6,7 +6,7 @@ client workspace (ACCT_AGENTS), their workspace colour, and the client routes; t
 reads it for each agent's name and History. An agent is added here when its page ships
 (docs/paid-marketing-plan.md), so the page never lists one that does not open yet.
 
-    slug      its page, /operational-agents/<slug>, and /<account>/agents/<slug> in a workspace
+    slug      its page, /operational-agents/<slug>, and /<account>/operational-agents/<slug> in a workspace
     endpoint  the Flask view of its page
     api       its JSON routes (under PREFIX), as regexes after /strategic-agents/ (for a client the workspace shares
               it with)
@@ -198,6 +198,7 @@ AGENTS = (
 )
 
 WORKSPACE = tuple(a for a in AGENTS if a.get("workspace", True))
+WORKSPACE_SLUGS = frozenset(a["slug"] for a in WORKSPACE)
 BY_SLUG = {a["slug"]: a for a in AGENTS}
 SLUGS = frozenset(BY_SLUG)
 NAMES = {a["slug"]: a["name"] for a in AGENTS}

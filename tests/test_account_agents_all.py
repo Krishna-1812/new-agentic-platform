@@ -66,10 +66,10 @@ def test_each_agent_in_the_accounts_is_wired_all_the_way(agent):
 
 @pytest.mark.parametrize("slug", [a[0] for a in appmod.ACCT_AGENTS])
 def test_each_agent_opens_in_an_account_for_the_team_and_names_it_on_every_call(seeded, slug):
-    html = T._client(T.RAJ).get("/lumina/agents/" + slug)
+    html = T._client(T.RAJ).get(account_history.agent_href("lumina", slug))
     assert html.status_code == 200, slug
     assert 'js/account-context.js?v=1" data-acct="lumina"' in html.get_data(as_text=True)
-    assert 'href="/lumina/agents/%s"' % slug in T._client(T.RAJ).get("/lumina").get_data(as_text=True)
+    assert 'href="%s"' % account_history.agent_href("lumina", slug) in T._client(T.RAJ).get("/lumina").get_data(as_text=True)
 
 
 # ── Market Radar and People & Signals are the account's inside it ─────────────

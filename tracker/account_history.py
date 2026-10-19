@@ -103,11 +103,18 @@ def agent_entry(acct, agent, title, detail, who, at, status, href=None):
     """One agent run as a History row (also used for Contact Finder's, read in app.py)."""
     st, label = _state(status)
     return {"tool": "agents", "kind": "run", "agent": agent, "who": who or "", "at": _iso(at), "title": title,
-            "detail": detail, "href": href or "/%s/agents/%s" % (acct["slug"], agent), "state": st,
+            "detail": detail, "href": href or agent_href(acct["slug"], agent), "state": st,
             "state_label": label, "tool_label": AGENT_NAMES[agent]}
 
 
 _agent = agent_entry
+
+
+def agent_href(slug, agent):
+    """An agent's page inside the account: a paid marketing agent's with the operational agents."""
+    if agent in paid_catalog.WORKSPACE_SLUGS:
+        return "/%s/operational-agents/%s" % (slug, agent)
+    return "/%s/agents/%s" % (slug, agent)
 
 
 def _lbr(acct):
@@ -224,7 +231,7 @@ def _seo(acct):
         out.append({"tool": "seo", "kind": "run", "seo_tool": r["tool"], "who": r.get("email") or "",
                     "at": _iso(r.get("created_at")), "title": r.get("title") or seo_runs.TOOLS.get(r["tool"], ""),
                     "detail": " · ".join("%s %s" % (k, v) for k, v in facts[:2]),
-                    "href": "/%s/seo-aeo/runs/%d" % (acct["slug"], r["id"]), "state": "ready", "state_label": "Done",
+                    "href": "/%s/operational-agents/runs/%d" % (acct["slug"], r["id"]), "state": "ready", "state_label": "Done",
                     "tool_label": seo_runs.TOOLS.get(r["tool"], "SEO & AEO")})
     return out
 
@@ -276,7 +283,7 @@ def _client_href(row, slug):
     if href.startswith("/%s/" % slug):
         return href
     if row["tool"] == "agents" and row.get("agent"):
-        return "/%s/agents/%s" % (slug, row["agent"])
+        return agent_href(slug, row["agent"])
     return None
 
 

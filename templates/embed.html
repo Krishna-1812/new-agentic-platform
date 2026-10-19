@@ -55,7 +55,7 @@
        message on every navigation (see seo-apps' RouteBridge). We reflect that
        into /operational-agents/<slug> via pushState so the URL always names the current
        agent and the browser's back/forward works across agents. */
-    var SEO_BASE = {{ (seo_base or none)|tojson }};   /* inside a client account: /<account>/seo-aeo */
+    var SEO_BASE = {{ (seo_base or none)|tojson }};   /* inside a client account: /<account>/operational-agents */
     (function(){
       var frame = document.getElementById('embed-frame');
       var expectedOrigin = '';

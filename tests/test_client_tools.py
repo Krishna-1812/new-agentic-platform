@@ -14,7 +14,7 @@ import pytest
 
 import app as appmod
 from tests import test_account_isolation as T
-from tracker import client_accounts_store, lbr_store, seo_runs_store, watch_store, workspace
+from tracker import account_history, client_accounts_store, lbr_store, seo_runs_store, watch_store, workspace
 
 seeded = T.seeded
 world = T.world
@@ -46,8 +46,8 @@ def test_the_client_home_offers_only_the_shared_tools_with_runs_left(seeded):
     _share("local-business-radar", "keyword-research", limit=12)
     html = T._client(CLIENT).get("/lumina").get_data(as_text=True)
     assert "Your tools" in html and "12 runs left this month" in html
-    assert 'href="/lumina/agents/local-business-radar"' in html and 'href="/lumina/seo-aeo/keyword-research"' in html
-    assert 'href="/lumina/agents/social-media-intelligence"' not in html and 'href="/lumina/seo-aeo/on-page-audit"' not in html
+    assert 'href="/lumina/agents/local-business-radar"' in html and 'href="/lumina/operational-agents/keyword-research"' in html
+    assert 'href="/lumina/agents/social-media-intelligence"' not in html and 'href="/lumina/operational-agents/on-page-audit"' not in html
     assert 'id="sh-dlg"' not in html, "no Share panel for a client"
 
 
@@ -61,7 +61,7 @@ def test_shared_tool_pages_open_and_others_send_the_client_home(seeded):
     c = T._client(CLIENT)
     assert c.get("/lumina/agents/local-business-radar").status_code == 200
     assert c.get("/lumina/page-watch").status_code == 200
-    for path in ("/lumina/agents/social-media-intelligence", "/lumina/video-studio", "/lumina/seo-aeo/keyword-research"):
+    for path in ("/lumina/agents/social-media-intelligence", "/lumina/video-studio", "/lumina/operational-agents/keyword-research"):
         r = c.get(path)
         assert r.status_code == 302 and r.headers["Location"].endswith("/lumina"), path
     assert c.get("/bloom/agents/local-business-radar").status_code == 403, "never another account's"
@@ -169,7 +169,7 @@ def test_the_platforms_own_pages_and_tests_stay_closed(seeded):
 def test_a_client_gets_a_studio_pass_for_their_account_and_shared_tools_only(seeded, monkeypatch):
     monkeypatch.setattr(appmod, "SEO_STUDIO_SECRET", "s3cret")
     _share("keyword-research", "seo-geo-audit")
-    html = T._client(CLIENT).get("/lumina/seo-aeo/keyword-research").get_data(as_text=True)
+    html = T._client(CLIENT).get("/lumina/operational-agents/keyword-research").get_data(as_text=True)
     import base64
     import re
     from urllib.parse import parse_qs, urlsplit
@@ -182,7 +182,7 @@ def test_a_client_gets_a_studio_pass_for_their_account_and_shared_tools_only(see
 
 def test_a_used_up_month_stops_the_studio_opening(seeded):
     _share("keyword-research", limit=0)
-    r = T._client(CLIENT).get("/lumina/seo-aeo/keyword-research")
+    r = T._client(CLIENT).get("/lumina/operational-agents/keyword-research")
     assert r.status_code == 429 and "runs are used up" in r.get_data(as_text=True)
 
 
@@ -196,10 +196,10 @@ def test_a_clients_finished_seo_run_is_saved_to_the_account_and_counts(seeded):
     assert run["space"] == T._acct("lumina")["space"] and run["email"] == CLIENT
     assert client_accounts_store.runs_this_month(T._acct("lumina")["key"]) == 1
     assert c.post("/api/seo-runs", json={"tool": "on-page-audit", "payload": {}}, headers=dict(FETCH, **XA)).status_code == 403
-    assert c.get("/lumina/seo-aeo/runs/%d" % r.get_json()["id"]).status_code == 200
+    assert c.get("/lumina/operational-agents/runs/%d" % r.get_json()["id"]).status_code == 200
     other = seeded["bloom-mark"]["seo"]
-    assert c.get("/lumina/seo-aeo/runs/%d" % other).status_code in (302, 404)
-    assert c.get("/lumina/seo-aeo/runs/%d.json" % seeded["anas-own-mark"]["seo"]).status_code in (302, 404)
+    assert c.get("/lumina/operational-agents/runs/%d" % other).status_code in (302, 404)
+    assert c.get("/lumina/operational-agents/runs/%d.json" % seeded["anas-own-mark"]["seo"]).status_code in (302, 404)
 
 
 # ── The scope itself ─────────────────────────────────────────────────────────
@@ -237,12 +237,12 @@ def test_a_client_with_every_tool_reaches_nothing_outside_their_account(seeded):
     urls = ["/lumina", "/lumina/page-watch", "/lumina/video-studio", LBR + "/runs", "/lumina/api/page-watch/watches",
             VS + "/api/library", "/strategic-agents/company-people-intelligence/history",
             "/strategic-agents/event-conference-intelligence/profiles"]
-    urls += ["/lumina/agents/" + a[0] for a in appmod.ACCT_AGENTS]
+    urls += [account_history.agent_href("lumina", a[0]) for a in appmod.ACCT_AGENTS]
     urls += ["/lumina/page-watch/watches/%d" % i for i in ids["watch"]]
     urls += ["/lumina/page-watch/changes/%d" % i for i in ids["change"]]
     urls += [PW + "/api/watches/%d" % i for i in ids["watch"]] + [PW + "/api/watches/%d/preview" % i for i in ids["watch"]]
     urls += ["/lumina/video-studio/videos/%d" % i for i in ids["video"]] + [VS + "/api/videos/%d" % i for i in ids["video"]]
-    urls += ["/lumina/seo-aeo/runs/%d" % i for i in ids["seo"]] + ["/lumina/seo-aeo/runs/%d.json" % i for i in ids["seo"]]
+    urls += ["/lumina/operational-agents/runs/%d" % i for i in ids["seo"]] + ["/lumina/operational-agents/runs/%d.json" % i for i in ids["seo"]]
     urls += [LBR + "/runs/%d/%s" % (i, t) for i in ids["lbr"] for t in ("status", "data", "report", "export.csv")]
     for url in urls:
         r = c.get(url, headers=XA)
@@ -298,7 +298,7 @@ def test_every_tool_the_share_panel_can_turn_on_shows_on_the_home_and_opens(seed
     for t in catalog:
         s = t["slug"]
         path = "/lumina/" + s if s in ("page-watch", "video-studio") else \
-            "/lumina/seo-aeo/" + s if s in dict(appmod.ACCT_SEO) else "/lumina/agents/" + s
+            "/lumina/operational-agents/" + s if s in dict(appmod.ACCT_SEO) else account_history.agent_href("lumina", s)
         assert 'href="%s"' % path in home, "%s is shared but not offered" % s
         assert c.get(path).status_code == 200, s
 
@@ -324,7 +324,7 @@ def test_a_client_without_a_referer_still_reaches_the_shared_tools(seeded):
 # ── Every tool an admin can share, a client can open and use ──────────────────
 def _tool_page(slug):
     return "/lumina/" + slug if slug in ("page-watch", "video-studio") else \
-        "/lumina/seo-aeo/" + slug if slug in dict(appmod.ACCT_SEO) else "/lumina/agents/" + slug
+        "/lumina/operational-agents/" + slug if slug in dict(appmod.ACCT_SEO) else account_history.agent_href("lumina", slug)
 
 
 def test_an_admin_shares_every_tool_from_the_share_panel_and_the_client_gets_each(seeded):

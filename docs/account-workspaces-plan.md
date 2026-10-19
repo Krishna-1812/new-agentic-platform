@@ -211,7 +211,7 @@ An account with no profile shows this block on its home, filled in with what is 
 - **The account's home** has a "Run for <account>" section listing every tool and agent below, each
   with what it will be given (for example "dental implants pune" or "Dental clinic · Pune"). Nothing
   runs until the person presses the tool's own button.
-- **`/<account>/seo-aeo/<tool>`** embeds the SEO Studio tool with the account's details in its address:
+- **`/<account>/operational-agents/<tool>`** (was `/<account>/seo-aeo/<tool>`, which redirects) embeds the SEO Studio tool with the account's details in its address:
 
   | Tool | Given |
   |---|---|
@@ -223,8 +223,8 @@ An account with no profile shows this block on its home, filled in with what is 
   `seo-apps/client/src/lib/prefill.js` reads them once, when a form first draws, and the person can
   change them. The studio's pass handling removes only `st` from the address, so they survive.
   Every other tool opens inside the account without values. As the studio moves between tools,
-  the address stays under `/<account>/seo-aeo`.
-- **`/<account>/agents/<agent>`** renders the agent's own page, unchanged, with the account in the
+  the address stays under `/<account>/operational-agents`.
+- **`/<account>/agents/<agent>`** (a paid marketing agent: `/<account>/operational-agents/<agent>`) renders the agent's own page, unchanged, with the account in the
   top bar. `static/js/account-prefill.js` then fills its empty fields from the profile (as if
   typed, so the page's own checks run) and says so:
 
