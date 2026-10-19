@@ -72,7 +72,7 @@ def built(c, **form):
 
 def test_the_page_and_every_api_are_for_staff_only(world):
     anon, outsider = client_as(None), client_as("x@gmail.com")
-    for path in ("/strategic-agents/paid-marketing/campaign-book", API + "/options", API + "/list", API + "/" + "a" * 32, API + "/" + "a" * 32 + "/status", API + "/" + "a" * 32 + "/download?file=xlsx"):
+    for path in ("/operational-agents/campaign-book", API + "/options", API + "/list", API + "/" + "a" * 32, API + "/" + "a" * 32 + "/status", API + "/" + "a" * 32 + "/download?file=xlsx"):
         assert anon.get(path).status_code == 302, path
         r = outsider.get(path)
         assert r.status_code == 302 and "/app" in r.headers["Location"], path
@@ -80,7 +80,7 @@ def test_the_page_and_every_api_are_for_staff_only(world):
 
 
 def test_the_page_renders_for_staff(world):
-    html = client_as(STAFF).get("/strategic-agents/paid-marketing/campaign-book").get_data(as_text=True)
+    html = client_as(STAFF).get("/operational-agents/campaign-book").get_data(as_text=True)
     assert "Strategy &amp; Campaign Book" in html and "campaign_book.js" in html and 'id="cards"' in html and "pm_picker.js" in html
 
 

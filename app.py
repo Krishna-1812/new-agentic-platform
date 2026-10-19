@@ -1030,9 +1030,9 @@ def _was_staff(email):
 # sits at the top level, so the sections are named. Old /p2 paths still count
 # (they only redirect, but they appear in recorded analytics and old next_urls).
 _INTERNAL_SECTIONS = frozenset({
-    "hub", "admin", "strategic-agents", "seo-aeo", "abm-signal-tracker",
+    "hub", "admin", "strategic-agents", "operational-agents", "abm-signal-tracker",
     "context", "playbook", "accounts", "signal-tracker",
-    "gtm", "b2b-agents", "seo", "p2",            # older names, redirect only
+    "gtm", "b2b-agents", "seo", "seo-aeo", "p2",  # older names, redirect only
 })
 
 
@@ -3995,17 +3995,24 @@ def ppc_anonymous_visitors_redirect():
 def ppc_linkedin_scraper_redirect():
     return redirect("/strategic-agents/linkedin-intelligence", code=301)
 
-@app.route("/seo-aeo")
+# ── Operational Agents ───────────────────────────────────────────────────────────
+# The paid marketing agents and the SEO Studio tools, on one page at /operational-agents, each agent at
+# /operational-agents/<slug>. The page was "SEO + AEO" at /seo-aeo until 2026-10-18, and the paid
+# marketing pages were at /strategic-agents/paid-marketing/<slug>: both old addresses redirect here.
+_OPS = "/operational-agents"
+
+
+@app.route(_OPS)
 @position2_required
 def seo():
     return render_template("seo.html", user=_get_user(), seo_tools=_seo_tools(),
                            seo_tool_groups=_seo_tool_groups(),
-                           seo_tool_briefs=_SEO_TOOL_BRIEFS, paid_agents=paid_catalog.AGENTS,
-                           paid_prefix=paid_catalog.PREFIX)
+                           seo_tool_briefs=_SEO_TOOL_BRIEFS, paid_agents=paid_catalog.AGENTS, ops=_OPS)
 
 
-# ── /seo/* -> /seo-aeo/* ───────────────────────────────────────────────
-# The section was renamed from "SEO" to "SEO + AEO", 2026-09-11. Same shape as
+# ── /seo/* and /seo-aeo/* -> /operational-agents/* ──────────────────────────
+# The section was renamed from "SEO" to "SEO + AEO", 2026-09-11, and to
+# "Operational agents" at /operational-agents, 2026-10-18. Same shape as
 # the B2B Agents -> Strategic Agents catch-all: one redirect for the whole old
 # tree, 308 (not 301) because the embedded-tool page's own JS pushState's
 # sub-paths like /seo/<tool> as the visitor switches tools client-side (see
@@ -4015,8 +4022,11 @@ def seo():
 @app.route("/seo", methods=["GET", "POST", "DELETE"])
 @app.route("/seo/", methods=["GET", "POST", "DELETE"])
 @app.route("/seo/<path:rest>", methods=["GET", "POST", "DELETE"])
+@app.route("/seo-aeo", methods=["GET", "POST", "DELETE"])
+@app.route("/seo-aeo/", methods=["GET", "POST", "DELETE"])
+@app.route("/seo-aeo/<path:rest>", methods=["GET", "POST", "DELETE"])
 def seo_aeo_legacy_redirect(rest=""):
-    target = "/seo-aeo" + (("/" + rest) if rest else "")
+    target = _OPS + (("/" + rest) if rest else "")
     if request.query_string:
         target += "?" + request.query_string.decode("utf-8", "ignore")
     return redirect(target, code=308)
@@ -4571,12 +4581,12 @@ def _seo_tool_groups():
     order = _SEO_GROUP_ORDER + [g for g in by_group if g not in _SEO_GROUP_ORDER]
     return [(g, by_group[g]) for g in order if by_group.get(g)]
 
-@app.route("/seo-aeo/<tool_slug>")
+@app.route(_OPS + "/<tool_slug>")
 @position2_required
 def seo_tool(tool_slug: str):
     if tool_slug in _SEO_TOOL_ALIASES:
         target = _SEO_TOOL_ALIASES[tool_slug]
-        return redirect("/seo-aeo" + ("/" + target if target else ""), code=301)
+        return redirect(_OPS + ("/" + target if target else ""), code=301)
     tool = next((t for t in _seo_tools() if t.get("slug") == tool_slug), None)
     if not tool:
         abort(404)
@@ -4592,7 +4602,7 @@ def seo_tool(tool_slug: str):
         user=_get_user(),
         title=tool["name"],
         embed_url=embed_url,
-        breadcrumb=[("Hub", "/hub"), ("SEO + AEO", "/seo-aeo")],
+        breadcrumb=[("Hub", "/hub"), ("Operational agents", _OPS)],
         current=tool["name"],
         accent="#34d399",
     )
@@ -4604,7 +4614,8 @@ def seo_tool(tool_slug: str):
 # paid_store.py). Listed on the Operational Agents page (templates/seo.html) from tracker/paid_catalog.py,
 # and opened inside every client workspace (ACCT_AGENTS), where they read only that workspace's own Google
 # Ads accounts (its profile's customer ids), for the team and for a client the workspace shares one with.
-_PM_PREFIX = paid_catalog.PREFIX
+_PM_PREFIX = paid_catalog.PREFIX        # the JSON routes
+_PM_PAGES = paid_catalog.PAGES          # the pages: /operational-agents/<slug>, beside the SEO tools
 
 
 def _pm_refuse_cross_site():
@@ -4670,7 +4681,19 @@ def _pm_note(agent, account, title, detail=""):
 @position2_required
 def paid_marketing():
     """The section's own address: its agents are on the Operational Agents page."""
-    return redirect("/seo-aeo#paid-marketing")
+    return redirect(_OPS + "#paid-marketing")
+
+
+@app.route(_PM_PREFIX + "/<slug>")
+def paid_marketing_old_page(slug):
+    """A page's address before 2026-10-18, /strategic-agents/paid-marketing/<slug>: sent on to
+    /operational-agents/<slug>, query string kept. The page runs its own gate there."""
+    if slug not in paid_catalog.SLUGS:
+        abort(404)
+    target = paid_catalog.path(slug)
+    if request.query_string:
+        target += "?" + request.query_string.decode("utf-8", "ignore")
+    return redirect(target, code=301)
 
 
 def _pm_page(template, slug):
@@ -4679,7 +4702,7 @@ def _pm_page(template, slug):
                            client=viewer_is_client())
 
 
-@app.route(_PM_PREFIX + "/performance-summarizer")
+@app.route(_PM_PAGES + "/performance-summarizer")
 @position2_required
 def paid_performance_summarizer():
     return _pm_page("performance_summarizer.html", "performance-summarizer")
@@ -4851,7 +4874,7 @@ def paid_gads_extras():
 
 # Product Analysis (ecommerce): per-product Shopping, Performance Max and Meta catalog numbers from the same
 # read-only sign-ins (tracker/paid_products.py, paid_meta_products.py), on the Performance Summarizer's quota.
-@app.route(_PM_PREFIX + "/product-analysis")
+@app.route(_PM_PAGES + "/product-analysis")
 @position2_required
 def paid_product_analysis():
     return _pm_page("product_analysis.html", "product-analysis")
@@ -4896,7 +4919,7 @@ SEGMENT_SUMMARY_DAILY_CAP = 100
 _SEGMENT_SUMMARY_USES = {}
 
 
-@app.route(_PM_PREFIX + "/segment-analysis")
+@app.route(_PM_PAGES + "/segment-analysis")
 @position2_required
 def paid_segment_analysis():
     return _pm_page("segment_analysis.html", "segment-analysis")
@@ -5022,7 +5045,7 @@ GEO_SUMMARY_DAILY_CAP = 100
 _GEO_SUMMARY_USES = {}
 
 
-@app.route(_PM_PREFIX + "/geo-performance")
+@app.route(_PM_PAGES + "/geo-performance")
 @position2_required
 def paid_geo_performance():
     return _pm_page("geo_performance.html", "geo-performance")
@@ -5092,7 +5115,7 @@ def paid_geo_summary():
 # failure keeps what was read), then asks for the analysis, which then answers from the stored days. Inside a workspace
 # each account named goes through _gads_account, so only the workspace's own Google Ads accounts are read.
 
-@app.route(_PM_PREFIX + "/seasonality-analysis")
+@app.route(_PM_PAGES + "/seasonality-analysis")
 @position2_required
 def paid_seasonality_analysis():
     return _pm_page("seasonality_analysis.html", "seasonality-analysis")
@@ -5189,7 +5212,7 @@ ADSTRENGTH_SUGGEST_DAILY_CAP = 60
 _ADSTRENGTH_USES = {}
 
 
-@app.route(_PM_PREFIX + "/ad-strength")
+@app.route(_PM_PAGES + "/ad-strength")
 @position2_required
 def paid_ad_strength():
     return _pm_page("ad_strength.html", "ad-strength")
@@ -5257,7 +5280,7 @@ def paid_adstrength_suggest():
 # sizes, the exclusions and what to do about each. The reading is tracker/paid_audiences.py, what it means
 # tracker/paid_audiences_insights.py. Plain arithmetic, no model. The account list is Segment Analysis's.
 
-@app.route(_PM_PREFIX + "/audience-segments")
+@app.route(_PM_PAGES + "/audience-segments")
 @position2_required
 def paid_audience_segments():
     return _pm_page("audience_segments.html", "audience-segments")
@@ -5291,7 +5314,7 @@ def paid_audiences_report():
 # what is missing, disapproved, paused, past its end date or never shown. Reading is tracker/paid_assets.py, the rules
 # tracker/paid_assets_rules.py. It only recommends: nothing is changed in Google Ads. The account list is Segment Analysis's.
 
-@app.route(_PM_PREFIX + "/asset-coverage")
+@app.route(_PM_PAGES + "/asset-coverage")
 @position2_required
 def paid_asset_coverage():
     return _pm_page("asset_coverage.html", "asset-coverage")
@@ -5349,7 +5372,7 @@ def paid_assets_library():
 # platform. Inside a workspace only its own Google Ads accounts are audited (_pm_target_refusal), saved audits included; the briefing's
 # model calls are booked (tracker/paid_spend.py).
 
-@app.route(_PM_PREFIX + "/account-audit")
+@app.route(_PM_PAGES + "/account-audit")
 @position2_required
 def paid_account_audit():
     return _pm_page("account_audit.html", "account-audit")
@@ -5525,7 +5548,7 @@ def paid_audit_download():
 # paid_lp_page.py, the matching paid_lp_match.py, the checks paid_lp_checks*.py and the report tracker/paid_lp.py. Inside a workspace only
 # its own Google Ads accounts are read; "read it like a person" is a model call, booked (tracker/paid_spend.py).
 
-@app.route(_PM_PREFIX + "/landing-page-check")
+@app.route(_PM_PAGES + "/landing-page-check")
 @position2_required
 def paid_landing_page_check():
     return _pm_page("landing_page_check.html", "landing-page-check")
@@ -5675,7 +5698,7 @@ def paid_lp_download():
 # Reading is tracker/paid_exp_read.py, the report tracker/paid_exp.py and the downloads (Excel, PDF, CSV zip) paid_exp_export.py. It only
 # reads. Inside a workspace only its own Google Ads accounts are read.
 
-@app.route(_PM_PREFIX + "/experiment-tracker")
+@app.route(_PM_PAGES + "/experiment-tracker")
 @position2_required
 def paid_experiment_tracker():
     return _pm_page("experiment_tracker.html", "experiment-tracker")
@@ -5748,7 +5771,7 @@ _QC_RUN_GAP_S = 60
 _QC_LAST_RUN = {}
 
 
-@app.route(_PM_PREFIX + "/qa-agent")
+@app.route(_PM_PAGES + "/qa-agent")
 @position2_required
 def paid_qa_agent():
     return _pm_page("qa_agent.html", "qa-agent")
@@ -5998,7 +6021,7 @@ def paid_qa_set_check(launch_id, check_id):
 # It is the team's view across every client, so it is not opened inside a workspace (tracker/paid_catalog.py "workspace": False,
 # with the reason). The per-client rules the engine may use are data, never code (pacing_engine/config.py).
 
-@app.route(_PM_PREFIX + "/pacing-desk")
+@app.route(_PM_PAGES + "/pacing-desk")
 @position2_required
 def paid_pacing_desk():
     return _pm_page("pacing_desk.html", "pacing-desk")
@@ -6236,7 +6259,7 @@ def paid_pacing_seed():
 # It suggests negatives and keywords; nothing is applied in Google Ads. The source's per-client rulebooks are not carried
 # over: every account is read with the generic one. Inside a workspace only its own accounts are read (_gads_account).
 
-@app.route(_PM_PREFIX + "/search-query-analysis")
+@app.route(_PM_PAGES + "/search-query-analysis")
 @position2_required
 def paid_sqr_agent():
     return _pm_page("sqr_agent.html", "search-query-analysis")
@@ -6404,7 +6427,7 @@ def _strat_begin(store, rec, resume=False):
     return True, ""
 
 
-@app.route(_PM_PREFIX + "/campaign-book")
+@app.route(_PM_PAGES + "/campaign-book")
 @position2_required
 def paid_campaign_book():
     return _pm_page("campaign_book.html", "campaign-book")
@@ -6582,7 +6605,7 @@ _BIZ_FILES = {"xlsx": ("application/vnd.openxmlformats-officedocument.spreadshee
               "zip": ("application/zip", "-all-tables.zip"), "csv": ("text/csv; charset=utf-8", "-questions-for-the-client.csv")}
 
 
-@app.route(_PM_PREFIX + "/business-research")
+@app.route(_PM_PAGES + "/business-research")
 @position2_required
 def paid_business_research_page():
     return _pm_page("business_research.html", "business-research")
@@ -6749,7 +6772,7 @@ _KW_FILES = {"xlsx": ("application/vnd.openxmlformats-officedocument.spreadsheet
              "zip": ("application/zip", "-all-tables.zip"), "csv": ("text/csv; charset=utf-8", "-ads-editor-keywords.csv")}
 
 
-@app.route(_PM_PREFIX + "/ppc-keyword-research")
+@app.route(_PM_PAGES + "/ppc-keyword-research")
 @position2_required
 def paid_keywords_page():
     return _pm_page("keyword_research.html", "ppc-keyword-research")
@@ -7816,7 +7839,7 @@ ACCT_AGENTS += tuple((a["slug"], a["endpoint"], paid_catalog.path(a["slug"]), a[
 ACCT_GLOBAL = {"": "/hub", "google-ads": "/dashboards/google-ads",
                "google-ads/ai-review": "/dashboards/google-ads/ai-review",
                "page-watch": "/strategic-agents/page-watch", "video-studio": "/strategic-agents/video-studio"}
-ACCT_GLOBAL.update({"seo-aeo/" + t: "/seo-aeo/" + t for t, _ in ACCT_SEO})
+ACCT_GLOBAL.update({"seo-aeo/" + t: _OPS + "/" + t for t, _ in ACCT_SEO})
 ACCT_GLOBAL.update({"agents/" + a[0]: a[2] for a in ACCT_AGENTS})
 _ACCT_FROM_GLOBAL = {v: k for k, v in ACCT_GLOBAL.items()}
 
@@ -7953,8 +7976,8 @@ def _acct_client_keys(email):
 # the address (or following a bookmark) would land them on the agency's own pages: those staff-only
 # pages already turn them away, to the public /app. Instead, every page outside their account sends them
 # back to it (their first account, if they have several): "/" already does, and so do these.
-CLIENT_FENCE = ("/hub", "/app", "/dashboards", "/strategic-agents", "/seo-aeo", "/admin", "/page-watch",
-                "/video-studio", "/b2b-agents")
+CLIENT_FENCE = ("/hub", "/app", "/dashboards", "/strategic-agents", "/operational-agents", "/seo-aeo", "/admin",
+                "/page-watch", "/video-studio", "/b2b-agents")
 
 
 # ── A client using the tools their account shares with them ─────────────────
@@ -9090,7 +9113,7 @@ def account_seo_tool(acct, tool_slug):
     """An SEO Studio tool opened for the account: its website, keyword or service filled in."""
     tool = next((t for t in _seo_tools() if t.get("slug") == tool_slug), None)
     if not tool or tool.get("url"):
-        return redirect("/seo-aeo/" + tool_slug)
+        return redirect(_OPS + "/" + tool_slug)
     g.acct_page = "seo-aeo/" + tool_slug
     f = _acct_facts(acct)
     key = dict(ACCT_SEO).get(tool_slug)
@@ -9135,7 +9158,7 @@ def _seo_run_tool(run_id):
 def _seo_run_home(r):
     """Where a run's page is: inside its account, or the General one."""
     return (_space_home(r["space"], "seo-aeo/runs/%d" % r["id"])
-            or "/seo-aeo/runs/%d" % r["id"])
+            or _OPS + "/runs/%d" % r["id"])
 
 
 @app.route("/api/seo-runs", methods=["POST"])
@@ -9158,7 +9181,7 @@ def seo_runs_save():
     except Exception:
         app.logger.exception("seo runs: the run could not be saved")
         return jsonify(ok=False, error="The run could not be saved."), 503
-    page = ("/%s/seo-aeo/runs/%d" % (acct["slug"], rid)) if acct else "/seo-aeo/runs/%d" % rid
+    page = ("/%s/seo-aeo/runs/%d" % (acct["slug"], rid)) if acct else _OPS + "/runs/%d" % rid
     return jsonify(ok=True, id=rid, page=page, where=(acct["name"] + " Workspace" if acct else my_workspace_name())), 201
 
 
@@ -9166,14 +9189,14 @@ def _seo_run_page(r, acct=None):
     from tracker import seo_runs
     _people([r], key="email")
     tool = next((t for t in _seo_tools() if t.get("slug") == r["tool"]), None)
-    again = ("/%s/seo-aeo/%s" % (acct["slug"], r["tool"])) if acct else "/seo-aeo/%s" % r["tool"]
+    again = ("/%s/seo-aeo/%s" % (acct["slug"], r["tool"])) if acct else _OPS + "/%s" % r["tool"]
     return render_template("seo_run.html", user=_get_user(), r=r, acct=acct, tool_name=seo_runs.TOOLS.get(r["tool"], r["tool"]),
                            again=again if tool else None,
-                           download=(("/%s" % acct["slug"]) if acct else "") + "/seo-aeo/runs/%d.json" % r["id"],
+                           download=("/%s/seo-aeo" % acct["slug"] if acct else _OPS) + "/runs/%d.json" % r["id"],
                            mine=r["email"] == _pw_email().lower())
 
 
-@app.route("/seo-aeo/runs/<int:run_id>")
+@app.route(_OPS + "/runs/<int:run_id>")
 @position2_required
 def seo_run_page(run_id):
     from tracker import seo_runs_store
@@ -9207,7 +9230,7 @@ def _seo_run_json(r):
     return resp
 
 
-@app.route("/seo-aeo/runs/<int:run_id>.json")
+@app.route(_OPS + "/runs/<int:run_id>.json")
 @position2_required
 def seo_run_json(run_id):
     from tracker import seo_runs_store
@@ -10040,10 +10063,18 @@ _PAGE_LABEL_ALIASES = (
     ("SEO Dashboards", "SEO + AEO Dashboards"),
     ("/p2/seo", "/p2/seo-aeo"),
     # The internal app left the /p2 prefix, 2026-09-24: every path recorded
-    # before then carries it, every path after does not. LAST on purpose, so a
-    # historical path is first brought to its current section name by the
-    # rules above and then loses the prefix, landing on today's path.
+    # before then carries it, every path after does not. After the section
+    # renames above, so a historical path is first brought to its current
+    # section name and then loses the prefix.
     ("/p2/", "/"),
+    # "SEO + AEO" -> "Operational agents" at /operational-agents, 2026-10-18,
+    # with the paid marketing pages moved from /strategic-agents/paid-marketing
+    # to the same prefix. After the /p2 fold, so a path already brought to
+    # /seo-aeo above lands on today's. Anchored at the start of the path: a
+    # client workspace still opens its SEO tools at /<account>/seo-aeo/<tool>.
+    ("SEO + AEO Dashboards", "Operational Agents"),
+    ("^/seo-aeo", _OPS),
+    ("^/strategic-agents/paid-marketing", _OPS),
 )
 
 
@@ -10054,8 +10085,9 @@ _PAGE_LABEL_ALIASES = (
 # matches: they are whole phrases, and "SEO Dashboards" is not inside
 # "SEO + AEO Dashboards".
 _PAGE_LABEL_RULES = tuple(
-    (re.compile(re.escape(old) + ("" if old.endswith("/") else r"(?![\w-])")) if old.startswith("/") else None,
-     old, new)
+    (re.compile(("^" if old.startswith("^") else "") + re.escape(old.lstrip("^"))
+                + ("" if old.endswith("/") else r"(?![\w-])")) if old.lstrip("^").startswith("/") else None,
+     old.lstrip("^"), new)
     for old, new in _PAGE_LABEL_ALIASES)
 
 

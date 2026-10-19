@@ -1,4 +1,4 @@
-"""The Operational agents directory (/seo-aeo), rebuilt in the public site's
+"""The Operational agents directory (/operational-agents, was /seo-aeo), rebuilt in the public site's
 voice on the same system as the Go-to-market directory.
 
 Every figure, chip, step, ticker item and card on the page is generated from
@@ -28,7 +28,7 @@ def body():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
         sess["google_user"] = {"email": "reporting@markifydigital.com", "name": "T"}
-    r = c.get("/seo-aeo")
+    r = c.get("/operational-agents")
     assert r.status_code == 200
     return r.get_data(as_text=True)
 
@@ -36,7 +36,7 @@ def body():
 def test_every_tool_has_a_brief_and_no_brief_is_orphaned():
     slugs = {t["slug"] for t in appmod._seo_tools()}
     briefs = appmod._SEO_TOOL_BRIEFS
-    assert slugs - set(briefs) == set(), "tools with no brief on /seo-aeo"
+    assert slugs - set(briefs) == set(), "tools with no brief on /operational-agents"
     assert set(briefs) - slugs == set(), "briefs for tools that are not listed"
     for slug, b in briefs.items():
         for key in ("lead", "gives", "gets"):
@@ -48,7 +48,7 @@ def test_every_tool_gets_exactly_one_card(body):
     for t in appmod._seo_tools():
         assert body.count('data-tool="%s"' % t["slug"]) == 1, t["slug"]
         assert 'id="t-%s"' % t["slug"] in body
-        assert 'href="/seo-aeo/%s" id="t-%s"' % (t["slug"], t["slug"]) in body
+        assert 'href="/operational-agents/%s" id="t-%s"' % (t["slug"], t["slug"]) in body
 
 
 def test_the_figures_and_chips_count_the_same_list(body):
@@ -71,7 +71,8 @@ def test_every_operational_agent_is_building_and_tagged_seo(body):
     """All the operational agents are still being built (2026-10-17, the owner): each card is
     Building, none Live, and each carries an "SEO" tag first, once."""
     import re as _re
-    cards = _re.findall(r'<a href="/seo-aeo/[^"]+" id="t-[^"]+" class="sa-card".*?</a>', body, _re.S)
+    cards = [c for c in _re.findall(r'<a href="/operational-agents/[^"]+" id="t-[^"]+" class="sa-card".*?</a>', body, _re.S)
+             if 'data-group="paid-marketing"' not in c]
     assert len(cards) == len(appmod._seo_tools())       # the SEO tools; the paid agents are pinned below
     for card in cards:
         assert 'data-badge="building"' in card and "sa-state--build" in card and ">Building<" in card
@@ -82,7 +83,7 @@ def test_every_operational_agent_is_building_and_tagged_seo(body):
 
 def test_the_ticker_and_the_path_name_every_tool(body):
     for t in appmod._seo_tools():
-        assert 'href="/seo-aeo/%s">' % t["slug"] in body, "missing from the ticker: " + t["slug"]
+        assert 'href="/operational-agents/%s">' % t["slug"] in body, "missing from the ticker: " + t["slug"]
         assert '<a href="#t-%s">' % t["slug"] in body, "missing from the path: " + t["slug"]
 
 
@@ -97,8 +98,9 @@ def test_the_page_runs_on_the_shared_directory_system(body):
     assert "strategic-agents.css?v=" in body
     assert "js/strategic-agents.js" in body
     assert 'class="sa"' in body
-    # The section keeps its own title; only the hub card says "Operational agents".
-    assert "SEO + AEO" in body
+    # The page is "Operational agents" now (it was "SEO + AEO").
+    assert "<title>Operational agents &middot;" in body
+    assert '<span class="bn-crumb-cur" aria-current="page">Operational agents</span>' in body
 
 
 def test_the_paid_marketing_agents_are_a_group_of_their_own_with_a_paid_marketing_pill(body):
@@ -107,11 +109,44 @@ def test_the_paid_marketing_agents_are_a_group_of_their_own_with_a_paid_marketin
     from tracker import paid_catalog
     assert 'id="paid-marketing" data-sa-groupbox="paid-marketing"' in body and "sa-group--d" in body
     assert 'data-sa-group="paid-marketing"><i class="sa-dot sa-dot--d"></i>Paid marketing <b>%d</b>' % len(paid_catalog.AGENTS) in body
-    cards = re.findall(r'<a href="/strategic-agents/paid-marketing/[^"]+" id="t-[^"]+" class="sa-card".*?</a>', body, re.S)
+    cards = [c for c in re.findall(r'<a href="/operational-agents/[^"]+" id="t-[^"]+" class="sa-card".*?</a>', body, re.S)
+             if 'data-group="paid-marketing"' in c]
     assert len(cards) == len(paid_catalog.AGENTS) >= 1
     for a, card in zip(paid_catalog.AGENTS, cards):
         assert 'id="t-%s"' % a["slug"] in card and 'data-group="paid-marketing"' in card
         assert 'data-badge="building"' in card and ">Building<" in card and ">Live<" not in card
         tags = re.findall(r'<span class="sa-tag">([^<]*)</span>', card)
         assert tags[0] == "Paid marketing" and "SEO" not in tags, tags
-        assert 'class="sa-tick-i sa-tick-i--d" href="/strategic-agents/paid-marketing/%s"' % a["slug"] in body
+        assert 'class="sa-tick-i sa-tick-i--d" href="/operational-agents/%s"' % a["slug"] in body
+
+
+def test_the_heading_says_operational_agents(body):
+    h1 = re.search(r'<h1 class="sa-h1".*?</h1>', body, re.S).group(0)
+    words = re.sub(r"<[^>]+>", " ", h1).split()
+    assert words == ["Operational", "agents."], words
+    assert "Own the answer" not in body
+
+
+def test_the_paid_marketing_agents_come_first_and_the_seo_tools_after(body):
+    """Paid marketing heads the page everywhere it lists agents: the ticker, the figures, the chips and the
+    directory, where every paid card comes before every SEO card and is numbered first."""
+    from tracker import paid_catalog
+    paid = {a["slug"] for a in paid_catalog.AGENTS}
+    seo = [t["slug"] for t in appmod._seo_tools()]
+    cards = re.findall(r'<a href="/operational-agents/([^"]+)" id="t-[^"]+" class="sa-card"', body)
+    assert cards[:len(paid)] == [a["slug"] for a in paid_catalog.AGENTS]
+    assert set(cards[len(paid):]) == set(seo) and len(cards) == len(paid) + len(seo)
+    nums = re.findall(r'<span class="sa-num">(\d+)</span>', body)
+    assert nums == ["%02d" % i for i in range(1, len(cards) + 1)]
+    ticker = re.findall(r'class="sa-tick-i[^"]*" href="/operational-agents/([^"]+)"', body)
+    assert ticker[:len(paid)] == [a["slug"] for a in paid_catalog.AGENTS] and set(ticker[len(paid):]) == set(seo)
+    assert body.index('data-figure="paid-marketing"') < body.index('data-figure="tools"')
+    assert body.index('data-sa-group="paid-marketing"') < body.index('data-sa-group="research"')
+    # The directory comes before the SEO guide sections.
+    assert body.index('id="sa-dir-t"') < body.index('id="sa-flow-t"') < body.index('id="sa-jobs-t"')
+
+
+def test_no_seo_tool_and_paid_agent_share_an_address():
+    from tracker import paid_catalog
+    assert not {t["slug"] for t in appmod._seo_tools()} & paid_catalog.SLUGS
+    assert "runs" not in paid_catalog.SLUGS and "runs" not in {t["slug"] for t in appmod._seo_tools()}

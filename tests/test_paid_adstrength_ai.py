@@ -231,7 +231,7 @@ def small():
 
 
 def test_the_page_renders_for_staff_and_not_for_anyone_else():
-    path = "/strategic-agents/paid-marketing/ad-strength"
+    path = "/operational-agents/ad-strength"
     assert client_as(STAFF).get(path).status_code == 200 and b"ad_strength.js" in client_as(STAFF).get(path).data
     assert client_as(None).get(path).status_code == 302 and client_as("someone@gmail.com").get(path).status_code == 302
 

@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
 {#- ════════════════════════════════════════════════════════════════════════
-    OPERATIONAL AGENTS (/seo-aeo) — in the public site's voice.
+    OPERATIONAL AGENTS (/operational-agents) — in the public site's voice.
 
-    The directory of every SEO Studio tool, on the same system as the
+    The directory of every paid marketing agent and every SEO Studio tool,
+    each opened at /operational-agents/<slug>, on the same system as the
     Go-to-market directory (b2b_agents.html): static/css/strategic-agents.css
     and static/js/strategic-agents.js. An ink hero with the statement behind
     the orange marker, a ticker, the Research -> Optimize -> Build path that
@@ -15,13 +16,15 @@
     _SEO_TOOL_BRIEFS (app.py), so a tool added to the studio's menu lands
     here, in the ticker, the path, the filters and every count, at once.
 
-    The hub card for this page is headed "Operational agents"; the page keeps
-    its "SEO + AEO" title (tests/test_seo_aeo_rename.py).
+    The page was "SEO + AEO" at /seo-aeo until 2026-10-18; that address now
+    redirects here (tests/test_operational_agents_rename.py).
 
     The Paid Marketing Agents (tracker/paid_catalog.py, docs/paid-marketing-plan.md)
-    are the amber "Paid marketing" group after the SEO groups: native pages at
-    /strategic-agents/paid-marketing/<slug>, each card carrying a "Paid marketing"
-    pill where the SEO tools carry "SEO". Every count on the page is of both.
+    come first, everywhere on the page: the amber "Paid marketing" group heads
+    the directory, ahead of the SEO groups, each card carrying a "Paid
+    marketing" pill where the SEO tools carry "SEO". The SEO guide (the order
+    the work happens in, the common jobs) follows the directory. Every count
+    on the page is of both.
 
     Motion is off under prefers-reduced-motion; with JS off this is a
     finished, static page.
@@ -39,11 +42,11 @@
 {%- set total = seo_tools|length + paid|length %}
 <html lang="en">
 <head>
-{{ head("SEO + AEO", ["strategic-agents.css?v=3"]) }}
+{{ head("Operational agents", ["strategic-agents.css?v=3"]) }}
 </head>
 <body class="sa">
 
-{{ topbar([("SEO + AEO", none)]) }}
+{{ topbar([("Operational agents", none)]) }}
 <div class="sa-prog" aria-hidden="true"><i></i></div>
 
 <main class="sa-shell">
@@ -51,7 +54,7 @@
   {# ── Hero ────────────────────────────────────────────────────────────── #}
   <section class="sa-hero" data-sa-settle>
     <div class="sa-hero-top">
-      <span class="sa-lbl" data-sa-decode>Operational agents &middot; SEO + AEO{% if paid %} &middot; Paid marketing{% endif %}</span>
+      <span class="sa-lbl" data-sa-decode>{% if paid %}Paid marketing &middot; {% endif %}SEO + AEO</span>
       <span class="sa-live sa-live--build"><i></i>{{ total }} in build</span>
       <div class="sa-shapes" aria-hidden="true">
         <span class="sa-shape sa-shape--circle"></span>
@@ -62,19 +65,19 @@
     </div>
 
     <h1 class="sa-h1" data-sa-springy>
-      <span class="sa-ln"><span>Own the answer,</span></span>
-      <span class="sa-ln"><span>in <span class="sa-mk">search</span> <em class="sa-it">and in AI.</em></span></span>
+      <span class="sa-ln"><span><span class="sa-mk">Operational</span></span></span>
+      <span class="sa-ln"><span><em class="sa-it">agents.</em></span></span>
     </h1>
 
     <div class="sa-hero-foot">
       <p class="sa-lead">
-        {{ seo_tools|length }} tools for search and answer-engine visibility, in the order the work
-        happens: research where the demand is, optimize the pages already live, and build the
-        ones that are missing.{% if paid %} And {{ paid|length }} paid marketing agent{{ '' if paid|length == 1 else 's' }}
-        that read{{ 's' if paid|length == 1 else '' }} Google Ads and Meta live.{% endif %}
+        {% if paid %}{{ paid|length }} paid marketing agent{{ '' if paid|length == 1 else 's' }} that
+        read{{ 's' if paid|length == 1 else '' }} Google Ads and Meta live, and {% endif %}{{ seo_tools|length }} tools
+        for search and answer-engine visibility, in the order the work happens: research where the
+        demand is, optimize the pages already live, and build the ones that are missing.
       </p>
       <div class="sa-hero-actions">
-        <a href="#agents" class="sa-btn sa-btn--hero">Browse the tools</a>
+        <a href="#agents" class="sa-btn sa-btn--hero">Browse the agents</a>
         <button type="button" class="sa-btn sa-btn--ghost" data-bn-palette>
           Jump to one <span class="sa-kbd"><kbd>&#8984;</kbd><kbd>K</kbd></span>
         </button>
@@ -83,34 +86,142 @@
 
     {# Counted from the same list as the cards below. #}
     <div class="sa-figs">
-      <div class="sa-fig"><b data-sa-odo data-figure="tools">{{ seo_tools|length }}</b><span>tools</span></div>
+      {% if paid %}<div class="sa-fig"><b data-sa-odo data-figure="paid-marketing">{{ paid|length }}</b><span>paid marketing</span></div>{% endif %}
+      <div class="sa-fig"><b data-sa-odo data-figure="tools">{{ seo_tools|length }}</b><span>SEO tools</span></div>
       {% for group_name, tools in seo_tool_groups %}
       <div class="sa-fig"><b data-sa-odo data-figure="{{ G[group_name].key if group_name in G else group_name|lower }}">{{ tools|length }}</b><span>{{ group_name|lower }}</span></div>
       {% endfor %}
-      {% if paid %}<div class="sa-fig"><b data-sa-odo data-figure="paid-marketing">{{ paid|length }}</b><span>paid marketing</span></div>{% endif %}
     </div>
   </section>
 
   {# ── Ticker ──────────────────────────────────────────────────────────── #}
-  <div class="sa-tick" aria-label="Every tool">
+  <div class="sa-tick" aria-label="Every agent">
     <div class="sa-tick-track">
-      {%- for t in seo_tools %}
-      <a class="sa-tick-i sa-tick-i--{{ G[t.group].hue if t.group in G else 'a' }}" href="/seo-aeo/{{ t.slug }}">{{ t.name }}</a>
-      {%- endfor %}
       {%- for a in paid %}
-      <a class="sa-tick-i sa-tick-i--d" href="{{ paid_prefix }}/{{ a.slug }}">{{ a.name }}</a>
+      <a class="sa-tick-i sa-tick-i--d" href="{{ ops }}/{{ a.slug }}">{{ a.name }}</a>
+      {%- endfor %}
+      {%- for t in seo_tools %}
+      <a class="sa-tick-i sa-tick-i--{{ G[t.group].hue if t.group in G else 'a' }}" href="{{ ops }}/{{ t.slug }}">{{ t.name }}</a>
       {%- endfor %}
     </div>
   </div>
+
+  {# ── The directory ───────────────────────────────────────────────────── #}
+  <section class="sa-dir" id="agents" aria-labelledby="sa-dir-t">
+    <div class="sa-sec-head">
+      <span class="sa-idx">01</span>
+      <div>
+        <span class="sa-lbl" data-sa-decode>The directory</span>
+        <h2 class="sa-h2" id="sa-dir-t">Every agent, <span class="sa-mk sa-mk--sm">in one place.</span></h2>
+      </div>
+    </div>
+
+    <div class="sa-filters" id="sa-filters">
+      <div class="sa-filters-in">
+        <div class="sa-chips" role="group" aria-label="Group">
+          <button type="button" class="sa-chip is-on" data-sa-group="all">All <b>{{ total }}</b></button>
+          {% if paid %}<button type="button" class="sa-chip" data-sa-group="paid-marketing"><i class="sa-dot sa-dot--d"></i>Paid marketing <b>{{ paid|length }}</b></button>{% endif %}
+          {% for group_name, tools in seo_tool_groups %}
+          {% set g = G.get(group_name, {"key": group_name|lower, "hue": "a"}) %}
+          <button type="button" class="sa-chip" data-sa-group="{{ g.key }}"><i class="sa-dot sa-dot--{{ g.hue }}"></i>{{ group_name }} <b>{{ tools|length }}</b></button>
+          {% endfor %}
+        </div>
+        <label class="sa-search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-3.4-3.4"/></svg>
+          <input type="search" id="sa-q" placeholder="Search agents, inputs, outputs&hellip;" aria-label="Search agents">
+          <kbd class="sa-slash" aria-hidden="true">/</kbd>
+        </label>
+        <span class="sa-count" id="sa-count" aria-live="polite">Showing {{ total }} of {{ total }}</span>
+      </div>
+    </div>
+
+    {% set n = namespace(i=0) %}
+    {% if paid %}
+    {#- The paid media team's agents: each reads an ad account live, read only. #}
+    <div class="sa-group sa-group--d" id="paid-marketing" data-sa-groupbox="paid-marketing">
+      <div class="sa-group-head">
+        <span class="sa-group-tile" aria-hidden="true"></span>
+        <div>
+          <h3 class="sa-group-name">Paid marketing</h3>
+          <p class="sa-group-sub">Google Ads and Meta, read live and read only: performance, where the money goes, and what to fix first.</p>
+        </div>
+        <span class="sa-group-count">{{ paid|length }} agent{{ '' if paid|length == 1 else 's' }}</span>
+      </div>
+      <div class="sa-grid">
+        {% for a in paid %}
+        {% set n.i = n.i + 1 %}
+        <a href="{{ ops }}/{{ a.slug }}" id="t-{{ a.slug }}" class="sa-card" data-tool="{{ a.slug }}" data-state="active" data-badge="building" data-group="paid-marketing">
+          <span class="sa-card-top">
+            <span class="sa-ic sa-ic--letter" aria-hidden="true">{{ a.icon or (a.name or '?')[:1]|upper }}</span>
+            <span class="sa-num">{{ "%02d"|format(n.i) }}</span>
+            <span class="sa-state sa-state--build"><i></i>Building</span>
+          </span>
+          <span class="sa-name" data-tool-name>{{ a.name }}</span>
+          <span class="sa-desc">{{ a.lead }}</span>
+          <span class="sa-dl">
+            <span><em>You give</em>{{ a.gives }}</span>
+            <span><em>You get</em>{{ a.gets }}</span>
+          </span>
+          {#- A paid marketing agent leads its tags with "Paid marketing", where an SEO tool has "SEO". #}
+          {% set tags = ["Paid marketing"] + ((a.tags or []) | reject("equalto", "Paid marketing") | list) %}
+          <span class="sa-tags">{% for tag in tags %}<span class="sa-tag">{{ tag }}</span>{% endfor %}</span>
+          <span class="sa-go">Open agent <span aria-hidden="true">&rarr;</span></span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% for group_name, tools in seo_tool_groups %}
+    {% set g = G.get(group_name, {"key": group_name|lower, "hue": "a", "sub": ""}) %}
+    <div class="sa-group sa-group--{{ g.hue }}" data-sa-groupbox="{{ g.key }}">
+      <div class="sa-group-head">
+        <span class="sa-group-tile" aria-hidden="true"></span>
+        <div>
+          <h3 class="sa-group-name">{{ group_name }}</h3>
+          <p class="sa-group-sub">{{ g.sub }}</p>
+        </div>
+        <span class="sa-group-count">{{ tools|length }} tools</span>
+      </div>
+      <div class="sa-grid">
+        {% for t in tools %}
+        {% set n.i = n.i + 1 %}
+        {% set b = seo_tool_briefs.get(t.slug, {}) %}
+        <a href="{{ ops }}/{{ t.slug }}" id="t-{{ t.slug }}" class="sa-card" data-tool="{{ t.slug }}" data-state="active" data-badge="building" data-group="{{ g.key }}">
+          <span class="sa-card-top">
+            <span class="sa-ic sa-ic--letter" aria-hidden="true">{{ (t.name or '?')[:1]|upper }}</span>
+            <span class="sa-num">{{ "%02d"|format(n.i) }}</span>
+            <span class="sa-state sa-state--build"><i></i>Building</span>
+          </span>
+          <span class="sa-name" data-tool-name>{{ t.name }}</span>
+          <span class="sa-desc">{{ b.lead or t.desc }}</span>
+          {% if b.gives %}
+          <span class="sa-dl">
+            <span><em>You give</em>{{ b.gives }}</span>
+            <span><em>You get</em>{{ b.gets }}</span>
+          </span>
+          {% endif %}
+          {#- An SEO tool leads its tags with "SEO", once. #}
+          {% set tags = ["SEO"] + ((t.tags or []) | reject("equalto", "SEO") | list) %}
+          <span class="sa-tags">{% for tag in tags %}<span class="sa-tag">{{ tag }}</span>{% endfor %}</span>
+          <span class="sa-go">Open tool <span aria-hidden="true">&rarr;</span></span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <p class="sa-none" id="sa-none" hidden>No agent matches that. Try an input like &ldquo;URL&rdquo; or an output like &ldquo;brief&rdquo;.</p>
+  </section>
 
   {# ── The order the work happens in ──────────────────────────────────────
      One step per group, on a path that draws itself as the section scrolls
      through. Each step's tools are links to their cards below. #}
   <section class="sa-flow" aria-labelledby="sa-flow-t">
     <div class="sa-sec-head">
-      <span class="sa-idx">01</span>
+      <span class="sa-idx">02</span>
       <div>
-        <span class="sa-lbl" data-sa-decode>The order the work happens in</span>
+        <span class="sa-lbl" data-sa-decode>SEO + AEO &middot; the order the work happens in</span>
         <h2 class="sa-h2" id="sa-flow-t">Find the demand. Fix the page. <em class="sa-it">Build</em> what is missing.</h2>
       </div>
     </div>
@@ -149,9 +260,9 @@
   ] %}
   <section class="sa-jobs-sec" aria-labelledby="sa-jobs-t">
     <div class="sa-sec-head">
-      <span class="sa-idx">02</span>
+      <span class="sa-idx">03</span>
       <div>
-        <span class="sa-lbl" data-sa-decode>Common jobs</span>
+        <span class="sa-lbl" data-sa-decode>SEO + AEO &middot; common jobs</span>
         <h2 class="sa-h2" id="sa-jobs-t">Three jobs, <span class="sa-mk sa-mk--sm">tool by tool.</span></h2>
       </div>
     </div>
@@ -172,114 +283,6 @@
       </div>
       {% endfor %}
     </div>
-  </section>
-
-  {# ── The directory ───────────────────────────────────────────────────── #}
-  <section class="sa-dir" id="agents" aria-labelledby="sa-dir-t">
-    <div class="sa-sec-head">
-      <span class="sa-idx">03</span>
-      <div>
-        <span class="sa-lbl" data-sa-decode>The directory</span>
-        <h2 class="sa-h2" id="sa-dir-t">Every tool, <span class="sa-mk sa-mk--sm">in one place.</span></h2>
-      </div>
-    </div>
-
-    <div class="sa-filters" id="sa-filters">
-      <div class="sa-filters-in">
-        <div class="sa-chips" role="group" aria-label="Group">
-          <button type="button" class="sa-chip is-on" data-sa-group="all">All <b>{{ total }}</b></button>
-          {% for group_name, tools in seo_tool_groups %}
-          {% set g = G.get(group_name, {"key": group_name|lower, "hue": "a"}) %}
-          <button type="button" class="sa-chip" data-sa-group="{{ g.key }}"><i class="sa-dot sa-dot--{{ g.hue }}"></i>{{ group_name }} <b>{{ tools|length }}</b></button>
-          {% endfor %}
-          {% if paid %}<button type="button" class="sa-chip" data-sa-group="paid-marketing"><i class="sa-dot sa-dot--d"></i>Paid marketing <b>{{ paid|length }}</b></button>{% endif %}
-        </div>
-        <label class="sa-search">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-3.4-3.4"/></svg>
-          <input type="search" id="sa-q" placeholder="Search tools, inputs, outputs&hellip;" aria-label="Search tools">
-          <kbd class="sa-slash" aria-hidden="true">/</kbd>
-        </label>
-        <span class="sa-count" id="sa-count" aria-live="polite">Showing {{ total }} of {{ total }}</span>
-      </div>
-    </div>
-
-    {% set n = namespace(i=0) %}
-    {% for group_name, tools in seo_tool_groups %}
-    {% set g = G.get(group_name, {"key": group_name|lower, "hue": "a", "sub": ""}) %}
-    <div class="sa-group sa-group--{{ g.hue }}" data-sa-groupbox="{{ g.key }}">
-      <div class="sa-group-head">
-        <span class="sa-group-tile" aria-hidden="true"></span>
-        <div>
-          <h3 class="sa-group-name">{{ group_name }}</h3>
-          <p class="sa-group-sub">{{ g.sub }}</p>
-        </div>
-        <span class="sa-group-count">{{ tools|length }} tools</span>
-      </div>
-      <div class="sa-grid">
-        {% for t in tools %}
-        {% set n.i = n.i + 1 %}
-        {% set b = seo_tool_briefs.get(t.slug, {}) %}
-        <a href="/seo-aeo/{{ t.slug }}" id="t-{{ t.slug }}" class="sa-card" data-tool="{{ t.slug }}" data-state="active" data-badge="building" data-group="{{ g.key }}">
-          <span class="sa-card-top">
-            <span class="sa-ic sa-ic--letter" aria-hidden="true">{{ (t.name or '?')[:1]|upper }}</span>
-            <span class="sa-num">{{ "%02d"|format(n.i) }}</span>
-            <span class="sa-state sa-state--build"><i></i>Building</span>
-          </span>
-          <span class="sa-name" data-tool-name>{{ t.name }}</span>
-          <span class="sa-desc">{{ b.lead or t.desc }}</span>
-          {% if b.gives %}
-          <span class="sa-dl">
-            <span><em>You give</em>{{ b.gives }}</span>
-            <span><em>You get</em>{{ b.gets }}</span>
-          </span>
-          {% endif %}
-          {#- Every operational agent is an SEO tool: "SEO" leads its tags, once. #}
-          {% set tags = ["SEO"] + ((t.tags or []) | reject("equalto", "SEO") | list) %}
-          <span class="sa-tags">{% for tag in tags %}<span class="sa-tag">{{ tag }}</span>{% endfor %}</span>
-          <span class="sa-go">Open tool <span aria-hidden="true">&rarr;</span></span>
-        </a>
-        {% endfor %}
-      </div>
-    </div>
-    {% endfor %}
-
-    {% if paid %}
-    {#- The paid media team's agents: each reads an ad account live, read only. #}
-    <div class="sa-group sa-group--d" id="paid-marketing" data-sa-groupbox="paid-marketing">
-      <div class="sa-group-head">
-        <span class="sa-group-tile" aria-hidden="true"></span>
-        <div>
-          <h3 class="sa-group-name">Paid marketing</h3>
-          <p class="sa-group-sub">Google Ads and Meta, read live and read only: performance, where the money goes, and what to fix first.</p>
-        </div>
-        <span class="sa-group-count">{{ paid|length }} agent{{ '' if paid|length == 1 else 's' }}</span>
-      </div>
-      <div class="sa-grid">
-        {% for a in paid %}
-        {% set n.i = n.i + 1 %}
-        <a href="{{ paid_prefix }}/{{ a.slug }}" id="t-{{ a.slug }}" class="sa-card" data-tool="{{ a.slug }}" data-state="active" data-badge="building" data-group="paid-marketing">
-          <span class="sa-card-top">
-            <span class="sa-ic sa-ic--letter" aria-hidden="true">{{ a.icon or (a.name or '?')[:1]|upper }}</span>
-            <span class="sa-num">{{ "%02d"|format(n.i) }}</span>
-            <span class="sa-state sa-state--build"><i></i>Building</span>
-          </span>
-          <span class="sa-name" data-tool-name>{{ a.name }}</span>
-          <span class="sa-desc">{{ a.lead }}</span>
-          <span class="sa-dl">
-            <span><em>You give</em>{{ a.gives }}</span>
-            <span><em>You get</em>{{ a.gets }}</span>
-          </span>
-          {#- A paid marketing agent leads its tags with "Paid marketing", where an SEO tool has "SEO". #}
-          {% set tags = ["Paid marketing"] + ((a.tags or []) | reject("equalto", "Paid marketing") | list) %}
-          <span class="sa-tags">{% for tag in tags %}<span class="sa-tag">{{ tag }}</span>{% endfor %}</span>
-          <span class="sa-go">Open agent <span aria-hidden="true">&rarr;</span></span>
-        </a>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
-    <p class="sa-none" id="sa-none" hidden>No tool matches that. Try an input like &ldquo;URL&rdquo; or an output like &ldquo;brief&rdquo;.</p>
   </section>
 
   {# ── The figures: an ink block that opens like a portal ──────────────────
@@ -341,7 +344,7 @@
   function _send(){
     if(_sent) return; _sent = true;
     fetch('/api/track', {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({page: window.location.pathname, title: 'SEO + AEO Dashboards',
+      body: JSON.stringify({page: window.location.pathname, title: 'Operational Agents',
       seconds: Math.round((Date.now()-_start)/1000),
       email: '{{ user.email if user else "" }}'}), keepalive: true}).catch(function(){});
   }

@@ -6,16 +6,18 @@ client workspace (ACCT_AGENTS), their workspace colour, and the client routes; t
 reads it for each agent's name and History. An agent is added here when its page ships
 (docs/paid-marketing-plan.md), so the page never lists one that does not open yet.
 
-    slug      /strategic-agents/paid-marketing/<slug>, and /<account>/agents/<slug> in a workspace
+    slug      its page, /operational-agents/<slug>, and /<account>/agents/<slug> in a workspace
     endpoint  the Flask view of its page
-    api       its JSON routes, as regexes after /strategic-agents/ (for a client the workspace shares it with)
+    api       its JSON routes (under PREFIX), as regexes after /strategic-agents/ (for a client the workspace shares
+              it with)
     runs      the requests that start one of its runs (counted against a client's monthly runs)
     workspace False for an agent that is the team's view across every client, so not opened inside a workspace
               (CLAUDE.md's exemption, for an agent genuinely not about one client); it says why in `why`
 """
 from __future__ import annotations
 
-PREFIX = "/strategic-agents/paid-marketing"
+PREFIX = "/strategic-agents/paid-marketing"      # the agents' JSON routes (and the pages' old address, redirected)
+PAGES = "/operational-agents"                     # the pages, beside the SEO tools on the Operational Agents page
 COLOUR = "#FFB500"            # amber, the Paid marketing group's hue on the directory and in workspaces
 
 # The account list and the reads every Google Ads or Meta page shares.
@@ -202,4 +204,4 @@ NAMES = {a["slug"]: a["name"] for a in AGENTS}
 
 
 def path(slug):
-    return PREFIX + "/" + slug
+    return PAGES + "/" + slug

@@ -70,7 +70,7 @@ def test_the_page_opens_for_staff_and_the_scripts_are_served():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
         sess["google_user"] = {"email": "someone@markifydigital.com", "name": "T"}
-    page = c.get("/strategic-agents/paid-marketing/search-query-analysis")
+    page = c.get("/operational-agents/search-query-analysis")
     assert page.status_code == 200 and b"sqr_core.js" in page.data and b"sqr_agent.js" in page.data
     assert c.get("/static/js/sqr_core.js").status_code == 200
 

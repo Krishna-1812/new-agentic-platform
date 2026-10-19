@@ -76,7 +76,7 @@ def test_a_client_is_kept_inside_their_account(seeded):
     T._invite("lumina")
     c = T._client(T.CLIENT)
     for path in ("/", "/hub", "/app", "/app/keyword-wizard", "/dashboards/google-ads", "/strategic-agents/local-business-radar",
-                 "/seo-aeo/keyword-research", "/admin/client-usage", "/page-watch", "/video-studio"):
+                 "/operational-agents/keyword-research", "/admin/client-usage", "/page-watch", "/video-studio"):
         r = c.get(path)
         assert r.status_code == 302 and r.headers["Location"].endswith("/lumina"), (path, r.status_code, r.headers.get("Location"))
     assert c.get("/bloom").status_code == 403, "another account is still refused"

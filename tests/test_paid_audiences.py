@@ -410,7 +410,7 @@ def client_as(email):
 
 
 def test_the_page_renders_for_staff_and_not_for_anyone_else():
-    path = "/strategic-agents/paid-marketing/audience-segments"
+    path = "/operational-agents/audience-segments"
     assert client_as(STAFF).get(path).status_code == 200 and b"audience_segments.js" in client_as(STAFF).get(path).data
     assert client_as(None).get(path).status_code == 302 and client_as("someone@gmail.com").get(path).status_code == 302
 

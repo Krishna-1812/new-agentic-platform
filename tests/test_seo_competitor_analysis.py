@@ -54,20 +54,20 @@ def test_it_is_registered_in_the_fallback_list():
 
 
 def test_the_suite_page_lists_it(client):
-    body = client.get("/seo-aeo").get_data(as_text=True)
+    body = client.get("/operational-agents").get_data(as_text=True)
     assert "Competitor Analysis" in body
-    assert '/seo-aeo/%s"' % _SLUG in body
+    assert '/operational-agents/%s"' % _SLUG in body
 
 
 def test_opening_it_embeds_the_real_serp_apps_page(client):
-    r = client.get("/seo-aeo/%s" % _SLUG)
+    r = client.get("/operational-agents/%s" % _SLUG)
     assert r.status_code == 200
     body = r.get_data(as_text=True)
     assert appmod._SERP_BASE + "/competitor-analysis" in body
 
 
 def test_an_unknown_seo_slug_still_404s(client):
-    r = client.get("/seo-aeo/not-a-real-tool")
+    r = client.get("/operational-agents/not-a-real-tool")
     assert r.status_code == 404
 
 

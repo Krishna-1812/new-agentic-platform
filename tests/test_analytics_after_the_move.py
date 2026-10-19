@@ -165,18 +165,21 @@ def test_every_analytics_reader_classifies_with_was_staff():
 # ── 2. Renamed paths fold once ──────────────────────────────────────────────
 
 @pytest.mark.parametrize("recorded,today", [
-    ("/p2/seo-aeo/keyword-research", "/seo-aeo/keyword-research"),
-    ("/p2/seo-aeo", "/seo-aeo"),
-    ("/p2/seo/keyword-research", "/seo-aeo/keyword-research"),
-    ("/p2/seo", "/seo-aeo"),
-    ("/p2/seo?tool=x", "/seo-aeo?tool=x"),
-    ("/seo-aeo/gbp-qc", "/seo-aeo/gbp-qc"),
+    # The section is /operational-agents since 2026-10-18 (tests/test_operational_agents_rename.py).
+    ("/p2/seo-aeo/keyword-research", "/operational-agents/keyword-research"),
+    ("/p2/seo-aeo", "/operational-agents"),
+    ("/p2/seo/keyword-research", "/operational-agents/keyword-research"),
+    ("/p2/seo", "/operational-agents"),
+    ("/p2/seo?tool=x", "/operational-agents?tool=x"),
+    ("/seo-aeo/gbp-qc", "/operational-agents/gbp-qc"),
+    ("/operational-agents/gbp-qc", "/operational-agents/gbp-qc"),
     ("/p2/gtm/ad-intelligence", "/strategic-agents/ad-intelligence"),
     ("/p2/b2b-agents/gentle-dental-slot-checker", "/strategic-agents/42-north-dental-slot-checker"),
     ("/p2/strategic-agents", "/strategic-agents"),
     ("/p2/hub", "/hub"),
-    ("SEO Dashboards", "SEO + AEO Dashboards"),
-    ("SEO + AEO Dashboards", "SEO + AEO Dashboards"),
+    ("SEO Dashboards", "Operational Agents"),
+    ("SEO + AEO Dashboards", "Operational Agents"),
+    ("Operational Agents", "Operational Agents"),
 ])
 def test_a_recorded_page_folds_to_its_current_name_exactly_once(recorded, today):
     assert appmod._page_label(recorded) == today

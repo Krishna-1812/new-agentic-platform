@@ -1,4 +1,6 @@
-"""The "SEO" section was renamed to "SEO + AEO", 2026-09-11.
+"""The "SEO" section was renamed to "SEO + AEO", 2026-09-11, and to
+"Operational agents" at /operational-agents, 2026-10-18 (both old addresses
+redirect; tests/test_operational_agents_rename.py covers the second rename).
 
 First rename for this section (unlike GTM -> B2B Agents -> Strategic Agents,
 there is no earlier generation to also fold forward). Two things have to
@@ -63,13 +65,12 @@ def client(monkeypatch):
 # ── The new canonical path ───────────────────────────────────────────────────
 
 def test_the_section_is_served_at_its_new_path(client):
-    assert client.get("/seo-aeo").status_code == 200
+    assert client.get("/operational-agents").status_code == 200
 
 
-def test_the_page_says_seo_plus_aeo_not_bare_seo(client):
-    body = client.get("/seo-aeo").get_data(as_text=True)
-    assert "SEO + AEO" in body
-    assert '<span class="bc-cur">SEO</span>' not in body
+def test_the_page_does_not_say_bare_seo(client):
+    body = client.get("/operational-agents").get_data(as_text=True)
+    assert '<span class="bn-crumb-cur" aria-current="page">SEO</span>' not in body
 
 
 def test_the_hub_card_is_renamed_and_points_at_the_new_path(client):
@@ -78,22 +79,22 @@ def test_the_hub_card_is_renamed_and_points_at_the_new_path(client):
     # identified by its data attributes rather than by a presentational class.
     # The card's own headline later became "Operational agents" (see
     # tests/test_hub_card_counts.py); what this test still pins is that it
-    # is the /seo-aeo workspace under the hood, not the retired "SEO" name.
+    # is the /operational-agents workspace, not the retired "SEO" name.
     assert re.search(r'data-ws-name>\s*Operational agents\s*<', body)
-    assert 'href="/seo-aeo"' in body
+    assert 'href="/operational-agents"' in body
     assert '<div class="card-title">SEO</div>' not in body
 
 
 def test_a_real_tool_slug_is_routed_at_the_new_prefix():
     rules = {str(r) for r in appmod.app.url_map.iter_rules()}
-    assert "/seo-aeo" in rules
-    assert "/seo-aeo/<tool_slug>" in rules
+    assert "/operational-agents" in rules
+    assert "/operational-agents/<tool_slug>" in rules
 
 
 def test_the_tool_cards_link_to_the_new_prefix(client):
-    body = client.get("/seo-aeo").get_data(as_text=True)
+    body = client.get("/operational-agents").get_data(as_text=True)
     tool = appmod._SEO_TOOLS[0]
-    assert '/seo-aeo/%s"' % tool["slug"] in body
+    assert '/operational-agents/%s"' % tool["slug"] in body
     assert '/seo/%s"' % tool["slug"] not in body
 
 
@@ -102,25 +103,25 @@ def test_the_tool_cards_link_to_the_new_prefix(client):
 def test_the_old_section_root_redirects(client):
     r = client.get("/seo")
     assert r.status_code == 308
-    assert r.headers["Location"].endswith("/seo-aeo")
+    assert r.headers["Location"].endswith("/operational-agents")
 
 
 def test_the_bare_path_with_trailing_slash_redirects_too(client):
     r = client.get("/seo/")
     assert r.status_code == 308
-    assert r.headers["Location"].endswith("/seo-aeo")
+    assert r.headers["Location"].endswith("/operational-agents")
 
 
 def test_an_old_tool_sub_path_redirects(client):
     tool = appmod._SEO_TOOLS[0]
     r = client.get("/seo/%s" % tool["slug"])
     assert r.status_code == 308
-    assert r.headers["Location"].endswith("/seo-aeo/%s" % tool["slug"])
+    assert r.headers["Location"].endswith("/operational-agents/%s" % tool["slug"])
 
 
 def test_a_query_string_survives_the_redirect(client):
     r = client.get("/seo/keyword-opportunity-engine?fresh=1")
-    assert r.headers["Location"].endswith("/seo-aeo/keyword-opportunity-engine?fresh=1")
+    assert r.headers["Location"].endswith("/operational-agents/keyword-opportunity-engine?fresh=1")
 
 
 def test_a_post_keeps_its_method_and_body(client):
@@ -129,7 +130,7 @@ def test_a_post_keeps_its_method_and_body(client):
     retry it as a GET, dropping the body."""
     r = client.post("/seo/keyword-opportunity-engine", json={"x": 1})
     assert r.status_code == 308, "301 would let the browser downgrade this to GET"
-    assert r.headers["Location"].endswith("/seo-aeo/keyword-opportunity-engine")
+    assert r.headers["Location"].endswith("/operational-agents/keyword-opportunity-engine")
 
 
 def test_a_delete_keeps_its_method(client):
@@ -146,22 +147,23 @@ def test_the_embedded_tool_page_pushes_state_to_the_new_prefix(client):
     rename would silently rewrite the URL back to a path that only exists as
     a redirect."""
     tool = appmod._SEO_TOOLS[0]
-    body = client.get("/seo-aeo/%s" % tool["slug"]).get_data(as_text=True)
-    assert "'/seo-aeo/' + d.tool" in body
+    body = client.get("/operational-agents/%s" % tool["slug"]).get_data(as_text=True)
+    assert "'/operational-agents/' + d.tool" in body
+    assert "'/seo-aeo/' + d.tool" not in body
     assert "'/seo/' + d.tool" not in body
 
 
 # ── Analytics written under the old name ────────────────────────────────────
 
 def test_the_old_page_title_folds_into_the_new_one():
-    assert appmod._page_label("SEO Dashboards") == "SEO + AEO Dashboards"
+    assert appmod._page_label("SEO Dashboards") == "Operational Agents"
 
 
 def test_an_old_recorded_path_folds_too():
     # A path as it was RECORDED: every page view before 2026-09-24 carries the
     # old /p2 prefix, so the historical input keeps it; the output does not.
     assert (appmod._page_label("/p2/seo/keyword-opportunity-engine")
-            == "/seo-aeo/keyword-opportunity-engine")
+            == "/operational-agents/keyword-opportunity-engine")
 
 
 def test_an_unrelated_label_is_untouched():
@@ -172,9 +174,9 @@ def test_top_pages_would_not_fork_across_the_rename():
     """The actual failure mode, stated as a test: two rows recorded either
     side of the rename have to count as one page."""
     from collections import Counter
-    rows = ["SEO Dashboards"] * 4 + ["SEO + AEO Dashboards"] * 1
+    rows = ["SEO Dashboards"] * 4 + ["SEO + AEO Dashboards"] * 1 + ["Operational Agents"] * 2
     folded = Counter(appmod._page_label(r) for r in rows)
-    assert folded == {"SEO + AEO Dashboards": 5}, "a rename must not split its own history"
+    assert folded == {"Operational Agents": 7}, "a rename must not split its own history"
 
 
 # ── The other meanings of "SEO" that are NOT this section ───────────────────

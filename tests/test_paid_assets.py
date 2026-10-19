@@ -607,7 +607,7 @@ def small():
 
 
 def test_the_page_renders_for_staff_and_not_for_anyone_else():
-    path = "/strategic-agents/paid-marketing/asset-coverage"
+    path = "/operational-agents/asset-coverage"
     page = client_as(STAFF).get(path)
     assert page.status_code == 200 and b"asset_coverage.js" in page.data and b"asset_coverage.css" in page.data and b"Asset Coverage Audit" in page.data
     assert client_as(None).get(path).status_code == 302 and client_as("someone@gmail.com").get(path).status_code == 302

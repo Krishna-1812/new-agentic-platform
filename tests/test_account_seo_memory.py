@@ -90,7 +90,7 @@ def _pass(html):
 def test_the_studio_is_opened_with_the_accounts_space_inside_an_account():
     inside = _pass(_client(ANA).get("/lumina/seo-aeo/on-page-audit").get_data(as_text=True))
     assert inside["s"] == _space("lumina") and inside["e"] == ANA
-    general = _pass(_client(ANA).get("/seo-aeo/on-page-audit").get_data(as_text=True))
+    general = _pass(_client(ANA).get("/operational-agents/on-page-audit").get_data(as_text=True))
     assert "s" not in general, "General: the studio files the work as the person's own"
 
 
@@ -98,7 +98,7 @@ def test_the_embed_hands_finished_runs_to_the_platform():
     html = _client(ANA).get("/lumina/seo-aeo/keyword-research").get_data(as_text=True)
     assert 'var ACCT = {"name": "Lumina Smiles Dental", "slug": "lumina"}' in html
     assert "'agent-run-finished'" in html and "fetch('/api/seo-runs'" in html and "headers['X-Account'] = ACCT.slug" in html
-    assert "var ACCT = null" in _client(ANA).get("/seo-aeo/keyword-research").get_data(as_text=True)
+    assert "var ACCT = null" in _client(ANA).get("/operational-agents/keyword-research").get_data(as_text=True)
 
 
 def test_every_tool_reports_its_finished_run():
@@ -132,7 +132,7 @@ def test_a_run_inside_an_account_is_the_teams():
     assert _client(RAJ).delete("/api/seo-runs/%d" % j["id"], headers=FETCH).status_code == 403
     dl = _client(RAJ).get("/lumina/seo-aeo/runs/%d.json" % j["id"])
     assert dl.status_code == 200 and json.loads(dl.data)["output"]["findings"]["scores"]["overall"] == 78
-    r = _client(RAJ).get("/seo-aeo/runs/%d" % j["id"])
+    r = _client(RAJ).get("/operational-agents/runs/%d" % j["id"])
     assert r.status_code == 302 and r.headers["Location"].endswith("/lumina/seo-aeo/runs/%d" % j["id"])
     assert _client(RAJ).get("/bloom/seo-aeo/runs/%d" % j["id"]).status_code == 302, "never shown inside another account"
     assert _client(ANA).delete("/api/seo-runs/%d" % j["id"], headers=FETCH).status_code == 200
@@ -140,10 +140,10 @@ def test_a_run_inside_an_account_is_the_teams():
 
 def test_a_general_run_is_private():
     j = _save(_client(ANA)).get_json()
-    assert j["page"] == "/seo-aeo/runs/%d" % j["id"] and j["where"] == "Ana's Workspace"
+    assert j["page"] == "/operational-agents/runs/%d" % j["id"] and j["where"] == "Ana's Workspace"
     assert _client(ANA).get(j["page"]).status_code == 200
     assert _client(RAJ).get(j["page"]).status_code == 404
-    assert _client(RAJ).get("/seo-aeo/runs/%d.json" % j["id"]).status_code == 404
+    assert _client(RAJ).get("/operational-agents/runs/%d.json" % j["id"]).status_code == 404
     assert seo_runs_store.list_runs(ANA)[0]["id"] == j["id"] and seo_runs_store.list_runs(RAJ) == []
 
 

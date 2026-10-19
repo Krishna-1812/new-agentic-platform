@@ -75,7 +75,7 @@ def delete(c, path):
 
 def test_the_page_and_every_api_are_for_staff_only(world):
     anon, outsider = client_as(None), client_as("x@gmail.com")
-    for path in ("/strategic-agents/paid-marketing/business-research", API + "/options", API + "/list", API + "/" + "a" * 32, API + "/" + "a" * 32 + "/status", API + "/" + "a" * 32 + "/download?file=xlsx"):
+    for path in ("/operational-agents/business-research", API + "/options", API + "/list", API + "/" + "a" * 32, API + "/" + "a" * 32 + "/status", API + "/" + "a" * 32 + "/download?file=xlsx"):
         assert anon.get(path).status_code == 302, path
         r = outsider.get(path)
         assert r.status_code == 302 and "/app" in r.headers["Location"], path
@@ -83,7 +83,7 @@ def test_the_page_and_every_api_are_for_staff_only(world):
 
 
 def test_the_page_renders_for_staff(world):
-    html = client_as(STAFF).get("/strategic-agents/paid-marketing/business-research").get_data(as_text=True)
+    html = client_as(STAFF).get("/operational-agents/business-research").get_data(as_text=True)
     assert "<title>Business Research" in html and "business_research.js" in html and "business_research.css" in html and 'id="cards"' in html and "pm_picker.js" in html
 
 
@@ -271,7 +271,7 @@ def test_every_address_the_page_script_uses_is_a_route():
     used = set(re.findall(r'API\+"(/[a-z]+)"', js)) | {"/<sid>/status", "/<sid>/rebuild", "/<sid>/download"}
     for path in used:
         assert any(r.startswith("/strategic-agents/paid-marketing/api/business") and r.endswith(path) for r in rules), path
-    assert "/strategic-agents/paid-marketing/api/segments/accounts" in rules and "/strategic-agents/paid-marketing/business-research" in rules
+    assert "/strategic-agents/paid-marketing/api/segments/accounts" in rules and "/operational-agents/business-research" in rules
 
 
 def test_the_operational_agents_page_and_every_workspace_list_the_new_agent():

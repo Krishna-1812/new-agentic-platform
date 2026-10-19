@@ -74,7 +74,7 @@ def test_the_pass_expires_after_twelve_hours(secret):
 
 
 def test_staff_open_a_tool_with_a_staff_pass(secret):
-    r = _client("sudheer@markifydigital.com").get("/seo-aeo/keyword-research")
+    r = _client("sudheer@markifydigital.com").get("/operational-agents/keyword-research")
     assert r.status_code == 200
     src = _iframe_src(r.get_data(as_text=True))
     q = parse_qs(urlsplit(src).query)
@@ -97,7 +97,7 @@ def test_a_public_member_gets_an_app_pass(secret, monkeypatch):
 def test_without_a_secret_the_legacy_shared_token_is_still_sent(monkeypatch):
     monkeypatch.setattr(appmod, "SEO_STUDIO_SECRET", "")
     monkeypatch.setenv("SERP_PLATFORM_TOKEN", "legacy")
-    r = _client("sudheer@markifydigital.com").get("/seo-aeo/keyword-research")
+    r = _client("sudheer@markifydigital.com").get("/operational-agents/keyword-research")
     q = parse_qs(urlsplit(_iframe_src(r.get_data(as_text=True))).query)
     assert q == {"pt": ["legacy"]}
 
@@ -139,9 +139,9 @@ def test_every_tool_here_points_at_a_real_studio_route():
 
 def test_retired_tools_redirect_instead_of_404ing():
     c = _client("sudheer@markifydigital.com")
-    assert c.get("/seo-aeo/hub-spoke").headers["Location"].endswith("/seo-aeo/content-architect")
-    assert c.get("/seo-aeo/gbp-qc-agent").headers["Location"].endswith("/seo-aeo/gbp-qc")
-    assert c.get("/seo-aeo/team-insights").headers["Location"].endswith("/seo-aeo")
+    assert c.get("/operational-agents/hub-spoke").headers["Location"].endswith("/operational-agents/content-architect")
+    assert c.get("/operational-agents/gbp-qc-agent").headers["Location"].endswith("/operational-agents/gbp-qc")
+    assert c.get("/operational-agents/team-insights").headers["Location"].endswith("/operational-agents")
 
 
 def test_no_tool_points_at_another_organisations_service():

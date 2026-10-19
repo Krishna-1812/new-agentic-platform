@@ -296,4 +296,4 @@ def test_the_desk_is_on_the_operational_agents_page_but_not_in_any_workspace():
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
         sess["google_user"] = {"email": "kris@markifydigital.com", "name": "K"}
-    assert 'href="/strategic-agents/paid-marketing/pacing-desk" id="t-pacing-desk" class="sa-card"' in c.get("/seo-aeo").get_data(as_text=True)
+    assert 'href="/operational-agents/pacing-desk" id="t-pacing-desk" class="sa-card"' in c.get("/operational-agents").get_data(as_text=True)

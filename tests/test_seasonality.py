@@ -573,7 +573,7 @@ def routes(monkeypatch):
 
 
 def test_the_page_opens_for_staff_and_not_for_anyone_else():
-    path = "/strategic-agents/paid-marketing/seasonality-analysis"
+    path = "/operational-agents/seasonality-analysis"
     page = client_as(STAFF).get(path)
     assert page.status_code == 200 and b"sa_data.js" in page.data and b"seasonality_analysis.js" in page.data
     assert b"Seasonality Analysis" in page.data

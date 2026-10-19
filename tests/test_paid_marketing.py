@@ -158,7 +158,7 @@ def test_state_changes_must_come_from_this_site_as_json(monkeypatch):
 
 
 def test_the_desk_renders_for_staff_and_not_for_anyone_else():
-    path = "/strategic-agents/paid-marketing/pacing-desk"
+    path = "/operational-agents/pacing-desk"
     assert client_as(STAFF).get(path).status_code == 200
     assert client_as(None).get(path).status_code == 302
     assert client_as("someone@gmail.com").get(path).status_code == 302

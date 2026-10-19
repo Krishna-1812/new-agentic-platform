@@ -6,7 +6,8 @@ tracker/paid_catalog.py, as a card on the Operational Agents page and in every c
 """
 import app as appmod
 
-PREFIX = "/strategic-agents/paid-marketing"
+PREFIX = "/strategic-agents/paid-marketing"     # the JSON routes
+PAGES = "/operational-agents"                  # the pages
 
 
 def rules():
@@ -14,9 +15,11 @@ def rules():
 
 
 def assert_routes(*paths):
-    """Each path (after the prefix, e.g. "/api/gads/products") is a route the app serves."""
+    """Each path is a route the app serves: an agent's page ("/geo-performance") under PAGES, anything else
+    (e.g. "/api/gads/products") under PREFIX."""
+    from tracker import paid_catalog
     have = rules()
-    missing = [p for p in paths if PREFIX + p not in have]
+    missing = [p for p in paths if (PAGES if p.lstrip("/") in paid_catalog.SLUGS else PREFIX) + p not in have]
     assert not missing, "routes the page script reads that the app does not serve: %s" % missing
 
 
@@ -28,6 +31,6 @@ def assert_listed(slug, name):
     c = appmod.app.test_client()
     with c.session_transaction() as sess:
         sess["google_user"] = {"email": "kris@markifydigital.com", "name": "K"}
-    page = c.get("/seo-aeo").get_data(as_text=True)
-    assert 'href="%s/%s" id="t-%s" class="sa-card"' % (PREFIX, slug, slug) in page, slug
-    assert (slug, paid_catalog.BY_SLUG[slug]["endpoint"], PREFIX + "/" + slug) in [a[:3] for a in appmod.ACCT_AGENTS], slug
+    page = c.get(PAGES).get_data(as_text=True)
+    assert 'href="%s/%s" id="t-%s" class="sa-card"' % (PAGES, slug, slug) in page, slug
+    assert (slug, paid_catalog.BY_SLUG[slug]["endpoint"], PAGES + "/" + slug) in [a[:3] for a in appmod.ACCT_AGENTS], slug
