@@ -161,8 +161,8 @@ can be compared. An MCC with mixed currencies is split into one group per curren
 no group. If some accounts fail, the report names them and says the totals are short.
 Mixed time zones are noted. Cost: about 7 API calls per account (a 13-account MCC is
 about 90), so a cold view takes around 15 seconds and a repeat comes from the cache.
-The Explorer allowance is 2,880 calls a day, which is roughly 30 cold views of a
-13-account MCC.
+The Explorer allowance was 2,880 calls a day, roughly 30 cold views of a
+13-account MCC. Basic access (from 2026-10-19) is 15,000, roughly 160.
 
 Not built: picking a subset of an MCC's accounts.
 
@@ -171,7 +171,7 @@ Not built: picking a subset of an MCC's accounts.
 The Performance Summarizer (Krishna Ladha, same day) landed on `main` with its own
 `tracker/paid_gads.py`. Rather than keep two Google Ads clients, Segment Analysis now
 calls Google only through that module, so it uses the same sign-in, retries, Postgres
-cache and the **shared daily request budget** (Explorer access is one pool of about
-2,880 calls a day for the whole developer token). A cold view of a 13-account MCC costs
+cache and the **shared daily request budget** (one pool for the whole agency: 2,880
+calls a day on Explorer access, 15,000 on Basic access from 2026-10-19). A cold view of a 13-account MCC costs
 about 95 of those calls, which is worth knowing before opening several in a row.
 Which accounts sit under which MCC is cached in Postgres for an hour.

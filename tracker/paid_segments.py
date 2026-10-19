@@ -384,7 +384,7 @@ def build_report(account, start, end, *, search_fn=None, geo_fn=None, workers=12
 
 
 # ── Cache + the entry point the route uses ──────────────────────────────────
-# Explorer access is 2,880 operations a day and one report is about eight, so
+# Basic access is 15,000 operations a day for everyone and one report is about eight, so
 # a report is saved in Postgres (shared by every worker, and kept across
 # restarts) and read from Google again only when it is older than
 # paid_gads._ttl(end) or someone presses Refresh. A minute in memory sits in
