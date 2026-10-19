@@ -158,7 +158,8 @@ def test_a_good_range_passes_and_is_cached_longer_once_it_has_ended():
 
 # ── Calls: the request budget, retries, errors, pages ──────────────────────
 
-def test_requests_stop_at_the_days_budget_and_say_when_it_resets():
+def test_requests_stop_at_the_days_budget_and_say_when_it_resets(monkeypatch):
+    monkeypatch.setattr(g, "DAILY_LIMIT", 500)              # a ceiling set on Railway (there is none by default)
     s = FakeStore(calls=g.DAILY_LIMIT)
     with pytest.raises(g.OverQuota, match="resets at midnight Pacific"):
         g._post("/x", {}, s, http=lambda *a, **k: pytest.fail("a request went out over the budget"))
@@ -324,7 +325,7 @@ def test_without_a_connection_the_routes_say_what_is_missing(monkeypatch):
 
 def test_only_admins_see_the_request_tally(wired):
     assert client_as(STAFF).get(BASE + "accounts").get_json()["usage"] is None
-    assert client_as(ADMIN).get(BASE + "accounts").get_json()["usage"] == {"calls": 41, "limit": g.DAILY_LIMIT}
+    assert client_as(ADMIN).get(BASE + "accounts").get_json()["usage"] == {"calls": 41, "limit": g.DAILY_LIMIT or g.GOOGLE_DAILY_OPS}
 
 
 def test_performance_checks_the_account_and_both_ranges(wired):

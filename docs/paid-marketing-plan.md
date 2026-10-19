@@ -97,7 +97,7 @@ check accepts any prefix, or none.
 | Variable | For |
 |---|---|
 | `GOOGLE_ADS_DEVELOPER_TOKEN`, `GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_CLIENT_SECRET`, `GOOGLE_ADS_REFRESH_TOKEN`, `GOOGLE_ADS_LOGIN_CUSTOMER_ID` | Every Google Ads read (every agent but the research builds' website reading) |
-| `GOOGLE_ADS_DAILY_LIMIT` | Optional: the app's own daily ceiling on Google Ads requests. Default 14,000, below Google's 15,000 a day on Basic access (the project moved from Explorer, 2,880 a day, on 2026-10-19). Raise it after a move to Standard access |
+| `GOOGLE_ADS_DAILY_LIMIT` | Optional: the app's own daily ceiling on Google Ads requests. Unset by default (from 2026-10-19): Google's own allowance, 15,000 a day on Basic access, is the stop, and saved copies are served until it resets. Set a number to stop the app sooner |
 | `META_ADS_ACCESS_TOKEN` (a System User token with `ads_read`; `business_management` too for pixel stats), optional `META_BUSINESS_ID`, `META_API_VERSION` | Every Meta read |
 | `ANTHROPIC_API_KEY` (already set) | The written parts: Segment, Geo, Ad Strength, Account Audit, Landing Page Check, QA Agent, Search Query Analysis, and the three research builds |
 | `PAGESPEED_API_KEY` | Optional: the Landing Page Check's lab speed test |

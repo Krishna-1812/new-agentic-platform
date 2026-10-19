@@ -4809,7 +4809,7 @@ def paid_gads_accounts():
                        metaProblem=mprob if platform == "both" else None,
                        scoped=scope is not None,
                        blockedUntil=paid_gads.blocked_until(paid_store) or None,
-                       usage={"calls": used, "limit": paid_gads.DAILY_LIMIT} if _pm_is_admin() else None)
+                       usage={"calls": used, "limit": paid_gads.DAILY_LIMIT or paid_gads.GOOGLE_DAILY_OPS} if _pm_is_admin() else None)
         resp.headers["Cache-Control"] = "private, max-age=300"          # the account list changes rarely
         return resp
     return _gads_guard(run)

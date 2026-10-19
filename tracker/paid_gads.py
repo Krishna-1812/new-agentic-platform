@@ -30,7 +30,10 @@ agency, which Google counts in its own way (a 429 names the rate it hit, e.g.
     were last read from Google;
   * Google's own "retry in N seconds" is remembered (in memory and in the
     database, so every worker knows) and no request is sent until it passes;
-  * a daily tally refuses new requests past DAILY_LIMIT.
+  * a daily tally counts every request (shown to admins); it refuses new
+    requests only when GOOGLE_ADS_DAILY_LIMIT sets a ceiling. Without one,
+    Google's own daily allowance is the stop: its quota error is remembered
+    as above and saved copies are served until it resets.
 
 Metrics: five core ones (impressions, clicks, cost, conversions, conversion
 value) are always fetched. A dozen more ("optional": all conversions,
@@ -58,12 +61,16 @@ API = "https://googleads.googleapis.com/" + API_VERSION
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 
 
-def _daily_limit(default=14000):
-    """Our own ceiling, below Google's 15,000 a day on Basic access (it was 2,400 on Explorer, then 12,000, and 14,000 from
-    2026-10-19 at the owner's call; the tally also counts extra result pages, which Google does not). GOOGLE_ADS_DAILY_LIMIT on
-    Railway overrides it, e.g. after a move to Standard access; a value that is not a positive whole number is ignored."""
+GOOGLE_DAILY_OPS = 15000       # Google's allowance a day on Basic access: what the admin warning measures against without a ceiling
+
+
+def _daily_limit():
+    """Our own ceiling, or None for none. There is none by default from 2026-10-19 (the owner's call, after Google turned down
+    Standard access until the app regularly reaches Basic access's 15,000 a day; it was 2,400 on Explorer, then 12,000 and
+    14,000): Google's quota error stops reads instead, and saved copies are served until midnight Pacific time.
+    GOOGLE_ADS_DAILY_LIMIT on Railway sets one again; a value that is not a positive whole number is ignored."""
     raw = os.environ.get("GOOGLE_ADS_DAILY_LIMIT", "").strip()
-    return int(raw) if raw.isdigit() and int(raw) > 0 else default
+    return int(raw) if raw.isdigit() and int(raw) > 0 else None
 
 
 DAILY_LIMIT = _daily_limit()
@@ -241,14 +248,14 @@ def reset_state():
 
 
 def _count_call(store):
-    """Add one request to today's tally; raise OverQuota past the limit.
+    """Add one request to today's tally; raise OverQuota past DAILY_LIMIT, if one is set.
     A store outage must not stop reads, so it is logged and skipped."""
     try:
         n = store.bump_gads_calls(_pacific_day())
     except Exception as e:
         log.warning("gads: could not count a request (%s)", e)
         return
-    if n > DAILY_LIMIT:
+    if DAILY_LIMIT and n > DAILY_LIMIT:
         raise OverQuota("Today's Google Ads request budget (%d) is used up. It resets at midnight "
                         "Pacific time; views already saved still open." % DAILY_LIMIT)
 
