@@ -597,7 +597,7 @@ def upload(c, lid, raw=None, name="Campaign Book.xlsx"):
 
 
 def test_the_page_is_for_staff_only():
-    page = "/strategic-agents/paid-marketing/qa-agent"
+    page = "/operational-agents/qa-agent"
     assert client_as(STAFF).get(page).status_code == 200
     assert client_as(None).get(page).status_code == 302
     assert client_as("someone@gmail.com").get(page).status_code == 302

@@ -226,7 +226,7 @@ def test_the_description_has_no_em_dash(hub_card):
 def test_the_seo_card_count_matches_the_tool_list():
     """Same class of drift, different tile: this count is generated from
     _seo_tools(), so it can be checked against the source of truth directly."""
-    assert _workspace("seo-aeo")["stats"]["dashboards"] == len(appmod._seo_tools())
+    assert _workspace("operational-agents")["stats"]["dashboards"] == len(appmod._seo_tools())
 
 
 # ── The "by the numbers" band, same hand-maintained-number risk ─────────────
@@ -266,9 +266,9 @@ def test_the_dashboards_card_opens_the_google_ads_dashboard():
 
 
 def test_the_operational_agents_card_replaced_seo_aeo(hub_card):
-    """The SEO + AEO workspace card reads "Operational agents" now; its own
-    page (/seo-aeo) keeps its original title untouched."""
-    assert _workspace("seo-aeo")["title"] == "Operational agents"
+    """The SEO + AEO workspace card reads "Operational agents", and so does its page, now at
+    /operational-agents (tests/test_operational_agents_rename.py)."""
+    assert _workspace("operational-agents")["title"] == "Operational agents"
 
 
 def test_the_card_copy_makes_no_unverifiable_headcount_claim(hub_card):

@@ -20,7 +20,7 @@ from tracker import paid_gads_segments as gads  # noqa: E402
 
 STAFF = "someone@markifydigital.com"
 SAME = {"Origin": "http://localhost"}
-PAGE = "/strategic-agents/paid-marketing/ad-strength"
+PAGE = "/operational-agents/ad-strength"
 API = "/strategic-agents/paid-marketing/api/adstrength"
 ITEM = {"key": "rsa:1:2", "strength": "POOR", "headlines": [], "descriptions": []}
 REPORT = {"account": {"id": "1234567890", "name": "Acme"}, "generatedAt": "2026-10-18T08:00:00+00:00",

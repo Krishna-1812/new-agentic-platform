@@ -744,7 +744,7 @@ def test_detail_failures_reach_the_page_with_a_status_and_a_reason(monkeypatch, 
 
 
 def test_the_page_script_and_styles_are_in_the_page():
-    page = client_as(STAFF).get("/strategic-agents/paid-marketing/asset-coverage").data.decode()
+    page = client_as(STAFF).get("/operational-agents/asset-coverage").data.decode()
     assert page.index("asset_tiles.js") < page.index("asset_coverage.js") and 'id="acDrawer"' in page and 'id="acZoom"' in page
 
 

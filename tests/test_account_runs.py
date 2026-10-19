@@ -116,7 +116,7 @@ def test_the_home_lists_what_to_run_for_staff_only():
 
 
 def test_from_a_global_tool_the_picker_opens_it_for_the_account():
-    html = _client().get("/seo-aeo/keyword-research").get_data(as_text=True)
+    html = _client().get("/operational-agents/keyword-research").get_data(as_text=True)
     assert 'data-acct-page="seo-aeo/keyword-research"' in html
     html = _client().get("/strategic-agents/local-business-radar").get_data(as_text=True)
     assert 'data-acct-page="agents/local-business-radar"' in html

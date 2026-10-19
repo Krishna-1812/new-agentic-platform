@@ -323,7 +323,7 @@ from tracker import paid_segment_insights as insights  # noqa: E402
 
 STAFF = "someone@markifydigital.com"
 SAME = {"Origin": "http://localhost"}
-PAGE = "/strategic-agents/paid-marketing/segment-analysis"
+PAGE = "/operational-agents/segment-analysis"
 API = "/strategic-agents/paid-marketing/api/segments"
 
 

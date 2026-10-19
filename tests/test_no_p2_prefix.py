@@ -84,14 +84,14 @@ def test_older_section_names_still_resolve_from_the_old_prefix():
 
 # ── The gate moved with the pages ───────────────────────────────────────────
 
-@pytest.mark.parametrize("path", ["/hub", "/strategic-agents", "/seo-aeo", "/playbook",
+@pytest.mark.parametrize("path", ["/hub", "/strategic-agents", "/operational-agents", "/playbook",
                                   "/abm-signal-tracker/accounts", "/admin/internal-usage"])
 def test_signed_out_visitors_are_sent_to_sign_in(path):
     r = _client().get(path)
     assert r.status_code == 302 and "/login" in r.headers["Location"], (path, r.status_code)
 
 
-@pytest.mark.parametrize("path", ["/hub", "/strategic-agents", "/seo-aeo", "/playbook"])
+@pytest.mark.parametrize("path", ["/hub", "/strategic-agents", "/operational-agents", "/playbook"])
 def test_people_outside_the_company_are_sent_to_the_public_side(path):
     r = _client(_OUTSIDER).get(path)
     assert r.status_code == 302 and r.headers["Location"].endswith("/app"), (path, r.status_code)
@@ -157,7 +157,7 @@ def test_page_views_recorded_under_p2_fold_into_the_new_path(recorded, today):
 def test_robots_keeps_the_internal_app_out():
     body = _client().get("/robots.txt").get_data(as_text=True)
     allows = [l.split(":", 1)[1].strip() for l in body.splitlines() if l.startswith("Allow:")]
-    for path in ("/hub", "/admin/internal-usage", "/strategic-agents", "/seo-aeo", "/playbook",
+    for path in ("/hub", "/admin/internal-usage", "/strategic-agents", "/operational-agents", "/playbook",
                  "/abm-signal-tracker/accounts", "/playbook"):
         assert not any(path.startswith(a.rstrip("$")) and (not a.endswith("$") or path == a[:-1])
                        for a in allows), path

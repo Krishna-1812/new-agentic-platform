@@ -186,8 +186,8 @@ def test_the_agents_lists_inside_an_account_hold_only_its_runs(seeded):
 def test_general_work_is_its_makers_only(seeded):
     for mark, owner, other in (("anas-own-mark", ANA, RAJ), ("rajs-own-mark", RAJ, ANA)):
         ids = seeded[mark]
-        assert _client(other).get("/seo-aeo/runs/%d" % ids["seo"]).status_code == 404
-        assert _client(owner).get("/seo-aeo/runs/%d" % ids["seo"]).status_code == 200
+        assert _client(other).get("/operational-agents/runs/%d" % ids["seo"]).status_code == 404
+        assert _client(owner).get("/operational-agents/runs/%d" % ids["seo"]).status_code == 200
         assert watch_store.get_target(ids["watch"], other) is None and video_store.get_project(ids["video"], other) is None
         assert lbr_store.get_run(ids["lbr"], other) is None
 

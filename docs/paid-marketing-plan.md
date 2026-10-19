@@ -3,7 +3,9 @@
 The paid media (PPC) team's agents, ported from the source platform (`ai-positon2/intelligence-platform`, commit
 `ddfd61d`) by copying its code and adapting it, never rewriting it: that code carries fixes found against real Google
 Ads and Meta accounts. They sit on the Operational Agents page with a **Paid marketing** pill, at
-`/strategic-agents/paid-marketing/<agent>`, and open inside every client workspace.
+`/operational-agents/<agent>` (first on that page, ahead of the SEO tools), and open inside every client
+workspace. Their JSON routes are under `/strategic-agents/paid-marketing/api/`; the pages' old addresses,
+`/strategic-agents/paid-marketing/<agent>`, redirect.
 
 ## The rules carried over
 

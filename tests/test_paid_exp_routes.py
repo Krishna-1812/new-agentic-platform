@@ -11,7 +11,7 @@ from tracker import paid_gads_segments as gads
 
 STAFF = "ana@markifydigital.com"
 API = "/strategic-agents/paid-marketing/api/exp"
-PAGE = "/strategic-agents/paid-marketing/experiment-tracker"
+PAGE = "/operational-agents/experiment-tracker"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 

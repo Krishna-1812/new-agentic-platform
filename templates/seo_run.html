@@ -8,7 +8,7 @@
 {{ head(tool_name ~ " · " ~ r.title, ["account-space.css?v=32"]) }}
 </head>
 <body class="as-page">
-{{ topbar([("SEO + AEO", "/" ~ acct.slug if acct else "/seo-aeo"), (tool_name, none)]) }}
+{{ topbar([("Operational agents", "/" ~ acct.slug if acct else "/operational-agents"), (tool_name, none)]) }}
 <main class="as-shell sr-shell">
   <section class="sr-head" aria-labelledby="sr-title">
     <span class="as-pre">{{ tool_name }}{% if acct %} &middot; for {{ acct.name }}{% else %} &middot; {{ my_workspace_name() }}, only you see it{% endif %}</span>
@@ -22,7 +22,7 @@
     <div class="sr-actions">
       {%- if again %}<a class="as-btn as-btn--ink" href="{{ again }}">Run it again <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>{% endif %}
       {%- if not r.summary.truncated %}<a class="as-btn as-btn--line" href="{{ download }}" download>Download the full result</a>{% endif %}
-      {%- if mine %}<button type="button" class="as-btn as-btn--line sr-del" data-sr-del="{{ r.id }}" data-sr-back="{{ ('/' ~ acct.slug) if acct else '/seo-aeo' }}">Delete</button>{% endif %}
+      {%- if mine %}<button type="button" class="as-btn as-btn--line sr-del" data-sr-del="{{ r.id }}" data-sr-back="{{ ('/' ~ acct.slug) if acct else '/operational-agents' }}">Delete</button>{% endif %}
     </div>
   </section>
 

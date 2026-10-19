@@ -111,7 +111,7 @@ def test_a_file_that_cannot_be_made_is_said_in_words(monkeypatch):
 
 # ── The page, the card and the registry ─────────────────────────────────────
 
-PAGE = "/strategic-agents/paid-marketing/landing-page-check"
+PAGE = "/operational-agents/landing-page-check"
 
 
 def test_the_page_opens_for_staff_and_is_closed_to_everyone_else():

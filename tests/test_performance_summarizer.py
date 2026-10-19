@@ -357,7 +357,7 @@ def test_google_failures_become_answers(wired, monkeypatch):
 
 
 def test_the_page_renders_for_staff_and_not_for_anyone_else():
-    path = "/strategic-agents/paid-marketing/performance-summarizer"
+    path = "/operational-agents/performance-summarizer"
     assert client_as(STAFF).get(path).status_code == 200
     assert client_as(None).get(path).status_code == 302
     assert client_as("someone@gmail.com").get(path).status_code == 302
@@ -394,9 +394,9 @@ def test_the_agent_is_listed_wherever_the_others_are():
     """On the Operational Agents page as a Paid marketing card, and in every client workspace."""
     from tracker import paid_catalog
     assert "performance-summarizer" in paid_catalog.SLUGS
-    page = client_as(STAFF).get("/seo-aeo").get_data(as_text=True)
-    assert 'href="/strategic-agents/paid-marketing/performance-summarizer" id="t-performance-summarizer"' in page
-    assert ("performance-summarizer", "paid_performance_summarizer", "/strategic-agents/paid-marketing/performance-summarizer") in \
+    page = client_as(STAFF).get("/operational-agents").get_data(as_text=True)
+    assert 'href="/operational-agents/performance-summarizer" id="t-performance-summarizer"' in page
+    assert ("performance-summarizer", "paid_performance_summarizer", "/operational-agents/performance-summarizer") in \
         [a[:3] for a in appmod.ACCT_AGENTS]
 
 
