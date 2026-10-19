@@ -210,6 +210,7 @@ def test_the_search_terms_failing_is_an_error_not_an_empty_account():
 
 
 def test_the_daily_allowance_spent_stops_the_read(monkeypatch):
+    monkeypatch.setattr(g, "DAILY_LIMIT", 14000)             # a ceiling set on Railway (there is none by default)
     st = FakeStore(calls=10 ** 6)
     with pytest.raises(g.OverQuota):
         D.read(st, ACCT, START, END, http=google([], ANSWERS))
