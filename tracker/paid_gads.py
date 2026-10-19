@@ -58,8 +58,9 @@ API = "https://googleads.googleapis.com/" + API_VERSION
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 
 
-def _daily_limit(default=12000):
-    """Our own ceiling, below Google's 15,000 a day on Basic access (it was 2,400 on Explorer). GOOGLE_ADS_DAILY_LIMIT on
+def _daily_limit(default=14000):
+    """Our own ceiling, below Google's 15,000 a day on Basic access (it was 2,400 on Explorer, then 12,000, and 14,000 from
+    2026-10-19 at the owner's call; the tally also counts extra result pages, which Google does not). GOOGLE_ADS_DAILY_LIMIT on
     Railway overrides it, e.g. after a move to Standard access; a value that is not a positive whole number is ignored."""
     raw = os.environ.get("GOOGLE_ADS_DAILY_LIMIT", "").strip()
     return int(raw) if raw.isdigit() and int(raw) > 0 else default
