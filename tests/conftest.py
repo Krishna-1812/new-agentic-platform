@@ -45,6 +45,14 @@ import app as appmod
 
 
 @pytest.fixture(autouse=True)
+def _no_house_workspaces(monkeypatch):
+    """The account lists the tests build are their own: the agency's always-listed workspace
+    (client_accounts.HOUSE) is left out, except in tests/test_house_workspace.py, which puts it back."""
+    from tracker import client_accounts
+    monkeypatch.setattr(client_accounts, "HOUSE", ())
+
+
+@pytest.fixture(autouse=True)
 def _reset_cpi_rate_limits():
     appmod._CPI_RATE_STATE.clear()
     yield

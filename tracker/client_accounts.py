@@ -9,6 +9,8 @@ Where the list comes from
     account of its own when its profile identifies one (a website, a URL name, an industry...), so a
     client with no Google Ads (SEO only, say) is listed too. General, Sample and Template tabs are not
     accounts.
+  - The agency's own workspaces (HOUSE), always listed: Outcomes.digital, the agency itself, with
+    every agent like any client's. A master doc tab with the same name or website takes its place.
 
 Each account gets a key that does not change when it is renamed ("cid:" and its lowest customer
 ID, or "doc:" and its tab's name), and a URL name (slug): the profile's "URL name", else the
@@ -93,12 +95,21 @@ def _is_sample(title):
     return any(n == s or n.startswith(s + " ") for s in SAMPLE)
 
 
+# The agency's own workspaces, each a profile block as a master doc tab would hold it (asked for on
+# 2026-10-19: "Outcomes.digital", open to the team and shareable like a client's, with every agent).
+HOUSE = (
+    "Display name: Outcomes.digital\nURL name: outcomes-digital\nWebsite: https://www.outcomes.digital\n"
+    "Industry: Digital marketing agency",
+)
+
+
 # ── The list ─────────────────────────────────────────────────────────────────
-def build(ads, doc=None):
+def build(ads, doc=None, house=None):
     """The accounts, in order (by spend, then accounts with no Google Ads by name).
 
     ads  [(Google Ads account name, customer ID)] from the campaign report, by spend
     doc  the master doc as the Docs API returns it, or None
+    house  the agency's own workspaces' profile blocks (HOUSE when None)
     Each account: key, name, ads_names, customer_ids, tab, profile, hidden, alt_keys.
     """
     names = [a for a, _ in ads]
@@ -134,6 +145,11 @@ def build(ads, doc=None):
     accounts = []
     for t in tab_accounts:
         accounts.append(_account(t["ads_names"], cids, t["tab"], t["profile"]))
+    for block in HOUSE if house is None else house:
+        profile = client_profile.parse(block)
+        if not any(norm(a["name"]) == norm(profile["display_name"]) or
+                   (profile.get("domain") and a["profile"].get("domain") == profile["domain"]) for a in accounts):
+            accounts.append(_account([], cids, None, profile))
     for a in names:
         if a in claimed:
             continue
