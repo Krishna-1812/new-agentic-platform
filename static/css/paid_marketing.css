@@ -1400,6 +1400,9 @@ html[data-theme="light"] body.pmx .pm.pm-panel{ border-radius: var(--r-lg); box-
 .pmx-pill{ display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: var(--r-pill);
   background: rgba(255,181,0,.16); color: #FFD27A; font-size: 12px; font-weight: 600; letter-spacing: .02em; }
 .pmx-pill i{ width: 7px; height: 7px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 0 rgba(255,181,0,.5); animation: pmPulse 2.4s infinite; }
+/* Live (every paid agent, 2026-10-19): the agents page's Live green on the ink hero. */
+.pmx-pill--live{ background: rgba(63,214,140,.16); color: #8BE8B6; }
+.pmx-pill--live i{ background: #3FD68C; box-shadow: none; animation: none; }
 .pmx-hero-side{ display: flex; flex-direction: column; align-items: flex-end; gap: var(--sp-3); min-width: 0; }
 .pmx-hero .ps-live{ color: var(--ink-paper); background: rgba(246,244,240,.08); border: 1px solid rgba(246,244,240,.16); }
 .pmx-hero .ps-live-dot{ background: var(--amber); box-shadow: 0 0 12px rgba(255,181,0,.7); }
