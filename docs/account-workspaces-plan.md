@@ -42,6 +42,10 @@ Decisions the owner made (2026-10-06):
 - **Not accounts:** General / All accounts / Agency / Common / Overall / Global / All clients (shared
   notes), and tabs starting with Sample, Example, Template, How to, Readme, Instructions, Guide or
   Archive. A second tab about an account another tab already holds is ignored.
+- **The agency's own workspace:** Outcomes.digital (`/outcomes-digital`) is always listed, from
+  `client_accounts.HOUSE`, with no Google Ads account. It works like a client's: the whole team opens
+  it, every agent opens inside it, and an admin can share it. A master doc tab with its name or its
+  website (outcomes.digital) takes its place, so a profile written there wins (added 2026-10-19).
 - **Order:** by spend; accounts with no Google Ads follow, by name. `Status: hidden` in a profile
   takes an account out of the lists; its address still works for staff.
 
