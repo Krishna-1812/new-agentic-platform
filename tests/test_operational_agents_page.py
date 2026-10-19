@@ -56,7 +56,8 @@ def test_the_figures_and_chips_count_the_same_list(body):
     tools = appmod._seo_tools()
     total = len(tools) + len(paid_catalog.AGENTS)
     assert re.search(r'data-figure="tools">%d<' % len(tools), body)
-    assert ">%d in build<" % total in body
+    # The paid agents are Live (2026-10-19); only the SEO tools are still counted as in build.
+    assert ">%d live<" % len(paid_catalog.AGENTS) in body and ">%d in build<" % len(tools) in body
     assert "Showing %d of %d" % (total, total) in body and "All <b>%d</b>" % total in body
     assert re.search(r'data-figure="paid-marketing">%d<' % len(paid_catalog.AGENTS), body)
     for name, group in appmod._seo_tool_groups():
@@ -105,7 +106,7 @@ def test_the_page_runs_on_the_shared_directory_system(body):
 
 def test_the_paid_marketing_agents_are_a_group_of_their_own_with_a_paid_marketing_pill(body):
     """Each paid agent is one card in the amber "Paid marketing" group, linking to its own page (not an SEO
-    Studio embed), Building, and leading its tags with "Paid marketing" where the SEO tools say "SEO"."""
+    Studio embed), Live (2026-10-19, once Google Ads was connected), and leading its tags with "Paid marketing" where the SEO tools say "SEO"."""
     from tracker import paid_catalog
     assert 'id="paid-marketing" data-sa-groupbox="paid-marketing"' in body and "sa-group--d" in body
     assert 'data-sa-group="paid-marketing"><i class="sa-dot sa-dot--d"></i>Paid marketing <b>%d</b>' % len(paid_catalog.AGENTS) in body
@@ -114,7 +115,7 @@ def test_the_paid_marketing_agents_are_a_group_of_their_own_with_a_paid_marketin
     assert len(cards) == len(paid_catalog.AGENTS) >= 1
     for a, card in zip(paid_catalog.AGENTS, cards):
         assert 'id="t-%s"' % a["slug"] in card and 'data-group="paid-marketing"' in card
-        assert 'data-badge="building"' in card and ">Building<" in card and ">Live<" not in card
+        assert 'data-badge="live"' in card and "sa-state--live" in card and ">Live<" in card and ">Building<" not in card
         tags = re.findall(r'<span class="sa-tag">([^<]*)</span>', card)
         assert tags[0] == "Paid marketing" and "SEO" not in tags, tags
         assert 'class="sa-tick-i sa-tick-i--d" href="/operational-agents/%s"' % a["slug"] in body

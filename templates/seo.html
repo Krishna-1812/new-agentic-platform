@@ -55,7 +55,8 @@
   <section class="sa-hero" data-sa-settle>
     <div class="sa-hero-top">
       <span class="sa-lbl" data-sa-decode>{% if paid %}Paid marketing &middot; {% endif %}SEO + AEO</span>
-      <span class="sa-live sa-live--build"><i></i>{{ total }} in build</span>
+      {% if paid %}<span class="sa-live"><i></i>{{ paid|length }} live</span>{% endif %}
+      <span class="sa-live sa-live--build"><i></i>{{ seo_tools|length }} in build</span>
       <div class="sa-shapes" aria-hidden="true">
         <span class="sa-shape sa-shape--circle"></span>
         <span class="sa-shape sa-shape--half"></span>
@@ -150,11 +151,11 @@
       <div class="sa-grid">
         {% for a in paid %}
         {% set n.i = n.i + 1 %}
-        <a href="{{ ops }}/{{ a.slug }}" id="t-{{ a.slug }}" class="sa-card" data-tool="{{ a.slug }}" data-state="active" data-badge="building" data-group="paid-marketing">
+        <a href="{{ ops }}/{{ a.slug }}" id="t-{{ a.slug }}" class="sa-card" data-tool="{{ a.slug }}" data-state="active" data-badge="live" data-group="paid-marketing">
           <span class="sa-card-top">
             <span class="sa-ic sa-ic--letter" aria-hidden="true">{{ a.icon or (a.name or '?')[:1]|upper }}</span>
             <span class="sa-num">{{ "%02d"|format(n.i) }}</span>
-            <span class="sa-state sa-state--build"><i></i>Building</span>
+            <span class="sa-state sa-state--live"><i></i>Live</span>
           </span>
           <span class="sa-name" data-tool-name>{{ a.name }}</span>
           <span class="sa-desc">{{ a.lead }}</span>

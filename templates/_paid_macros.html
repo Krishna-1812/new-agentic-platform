@@ -1,7 +1,7 @@
 {#- The Paid Marketing pages' shared pieces (templates/_paid_base.html says how a page is put together).
 
     paid_hero(kind, line1, mark, after, lead): the ink block a page opens with, in the directory's voice:
-    "Paid marketing . <kind>", the Building pill, a two-line statement whose second line starts behind the
+    "Paid marketing . <kind>", the Live pill, a two-line statement whose second line starts behind the
     orange marker, and a lead. Called with {% call %}, whatever the call holds (a live status, a figure)
     sits on its right. Import it `with context` so it knows when the page is inside a workspace. -#}
 {%- macro paid_hero(kind, line1, mark, after, lead) -%}
@@ -9,7 +9,7 @@
     <div class="pmx-hero-copy">
       <div class="sa-hero-top">
         <span class="sa-lbl">Paid marketing &middot; {{ kind }}</span>
-        <span class="pmx-pill"><i></i>Building</span>
+        <span class="pmx-pill pmx-pill--live"><i></i>Live</span>
       </div>
       <h1 class="sa-h1 mr-h1">
         <span class="sa-ln"><span>{{ line1 }}</span></span>
