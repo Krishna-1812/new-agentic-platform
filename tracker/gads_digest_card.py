@@ -1,8 +1,7 @@
 """The picture in each account's Slack update: the client report as an image.
 
 Laid out like the Looker Studio page the clients see, on a white card over a soft grey page: the
-account's name with its status (a tinted pill, a dot and the word, never colour alone) and the month so
-far in a navy pill; a navy band with the month's nine figures; the latest day as a one-row table; and
+account's name and the month so far (the 1st to yesterday) in a navy pill; a navy band with the month's nine figures; the latest day as a one-row table; and
 the month's budget as a bar (spent so far, with a tick where an even pace would be by the latest day)
 over four boxes: allocation, projected, spent, and over or under. Drawn with Pillow in Inter
 (tracker/fonts, SIL Open Font License, LICENSE-Inter.txt), which has the rupee sign, opaque so it reads
@@ -88,7 +87,7 @@ def card_data(s):
     if budget and budget["daily_budgets"]:
         note += "  ·  allocation: the campaigns' daily budgets (no Pacing Desk budget this month)"
     day = s["day"]
-    return {"account": s["account"], "status": s.get("status") or "good", "span": d.range_label(m["start"], day),
+    return {"account": s.get("name") or s["account"], "span": d.range_label(m["start"], day),
             "kpis": [[label, value] for label, _, value in d._figures(m, cur)],
             "day": d.range_label(day, day).split(" - ")[1],
             "day_values": [[label, value] for label, _, value in d._figures(s.get("day_totals") or s["now"], cur)],
@@ -178,15 +177,7 @@ def render(data):
     pw = _len(dr, span, pill) + 40
     name_w = inner - 76 - pw - 24
     _text(dr, (x0 + 74, y + 2), data["account"], _fit(dr, data["account"], name_w, 27, "bold"), INK)
-    st = data.get("status") or "good"
-    mark, tint = STATUS.get(st, STATUS["good"])
-    word = d.STATUS_WORD.get(st, "On track")
-    sf = _font(12.5, "semibold")
-    sw = _len(dr, word, sf) + 36
-    _box(dr, (x0 + 74, y + 38, x0 + 74 + sw, y + 62), 12, fill=tint)
-    _box(dr, (x0 + 86, y + 46, x0 + 94, y + 54), 4, fill=mark)
-    _text(dr, (x0 + 102, y + 50), word, sf, INK, "lm")
-    _text(dr, (x0 + 74 + sw + 12, y + 50), "Month to date", _font(13), INK_3, "lm")
+    _text(dr, (x0 + 74, y + 50), "Daily performance  \u00b7  month to date", _font(13.5), INK_3, "lm")
     _box(dr, (x1 - pw, y + 8, x1, y + 48), 20, fill=NAVY)
     _text(dr, (x1 - pw / 2, y + 28), span, pill, ON_NAVY, "mm")
     y += 64 + 26
@@ -208,7 +199,7 @@ def render(data):
     y += 124 + 34
 
     # The latest day as a table.
-    _section(dr, x0, y, "Latest day", data["day"])
+    _section(dr, x0, y, "Yesterday", data["day"])
     y += 28
     heads = ["Day"] + [label for label, _ in data["day_values"]]
     vals = [data["day"]] + [v for _, v in data["day_values"]]

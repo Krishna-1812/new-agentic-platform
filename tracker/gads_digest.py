@@ -109,6 +109,18 @@ DIGEST_ACCOUNTS = ["AIHS", "Alphametic", "AllureAvani", "Basil woods school", "C
                    "Turquoise Institute", "City College", "KFI"]
 
 
+# The name each account goes by in the digest, where the Google Ads account is named otherwise. Matched as
+# account names are matched below (case, spaces and punctuation do not matter).
+DISPLAY_NAMES = {"AA_New": "AllureAvani", "JulyMode x 2025": "July Mode", "BTay": "Artistic Yoga (BTA)",
+                 "Krishnamurti Foundation India": "KFI"}
+
+
+def display_name(account):
+    """The name the digest shows for a Google Ads account: DISPLAY_NAMES's, else its own."""
+    keys = _keys(account)
+    return next((shown for real, shown in DISPLAY_NAMES.items() if _keys(real) == keys and keys), account)
+
+
 def wanted_names(env=""):
     """The list to send: the environment's names when it has any, else DIGEST_ACCOUNTS; None means every account."""
     names = [n.strip() for n in re.split(r"[,;\n]", env or "") if n.strip()]
@@ -130,11 +142,12 @@ def pick_accounts(accounts, names):
         return list(accounts), []
     chosen, missing = [], []
     wanted = [(n, _keys(n)) for n in names]
+    known = {a: _keys(a) | _keys(display_name(a)) for a in accounts}   # its own name or the one it goes by
     for a in accounts:
-        if any(_keys(a) & k for _, k in wanted):
+        if any(known[a] & k for _, k in wanted):
             chosen.append(a)
     for n, k in wanted:
-        if not any(_keys(a) & k for a in accounts):
+        if not any(known[a] & k for a in accounts):
             missing.append(n)
     return chosen, missing
 
@@ -191,14 +204,15 @@ def api_totals(shape, day, currency):
     return {"mtd": add(rows), "day": add(on_day), "currency": currency}
 
 
-def summarize(rows, account, st=None, fx=None, today=None, allocated=None, api=None):
+def summarize(rows, account, st=None, fx=None, today=None, allocated=None, api=None, day=None):
     """One account's digest: the month so far, its latest day against the 7 days before it, the month's
     budget, and what needs attention.
 
     rows: the campaign report (app._fetch_google_ads_rows); st: the parsed insights tabs
     (google_ads_insights.store), optional; fx: google_ads_insights.FX(rows); allocated: what the client
     agreed to spend this month (the Pacing Desk's budget for the account), or None; api: api_totals for the
-    month so far, whose figures (phone calls among them) the card shows when its currency is the card's."""
+    month so far, whose figures (phone calls among them) the card shows when its currency is the card's;
+    day: the day reported on (the digest's is always yesterday in India), else the account's latest day in the sheet."""
     fx = fx or g.FX(rows)
     mine = [r for r in rows if (r.get("account") or "") == account and r.get("day")]
     if not mine:
@@ -211,7 +225,11 @@ def summarize(rows, account, st=None, fx=None, today=None, allocated=None, api=N
         mine = [dict(r, cost=r.get("cost_native") or 0.0, currency=r["currency_native"]) for r in mine]
         fx = g.FX(mine)
     report_days = sorted({r["day"] for r in rows if r.get("day")})
-    day = max(r["day"] for r in mine)
+    sheet_day = max(r["day"] for r in mine)
+    day = day or sheet_day
+    mine = [r for r in mine if r["day"] <= day] or mine[:0]
+    if not mine:
+        return None
     cur = max(sorted({r.get("currency") or "" for r in mine}),
               key=lambda c: sum(r.get("cost") or 0 for r in mine if (r.get("currency") or "") == c))
     d = _dt.date.fromisoformat(day)
@@ -222,12 +240,18 @@ def summarize(rows, account, st=None, fx=None, today=None, allocated=None, api=N
     covered = [x for x in report_days if base_lo <= x <= base_hi]
     n_base = len(covered)
     now = _totals([r for r in mine if r["day"] == day])
+    use_api = bool(api and api.get("currency") == cur)
+    if use_api:   # the day from Google itself, so a sheet a day behind never reads as a day of nothing
+        now = dict(api["day"])
     base = None
     if n_base:
         t = _totals([r for r in mine if base_lo <= r["day"] <= base_hi])
         base = {k: None if v is None else v / n_base for k, v in t.items()}
 
-    out = {"account": account, "customer_id": next((r.get("customer_id") for r in mine if r.get("customer_id")), ""),
+    out = {"account": account, "name": display_name(account), "sheet_day": sheet_day,
+           # The sheet has not reached the day and the API could not stand in: no figure for it to judge.
+           "day_missing": not use_api and sheet_day < day,
+           "customer_id": next((r.get("customer_id") for r in mine if r.get("customer_id")), ""),
            "day": day, "cur": cur, "now": now, "base": base, "base_days": n_base,
            "cpa": _ratio(now["cost"], now["conversions"]),
            "base_cpa": _ratio(base["cost"], base["conversions"]) if base else None,
@@ -237,10 +261,10 @@ def summarize(rows, account, st=None, fx=None, today=None, allocated=None, api=N
     # The month so far: the 1st of the latest day's month to that day, as the dashboard's date range reads.
     first = d.replace(day=1).isoformat()
     month_rows = [r for r in mine if first <= r["day"] <= day]
-    out["mtd"] = dict(_totals(month_rows), start=min(r["day"] for r in month_rows),
+    out["mtd"] = dict(_totals(month_rows), start=min([r["day"] for r in month_rows] or [first]),
                       partial=min(report_days) > first)
     out["day_totals"], out["source"] = now, "sheet"
-    if api and api.get("currency") == cur:
+    if use_api:
         out["mtd"] = dict(api["mtd"], start=first, partial=False)
         out["day_totals"], out["source"] = api["day"], "api"
 
@@ -317,7 +341,6 @@ def allocation_for(saved, account):
 
 
 CRITICAL, WARNING, INFO = "critical", "warning", "info"
-LEVEL_HEADING = {CRITICAL: "Action needed", WARNING: "Watch", INFO: "For information"}
 
 
 def alert_items(s, limited=(), disapproved=0, today=None):
@@ -325,8 +348,11 @@ def alert_items(s, limited=(), disapproved=0, today=None):
     broken), warning (a figure moved the wrong way), info (worth knowing)."""
     a = []
     now, base, cur = s["now"], s["base"], s["cur"]
-    if today and (today - _dt.date.fromisoformat(s["day"])).days > STALE_AFTER_DAYS:
-        a.append((CRITICAL, "No data after %s. Check that the Google Ads scripts ran." % day_label(s["day"])))
+    seen = s.get("sheet_day") or s["day"]
+    if today and (today - _dt.date.fromisoformat(seen)).days > STALE_AFTER_DAYS:
+        a.append((CRITICAL, "No data after %s. Check that the Google Ads scripts ran." % day_label(seen)))
+    if s.get("day_missing"):
+        base = None
     if base and base["cost"] > 0:
         if now["cost"] == 0:
             a.append((CRITICAL, "Spent nothing (7-day average %s a day)." % money(base["cost"], cur)))
@@ -338,7 +364,7 @@ def alert_items(s, limited=(), disapproved=0, today=None):
         a.append((CRITICAL, "No conversions (7-day average %s a day)." % number(base["conversions"])))
     if disapproved:
         a.append((CRITICAL, "%d disapproved ad%s." % (disapproved, "" if disapproved == 1 else "s")))
-    if s["cpa"] and s["base_cpa"] and s["cpa"] >= s["base_cpa"] * (1 + CPA_RISE):
+    if base and s["cpa"] and s["base_cpa"] and s["cpa"] >= s["base_cpa"] * (1 + CPA_RISE):
         a.append((WARNING, "Cost per conversion %s, up %d%% on the 7-day %s." %
                   (money(s["cpa"], cur), round(100 * (s["cpa"] / s["base_cpa"] - 1)), money(s["base_cpa"], cur))))
     if s["roas"] is not None and s["base_roas"] and s["roas"] <= s["base_roas"] * (1 - ROAS_DROP):
@@ -366,9 +392,8 @@ def status(items):
     return CRITICAL if CRITICAL in levels else WARNING if WARNING in levels else "good"
 
 
-# The coloured bar down the side of each message (the reference data-viz palette's status colours).
-STATUS_COLOR = {CRITICAL: "#d03b3b", WARNING: "#fab219", "good": "#0ca30c"}
-STATUS_WORD = {CRITICAL: "Needs action", WARNING: "Worth a look", "good": "On track"}
+# The bar down the side of every message: the report's navy, the same for every account (no status labels).
+BAR_COLOR = "#16194c"
 
 
 def _names(xs, keep=3):
@@ -398,14 +423,8 @@ def _attachment(color, blocks):
 
 
 def _alert_text(items):
-    if not items:
-        return "*All clear*\nNothing unusual against the last 7 days."
-    parts = []
-    for lvl in (CRITICAL, WARNING, INFO):
-        mine = [t for l, t in items if l == lvl]
-        if mine:
-            parts.append("*%s*\n" % LEVEL_HEADING[lvl] + "\n".join("\u2022  " + esc(t) for t in mine))
-    return "\n\n".join(parts)
+    """What needs a look, most urgent first, as plain bullets (no headings or labels)."""
+    return "\n".join("\u2022  " + esc(t) for _, t in items)
 
 
 def _links(s, base_url):
@@ -452,11 +471,11 @@ def message(s, base_url="", card_url=""):
     figures; without one they are written out. Returns {"text", "blocks", "attachments"}."""
     cur, now, m = s["cur"], s["now"], s["mtd"]
     items = s.get("alert_items") or [(WARNING, t) for t in s.get("alerts") or []]
-    st = s.get("status") or status(items)
+    name = s.get("name") or s["account"]
     span = range_label(m["start"], s["day"])
-    fallback = "%s: %s, %s. Cost %s, %s conversions" % (
-        s["account"], STATUS_WORD[st].lower(), span, money(m["cost"], cur, cents=True), number(m["conversions"]))
-    blocks = [{"type": "header", "text": {"type": "plain_text", "text": s["account"][:150]}}]
+    fallback = "%s: %s. Cost %s, %s conversions" % (
+        name, span, money(m["cost"], cur, cents=True), number(m["conversions"]))
+    blocks = [{"type": "header", "text": {"type": "plain_text", "text": name[:150]}}]
 
     if card_url:
         card = [{"type": "image", "image_url": card_url, "alt_text": fallback[:1900]}]
@@ -464,15 +483,15 @@ def message(s, base_url="", card_url=""):
             card.append({"type": "section", "text": {"type": "mrkdwn", "text": _alert_text(items)[:2900]}})
         card += _links(s, base_url)
         card.append({"type": "context", "elements": [{"type": "mrkdwn", "text":
-            "Reply in this thread to ask about %s" % esc(s["account"])}]})
-        return {"text": fallback, "blocks": blocks, "attachments": _attachment(STATUS_COLOR[st], card)}
+            "Reply in this thread to ask about %s" % esc(name)}]})
+        return {"text": fallback, "blocks": blocks, "attachments": _attachment(BAR_COLOR, card)}
 
     card = [
         {"type": "context", "elements": [{"type": "mrkdwn", "text": "*%s*%s%s%smonth to date" % (
-            STATUS_WORD[st], DOT, span, DOT)}]},
+            "Daily performance", DOT, span, DOT)}]},
         {"type": "section", "fields": [{"type": "mrkdwn", "text": "%s\n*%s*" % (label, value)}
                                        for label, _, value in _figures(m, cur)]},
-        {"type": "section", "text": {"type": "mrkdwn", "text": "*Latest day*\n" + day_table(
+        {"type": "section", "text": {"type": "mrkdwn", "text": "*Yesterday*\n" + day_table(
             s["day"], s.get("day_totals") or now, cur)}},
     ]
     b = s.get("budget")
@@ -500,27 +519,25 @@ def message(s, base_url="", card_url=""):
         card.append({"type": "section", "text": {"type": "mrkdwn", "text": _alert_text(items)[:2900]}})
     card += _links(s, base_url)
     note = "Reply in this thread to ask about %s%sMoney in %s; the latest day can still move slightly as Google " \
-           "adds late clicks." % (esc(s["account"]), DOT, cur or "the report's currency")
+           "adds late clicks." % (esc(name), DOT, cur or "the report's currency")
     if m.get("partial"):
         note += "%sThe sheet starts on %s, so the month so far begins there." % (DOT, day_label(m["start"]))
     if s.get("source") != "api":
         note += "%sThe Google Ads API could not be read, so these figures are the sheet's and phone calls are " \
                 "missing." % DOT
     card.append({"type": "context", "elements": [{"type": "mrkdwn", "text": note}]})
-    return {"text": fallback, "blocks": blocks, "attachments": _attachment(STATUS_COLOR[st], card)}
+    return {"text": fallback, "blocks": blocks, "attachments": _attachment(BAR_COLOR, card)}
 
 
 def overview(summaries, base_url="", today=None):
-    """The morning's first message: every account at a glance, grouped by status, most urgent first."""
-    order = {CRITICAL: 0, WARNING: 1, "good": 2}
-    ss = sorted(summaries, key=lambda s: (order[s["status"]], -s["now"]["cost"]))
-    counts = {k: sum(1 for s in ss if s["status"] == k) for k in order}
-    worst = next((k for k in order if counts[k]), "good")
+    """The morning's first message: yesterday's spend and conversions, then every account, biggest spend first."""
+    ss = sorted(summaries, key=lambda s: -s["now"]["cost"])
     curs = {s["cur"] for s in ss}
     days = sorted({s["day"] for s in ss})
     blocks = [{"type": "header", "text": {"type": "plain_text", "text": "Google Ads daily briefing"}}]
-    card = [{"type": "context", "elements": [{"type": "mrkdwn", "text": "%s%s%d account%s%seach account's latest day against its 7-day average" % (
-        day_label((today or today_ist()).isoformat()), DOT, len(ss), "" if len(ss) == 1 else "s", DOT)}]}]
+    when = day_label(days[-1]) if days else day_label(((today or today_ist()) - _dt.timedelta(days=1)).isoformat())
+    card = [{"type": "context", "elements": [{"type": "mrkdwn", "text": "%s%s%d account%s%sagainst each account's 7-day average" % (
+        when, DOT, len(ss), "" if len(ss) == 1 else "s", DOT)}]}]
     fields = []
     # Each account is in its own currency; amounts in different currencies are never added together,
     # so with several the total spend is one line per currency.
@@ -537,39 +554,28 @@ def overview(summaries, base_url="", today=None):
         fields.append({"type": "mrkdwn", "text": "Total spend by currency\n" +
                        "\n".join("*%s*   %s" % spent(c) for c in by)})
     fields.append({"type": "mrkdwn", "text": "Conversions\n*%s*   %s" % (number(conv), delta(conv, bconv))})
-    fields.append({"type": "mrkdwn", "text": "Accounts\n*%d* need action%s*%d* worth a look%s*%d* on track" % (
-        counts[CRITICAL], DOT, counts[WARNING], DOT, counts["good"])})
     card.append({"type": "section", "fields": fields})
     card.append({"type": "divider"})
-    for k in order:
-        group = [s for s in ss if s["status"] == k]
-        if not group:
-            continue
-        lines = []
-        for s in group:
-            line = "*%s*%s%s%s%s conv." % (esc(s["account"]), DOT, money(s["now"]["cost"], s["cur"]), DOT,
-                                         number(s["now"]["conversions"]))
-            if s.get("alerts"):
-                line += "\n_%s_" % esc(s["alerts"][0])
-            lines.append(line)
-        chunk = "*%s*" % STATUS_WORD[k]
-        for line in lines:   # Slack allows 3,000 characters per section
-            if len(chunk) + len(line) > 2800:
-                card.append({"type": "section", "text": {"type": "mrkdwn", "text": chunk}})
-                chunk = ""
-            chunk += ("\n" if chunk else "") + line
+    chunk = ""
+    for s in ss:
+        line = "*%s*%s%s%s%s conv." % (esc(s.get("name") or s["account"]), DOT, money(s["now"]["cost"], s["cur"]), DOT,
+                                     number(s["now"]["conversions"]))
+        if s.get("alerts"):
+            line += "\n_%s_" % esc(s["alerts"][0])
+        if chunk and len(chunk) + len(line) > 2800:   # Slack allows 3,000 characters per section
+            card.append({"type": "section", "text": {"type": "mrkdwn", "text": chunk}})
+            chunk = ""
+        chunk += ("\n" if chunk else "") + line
+    if chunk:
         card.append({"type": "section", "text": {"type": "mrkdwn", "text": chunk}})
     if base_url:
         card.append({"type": "actions", "elements": [
             {"type": "button", "action_id": "open_dashboard_all", "text": {"type": "plain_text", "text": "Open dashboard"},
              "url": "%s/dashboards/google-ads" % base_url}]})
-    note = "Each account's briefing follows. Reply under any of them, or mention @Ads Insight, to ask a question."
-    if len(days) > 1:
-        note += "%sLatest days differ by account (%s to %s)." % (DOT, days[0], days[-1])
+    note = "Each account's report follows. Reply under any of them, or mention @Ads Insight, to ask a question."
     card.append({"type": "context", "elements": [{"type": "mrkdwn", "text": note}]})
-    text = "Google Ads daily briefing: %d accounts, %d need action, %d worth a look." % (
-        len(ss), counts[CRITICAL], counts[WARNING])
-    return {"text": text, "blocks": blocks, "attachments": _attachment(STATUS_COLOR[worst], card[:49])}
+    text = "Google Ads daily briefing: %d accounts, %s." % (len(ss), when)
+    return {"text": text, "blocks": blocks, "attachments": _attachment(BAR_COLOR, card[:49])}
 
 
 # ── Posting ──────────────────────────────────────────────────────────────────
@@ -626,14 +632,19 @@ def run(rows, accounts, st=None, token="", channel="", base_url="", dry_run=Fals
     today = today or today_ist()
     out, sent = [], [0]
     summaries = []
+    # Always yesterday in India, whatever day the sheet has reached: sent on 20 Oct, the report is for 19 Oct,
+    # and the month so far runs from the 1st to then.
+    day = (today - _dt.timedelta(days=1)).isoformat()
     for account in accounts:
-        day = max((r["day"] for r in rows if r.get("account") == account and r.get("day")), default="")
-        allocated = allocation(account, day[:7]) if allocation and day else None
+        allocated = None
+        if allocation:
+            allocated = allocation(display_name(account), day[:7]) or (
+                allocation(account, day[:7]) if display_name(account) != account else None)
         figures = None
-        if api and day:
+        if api:
             cid = next((r.get("customer_id") for r in rows if r.get("account") == account and r.get("customer_id")), "")
             figures = api(account, cid, day[:8] + "01", day)
-        s = summarize(rows, account, st, fx, today, allocated, figures)
+        s = summarize(rows, account, st, fx, today, allocated, figures, day=day)
         if s:
             summaries.append(s)
         else:
