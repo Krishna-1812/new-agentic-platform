@@ -7571,6 +7571,47 @@ def google_ads_slack_digest_preview():
     return jsonify({"ok": True, "channel_set": bool(os.environ.get("GOOGLE_ADS_SLACK_CHANNEL")),
                     "token_set": bool(os.environ.get("GOOGLE_ADS_SLACK_BOT_TOKEN")), "results": results})
 
+
+_DIGEST_CARDS_PAGE = """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slack digest preview</title><style>
+body{margin:0;background:#f3f4f7;color:#111326;font:15px/1.5 system-ui,sans-serif}
+main{max-width:1240px;margin:0 auto;padding:24px 16px}h1{font-size:22px;margin:0 0 4px}p{color:#54576a;margin:0 0 24px}
+section{margin:0 0 36px}h2{font-size:17px;margin:0 0 10px}img{width:100%;height:auto;display:block;border-radius:14px}
+.alerts{background:#fff;border-radius:12px;padding:12px 16px;margin-top:10px;white-space:pre-line}.missing{color:#8a8d9e}
+</style></head><body><main><h1>Slack digest preview</h1>
+<p>What each account's message would show this morning. Nothing has been posted.</p>
+{% for r in cards %}<section><h2>{{ r.account }}</h2>
+{% if r.image %}<img src="{{ r.image }}" alt="{{ r.alt }}">{% else %}<div class="missing">{{ r.why }}</div>{% endif %}
+{% if r.alerts %}<div class="alerts">{{ r.alerts }}</div>{% endif %}</section>{% endfor %}
+</main></body></html>"""
+
+
+@app.route(GADS_DIGEST + "/preview/cards")
+@position2_required
+def google_ads_slack_digest_preview_cards():
+    """The pictures the digest would post, one per account (or ?account=), on one page, without posting anything."""
+    from flask import render_template_string
+    from tracker import gads_digest
+    try:
+        results = _gads_digest_run(dry_run=True, account=request.args.get("account", "")[:300])
+    except Exception as exc:
+        return "Could not read the Google Ads sheet (%s)." % type(exc).__name__, 502
+    cards = []
+    for r in results:
+        if r["account"] == gads_digest.OVERVIEW:
+            continue
+        msg = r.get("message") or {}
+        blocks = ((msg.get("attachments") or [{}])[0]).get("blocks") or []
+        img = next((b for b in blocks if b.get("type") == "image"), None)
+        alerts = next((b["text"]["text"] for b in blocks if b.get("type") == "section" and "text" in b
+                       and "•" in b["text"]["text"]), "")
+        cards.append({"account": r["account"], "image": img["image_url"] if img else "", "alt": img["alt_text"] if img else "",
+                      "alerts": alerts.replace("*", ""),
+                      "why": {"no_data": "No rows for this account in the sheet.",
+                              "not_found": "Listed, but no account of that name in the sheet."}.get(
+                                  r["status"], "No picture: GOOGLE_ADS_DIGEST_TOKEN is not set in Railway.")})
+    return render_template_string(_DIGEST_CARDS_PAGE, cards=cards)
+
 @app.after_request
 def _no_html_cache(resp):
     """Never let browsers cache HTML pages — UI updates must show immediately after deploys."""

@@ -590,3 +590,14 @@ def test_the_card_picture_shows_the_client_report():
     without = Image.open(io.BytesIO(card.render(dict(data, budget=None))))
     assert without.size[1] < img.size[1], "no budget: a line, not four empty boxes"
     assert json.loads(json.dumps(data)) == data, "what is stored is plain JSON"
+
+
+def test_staff_can_see_every_card_on_one_page_without_posting(site):
+    assert appmod.app.test_client().get("/api/dashboards/google-ads/slack-digest/preview/cards").status_code in (302, 401, 403)
+    r = T._client().get("/api/dashboards/google-ads/slack-digest/preview/cards")
+    page = r.get_data(as_text=True)
+    assert r.status_code == 200 and "<h2>Acme</h2>" in page and site.calls == [], "nothing is posted"
+    src = page.split('<img src="')[1].split('"')[0].replace("&amp;", "&")
+    path = "/" + src.split("://", 1)[1].split("/", 1)[1]
+    got = appmod.app.test_client().get(path)
+    assert got.status_code == 200 and got.mimetype == "image/png", "the picture Slack would fetch"
