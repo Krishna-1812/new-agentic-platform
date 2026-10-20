@@ -173,7 +173,7 @@ def test_the_message_is_laid_out_like_the_client_report():
     budget = next(b for b in card if b.get("fields") and "Budget" in b["fields"][0]["text"])["fields"]
     assert [f["text"] for f in budget] == ["Budget allocation\n*$3,000.00*", "Projected budget to Oct 15\n*$1,451.61*",
                                            "Spent so far\n*$1,730.27*", "Overspent\n*+$278.66*"]
-    assert msg["text"] == "Core Care Clinic: on track, Oct 1 - Oct 15, 2026. Cost $1,730.27, 74 conversions"
+    assert msg["text"] == "Core Care Clinic: Oct 1 - Oct 15, 2026. Cost $1,730.27, 74 conversions"
     blob = json.dumps(msg, ensure_ascii=False)
     assert "Pacing Desk" not in blob and "could not be read" not in blob and "sheet starts" not in blob
     assert '"url": "https://app.example/dashboards/google-ads?account=Core%20Care%20Clinic"' in blob
@@ -237,25 +237,29 @@ def test_the_message_escapes_names_and_shows_alerts_only_when_there_are_any():
     blob = json.dumps(msg, ensure_ascii=False)
     assert msg["blocks"] == [{"type": "header", "text": {"type": "plain_text", "text": "A & <B>"}}], \
         "plain_text needs no escaping"
-    assert msg["attachments"][0]["color"] == d.STATUS_COLOR[d.WARNING], "the status is the card's coloured bar"
-    assert "*Worth a look*" in blob and "Sep 19 - Sep 26, 2026" in blob
+    assert msg["attachments"][0]["color"] == d.BAR_COLOR, "one navy bar for every account"
+    assert "Sep 19 - Sep 26, 2026" in blob
     assert "Reply in this thread to ask about A &amp; &lt;B&gt;" in blob
     assert "The sheet starts on Sat 19 Sep 2026" in blob, "a month the sheet does not reach back to is said"
     assert '"url": "https://app.example/dashboards/google-ads?account=A%20%26%20%3CB%3E"' in blob
     texts = [b["text"]["text"] for b in _card(msg) if b["type"] == "section" and "text" in b]
-    assert any(t.startswith("*Watch*\n\u2022  Spend up 60%") for t in texts)
+    assert any(t.startswith("\u2022  Spend up 60%") for t in texts)
 
 
-def test_alerts_carry_a_level_and_the_most_serious_sets_the_colour():
+def test_alerts_are_plain_bullets_most_urgent_first_with_no_status_labels():
     s = d.summarize(_week(last=[("Generic - Search", 1000.0, 0.0)]), "Acme", today=TODAY)
-    assert s["alert_items"][0] == (d.CRITICAL, "No conversions (7-day average 4 a day).") and s["status"] == d.CRITICAL
+    assert s["alert_items"][0] == (d.CRITICAL, "No conversions (7-day average 4 a day).")
     texts = [b["text"]["text"] for b in _card(d.message(s)) if b["type"] == "section" and "text" in b]
-    assert any(t.startswith("*Action needed*\n\u2022  No conversions") for t in texts)
+    assert any(t.startswith("\u2022  No conversions") for t in texts)
     calm = d.summarize(_week(last=[("Generic - Search", 1050.0, 4.0)]), "Acme", today=TODAY)
-    assert calm["status"] == "good"
     msg = d.message(calm)
-    assert msg["attachments"][0]["color"] == d.STATUS_COLOR["good"]
+    assert msg["attachments"][0]["color"] == d.BAR_COLOR
     assert not any(b["type"] == "section" and "text" in b and "\u2022" in b["text"]["text"] for b in _card(msg))
+    for m in (d.message(s), d.message(calm), d.message(s, card_url="https://x/c.png")):
+        blob = json.dumps(m)
+        for tag in ("Needs action", "Worth a look", "On track", "Action needed", "Watch", "For information",
+                    "need action", "worth a look", "on track", "All clear"):
+            assert tag not in blob, tag
 
 
 def test_the_change_against_the_average():
@@ -263,18 +267,19 @@ def test_the_change_against_the_average():
     assert d.delta(102, 100) == "flat" and d.delta(5, 0) == ""
 
 
-def test_the_morning_overview_groups_accounts_most_urgent_first():
-    rows = (_week(last=[("Generic - Search", 1000.0, 0.0)]) + _week("Calm", last=[("S", 1000.0, 4.0)])
+def test_the_morning_overview_lists_accounts_biggest_spend_first_without_labels():
+    rows = (_week(last=[("Generic - Search", 1000.0, 0.0)]) + _week("Calm", last=[("S", 900.0, 4.0)])
             + _week("Busy", last=[("S", 1700.0, 6.0)]))
     ss = [d.summarize(rows, a, today=TODAY) for a in ("Calm", "Busy", "Acme")]
     msg = d.overview(ss, "https://app.example", today=TODAY)
     blob = json.dumps(msg, ensure_ascii=False)
-    assert blob.index("*Needs action*") < blob.index("*Acme*") < blob.index("*Worth a look*") < blob.index("*Busy*") \
-        < blob.index("*On track*") < blob.index("*Calm*")
-    assert "*1* need action  \u00b7  *1* worth a look  \u00b7  *1* on track" in blob
-    assert "\u20b93,700" in blob, "one currency: the total is shown"
-    assert msg["attachments"][0]["color"] == d.STATUS_COLOR[d.CRITICAL]
-    assert msg["text"] == "Google Ads daily briefing: 3 accounts, 1 need action, 1 worth a look."
+    assert blob.index("*Busy*") < blob.index("*Acme*") < blob.index("*Calm*")
+    assert "_No conversions (7-day average 4 a day)._" in blob, "an account's main alert under it"
+    assert "\u20b93,600" in blob, "one currency: the total is shown"
+    assert msg["attachments"][0]["color"] == d.BAR_COLOR
+    assert msg["text"] == "Google Ads daily briefing: 3 accounts, Sat 26 Sep 2026."
+    for tag in ("Needs action", "Worth a look", "On track", "need action", "worth a look", "on track"):
+        assert tag not in blob
     assert not any(ord(ch) >= 0x1F000 for ch in blob)
 
 
@@ -505,7 +510,7 @@ def test_each_account_is_posted_as_a_picture_of_the_client_report(site):
     assert [b["type"] for b in blocks] == ["image", "actions", "context"], "no alerts: picture, buttons, the note"
     assert site.calls[0]["json"]["blocks"][0]["text"]["text"] == "Acme"
     img = blocks[0]
-    assert img["alt_text"].startswith("Acme: on track, Sep 19 - Sep 26, 2026")
+    assert img["alt_text"].startswith("Acme: Sep 19 - Sep 26, 2026")
     path = img["image_url"].split("web.example")[1]
     assert c.get(path.replace("a=Acme", "a=Other")).status_code == 404, "signed for one account"
     assert c.get(path.replace("/2026-09-26/", "/2026-09-25/")).status_code == 404, "and one day"
@@ -601,3 +606,63 @@ def test_staff_can_see_every_card_on_one_page_without_posting(site):
     path = "/" + src.split("://", 1)[1].split("/", 1)[1]
     got = appmod.app.test_client().get(path)
     assert got.status_code == 200 and got.mimetype == "image/png", "the picture Slack would fetch"
+
+
+# ── Names and the day reported ───────────────────────────────────────────────
+def test_accounts_go_by_the_names_the_team_uses():
+    sheet = ["AA_New", "JulyMode x 2025", "BTay", "Krishnamurti Foundation India", "Core Care Clinic", "KFI Foods"]
+    chosen, missing = d.pick_accounts(sheet, d.wanted_names(""))
+    assert chosen == ["AA_New", "JulyMode x 2025", "BTay", "Krishnamurti Foundation India", "Core Care Clinic"]
+    assert "AllureAvani" not in missing and "July Mode" not in missing and "KFI" not in missing
+    assert "Artistic Yoga(BTA)" not in missing
+    assert [d.display_name(a) for a in sheet] == ["AllureAvani", "July Mode", "Artistic Yoga (BTA)", "KFI",
+                                                  "Core Care Clinic", "KFI Foods"]
+    rows = [dict(_row("AA_New", "S", "2026-09-%02d" % n, 1000.0, 4.0)) for n in range(19, 27)]
+    s = d.summarize(rows, "AA_New", today=TODAY)
+    msg = d.message(s)
+    assert msg["blocks"][0]["text"]["text"] == "AllureAvani" and msg["text"].startswith("AllureAvani:")
+    from tracker import gads_digest_card as card
+    assert card.card_data(s)["account"] == "AllureAvani"
+
+
+def test_the_pacing_desk_budget_is_found_under_either_name():
+    rows = [dict(_row("AA_New", "S", "2026-09-%02d" % n, 1000.0, 4.0)) for n in range(19, 27)]
+    asked = []
+    out = d.run(rows, ["AA_New"], today=TODAY, dry_run=True,
+                allocation=lambda a, m: asked.append(a) or (30000.0 if a == "AllureAvani" else None))
+    assert asked == ["AllureAvani"] and out[0]["message"]
+    assert "\u20b930,000" in json.dumps(out[0]["message"], ensure_ascii=False)
+
+
+def test_the_report_is_always_for_yesterday_in_india():
+    # Sent on 20 Oct: the latest day is 19 Oct and the month runs from 1 Oct, even if the sheet has 20 Oct already
+    # or has not reached 19 Oct yet.
+    today = dt.date(2026, 10, 20)
+    ahead = [dict(_row("Acme", "S", "2026-10-%02d" % n, 100.0, 1.0)) for n in range(1, 21)]
+    out = d.run(ahead, ["Acme"], today=today, dry_run=True)
+    assert out[0]["day"] == "2026-10-19"
+    assert "Oct 1 - Oct 19, 2026" in json.dumps(out[0]["message"]) and "Oct 20" not in json.dumps(out[0]["message"])
+    s = d.summarize(ahead, "Acme", today=today, day="2026-10-19")
+    assert s["mtd"]["cost"] == 1900.0 and s["now"]["cost"] == 100.0
+
+    behind = [dict(_row("Acme", "S", "2026-10-%02d" % n, 100.0, 1.0)) for n in range(1, 19)]
+    s = d.summarize(behind, "Acme", today=today, day="2026-10-19")
+    assert s["day"] == "2026-10-19" and s["now"]["cost"] == 0 and s["day_missing"]
+    assert not any("Spent nothing" in t or "No conversions" in t for t in s["alerts"]), \
+        "a sheet a day behind is not a day of nothing"
+    api = {"mtd": {"impressions": 1900, "clicks": 190, "cost": 1900.0, "conversions": 19.0, "phone_calls": 3.0},
+           "day": {"impressions": 100, "clicks": 10, "cost": 100.0, "conversions": 1.0, "phone_calls": 0.0},
+           "currency": "INR"}
+    s = d.summarize(behind, "Acme", today=today, day="2026-10-19", api=api)
+    assert s["now"]["cost"] == 100.0 and not s["day_missing"] and s["alerts"] == [], "the API has the day"
+
+    first = d.run(ahead, ["Acme"], today=dt.date(2026, 11, 1), dry_run=True)
+    assert first[0]["day"] == "2026-10-31" and "Oct 1 - Oct 31, 2026" in json.dumps(first[0]["message"]), \
+        "on the 1st, the whole of last month"
+
+
+def test_the_picture_has_no_status_label():
+    from tracker import gads_digest_card as card
+    data = card.card_data(_core_summary())
+    assert "status" not in data
+    assert card.render(data)[:8] == b"\x89PNG\r\n\x1a\n"
