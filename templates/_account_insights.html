@@ -54,7 +54,7 @@
         {%- for t in order if b.counts[t] %}
         {%- set gap = 5 if kinds > 1 else 0 %}
         {%- set len = C * b.counts[t] / b.total - gap %}
-        <circle class="ib-dial-seg ib-dial-seg--{{ t }}" cx="60" cy="60" r="48" style="--d: {{ loop.index0 * 110 }}ms"
+        <circle class="ib-dial-seg ib-dial-seg--{{ t }}" cx="60" cy="60" r="48"
                 stroke-dasharray="{{ '%.2f'|format([len, 0.5]|max) }} {{ '%.2f'|format(C) }}" stroke-dashoffset="{{ '%.2f'|format(-ns.at) }}"/>
         {%- set ns.at = ns.at + len + gap %}
         {%- endfor %}
@@ -91,7 +91,7 @@
   {#- ── The insights, most important first ───────────────────────────── #}
   <ol class="ib-grid" role="list">
     {%- for it in b["items"] %}
-    <li class="ib-cell{% if loop.first %} ib-cell--lead{% endif %}" data-tone="{{ it.tone }}" data-via="{{ it.via }}" style="--i: {{ loop.index0 }}">
+    <li class="ib-cell{% if loop.first %} ib-cell--lead{% endif %}" data-tone="{{ it.tone }}" data-via="{{ it.via }}">
       <a class="ib-card ib-card--{{ it.tone }}{% if loop.first %} ib-card--lead{% endif %}{% if it.severity == 'critical' %} is-critical{% endif %}"
          href="{{ it.href }}"{% if it.external %} target="_blank" rel="noopener"{% endif %}
          aria-label="{{ it.label }}: {{ it.title }}. Open {{ it.source_label }}">

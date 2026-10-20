@@ -61,14 +61,12 @@
         var show = match && (filtered || state.all || n < first);
         if (match) n++;
         c.hidden = !show;
-        if (show && animate && !reduce) {          // the cards shown deal in again, in order
+        if (show && animate && !reduce) {          // the cards shown come in again, all at once
           c.style.animation = "none";
           void c.offsetWidth;
           c.style.animation = "";
         }
       });
-      var shown = 0;
-      cells.forEach(function (c) { if (!c.hidden) c.style.setProperty("--n", String(shown++)); });
       if (none) none.hidden = n > 0;
       if (more) more.hidden = filtered;
       // The first card shown leads, whatever the filter.

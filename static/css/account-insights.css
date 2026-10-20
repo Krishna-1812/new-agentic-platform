@@ -56,7 +56,7 @@
 .ib-dial svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
 .ib-dial circle { fill: none; stroke-width: 11; }
 .ib-dial-track { stroke: rgba(246, 244, 240, .1); }
-.ib-dial-seg { stroke: var(--t-glow); stroke-linecap: round; animation: ib-draw 1.2s var(--as-glide) both; animation-delay: var(--d, 0ms);
+.ib-dial-seg { stroke: var(--t-glow); stroke-linecap: round; animation: ib-draw 1.2s var(--as-glide) both;
   filter: drop-shadow(0 0 6px color-mix(in srgb, var(--t-glow) 60%, transparent)); }
 @keyframes ib-draw { from { stroke-dasharray: 0 302; } }
 .ib-dial-c { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
@@ -110,7 +110,7 @@
 
 /* ── The insights ────────────────────────────────────────────────────── */
 .ib-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-flow: row dense; gap: var(--gap); }
-.ib-cell { display: flex; min-width: 0; animation: ib-in 640ms var(--as-glide) both; animation-delay: calc(var(--n, var(--i)) * 55ms); }
+.ib-cell { display: flex; min-width: 0; animation: ib-in 520ms var(--as-glide) both; }      /* together: no card waits on its place in the list */
 .ib-cell[hidden] { display: none; }
 .ib-cell--lead { grid-column: span 2; grid-row: span 2; }
 @keyframes ib-in { from { opacity: 0; transform: translateY(18px) scale(.98); } }
