@@ -65,6 +65,15 @@ run did not say why.
   fails with the reason. A run that read some notes how many it could not read, and why. Drafts that could
   not be written are noted the same way. The team sees the notes under each search in Recent searches.
 
+### An API key outside a workspace
+
+The test post caught the next failure the same day: Anthropic refused every request with "This API key is
+not scoped to a workspace". An organization-level key must name a workspace on each request. Setting
+`ANTHROPIC_WORKSPACE_ID` (the `wrkspc_…` ID from console.anthropic.com → Settings → Workspaces) in Railway →
+web and worker → Variables sends it on every Claude call in the app (`tracker/claude_workspace.py`, run from
+`tracker/__init__.py`). Replacing the key with one made inside a workspace works too. The run shows these
+steps instead of the raw error.
+
 ## What it costs
 
 Every paid call is recorded in `br_spend`, with who ran it and the workspace. It shows in the admin panel
