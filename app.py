@@ -8739,6 +8739,247 @@ def account_home(acct):
         runs_left=max(0, _acct_runs_left(acct)) if client and runs else None)
 
 
+# ── An account's briefing: what needs the team today ─────────────────────────
+# The home's first section for staff (templates/_account_insights.html, loaded by static/js/account-insights.js): what
+# the campaign report, the master doc, the Pacing Desk, the AI review and every Paid Marketing agent last found for this
+# account, ranked, each opening the agent with the detail. tracker/account_insights.py turns each read into insights;
+# here are the reads. Nothing here asks Google Ads: only what the agents and the Script already saved is read, keyed by
+# the account's own customer ids, Google Ads account names and workspace, so one account's briefing holds no other's.
+ACCT_INSIGHTS_TTL = 600        # seconds a briefing is reused; "Read again" builds a new one
+_ACCT_INSIGHTS = {}
+_ACCT_INSIGHTS_LOCK = threading.Lock()
+_ISO_RANGE = re.compile(r"^(\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})(?:, by (\w+))?$")
+
+
+def _acct_cid_names(acct):
+    """{customer id (digits): (Google Ads account name, currency)} for the account's own accounts, from the campaign report."""
+    out = {}
+    try:
+        for r in _acct_rows(acct):
+            cid = re.sub(r"\D", "", str(r.get("customer_id") or ""))
+            if cid and cid not in out:
+                out[cid] = (r.get("account") or cid, r.get("currency_native") or r.get("currency") or "")
+    except Exception:
+        app.logger.warning("account insights: campaign report unreadable", exc_info=True)
+    for c in acct.get("customer_ids") or []:
+        cid = re.sub(r"\D", "", str(c))
+        if cid:
+            out.setdefault(cid, (acct["name"], ""))
+    return out
+
+
+def _acct_insight_sources(acct):
+    """source key -> a function returning (insights, when what it read was read) for tracker/account_insights.gather."""
+    from tracker import account_insights as ai, gads_ai_store, gads_digest, paid_activity, paid_gads, paid_store
+    st, names, money = acct["stats"], list(acct["ads_names"]), client_accounts.money
+    now = datetime.now(timezone.utc)
+    accounts = _acct_cid_names(acct)
+    memo = {}
+
+    def activity():
+        """The account's Paid Marketing reads, newest first (who read which of its accounts, and the range)."""
+        if "rows" not in memo:
+            memo["rows"] = [r for r in paid_activity.space_rows(acct["space"], limit=240)
+                            if re.sub(r"\D", "", str(r.get("account") or "").split("+")[0]) in accounts]
+        return memo["rows"]
+
+    def saved(key):
+        """(what an agent saved under this key, when), whatever its age, or None. Never asks Google."""
+        return paid_gads._saved_copy(paid_store, key)
+
+    def target(cid):
+        name, cur = accounts[cid]
+        return {"id": cid, "name": name, "currency": cur or (st or {}).get("currency") or "USD"}
+
+    def newest(hits):
+        hits = [h for h in hits if h]
+        return max(hits, key=lambda h: str(h[1] or "")) if hits else None
+
+    def google_ads():
+        items = ai.performance(st, money)
+        if names and st:
+            ins = _google_ads_insights(_acct_rows(acct), start=st["from"], end=st["to"], only=tuple(sorted(names)))
+            items += ai.script_insights(ins, names, money)
+        return items, (st or {}).get("to")
+
+    def pacing():
+        if not st:
+            return [], None
+        from tracker import paid_pacing_budget_store
+        try:
+            plan = ai.plan_rows(paid_pacing_budget_store.list_month(st["to"][:7]),
+                                [acct["name"]] + names + [gads_digest.display_name(n) for n in names])
+        except Exception:
+            app.logger.warning("account insights: Pacing Desk budgets unreadable", exc_info=True)
+            plan = None                 # unknown, which is not the same as none set
+        mtd, _cur = ai.month_to_date(_acct_rows(acct), names, st["to"])
+        return ai.targets(plan, st, mtd, money, profile_goals=acct["profile"].get("goals") or ""), st["to"]
+
+    def review():
+        rows = []
+        for n in names:
+            rows += gads_ai_store.list_reviews(n, limit=3)
+        if not names:
+            return [], None
+        rows.sort(key=lambda r: str(r.get("created_at") or ""), reverse=True)
+        done = next((r for r in rows if r.get("status") == "complete"), None)
+        row = done or (rows[0] if rows else None)
+        report = (gads_ai_store.get_review(row["id"]) or {}).get("report") if done else None
+        return ai.review(row, report, now), (row or {}).get("finished_at") or (row or {}).get("created_at")
+
+    def audit():
+        from tracker import paid_audit
+        best, at = None, None
+        for cid in accounts:
+            hit = saved(paid_audit.cache_key("audit-google", cid))
+            if hit and (at is None or str(hit[1] or "") > str(at or "")):
+                best, at = paid_audit.assemble(hit[0], None, [dict(target(cid), platform="google")]), hit[1]
+        if not names and best is None:
+            return [], None
+        return ai.audit(best, at, now), at
+
+    def keyed(agent, module):
+        """The cid-keyed reads (Landing Page Check, Experiment Tracker): each of the account's accounts, and any account key
+        its reads in the workspace were filed under (a Google account with a Meta one)."""
+        keys = list(accounts) + [r["account"] for r in activity() if r["agent"] == agent and r["account"] not in accounts]
+        hit = newest([saved(module.cache_key(k)) for k in dict.fromkeys(keys)])
+        return (module.assemble(hit[0]), hit[1]) if hit else (None, None)
+
+    def landing_pages():
+        from tracker import paid_lp
+        report, at = keyed("landing-page-check", paid_lp)
+        return ai.landing_pages(report, at), at
+
+    def experiments():
+        from tracker import paid_exp
+        report, at = keyed("experiment-tracker", paid_exp)
+        return ai.experiments(report, at), at
+
+    def last_read(agent):
+        return next((r for r in activity() if r["agent"] == agent), None)
+
+    def ranged(agent, build):
+        """Geo Performance, Audience Segments and Segment Analysis: the range their last read in the workspace used."""
+        r = last_read(agent)
+        m = _ISO_RANGE.match(str((r or {}).get("detail") or ""))
+        if not m:
+            return [], None
+        cid = re.sub(r"\D", "", r["account"])
+        s, e = datetime.fromisoformat(m.group(1)).date(), datetime.fromisoformat(m.group(2)).date()
+        return build(cid, s, e, m.group(3)), r["at"]
+
+    def geo():
+        from tracker import paid_geo
+
+        def build(cid, s, e, level):
+            hit = saved(paid_gads.CACHE_V + "geo:google:%s:%s:%s:%s" % (cid, level, s.isoformat(), e.isoformat()))
+            report = paid_geo.assemble(hit[0], target(cid), s, e) if hit else None
+            return ai.report_insights("geo-performance", ((report or {}).get("views") or {}).get(paid_geo.ALL, {}).get("insights"),
+                                      hit[1] if hit else None)
+        return ranged("geo-performance", build)
+
+    def audiences():
+        from tracker import paid_audiences
+
+        def build(cid, s, e, _level):
+            hit = saved(paid_gads.CACHE_V + "geo:audiences:%s:all:%s:%s" % (cid, s.isoformat(), e.isoformat()))
+            report = paid_audiences.assemble(hit[0], target(cid), s, e) if hit else None
+            return ai.report_insights("audience-segments", ((report or {}).get("views") or {}).get(paid_audiences.ALL, {}).get("insights"),
+                                      hit[1] if hit else None)
+        return ranged("audience-segments", build)
+
+    def segments():
+        from tracker import paid_segment_insights
+
+        def build(cid, s, e, _level):
+            hit = saved(paid_gads.CACHE_V + "seg:%s:%s:%s" % (cid, s.isoformat(), e.isoformat()))
+            return ai.report_insights("segment-analysis", paid_segment_insights.build(hit[0]) if hit else [], hit[1] if hit else None)
+        return ranged("segment-analysis", build)
+
+    def by_day(agent, kind, module, scope, extract):
+        """Ad Strength and Asset Coverage: a read is filed under the day it was made."""
+        r = last_read(agent)
+        if not r or not r.get("at"):
+            return [], None
+        cid = re.sub(r"\D", "", r["account"])
+        at = r["at"] if isinstance(r["at"], datetime) else datetime.fromisoformat(str(r["at"]))
+        for day in dict.fromkeys((at.date(), at.astimezone(timezone.utc).date(), at.date() - timedelta(days=1))):
+            hit = saved(paid_gads.CACHE_V + "geo:%s:%s:%s:%s:%s" % (kind, cid, scope, day.isoformat(), day.isoformat()))
+            if hit:
+                return extract(module.assemble(hit[0], target(cid), day), hit[1]), hit[1]
+        return [], None
+
+    def ad_strength():
+        from tracker import paid_adstrength
+        return by_day("ad-strength", "adstrength", paid_adstrength, "ads", ai.ad_strength)
+
+    def asset_coverage():
+        from tracker import paid_assets
+        return by_day("asset-coverage", "assets", paid_assets, "audit", ai.assets)
+
+    def qa():
+        from tracker import paid_qa, paid_qa_store
+        launches = []
+        for cid in accounts:
+            launches += paid_qa_store.list_launches(cid, limit=5)
+        if not launches:
+            return [], None
+        checks = paid_qa_store.checks_for([l["id"] for l in launches])
+        out = [paid_qa.payload(l, checks.get(l["id"]) or {}) for l in launches]
+        out.sort(key=lambda p: str((p.get("launch") or {}).get("updatedAt") or (p.get("launch") or {}).get("updated_at") or ""), reverse=True)
+        return ai.qa(out), None
+
+    def build_of(kind):
+        from tracker import paid_strategy_store
+
+        def read():
+            mine = [r for r in paid_strategy_store.list_recent(limit=100, kind=kind)
+                    if (r.get("inputs") or {}).get("space") == acct["space"]
+                    or re.sub(r"\D", "", str(r.get("account_id") or "")) in accounts]
+            done = next((r for r in mine if r.get("status") == "done"), None)
+            if not done:
+                return [], None
+            full = paid_strategy_store.get(done["id"]) or {}
+            return ai.builds(kind, full), full.get("updated_at")
+        return read
+
+    sources = {"google-ads": google_ads, "pacing-desk": pacing, "ai-review": review, "account-audit": audit,
+               "landing-page-check": landing_pages, "experiment-tracker": experiments, "qa-agent": qa,
+               "geo-performance": geo, "audience-segments": audiences, "segment-analysis": segments,
+               "ad-strength": ad_strength, "asset-coverage": asset_coverage,
+               "business-research": build_of("business"), "ppc-keyword-research": build_of("keywords"),
+               "campaign-book": build_of("strategy")}
+    return sources
+
+
+def _acct_briefing(acct, fresh=False):
+    """The account's briefing, reused for ACCT_INSIGHTS_TTL; `fresh` reads everything again."""
+    from tracker import account_insights
+    key = acct["space"]
+    with _ACCT_INSIGHTS_LOCK:
+        hit = _ACCT_INSIGHTS.get(key)
+    if hit and not fresh and time.time() - hit[0] < ACCT_INSIGHTS_TTL:
+        return hit[1]
+    listing = _acct_listing()
+    out = account_insights.gather(acct, _acct_insight_sources(acct), money=client_accounts.money,
+                                  doc_url=listing.get("doc_url") or "")
+    with _ACCT_INSIGHTS_LOCK:
+        _ACCT_INSIGHTS[key] = (time.time(), out)
+    return out
+
+
+@app.route("/<acct:slug>/insights")
+@_acct_view("", api=True, staff_only=True)
+def account_insights_view(acct):
+    """The briefing, drawn: the home asks for it once the page is up, and again on "Read again" (?fresh=1)."""
+    try:
+        b = _acct_briefing(acct, fresh=request.args.get("fresh") == "1")
+    except Exception:
+        app.logger.exception("account insights: the briefing could not be built")
+        return render_template("_account_insights.html", acct=acct, b=None), 200
+    return render_template("_account_insights.html", acct=acct, b=b)
+
+
 def _acct_client_watch(acct):
     """Page Watch and Video Studio as cards in a client's "Your tools" (the agents' and SEO tools'
     come from _acct_runs). Staff have their own cards for these two higher on the home."""
