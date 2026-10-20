@@ -339,7 +339,7 @@ Renamed from "Account Mapper". Internal module and spend names still say `accoun
 - Model: Opus 5.5. Each review costs about $0.50–2. Reviews are stored in Postgres.
 
 **Slack digest, "Ads Insight" (PRs #48–#51, #130):**
-- One message per account every day at **10:00 IST**, via the `google-ads-slack-digest.yml` GitHub Action. Each message has a morning overview, charts, status lights and buttons, in a professional style with no emoji.
+- One message per account every day at **13:00 IST** (10:00 until 20 Oct 2026), via the `google-ads-slack-digest.yml` GitHub Action. Each message has a morning overview, charts, status lights and buttons, in a professional style with no emoji.
 - **Answers questions in Slack:** replies under the digest and @mentions (`tracker/gads_slack_chat.py`; needs `GOOGLE_ADS_SLACK_SIGNING_SECRET`).
 - **It covers only twelve listed accounts** (`DIGEST_ACCOUNTS` in `tracker/gads_digest.py`, overridable with `GOOGLE_ADS_DIGEST_ACCOUNTS`). The owner's list: AIHS, Alphametic, AllureAvani, Basil woods school, Core Care Clinic, Madge Beauty, July Mode, Greet Technologies, Artistic Yoga (BTA), and the rest named in that constant.
 
@@ -419,7 +419,7 @@ The site's AI features bill the **Anthropic API key in Railway**, which is separ
 | `event-intelligence-tests.yml` | Event & Conference Intelligence tests |
 | `seo-studio-tests.yml` | SEO Studio tests |
 | `build-frontend.yml` | Ad Intelligence build |
-| `google-ads-slack-digest.yml` | Daily digest at 10:00 IST |
+| `google-ads-slack-digest.yml` | Daily digest at 13:00 IST |
 | `page-watch-watchdog.yml` | Page Watch watchdog |
 | `refresh-dashboards.yml`, `weekly_tracker.yml` | ABM tracker refresh |
 | `sync-job-change-alerts.yml` | Job Change Alert sync |

@@ -7579,7 +7579,7 @@ main{max-width:1240px;margin:0 auto;padding:24px 16px}h1{font-size:22px;margin:0
 section{margin:0 0 36px}h2{font-size:17px;margin:0 0 10px}img{width:100%;height:auto;display:block;border-radius:14px}
 .alerts{background:#fff;border-radius:12px;padding:12px 16px;margin-top:10px;white-space:pre-line}.missing{color:#8a8d9e}
 </style></head><body><main><h1>Slack digest preview</h1>
-<p>What each account's message would show this morning. Nothing has been posted.</p>
+<p>What each account's message would show today. Nothing has been posted.</p>
 {% for r in cards %}<section><h2>{{ r.account }}</h2>
 {% if r.image %}<img src="{{ r.image }}" alt="{{ r.alt }}">{% else %}<div class="missing">{{ r.why }}</div>{% endif %}
 {% if r.alerts %}<div class="alerts">{{ r.alerts }}</div>{% endif %}</section>{% endfor %}
