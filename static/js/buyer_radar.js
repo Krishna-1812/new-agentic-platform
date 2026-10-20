@@ -181,8 +181,16 @@
       return '<li id="run-' + esc(r.id) + '" class="br-r br-r--' + esc(r.status) + '"><span class="br-r-dot"></span><span class="br-r-t"><b>' + esc(label) + '</b>' +
         '<small>' + esc((r.trigger === 'daily' ? 'Daily · ' : '') + ago(r.created_at)) + (bits.length ? ' · ' + esc(bits.join(' · ')) : '') + '</small>' +
         (r.status === 'failed' && r.error ? '<small class="br-err">' + esc(r.error) + '</small>' : '') +
+        (r.status === 'ready' && !CLIENT ? renderNotes(s.notes) : '') +
         (r.status === 'ready' && !s.kept ? renderClosest(s.closest) : '') + '</span></li>';
     }).join('') + '</ol>';
+  }
+
+  // What went wrong along the way (posts Claude could not read, a search cut short), in the run's own words.
+  // Team only: a note can name the run's cost cap.
+  function renderNotes(notes) {
+    if (!notes || !notes.length) return '';
+    return notes.slice(0, 3).map(function (n) { return '<small class="br-note">' + esc(excerpt(n, 220)) + '</small>'; }).join('');
   }
 
   // A search that kept nothing says how close the best post came, so an empty list explains itself.

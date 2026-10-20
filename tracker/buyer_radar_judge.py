@@ -14,6 +14,7 @@ from __future__ import annotations
 import copy
 import logging
 import re
+import time
 
 from . import buyer_radar as br
 
@@ -103,27 +104,70 @@ def clean_verdict(v, offers):
     return out
 
 
-def judge_posts(posts, offers, *, budget, model=br.MODEL, call=None):
+class Verdicts(dict):
+    """{post key: verdict}, and .errors: why the posts left out could not be read, one line per failed call."""
+
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.errors = []
+
+
+RETRIES = 3                # a rate limit or an overloaded API is waited out this many times per batch
+
+
+def why(e):
+    """One line a person can act on: the API's status and message, or the error's own words."""
+    status = getattr(e, "status_code", None)
+    msg = getattr(e, "message", None) or getattr(e, "detail", None) or str(e)
+    msg = re.sub(r"\s+", " ", str(msg)).strip()[:240]
+    return ("Claude API %s: %s" % (status, msg)) if isinstance(status, int) else ("%s: %s" % (type(e).__name__, msg))
+
+
+def _wait_for(e, attempt):
+    """Seconds to wait before asking again, or None when asking again would fail the same way."""
+    status = getattr(e, "status_code", None)
+    if status not in (429, 500, 502, 503, 504, 529) and getattr(e, "kind", None) != "api_error":
+        return None
+    try:
+        after = float((getattr(getattr(e, "response", None), "headers", None) or {}).get("retry-after") or 0)
+    except (TypeError, ValueError):
+        after = 0
+    return min(60.0, max(after, 5.0 * (attempt + 1)))
+
+
+def judge_posts(posts, offers, *, budget, model=br.MODEL, call=None, sleep=time.sleep):
     """Every post, in batches of buyer_radar.JUDGE_BATCH. A batch that would pass the run's cap raises
-    BudgetExceeded, carrying the verdicts read so far as .partial, so the caller keeps them."""
+    BudgetExceeded, carrying the verdicts read so far as .partial, so the caller keeps them. A rate limit is
+    waited out; a reply cut off at its length limit is asked again in two halves; any other failure skips
+    the batch and is kept in .errors, so the run can say why posts were not read."""
     from . import contact_lab as lab
+    from . import contact_lab_search as cls
     call = call or lab._json_call
-    out = {}
+    out = Verdicts()
     offers_text = _offers_text(offers)
     schema = judge_schema(offers)
-    for start in range(0, len(posts), br.JUDGE_BATCH):
-        batch = posts[start:start + br.JUDGE_BATCH]
+
+    def read(batch):
         user = offers_text + "\n\n" + "\n\n".join(_post_text(i + 1, p) for i, p in enumerate(batch))
-        try:
-            got = call(budget, "read", model, JUDGE_SYSTEM, user, schema, br.JUDGE_MAX_TOKENS)
-        except Exception as e:
-            from . import contact_lab_search as cls
-            if isinstance(e, cls.BudgetExceeded):
-                e.partial = out
+        for attempt in range(RETRIES + 1):
+            try:
+                got = call(budget, "read", model, JUDGE_SYSTEM, user, schema, br.JUDGE_MAX_TOKENS)
+                break
+            except cls.BudgetExceeded:
                 raise
-            log.warning("buyer_radar: Claude could not read posts %d-%d: %s: %s", start + 1, start + len(batch),
-                        type(e).__name__, str(e)[:200])
-            continue                       # one batch the model could not read is skipped, not the run
+            except Exception as e:
+                if getattr(e, "kind", None) == "truncated" and len(batch) > 1:
+                    half = len(batch) // 2
+                    read(batch[:half])
+                    read(batch[half:])
+                    return
+                wait = _wait_for(e, attempt)
+                if wait is not None and attempt < RETRIES:
+                    sleep(wait)
+                    continue
+                log.warning("buyer_radar: Claude could not read %d posts: %s", len(batch), why(e))
+                out.errors.append(why(e))
+                return
         for v in got.get("verdicts") or []:
             try:
                 n = int(v.get("n"))
@@ -131,7 +175,25 @@ def judge_posts(posts, offers, *, budget, model=br.MODEL, call=None):
                 continue
             if 1 <= n <= len(batch):
                 out[batch[n - 1]["key"]] = clean_verdict(v, offers)
+
+    for start in range(0, len(posts), br.JUDGE_BATCH):
+        try:
+            read(posts[start:start + br.JUDGE_BATCH])
+        except cls.BudgetExceeded as e:
+            e.partial = out
+            raise
     return out
+
+
+CHECK_POST = {"key": "check", "text": "We are looking for a call analytics tool for our sales team. Recommendations?",
+              "author": {"name": "A test", "headline": "Head of Sales"}, "posted_at": "today"}
+
+
+def check(offers, *, budget, model=br.MODEL, call=None):
+    """One post read before the search is paid for: '' when Claude answers, else why it did not, so a run
+    that could read nothing stops before Apify charges for posts."""
+    got = judge_posts([CHECK_POST], offers, budget=budget, model=model, call=call)
+    return "" if got else (got.errors[0] if got.errors else "Claude returned no verdict for a test post.")
 
 
 DRAFT_SYSTEM = (

@@ -368,8 +368,11 @@ def deps(scores, out, **over):
     def find_emails(leads):
         out["find"] = [x["id"] for x in leads]
         return {x["id"]: "found%d@acme.com" % x["id"] for x in leads}, len(leads), None
+    def check(offers, budget, model):
+        out["checked"] = sorted(offers)
+        return ""
     d = {"search": search, "unipile_search": unipile_search, "judge": judge_posts, "draft": draft, "send_email": send_email, "send_linkedin": send_linkedin,
-         "slack": slack, "find_emails": find_emails}
+         "slack": slack, "find_emails": find_emails, "check": check}
     d.update(over)
     return d, posts
 
@@ -1039,3 +1042,122 @@ def test_the_settings_form_holds_every_setting_and_the_estimate_reads_plainly():
         assert 'id="%s"' % id_ in form, id_
     assert "&quot;call QA&quot;" in form and "<img" not in form
     assert "the run's cap" in est
+
+
+# == when Claude cannot read (2026-10-20: a run found 502 posts and read none, and said nothing of why) ==========
+
+class _ApiError(Exception):
+    def __init__(self, status, message, retry_after=None):
+        super().__init__(message)
+        self.status_code, self.message = status, message
+        self.response = type("R", (), {"headers": {"retry-after": retry_after} if retry_after else {}})()
+
+
+def _answer(user):
+    n = user.count("POST ")
+    return {"verdicts": [{"n": i, "role": "buyer", "offer": "callvibe", "intent": "seeking_vendor", "score": 80,
+                          "need": "", "company": "", "region": "", "deadline": "", "reason": ""} for i in range(1, n + 1)]}
+
+
+def test_a_rate_limit_is_waited_out_and_the_batch_read():
+    posts = src.normalize([raw_post(i) for i in range(1, 4)])
+    tries, waits = [], []
+
+    def call(budget, stage, model, system, user, schema, max_tokens):
+        tries.append(1)
+        if len(tries) < 3:
+            raise _ApiError(429, "rate_limit_error: too many tokens", retry_after="12")
+        return _answer(user)
+    got = judge.judge_posts(posts, OFFERS, budget=cls.Budget(1), call=call, sleep=waits.append)
+    assert len(got) == 3 and got.errors == [] and waits == [12.0, 12.0]
+
+
+def test_a_reply_cut_off_at_its_limit_is_asked_again_in_halves():
+    from tracker import market_radar_llm as llm
+    posts = src.normalize([raw_post(i) for i in range(1, 9)])
+    sizes = []
+
+    def call(budget, stage, model, system, user, schema, max_tokens):
+        n = user.count("POST ")
+        sizes.append(n)
+        if n > 2:
+            raise llm.ModelError("truncated", "the reply hit the %d-token limit" % max_tokens)
+        return _answer(user)
+    got = judge.judge_posts(posts, OFFERS, budget=cls.Budget(1), call=call, sleep=lambda s: None)
+    assert len(got) == 8 and got.errors == [] and sizes[:3] == [8, 4, 2]
+
+
+def test_a_batch_claude_refuses_is_skipped_with_the_reason_kept():
+    posts = src.normalize([raw_post(i) for i in range(1, 11)])
+    calls = []
+
+    def call(budget, stage, model, system, user, schema, max_tokens):
+        calls.append(1)
+        if len(calls) == 1:
+            raise _ApiError(400, "model: claude-haiku-5-5 is not available")
+        return _answer(user)
+    got = judge.judge_posts(posts, OFFERS, budget=cls.Budget(1), call=call, sleep=lambda s: None)
+    assert len(got) == 2 and len(calls) == 2, "a request error is not retried"
+    assert got.errors == ["Claude API 400: model: claude-haiku-5-5 is not available"]
+
+
+def test_the_test_post_says_why_claude_could_not_read():
+    def broken(budget, stage, model, system, user, schema, max_tokens):
+        raise RuntimeError("ANTHROPIC_API_KEY is not set")
+    assert judge.check(OFFERS, budget=cls.Budget(1), call=broken) == "RuntimeError: ANTHROPIC_API_KEY is not set"
+    assert judge.check(OFFERS, budget=cls.Budget(1), call=lambda *a: _answer(a[4])) == ""
+
+
+def test_a_run_claude_cannot_read_stops_before_the_search_is_paid_for(monkeypatch):
+    monkeypatch.setenv("APIFY_API_TOKEN", "t")
+    fake = FakeStore()
+    fake.install(monkeypatch)
+    out = {}
+    d, posts = deps([92], out, check=lambda offers, budget, model: "Claude API 404: model not found")
+    with pytest.raises(RuntimeError) as e:
+        br.run(1, "k", br.merged({"source": "apify"}), deps=d)
+    assert "LinkedIn was not searched" in str(e.value) and "404: model not found" in str(e.value)
+    assert "search" not in out and not fake.leads
+
+
+def test_a_run_that_read_no_post_fails_and_says_why(monkeypatch):
+    monkeypatch.setenv("APIFY_API_TOKEN", "t")
+    FakeStore().install(monkeypatch)
+    d, posts = deps([92, 91], {})
+
+    def none_read(ps, offers, budget, model):
+        got = judge.Verdicts()
+        got.errors.append("Claude API 529: overloaded")
+        return got
+    d["judge"] = none_read
+    with pytest.raises(RuntimeError) as e:
+        br.run(1, "k", br.merged({}), deps=d)
+    assert str(e.value) == "Claude could not read any of the 2 posts, so no leads were kept: Claude API 529: overloaded"
+
+
+def test_some_posts_unread_or_drafts_unwritten_are_noted_with_the_reason(monkeypatch):
+    monkeypatch.setenv("APIFY_API_TOKEN", "t")
+    FakeStore().install(monkeypatch)
+    d, posts = deps([92, 91, 90], {})
+
+    def some(ps, offers, budget, model):
+        got = judge.Verdicts({posts[0]["key"]: verdict(92)})
+        got.errors.append("Claude API 529: overloaded")
+        return got
+
+    def draft(*a, **k):
+        raise _ApiError(500, "internal error")
+    d.update(judge=some, draft=draft)
+    summary = br.run(1, "k", br.merged({}), deps=d)
+    assert "Claude could not read 2 of the 3 posts (Claude API 529: overloaded)." in summary["notes"]
+    assert "Claude could not write messages for 1 of the 1 leads (Claude API 500: internal error)." in summary["notes"]
+
+
+def test_the_limits_leave_room_for_haikus_thinking():
+    assert br.JUDGE_MAX_TOKENS >= 6000 and br.DRAFT_MAX_TOKENS >= 3000
+
+
+def test_a_runs_notes_show_to_the_team():
+    out = run_js("return BR.renderRuns([{id: 1, status: 'ready', summary: {posts: 9, read: 3, kept: 1, "
+                 "notes: ['Claude could not read 6 of the 9 posts (<b>x</b>).']}}]);")
+    assert "Claude could not read 6 of the 9 posts" in out and "<b>x</b>" not in out
