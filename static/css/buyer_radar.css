@@ -147,6 +147,7 @@
 .br-r-t small { color: var(--tx3); font-size: 12px; }
 .br-r-t .br-err { color: var(--clay-tx); overflow-wrap: anywhere; }
 .br-r-t .br-closest { overflow-wrap: anywhere; }
+.br-r-t .br-note { color: var(--clay-tx); overflow-wrap: anywhere; }
 .br-r:target { outline: 2px solid var(--acc); outline-offset: 4px; border-radius: 6px; }
 
 /* ── Settings ────────────────────────────────────────────────────────────── */

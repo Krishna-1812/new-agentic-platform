@@ -14,7 +14,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Buyer Radar", ["strategic-agents.css?v=3", "market_radar.css?v=7", "buyer_radar.css?v=6"]) }}
+{{ head("Buyer Radar", ["strategic-agents.css?v=3", "market_radar.css?v=7", "buyer_radar.css?v=7"]) }}
 </head>
 <body class="sa"{% if client %} data-br-client{% endif %}>
 
@@ -131,6 +131,6 @@
 
 <script id="brOffers" type="application/json">{{ offers | tojson }}</script>
 {{ topbar_script() }}
-<script src="{{ url_for('static', filename='js/buyer_radar.js') }}?v=6"></script>
+<script src="{{ url_for('static', filename='js/buyer_radar.js') }}?v=7"></script>
 </body>
 </html>

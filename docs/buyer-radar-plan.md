@@ -50,6 +50,21 @@ every workspace at `/<account>/agents/buyer-radar`.
    leads where Settings switches it on.
 6. **Posts the strong leads to Slack**, if a channel is set.
 
+## When Claude cannot read
+
+Added 2026-10-20, after a run found 502 posts and kept nothing because Claude read none of them. The
+run did not say why.
+
+- **A test post first.** Before the search is paid for, Claude reads one test post (`buyer_radar_judge.check`).
+  If that fails (no key, a model the account cannot use, a refusal), the run stops with Claude's own error
+  and nothing is charged for posts.
+- **Busy, overloaded or cut short.** A rate limit or an overloaded API is waited out, up to three times a
+  batch. A reply cut off at its length limit is asked again in two halves. Claude Haiku 5.5 thinks before
+  it answers, and the thinking counts toward the limit, so a batch has 6,000 tokens and a draft 3,000.
+- **Said, not hidden.** Any other failure skips that batch and keeps the reason. A run that read no post
+  fails with the reason. A run that read some notes how many it could not read, and why. Drafts that could
+  not be written are noted the same way. The team sees the notes under each search in Recent searches.
+
 ## What it costs
 
 Every paid call is recorded in `br_spend`, with who ran it and the workspace. It shows in the admin panel

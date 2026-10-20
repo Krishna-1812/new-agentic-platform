@@ -230,8 +230,9 @@ def clean_settings(body, current=None):
 
 # == what a run can cost ==================================================================================
 JUDGE_BATCH = 8
-JUDGE_MAX_TOKENS = 2400
-DRAFT_MAX_TOKENS = 900
+# Claude Haiku 5.5 thinks before it answers, and its thinking counts toward these limits: room for both.
+JUDGE_MAX_TOKENS = 6000
+DRAFT_MAX_TOKENS = 3000
 
 
 def estimate(settings):
@@ -327,6 +328,7 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     from . import buyer_radar_store as store, contact_lab_search as cls
     from . import buyer_radar_unipile as uni
     deps = dict({"search": src.collect, "unipile_search": uni.collect, "judge": judge.judge_posts, "draft": judge.draft,
+                 "check": judge.check,
                  "find_emails": send.find_emails, "send_email": send.email_lead, "send_linkedin": send.linkedin_lead,
                  "slack": send.slack_leads}, **(deps or {}))
     who = started_by or ""
@@ -350,6 +352,15 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
         raise RuntimeError("APIFY_API_TOKEN is not set on this service (Railway → web → Variables).")
     if source == "unipile" and not os.environ.get("UNIPILE_API_KEY"):
         raise RuntimeError("UNIPILE_API_KEY is not set on this service (Railway → web → Variables).")
+    # Claude reads one test post first: a run it cannot read would pay for the search and keep nothing.
+    check_budget = cls.Budget(Decimal("0.05"))
+    try:
+        problem = deps["check"]({o: OFFERS[o] for o in settings["offers"]}, budget=check_budget, model=MODEL)
+    finally:
+        _book_claude(check_budget, spend, "check")
+    if problem:
+        raise RuntimeError("Claude could not read posts, so LinkedIn was not searched and nothing was charged "
+                           "for posts: %s" % problem)
     queries, offer_of = [], {}
     for offer in settings["offers"]:
         for q in queries_for(settings, offer):
@@ -400,8 +411,12 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     finally:
         _book_claude(budget, spend, "read")
     summary["read"] = len(verdicts)
+    errors = getattr(verdicts, "errors", [])
+    if posts and not verdicts and errors:
+        raise RuntimeError("Claude could not read any of the %d posts, so no leads were kept: %s" % (len(posts), errors[0]))
     if len(verdicts) < len(posts) and not any("cost cap" in n for n in summary["notes"]):
-        summary["notes"].append("Claude could not read %d of the %d posts." % (len(posts) - len(verdicts), len(posts)))
+        summary["notes"].append("Claude could not read %d of the %d posts%s." % (
+            len(posts) - len(verdicts), len(posts), (" (%s)" % errors[0]) if errors else ""))
     leads = []
     for p in posts:
         v = verdicts.get(p["key"])
@@ -431,8 +446,12 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
             summary["notes"].append("Stopped writing messages at the run's cost cap: %s" % e)
             break
         except Exception as e:
-            lead["draft_error"] = "%s: %s" % (type(e).__name__, str(e)[:160])
+            lead["draft_error"] = judge.why(e)
     _book_claude(budget, spend, "draft", since=spent_before)
+    failed = [lead["draft_error"] for lead in leads if lead.get("draft_error")]
+    if failed:
+        summary["notes"].append("Claude could not write messages for %d of the %d leads (%s)." % (
+            len(failed), len(leads), failed[0]))
     saved = store.add_leads(owner, run_id, leads)
     for lead, lead_id in zip(leads, saved):
         lead["id"] = lead_id
