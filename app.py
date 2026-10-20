@@ -7613,6 +7613,62 @@ def google_ads_slack_digest_preview_cards():
                                   r["status"], "No picture: GOOGLE_ADS_DIGEST_TOKEN is not set in Railway.")})
     return render_template_string(_DIGEST_CARDS_PAGE, cards=cards)
 
+_DIGEST_BUDGETS_PAGE = """<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily budgets</title><style>
+body{margin:0;background:#f3f4f7;color:#111326;font:15px/1.5 system-ui,sans-serif}
+main{max-width:960px;margin:0 auto;padding:24px 16px}h1{font-size:22px;margin:0 0 4px}p{color:#54576a;margin:0 0 20px}
+section{background:#fff;border-radius:12px;padding:16px;margin:0 0 24px;overflow-x:auto}h2{font-size:17px;margin:0 0 10px}
+table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #e6e7ee}
+td.r,th.r{text-align:right}tfoot td{font-weight:600;border:0}.why{color:#8a8d9e}
+</style></head><body><main><h1>Daily budgets</h1>
+<p>Enabled campaigns, read now from the Google Ads API. A shared budget is counted once in the total.</p>
+{% for a in accounts %}<section><h2>{{ a.name }}</h2>
+{% if a.why %}<div class="why">{{ a.why }}</div>{% else %}<table><thead><tr><th>Campaign</th><th>Type</th><th>Shared budget</th>
+<th class="r">Daily budget ({{ a.currency }})</th></tr></thead><tbody>
+{% for c in a.campaigns %}<tr><td>{{ c.name }}</td><td>{{ c.type }}</td><td>{{ c.pool }}</td><td class="r">{{ "{:,.2f}".format(c.budget) }}</td></tr>{% endfor %}
+</tbody><tfoot><tr><td colspan="3">Total a day</td><td class="r">{{ "{:,.2f}".format(a.total) }}</td></tr>
+<tr><td colspan="3">For the whole month ({{ a.days }} days)</td><td class="r">{{ "{:,.2f}".format(a.total * a.days) }}</td></tr></tfoot></table>{% endif %}
+</section>{% endfor %}
+</main></body></html>"""
+
+
+@app.route(GADS_DIGEST + "/preview/budgets")
+@position2_required
+def google_ads_slack_digest_preview_budgets():
+    """Each digest account's enabled campaigns and their daily budgets from the Google Ads API (?account= for one):
+    where the card's estimated allocation comes from when the Pacing Desk has none."""
+    import calendar
+    from flask import render_template_string
+    from tracker import gads_digest, paid_gads, paid_pacing_read, paid_store
+    problem = paid_gads.config_problem()
+    if problem:
+        return "The Google Ads API is not connected: %s" % problem, 503
+    try:
+        known = paid_gads.list_accounts(paid_store)
+    except Exception as exc:
+        return "Could not read the Google Ads accounts (%s)." % type(exc).__name__, 502
+    by_name = {a["name"]: a for a in known}
+    chosen, _ = gads_digest.pick_accounts(list(by_name), gads_digest.wanted_names(os.environ.get("GOOGLE_ADS_DIGEST_ACCOUNTS", "")))
+    want = request.args.get("account", "")[:300]
+    if want:
+        chosen = [a for a in chosen if want in (a, gads_digest.display_name(a))]
+    yesterday = gads_digest.today_ist() - timedelta(days=1)
+    days = calendar.monthrange(yesterday.year, yesterday.month)[1]
+    out = []
+    for name in chosen:
+        a = by_name[name]
+        row = {"name": gads_digest.display_name(name), "currency": a["currency"], "days": days, "why": ""}
+        try:
+            camps, total = gads_digest.daily_budgets(paid_gads.search(a["id"], paid_pacing_read.q_enabled(), paid_store))
+            row.update(campaigns=camps, total=total)
+            if not camps:
+                row["why"] = "No enabled campaigns."
+        except Exception as exc:
+            row["why"] = "Google Ads would not answer for this account (%s)." % type(exc).__name__
+        out.append(row)
+    return render_template_string(_DIGEST_BUDGETS_PAGE, accounts=out)
+
+
 @app.after_request
 def _no_html_cache(resp):
     """Never let browsers cache HTML pages — UI updates must show immediately after deploys."""
