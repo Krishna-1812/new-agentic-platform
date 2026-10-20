@@ -101,29 +101,16 @@ Every morning at about **10:00 India time**, the site posts to one Slack channel
 **Which accounts.** Only twelve: AIHS, Alphametic, AllureAvani, Basil woods school, Core Care Clinic, Madge Beauty, July Mode, Greet Technologies, Artistic Yoga(BTA), Turquoise Institute, City College and KFI (`DIGEST_ACCOUNTS` in `tracker/gads_digest.py`). Case, spaces, punctuation and a bracketed tag such as `(BTA)` don't have to match the sheet, but the rest of the name does: "KFI" will not pick up "KFI Foods". Every other account is left out of the overview and gets no message. To change the list without a deploy, set `GOOGLE_ADS_DIGEST_ACCOUNTS` in Railway → web → Variables (names separated by commas or new lines; `*` sends every account). A listed name that matches nothing in the sheet is not skipped quietly: the Action's reply counts it as `not_found`, and the staff preview names it.
 
 - **First, an overview.** Accounts are grouped under *Needs action*, *Worth a look* and *On track*, each with its main reason. It also shows the day's totals when every account uses one currency.
-- **Then one message per account.** Each is a card whose coloured side bar is the account's status: red, amber or green. The card holds:
-  - the key figures, each with its change against the 7-day average;
-  - month-to-date pacing;
-  - a 14-day chart of spend and conversions;
-  - what needs attention, under *Action needed*, *Watch* and *For information*;
-  - the top three campaigns;
-  - buttons to the dashboard and the AI review.
+- **Then one message per account**: a picture laid out like the client report (since 2026-10-20), under a coloured side bar that is the account's status (red, amber or green), with what needs attention and the buttons below it. The picture holds:
+  - **the month so far** (the 1st to the account's latest day): impressions, clicks, CTR, average CPC, cost, conversions, phone calls, cost per conversion and conversion rate (conversions per click);
+  - **the latest day** (the account's own yesterday) as a one-row table with the same figures;
+  - **the budget**: the month's allocation from the Pacing Desk, the projected budget (the allocation spread evenly over the month, up to the latest day), what has been spent, and the difference, marked *Overspent* (+) or *Underspent* (−). With no Pacing Desk budget for the account that month, its campaigns' daily budgets for the whole month stand in, and the card says so;
+  - and, under the picture as text, **what needs attention**, only when there is something: the latest day against the 7 days before it, under *Action needed*, *Watch* and *For information*. For example spend up or down by half or more, or none at all; no conversions on a day the account usually gets one; cost per conversion up 30% or ROAS down 30%; budgets pacing over or under; campaigns losing 10% or more of searches to budget; disapproved ads; data that stopped arriving;
+  - buttons to the dashboard and the AI review for that account.
 
-Each account message shows:
+The month-so-far and latest-day figures, phone calls among them, are read from the **Google Ads API** (`tracker/paid_gads.py`, the same reads the Paid Marketing agents use): one request per account a morning, then its stored days, so about a dozen of the day's 15,000 operations. If the API is not connected, cannot answer for an account, or bills it in another currency than the sheet shows, that card uses the sheet's figures instead and says so; the sheet has no phone calls, so they show "—", never 0. Alerts still compare the sheet's latest day with its 7 days before. The Pacing Desk budget is matched to the account by name (the row's account, else its client), Google rows only.
 
-- the account's latest day (its own yesterday) against the average of the 7 days before it: spend, conversions, cost per conversion, clicks and, where conversion values are recorded, ROAS;
-- month-to-date spend against the month's budget and the share of the spend expected by now;
-- **Needs attention**, for example:
-  - spend up or down by half or more, or no spend at all;
-  - no conversions on a day when the account usually gets at least one;
-  - cost per conversion up 30% or more, or ROAS down 30% or more;
-  - budgets pacing over or under;
-  - campaigns losing 10% or more of searches to budget in the last 7 days;
-  - disapproved ads;
-  - data that stopped arriving;
-- the top three campaigns by spend, and links to the dashboard and the AI review for that account.
-
-The figures come from the same sheet and the same conversions as the dashboard. The work happens on the site (`tracker/gads_digest.py`). The GitHub Action `.github/workflows/google-ads-slack-digest.yml` only starts it, at 04:25 UTC. The site remembers the day it last posted for each account, so a retried run never posts twice. Staff can see what would be posted, without posting, at `/api/dashboards/google-ads/slack-digest/preview` (add `?account=` for one account).
+The figures come from the same sheet and the same conversions as the dashboard. The work happens on the site (`tracker/gads_digest.py`). The GitHub Action `.github/workflows/google-ads-slack-digest.yml` only starts it, at 04:25 UTC. The site remembers the day it last posted for each account, so a retried run never posts twice. Staff can see what would be posted, without posting, at `/api/dashboards/google-ads/slack-digest/preview` (add `?account=` for one account). To see the pictures themselves, open `/api/dashboards/google-ads/slack-digest/preview/cards`: every account's card on one page, as Slack would get it.
 
 **Setup.**
 
@@ -134,7 +121,7 @@ The figures come from the same sheet and the same conversions as the dashboard. 
    - `GOOGLE_ADS_DIGEST_TOKEN` (any long random string).
 3. Put the same `GOOGLE_ADS_DIGEST_TOKEN` in GitHub → Settings → Secrets and variables → Actions as a repository secret.
 
-The chart is a PNG that Slack fetches from `/api/dashboards/google-ads/slack-chart/…`. Each address is signed for one account and day with `GOOGLE_ADS_DIGEST_TOKEN`, and expires after 45 days. The buttons need the app's **Interactivity** pointed at `/api/slack/interactions`, which only acknowledges the click. To post again on the same day, run the Action by hand with **force** ticked.
+The picture is drawn by `tracker/gads_digest_card.py` and fetched by Slack from `/api/dashboards/google-ads/slack-card/…`: the morning run saves the few figures it shows (a few hundred bytes per account a day), and each address is signed for one account and day with `GOOGLE_ADS_DIGEST_TOKEN` and expires after 45 days. Without that token the figures are written out in the message instead. Messages before 2026-10-20 had a chart, a PNG that Slack fetches from `/api/dashboards/google-ads/slack-chart/…`; the address stays up so those messages keep their pictures until it expires after 45 days. The buttons need the app's **Interactivity** pointed at `/api/slack/interactions`, which only acknowledges the click. To post again on the same day, run the Action by hand with **force** ticked.
 
 The digest never uses `SLACK_BOT_TOKEN` or `SLACK_CHANNEL_ID`. The Action's log shows only counts and Slack error codes, never account names or figures.
 
