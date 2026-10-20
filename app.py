@@ -7139,7 +7139,7 @@ def _gads_digest_run(dry_run, force=False, account=""):
         [a for a, _ in _gads_ai_accounts(rows)],
         gads_digest.wanted_names(os.environ.get("GOOGLE_ADS_DIGEST_ACCOUNTS", "")))
     if account:
-        accounts = [a for a in accounts if a == account]
+        accounts = [a for a in accounts if account in (a, gads_digest.display_name(a))]
         not_found = []
 
     def last_posted(a):
@@ -7579,7 +7579,7 @@ main{max-width:1240px;margin:0 auto;padding:24px 16px}h1{font-size:22px;margin:0
 section{margin:0 0 36px}h2{font-size:17px;margin:0 0 10px}img{width:100%;height:auto;display:block;border-radius:14px}
 .alerts{background:#fff;border-radius:12px;padding:12px 16px;margin-top:10px;white-space:pre-line}.missing{color:#8a8d9e}
 </style></head><body><main><h1>Slack digest preview</h1>
-<p>What each account's message would show this morning. Nothing has been posted.</p>
+<p>What each account's message would show today. Nothing has been posted.</p>
 {% for r in cards %}<section><h2>{{ r.account }}</h2>
 {% if r.image %}<img src="{{ r.image }}" alt="{{ r.alt }}">{% else %}<div class="missing">{{ r.why }}</div>{% endif %}
 {% if r.alerts %}<div class="alerts">{{ r.alerts }}</div>{% endif %}</section>{% endfor %}
@@ -7605,7 +7605,8 @@ def google_ads_slack_digest_preview_cards():
         img = next((b for b in blocks if b.get("type") == "image"), None)
         alerts = next((b["text"]["text"] for b in blocks if b.get("type") == "section" and "text" in b
                        and "•" in b["text"]["text"]), "")
-        cards.append({"account": r["account"], "image": img["image_url"] if img else "", "alt": img["alt_text"] if img else "",
+        # Headed by the name the team uses (AllureAvani, not AA_New), as the message itself is.
+        cards.append({"account": gads_digest.display_name(r["account"]), "image": img["image_url"] if img else "", "alt": img["alt_text"] if img else "",
                       "alerts": alerts.replace("*", ""),
                       "why": {"no_data": "No rows for this account in the sheet.",
                               "not_found": "Listed, but no account of that name in the sheet."}.get(

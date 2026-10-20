@@ -443,10 +443,10 @@ def test_the_preview_names_the_listed_accounts_it_could_not_find(site, monkeypat
     assert by["Acme"] == "preview" and by["Ghost Co"] == "not_found"
 
 
-def test_the_schedule_is_10am_india_time_and_the_log_shows_no_figures():
+def test_the_schedule_is_1pm_india_time_and_the_log_shows_no_figures():
     with open(os.path.join(ROOT, ".github", "workflows", "google-ads-slack-digest.yml")) as f:
         wf = f.read()
-    assert "cron: '25 4 * * *'" in wf, "04:25 UTC = 09:55 IST, posting at about 10:00 after GitHub's usual delay"
+    assert "cron: '25 7 * * *'" in wf, "07:25 UTC = 12:55 IST, posting at about 13:00 after GitHub's usual delay"
     assert "secrets.GOOGLE_ADS_DIGEST_TOKEN" in wf and "/api/dashboards/google-ads/slack-digest" in wf
     assert "permissions: {}" in wf
 
@@ -606,6 +606,21 @@ def test_staff_can_see_every_card_on_one_page_without_posting(site):
     path = "/" + src.split("://", 1)[1].split("/", 1)[1]
     got = appmod.app.test_client().get(path)
     assert got.status_code == 200 and got.mimetype == "image/png", "the picture Slack would fetch"
+
+
+def test_the_page_of_cards_heads_each_account_by_the_name_the_team_uses(site, monkeypatch):
+    rows = []
+    for a in ("AA_New", "JulyMode x 2025", "BTay", "Krishnamurti Foundation India"):
+        rows += _week(a, last=[("Generic - Search", 1000.0, 4.0)])
+    monkeypatch.setattr(appmod, "_fetch_google_ads_rows", lambda force=False: rows)
+    monkeypatch.delenv("GOOGLE_ADS_DIGEST_ACCOUNTS")
+    page = T._client().get("/api/dashboards/google-ads/slack-digest/preview/cards").get_data(as_text=True)
+    for shown in ("AllureAvani", "July Mode", "Artistic Yoga (BTA)", "KFI"):
+        assert "<h2>%s</h2>" % shown in page
+    for real in ("AA_New", "JulyMode x 2025", "BTay", "Krishnamurti Foundation India"):
+        assert "<h2>%s</h2>" % real not in page
+    one = T._client().get("/api/dashboards/google-ads/slack-digest/preview/cards?account=AllureAvani")
+    assert "<h2>AllureAvani</h2>" in one.get_data(as_text=True) and "<h2>KFI</h2>" not in one.get_data(as_text=True)
 
 
 # ── Names and the day reported ───────────────────────────────────────────────
