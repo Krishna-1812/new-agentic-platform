@@ -29,7 +29,6 @@ var AdsApp = {
         .concat([{ customerClient: { id: "5555555555", status: "ENABLED", testAccount: true } }]));
     }
     var m = q.match(/BETWEEN '([\d-]+)' AND '([\d-]+)'/);
-    if (!/metrics\.phone_calls/.test(q)) throw new Error("phone calls expected: " + q);
     if (!m || !/metrics\.impressions > 0/.test(q)) throw new Error("daily query expected: " + q);
     if (m[1] !== "2026-08-28" || m[2] !== "2026-09-26") throw new Error("30 days ending yesterday expected: " + q);
     var big = current === "111-111-1111";
@@ -37,7 +36,7 @@ var AdsApp = {
       { campaign: { name: "Search | Brand", status: "ENABLED", advertisingChannelType: "SEARCH" }, segments: { date: "2026-09-26" },
         metrics: { clicks: big ? "200" : "20", impressions: "4000", costMicros: big ? "5000000000" : "50000000", conversions: 10,
                    viewThroughConversions: "1", absoluteTopImpressionPercentage: 0.5, topImpressionPercentage: 0.8,
-                   conversionsFromInteractionsRate: 0.05, phoneCalls: "3" } },
+                   conversionsFromInteractionsRate: 0.05 } },
       { campaign: { name: "PMax | All", status: "PAUSED", advertisingChannelType: "PERFORMANCE_MAX" }, segments: { date: "2026-09-20" },
         metrics: { clicks: "5", impressions: "900", costMicros: "12345678", conversions: 0, viewThroughConversions: "0",
                    conversionsFromInteractionsRate: 0 } }

@@ -3,7 +3,8 @@
 Each message is laid out like the client report (the Looker Studio page the clients see): the month so
 far (impressions, clicks, CTR, average CPC, cost, conversions, phone calls, cost per conversion,
 conversion rate), the account's latest day in the campaign report (its own "yesterday", in its own time
-zone) as a one-row table, and the month's budget: the allocation from the Pacing Desk, what an even pace
+zone) as a one-row table, both read from the Google Ads API (the sheet's figures, without phone calls,
+when the API cannot be read), and the month's budget: the allocation from the Pacing Desk, what an even pace
 would have spent by that day, what has been spent and the difference. What needs attention (the latest
 day against the 7 days before it) follows when there is anything.
 Every figure comes from the same sheet and the same conversions the dashboard uses, so Slack and
@@ -154,24 +155,50 @@ def _ratio(a, b):
 
 
 def _totals(rows):
-    """Spend, clicks, impressions and conversions added up; phone calls too, or None when the sheet has no
-    "Phone calls" column yet (scripts/google_ads/export_campaign_report.js writes it)."""
+    """Spend, clicks, impressions and conversions added up. The sheet has no phone calls (None); the card's
+    figures come from the Google Ads API when it can be read (api_totals)."""
     t = {"cost": 0.0, "clicks": 0.0, "impressions": 0.0, "conversions": 0.0}
     for r in rows:
         for k in t:
             t[k] += r.get(k) or 0.0
-    calls = [r.get("phone_calls") for r in rows if r.get("phone_calls") is not None]
-    t["phone_calls"] = sum(calls) if calls else None
+    t["phone_calls"] = None
     return t
 
 
-def summarize(rows, account, st=None, fx=None, today=None, allocated=None):
+def api_totals(shape, day, currency):
+    """{"mtd", "day", "currency"} from paid_gads.campaign_days over the 1st of the month to `day`: the month's
+    totals and the day's, phone calls included (None when Google would not give that column)."""
+    from tracker import paid_gads
+    names = [k for k, _ in paid_gads.BASE]
+    col = {k: names.index(k) for k in ("impressions", "clicks", "cost_micros", "conversions", "phone_calls")}
+    calls_missing = col["phone_calls"] in (shape.get("missing") or [])
+    days = shape.get("days") or []
+
+    def add(rows):
+        t = {"impressions": 0.0, "clicks": 0.0, "cost": 0.0, "conversions": 0.0, "phone_calls": 0.0}
+        for r in rows:
+            nums = r[2:]
+            t["impressions"] += nums[col["impressions"]]
+            t["clicks"] += nums[col["clicks"]]
+            t["cost"] += nums[col["cost_micros"]]
+            t["conversions"] += nums[col["conversions"]]
+            t["phone_calls"] += nums[col["phone_calls"]]
+        if calls_missing:
+            t["phone_calls"] = None
+        return t
+    rows = shape.get("rows") or []
+    on_day = [r for r in rows if r[1] < len(days) and days[r[1]] == day]
+    return {"mtd": add(rows), "day": add(on_day), "currency": currency}
+
+
+def summarize(rows, account, st=None, fx=None, today=None, allocated=None, api=None):
     """One account's digest: the month so far, its latest day against the 7 days before it, the month's
     budget, and what needs attention.
 
     rows: the campaign report (app._fetch_google_ads_rows); st: the parsed insights tabs
     (google_ads_insights.store), optional; fx: google_ads_insights.FX(rows); allocated: what the client
-    agreed to spend this month (the Pacing Desk's budget for the account), or None."""
+    agreed to spend this month (the Pacing Desk's budget for the account), or None; api: api_totals for the
+    month so far, whose figures (phone calls among them) the card shows when its currency is the card's."""
     fx = fx or g.FX(rows)
     mine = [r for r in rows if (r.get("account") or "") == account and r.get("day")]
     if not mine:
@@ -212,6 +239,10 @@ def summarize(rows, account, st=None, fx=None, today=None, allocated=None):
     month_rows = [r for r in mine if first <= r["day"] <= day]
     out["mtd"] = dict(_totals(month_rows), start=min(r["day"] for r in month_rows),
                       partial=min(report_days) > first)
+    out["day_totals"], out["source"] = now, "sheet"
+    if api and api.get("currency") == cur:
+        out["mtd"] = dict(api["mtd"], start=first, partial=False)
+        out["day_totals"], out["source"] = api["day"], "api"
 
     # Top campaigns on the day, by spend.
     camps = {}
@@ -377,6 +408,17 @@ def _alert_text(items):
     return "\n\n".join(parts)
 
 
+def _links(s, base_url):
+    if not base_url:
+        return []
+    q = "?account=" + quote(s["account"], safe="")
+    return [{"type": "actions", "elements": [
+        {"type": "button", "action_id": "open_dashboard", "text": {"type": "plain_text", "text": "Open dashboard"},
+         "url": "%s/dashboards/google-ads%s" % (base_url, q)},
+        {"type": "button", "action_id": "open_ai_review", "text": {"type": "plain_text", "text": "AI review"},
+         "url": "%s/dashboards/google-ads/ai-review%s" % (base_url, q)}]}]
+
+
 def _figures(t, cur):
     """The client report's figures for a stretch of days, in its order: (label, short label, value)."""
     calls = t.get("phone_calls")
@@ -403,21 +445,35 @@ def day_table(day, t, cur):
     return "```\n%s\n%s\n```" % (line([h for h, _ in cols]), line([v for _, v in cols]))
 
 
-def message(s, base_url=""):
+def message(s, base_url="", card_url=""):
     """One account's update, laid out like the client report: the month so far, the latest day, then the
     month's budget, in a card whose coloured bar is the account's status, with what needs attention and
-    links. Returns {"text", "blocks", "attachments"}."""
+    links. With card_url (tracker/gads_digest_card.py's picture of the same), the picture replaces the
+    figures; without one they are written out. Returns {"text", "blocks", "attachments"}."""
     cur, now, m = s["cur"], s["now"], s["mtd"]
     items = s.get("alert_items") or [(WARNING, t) for t in s.get("alerts") or []]
     st = s.get("status") or status(items)
     span = range_label(m["start"], s["day"])
+    fallback = "%s: %s, %s. Cost %s, %s conversions" % (
+        s["account"], STATUS_WORD[st].lower(), span, money(m["cost"], cur, cents=True), number(m["conversions"]))
+    blocks = [{"type": "header", "text": {"type": "plain_text", "text": s["account"][:150]}}]
+
+    if card_url:
+        card = [{"type": "image", "image_url": card_url, "alt_text": fallback[:1900]}]
+        if items:
+            card.append({"type": "section", "text": {"type": "mrkdwn", "text": _alert_text(items)[:2900]}})
+        card += _links(s, base_url)
+        card.append({"type": "context", "elements": [{"type": "mrkdwn", "text":
+            "Reply in this thread to ask about %s" % esc(s["account"])}]})
+        return {"text": fallback, "blocks": blocks, "attachments": _attachment(STATUS_COLOR[st], card)}
 
     card = [
         {"type": "context", "elements": [{"type": "mrkdwn", "text": "*%s*%s%s%smonth to date" % (
             STATUS_WORD[st], DOT, span, DOT)}]},
         {"type": "section", "fields": [{"type": "mrkdwn", "text": "%s\n*%s*" % (label, value)}
                                        for label, _, value in _figures(m, cur)]},
-        {"type": "section", "text": {"type": "mrkdwn", "text": "*Latest day*\n" + day_table(s["day"], now, cur)}},
+        {"type": "section", "text": {"type": "mrkdwn", "text": "*Latest day*\n" + day_table(
+            s["day"], s.get("day_totals") or now, cur)}},
     ]
     b = s.get("budget")
     if b:
@@ -442,24 +498,15 @@ def message(s, base_url=""):
     if items:
         card.append({"type": "divider"})
         card.append({"type": "section", "text": {"type": "mrkdwn", "text": _alert_text(items)[:2900]}})
-    if base_url:
-        q = "?account=" + quote(s["account"], safe="")
-        card.append({"type": "actions", "elements": [
-            {"type": "button", "action_id": "open_dashboard", "text": {"type": "plain_text", "text": "Open dashboard"},
-             "url": "%s/dashboards/google-ads%s" % (base_url, q)},
-            {"type": "button", "action_id": "open_ai_review", "text": {"type": "plain_text", "text": "AI review"},
-             "url": "%s/dashboards/google-ads/ai-review%s" % (base_url, q)}]})
+    card += _links(s, base_url)
     note = "Reply in this thread to ask about %s%sMoney in %s; the latest day can still move slightly as Google " \
            "adds late clicks." % (esc(s["account"]), DOT, cur or "the report's currency")
     if m.get("partial"):
         note += "%sThe sheet starts on %s, so the month so far begins there." % (DOT, day_label(m["start"]))
-    if m.get("phone_calls") is None:
-        note += "%sPhone calls appear once the updated campaign report script runs." % DOT
+    if s.get("source") != "api":
+        note += "%sThe Google Ads API could not be read, so these figures are the sheet's and phone calls are " \
+                "missing." % DOT
     card.append({"type": "context", "elements": [{"type": "mrkdwn", "text": note}]})
-
-    fallback = "%s: %s, %s. Cost %s, %s conversions" % (
-        s["account"], STATUS_WORD[st].lower(), span, money(m["cost"], cur, cents=True), number(m["conversions"]))
-    blocks = [{"type": "header", "text": {"type": "plain_text", "text": s["account"][:150]}}]
     return {"text": fallback, "blocks": blocks, "attachments": _attachment(STATUS_COLOR[st], card)}
 
 
@@ -562,13 +609,16 @@ OVERVIEW = "__overview__"
 
 def run(rows, accounts, st=None, token="", channel="", base_url="", dry_run=False, force=False,
         last_posted=None, mark_posted=None, on_thread=None, today=None, session=None, sleep=time.sleep,
-        allocation=None):
+        allocation=None, api=None, card_url=None):
     """Post the morning overview (with two or more accounts), then each account's digest, in the order given.
 
     last_posted(key) -> the day last posted for an account (or OVERVIEW), so a retried run never posts
     twice; mark_posted(key, day) records a post; on_thread(account, ts) records which account a posted
     message is about ("" for the overview), so Ads Insight can answer replies under it;
     allocation(account, "YYYY-MM") -> the month's budget the client agreed (the Pacing Desk's), or None.
+    api(account, customer_id, first, last) -> api_totals from the Google Ads API, or None (the sheet's figures).
+    card_url(summary) -> the address of the account's picture (tracker/gads_digest_card.py), or "" to write
+    the figures out instead.
     Returns one result
     per account (and one for the overview, account OVERVIEW):
     {"account", "day", "status": posted | skipped | preview | failed | no_data, "error", "message"}."""
@@ -579,7 +629,11 @@ def run(rows, accounts, st=None, token="", channel="", base_url="", dry_run=Fals
     for account in accounts:
         day = max((r["day"] for r in rows if r.get("account") == account and r.get("day")), default="")
         allocated = allocation(account, day[:7]) if allocation and day else None
-        s = summarize(rows, account, st, fx, today, allocated)
+        figures = None
+        if api and day:
+            cid = next((r.get("customer_id") for r in rows if r.get("account") == account and r.get("customer_id")), "")
+            figures = api(account, cid, day[:8] + "01", day)
+        s = summarize(rows, account, st, fx, today, allocated, figures)
         if s:
             summaries.append(s)
         else:
@@ -607,5 +661,6 @@ def run(rows, accounts, st=None, token="", channel="", base_url="", dry_run=Fals
     if len(summaries) > 1:
         send(OVERVIEW, today.isoformat(), overview(summaries, base_url, today), "")
     for s in summaries:
-        send(s["account"], s["day"], message(s, base_url), s["account"], {"alerts": len(s["alerts"])})
+        url = card_url(s) if card_url else ""
+        send(s["account"], s["day"], message(s, base_url, url), s["account"], {"alerts": len(s["alerts"])})
     return out

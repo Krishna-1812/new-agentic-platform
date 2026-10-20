@@ -7162,7 +7162,8 @@ def _gads_digest_run(dry_run, force=False, account=""):
                                channel=os.environ.get("GOOGLE_ADS_SLACK_CHANNEL", ""),
                                base_url=base_url, dry_run=dry_run, force=force,
                                last_posted=last_posted, mark_posted=mark_posted, on_thread=_slack_thread_remember,
-                               allocation=_gads_digest_allocation())
+                               allocation=_gads_digest_allocation(), api=_gads_digest_api(),
+                               card_url=lambda s: _gads_card_url(base_url, s))
     # A listed name that matches no account in the sheet is reported, never skipped silently.
     return results + [{"account": n, "day": "", "status": "not_found", "error": ""} for n in not_found]
 
@@ -7184,6 +7185,34 @@ def _gads_digest_allocation():
     return allocation
 
 
+def _gads_digest_api():
+    """api(account, customer_id, start, end) for the digest: the account's figures for the month so far and
+    its latest day straight from the Google Ads API (tracker/paid_gads.py), phone calls included, or None
+    when the API is not connected or cannot answer for the account. One request per account a morning,
+    then the stored days (paid_gads.campaign_days keeps each day and re-reads only stale ones)."""
+    from tracker import gads_digest, paid_gads, paid_store
+    if paid_gads.config_problem():
+        return None
+    known = {}
+
+    def api(account, customer_id, start, end):
+        cid = re.sub(r"\D", "", customer_id or "")
+        if not paid_gads.ID_RE.match(cid):
+            return None
+        try:
+            if "ids" not in known:
+                known["ids"] = {a["id"]: a for a in paid_gads.list_accounts(paid_store)}
+            acct = known["ids"].get(cid)
+            if not acct:
+                return None
+            shape = paid_gads.campaign_days(paid_store, cid, start, end)
+        except Exception as e:
+            app.logger.warning("gads_digest: Google Ads API figures unavailable for one account (%s)", type(e).__name__)
+            return None
+        return gads_digest.api_totals(shape, end, acct["currency"])
+    return api
+
+
 # Digest messages before 2026-10-20 showed a chart, an image Slack fetches from here; the route stays so
 # those messages keep their pictures until the addresses expire. Slack needs a public address,
 # so each one is signed for its account and day with GOOGLE_ADS_DIGEST_TOKEN (unguessable, and useless
@@ -7192,12 +7221,68 @@ GADS_CHART = "/api/dashboards/google-ads/slack-chart"
 CHART_DAYS = 45
 
 
-def _gads_chart_sig(account, day):
+def _gads_chart_sig(account, day, kind="chart"):
     import hmac
     secret = os.environ.get("GOOGLE_ADS_DIGEST_TOKEN", "")
     if not secret:
         return ""
-    return hmac.new(secret.encode(), ("chart\x01%s\x01%s" % (account, day)).encode(), "sha256").hexdigest()[:40]
+    return hmac.new(secret.encode(), ("%s\x01%s\x01%s" % (kind, account, day)).encode(), "sha256").hexdigest()[:40]
+
+
+# Each account's update is a picture of the client report (tracker/gads_digest_card.py). The morning run
+# saves the few strings it shows (a few hundred bytes per account and day, in the Ads Insight settings)
+# and Slack fetches the picture from this address, signed like the chart's and kept as long.
+GADS_CARD = "/api/dashboards/google-ads/slack-card"
+
+
+def _gads_card_key(account, day):
+    return "slack_card:%s:%s" % (day, account)
+
+
+def _gads_card_url(base_url, s):
+    """Saves the account's card and returns the address Slack fetches it from, or "" (the figures are then
+    written out in the message instead)."""
+    import hashlib
+    from urllib.parse import quote
+    from tracker import gads_ai_store, gads_digest_card
+    sig = _gads_chart_sig(s["account"], s["day"], "card")
+    if not (sig and base_url):
+        return ""
+    try:
+        value = json.dumps(gads_digest_card.card_data(s), ensure_ascii=False)
+        gads_ai_store.set_setting(_gads_card_key(s["account"], s["day"]), value, "slack-digest")
+    except Exception:
+        app.logger.exception("gads_digest: could not save the card")
+        return ""
+    # v changes with the figures, so a card posted again the same day is not served from Slack's cache.
+    v = hashlib.sha256(value.encode()).hexdigest()[:10]
+    return "%s%s/%s/%s.png?a=%s&v=%s" % (base_url, GADS_CARD, s["day"], sig, quote(s["account"], safe=""), v)
+
+
+@app.route(GADS_CARD + "/<day>/<sig>.png")
+def google_ads_slack_card(day, sig):
+    import hmac
+    from tracker import gads_ai_store, gads_digest, gads_digest_card
+    account = request.args.get("a", "")[:300]
+    want = _gads_chart_sig(account, day, "card")
+    if not (want and _ISO_DAY.match(day) and hmac.compare_digest(want, sig)):
+        abort(404)
+    try:
+        age = (gads_digest.today_ist() - datetime.strptime(day, "%Y-%m-%d").date()).days
+    except ValueError:
+        abort(404)
+    if age > CHART_DAYS or age < -2:
+        abort(404)
+    try:
+        got = gads_ai_store.get_setting(_gads_card_key(account, day))
+    except Exception:
+        abort(503)
+    if not got:
+        abort(404)
+    png = gads_digest_card.render(json.loads(got["value"]))
+    resp = app.response_class(png, mimetype="image/png")
+    resp.headers["Cache-Control"] = "public, max-age=604800"
+    return resp
 
 
 def _gads_chart_url(base_url, account, day):
@@ -24217,9 +24302,6 @@ def _fetch_google_ads_rows(force: bool = False):
             # exchange rate for that account and day, which the insights panels convert with.
             "cost_native":     _parse_ads_number(_col(row, "cost")),
             "currency_native": _col(row, "currency code"),
-            # Optional too, but None (not 0) without the column, so the Slack digest can say calls are not
-            # in the sheet yet rather than that there were none.
-            "phone_calls": _parse_ads_number(_col(row, "phone calls")) if "phone calls" in headers else None,
         })
 
     _google_ads_cache.update(rows=rows, at=now)

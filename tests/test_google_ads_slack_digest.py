@@ -122,18 +122,40 @@ def _card(msg):
     return msg["attachments"][0]["blocks"]
 
 
-def _core_care(calls=True):
-    """The client report's example: Core Care Clinic, 1-15 Oct 2026, in US dollars."""
-    def r(day, impr, clicks, cost, conv, phone):
-        row = dict(_row("Core Care Clinic", "Search", day, cost, conv, clicks, cur="USD"), impressions=impr)
-        if calls:
-            row["phone_calls"] = phone
-        return row
-    return [r("2026-10-01", 14651.0, 460.0, 1614.92, 67.0, 87.0), r("2026-10-15", 1092.0, 32.0, 115.35, 7.0, 4.0)]
+def _core_care():
+    """The client report's example: Core Care Clinic, 1-15 Oct 2026, in US dollars, as the sheet has it."""
+    def r(day, impr, clicks, cost, conv):
+        return dict(_row("Core Care Clinic", "Search", day, cost, conv, clicks, cur="USD"), impressions=impr)
+    return [r("2026-10-01", 14651.0, 460.0, 1614.92, 67.0), r("2026-10-15", 1092.0, 32.0, 115.35, 7.0)]
+
+
+def _shape(days, missing=()):
+    """paid_gads.campaign_days' shape for one campaign: {day: (impressions, clicks, cost, conversions, calls)}."""
+    from tracker import paid_gads
+    names = [k for k, _ in paid_gads.BASE]
+    all_days = ["2026-10-%02d" % n for n in range(1, 16)]
+    rows = []
+    for day, (impr, clicks, cost, conv, calls) in days.items():
+        nums = [0] * len(names)
+        for k, v in (("impressions", impr), ("clicks", clicks), ("cost_micros", cost), ("conversions", conv),
+                     ("phone_calls", calls)):
+            nums[names.index(k)] = v
+        rows.append([0, all_days.index(day)] + nums)
+    return {"days": all_days, "campaigns": [{"id": "1"}], "rows": rows,
+            "missing": [names.index(m) for m in missing]}
+
+
+CORE_API = {"2026-10-01": (14651, 460, 1614.92, 67.0, 87.0), "2026-10-15": (1092, 32, 115.35, 7.0, 4.0)}
+
+
+def _core_summary(allocated=3000.0, missing=(), currency="USD"):
+    api = d.api_totals(_shape(CORE_API, missing), "2026-10-15", currency)
+    return d.summarize(_core_care(), "Core Care Clinic", today=dt.date(2026, 10, 16), allocated=allocated, api=api)
 
 
 def test_the_message_is_laid_out_like_the_client_report():
-    s = d.summarize(_core_care(), "Core Care Clinic", today=dt.date(2026, 10, 16), allocated=3000.0)
+    s = _core_summary()
+    assert s["source"] == "api"
     msg = d.message(s, "https://app.example")
     assert msg["blocks"] == [{"type": "header", "text": {"type": "plain_text", "text": "Core Care Clinic"}}]
     card = _card(msg)
@@ -153,17 +175,17 @@ def test_the_message_is_laid_out_like_the_client_report():
                                            "Spent so far\n*$1,730.27*", "Overspent\n*+$278.66*"]
     assert msg["text"] == "Core Care Clinic: on track, Oct 1 - Oct 15, 2026. Cost $1,730.27, 74 conversions"
     blob = json.dumps(msg, ensure_ascii=False)
-    assert "Pacing Desk" not in blob and "Phone calls appear" not in blob and "sheet starts" not in blob
+    assert "Pacing Desk" not in blob and "could not be read" not in blob and "sheet starts" not in blob
     assert '"url": "https://app.example/dashboards/google-ads?account=Core%20Care%20Clinic"' in blob
     assert not any(ord(ch) >= 0x1F000 for ch in blob), "no emoji"
     assert len(card) <= 50 and all(len(f["text"]) < 2000 for b in card for f in b.get("fields", []))
 
 
 def test_underspent_and_where_the_budget_comes_from():
-    s = d.summarize(_core_care(), "Core Care Clinic", today=dt.date(2026, 10, 16), allocated=5000.0)
+    s = _core_summary(allocated=5000.0)
     budget = next(b for b in _card(d.message(s)) if b.get("fields") and "Budget" in b["fields"][0]["text"])["fields"]
     assert budget[1]["text"].endswith("*$2,419.35*") and budget[3]["text"] == "Underspent\n*-$689.08*"
-    none = d.summarize(_core_care(), "Core Care Clinic", today=dt.date(2026, 10, 16))
+    none = _core_summary(allocated=None)
     assert none["budget"] is None
     assert "No budget for this account in the Pacing Desk" in json.dumps(d.message(none))
 
@@ -187,11 +209,25 @@ def test_the_pacing_desk_allocation_is_found_by_account_then_client():
     assert d.allocation_for(saved, "Acme") is None and d.allocation_for([], "Core Care Clinic") is None
 
 
-def test_without_phone_calls_in_the_sheet_it_says_so_not_zero():
-    s = d.summarize(_core_care(calls=False), "Core Care Clinic", today=dt.date(2026, 10, 16), allocated=3000.0)
-    msg = d.message(s)
-    assert "Phone calls\n*\u2014*" in [f["text"] for f in _card(msg)[1]["fields"]]
-    assert "Phone calls appear once the updated campaign report script runs." in json.dumps(msg, ensure_ascii=False)
+def test_without_the_api_the_sheet_figures_stand_in_and_calls_are_a_dash_not_zero():
+    for s in (d.summarize(_core_care(), "Core Care Clinic", today=dt.date(2026, 10, 16), allocated=3000.0),
+              _core_summary(currency="INR")):   # the API's currency is not the card's: never mixed
+        assert s["source"] == "sheet"
+        msg = d.message(s)
+        fields = [f["text"] for f in _card(msg)[1]["fields"]]
+        assert "Phone calls\n*\u2014*" in fields and "Cost\n*$1,730.27*" in fields
+        assert "The Google Ads API could not be read" in json.dumps(msg, ensure_ascii=False)
+    s = _core_summary(missing=["phone_calls"])
+    assert s["source"] == "api" and s["mtd"]["phone_calls"] is None, "Google would not give calls: a dash, not 0"
+
+
+def test_the_api_figures_replace_the_sheets_for_the_card():
+    api = d.api_totals(_shape({"2026-10-01": (1000, 50, 200.0, 5.0, 3.0), "2026-10-15": (500, 20, 80.0, 2.0, 1.0)}),
+                       "2026-10-15", "USD")
+    assert api["mtd"] == {"impressions": 1500, "clicks": 70, "cost": 280.0, "conversions": 7.0, "phone_calls": 4.0}
+    assert api["day"] == {"impressions": 500, "clicks": 20, "cost": 80.0, "conversions": 2.0, "phone_calls": 1.0}
+    s = d.summarize(_core_care(), "Core Care Clinic", today=dt.date(2026, 10, 16), allocated=3000.0, api=api)
+    assert s["mtd"]["cost"] == 280.0 and s["budget"]["spent"] == 280.0 and s["mtd"]["start"] == "2026-10-01"
 
 
 def test_the_message_escapes_names_and_shows_alerts_only_when_there_are_any():
@@ -256,8 +292,9 @@ def test_an_overview_then_one_message_per_account_spaced_a_second_apart_and_neve
     slack, slept, posted, threads = FakeSlack((200, {"ok": True, "ts": "1.1"})), [], {}, []
     kw = dict(token="xoxb-test", channel="C123", today=TODAY, session=slack, sleep=slept.append,
               last_posted=posted.get, mark_posted=posted.__setitem__, on_thread=lambda a, ts: threads.append(a),
-              allocation=lambda a, month: asked.append((a, month)) or (2000.0 if a == "Acme" else None))
-    asked = []
+              allocation=lambda a, month: asked.append((a, month)) or (2000.0 if a == "Acme" else None),
+              api=lambda a, cid, first, last: read.append((a, cid, first, last)))
+    asked, read = [], []
     out = d.run(rows, ["Acme", "Beta"], **kw)
     assert [(r["account"], r["status"]) for r in out] == [(d.OVERVIEW, "posted"), ("Acme", "posted"), ("Beta", "posted")]
     assert len(slack.calls) == 3 and slept == [d.SPACING_SECONDS] * 2
@@ -266,6 +303,7 @@ def test_an_overview_then_one_message_per_account_spaced_a_second_apart_and_neve
     assert call["url"] == "https://slack.com/api/chat.postMessage"
     assert call["headers"]["Authorization"] == "Bearer xoxb-test" and call["json"]["channel"] == "C123"
     assert ("Acme", "2026-09") in asked and ("Beta", "2026-09") in asked, "each account's budget for its own month"
+    assert ("Acme", "123-456-7890", "2026-09-01", "2026-09-26") in read, "the API is asked for the month so far"
     assert "Budget allocation\\n*\u20b92,000*" in json.dumps(call["json"], ensure_ascii=False)
     assert posted == {d.OVERVIEW: "2026-09-27", "Acme": "2026-09-26", "Beta": "2026-09-26"}
     again = d.run(rows, ["Acme", "Beta"], **kw)
@@ -444,20 +482,54 @@ def test_the_chart_address_is_signed_for_one_account_and_day(site, monkeypatch):
     assert appmod._gads_chart_url("https://web.example", "Acme", "2026-09-26") == ""
 
 
-def test_the_posted_digest_reads_the_pacing_desk_and_needs_no_database(site, monkeypatch):
+def _posted_card(site, n=-1):
+    """The picture a posted message shows: its address answers with a PNG, and the figures it was drawn from."""
+    from urllib.parse import parse_qs, urlsplit
+    blocks = site.calls[n]["json"]["attachments"][0]["blocks"]
+    img = next(b for b in blocks if b["type"] == "image")
+    url = urlsplit(img["image_url"])
+    assert url.path.startswith("/api/dashboards/google-ads/slack-card/2026-09-26/")
+    r = appmod.app.test_client().get(url.path + "?" + url.query)
+    assert r.status_code == 200 and r.mimetype == "image/png" and r.data[:8] == b"\x89PNG\r\n\x1a\n"
+    account = parse_qs(url.query)["a"][0]
+    return json.loads(store.get_setting("slack_card:2026-09-26:" + account)["value"]), blocks
+
+
+def test_each_account_is_posted_as_a_picture_of_the_client_report(site):
+    c = appmod.app.test_client()
+    c.post("/api/dashboards/google-ads/slack-digest", headers={"Authorization": "Bearer s3cret"}, base_url="http://web.example")
+    data, blocks = _posted_card(site)
+    assert data["account"] == "Acme" and data["span"] == "Sep 19 - Sep 26, 2026"
+    assert [k for k, _ in data["kpis"]] == ["Impressions", "Clicks", "CTR", "Avg. CPC", "Cost", "Conversions",
+                                            "Phone calls", "Cost / conv.", "Conv. rate"]
+    assert [b["type"] for b in blocks] == ["image", "actions", "context"], "no alerts: picture, buttons, the note"
+    assert site.calls[0]["json"]["blocks"][0]["text"]["text"] == "Acme"
+    img = blocks[0]
+    assert img["alt_text"].startswith("Acme: on track, Sep 19 - Sep 26, 2026")
+    path = img["image_url"].split("web.example")[1]
+    assert c.get(path.replace("a=Acme", "a=Other")).status_code == 404, "signed for one account"
+    assert c.get(path.replace("/2026-09-26/", "/2026-09-25/")).status_code == 404, "and one day"
+
+
+def test_without_a_signing_token_the_figures_are_written_out(site, monkeypatch):
+    monkeypatch.setattr(appmod, "_gads_chart_sig", lambda *a: "")
+    appmod.app.test_client().post("/api/dashboards/google-ads/slack-digest", headers={"Authorization": "Bearer s3cret"})
+    blocks = site.calls[0]["json"]["attachments"][0]["blocks"]
+    assert not any(b["type"] == "image" for b in blocks) and blocks[1]["fields"][0]["text"].startswith("Impressions")
+
+
+def test_the_card_reads_the_pacing_desk_and_needs_no_database(site, monkeypatch):
     from tracker import paid_pacing_budget_store as bstore
     c = appmod.app.test_client()
     monkeypatch.setattr(bstore, "list_month", lambda m: [{"client": "Acme", "account": "Acme", "allocated": 30000.0}])
-    c.post("/api/dashboards/google-ads/slack-digest", headers={"Authorization": "Bearer s3cret"}, base_url="http://web.example")
-    blob = json.dumps(site.calls[0]["json"], ensure_ascii=False)
-    assert "Budget allocation\\n*\u20b930,000*" in blob and not any(
-        b["type"] == "image" for b in site.calls[0]["json"]["attachments"][0]["blocks"]), "no chart any more"
+    c.post("/api/dashboards/google-ads/slack-digest", headers={"Authorization": "Bearer s3cret"})
+    assert _posted_card(site)[0]["budget"]["boxes"][0] == ["Budget allocation", "\u20b930,000"]
 
     def down(m):
         raise RuntimeError("no database")
     monkeypatch.setattr(bstore, "list_month", down)
     c.post("/api/dashboards/google-ads/slack-digest", json={"force": True}, headers={"Authorization": "Bearer s3cret"})
-    assert "No budget for this account in the Pacing Desk" in json.dumps(site.calls[-1]["json"])
+    assert _posted_card(site)[0]["budget"] is None
 
 
 def test_button_clicks_are_acknowledged_only_for_slack(site, monkeypatch):
@@ -473,3 +545,48 @@ def test_button_clicks_are_acknowledged_only_for_slack(site, monkeypatch):
     assert c.post("/api/slack/interactions", data=body, headers=h,
                   content_type="application/x-www-form-urlencoded").status_code == 200
     assert c.post("/api/slack/interactions", data=body, content_type="application/x-www-form-urlencoded").status_code == 401
+
+
+def test_the_posted_digest_reads_the_card_from_the_google_ads_api(site, monkeypatch):
+    from tracker import paid_gads
+    asked = []
+    monkeypatch.setattr(paid_gads, "config_problem", lambda: None)
+    monkeypatch.setattr(paid_gads, "list_accounts", lambda store: [{"id": "1234567890", "currency": "INR"}])
+
+    def days(store, cid, start, end):
+        asked.append((cid, start, end))
+        names = [k for k, _ in paid_gads.BASE]
+        nums = [0] * len(names)
+        nums[names.index("phone_calls")], nums[names.index("cost_micros")] = 9, 777.0
+        return {"days": [end], "rows": [[0, 0] + nums], "missing": []}
+    monkeypatch.setattr(paid_gads, "campaign_days", days)
+    appmod.app.test_client().post("/api/dashboards/google-ads/slack-digest", headers={"Authorization": "Bearer s3cret"})
+    assert asked == [("1234567890", "2026-09-01", "2026-09-26")], "one read per account, the month so far"
+    data = _posted_card(site, 0)[0]
+    assert ["Phone calls", "9"] in data["kpis"] and ["Cost", "₹777"] in data["kpis"]
+    assert data["note"].startswith("Google Ads API")
+
+    monkeypatch.setattr(paid_gads, "campaign_days", lambda *a, **k: (_ for _ in ()).throw(paid_gads.AdsError("down")))
+    appmod.app.test_client().post("/api/dashboards/google-ads/slack-digest", json={"force": True},
+                                  headers={"Authorization": "Bearer s3cret"})
+    assert "API could not be read" in _posted_card(site)[0]["note"], "a failed read falls back to the sheet"
+
+
+def test_the_card_picture_shows_the_client_report():
+    import io
+    from PIL import Image
+    from tracker import gads_digest_card as card
+    data = card.card_data(_core_summary())
+    assert data["span"] == "Oct 1 - Oct 15, 2026" and data["day"] == "Oct 15, 2026"
+    assert data["kpis"][4] == ["Cost", "$1,730.27"] and data["day_values"][6] == ["Phone calls", "4"]
+    b = data["budget"]
+    assert b["boxes"] == [["Budget allocation", "$3,000.00"], ["Projected to Oct 15", "$1,451.61"],
+                          ["Spent so far", "$1,730.27"], ["Overspent", "+$278.66"]]
+    assert b["state"] == "over" and b["pace"] == "19% ahead of pace" and round(b["expected_share"], 3) == 0.484
+    assert card.card_data(_core_summary(allocated=3600.0))["budget"]["pace"] == "On pace", "within 10%: on pace"
+    assert card.card_data(_core_summary(allocated=5000.0))["budget"]["pace"] == "28% behind pace"
+    img = Image.open(io.BytesIO(card.render(data)))
+    assert img.format == "PNG" and img.size[0] == card.W * card.SCALE
+    without = Image.open(io.BytesIO(card.render(dict(data, budget=None))))
+    assert without.size[1] < img.size[1], "no budget: a line, not four empty boxes"
+    assert json.loads(json.dumps(data)) == data, "what is stored is plain JSON"

@@ -76,7 +76,7 @@ def test_the_report_has_the_columns_and_rows_the_dashboard_reads():
                     "Impr.", "CTR", "Currency code", "Avg. CPC", "Avg. CPC (Converted currency)", "Cost",
                     "Cost (Converted currency)", "Impr. (Abs. Top) %", "Impr. (Top) %", "Conversions",
                     "View-through conv.", "Cost / conv.", "Cost / conv. (Converted currency)", "Conv. rate",
-                    "Converted currency code", "Phone calls"]
+                    "Converted currency code"]
     assert res["order"][0] == "Daily Campaign Performance", "the dashboard reads the first tab"
     assert res["formats"]["6"]["f"] == "@" and res["formats"]["2"]["f"] == "@", "days and IDs stay text"
     assert [r[6] for r in g[3:]] == sorted((r[6] for r in g[3:]), reverse=True), "sorted by clicks"
@@ -112,8 +112,6 @@ def test_the_dashboard_reads_the_report_and_names_the_rates(monkeypatch):
     us = next(r for r in rows if r["account"] == "Beta US" and r["day"] == "2026-09-26")
     assert (us["cost"], us["currency"], us["cost_native"], us["currency_native"]) == (4800.0, "INR", 50.0, "USD")
     assert us["top_pct"] == 80.0 and us["abs_top_pct"] == 50.0 and us["view_through"] == 1.0
-    assert us["phone_calls"] == 3.0
-    assert next(r for r in rows if r["campaign"] == "PMax | All")["phone_calls"] == 0.0, "no calls reported: none"
     pmax = next(r for r in rows if r["campaign"] == "PMax | All")
     assert pmax["type"] == "Performance Max" and pmax["state"] == "Paused"
     assert appmod._google_ads_cache["rate_source"] == "ecb"
