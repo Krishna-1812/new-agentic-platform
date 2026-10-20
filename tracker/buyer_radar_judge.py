@@ -17,6 +17,7 @@ import re
 import time
 
 from . import buyer_radar as br
+from . import claude_workspace
 
 log = logging.getLogger(__name__)
 
@@ -119,7 +120,11 @@ def why(e):
     """One line a person can act on: the API's status and message, or the error's own words."""
     status = getattr(e, "status_code", None)
     msg = getattr(e, "message", None) or getattr(e, "detail", None) or str(e)
-    msg = re.sub(r"\s+", " ", str(msg)).strip()[:240]
+    msg = re.sub(r"\s+", " ", str(msg)).strip()
+    steps = claude_workspace.explain(msg)
+    if steps:
+        return steps
+    msg = msg[:240]
     return ("Claude API %s: %s" % (status, msg)) if isinstance(status, int) else ("%s: %s" % (type(e).__name__, msg))
 
 
