@@ -245,3 +245,38 @@ An account with no profile shows this block on its home, filled in with what is 
 - **Not prefilled:** the dashboards that are not per client (ABM Signal Tracker, Job Change Alert,
   LinkedIn Intelligence, Anonymous Visitors, Slot Checker) and Competitor Ad Intelligence (its own
   React app). They still open from the switch and work across accounts as before.
+
+## The briefing: what needs the team today (staff)
+
+Nobody has time to open every Paid Marketing agent for every client, so an account's home opens on a briefing
+("What needs you"): what every source last found for that account, ranked, each card opening the agent or page with the
+detail, inside the account.
+
+- **What it reads** (`app._acct_insight_sources`). It reads only what is already saved and never asks Google Ads, so
+  opening a home spends no quota:
+  - the campaign report and the Script's insights tabs, cut down to the account's Google Ads accounts;
+  - the Pacing Desk's budget and target cost per conversion this month;
+  - the master doc's goals;
+  - the latest AI review;
+  - each Paid Marketing agent's last saved read for the account's own customer ids: Account Audit, Landing Page Check,
+    Experiment Tracker, Geo Performance, Audience Segments, Segment Analysis, Ad Strength and Asset Coverage;
+  - its QA Agent checks;
+  - its Business Research, Keyword Research and Strategy & Campaign Book builds.
+
+  Geo, audiences, segments, ad strength and assets are found through the account's own reads in the workspace log
+  (`pm_activity`), which holds the range or day each was saved under.
+- **What it says** (`tracker/account_insights.py`). Each source becomes insights of five kinds: fix now, watch,
+  opportunity, win and to do. Each insight has its numbers, a one-line title, the evidence and where it came from.
+  - A source that cannot be read costs only its own insights; its chip says so.
+  - Ranking puts the most important first: by kind, severity and the share of the account's spend involved.
+  - Limits keep it a briefing, not a dump: at most 6 to fix, 4 to watch, 4 opportunities, 2 wins and 3 to-dos; at most
+    3 problems from any one source; 15 in all. Every kind found keeps at least one place.
+- **The page** (`templates/_account_insights.html`, `static/css/account-insights.css`, `static/js/account-insights.js`).
+  - The home paints at once with the briefing's shape shimmering, then loads `/<account>/insights`. That route is staff
+    only, and its result is kept for 10 minutes; "Read again" reads every source afresh.
+  - At the top, an ink block puts the day in one line beside a dial of the counts, over a chip for each source read.
+    Each chip is a filter.
+  - Under it are the insights. The first is a big block in its colour; the kinds filter the rest; "Show all" opens past
+    the first nine.
+- **One account only.** Every read is keyed by the account's customer ids, Google Ads account names or workspace, and a
+  test checks that one account's briefing holds nothing of another's. Clients do not see the briefing.

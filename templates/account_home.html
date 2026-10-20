@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 {%- from "_bento.html" import head, topbar, topbar_script with context %}
+{%- from "_agent_icons.html" import run_icon %}
 {#- ════════════════════════════════════════════════════════════════════════
     AN ACCOUNT'S HOME (/<account>) — one client, everything for it
 
@@ -12,7 +13,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head(acct.name, ["account-space.css?v=32"]) }}
+{{ head(acct.name, ["account-space.css?v=32", "account-insights.css?v=1"]) }}
 </head>
 <body class="as-page">
 
@@ -114,6 +115,38 @@
   </section>
   {%- endif %}
 
+  {# ── Today's briefing: what needs the team, from every source ──────────
+     Staff only. The section paints at once in the briefing's shape and static/js/account-insights.js
+     fills it from /<account>/insights (templates/_account_insights.html, tracker/account_insights.py). #}
+  {%- if not client_view %}
+  <section class="ib-wrap" id="briefing" aria-labelledby="ib-h">
+    <div class="ib-wrap-head">
+      <h2 class="as-h2" id="ib-h">What needs you</h2>
+      <p class="ib-wrap-sub">Everything every agent has found for {{ acct.name }}, and nothing about anyone else.</p>
+    </div>
+    <div data-insights="/{{ acct.slug }}/insights" aria-busy="true" aria-live="polite">
+      <div class="ib ib-skel" aria-hidden="true">
+        <div class="ib-hero">
+          <span class="ib-glow ib-glow--a"></span>
+          <div class="ib-hero-copy">
+            <span class="ib-kicker"><i class="ib-live"></i>Today&rsquo;s briefing</span>
+            <span class="ib-skel-line ib-skel-line--xl"></span>
+            <span class="ib-skel-line ib-skel-line--l"></span>
+            <span class="ib-skel-line ib-skel-line--s"></span>
+            <p class="ib-skel-note">Reading Google Ads, the master doc, the Pacing Desk, the AI review and every paid marketing agent for {{ acct.name }}&hellip;</p>
+          </div>
+          <span class="ib-skel-ring"></span>
+        </div>
+        <div class="ib-grid" style="margin-top: var(--sp-6)">
+          <span class="ib-skel-card ib-skel-card--lead"></span>
+          <span class="ib-skel-card"></span>
+          <span class="ib-skel-card"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+  {%- endif %}
+
   {# ── Its pages ──────────────────────────────────────────────────────── #}
   {%- set any_mod = show_ads or (show_review and (review or not client_view)) or (not acct.ads_names and not client_view) or tools %}
   {%- if any_mod %}
@@ -209,79 +242,6 @@
      The agents as cards, each in its own colour: what it does, what it starts with from the master
      doc, and its last run for the account. On hover the card fills with its colour from the icon.
      The SEO & AEO tools below as the same cards, a size smaller. Staff only. #}
-  {%- macro run_icon(slug) -%}
-  {%- if slug == "social-media-intelligence" -%}
-  <svg viewBox="0 0 24 24"><path d="M4 5.5h11a2 2 0 0 1 2 2V13a2 2 0 0 1-2 2H9l-4 3v-3H4a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2z"/><path d="M17 9h3a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1v3l-3.5-3H12"/><circle class="rx-pulse" cx="6.5" cy="10.2" r=".6"/><circle class="rx-pulse" cx="9.5" cy="10.2" r=".6"/><circle class="rx-pulse" cx="12.5" cy="10.2" r=".6"/></svg>
-  {%- elif slug == "local-business-radar" -%}
-  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><g class="rx-sweep"><path d="M12 12 18.4 5.6"/></g><circle cx="15.6" cy="8.6" r="1.2" class="rx-blip"/><circle cx="12" cy="12" r="1"/></svg>
-  {%- elif slug == "event-conference-intelligence" -%}
-  <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/><path class="rx-star" d="m12 12.6.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z"/></svg>
-  {%- elif slug == "company-people-intelligence" -%}
-  <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><g class="rx-lens"><circle cx="17.5" cy="13.5" r="3"/><path d="m19.7 15.7 2.3 2.3"/></g></svg>
-  {%- elif slug == "thought-leader-pr" -%}
-  <svg viewBox="0 0 24 24"><path d="M3 10v4a1 1 0 0 0 1 1h3l6 4V5L7 9H4a1 1 0 0 0-1 1z"/><path d="M8 15.2 9.3 20h2.4"/><path class="rx-wave" d="M16.5 9a4 4 0 0 1 0 6"/><path class="rx-wave rx-wave--2" d="M19 6.5a7.5 7.5 0 0 1 0 11"/></svg>
-  {%- elif slug == "market-radar" -%}
-  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path class="rx-trend" d="M3 12h4l2.5-5 4 10 2.5-5h5"/></svg>
-  {%- elif slug == "people-signals" -%}
-  <svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3.2"/><path d="M2.5 20a5.5 5.5 0 0 1 11 0"/><path class="rx-wave" d="M16 8.5a3 3 0 0 1 0 5"/><path class="rx-wave rx-wave--2" d="M18.6 6a6.5 6.5 0 0 1 0 10"/></svg>
-  {%- elif slug == "buyer-radar" -%}
-  <svg viewBox="0 0 24 24"><path d="M4 5.5h10a2 2 0 0 1 2 2V12a2 2 0 0 1-2 2H8.5L5 17v-3H4a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2z"/><g class="rx-lens"><circle cx="17.5" cy="15.5" r="3"/><path d="m19.7 17.7 2.3 2.3"/></g></svg>
-  {%- elif slug in ("seo-geo-audit", "seo-geo-snapshot") -%}
-  <svg viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0"/><path class="rx-needle" d="M12 18l4-6"/><circle cx="12" cy="18" r="1.3"/>{% if slug == "seo-geo-snapshot" %}<path d="M3 21h18"/>{% endif %}</svg>
-  {%- elif slug == "on-page-audit" -%}
-  <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path class="rx-tick" d="m9 13 2 2 4-4"/></svg>
-  {%- elif slug == "agent-readiness-audit" -%}
-  <svg viewBox="0 0 24 24"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M10 16.5h4"/><path class="rx-eyes" d="M9 13h.01M15 13h.01"/><circle cx="12" cy="3.5" r="1"/></svg>
-  {%- elif slug == "image-alt-audit" -%}
-  <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle class="rx-sun" cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
-  {%- elif slug == "keyword-research" -%}
-  <svg viewBox="0 0 24 24"><g class="rx-key"><circle cx="8" cy="15" r="4"/><path d="m11 12 8-8M16 7l2 2M14 9l1.5 1.5"/></g></svg>
-  {%- elif slug == "content-research" -%}
-  <svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12v15H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 0 2 2h12v-4"/><path class="rx-lines" d="M8 8h6M8 11h4"/></svg>
-  {%- elif slug == "content-architect" -%}
-  <svg viewBox="0 0 24 24"><rect class="rx-hub" x="9" y="3" width="6" height="5" rx="1.5"/><rect x="2.5" y="16" width="6" height="5" rx="1.5"/><rect x="15.5" y="16" width="6" height="5" rx="1.5"/><path d="M12 8v4M5.5 16v-2h13v2"/></svg>
-  {%- elif slug == "market-potential" -%}
-  <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 17v-4M11 17V9M16 17v-7M21 17V5"/><path class="rx-trend" d="m3 11 6-5 4 3 7-6"/></svg>
-  {%- elif slug == "performance-summarizer" -%}
-  <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 17v-5M11 17V8M16 17v-4M21 17V6"/><path class="rx-trend" d="m3 10 5-4 4 3 6-5 3 2"/></svg>
-  {%- elif slug == "product-analysis" -%}
-  <svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path class="rx-tick" d="M12 11v10"/></svg>
-  {%- elif slug == "segment-analysis" -%}
-  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6.4 6.4"/><path class="rx-tick" d="M12 12H3"/></svg>
-  {%- elif slug == "geo-performance" -%}
-  <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle class="rx-tick" cx="12" cy="9.5" r="2.5"/></svg>
-  {%- elif slug == "seasonality-analysis" -%}
-  <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path class="rx-trend" d="m6 17 3-3 3 2 5-4"/></svg>
-  {%- elif slug == "ad-strength" -%}
-  <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/><path class="rx-tick" d="m14 17 2 2 4-4"/></svg>
-  {%- elif slug == "audience-segments" -%}
-  <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path class="rx-tick" d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/></svg>
-  {%- elif slug == "asset-coverage" -%}
-  <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><path class="rx-tick" d="M17.25 14v6.5M14 17.25h6.5"/></svg>
-  {%- elif slug == "account-audit" -%}
-  <svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3"/><path class="rx-tick" d="m8.5 12.5 2.5 2.5 4.5-5"/></svg>
-  {%- elif slug == "landing-page-check" -%}
-  <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8h18"/><path class="rx-tick" d="m8.5 14 2.5 2.5 4.5-5"/></svg>
-  {%- elif slug == "experiment-tracker" -%}
-  <svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5.5 9.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path class="rx-tick" d="M7.5 15h9"/></svg>
-  {%- elif slug == "qa-agent" -%}
-  <svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z"/><path class="rx-tick" d="m8.5 12 2.5 2.5 4.5-5"/></svg>
-  {%- elif slug == "search-query-analysis" -%}
-  <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/><path class="rx-tick" d="M7.5 10.5h6"/></svg>
-  {%- elif slug == "business-research" -%}
-  <svg viewBox="0 0 24 24"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/><path class="rx-tick" d="M9 10h6"/></svg>
-  {%- elif slug == "ppc-keyword-research" -%}
-  <svg viewBox="0 0 24 24"><path d="M4 7h10M4 12h7M4 17h5"/><circle cx="16.5" cy="14.5" r="3.5"/><path class="rx-tick" d="m19 17 2.5 2.5"/></svg>
-  {%- elif slug == "campaign-book" -%}
-  <svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path class="rx-tick" d="M9 8h6"/></svg>
-  {%- elif slug == "page-watch" -%}
-  <svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-  {%- elif slug == "video-studio" -%}
-  <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg>
-  {%- else -%}
-  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
-  {%- endif -%}
-  {%- endmacro %}
   {%- macro run_card(t, n, kind="") -%}
         <a class="rx-ag rx-ag--{{ t.slug }}{% if kind %} {{ kind }}{% endif %}" href="{{ t.href }}">
           <span class="rx-flood" aria-hidden="true"></span>
@@ -635,6 +595,9 @@
 
 <script id="acct-data" type="application/json">{{ accounts|tojson }}</script>
 <script defer src="{{ url_for('static', filename='js/account-space.js') }}?v=3"></script>
+{%- if not client_view %}
+<script defer src="{{ url_for('static', filename='js/account-insights.js') }}?v=1"></script>
+{%- endif %}
 {{ topbar_script() }}
 <script>
 (function(){

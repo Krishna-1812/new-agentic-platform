@@ -1,0 +1,134 @@
+{#- ════════════════════════════════════════════════════════════════════════
+    AN ACCOUNT'S BRIEFING — what needs the team today, for one client
+
+    Drawn by /<account>/insights (app.account_insights_view) from tracker/account_insights.py and put
+    into the home's #briefing by static/js/account-insights.js, which also filters it (by kind, by
+    source), shows the rest and reads it again. Staff only.
+
+    An ink block says it in one line ("2 things to fix now, an opportunity and a win") beside a dial of
+    the same counts, over the sources it read, each a filter. Under it the insights, most important
+    first: the first as a big block in its own colour, the rest as cards. Every card opens the agent
+    or page that found it, inside the account.
+-#}
+{%- from "_agent_icons.html" import run_icon %}
+{%- if not b %}
+<div class="ib ib--error" data-ib-ready>
+  <div class="ib-err">
+    <b>The briefing could not be read just now.</b>
+    <span>Each agent's own page still has its results.</span>
+    <button type="button" class="ib-again" data-ib-refresh>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>Try again</button>
+  </div>
+</div>
+{%- else %}
+{%- set order = ["fix", "watch", "opportunity", "win", "todo"] %}
+{%- set labels = {"fix": "Fix now", "watch": "Watch", "opportunity": "Opportunities", "win": "Wins", "todo": "To do"} %}
+<div class="ib" data-ib-ready data-ib-at="{{ b.at }}" data-ib-first="9">
+
+  {#- ── The ink block: the day in one line, its dial, and what was read ── #}
+  <div class="ib-hero">
+    <span class="ib-glow ib-glow--a" aria-hidden="true"></span>
+    <span class="ib-glow ib-glow--b" aria-hidden="true"></span>
+    <div class="ib-hero-copy">
+      <span class="ib-kicker"><i class="ib-live" aria-hidden="true"></i>Today&rsquo;s briefing<span class="ib-sep" aria-hidden="true"></span><span data-ib-age>read just now</span></span>
+      {%- if b.headline %}
+      <p class="ib-sum">
+        {%- for p in b.headline -%}
+        {%- if not loop.first %}{{ " and " if loop.last else ", " }}{% endif -%}
+        <span class="ib-sum-p ib-sum-p--{{ p.tone }}"><b class="ib-n" data-ib-count="{{ p.n }}">{{ p.n }}</b> {{ p.text }}</span>
+        {%- endfor %}.</p>
+      {%- else %}
+      <p class="ib-sum">Nothing needs you for {{ acct.name }} today.</p>
+      {%- endif %}
+      <p class="ib-hero-sub">Read from {{ b.read_ok }} source{{ "" if b.read_ok == 1 else "s" }} for {{ acct.name }} alone: its Google Ads, the master doc, the Pacing Desk, the AI review and the last look each paid marketing agent took.</p>
+    </div>
+
+    {%- set C = 301.59 %}
+    {%- set ns = namespace(at=0.0, kinds=0) %}
+    {%- for t in order if b.counts[t] %}{% set ns.kinds = ns.kinds + 1 %}{% endfor %}
+    {%- set kinds = ns.kinds %}
+    <div class="ib-dial" role="img" aria-label="{% for t in order %}{% if b.counts[t] %}{{ b.counts[t] }} {{ labels[t]|lower }}{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="ib-dial-track" cx="60" cy="60" r="48"/>
+        {%- if b.total %}
+        {%- for t in order if b.counts[t] %}
+        {%- set gap = 5 if kinds > 1 else 0 %}
+        {%- set len = C * b.counts[t] / b.total - gap %}
+        <circle class="ib-dial-seg ib-dial-seg--{{ t }}" cx="60" cy="60" r="48" style="--d: {{ loop.index0 * 110 }}ms"
+                stroke-dasharray="{{ '%.2f'|format([len, 0.5]|max) }} {{ '%.2f'|format(C) }}" stroke-dashoffset="{{ '%.2f'|format(-ns.at) }}"/>
+        {%- set ns.at = ns.at + len + gap %}
+        {%- endfor %}
+        {%- endif %}
+      </svg>
+      <span class="ib-dial-c"><b data-ib-count="{{ b.total }}">{{ b.total }}</b><small>{{ "insight" if b.total == 1 else "insights" }}</small></span>
+    </div>
+
+    <div class="ib-srcs" role="group" aria-label="Show what one source found">
+      {%- for r in b.read %}
+      <button type="button" class="ib-src{% if not r.ok %} is-off{% elif not r.n %} is-quiet{% endif %}" data-ib-via="{{ r.key }}"
+              aria-pressed="false"{% if not r.n %} disabled{% endif %}
+              title="{% if not r.ok %}{{ r.label }} could not be read just now{% elif r.n %}{{ r.n }} from {{ r.label }}{% else %}Nothing from {{ r.label }} needs you{% endif %}">
+        <span class="ib-src-ic" aria-hidden="true">{{ run_icon(r.key) }}</span>{{ r.label }}{% if r.n %}<em>{{ r.n }}</em>{% elif not r.ok %}<em class="ib-src-x" aria-label="not readable">!</em>{% endif %}
+      </button>
+      {%- endfor %}
+    </div>
+  </div>
+
+  {%- if b["items"] %}
+  {#- ── Filter by kind; read it all again ─────────────────────────────── #}
+  <div class="ib-bar">
+    <div class="ib-tabs" role="group" aria-label="Show">
+      <span class="ib-tab-ink" aria-hidden="true"></span>
+      <button type="button" class="ib-tab is-on" data-ib-tone="" aria-pressed="true">All <em>{{ b.total }}</em></button>
+      {%- for t in order if b.counts[t] %}
+      <button type="button" class="ib-tab ib-tab--{{ t }}" data-ib-tone="{{ t }}" aria-pressed="false"><i aria-hidden="true"></i>{{ labels[t] }} <em>{{ b.counts[t] }}</em></button>
+      {%- endfor %}
+    </div>
+    <button type="button" class="ib-again" data-ib-refresh title="Read every source for {{ acct.name }} again">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>Read again</button>
+  </div>
+
+  {#- ── The insights, most important first ───────────────────────────── #}
+  <ol class="ib-grid" role="list">
+    {%- for it in b["items"] %}
+    <li class="ib-cell{% if loop.first %} ib-cell--lead{% endif %}" data-tone="{{ it.tone }}" data-via="{{ it.via }}" style="--i: {{ loop.index0 }}">
+      <a class="ib-card ib-card--{{ it.tone }}{% if loop.first %} ib-card--lead{% endif %}{% if it.severity == 'critical' %} is-critical{% endif %}"
+         href="{{ it.href }}"{% if it.external %} target="_blank" rel="noopener"{% endif %}
+         aria-label="{{ it.label }}: {{ it.title }}. Open {{ it.source_label }}">
+        <span class="ib-flood" aria-hidden="true"></span>
+        {%- if loop.first %}<span class="ib-mark" aria-hidden="true">{{ run_icon(it.source) }}</span>{% endif %}
+        <span class="ib-card-top">
+          <span class="ib-tone"><i aria-hidden="true"></i>{{ it.label }}</span>
+          <span class="ib-ic" aria-hidden="true">{{ run_icon(it.source) }}</span>
+        </span>
+        {%- if it.stat %}
+        <span class="ib-stat"><b>{{ it.stat }}</b>{% if it.stat_label %}<small>{{ it.stat_label }}</small>{% endif %}</span>
+        {%- endif %}
+        <span class="ib-t">{{ it.title }}</span>
+        {%- if it.detail %}<span class="ib-d">{{ it.detail }}</span>{% endif %}
+        <span class="ib-foot">
+          <span class="ib-from">{{ it.source_label }}{% if it.when %}<span class="ib-dot" aria-hidden="true"></span>{{ it.when }}{% endif %}</span>
+          <span class="ib-go"><span class="ib-go-t">{{ "Open the doc" if it.external else "Open" }}</span><span class="ib-go-c" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></span>
+        </span>
+      </a>
+    </li>
+    {%- endfor %}
+  </ol>
+  <p class="ib-none" data-ib-none hidden>Nothing of this kind for {{ acct.name }} right now.</p>
+  {%- if b.total > 9 %}
+  <button type="button" class="ib-more" data-ib-more aria-expanded="false">
+    <span data-ib-more-t>Show all {{ b.total }}</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+  {%- endif %}
+  {%- else %}
+  <div class="ib-calm">
+    <span class="ib-calm-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></span>
+    <b>All clear for {{ acct.name }}.</b>
+    <span>No agent found anything that needs you. Run one below for a fresh look.</span>
+    <button type="button" class="ib-again" data-ib-refresh>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>Read again</button>
+  </div>
+  {%- endif %}
+</div>
+{%- endif %}
