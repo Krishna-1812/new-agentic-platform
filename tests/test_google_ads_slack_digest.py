@@ -681,3 +681,46 @@ def test_the_picture_has_no_status_label():
     data = card.card_data(_core_summary())
     assert "status" not in data
     assert card.render(data)[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+# ── Where the estimated allocation comes from ───────────────────────────────
+def _budget_row(cid, name, amount, budget_id, shared=False):
+    return {"campaign": {"id": cid, "name": name, "status": "ENABLED", "advertisingChannelType": "SEARCH",
+                         "biddingStrategyType": "MAXIMIZE_CONVERSIONS"},
+            "campaignBudget": {"id": budget_id, "name": "Pool" if shared else "", "amountMicros": str(int(amount * 1e6)),
+                               "explicitlyShared": shared}}
+
+
+def test_a_shared_budget_counts_once_in_the_daily_total():
+    rows = [_budget_row("1", "Brand", 20.0, "b1"), _budget_row("2", "Generic", 40.0, "b2", True),
+            _budget_row("3", "Competitor", 40.0, "b2", True)]
+    camps, total = d.daily_budgets(rows)
+    assert total == 60.0 and [c["name"] for c in camps] == ["Competitor", "Generic", "Brand"]
+    assert camps[0]["pool"] == "Pool" and camps[2]["pool"] == ""
+
+
+def test_staff_can_see_each_accounts_daily_budgets_from_the_api(monkeypatch):
+    from tracker import paid_gads
+    monkeypatch.setattr(paid_gads, "config_problem", lambda: "")
+    monkeypatch.setattr(paid_gads, "list_accounts", lambda store: [
+        {"id": "1112223333", "name": "Core Care Clinic", "currency": "USD"},
+        {"id": "4445556666", "name": "AA_New", "currency": "INR"},
+        {"id": "7778889999", "name": "Not Listed", "currency": "USD"}])
+    asked = []
+
+    def search(cid, q, store):
+        asked.append(cid)
+        assert "campaign.status = 'ENABLED'" in q and "campaign_budget.amount_micros" in q
+        return [_budget_row("1", "Search - Brand", 60.0, "b1"), _budget_row("2", "PMax", 40.0, "b2")]
+    monkeypatch.setattr(paid_gads, "search", search)
+    monkeypatch.setattr(d, "today_ist", lambda: TODAY)
+    monkeypatch.delenv("GOOGLE_ADS_DIGEST_ACCOUNTS", raising=False)
+    url = "/api/dashboards/google-ads/slack-digest/preview/budgets"
+    assert appmod.app.test_client().get(url).status_code in (302, 401, 403)
+    page = T._client().get(url + "?account=Core Care Clinic").get_data(as_text=True)
+    assert "<h2>Core Care Clinic</h2>" in page and "Search - Brand" in page and "100.00" in page
+    assert asked == ["1112223333"]
+    page = T._client().get(url).get_data(as_text=True)
+    assert "<h2>AllureAvani</h2>" in page and "Not Listed" not in page
+    monkeypatch.setattr(paid_gads, "config_problem", lambda: "no developer token")
+    assert T._client().get(url).status_code == 503

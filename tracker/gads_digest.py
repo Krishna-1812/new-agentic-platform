@@ -402,6 +402,24 @@ def _names(xs, keep=3):
     return shown + (" and %d more" % (len(xs) - keep) if len(xs) > keep else "")
 
 
+def daily_budgets(rows):
+    """(campaigns, total a day) from paid_pacing_read.q_enabled()'s rows: each enabled campaign with its daily
+    budget, and the account's total with a shared budget counted once, as the card's estimate counts it."""
+    from tracker import paid_pacing_read
+    camps, seen, total = [], set(), 0.0
+    for r in rows:
+        c = paid_pacing_read._campaign(r)
+        if not c["id"]:
+            continue
+        camps.append(c)
+        key = str(((r.get("campaignBudget") or {}).get("id")) or "campaign:" + c["id"])
+        if key not in seen:
+            seen.add(key)
+            total += c["budget"]
+    camps.sort(key=lambda c: (-c["budget"], c["name"].lower()))
+    return camps, round(total, 2)
+
+
 # ── The Slack message ────────────────────────────────────────────────────────
 UP, DOWN = "\u25B2", "\u25BC"
 DOT = "  \u00b7  "
