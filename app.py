@@ -7139,7 +7139,7 @@ def _gads_digest_run(dry_run, force=False, account=""):
         [a for a, _ in _gads_ai_accounts(rows)],
         gads_digest.wanted_names(os.environ.get("GOOGLE_ADS_DIGEST_ACCOUNTS", "")))
     if account:
-        accounts = [a for a in accounts if a == account]
+        accounts = [a for a in accounts if account in (a, gads_digest.display_name(a))]
         not_found = []
 
     def last_posted(a):
@@ -7605,7 +7605,8 @@ def google_ads_slack_digest_preview_cards():
         img = next((b for b in blocks if b.get("type") == "image"), None)
         alerts = next((b["text"]["text"] for b in blocks if b.get("type") == "section" and "text" in b
                        and "•" in b["text"]["text"]), "")
-        cards.append({"account": r["account"], "image": img["image_url"] if img else "", "alt": img["alt_text"] if img else "",
+        # Headed by the name the team uses (AllureAvani, not AA_New), as the message itself is.
+        cards.append({"account": gads_digest.display_name(r["account"]), "image": img["image_url"] if img else "", "alt": img["alt_text"] if img else "",
                       "alerts": alerts.replace("*", ""),
                       "why": {"no_data": "No rows for this account in the sheet.",
                               "not_found": "Listed, but no account of that name in the sheet."}.get(
