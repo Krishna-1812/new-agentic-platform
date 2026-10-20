@@ -7162,12 +7162,30 @@ def _gads_digest_run(dry_run, force=False, account=""):
                                channel=os.environ.get("GOOGLE_ADS_SLACK_CHANNEL", ""),
                                base_url=base_url, dry_run=dry_run, force=force,
                                last_posted=last_posted, mark_posted=mark_posted, on_thread=_slack_thread_remember,
-                               chart_url=lambda a, day: _gads_chart_url(base_url, a, day))
+                               allocation=_gads_digest_allocation())
     # A listed name that matches no account in the sheet is reported, never skipped silently.
     return results + [{"account": n, "day": "", "status": "not_found", "error": ""} for n in not_found]
 
 
-# The chart in each digest message is an image Slack fetches from here. Slack needs a public address,
+def _gads_digest_allocation():
+    """allocation(account, month) for the digest: the month's budget saved in the Pacing Desk
+    (tracker/paid_pacing_budget_store.py), read once per month per run. Without the database, None."""
+    from tracker import gads_digest, paid_pacing_budget_store as bstore
+    saved = {}
+
+    def allocation(account, month):
+        if month not in saved:
+            try:
+                saved[month] = bstore.list_month(month)
+            except Exception:
+                app.logger.warning("gads_digest: Pacing Desk budgets unavailable for %s", month)
+                saved[month] = []
+        return gads_digest.allocation_for(saved[month], account)
+    return allocation
+
+
+# Digest messages before 2026-10-20 showed a chart, an image Slack fetches from here; the route stays so
+# those messages keep their pictures until the addresses expire. Slack needs a public address,
 # so each one is signed for its account and day with GOOGLE_ADS_DIGEST_TOKEN (unguessable, and useless
 # for any other account or day) and expires after CHART_DAYS.
 GADS_CHART = "/api/dashboards/google-ads/slack-chart"
@@ -24199,6 +24217,9 @@ def _fetch_google_ads_rows(force: bool = False):
             # exchange rate for that account and day, which the insights panels convert with.
             "cost_native":     _parse_ads_number(_col(row, "cost")),
             "currency_native": _col(row, "currency code"),
+            # Optional too, but None (not 0) without the column, so the Slack digest can say calls are not
+            # in the sheet yet rather than that there were none.
+            "phone_calls": _parse_ads_number(_col(row, "phone calls")) if "phone calls" in headers else None,
         })
 
     _google_ads_cache.update(rows=rows, at=now)

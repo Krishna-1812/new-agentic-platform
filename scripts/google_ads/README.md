@@ -44,7 +44,7 @@ Every panel on the dashboard follows every filter above it: the dates (Last day,
 
 ## The campaign report script (optional)
 
-`export_campaign_report.js` writes the **Daily Campaign Performance** tab, the campaign report the dashboard's main panels read, so it no longer has to come from a report scheduled in the Google Ads interface. It writes the same columns and the same title and date rows, one row per campaign per day with an impression, for the last `DAYS` days (30 by default) ending on each account's own yesterday. Install it in the manager account like the insights script, schedule it daily before the insights script, and **turn off the Google Ads scheduled report** that filled the tab, so the two never overwrite each other.
+`export_campaign_report.js` writes the **Daily Campaign Performance** tab, the campaign report the dashboard's main panels read, so it no longer has to come from a report scheduled in the Google Ads interface. It writes the same columns and the same title and date rows, one row per campaign per day with an impression, for the last `DAYS` days (30 by default) ending on each account's own yesterday. The last column, **Phone calls**, feeds the Slack digest. Install it in the manager account like the insights script, schedule it daily before the insights script, and **turn off the Google Ads scheduled report** that filled the tab, so the two never overwrite each other.
 
 One difference: the Google Ads API has no converted-currency cost (Google's own conversion exists only in reports built in the Google Ads interface). The script converts each account into the manager account's currency at the **European Central Bank's daily reference rates** (from frankfurter.app; a weekend or holiday takes the last published rate), and US-dollar-pegged currencies (AED, SAR, QAR, OMR, BHD, JOD) through their fixed rate. Row 2 says so, and the dashboard's currency notes then name these rates instead of Google's. They can differ from Google's by a fraction of a percent. A currency with no rate stays in its own currency and the dashboard flags it.
 
@@ -101,27 +101,14 @@ Every morning at about **10:00 India time**, the site posts to one Slack channel
 **Which accounts.** Only twelve: AIHS, Alphametic, AllureAvani, Basil woods school, Core Care Clinic, Madge Beauty, July Mode, Greet Technologies, Artistic Yoga(BTA), Turquoise Institute, City College and KFI (`DIGEST_ACCOUNTS` in `tracker/gads_digest.py`). Case, spaces, punctuation and a bracketed tag such as `(BTA)` don't have to match the sheet, but the rest of the name does: "KFI" will not pick up "KFI Foods". Every other account is left out of the overview and gets no message. To change the list without a deploy, set `GOOGLE_ADS_DIGEST_ACCOUNTS` in Railway → web → Variables (names separated by commas or new lines; `*` sends every account). A listed name that matches nothing in the sheet is not skipped quietly: the Action's reply counts it as `not_found`, and the staff preview names it.
 
 - **First, an overview.** Accounts are grouped under *Needs action*, *Worth a look* and *On track*, each with its main reason. It also shows the day's totals when every account uses one currency.
-- **Then one message per account.** Each is a card whose coloured side bar is the account's status: red, amber or green. The card holds:
-  - the key figures, each with its change against the 7-day average;
-  - month-to-date pacing;
-  - a 14-day chart of spend and conversions;
-  - what needs attention, under *Action needed*, *Watch* and *For information*;
-  - the top three campaigns;
-  - buttons to the dashboard and the AI review.
+- **Then one message per account**, laid out like the client report (since 2026-10-20). Each is a card whose coloured side bar is the account's status: red, amber or green. The card holds:
+  - **the month so far** (the 1st to the account's latest day): impressions, clicks, CTR, average CPC, cost, conversions, phone calls, cost per conversion and conversion rate (conversions per click);
+  - **the latest day** (the account's own yesterday) as a one-row table with the same figures;
+  - **the budget**: the month's allocation from the Pacing Desk, the projected budget (the allocation spread evenly over the month, up to the latest day), what has been spent, and the difference, marked *Overspent* (+) or *Underspent* (−). With no Pacing Desk budget for the account that month, its campaigns' daily budgets for the whole month stand in, and the card says so;
+  - **what needs attention**, only when there is something: the latest day against the 7 days before it, under *Action needed*, *Watch* and *For information*. For example spend up or down by half or more, or none at all; no conversions on a day the account usually gets one; cost per conversion up 30% or ROAS down 30%; budgets pacing over or under; campaigns losing 10% or more of searches to budget; disapproved ads; data that stopped arriving;
+  - buttons to the dashboard and the AI review for that account.
 
-Each account message shows:
-
-- the account's latest day (its own yesterday) against the average of the 7 days before it: spend, conversions, cost per conversion, clicks and, where conversion values are recorded, ROAS;
-- month-to-date spend against the month's budget and the share of the spend expected by now;
-- **Needs attention**, for example:
-  - spend up or down by half or more, or no spend at all;
-  - no conversions on a day when the account usually gets at least one;
-  - cost per conversion up 30% or more, or ROAS down 30% or more;
-  - budgets pacing over or under;
-  - campaigns losing 10% or more of searches to budget in the last 7 days;
-  - disapproved ads;
-  - data that stopped arriving;
-- the top three campaigns by spend, and links to the dashboard and the AI review for that account.
+Phone calls come from the **Phone calls** column that `export_campaign_report.js` writes (Google Ads' `metrics.phone_calls`, calls from call assets and call ads). Until the updated script has run, the card shows "—" for calls and says why, never 0. The Pacing Desk budget is matched to the account by name (the row's account, else its client), Google rows only.
 
 The figures come from the same sheet and the same conversions as the dashboard. The work happens on the site (`tracker/gads_digest.py`). The GitHub Action `.github/workflows/google-ads-slack-digest.yml` only starts it, at 04:25 UTC. The site remembers the day it last posted for each account, so a retried run never posts twice. Staff can see what would be posted, without posting, at `/api/dashboards/google-ads/slack-digest/preview` (add `?account=` for one account).
 
@@ -134,7 +121,7 @@ The figures come from the same sheet and the same conversions as the dashboard. 
    - `GOOGLE_ADS_DIGEST_TOKEN` (any long random string).
 3. Put the same `GOOGLE_ADS_DIGEST_TOKEN` in GitHub → Settings → Secrets and variables → Actions as a repository secret.
 
-The chart is a PNG that Slack fetches from `/api/dashboards/google-ads/slack-chart/…`. Each address is signed for one account and day with `GOOGLE_ADS_DIGEST_TOKEN`, and expires after 45 days. The buttons need the app's **Interactivity** pointed at `/api/slack/interactions`, which only acknowledges the click. To post again on the same day, run the Action by hand with **force** ticked.
+Messages before 2026-10-20 had a chart, a PNG that Slack fetches from `/api/dashboards/google-ads/slack-chart/…`; the address stays up so those messages keep their pictures until it expires after 45 days. The buttons need the app's **Interactivity** pointed at `/api/slack/interactions`, which only acknowledges the click. To post again on the same day, run the Action by hand with **force** ticked.
 
 The digest never uses `SLACK_BOT_TOKEN` or `SLACK_CHANNEL_ID`. The Action's log shows only counts and Slack error codes, never account names or figures.
 

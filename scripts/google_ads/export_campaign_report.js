@@ -8,7 +8,7 @@
  *   Account name, Customer ID, Campaign, Campaign state, Campaign type, Day, Clicks, Impr., CTR,
  *   Currency code, Avg. CPC, Avg. CPC (Converted currency), Cost, Cost (Converted currency),
  *   Impr. (Abs. Top) %, Impr. (Top) %, Conversions, View-through conv., Cost / conv.,
- *   Cost / conv. (Converted currency), Conv. rate, Converted currency code
+ *   Cost / conv. (Converted currency), Conv. rate, Converted currency code, Phone calls
  *
  * Install in the MANAGER (MCC) account: Tools > Bulk actions > Scripts > +. Paste this file,
  * set SPREADSHEET_URL to the Google Ads sheet the dashboard reads, authorise, Preview once,
@@ -43,11 +43,11 @@ var USD_PEGS = { AED: 3.6725, SAR: 3.75, QAR: 3.64, OMR: 0.3845, BHD: 0.376, JOD
 var HEADER = ['Account name', 'Customer ID', 'Campaign', 'Campaign state', 'Campaign type', 'Day', 'Clicks',
   'Impr.', 'CTR', 'Currency code', 'Avg. CPC', 'Avg. CPC (Converted currency)', 'Cost',
   'Cost (Converted currency)', 'Impr. (Abs. Top) %', 'Impr. (Top) %', 'Conversions', 'View-through conv.',
-  'Cost / conv.', 'Cost / conv. (Converted currency)', 'Conv. rate', 'Converted currency code'];
+  'Cost / conv.', 'Cost / conv. (Converted currency)', 'Conv. rate', 'Converted currency code', 'Phone calls'];
 // Number formats per column (null: as written). Text columns are set to text so Sheets never
 // turns a day into a date or a customer ID into a number.
 var FORMATS = ['@', '@', '@', '@', '@', '@', '0', '0', '0.00%', '@', '0.00', '0.00', '0.00', '0.00',
-  '0.00%', '0.00%', '0.00', '0', '0.00', null, '0.00%', '@'];
+  '0.00%', '0.00%', '0.00', '0', '0.00', null, '0.00%', '@', '0'];
 
 var TYPES = { SEARCH: 'Search', DISPLAY: 'Display', SHOPPING: 'Shopping', VIDEO: 'Video', MULTI_CHANNEL: 'App',
   PERFORMANCE_MAX: 'Performance Max', DEMAND_GEN: 'Demand Gen', DISCOVERY: 'Demand Gen', LOCAL: 'Local',
@@ -128,7 +128,7 @@ function readAccount(acct) {
   var q = AdsApp.search('SELECT campaign.name, campaign.status, campaign.advertising_channel_type, segments.date, ' +
     'metrics.clicks, metrics.impressions, metrics.cost_micros, metrics.conversions, ' +
     'metrics.view_through_conversions, metrics.absolute_top_impression_percentage, ' +
-    'metrics.top_impression_percentage, metrics.conversions_from_interactions_rate ' +
+    'metrics.top_impression_percentage, metrics.conversions_from_interactions_rate, metrics.phone_calls ' +
     "FROM campaign WHERE segments.date BETWEEN '" + first + "' AND '" + last + "' AND metrics.impressions > 0");
   var rows = [];
   while (q.hasNext()) {
@@ -138,7 +138,7 @@ function readAccount(acct) {
       type: TYPES[c.advertisingChannelType] || title(c.advertisingChannelType), day: r.segments.date,
       clicks: num(m.clicks), impr: num(m.impressions), cost: num(m.costMicros) / 1e6, conv: num(m.conversions),
       vtc: num(m.viewThroughConversions), abs: num(m.absoluteTopImpressionPercentage),
-      top: num(m.topImpressionPercentage), cvr: num(m.conversionsFromInteractionsRate)
+      top: num(m.topImpressionPercentage), cvr: num(m.conversionsFromInteractionsRate), calls: num(m.phoneCalls)
     });
   }
   Logger.log(name + ' (' + cid + ', ' + cur + '): ' + rows.length + ' campaign-days, ' + first + ' to ' + last);
@@ -233,7 +233,7 @@ function write(rows, ranges, to, fx) {
     out.push([r.account, r.cid, r.campaign, r.state, r.type, r.day, r.clicks, r.impr,
       r.impr ? r.clicks / r.impr : 0, r.cur, round2(cpc), round2(cpc * rate), round2(r.cost), round2(r.cost * rate),
       r.abs, r.top, round2(r.conv), r.vtc, r.conv ? round2(r.cost / r.conv) : 0,
-      r.conv ? round2(r.cost * rate / r.conv) : '--', r.cvr, conv ? to : r.cur]);
+      r.conv ? round2(r.cost * rate / r.conv) : '--', r.cvr, conv ? to : r.cur, r.calls]);
   });
   if (out.length > 3) {
     FORMATS.forEach(function (f, i) {
