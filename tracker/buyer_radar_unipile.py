@@ -13,7 +13,7 @@ Request and Post shapes are from Unipile's API reference (linkedincontroller_sea
 and developer.unipile.com/docs/provider-limits-and-restrictions, read 2026-10-18; not yet confirmed against
 a live response, so each field is read defensively.
 
-    collect(queries, posted="3months", per_query=25, room=DAY_MAX) -> {"posts", "usd", "error", "results", "notes"}
+    collect(queries, posted="3months", per_query=25, room=day_max()) -> {"posts", "usd", "error", "results", "notes"}
 """
 from __future__ import annotations
 
@@ -28,7 +28,20 @@ DATE_POSTED = {"1h": "past_day", "24h": "past_day", "week": "past_week", "month"
                "3months": "past_month"}
 PAGE_MAX = 49           # the reference: post searches return up to 49 a page
 DAY_MAX = 900           # all workspaces together, under Unipile's ~1,000 results a day, with room for other agents
+DAY_MAX_CEILING = 2400  # a Sales Navigator account is allowed about 2,500 a day (the same limits page)
 PAUSE_S = (2.0, 5.0)    # between requests, at random, as Unipile advises
+
+
+def day_max():
+    """The day's LinkedIn search results across every workspace: DAY_MAX, or BUYER_RADAR_UNIPILE_DAY_MAX
+    for an account LinkedIn allows more (Sales Navigator), held under DAY_MAX_CEILING. Posts, job ads and
+    every other LinkedIn search share it."""
+    import os
+    try:
+        n = int((os.environ.get("BUYER_RADAR_UNIPILE_DAY_MAX") or "").strip() or DAY_MAX)
+    except ValueError:
+        n = DAY_MAX
+    return max(100, min(DAY_MAX_CEILING, n))
 
 
 def _items(payload):
@@ -64,7 +77,8 @@ def as_actor_item(item, query):
     handle = str(a.get("public_identifier") or "").strip()
     company = a.get("is_company") is True
     a_url = ("https://www.linkedin.com/%s/%s/" % ("company" if company else "in", handle)) if handle else ""
-    return {"id": _activity_id(item), "linkedinUrl": item.get("share_url") or "", "content": item.get("text") or "",
+    return {"id": _activity_id(item), "social_id": item.get("social_id") or "",
+            "linkedinUrl": item.get("share_url") or "", "content": item.get("text") or "",
             "postedAt": {"date": item.get("parsed_datetime") or ""},
             "author": {"name": a.get("name") or "", "info": a.get("headline") or "", "linkedinUrl": a_url,
                        "type": "company" if company else "profile"},
@@ -72,7 +86,7 @@ def as_actor_item(item, query):
             "query": query}
 
 
-def collect(queries, *, posted="3months", per_query=25, room=DAY_MAX, account_id=None, client=None,
+def collect(queries, *, posted="3months", per_query=25, room=None, account_id=None, client=None,
             sleep=time.sleep):
     """Every query, page by page, until per_query posts each or `room` results in all. Never raises:
     {"posts", "usd": 0, "error", "results", "notes"}. A refusal (LinkedIn's limit shows as HTTP 429 or 500)
@@ -80,6 +94,7 @@ def collect(queries, *, posted="3months", per_query=25, room=DAY_MAX, account_id
     from tracker import buyer_radar_source as src
     if client is None:
         from tracker import unipile_client as client
+    room = day_max() if room is None else room
     out = {"posts": [], "usd": 0.0, "error": None, "results": 0, "notes": []}
     if posted == "3months":
         out["notes"].append("Unipile looks back a month at most, so this search read the last month.")
@@ -112,7 +127,7 @@ def collect(queries, *, posted="3months", per_query=25, room=DAY_MAX, account_id
         if out["error"]:
             break
         if out["results"] >= room:
-            out["notes"].append("Stopped at today's Unipile limit of %d search results." % DAY_MAX)
+            out["notes"].append("Stopped at today's Unipile limit of %d search results." % day_max())
             break
     out["posts"] = src.normalize(raw)
     return out

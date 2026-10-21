@@ -124,6 +124,8 @@ def normalize(raw_items):
             "reactions": _count(item, "engagement.likes", "numLikes", "likes"),
             "comments": _count(item, "engagement.comments", "numComments", "comments"),
             "query": _query(item),
+            # Unipile reads a post's comments by its social id ("urn:li:activity:<n>"), not its link
+            "social_id": str(_get(item, "social_id", "socialId") or ("urn:li:activity:%s" % key if key.isdigit() else "")),
         })
     return out
 

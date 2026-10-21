@@ -115,7 +115,9 @@ def test_every_default_search_is_one_linkedin_accepts():
     calls = " ".join(br.OFFERS["callvibe"]["queries"]).lower()
     assert '"call auditing"' in calls and "freelancer" in calls, "finds 'Looking for an AI Solution / Freelancer for Call Auditing'"
     assert '"marketing agency" AND (hiring OR RFP' in " ".join(br.OFFERS["markify"]["queries"]), "finds 'hiring a marketing agency... RFP'"
-    assert sum(len(o["queries"]) for o in br.OFFERS.values()) * 25 <= 900, "a run fits in Unipile's day"
+    est = br.estimate(br.merged({}))
+    assert est["posts"] + est["jobs"] <= 900, "a run's posts and job ads share Unipile's day"
+    assert est["posts"] >= 500 and est["jobs"] >= 300, "neither crowds the other out"
     assert br.merged({})["posted"] == "3months" and "3months" in src.POSTED
     assert br.clean_settings({"posted": "3months"})["posted"] == "3months"
 
@@ -285,13 +287,16 @@ def test_a_draft_has_no_em_dashes_and_a_note_linkedin_accepts():
 class FakeStore:
     def __init__(self, known=(), unipile_today=0):
         self.known, self.spend, self.leads, self.updates, self.sent = set(known), [], {}, [], {"email": 0, "linkedin": 0}
-        self.unipile_today = unipile_today
+        self.unipile_today, self.seen = unipile_today, set()
 
     def install(self, monkeypatch):
         monkeypatch.setenv("UNIPILE_API_KEY", "u")
         for name in ("update_run", "add_spend", "known_posts", "add_leads", "get_lead", "update_lead", "sent_today",
-                     "unipile_results_today"):
+                     "unipile_results_today", "mark_seen"):
             monkeypatch.setattr(store, name, getattr(self, name))
+
+    def mark_seen(self, owner, keys):
+        self.seen.update(keys)
 
     def unipile_results_today(self):
         return self.unipile_today
@@ -303,7 +308,7 @@ class FakeStore:
         self.spend.append((provider, op, round(float(usd), 6), credits, owner, who))
 
     def known_posts(self, owner, keys):
-        return {k for k in keys if k in self.known}
+        return {k for k in keys if k in self.known or k in self.seen}
 
     def add_leads(self, owner, run_id, leads):
         ids = []
@@ -371,8 +376,17 @@ def deps(scores, out, **over):
     def check(offers, budget, model):
         out["checked"] = sorted(offers)
         return ""
+    def jobs_search(titles, days, per_query, room, location_ids):
+        out["jobs"] = (len(titles), days, per_query, room, location_ids)
+        return {"jobs": [], "results": 0, "error": None, "notes": []}
+
+    def comments(leads):
+        out["comments_of"] = [x["post"]["key"] for x in leads]
+        return {"comments": [], "error": None, "notes": [], "posts": len(leads)}
     d = {"search": search, "unipile_search": unipile_search, "judge": judge_posts, "draft": draft, "send_email": send_email, "send_linkedin": send_linkedin,
-         "slack": slack, "find_emails": find_emails, "check": check}
+         "slack": slack, "find_emails": find_emails, "check": check, "jobs_search": jobs_search,
+         "job_locations": lambda places: (["101"] * len(places), []), "comments": comments,
+         "people": lambda leads, offers: None}
     d.update(over)
     return d, posts
 
@@ -393,7 +407,9 @@ def test_a_run_keeps_the_buyers_drafts_them_and_records_every_cost(monkeypatch):
     assert ("apify", "post-search", 0.25, 0, "acct:7", "mia@x.com") in fake.spend
     assert ("anthropic", "read", 0.01, 0, "acct:7", "mia@x.com") in fake.spend
     assert ("anthropic", "draft", 0.004, 0, "acct:7", "mia@x.com") in fake.spend
-    assert fake.updates[:3] == ["searching", "reading", "drafting"]
+    assert fake.updates[:4] == ["searching", "reading", "reading comments", "drafting"]
+    assert out["comments_of"] == [posts[0]["key"], posts[2]["key"]], "the comments of the posts kept, best first"
+    assert fake.seen == {p["key"] for p in posts}, "every post read is remembered, kept or not"
     assert [(c["score"], c["role"]) for c in summary["closest"]] == [(40, "buyer"), (10, "buyer")], \
         "the best posts not kept, so a search that keeps nothing says how close it came"
     assert summary["closest"][0]["url"].startswith("https://www.linkedin.com/posts/") and summary["notes"] == []
@@ -458,8 +474,10 @@ def test_a_search_that_did_not_run_fails_the_run_and_one_cut_short_keeps_its_pos
     assert "did not run" in str(e.value)
     monkeypatch.delenv("APIFY_API_TOKEN")
     with pytest.raises(RuntimeError) as e:
-        br.run(1, "k", br.merged({"source": "apify"}), deps=d)
+        br.run(1, "k", br.merged({"source": "apify", "sources": ["posts"]}), deps=d)
     assert "APIFY_API_TOKEN" in str(e.value)
+    summary = br.run(1, "k", br.merged({"source": "apify"}), deps=dict(d, search=None))
+    assert summary["notes"][0].startswith("Posts were not searched: APIFY_API_TOKEN"), "the job ads still run"
     monkeypatch.delenv("UNIPILE_API_KEY")
     with pytest.raises(RuntimeError) as e:
         br.run(1, "k", br.merged({}), deps=d)
@@ -476,7 +494,8 @@ def test_a_unipile_search_is_free_keeps_to_the_days_limit_and_says_how_far_back_
     summary = br.run(1, "acct:7", br.merged({}), started_by="mia@x.com", deps=d)
     assert br.merged({})["source"] == "unipile", "Unipile is the default: nothing to pay per post"
     n = sum(len(o["queries"]) for o in br.OFFERS.values())
-    assert out["unipile"] == (n, "3months", 25, 100) and "search" not in out, "the room left today, not more"
+    assert out["unipile"] == (n, "3months", 25, 50) and "search" not in out, "the room left today, not more"
+    assert out["jobs"][3] == 50, "posts and job ads share it"
     assert summary["source"] == "unipile" and summary["unipile_results"] == 2 and summary["kept"] == 1
     assert not any(s[0] == "apify" for s in fake.spend), "no Apify spend through Unipile"
     assert any("a month at most" in n for n in summary["notes"])
@@ -493,7 +512,9 @@ def test_search_with_is_unipile_or_apify_and_the_estimate_follows_it():
     uni, apify = br.estimate(br.merged({})), br.estimate(br.merged({"source": "apify"}))
     n = sum(len(o["queries"]) for o in br.OFFERS.values())
     assert uni["source"] == "unipile" and uni["apify_usd"] == 0 and apify["apify_usd"] == pytest.approx(n * 25 * 0.002)
-    assert br.estimate(br.merged({"per_query": 100}))["posts"] == 900, "a Unipile run reads at most the day's limit"
+    big = br.estimate(br.merged({"per_query": 100}))
+    assert big["posts"] + big["jobs"] == 900, "a Unipile run reads at most the day's limit"
+    assert br.estimate(br.merged({"per_query": 100, "sources": ["posts"]}))["posts"] == 900
     assert uni["worst_usd"] < apify["worst_usd"]
 
 
@@ -741,6 +762,7 @@ def mem(monkeypatch):
     monkeypatch.setattr(store, "counts", lambda owner: {"all": 1, "new": 1, "contacted": 0, "replied": 0, "week": 1})
     monkeypatch.setattr(store, "month_spend", lambda owner: {"usd": db.get("month", 0.5), "credits": 0})
     monkeypatch.setattr(store, "running_run", lambda owner: None)
+    monkeypatch.setattr(store, "ran_within", lambda owner, days: owner in db.get("ran_within", ()))
     monkeypatch.setattr(store, "list_runs", lambda owner, limit=20: [])
     monkeypatch.setattr(store, "list_leads", lambda owner, **kw: db.setdefault("asked", []).append((owner, kw)) or list(db["leads"].values()))
     monkeypatch.setattr(store, "get_lead", lambda lead_id, owner: db["leads"].get(lead_id))
@@ -815,7 +837,7 @@ def test_the_leads_export_as_a_spreadsheet_with_the_lists_filters(mem):
     r = _client(STAFF).get(BASE + "/api/leads/export?offer=markify&min=70")
     assert r.status_code == 200 and r.mimetype == "text/csv"
     assert r.headers["Content-Disposition"].startswith('attachment; filename="buyer-radar-leads-') and r.headers["Content-Disposition"].endswith('-markify.csv"')
-    assert mem["asked"][-1] == (STAFF, {"status": None, "offer": "markify", "min_score": 70, "limit": 5000})
+    assert mem["asked"][-1] == (STAFF, {"status": None, "offer": "markify", "source": None, "min_score": 70, "limit": 5000})
     import csv as csvmod
     import io
     text = r.get_data(as_text=True)
@@ -833,7 +855,7 @@ def test_leads_are_filtered_and_a_lead_can_be_edited(mem):
     c = _client(STAFF)
     got = c.get(BASE + "/api/leads?status=new&offer=callvibe&min=70").get_json()
     assert got["leads"][0]["draft"] == {"subject": "s"}
-    assert mem["asked"][-1] == (STAFF, {"status": "new", "offer": "callvibe", "min_score": 70})
+    assert mem["asked"][-1] == (STAFF, {"status": "new", "offer": "callvibe", "source": None, "min_score": 70})
     assert c.get(BASE + "/api/leads?status=bogus").status_code == 400
     r = c.post(BASE + "/api/leads/7", json={"email": "Buyer@Acme.com", "draft": {"subject": "x" * 500, "note": "n" * 400}}, headers=H)
     assert r.status_code == 200 and mem["leads"][7]["email"] == "Buyer@Acme.com" and mem["leads"][7]["email_source"] == "typed"
@@ -867,7 +889,7 @@ def test_the_daily_search_needs_the_token_and_keeps_to_each_cap(mem, monkeypatch
     monkeypatch.delenv("APIFY_API_TOKEN", raising=False)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
     mem["settings"].update({"acct:1": {"daily": True}, "acct:2": {"daily": True}, "acct:3": {"daily": True, "monthly_cap_usd": 1},
-                            "acct:4": {"daily": True, "source": "apify"}})
+                            "acct:4": {"daily": True, "source": "apify", "sources": ["posts"]}})
     monkeypatch.setattr(store, "daily_owners", lambda: ["acct:1", "acct:2", "acct:3", "acct:4"])
     monkeypatch.setattr(store, "ran_today", lambda owner: owner == "acct:2")
     monkeypatch.setattr(store, "month_spend", lambda owner: {"usd": 5.0 if owner == "acct:3" else 0, "credits": 0})
@@ -875,6 +897,10 @@ def test_the_daily_search_needs_the_token_and_keeps_to_each_cap(mem, monkeypatch
     assert r.get_json() == {"ok": True, "started": 1, "skipped": {"ran_today": 1, "monthly_cap": 1, "running": 0,
                                                                    "no_search_key": 1}}, "acct:4 searches with Apify, unset"
     assert [x[0] for x in mem["runs"]] == ["acct:1"] and mem["runs"][0][3] == "daily"
+    assert mem["runs"][0][1]["posted"] == "3months", "a first search reads as far back as Settings says"
+    mem.update(runs=[], ran_within={"acct:1"})
+    c.post("/api/buyer-radar/daily", headers={"Authorization": "Bearer s3cret"})
+    assert mem["runs"][0][1]["posted"] == "week", "searched this week already: the last week's posts are the new ones"
 
 
 def test_the_opt_out_page_asks_then_opts_the_address_out_for_good(monkeypatch):

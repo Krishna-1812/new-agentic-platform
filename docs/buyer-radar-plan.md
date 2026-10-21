@@ -1,8 +1,20 @@
 # Buyer Radar
 
-LinkedIn posts from people asking for what we sell, in one place, with a message ready to send.
-Built 2026-10-17. On the agents page as **Building**. Page: `/strategic-agents/buyer-radar`, and inside
-every workspace at `/<account>/agents/buyer-radar`.
+People and companies on LinkedIn showing they need what we sell, in one place, with a message ready to send.
+Built 2026-10-17; job ads and comments added 2026-10-21. On the agents page as **Building**. Page:
+`/strategic-agents/buyer-radar`, and inside every workspace at `/<account>/agents/buyer-radar`.
+
+## Where it looks
+
+Settings → "Where to look" switches each on for the workspace. All three are on by default.
+
+| Source | What it finds | Through | Lead kind (`br_leads.source`) |
+|---|---|---|---|
+| LinkedIn posts | people posting that they need it | Unipile or Apify | `post` |
+| Their comments | people under those posts saying they need it too | Unipile (free) | `comment` |
+| Job ads | companies advertising jobs for the work, and who decides there | Unipile (free), Saleshandy's people search (free) | `jobs` |
+
+Every lead shows where it came from, and the list filters by it (Posts, Comments, Hiring).
 
 ## What it does
 
@@ -50,6 +62,63 @@ every workspace at `/<account>/agents/buyer-radar`.
    leads where Settings switches it on.
 6. **Posts the strong leads to Slack**, if a channel is set.
 
+## Job ads (`tracker/buyer_radar_jobs.py`)
+
+A company hiring a performance marketing manager or an SEO executive is building marketing in house that
+it could hand to an agency (Markify). A company hiring call quality analysts or call auditors pays people
+to listen to calls that CallVibe scores. Each offer lists the job titles that mean this (`OFFERS[...]["jobs"]`,
+editable per workspace in Settings, up to 20).
+
+- **The search** is LinkedIn's own job search through Unipile (`unipile_client.search_jobs`, "Classic -
+  JOBS"): the last `jobs_days` days (default 14), newest first, up to `jobs_per_query` ads per title
+  (default 20). "Job ads in" takes up to 5 places, turned into LinkedIn's location ids
+  (`unipile_client.search_parameters`, type LOCATION). LinkedIn treats a place it does not know as
+  anywhere, so the run notes it and leaves it out instead.
+- **One lead per company a month.** The ads are grouped by company (`by_company`), under the key
+  `jobs:<company>:<YYYY-MM>`, so five SEO roles at one company are one lead, and the same company still
+  hiring next month is a fresh one.
+- **Claude reads each company** with its own instructions (`buyer_radar_judge.JOB_SYSTEM`). A marketing
+  agency hiring marketers, a call analytics vendor, or a recruiter hiring for unnamed clients is a
+  seller or "other", held to 10 like any seller. A small or mid-sized company's first hire, or several
+  roles, scores highest; a large enterprise hiring one specialist, lowest.
+- **Who decides there.** For the companies kept (25 a run at most), Saleshandy's people search names
+  the senior people at the company: directors and heads or above first, then the offer's own departments
+  (`OFFERS[...]["decision_makers"]`: Marketing, then C-Suite, for Markify; Sales, Customer Service and
+  Operations, then C-Suite, for CallVibe). So a VP Marketing comes before the CEO for an agency pitch.
+  The search is free. Someone at a company with a similar name is left out (`same_company`). The lead is
+  kept as `sh/<Saleshandy id>` until their email is revealed, which also gives their LinkedIn profile.
+- **The message** names the roles as something public the team noticed, never as if they asked
+  (`DRAFT_SYSTEM`), and greets the decision maker by first name.
+
+## Comments (`tracker/buyer_radar_comments.py`)
+
+Under "Can anyone recommend a call analytics tool?" most comments are vendors pitching. Some say "we are
+looking for the same", "following" or "interested". After the posts are read, the comments of the best
+`comment_posts` posts kept (default 10) are read through Unipile (`list_comments`, by the post's social
+id). Claude reads each comment against what the post asked for (`COMMENT_SYSTEM`). The post's own author
+replying is not a new lead. A commenter is written to on LinkedIn by LinkedIn's own member id, whose case
+matters, as the comment gives it.
+
+## Finding an email
+
+"Find their email" in a lead's message drawer (`POST /api/leads/<id>/find-email`, the team only, after a
+yes) asks Saleshandy for one person's work email: one credit (about $0.026) if found, nothing if not. At a
+hiring company the team picks which decision maker first. The credit is recorded in `br_spend` like the
+automatic finding. The automatic finding (Settings: "Find work emails") now also covers decision makers.
+
+## Reading less, finding more
+
+- **Read once.** Every post, comment and company Claude reads is remembered (`br_seen`), kept or not, so
+  the next search does not pay to read it again.
+- **A fresher daily search.** When a workspace's search finished in the last 6 days and Settings looks back
+  a month or 3 months, the daily search reads the last week. The newest posts are then new ones, not
+  the same newest posts again.
+- **Shared fairly.** Posts and job ads share the day's Unipile results (`split_room`): each gets what it
+  asks for when there is room, else an equal share. A smaller one's spare share goes to the other. 20
+  searches an offer now (was 12), with more ways buyers word it.
+- **A bigger day for Sales Navigator.** LinkedIn allows a Sales Navigator account about 2,500 search
+  results a day. Set `BUYER_RADAR_UNIPILE_DAY_MAX` (up to 2,400) when the connected account has it.
+
 ## When Claude cannot read
 
 Added 2026-10-20, after a run found 502 posts and kept nothing because Claude read none of them. The
@@ -83,14 +152,13 @@ Every paid call is recorded in `br_spend`, with who ran it and the workspace. It
 |---|---|
 | Unipile post search | Nothing per post (Unipile is paid per connected account) |
 | Apify post search | About $2 per 1,000 posts (Apify's own figure for each run is recorded) |
-| Claude Haiku, reading | About $0.01 for 300 posts |
+| Claude Haiku, reading | About $0.01 for 300 posts, comments or companies |
+| Unipile job search and comments | Nothing per result |
+| Saleshandy people search (decision makers) | Nothing; only revealing an email costs |
 | Claude Haiku, writing | Well under a cent per lead |
 | Saleshandy email finding (optional) | 1 credit, about $0.026, per email found |
 
-With the default settings (23 searches × 25 posts = up to 575 posts), a run through Unipile costs only
-Claude's reading, a few cents; through Apify it usually costs $0.80–1.30. 575 is within Unipile's daily
-limit of 900, so one run a day fits. Each search returns its newest posts first, so a daily search over 3 months
-fetches (and Apify charges for) many of yesterday's posts again; Claude does not read a post already kept. Each run has a cap (`run_cap_usd`, default $2): Apify is told to stop charging at 80%
+With the default settings (37 post searches × 25 posts, and 19 job titles × 20 ads), a run through Unipile reads about 520 posts and 380 job ads, Unipile's daily 900 shared between them, and costs only Claude's reading: usually about $0.30, at most about $0.95. Through Apify the posts cost about $2 per 1,000 more. A daily search reads the last week once a search has finished that week, and Claude never reads a post, comment or company twice. Each run has a cap (`run_cap_usd`, default $2): Apify is told to stop charging at 80%
 of it (`maxTotalChargeUsd`), and Claude stops at the rest. The daily run is skipped once the month's spend
 reaches `monthly_cap_usd` (default $40).
 
@@ -158,10 +226,13 @@ search still going.
 | `BUYER_RADAR_SLACK_BOT_TOKEN` | Optional; falls back to `GOOGLE_ADS_SLACK_BOT_TOKEN`, then `SLACK_BOT_TOKEN` |
 | `BUYER_RADAR_SEND` | `off` stops every send |
 | `BUYER_RADAR_APIFY_ACTOR_ID` | Optional; another post-search actor |
+| `BUYER_RADAR_UNIPILE_DAY_MAX` | Optional; the day's LinkedIn search results across workspaces (default 900, up to 2,400 for Sales Navigator) |
 
 ## Before switching the badge to Live
 
 - [ ] One live search, checked by hand: are the strong leads real buyers?
 - [ ] One email and one LinkedIn send to a team member's own address and profile, through each route.
 - [ ] Unipile's post search, invite and chat routes confirmed against a live response; update the docstrings.
+- [ ] Unipile's job search, location ids and post comments confirmed against a live response.
+- [ ] Saleshandy's enrichment by lead id returns the LinkedIn profile with the email (`enriched()["linkedin"]`).
 - [ ] The opt-out link tried from a real inbox.
