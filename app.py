@@ -15348,8 +15348,9 @@ def buyer_radar_status():
     except store.StoreUnavailable as e:
         return _br_store_error(e)
     out = {"client": client, "counts": counts, "running": running["id"] if running else None,
-           "ready": {"search": not br.search_missing(settings), "claude": bool(os.environ.get("ANTHROPIC_API_KEY")),
-                     "jobs": bool(os.environ.get("UNIPILE_API_KEY"))},
+           "ready": {"search": br.posts_ready(settings), "run": not br.search_missing(settings),
+                     "claude": bool(os.environ.get("ANTHROPIC_API_KEY")),
+                     "jobs": bool(os.environ.get("UNIPILE_API_KEY")), "reddit": br.reddit_ready()},
            "source": settings.get("source"), "sources": br.SEARCH_SOURCES, "lead_sources": br.LEAD_SOURCES}
     if client:
         out["settings"] = {k: settings[k] for k in ("offers", "posted", "keep_score", "alert_score", "sources")}
@@ -15357,10 +15358,12 @@ def buyer_radar_status():
     out["ready"].update(email=market_radar_deliver.ready()["email"], linkedin=bool(os.environ.get("UNIPILE_API_KEY")),
                         slack=bool(send.slack_token()), saleshandy=sh.configured(), cron=bool(os.environ.get("BUYER_RADAR_CRON_TOKEN")),
                         sending=not send.sending_off())
-    from tracker import buyer_radar_icp as icp
+    from tracker import buyer_radar_icp as icp, buyer_radar_reddit as reddit, buyer_radar_rfp as rfp
     out.update(settings=settings, estimate=br.estimate(settings), month=month,
                defaults={k: o["queries"] for k, o in br.OFFERS.items()},
                job_defaults={k: o["jobs"] for k, o in br.OFFERS.items()},
+               rfp_defaults={k: rfp.OFFER_QUERIES.get(k, []) for k in br.OFFERS},
+               reddit_defaults={k: reddit.OFFER_QUERIES.get(k, []) for k in br.OFFERS},
                icps={k: icp.icps_for(settings, k) for k in br.OFFERS}, triggers=icp.TRIGGERS, levels=icp.LEVELS)
     return jsonify(out)
 
@@ -15600,8 +15603,9 @@ def buyer_radar_find_email(lead_id):
                 return jsonify(error="No such person at this company."), 400
             lead["person"] = src.profile_key(pick.get("linkedin")) or pick["key"]
         if not lead["person"].startswith(("in/", "sh/")):
-            return jsonify(error="There is nobody to find an email for yet: %s." % (
-                "Saleshandy named nobody at this company" if lead.get("source") == "jobs" else "the post is from a company page")), 400
+            return jsonify(error="There is nobody to find an email for yet: %s." % {
+                "jobs": "Saleshandy named nobody at this company", "rfp": "an RFP is answered at the address it gives",
+                "reddit": "a Reddit thread is answered in the thread"}.get(lead.get("source"), "the post is from a company page")), 400
         found, credits, note = send.find_emails([lead])
         if credits:
             store.add_spend(None, owner, (_get_user() or {}).get("email", ""), "saleshandy", "email-reveal", credits=credits)

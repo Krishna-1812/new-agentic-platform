@@ -211,6 +211,14 @@ def _br(acct):
         people = (sm.get("by_source") or {}).get("icp")
         if people:
             bits.append("%d from customer profiles" % people)
+        rfps = (sm.get("by_source") or {}).get("rfp")
+        if rfps:
+            bits.append("%d RFP%s" % (rfps, "" if rfps == 1 else "s"))
+        threads = (sm.get("by_source") or {}).get("reddit")
+        if threads:
+            bits.append("%d from Reddit" % threads)
+        if sm.get("multi"):
+            bits.append("%d found in several places" % sm["multi"])
         if sm.get("emailed") or sm.get("messaged"):
             bits.append("%d written to" % ((sm.get("emailed") or 0) + (sm.get("messaged") or 0)))
         out.append(_agent(acct, "buyer-radar", title, " \u00b7 ".join(bits), r.get("started_by"), r.get("created_at"),

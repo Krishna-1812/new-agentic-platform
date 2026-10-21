@@ -127,3 +127,27 @@ def test_unipile_results_today_are_counted_across_every_workspace(db):
     assert db.unipile_results_today() == 325, "one LinkedIn account searches for every workspace"
     db._exec("UPDATE br_runs SET created_at = now() - interval '2 days' WHERE id=%s", (a,))
     assert db.unipile_results_today() == 25, "yesterday's do not count"
+
+
+def test_rfp_searches_are_spaced_and_recent_companies_are_read_for_the_several_places_boost(db):
+    run = db.create_run("acct:1", br.merged({}), 2.0)
+    assert db.spent_within("acct:1", "rfp-search", 165) is False
+    db.add_spend(run, "acct:1", None, "anthropic", "rfp-search", usd=0)
+    assert db.spent_within("acct:1", "rfp-search", 165) is False, "a search that cost nothing did not run"
+    db.add_spend(run, "acct:1", None, "anthropic", "rfp-search", usd=0.03)
+    assert db.spent_within("acct:1", "rfp-search", 165) and not db.spent_within("acct:2", "rfp-search", 165)
+    db._exec("UPDATE br_spend SET created_at = now() - interval '8 days' WHERE op='rfp-search'")
+    assert db.spent_within("acct:1", "rfp-search", 165) is False, "a week later the next search is due"
+    hiring = dict(_lead("jobs:company/acme:2026-10", person=""), source="jobs")
+    hiring["verdict"] = dict(hiring["verdict"], company="Acme Ltd")
+    rfp = dict(_lead("rfp:abc", person="", emails=["bids@city.gov"]), source="rfp", email_source="rfp")
+    rfp["post"] = dict(rfp["post"], company={"name": "City of Pune"})
+    old = dict(_lead("p-old"), source="post")
+    old["verdict"] = dict(old["verdict"], company="Gone Co")
+    ids = db.add_leads("acct:1", run, [hiring, rfp, old])
+    assert db.get_lead(ids[1], "acct:1")["email_source"] == "rfp" and db.get_lead(ids[1], "acct:1")["source"] == "rfp"
+    db.update_lead(ids[2], "acct:1", status="dismissed")
+    assert sorted(db.recent_companies("acct:1")) == [("jobs", "Acme Ltd"), ("rfp", "City of Pune")], \
+        "the verdict's company, else the post's; a lead marked not a fit does not count"
+    db._exec("UPDATE br_leads SET created_at = now() - interval '70 days' WHERE id=%s", (ids[0],))
+    assert db.recent_companies("acct:1") == [("rfp", "City of Pune")] and db.recent_companies("acct:2") == []

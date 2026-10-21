@@ -338,7 +338,7 @@ def test_a_run_keeps_posts_comments_and_hiring_companies_each_as_its_kind(monkey
     assert out["jobs"][1] == 7 and out["jobs"][3] == ["101"], "the place, as LinkedIn's id"
     kinds = sorted((x["source"], x["score"], x["person"]) for x in fake.leads.values())
     assert kinds == [("comment", 80, "in/acoaab1"), ("jobs", 75, "sh/s1"), ("post", 92, "in/person-1")]
-    assert summary["by_source"] == {"post": 1, "jobs": 1, "comment": 1, "icp": 0} and summary["kept"] == 3
+    assert summary["by_source"] == {"post": 1, "jobs": 1, "comment": 1, "icp": 0, "rfp": 0} and summary["kept"] == 3
     assert summary["companies"] == 1 and summary["unipile_results"] == 3 and summary["comments"] == 2
     assert {"read", "read-jobs", "read-comments", "draft"} <= {s[1] for s in fake.spend}
     assert fake.seen >= {posts[1]["key"], found[1]["key"]}, "what was read and not kept is not read again"
@@ -388,7 +388,7 @@ def test_the_new_settings_are_checked():
                 {"job_queries": {"markify": ["x"] * 21}}, {"job_queries": {"callvibe": ["x" * 101]}}):
         with pytest.raises(ValueError):
             br.clean_settings(bad)
-    assert br.merged({})["sources"] == ["posts", "comments", "jobs", "icp"]
+    assert br.merged({})["sources"] == ["posts", "comments", "jobs", "icp", "rfps", "reddit"]
 
 
 def test_a_run_with_only_job_ads_needs_only_unipile(monkeypatch):
