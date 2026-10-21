@@ -291,6 +291,7 @@ class FakeStore:
 
     def install(self, monkeypatch):
         monkeypatch.setenv("UNIPILE_API_KEY", "u")
+        monkeypatch.setenv("SALESHANDY_API_KEY", "s")
         for name in ("update_run", "add_spend", "known_posts", "add_leads", "get_lead", "update_lead", "sent_today",
                      "unipile_results_today", "mark_seen"):
             monkeypatch.setattr(store, name, getattr(self, name))
@@ -386,7 +387,8 @@ def deps(scores, out, **over):
     d = {"search": search, "unipile_search": unipile_search, "judge": judge_posts, "draft": draft, "send_email": send_email, "send_linkedin": send_linkedin,
          "slack": slack, "find_emails": find_emails, "check": check, "jobs_search": jobs_search,
          "job_locations": lambda places: (["101"] * len(places), []), "comments": comments,
-         "people": lambda leads, offers: None}
+         "people": lambda leads, offers: None, "icp": lambda pairs, per_icp, known: out.setdefault("icp", (len(pairs), per_icp)) and ([], []),
+         "sequence": lambda owner, lead, settings, by, auto: out.setdefault("sequenced", []).append(lead["id"]) or {"ok": True}}
     d.update(over)
     return d, posts
 
@@ -407,7 +409,8 @@ def test_a_run_keeps_the_buyers_drafts_them_and_records_every_cost(monkeypatch):
     assert ("apify", "post-search", 0.25, 0, "acct:7", "mia@x.com") in fake.spend
     assert ("anthropic", "read", 0.01, 0, "acct:7", "mia@x.com") in fake.spend
     assert ("anthropic", "draft", 0.004, 0, "acct:7", "mia@x.com") in fake.spend
-    assert fake.updates[:4] == ["searching", "reading", "reading comments", "drafting"]
+    assert fake.updates[:5] == ["searching", "reading", "reading comments", "finding people", "drafting"]
+    assert out["icp"] == (6, 5), "30 people a search, shared by the six customer profiles"
     assert out["comments_of"] == [posts[0]["key"], posts[2]["key"]], "the comments of the posts kept, best first"
     assert fake.seen == {p["key"] for p in posts}, "every post read is remembered, kept or not"
     assert [(c["score"], c["role"]) for c in summary["closest"]] == [(40, "buyer"), (10, "buyer")], \
@@ -470,8 +473,10 @@ def test_a_search_that_did_not_run_fails_the_run_and_one_cut_short_keeps_its_pos
     FakeStore().install(monkeypatch)
     d, _ = deps([90], {}, search=lambda *a, **k: {"posts": [], "usd": 0, "error": "start failed: 401"})
     with pytest.raises(RuntimeError) as e:
-        br.run(1, "k", br.merged({"source": "apify"}), deps=d)
+        br.run(1, "k", br.merged({"source": "apify", "sources": ["posts", "comments", "jobs"]}), deps=d)
     assert "did not run" in str(e.value)
+    summary = br.run(1, "k", br.merged({"source": "apify"}), deps=d)
+    assert "The post search did not run (start failed: 401)." in summary["notes"], "the customer profiles still run"
     monkeypatch.delenv("APIFY_API_TOKEN")
     with pytest.raises(RuntimeError) as e:
         br.run(1, "k", br.merged({"source": "apify", "sources": ["posts"]}), deps=d)
@@ -479,6 +484,7 @@ def test_a_search_that_did_not_run_fails_the_run_and_one_cut_short_keeps_its_pos
     summary = br.run(1, "k", br.merged({"source": "apify"}), deps=dict(d, search=None))
     assert summary["notes"][0].startswith("Posts were not searched: APIFY_API_TOKEN"), "the job ads still run"
     monkeypatch.delenv("UNIPILE_API_KEY")
+    monkeypatch.delenv("SALESHANDY_API_KEY")
     with pytest.raises(RuntimeError) as e:
         br.run(1, "k", br.merged({}), deps=d)
     assert "UNIPILE_API_KEY" in str(e.value)
@@ -942,7 +948,8 @@ def test_a_client_searches_and_reads_but_never_sends_or_sees_costs(seeded, mem, 
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
     T._invite("lumina", **{"tool:buyer-radar": True})
     space = T._acct("lumina")["space"]
-    mem["settings"][space] = br.merged({"auto_email": True, "auto_linkedin": True, "find_emails": True, "slack_channel": "#x"})
+    mem["settings"][space] = br.merged({"auto_email": True, "auto_linkedin": True, "find_emails": True, "slack_channel": "#x",
+                                        "auto_sequence": True})
     c = T._client(T.CLIENT)
     page = c.get("/lumina/agents/buyer-radar").get_data(as_text=True)
     assert "data-br-client" in page and 'id="brSettings"' not in page
@@ -952,7 +959,8 @@ def test_a_client_searches_and_reads_but_never_sends_or_sees_costs(seeded, mem, 
     assert r.status_code == 202
     owner, settings, by, trigger = mem["runs"][-1]
     assert owner == space and by == T.CLIENT
-    assert not (settings["auto_email"] or settings["auto_linkedin"] or settings["find_emails"] or settings["slack_channel"])
+    assert not (settings["auto_email"] or settings["auto_linkedin"] or settings["find_emails"] or settings["slack_channel"]
+                or settings["auto_sequence"]), "a client's search never adds anyone to a Saleshandy sequence either"
     leads = c.get(BASE + "/api/leads", headers=XA).get_json()["leads"]
     assert "draft" not in leads[0] and leads[0]["sends"] == [{"channel": "email", "status": "sent", "at": None}]
     mem["leads"][7]["draft"] = {"subject": "Our secret pitch", "email": "e", "note": "n", "message": "m"}

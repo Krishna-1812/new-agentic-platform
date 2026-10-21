@@ -15357,9 +15357,11 @@ def buyer_radar_status():
     out["ready"].update(email=market_radar_deliver.ready()["email"], linkedin=bool(os.environ.get("UNIPILE_API_KEY")),
                         slack=bool(send.slack_token()), saleshandy=sh.configured(), cron=bool(os.environ.get("BUYER_RADAR_CRON_TOKEN")),
                         sending=not send.sending_off())
+    from tracker import buyer_radar_icp as icp
     out.update(settings=settings, estimate=br.estimate(settings), month=month,
                defaults={k: o["queries"] for k, o in br.OFFERS.items()},
-               job_defaults={k: o["jobs"] for k, o in br.OFFERS.items()})
+               job_defaults={k: o["jobs"] for k, o in br.OFFERS.items()},
+               icps={k: icp.icps_for(settings, k) for k in br.OFFERS}, triggers=icp.TRIGGERS, levels=icp.LEVELS)
     return jsonify(out)
 
 
@@ -15407,7 +15409,8 @@ def buyer_radar_runs():
             return jsonify(error="%s is not set on this service (Railway → web → Variables)." % missing), 400
         if viewer_is_client():
             # A client's search never writes to anyone or spends Saleshandy credits: that stays with the team.
-            settings = dict(settings, auto_email=False, auto_linkedin=False, find_emails=False, slack_channel="")
+            settings = dict(settings, auto_email=False, auto_linkedin=False, find_emails=False, slack_channel="",
+                            auto_sequence=False)
         going = store.running_run(owner)
         if going:
             return jsonify(error="A search is already going here; wait for it to finish.", run_id=going["id"]), 409
@@ -15618,6 +15621,87 @@ def buyer_radar_find_email(lead_id):
     except store.StoreUnavailable as e:
         return _br_store_error(e)
     return jsonify(lead=_br_lead_out(lead, False), credits=credits)
+
+
+@app.route(BR + "/api/sequences")
+@position2_required
+def buyer_radar_sequences():
+    """The Saleshandy sequences a workspace's leads can go to, with their steps, for Settings. Free. The team
+    only."""
+    from tracker import saleshandy_client as sh
+    refused = _br_team_only()
+    if refused:
+        return refused
+    if not sh.configured():
+        return jsonify(error="Saleshandy needs SALESHANDY_API_KEY on this service (Railway → web → Variables)."), 400
+    try:
+        return jsonify(sequences=sh.Client().sequences())
+    except sh.SaleshandyError as e:
+        return jsonify(error="Saleshandy: %s" % e), 502
+
+
+@app.route(BR + "/api/leads/<int:lead_id>/sequence", methods=["POST"])
+@position2_required
+def buyer_radar_sequence(lead_id):
+    """One lead into their offer's Saleshandy sequence, after a yes. With no email known yet, `reveal` lets
+    Saleshandy find it as it adds them (one credit). The team only."""
+    from tracker import buyer_radar_send as send, buyer_radar_store as store
+    refused = _mr_guard_post() or _br_team_only()
+    if refused:
+        return refused
+    body = request.get_json(silent=True) or {}
+    if body.get("confirm") is not True:
+        return jsonify(error="Confirm to add them to the sequence."), 400
+    owner = _mr_email()
+    try:
+        lead = store.get_lead(lead_id, owner)
+        if lead is None:
+            return jsonify(error="No such lead here."), 404
+        res = send.sequence_lead(owner, lead, store.get_settings(owner), by=(_get_user() or {}).get("email", ""),
+                                 auto=False, reveal=body.get("reveal") is True)
+    except store.StoreUnavailable as e:
+        return _br_store_error(e)
+    if not res.get("ok"):
+        return jsonify(error=res["detail"][:300]), 400
+    return jsonify(ok=True, detail=res["detail"])
+
+
+@app.route(BR + "/api/icps/suggest", methods=["POST"])
+@position2_required
+def buyer_radar_icps_suggest():
+    """Customer profiles Claude proposes for one offer, from its description and the team's notes, after a
+    yes: about a cent, recorded in br_spend. Shown in Settings to edit; nothing is saved here. The team only."""
+    from decimal import Decimal
+    from tracker import buyer_radar as br, buyer_radar_icp as icp, buyer_radar_judge as judge
+    from tracker import buyer_radar_store as store, contact_lab_search as cls
+    refused = _mr_guard_post() or _br_team_only()
+    if refused:
+        return refused
+    body = request.get_json(silent=True) or {}
+    offer = body.get("offer")
+    if offer not in br.OFFERS:
+        return jsonify(error="Unknown offer."), 400
+    if body.get("confirm") is not True:
+        return jsonify(error="Claude's suggestion costs about a cent; confirm to go ahead."), 400
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return jsonify(error="ANTHROPIC_API_KEY is not set on this service (Railway → web → Variables)."), 400
+    budget = cls.Budget(Decimal("0.10"))
+    try:
+        got = icp.suggest(br.OFFERS[offer], str(body.get("notes") or ""), budget=budget, model=br.MODEL)
+    except cls.BudgetExceeded:
+        got = []
+    except Exception as e:
+        return jsonify(error="Claude could not suggest profiles: %s" % judge.why(e)), 502
+    finally:
+        try:
+            if budget.spent:
+                store.add_spend(None, _mr_email(), (_get_user() or {}).get("email", ""), "anthropic", "icp-suggest",
+                                usd=float(budget.spent))
+        except store.StoreUnavailable:
+            pass
+    if not got:
+        return jsonify(error="Claude suggested no profile that could be searched. Try again with notes."), 502
+    return jsonify(icps=got)
 
 
 @app.route("/api/buyer-radar/daily", methods=["POST"])

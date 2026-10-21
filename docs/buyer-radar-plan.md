@@ -6,13 +6,14 @@ Built 2026-10-17; job ads and comments added 2026-10-21. On the agents page as *
 
 ## Where it looks
 
-Settings → "Where to look" switches each on for the workspace. All three are on by default.
+Settings → "Where to look" switches each on for the workspace. All four are on by default.
 
 | Source | What it finds | Through | Lead kind (`br_leads.source`) |
 |---|---|---|---|
 | LinkedIn posts | people posting that they need it | Unipile or Apify | `post` |
 | Their comments | people under those posts saying they need it too | Unipile (free) | `comment` |
 | Job ads | companies advertising jobs for the work, and who decides there | Unipile (free), Saleshandy's people search (free) | `jobs` |
+| Customer profiles | people who fit an offer's customers at a moment that matters | Saleshandy's lead database (free to search) | `icp` |
 
 Every lead shows where it came from, and the list filters by it (Posts, Comments, Hiring).
 
@@ -90,6 +91,81 @@ editable per workspace in Settings, up to 20).
 - **The message** names the roles as something public the team noticed, never as if they asked
   (`DRAFT_SYSTEM`), and greets the decision maker by first name.
 
+## Customer profiles (`tracker/buyer_radar_icp.py`)
+
+Posts, comments and job ads find people who show a need. A customer profile (ICP) finds the people likely to
+have it before they say so. A profile describes the people an offer sells to:
+
+- job titles, seniority and departments;
+- industries, locations and company keywords;
+- company size.
+
+A trigger narrows it to a moment that makes a first message timely. Each trigger is one of Saleshandy's own
+search filters (from its OpenAPI, read 2026-10-21):
+
+| Trigger | Saleshandy filter |
+|---|---|
+| New in their role | people: `jobs_changed_within` 0 to N months |
+| Recently funded | companies: `signalIds` 2 and 5 ("Recently Funded", "Freshly Funded & Hiring Fast") |
+| New sales or marketing leaders | companies: `signalIds` 3 ("New Executive Hires in GTM") |
+| Growing fast | companies: `signalIds` 1 ("Rapid Growth") |
+| Uses a product | companies: `technologies_used` (a rival such as Gong or Chorus, or a product the offer works with) |
+| Hiring for the work | companies: `active_job_postings_title` |
+| Fit alone | none |
+
+**How a profile searches.**
+
+- A company trigger searches companies first. It then finds the people inside up to 15 of them, at most two
+  people a company.
+- Searching is free. A run takes `icp_per_run` people in all (default 30), shared by the profiles switched on.
+- Each person is found once. The search reads on past people the workspace has already met, up to 5 pages,
+  so the daily search does not keep finding the same first page.
+
+**Scoring and writing.**
+
+- A person scores 55 for fitting the profile. They score more for the trigger (up to 20), for being a
+  director or above (6), for Saleshandy marking them a decision maker (4) and for the profile's own
+  department (4).
+- Claude does not read them, because they have written nothing. It writes them a cold first message that
+  names the moment briefly and never pretends they posted or asked.
+- Their email is revealed when the team asks, or automatically for strong leads when "Find work emails" is
+  on. The LinkedIn profile comes with the email.
+
+**The starting profiles** (`DEFAULT_ICPS`):
+
+- CallVibe:
+  - new sales leaders at inside-sales teams;
+  - support and quality heads at contact centres;
+  - sales leaders at companies on Gong, Chorus, Avoma or Fireflies.
+- Markify:
+  - new marketing leaders at growing companies;
+  - founders of companies that just raised;
+  - companies hiring their first marketers.
+
+Settings has an editor for each offer's profiles: add, remove, switch off, and change every field. **Suggest
+with Claude** (`POST /api/icps/suggest`, after a yes, about a cent, recorded in `br_spend`) writes three to
+five profiles from the offer's description and the team's notes ("we sell to Indian D2C brands"). They are
+checked like typed ones and only kept once Settings is saved.
+
+## Saleshandy sequences
+
+A single email gets one chance. A Saleshandy sequence sends a series and follows up on its own schedule.
+
+- In Settings, each offer can name one of the account's sequences, listed from `GET /v1/sequences`. Leads go
+  into its first step.
+- A lead with an email address is imported with it, through `POST /v1/sequences/prospects/import-with-field-name`.
+  The fields are First Name, Last Name, Email, Company and Job Title, plus the tags "Buyer Radar" and the
+  offer. An existing prospect is left unchanged (`noUpdate`).
+- "Saleshandy field for the message written" names a custom prospect field that carries Claude's email, so
+  the sequence's first email can use it. Make the field in Saleshandy first: an unknown field fails the import.
+- A lead known only by Saleshandy's id is added as a lead (`POST /v1/leads/bulk-actions/add-to-sequence`).
+  Saleshandy reveals their email itself, for one credit. Buyer Radar allows that only after the team's yes,
+  or automatically when "Find work emails" is on.
+- Adding someone counts as an email (`br_sends`, channel email). The same opt-outs, nobody-twice rule and
+  daily caps apply.
+- "Add strong leads to the offer's Saleshandy sequence" (`auto_sequence`) does it automatically, in place of
+  the one email, for the offers with a sequence. The drawer has "Add to the sequence" for one lead.
+
 ## Comments (`tracker/buyer_radar_comments.py`)
 
 Under "Can anyone recommend a call analytics tool?" most comments are vendors pitching. Some say "we are
@@ -154,7 +230,9 @@ Every paid call is recorded in `br_spend`, with who ran it and the workspace. It
 | Apify post search | About $2 per 1,000 posts (Apify's own figure for each run is recorded) |
 | Claude Haiku, reading | About $0.01 for 300 posts, comments or companies |
 | Unipile job search and comments | Nothing per result |
-| Saleshandy people search (decision makers) | Nothing; only revealing an email costs |
+| Saleshandy people search (decision makers, customer profiles) | Nothing; only revealing an email costs |
+| Claude Haiku, suggesting customer profiles | About a cent, only on a yes |
+| Saleshandy sequences | Nothing to add a prospect with an email; one credit when Saleshandy reveals one |
 | Claude Haiku, writing | Well under a cent per lead |
 | Saleshandy email finding (optional) | 1 credit, about $0.026, per email found |
 
@@ -235,4 +313,6 @@ search still going.
 - [ ] Unipile's post search, invite and chat routes confirmed against a live response; update the docstrings.
 - [ ] Unipile's job search, location ids and post comments confirmed against a live response.
 - [ ] Saleshandy's enrichment by lead id returns the LinkedIn profile with the email (`enriched()["linkedin"]`).
+- [ ] Saleshandy's company signals, `jobs_changed_within` (months?) and `technologies_used` confirmed on a live search.
+- [ ] One prospect added to a test sequence, with and without the message field.
 - [ ] The opt-out link tried from a real inbox.

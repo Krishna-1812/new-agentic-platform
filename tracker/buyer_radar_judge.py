@@ -25,7 +25,9 @@ log = logging.getLogger(__name__)
 
 INTENTS = ("seeking_vendor", "asking_recommendations", "hiring_for_it", "pain_point", "none")
 INTENT_LABELS = {"seeking_vendor": "Looking for a vendor", "asking_recommendations": "Asking for recommendations",
-                 "hiring_for_it": "Hiring for it", "pain_point": "Has the problem", "none": "Not buying"}
+                 "hiring_for_it": "Hiring for it", "pain_point": "Has the problem", "none": "Not buying",
+                 # never the model's to choose: a person a customer profile found, who has said nothing
+                 "fits_profile": "Fits your customer profile"}
 ROLES = ("buyer", "seller", "job_seeker", "other")
 
 JUDGE_SYSTEM = (
@@ -262,10 +264,12 @@ def check(offers, *, budget, model=br.MODEL, call=None):
 DRAFT_SYSTEM = (
     "You write a first message to someone whose public LinkedIn activity shows they need something your "
     "company sells: a post asking for it, a comment saying they need it too, or their company's job ads "
-    "for the work. Write as the sender named, for the offer described. Rules: refer to that signal "
-    "specifically in the first line, in their terms (for a post or comment, what they asked for; for job "
-    "ads, the roles their company is hiring for, as something public you noticed, never as if they asked "
-    "you); say in one or two sentences how the offer fits that exact need, with no claims beyond what the "
+    "for the work; or who fits the offer's customers at a moment that matters (new in their role, their "
+    "company recently funded or hiring), and has asked for nothing. Write as the sender named, for the "
+    "offer described. Rules: refer to that signal specifically in the first line, in their terms (for a "
+    "post or comment, what they asked for; for job ads, the roles their company is hiring for, as something "
+    "public you noticed, never as if they asked you; for a customer profile, the moment, briefly and without "
+    "presuming they need anything, and never pretending they posted or asked); say in one or two sentences how the offer fits that exact need, with no claims beyond what the "
     "offer description says; one clear, low-effort next step (a short call or a demo, or a reply); plain, "
     "warm, professional English; no flattery, no cliches, no exclamation marks, no em dashes, no emoji, no "
     "hashtags. Email: a subject under 60 characters and a body under 110 words, without a greeting line's "
@@ -299,6 +303,13 @@ def _signal_text(lead):
         first = (c.get("name") or "").split(" ")[0]
         return ("WRITING TO: %s\n\nTHEIR COMPANY'S OPEN JOBS ON LINKEDIN (%s): %s\n\nWHAT THEY ARE BUILDING: %s"
                 % (who, a.get("name"), roles, v.get("need") or "")), first
+    if kind == "icp":
+        icp = p.get("icp") or {}
+        c = (p.get("contacts") or [{}])[0]
+        return ("WRITING TO: %s, %s\n\nWHY THEM: they fit the customer profile “%s”%s.\nThey have not asked for "
+                "anything: this is a cold first message." % (a.get("name") or "them", a.get("headline") or "",
+                                                              icp.get("name") or "", ("; " + icp["why"]) if icp.get("why") else "")
+                ), (c.get("name") or a.get("name") or "").split(" ")[0]
     first = (a.get("name") or "").split(" ")[0] if not a.get("company") else ""
     body = re.sub(r"\s+", " ", p.get("text") or "")[:2500]
     if kind == "comment":

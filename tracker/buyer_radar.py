@@ -7,6 +7,8 @@ in three places, each switched on in Settings ("sources"):
     comments   people in the comments of those posts saying they need it too (Unipile)
     jobs       companies whose LinkedIn job ads are the offer's work (Unipile), with who decides there
                found by Saleshandy's free people search
+    icp        people who fit an offer's customer profile at a moment that matters (new in role, funded,
+               hiring, using a rival), from Saleshandy's lead database (tracker/buyer_radar_icp.py)
 
 Claude reads each one and says whether it is a buyer, a message is written for each lead, and, where
 the workspace has switched it on, they are sent and the strong leads posted to Slack.
@@ -127,11 +129,11 @@ OFFERS = {
 # == settings =============================================================================================
 SEARCH_SOURCES = {"unipile": "Unipile", "apify": "Apify"}
 # where leads come from; "posts" through the source above, the rest through Unipile
-LEAD_SOURCES = {"posts": "LinkedIn posts", "comments": "Their comments", "jobs": "Job ads"}
+LEAD_SOURCES = {"posts": "LinkedIn posts", "comments": "Their comments", "jobs": "Job ads", "icp": "Customer profiles"}
 
 DEFAULTS = {
     "source": "unipile",              # who runs the search: Unipile (free per post, as our LinkedIn account) or Apify
-    "sources": ["posts", "comments", "jobs"],   # where leads come from (LEAD_SOURCES)
+    "sources": ["posts", "comments", "jobs", "icp"],   # where leads come from (LEAD_SOURCES)
     "offers": ["callvibe", "markify"],
     "queries": {},                    # offer -> its own searches, in place of OFFERS[offer]["queries"]
     "job_queries": {},                # offer -> its own job titles, in place of OFFERS[offer]["jobs"]
@@ -139,6 +141,11 @@ DEFAULTS = {
     "jobs_days": 14,                  # job ads posted in the last this many days
     "jobs_per_query": 20,             # job ads per title
     "comment_posts": 10,              # the best posts kept whose comments are read
+    "icps": {},                       # offer -> its customer profiles, in place of buyer_radar_icp.DEFAULT_ICPS
+    "icp_per_run": 30,                # people the customer profiles add to a run, all profiles together
+    "sequences": {},                  # offer -> the Saleshandy sequence its leads go to {"id", "step_id", "title"}
+    "sequence_field": "",             # a Saleshandy prospect field that carries the message written, if any
+    "auto_sequence": False,           # strong leads go to the offer's sequence, in place of one email
     "posted": "3months",              # how far back each search looks; a post already kept is not read again
     "per_query": 25,                  # posts per search
     "keep_score": 50,                 # a post scored below this is not kept as a lead
@@ -158,7 +165,7 @@ DEFAULTS = {
 }
 LIMITS = {"per_query": (5, 100), "keep_score": (0, 100), "alert_score": (0, 100), "send_score": (50, 100),
           "daily_email_cap": (0, 100), "daily_linkedin_cap": (0, 80), "jobs_days": (1, 30),
-          "jobs_per_query": (5, 100), "comment_posts": (0, 30)}
+          "jobs_per_query": (5, 100), "comment_posts": (0, 30), "icp_per_run": (0, 100)}
 USD_LIMITS = {"run_cap_usd": (0.1, 20.0), "monthly_cap_usd": (1.0, 500.0)}
 MAX_QUERIES = 20
 MAX_JOB_QUERIES = 20
@@ -191,7 +198,9 @@ def search_missing(settings):
         return None
     if "jobs" in on and os.environ.get("UNIPILE_API_KEY"):
         return None
-    return post_key if "posts" in on else "UNIPILE_API_KEY"
+    if "icp" in on and os.environ.get("SALESHANDY_API_KEY"):
+        return None
+    return post_key if "posts" in on else "UNIPILE_API_KEY" if "jobs" in on else "SALESHANDY_API_KEY"
 
 
 def split_room(room, demands):
@@ -314,7 +323,31 @@ def clean_settings(body, current=None):
                 out[k] = round(_num(body[k], lo, hi, float), 2)
             except ValueError as e:
                 raise ValueError("%s %s." % (k.replace("_usd", "").replace("_", " ").capitalize(), e))
-    for k in ("daily", "auto_email", "auto_linkedin", "find_emails"):
+    if "icps" in body:
+        from . import buyer_radar_icp as icp_mod
+        given = body["icps"] if isinstance(body["icps"], dict) else {}
+        clean = dict(out.get("icps") or {})
+        for offer, rows in given.items():
+            if offer not in OFFERS:
+                continue
+            if rows is None:
+                clean.pop(offer, None)            # back to the defaults
+                continue
+            rows = rows if isinstance(rows, list) else []
+            if len(rows) > icp_mod.MAX_ICPS:
+                raise ValueError("%s: at most %d customer profiles." % (OFFERS[offer]["label"], icp_mod.MAX_ICPS))
+            clean[offer] = [icp_mod.clean_icp(r, OFFERS[offer]["label"]) for r in rows]
+        out["icps"] = clean
+    if "sequences" in body:
+        seqs = body["sequences"] if isinstance(body["sequences"], dict) else {}
+        clean = {}
+        for offer, sq in seqs.items():
+            if offer in OFFERS and isinstance(sq, dict) and str(sq.get("id") or "").strip() and str(sq.get("step_id") or "").strip():
+                clean[offer] = {k: str(sq.get(k) or "").strip()[:120] for k in ("id", "step_id", "title")}
+        out["sequences"] = clean
+    if "sequence_field" in body:
+        out["sequence_field"] = re.sub(r"\s+", " ", str(body["sequence_field"] or "")).strip()[:60]
+    for k in ("daily", "auto_email", "auto_linkedin", "find_emails", "auto_sequence"):
         if k in body:
             out[k] = body[k] is True
     if "slack_channel" in body:
@@ -364,12 +397,13 @@ def estimate(settings):
     jobs = room["jobs"]
     comments = int(settings["comment_posts"]) * 30 if "comments" in on and "posts" in on else 0
     read = posts + jobs // 2 + comments          # job ads are read a company at a time
+    people = int(settings.get("icp_per_run") or 0) if "icp" in on else 0      # drafted, never read
     apify = 0.0 if unipile else posts * src.USD_PER_POST
     batches = -(-read // JUDGE_BATCH)
     judge = float(costs.worst_case_model_usd(MODEL, 900 * JUDGE_BATCH + 1500, JUDGE_MAX_TOKENS)) * batches
-    drafts = float(costs.worst_case_model_usd(MODEL, 2500, DRAFT_MAX_TOKENS)) * max(1, read // 4)
+    drafts = float(costs.worst_case_model_usd(MODEL, 2500, DRAFT_MAX_TOKENS)) * max(1, read // 4 + people)
     worst = apify + judge + drafts
-    return {"queries": n_queries, "posts": posts, "job_queries": n_jobs, "jobs": jobs, "comments": comments,
+    return {"queries": n_queries, "posts": posts, "job_queries": n_jobs, "jobs": jobs, "comments": comments, "people": people,
             "source": "unipile" if unipile else "apify",
             "apify_usd": round(apify, 4), "claude_usd": round(judge + drafts, 4),
             "worst_usd": round(worst, 4), "typical_usd": round(apify * 0.6 + (judge + drafts) * 0.3, 4),
@@ -447,20 +481,21 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     job_locations, comments, people, judge, draft, check, find_emails, send_email, send_linkedin, slack."""
     import os
     from datetime import datetime, timezone
-    from . import buyer_radar_comments as comments_src, buyer_radar_jobs as jobs_src
+    from . import buyer_radar_comments as comments_src, buyer_radar_icp as icp_src, buyer_radar_jobs as jobs_src
     from . import buyer_radar_judge as judge, buyer_radar_send as send, buyer_radar_source as src
     from . import buyer_radar_store as store, contact_lab_search as cls
     from . import buyer_radar_unipile as uni
     deps = dict({"search": src.collect, "unipile_search": uni.collect, "judge": judge.judge_posts, "draft": judge.draft,
                  "check": judge.check, "jobs_search": jobs_src.collect, "job_locations": jobs_src.locations,
-                 "comments": comments_src.collect, "people": jobs_src.decision_makers,
+                 "comments": comments_src.collect, "people": jobs_src.decision_makers, "icp": icp_src.find,
+                 "sequence": send.sequence_lead,
                  "find_emails": send.find_emails, "send_email": send.email_lead, "send_linkedin": send.linkedin_lead,
                  "slack": send.slack_leads}, **(deps or {}))
     who = started_by or ""
     cap = Decimal(str(settings["run_cap_usd"]))
     on = sources_on(settings) or ["posts"]
     summary = {"offers": list(settings["offers"]), "sources": on, "searched": 0, "posts": 0, "new_posts": 0, "read": 0,
-               "kept": 0, "strong": 0, "drafted": 0, "emailed": 0, "messaged": 0, "notes": [],
+               "kept": 0, "strong": 0, "drafted": 0, "emailed": 0, "messaged": 0, "sequenced": 0, "notes": [],
                "by_source": {}}
 
     def stage(name):
@@ -475,17 +510,20 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     summary["source"] = source
     has_unipile = bool(os.environ.get("UNIPILE_API_KEY"))
     token = os.environ.get("APIFY_API_TOKEN", "")
-    want_posts, want_jobs = "posts" in on, "jobs" in on
-    if want_posts and source == "apify" and not token and not (want_jobs and has_unipile):
-        raise RuntimeError("APIFY_API_TOKEN is not set on this service (Railway → web → Variables).")
-    if not has_unipile and (source == "unipile" and want_posts or not want_posts):
-        raise RuntimeError("UNIPILE_API_KEY is not set on this service (Railway → web → Variables).")
-    if want_posts and source == "apify" and not token:
-        summary["notes"].append("Posts were not searched: APIFY_API_TOKEN is not set on this service.")
-        want_posts = False
-    if want_jobs and not has_unipile:
-        summary["notes"].append("Job ads were not searched: they need UNIPILE_API_KEY on this service.")
-        want_jobs = False
+    want_posts, want_jobs, want_icp = "posts" in on, "jobs" in on, "icp" in on and bool(settings.get("icp_per_run"))
+    missing = []
+    for want, key, what in ((want_posts, "APIFY_API_TOKEN" if source == "apify" else "UNIPILE_API_KEY", "Posts were not searched"),
+                            (want_jobs, "UNIPILE_API_KEY", "Job ads were not searched"),
+                            (want_icp, "SALESHANDY_API_KEY", "Customer profiles were not searched")):
+        if want and not os.environ.get(key):
+            missing.append((key, what))
+    if missing and len(missing) == sum((want_posts, want_jobs, want_icp)):
+        raise RuntimeError("%s is not set on this service (Railway → web → Variables)." % missing[0][0])
+    for key, what in missing:
+        summary["notes"].append("%s: %s is not set on this service." % (what, key))
+        want_posts = want_posts and not what.startswith("Posts")
+        want_jobs = want_jobs and not what.startswith("Job")
+        want_icp = want_icp and not what.startswith("Customer")
     # Claude reads one test post first: a run it cannot read would pay for the search and keep nothing.
     check_budget = cls.Budget(Decimal("0.05"))
     try:
@@ -555,7 +593,7 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
                 summary["notes"].append("The job search %s (%s)." % (
                     "stopped early" if jg.get("jobs") else "did not run", jg["error"][:120]))
             signals = jobs_src.by_company(jg.get("jobs") or [], datetime.now(timezone.utc).strftime("%Y-%m"))
-    if not posts and not signals and got.get("error"):
+    if not posts and not signals and got.get("error") and not want_icp:
         raise RuntimeError("The LinkedIn search did not run: %s" % got["error"])
     summary["posts"] = len(posts)
     summary["companies"] = len(signals)
@@ -611,7 +649,8 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     summary["closest"] = [{"url": p["url"], "score": verdicts[p["key"]].get("score", 0),
                            "role": verdicts[p["key"]].get("role"), "reason": verdicts[p["key"]].get("reason", "")[:200]}
                           for p in misses]
-    summary["by_source"]["post"] = len(leads)
+    if want_posts:
+        summary["by_source"]["post"] = len(leads)
 
     if signals:
         spent_before = budget.spent
@@ -647,18 +686,46 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
             summary["by_source"]["comment"] = len(comment_leads)
             leads += comment_leads
 
+    # 4. people who fit a customer profile at a moment that matters: Saleshandy's search, free
+    pairs = [(o, x) for o in settings["offers"] for x in icp_src.icps_for(settings, o) if x.get("on", True)] if want_icp else []
+    if pairs:
+        stage("finding people")
+        per = -(-int(settings["icp_per_run"]) // len(pairs))
+        found, notes = deps["icp"](pairs, per_icp=per, known=lambda keys: store.known_posts(owner, keys))
+        summary["notes"].extend(notes)
+        met = store.known_posts(owner, [f[2]["key"] for f in found])
+        taken, icp_leads = {}, []
+        for offer, x, sig, sc in found:
+            if sig["key"] in met or taken.get(x["name"], 0) >= per:
+                continue
+            taken[x["name"]] = taken.get(x["name"], 0) + 1
+            if sc < settings["keep_score"]:
+                continue
+            why = sig["icp"]["why"]
+            icp_leads.append({"post": sig, "offer": offer, "score": sc, "source": "icp", "emails": [], "person": sig["author"]["key"],
+                              "verdict": {"role": "buyer", "offer": offer, "intent": "fits_profile", "score": sc,
+                                          "intent_label": judge.INTENT_LABELS["fits_profile"],
+                                          "need": (why[:1].upper() + why[1:]) if why else "Fits “%s”" % x["name"],
+                                          "company": sig["company"]["name"], "region": sig["contacts"][0]["location"],
+                                          "deadline": "", "reason": sig["text"]}})
+        store.mark_seen(owner, [f[2]["key"] for f in found if f[2]["key"] not in met])
+        icp_leads = sorted(icp_leads, key=lambda x: -x["score"])[:int(settings["icp_per_run"])]
+        summary["people"] = len(icp_leads)
+        summary["by_source"]["icp"] = len(icp_leads)
+        leads += icp_leads
+
     leads.sort(key=lambda lead: -lead["score"])
     summary["kept"] = len(leads)
     summary["strong"] = sum(1 for lead in leads if lead["score"] >= settings["alert_score"])
 
-    # 4. who to write to at each company hiring: Saleshandy's people search, free
+    # 5. who to write to at each company hiring: Saleshandy's people search, free
     if any(lead["source"] == "jobs" for lead in leads):
         stage("finding decision makers")
         note = deps["people"](leads, offers)
         if note:
             summary["notes"].append(note)
 
-    # 5. draft: an email and a LinkedIn note for every lead, best first, until the cap
+    # 6. draft: an email and a LinkedIn note for every lead, best first, until the cap
     stage("drafting")
     spent_before = budget.spent
     for lead in leads:
@@ -681,12 +748,24 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
         lead["id"] = lead_id
     leads = [lead for lead in leads if lead.get("id")]
 
-    # 6. send, where the workspace switched it on
+    # 7. send, where the workspace switched it on: to the offer's Saleshandy sequence, or one email
     sendable = [lead for lead in leads if lead["score"] >= settings["send_score"] and lead.get("draft")]
-    if settings["auto_email"] and sendable:
+    in_sequence = {o for o, sq in (settings.get("sequences") or {}).items() if sq.get("step_id")} \
+        if settings.get("auto_sequence") else set()
+    if in_sequence and sendable:
+        stage("adding to Saleshandy")
+        for lead in sendable:
+            if lead["offer"] in in_sequence:
+                res = deps["sequence"](owner, store.get_lead(lead["id"], owner), settings, by="", auto=True)
+                summary["sequenced"] += 1 if res.get("ok") else 0
+                if res.get("stop"):
+                    summary["notes"].append("Adding to Saleshandy stopped: %s" % res["detail"])
+                    break
+    sendable_email = [lead for lead in sendable if lead["offer"] not in in_sequence]
+    if settings["auto_email"] and sendable_email:
         stage("sending emails")
         if settings["find_emails"]:
-            need = [lead for lead in sendable if not lead["emails"] and lead["person"].startswith(("in/", "sh/"))]
+            need = [lead for lead in sendable_email if not lead["emails"] and lead["person"].startswith(("in/", "sh/"))]
             room_e = max(0, settings["daily_email_cap"] - store.sent_today(owner, "email"))
             if need and room_e:
                 found, credits, note = deps["find_emails"](need[:room_e])
@@ -705,7 +784,7 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
                         lead["person"] = src.profile_key(hit["linkedin"]) or lead["person"]
                         kw["person"] = lead["person"]
                     store.update_lead(lead["id"], owner, **kw)
-        for lead in sendable:
+        for lead in sendable_email:
             if lead["emails"]:
                 res = deps["send_email"](owner, store.get_lead(lead["id"], owner), settings, by="", auto=True)
                 summary["emailed"] += 1 if res.get("ok") else 0

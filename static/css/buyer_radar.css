@@ -227,3 +227,16 @@
   background: var(--ink); color: var(--tx-on-ink); font-size: 14px; box-shadow: 0 16px 40px -16px rgba(0,0,0,.5); transition: opacity 400ms ease, transform 400ms ease; }
 .br-toast.bad { background: var(--clay); color: #121213; }
 .br-toast.go { opacity: 0; transform: translate(-50%, 8px); }
+
+/* ── Customer profiles (Settings) ─────────────────────────────────────────── */
+.br-icp-t { margin: 10px 0 2px; font: 700 13px var(--font-body); }
+.br-icps { display: grid; gap: 10px; }
+.br-icp { border: 0; margin: 0; padding: 12px; border-radius: 14px; background: var(--s1); box-shadow: inset 0 0 0 1px var(--line); display: grid; gap: 10px; min-width: 0; }
+.br-icp-h { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.br-icp-on { display: flex; gap: 6px; align-items: center; flex: none; cursor: pointer; }
+.mr .br-icp-name { flex: 1; min-width: 0; font-weight: 650; }
+.br-icp-g { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px 10px; }
+.br-icp-f { display: grid; gap: 3px; min-width: 0; }
+.br-icp-f span { font-size: 11.5px; font-weight: 600; color: var(--tx3); }
+.br-icp-acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.mr .br-icp-acts input { flex: 1; min-width: 200px; }
