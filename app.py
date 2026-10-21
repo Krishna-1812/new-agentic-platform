@@ -7163,9 +7163,19 @@ def _gads_digest_run(dry_run, force=False, account=""):
                                base_url=base_url, dry_run=dry_run, force=force,
                                last_posted=last_posted, mark_posted=mark_posted, on_thread=_slack_thread_remember,
                                allocation=_gads_digest_allocation(), api=_gads_digest_api(),
-                               card_url=lambda s: _gads_card_url(base_url, s))
+                               card_url=lambda s: _gads_card_url(base_url, s),
+                               briefing=lambda name: _gads_digest_briefing(name, base_url))
     # A listed name that matches no account in the sheet is reported, never skipped silently.
     return results + [{"account": n, "day": "", "status": "not_found", "error": ""} for n in not_found]
+
+
+def _gads_digest_briefing(ads_name, base_url):
+    """The home briefing of the workspace holding this Google Ads account (app._acct_briefing), with the address of
+    its "What needs you" section, for the digest's message. None when no workspace holds it."""
+    acct = next((a for a in _acct_listing()["accounts"] if ads_name in (a.get("ads_names") or ())), None)
+    if acct is None:
+        return None
+    return dict(_acct_briefing(acct), url="%s/%s#briefing" % (base_url, acct["slug"]) if base_url else "")
 
 
 def _gads_digest_allocation():
