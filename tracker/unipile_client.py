@@ -420,6 +420,35 @@ def search_posts_filtered(account_id: str, keywords: str, *, date_posted: str | 
     return _request("POST", f"{_API}/linkedin/search", json_body=body, params=params)
 
 
+def search_jobs(account_id: str, keywords: str, *, date_posted_days: int | None = None,
+                location_ids: list[str] | None = None, cursor: str | None = None,
+                limit: int = 25) -> tuple[Any, dict | None]:
+    """LinkedIn's job search ("Classic - JOBS"), for Buyer Radar's hiring signal. Per Unipile's reference
+    (linkedincontroller_search, read 2026-10-21): `date_posted` is a number of days back; `location` is
+    a list of LOCATION ids (search_parameters below); a jobs page holds up to 50; each item is a
+    SearchResult of type JOB with id, title, location, posted_at, reposted, url and company {id,
+    public_identifier, name, profile_url}. Not yet confirmed against a live response."""
+    body: dict[str, Any] = {"api": "classic", "category": "jobs", "keywords": keywords, "sort_by": "date"}
+    if date_posted_days:
+        body["date_posted"] = int(date_posted_days)
+    if location_ids:
+        body["location"] = [str(x) for x in location_ids]
+    params: dict[str, Any] = {"account_id": account_id, "limit": max(1, min(limit, 50))}
+    if cursor:
+        params["cursor"] = cursor
+    return _request("POST", f"{_API}/linkedin/search", json_body=body, params=params)
+
+
+def search_parameters(account_id: str, kind: str, keywords: str, limit: int = 5) -> tuple[Any, dict | None]:
+    """The ids LinkedIn's search filters take in place of words ("India" -> a LOCATION id), GET
+    /api/v1/linkedin/search/parameters (linkedincontroller_getsearchparameterslist, read 2026-10-21):
+    {"object": "LinkedinSearchParametersList", "items": [{"id", "title"}], "paging"}. Not yet confirmed
+    against a live response."""
+    return _request("GET", f"{_API}/linkedin/search/parameters",
+                    params={"account_id": account_id, "type": kind, "keywords": keywords,
+                            "limit": max(1, min(limit, 100))})
+
+
 def list_posts(account_id: str, identifier: str, is_company: bool = True,
                cursor: str | None = None, limit: int = 50) -> tuple[dict | None, dict | None]:
     """Recent posts for `identifier`, fetched through `account_id`'s

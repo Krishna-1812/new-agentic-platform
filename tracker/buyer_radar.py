@@ -1,9 +1,16 @@
-"""Buyer Radar: LinkedIn posts from people asking for what we sell, in one place, with a message ready.
+"""Buyer Radar: people and companies showing they need what we sell, in one place, with a message ready.
 
-Each run searches LinkedIn posts for every offer switched on (CallVibe's call analytics and Markify's
-marketing services), has Claude read each post and say whether its author is looking to buy, writes an
-email and a LinkedIn note for each lead, and, where the workspace has switched it on, sends them and posts
-the strong leads to Slack. docs/buyer-radar-plan.md.
+Each run looks for every offer switched on (CallVibe's call analytics and Markify's marketing services)
+in three places, each switched on in Settings ("sources"):
+
+    posts      LinkedIn posts asking for it (Unipile or Apify)
+    comments   people in the comments of those posts saying they need it too (Unipile)
+    jobs       companies whose LinkedIn job ads are the offer's work (Unipile), with who decides there
+               found by Saleshandy's free people search
+
+Claude reads each one and says whether it is a buyer, a message is written for each lead, and, where
+the workspace has switched it on, they are sent and the strong leads posted to Slack.
+docs/buyer-radar-plan.md.
 
     OFFERS                         what each offer sells and the searches that find its buyers
     clean_settings(body, current)  a workspace's settings, checked
@@ -41,6 +48,12 @@ OFFERS = {
         "buyers": ("Sales, inside-sales, call-centre, customer-support, QA and revenue-operations leaders, and "
                    "founders, who want call recording, call analytics, call audit or QA, speech analytics, "
                    "conversation intelligence, rep coaching or a cheaper alternative to Gong, Chorus or similar."),
+        # who decides, for a company found by its job ads (Saleshandy's department names)
+        "decision_makers": ["Sales", "Customer Service", "Operations", "C-Suite"],
+        # LinkedIn job titles whose work CallVibe does or makes easier: people paid to listen to calls
+        "jobs": ["call quality analyst", "quality analyst call center", "call auditor", "quality assurance analyst BPO",
+                 "speech analytics", "sales enablement manager", "sales trainer", "customer support quality analyst",
+                 "inside sales manager"],
         "queries": [
             '"looking for a call recording" OR "recommend a call recording" OR "call recording software recommendations"',
             '"looking for a conversation intelligence" OR "recommend a conversation intelligence" OR '
@@ -56,6 +69,13 @@ OFFERS = {
             '("call quality monitoring" OR "call QA") AND (looking OR vendor OR solution)',
             '("call analytics" OR "conversation intelligence") AND (looking OR vendor OR recommend)',
             '("speech analytics" OR "call recording") AND (looking OR recommend OR vendor)',
+            # more ways buyers say it (2026-10-21): call centre QA, coaching, Gong's price, Indian telephony
+            '"call center QA" AND (software OR tool) AND (looking OR recommend)',
+            '"sales call" AND (coaching OR analytics) AND (tool OR software) AND recommend',
+            '"Chorus alternative" OR "alternative to Chorus" OR "Gong pricing" OR "Gong is expensive"',
+            '("AI call analysis" OR "AI call scoring" OR "AI call audit") AND (looking OR need OR recommend)',
+            '(Exotel OR LeadSquared OR Ozonetel) AND ("call recording" OR "call analytics")',
+            '"listen to calls" AND (QA OR quality OR coaching) AND (tool OR software)',
         ],
     },
     "markify": {
@@ -67,6 +87,11 @@ OFFERS = {
         "buyers": ("Founders, CEOs and marketing leaders looking for a marketing, digital, performance, SEO or "
                    "paid-media agency or freelancer, issuing a marketing RFP, asking for agency recommendations, "
                    "or building out marketing that they could hand to an agency."),
+        "decision_makers": ["Marketing", "C-Suite"],
+        # LinkedIn job titles whose work an agency does: a company hiring them is building marketing in house
+        "jobs": ["performance marketing manager", "digital marketing manager", "SEO specialist", "SEO executive",
+                 "Google Ads specialist", "PPC specialist", "paid media manager", "social media manager",
+                 "growth marketing manager", "content marketing manager"],
         "queries": [
             '"looking for a marketing agency" OR "looking for a digital marketing agency" OR '
             '"looking for a performance marketing agency"',
@@ -85,17 +110,35 @@ OFFERS = {
             '("Google Ads" OR PPC) AND (agency OR freelancer) AND looking',
             '("branding agency" OR "creative agency" OR "web design agency") AND (looking OR need OR RFP)',
             '"request for proposal" AND (marketing OR agency)',
+            # more ways buyers say it (2026-10-21): paid social, growth, content, lead generation, fractional
+            '"looking for a Meta ads" OR "looking for a Facebook ads" OR "looking for a LinkedIn ads" OR '
+            '"looking for a paid social"',
+            '"need help with" AND ("Google Ads" OR "Meta ads" OR "paid ads")',
+            '"looking for a growth marketer" OR "looking for a growth marketing agency" OR "looking for a fractional CMO"',
+            '"lead generation agency" AND (looking OR recommend OR need)',
+            '"content marketing agency" AND (looking OR recommend OR need)',
+            '"fractional CMO" AND (looking OR hiring OR need)',
+            '"website redesign" AND (agency OR freelancer) AND (looking OR need)',
+            '"recommend an agency" OR "agency recommendations" OR "can anyone recommend an agency"',
         ],
     },
 }
 
 # == settings =============================================================================================
 SEARCH_SOURCES = {"unipile": "Unipile", "apify": "Apify"}
+# where leads come from; "posts" through the source above, the rest through Unipile
+LEAD_SOURCES = {"posts": "LinkedIn posts", "comments": "Their comments", "jobs": "Job ads"}
 
 DEFAULTS = {
     "source": "unipile",              # who runs the search: Unipile (free per post, as our LinkedIn account) or Apify
+    "sources": ["posts", "comments", "jobs"],   # where leads come from (LEAD_SOURCES)
     "offers": ["callvibe", "markify"],
     "queries": {},                    # offer -> its own searches, in place of OFFERS[offer]["queries"]
+    "job_queries": {},                # offer -> its own job titles, in place of OFFERS[offer]["jobs"]
+    "job_locations": [],              # places the job ads are in ("India", "London"); none is anywhere
+    "jobs_days": 14,                  # job ads posted in the last this many days
+    "jobs_per_query": 20,             # job ads per title
+    "comment_posts": 10,              # the best posts kept whose comments are read
     "posted": "3months",              # how far back each search looks; a post already kept is not read again
     "per_query": 25,                  # posts per search
     "keep_score": 50,                 # a post scored below this is not kept as a lead
@@ -114,9 +157,12 @@ DEFAULTS = {
     "postal_address": "",             # in every email's footer
 }
 LIMITS = {"per_query": (5, 100), "keep_score": (0, 100), "alert_score": (0, 100), "send_score": (50, 100),
-          "daily_email_cap": (0, 100), "daily_linkedin_cap": (0, 80)}
+          "daily_email_cap": (0, 100), "daily_linkedin_cap": (0, 80), "jobs_days": (1, 30),
+          "jobs_per_query": (5, 100), "comment_posts": (0, 30)}
 USD_LIMITS = {"run_cap_usd": (0.1, 20.0), "monthly_cap_usd": (1.0, 500.0)}
-MAX_QUERIES = 12
+MAX_QUERIES = 20
+MAX_JOB_QUERIES = 20
+MAX_JOB_LOCATIONS = 5
 CHANNEL_RX = re.compile(r"^[#]?[A-Za-z0-9._-]{1,80}$")
 EMAIL_RX = re.compile(r"^[^@\s<>\"']+@[^@\s<>\"']+\.[A-Za-z]{2,}$")
 
@@ -136,15 +182,49 @@ def merged(saved):
 
 
 def search_missing(settings):
-    """The variable the chosen search needs and this service lacks, or None."""
+    """The variable the chosen search needs and this service lacks, or None. Posts need their search's
+    key; comments and job ads need Unipile's. A run can go when one source switched on can."""
     import os
-    name = "UNIPILE_API_KEY" if settings.get("source") == "unipile" else "APIFY_API_TOKEN"
-    return None if os.environ.get(name) else name
+    on = sources_on(settings)
+    post_key = "UNIPILE_API_KEY" if settings.get("source") == "unipile" else "APIFY_API_TOKEN"
+    if "posts" in on and os.environ.get(post_key):
+        return None
+    if "jobs" in on and os.environ.get("UNIPILE_API_KEY"):
+        return None
+    return post_key if "posts" in on else "UNIPILE_API_KEY"
+
+
+def split_room(room, demands):
+    """The day's Unipile search results shared between the sources that use them: each gets what it
+    asks for when there is room, else an equal share, with what a smaller one leaves over going to the
+    rest. {name: results}."""
+    out, left = {}, max(0, int(room))
+    pending = sorted(((max(0, int(d)), k) for k, d in demands.items()))
+    while pending:
+        share = left // len(pending)
+        d, k = pending.pop(0)
+        out[k] = min(d, share) if pending else min(d, left)
+        left -= out[k]
+    return out
 
 
 def queries_for(settings, offer):
     own = (settings.get("queries") or {}).get(offer)
     return list(own) if own else list(OFFERS[offer]["queries"])
+
+
+def job_queries_for(settings, offer):
+    own = (settings.get("job_queries") or {}).get(offer)
+    return list(own) if own else list(OFFERS[offer]["jobs"])
+
+
+def sources_on(settings):
+    return [x for x in settings.get("sources") or [] if x in LEAD_SOURCES]
+
+
+def _lines(v):
+    lines = v.splitlines() if isinstance(v, str) else v if isinstance(v, list) else []
+    return [re.sub(r"\s+", " ", str(x)).strip() for x in lines if str(x).strip()]
 
 
 def _num(v, lo, hi, cast):
@@ -185,6 +265,35 @@ def clean_settings(body, current=None):
             if lines and lines != OFFERS[offer]["queries"]:
                 clean[offer] = lines
         out["queries"] = clean
+    if "sources" in body:
+        got = [x for x in body["sources"] or [] if x in LEAD_SOURCES] if isinstance(body["sources"], list) else []
+        if not got:
+            raise ValueError("Pick at least one place to look: posts, their comments or job ads.")
+        if got == ["comments"]:
+            raise ValueError("Their comments are read under the posts found, so LinkedIn posts must be on too.")
+        out["sources"] = [x for x in LEAD_SOURCES if x in got]
+    if "job_queries" in body:
+        qs = body["job_queries"] if isinstance(body["job_queries"], dict) else {}
+        clean = {}
+        for offer, lines in qs.items():
+            if offer not in OFFERS:
+                continue
+            lines = _lines(lines)
+            if len(lines) > MAX_JOB_QUERIES:
+                raise ValueError("%s: at most %d job titles." % (OFFERS[offer]["label"], MAX_JOB_QUERIES))
+            if any(len(q) > 100 for q in lines):
+                raise ValueError("%s: a job title is at most 100 characters." % OFFERS[offer]["label"])
+            if lines and lines != OFFERS[offer]["jobs"]:
+                clean[offer] = lines
+        out["job_queries"] = clean
+    if "job_locations" in body:
+        places = _lines(body["job_locations"].replace(",", "\n") if isinstance(body["job_locations"], str)
+                        else body["job_locations"])
+        if len(places) > MAX_JOB_LOCATIONS:
+            raise ValueError("At most %d job locations." % MAX_JOB_LOCATIONS)
+        if any(len(x) > 60 for x in places):
+            raise ValueError("A job location is at most 60 characters.")
+        out["job_locations"] = list(dict.fromkeys(places))
     if "source" in body:
         if body["source"] not in SEARCH_SOURCES:
             raise ValueError("Search with must be Unipile or Apify.")
@@ -236,22 +345,32 @@ DRAFT_MAX_TOKENS = 3000
 
 
 def estimate(settings):
-    """The most one run can cost, and what it usually costs. Through Apify the search is paid at its list
-    price for every post the searches may return; through Unipile it is free per post, and a run reads at
-    most the day's Unipile limit. Claude reads each post (in batches) and drafts for up to one in four.
-    The run's cap (run_cap_usd) is what is enforced."""
+    """The most one run can cost, and what it usually costs. Through Apify the post search is paid at its
+    list price for every post the searches may return; through Unipile it is free per result, and every
+    LinkedIn search a run makes (posts, job ads) reads at most the day's Unipile limit. Claude reads each
+    post, company and comment (in batches) and drafts for up to one in four. The run's cap (run_cap_usd)
+    is what is enforced."""
     from . import buyer_radar_source as src, buyer_radar_unipile as uni, market_radar_costs as costs
-    n_queries = sum(len(queries_for(settings, o)) for o in settings["offers"])
+    on = sources_on(settings)
+    n_queries = sum(len(queries_for(settings, o)) for o in settings["offers"]) if "posts" in on else 0
+    n_jobs = (sum(len(job_queries_for(settings, o)) for o in settings["offers"]) * max(1, len(settings.get("job_locations") or []))
+              if "jobs" in on else 0)
     posts = n_queries * int(settings["per_query"])
+    jobs = n_jobs * int(settings["jobs_per_query"])
     unipile = settings.get("source") == "unipile"
+    room = split_room(uni.day_max(), {"posts": posts if unipile else 0, "jobs": jobs})
     if unipile:
-        posts = min(posts, uni.DAY_MAX)
+        posts = room["posts"]
+    jobs = room["jobs"]
+    comments = int(settings["comment_posts"]) * 30 if "comments" in on and "posts" in on else 0
+    read = posts + jobs // 2 + comments          # job ads are read a company at a time
     apify = 0.0 if unipile else posts * src.USD_PER_POST
-    batches = -(-posts // JUDGE_BATCH)
+    batches = -(-read // JUDGE_BATCH)
     judge = float(costs.worst_case_model_usd(MODEL, 900 * JUDGE_BATCH + 1500, JUDGE_MAX_TOKENS)) * batches
-    drafts = float(costs.worst_case_model_usd(MODEL, 2500, DRAFT_MAX_TOKENS)) * max(1, posts // 4)
+    drafts = float(costs.worst_case_model_usd(MODEL, 2500, DRAFT_MAX_TOKENS)) * max(1, read // 4)
     worst = apify + judge + drafts
-    return {"queries": n_queries, "posts": posts, "source": "unipile" if unipile else "apify",
+    return {"queries": n_queries, "posts": posts, "job_queries": n_jobs, "jobs": jobs, "comments": comments,
+            "source": "unipile" if unipile else "apify",
             "apify_usd": round(apify, 4), "claude_usd": round(judge + drafts, 4),
             "worst_usd": round(worst, 4), "typical_usd": round(apify * 0.6 + (judge + drafts) * 0.3, 4),
             "usd_cap": float(settings["run_cap_usd"]), "capped": worst > float(settings["run_cap_usd"]),
@@ -259,7 +378,8 @@ def estimate(settings):
 
 
 # == the export ===========================================================================================
-EXPORT_COLS = [("Found", "created_at"), ("Score", "score"), ("Offer", "offer"), ("Status", "status"),
+SOURCE_LABELS = {"post": "LinkedIn post", "comment": "Comment on a post", "jobs": "Job ads"}
+EXPORT_COLS = [("Found", "created_at"), ("Score", "score"), ("Offer", "offer"), ("Source", "source"), ("Status", "status"),
                ("Name", "name"), ("Headline", "headline"), ("Profile", "profile"), ("Email address", "email"),
                ("What they want", "need"), ("Intent", "intent"), ("Company", "company"), ("Region", "region"),
                ("Deadline", "deadline"), ("Why", "reason"), ("Posted", "posted_at"), ("Post", "url"),
@@ -292,6 +412,7 @@ def leads_csv(leads, *, drafts=True):
                        if s.get("status") == "sent"})
         row = {"created_at": (lead.get("created_at") or "")[:10], "score": lead.get("score"),
                "offer": OFFERS.get(lead.get("offer"), {}).get("label", lead.get("offer")), "status": lead.get("status"),
+               "source": SOURCE_LABELS.get(lead.get("source") or "post", lead.get("source")),
                "name": a.get("name"), "headline": a.get("headline"), "profile": a.get("url"), "email": lead.get("email"),
                "need": v.get("need"), "intent": v.get("intent_label") or v.get("intent"), "company": v.get("company"),
                "region": v.get("region"), "deadline": v.get("deadline"), "reason": v.get("reason"),
@@ -322,19 +443,25 @@ def emails_in(text):
 def run(run_id, owner, settings, *, started_by=None, deps=None):
     """Search, read, keep, draft, then (if switched on) find emails, send and post to Slack. Every stage is
     saved as it ends, and the leads are saved before anything is sent, so a failure late in the run keeps
-    what was found. deps replaces the outside world in tests: search, judge, draft, find_emails,
-    send_email, send_linkedin, slack, unipile_search."""
+    what was found. deps replaces the outside world in tests: search, unipile_search, jobs_search,
+    job_locations, comments, people, judge, draft, check, find_emails, send_email, send_linkedin, slack."""
+    import os
+    from datetime import datetime, timezone
+    from . import buyer_radar_comments as comments_src, buyer_radar_jobs as jobs_src
     from . import buyer_radar_judge as judge, buyer_radar_send as send, buyer_radar_source as src
     from . import buyer_radar_store as store, contact_lab_search as cls
     from . import buyer_radar_unipile as uni
     deps = dict({"search": src.collect, "unipile_search": uni.collect, "judge": judge.judge_posts, "draft": judge.draft,
-                 "check": judge.check,
+                 "check": judge.check, "jobs_search": jobs_src.collect, "job_locations": jobs_src.locations,
+                 "comments": comments_src.collect, "people": jobs_src.decision_makers,
                  "find_emails": send.find_emails, "send_email": send.email_lead, "send_linkedin": send.linkedin_lead,
                  "slack": send.slack_leads}, **(deps or {}))
     who = started_by or ""
     cap = Decimal(str(settings["run_cap_usd"]))
-    summary = {"offers": list(settings["offers"]), "searched": 0, "posts": 0, "new_posts": 0, "read": 0,
-               "kept": 0, "strong": 0, "drafted": 0, "emailed": 0, "messaged": 0, "notes": []}
+    on = sources_on(settings) or ["posts"]
+    summary = {"offers": list(settings["offers"]), "sources": on, "searched": 0, "posts": 0, "new_posts": 0, "read": 0,
+               "kept": 0, "strong": 0, "drafted": 0, "emailed": 0, "messaged": 0, "notes": [],
+               "by_source": {}}
 
     def stage(name):
         store.update_run(run_id, stage=name, summary=summary)
@@ -342,16 +469,23 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
     def spend(provider, op, usd=0, credits=0):
         store.add_spend(run_id, owner, who, provider, op, usd=usd, credits=credits)
 
-    # 1. search: one Apify run for every offer's searches, capped at what the run may spend
+    # 1. search: posts (Unipile or Apify) and job ads (Unipile), sharing the day's Unipile results
     stage("searching")
-    import os
     source = settings.get("source") if settings.get("source") in SEARCH_SOURCES else "apify"
     summary["source"] = source
+    has_unipile = bool(os.environ.get("UNIPILE_API_KEY"))
     token = os.environ.get("APIFY_API_TOKEN", "")
-    if source == "apify" and not token:
+    want_posts, want_jobs = "posts" in on, "jobs" in on
+    if want_posts and source == "apify" and not token and not (want_jobs and has_unipile):
         raise RuntimeError("APIFY_API_TOKEN is not set on this service (Railway → web → Variables).")
-    if source == "unipile" and not os.environ.get("UNIPILE_API_KEY"):
+    if not has_unipile and (source == "unipile" and want_posts or not want_posts):
         raise RuntimeError("UNIPILE_API_KEY is not set on this service (Railway → web → Variables).")
+    if want_posts and source == "apify" and not token:
+        summary["notes"].append("Posts were not searched: APIFY_API_TOKEN is not set on this service.")
+        want_posts = False
+    if want_jobs and not has_unipile:
+        summary["notes"].append("Job ads were not searched: they need UNIPILE_API_KEY on this service.")
+        want_jobs = False
     # Claude reads one test post first: a run it cannot read would pay for the search and keep nothing.
     check_budget = cls.Budget(Decimal("0.05"))
     try:
@@ -362,79 +496,169 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
         raise RuntimeError("Claude could not read posts, so LinkedIn was not searched and nothing was charged "
                            "for posts: %s" % problem)
     queries, offer_of = [], {}
-    for offer in settings["offers"]:
-        for q in queries_for(settings, offer):
-            queries.append(q)
-            offer_of.setdefault(q, offer)
+    if want_posts:
+        for offer in settings["offers"]:
+            for q in queries_for(settings, offer):
+                queries.append(q)
+                offer_of.setdefault(q, offer)
+    titles = [q for o in settings["offers"] for q in job_queries_for(settings, o)] if want_jobs else []
+    places = list(settings.get("job_locations") or [])
     summary["searched"] = len(queries)
-    if source == "unipile":
-        from . import buyer_radar_unipile as uni
-        room = uni.DAY_MAX - store.unipile_results_today()
-        if room <= 0:
+    room = {"posts": 0, "jobs": 0}
+    if (want_posts and source == "unipile") or want_jobs:
+        left = uni.day_max() - store.unipile_results_today()
+        if left <= 0:
             raise RuntimeError("Today's Unipile limit of %d LinkedIn search results is reached, across every "
-                               "workspace. Search with Apify, or again tomorrow." % uni.DAY_MAX)
-        got = deps["unipile_search"](queries, posted=settings["posted"], per_query=settings["per_query"], room=room)
-        summary["unipile_results"] = int(got.get("results") or 0)
+                               "workspace. Search with Apify, or again tomorrow." % uni.day_max())
+        room = split_room(left, {"posts": len(queries) * int(settings["per_query"]) if want_posts and source == "unipile" else 0,
+                                 "jobs": len(titles) * max(1, len(places)) * int(settings["jobs_per_query"])})
+    summary["unipile_results"] = 0
+    apify_usd, posts = 0.0, []
+    if want_posts and source == "unipile":
+        got = deps["unipile_search"](queries, posted=settings["posted"], per_query=settings["per_query"], room=room["posts"])
+        summary["unipile_results"] += int(got.get("results") or 0)
         summary["notes"].extend(got.get("notes") or [])
-        apify_usd = 0.0
-    else:
+    elif want_posts:
         apify_cap = float(cap) * 0.8
         got = deps["search"](queries, token, posted=settings["posted"], per_query=settings["per_query"],
                              max_charge_usd=apify_cap)
         apify_usd = float(got.get("usd") or 0)
         if not got.get("usd") and got.get("posts"):
             apify_usd = len(got["posts"]) * src.USD_PER_POST      # not reported: counted at the list price
+    else:
+        got = {"posts": []}
     if apify_usd:
         spend("apify", "post-search", usd=apify_usd)
-    if got.get("error") and not got.get("posts"):
+    if got.get("error") and not got.get("posts") and not want_jobs:
         raise RuntimeError("The LinkedIn search did not run: %s" % got["error"])
     if got.get("error"):
-        summary["notes"].append("The search stopped early (%s); what it found is used." % got["error"][:120])
+        summary["notes"].append(("The post search stopped early (%s); what it found is used." if got.get("posts") else
+                                 "The post search did not run (%s).") % got["error"][:120])
     posts = got.get("posts") or []
     for p in posts:
         p["offer_hint"] = offer_of.get(p.get("query")) or ""
+    signals = []
+    if want_jobs:
+        ids = []
+        if places:
+            ids, notes = deps["job_locations"](places)
+            summary["notes"].extend(notes)
+        if places and not ids:
+            summary["notes"].append("Job ads were not searched: none of the job locations was recognised.")
+        else:
+            jg = deps["jobs_search"](titles, days=settings["jobs_days"], per_query=settings["jobs_per_query"],
+                                     room=room["jobs"], location_ids=ids or None)
+            summary["unipile_results"] += int(jg.get("results") or 0)
+            summary["job_ads"] = len(jg.get("jobs") or [])
+            summary["notes"].extend(jg.get("notes") or [])
+            if jg.get("error"):
+                summary["notes"].append("The job search %s (%s)." % (
+                    "stopped early" if jg.get("jobs") else "did not run", jg["error"][:120]))
+            signals = jobs_src.by_company(jg.get("jobs") or [], datetime.now(timezone.utc).strftime("%Y-%m"))
+    if not posts and not signals and got.get("error"):
+        raise RuntimeError("The LinkedIn search did not run: %s" % got["error"])
     summary["posts"] = len(posts)
-    known = store.known_posts(owner, [p["key"] for p in posts])
+    summary["companies"] = len(signals)
+    known = store.known_posts(owner, [p["key"] for p in posts + signals])
     posts = [p for p in posts if p["key"] not in known]
+    signals = [p for p in signals if p["key"] not in known]
     summary["new_posts"] = len(posts)
 
     # 2. read: Claude says who is buying, and what
     stage("reading")
     budget = cls.Budget(max(Decimal("0.05"), cap - Decimal(str(apify_usd))))
     offers = {o: OFFERS[o] for o in settings["offers"]}
-    verdicts = {}
+    stopped = False
+
+    def read(items, **kw):
+        nonlocal stopped
+        if not items or stopped:
+            return {}
+        try:
+            got = deps["judge"](items, offers, budget=budget, model=MODEL, **kw)
+        except cls.BudgetExceeded as e:
+            got = getattr(e, "partial", {})
+            stopped = True
+            summary["notes"].append("Stopped reading at the run's cost cap: %s" % e)
+        store.mark_seen(owner, list(got))
+        return got
+
+    def kept(items, verdicts, source):
+        out = []
+        for p in items:
+            v = verdicts.get(p["key"])
+            if not v or v.get("offer") not in offers or v.get("score", 0) < settings["keep_score"]:
+                continue
+            out.append({"post": p, "verdict": v, "offer": v["offer"], "score": int(v["score"]), "source": source,
+                        "emails": emails_in(p["text"]) if source != "jobs" else [], "person": p["author"].get("key") or ""})
+        return out
+
     try:
-        verdicts = deps["judge"](posts, offers, budget=budget, model=MODEL)
-    except cls.BudgetExceeded as e:
-        verdicts = getattr(e, "partial", {})
-        summary["notes"].append("Stopped reading at the run's cost cap: %s" % e)
+        verdicts = read(posts)
     finally:
         _book_claude(budget, spend, "read")
     summary["read"] = len(verdicts)
     errors = getattr(verdicts, "errors", [])
-    if posts and not verdicts and errors:
+    if posts and not verdicts and errors and not signals:
         raise RuntimeError("Claude could not read any of the %d posts, so no leads were kept: %s" % (len(posts), errors[0]))
-    if len(verdicts) < len(posts) and not any("cost cap" in n for n in summary["notes"]):
+    if len(verdicts) < len(posts) and not stopped:
         summary["notes"].append("Claude could not read %d of the %d posts%s." % (
             len(posts) - len(verdicts), len(posts), (" (%s)" % errors[0]) if errors else ""))
-    leads = []
-    for p in posts:
-        v = verdicts.get(p["key"])
-        if not v or v.get("offer") not in offers or v.get("score", 0) < settings["keep_score"]:
-            continue
-        leads.append({"post": p, "verdict": v, "offer": v["offer"], "score": int(v["score"]),
-                      "emails": emails_in(p["text"]), "person": p["author"].get("key") or ""})
-    leads.sort(key=lambda lead: -lead["score"])
-    kept = {lead["post"]["key"] for lead in leads}
-    misses = sorted((p for p in posts if p["key"] in verdicts and p["key"] not in kept),
+    leads = kept(posts, verdicts, "post")
+    taken = {lead["post"]["key"] for lead in leads}
+    misses = sorted((p for p in posts if p["key"] in verdicts and p["key"] not in taken),
                     key=lambda p: -verdicts[p["key"]].get("score", 0))[:3]
     summary["closest"] = [{"url": p["url"], "score": verdicts[p["key"]].get("score", 0),
                            "role": verdicts[p["key"]].get("role"), "reason": verdicts[p["key"]].get("reason", "")[:200]}
                           for p in misses]
+    summary["by_source"]["post"] = len(leads)
+
+    if signals:
+        spent_before = budget.spent
+        try:
+            jv = read(signals, system=judge.JOB_SYSTEM, text_of=judge.job_text)
+        finally:
+            _book_claude(budget, spend, "read-jobs", since=spent_before)
+        summary["read"] += len(jv)
+        job_leads = kept(signals, jv, "jobs")
+        summary["by_source"]["jobs"] = len(job_leads)
+        leads += job_leads
+
+    # 3. the comments under the best posts kept: people saying they need it too
+    if "comments" in on and has_unipile and settings["comment_posts"] and not stopped:
+        best = sorted((x for x in leads if x["source"] == "post"), key=lambda x: -x["score"])[:settings["comment_posts"]]
+        if best:
+            stage("reading comments")
+            cg = deps["comments"](best)
+            summary["notes"].extend(cg.get("notes") or [])
+            if cg.get("error"):
+                summary["notes"].append("Reading comments stopped (%s)." % cg["error"][:120])
+            found = cg.get("comments") or []
+            seen_c = store.known_posts(owner, [c["key"] for c in found])
+            found = [c for c in found if c["key"] not in seen_c]
+            summary["comments"] = len(found)
+            spent_before = budget.spent
+            try:
+                cv = read(found, system=judge.COMMENT_SYSTEM, text_of=judge.comment_text)
+            finally:
+                _book_claude(budget, spend, "read-comments", since=spent_before)
+            summary["read"] += len(cv)
+            comment_leads = kept(found, cv, "comment")
+            summary["by_source"]["comment"] = len(comment_leads)
+            leads += comment_leads
+
+    leads.sort(key=lambda lead: -lead["score"])
     summary["kept"] = len(leads)
     summary["strong"] = sum(1 for lead in leads if lead["score"] >= settings["alert_score"])
 
-    # 3. draft: an email and a LinkedIn note for every lead, best first, until the cap
+    # 4. who to write to at each company hiring: Saleshandy's people search, free
+    if any(lead["source"] == "jobs" for lead in leads):
+        stage("finding decision makers")
+        note = deps["people"](leads, offers)
+        if note:
+            summary["notes"].append(note)
+
+    # 5. draft: an email and a LinkedIn note for every lead, best first, until the cap
     stage("drafting")
     spent_before = budget.spent
     for lead in leads:
@@ -457,23 +681,30 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
         lead["id"] = lead_id
     leads = [lead for lead in leads if lead.get("id")]
 
-    # 4. send, where the workspace switched it on
+    # 6. send, where the workspace switched it on
     sendable = [lead for lead in leads if lead["score"] >= settings["send_score"] and lead.get("draft")]
     if settings["auto_email"] and sendable:
         stage("sending emails")
         if settings["find_emails"]:
-            need = [lead for lead in sendable if not lead["emails"] and lead["person"].startswith("in/")]
-            room = max(0, settings["daily_email_cap"] - store.sent_today(owner, "email"))
-            if need and room:
-                found, credits, note = deps["find_emails"](need[:room])
+            need = [lead for lead in sendable if not lead["emails"] and lead["person"].startswith(("in/", "sh/"))]
+            room_e = max(0, settings["daily_email_cap"] - store.sent_today(owner, "email"))
+            if need and room_e:
+                found, credits, note = deps["find_emails"](need[:room_e])
                 if credits:
                     spend("saleshandy", "email-reveal", credits=credits)
                 if note:
                     summary["notes"].append(note)
                 for lead in need:
-                    if found.get(lead["id"]):
-                        lead["emails"] = [found[lead["id"]]]
-                        store.update_lead(lead["id"], owner, email=found[lead["id"]], email_source="saleshandy")
+                    hit = found.get(lead["id"])
+                    if not hit:
+                        continue
+                    hit = hit if isinstance(hit, dict) else {"email": hit}
+                    lead["emails"] = [hit["email"]]
+                    kw = {"email": hit["email"], "email_source": "saleshandy"}
+                    if hit.get("linkedin") and lead["person"].startswith("sh/"):
+                        lead["person"] = src.profile_key(hit["linkedin"]) or lead["person"]
+                        kw["person"] = lead["person"]
+                    store.update_lead(lead["id"], owner, **kw)
         for lead in sendable:
             if lead["emails"]:
                 res = deps["send_email"](owner, store.get_lead(lead["id"], owner), settings, by="", auto=True)
@@ -491,7 +722,7 @@ def run(run_id, owner, settings, *, started_by=None, deps=None):
                     summary["notes"].append("LinkedIn stopped: %s" % res["detail"])
                     break
 
-    # 5. Slack: the strong leads
+    # 7. Slack: the strong leads
     strong = [lead for lead in leads if lead["score"] >= settings["alert_score"]]
     if settings["slack_channel"] and strong:
         stage("posting to Slack")

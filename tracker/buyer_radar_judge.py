@@ -1,6 +1,8 @@
 """Buyer Radar: Claude reads each post and says whether its author wants to buy, then writes to them.
 
     judge_posts(posts, offers, budget=, model=) -> {post key: verdict}
+    judge_posts(signals, offers, ..., system=JOB_SYSTEM, text_of=job_text)          companies hiring
+    judge_posts(comments, offers, ..., system=COMMENT_SYSTEM, text_of=comment_text)  people in the comments
     draft(lead, offer, sender, budget=, model=) -> {"subject", "email", "note", "message"}
 
 Both are structured-output calls through contact_lab._json_call, so every call is checked against the
@@ -48,6 +50,45 @@ JUDGE_SYSTEM = (
     "- reason: why, in one sentence, quoting a few words of the post.\n"
     "Never invent facts that are not in the post or headline. Use the post numbers given.")
 
+JOB_SYSTEM = (
+    "You find companies for a sales team whose open jobs show they need what one of the team's offers "
+    "sells. You are given what each offer sells and who buys it, then numbered companies, each with the "
+    "jobs it advertises on LinkedIn. For each company decide, from its name and its jobs alone:\n"
+    "- role: 'buyer' when the company is building, in house, work an offer does (a marketing team for a "
+    "marketing agency's offer; call quality, sales coaching or support quality for a call analytics offer) "
+    "and could buy the offer instead of, or as well as, hiring; 'seller' when the company itself sells the "
+    "offer's service or product (a marketing agency hiring marketers, a call analytics vendor hiring); "
+    "'other' for a recruiter or staffing firm hiring for unnamed clients, or jobs unrelated to every offer.\n"
+    "- offer: which offer's key fits, or 'none'.\n"
+    "- intent: 'hiring_for_it' when the jobs are the offer's work, else 'none'.\n"
+    "- score 0 to 100, how likely a short message about the offer is welcome now: several open roles in the "
+    "offer's area, or a first hire for it at a small or mid-sized company, 65 to 85; one such role, 50 to 70; "
+    "a large enterprise hiring one specialist, 30 to 50; any seller, recruiter or unrelated job 0 to 10.\n"
+    "- need: what they are building, in one short sentence in plain English (\"Building an in-house "
+    "performance marketing team\").\n"
+    "- company: the company's name. region: the job locations if given, else ''. deadline: ''.\n"
+    "- reason: why, in one sentence, naming the roles.\n"
+    "Never invent facts that are not in the jobs given. Use the numbers given.")
+
+COMMENT_SYSTEM = (
+    "You find buyers for a sales team in the comments under LinkedIn posts where someone asked for what "
+    "the team sells. You are given what each offer sells and who buys it, then numbered comments, each "
+    "with what the post it is under asked for. For each comment decide whether its author wants the same "
+    "thing themselves:\n"
+    "- role: 'buyer' when the commenter says they need it too, are also looking, or ask to be told what "
+    "the post's author finds ('following', 'interested', 'same question here'); 'seller' when they offer "
+    "their own product, service or agency, or invite a message about it (most comments under such posts "
+    "are vendors pitching); 'job_seeker' when they want a job; else 'other' (tagging someone, praise, a "
+    "recommendation of a product they do not sell).\n"
+    "- offer: which offer's key fits what they want, or 'none'. intent: 'seeking_vendor' when they say they "
+    "want it, 'asking_recommendations' when they ask to be told, else 'none'.\n"
+    "- score 0 to 100, how likely a short message from this offer is welcome now: they say they need it "
+    "too, 70 to 90; 'following', 'interested' or 'same question' alone, 50 to 65; any seller, job seeker or "
+    "'other' 0 to 10.\n"
+    "- need, company (from the headline, else ''), region, deadline, reason as for a post; the reason "
+    "quotes a few words of the comment.\n"
+    "Never invent facts that are not in the comment or headline. Use the numbers given.")
+
 JUDGE_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["verdicts"],
                 "properties": {"verdicts": {"type": "array", "items": {
                     "type": "object", "additionalProperties": False,
@@ -86,6 +127,21 @@ def _post_text(n, p):
     return "POST %d (posted %s)\nAUTHOR: %s, %s%s\nTEXT: %s" % (
         n, p.get("posted_at") or "date unknown", a.get("name") or "unknown", a.get("headline") or "no headline",
         " (a company page)" if a.get("company") else "", re.sub(r"\s+", " ", p.get("text") or "")[:2500])
+
+
+def job_text(n, p):
+    lines = "\n".join("- %s%s%s" % (j.get("title"), (", " + j["location"]) if j.get("location") else "",
+                                    (", posted " + str(j["posted_at"])[:10]) if j.get("posted_at") else "")
+                      for j in (p.get("jobs") or [])[:8])
+    return "COMPANY %d: %s\nOPEN JOBS ON LINKEDIN:\n%s" % (n, (p.get("company") or {}).get("name") or
+                                                        (p.get("author") or {}).get("name") or "unknown", lines)
+
+
+def comment_text(n, p):
+    a, parent = p.get("author") or {}, p.get("parent") or {}
+    return "COMMENT %d (posted %s)\nUNDER A POST BY %s ASKING FOR: %s\nCOMMENTER: %s, %s\nCOMMENT: %s" % (
+        n, p.get("posted_at") or "date unknown", parent.get("author") or "someone", parent.get("need") or "unknown",
+        a.get("name") or "unknown", a.get("headline") or "no headline", re.sub(r"\s+", " ", p.get("text") or "")[:1500])
 
 
 def clean_verdict(v, offers):
@@ -140,7 +196,8 @@ def _wait_for(e, attempt):
     return min(60.0, max(after, 5.0 * (attempt + 1)))
 
 
-def judge_posts(posts, offers, *, budget, model=br.MODEL, call=None, sleep=time.sleep):
+def judge_posts(posts, offers, *, budget, model=br.MODEL, call=None, sleep=time.sleep, system=JUDGE_SYSTEM,
+                text_of=None):
     """Every post, in batches of buyer_radar.JUDGE_BATCH. A batch that would pass the run's cap raises
     BudgetExceeded, carrying the verdicts read so far as .partial, so the caller keeps them. A rate limit is
     waited out; a reply cut off at its length limit is asked again in two halves; any other failure skips
@@ -148,15 +205,16 @@ def judge_posts(posts, offers, *, budget, model=br.MODEL, call=None, sleep=time.
     from . import contact_lab as lab
     from . import contact_lab_search as cls
     call = call or lab._json_call
+    text_of = text_of or _post_text
     out = Verdicts()
     offers_text = _offers_text(offers)
     schema = judge_schema(offers)
 
     def read(batch):
-        user = offers_text + "\n\n" + "\n\n".join(_post_text(i + 1, p) for i, p in enumerate(batch))
+        user = offers_text + "\n\n" + "\n\n".join(text_of(i + 1, p) for i, p in enumerate(batch))
         for attempt in range(RETRIES + 1):
             try:
-                got = call(budget, "read", model, JUDGE_SYSTEM, user, schema, br.JUDGE_MAX_TOKENS)
+                got = call(budget, "read", model, system, user, schema, br.JUDGE_MAX_TOKENS)
                 break
             except cls.BudgetExceeded:
                 raise
@@ -202,15 +260,18 @@ def check(offers, *, budget, model=br.MODEL, call=None):
 
 
 DRAFT_SYSTEM = (
-    "You write a first message to someone who posted on LinkedIn asking for something your company "
-    "sells. Write as the sender named, for the offer described. Rules: refer to their post specifically "
-    "(what they asked for, in their terms) in the first line; say in one or two sentences how the offer "
-    "fits that exact need, with no claims beyond what the offer description says; one clear, low-effort "
-    "next step (a short call or a demo, or a reply); plain, warm, professional English; no flattery, no "
-    "cliches, no exclamation marks, no em dashes, no emoji, no hashtags. Email: a subject under 60 "
-    "characters and a body under 110 words, without a greeting line's name guess beyond their first name, "
-    "and without a signature (it is added). LinkedIn connection note: under 280 characters, no link. "
-    "LinkedIn message (for a first-degree connection): under 500 characters, may include the website.")
+    "You write a first message to someone whose public LinkedIn activity shows they need something your "
+    "company sells: a post asking for it, a comment saying they need it too, or their company's job ads "
+    "for the work. Write as the sender named, for the offer described. Rules: refer to that signal "
+    "specifically in the first line, in their terms (for a post or comment, what they asked for; for job "
+    "ads, the roles their company is hiring for, as something public you noticed, never as if they asked "
+    "you); say in one or two sentences how the offer fits that exact need, with no claims beyond what the "
+    "offer description says; one clear, low-effort next step (a short call or a demo, or a reply); plain, "
+    "warm, professional English; no flattery, no cliches, no exclamation marks, no em dashes, no emoji, no "
+    "hashtags. Email: a subject under 60 characters and a body under 110 words, without a greeting line's "
+    "name guess beyond their first name, and without a signature (it is added). LinkedIn connection note: "
+    "under 280 characters, no link. LinkedIn message (for a first-degree connection): under 500 "
+    "characters, may include the website.")
 
 DRAFT_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["subject", "email", "note", "message"],
                 "properties": {"subject": {"type": "string"}, "email": {"type": "string"},
@@ -223,18 +284,39 @@ def _no_dashes(s):
     return re.sub(r"\s*[—–]\s*", ", ", s or "").strip()
 
 
+def _signal_text(lead):
+    """What the person did that makes them a lead, for the writer: their post, their comment, or their
+    company's job ads, and who the message goes to."""
+    p, v = lead["post"], lead["verdict"]
+    a = p.get("author") or {}
+    kind = p.get("kind") or "post"
+    if kind == "jobs":
+        c = (p.get("contacts") or [{}])[0]
+        roles = "; ".join("%s%s" % (j.get("title"), (" (%s)" % j["location"]) if j.get("location") else "")
+                          for j in (p.get("jobs") or [])[:6])
+        who = ("%s, %s at %s" % (c["name"], c.get("title") or "", a.get("name"))) if c.get("name") else \
+            "the team at %s (no name known)" % a.get("name")
+        first = (c.get("name") or "").split(" ")[0]
+        return ("WRITING TO: %s\n\nTHEIR COMPANY'S OPEN JOBS ON LINKEDIN (%s): %s\n\nWHAT THEY ARE BUILDING: %s"
+                % (who, a.get("name"), roles, v.get("need") or "")), first
+    first = (a.get("name") or "").split(" ")[0] if not a.get("company") else ""
+    body = re.sub(r"\s+", " ", p.get("text") or "")[:2500]
+    if kind == "comment":
+        parent = p.get("parent") or {}
+        return ("THEIR COMMENT (by %s, %s), under a LinkedIn post by %s asking for: %s\n%s\n\nWHAT THEY WANT: %s"
+                % (a.get("name") or "the author", a.get("headline") or "", parent.get("author") or "someone",
+                   parent.get("need") or "", body, v.get("need") or "")), first
+    return ("THEIR POST (by %s, %s):\n%s\n\nWHAT THEY WANT: %s" % (
+        a.get("name") or "the author", a.get("headline") or "", body, v.get("need") or "")), first
+
+
 def draft(lead, offer, sender, *, budget, model=br.MODEL, call=None):
     from . import contact_lab as lab
     call = call or lab._json_call
-    p, v = lead["post"], lead["verdict"]
-    a = p.get("author") or {}
-    first = (a.get("name") or "").split(" ")[0] if not a.get("company") else ""
-    user = ("OFFER: %s (%s)\n%s\n\nSENDER: %s%s\n\nTHEIR POST (by %s, %s):\n%s\n\nWHAT THEY WANT: %s\n"
-            "Their first name, to greet them by: %s" % (
-                offer["label"], offer["site"], offer["sells"], sender.get("name") or "the team",
-                (", " + sender["title"]) if sender.get("title") else "", a.get("name") or "the author",
-                a.get("headline") or "", re.sub(r"\s+", " ", p.get("text") or "")[:2500], v.get("need") or "",
-                first or "(none; use no name)"))
+    signal, first = _signal_text(lead)
+    user = ("OFFER: %s (%s)\n%s\n\nSENDER: %s%s\n\n%s\nTheir first name, to greet them by: %s" % (
+        offer["label"], offer["site"], offer["sells"], sender.get("name") or "the team",
+        (", " + sender["title"]) if sender.get("title") else "", signal, first or "(none; use no name)"))
     got = call(budget, "draft", model, DRAFT_SYSTEM, user, DRAFT_SCHEMA, br.DRAFT_MAX_TOKENS)
     out = {k: _no_dashes(got.get(k)) for k in ("subject", "email", "note", "message")}
     out["subject"] = out["subject"][:120]

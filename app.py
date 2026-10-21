@@ -8028,7 +8028,7 @@ ACCT_AGENTS = (
     ("people-signals", "admin_account_mapper", "/strategic-agents/people-signals", "People & Signals",
      "The right people at their target accounts, and what each account is doing", ()),
     ("buyer-radar", "buyer_radar_page", "/strategic-agents/buyer-radar", "Buyer Radar",
-     "LinkedIn posts from people asking for what we sell, with a message ready", ()),
+     "People and companies on LinkedIn showing they need what we sell, with a message ready", ()),
 )
 # Every agent on the agents page (templates/b2b_agents.html) is in ACCT_AGENTS, so it opens inside every
 # account, for the whole team and for clients the account shares it with; tests/test_account_agents_all.py
@@ -15326,8 +15326,10 @@ def _br_store_error(e):
 @position2_required
 def buyer_radar_page():
     from tracker import buyer_radar as br
-    offers = [{"key": k, "label": o["label"], "site": o["site"], "queries": o["queries"]} for k, o in br.OFFERS.items()]
-    return render_template("buyer_radar.html", user=_get_user(), offers=offers, client=viewer_is_client())
+    offers = [{"key": k, "label": o["label"], "site": o["site"], "queries": o["queries"], "jobs": o["jobs"]}
+              for k, o in br.OFFERS.items()]
+    return render_template("buyer_radar.html", user=_get_user(), offers=offers, client=viewer_is_client(),
+                           lead_sources=br.LEAD_SOURCES)
 
 
 @app.route(BR + "/api/status")
@@ -15346,16 +15348,18 @@ def buyer_radar_status():
     except store.StoreUnavailable as e:
         return _br_store_error(e)
     out = {"client": client, "counts": counts, "running": running["id"] if running else None,
-           "ready": {"search": not br.search_missing(settings), "claude": bool(os.environ.get("ANTHROPIC_API_KEY"))},
-           "source": settings.get("source"), "sources": br.SEARCH_SOURCES}
+           "ready": {"search": not br.search_missing(settings), "claude": bool(os.environ.get("ANTHROPIC_API_KEY")),
+                     "jobs": bool(os.environ.get("UNIPILE_API_KEY"))},
+           "source": settings.get("source"), "sources": br.SEARCH_SOURCES, "lead_sources": br.LEAD_SOURCES}
     if client:
-        out["settings"] = {k: settings[k] for k in ("offers", "posted", "keep_score", "alert_score")}
+        out["settings"] = {k: settings[k] for k in ("offers", "posted", "keep_score", "alert_score", "sources")}
         return jsonify(out)
     out["ready"].update(email=market_radar_deliver.ready()["email"], linkedin=bool(os.environ.get("UNIPILE_API_KEY")),
                         slack=bool(send.slack_token()), saleshandy=sh.configured(), cron=bool(os.environ.get("BUYER_RADAR_CRON_TOKEN")),
                         sending=not send.sending_off())
     out.update(settings=settings, estimate=br.estimate(settings), month=month,
-               defaults={k: o["queries"] for k, o in br.OFFERS.items()})
+               defaults={k: o["queries"] for k, o in br.OFFERS.items()},
+               job_defaults={k: o["jobs"] for k, o in br.OFFERS.items()})
     return jsonify(out)
 
 
@@ -15441,23 +15445,36 @@ def _br_lead_out(lead, client):
     return out
 
 
-@app.route(BR + "/api/leads")
-@position2_required
-def buyer_radar_leads():
+def _br_lead_filters():
+    """(status, offer, source, min score) from the query string, or a 400 reply."""
     from tracker import buyer_radar as br, buyer_radar_store as store
     status = request.args.get("status") or None
     offer = request.args.get("offer") or None
+    source = request.args.get("source") or None
     if status and status not in store.LEAD_STATUSES:
-        return jsonify(error="Unknown status."), 400
+        return None, (jsonify(error="Unknown status."), 400)
     if offer and offer not in br.OFFERS:
-        return jsonify(error="Unknown offer."), 400
+        return None, (jsonify(error="Unknown offer."), 400)
+    if source and source not in store.LEAD_SOURCES:
+        return None, (jsonify(error="Unknown source."), 400)
     try:
         min_score = max(0, min(100, int(request.args.get("min") or 0)))
     except ValueError:
         min_score = 0
+    return (status, offer, source, min_score), None
+
+
+@app.route(BR + "/api/leads")
+@position2_required
+def buyer_radar_leads():
+    from tracker import buyer_radar_store as store
+    got, bad = _br_lead_filters()
+    if bad:
+        return bad
+    status, offer, source, min_score = got
     client = viewer_is_client()
     try:
-        leads = store.list_leads(_mr_email(), status=status, offer=offer, min_score=min_score)
+        leads = store.list_leads(_mr_email(), status=status, offer=offer, source=source, min_score=min_score)
     except store.StoreUnavailable as e:
         return _br_store_error(e)
     return jsonify(leads=[_br_lead_out(x, client) for x in leads])
@@ -15470,22 +15487,16 @@ def buyer_radar_leads_export():
     no drafted messages, as the page shows them none."""
     from flask import Response
     from tracker import buyer_radar as br, buyer_radar_store as store
-    status = request.args.get("status") or None
-    offer = request.args.get("offer") or None
-    if status and status not in store.LEAD_STATUSES:
-        return jsonify(error="Unknown status."), 400
-    if offer and offer not in br.OFFERS:
-        return jsonify(error="Unknown offer."), 400
+    got, bad = _br_lead_filters()
+    if bad:
+        return bad
+    status, offer, source, min_score = got
     try:
-        min_score = max(0, min(100, int(request.args.get("min") or 0)))
-    except ValueError:
-        min_score = 0
-    try:
-        leads = store.list_leads(_mr_email(), status=status, offer=offer, min_score=min_score, limit=5000)
+        leads = store.list_leads(_mr_email(), status=status, offer=offer, source=source, min_score=min_score, limit=5000)
     except store.StoreUnavailable as e:
         return _br_store_error(e)
-    name = "buyer-radar-leads-%s%s.csv" % (datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-                                          "-" + (status or offer or "min%d" % min_score) if (status or offer or min_score) else "")
+    tag = status or offer or source or ("min%d" % min_score if min_score else "")
+    name = "buyer-radar-leads-%s%s.csv" % (datetime.now(timezone.utc).strftime("%Y-%m-%d"), "-" + tag if tag else "")
     return Response(br.leads_csv(leads, drafts=not viewer_is_client()), mimetype="text/csv",
                     headers={"Content-Disposition": 'attachment; filename="%s"' % name, "Cache-Control": "no-store"})
 
@@ -15556,6 +15567,59 @@ def buyer_radar_send(lead_id):
     return jsonify(ok=True, detail=res["detail"])
 
 
+@app.route(BR + "/api/leads/<int:lead_id>/find-email", methods=["POST"])
+@position2_required
+def buyer_radar_find_email(lead_id):
+    """Find one lead's work email through Saleshandy, after a yes: one credit (about $0.026) when an email
+    is found, nothing when none is. For a hiring company, `contact` picks which of its decision makers
+    (0, the first, by default) the lead is written to. The team only."""
+    from tracker import buyer_radar_send as send, buyer_radar_source as src, buyer_radar_store as store
+    from tracker import saleshandy_client as sh
+    refused = _mr_guard_post() or _br_team_only()
+    if refused:
+        return refused
+    body = request.get_json(silent=True) or {}
+    if body.get("confirm") is not True:
+        return jsonify(error="Finding an email spends a Saleshandy credit; confirm to go ahead."), 400
+    if not sh.configured():
+        return jsonify(error="Finding emails needs SALESHANDY_API_KEY on this service (Railway → web → Variables)."), 400
+    owner = _mr_email()
+    try:
+        lead = store.get_lead(lead_id, owner)
+        if lead is None:
+            return jsonify(error="No such lead here."), 404
+        post = lead.get("post") or {}
+        contacts = post.get("contacts") or []
+        if contacts:
+            try:
+                pick = contacts[int(body.get("contact") or 0)]
+            except (TypeError, ValueError, IndexError):
+                return jsonify(error="No such person at this company."), 400
+            lead["person"] = src.profile_key(pick.get("linkedin")) or pick["key"]
+        if not lead["person"].startswith(("in/", "sh/")):
+            return jsonify(error="There is nobody to find an email for yet: %s." % (
+                "Saleshandy named nobody at this company" if lead.get("source") == "jobs" else "the post is from a company page")), 400
+        found, credits, note = send.find_emails([lead])
+        if credits:
+            store.add_spend(None, owner, (_get_user() or {}).get("email", ""), "saleshandy", "email-reveal", credits=credits)
+        hit = found.get(lead["id"])
+        if not hit:
+            store.update_lead(lead_id, owner, person=lead["person"])
+            return jsonify(error=note or "Saleshandy found no work email for this person."), 404
+        hit = hit if isinstance(hit, dict) else {"email": hit}
+        if hit.get("linkedin") and lead["person"].startswith("sh/"):
+            for c in contacts:
+                if c.get("key") == lead["person"]:
+                    c["linkedin"] = hit["linkedin"]
+            lead["person"] = src.profile_key(hit["linkedin"]) or lead["person"]
+        store.update_lead(lead_id, owner, email=hit["email"], email_source="saleshandy", person=lead["person"],
+                          post=post if contacts else None)
+        lead = store.get_lead(lead_id, owner)
+    except store.StoreUnavailable as e:
+        return _br_store_error(e)
+    return jsonify(lead=_br_lead_out(lead, False), credits=credits)
+
+
 @app.route("/api/buyer-radar/daily", methods=["POST"])
 def buyer_radar_daily():
     """Called once a day by .github/workflows/buyer-radar-daily.yml with "Authorization: Bearer
@@ -15584,6 +15648,9 @@ def buyer_radar_daily():
             elif store.running_run(owner):
                 skipped["running"] += 1
             else:
+                if settings.get("posted") in ("month", "3months") and store.ran_within(owner, 6):
+                    # searched this week already: the newest posts of the last week are the new ones
+                    settings = dict(settings, posted="week")
                 store.start_run(owner, settings, started_by="", trigger="daily", spawn=_br_spawn)
                 started += 1
     except store.StoreUnavailable:

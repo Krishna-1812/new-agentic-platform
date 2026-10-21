@@ -162,7 +162,13 @@ def linkedin_lead(owner, lead, settings, *, by="", auto=False, client=None, stor
     if err:
         return {"ok": False, "detail": client.describe_error(err) or "No LinkedIn account is connected to Unipile.",
                 "stop": True}
-    ident = src.public_id((lead.get("post") or {}).get("author", {}).get("url")) or lead["person"].split("/", 1)[1]
+    author = (lead.get("post") or {}).get("author") or {}
+    if lead["person"] == author.get("key"):
+        # a commenter's link carries LinkedIn's own id, whose case matters; the comment gives it as it is
+        ident = author.get("provider_id") or src.public_id(author.get("url")) or lead["person"].split("/", 1)[1]
+    else:
+        # a company's decision maker, whose LinkedIn profile came with their email
+        ident = lead["person"].split("/", 1)[1]
     profile, err = client.get_user_profile(ident, account)
     if err:
         store.record_send(owner, lead["id"], "linkedin", lead["person"], lead["person"], "failed",
@@ -185,30 +191,45 @@ def linkedin_lead(owner, lead, settings, *, by="", auto=False, client=None, stor
 # == finding an email ===================================================================================
 
 def find_emails(leads, *, client=None, wait_s=180):
-    """Work emails for leads with a LinkedIn profile, through Saleshandy (one credit per email found,
-    about $0.026). ({lead id: email}, credits charged, note)."""
+    """Work emails through Saleshandy (one credit per email found, about $0.026): by LinkedIn profile for
+    people found by their post or comment ("in/..."), and by Saleshandy's own id for the decision makers
+    its search named at a hiring company ("sh/<id>"), whose LinkedIn profile comes back with the email.
+    ({lead id: email, or {"email", "linkedin"} for a decision maker}, credits charged, note)."""
     from . import saleshandy_client as sh
     if not sh.configured():
         return {}, 0, "Finding emails needs SALESHANDY_API_KEY on this service."
     client = client or sh.Client()
     by_key = {lead["person"]: lead for lead in leads if lead.get("person", "").startswith("in/")}
-    if not by_key:
+    by_id = {lead["person"].split("/", 1)[1]: lead for lead in leads if lead.get("person", "").startswith("sh/")}
+    if not by_key and not by_id:
         return {}, 0, None
-    urls = ["https://www.linkedin.com/%s" % k for k in list(by_key)[:sh.MAX_ENRICH]]
-    try:
-        res = client.wait(client.enrich_contacts(linkedin_urls=urls), timeout=wait_s)
-    except sh.SaleshandyError as e:
-        return {}, 0, "Saleshandy could not find emails: %s" % e
-    found = {}
-    for r in (sh.enriched(x) for x in res.get("records") or []):
-        lead = by_key.get(src.profile_key(r.get("linkedin")))
-        if lead and r.get("email") and r.get("email_status") not in ("invalid",):
-            found[lead["id"]] = r["email"]
-    credits = res.get("credits")
-    try:
-        credits = float(credits) if credits is not None else float(len(found))
-    except (TypeError, ValueError):
-        credits = float(len(found))
+    found, credits = {}, 0.0
+    for kind, keys in (("linkedin_urls", list(by_key)[:sh.MAX_ENRICH]), ("lead_ids", list(by_id)[:sh.MAX_ENRICH])):
+        if not keys:
+            continue
+        ask = ["https://www.linkedin.com/%s" % k for k in keys] if kind == "linkedin_urls" else keys
+        try:
+            res = client.wait(client.enrich_contacts(**{kind: ask}), timeout=wait_s)
+        except sh.SaleshandyError as e:
+            return found, credits, "Saleshandy could not find emails: %s" % e
+        got = 0
+        for r in (sh.enriched(x) for x in res.get("records") or []):
+            if not r.get("email") or r.get("email_status") in ("invalid",):
+                continue
+            if kind == "linkedin_urls":
+                lead = by_key.get(src.profile_key(r.get("linkedin")))
+                if lead:
+                    found[lead["id"]] = r["email"]
+                    got += 1
+            else:
+                lead = by_id.get(str(r.get("lead_id") or ""))
+                if lead:
+                    found[lead["id"]] = {"email": r["email"], "linkedin": r.get("linkedin") or ""}
+                    got += 1
+        try:
+            credits += float(res["credits"]) if res.get("credits") is not None else float(got)
+        except (TypeError, ValueError):
+            credits += float(got)
     return found, credits, None
 
 
@@ -219,6 +240,9 @@ def slack_token():
             or os.environ.get("SLACK_BOT_TOKEN") or "")
 
 
+SLACK_KIND = {"post": "Post", "comment": "Comment", "jobs": "Hiring"}
+
+
 def slack_message(owner_label, leads, page_url):
     from . import buyer_radar as br, watch_alerts
     esc = watch_alerts.esc
@@ -227,10 +251,15 @@ def slack_message(owner_label, leads, page_url):
     for lead in leads[:10]:
         p, v = lead["post"], lead["verdict"]
         a = p.get("author") or {}
+        kind = p.get("kind") or "post"
         who = esc(a.get("name") or "Someone") + ((", " + esc(a.get("headline")[:90])) if a.get("headline") else "")
-        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*%s* · %s · score %d\n%s\n<%s|Open the post>" % (
-            esc(br.OFFERS.get(lead["offer"], {}).get("label", lead["offer"])), esc(v.get("intent_label") or ""),
-            lead["score"], "%s: %s" % (who, esc(v.get("need") or "")), p["url"])}})
+        if kind == "jobs" and p.get("contacts"):
+            c = p["contacts"][0]
+            who += " (write to %s%s)" % (esc(c.get("name") or ""), (", " + esc(c["title"][:60])) if c.get("title") else "")
+        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*%s* · %s · %s · score %d\n%s\n<%s|%s>" % (
+            esc(br.OFFERS.get(lead["offer"], {}).get("label", lead["offer"])), SLACK_KIND.get(kind, "Post"),
+            esc(v.get("intent_label") or ""), lead["score"], "%s: %s" % (who, esc(v.get("need") or "")), p["url"],
+            {"jobs": "Open the company", "comment": "Open the post they commented on"}.get(kind, "Open the post"))}})
     if len(leads) > 10:
         blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": "and %d more" % (len(leads) - 10)}]})
     if page_url:

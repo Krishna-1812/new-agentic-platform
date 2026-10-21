@@ -19,10 +19,18 @@
   var STATUS = { 'new': ['acc', 'New'], contacted: ['ok', 'Contacted'], replied: ['ok', 'Replied'], dismissed: ['', 'Dismissed'] };
   var INTENT = { seeking_vendor: 'Looking for a vendor', asking_recommendations: 'Asking for recommendations',
     hiring_for_it: 'Hiring for it', pain_point: 'Has the problem', none: 'Not buying' };
-  var STAGES = ['queued', 'searching', 'reading', 'drafting', 'sending emails', 'sending on LinkedIn', 'posting to Slack', 'done'];
-  var STAGE_WORDS = { queued: 'Starting', searching: 'Searching LinkedIn', reading: 'Claude is reading the posts',
+  var STAGES = ['queued', 'searching', 'reading', 'reading comments', 'finding decision makers', 'drafting', 'sending emails',
+    'sending on LinkedIn', 'posting to Slack', 'done'];
+  var STAGE_WORDS = { queued: 'Starting', searching: 'Searching LinkedIn', reading: 'Claude is reading what it found',
+    'reading comments': 'Reading the comments', 'finding decision makers': 'Finding who decides',
     drafting: 'Writing the messages', 'sending emails': 'Sending emails', 'sending on LinkedIn': 'Sending on LinkedIn',
     'posting to Slack': 'Posting to Slack', done: 'Done', failed: 'Stopped' };
+  // Where a lead came from: its own post, a comment under a buyer's post, or its company's job ads.
+  var SOURCE = { post: ['Post', 'They posted asking for it'], comment: ['Comment', 'They said so under a buyer\'s post'],
+    jobs: ['Hiring', 'Their company is hiring for the work'] };
+  var LEAD_SOURCES = { posts: ['LinkedIn posts', 'People posting that they need it.'],
+    comments: ['Their comments', 'People under those posts saying they need it too. Read through Unipile.'],
+    jobs: ['Job ads', 'Companies whose LinkedIn job ads are the work, and who decides there. Read through Unipile; people found by Saleshandy, free.'] };
 
   function esc(v) {
     return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
@@ -108,13 +116,29 @@
     return text.length > n ? text.slice(0, n).replace(/\s+\S*$/, '') + '…' : text;
   }
 
+  // A company's open roles, and the people Saleshandy says decide there.
+  function renderJobs(p) {
+    var jobs = (p.jobs || []).slice(0, 4).map(function (j) {
+      return '<li>' + link(j.url, j.title) + (j.location ? ' <span>' + esc(j.location) + '</span>' : '') + '</li>';
+    }).join('');
+    var more = (p.jobs || []).length > 4 ? '<li><span>and ' + esc(p.jobs.length - 4) + ' more</span></li>' : '';
+    var people = (p.contacts || []).map(function (c) {
+      return '<li><b>' + (c.linkedin ? link(c.linkedin, c.name) : esc(c.name)) + '</b> <span>' + esc(c.title || '') + '</span></li>';
+    }).join('');
+    return '<ul class="br-jobs">' + jobs + more + '</ul>' +
+      (people ? '<div class="br-dm"><small>Who decides</small><ul>' + people + '</ul></div>' :
+        '<p class="br-dm br-dm--none"><small>Nobody found yet. ' + link(p.url ? String(p.url).replace(/\/?$/, '/people/') : '', 'See their people on LinkedIn') + '</small></p>');
+  }
+
   function renderLead(lead) {
     var p = lead.post || {}, v = lead.verdict || {}, a = p.author || {};
     var offers = (root.BR && root.BR.offers) || {};
     var st = STATUS[lead.status] || STATUS['new'];
     var sends = lead.sends || [];
     var sent = sends.filter(function (s) { return s.status === 'sent'; });
-    var meta = [chip('br-offer br-offer--' + esc(lead.offer), (offers[lead.offer] || {}).label || lead.offer),
+    var kind = SOURCE[lead.source] ? lead.source : 'post';
+    var meta = [chip('br-kind br-kind--' + esc(kind), SOURCE[kind][0], SOURCE[kind][1]),
+                chip('br-offer br-offer--' + esc(lead.offer), (offers[lead.offer] || {}).label || lead.offer),
                 chip('', INTENT[v.intent] || v.intent_label || ''), chip(st[0], st[1])];
     if (v.deadline) meta.push(chip('warn', 'By ' + v.deadline));
     if (v.region) meta.push(chip('', v.region));
@@ -126,7 +150,7 @@
     if (!CLIENT) {
       acts = '<button type="button" class="mr-btn small primary" data-act="open" data-id="' + esc(lead.id) + '">Message</button>';
     }
-    acts += link(p.url, 'Open the post', 'mr-btn small ghost');
+    acts += link(p.url, kind === 'jobs' ? 'Open the company' : 'Open the post', 'mr-btn small ghost');
     if (lead.status !== 'replied') acts += '<button type="button" class="mr-btn small ghost" data-act="status" data-status="replied" data-id="' + esc(lead.id) + '">They replied</button>';
     if (lead.status !== 'dismissed') acts += '<button type="button" class="mr-btn small ghost br-dim" data-act="status" data-status="dismissed" data-id="' + esc(lead.id) + '">Not a fit</button>';
     else acts += '<button type="button" class="mr-btn small ghost" data-act="status" data-status="new" data-id="' + esc(lead.id) + '">Bring back</button>';
@@ -140,8 +164,11 @@
           '<span class="br-when">' + esc(ago(p.posted_at || lead.created_at)) + '</span></div>' +
         '<p class="br-need">' + esc(v.need || '') + '</p>' +
         '<div class="br-meta">' + meta.join('') + '</div>' +
+        (kind === 'jobs' ? renderJobs(p) + (v.reason ? '<p class="br-why"><b>Why Claude kept it:</b> ' + esc(v.reason) + '</p>' : '') :
+        (kind === 'comment' && p.parent ? '<p class="br-parent">Under ' + link(p.parent.url, (p.parent.author || 'a') + '\'s post') +
+          (p.parent.need ? ' asking for ' + esc(excerpt(p.parent.need, 90)) : '') + '</p>' : '') +
         '<details class="br-post-x"><summary>' + esc(excerpt(p.text, 220)) + '</summary><p>' + esc(p.text || '') + '</p>' +
-          (v.reason ? '<p class="br-why"><b>Why Claude kept it:</b> ' + esc(v.reason) + '</p>' : '') + '</details>' +
+          (v.reason ? '<p class="br-why"><b>Why Claude kept it:</b> ' + esc(v.reason) + '</p>' : '') + '</details>') +
         (did ? '<ul class="br-did">' + did + '</ul>' : '') +
         '<div class="br-acts">' + acts + '</div>' +
       '</div></article>';
@@ -157,6 +184,7 @@
 
   function renderFilters(cur, offers) {
     var f = [['all', 'All'], ['strong', 'Strong'], ['new', 'New'], ['contacted', 'Contacted'], ['replied', 'Replied'], ['dismissed', 'Not a fit']];
+    Object.keys(SOURCE).forEach(function (k) { f.push(['source:' + k, SOURCE[k][0] + (k === 'jobs' ? '' : 's')]); });
     Object.keys(offers || {}).forEach(function (k) { f.push(['offer:' + k, offers[k].label]); });
     return f.map(function (x) {
       return '<button type="button" class="br-f' + (x[0] === cur ? ' on' : '') + '" data-filter="' + esc(x[0]) + '" aria-pressed="' + (x[0] === cur) + '">' + esc(x[1]) + '</button>';
@@ -172,6 +200,8 @@
       var bits = [];
       if (r.status === 'ready') {
         bits.push((s.posts || 0) + ' posts found');
+        if (s.companies) bits.push(s.companies + ' companies hiring');
+        if (s.comments) bits.push(s.comments + ' comments');
         if (s.read != null && s.read !== s.posts) bits.push(s.read + ' read by Claude');
         if (s.source) bits.push('via ' + (s.source === 'unipile' ? 'Unipile' : 'Apify'));
         if (s.strong) bits.push(s.strong + ' strong');
@@ -204,12 +234,14 @@
   function renderLive(run) {
     var at = Math.max(0, STAGES.indexOf(run.stage));
     var s = run.summary || {};
-    var steps = ['searching', 'reading', 'drafting'].map(function (k) {
+    var extra = run.stage === 'reading comments' || run.stage === 'finding decision makers' ? [run.stage] : [];
+    var steps = ['searching', 'reading'].concat(extra, ['drafting']).map(function (k) {
       var i = STAGES.indexOf(k);
       return '<li class="' + (i < at ? 'done' : i === at ? 'now' : '') + '">' + esc(STAGE_WORDS[k]) + '</li>';
     }).join('');
     var n = [];
     if (s.posts) n.push(s.posts + ' posts found');
+    if (s.companies) n.push(s.companies + ' companies hiring');
     if (s.read) n.push(s.read + ' read');
     if (s.kept) n.push(s.kept + ' kept');
     return '<ol class="br-steps-live">' + steps + '</ol>' + (n.length ? '<p class="br-live-n">' + esc(n.join(' · ')) + '</p>' : '');
@@ -218,7 +250,7 @@
   function renderEstimate(est) {
     if (!est) return '';
     var uni = est.source === 'unipile';
-    return (uni ? '<p class="br-cost">The search is free through Unipile; Claude reading the posts is the cost.</p>' : '') +
+    return (uni ? '<p class="br-cost">The search is free through Unipile; Claude reading what it finds is the cost.</p>' : '') +
       '<p class="br-cost">Usually about ' + esc(money(est.typical_usd)) + ', never more than ' + esc(money(Math.min(est.worst_usd, est.usd_cap))) + ' (the run\'s cap). Every day for a month: up to ' + esc(money(est.month_usd)) + '.</p>';
   }
 
@@ -228,30 +260,49 @@
     var person = String(lead.person || '');
     var sentOn = {};
     (lead.sends || []).forEach(function (s) { if (s.status === 'sent') sentOn[s.channel] = s; });
-    var company = person.indexOf('company/') === 0;
+    var company = person.indexOf('company/') === 0 || (lead.source === 'jobs' && !person);
+    var jobs = lead.source === 'jobs';
+    var unrevealed = person.indexOf('sh/') === 0;
+    var contacts = p.contacts || [];
     function sentLine(ch) {
       var s = sentOn[ch];
       return s ? '<p class="mr-callout ok">Already sent ' + esc(ago(s.at)) + '. Nobody is written to twice.</p>' : '';
     }
-    return '<p class="br-dr-who"><b>' + esc(a.name || 'Someone') + '</b> ' + esc(excerpt(a.headline, 90)) + '</p>' +
-      '<blockquote class="br-dr-post">' + esc(excerpt(p.text, 420)) + '</blockquote>' +
+    // At a hiring company, the team picks who of its decision makers to write to.
+    var pick = '';
+    if (jobs) {
+      var on = 0;
+      contacts.forEach(function (c, i) { if (c.key === person || (c.linkedin && person && String(c.linkedin).toLowerCase().indexOf(person) >= 0)) on = i; });
+      pick = contacts.length ? '<fieldset class="br-pick"><legend class="mr-k">Write to</legend>' + contacts.map(function (c, i) {
+        return '<label><input type="radio" name="brWho" value="' + i + '"' + (i === on ? ' checked' : '') + '><span><b>' + esc(c.name) + '</b> ' + esc(c.title || '') + '</span></label>';
+      }).join('') + '</fieldset>' :
+        '<p class="mr-callout warn">Saleshandy knew nobody senior at this company. ' + link(p.url ? String(p.url).replace(/\/?$/, '/people/') : '', 'Look at their people on LinkedIn') + ' and type an address below.</p>';
+    }
+    var canFind = !lead.email && ready.saleshandy && (unrevealed || person.indexOf('in/') === 0 || (jobs && contacts.length));
+    var find = canFind ? '<div class="br-dr-acts"><button type="button" class="mr-btn ghost" data-act="find">Find their email</button>' +
+      '<span class="mr-hint">Saleshandy, one credit (about $0.026) if it finds one.</span></div>' : '';
+    var top = jobs ? '<p class="br-dr-who"><b>' + esc(a.name || 'A company') + '</b> ' + esc(a.headline || '') + '</p>' + renderJobs(p) :
+      '<p class="br-dr-who"><b>' + esc(a.name || 'Someone') + '</b> ' + esc(excerpt(a.headline, 90)) + '</p>' +
+      '<blockquote class="br-dr-post">' + esc(excerpt(p.text, 420)) + '</blockquote>';
+    return top + pick +
       (lead.draft ? '' : '<p class="mr-callout warn">No message was written for this lead (the run reached its cost cap). Write one below.</p>') +
       '<section class="br-dr-sec"><h5>Email</h5>' + sentLine('email') +
         '<label class="mr-k" for="brTo">To</label><input type="email" id="brTo" value="' + esc(lead.email || '') + '" placeholder="Their email address">' +
-        '<div class="mr-hint">' + (lead.email_source === 'post' ? 'From their post: they asked to be written to here.' : lead.email_source === 'saleshandy' ? 'Found by Saleshandy.' : 'Not in the post. Type it in if you have it.') + '</div>' +
+        '<div class="mr-hint">' + (lead.email_source === 'post' ? 'From their post: they asked to be written to here.' : lead.email_source === 'saleshandy' ? 'Found by Saleshandy.' : 'Not known yet. Type it in if you have it.') + '</div>' + find +
         '<label class="mr-k" for="brSubj">Subject</label><input type="text" id="brSubj" maxlength="120" value="' + esc(d.subject || '') + '">' +
         '<label class="mr-k" for="brBody">Message</label><textarea id="brBody" rows="8">' + esc(d.email || '') + '</textarea>' +
         '<div class="mr-hint">Your name and an opt-out line are added at the bottom.</div>' +
         '<div class="br-dr-acts"><button type="button" class="mr-btn primary" data-act="send" data-channel="email"' + (ready.email && !sentOn.email ? '' : ' disabled') + '>Send email</button>' +
         (ready.email ? '' : '<span class="mr-hint">Email is not set up on the service.</span>') + '</div></section>' +
       '<section class="br-dr-sec"><h5>LinkedIn</h5>' + sentLine('linkedin') +
-        (company ? '<p class="mr-hint">This post is from a company page; LinkedIn messages go to people.</p>' :
+        (company ? '<p class="mr-hint">' + (jobs ? 'There is no person to write to at this company yet.' : 'This post is from a company page; LinkedIn messages go to people.') + '</p>' :
+        unrevealed ? '<p class="mr-hint">Find their email first: Saleshandy brings their LinkedIn profile with it.</p>' :
         '<label class="mr-k" for="brNote">Connection note <span class="br-n" id="brNoteN"></span></label><textarea id="brNote" rows="4" maxlength="300">' + esc(d.note || '') + '</textarea>' +
         '<div class="mr-hint">Sent with a connection request when you are not connected yet.</div>' +
         '<label class="mr-k" for="brMsg">Message, if you are already connected</label><textarea id="brMsg" rows="5" maxlength="1000">' + esc(d.message || '') + '</textarea>' +
         '<div class="br-dr-acts"><button type="button" class="mr-btn primary" data-act="send" data-channel="linkedin"' + (ready.linkedin && !sentOn.linkedin ? '' : ' disabled') + '>Send on LinkedIn</button>' +
         (ready.linkedin ? '' : '<span class="mr-hint">LinkedIn is not set up on the service.</span>') + '</div>') + '</section>' +
-      '<div class="br-dr-foot"><button type="button" class="mr-btn ghost" data-act="save">Save changes</button>' + link(p.url, 'Open the post', 'mr-btn ghost') + '</div>';
+      '<div class="br-dr-foot"><button type="button" class="mr-btn ghost" data-act="save">Save changes</button>' + link(p.url, jobs ? 'Open the company' : 'Open the post', 'mr-btn ghost') + '</div>';
   }
 
   // ── settings ─────────────────────────────────────────────────────────────
@@ -263,14 +314,20 @@
       '" min="' + min + '" max="' + max + '" step="' + (step || 1) + '">' + (hint ? '<div class="mr-hint">' + esc(hint) + '</div>' : '') + '</div>';
   }
 
-  function renderSettings(s, offers, defaults) {
+  function renderSettings(s, offers, defaults, jobDefaults) {
+    var where = Object.keys(LEAD_SOURCES).map(function (k) {
+      return sw('brSrc-' + k, (s.sources || []).indexOf(k) >= 0, LEAD_SOURCES[k][0], LEAD_SOURCES[k][1]);
+    }).join('');
     var o = Object.keys(offers).map(function (k) {
       var on = (s.offers || []).indexOf(k) >= 0;
       var qs = ((s.queries || {})[k] || (defaults || {})[k] || offers[k].queries || []).join('\n');
+      var js = ((s.job_queries || {})[k] || (jobDefaults || {})[k] || offers[k].jobs || []).join('\n');
       var snd = (s.senders || {})[k] || {};
       return '<fieldset class="br-offer-set"><legend>' + sw('brOn-' + k, on, offers[k].label, offers[k].site) + '</legend>' +
-        '<label class="mr-k" for="brQ-' + esc(k) + '">Searches, one a line</label><textarea id="brQ-' + esc(k) + '" rows="5" data-offer="' + esc(k) + '">' + esc(qs) + '</textarea>' +
+        '<label class="mr-k" for="brQ-' + esc(k) + '">Post searches, one a line</label><textarea id="brQ-' + esc(k) + '" rows="5" data-offer="' + esc(k) + '">' + esc(qs) + '</textarea>' +
         '<div class="mr-hint">LinkedIn search words. Quotes for a phrase, AND / OR / NOT (5 at most a line). Clear the box to go back to the defaults.</div>' +
+        '<label class="mr-k" for="brJ-' + esc(k) + '">Job titles that mean they need it, one a line</label><textarea id="brJ-' + esc(k) + '" rows="4">' + esc(js) + '</textarea>' +
+        '<div class="mr-hint">A company advertising these jobs is doing the work in house. Clear the box to go back to the defaults.</div>' +
         '<div class="br-grid3"><div><label class="mr-k" for="brSn-' + esc(k) + '">Sender name</label><input type="text" id="brSn-' + esc(k) + '" value="' + esc(snd.name || '') + '"></div>' +
         '<div><label class="mr-k" for="brSt-' + esc(k) + '">Sender title</label><input type="text" id="brSt-' + esc(k) + '" value="' + esc(snd.title || '') + '"></div>' +
         '<div><label class="mr-k" for="brSe-' + esc(k) + '">Send from</label><input type="email" id="brSe-' + esc(k) + '" value="' + esc(snd.email || '') + '" placeholder="the platform sender"></div></div>' +
@@ -279,9 +336,14 @@
     var posted = ['24h', 'week', 'month', '3months'].map(function (p) {
       return '<option value="' + p + '"' + (s.posted === p ? ' selected' : '') + '>' + { '24h': 'Last day', week: 'Last week', month: 'Last month', '3months': 'Last 3 months' }[p] + '</option>';
     }).join('');
-    return '<h4 class="br-set-t">What to look for</h4>' + o +
-      '<div class="br-grid3"><div><label class="mr-k" for="brPosted">How far back</label><select id="brPosted">' + posted + '</select></div>' +
+    return '<h4 class="br-set-t">Where to look</h4>' + where +
+      '<h4 class="br-set-t">What to look for</h4>' + o +
+      '<div class="br-grid3"><div><label class="mr-k" for="brPosted">Posts: how far back</label><select id="brPosted">' + posted + '</select></div>' +
         numIn('brPer', 'Posts per search', s.per_query, 5, 100, 5) + numIn('brKeep', 'Keep leads scoring at least', s.keep_score, 0, 100, 5) + '</div>' +
+      '<div class="br-grid3"><div><label class="mr-k" for="brJobLoc">Job ads in</label><input type="text" id="brJobLoc" value="' + esc((s.job_locations || []).join(', ')) + '" placeholder="Anywhere">' +
+          '<div class="mr-hint">Up to 5 places, with commas: India, Dubai, London.</div></div>' +
+        numIn('brJobDays', 'Job ads posted in the last (days)', s.jobs_days, 1, 30, 1) + numIn('brJobPer', 'Job ads per title', s.jobs_per_query, 5, 100, 5) + '</div>' +
+      '<div class="br-grid3">' + numIn('brComPosts', 'Read the comments of the best', s.comment_posts, 0, 30, 1, 'posts kept in each search.') + '</div>' +
       '<h4 class="br-set-t">Every day</h4>' +
       sw('brDaily', s.daily, 'Search LinkedIn every day', 'Once a day, early morning India time. Skipped once this month\'s spend reaches the monthly cap.') +
       '<div class="br-grid3">' + numIn('brCap', 'Most one search may cost ($)', s.run_cap_usd, 0.1, 20, 0.1) + numIn('brMonth', 'Monthly cap ($)', s.monthly_cap_usd, 1, 500, 1) +
@@ -301,15 +363,22 @@
   }
 
   function readSettings($, offers) {
-    var body = { offers: [], queries: {}, senders: {} };
+    var body = { offers: [], queries: {}, job_queries: {}, senders: {}, sources: [] };
+    Object.keys(LEAD_SOURCES).forEach(function (k) { if ($('brSrc-' + k).checked) body.sources.push(k); });
     Object.keys(offers).forEach(function (k) {
       if ($('brOn-' + k).checked) body.offers.push(k);
       var q = $('brQ-' + k).value.trim();
       body.queries[k] = q ? q.split('\n') : [];
+      var j = $('brJ-' + k).value.trim();
+      body.job_queries[k] = j ? j.split('\n') : [];
       body.senders[k] = { name: $('brSn-' + k).value, title: $('brSt-' + k).value, email: $('brSe-' + k).value };
     });
     body.posted = $('brPosted').value;
     body.per_query = $('brPer').value;
+    body.job_locations = $('brJobLoc').value;
+    body.jobs_days = $('brJobDays').value;
+    body.jobs_per_query = $('brJobPer').value;
+    body.comment_posts = $('brComPosts').value;
     body.keep_score = $('brKeep').value;
     body.daily = $('brDaily').checked;
     body.run_cap_usd = $('brCap').value;
@@ -330,13 +399,14 @@
   function leadQuery(filter, strong) {
     if (filter === 'strong') return '?min=' + encodeURIComponent(strong == null ? 70 : strong);
     if (filter && filter.indexOf('offer:') === 0) return '?offer=' + encodeURIComponent(filter.slice(6));
+    if (filter && filter.indexOf('source:') === 0) return '?source=' + encodeURIComponent(filter.slice(7));
     if (filter && filter !== 'all') return '?status=' + encodeURIComponent(filter);
     return '';
   }
 
   root.BR = { esc: esc, safeUrl: safeUrl, renderSource: renderSource, renderLead: renderLead, renderLeads: renderLeads, renderRuns: renderRuns,
     renderStats: renderStats, renderReady: renderReady, renderDrawer: renderDrawer, renderSettings: renderSettings,
-    renderEstimate: renderEstimate, renderFilters: renderFilters, renderLive: renderLive, leadQuery: leadQuery, offers: {} };
+    renderEstimate: renderEstimate, renderFilters: renderFilters, renderJobs: renderJobs, renderLive: renderLive, leadQuery: leadQuery, offers: {} };
 
   // ── the page ─────────────────────────────────────────────────────────────
   if (!DOC || !DOC.getElementById('br')) return;
@@ -390,7 +460,7 @@
       if (!CLIENT && st.estimate) $('brEstimate').innerHTML = renderEstimate(st.estimate);
       if (!CLIENT && $('brSource')) $('brSource').innerHTML = renderSource(st.source, st.sources);
       if (!CLIENT && $('brSettings') && !$('brSettings').dataset.drawn) {
-        $('brSettings').innerHTML = renderSettings(st.settings, OFFERS, st.defaults);
+        $('brSettings').innerHTML = renderSettings(st.settings, OFFERS, st.defaults, st.job_defaults);
         $('brSettings').dataset.drawn = '1';
       }
       $('brRunBtn').disabled = !(st.ready.search && st.ready.claude);
@@ -537,6 +607,16 @@
     var act = b.getAttribute('data-act');
     if (act === 'save') {
       saveDrawer().then(function () { toast('Saved.'); loadLeads(); }).catch(function (e) { toast(e.message, true); });
+    }
+    if (act === 'find') {
+      var who = DOC.querySelector('input[name="brWho"]:checked');
+      confirmBox('Find their email?', 'Saleshandy looks up their work email. It spends one credit (about $0.026) if it finds one, and nothing if not.').then(function (yes) {
+        if (!yes) return;
+        b.disabled = true;
+        api('/leads/' + state.open.id + '/find-email', { method: 'POST', body: { confirm: true, contact: who ? Number(who.value) : 0 } })
+          .then(function (j) { toast('Found ' + j.lead.email + '.'); openDrawer(j.lead); loadLeads(); })
+          .catch(function (e) { b.disabled = false; toast(e.message, true); });
+      });
     }
     if (act === 'send') {
       var ch = b.getAttribute('data-channel');

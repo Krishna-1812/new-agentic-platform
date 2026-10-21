@@ -5,7 +5,11 @@ workspace the owner is the workspace's space ("acct:<id>"), shared by the whole 
 each run kept in started_by; otherwise it is the person's own email.
 
     br_runs       one search, with its stage and summary; trigger "manual" or "daily"
-    br_leads      one post kept as a lead, once per owner (the same post found again is not a new lead)
+    br_leads      one signal kept as a lead, once per owner (the same post found again is not a new lead):
+                  source 'post' (a LinkedIn post), 'comment' (a comment under a buyer's post) or 'jobs'
+                  (a company's LinkedIn job ads, once a month)
+    br_seen       every post, comment and company Claude has read, kept or not, so the next run does not
+                  pay to read it again
     br_sends      every email and LinkedIn message sent, by whom ("" for the automatic send)
     br_settings   each owner's settings (tracker/buyer_radar.py DEFAULTS)
     br_suppress   people who opted out, or must never be written to; for every owner
@@ -24,6 +28,7 @@ from .market_radar_store import StoreUnavailable, _connect  # noqa: F401  (re-ex
 log = logging.getLogger(__name__)
 STALE_AFTER_S = 1200
 LEAD_STATUSES = ("new", "contacted", "replied", "dismissed")
+LEAD_SOURCES = ("post", "comment", "jobs")
 
 SCHEMA = [
     """CREATE TABLE IF NOT EXISTS br_runs (
@@ -58,6 +63,12 @@ SCHEMA = [
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         UNIQUE (owner, post_key))""",
     "CREATE INDEX IF NOT EXISTS idx_br_leads_owner ON br_leads (owner, created_at DESC)",
+    "ALTER TABLE br_leads ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'post'",
+    """CREATE TABLE IF NOT EXISTS br_seen (
+        owner TEXT NOT NULL,
+        key TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (owner, key))""",
     """CREATE TABLE IF NOT EXISTS br_sends (
         id BIGSERIAL PRIMARY KEY,
         owner TEXT NOT NULL,
@@ -233,6 +244,14 @@ def ran_today(owner, trigger="daily"):
     return bool(row)
 
 
+def ran_within(owner, days):
+    """Did a search for this owner finish well in the last `days` days? The daily search then reads only
+    the last week of posts, so its results are new posts rather than the same ones again."""
+    row = _exec("""SELECT 1 FROM br_runs WHERE owner=%s AND status='ready'
+                   AND created_at >= now() - make_interval(days => %s) LIMIT 1""", (owner, int(days)), fetch="one")
+    return bool(row)
+
+
 def unipile_results_today():
     """LinkedIn search results read through Unipile today, across every owner: Unipile's daily advice is
     per LinkedIn account, and there is one."""
@@ -261,11 +280,22 @@ def month_spend(owner):
 # == leads ===============================================================================================
 
 def known_posts(owner, keys):
+    """The keys this owner has kept as a lead or Claude has already read: neither is read again."""
     keys = [k for k in keys if k]
     if not keys:
         return set()
-    rows = _exec("SELECT post_key FROM br_leads WHERE owner=%s AND post_key = ANY(%s)", (owner, keys), fetch="all")
+    rows = _exec("""SELECT post_key FROM br_leads WHERE owner=%s AND post_key = ANY(%s)
+                    UNION SELECT key FROM br_seen WHERE owner=%s AND key = ANY(%s)""",
+                 (owner, keys, owner, keys), fetch="all")
     return {r[0] for r in rows}
+
+
+def mark_seen(owner, keys):
+    """Posts, comments and companies Claude read for this owner, kept or not."""
+    keys = sorted({k for k in keys if k})
+    if keys:
+        _exec("""INSERT INTO br_seen (owner, key) SELECT %s, unnest(%s::text[])
+                 ON CONFLICT (owner, key) DO NOTHING""", (owner, keys))
 
 
 def add_leads(owner, run_id, leads):
@@ -274,19 +304,20 @@ def add_leads(owner, run_id, leads):
     for lead in leads:
         p = lead["post"]
         email = (lead.get("emails") or [None])[0]
+        source = lead.get("source") if lead.get("source") in LEAD_SOURCES else "post"
         row = _exec("""INSERT INTO br_leads (owner, run_id, post_key, post, offer, score, verdict, draft, person,
-                                             email, email_source)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                             email, email_source, source)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                        ON CONFLICT (owner, post_key) DO NOTHING RETURNING id""",
                     (owner, run_id, p["key"], _json(p), lead["offer"], int(lead["score"]), _json(lead["verdict"]),
                      _json(lead["draft"]) if lead.get("draft") else None, lead.get("person") or "", email,
-                     "post" if email else None), fetch="one")
+                     "post" if email else None, source), fetch="one")
         ids.append(row[0] if row else None)
     return ids
 
 
 LEAD_COLS = ("id", "run_id", "post", "offer", "score", "verdict", "draft", "person", "email", "email_source",
-             "status", "created_at", "updated_at")
+             "status", "created_at", "updated_at", "source")
 _LEAD_SELECT = "SELECT %s FROM br_leads" % ", ".join(LEAD_COLS)
 
 
@@ -296,7 +327,7 @@ def _lead(r):
     return out
 
 
-def list_leads(owner, *, status=None, offer=None, min_score=0, limit=200):
+def list_leads(owner, *, status=None, offer=None, source=None, min_score=0, limit=200):
     where, params = ["owner=%s", "score >= %s"], [owner, int(min_score)]
     if status:
         where.append("status=%s")
@@ -304,6 +335,9 @@ def list_leads(owner, *, status=None, offer=None, min_score=0, limit=200):
     if offer:
         where.append("offer=%s")
         params.append(offer)
+    if source:
+        where.append("source=%s")
+        params.append(source)
     params.append(int(limit))
     rows = _exec(_LEAD_SELECT + " WHERE %s ORDER BY created_at DESC, score DESC LIMIT %%s" % " AND ".join(where),
                  params, fetch="all")
@@ -326,7 +360,7 @@ def get_lead(lead_id, owner):
     return _lead(r) if r else None
 
 
-def update_lead(lead_id, owner, *, status=None, email=None, email_source=None, draft=None):
+def update_lead(lead_id, owner, *, status=None, email=None, email_source=None, draft=None, person=None, post=None):
     sets, params = ["updated_at=now()"], []
     if status is not None:
         if status not in LEAD_STATUSES:
@@ -342,6 +376,12 @@ def update_lead(lead_id, owner, *, status=None, email=None, email_source=None, d
     if draft is not None:
         sets.append("draft=%s")
         params.append(_json(draft))
+    if person is not None:
+        sets.append("person=%s")
+        params.append(person)
+    if post is not None:
+        sets.append("post=%s")
+        params.append(_json(post))
     params += [lead_id, owner]
     row = _exec("UPDATE br_leads SET %s WHERE id=%%s AND owner=%%s RETURNING id" % ", ".join(sets), params,
                 fetch="one")
@@ -353,7 +393,10 @@ def counts(owner):
                           COUNT(*) FILTER (WHERE status='replied'),
                           COUNT(*) FILTER (WHERE created_at >= now() - interval '7 days')
                      FROM br_leads WHERE owner=%s""", (owner,), fetch="one")
-    return dict(zip(("all", "new", "contacted", "replied", "week"), [int(x or 0) for x in row]))
+    out = dict(zip(("all", "new", "contacted", "replied", "week"), [int(x or 0) for x in row]))
+    rows = _exec("SELECT source, COUNT(*) FROM br_leads WHERE owner=%s GROUP BY source", (owner,), fetch="all")
+    out["by_source"] = {r[0]: int(r[1] or 0) for r in rows}
+    return out
 
 
 # == sends and opt-outs ===================================================================================

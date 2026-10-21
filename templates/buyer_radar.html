@@ -3,10 +3,11 @@
 {#- ════════════════════════════════════════════════════════════════════════
     BUYER RADAR (/strategic-agents/buyer-radar) — the team; listed as Building
 
-    LinkedIn posts from people asking for what we sell (CallVibe's call
-    analytics, Markify's marketing services), found by Apify's post search,
-    read by Claude, kept as leads with an email and a LinkedIn note written
-    for each. Sent from here, or automatically where the workspace switches
+    People and companies showing they need what we sell (CallVibe's call
+    analytics, Markify's marketing services): LinkedIn posts asking for it,
+    people in those posts' comments saying they need it too, and companies
+    whose job ads are the work. Read by Claude, kept as leads with an email
+    and a LinkedIn note written for each. Sent from here, or automatically where the workspace switches
     it on. Drawn by static/js/buyer_radar.js from the JSON routes in app.py;
     the engine is tracker/buyer_radar*.py; the plan is docs/buyer-radar-plan.md.
     A client the workspace shares it with may search and read the leads: no
@@ -14,7 +15,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Buyer Radar", ["strategic-agents.css?v=3", "market_radar.css?v=7", "buyer_radar.css?v=7"]) }}
+{{ head("Buyer Radar", ["strategic-agents.css?v=3", "market_radar.css?v=7", "buyer_radar.css?v=8"]) }}
 </head>
 <body class="sa"{% if client %} data-br-client{% endif %}>
 
@@ -25,18 +26,19 @@
   <section class="sa-hero mr-hero mr-hero--compact br-hero">
     <div class="br-hero-copy">
       <div class="sa-hero-top">
-        <span class="sa-lbl">Building{% if not client %} &middot; LinkedIn posts, read by Claude{% endif %}</span>
+        <span class="sa-lbl">Building{% if not client %} &middot; posts, comments and job ads, read by Claude{% endif %}</span>
         <span class="br-ready" id="brReady"><span class="mr-chip">Checking&hellip;</span></span>
       </div>
       <h1 class="sa-h1 mr-h1">
         <span class="sa-ln"><span>They ask.</span></span>
         <span class="sa-ln"><span><span class="sa-mk">You answer</span> <em class="sa-it">first.</em></span></span>
       </h1>
-      <p class="br-intro">Every day people post on LinkedIn that they need a call analytics tool or a marketing agency.
-        Buyer Radar finds those posts, keeps the real buyers{% if not client %}, writes each one an email and a LinkedIn note,
-        and sends them for you if you want{% endif %}.</p>
+      <p class="br-intro">Every day people post on LinkedIn that they need a call analytics tool or a marketing agency, others
+        say &ldquo;we need this too&rdquo; in the comments, and companies advertise jobs for the work.
+        Buyer Radar finds all three, keeps the real buyers{% if not client %}, finds who decides at each company, writes each one
+        an email and a LinkedIn note, and sends them for you if you want{% endif %}.</p>
       <ol class="br-steps">
-        <li><b>1</b><span>Searches LinkedIn posts<small>{{ offers | map(attribute="label") | join(" and ") }}</small></span></li>
+        <li><b>1</b><span>Searches LinkedIn<small>posts, their comments and job ads</small></span></li>
         <li><b>2</b><span>Claude keeps the buyers<small>not vendors or job seekers</small></span></li>
         <li><b>3</b><span>{% if client %}See who to talk to{% else %}Message ready to send<small>email and LinkedIn</small>{% endif %}</span></li>
       </ol>
@@ -70,7 +72,7 @@
     <div class="br-top">
       <section class="card mr-card br-inbox" aria-label="Leads">
         <header class="br-inbox-h">
-          <div><h3>Leads</h3><p>Newest first. Each one is a post Claude read as someone looking to buy.</p></div>
+          <div><h3>Leads</h3><p>Newest first. Each one is a post, a comment or a company's job ads that Claude read as someone looking to buy.</p></div>
           <div class="br-inbox-tools">
             <div class="br-filters" id="brFilters" role="group" aria-label="Show"></div>
             <button type="button" class="mr-btn ghost br-export" id="brExport" title="Download the leads shown, as a spreadsheet (CSV)">
@@ -82,7 +84,7 @@
 
       <aside class="br-side">
         <section class="card mr-card br-run" aria-label="Search now">
-          <header class="mr-card-h"><div><h3>Search now</h3><p id="brRunSub">Searches LinkedIn posts{% if not client %} with the searches in Settings{% endif %}.</p></div></header>
+          <header class="mr-card-h"><div><h3>Search now</h3><p id="brRunSub">Searches LinkedIn{% if not client %} where Settings says, with its searches{% endif %}.</p></div></header>
           <div class="mr-card-b">
             <div id="brEstimate" class="br-est"></div>
             <div id="brLive" class="br-live" hidden></div>
@@ -131,6 +133,6 @@
 
 <script id="brOffers" type="application/json">{{ offers | tojson }}</script>
 {{ topbar_script() }}
-<script src="{{ url_for('static', filename='js/buyer_radar.js') }}?v=7"></script>
+<script src="{{ url_for('static', filename='js/buyer_radar.js') }}?v=8"></script>
 </body>
 </html>

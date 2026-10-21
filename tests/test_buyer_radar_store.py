@@ -54,7 +54,28 @@ def test_a_post_is_one_lead_per_owner(db):
     assert not db.update_lead(2, "acct:2", status="new"), "never another owner's lead"
     with pytest.raises(ValueError):
         db.update_lead(2, "acct:1", status="bogus")
-    assert db.counts("acct:1") == {"all": 2, "new": 1, "contacted": 0, "replied": 0, "week": 2}
+    assert db.counts("acct:1") == {"all": 2, "new": 1, "contacted": 0, "replied": 0, "week": 2, "by_source": {"post": 2}}
+
+
+def test_each_lead_says_where_it_came_from_and_what_was_read_is_not_read_again(db):
+    run = db.create_run("acct:1", br.merged({}), 2.0, "kris@x.com")
+    company = dict(_lead("jobs:company/acme:2026-10", person="sh/s1"), source="jobs")
+    db.add_leads("acct:1", run, [_lead("p1"), company, dict(_lead("comment:9"), source="comment")])
+    assert [x["source"] for x in db.list_leads("acct:1", source="jobs")] == ["jobs"]
+    assert db.counts("acct:1")["by_source"] == {"post": 1, "jobs": 1, "comment": 1}
+    db.mark_seen("acct:1", ["p7", "p8", "p7", ""])
+    db.mark_seen("acct:1", ["p8"])
+    assert db.known_posts("acct:1", ["p1", "p7", "p8", "p9"]) == {"p1", "p7", "p8"}, "kept or read: neither again"
+    assert db.known_posts("acct:2", ["p7"]) == set(), "another workspace reads it for itself"
+    lead_id = db.list_leads("acct:1", source="jobs")[0]["id"]
+    post = dict(company["post"], contacts=[{"key": "sh/s1", "linkedin": "https://www.linkedin.com/in/meera"}])
+    assert db.update_lead(lead_id, "acct:1", person="in/meera", email="m@acme.com", email_source="saleshandy", post=post)
+    got = db.get_lead(lead_id, "acct:1")
+    assert (got["person"], got["email"], got["post"]["contacts"][0]["linkedin"]) == ("in/meera", "m@acme.com",
+                                                                                     "https://www.linkedin.com/in/meera")
+    assert db.ran_within("acct:1", 6) is False, "a run still going is not a finished search"
+    db.update_run(run, status="ready")
+    assert db.ran_within("acct:1", 6) is True and db.ran_within("acct:2", 6) is False
 
 
 def test_nobody_is_written_to_twice_and_an_opt_out_holds_everywhere(db):
