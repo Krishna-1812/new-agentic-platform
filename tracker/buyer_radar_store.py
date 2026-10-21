@@ -7,7 +7,7 @@ each run kept in started_by; otherwise it is the person's own email.
     br_runs       one search, with its stage and summary; trigger "manual" or "daily"
     br_leads      one signal kept as a lead, once per owner (the same post found again is not a new lead):
                   source 'post' (a LinkedIn post), 'comment' (a comment under a buyer's post) or 'jobs'
-                  (a company's LinkedIn job ads, once a month)
+                  (a company's LinkedIn job ads, once a month) or 'icp' (a person who fits a customer profile)
     br_seen       every post, comment and company Claude has read, kept or not, so the next run does not
                   pay to read it again
     br_sends      every email and LinkedIn message sent, by whom ("" for the automatic send)
@@ -28,7 +28,7 @@ from .market_radar_store import StoreUnavailable, _connect  # noqa: F401  (re-ex
 log = logging.getLogger(__name__)
 STALE_AFTER_S = 1200
 LEAD_STATUSES = ("new", "contacted", "replied", "dismissed")
-LEAD_SOURCES = ("post", "comment", "jobs")
+LEAD_SOURCES = ("post", "comment", "jobs", "icp")
 
 SCHEMA = [
     """CREATE TABLE IF NOT EXISTS br_runs (

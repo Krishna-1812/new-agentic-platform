@@ -393,6 +393,46 @@ class Client:
         rows, meta = _payload_list(self._req("POST", "/search/companies", dict(filters, page=page)), "company")
         return dict(meta, companies=[company(r) for r in rows if isinstance(r, dict)])
 
+    # -- sequences (Saleshandy's own multi-step email; nothing is charged to add a prospect) ---------------
+    def sequences(self):
+        """[{"id", "title", "active", "steps": [{"id", "name"}]}], GET /v1/sequences."""
+        p = self._req("GET", "/sequences", gap=False)
+        rows = p if isinstance(p, list) else (p or {}).get("sequences") or [] if isinstance(p, dict) else []
+        out = []
+        for r in rows:
+            if not isinstance(r, dict) or not r.get("id"):
+                continue
+            steps = [{"id": str(s.get("id")), "name": str(s.get("name") or "")} for s in r.get("steps") or []
+                     if isinstance(s, dict) and s.get("id")]
+            out.append({"id": str(r["id"]), "title": str(r.get("title") or r.get("name") or ""),
+                        "active": bool(r.get("active")), "steps": steps})
+        return out
+
+    def fields(self):
+        """The prospect field names this account has, system fields included, GET /v1/fields."""
+        p = self._req("GET", "/fields?systemFields=true", gap=False)
+        rows = p if isinstance(p, list) else (p or {}).get("fields") or [] if isinstance(p, dict) else []
+        return [str(r.get("label") or r.get("name") or "") for r in rows if isinstance(r, dict)]
+
+    def import_to_sequence(self, step_id, prospects, *, tags=(), conflict="noUpdate"):
+        """Prospects (dicts of field name to value: "First Name", "Email", ...) added to a sequence step,
+        POST /v1/sequences/prospects/import-with-field-name. Saleshandy imports them in the background and
+        answers with a request id. A prospect already there is left as it is (noUpdate)."""
+        body = {"prospectList": list(prospects), "stepId": step_id, "conflictAction": conflict}
+        if tags:
+            body["tags"] = list(tags)
+        p = self._req("POST", "/sequences/prospects/import-with-field-name", body) or {}
+        return p.get("requestId")
+
+    def add_leads_to_sequence(self, sequence_id, step_id, lead_ids, *, tags=()):
+        """Lead-finder people (by Saleshandy's id) added to a sequence step; Saleshandy makes them
+        prospects, revealing their email as it does (POST /v1/leads/bulk-actions/add-to-sequence)."""
+        body = {"leadIds": list(lead_ids), "sequenceId": sequence_id, "stepId": step_id}
+        if tags:
+            body["newTags"] = list(tags)
+        p = self._req("POST", "/leads/bulk-actions/add-to-sequence", body) or {}
+        return str(p.get("message") or "")
+
     # -- enrichment (credits) --------------------------------------------------------
     def enrich_contacts(self, *, lead_ids=(), linkedin_urls=(), names=(), reveal_phone=False,
                         profile_only=False, email_type="work_email", webhook_url=None):

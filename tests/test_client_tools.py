@@ -401,6 +401,9 @@ TEAM_ONLY = {
     "/strategic-agents/buyer-radar/api/settings": "what to search, the caps and automatic sending are the team's",
     "/strategic-agents/buyer-radar/api/leads/<int:lead_id>/send": "writes to people for the agency",
     "/strategic-agents/buyer-radar/api/leads/<int:lead_id>/find-email": "spends the agency's Saleshandy credits",
+    "/strategic-agents/buyer-radar/api/leads/<int:lead_id>/sequence": "writes to people for the agency",
+    "/strategic-agents/buyer-radar/api/sequences": "the agency's Saleshandy sequences",
+    "/strategic-agents/buyer-radar/api/icps/suggest": "the customer profiles are the team's settings",
 }
 
 

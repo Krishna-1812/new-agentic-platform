@@ -188,6 +188,71 @@ def linkedin_lead(owner, lead, settings, *, by="", auto=False, client=None, stor
     return {"ok": True, "detail": detail, "stop": False, "kind": kind}
 
 
+# == a Saleshandy sequence ==============================================================================
+
+def _names(lead):
+    """(first, last, title, company) of the person written to: a company's decision maker, else the author."""
+    p = lead.get("post") or {}
+    a = p.get("author") or {}
+    pick = next((c for c in p.get("contacts") or [] if c.get("key") == lead.get("person")
+                 or (c.get("linkedin") and src.profile_key(c["linkedin"]) == lead.get("person"))), None)
+    name = (pick or {}).get("name") or ("" if a.get("company") else a.get("name")) or ""
+    first, _, last = name.strip().partition(" ")
+    company = (p.get("company") or {}).get("name") or (lead.get("verdict") or {}).get("company") or ""
+    title = (pick or {}).get("title") or ("" if a.get("company") else (a.get("headline") or "").split(" at ")[0])
+    return first, last.strip(), title[:120], company[:160]
+
+
+def sequence_lead(owner, lead, settings, *, by="", auto=False, client=None, store=None, reveal=None):
+    """The lead added to their offer's Saleshandy sequence, which sends and follows up on its own schedule.
+    Counted as an email: the same opt-outs, the same nobody-twice and the same daily caps. With an email
+    address the prospect is imported with it (and, where Settings names a field, the message written);
+    with only Saleshandy's id the person is added as a lead, which Saleshandy reveals itself (a credit).
+    `reveal` allows that: the team's yes on the page, or "Find work emails" for the automatic send.
+    {"ok", "detail", "stop"}."""
+    from . import buyer_radar as br, buyer_radar_store, saleshandy_client as sh
+    store = store or buyer_radar_store
+    if not lead:
+        return {"ok": False, "detail": "no such lead", "stop": False}
+    seq = (settings.get("sequences") or {}).get(lead["offer"]) or {}
+    if not seq.get("step_id"):
+        return {"ok": False, "detail": "no Saleshandy sequence is chosen for %s in Settings" %
+                br.OFFERS.get(lead["offer"], {}).get("label", lead["offer"]), "stop": False}
+    if sending_off():
+        return {"ok": False, "detail": "sending is switched off on this service (BUYER_RADAR_SEND)", "stop": True}
+    person, email = lead.get("person") or "", (lead.get("email") or "").strip().lower()
+    reveal = auto and settings.get("find_emails") if reveal is None else reveal
+    if not email and not (person.startswith("sh/") and reveal):
+        return {"ok": False, "detail": "no email address is known for this person yet", "stop": False}
+    if store.suppressed(email, person):
+        return {"ok": False, "detail": "this person asked not to be contacted", "stop": False}
+    if store.already_contacted("email", person=person, recipient=email):
+        return {"ok": False, "detail": "this person has already been contacted by email", "stop": False}
+    if auto and store.sent_today(owner, "email") >= settings["daily_email_cap"]:
+        return {"ok": False, "detail": "today's automatic limit of %d is reached" % settings["daily_email_cap"], "stop": True}
+    if not sh.configured():
+        return {"ok": False, "detail": "Saleshandy needs SALESHANDY_API_KEY on this service", "stop": True}
+    client = client or sh.Client()
+    tags = ["Buyer Radar", br.OFFERS.get(lead["offer"], {}).get("label", lead["offer"])]
+    title = seq.get("title") or "the sequence"
+    try:
+        if email:
+            first, last, job, company = _names(lead)
+            row = {"First Name": first, "Last Name": last, "Email": email, "Company": company, "Job Title": job}
+            if settings.get("sequence_field") and (lead.get("draft") or {}).get("email"):
+                row[settings["sequence_field"]] = lead["draft"]["email"].strip()
+            client.import_to_sequence(seq["step_id"], [row], tags=tags)
+        else:
+            client.add_leads_to_sequence(seq["id"], seq["step_id"], [person.split("/", 1)[1]], tags=tags)
+    except sh.SaleshandyError as e:
+        store.record_send(owner, lead["id"], "email", email or person, person, "failed", "Saleshandy: %s" % e, by)
+        return {"ok": False, "detail": "Saleshandy did not add them: %s" % e,
+                "stop": isinstance(e, (sh.AuthError, sh.RateLimited))}
+    detail = "added to the Saleshandy sequence “%s”" % title
+    store.record_send(owner, lead["id"], "email", email or person, person, "sent", detail, by)
+    return {"ok": True, "detail": detail, "stop": False}
+
+
 # == finding an email ===================================================================================
 
 def find_emails(leads, *, client=None, wait_s=180):

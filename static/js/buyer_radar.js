@@ -27,10 +27,13 @@
     'posting to Slack': 'Posting to Slack', done: 'Done', failed: 'Stopped' };
   // Where a lead came from: its own post, a comment under a buyer's post, or its company's job ads.
   var SOURCE = { post: ['Post', 'They posted asking for it'], comment: ['Comment', 'They said so under a buyer\'s post'],
-    jobs: ['Hiring', 'Their company is hiring for the work'] };
+    jobs: ['Hiring', 'Their company is hiring for the work'], icp: ['Profile', 'Fits your customer profile, at a moment that matters'] };
   var LEAD_SOURCES = { posts: ['LinkedIn posts', 'People posting that they need it.'],
     comments: ['Their comments', 'People under those posts saying they need it too. Read through Unipile.'],
-    jobs: ['Job ads', 'Companies whose LinkedIn job ads are the work, and who decides there. Read through Unipile; people found by Saleshandy, free.'] };
+    jobs: ['Job ads', 'Companies whose LinkedIn job ads are the work, and who decides there. Read through Unipile; people found by Saleshandy, free.'],
+    icp: ['Customer profiles', 'People who fit your customers at a moment that matters: new in their role, recently funded, hiring, using a rival. From Saleshandy, free to search.'] };
+  var ICP_LISTS = [['titles', 'Job titles'], ['levels', 'Seniority'], ['departments', 'Departments'], ['industries', 'Industries'],
+    ['locations', 'Locations'], ['keywords', 'Company keywords'], ['technologies', 'Products their company uses'], ['hiring', 'Jobs their company advertises']];
 
   function esc(v) {
     return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
@@ -150,7 +153,7 @@
     if (!CLIENT) {
       acts = '<button type="button" class="mr-btn small primary" data-act="open" data-id="' + esc(lead.id) + '">Message</button>';
     }
-    acts += link(p.url, kind === 'jobs' ? 'Open the company' : 'Open the post', 'mr-btn small ghost');
+    if (kind !== 'icp') acts += link(p.url, kind === 'jobs' ? 'Open the company' : 'Open the post', 'mr-btn small ghost');
     if (lead.status !== 'replied') acts += '<button type="button" class="mr-btn small ghost" data-act="status" data-status="replied" data-id="' + esc(lead.id) + '">They replied</button>';
     if (lead.status !== 'dismissed') acts += '<button type="button" class="mr-btn small ghost br-dim" data-act="status" data-status="dismissed" data-id="' + esc(lead.id) + '">Not a fit</button>';
     else acts += '<button type="button" class="mr-btn small ghost" data-act="status" data-status="new" data-id="' + esc(lead.id) + '">Bring back</button>';
@@ -164,7 +167,9 @@
           '<span class="br-when">' + esc(ago(p.posted_at || lead.created_at)) + '</span></div>' +
         '<p class="br-need">' + esc(v.need || '') + '</p>' +
         '<div class="br-meta">' + meta.join('') + '</div>' +
-        (kind === 'jobs' ? renderJobs(p) + (v.reason ? '<p class="br-why"><b>Why Claude kept it:</b> ' + esc(v.reason) + '</p>' : '') :
+        (kind === 'icp' ? '<p class="br-parent">Fits &ldquo;' + esc((p.icp || {}).name || '') + '&rdquo;' +
+          ((p.company || {}).name ? ' &middot; ' + esc(p.company.name) : '') + '</p>' :
+        kind === 'jobs' ? renderJobs(p) + (v.reason ? '<p class="br-why"><b>Why Claude kept it:</b> ' + esc(v.reason) + '</p>' : '') :
         (kind === 'comment' && p.parent ? '<p class="br-parent">Under ' + link(p.parent.url, (p.parent.author || 'a') + '\'s post') +
           (p.parent.need ? ' asking for ' + esc(excerpt(p.parent.need, 90)) : '') + '</p>' : '') +
         '<details class="br-post-x"><summary>' + esc(excerpt(p.text, 220)) + '</summary><p>' + esc(p.text || '') + '</p>' +
@@ -255,7 +260,7 @@
   }
 
   // ── the message drawer ───────────────────────────────────────────────────
-  function renderDrawer(lead, ready) {
+  function renderDrawer(lead, ready, settings) {
     var d = lead.draft || {}, p = lead.post || {}, a = p.author || {};
     var person = String(lead.person || '');
     var sentOn = {};
@@ -281,7 +286,17 @@
     var canFind = !lead.email && ready.saleshandy && (unrevealed || person.indexOf('in/') === 0 || (jobs && contacts.length));
     var find = canFind ? '<div class="br-dr-acts"><button type="button" class="mr-btn ghost" data-act="find">Find their email</button>' +
       '<span class="mr-hint">Saleshandy, one credit (about $0.026) if it finds one.</span></div>' : '';
-    var top = jobs ? '<p class="br-dr-who"><b>' + esc(a.name || 'A company') + '</b> ' + esc(a.headline || '') + '</p>' + renderJobs(p) :
+    var seq = ((settings || {}).sequences || {})[lead.offer];
+    var sentSeq = (lead.sends || []).some(function (x) { return x.status === 'sent' && /Saleshandy sequence/.test(x.detail || ''); });
+    var sequence = ready.saleshandy ? '<section class="br-dr-sec"><h5>Saleshandy sequence</h5>' +
+      (sentSeq ? '<p class="mr-callout ok">Already added. Saleshandy sends and follows up.</p>' : seq ?
+        '<p class="mr-hint">Adds them to &ldquo;' + esc(seq.title || 'the sequence') + '&rdquo;, which sends and follows up on its own schedule.' +
+          (lead.email ? '' : ' Their email is not known yet: Saleshandy finds it as it adds them, for one credit.') + '</p>' +
+          '<div class="br-dr-acts"><button type="button" class="mr-btn primary" data-act="sequence"' + (sentOn.email ? ' disabled' : '') + '>Add to the sequence</button></div>' :
+        '<p class="mr-hint">Choose a sequence for this offer in Settings to send with follow-ups.</p>') + '</section>' : '';
+    var top = lead.source === 'icp' ? '<p class="br-dr-who"><b>' + esc(a.name || 'Someone') + '</b> ' + esc(a.headline || '') + '</p>' +
+        '<blockquote class="br-dr-post">' + esc(p.text || '') + '</blockquote>' :
+      jobs ? '<p class="br-dr-who"><b>' + esc(a.name || 'A company') + '</b> ' + esc(a.headline || '') + '</p>' + renderJobs(p) :
       '<p class="br-dr-who"><b>' + esc(a.name || 'Someone') + '</b> ' + esc(excerpt(a.headline, 90)) + '</p>' +
       '<blockquote class="br-dr-post">' + esc(excerpt(p.text, 420)) + '</blockquote>';
     return top + pick +
@@ -302,7 +317,8 @@
         '<label class="mr-k" for="brMsg">Message, if you are already connected</label><textarea id="brMsg" rows="5" maxlength="1000">' + esc(d.message || '') + '</textarea>' +
         '<div class="br-dr-acts"><button type="button" class="mr-btn primary" data-act="send" data-channel="linkedin"' + (ready.linkedin && !sentOn.linkedin ? '' : ' disabled') + '>Send on LinkedIn</button>' +
         (ready.linkedin ? '' : '<span class="mr-hint">LinkedIn is not set up on the service.</span>') + '</div>') + '</section>' +
-      '<div class="br-dr-foot"><button type="button" class="mr-btn ghost" data-act="save">Save changes</button>' + link(p.url, jobs ? 'Open the company' : 'Open the post', 'mr-btn ghost') + '</div>';
+      sequence +
+      '<div class="br-dr-foot"><button type="button" class="mr-btn ghost" data-act="save">Save changes</button>' + (lead.source === 'icp' ? '' : link(p.url, jobs ? 'Open the company' : 'Open the post', 'mr-btn ghost')) + '</div>';
   }
 
   // ── settings ─────────────────────────────────────────────────────────────
@@ -314,7 +330,55 @@
       '" min="' + min + '" max="' + max + '" step="' + (step || 1) + '">' + (hint ? '<div class="mr-hint">' + esc(hint) + '</div>' : '') + '</div>';
   }
 
-  function renderSettings(s, offers, defaults, jobDefaults) {
+  // One customer profile, every field editable; lists are written with commas.
+  function renderIcp(icp, offer, extra) {
+    icp = icp || {};
+    var triggers = (extra && extra.triggers) || { none: 'Fit alone' };
+    var opts = Object.keys(triggers).map(function (t) {
+      return '<option value="' + esc(t) + '"' + (icp.trigger === t ? ' selected' : '') + '>' + esc(triggers[t]) + '</option>';
+    }).join('');
+    var lists = ICP_LISTS.map(function (f) {
+      return '<label class="br-icp-f"><span>' + esc(f[1]) + '</span><input type="text" data-f="' + f[0] + '" value="' + esc((icp[f[0]] || []).join(', ')) + '"></label>';
+    }).join('');
+    return '<fieldset class="br-icp" data-offer="' + esc(offer) + '">' +
+      '<div class="br-icp-h"><label class="br-icp-on"><input type="checkbox" data-f="on"' + (icp.on === false ? '' : ' checked') + '><span class="mr-hint">On</span></label>' +
+        '<input type="text" class="br-icp-name" data-f="name" value="' + esc(icp.name || '') + '" placeholder="Who they are" aria-label="Profile name">' +
+        '<button type="button" class="mr-btn small ghost" data-icp="remove">Remove</button></div>' +
+      '<div class="br-icp-g"><label class="br-icp-f"><span>When to write</span><select data-f="trigger">' + opts + '</select></label>' +
+        '<label class="br-icp-f"><span>New in role within (months)</span><input type="number" min="1" max="12" data-f="months" value="' + esc(icp.months || 3) + '"></label>' +
+        '<label class="br-icp-f"><span>Company size from</span><input type="number" min="0" data-f="size_min" value="' + esc(icp.size_min || '') + '"></label>' +
+        '<label class="br-icp-f"><span>to (employees)</span><input type="number" min="0" data-f="size_max" value="' + esc(icp.size_max || '') + '"></label>' +
+        lists + '</div></fieldset>';
+  }
+
+  function readIcps(box) {
+    return Array.prototype.slice.call(box.querySelectorAll('.br-icp')).map(function (f) {
+      function v(k) { var el = f.querySelector('[data-f="' + k + '"]'); return el ? el.value : ''; }
+      var out = { name: v('name'), trigger: v('trigger'), months: v('months'), size_min: v('size_min'), size_max: v('size_max'),
+        on: f.querySelector('[data-f="on"]').checked };
+      ICP_LISTS.forEach(function (x) { out[x[0]] = v(x[0]).split(',').map(function (t) { return t.trim(); }).filter(Boolean); });
+      return out;
+    });
+  }
+
+  function seqOptions(current, list) {
+    var opts = '<option value="">No sequence: one email</option>';
+    var seen = false;
+    (list || []).forEach(function (q) {
+      var step = (q.steps || [])[0];
+      if (!step) return;
+      var val = q.id + '|' + step.id + '|' + q.title;
+      var on = current && current.id === q.id;
+      seen = seen || on;
+      opts += '<option value="' + esc(val) + '"' + (on ? ' selected' : '') + '>' + esc(q.title + (q.active ? '' : ' (paused)')) + '</option>';
+    });
+    if (current && current.id && !seen) {
+      opts += '<option value="' + esc(current.id + '|' + current.step_id + '|' + (current.title || '')) + '" selected>' + esc(current.title || current.id) + '</option>';
+    }
+    return opts;
+  }
+
+  function renderSettings(s, offers, defaults, jobDefaults, extra) {
     var where = Object.keys(LEAD_SOURCES).map(function (k) {
       return sw('brSrc-' + k, (s.sources || []).indexOf(k) >= 0, LEAD_SOURCES[k][0], LEAD_SOURCES[k][1]);
     }).join('');
@@ -328,6 +392,14 @@
         '<div class="mr-hint">LinkedIn search words. Quotes for a phrase, AND / OR / NOT (5 at most a line). Clear the box to go back to the defaults.</div>' +
         '<label class="mr-k" for="brJ-' + esc(k) + '">Job titles that mean they need it, one a line</label><textarea id="brJ-' + esc(k) + '" rows="4">' + esc(js) + '</textarea>' +
         '<div class="mr-hint">A company advertising these jobs is doing the work in house. Clear the box to go back to the defaults.</div>' +
+        '<h5 class="br-icp-t">Customer profiles</h5><div class="br-icps" id="brIcps-' + esc(k) + '">' +
+          (((extra && extra.icps) || {})[k] || []).map(function (x) { return renderIcp(x, k, extra); }).join('') + '</div>' +
+        '<div class="br-icp-acts"><button type="button" class="mr-btn small ghost" data-icp="add" data-offer="' + esc(k) + '">Add a profile</button>' +
+          '<input type="text" id="brIcpNotes-' + esc(k) + '" placeholder="Notes for Claude: who you sell to, where, what size" aria-label="Notes for Claude">' +
+          '<button type="button" class="mr-btn small" data-icp="suggest" data-offer="' + esc(k) + '">Suggest with Claude</button></div>' +
+        '<label class="mr-k" for="brSeq-' + esc(k) + '">Saleshandy sequence</label><select id="brSeq-' + esc(k) + '" data-seq="' + esc(k) + '">' +
+          seqOptions((s.sequences || {})[k], null) + '</select>' +
+        '<div class="mr-hint">Leads added to a sequence get Saleshandy&rsquo;s follow-ups. Pick one to use it.</div>' +
         '<div class="br-grid3"><div><label class="mr-k" for="brSn-' + esc(k) + '">Sender name</label><input type="text" id="brSn-' + esc(k) + '" value="' + esc(snd.name || '') + '"></div>' +
         '<div><label class="mr-k" for="brSt-' + esc(k) + '">Sender title</label><input type="text" id="brSt-' + esc(k) + '" value="' + esc(snd.title || '') + '"></div>' +
         '<div><label class="mr-k" for="brSe-' + esc(k) + '">Send from</label><input type="email" id="brSe-' + esc(k) + '" value="' + esc(snd.email || '') + '" placeholder="the platform sender"></div></div>' +
@@ -343,7 +415,8 @@
       '<div class="br-grid3"><div><label class="mr-k" for="brJobLoc">Job ads in</label><input type="text" id="brJobLoc" value="' + esc((s.job_locations || []).join(', ')) + '" placeholder="Anywhere">' +
           '<div class="mr-hint">Up to 5 places, with commas: India, Dubai, London.</div></div>' +
         numIn('brJobDays', 'Job ads posted in the last (days)', s.jobs_days, 1, 30, 1) + numIn('brJobPer', 'Job ads per title', s.jobs_per_query, 5, 100, 5) + '</div>' +
-      '<div class="br-grid3">' + numIn('brComPosts', 'Read the comments of the best', s.comment_posts, 0, 30, 1, 'posts kept in each search.') + '</div>' +
+      '<div class="br-grid3">' + numIn('brComPosts', 'Read the comments of the best', s.comment_posts, 0, 30, 1, 'posts kept in each search.') +
+        numIn('brIcpN', 'People from customer profiles a search', s.icp_per_run, 0, 100, 5, 'All profiles together. Free to find; a message is written for each.') + '</div>' +
       '<h4 class="br-set-t">Every day</h4>' +
       sw('brDaily', s.daily, 'Search LinkedIn every day', 'Once a day, early morning India time. Skipped once this month\'s spend reaches the monthly cap.') +
       '<div class="br-grid3">' + numIn('brCap', 'Most one search may cost ($)', s.run_cap_usd, 0.1, 20, 0.1) + numIn('brMonth', 'Monthly cap ($)', s.monthly_cap_usd, 1, 500, 1) +
@@ -355,6 +428,9 @@
       sw('brAutoEmail', s.auto_email, 'Email strong leads automatically', 'Only leads with an email address in their post, or found by Saleshandy below.') +
       sw('brAutoLi', s.auto_linkedin, 'Send on LinkedIn automatically', 'A connection request with the note, or a message if you are already connected.') +
       sw('brFind', s.find_emails, 'Find work emails with Saleshandy', 'One credit (about $0.026) per email found, only for leads about to be emailed.') +
+      sw('brAutoSeq', s.auto_sequence, 'Add strong leads to the offer\'s Saleshandy sequence', 'In place of one email, for offers with a sequence chosen above. Saleshandy sends and follows up.') +
+      '<label class="mr-k" for="brSeqField">Saleshandy field for the message written</label><input type="text" id="brSeqField" value="' + esc(s.sequence_field || '') + '" placeholder="Leave empty to send the sequence\'s own copy">' +
+      '<div class="mr-hint">Make a custom field in Saleshandy (Settings &rarr; Prospect fields), name it here, and put it in the sequence&rsquo;s first email.</div>' +
       '<div class="br-grid3">' + numIn('brSend', 'Send only to leads scoring at least', s.send_score, 50, 100, 5) +
         numIn('brEcap', 'Emails a day, at most', s.daily_email_cap, 0, 100, 1) + numIn('brLcap', 'LinkedIn sends a day, at most', s.daily_linkedin_cap, 0, 80, 1, 'LinkedIn restricts accounts that send too many.') + '</div>' +
       '<label class="mr-k" for="brAddr">Postal address for the email footer</label><input type="text" id="brAddr" value="' + esc(s.postal_address || '') + '" placeholder="Company name, street, city, country">' +
@@ -363,7 +439,7 @@
   }
 
   function readSettings($, offers) {
-    var body = { offers: [], queries: {}, job_queries: {}, senders: {}, sources: [] };
+    var body = { offers: [], queries: {}, job_queries: {}, senders: {}, sources: [], icps: {}, sequences: {} };
     Object.keys(LEAD_SOURCES).forEach(function (k) { if ($('brSrc-' + k).checked) body.sources.push(k); });
     Object.keys(offers).forEach(function (k) {
       if ($('brOn-' + k).checked) body.offers.push(k);
@@ -371,6 +447,9 @@
       body.queries[k] = q ? q.split('\n') : [];
       var j = $('brJ-' + k).value.trim();
       body.job_queries[k] = j ? j.split('\n') : [];
+      if ($('brIcps-' + k)) body.icps[k] = readIcps($('brIcps-' + k));
+      var sq = $('brSeq-' + k) ? $('brSeq-' + k).value.split('|') : [];
+      if (sq.length >= 2 && sq[0]) body.sequences[k] = { id: sq[0], step_id: sq[1], title: sq.slice(2).join('|') };
       body.senders[k] = { name: $('brSn-' + k).value, title: $('brSt-' + k).value, email: $('brSe-' + k).value };
     });
     body.posted = $('brPosted').value;
@@ -379,6 +458,9 @@
     body.jobs_days = $('brJobDays').value;
     body.jobs_per_query = $('brJobPer').value;
     body.comment_posts = $('brComPosts').value;
+    body.icp_per_run = $('brIcpN').value;
+    body.auto_sequence = $('brAutoSeq').checked;
+    body.sequence_field = $('brSeqField').value;
     body.keep_score = $('brKeep').value;
     body.daily = $('brDaily').checked;
     body.run_cap_usd = $('brCap').value;
@@ -406,7 +488,7 @@
 
   root.BR = { esc: esc, safeUrl: safeUrl, renderSource: renderSource, renderLead: renderLead, renderLeads: renderLeads, renderRuns: renderRuns,
     renderStats: renderStats, renderReady: renderReady, renderDrawer: renderDrawer, renderSettings: renderSettings,
-    renderEstimate: renderEstimate, renderFilters: renderFilters, renderJobs: renderJobs, renderLive: renderLive, leadQuery: leadQuery, offers: {} };
+    renderEstimate: renderEstimate, renderFilters: renderFilters, renderJobs: renderJobs, renderIcp: renderIcp, seqOptions: seqOptions, renderLive: renderLive, leadQuery: leadQuery, offers: {} };
 
   // ── the page ─────────────────────────────────────────────────────────────
   if (!DOC || !DOC.getElementById('br')) return;
@@ -460,7 +542,8 @@
       if (!CLIENT && st.estimate) $('brEstimate').innerHTML = renderEstimate(st.estimate);
       if (!CLIENT && $('brSource')) $('brSource').innerHTML = renderSource(st.source, st.sources);
       if (!CLIENT && $('brSettings') && !$('brSettings').dataset.drawn) {
-        $('brSettings').innerHTML = renderSettings(st.settings, OFFERS, st.defaults, st.job_defaults);
+        $('brSettings').innerHTML = renderSettings(st.settings, OFFERS, st.defaults, st.job_defaults,
+          { icps: st.icps, triggers: st.triggers, levels: st.levels });
         $('brSettings').dataset.drawn = '1';
       }
       $('brRunBtn').disabled = !(st.ready.search && st.ready.claude);
@@ -560,7 +643,7 @@
   function openDrawer(lead) {
     state.open = lead;
     $('brDrawerTitle').textContent = 'Message ' + ((lead.post || {}).author || {}).name;
-    $('brDrawerBody').innerHTML = renderDrawer(lead, state.status.ready || {});
+    $('brDrawerBody').innerHTML = renderDrawer(lead, state.status.ready || {}, state.status.settings);
     $('brDrawer').hidden = $('brDrawerBg').hidden = false;
     requestAnimationFrame(function () { $('brDrawer').classList.add('open'); });
     var note = $('brNote');
@@ -608,6 +691,18 @@
     if (act === 'save') {
       saveDrawer().then(function () { toast('Saved.'); loadLeads(); }).catch(function (e) { toast(e.message, true); });
     }
+    if (act === 'sequence') {
+      var noEmail = !state.open.email;
+      confirmBox('Add them to the Saleshandy sequence?', 'Saleshandy will send the sequence\'s emails and follow-ups to them.' +
+        (noEmail ? ' Their email is not known yet: Saleshandy finds it as it adds them, for one credit.' : '')).then(function (yes) {
+        if (!yes) return;
+        b.disabled = true;
+        saveDrawer().then(function (lead) {
+          return api('/leads/' + lead.id + '/sequence', { method: 'POST', body: { confirm: true, reveal: noEmail } });
+        }).then(function (j) { toast(j.detail.charAt(0).toUpperCase() + j.detail.slice(1) + '.'); closeDrawer(); loadLeads(); loadStatus(); })
+          .catch(function (e) { b.disabled = false; toast(e.message, true); });
+      });
+    }
     if (act === 'find') {
       var who = DOC.querySelector('input[name="brWho"]:checked');
       confirmBox('Find their email?', 'Saleshandy looks up their work email. It spends one credit (about $0.026) if it finds one, and nothing if not.').then(function (yes) {
@@ -639,6 +734,38 @@
       var f = $('brSettings'), open = f.hidden;
       f.hidden = !open;
       $('brSetToggle').setAttribute('aria-expanded', String(open));
+      if (open && !f.dataset.seqs && state.status.ready.saleshandy) {
+        f.dataset.seqs = '1';
+        api('/sequences').then(function (j) {
+          Object.keys(OFFERS).forEach(function (k) {
+            var el = $('brSeq-' + k);
+            if (el) el.innerHTML = seqOptions((state.status.settings.sequences || {})[k], j.sequences);
+          });
+        }).catch(function (e) { toast('Saleshandy sequences: ' + e.message, true); });
+      }
+    });
+    // Customer profiles: add one, remove one, or have Claude suggest them (shown to edit, saved with Settings).
+    $('brSettings').addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-icp]');
+      if (!b) return;
+      var what = b.getAttribute('data-icp');
+      if (what === 'remove') { b.closest('.br-icp').remove(); return; }
+      var k = b.getAttribute('data-offer'), box = $('brIcps-' + k);
+      var extra = { triggers: state.status.triggers };
+      if (what === 'add') { box.insertAdjacentHTML('beforeend', renderIcp({ trigger: 'new_in_role', months: 3 }, k, extra)); return; }
+      if (what === 'suggest') {
+        confirmBox('Ask Claude for customer profiles?', 'Claude reads ' + OFFERS[k].label + '\'s description and your notes and suggests profiles to edit. About a cent. Nothing is saved until you save Settings.').then(function (yes) {
+          if (!yes) return;
+          b.disabled = true;
+          api('/icps/suggest', { method: 'POST', body: { offer: k, notes: $('brIcpNotes-' + k).value, confirm: true } })
+            .then(function (j) {
+              box.innerHTML = j.icps.map(function (x) { return renderIcp(x, k, extra); }).join('');
+              toast('Claude suggested ' + j.icps.length + ' profiles. Save settings to keep them.');
+            })
+            .catch(function (e) { toast(e.message, true); })
+            .then(function () { b.disabled = false; });
+        });
+      }
     });
     $('brSettings').addEventListener('submit', function (ev) {
       ev.preventDefault();

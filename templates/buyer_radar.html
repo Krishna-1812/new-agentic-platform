@@ -15,7 +15,7 @@
 -#}
 <html lang="en">
 <head>
-{{ head("Buyer Radar", ["strategic-agents.css?v=3", "market_radar.css?v=7", "buyer_radar.css?v=8"]) }}
+{{ head("Buyer Radar", ["strategic-agents.css?v=3", "market_radar.css?v=7", "buyer_radar.css?v=9"]) }}
 </head>
 <body class="sa"{% if client %} data-br-client{% endif %}>
 
@@ -34,11 +34,11 @@
         <span class="sa-ln"><span><span class="sa-mk">You answer</span> <em class="sa-it">first.</em></span></span>
       </h1>
       <p class="br-intro">Every day people post on LinkedIn that they need a call analytics tool or a marketing agency, others
-        say &ldquo;we need this too&rdquo; in the comments, and companies advertise jobs for the work.
-        Buyer Radar finds all three, keeps the real buyers{% if not client %}, finds who decides at each company, writes each one
+        say &ldquo;we need this too&rdquo; in the comments, companies advertise jobs for the work, and people who fit your
+        customers start new roles or raise money. Buyer Radar finds them all, keeps the real buyers{% if not client %}, finds who decides at each company, writes each one
         an email and a LinkedIn note, and sends them for you if you want{% endif %}.</p>
       <ol class="br-steps">
-        <li><b>1</b><span>Searches LinkedIn<small>posts, their comments and job ads</small></span></li>
+        <li><b>1</b><span>Searches LinkedIn and Saleshandy<small>posts, comments, job ads and your customer profiles</small></span></li>
         <li><b>2</b><span>Claude keeps the buyers<small>not vendors or job seekers</small></span></li>
         <li><b>3</b><span>{% if client %}See who to talk to{% else %}Message ready to send<small>email and LinkedIn</small>{% endif %}</span></li>
       </ol>
@@ -133,6 +133,6 @@
 
 <script id="brOffers" type="application/json">{{ offers | tojson }}</script>
 {{ topbar_script() }}
-<script src="{{ url_for('static', filename='js/buyer_radar.js') }}?v=8"></script>
+<script src="{{ url_for('static', filename='js/buyer_radar.js') }}?v=9"></script>
 </body>
 </html>

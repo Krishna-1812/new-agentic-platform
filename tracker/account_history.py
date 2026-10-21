@@ -208,6 +208,9 @@ def _br(acct):
         hiring = (sm.get("by_source") or {}).get("jobs")
         if hiring:
             bits.append("%d compan%s hiring" % (hiring, "y" if hiring == 1 else "ies"))
+        people = (sm.get("by_source") or {}).get("icp")
+        if people:
+            bits.append("%d from customer profiles" % people)
         if sm.get("emailed") or sm.get("messaged"):
             bits.append("%d written to" % ((sm.get("emailed") or 0) + (sm.get("messaged") or 0)))
         out.append(_agent(acct, "buyer-radar", title, " \u00b7 ".join(bits), r.get("started_by"), r.get("created_at"),
