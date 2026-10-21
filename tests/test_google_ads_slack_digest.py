@@ -352,6 +352,7 @@ def site(monkeypatch):
         monkeypatch.setenv(k, v)
     monkeypatch.delenv("PUBLIC_BASE_URL", raising=False)
     monkeypatch.setenv("GOOGLE_ADS_DIGEST_ACCOUNTS", "*")   # the test sheet's account is not on the real list
+    monkeypatch.setattr(appmod, "_gads_digest_briefing", lambda name, base_url: None)   # its own tests below
     yield slack
     store.reset_memory()
 
@@ -724,3 +725,50 @@ def test_staff_can_see_each_accounts_daily_budgets_from_the_api(monkeypatch):
     assert "<h2>AllureAvani</h2>" in page and "Not Listed" not in page
     monkeypatch.setattr(paid_gads, "config_problem", lambda: "no developer token")
     assert T._client().get(url).status_code == 503
+
+
+# ── The account's briefing in its message ────────────────────────────────────
+def _briefing():
+    from tracker import account_insights as ai
+    items = [dict(ai.item("account-audit", "fix", "Lead form recorded no conversions", stat="0", stat_label="conversions in 30 days"), via="x"),
+             dict(ai.item("pacing-desk", "watch", "On course to overspend October's budget", stat="$4,242"), via="x"),
+             dict(ai.item("experiment-tracker", "opportunity", "Apply the winning headline <B>"), via="x"),
+             dict(ai.item("pacing-desk", "win", "Beating the target"), via="x")]
+    b = ai.finish("lumina", items, [], now=dt.datetime(2026, 10, 20, tzinfo=dt.timezone.utc))
+    return dict(b, url="https://app.example/lumina#briefing")
+
+
+def test_the_message_carries_the_accounts_briefing_and_opens_it():
+    msg = d.message(_core_summary(allocated=3000.0), "https://app.example", "https://app.example/card.png", _briefing())
+    blocks = msg["attachments"][0]["blocks"]
+    text = next(b["text"]["text"] for b in blocks if b["type"] == "section")
+    assert text.startswith("*What needs you*  \u00b7  1 thing to fix now, 1 to watch, 1 opportunity and 1 win")
+    assert "*Fix now*  <https://app.example/lumina/operational-agents/account-audit|Lead form recorded no conversions>" \
+           "  \u00b7  0 conversions in 30 days" in text
+    assert "Apply the winning headline &lt;B&gt;" in text and "_+1 more in the briefing_" in text
+    assert "Beating the target" not in text, "three, most important first"
+    buttons = next(b for b in blocks if b["type"] == "actions")["elements"]
+    assert buttons[0]["text"]["text"] == "Open the briefing" and buttons[0]["url"] == "https://app.example/lumina#briefing"
+    assert buttons[0]["style"] == "primary"
+
+
+def test_without_a_briefing_the_message_keeps_its_own_alerts():
+    msg = d.message(_core_summary(allocated=3000.0), "https://app.example", "https://app.example/card.png", None)
+    assert "Open the briefing" not in json.dumps(msg) and "What needs you" not in json.dumps(msg)
+
+
+def test_the_digest_finds_the_workspace_that_holds_each_account(monkeypatch):
+    monkeypatch.setattr(appmod, "_acct_listing", lambda: {"accounts": [
+        {"slug": "lumina", "ads_names": ["Lumina Ads", "Lumina 2"], "space": "acct:1"}, {"slug": "other", "ads_names": ["Other"]}]})
+    monkeypatch.setattr(appmod, "_acct_briefing", lambda acct, fresh=False: {"items": [], "slug": acct["slug"]})
+    got = appmod._gads_digest_briefing("Lumina 2", "https://app.example")
+    assert got["slug"] == "lumina" and got["url"] == "https://app.example/lumina#briefing"
+    assert appmod._gads_digest_briefing("Nobody", "https://app.example") is None
+
+
+def test_a_briefing_that_fails_never_stops_the_post(site, monkeypatch):
+    def boom(name, base_url):
+        raise RuntimeError("down")
+    monkeypatch.setattr(appmod, "_gads_digest_briefing", boom)
+    r = appmod.app.test_client().post("/api/dashboards/google-ads/slack-digest", headers={"Authorization": "Bearer s3cret"})
+    assert r.status_code == 200 and r.get_json()["counts"] == {"posted": 1}

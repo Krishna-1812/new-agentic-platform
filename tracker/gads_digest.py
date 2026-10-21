@@ -16,6 +16,7 @@ message per second per channel (https://api.slack.com/apis/rate-limits#posting-m
 are spaced a second apart and a 429 is retried once after its Retry-After.
 """
 import datetime as _dt
+import logging
 import re
 import time
 from urllib.parse import quote
@@ -23,6 +24,8 @@ from urllib.parse import quote
 import requests
 
 from tracker import google_ads_insights as g
+
+log = logging.getLogger(__name__)
 
 BASELINE_DAYS = 7
 SPEND_SWING = 0.5        # spend up or down by half or more against the 7-day average
@@ -445,11 +448,32 @@ def _alert_text(items):
     return "\n".join("\u2022  " + esc(t) for _, t in items)
 
 
-def _links(s, base_url):
+def briefing_section(b, base_url):
+    """The account's briefing (tracker/account_insights.py, the home's "What needs you") in a few lines: what the day
+    holds, then its three most important insights, each a link to the agent that found it."""
+    if not b or not b.get("items"):
+        return []
+    parts = ["%d %s" % (p["n"], p["text"]) for p in b.get("headline") or []]
+    said = (", ".join(parts[:-1]) + " and " + parts[-1]) if len(parts) > 1 else (parts[0] if parts else "")
+    lines = ["*What needs you*" + (DOT + said if said else "")]
+    for it in b["items"][:3]:
+        title, link = esc(it["title"]), it.get("href") or ""
+        if link and not link.startswith("http"):
+            link = base_url + link if base_url else ""
+        stat = ("%s %s" % (esc(it["stat"]), esc(it.get("stat_label") or ""))).strip() if it.get("stat") else ""
+        lines.append("*%s*  %s%s" % (it["label"], "<%s|%s>" % (link, title) if link else title, DOT + stat if stat else ""))
+    if len(b["items"]) > 3:
+        lines.append("_+%d more in the briefing_" % (len(b["items"]) - 3))
+    return [{"type": "section", "text": {"type": "mrkdwn", "text": "\n".join(lines)[:2900]}}]
+
+
+def _links(s, base_url, briefing_url=""):
     if not base_url:
         return []
     q = "?account=" + quote(s["account"], safe="")
-    return [{"type": "actions", "elements": [
+    first = [{"type": "button", "action_id": "open_briefing", "style": "primary",
+              "text": {"type": "plain_text", "text": "Open the briefing"}, "url": briefing_url}] if briefing_url else []
+    return [{"type": "actions", "elements": first + [
         {"type": "button", "action_id": "open_dashboard", "text": {"type": "plain_text", "text": "Open dashboard"},
          "url": "%s/dashboards/google-ads%s" % (base_url, q)},
         {"type": "button", "action_id": "open_ai_review", "text": {"type": "plain_text", "text": "AI review"},
@@ -482,11 +506,13 @@ def day_table(day, t, cur):
     return "```\n%s\n%s\n```" % (line([h for h, _ in cols]), line([v for _, v in cols]))
 
 
-def message(s, base_url="", card_url=""):
+def message(s, base_url="", card_url="", briefing=None):
     """One account's update, laid out like the client report: the month so far, the latest day, then the
     month's budget, in a card whose coloured bar is the account's status, with what needs attention and
     links. With card_url (tracker/gads_digest_card.py's picture of the same), the picture replaces the
-    figures; without one they are written out. Returns {"text", "blocks", "attachments"}."""
+    figures; without one they are written out. With `briefing` ({"url", "items", "headline"}: the account's home
+    briefing), its top insights replace the digest's own alerts and "Open the briefing" leads to it.
+    Returns {"text", "blocks", "attachments"}."""
     cur, now, m = s["cur"], s["now"], s["mtd"]
     items = s.get("alert_items") or [(WARNING, t) for t in s.get("alerts") or []]
     name = s.get("name") or s["account"]
@@ -495,11 +521,15 @@ def message(s, base_url="", card_url=""):
         name, span, money(m["cost"], cur, cents=True), number(m["conversions"]))
     blocks = [{"type": "header", "text": {"type": "plain_text", "text": name[:150]}}]
 
+    told = briefing_section(briefing, base_url)
+    burl = (briefing or {}).get("url", "")
     if card_url:
         card = [{"type": "image", "image_url": card_url, "alt_text": fallback[:1900]}]
-        if items:
+        if told:
+            card += told
+        elif items:
             card.append({"type": "section", "text": {"type": "mrkdwn", "text": _alert_text(items)[:2900]}})
-        card += _links(s, base_url)
+        card += _links(s, base_url, burl)
         card.append({"type": "context", "elements": [{"type": "mrkdwn", "text":
             "Reply in this thread to ask about %s" % esc(name)}]})
         return {"text": fallback, "blocks": blocks, "attachments": _attachment(BAR_COLOR, card)}
@@ -532,10 +562,13 @@ def message(s, base_url="", card_url=""):
     else:
         card.append({"type": "context", "elements": [{"type": "mrkdwn", "text":
             "No budget for this account in the Pacing Desk this month. Add one there to see the budget row."}]})
-    if items:
+    if told:
+        card.append({"type": "divider"})
+        card += told
+    elif items:
         card.append({"type": "divider"})
         card.append({"type": "section", "text": {"type": "mrkdwn", "text": _alert_text(items)[:2900]}})
-    card += _links(s, base_url)
+    card += _links(s, base_url, burl)
     note = "Reply in this thread to ask about %s%sMoney in %s; the latest day can still move slightly as Google " \
            "adds late clicks." % (esc(name), DOT, cur or "the report's currency")
     if m.get("partial"):
@@ -633,7 +666,7 @@ OVERVIEW = "__overview__"
 
 def run(rows, accounts, st=None, token="", channel="", base_url="", dry_run=False, force=False,
         last_posted=None, mark_posted=None, on_thread=None, today=None, session=None, sleep=time.sleep,
-        allocation=None, api=None, card_url=None):
+        allocation=None, api=None, card_url=None, briefing=None):
     """Post the morning overview (with two or more accounts), then each account's digest, in the order given.
 
     last_posted(key) -> the day last posted for an account (or OVERVIEW), so a retried run never posts
@@ -691,5 +724,11 @@ def run(rows, accounts, st=None, token="", channel="", base_url="", dry_run=Fals
         send(OVERVIEW, today.isoformat(), overview(summaries, base_url, today), "")
     for s in summaries:
         url = card_url(s) if card_url else ""
-        send(s["account"], s["day"], message(s, base_url, url), s["account"], {"alerts": len(s["alerts"])})
+        b = None
+        if briefing:
+            try:
+                b = briefing(s["account"])
+            except Exception:                  # noqa: BLE001 (the digest goes out without it)
+                log.warning("gads_digest: briefing unavailable for one account", exc_info=True)
+        send(s["account"], s["day"], message(s, base_url, url, b), s["account"], {"alerts": len(s["alerts"])})
     return out
