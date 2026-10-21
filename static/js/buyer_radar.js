@@ -19,19 +19,24 @@
   var STATUS = { 'new': ['acc', 'New'], contacted: ['ok', 'Contacted'], replied: ['ok', 'Replied'], dismissed: ['', 'Dismissed'] };
   var INTENT = { seeking_vendor: 'Looking for a vendor', asking_recommendations: 'Asking for recommendations',
     hiring_for_it: 'Hiring for it', pain_point: 'Has the problem', none: 'Not buying' };
-  var STAGES = ['queued', 'searching', 'reading', 'reading comments', 'finding decision makers', 'drafting', 'sending emails',
-    'sending on LinkedIn', 'posting to Slack', 'done'];
+  var STAGES = ['queued', 'searching', 'reading', 'reading comments', 'reading Reddit', 'searching for RFPs', 'finding people',
+    'finding decision makers', 'drafting', 'adding to Saleshandy', 'sending emails', 'sending on LinkedIn', 'posting to Slack', 'done'];
   var STAGE_WORDS = { queued: 'Starting', searching: 'Searching LinkedIn', reading: 'Claude is reading what it found',
-    'reading comments': 'Reading the comments', 'finding decision makers': 'Finding who decides',
+    'reading comments': 'Reading the comments', 'reading Reddit': 'Reading Reddit', 'searching for RFPs': 'Searching the web for RFPs',
+    'finding people': 'Finding people who fit your profiles', 'finding decision makers': 'Finding who decides',
+    'adding to Saleshandy': 'Adding to Saleshandy',
     drafting: 'Writing the messages', 'sending emails': 'Sending emails', 'sending on LinkedIn': 'Sending on LinkedIn',
     'posting to Slack': 'Posting to Slack', done: 'Done', failed: 'Stopped' };
-  // Where a lead came from: its own post, a comment under a buyer's post, or its company's job ads.
-  var SOURCE = { post: ['Post', 'They posted asking for it'], comment: ['Comment', 'They said so under a buyer\'s post'],
-    jobs: ['Hiring', 'Their company is hiring for the work'], icp: ['Profile', 'Fits your customer profile, at a moment that matters'] };
+  // Where a lead came from: [chip, what it means, the filter's name].
+  var SOURCE = { post: ['Post', 'They posted asking for it', 'Posts'], comment: ['Comment', 'They said so under a buyer\'s post', 'Comments'],
+    jobs: ['Hiring', 'Their company is hiring for the work', 'Hiring'], icp: ['Profile', 'Fits your customer profile, at a moment that matters', 'Profiles'],
+    rfp: ['RFP', 'They published a request for proposals', 'RFPs'], reddit: ['Reddit', 'They asked on Reddit', 'Reddit'] };
   var LEAD_SOURCES = { posts: ['LinkedIn posts', 'People posting that they need it.'],
     comments: ['Their comments', 'People under those posts saying they need it too. Read through Unipile.'],
     jobs: ['Job ads', 'Companies whose LinkedIn job ads are the work, and who decides there. Read through Unipile; people found by Saleshandy, free.'],
-    icp: ['Customer profiles', 'People who fit your customers at a moment that matters: new in their role, recently funded, hiring, using a rival. From Saleshandy, free to search.'] };
+    icp: ['Customer profiles', 'People who fit your customers at a moment that matters: new in their role, recently funded, hiring, using a rival. From Saleshandy, free to search.'],
+    rfps: ['RFPs and tenders', 'Open requests for proposals on the web, found by Claude\'s web search. About $0.03 a search, run once every few days.'],
+    reddit: ['Reddit', 'Threads asking for recommendations, answered in the thread by you. Free; needs a Reddit app\'s keys on the service.'] };
   var ICP_LISTS = [['titles', 'Job titles'], ['levels', 'Seniority'], ['departments', 'Departments'], ['industries', 'Industries'],
     ['locations', 'Locations'], ['keywords', 'Company keywords'], ['technologies', 'Products their company uses'], ['hiring', 'Jobs their company advertises']];
 
@@ -94,6 +99,9 @@
       out.push(chip(r.email ? 'ok' : 'warn', r.email ? 'Email' : 'Email not set up', r.email ? '' : 'Needs GMAIL_SENDER with GOOGLE_SA_JSON'));
       out.push(chip(r.linkedin ? 'ok' : 'warn', r.linkedin ? 'LinkedIn sending' : 'LinkedIn not set up', r.linkedin ? 'Unipile is set up' : 'Needs UNIPILE_API_KEY and UNIPILE_DSN'));
       if (r.sending === false) out.push(chip('bad', 'Sending switched off', 'BUYER_RADAR_SEND is off on the service'));
+      if (((st.settings || {}).sources || []).indexOf('reddit') >= 0) {
+        out.push(chip(r.reddit ? 'ok' : 'warn', r.reddit ? 'Reddit' : 'Reddit not set up', r.reddit ? '' : 'Needs REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET'));
+      }
     }
     return out.join(' ');
   }
@@ -145,6 +153,9 @@
                 chip('', INTENT[v.intent] || v.intent_label || ''), chip(st[0], st[1])];
     if (v.deadline) meta.push(chip('warn', 'By ' + v.deadline));
     if (v.region) meta.push(chip('', v.region));
+    var also = (v.signals || []).filter(function (x) { return x !== kind && SOURCE[x]; });
+    if (also.length) meta.push(chip('acc br-multi', 'Also: ' + also.map(function (x) { return SOURCE[x][0]; }).join(', '),
+      'This company was found in ' + (also.length + 1) + ' places, which raised its score'));
     var did = sent.map(function (s) {
       return '<li>' + esc(s.channel === 'email' ? 'Emailed' : 'LinkedIn') + (s.to && s.channel === 'email' ? ' ' + esc(s.to) : '') +
         ' <span>' + esc(ago(s.at)) + (s.by === '' && !CLIENT ? ' · automatic' : '') + '</span></li>';
@@ -153,7 +164,7 @@
     if (!CLIENT) {
       acts = '<button type="button" class="mr-btn small primary" data-act="open" data-id="' + esc(lead.id) + '">Message</button>';
     }
-    if (kind !== 'icp') acts += link(p.url, kind === 'jobs' ? 'Open the company' : 'Open the post', 'mr-btn small ghost');
+    if (kind !== 'icp') acts += link(p.url, OPEN[kind] || 'Open the post', 'mr-btn small ghost');
     if (lead.status !== 'replied') acts += '<button type="button" class="mr-btn small ghost" data-act="status" data-status="replied" data-id="' + esc(lead.id) + '">They replied</button>';
     if (lead.status !== 'dismissed') acts += '<button type="button" class="mr-btn small ghost br-dim" data-act="status" data-status="dismissed" data-id="' + esc(lead.id) + '">Not a fit</button>';
     else acts += '<button type="button" class="mr-btn small ghost" data-act="status" data-status="new" data-id="' + esc(lead.id) + '">Bring back</button>';
@@ -169,6 +180,9 @@
         '<div class="br-meta">' + meta.join('') + '</div>' +
         (kind === 'icp' ? '<p class="br-parent">Fits &ldquo;' + esc((p.icp || {}).name || '') + '&rdquo;' +
           ((p.company || {}).name ? ' &middot; ' + esc(p.company.name) : '') + '</p>' :
+        kind === 'rfp' ? '<p class="br-parent">' + link(p.url, (p.rfp || {}).title || 'The RFP') +
+          ((p.rfp || {}).due ? ' &middot; due ' + esc(p.rfp.due) : '') + ((p.rfp || {}).location ? ' &middot; ' + esc(p.rfp.location) : '') + '</p>' +
+          (v.reason ? '<p class="br-why"><b>Why Claude kept it:</b> ' + esc(v.reason) + '</p>' : '') :
         kind === 'jobs' ? renderJobs(p) + (v.reason ? '<p class="br-why"><b>Why Claude kept it:</b> ' + esc(v.reason) + '</p>' : '') :
         (kind === 'comment' && p.parent ? '<p class="br-parent">Under ' + link(p.parent.url, (p.parent.author || 'a') + '\'s post') +
           (p.parent.need ? ' asking for ' + esc(excerpt(p.parent.need, 90)) : '') + '</p>' : '') +
@@ -178,6 +192,8 @@
         '<div class="br-acts">' + acts + '</div>' +
       '</div></article>';
   }
+
+  var OPEN = { jobs: 'Open the company', rfp: 'Open the RFP', reddit: 'Open the thread', comment: 'Open the post' };
 
   function renderLeads(leads, filter) {
     if (!leads || !leads.length) {
@@ -189,7 +205,7 @@
 
   function renderFilters(cur, offers) {
     var f = [['all', 'All'], ['strong', 'Strong'], ['new', 'New'], ['contacted', 'Contacted'], ['replied', 'Replied'], ['dismissed', 'Not a fit']];
-    Object.keys(SOURCE).forEach(function (k) { f.push(['source:' + k, SOURCE[k][0] + (k === 'jobs' ? '' : 's')]); });
+    Object.keys(SOURCE).forEach(function (k) { f.push(['source:' + k, SOURCE[k][2]]); });
     Object.keys(offers || {}).forEach(function (k) { f.push(['offer:' + k, offers[k].label]); });
     return f.map(function (x) {
       return '<button type="button" class="br-f' + (x[0] === cur ? ' on' : '') + '" data-filter="' + esc(x[0]) + '" aria-pressed="' + (x[0] === cur) + '">' + esc(x[1]) + '</button>';
@@ -207,6 +223,9 @@
         bits.push((s.posts || 0) + ' posts found');
         if (s.companies) bits.push(s.companies + ' companies hiring');
         if (s.comments) bits.push(s.comments + ' comments');
+        if (s.threads) bits.push(s.threads + ' Reddit threads');
+        if (s.rfps) bits.push(s.rfps + ' RFPs');
+        if (s.multi) bits.push(s.multi + ' in several places');
         if (s.read != null && s.read !== s.posts) bits.push(s.read + ' read by Claude');
         if (s.source) bits.push('via ' + (s.source === 'unipile' ? 'Unipile' : 'Apify'));
         if (s.strong) bits.push(s.strong + ' strong');
@@ -239,7 +258,7 @@
   function renderLive(run) {
     var at = Math.max(0, STAGES.indexOf(run.stage));
     var s = run.summary || {};
-    var extra = run.stage === 'reading comments' || run.stage === 'finding decision makers' ? [run.stage] : [];
+    var extra = ['reading comments', 'reading Reddit', 'searching for RFPs', 'finding people', 'finding decision makers'].indexOf(run.stage) >= 0 ? [run.stage] : [];
     var steps = ['searching', 'reading'].concat(extra, ['drafting']).map(function (k) {
       var i = STAGES.indexOf(k);
       return '<li class="' + (i < at ? 'done' : i === at ? 'now' : '') + '">' + esc(STAGE_WORDS[k]) + '</li>';
@@ -260,13 +279,27 @@
   }
 
   // ── the message drawer ───────────────────────────────────────────────────
+  // A Reddit thread is answered in the thread, by a person: the reply to copy, and the thread to open.
+  function renderRedditDrawer(lead) {
+    var d = lead.draft || {}, p = lead.post || {}, a = p.author || {};
+    return '<p class="br-dr-who"><b>' + esc(a.name || 'Someone') + '</b> ' + esc(a.headline || '') + '</p>' +
+      '<blockquote class="br-dr-post">' + esc(excerpt(p.text, 600)) + '</blockquote>' +
+      '<section class="br-dr-sec"><h5>Reply in the thread</h5>' +
+        '<p class="mr-hint">Nobody on Reddit is emailed or messaged from here. Read the subreddit&rsquo;s rules on self-promotion, then post this yourself.</p>' +
+        '<label class="mr-k" for="brMsg">Reply</label><textarea id="brMsg" rows="7" maxlength="1000">' + esc(d.message || '') + '</textarea>' +
+        '<div class="br-dr-acts"><button type="button" class="mr-btn primary" data-act="copy">Copy the reply</button>' + link(p.url, 'Open the thread', 'mr-btn ghost') + '</div></section>' +
+      '<div class="br-dr-foot"><button type="button" class="mr-btn ghost" data-act="save">Save changes</button>' +
+        '<button type="button" class="mr-btn ghost" data-act="status" data-status="contacted">I replied</button></div>';
+  }
+
   function renderDrawer(lead, ready, settings) {
+    if (lead.source === 'reddit') return renderRedditDrawer(lead);
     var d = lead.draft || {}, p = lead.post || {}, a = p.author || {};
     var person = String(lead.person || '');
     var sentOn = {};
     (lead.sends || []).forEach(function (s) { if (s.status === 'sent') sentOn[s.channel] = s; });
     var company = person.indexOf('company/') === 0 || (lead.source === 'jobs' && !person);
-    var jobs = lead.source === 'jobs';
+    var jobs = lead.source === 'jobs', rfp = lead.source === 'rfp';
     var unrevealed = person.indexOf('sh/') === 0;
     var contacts = p.contacts || [];
     function sentLine(ch) {
@@ -294,7 +327,10 @@
           (lead.email ? '' : ' Their email is not known yet: Saleshandy finds it as it adds them, for one credit.') + '</p>' +
           '<div class="br-dr-acts"><button type="button" class="mr-btn primary" data-act="sequence"' + (sentOn.email ? ' disabled' : '') + '>Add to the sequence</button></div>' :
         '<p class="mr-hint">Choose a sequence for this offer in Settings to send with follow-ups.</p>') + '</section>' : '';
-    var top = lead.source === 'icp' ? '<p class="br-dr-who"><b>' + esc(a.name || 'Someone') + '</b> ' + esc(a.headline || '') + '</p>' +
+    var top = rfp ? '<p class="br-dr-who"><b>' + esc(a.name || 'An organisation') + '</b> ' + link(p.url, (p.rfp || {}).title || 'Request for proposals') +
+        ((p.rfp || {}).due ? ' &middot; due ' + esc(p.rfp.due) : '') + '</p><blockquote class="br-dr-post">' + esc(excerpt(p.text, 420)) + '</blockquote>' +
+        '<p class="mr-hint">An RFP is answered by your team with a proposal. This email asks for the documents or the next step; it is never sent automatically.</p>' :
+      lead.source === 'icp' ? '<p class="br-dr-who"><b>' + esc(a.name || 'Someone') + '</b> ' + esc(a.headline || '') + '</p>' +
         '<blockquote class="br-dr-post">' + esc(p.text || '') + '</blockquote>' :
       jobs ? '<p class="br-dr-who"><b>' + esc(a.name || 'A company') + '</b> ' + esc(a.headline || '') + '</p>' + renderJobs(p) :
       '<p class="br-dr-who"><b>' + esc(a.name || 'Someone') + '</b> ' + esc(excerpt(a.headline, 90)) + '</p>' +
@@ -303,22 +339,23 @@
       (lead.draft ? '' : '<p class="mr-callout warn">No message was written for this lead (the run reached its cost cap). Write one below.</p>') +
       '<section class="br-dr-sec"><h5>Email</h5>' + sentLine('email') +
         '<label class="mr-k" for="brTo">To</label><input type="email" id="brTo" value="' + esc(lead.email || '') + '" placeholder="Their email address">' +
-        '<div class="mr-hint">' + (lead.email_source === 'post' ? 'From their post: they asked to be written to here.' : lead.email_source === 'saleshandy' ? 'Found by Saleshandy.' : 'Not known yet. Type it in if you have it.') + '</div>' + find +
+        '<div class="mr-hint">' + (lead.email_source === 'rfp' ? 'The contact the RFP gives.' : lead.email_source === 'post' ? 'From their post: they asked to be written to here.' : lead.email_source === 'saleshandy' ? 'Found by Saleshandy.' : 'Not known yet. Type it in if you have it.') + '</div>' + find +
         '<label class="mr-k" for="brSubj">Subject</label><input type="text" id="brSubj" maxlength="120" value="' + esc(d.subject || '') + '">' +
         '<label class="mr-k" for="brBody">Message</label><textarea id="brBody" rows="8">' + esc(d.email || '') + '</textarea>' +
         '<div class="mr-hint">Your name and an opt-out line are added at the bottom.</div>' +
         '<div class="br-dr-acts"><button type="button" class="mr-btn primary" data-act="send" data-channel="email"' + (ready.email && !sentOn.email ? '' : ' disabled') + '>Send email</button>' +
         (ready.email ? '' : '<span class="mr-hint">Email is not set up on the service.</span>') + '</div></section>' +
       '<section class="br-dr-sec"><h5>LinkedIn</h5>' + sentLine('linkedin') +
-        (company ? '<p class="mr-hint">' + (jobs ? 'There is no person to write to at this company yet.' : 'This post is from a company page; LinkedIn messages go to people.') + '</p>' :
+        (rfp ? '<p class="mr-hint">An RFP has a contact address, not a LinkedIn profile.</p>' :
+        company ? '<p class="mr-hint">' + (jobs ? 'There is no person to write to at this company yet.' : 'This post is from a company page; LinkedIn messages go to people.') + '</p>' :
         unrevealed ? '<p class="mr-hint">Find their email first: Saleshandy brings their LinkedIn profile with it.</p>' :
         '<label class="mr-k" for="brNote">Connection note <span class="br-n" id="brNoteN"></span></label><textarea id="brNote" rows="4" maxlength="300">' + esc(d.note || '') + '</textarea>' +
         '<div class="mr-hint">Sent with a connection request when you are not connected yet.</div>' +
         '<label class="mr-k" for="brMsg">Message, if you are already connected</label><textarea id="brMsg" rows="5" maxlength="1000">' + esc(d.message || '') + '</textarea>' +
         '<div class="br-dr-acts"><button type="button" class="mr-btn primary" data-act="send" data-channel="linkedin"' + (ready.linkedin && !sentOn.linkedin ? '' : ' disabled') + '>Send on LinkedIn</button>' +
         (ready.linkedin ? '' : '<span class="mr-hint">LinkedIn is not set up on the service.</span>') + '</div>') + '</section>' +
-      sequence +
-      '<div class="br-dr-foot"><button type="button" class="mr-btn ghost" data-act="save">Save changes</button>' + (lead.source === 'icp' ? '' : link(p.url, jobs ? 'Open the company' : 'Open the post', 'mr-btn ghost')) + '</div>';
+      (rfp ? '' : sequence) +
+      '<div class="br-dr-foot"><button type="button" class="mr-btn ghost" data-act="save">Save changes</button>' + (lead.source === 'icp' ? '' : link(p.url, OPEN[lead.source] || 'Open the post', 'mr-btn ghost')) + '</div>';
   }
 
   // ── settings ─────────────────────────────────────────────────────────────
@@ -386,12 +423,18 @@
       var on = (s.offers || []).indexOf(k) >= 0;
       var qs = ((s.queries || {})[k] || (defaults || {})[k] || offers[k].queries || []).join('\n');
       var js = ((s.job_queries || {})[k] || (jobDefaults || {})[k] || offers[k].jobs || []).join('\n');
+      var rs = ((s.rfp_queries || {})[k] || ((extra && extra.rfpDefaults) || {})[k] || []).join('\n');
+      var ds = ((s.reddit_queries || {})[k] || ((extra && extra.redditDefaults) || {})[k] || []).join('\n');
       var snd = (s.senders || {})[k] || {};
       return '<fieldset class="br-offer-set"><legend>' + sw('brOn-' + k, on, offers[k].label, offers[k].site) + '</legend>' +
         '<label class="mr-k" for="brQ-' + esc(k) + '">Post searches, one a line</label><textarea id="brQ-' + esc(k) + '" rows="5" data-offer="' + esc(k) + '">' + esc(qs) + '</textarea>' +
         '<div class="mr-hint">LinkedIn search words. Quotes for a phrase, AND / OR / NOT (5 at most a line). Clear the box to go back to the defaults.</div>' +
         '<label class="mr-k" for="brJ-' + esc(k) + '">Job titles that mean they need it, one a line</label><textarea id="brJ-' + esc(k) + '" rows="4">' + esc(js) + '</textarea>' +
         '<div class="mr-hint">A company advertising these jobs is doing the work in house. Clear the box to go back to the defaults.</div>' +
+        '<label class="mr-k" for="brR-' + esc(k) + '">RFP searches, one a line</label><textarea id="brR-' + esc(k) + '" rows="3">' + esc(rs) + '</textarea>' +
+        '<div class="mr-hint">Web searches for open RFPs and tenders; {year} is this year. About $0.03 each. Clear the box to go back to the defaults.</div>' +
+        '<label class="mr-k" for="brRd-' + esc(k) + '">Reddit searches, one a line</label><textarea id="brRd-' + esc(k) + '" rows="3">' + esc(ds) + '</textarea>' +
+        '<div class="mr-hint">Reddit&rsquo;s own search, the last month. Quotes for a phrase. Clear the box to go back to the defaults.</div>' +
         '<h5 class="br-icp-t">Customer profiles</h5><div class="br-icps" id="brIcps-' + esc(k) + '">' +
           (((extra && extra.icps) || {})[k] || []).map(function (x) { return renderIcp(x, k, extra); }).join('') + '</div>' +
         '<div class="br-icp-acts"><button type="button" class="mr-btn small ghost" data-icp="add" data-offer="' + esc(k) + '">Add a profile</button>' +
@@ -416,7 +459,9 @@
           '<div class="mr-hint">Up to 5 places, with commas: India, Dubai, London.</div></div>' +
         numIn('brJobDays', 'Job ads posted in the last (days)', s.jobs_days, 1, 30, 1) + numIn('brJobPer', 'Job ads per title', s.jobs_per_query, 5, 100, 5) + '</div>' +
       '<div class="br-grid3">' + numIn('brComPosts', 'Read the comments of the best', s.comment_posts, 0, 30, 1, 'posts kept in each search.') +
-        numIn('brIcpN', 'People from customer profiles a search', s.icp_per_run, 0, 100, 5, 'All profiles together. Free to find; a message is written for each.') + '</div>' +
+        numIn('brIcpN', 'People from customer profiles a search', s.icp_per_run, 0, 100, 5, 'All profiles together. Free to find; a message is written for each.') +
+        numIn('brRfpDays', 'Search for RFPs every (days)', s.rfp_days, 1, 30, 1, 'An RFP stays open for weeks; each search is paid.') + '</div>' +
+      '<div class="br-grid3">' + numIn('brRdPer', 'Reddit threads per search', s.reddit_per_query, 5, 100, 5) + '</div>' +
       '<h4 class="br-set-t">Every day</h4>' +
       sw('brDaily', s.daily, 'Search LinkedIn every day', 'Once a day, early morning India time. Skipped once this month\'s spend reaches the monthly cap.') +
       '<div class="br-grid3">' + numIn('brCap', 'Most one search may cost ($)', s.run_cap_usd, 0.1, 20, 0.1) + numIn('brMonth', 'Monthly cap ($)', s.monthly_cap_usd, 1, 500, 1) +
@@ -439,7 +484,7 @@
   }
 
   function readSettings($, offers) {
-    var body = { offers: [], queries: {}, job_queries: {}, senders: {}, sources: [], icps: {}, sequences: {} };
+    var body = { offers: [], queries: {}, job_queries: {}, rfp_queries: {}, reddit_queries: {}, senders: {}, sources: [], icps: {}, sequences: {} };
     Object.keys(LEAD_SOURCES).forEach(function (k) { if ($('brSrc-' + k).checked) body.sources.push(k); });
     Object.keys(offers).forEach(function (k) {
       if ($('brOn-' + k).checked) body.offers.push(k);
@@ -447,6 +492,8 @@
       body.queries[k] = q ? q.split('\n') : [];
       var j = $('brJ-' + k).value.trim();
       body.job_queries[k] = j ? j.split('\n') : [];
+      if ($('brR-' + k)) { var r = $('brR-' + k).value.trim(); body.rfp_queries[k] = r ? r.split('\n') : []; }
+      if ($('brRd-' + k)) { var rd = $('brRd-' + k).value.trim(); body.reddit_queries[k] = rd ? rd.split('\n') : []; }
       if ($('brIcps-' + k)) body.icps[k] = readIcps($('brIcps-' + k));
       var sq = $('brSeq-' + k) ? $('brSeq-' + k).value.split('|') : [];
       if (sq.length >= 2 && sq[0]) body.sequences[k] = { id: sq[0], step_id: sq[1], title: sq.slice(2).join('|') };
@@ -459,6 +506,8 @@
     body.jobs_per_query = $('brJobPer').value;
     body.comment_posts = $('brComPosts').value;
     body.icp_per_run = $('brIcpN').value;
+    body.rfp_days = $('brRfpDays').value;
+    body.reddit_per_query = $('brRdPer').value;
     body.auto_sequence = $('brAutoSeq').checked;
     body.sequence_field = $('brSeqField').value;
     body.keep_score = $('brKeep').value;
@@ -488,7 +537,7 @@
 
   root.BR = { esc: esc, safeUrl: safeUrl, renderSource: renderSource, renderLead: renderLead, renderLeads: renderLeads, renderRuns: renderRuns,
     renderStats: renderStats, renderReady: renderReady, renderDrawer: renderDrawer, renderSettings: renderSettings,
-    renderEstimate: renderEstimate, renderFilters: renderFilters, renderJobs: renderJobs, renderIcp: renderIcp, seqOptions: seqOptions, renderLive: renderLive, leadQuery: leadQuery, offers: {} };
+    renderEstimate: renderEstimate, renderFilters: renderFilters, renderRedditDrawer: renderRedditDrawer, renderJobs: renderJobs, renderIcp: renderIcp, seqOptions: seqOptions, renderLive: renderLive, leadQuery: leadQuery, offers: {} };
 
   // ── the page ─────────────────────────────────────────────────────────────
   if (!DOC || !DOC.getElementById('br')) return;
@@ -543,10 +592,10 @@
       if (!CLIENT && $('brSource')) $('brSource').innerHTML = renderSource(st.source, st.sources);
       if (!CLIENT && $('brSettings') && !$('brSettings').dataset.drawn) {
         $('brSettings').innerHTML = renderSettings(st.settings, OFFERS, st.defaults, st.job_defaults,
-          { icps: st.icps, triggers: st.triggers, levels: st.levels });
+          { icps: st.icps, triggers: st.triggers, levels: st.levels, rfpDefaults: st.rfp_defaults, redditDefaults: st.reddit_defaults });
         $('brSettings').dataset.drawn = '1';
       }
-      $('brRunBtn').disabled = !(st.ready.search && st.ready.claude);
+      $('brRunBtn').disabled = !((st.ready.run == null ? st.ready.search : st.ready.run) && st.ready.claude);
       if (st.running) watch(st.running);
       return st;
     }).catch(function (e) { $('brReady').innerHTML = chip('bad', e.message); });
@@ -661,13 +710,14 @@
   $('brDrawerBg').addEventListener('click', closeDrawer);
   DOC.addEventListener('keydown', function (e) { if (e.key === 'Escape' && state.open) closeDrawer(); });
 
+  function val(id) { return $(id) ? $(id).value : ''; }
   function draftFromDrawer() {
-    return { subject: $('brSubj').value, email: $('brBody').value,
-             note: $('brNote') ? $('brNote').value : '', message: $('brMsg') ? $('brMsg').value : '' };
+    return { subject: val('brSubj'), email: val('brBody'), note: val('brNote'), message: val('brMsg') };
   }
   function saveDrawer() {
-    var lead = state.open;
-    return api('/leads/' + lead.id, { method: 'POST', body: { email: $('brTo').value.trim(), draft: draftFromDrawer() } })
+    var lead = state.open, body = { draft: draftFromDrawer() };
+    if ($('brTo')) body.email = $('brTo').value.trim();
+    return api('/leads/' + lead.id, { method: 'POST', body: body })
       .then(function (j) { state.open = j.lead; return j.lead; });
   }
 
@@ -690,6 +740,17 @@
     var act = b.getAttribute('data-act');
     if (act === 'save') {
       saveDrawer().then(function () { toast('Saved.'); loadLeads(); }).catch(function (e) { toast(e.message, true); });
+    }
+    if (act === 'copy') {
+      var text = val('brMsg');
+      (root.navigator && navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject(new Error('no clipboard')))
+        .then(function () { toast('Copied. Paste it in the thread.'); })
+        .catch(function () { $('brMsg').select(); toast('Select and copy the reply.', true); });
+    }
+    if (act === 'status') {
+      saveDrawer().then(function (lead) { return api('/leads/' + lead.id, { method: 'POST', body: { status: b.getAttribute('data-status') } }); })
+        .then(function () { toast('Marked as contacted.'); closeDrawer(); loadLeads(); loadStatus(); })
+        .catch(function (e) { toast(e.message, true); });
     }
     if (act === 'sequence') {
       var noEmail = !state.open.email;

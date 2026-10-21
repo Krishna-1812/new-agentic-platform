@@ -28,7 +28,7 @@ from .market_radar_store import StoreUnavailable, _connect  # noqa: F401  (re-ex
 log = logging.getLogger(__name__)
 STALE_AFTER_S = 1200
 LEAD_STATUSES = ("new", "contacted", "replied", "dismissed")
-LEAD_SOURCES = ("post", "comment", "jobs", "icp")
+LEAD_SOURCES = ("post", "comment", "jobs", "icp", "rfp", "reddit")
 
 SCHEMA = [
     """CREATE TABLE IF NOT EXISTS br_runs (
@@ -271,6 +271,14 @@ def add_spend(run_id, owner, started_by, provider, op, *, usd=0, credits=0):
            Decimal(str(credits or 0))))
 
 
+def spent_within(owner, op, hours):
+    """Did this owner pay for `op` (as booked by a run) in the last `hours` hours? The RFP search runs
+    every few days, not every run."""
+    row = _exec("""SELECT 1 FROM br_spend WHERE owner=%s AND op=%s AND usd > 0
+                   AND created_at >= now() - make_interval(hours => %s) LIMIT 1""", (owner, op, int(hours)), fetch="one")
+    return bool(row)
+
+
 def month_spend(owner):
     row = _exec("""SELECT COALESCE(SUM(usd), 0), COALESCE(SUM(credits), 0) FROM br_spend
                    WHERE owner=%s AND created_at >= date_trunc('month', now())""", (owner,), fetch="one")
@@ -298,6 +306,15 @@ def mark_seen(owner, keys):
                  ON CONFLICT (owner, key) DO NOTHING""", (owner, keys))
 
 
+def recent_companies(owner, days=60):
+    """(source, company) for this owner's leads of the last `days` days, the ones marked not a fit left
+    out: a company seen in two places scores higher (buyer_radar.multi_signal)."""
+    rows = _exec("""SELECT source, COALESCE(NULLIF(verdict->>'company', ''), post->'company'->>'name', '')
+                    FROM br_leads WHERE owner=%s AND status <> 'dismissed'
+                    AND created_at >= now() - make_interval(days => %s)""", (owner, int(days)), fetch="all")
+    return [(r[0], r[1]) for r in rows if r[1]]
+
+
 def add_leads(owner, run_id, leads):
     """Each lead's id, or None where the post was already a lead of this owner's."""
     ids = []
@@ -311,7 +328,7 @@ def add_leads(owner, run_id, leads):
                        ON CONFLICT (owner, post_key) DO NOTHING RETURNING id""",
                     (owner, run_id, p["key"], _json(p), lead["offer"], int(lead["score"]), _json(lead["verdict"]),
                      _json(lead["draft"]) if lead.get("draft") else None, lead.get("person") or "", email,
-                     "post" if email else None, source), fetch="one")
+                     (lead.get("email_source") or "post") if email else None, source), fetch="one")
         ids.append(row[0] if row else None)
     return ids
 

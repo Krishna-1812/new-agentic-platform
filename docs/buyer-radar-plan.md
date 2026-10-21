@@ -1,12 +1,13 @@
 # Buyer Radar
 
 People and companies on LinkedIn showing they need what we sell, in one place, with a message ready to send.
-Built 2026-10-17; job ads and comments added 2026-10-21. On the agents page as **Building**. Page:
+Built 2026-10-17; job ads, comments, customer profiles, RFPs and Reddit added 2026-10-21. On the agents page as **Building**. Page:
 `/strategic-agents/buyer-radar`, and inside every workspace at `/<account>/agents/buyer-radar`.
 
 ## Where it looks
 
-Settings → "Where to look" switches each on for the workspace. All four are on by default.
+Settings → "Where to look" switches each on for the workspace. All six are on by default; Reddit is
+skipped quietly until its keys are set (the page shows "Reddit not set up").
 
 | Source | What it finds | Through | Lead kind (`br_leads.source`) |
 |---|---|---|---|
@@ -14,8 +15,20 @@ Settings → "Where to look" switches each on for the workspace. All four are on
 | Their comments | people under those posts saying they need it too | Unipile (free) | `comment` |
 | Job ads | companies advertising jobs for the work, and who decides there | Unipile (free), Saleshandy's people search (free) | `jobs` |
 | Customer profiles | people who fit an offer's customers at a moment that matters | Saleshandy's lead database (free to search) | `icp` |
+| RFPs and tenders | organisations asking vendors for proposals, with a due date and a contact | Claude's web search (paid), every `rfp_days` days | `rfp` |
+| Reddit | threads asking for a tool or an agency, answered in the thread | Reddit's own API (free) | `reddit` |
 
-Every lead shows where it came from, and the list filters by it (Posts, Comments, Hiring).
+Every lead shows where it came from, and the list filters by it (Posts, Comments, Hiring, Profiles, RFPs,
+Reddit). A run goes as long as one source switched on can: RFPs need only Claude.
+
+## One company, several places
+
+A company found in two or more places (its job ads and a customer profile, an RFP and a post), in this run
+or among the workspace's leads of the last 60 days (`recent_companies`, those marked "Not a fit" left
+out), is likelier to buy. Each of its leads gains 8 points for every other place, at most 16 and never past
+100, and shows "Also: Hiring, Profile". Companies are compared by `buyer_radar_jobs.company_norm` (case,
+punctuation and Ltd, Inc and the like taken off); "Self-employed", "Freelance", "Stealth" and names under
+three letters are never matched. Slack and the spreadsheet (column "Also found in") say so too.
 
 ## What it does
 
@@ -175,6 +188,33 @@ id). Claude reads each comment against what the post asked for (`COMMENT_SYSTEM`
 replying is not a new lead. A commenter is written to on LinkedIn by LinkedIn's own member id, whose case
 matters, as the comment gives it.
 
+## RFPs and tenders (`tracker/buyer_radar_rfp.py`)
+
+An organisation that publishes an RFP has a budget, a scope and a deadline, and is asking vendors to
+write. Each offer has its own searches (Settings → "RFP searches"; `{year}` is this year), run through
+Claude's web search (`contact_lab_search.claude`, one search each). Claude lists what the results show,
+as JSON: the title, the issuer, the due date, where, a contact address and a summary. An RFP is dropped
+when its link is not one the search returned (so the model cannot invent one) or its due date has passed.
+Claude then reads each one against the offers (`RFP_SYSTEM`): the offer's whole scope with time to answer
+scores highest, a part of a wider scope less, local or certified vendors only or due within a week lower.
+
+- The search runs once every `rfp_days` days (default 7), counted from the last paid RFP search in
+  `br_spend` (op `rfp-search`), not every run: an RFP stays open for weeks.
+- The contact address the RFP gives is the lead's email (`email_source` `rfp`). The message asks for the
+  documents or the next step and never says they asked.
+- An RFP is never sent, emailed or added to a sequence automatically: the team answers it with a
+  proposal.
+
+## Reddit (`tracker/buyer_radar_reddit.py`)
+
+Founders and managers ask Reddit what they do not ask on LinkedIn ("Gong is too expensive, what else?",
+"Any PPC agency you would recommend?"). Each offer's Reddit searches (Settings) go through Reddit's own
+search (`sci_reddit_client.search_posts`, the last month, newest first, `reddit_per_query` threads each).
+Claude reads each thread (`REDDIT_SYSTEM`). Nobody on Reddit is emailed or messaged from here: the
+drawer has the reply Claude wrote, to copy and post in the thread by hand, after reading the
+subreddit's rules, and "I replied" marks it contacted. Needs `REDDIT_CLIENT_ID` and
+`REDDIT_CLIENT_SECRET` (a "script" app at reddit.com/prefs/apps).
+
 ## Finding an email
 
 "Find their email" in a lead's message drawer (`POST /api/leads/<id>/find-email`, the team only, after a
@@ -234,6 +274,8 @@ Every paid call is recorded in `br_spend`, with who ran it and the workspace. It
 | Claude Haiku, suggesting customer profiles | About a cent, only on a yes |
 | Saleshandy sequences | Nothing to add a prospect with an email; one credit when Saleshandy reveals one |
 | Claude Haiku, writing | Well under a cent per lead |
+| Claude's web search for RFPs | $10 per 1,000 searches plus the reading, about $0.03 a search; 10 searches once a week by default |
+| Reddit search | Nothing |
 | Saleshandy email finding (optional) | 1 credit, about $0.026, per email found |
 
 With the default settings (37 post searches × 25 posts, and 19 job titles × 20 ads), a run through Unipile reads about 520 posts and 380 job ads, Unipile's daily 900 shared between them, and costs only Claude's reading: usually about $0.30, at most about $0.95. Through Apify the posts cost about $2 per 1,000 more. A daily search reads the last week once a search has finished that week, and Claude never reads a post, comment or company twice. Each run has a cap (`run_cap_usd`, default $2): Apify is told to stop charging at 80%
@@ -301,6 +343,7 @@ search still going.
 | `GMAIL_SENDER`, `GOOGLE_SA_JSON` | Email (as Market Radar's weekly email) |
 | `UNIPILE_API_KEY`, `UNIPILE_DSN` | LinkedIn sending; `UNIPILE_LINKEDIN_ACCOUNT_ID` pins the account |
 | `SALESHANDY_API_KEY` | Optional email finding (already set) |
+| `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` | Reddit threads (a Reddit "script" app; already used by Social Media Intelligence if set) |
 | `BUYER_RADAR_SLACK_BOT_TOKEN` | Optional; falls back to `GOOGLE_ADS_SLACK_BOT_TOKEN`, then `SLACK_BOT_TOKEN` |
 | `BUYER_RADAR_SEND` | `off` stops every send |
 | `BUYER_RADAR_APIFY_ACTOR_ID` | Optional; another post-search actor |
@@ -316,3 +359,5 @@ search still going.
 - [ ] Saleshandy's company signals, `jobs_changed_within` (months?) and `technologies_used` confirmed on a live search.
 - [ ] One prospect added to a test sequence, with and without the message field.
 - [ ] The opt-out link tried from a real inbox.
+- [ ] One RFP search per offer checked by hand: are the RFPs real, open and in scope? Tune the searches.
+- [ ] One Reddit search with the keys set: are the threads buyers?

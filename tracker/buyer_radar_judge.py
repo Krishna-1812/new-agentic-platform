@@ -3,6 +3,8 @@
     judge_posts(posts, offers, budget=, model=) -> {post key: verdict}
     judge_posts(signals, offers, ..., system=JOB_SYSTEM, text_of=job_text)          companies hiring
     judge_posts(comments, offers, ..., system=COMMENT_SYSTEM, text_of=comment_text)  people in the comments
+    judge_posts(rfps, offers, ..., system=RFP_SYSTEM, text_of=rfp_text)              requests for proposals
+    judge_posts(threads, offers, ..., system=REDDIT_SYSTEM, text_of=reddit_text)     Reddit threads
     draft(lead, offer, sender, budget=, model=) -> {"subject", "email", "note", "message"}
 
 Both are structured-output calls through contact_lab._json_call, so every call is checked against the
@@ -91,6 +93,40 @@ COMMENT_SYSTEM = (
     "quotes a few words of the comment.\n"
     "Never invent facts that are not in the comment or headline. Use the numbers given.")
 
+RFP_SYSTEM = (
+    "You find work for a sales team in requests for proposals (RFPs), requests for quotation and tenders "
+    "that organisations have published. You are given what each of the team's offers sells and who buys "
+    "it, then numbered RFPs, each with who issued it, what it asks for, its due date and where. For each "
+    "RFP decide:\n"
+    "- role: 'buyer' when the issuer is asking vendors for work an offer does; 'seller' when it is a "
+    "vendor's own page, an advert or a list of RFPs sold by a lead service; 'other' when it asks for "
+    "something no offer does (construction, printing, hardware).\n"
+    "- offer: which offer's key fits, or 'none'. intent: 'seeking_vendor' when it fits, else 'none'.\n"
+    "- score 0 to 100, how likely a response from this offer is worth the team's time: exactly the offer's "
+    "work with a due date at least a week away, 75 to 95; the offer's work as one part of a wider scope, 55 "
+    "to 75; due within a week, or limited to local, certified or registered vendors the offer may not "
+    "qualify as, 30 to 55; anything else 0 to 10.\n"
+    "- need: what they want, in one short sentence in plain English.\n"
+    "- company: the issuer. region: where, if given. deadline: the due date as given, else ''.\n"
+    "- reason: why, in one sentence, naming the scope.\n"
+    "Never invent facts that are not in the RFP given. Use the numbers given.")
+
+REDDIT_SYSTEM = (
+    "You find buyers on Reddit for a sales team. You are given what each of the team's offers sells and "
+    "who buys it, then numbered Reddit threads (the title and the opening post). For each thread decide, "
+    "from the thread alone:\n"
+    "- role: 'buyer' when the poster wants a product, tool, agency or freelancer, or advice choosing one, "
+    "for themselves or their company; 'seller' when they promote their own product or service; "
+    "'job_seeker' when they want a job or clients; else 'other' (news, a rant, a question about a career).\n"
+    "- offer: which offer's key fits what they want, or 'none'.\n"
+    "- intent: 'seeking_vendor', 'asking_recommendations', 'pain_point' or 'none', as for a LinkedIn post.\n"
+    "- score 0 to 100, how likely a helpful reply in the thread that mentions the offer is welcome: asking "
+    "for a vendor or for recommendations in the offer's area, 65 to 90; a pain point the offer solves, 35 "
+    "to 60; any seller, job seeker or 'none' offer 0 to 10.\n"
+    "- need, company (only if the thread names it, else ''), region, deadline, reason as for a post; the "
+    "reason quotes a few words of the thread.\n"
+    "Never invent facts that are not in the thread. Use the numbers given.")
+
 JUDGE_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["verdicts"],
                 "properties": {"verdicts": {"type": "array", "items": {
                     "type": "object", "additionalProperties": False,
@@ -144,6 +180,19 @@ def comment_text(n, p):
     return "COMMENT %d (posted %s)\nUNDER A POST BY %s ASKING FOR: %s\nCOMMENTER: %s, %s\nCOMMENT: %s" % (
         n, p.get("posted_at") or "date unknown", parent.get("author") or "someone", parent.get("need") or "unknown",
         a.get("name") or "unknown", a.get("headline") or "no headline", re.sub(r"\s+", " ", p.get("text") or "")[:1500])
+
+
+def rfp_text(n, p):
+    r = p.get("rfp") or {}
+    return "RFP %d\nTITLE: %s\nISSUED BY: %s\nDUE: %s\nWHERE: %s\nWHAT THEY WANT: %s" % (
+        n, r.get("title") or "unknown", r.get("issuer") or "unknown", r.get("due") or "not given",
+        r.get("location") or "not given", r.get("summary") or re.sub(r"\s+", " ", p.get("text") or "")[:1500])
+
+
+def reddit_text(n, p):
+    return "THREAD %d (posted %s, in r/%s)\nBY: %s\nTEXT: %s" % (
+        n, p.get("posted_at") or "date unknown", p.get("subreddit") or "unknown", (p.get("author") or {}).get("name") or "unknown",
+        re.sub(r"\s+", " ", p.get("text") or "")[:2500])
 
 
 def clean_verdict(v, offers):
@@ -269,7 +318,9 @@ DRAFT_SYSTEM = (
     "offer described. Rules: refer to that signal specifically in the first line, in their terms (for a "
     "post or comment, what they asked for; for job ads, the roles their company is hiring for, as something "
     "public you noticed, never as if they asked you; for a customer profile, the moment, briefly and without "
-    "presuming they need anything, and never pretending they posted or asked); say in one or two sentences how the offer fits that exact need, with no claims beyond what the "
+    "presuming they need anything, and never pretending they posted or asked; for an RFP, name it and its "
+    "due date, say the offer means to respond and ask for the full documents or the next step; for a "
+    "Reddit thread, follow the instructions given with it); say in one or two sentences how the offer fits that exact need, with no claims beyond what the "
     "offer description says; one clear, low-effort next step (a short call or a demo, or a reply); plain, "
     "warm, professional English; no flattery, no cliches, no exclamation marks, no em dashes, no emoji, no "
     "hashtags. Email: a subject under 60 characters and a body under 110 words, without a greeting line's "
@@ -310,6 +361,20 @@ def _signal_text(lead):
                 "anything: this is a cold first message." % (a.get("name") or "them", a.get("headline") or "",
                                                               icp.get("name") or "", ("; " + icp["why"]) if icp.get("why") else "")
                 ), (c.get("name") or a.get("name") or "").split(" ")[0]
+    if kind == "rfp":
+        r = p.get("rfp") or {}
+        return ("WRITING TO: the contact for a request for proposals published by %s\n\nTHE RFP: %s. %s%s%s\n\n"
+                "WHAT THEY WANT: %s\nThey published this for vendors to answer: say you saw it, never that they "
+                "asked you." % (r.get("issuer") or "an organisation", r.get("title") or "", r.get("summary") or "",
+                                (" Due %s." % r["due"]) if r.get("due") else "", (" %s." % r["location"]) if r.get("location") else "",
+                                v.get("need") or "")), ""
+    if kind == "reddit":
+        return ("A PUBLIC REDDIT THREAD by %s %s:\n%s\n\nWHAT THEY WANT: %s\n\nWrite 'message' as a reply to post in "
+                "the thread, under 600 characters: answer their question helpfully first, then say plainly that you "
+                "work on the offer and that it may fit, in one sentence, with the website. No sales tone, no link "
+                "beyond the website. Leave 'subject', 'email' and 'note' as empty strings: nobody on Reddit is "
+                "emailed." % (a.get("name") or "someone", a.get("headline") or "", re.sub(r"\s+", " ", p.get("text") or "")[:2500],
+                               v.get("need") or "")), ""
     first = (a.get("name") or "").split(" ")[0] if not a.get("company") else ""
     body = re.sub(r"\s+", " ", p.get("text") or "")[:2500]
     if kind == "comment":

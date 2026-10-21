@@ -116,6 +116,10 @@
 .mr-chip.br-kind { font-weight: 700; background: var(--ink); color: var(--tx-on-ink); }
 .mr-chip.br-kind--comment { background: var(--clay-dim); color: var(--clay-tx); }
 .mr-chip.br-kind--jobs { background: var(--mr-ok-bg); color: var(--mr-ok); }
+.mr-chip.br-kind--rfp { background: var(--mr-warn-bg); color: var(--mr-warn); }
+.mr-chip.br-kind--reddit { background: var(--acc-dim); color: var(--acc-tx); }
+/* a company found in several places (its job ads and a customer profile): it scored higher for it */
+.mr-chip.br-multi { font-weight: 700; }
 .br-parent { margin: 10px 0 0; font-size: 13px; color: var(--tx3); }
 .br-parent a { color: var(--tx2); font-weight: 600; }
 .br-jobs { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 4px; font-size: 13.5px; }

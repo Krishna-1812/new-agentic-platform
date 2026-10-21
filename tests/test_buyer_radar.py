@@ -33,6 +33,7 @@ from tracker import buyer_radar as br  # noqa: E402
 from tracker import buyer_radar_judge as judge  # noqa: E402
 from tracker import buyer_radar_send as send  # noqa: E402
 from tracker import buyer_radar_source as src  # noqa: E402
+from tracker import buyer_radar_rfp as rfp  # noqa: E402
 from tracker import buyer_radar_store as store  # noqa: E402
 from tracker import contact_lab_search as cls  # noqa: E402
 
@@ -285,16 +286,22 @@ def test_a_draft_has_no_em_dashes_and_a_note_linkedin_accepts():
 # == the run =============================================================================================
 
 class FakeStore:
-    def __init__(self, known=(), unipile_today=0):
+    def __init__(self, known=(), unipile_today=0, recent=(), rfp_hours_ago=None):
         self.known, self.spend, self.leads, self.updates, self.sent = set(known), [], {}, [], {"email": 0, "linkedin": 0}
-        self.unipile_today, self.seen = unipile_today, set()
+        self.unipile_today, self.seen, self.recent, self.rfp_hours_ago = unipile_today, set(), list(recent), rfp_hours_ago
 
     def install(self, monkeypatch):
         monkeypatch.setenv("UNIPILE_API_KEY", "u")
         monkeypatch.setenv("SALESHANDY_API_KEY", "s")
         for name in ("update_run", "add_spend", "known_posts", "add_leads", "get_lead", "update_lead", "sent_today",
-                     "unipile_results_today", "mark_seen"):
+                     "unipile_results_today", "mark_seen", "spent_within", "recent_companies"):
             monkeypatch.setattr(store, name, getattr(self, name))
+
+    def spent_within(self, owner, op, hours):
+        return op == "rfp-search" and self.rfp_hours_ago is not None and self.rfp_hours_ago < hours
+
+    def recent_companies(self, owner, days=60):
+        return self.recent
 
     def mark_seen(self, owner, keys):
         self.seen.update(keys)
@@ -387,7 +394,9 @@ def deps(scores, out, **over):
     d = {"search": search, "unipile_search": unipile_search, "judge": judge_posts, "draft": draft, "send_email": send_email, "send_linkedin": send_linkedin,
          "slack": slack, "find_emails": find_emails, "check": check, "jobs_search": jobs_search,
          "job_locations": lambda places: (["101"] * len(places), []), "comments": comments,
-         "people": lambda leads, offers: None, "icp": lambda pairs, per_icp, known: out.setdefault("icp", (len(pairs), per_icp)) and ([], []),
+         "people": lambda leads, offers: None,
+         "rfps": lambda queries, budget, model: out.setdefault("rfps", len(queries)) and {"rfps": [], "notes": [], "searches": 0},
+         "reddit": lambda queries, per_query: out.setdefault("reddit", (len(queries), per_query)) and {"posts": [], "notes": []}, "icp": lambda pairs, per_icp, known: out.setdefault("icp", (len(pairs), per_icp)) and ([], []),
          "sequence": lambda owner, lead, settings, by, auto: out.setdefault("sequenced", []).append(lead["id"]) or {"ok": True}}
     d.update(over)
     return d, posts
@@ -409,7 +418,9 @@ def test_a_run_keeps_the_buyers_drafts_them_and_records_every_cost(monkeypatch):
     assert ("apify", "post-search", 0.25, 0, "acct:7", "mia@x.com") in fake.spend
     assert ("anthropic", "read", 0.01, 0, "acct:7", "mia@x.com") in fake.spend
     assert ("anthropic", "draft", 0.004, 0, "acct:7", "mia@x.com") in fake.spend
-    assert fake.updates[:5] == ["searching", "reading", "reading comments", "finding people", "drafting"]
+    assert fake.updates[:6] == ["searching", "reading", "reading comments", "searching for RFPs", "finding people", "drafting"]
+    assert out["rfps"] == sum(len(q) for q in rfp.OFFER_QUERIES.values()) and "reddit" not in out, \
+        "RFPs searched with every offer's searches; Reddit skipped without its keys"
     assert out["icp"] == (6, 5), "30 people a search, shared by the six customer profiles"
     assert out["comments_of"] == [posts[0]["key"], posts[2]["key"]], "the comments of the posts kept, best first"
     assert fake.seen == {p["key"] for p in posts}, "every post read is remembered, kept or not"
@@ -486,8 +497,11 @@ def test_a_search_that_did_not_run_fails_the_run_and_one_cut_short_keeps_its_pos
     monkeypatch.delenv("UNIPILE_API_KEY")
     monkeypatch.delenv("SALESHANDY_API_KEY")
     with pytest.raises(RuntimeError) as e:
-        br.run(1, "k", br.merged({}), deps=d)
+        br.run(1, "k", br.merged({"sources": ["posts", "comments", "jobs", "icp", "reddit"]}), deps=d)
     assert "UNIPILE_API_KEY" in str(e.value)
+    summary = br.run(1, "k", br.merged({}), deps=d)
+    assert summary["kept"] == 0 and any(n.startswith("Posts were not searched") for n in summary["notes"]), \
+        "RFPs need only Claude, so a run with them on still goes"
 
 
 def test_a_unipile_search_is_free_keeps_to_the_days_limit_and_says_how_far_back_it_read(monkeypatch):
@@ -819,8 +833,9 @@ def test_a_search_needs_its_keys_and_a_yes(mem, monkeypatch):
     c = _client(STAFF)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
     monkeypatch.delenv("UNIPILE_API_KEY", raising=False)
+    mem["settings"][STAFF] = br.merged({"sources": ["posts", "comments"]})
     assert "UNIPILE_API_KEY" in c.post(BASE + "/api/runs", json={"confirm_spend": True}, headers=H).get_json()["error"]
-    mem["settings"][STAFF] = br.merged({"source": "apify"})
+    mem["settings"][STAFF] = br.merged({"source": "apify", "sources": ["posts"]})
     monkeypatch.delenv("APIFY_API_TOKEN", raising=False)
     assert "APIFY_API_TOKEN" in c.post(BASE + "/api/runs", json={"confirm_spend": True}, headers=H).get_json()["error"]
     monkeypatch.setenv("APIFY_API_TOKEN", "t")

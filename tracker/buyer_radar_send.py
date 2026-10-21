@@ -214,6 +214,8 @@ def sequence_lead(owner, lead, settings, *, by="", auto=False, client=None, stor
     store = store or buyer_radar_store
     if not lead:
         return {"ok": False, "detail": "no such lead", "stop": False}
+    if lead.get("source") == "reddit":
+        return {"ok": False, "detail": "a Reddit thread is answered in the thread, not by email", "stop": False}
     seq = (settings.get("sequences") or {}).get(lead["offer"]) or {}
     if not seq.get("step_id"):
         return {"ok": False, "detail": "no Saleshandy sequence is chosen for %s in Settings" %
@@ -305,7 +307,10 @@ def slack_token():
             or os.environ.get("SLACK_BOT_TOKEN") or "")
 
 
-SLACK_KIND = {"post": "Post", "comment": "Comment", "jobs": "Hiring"}
+SLACK_KIND = {"post": "Post", "comment": "Comment", "jobs": "Hiring", "icp": "Customer profile", "rfp": "RFP",
+              "reddit": "Reddit"}
+SLACK_LINK = {"jobs": "Open the company", "comment": "Open the post they commented on", "rfp": "Open the RFP",
+              "reddit": "Open the thread"}
 
 
 def slack_message(owner_label, leads, page_url):
@@ -321,10 +326,13 @@ def slack_message(owner_label, leads, page_url):
         if kind == "jobs" and p.get("contacts"):
             c = p["contacts"][0]
             who += " (write to %s%s)" % (esc(c.get("name") or ""), (", " + esc(c["title"][:60])) if c.get("title") else "")
-        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*%s* · %s · %s · score %d\n%s\n<%s|%s>" % (
+        if len(v.get("signals") or []) > 1:
+            who += " (also found by %s)" % ", ".join(SLACK_KIND.get(x, x).lower() for x in v["signals"] if x != kind)
+        url = p.get("url") or ""
+        link = ("\n<%s|%s>" % (url, SLACK_LINK.get(kind, "Open the post"))) if url.startswith(("https://", "http://")) else ""
+        blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "*%s* · %s · %s · score %d\n%s%s" % (
             esc(br.OFFERS.get(lead["offer"], {}).get("label", lead["offer"])), SLACK_KIND.get(kind, "Post"),
-            esc(v.get("intent_label") or ""), lead["score"], "%s: %s" % (who, esc(v.get("need") or "")), p["url"],
-            {"jobs": "Open the company", "comment": "Open the post they commented on"}.get(kind, "Open the post"))}})
+            esc(v.get("intent_label") or ""), lead["score"], "%s: %s" % (who, esc(v.get("need") or "")), link)}})
     if len(leads) > 10:
         blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": "and %d more" % (len(leads) - 10)}]})
     if page_url:
