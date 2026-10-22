@@ -20,11 +20,12 @@
   var INTENT = { seeking_vendor: 'Looking for a vendor', asking_recommendations: 'Asking for recommendations',
     hiring_for_it: 'Hiring for it', pain_point: 'Has the problem', none: 'Not buying' };
   var STAGES = ['queued', 'searching', 'reading', 'reading comments', 'reading Reddit', 'searching for RFPs', 'finding people',
-    'finding decision makers', 'drafting', 'adding to Saleshandy', 'sending emails', 'sending on LinkedIn', 'posting to Slack', 'done'];
+    'finding decision makers', 'drafting', 'adding to Saleshandy', 'sending emails', 'sending on LinkedIn', 'updating the Google Sheet',
+    'posting to Slack', 'done'];
   var STAGE_WORDS = { queued: 'Starting', searching: 'Searching LinkedIn', reading: 'Claude is reading what it found',
     'reading comments': 'Reading the comments', 'reading Reddit': 'Reading Reddit', 'searching for RFPs': 'Searching the web for RFPs',
     'finding people': 'Finding people who fit your profiles', 'finding decision makers': 'Finding who decides',
-    'adding to Saleshandy': 'Adding to Saleshandy',
+    'adding to Saleshandy': 'Adding to Saleshandy', 'updating the Google Sheet': 'Updating the Google Sheet',
     drafting: 'Writing the messages', 'sending emails': 'Sending emails', 'sending on LinkedIn': 'Sending on LinkedIn',
     'posting to Slack': 'Posting to Slack', done: 'Done', failed: 'Stopped' };
   // Where a lead came from: [chip, what it means, the filter's name].
@@ -74,6 +75,18 @@
     s = String(s || '');
     for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 6;
     return 'h' + h;
+  }
+  // A time of day as India shows it ("9:00 AM"), from an hour (0..23) or a Date.
+  function hourLabel(h) {
+    if (h instanceof Date) {
+      if (isNaN(h)) return '';
+      var ist = new Date(h.getTime() + 330 * 60000);
+      h = ist.getUTCHours();
+      var m = ist.getUTCMinutes();
+      return ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + ' ' + (h < 12 ? 'AM' : 'PM');
+    }
+    h = Number(h) || 0;
+    return ((h % 12) || 12) + ':00 ' + (h < 12 ? 'AM' : 'PM');
   }
   function band(score) { return score >= 85 ? 'hot' : score >= 70 ? 'warm' : 'cool'; }
 
@@ -226,6 +239,9 @@
         if (s.threads) bits.push(s.threads + ' Reddit threads');
         if (s.rfps) bits.push(s.rfps + ' RFPs');
         if (s.multi) bits.push(s.multi + ' in several places');
+        if (s.repeats) bits.push(s.repeats + ' repeat' + (s.repeats === 1 ? '' : 's') + ' skipped');
+        if (s.slack === 'waiting' && s.slack_at) bits.push('Slack at ' + hourLabel(new Date(s.slack_at)));
+        if (s.sheet && s.sheet.added != null) bits.push(s.sheet.added + ' added to the sheet');
         if (s.read != null && s.read !== s.posts) bits.push(s.read + ' read by Claude');
         if (s.source) bits.push('via ' + (s.source === 'unipile' ? 'Unipile' : 'Apify'));
         if (s.strong) bits.push(s.strong + ' strong');
@@ -463,7 +479,19 @@
         numIn('brRfpDays', 'Search for RFPs every (days)', s.rfp_days, 1, 30, 1, 'An RFP stays open for weeks; each search is paid.') + '</div>' +
       '<div class="br-grid3">' + numIn('brRdPer', 'Reddit threads per search', s.reddit_per_query, 5, 100, 5) + '</div>' +
       '<h4 class="br-set-t">Every day</h4>' +
-      sw('brDaily', s.daily, 'Search LinkedIn every day', 'Once a day, early morning India time. Skipped once this month\'s spend reaches the monthly cap.') +
+      sw('brDaily', s.daily, 'Search every day', 'Starts an hour before the time below; the Slack message goes out at that time. Skipped once this month\'s spend reaches the monthly cap.') +
+      '<div class="br-grid3"><div><label class="mr-k" for="brHour">Slack message at (India time)</label><select id="brHour">' +
+        Array.apply(null, Array(24)).map(function (_, h) {
+          return '<option value="' + h + '"' + (Number(s.daily_hour) === h ? ' selected' : '') + '>' + hourLabel(h) + '</option>';
+        }).join('') + '</select></div>' +
+        numIn('brDailyN', 'New leads a search, about', s.daily_leads, 0, 100, 5, 'Customer profiles fill what the other places leave, so every day brings about this many. 0: no filling.') + '</div>' +
+      '<h4 class="br-set-t">Google Sheet</h4>' +
+      '<label class="mr-k" for="brSheet">Sheet link</label><input type="text" id="brSheet" value="' + esc(s.sheet_id ? 'https://docs.google.com/spreadsheets/d/' + s.sheet_id + '/edit' : '') + '" placeholder="https://docs.google.com/spreadsheets/d/...">' +
+      '<div class="mr-hint">Every lead gets one row, never twice, with everything Buyer Radar knows; status, email and who was written to are kept up to date. ' +
+        (((extra || {}).sheet || {}).email ? 'Share the sheet with <b>' + esc(extra.sheet.email) + '</b> as an Editor first.' : 'The service account (GOOGLE_SA_JSON) is not set on the service.') + '</div>' +
+      '<div class="br-dr-acts"><button type="button" class="mr-btn small ghost" data-sheet="check">Check the sheet</button>' +
+        '<button type="button" class="mr-btn small ghost" data-sheet="sync">Update the sheet now</button>' +
+        (s.sheet_id ? link('https://docs.google.com/spreadsheets/d/' + s.sheet_id + '/edit', 'Open the sheet', 'mr-btn small ghost') : '') + '</div>' +
       '<div class="br-grid3">' + numIn('brCap', 'Most one search may cost ($)', s.run_cap_usd, 0.1, 20, 0.1) + numIn('brMonth', 'Monthly cap ($)', s.monthly_cap_usd, 1, 500, 1) +
         numIn('brAlert', 'Strong lead score', s.alert_score, 0, 100, 5, 'Posted to Slack and shown under Strong.') + '</div>' +
       '<div class="br-grid3"><div><label class="mr-k" for="brSlack">Slack channel</label><input type="text" id="brSlack" value="' + esc(s.slack_channel || '') + '" placeholder="#buyer-leads">' +
@@ -506,6 +534,9 @@
     body.jobs_per_query = $('brJobPer').value;
     body.comment_posts = $('brComPosts').value;
     body.icp_per_run = $('brIcpN').value;
+    body.daily_hour = $('brHour').value;
+    body.daily_leads = $('brDailyN').value;
+    body.sheet_id = $('brSheet').value.trim();
     body.rfp_days = $('brRfpDays').value;
     body.reddit_per_query = $('brRdPer').value;
     body.auto_sequence = $('brAutoSeq').checked;
@@ -537,7 +568,7 @@
 
   root.BR = { esc: esc, safeUrl: safeUrl, renderSource: renderSource, renderLead: renderLead, renderLeads: renderLeads, renderRuns: renderRuns,
     renderStats: renderStats, renderReady: renderReady, renderDrawer: renderDrawer, renderSettings: renderSettings,
-    renderEstimate: renderEstimate, renderFilters: renderFilters, renderRedditDrawer: renderRedditDrawer, renderJobs: renderJobs, renderIcp: renderIcp, seqOptions: seqOptions, renderLive: renderLive, leadQuery: leadQuery, offers: {} };
+    renderEstimate: renderEstimate, renderFilters: renderFilters, renderRedditDrawer: renderRedditDrawer, hourLabel: hourLabel, renderJobs: renderJobs, renderIcp: renderIcp, seqOptions: seqOptions, renderLive: renderLive, leadQuery: leadQuery, offers: {} };
 
   // ── the page ─────────────────────────────────────────────────────────────
   if (!DOC || !DOC.getElementById('br')) return;
@@ -592,7 +623,7 @@
       if (!CLIENT && $('brSource')) $('brSource').innerHTML = renderSource(st.source, st.sources);
       if (!CLIENT && $('brSettings') && !$('brSettings').dataset.drawn) {
         $('brSettings').innerHTML = renderSettings(st.settings, OFFERS, st.defaults, st.job_defaults,
-          { icps: st.icps, triggers: st.triggers, levels: st.levels, rfpDefaults: st.rfp_defaults, redditDefaults: st.reddit_defaults });
+          { icps: st.icps, triggers: st.triggers, levels: st.levels, rfpDefaults: st.rfp_defaults, redditDefaults: st.reddit_defaults, sheet: st.sheet });
         $('brSettings').dataset.drawn = '1';
       }
       $('brRunBtn').disabled = !((st.ready.run == null ? st.ready.search : st.ready.run) && st.ready.claude);
@@ -806,6 +837,16 @@
       }
     });
     // Customer profiles: add one, remove one, or have Claude suggest them (shown to edit, saved with Settings).
+    // The Google Sheet: check it (sets up its tabs) or send what is not in it yet. Save the link first.
+    $('brSettings').addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-sheet]');
+      if (!b) return;
+      b.disabled = true;
+      api('/sheet', { method: 'POST', body: { action: b.getAttribute('data-sheet') } })
+        .then(function (j) { toast(j.detail || ('Sheet updated: ' + j.added + ' added, ' + j.updated + ' brought up to date.')); })
+        .catch(function (e) { toast(e.message, true); })
+        .then(function () { b.disabled = false; });
+    });
     $('brSettings').addEventListener('click', function (ev) {
       var b = ev.target.closest('[data-icp]');
       if (!b) return;

@@ -188,18 +188,19 @@ def test_a_run_keeps_people_who_fit_a_profile_each_once_and_no_more_than_asked(m
     rows = [("markify", a, icp.signal(a, "markify", person(i)), 80 - i) for i in (1, 2, 3, 9)]
     rows += [("markify", b, icp.signal(b, "markify", person(i)), 40) for i in (5,)]
     seen = {}
-    d.update(icp=lambda pairs, per_icp, known: seen.update(pairs=len(pairs), per=per_icp, met=known(["icp:9", "icp:1"])) or
+    d.update(icp=lambda pairs, per_icp, known, cursor: seen.update(pairs=len(pairs), per=per_icp, met=known(["icp:9", "icp:1"])) or
              (rows, ["a note"]))
-    s = br.merged({"sources": ["icp"], "icp_per_run": 4,
+    s = br.merged({"sources": ["icp"], "icp_per_run": 2,
                    "icps": {"markify": [a, b], "callvibe": []}})
     summary = br.run(1, "acct:7", s, started_by="mia@x.com", deps=d)
-    assert seen == {"pairs": 2, "per": 2, "met": {"icp:9"}}, "4 people shared by the 2 profiles; the search is told who was met"
+    assert seen == {"pairs": 2, "per": 3, "met": {"icp:9"}}, "2 wanted, asked half again over the 2 profiles, 3 at least"
     kept = sorted(fake.leads.values(), key=lambda x: -x["score"])
-    assert [x["post"]["key"] for x in kept] == ["icp:1", "icp:2"], "2 a profile; one already met skipped; under 50 not kept"
+    assert [x["post"]["key"] for x in kept] == ["icp:1", "icp:2"], "the best 2; one already met skipped; under 50 not kept"
     assert kept[0]["source"] == "icp" and kept[0]["person"] == "sh/1" and kept[0]["verdict"]["intent"] == "fits_profile"
     assert kept[0]["verdict"]["need"] == "Started in their role in the last 2 months" and kept[0]["draft"]
     assert summary["by_source"] == {"icp": 2} and summary["people"] == 2 and "a note" in summary["notes"]
-    assert {"icp:1", "icp:2", "icp:3", "icp:5"} <= fake.seen, "everyone looked at is not looked at again"
+    assert "icp:5" in fake.seen and "icp:3" not in fake.seen, \
+        "one under the score is not looked at again; one not needed today is left for another day"
 
 
 def test_strong_leads_go_to_their_offers_sequence_and_the_rest_by_email(monkeypatch):

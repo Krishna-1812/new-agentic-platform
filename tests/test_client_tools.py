@@ -404,6 +404,7 @@ TEAM_ONLY = {
     "/strategic-agents/buyer-radar/api/leads/<int:lead_id>/sequence": "writes to people for the agency",
     "/strategic-agents/buyer-radar/api/sequences": "the agency's Saleshandy sequences",
     "/strategic-agents/buyer-radar/api/icps/suggest": "the customer profiles are the team's settings",
+    "/strategic-agents/buyer-radar/api/sheet": "the Google Sheet is the team's setting, and holds the drafted messages",
 }
 
 

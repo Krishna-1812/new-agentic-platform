@@ -15359,10 +15359,12 @@ def buyer_radar_status():
                         slack=bool(send.slack_token()), saleshandy=sh.configured(), cron=bool(os.environ.get("BUYER_RADAR_CRON_TOKEN")),
                         sending=not send.sending_off())
     from tracker import buyer_radar_icp as icp, buyer_radar_reddit as reddit, buyer_radar_rfp as rfp
+    from tracker import buyer_radar_sheet as br_sheet
     out.update(settings=settings, estimate=br.estimate(settings), month=month,
                defaults={k: o["queries"] for k, o in br.OFFERS.items()},
                job_defaults={k: o["jobs"] for k, o in br.OFFERS.items()},
                rfp_defaults={k: rfp.OFFER_QUERIES.get(k, []) for k in br.OFFERS},
+               sheet={"email": br_sheet.service_email(), "url": br_sheet.sheet_url(settings.get("sheet_id"))},
                reddit_defaults={k: reddit.OFFER_QUERIES.get(k, []) for k in br.OFFERS},
                icps={k: icp.icps_for(settings, k) for k in br.OFFERS}, triggers=icp.TRIGGERS, levels=icp.LEVELS)
     return jsonify(out)
@@ -15710,10 +15712,11 @@ def buyer_radar_icps_suggest():
 
 @app.route("/api/buyer-radar/daily", methods=["POST"])
 def buyer_radar_daily():
-    """Called once a day by .github/workflows/buyer-radar-daily.yml with "Authorization: Bearer
-    <BUYER_RADAR_CRON_TOKEN>". Starts one search for each workspace whose daily search is on, unless it
-    already ran today or this month's spend has reached its monthly cap. The reply holds counts only: the
-    Action's log may be public."""
+    """Called every hour by .github/workflows/buyer-radar-daily.yml with "Authorization: Bearer
+    <BUYER_RADAR_CRON_TOKEN>". For each workspace whose daily search is on, starts today's search in the
+    hour before its Slack time (Settings, India time), unless one finished or is going today, two failed,
+    or this month's spend has reached its cap. Then posts every daily search's Slack message whose time has
+    come. The reply holds counts only: the Action's log may be public."""
     import hmac
     from tracker import buyer_radar as br, buyer_radar_store as store
     secret = os.environ.get("BUYER_RADAR_CRON_TOKEN", "")
@@ -15723,14 +15726,15 @@ def buyer_radar_daily():
         return jsonify(ok=False, error="Not allowed."), 403
     if not os.environ.get("ANTHROPIC_API_KEY"):
         return jsonify(ok=False, error="ANTHROPIC_API_KEY is needed."), 503
-    started, skipped = 0, {"ran_today": 0, "monthly_cap": 0, "running": 0, "no_search_key": 0}
+    now = datetime.now(timezone.utc)
+    started, skipped = 0, {"not_yet": 0, "done_today": 0, "monthly_cap": 0, "running": 0, "no_search_key": 0}
     try:
         for owner in store.daily_owners():
             settings = store.get_settings(owner)
             if br.search_missing(settings):
                 skipped["no_search_key"] += 1
-            elif store.ran_today(owner):
-                skipped["ran_today"] += 1
+            elif not br.daily_due(settings, now, store.daily_runs_since(owner, br.ist_day_start(now))):
+                skipped["not_yet" if now < br.daily_slot(settings, now)[0] else "done_today"] += 1
             elif store.month_spend(owner)["usd"] >= float(settings["monthly_cap_usd"]):
                 skipped["monthly_cap"] += 1
             elif store.running_run(owner):
@@ -15739,11 +15743,41 @@ def buyer_radar_daily():
                 if settings.get("posted") in ("month", "3months") and store.ran_within(owner, 6):
                     # searched this week already: the newest posts of the last week are the new ones
                     settings = dict(settings, posted="week")
+                settings = dict(settings, deliver_at=br.daily_slot(settings, now)[1].isoformat())
                 store.start_run(owner, settings, started_by="", trigger="daily", spawn=_br_spawn)
                 started += 1
+        posted = br.deliver_waiting(now=now)
     except store.StoreUnavailable:
         return jsonify(ok=False, error="The database is unavailable."), 503
-    return jsonify(ok=True, started=started, skipped=skipped)
+    return jsonify(ok=True, started=started, skipped=skipped, slack_posted=posted)
+
+
+@app.route(BR + "/api/sheet", methods=["POST"])
+@position2_required
+def buyer_radar_sheet():
+    """The team's Google Sheet: {"action": "check"} sets up its tabs and says whether Buyer Radar may
+    write to it; {"action": "sync"} sends every lead not in it yet, and the changed ones, now. Free."""
+    from tracker import buyer_radar_sheet as sheet, buyer_radar_store as store
+    refused = _mr_guard_post() or _br_team_only()
+    if refused:
+        return refused
+    body = request.get_json(silent=True) or {}
+    owner = _mr_email()
+    try:
+        settings = store.get_settings(owner)
+        if not settings.get("sheet_id"):
+            return jsonify(error="Save a Google Sheet link in Settings first."), 400
+        if body.get("action") == "check":
+            ok, message = sheet.check(settings["sheet_id"])
+            return (jsonify(ok=True, detail=message) if ok else (jsonify(error=message), 400))
+        if body.get("action") == "sync":
+            got = sheet.sync(owner, settings)
+            if got.get("error"):
+                return jsonify(error="The Google Sheet was not updated: %s." % got["error"]), 400
+            return jsonify(ok=True, **got)
+    except store.StoreUnavailable as e:
+        return _br_store_error(e)
+    return jsonify(error="Choose check or sync."), 400
 
 
 @app.route("/buyer-radar/opt-out/<token>", methods=["GET", "POST"])

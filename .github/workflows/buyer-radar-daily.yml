@@ -1,9 +1,10 @@
 name: Buyer Radar daily search
 
-# Each morning, asks the live site to start one Buyer Radar search (LinkedIn posts from people asking
-# for what we sell) for every workspace that switched its daily search on in Settings. The site does
-# the work and keeps to each workspace's run and monthly caps (app.py buyer_radar_daily); this only
-# calls it. The reply holds counts only.
+# Every hour, asks the live site to look after Buyer Radar's daily searches (app.py buyer_radar_daily):
+# it starts each workspace's search in the hour before its time (Settings, India time), tries a failed
+# one once more, and posts each finished search's Slack message when its time comes. A late or skipped
+# call is made up by the next one. The site does the work and keeps to each workspace's run and monthly
+# caps; this only calls it. The reply holds counts only.
 #
 # Needs the repository secret BUYER_RADAR_CRON_TOKEN (the same value as the Railway variable on the web
 # service). Until it is set this exits quietly, so nothing runs or spends before it is switched on.
@@ -12,9 +13,9 @@ name: Buyer Radar daily search
 on:
   workflow_dispatch:
   schedule:
-    # 01:17 UTC = 06:47 India time: yesterday's posts are in, and the leads are waiting at the start
-    # of the day. Off the hour, when GitHub's scheduled runs start latest.
-    - cron: '17 1 * * *'
+    # Minute 31 UTC is one minute past the hour in India (UTC+5:30), so a 9:00 Slack time is met at
+    # about 9:01. GitHub can start a scheduled run some minutes late; the next hour's call catches up.
+    - cron: '31 * * * *'
 
 permissions: {}
 
